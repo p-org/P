@@ -5,8 +5,11 @@ import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.buffer.FifoQueue;
 import pexplicit.runtime.machine.eventhandlers.EventHandler;
+import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.exceptions.NotImplementedException;
+import pexplicit.utils.serialize.SerializableBiFunction;
+import pexplicit.utils.serialize.SerializableRunnable;
 import pexplicit.values.PEvent;
 import pexplicit.values.PMachineValue;
 import pexplicit.values.PValue;
@@ -45,6 +48,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     @Getter
     private boolean halted = false;
 
+    private final Map<String, PContinuation> continuationMap = new TreeMap<>();
+
+    private PContinuation blockedBy = null;
 
     /**
      * TODO
@@ -185,12 +191,43 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     /**
-     * TODO
-     *
-     * @param event
+     * Register a continuation
+     * @param name Name of the continuation
+     * @param handleFun Function executed when unblocking
+     * @param clearFun Function that clears corresponding continuation variables
      */
-    public void unblock(PMessage event) {
-        throw new NotImplementedException();
+    protected void registerContinuation(
+            String name,
+            SerializableBiFunction<PMachine, PMessage> handleFun,
+            SerializableRunnable clearFun,
+            String ... caseEvents) {
+        continuationMap.put(name, new PContinuation(handleFun, clearFun, caseEvents));
+    }
+
+    /**
+     * TODO
+     * @param continuationName
+     */
+    public void blockUntil(String continuationName) {
+        blockedBy = continuationMap.get(continuationName);
+    }
+
+    public boolean isBlocked() {
+        return blockedBy != null;
+    }
+
+    public void clearBlocked() {
+        blockedBy = null;
+    }
+
+    public boolean isDeferred(PEvent event) {
+        if (currentState.isDeferred(event)) {
+            return true;
+        }
+        if (isBlocked()) {
+            return blockedBy.isDeferred(event);
+        }
+        return false;
     }
 
     /**
@@ -212,7 +249,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         }
 
         // make sure event is not deferred in current state
-        assert (!currentState.isDeferred(msg.getEvent()));
+        assert (!isDeferred(msg.getEvent()));
 
         // process the event
         processEvent(msg);
@@ -224,7 +261,18 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      */
     void processEvent(PMessage message) {
         PExplicitLogger.logEvent(message);
-        currentState.handleEvent(message, this);
+        if (isBlocked()) {
+            PContinuation currBlockedBy = this.blockedBy;
+            clearBlocked();
+            currBlockedBy.getHandleFun().apply(this, message);
+            if (!isBlocked()) {
+                for (PContinuation c : continuationMap.values()) {
+                    c.getClearFun().run();
+                }
+            }
+        } else {
+            currentState.handleEvent(message, this);
+        }
     }
 
     /**
@@ -238,11 +286,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         if (currentState != null) {
             // execute exit function of current state
             currentState.exit(this);
-        }
-
-        if (currentState != newState) {
-            // reset peek since transitioning to a different state
-            sendBuffer.resetPeek();
         }
 
         // change current state to new state

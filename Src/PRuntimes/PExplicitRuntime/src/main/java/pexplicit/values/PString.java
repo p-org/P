@@ -2,20 +2,35 @@ package pexplicit.values;
 
 import lombok.Getter;
 
+import java.text.MessageFormat;
+
 /**
  * Represents the PValue for P string
  */
 @Getter
 public class PString extends PValue<PString> {
+    private final String base;
+    private final PValue<?>[] args;
     private final String value;
 
     /**
      * Constructor
      *
-     * @param val String value to set to.
+     * @param base Base string.
+     * @param args Arguments, if any.
      */
-    public PString(String val) {
-        value = val;
+    public PString(String base, PValue<?> ... args) {
+        this.base = base;
+        if (args.length == 0) {
+            this.args = null;
+            this.value = base;
+        } else {
+            this.args = new PValue<?>[args.length];
+            for (int i = 0; i < args.length; i++) {
+                this.args[i] = PValue.clone(args[i]);
+            }
+            this.value = MessageFormat.format(base, args);
+        }
     }
 
     /**
@@ -24,22 +39,12 @@ public class PString extends PValue<PString> {
      * @param val PString value to construct from.
      */
     public PString(PString val) {
-        value = val.value;
-    }
-
-    /**
-     * Constructor
-     *
-     * @param val Object value to construct from.
-     */
-    public PString(Object val) {
-        if (val instanceof PString) value = ((PString) val).value;
-        else value = (String) val;
+        this(val.base, val.args);
     }
 
     @Override
     public PString clone() {
-        return new PString(value);
+        return new PString(base, args);
     }
 
     @Override

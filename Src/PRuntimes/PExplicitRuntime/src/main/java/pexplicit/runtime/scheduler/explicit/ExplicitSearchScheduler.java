@@ -105,7 +105,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     if (schedule.getStepNumber() > maxStepNumber) {
       maxStepNumber = schedule.getStepNumber();
     }
-    Assert.prop(
+    Assert.fromModel(
             !PExplicitGlobal.getConfig().isFailOnMaxStepBound() || (schedule.getStepNumber() < PExplicitGlobal.getConfig().getMaxStepBound()),
             "Step bound of " + PExplicitGlobal.getConfig().getMaxStepBound() + " reached.");
     if (PExplicitGlobal.getConfig().getMaxSchedules() > 0) {
@@ -328,7 +328,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     StatWriter.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
     StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
     StatWriter.log("#-schedules", String.format("%d", iteration));
-    StatWriter.log("max-step", String.format("%d", maxStepNumber));
+    StatWriter.log("max-steps", String.format("%d", maxStepNumber));
     PExplicitLogger.log( String.format("Max Schedule Length       %d", maxStepNumber));
     StatWriter.log("#-choices-unexplored", String.format("%d", schedule.getNumUnexploredChoices()));
     StatWriter.log("%-choices-unexplored-data", String.format("%.1f", schedule.getUnexploredDataChoicesPercent()));

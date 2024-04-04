@@ -408,11 +408,21 @@ namespace Plang.Compiler.Backend.PExplicit
                 if (method is Continuation)
                 {
                     var cont = (Continuation) method;
-                    context.Write(output, $"continuations.put(\"{context.GetContinuationName(cont)}\", ");
-                    context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(");
-                    context.Write(output, "continuation_outcome");
-                    context.WriteLine(output, $", msg)));");
-                    context.WriteLine(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
+                    context.WriteLine(output, "registerContinuation(");
+                    context.WriteLine(output, $"\"{context.GetContinuationName(cont)}\"");
+                    context.WriteLine(output, $", (machine, msg) -> {context.GetContinuationName(cont)}(machine, msg)");
+                    context.WriteLine(output, $", () -> clear_{context.GetContinuationName(cont)}()");
+                    foreach (var (caseEvent, _) in cont.Cases)
+                    {
+                        context.Write(output, $", \"{caseEvent.Name}\"");
+                    }
+                    context.WriteLine(output, ");");
+
+                    // context.Write(output, $"continuations.put(\"{context.GetContinuationName(cont)}\", ");
+                    // context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(");
+                    // context.Write(output, "continuation_outcome");
+                    // context.WriteLine(output, $", msg)));");
+                    // context.WriteLine(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
                 }
             }
 
@@ -877,7 +887,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     break;
 
                 case AssertStmt assertStmt:
-                    context.Write(output, "Assert.progProp((");
+                    context.Write(output, "Assert.fromModel((");
                     WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ").getValue(), ");
                     WriteExpr(context, output, assertStmt.Message);
@@ -1171,7 +1181,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     context.WriteLine(output, ");");
                     break;
                 case ReceiveSplitStmt splitStmt:
-                    context.WriteLine(output, $"{CompilationContext.CurrentMachine}.receive(\"{context.GetContinuationName(splitStmt.Cont)}\");");
+                    context.WriteLine(output, $"{CompilationContext.CurrentMachine}.blockUntil(\"{context.GetContinuationName(splitStmt.Cont)}\");");
                     break;
                 default:
                     throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported, found in {function.Name}");
@@ -1216,39 +1226,44 @@ namespace Plang.Compiler.Backend.PExplicit
                 context.Write(output, $"{GetPExplicitType(local.Type)} {CompilationContext.GetVar(local.Name)}");
                 context.WriteLine(output, $"= {CompilationContext.GetVar(continuation.StoreForLocal[local].Name)};");
             }
-            var idx = 0;
-            foreach (var (_, value) in continuation.Cases)
+
+            context.WriteLine(output, $"switch ({messageName}.getEvent().toString())");
+            context.WriteLine(output, "{");
+            foreach (var (caseEvent, caseFun) in continuation.Cases)
             {
-                context.WriteLine(output, $"PMessage {messageName}_{idx} = {messageName};");
-                context.WriteLine(output, $"if (!{messageName}_{idx}.isEmpty())");
+                context.WriteLine(output, $"case \"{caseEvent.Name}\":");
                 context.WriteLine(output, "{");
-                context.WriteLine(output, $"{CompilationContext.CurrentMachine}.unblock({messageName}_{idx});");
                 var caseContext = ControlFlowContext.FreshFuncContext(context);
-                if (value.Signature.Parameters.Count > 0)
+                if (caseFun.Signature.Parameters.Count > 0)
                 {
-                    if (value.Signature.Parameters.Count > 1)
+                    if (caseFun.Signature.Parameters.Count > 1)
                     {
-                        throw new NotImplementedException($"Too many parameters ({value.Signature.Parameters.Count}) in receive case");
+                        throw new NotImplementedException($"Too many parameters ({caseFun.Signature.Parameters.Count}) in receive case");
                     }
-                    var arg =value.Signature.Parameters[0];
+                    var arg =caseFun.Signature.Parameters[0];
                     var argValue = new Variable($"{arg.Name}_payload", continuation.SourceLocation, VariableRole.Param);
                     argValue.Type = PrimitiveType.Any;
-                    context.WriteLine(output, $"PValue<?> var_{arg.Name}_payload = {messageName}_{idx}.getPayload();");
+                    context.WriteLine(output, $"PValue<?> var_{arg.Name}_payload = {messageName}.getPayload();");
                     var assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
                     context.WriteLine(output, $"{GetPExplicitType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(arg.Type)};");
                     WriteStmt(continuation, context, output, caseContext, assignMsg);
                 }
-                foreach (var local in value.LocalVariables)
+                foreach (var local in caseFun.LocalVariables)
                 {
                     if (!continuationLocalParams.Contains(local.Name))
                     {
                         context.WriteLine(output, $"{GetPExplicitType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(local.Type)};");
                     }
                 }
-                WriteStmt(continuation, context, output, caseContext, value.Body);
+                WriteStmt(continuation, context, output, caseContext, caseFun.Body);
                 context.WriteLine(output, "}");
-                idx++;
+                context.WriteLine(output, "break;");
             }
+            context.WriteLine(output, "default:");
+            context.WriteLine(output, "{");
+            context.WriteLine(output, "Assert.fromModel(false, \"Unexpected event received in a continuation.\");");
+            context.WriteLine(output, "}");
+            context.WriteLine(output, "}");
             if (continuation.After != null)
             {
                 var afterCaseContext = ControlFlowContext.FreshFuncContext(context);
@@ -2365,8 +2380,9 @@ namespace Plang.Compiler.Backend.PExplicit
             context.WriteLine(output, "import pexplicit.runtime.machine.events.*;");
             // context.WriteLine(output, "import pexplicit.runtime.scheduler.*;");
             context.WriteLine(output, "import pexplicit.values.*;");
-            // context.WriteLine(output, "import pexplicit.utils.*;");
-            // context.WriteLine(output, "import pexplicit.utils.serialize.*;");
+            context.WriteLine(output, "import pexplicit.utils.*;");
+            context.WriteLine(output, "import pexplicit.utils.misc.*;");
+            context.WriteLine(output, "import pexplicit.utils.serialize.*;");
             context.WriteLine(output, "import java.util.List;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");

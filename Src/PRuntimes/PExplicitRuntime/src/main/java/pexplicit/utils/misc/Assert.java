@@ -10,7 +10,7 @@ public class Assert {
     @Getter
     private static String failureMsg = "";
 
-    public static void prop(boolean p, String msg) {
+    public static void fromModel(boolean p, String msg) {
         if (!p) {
             failureType = "prop";
             failureMsg = "Property violated: " + msg;

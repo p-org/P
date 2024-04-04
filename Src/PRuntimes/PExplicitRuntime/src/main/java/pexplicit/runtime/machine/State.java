@@ -5,7 +5,6 @@ import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.eventhandlers.IgnoreEventHandler;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.machine.events.StateEvents;
-import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.PEvent;
 import pexplicit.values.PValue;
@@ -127,7 +126,7 @@ public abstract class State implements Serializable {
         }
 
         // make sure event is handled (or is halt event)
-        Assert.prop(done, String.format("%s received event %s that cannot be handled in state %s",
+        Assert.fromModel(done, String.format("%s received event %s that cannot be handled in state %s",
                 machine, msg.getEvent(), this.name));
     }
 

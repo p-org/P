@@ -3,7 +3,6 @@ package pexplicit.runtime.machine.buffer;
 import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.events.PMessage;
-import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.utils.misc.Assert;
 
 import java.io.Serializable;
@@ -120,43 +119,29 @@ public abstract class MessageQueue implements Serializable {
         PMessage msg = null;
         int msgIdx = 0;
 
-        if (validPeek) {
-            // peek is valid, so we can use it
-            msgIdx = peekIdx;
-            msg = getPeekMsg();
-        } else {
-            // peek is not valid, so we need to find the first non-deferred message
-
-            // find the first non-deferred message
-            for (PMessage m: elements) {
-                if (!owner.getCurrentState().isDeferred(m.getEvent())) {
-                    msg = m;
-                    break;
-                }
-                msgIdx++;
+        // find the first non-deferred message
+        for (PMessage m: elements) {
+            if (!m.getTarget().isDeferred(m.getEvent())) {
+                msg = m;
+                break;
             }
-
-            // update peek
-            setPeek(msgIdx);
+            msgIdx++;
         }
+
+        // update peek
+        setPeek(msgIdx);
 
         // dequeue the peek
         if (dequeue) {
             if (msg == null) {
                 if (elements.isEmpty()) {
-                    Assert.prop(false, "Cannot dequeue from empty queue");
+                    Assert.fromModel(false, "Cannot dequeue from empty queue");
                 } else {
-                    Assert.prop(false, "Cannot dequeue since all events in the queue are deferred");
+                    Assert.fromModel(false, "Cannot dequeue since all events in the queue are deferred");
                 }
             } else {
                 elements.remove(msgIdx);
-                if (msgIdx < elements.size()) {
-                    // add the next element as peek
-                    setPeek(msgIdx);
-                } else {
-                    // no next element, reset peek
-                    resetPeek();
-                }
+                resetPeek();
             }
         }
 

@@ -66,8 +66,7 @@ public abstract class MessageQueue implements Serializable {
      * @return peek message corresponding to the peek index
      */
     private PMessage getPeekMsg() {
-        assert (isPeekValid());
-        if (peekIdx < elements.size()) {
+        if (peekIdx >= 0 && peekIdx < elements.size()) {
             return elements.get(peekIdx);
         } else {
             return null;
@@ -116,32 +115,43 @@ public abstract class MessageQueue implements Serializable {
             return getPeekMsg();
         }
 
-        PMessage msg = null;
-        int msgIdx = 0;
+        int msgIdx = -1;
 
-        // find the first non-deferred message
-        for (PMessage m: elements) {
-            if (!m.getTarget().isDeferred(m.getEvent())) {
-                msg = m;
-                break;
+        if (validPeek) {
+            // peek is valid, so we can use it
+            msgIdx = peekIdx;
+        } else {
+            // peek is not valid
+
+            if (elements.isEmpty()) {
+                msgIdx = -1;
+            } else {
+                msgIdx = 0;
             }
-            msgIdx++;
+
+            // update peek
+            setPeek(msgIdx);
         }
 
-        // update peek
-        setPeek(msgIdx);
+        PMessage msg = getPeekMsg();
 
         // dequeue the peek
         if (dequeue) {
-            if (msg == null) {
+            if (msgIdx == -1) {
                 if (elements.isEmpty()) {
                     Assert.fromModel(false, "Cannot dequeue from empty queue");
                 } else {
                     Assert.fromModel(false, "Cannot dequeue since all events in the queue are deferred");
                 }
             } else {
-                elements.remove(msgIdx);
-                resetPeek();
+                msg = elements.remove(msgIdx);
+                if (msgIdx < elements.size()) {
+                    // add the next element as peek
+                    setPeek(msgIdx);
+                } else {
+                    // no next element, reset peek
+                    resetPeek();
+                }
             }
         }
 

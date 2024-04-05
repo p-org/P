@@ -22,11 +22,6 @@ public abstract class Scheduler implements SchedulerInterface {
     public final Schedule schedule;
 
     /**
-     * Flag whether check for liveness at the end
-     */
-    protected boolean terminalLivenessEnabled = true;
-
-    /**
      * Constructor
      */
     protected Scheduler() {

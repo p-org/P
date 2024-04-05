@@ -157,7 +157,6 @@ public class ExplicitSearchScheduler extends Scheduler {
     schedule.setChoiceNumber(0);
     schedule.getMachineListByType().clear();
     schedule.getMachineSet().clear();
-    terminalLivenessEnabled = true;
   }
 
   /**

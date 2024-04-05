@@ -55,7 +55,7 @@ machine Node assume 100 {
 
     state KeepSending_Main_Node {
       entry (payload: machine) {
-        if (payload == this) 
+        if (payload == this)
           send NextMachine, Done, this;
         else
           send NextMachine, Sending, payload;
@@ -69,7 +69,7 @@ machine Node assume 100 {
       entry (payload: machine) {
         if (IsSending == true)
           send NextMachine, Empty;
-        else 
+        else
           send NextMachine, Done, payload;
         raise Unit;
       }

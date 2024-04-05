@@ -30,7 +30,7 @@ namespace Plang.Compiler.Backend.Symbolic
         }
 
         public IReadOnlyDictionary<PEvent, Function> Cases { get; }
-        public IPStmt After { get; } 
+        public IPStmt After { get; }
         public IEnumerable<Variable> StoreParameters => storeParameters;
         public IEnumerable<Variable> LocalParameters => localParameters;
         public IEnumerable<AssignStmt> StoreStmts => storeStmts;

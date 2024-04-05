@@ -10,8 +10,8 @@ machine Main {
     var ghost_machine: machine;
     start state Real_Init {
         entry {
-			ghost_machine = new Ghost(this);  
-            raise unit;	   
+			ghost_machine = new Ghost(this);
+            raise unit;	
         }
         on E2 do (payload: int) { Action1(payload); }
 		on unit goto Real_S1;
@@ -19,10 +19,10 @@ machine Main {
     }
 
     state Real_S1 {
-    
+
 	entry {
             send ghost_machine, E1;
-	    
+	
 		}
     }
 
@@ -37,7 +37,7 @@ machine Main {
 		assert(payload == 100);  //this assert passes
         send ghost_machine, E3;
     }
- 
+
 }
 
 machine Ghost {

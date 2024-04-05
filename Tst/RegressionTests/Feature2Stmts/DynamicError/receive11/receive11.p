@@ -30,8 +30,8 @@ machine B {
 	state X {
 		entry {
 			receive {
-				case F: { 
-					send this, E, 10; 
+				case F: {
+					send this, E, 10;
 					assert(false);
 				}
 				case null : {raise F;}

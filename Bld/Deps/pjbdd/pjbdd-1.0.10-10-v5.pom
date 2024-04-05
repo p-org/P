@@ -5,7 +5,7 @@
       <artifactId>pjbdd</artifactId>
       <version>1.0.10-10-v5</version>
       <packaging>jar</packaging>
-     
+
       <name>PJBDD Java Bindings</name>
       <description>PJBDD Java Bindings</description>
       <url>https://gitlab.com/sosy-lab/software/paralleljbdd/</url>
@@ -15,15 +15,15 @@
           <url>${project.url}</url>
         </developer>
       </developers>
-     
+
       <licenses>
         <license>
           <url>${project.url}</url>
         </license>
       </licenses>
-     
+
       <scm>
         <url>${project.url}</url>
       </scm>
-     
+
     </project>

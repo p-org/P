@@ -5,7 +5,7 @@ set ( LIBHANDLER_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/)
 set ( LIBHANDLERINC_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/inc)
 set ( LIBHANDLEROUT_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/out)
 
-ADD_CUSTOM_TARGET( 
+ADD_CUSTOM_TARGET(
   libhandler
   COMMAND ./configure
   COMMAND make depend

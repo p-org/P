@@ -9,8 +9,8 @@ machine Main {
     var ghost_machine: machine;
     var XYZ: bool;
     start state Real_Init {
-        entry {			  
-            raise E2;	   
+        entry {			
+            raise E2;	
         }
         on E2 goto Real_S1; //exit actions are performed before transition to Real_S1
         exit {
@@ -20,13 +20,13 @@ machine Main {
     }
 
     state Real_S1 {
-    
+
 		entry {
 			assert(XYZ == true);  //holds
 			send ghost_machine, E1;
 		}
     }
- 
+
 }
 
 machine Ghost {

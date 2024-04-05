@@ -4,7 +4,7 @@ event START: int;
 event TIMEOUT: machine;
 
 // local event for control transfer within timer
-event UNIT; 
+event UNIT;
 machine Timer {
   var client: machine;
   start state Init {
@@ -15,7 +15,7 @@ machine Timer {
     on UNIT goto WaitForReq;
   }
 
-  state WaitForReq { 
+  state WaitForReq {
     on START do (payload: int) { send client, TIMEOUT, this; }
   }
 

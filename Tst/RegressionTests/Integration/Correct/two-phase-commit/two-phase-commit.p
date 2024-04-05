@@ -100,7 +100,7 @@ machine Replica {
 		on REQ_REPLICA do (payload :(seqNum:int, idx:int, val:int)) { HandleReqReplica(payload); }
 	}
 
-	fun ShouldCommitWrite(): bool 
+	fun ShouldCommitWrite(): bool
 	{
 		return $;
 	}
@@ -276,7 +276,7 @@ spec M observes announce_WRITE, announce_READ_SUCCESS, announce_READ_UNAVAILABLE
 
 	start state Init {
 		on announce_WRITE do (payload: (idx:int, val:int)) { dataValues[payload.idx] = payload.val; }
-		on announce_READ_SUCCESS do (payload : (idx:int, val:int)) { 
+		on announce_READ_SUCCESS do (payload : (idx:int, val:int)) {
 			assert(payload.idx in dataValues);
 			assert(dataValues[payload.idx] == payload.val);
 		}

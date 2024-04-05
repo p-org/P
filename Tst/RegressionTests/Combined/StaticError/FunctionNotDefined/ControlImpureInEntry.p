@@ -1,7 +1,7 @@
 // Combined XYZs: "Control Impure" static errors
 // Cases covered:
 // "pop" and "raise" in entry action,
-// used in anonymous functions (allowed) and  
+// used in anonymous functions (allowed) and
 // invoked by (named) function calls (error)
 
 event E;
@@ -16,7 +16,7 @@ machine Main {
 	}
 
 	state Call {
-		   entry { 
+		   entry {
 			 if (i == 3) {
 //				    pop;           //no error
 					Action4();
@@ -28,13 +28,13 @@ machine Main {
             else
 			    {
 					i = i + Action2() +
-							Action2() - 
+							Action2() -
 							Action2();
 			    }
-			     raise E; 
+			     raise E;
 			 }
 	}
-	fun Action1() : int {		                          
+	fun Action1() : int {		
 //		pop;
 		return 1;
     }
@@ -46,7 +46,7 @@ machine Main {
 		raise unit;
 		return 1;
     }
-	fun Action4() {		                          
+	fun Action4() {		
 //		pop;
 		
     }

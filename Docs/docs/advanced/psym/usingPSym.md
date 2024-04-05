@@ -1,4 +1,4 @@
-!!! check ""  
+!!! check ""
     Before moving forward, we assume that you have successfully [installed PSym](install.md) :metal: .
 
 In this section, we provide an overview of the steps involved in compiling and checking a P program with PSym
@@ -47,7 +47,7 @@ Simply pass the commandline argument `-generate:PSym` when running the P compile
 
 !!! tip "Recommendation"
 
-    We recommend using the P project file `*.pproj` along with passing `-generate:PSym` as commandline argument to the compiler 
+    We recommend using the P project file `*.pproj` along with passing `-generate:PSym` as commandline argument to the compiler
     to compile a P program for PSym.
     Commandline argument `-generate:XXX` takes priority over `<Target>YYY</Target>` in `*.pproj` file.
 
@@ -57,7 +57,7 @@ Simply pass the commandline argument `-generate:PSym` when running the P compile
 ``` shell
 pc -proj:ClientServer.pproj -generate:PSym
 ```
-    
+
 ??? info "Expected Output"
     ```
     $ pc -proj:ClientServer.pproj -generate:PSym
@@ -101,7 +101,7 @@ java -jar target/ClientServer-jar-with-dependencies.jar
 ??? info "Expected Output"
     ```hl_lines="9 10 11 12"
     java -jar target/ClientServer-jar-with-dependencies.jar
-    
+
     Picked up JAVA_TOOL_OPTIONS: -Dlog4j2.formatMsgNoLookups=true
     WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
     Reflections took 100 ms to scan 1 urls, producing 38 keys and 168 values
@@ -137,7 +137,7 @@ java -jar target/ClientServer-jar-with-dependencies.jar \
     ... Method tcSingleClient
     ... Project clientserver is using 'default' strategy (seed:0)
     --------------------
-      Time       Memory        Coverage      Schedule         Remaining          Depth      States   
+      Time       Memory        Coverage      Schedule         Remaining          Depth      States
     00:00:10     0.2 GB     1.4246418994 %      140        1820 (100 % data)        1         8043
     --------------------
     Estimated Coverage:: 1.4246418994 %
@@ -163,7 +163,7 @@ java -jar target/ClientServer-jar-with-dependencies.jar \
 ### Coverage
 
 At the end of a run, PSym reports a coverage metric as an estimated percentage of the execution tree that is explored during
-the run. Assuming a uniform probability for each scheduling/data choice, this metric reports the probability of a 
+the run. Assuming a uniform probability for each scheduling/data choice, this metric reports the probability of a
 randomly-sampled schedule to be bug free.
 
 ??? info "Continuous Feedback"
@@ -171,14 +171,14 @@ randomly-sampled schedule to be bug free.
     During the run, PSym prints useful metrics that summarizes the current status of the run.
 
     For example, for the ClientServer run above, PSym prints:
-    
+
     ```
-      Time       Memory        Coverage      Schedule         Remaining          Depth      States   
+      Time       Memory        Coverage      Schedule         Remaining          Depth      States
     00:00:10     0.2 GB     1.4246418994 %      140        1820 (100 % data)        1         8043
     ```
-    
+
     that summarizes:
-        
+
     | Label     | Description                                                                      |
     |-----------|----------------------------------------------------------------------------------|
     | Time      | Elapsed runtime in ``hh:mm:ss`` format                                           |
@@ -194,20 +194,20 @@ randomly-sampled schedule to be bug free.
 
     Sadly, No :pensive:!
 
-    PSym's coverage metric is **not** a perfect state-space coverage metric. 
-    This metric gives more weightage to shorter schedules, or more precisely, schedules with fewer schedule/data 
+    PSym's coverage metric is **not** a perfect state-space coverage metric.
+    This metric gives more weightage to shorter schedules, or more precisely, schedules with fewer schedule/data
     choices at shallower search depths.
-    Therefore, a PSym run can quickly reach a high estimated coverage (> 99 %) due to exploring shorter schedules 
+    Therefore, a PSym run can quickly reach a high estimated coverage (> 99 %) due to exploring shorter schedules
     first, after which gaining the remaining left-over percentage can become increasingly (and exponentially) difficult.
-    
+
     Our recommendation is to target achieving coverage up to 11 nines, i.e., 99.999999999 % to be sufficiently confident
     of the absence of bug.
-    Additionally, check PSym's Coverage Report (`` output/coverage-*.log ``) to understand the state-space covered 
+    Additionally, check PSym's Coverage Report (`` output/coverage-*.log ``) to understand the state-space covered
     during the run, as well as the number of distinct states explored.
 
 
-At the end of a run, PSym also prints a coverage report in `` output/coverage-*.log `` that tabulates, for each 
-exploration step/depth, the number of schedule/data choices explored during the run, along with the number of 
+At the end of a run, PSym also prints a coverage report in `` output/coverage-*.log `` that tabulates, for each
+exploration step/depth, the number of schedule/data choices explored during the run, along with the number of
 choices remaining as unexplored backtracks.
 For example, coverage report corresponding to the previous ClientServer run can be found in `` output/coverage-clientserver.log ``
 
@@ -226,21 +226,21 @@ For example, coverage report corresponding to the previous ClientServer run can 
     Depth   Covered       Remaining
           sch    data     sch    data
     -------------------------------------
-     0            100                 
-     1    100                         
+     0            100
+     1    100
      2    100     134            5806
-     3    135                         
-     4    134                         
-     5    134                         
-     6    134                         
+     3    135
+     4    134
+     5    134
+     6    134
      7    134      50            1162
      8    134      77            2659
-     9    127                         
-    10    127                         
+     9    127
+    10    127
     11    127      36             559
     12    127      48            1045
     13    124      36            1149
-    14    120                         
+    14    120
     15    120      23             296
     16    120      36             621
     17    114      34             766
@@ -283,9 +283,9 @@ For example, coverage report corresponding to the previous ClientServer run can 
     ```
 
 ??? tip "Improving Coverage for ClientServer"
-    Looks like the ClientServer example is quite data heavy, since there are lots of unexplored data choices at different steps 
+    Looks like the ClientServer example is quite data heavy, since there are lots of unexplored data choices at different steps
     (check the rightmost column of `` output/coverage-clientserver.log ``).
-    A good idea is to reduce the amount of data non-determinism by reducing the number of choices in the 
+    A good idea is to reduce the amount of data non-determinism by reducing the number of choices in the
     `choose(*)` expressions, such as the number of data choices in setting the initial bank balances in expression
     `choose(100)` [here](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L30).
 
@@ -315,7 +315,7 @@ For a complete list of options, pass the argument ` --help `.
 
 ??? tip "Exploration Techniques"
     PSym implements a collection of configurable techniques summarized as follows:
-    
+
     | Technique             | Description                                                                         |
     |-----------------------|-------------------------------------------------------------------------------------|
     | Search Strategy       | Configure the order in which search is performed: `astar`, `random`, `dfs`, `learn` |
@@ -328,7 +328,7 @@ For a complete list of options, pass the argument ` --help `.
 !!! info "Preconfigured Modes"
 
     For ease of usage, PSym provides a set of preconfigured exploration modes as follows:
-    
+
     | Mode      | Description                                                                                                                                                                                                                   |
     |-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
     | `default` | Explore single execution at a time <br/> Search Strategy = `astar` <br/> Choice Selection = `random` <br/> Never Repeat States = `ON` <br/> Stateful Backtracking = `ON` <br/> BMC = `OFF`                                    |
@@ -336,7 +336,7 @@ For a complete list of options, pass the argument ` --help `.
     | `fuzz`    | Explore like a random fuzzer (but never repeat an execution!) <br/> Search Strategy = `random` <br/> Choice Selection = `random` <br/> Never Repeat States = `OFF` <br/> Stateful Backtracking = `OFF` <br/> BMC = `OFF`      |
     | `dfs`     | Explore single executions at a time in depth-first manner <br/> Search Strategy = `dfs` <br/> Choice Selection = `random` <br/> Never Repeat States = `ON` <br/> Stateful Backtracking = `ON` <br/> BMC = `OFF`               |
     | `learn`   | Explore single execution at a time with learning <br/> Search Strategy = `learn` <br/> Choice Selection = `learn` <br/> Never Repeat States = `ON` <br/> Stateful Backtracking = `ON` <br/> BMC = `OFF`                       |
-    
+
     Pass the CLI argument ` --mode <option> ` to set the exploration mode.
 
 

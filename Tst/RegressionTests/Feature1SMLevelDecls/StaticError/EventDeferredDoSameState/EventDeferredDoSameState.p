@@ -8,10 +8,10 @@ machine Main {
     start state Init {
         entry {
   	    server = new Server();
-	    raise SUCCESS;   	   
+	    raise SUCCESS;   	
         }
 		//static error:
-		on PING do Action1;  
+		on PING do Action1;
 		defer PING;
     }
 
@@ -20,13 +20,13 @@ machine Main {
 	    send server, PING, this;
 	    raise SUCCESS;
 	}
-        on SUCCESS goto WaitPong;  
+        on SUCCESS goto WaitPong;
      }
 
      state WaitPong {
 		on PONG do Action1;
      }
-	 
+	
 	 fun Action1() {
 		XYZ = true;
     }
@@ -40,7 +40,7 @@ machine Server {
     state SendPong {
 		entry (payload: machine) {
 			send payload, PONG;
-			raise SUCCESS;		 	  
+			raise SUCCESS;		 	
 		}
         on SUCCESS goto WaitPing;
     }

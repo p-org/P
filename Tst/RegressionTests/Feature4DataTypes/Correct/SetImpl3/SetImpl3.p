@@ -5,7 +5,7 @@ machine Main {
 	var t1 : (a: seq [int], b: map[int, seq[int]]);
 	var ts: (a: int, b: int);
 	var tt: (int, int);
-	var te: (int, event);       
+	var te: (int, event);
     var y : int;
 	var b: bool;
 	var e: event;
@@ -23,12 +23,12 @@ machine Main {
 		st += (4);
         st += (5);
         st -= (4);
-        st1 += (false);	   
-		st1 += (true);    
+        st1 += (false);	
+		st1 += (true);
 		tmp = sizeof(st);
 		b = st1[1];
-		raise halt; 
-       }    
-    } 
+		raise halt;
+       }
+    }
 }
 

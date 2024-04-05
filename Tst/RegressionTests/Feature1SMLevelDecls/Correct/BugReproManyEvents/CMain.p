@@ -90,7 +90,7 @@ machine DownloadManagerMachine {
     on DownloadCompleteInternal do {}
     }
 
-    state Canceling 
+    state Canceling
     {
     // TODO: Missing CancelDownload?
     on DownloadCompleteInternal do {}
@@ -101,7 +101,7 @@ machine DownloadManagerMachine {
     }
 
     // Stop State:
-    state Complete 
+    state Complete
     {
         entry
         {
@@ -113,23 +113,23 @@ machine DownloadManagerMachine {
 
 
 machine Main {
-	    // Fields: 
+	    // Fields:
 
 
 
-	    // States: 
+	    // States:
 
 	    start state Init
 	    {
 	        entry
 	        {
-	            
+	
 	        }
 	    }
 
 	}
 
-	 
+	
 
 
 

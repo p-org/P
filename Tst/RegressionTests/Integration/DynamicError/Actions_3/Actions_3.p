@@ -11,16 +11,16 @@ machine Main {
     var ghost_machine: machine;
     start state Real_Init {
         entry {
-			ghost_machine = new Ghost(this);  
-            send ghost_machine, E1;  	   
+			ghost_machine = new Ghost(this);
+            send ghost_machine, E1;  	
         }
         on E2 do Action1;
 		on E4 goto Real_S2;
     }
 
-    state Real_S1 {    
+    state Real_S1 {
 		entry {
-			 
+			
 			raise unit;
 		}
     }
@@ -35,7 +35,7 @@ machine Main {
     fun Action1() {
         send ghost_machine, E3;
     }
- 
+
 }
 
 machine Ghost {

@@ -14,16 +14,16 @@ machine Main {
 
        state WaitForUser
        {
-            entry { 
+            entry {
 				announce Waiting, 0;
 				send this, UserEvent;
 			}
             on UserEvent goto HandleEvent;
        }
-  
+
        state HandleEvent
        {
-            entry { 
+            entry {
 				announce Computing;
 				// send this, Done;
 			}			
@@ -34,13 +34,13 @@ machine Main {
 spec WatchDog observes Computing, Waiting
 {
       start cold state CanGetUserInput
-	 
+	
       {
              on Waiting goto CanGetUserInput;
              on Computing goto CannotGetUserInput;
-      } 
+      }
 	  //If CannotGetUserInput is marked as "hot", Zinger reports liveness error
-	  //hot state CannotGetUserInput  
+	  //hot state CannotGetUserInput
 	  //"warm" instead of "hot":
 	  state CannotGetUserInput
      {

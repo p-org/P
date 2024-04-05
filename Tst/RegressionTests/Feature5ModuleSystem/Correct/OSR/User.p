@@ -1,8 +1,8 @@
-machine Main 
+machine Main
 sends eD0Entry, eD0Exit;
 {
   var Driver: machine;
-    
+
 	start state User_Init {
 		entry{
 			Driver = new OSRDriverInterface();
@@ -26,7 +26,7 @@ sends eD0Entry, eD0Exit;
 		}
 		on eUnit goto S0;
 	}
-  
+
 }
 
 

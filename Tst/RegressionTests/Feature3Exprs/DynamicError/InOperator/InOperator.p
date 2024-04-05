@@ -1,4 +1,4 @@
-event E assert 1; 
+event E assert 1;
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -10,7 +10,7 @@ machine Main {
     start state S
     {
        entry
-       {  
+       {
 		  sequence += (0, 1);
 		  sequence += (1, 2);
 		  sequence += (2, (3, 4));
@@ -20,6 +20,6 @@ machine Main {
 		  dictionary[0] = (1, 2);
 		  assert((0 in dictionary) == false); // errors for failing assertions
 		  raise halt;
-       }    
-    }      
+       }
+    }
 }

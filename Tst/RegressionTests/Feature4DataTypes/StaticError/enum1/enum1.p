@@ -16,7 +16,7 @@ machine Main {
             // assert comparison between two enums
             assert (default(Bar) to int) == (Foo1 to int);
             assert x >= Foo0 to int;
-            
+
         }
     }
 }

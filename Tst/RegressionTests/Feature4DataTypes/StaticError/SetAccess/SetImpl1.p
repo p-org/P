@@ -18,7 +18,7 @@ machine Main {
         st += (4);
 		st[1] = 3;
 		raise halt;
-       }    
-    } 
+       }
+    }
 }
 

@@ -3,8 +3,8 @@
 machine Main {
 	var x: int;
 
-    start state S { 
-        entry { 
+    start state S {
+        entry {
 			var xloc: int;
 			foo(xloc swap); //error: "Parameter passed with swap not available at callee return"
 		}
@@ -12,6 +12,6 @@ machine Main {
 	fun foo(a: int) {
 		a = 1;
 		x = a move;
-		assert x == 1;             
+		assert x == 1;
 	}
 }

@@ -1,5 +1,5 @@
-// Bug repro in PtoZing translation: assignment to a nested datatype when the right hand side of the assignment 
-// is a side-effect free function with a nondeterministic choice inside.  
+// Bug repro in PtoZing translation: assignment to a nested datatype when the right hand side of the assignment
+// is a side-effect free function with a nondeterministic choice inside. 
 machine Main {
     fun F() : int {
 	    if ($) {

@@ -15,7 +15,7 @@ namespace Plang.Compiler.Backend.Java
             // create the pom.xml file
             var pomTemplate = Constants.pomTemplate;
             pomTemplate = pomTemplate.Replace("-package-name-",job.PObservePackageName);
-            
+
             string foreignInclude = "";
             var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".java"));
             if (foreignFiles.Any())
@@ -39,7 +39,7 @@ namespace Plang.Compiler.Backend.Java
                 foreignInclude = foreignInclude.Replace("-foreign-source-include-", foreignSourceInclude);
             }
             pomTemplate = pomTemplate.Replace("-foreign-include-", foreignInclude);
-            
+
             File.WriteAllText(pomPath, pomTemplate);
 
             job.Output.WriteInfo("Generated " + Constants.BuildFileName);

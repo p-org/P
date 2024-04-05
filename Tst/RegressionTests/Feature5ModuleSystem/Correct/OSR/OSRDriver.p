@@ -1,5 +1,5 @@
 machine OSRDriverMachine
-sends eUpdateBarGraphStateUsingControlTransfer, eSetLedStateToStableUsingControlTransfer, 
+sends eUpdateBarGraphStateUsingControlTransfer, eSetLedStateToStableUsingControlTransfer,
 eSetLedStateToUnstableUsingControlTransfer, eStartDebounceTimer, eStopTimer;
 {
 	

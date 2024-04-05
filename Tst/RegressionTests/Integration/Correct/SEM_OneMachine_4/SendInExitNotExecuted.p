@@ -4,9 +4,9 @@ event E2 assert 1;
 
 machine Main {
     start state Real1_Init {
-        entry {   
+        entry {
         }
-        on E2 do Action2; 
+        on E2 do Action2;
         exit {  send this, E2; }
 	}
 	fun Action2() {

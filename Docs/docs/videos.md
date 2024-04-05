@@ -1,7 +1,7 @@
 ## Introductory tutorial on P
 
 Background and motivation behind P :: what worked and what didn't: [Apple Podcast](https://podcasts.apple.com/us/podcast/episode-20-ankush-desai-p-the-modeling-language-that-could/id1537190695?i=1000559001558) and [Youtube Podcast](https://www.youtube.com/watch?v=ivFc79l6VpM).
-  
+
 
 ## Tech Talks and Presentations
 

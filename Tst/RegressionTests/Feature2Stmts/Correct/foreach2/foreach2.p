@@ -1,7 +1,7 @@
 /********************
  * This example explains the usage of foreach iterator with continue
  * ******************/
- 
+
 
  machine Main {
  	var ss: set[int];
@@ -28,5 +28,5 @@
  			assert sum == 345, "Incorrect sum outside loop";
  		}
  	}
- } 
+ }
 

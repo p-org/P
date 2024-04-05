@@ -82,7 +82,7 @@ namespace PChecker.SystematicTesting
         /// checkerConfiguration is specified.
         /// </summary>
         private JsonWriter JsonLogger;
-        
+
         /// <summary>
         /// Field declaration for the JsonVerboseLogs
         /// Structure representation is a list of the JsonWriter logs.
@@ -99,7 +99,7 @@ namespace PChecker.SystematicTesting
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = true
         };
-        
+
         /// <summary>
         /// The profiler.
         /// </summary>
@@ -126,7 +126,7 @@ namespace PChecker.SystematicTesting
         /// checkerConfiguration is specified.
         /// </summary>
         private StringBuilder XmlLog;
-        
+
         /// <summary>
         /// The readable trace, if any.
         /// </summary>
@@ -169,7 +169,7 @@ namespace PChecker.SystematicTesting
                     {
                         Console.Out.WriteLine($"{mi.DeclaringType.Name}");
                     }
-                    
+
                     Environment.Exit(0);
                 }
                 catch
@@ -177,7 +177,7 @@ namespace PChecker.SystematicTesting
                     Error.ReportAndExit($"Failed to list test methods from assembly '{assembly.FullName}'");
                 }
             }
-            
+
             TestMethodInfo testMethodInfo = null;
             try
             {
@@ -265,7 +265,7 @@ namespace PChecker.SystematicTesting
             {
                 JsonVerboseLogs = new List<List<LogEntry>>();
             }
-            
+
             if (checkerConfiguration.SchedulingStrategy is "replay")
             {
                 var scheduleDump = GetScheduleForReplay(out var isFair);
@@ -463,7 +463,7 @@ namespace PChecker.SystematicTesting
                     using var jsonStreamFile = File.Create(jsonVerbosePath);
                     JsonSerializer.Serialize(jsonStreamFile, JsonVerboseLogs, jsonSerializerConfig);
                 }
-                
+
             }, CancellationTokenSource.Token);
         }
 
@@ -502,7 +502,7 @@ namespace PChecker.SystematicTesting
                 // Always output a json log of the error
                 JsonLogger = new JsonWriter();
                 runtime.SetJsonLogger(JsonLogger);
-                    
+
                 // If verbosity is turned off, then intercept the program log, and also redirect
                 // the standard output and error streams to a nul logger.
                 if (!_checkerConfiguration.IsVerbose)
@@ -547,7 +547,7 @@ namespace PChecker.SystematicTesting
                 {
                     JsonVerboseLogs.Add(JsonLogger.Logs);
                 }
-                
+
                 runtime.LogWriter.LogCompletion();
 
                 GatherTestingStatistics(runtime);
@@ -684,12 +684,12 @@ namespace PChecker.SystematicTesting
                 Logger.WriteLine($"..... Writing {xmlPath}");
                 File.WriteAllText(xmlPath, XmlLog.ToString());
             }
-            
+
             if (_checkerConfiguration.IsJsonLogEnabled)
             {
                 var jsonPath = directory + file + "_" + index + ".trace.json";
                 Logger.WriteLine($"..... Writing {jsonPath}");
-                
+
                 // Remove the null objects from payload recursively for each log event
                 for(int i=0; i<JsonLogger.Logs.Count; i++) {
                     JsonLogger.Logs[i].Details.Payload = RecursivelyReplaceNullWithString(JsonLogger.Logs[i].Details.Payload);

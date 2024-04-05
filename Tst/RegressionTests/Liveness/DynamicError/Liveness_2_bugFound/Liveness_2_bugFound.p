@@ -14,16 +14,16 @@ machine Main {
 
        state WaitForUser
        {
-            entry { 
+            entry {
 				announce Waiting, 0;
 				send this, UserEvent;
 			}
             on UserEvent goto HandleEvent;
        }
-  
+
        state HandleEvent
        {
-            entry { 
+            entry {
 				announce Computing;
 				// send this, Done;
 			}			
@@ -37,7 +37,7 @@ spec WatchDog observes Computing, Waiting
       {
              on Waiting goto CanGetUserInput;
              on Computing goto CannotGetUserInput;
-      } 
+      }
 	  hot state CannotGetUserInput
      {
              on Waiting goto CanGetUserInput;

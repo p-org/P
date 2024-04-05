@@ -4,7 +4,7 @@
 
 The basic idea behind PSym is to perform symbolic exploration of P models, powered by automated reasoning through Binary Decision Diagrams (BDDs) or SAT/SMT solvers.
 
-PSym is composed of two components: 
+PSym is composed of two components:
   1) [Compiler backend](../../PCompiler/CompilerCore/Backend/Symbolic) in C# that converts a P model to a customized symbolically-instrumented Java code.
   2) [Runtime analysis](../PSymRuntime) in Java that performs systematic symbolic exploration by executing the symbolically-instrumented Java code.
 
@@ -17,11 +17,11 @@ This installs PSym with the default BDD backend. For detailed solver options, ch
 
 ### Usage
 
-     ./scripts/run_psym.sh <path-to-P-project> <project-name> <args> 
+     ./scripts/run_psym.sh <path-to-P-project> <project-name> <args>
 
 ### Example
-    
-    ./scripts/run_psym.sh Examples/tests/PingPong/ psymExample 
+
+    ./scripts/run_psym.sh Examples/tests/PingPong/ psymExample
 
 ### Output
 PSym creates a directory `` output/<project-name> `` which contains results, statistics and logs relating to the run.

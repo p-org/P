@@ -4,12 +4,12 @@ event E1 assert 1;
 event E2 assert 1: bool;
 
 machine Main {
-    var XYZ: bool; 
+    var XYZ: bool;
 	var ev2: event;
     start state Real1_Init {
-        entry { 
+        entry {
 			ev2 = E2;
-			announce ev2, XYZ;  
+			announce ev2, XYZ;
 		}
 	}
 }

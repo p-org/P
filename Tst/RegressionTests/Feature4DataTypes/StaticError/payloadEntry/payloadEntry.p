@@ -30,8 +30,8 @@ machine Main {
 	
 	state State1 {
 		entry (payload: (int, bool)) {
-			INT = payload.0; 
-			BOOL = payload.1; 
+			INT = payload.0;
+			BOOL = payload.1;
 		}
 	}
 	

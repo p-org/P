@@ -11,10 +11,10 @@ machine Main {
 	var m: map[int, int];
 	var s: seq[bool];
 	
-	fun foo_1(payload: (int, bool)) { 
-			INT = payload.0; 
+	fun foo_1(payload: (int, bool)) {
+			INT = payload.0;
 			assert ( INT == 1 );
-			BOOL = payload.1;  
+			BOOL = payload.1;
 			assert ( BOOL == true );			
 	}
 	

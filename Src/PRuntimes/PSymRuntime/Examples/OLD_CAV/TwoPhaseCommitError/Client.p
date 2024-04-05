@@ -77,7 +77,7 @@ machine Client {
 }
 
 
-/* 
+/*
 This is an external function (implemented in C#) to randomly choose transaction values
 In P, function declarations without body are considered as foreign functions.
 */

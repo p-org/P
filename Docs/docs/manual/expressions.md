@@ -59,7 +59,7 @@ P supports the common imperative programming language expressions (just like in 
         | iden = rvalue (, iden = rvalue)+
         ;
 
-        # r-value is an expression that can’t have a value assigned to it which 
+        # r-value is an expression that can’t have a value assigned to it which
         # means r-value can appear on right but not on left hand side of an assignment operator(=)
         rvalue : expr ;
         # rvalueList is a comma separated list of rvalue.
@@ -98,7 +98,7 @@ P allows creating formatted strings.
 
     h = "Hello"; w = "World";
     tup = ("tup value", 100);
-    hw = format("{0} {1}, and {2} is {3}!", 
+    hw = format("{0} {1}, and {2} is {3}!",
             h, w, tup.0, tup.1);
     // hw value is "Hello World, and tup value is 100!"
     ```
@@ -112,7 +112,7 @@ P allows creating formatted strings.
 
     h = "Hello"; w = "World";
     tup = ("tup value", 100);
-    print format("{0} {1}, and {2} is {3}!", 
+    print format("{0} {1}, and {2} is {3}!",
             h, w, tup.0, tup.1);
     // prints "Hello World, and tup value is 100!"
     ```
@@ -125,24 +125,24 @@ A tuple or named tuple value can be created using the following expressions:
 
 ``` java
 // tuple value of type (int,)
-(10,) 
+(10,)
 // tuple value of type (string, (string, string))
-("Hello", ("World", "!")) 
+("Hello", ("World", "!"))
 // assume x: int and y: string
 // tuple value of type (int, string)
-(x, y) 
+(x, y)
 ```
 
 **Syntax (named tuple value):**: `(iden = rvalue ,)` for a single field named tuple value or `(iden = rvalue (, iden = rvalue)+)` for named tuple with multiple fields.
 
 ``` java
 // named tuple value of type (reqId: int,)
-(reqId = 10,) 
+(reqId = 10,)
 // named tuple value of type (h: string, (w: string, a: string))
-(h = "Hello", (w = "World", a = "!")) 
+(h = "Hello", (w = "World", a = "!"))
 // assume x: int and y: string
 // named tuple value of type (a:int, b:string)
-(a = x, b = y) 
+(a = x, b = y)
 ```
 
 ### Access Field of Tuple and Named Tuple
@@ -157,7 +157,7 @@ accessed by using the `.` operation followed by the field index.
 var tupleEx: (int, bool, int);
 tupleEx = (20, false, 21);
 
-// accessing the first and third element of the tupleEx 
+// accessing the first and third element of the tupleEx
 tupleEx.0 = tupleEx.0 + tupleEx.2;
 ```
 
@@ -171,7 +171,7 @@ of a named tuple can be accessed by using the `.` operation followed by the fiel
 var namedTupleEx: (x1: int, x2: bool, x3: int);
 namedTupleEx = (x1 = 20, x2 = false, x3 = 21);
 
-// accessing the first and third element of the namedTupleEx 
+// accessing the first and third element of the namedTupleEx
 namedTupleEx.x1 = namedTupleEx.x1 + namedTupleEx.x3;
 ```
 
@@ -179,7 +179,7 @@ namedTupleEx.x1 = namedTupleEx.x1 + namedTupleEx.x3;
 
 P supports three collection types: `map`, `seq`, and `set`. We can index into these collection types to access its elements.
 
-**Syntax:** `expr_c[expr_i]` 
+**Syntax:** `expr_c[expr_i]`
 
 If `expr_c` is a value of sequence type then `expr_i` must be an integer expression and `expr_c[expr_i]` represents the element at index `expr_i`. Similarly, If `expr_c` is a value of set type then `expr_i` must be an integer expression and `expr_c[expr_i]` represents the element at index `expr_i` but note that for a set there is no guarantee for the order in which elements are stored in the set.
 Finally, if `expr_c` is a value of map type then `expr_i` represents the key to look up and `expr_c[expr_i]` represents the value for the key `expr_i`.
@@ -214,7 +214,7 @@ Primarily, `keys` and `values` are used to get contents of the map and then oper
 
 To check if an element (or key in the case of a map) belongs to a collection, P provides the `in` operation.
 
-**Syntax:** `expr_e in expr_c` 
+**Syntax:** `expr_e in expr_c`
 
 `expr_e` is the element (or key in the case of map) and `expr_c` is the collection value. The `in` expression evaluates to `true` if the element belongs to the collection and `false` otherwise.
 
@@ -247,7 +247,7 @@ New expression is used to create an instance of a machine, `new` returns a machi
     ``` java
     new Client((id = 1, server = this));
     ```
-    Creates a dynamic instance of a Client machine and passes the constructor parameter `(id = 1, server = this)` 
+    Creates a dynamic instance of a Client machine and passes the constructor parameter `(id = 1, server = this)`
     which is delivered as a payload to the entry function of the start state of the created Client machine.
 
 ### Function Call
@@ -264,7 +264,7 @@ Function calls in P are similar to any other imperative programming languages.
 === "Function call"
 
     ``` java
-    x = Foo(); 
+    x = Foo();
     y = Bar(10, "haha");
     ```
 

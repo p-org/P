@@ -38,7 +38,7 @@ sends eSendCommandToResetDoor, eSendCommandToOpenDoor, eStartDoorCloseTimer, eSe
     state DoorClosed {
         ignore eCloseDoor;
 
-        entry { 
+        entry {
             send DoorV, eSendCommandToResetDoor;
         }
 
@@ -93,7 +93,7 @@ sends eSendCommandToResetDoor, eSendCommandToOpenDoor, eStartDoorCloseTimer, eSe
     }
 
     state StoppingDoor {
-        defer eCloseDoor; 
+        defer eCloseDoor;
         ignore eOpenDoor, eObjectDetected;
 
         entry {
@@ -110,7 +110,7 @@ sends eSendCommandToResetDoor, eSendCommandToOpenDoor, eStartDoorCloseTimer, eSe
 
         entry {
              send TimerV,eStopDoorCloseTimer;
-        } 
+        }
 
         on eOperationSuccess goto ReturnState;
         on eOperationFailure goto WaitingForTimer;
@@ -130,7 +130,7 @@ sends eSendCommandToResetDoor, eSendCommandToOpenDoor, eStartDoorCloseTimer, eSe
     }
 }
 
-machine Main 
+machine Main
 sends eOpenDoor, eCloseDoor;
 {
     var ElevatorV : Elevator;
@@ -138,7 +138,7 @@ sends eOpenDoor, eCloseDoor;
     start state Init {
         entry {
             ElevatorV = new Elevator();
-            raise eUnit; 
+            raise eUnit;
         }
 
         on eUnit goto Loop;
@@ -261,7 +261,7 @@ sends eTimerFired, eOperationFailure, eOperationSuccess;
     state SendTimerFired {
         defer eStartDoorCloseTimer;
         entry {
-            send ElevatorV,eTimerFired; raise eUnit; 
+            send ElevatorV,eTimerFired; raise eUnit;
         }
         on eUnit goto Init;
     }

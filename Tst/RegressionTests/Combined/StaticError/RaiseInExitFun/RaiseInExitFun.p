@@ -7,12 +7,12 @@ event E1 assert 1;
 machine Main {
     var XYZ: bool;  //init with "false"
     start state Real1_Init {
-        entry {			   
+        entry {			
         }
 		
         on E1 do Action1;   // checking "raise"
-        exit { 
-			raise E1; 
+        exit {
+			raise E1;
 		}
 	}
     fun Action1() {

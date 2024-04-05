@@ -1,5 +1,5 @@
 // P semantics XYZ: one machine, "goto" transition, action is not inherited by the destination state
-// This XYZ checks that after "goto" transition, action of the src state is not inherited by the dest state 
+// This XYZ checks that after "goto" transition, action of the src state is not inherited by the dest state
 // Compare error trace for this XYZ with the one for PushTransInheritance.p
 
 event E2 assert 1;
@@ -9,15 +9,15 @@ event E3 assert 1;
 machine Main {
     var XYZ: bool;
     start state Real1_Init {
-        entry { 
+        entry {
 			send this, E1;
         }
 		
-        on E1 goto Real1_S1; 
+        on E1 goto Real1_S1;
 		on E3 goto Real1_S2;         //this E3 handler is not inherited by Real1_S1
-        exit {  
-			//send this, E2; 
-		}   
+        exit {
+			//send this, E2;
+		}
 	}
 	state Real1_S1 {
 		entry {

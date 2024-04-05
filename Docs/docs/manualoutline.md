@@ -1,4 +1,4 @@
-!!! tip ""  
+!!! tip ""
     **We recommend that you start with the [Tutorials](tutsoutline.md) to get familiar with
     the P language and its tool chain.**
 
@@ -30,7 +30,7 @@ A P program consists of a collection of following top-level declarations:
 | [Module System](manual/modulesystem.md)      | P supports a module system for implementing and testing the system modularly by dividing it into separate components                  |
 | [Test Cases](manual/testcases.md)            | P test cases help programmers to write different finite scenarios under which they would like to check the correctness of their system |
 
-!!! Tip "Models, Specifications, Model Checking Scenario"  
+!!! Tip "Models, Specifications, Model Checking Scenario"
     A quick primer on what a model
     is, versus a specification, and model checking scenarios: (1) A specification says what
     the system should do (correctness properties). (2) A model captures the details of how the

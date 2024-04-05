@@ -1,6 +1,6 @@
 module OSModule =
 {
-  LEDMachine -> LEDInterface, 
+  LEDMachine -> LEDInterface,
   TimerMachine -> TimerInterface,
   SwitchMachine -> SwitchInterface
 };

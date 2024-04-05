@@ -20,7 +20,7 @@ machine TestDriver {
   start state Init {
     entry {
       var i : int;
-      
+
       sharedObj = new LBSharedObject(1);
       // create 10 users
       while (i < 10)

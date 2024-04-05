@@ -85,25 +85,25 @@ namespace PChecker.ExhaustiveSearch
                         Error.ReportAndExit($"Unexpected checker mode: {_checkerConfiguration.Mode}.");
                         break;
                 }
-                
+
                 arguments.Append($"--timeout {_checkerConfiguration.Timeout} ");
-                
+
                 arguments.Append($"--memout {_checkerConfiguration.MemoryLimit} ");
 
                 if (_checkerConfiguration.IsVerbose)
                 {
                     arguments.Append($"--verbose 1 ");
                 }
-                
+
                 arguments.Append($"--schedules {_checkerConfiguration.TestingIterations} ");
-                
+
                 arguments.Append($"--max-steps {_checkerConfiguration.MaxUnfairSchedulingSteps} ");
 
                 if (_checkerConfiguration.ConsiderDepthBoundHitAsBug)
                 {
                     arguments.Append("--fail-on-maxsteps ");
                 }
-                
+
                 if (_checkerConfiguration.RandomGeneratorSeed.HasValue)
                 {
                     arguments.Append($"--seed {_checkerConfiguration.RandomGeneratorSeed.Value} ");
@@ -143,9 +143,9 @@ namespace PChecker.ExhaustiveSearch
                     CancellationTokenSource.CancelAfter(
                         (_checkerConfiguration.Timeout + 30) * 1000);
                 }
-            
+
                 await  proc.WaitForExitAsync(CancellationTokenSource.Token);
-                    
+
                 switch (proc.ExitCode)
                 {
                     case 0:
@@ -190,7 +190,7 @@ namespace PChecker.ExhaustiveSearch
             proc.Start();
             Task task = CreateTaskFromProcess(proc);
             bool interrupted = false;
-            
+
             // For graceful shutdown, trap unload event
             AppDomain.CurrentDomain.ProcessExit += delegate
             {

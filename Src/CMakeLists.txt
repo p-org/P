@@ -44,7 +44,7 @@ macro ( Publish_Library_Header target )
 		file ( GLOB incl_files ${incl_file_path}/*.h )
 		foreach(incl_file ${incl_files})
 			add_custom_command(TARGET ${target} POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+				COMMAND ${CMAKE_COMMAND} -E copy_if_different
 					${incl_file}
 			       	${LIBRARY_OUTPUT_INCLUDE_PATH}
 			)

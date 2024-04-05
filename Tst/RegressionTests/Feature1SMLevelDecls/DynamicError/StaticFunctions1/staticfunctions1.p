@@ -2,7 +2,7 @@ event a;
 event b;
 event c: int;
 
-fun F1(m: machine) 
+fun F1(m: machine)
 {
 	var mInt : map[int, int];
 	mInt[0] = 10;

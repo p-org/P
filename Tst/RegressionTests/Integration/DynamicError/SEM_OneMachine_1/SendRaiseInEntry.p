@@ -5,8 +5,8 @@ event E2 assert 1;
 machine Main {
     var XYZ: bool;  //init with "false"
     start state Real1_Init {
-        entry { 
-            send this, E2;	 
+        entry {
+            send this, E2;	
 			raise E1;
         }
 		

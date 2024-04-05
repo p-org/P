@@ -3,7 +3,7 @@ event y : machine;
 
 machine Main {
     var id: machine;
-    start state S 
+    start state S
     {
       entry {
         id = new M2();
@@ -12,7 +12,7 @@ machine Main {
       ignore x;
     }
   }
-  
+
   spec Mon1 observes x, y
   {
     var i : int;
@@ -26,7 +26,7 @@ machine Main {
     }
 
     hot state hotState {
-      
+
     }
   }
 

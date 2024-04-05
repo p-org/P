@@ -19,5 +19,5 @@ P allows programmers to write different scenarios under which we would like to c
 
 !!! info "Properties checked for a Test Case"
 
-    For each testcase, the P checker by default asserts that for each execution of the system (i.e., `module_under_test`): (1) there are no `unhandled event` exceptions; (2) all local assertions in the program hold; (3) there are no deadlocks; and finally (4) based on the [specification monitors that are attached](modulesystem.md#assert-monitors-module) to the module, these safety and liveness properties asserted by the monitors always hold. 
+    For each testcase, the P checker by default asserts that for each execution of the system (i.e., `module_under_test`): (1) there are no `unhandled event` exceptions; (2) all local assertions in the program hold; (3) there are no deadlocks; and finally (4) based on the [specification monitors that are attached](modulesystem.md#assert-monitors-module) to the module, these safety and liveness properties asserted by the monitors always hold.
 

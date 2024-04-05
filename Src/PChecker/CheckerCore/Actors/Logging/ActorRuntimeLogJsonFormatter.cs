@@ -17,7 +17,7 @@ namespace PChecker.Actors.Logging
         public JsonWriter Writer { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActorRuntimeLogJsonFormatter"/> class. 
+        /// Initializes a new instance of the <see cref="ActorRuntimeLogJsonFormatter"/> class.
         /// </summary>
         protected ActorRuntimeLogJsonFormatter()
         {

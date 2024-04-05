@@ -12,9 +12,9 @@ machine Main {
 		
 		}
 		
-		on myTuple do (payload: (int, bool)) { 
-			INT = payload.0; 
-			BOOL = payload.1; 
+		on myTuple do (payload: (int, bool)) {
+			INT = payload.0;
+			BOOL = payload.1;
 		}
 		
 		on myNmTuple do (payload: (first:int, sec:bool)) {

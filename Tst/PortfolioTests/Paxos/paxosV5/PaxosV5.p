@@ -24,7 +24,7 @@ machine Global {
   var maxQuorum : int;
   var maxValue : int;
   var driver : machine;
- 
+
   start state Init {
     entry (pld : (driver : machine, ids : seq[mid], maxRound : int, maxValue : int)) {
       var i : int;
@@ -40,7 +40,7 @@ machine Global {
       var valBoolMap : map[value, bool];
       var quorumBoolMap : map[quorum, bool];
       driver = pld.driver;
-      mids = pld.ids; 
+      mids = pld.ids;
       maxRound = pld.maxRound;
       maxValue = pld.maxValue;
       while (i < maxRound) {
@@ -52,7 +52,7 @@ machine Global {
           j = j + 1;
         }
         i = i + 1;
-      } 
+      }
       i = 0;
       j = 0;
       while (i < sizeof(mids)) {
@@ -272,7 +272,7 @@ machine Global {
 
       print("run2");
 
-      //forall 
+      //forall
       i = 0;
       j = 0;
       k = 0;
@@ -314,7 +314,7 @@ machine Global {
       if (change) {
         send driver, eNext;
       }
-    } 
+    }
 
     on eCastVote do (pld : (n:mid, v:value, r:round)) {
       var run : bool;
@@ -342,7 +342,7 @@ machine Global {
 
     on eDecide do (pld : (n:mid, r:round, v:value, q:quorum)) {
       var i : int;
-      var change : bool; 
+      var change : bool;
       var run : bool;
       print("decide");
       run = true;
@@ -363,7 +363,7 @@ machine Global {
         while (i < maxValue) {
           if (i != pld.v) {
             assert(!decision[pld.n][pld.r][i]);
-          } 
+          }
           i = i + 1;
         }
       }
@@ -392,7 +392,7 @@ machine Main {
       while (i < 1) {
         mids += (i, i);
         i = i + 1;
-      } 
+      }
       global = new Global((driver=this, ids=mids, maxRound = maxRounds, maxValue = maxVal));
       raise eNext;
     }

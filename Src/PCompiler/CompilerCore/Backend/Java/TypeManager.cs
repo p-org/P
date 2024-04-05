@@ -89,10 +89,10 @@ namespace Plang.Compiler.Backend.Java
             /// </summary>
             internal virtual string MutatorMethodName =>
                 throw new Exception($"MutatorMethodName not implemented for {TypeName}");
-            
+
             internal virtual string InsertMethodName =>
                 throw new Exception($"MutatorMethodName not implemented for {TypeName}");
-            
+
             /// <summary>
             /// The name of the method K -> void that removes key K from the collection.  Throws for
             /// non-collection types!

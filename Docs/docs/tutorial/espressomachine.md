@@ -1,7 +1,7 @@
 ??? note "How to use this example"
 
     We assume that you have cloned the P repository locally.
-    ```shell 
+    ```shell
     git clone https://github.com/p-org/P.git
     ```
 
@@ -31,14 +31,14 @@ The [3_EspressoMachine](https://github.com/p-org/P/tree/master/Tutorial/3_Espres
 The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/3_EspressoMachine/PSrc)) for the EspressoMachine example consist of three files:
 
 - [CoffeeMakerControlPanel.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMakerControlPanel.p): Implements the CoffeeMakerControlPanel state machine. Basically, the control panel starts in the initial state and kicks off by warming up the coffee maker. After warming is successful, it moves to the ready state where it can either make coffee or start the steamer. When asked to make coffee, it first grinds the beans and then brews coffee. In any of these states, if there is an error due to. e.g, no water or no beans, the control panel informs the user of the error and moves to the error state waiting for the user to reset the machine.
-  
+
 ??? tip "[Expand]: Let's walk through CoffeeMakerControlPanel.p"
     - ([L2 - L19](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMakerControlPanel.p#L2-L19))  &rarr; Declare events that are used to communicate between the `User` and the `ControlPanel` machines (manual: [event declaration](../manual/events.md)). These are events that represent the operations performed by the user, e.g., resetting the machine, pressing the steamer button on and off, etc.
     - ([L34 - L231](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMakerControlPanel.p#L34-L231)) &rarr; Declares the `CoffeeMakerControlPanel` state machine. The interesting points that we would like to highlight are: (1) the state machine transitions from one mode (or state) to another based on the events received from the user and the `CoffeeMaker` machine; (2) in all the states, the state machine appropriately handles different events that can be received, including ignoring or deferring them if they are stale events.
 
 
 - [CoffeeMaker.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMaker.p): Implements the CoffeeMaker state machine.
-  
+
 ??? tip "[Expand]: Let's walk through CoffeeMaker.p"
     - ([L4 - L29](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMaker.p#L4-L29)) &rarr; Declares the events used to communicate between the control panel and the backend coffee maker.
     - ([L31 - L78](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PSrc/CoffeeMaker.p#L31-L78)) &rarr; Declares the `EspressoCoffeeMaker` machine. EspressoCoffeeMaker receives requests from the control panel of the coffee machine and
@@ -61,7 +61,7 @@ it is reset and after which it returns to the `Warmup` state.
 
 The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios. TestScripts are collections of test cases that are automatically run by the P checker.
 
-The test scenarios folder for EspressoMachine ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_EspressoMachine/PTst)) consists of three files: [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestDrivers.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestScripts.p) are just like other previous examples. The [User.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p) declares two machines: (1) a [`SaneUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L4-L51) that uses the EspressoMachine with care, pressing the buttons in the right order, and cleaning up the grounds after the coffee is made; and (2) a [`CrazyUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L66-L136) who has never used an espresso machine before, gets too excited, and starts pushing random buttons on the control panel.  
+The test scenarios folder for EspressoMachine ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_EspressoMachine/PTst)) consists of three files: [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestDrivers.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestScripts.p) are just like other previous examples. The [User.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p) declares two machines: (1) a [`SaneUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L4-L51) that uses the EspressoMachine with care, pressing the buttons in the right order, and cleaning up the grounds after the coffee is made; and (2) a [`CrazyUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L66-L136) who has never used an espresso machine before, gets too excited, and starts pushing random buttons on the control panel.
 
 ### Compiling EspressoMachine
 
@@ -97,14 +97,14 @@ p compile
     Determining projects to restore...
     Restored P/Tutorial/3_EspressoMachine/PGenerated/CSharp/EspressoMachine.csproj (in 102 ms).
     EspressoMachine -> P/Tutorial/3_EspressoMachine/PGenerated/CSharp/net6.0/EspressoMachine.dll
-    
+
     Build succeeded.
     0 Warning(s)
     0 Error(s)
-    
+
     Time Elapsed 00:00:04.57
-    
-    
+
+
     ----------------------------------------
     ~~ [PTool]: Thanks for using P! ~~
     ```
@@ -129,7 +129,7 @@ p check
     Possible options are:
     tcSaneUserUsingCoffeeMachine
     tcCrazyUserUsingCoffeeMachine
-    
+
     ~~ [PTool]: Thanks for using P! ~~
     ```
 

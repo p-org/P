@@ -4,25 +4,25 @@ event E1 assert 1: int;
 event E2 assert 1: bool;
 
 machine Main {
-    var XYZ: bool; 
+    var XYZ: bool;
 	var mac: machine;
 	var ev1: event;
 	var ev2: event;
 	var ev3: int;
     start state Real1_Init {
-        entry { 
+        entry {
 			mac = new Real2();
 			ev2 = E2;
-			announce ev2, true;  
+			announce ev2, true;
 			ev1 = E1;			
 			raise ev1, 100;  		
         } 	
-        on E1 do (payload: int) { Action1(payload); }   
+        on E1 do (payload: int) { Action1(payload); }
 		on null goto Real1_S1;  //unreachable
 		//on E2 do Action2;
-        exit {  
+        exit {
 			ev2 = E2;
-            send mac, ev2, XYZ;			 
+            send mac, ev2, XYZ;			
 		}
 	}
 	state Real1_S1 {
@@ -39,10 +39,10 @@ machine Real2 {
 		}
 		on E2 do (payload: bool) {
 			
-			 
-				Action2(payload); 
 			
-			 
+				Action2(payload);
+			
+			
 			
 		}
 	}

@@ -376,7 +376,7 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSetCapacity(_In_ PRT_VALUE* set);
 	*/
 	PRT_API PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE* prmVal);
 
-	/** Concatenates two strings. 
+	/** Concatenates two strings.
 	* @param[in]     str1 first input string.
 	* @param[in]     str2 second input string.
 	*/

@@ -9,7 +9,7 @@ machine Main {
 	fun foo() : int
     {
        return 1;
-    }   
+    }
 	
 	var t: (a: seq [int], b: map[int, seq[int]]);
 	var i: int;

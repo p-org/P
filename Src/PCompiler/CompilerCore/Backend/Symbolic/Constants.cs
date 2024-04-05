@@ -82,7 +82,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     </properties>
 </project>
 ";
-        
+
         internal static readonly string pomForeignTemplate =
             @"
             <plugin>

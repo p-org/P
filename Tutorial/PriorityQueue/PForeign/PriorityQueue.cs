@@ -31,21 +31,21 @@ namespace PImplementation
         {
             elements.Add(elem);
         }
-        
+
         // delete all elements irrespective of the priority
         public void Delete(ElementWithPriority elem)
         {
             elements = elements.Where(el => !el.Element.Equals(elem.Element)).ToList();
         }
-        
-        // priority remove  
+
+        // priority remove
         public IPrtValue PriorityRemove()
         {
             var removeElem = elements.OrderBy(el => el.Priority).First();
             elements.Remove(removeElem);
             return removeElem.Element;
         }
-        
+
         public bool Equals(IPrtValue other)
         {
             if (other is tPriorityQueue || other != null)
@@ -78,7 +78,7 @@ namespace PImplementation
             return elements.ElementAt(index).Element;
         }
     }
-    
+
     public class ElementWithPriority
     {
         public IPrtValue Element { get; }

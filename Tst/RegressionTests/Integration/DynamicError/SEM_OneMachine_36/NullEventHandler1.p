@@ -1,4 +1,4 @@
-// P semantics XYZ, one machine: "null" handler semantics 
+// P semantics XYZ, one machine: "null" handler semantics
 // XYZing that null handler is enabled in the simplest case
 
 event E1 assert 1;
@@ -7,12 +7,12 @@ event unit assert 1;
 machine Main {
     var XYZ: bool;  //init with "false"
     start state Real1_Init {
-        entry { 
+        entry {
 			raise unit;
         }
 		on unit do { send this, E1; }
-        on E1 do Action2;   
-        on null goto Real1_S2;   
+        on E1 do Action2;
+        on null goto Real1_S2;
         exit {   }
 	}
 	

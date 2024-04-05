@@ -15,7 +15,7 @@ namespace PChecker.Actors.Logging
     {
         /// <summary>
         /// Nested class for handling FIFO send receive requests.
-        /// NOTE: In the case of sending to a the same machine with the same event and same payload. 
+        /// NOTE: In the case of sending to a the same machine with the same event and same payload.
         /// </summary>
         private class FifoSendReceiveMapping
         {
@@ -141,8 +141,8 @@ namespace PChecker.Actors.Logging
                 // If no payload, return empty string
                 case null:
                     return string.Empty;
-                
-                // If payload is of Dictionary, iterate through key, value pair and build string. Recurse on the value 
+
+                // If payload is of Dictionary, iterate through key, value pair and build string. Recurse on the value
                 // in the case that the value is another dictionary/list rather than a primitive type
                 case IDictionary eventPayloadDict:
                 {
@@ -152,17 +152,17 @@ namespace PChecker.Actors.Logging
                     {
                         stringBuilder.Append($"{key}: {ConvertPayloadToString(eventPayloadDict[key])}, ");
                     }
-                
+
                     // Remove the last ", "
                     if (stringBuilder.Length >= 2)
                     {
                         stringBuilder.Length -= 2;
                     }
-                    
+
                     // Surround string with { and }
                     return $"{{ {stringBuilder} }}";
                 }
-                
+
                 // If payload is of List, iterate through each item, and build string. Recurse on the item value
                 // in the case that the value is another dictionary/list rather than a primitive type
                 case IList eventPayloadList:
@@ -172,17 +172,17 @@ namespace PChecker.Actors.Logging
                     {
                         stringBuilder.Append($"{ConvertPayloadToString(value)}, ");
                     }
-                
+
                     // Remove the last ", "
                     if (stringBuilder.Length >= 2)
                     {
                         stringBuilder.Length -= 2;
                     }
-                
+
                     // Surround string with [ and ]
                     return $"[ {stringBuilder} ]";
                 }
-                
+
                 // Just convert primitive types to string
                 default:
                     return eventPayload.ToString();
@@ -276,7 +276,7 @@ namespace PChecker.Actors.Logging
                     _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(_contextVcMap[machine]));
                     break;
 
-                // For MonitorProcessEvents, tie it to the senderMachine's current vector clock 
+                // For MonitorProcessEvents, tie it to the senderMachine's current vector clock
                 // so that there is some association in the timeline
                 case "MonitorProcessEvent":
                     if (logDetails.Sender != null) updateMachineVcMap(machine, _contextVcMap[logDetails.Sender]);
@@ -322,7 +322,7 @@ namespace PChecker.Actors.Logging
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class LogEntry
     {
@@ -337,7 +337,7 @@ namespace PChecker.Actors.Logging
         public LogDetails Details { get; set; }
 
         /// <summary>
-        /// LogEntry constructor. 
+        /// LogEntry constructor.
         /// </summary>
         public LogEntry()
         {
@@ -353,7 +353,7 @@ namespace PChecker.Actors.Logging
     /// are changed for simplicity.
     /// I.e., for OnRaiseEvent(ActorId id, string, stateName, Event e), it
     /// will have attributes id, state (simplified from stateName, event
-    /// (simplified from eventName within Event e), and payload (in Event e). 
+    /// (simplified from eventName within Event e), and payload (in Event e).
     /// </summary>
     public class LogDetails
     {
@@ -388,7 +388,7 @@ namespace PChecker.Actors.Logging
         /// Type of creator.
         /// </summary>
         public string? CreatorType { get; set; }
-        
+
         /// <summary>
         /// The state associated with an event, machine, etc...
         /// </summary>
@@ -539,7 +539,7 @@ namespace PChecker.Actors.Logging
         /// Getter for accessing log entry details.
         /// </summary>
         public LogDetails LogDetails => _log.Details;
-        
+
         /// <summary>
         /// Getter for accessing logs.
         /// </summary>
@@ -680,12 +680,12 @@ namespace PChecker.Actors.Logging
             /// Invoked when the specified actor waits to receive multiple events of a specified type.
             /// </summary>
             WaitMultipleEvents,
-            
+
             /// <summary>
             /// Invoked on a print statement
             /// </summary>
             Print,
-            
+
             /// <summary>
             /// Invoked on a print statement
             /// </summary>

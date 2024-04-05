@@ -26,11 +26,11 @@ machine TransactionCommit {
         rmState += (sizeof(rmState), 0);
         i = i + 1;
       }
-      RMMAYFAIL = pld.RMMAYFAIL; 
+      RMMAYFAIL = pld.RMMAYFAIL;
       TMMAYFAIL = pld.TMMAYFAIL;
       driver = pld.driver;
     }
-    
+
     on eNext do {
       var choices : seq[(int, int)];
       var choice : int;
@@ -42,7 +42,7 @@ machine TransactionCommit {
       var canAbort : bool;
       var next : bool;
       var last : int;
-      allPrepared = true; 
+      allPrepared = true;
       i = 0;
       while (i < sizeof(RM)) {
         // rmState is "working" or "prepared"
@@ -71,11 +71,11 @@ machine TransactionCommit {
         i = i + 1;
       }
       canCommit = allPrepared || atLeastOneCommit;
-      canAbort = atLeastOneAbortOrFail && (!atLeastOneCommit); 
+      canAbort = atLeastOneAbortOrFail && (!atLeastOneCommit);
       last = tmState;
       if (tManagerPC == 0) {
         if (canCommit && tmState != 2) {
-          choices += (sizeof(choices), (3, 0)); 
+          choices += (sizeof(choices), (3, 0));
         }
         if (canAbort && tmState != 3) {
           choices += (sizeof(choices), (4, 0));
@@ -83,7 +83,7 @@ machine TransactionCommit {
       }
       if (btManagerPC == 0) {
         if (canCommit && tmState == 1) {
-          choices += (sizeof(choices), (3, 1)); 
+          choices += (sizeof(choices), (3, 1));
         }
         if (canAbort && tmState == 1) {
           choices += (sizeof(choices), (4, 1));
@@ -176,5 +176,5 @@ machine Main {
     on eNext do {
       send global, eNext;
     }
-  } 
+  }
 }

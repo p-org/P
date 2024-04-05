@@ -16,7 +16,7 @@ extern "C"{
 #endif
 
     /** Calling convention __cdecl is not supported by gcc. */
-#define PRT_CALL_CONV 
+#define PRT_CALL_CONV
 
     /* These argument annotations are not supported by gcc */
 #define _In_

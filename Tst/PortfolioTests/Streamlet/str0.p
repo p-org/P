@@ -142,7 +142,7 @@ machine Str0 {
         }
         exists[pld.e] = true;
         send driver, eNext;
-      } 
+      }
     }
   }
   fun mod (a : int, b : int) : int {

@@ -1,8 +1,8 @@
 event local_write_event;
 event local_read_event;
 
-/* 
-The coordinator machine that communicates with the participants and 
+/*
+The coordinator machine that communicates with the participants and
 guarantees atomicity accross participants for write transactions
 */
 
@@ -16,7 +16,7 @@ machine Coordinator
 
 	start state Init {
 		entry (numParticipants : int){
-			var i : int; 
+			var i : int;
 			//initialize variables
 			i = 0; currTransId = 0;
 			timer = CreateTimer(this);
@@ -123,8 +123,8 @@ machine Coordinator
 			}
 		}
 
-		on eTimeOut do { 
-			DoGlobalAbort(); 
+		on eTimeOut do {
+			DoGlobalAbort();
 		}
 
 		exit {

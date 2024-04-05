@@ -1,7 +1,7 @@
 // RTC compiles way better than random
 
 /*
-The basic paxos algorithm. 
+The basic paxos algorithm.
 */
 event prepare assume 3: (proposer: machine, slot : int, proposal : (round: int, servermachine : int)) ;
 event accept  assume 3: (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
@@ -73,7 +73,7 @@ machine PaxosNode {
 	
 	fun CheckIfLeader(payload :(seqmachine: int, command : int)) {
 		if(currentLeader.rank == myRank) {
-			// I am the leader 
+			// I am the leader
 			commitValue = payload.command;
 			proposeVal = commitValue;
 			raise(goPropose);
@@ -93,7 +93,7 @@ machine PaxosNode {
 		
 		/***** acceptor ****/
 		on prepare do (payload : (proposer: machine, slot : int, proposal : (round: int, servermachine : int))) { preparefun(payload); }
-		on accept do (payload : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int)) { acceptfun(payload); } 
+		on accept do (payload : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int)) { acceptfun(payload); }
 		
 		/**** leaner ****/
 		on chosen goto RunLearner;
@@ -117,7 +117,7 @@ machine PaxosNode {
 		{
 			send receivedMess_2.proposer, reject, (slot = receivedMess_2.slot, proposal = acceptorSlots[receivedMess_2.slot].proposal);
 		}
-		else 
+		else
 		{
 			send receivedMess_2.proposer, agree, (slot = receivedMess_2.slot, proposal = acceptorSlots[receivedMess_2.slot].proposal, value = acceptorSlots[receivedMess_2.slot].value);
 			acceptorSlots[receivedMess_2.slot] = (proposal = receivedMess_2.proposal, value = -1);
@@ -195,7 +195,7 @@ machine PaxosNode {
 			send timer, startTimer;
 		}
 		
-		on agree do (receivedMess :(slot : int, proposal : (round: int, servermachine : int), value : int)) { 
+		on agree do (receivedMess :(slot : int, proposal : (round: int, servermachine : int), value : int)) {
 			if(receivedMess.slot == nextSlotForProposer)
 			{
 				countAgree = countAgree + 1;
@@ -326,7 +326,7 @@ machine PaxosNode {
 
 /*
 Properties :
-The property we check is that 
+The property we check is that
 P2b : If a proposal is chosen with value v , then every higher numbered proposal issued by any proposer has value v.
 
 */
@@ -392,7 +392,7 @@ spec BasicPaxosInvariant_P2b observes announce_valueChosen, announce_valuePropos
 
 
 /*
-announce to check if 
+announce to check if
 the proposed value is from the set send by the client (accept)
 chosen value is the one proposed by atleast one proposer (chosen).
 */
@@ -422,7 +422,7 @@ spec ValmachineityCheck observes announce_client_sent, announce_proposer_sent, a
 
 
 /*
-The leader election protocol for multi-paxos, the protocol is based on broadcast based approach. 
+The leader election protocol for multi-paxos, the protocol is based on broadcast based approach.
 
 */
 event Ping assume 4 : (rank:int, server : machine) ;

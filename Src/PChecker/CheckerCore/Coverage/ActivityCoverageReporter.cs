@@ -53,7 +53,10 @@ namespace PChecker.Coverage
         {
             using (var writer = new StreamWriter(coverageFile))
             {
-                WriteCoverageText(writer);
+                if (CoverageInfo.CoverageGraph != null)
+                {
+                    WriteCoverageText(writer);
+                }
             }
         }
 
@@ -353,7 +356,7 @@ namespace PChecker.Coverage
 
         private static string GetStateId(string machineName, string stateName) =>
             string.Format("{0}::{1}", stateName, machineName);
-        
+
         private static string GetSanitizedName(string name)
         {
             var i = name.LastIndexOf(".");
@@ -361,7 +364,7 @@ namespace PChecker.Coverage
             {
                 return name.Substring(i + 1);
             }
-            
+
             return name;
         }
     }

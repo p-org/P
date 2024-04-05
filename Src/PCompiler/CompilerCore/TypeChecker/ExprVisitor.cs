@@ -96,15 +96,15 @@ namespace Plang.Compiler.TypeChecker
                     {
                         throw handler.TypeMismatch(context.index, indexExpr.Type, mapType.KeyType);
                     }
-                    
+
                     return new MapAccessExpr(context, seqOrMap, indexExpr, mapType.ValueType);
-                
+
                 case SetType setType:
                     if (!PrimitiveType.Int.IsAssignableFrom(indexExpr.Type))
                     {
                         throw handler.TypeMismatch(context.index, indexExpr.Type, PrimitiveType.Int);
                     }
-                    
+
                     return new SetAccessExpr(context, seqOrMap, indexExpr, setType.ElementType);
             }
 
@@ -172,9 +172,9 @@ namespace Plang.Compiler.TypeChecker
 
             var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, @interface.PayloadType, arguments);
-            
+
             method.CanCreate = true;
-            
+
             return new CtorExpr(context, @interface, arguments);
         }
 
@@ -203,7 +203,7 @@ namespace Plang.Compiler.TypeChecker
                 {
                     throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
                 }
-                
+
             }
 
             method.AddCallee(function);
@@ -310,7 +310,7 @@ namespace Plang.Compiler.TypeChecker
                     {
                         return arithCtors[op](lhs, rhs);
                     }
-                    throw handler.IncomparableTypes(context, lhs.Type, rhs.Type); 
+                    throw handler.IncomparableTypes(context, lhs.Type, rhs.Type);
                 case "in":
                     var rhsType = rhs.Type.Canonicalize();
                     if (rhsType is MapType rhsMap)
@@ -388,17 +388,17 @@ namespace Plang.Compiler.TypeChecker
 
                 case SetType setType:
                     return new ChooseExpr(context, subExpr, setType.ElementType);
-                
+
                 case MapType mapType:
                     return new ChooseExpr(context, subExpr, mapType.KeyType);
-                
+
                 case PrimitiveType primType when primType.IsSameTypeAs(PrimitiveType.Int):
                     return new ChooseExpr(context, subExpr, PrimitiveType.Int);
-                
+
                 default:
                     throw handler.IllegalChooseSubExprType(context, subExprType);
             }
-            
+
         }
 
         public override IPExpr VisitCastExpr(PParser.CastExprContext context)

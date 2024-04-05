@@ -1,5 +1,5 @@
 /**************************************
-We implemented the basic paxos protocol as described 
+We implemented the basic paxos protocol as described
 in the "Paxos Made Simple" paper by Leslie Lamport
 ****************************************/
 
@@ -94,7 +94,7 @@ machine AcceptorMachine {
       {
         send payload.proposer, reject, lastRecvProposal.pid;
       }
-      else 
+      else
       {
         send payload.proposer, agree, lastRecvProposal;
         lastRecvProposal = payload.proposal;
@@ -143,7 +143,7 @@ machine ProposerMachine {
     index = 0;
     while(index < sizeof(acceptors))
     {
-      send acceptors[index], e, v;  
+      send acceptors[index], e, v;
       index = index + 1;
     }
   }
@@ -207,7 +207,7 @@ machine ProposerMachine {
       }
       goto ProposerPhaseOne;
     }
-    
+
     on accepted do (payload: ProposalType) {
       if(ProposalIdEqual(payload.pid, nextProposalId)){
         numOfAcceptRecv = numOfAcceptRecv + 1;

@@ -13,7 +13,7 @@ machine Main {
 		}
 	}
 	fun foo(b: machine, p: int) {
-		receive { 
+		receive {
 			case E: (payload: int) { assert false; }
 		}
 	}

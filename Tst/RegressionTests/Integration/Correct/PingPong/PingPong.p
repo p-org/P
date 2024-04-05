@@ -8,7 +8,7 @@ machine Main {
     start state Ping_Init {
         entry {
       	    pongId = new PONG();
-    	    raise Success;   	   
+    	    raise Success;   	
         }
         on Success goto Ping_SendPing;
     }
@@ -37,7 +37,7 @@ machine PONG {
     state Pong_SendPong {
 	entry (payload: machine) {
 	     send payload, Pong;
-	     raise Success;		 	  
+	     raise Success;		 	
 	}
         on Success goto Pong_WaitPing;
     }

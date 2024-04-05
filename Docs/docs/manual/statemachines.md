@@ -1,6 +1,6 @@
 A P program is a collection of concurrently executing state machines that communicate with each other by sending events (or messages) asynchronously.
 
-!!! info "P State Machine Semantics"  
+!!! info "P State Machine Semantics"
     The underlying model of computation is similar to that of [Gul Agha's](http://osl.cs.illinois.edu/members/agha.html) [Actor-model-of-computation](https://dspace.mit.edu/handle/1721.1/6952) ([wiki](https://en.wikipedia.org/wiki/Actor_model)). Here is a summary of important semantic details:
 
     - Each P state machine has an **unbounded FIFO buffer** associated with it.
@@ -20,14 +20,14 @@ A P program is a collection of concurrently executing state machines that commun
 
     # State Machine Body
     machineBody : LBRACE machineEntry* RBRACE;
-    machineEntry 
+    machineEntry
       | varDecl
       | funDecl
       | stateDecl
       ;
 
     # Variable Decl
-    varDecl : var iden : type ;                                    
+    varDecl : var iden : type ;
 
     # State Declaration in P
     stateDecl : start? (hot | cold)? state name { stateBody* }
@@ -77,7 +77,7 @@ The entry function gets executed when a machine enters that state. If the corres
 
 === "Entry function"
 
-    ``` kotlin 
+    ``` kotlin
     entry {
         print format ("Entering state");
     }
@@ -100,7 +100,7 @@ The exit function gets executed when a machine exits that state to transition to
 
 === "Exit function"
 
-    ``` kotlin 
+    ``` kotlin
     exit {
         print format ("Exiting state");
     }
@@ -115,7 +115,7 @@ An event handler defined for event `E` in state `S` describes what statements ar
 
 === "Event handler"
 
-    ``` kotlin 
+    ``` kotlin
     on eWarmUpReq do {
         send controller, eWarmUpCompleted;
     }
@@ -123,7 +123,7 @@ An event handler defined for event `E` in state `S` describes what statements ar
 
 === "Event handler with input parameters"
 
-    ``` kotlin 
+    ``` kotlin
     on eWithDrawReq do (req: tWithDrawReq) {
       assert req.accountId in bankBalance,
         format ("Unknown accountId {0} in the withdraw request. Valid accountIds = {1}",
@@ -139,20 +139,20 @@ An event handler can be further combined with a [Goto](statements.md#goto) state
 
 === "Event handler with goto only"
 
-    ``` kotlin 
+    ``` kotlin
     on eWarmUpCompleted goto CoffeeMakerReady;
     ```
 
 === "Event handler with goto"
 
-    ``` kotlin 
+    ``` kotlin
     on eTimeOut goto WaitForTransactions with { DoGlobalAbort(TIMEOUT); }
     ```
 
 
 === "Event handler with goto and input parameters"
 
-    ``` kotlin 
+    ``` kotlin
     on eSpec_BankBalanceIsAlwaysCorrect_Init goto WaitForWithDrawReqAndResp with (balance: map[int, int]) {
       bankBalance = balance;
     }

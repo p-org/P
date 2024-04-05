@@ -11,7 +11,7 @@ machine Main {
             assert (Foo0 to int) > (Foo1 to int);
             x =  (Foo1 to int) + 1;
             assert x >= Foo0 to int;
-            
+
         }
     }
 }

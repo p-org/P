@@ -17,12 +17,12 @@ To install .Net Core 3.1 SDK use:
     brew tap isen-ng/dotnet-sdk-versions
     brew install --cask dotnet-sdk3-1-400
     ```
-    Dont have Homebrew? :upside_down_face: Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-macos-x64-installer). 
+    Dont have Homebrew? :upside_down_face: Install directly using the [installer](https://dotnet.microsoft.com/download/dotnet/thank-you/sdk-3.1.412-macos-x64-installer).
 
 === "Ubuntu"
 
     Installing .Net SDK on Ubuntu ([details](https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu))
-    
+
     ```
     wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
     sudo dpkg -i packages-microsoft-prod.deb
@@ -69,12 +69,12 @@ To install Java use:
     ```
     brew install java
     ```
-    Dont have Homebrew? Directly use [installer](https://www.java.com/en/download/help/mac_install.html). 
+    Dont have Homebrew? Directly use [installer](https://www.java.com/en/download/help/mac_install.html).
 
 === "Ubuntu"
 
     Installing Java on Ubuntu ([details](https://ubuntu.com/tutorials/install-jre#2-installing-openjdk-jre))
-    
+
     ```
     sudo apt install default-jre
     ```
@@ -143,7 +143,7 @@ We highly recommend that you create the following alias as we use it in the rest
 
 === "On MacOS or Linux"
 
-    Add following alias to the bash profile (`~/.bash_profile` or the equivalent on your system) 
+    Add following alias to the bash profile (`~/.bash_profile` or the equivalent on your system)
     so that you can invoke the P checker (`pmc`) directly.
     ```shell
     alias pmc='coyote test'
@@ -151,7 +151,7 @@ We highly recommend that you create the following alias as we use it in the rest
 
 === "On Windows"
 
-    We recommend that you add the following to the `Microsoft.PowerShell_profile` 
+    We recommend that you add the following to the `Microsoft.PowerShell_profile`
     normally found in `D:\Users\<username>\Documents\WindowsPowerShell`
 
     ```shell

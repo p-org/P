@@ -17,10 +17,10 @@ machine Driver {
 				}
             on UserEvent goto HandleEvent;
        }
-  
+
        state HandleEvent
        {
-            entry { 
+            entry {
 				count = count + 1;
 				if (count == 10) {
 				    raise halt;
@@ -39,7 +39,7 @@ spec WatchDog observes Computing, Waiting
       {
              on Waiting goto CanGetUserInput;
              on Computing goto CannotGetUserInput;
-      } 
+      }
 	  hot state CannotGetUserInput
      {
 		entry {

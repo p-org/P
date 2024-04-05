@@ -39,7 +39,7 @@ machine Timer {
 
     on eDelayedTimeOut goto TimerDelayed;
     on eCancelTimer goto WaitForTimerRequests;
-    defer eStartTimer;    
+    defer eStartTimer;
   }
 
   state TimerDelayed {
@@ -52,7 +52,7 @@ machine Timer {
       }
     }
 
-    on eCancelTimer goto WaitForTimerRequests;    
+    on eCancelTimer goto WaitForTimerRequests;
     defer eStartTimer;
     ignore eDelayedTimeOut;
   }

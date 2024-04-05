@@ -1,5 +1,5 @@
-// P semantics XYZ: one machine, the XYZ demonstrates that "null" event handler 
-// is executed in a loop 
+// P semantics XYZ: one machine, the XYZ demonstrates that "null" event handler
+// is executed in a loop
 //
 
 event E1 assert 2;
@@ -10,10 +10,10 @@ machine Main {
     var XYZ: bool;  //init with "false"
 	var i: int;
     start state Real1_Init {
-        entry { 
+        entry {
 			raise unit;
         }
-		on unit do {send this, E1; raise local; }  
+		on unit do {send this, E1; raise local; }
 		on local goto Real1_S1;
 		on null do Action2;   //Action2 handler for E1 is inherited by Real1_S1
         exit { send this, E1;  }

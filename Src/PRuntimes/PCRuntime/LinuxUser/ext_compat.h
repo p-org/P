@@ -6,9 +6,9 @@
 #include <stdarg.h>
 
 /* 	
-	This file is only a temporary solution to getting Linux Prt to Compile. 
-	The implementations are NOT COMPLETE !!! 
-	TODO: move to a safer cleaner solution 
+	This file is only a temporary solution to getting Linux Prt to Compile.
+	The implementations are NOT COMPLETE !!!
+	TODO: move to a safer cleaner solution
 */
 
 #define fprintf_s(stream, format, args...) fprintf(stream, format, ##args)

@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.CSharp
             var mainFilePath = Path.Combine(job.OutputDirectory.FullName, "Test.cs");
             var stdout = "";
             var stderr = "";
-            
+
             // create the .csproj file
             var csprojTemplate = Constants.csprojTemplate;
             csprojTemplate = csprojTemplate.Replace("-directory-",
@@ -735,7 +735,7 @@ namespace Plang.Compiler.Backend.CSharp
                 context.WriteLine(output,
                     $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_machine})");
                 WriteFunctionBody(context, output, function);
-                
+
                 // for monitor
                 if (!(function.CanCreate == true || function.CanSend == true || function.IsNondeterministic == true || function.CanReceive == true))
                 {
@@ -744,15 +744,15 @@ namespace Plang.Compiler.Backend.CSharp
                         $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_monitor})");
                     WriteFunctionBody(context, output, function);
                 }
-                
+
             }
             else
             {
                 context.WriteLine(output,
                     $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters})");
-                WriteFunctionBody(context, output, function);   
+                WriteFunctionBody(context, output, function);
             }
-            
+
         }
 
         private void WriteFunctionBody(CompilationContext context, StringWriter output, Function function)

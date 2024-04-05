@@ -11,7 +11,7 @@ machine Main {
     start state Ping_start {
         entry {
   	    pongId = new PONG(this);
-	    raise Success;   	   
+	    raise Success;   	
         }
         on Success goto Ping_ping1;
     }

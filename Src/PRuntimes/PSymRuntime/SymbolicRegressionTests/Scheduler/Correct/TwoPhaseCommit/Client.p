@@ -1,4 +1,4 @@
-/* 
+/*
 A client machine pumping in one random transaction
 */
 

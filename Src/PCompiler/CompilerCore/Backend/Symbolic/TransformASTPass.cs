@@ -12,7 +12,7 @@ using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.Backend.Symbolic
 {
-    class TransformASTPass 
+    class TransformASTPass
     {
 
         static private int continuationNumber = 0;
@@ -56,7 +56,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case Machine machine:
                     if (machine.Receives.Events.GetEnumerator().MoveNext())
                         return TransformMachine(machine);
-                    else return machine; 
+                    else return machine;
                 default:
                     return decl;
             }
@@ -112,7 +112,7 @@ namespace Plang.Compiler.Backend.Symbolic
             {
                 transformedMachine.AddState(TransformState(state, functionMap));
             }
-            
+
             foreach (var method in machine.Methods)
             {
                 if (!requiredMethods.Contains(method))
@@ -138,7 +138,7 @@ namespace Plang.Compiler.Backend.Symbolic
             if (state.Exit != null)
                 transformedState.Exit = functionMap[state.Exit];
             transformedState.OwningMachine = state.OwningMachine;
-             
+
             foreach (var handler in state.AllEventHandlers)
             {
                 if (handler.Key.IsNullEvent)
@@ -206,10 +206,10 @@ namespace Plang.Compiler.Backend.Symbolic
                 switch (stmt)
                 {
                     case ReturnStmt returnStmt:
-                        newBody.Add(new AssignStmt(returnStmt.SourceLocation, location, returnStmt.ReturnValue)); 
+                        newBody.Add(new AssignStmt(returnStmt.SourceLocation, location, returnStmt.ReturnValue));
                         break;
                     case CompoundStmt compoundStmt:
-                        var replace = ReplaceReturn(compoundStmt.Statements, location); 
+                        var replace = ReplaceReturn(compoundStmt.Statements, location);
                         foreach (var statement in replace) newBody.Add(statement);
                         break;
                     case IfStmt ifStmt:
@@ -222,7 +222,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         IPStmt elseStmt = null;
                         if (ifStmt.ElseBranch != null)
                         {
-                            var replaceElse = ReplaceReturn(ifStmt.ElseBranch.Statements, location); 
+                            var replaceElse = ReplaceReturn(ifStmt.ElseBranch.Statements, location);
                             elseStmt =  new CompoundStmt(ifStmt.ElseBranch.SourceLocation, replaceElse);
                         }
                         newBody.Add(new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, thenStmt, elseStmt));
@@ -238,17 +238,17 @@ namespace Plang.Compiler.Backend.Symbolic
                     case WhileStmt whileStmt:
                         var bodyList = new List<IPStmt>();
                         bodyList.Add(whileStmt.Body);
-                        var replaceWhile = ReplaceReturn(bodyList, location); 
+                        var replaceWhile = ReplaceReturn(bodyList, location);
                         newBody.Add(new WhileStmt(whileStmt.SourceLocation, whileStmt.Condition, new CompoundStmt(whileStmt.Body.SourceLocation, replaceWhile)));
                         break;
-                    default: 
+                    default:
                         newBody.Add(stmt);
                         break;
                 }
             }
             return newBody;
         }
- 
+
         static private void InlineStmt(Function function, IPStmt stmt, List<IPStmt> body)
         {
             switch (stmt)
@@ -566,7 +566,7 @@ namespace Plang.Compiler.Backend.Symbolic
                         while (enumerator.MoveNext())
                         {
                             afterStmts.Add(enumerator.Current);
-                        } 
+                        }
                         CompoundStmt after = null;
                         if (afterStmts.Count > 0)
                         {
@@ -725,7 +725,7 @@ namespace Plang.Compiler.Backend.Symbolic
                                 var loopBody = new List<IPStmt>();
                                 var bodyEnumerator = loop.Body.Statements.GetEnumerator();
                                 while (bodyEnumerator.MoveNext())
-                                {   
+                                {
                                     var stmt = bodyEnumerator.Current;
                                     var replaceBreak = ReplaceBreaks(stmt, afterStmts);
                                     if (replaceBreak != null) {
@@ -774,7 +774,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     return statement;
             }
         }
- 
+
         static private Continuation GetContinuation(Function function, IDictionary<PEvent, Function> cases, IPStmt after, ParserRuleContext location)
         {
             var continuationName = $"continuation_{continuationNumber}";

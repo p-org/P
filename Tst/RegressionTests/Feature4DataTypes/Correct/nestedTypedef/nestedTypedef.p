@@ -4,7 +4,7 @@ type SOME_Type = (
 );
 type SomeType = int;
 
-type MessageType = 
+type MessageType =
 (
     List : seq[SOME_Type]
 );

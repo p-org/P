@@ -125,7 +125,7 @@ namespace Plang
             lock (ConsoleLock)
             {
                 Error.Report($"[Internal Error]:\n {ex.Message}\n<Please report to the P team or create an issue on GitHub, Thanks!>");
-                Error.Report("[PTool] unhandled exception: {0}: {1}", ex.GetType().ToString(), ex.Message);
+                Error.Report("[PTool] unhandled exception: {0}: {1}\n Stack Trace: {2}", ex.GetType().ToString(), ex.Message, ex.StackTrace);
             }
         }
 
@@ -136,7 +136,7 @@ namespace Plang
         {
             CommandLineOutput.WriteInfo("~~ [PTool]: Thanks for using P! ~~");
         }
-        
+
         public static void RunCompiler(string[] args)
         {
             var configuration = new PCompilerOptions().Parse(args);

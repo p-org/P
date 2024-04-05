@@ -15,7 +15,7 @@ A P program is typically divided into four folders (or parts):
   The `PForeign` folder contains
   all the foreign code used in the P program.
 
-!!! Note "Recommendation"  
+!!! Note "Recommendation"
     The folder structure described above is just a recommendation.
     The P compiler does not require any particular folder structure for a P project. The
     examples in the [Tutorials](../tutsoutline.md) use the same folder structure.

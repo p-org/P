@@ -5,7 +5,7 @@ machine M {
 		}
 	}
 }
- 
+
 machine Main {
 	start state _ {
 		entry {

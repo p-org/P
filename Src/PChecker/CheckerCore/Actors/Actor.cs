@@ -113,7 +113,7 @@ namespace PChecker.Actors
         /// The installed runtime logger.
         /// </summary>
         protected TextWriter Logger => Runtime.Logger;
-        
+
         /// <summary>
         /// The installed runtime json logger.
         /// </summary>

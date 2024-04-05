@@ -1,10 +1,10 @@
 machine Main
 {
-  start state Init {  
+  start state Init {
     entry {
       // create a sane user
       new SaneUser(new CoffeeMakerControlPanel());
-    } 
+    }
   }
 }
 

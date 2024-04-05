@@ -114,7 +114,7 @@ namespace PChecker.Actors.Logging
         /// <param name="currentStateName">The name of the current state.</param>
         /// <param name="newStateName">The target state of the transition.</param>
         void OnGotoState(ActorId id, string currentStateName, string newStateName);
-  
+
 
         /// <summary>
         /// Invoked when the specified actor is idle (there is nothing to dequeue) and the default
@@ -166,7 +166,7 @@ namespace PChecker.Actors.Logging
         /// <param name="actionName">The name of the action being executed.</param>
         /// <param name="ex">The exception.</param>
         void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex);
-        
+
 
         /// <summary>
         /// Invoked when the specified monitor has been created.

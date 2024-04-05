@@ -7,15 +7,15 @@ event E1 assert 1;
 machine Main {
     var XYZ: bool;  //init with "false"
     start state Real1_Init {
-        entry {			   
+        entry {			
         }
 		
         on E1 do Action1;   // checking "raise"
-        exit { 
-			pop; 
+        exit {
+			pop;
 		}
 	}
-	state Real1_S1 {   
+	state Real1_S1 {
 		entry {
 			assert(XYZ == true); //unreachable
 		}

@@ -10,7 +10,7 @@ machine Main {
 	var p3:machine;
 	var count:int;
     start state inits {
-        
+
 		entry {
 			p1 = new Process(this);
 			p2 = new Process(this);
@@ -51,8 +51,8 @@ machine Process {
 	var other2:machine;
 	
         start state _init {
-			entry (payload: machine) { 
-				  parent = payload; 
+			entry (payload: machine) {
+				  parent = payload;
 				  raise unit;
 			}
             on unit goto inits;

@@ -14,8 +14,8 @@ machine Main {
 	}
 	fun foo() {
 		send this, E;
-		receive { 
-			case E: { bar(); } 
+		receive {
+			case E: { bar(); }
 		}
 		receive {
 			case F: { }

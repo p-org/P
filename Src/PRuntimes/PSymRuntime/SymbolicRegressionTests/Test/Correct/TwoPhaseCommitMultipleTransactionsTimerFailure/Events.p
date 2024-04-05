@@ -1,6 +1,6 @@
-/* 
+/*
 This file declares all the events used for communication between various machines in the two phase commit protocol
-*/ 
+*/
 
 // events for communication between the coordinator and the participants
 event ePrepare: tPrepareForTrans;

@@ -14,7 +14,7 @@ P Supports the following data types:
     Data types in P:
 
     ```
-    type : 
+    type :
      | bool                         # PrimitiveType
      | int                          # PrimitiveType
      | float                        # PrimitiveType
@@ -28,7 +28,7 @@ P Supports the following data types:
      | seq[type]                    # SeqType
      | set[type]                    # SetType
      | map[type, type]              # MapType
-     
+
      | data                         # UniversalType
      | any                          # UniversalType
 
@@ -38,7 +38,7 @@ P Supports the following data types:
 
     Declaring user defined types and foreign types:
     ```
-    typeDecl : 
+    typeDecl :
      | type iden ;                  # ForeignTypeDeclaration
      | type iden = type ;           # UserDefinedTypeDeclaration
      ;
@@ -47,7 +47,7 @@ P Supports the following data types:
     Declaring enum types:
 
     ```
-    enumTypeDecl : 
+    enumTypeDecl :
      | enum iden { enumElemList }
      | enum iden { numberedEnumElemList }
      ;
@@ -57,7 +57,7 @@ P Supports the following data types:
     numberedEnumElem : iden = IntLiteral ;
     ```
 
-!!! info "Operations on P data types"  
+!!! info "Operations on P data types"
     Details for the operations that can be performed on
     P datatypes are described in the [expressions](expressions.md) and [statements](statements.md).
 
@@ -102,7 +102,7 @@ to the elements). Enums in P can be coerced to `int`. Please refer to the gramma
 
 === "Enum Declaration"
 
-    ``` 
+    ```
     enum tResponseStatus { ERROR, SUCCESS, TIMEOUT }
 
     // usage of enums
@@ -116,7 +116,7 @@ to the elements). Enums in P can be coerced to `int`. Please refer to the gramma
 
 === "Enum Declaration with Values"
 
-    ``` 
+    ```
     enum tResponseStatus { ERROR = 500, SUCCESS = 200,
     TIMEOUT = 400; }
 
@@ -141,7 +141,7 @@ var tupleEx: (int, bool, int);
 // constructing a value of tuple type.
 tupleEx = (20, false, 21);
 
-// accessing the first and third element of the tupleEx 
+// accessing the first and third element of the tupleEx
 tupleEx.0 = tupleEx.0 + tupleEx.2;
 ```
 
@@ -155,7 +155,7 @@ var namedTupleEx: (x1: int, x2: bool, x3: int);
 // constructing a value of named tuple type.
 namedTupleEx = (x1 = 20, x2 = false, x3 = 21);
 
-// accessing the first and third element of the namedTupleEx 
+// accessing the first and third element of the namedTupleEx
 namedTupleEx.x1 = namedTupleEx.x1 + namedTupleEx.x3;
 ```
 
@@ -170,7 +170,7 @@ namedTupleEx.x1 = namedTupleEx.x1 + namedTupleEx.x3;
 
 P supports three collection types: map, sequence (lists), and set. The operations to mutate the collection types like insert, update, and remove elements are described in the [statements](statements.md) section. One can use the `while` loop to iterate over these collection types. Other operations like `sizeof`, `in` (to check containment), `choose` (pick a value nondeterministically), `keys`, and `values` on these collection types are defined in the [expressions](expressions.md) section.
 
-**Syntax**: 
+**Syntax**:
 
 - `map[K, V]` represents a `map` type with keys of type `K` and values of type `V`.
 - `seq[T]` represents a sequence type with elements of type `T`.
@@ -182,7 +182,7 @@ P allows programmers to define (or implement) types in the external languages. W
 
 **Syntax:**: `type tName;`
 
-`tName` is the name of the foreign type. 
+`tName` is the name of the foreign type.
 
 Note that foreign types are disjoint from all other types in P. They are subtype of the `any` type.
 Details about how to define/implement foreign types in P is described [here](foriegntypesfunctions.md).

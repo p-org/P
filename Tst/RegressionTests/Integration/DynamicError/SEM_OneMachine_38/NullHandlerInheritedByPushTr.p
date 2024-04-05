@@ -1,4 +1,4 @@
-// P semantics XYZ, one machine: "null" handler semantics 
+// P semantics XYZ, one machine: "null" handler semantics
 // XYZing that null handler is inherited by the pushed state
 
 
@@ -15,16 +15,16 @@ machine Main {
 	}
 
 	state Call {
-		   entry { 
+		   entry {
 			   if (i == 0) {
 				     raise E;
-					   
+					
 			   }
                else {
 					i = i + 1;
 			   }
 			}
-			ignore E;   
+			ignore E;
 			//at this point, inherited "do" on "null" is executed
 			
 			exit { assert (false);}  //unreachable, since the state is not popped

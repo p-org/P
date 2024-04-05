@@ -1,5 +1,5 @@
 //Exit function performed while explicitly popping the state
-//this is a workaround for wrong Zinger line number reporting in error trace: 
+//this is a workaround for wrong Zinger line number reporting in error trace:
 //Formula terms for asserts on lines 7 and 16 are made different
 //Compare this XYZ to BugReproIdenticalTerms.p
 event E;
@@ -11,8 +11,8 @@ machine Main {
 	}
 
 	state Call {
-		   entry { 
-			   
+		   entry {
+			
 				       goto Init;
 			}
 			exit { assert (false); ;}  //reachable

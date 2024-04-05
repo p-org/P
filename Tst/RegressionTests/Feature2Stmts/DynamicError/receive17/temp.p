@@ -20,7 +20,7 @@ machine N {
 				case e2: { assert true; assert false; }
 			}
 		}
-		on getres do (payload: machine){ 
+		on getres do (payload: machine){
 			receive {
 				case e3: { assert true; assert false; assert 1 == 1; }
 			}

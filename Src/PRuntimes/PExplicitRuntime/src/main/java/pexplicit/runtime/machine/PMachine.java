@@ -3,7 +3,8 @@ package pexplicit.runtime.machine;
 import lombok.Getter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
-import pexplicit.runtime.machine.buffer.FifoQueue;
+import pexplicit.runtime.machine.buffer.DeferQueue;
+import pexplicit.runtime.machine.buffer.SenderQueue;
 import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.machine.events.PMessage;
@@ -16,6 +17,7 @@ import pexplicit.values.PValue;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.ArrayList;
 import java.util.function.Function;
 
 /**
@@ -41,7 +43,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     private State currentState;
 
     @Getter
-    private final FifoQueue sendBuffer;
+    private final SenderQueue sendBuffer;
+    private final DeferQueue deferQueue;
 
     @Getter
     private boolean started = false;
@@ -85,7 +88,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
                 });
 
         // initialize send buffer
-        this.sendBuffer = new FifoQueue(this);
+        this.sendBuffer = new SenderQueue(this);
+        this.deferQueue = new DeferQueue(this);
     }
 
     public void start(PValue<?> payload) {
@@ -114,6 +118,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     public void reset() {
         this.currentState = startState;
         this.sendBuffer.clear();
+        this.deferQueue.clear();
         this.started = false;
         this.halted = false;
     }
@@ -248,11 +253,23 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             return;
         }
 
-        // make sure event is not deferred in current state
-        assert (!isDeferred(msg.getEvent()));
+        runDeferredEvents();
 
         // process the event
         processEvent(msg);
+
+        runDeferredEvents();
+    }
+
+    /**
+     * Run events from the deferred queue
+     */
+    void runDeferredEvents() {
+        List<PMessage> deferredMessages = new ArrayList<>(deferQueue.getElements());
+        deferQueue.clear();
+        for (PMessage msg: deferredMessages) {
+            processEvent(msg);
+        }
     }
 
     /**
@@ -261,6 +278,11 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      */
     void processEvent(PMessage message) {
         PExplicitLogger.logEvent(message);
+        if (isDeferred(message.getEvent())) {
+            deferQueue.add(message);
+            return;
+        }
+
         if (isBlocked()) {
             PContinuation currBlockedBy = this.blockedBy;
             clearBlocked();

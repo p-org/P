@@ -8,20 +8,17 @@ import pexplicit.values.PValue;
 import java.io.Serializable;
 
 /**
- * Represents a FIFO event queue
+ * Represents a FIFO sender event queue
  */
-public class FifoQueue extends MessageQueue implements EventBuffer, Serializable {
-
-    private final PMachine sender;
+public class SenderQueue extends MessageQueue implements EventBuffer, Serializable {
 
     /**
      * Constructor
      *
-     * @param sender Sender machine (owner of the queue)
+     * @param owner Sender machine (owner of the queue)
      */
-    public FifoQueue(PMachine sender) {
-        super(sender);
-        this.sender = sender;
+    public SenderQueue(PMachine owner) {
+        super(owner);
     }
 
     /**

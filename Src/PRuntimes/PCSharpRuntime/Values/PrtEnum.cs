@@ -24,7 +24,7 @@ namespace Plang.CSharpRuntime.Values
         {
             enumElements.Clear();
         }
-        
+
         public object ToDict()
         {
             return enumElements.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToDict());

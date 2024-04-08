@@ -11,7 +11,7 @@ on:
         description: Additional arguments
         default: ""
         required: false
-        
+
 jobs:
   Release:
     name: P release

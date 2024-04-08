@@ -24,7 +24,7 @@ P currently uses the specific version of [.Net SDK 8.0](https://dotnet.microsoft
 === "Ubuntu"
 
     Installing .Net SDK on Ubuntu ([details](https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu))
-    
+
     ```shell
     wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
     sudo dpkg -i packages-microsoft-prod.deb
@@ -39,12 +39,12 @@ P currently uses the specific version of [.Net SDK 8.0](https://dotnet.microsoft
 === "Amazon Linux"
 
     Installing .Net SDK on Amazon Linux 2 ([details](https://learn.microsoft.com/en-us/dotnet/core/install/linux-scripted-manual#scripted-install))
-    
+
     ```shell
     wget https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.sh
     chmod +x dotnet-install.sh
     ./dotnet-install.sh  -c 8.0 -i ~/.dotnet
-    
+
     # If using a bash shell, replace .zshrc with .bashrc in the below commands
     echo 'PATH=$HOME/.dotnet:$HOME/.dotnet/tools:$PATH' >> ~/.zshrc
     echo 'export PATH' >> ~/.zshrc
@@ -65,10 +65,10 @@ P currently uses the specific version of [.Net SDK 8.0](https://dotnet.microsoft
 
     You must see an SDK with `8.0.*` dotnet version installed.
     If you get `dotnet` command not found error, mostly likely, you need to add the path to dotnet in your `PATH`.
-    
+
     Useful resources:
 
-    - For Ubuntu: [fxr does not exist](https://stackoverflow.com/questions/73753672/a-fatal-error-occurred-the-folder-usr-share-dotnet-host-fxr-does-not-exist) 
+    - For Ubuntu: [fxr does not exist](https://stackoverflow.com/questions/73753672/a-fatal-error-occurred-the-folder-usr-share-dotnet-host-fxr-does-not-exist)
 
 
 
@@ -82,12 +82,12 @@ The P compiler also requires Java (`java` version 11 or higher).
     ```shell
     brew install java
     ```
-    Dont have Homebrew? Directly use [installer](https://www.java.com/en/download/help/mac_install.html). 
+    Dont have Homebrew? Directly use [installer](https://www.java.com/en/download/help/mac_install.html).
 
 === "Ubuntu"
 
     Installing Java on Ubuntu ([details](https://ubuntu.com/tutorials/install-jre#2-installing-openjdk-jre))
-    
+
     ```shell
     sudo apt install -y default-jre
     ```

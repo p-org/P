@@ -2,7 +2,7 @@ event a;
 event b;
 event c: int;
 
-fun F1(m: machine) 
+fun F1(m: machine)
 {
 	var mInt : map[int, int];
 	mInt[0] =  10;
@@ -17,11 +17,11 @@ fun F2(m: machine) {
 fun F3()
 {
 	receive {
-		case b : { 
-		receive { 
-			case a : 
-			{ 
-				receive { 
+		case b : {
+		receive {
+			case a :
+			{
+				receive {
 				case b : {assert(false);}
 				}
 			}

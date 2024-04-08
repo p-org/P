@@ -11,7 +11,7 @@ machine Main {
     start state Ping_Init {
         entry {
 			pongId = new PONG();
-			raise Success;   	   
+			raise Success;   	
         }
         on Success goto Ping_SendPing;
     }
@@ -31,8 +31,8 @@ machine Main {
         on Success goto Ping_WaitPong;
     }
 
-    state Ping_WaitPong { 
-		on Pong goto Ping_SendPing; 
+    state Ping_WaitPong {
+		on Pong goto Ping_SendPing;
 		on PongIgnored do { assert(false); }   //unreachable
      }
 }

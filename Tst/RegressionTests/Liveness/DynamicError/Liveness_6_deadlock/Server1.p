@@ -2,7 +2,7 @@ event Local;
 event Search;
 event SearchStarted;
 event SearchFinished;
- 
+
 machine Main
 {
    var store : seq[int];
@@ -19,7 +19,7 @@ machine Main
       ignore SearchStarted;
    }
 }
- 
+
 spec Liveness observes SearchStarted, SearchFinished
 {
    start cold state Searched

@@ -13,9 +13,9 @@ machine Main {
 		
 		}
 		
-		on myTuple goto State1 with (payload: (int, bool)) { 
-			INT = payload.0; 
-			BOOL = payload.1; 
+		on myTuple goto State1 with (payload: (int, bool)) {
+			INT = payload.0;
+			BOOL = payload.1;
 		}
 		
 		on myNmTuple goto State1 with (payload: (first:int, sec:bool)) {

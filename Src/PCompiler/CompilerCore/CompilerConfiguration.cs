@@ -58,7 +58,7 @@ namespace Plang.Compiler
             ProjectDependencies = projectDependencies ?? new List<string>();
             Debug = debug;
         }
-        
+
         public ICompilerOutput Output { get; set; }
         public DirectoryInfo OutputDirectory { get; set; }
         public IList<CompilerOutput> OutputLanguages { get; set; }

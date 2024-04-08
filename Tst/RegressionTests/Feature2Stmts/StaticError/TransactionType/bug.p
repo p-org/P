@@ -1,4 +1,4 @@
-//Defines the transaction type 
+//Defines the transaction type
 interface IC() receives E1, E2;
 interface IC1() receives E2;
 event E2;

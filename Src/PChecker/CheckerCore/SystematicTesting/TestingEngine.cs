@@ -189,7 +189,7 @@ namespace PChecker.SystematicTesting
                     {
                         Console.Out.WriteLine($"{mi.DeclaringType.Name}");
                     }
-                    
+
                     Environment.Exit(0);
                 }
                 catch
@@ -197,7 +197,7 @@ namespace PChecker.SystematicTesting
                     Error.ReportAndExit($"Failed to list test methods from assembly '{assembly.FullName}'");
                 }
             }
-            
+
             TestMethodInfo testMethodInfo = null;
             EventPatternObserver eventMatcher = null;
             try

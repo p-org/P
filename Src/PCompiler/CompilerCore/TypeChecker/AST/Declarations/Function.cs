@@ -98,9 +98,9 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public bool? CanChangeState { get; set; }
         public bool? CanRaiseEvent { get; set; }
         public bool? CanReceive { get; set; }
-        
+
         public bool? CanSend { get; set; }
-        
+
         public bool? CanCreate { get; set; }
         public bool? IsNondeterministic { get; set; }
 

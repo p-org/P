@@ -74,7 +74,7 @@ machine MultipleClientsNoFailure {
   start state Init {
     entry {
       var config: t2PCConfig;
-      config = 
+      config =
         (numClients = 2,
         numParticipants = 3,
         numTransPerClient = 2,
@@ -93,7 +93,7 @@ machine MultipleClientsWithFailure {
   start state Init {
     entry {
       var config: t2PCConfig;
-      config = 
+      config =
         (numClients = 2,
         numParticipants = 3,
         numTransPerClient = 2,

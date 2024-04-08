@@ -1,9 +1,9 @@
 machine PongDongMachine {
 	var pingid: machine;
     start state _Init {
-      entry (payload: machine) 
-      { 
-        pingid = payload; 
+      entry (payload: machine)
+      {
+        pingid = payload;
         goto WaitPing;
       }
     }
@@ -13,7 +13,7 @@ machine PongDongMachine {
         send pingid, Pong;
         goto WaitDing;
       }
-		  
+		
     }
 
     state WaitDing {

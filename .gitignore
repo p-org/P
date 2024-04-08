@@ -241,7 +241,7 @@ Tst/temp_builds/*
 target/
 *.class
 
-#Mkdocs 
+#Mkdocs
 site/
 
 # Output

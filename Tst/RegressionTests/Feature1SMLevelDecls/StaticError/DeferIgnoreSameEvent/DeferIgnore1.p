@@ -8,7 +8,7 @@ event unit assert 1;
 machine Main {
     var XYZ: bool;  //init with "false"
     start state Real1_Init {
-        entry { 
+        entry {
 			raise unit;
 			send this, E1;
 			send this, E2;

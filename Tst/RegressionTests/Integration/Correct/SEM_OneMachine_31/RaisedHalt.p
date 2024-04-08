@@ -6,12 +6,12 @@ event E1 assert 1;
 machine Main {
     var XYZ: bool;  //init with "false"
     start state Real1_Init {
-        entry { 
+        entry {
 		    send this, E1;
 			raise halt;
         }
 		on E1 goto Real1_S1;
-        on E2 do Action2; 
+        on E2 do Action2;
         exit {  send this, E2; }   //machine Real1 is halted after sending E2
 	}
 	state Real1_S1 {

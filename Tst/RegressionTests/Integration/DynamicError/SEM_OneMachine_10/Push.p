@@ -7,7 +7,7 @@ event E1 assert 1;
 
 machine Main {
     start state Real1_Init {
-        entry { 
+        entry {
 			send this, E1;
         }
 		

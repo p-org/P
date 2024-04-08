@@ -37,7 +37,7 @@ namespace Plang.Options
             // basicOptions.AddArgument("smoke-testing", "tsmoke",
             //     "Smoke test the program by running the checker on all the test cases", typeof(bool));
             basicOptions.AddArgument("list-tests", null, "List all test cases and exit.", typeof(bool));
-            
+
             var basicGroup = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicGroup.AddArgument("timeout", "t", "Timeout in seconds (disabled by default)", typeof(uint));
             basicGroup.AddArgument("memout", null, "Memory limit in Giga bytes (disabled by default)", typeof(double)).IsHidden = true;
@@ -111,7 +111,7 @@ namespace Plang.Options
 
                 // load pproj file first
                 UpdateConfigurationWithPProjectFile(configuration, result);
-                
+
                 foreach (var arg in result)
                 {
                     UpdateConfigurationWithParsedArgument(configuration, arg);
@@ -148,7 +148,7 @@ namespace Plang.Options
         private static void FindLocalPProject(List<CommandLineArgument> result)
         {
             // CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
-            var filtered = 
+            var filtered =
                 from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj")
                 let info = new FileInfo(file)
                 where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
@@ -188,7 +188,7 @@ namespace Plang.Options
                 }
             }
         }
-        
+
         /// <summary>
         /// Updates the checkerConfiguration with the specified parsed argument.
         /// </summary>
@@ -435,8 +435,7 @@ namespace Plang.Options
                 enumerationOptions.RecurseSubdirectories = true;
                 enumerationOptions.MaxRecursionDepth = 3;
 
-                
-                var files = 
+                var files =
                     from file in Directory.GetFiles(checkerConfiguration.PCompiledPath, filePattern, enumerationOptions)
                     let info = new FileInfo(file)
                     where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))

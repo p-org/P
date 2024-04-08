@@ -8,7 +8,7 @@ machine Main {
     	b = (res = true, record = (0, 10), rId = 1);
         c = b;
         b.rId = 10;
-        assert b.res == c.0 && b.rId == c.2 * 10; 
+        assert b.res == c.0 && b.rId == c.2 * 10;
     }
   }
 }

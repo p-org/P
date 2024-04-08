@@ -47,7 +47,7 @@ namespace Plang.Compiler.Backend.Stately {
             }
         }
 
-        //Collects all the go-to's within a function call, iteratively 
+        //Collects all the go-to's within a function call, iteratively
         private List<String> WriteStmt(IPStmt statement)
         {
             var gotoStmts = new List<String>();
@@ -107,22 +107,22 @@ namespace Plang.Compiler.Backend.Stately {
 
             return gotoStmts;
         }
-        
+
         //Handles writing all instances of a machine
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
 
             context.WriteLine(output, $"const {machine.Name} = createMachine<Context>({{");
             context.WriteLine(output, $"id: \"{machine.Name}\",");
-            
+
             //Code start state of machine.
             context.WriteLine(output,$"initial: \"{machine.StartState.Name}\", ");
-            
+
             //Code up the states in each machine.
             context.WriteLine(output, "states: {");
             foreach (State state in machine.States)
             {
-                
+
                 context.WriteLine(output,$"{state.Name}: {{");
                 WriteState(context, output, state);
                 context.WriteLine(output, state.Equals(machine.States.Last()) ? "}" : "},");
@@ -130,7 +130,7 @@ namespace Plang.Compiler.Backend.Stately {
             context.WriteLine(output, "}");
             context.WriteLine(output, "});");
         }
-        
+
         //Handles writing all instances of states (within a machine)
         private void WriteState(CompilationContext context, StringWriter output, State state)
         {
@@ -160,7 +160,7 @@ namespace Plang.Compiler.Backend.Stately {
             foreach (var pair in state.AllEventHandlers)
             {
                 var handledEvent = pair.Key;
-                
+
                 //context.WriteLine(output, $"{pair.Value}");
                 switch (pair.Value)
                 {
@@ -181,10 +181,10 @@ namespace Plang.Compiler.Backend.Stately {
                             gotoStmts[doAct.Trigger.Name].UnionWith(WriteStmt(stmt));
                         }
                         break;
-                    
+
                 }
             }
-            
+
             //Writes out all the Go-To Statements collected within a state into the code.
             if (gotoStmts.Any())
             {

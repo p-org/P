@@ -40,7 +40,7 @@ namespace Plang.Compiler.TypeChecker
             var statements = context.statement().Select(Visit).ToList();
             return new CompoundStmt(context, statements);
         }
-        
+
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
         {
             var assertion = exprVisitor.Visit(context.assertion);
@@ -60,7 +60,7 @@ namespace Plang.Compiler.TypeChecker
                 assertMessage = new StringExpr(message.SourceLocation, "{0} {1}",new List<IPExpr>() {assertMessage,
                     message});
             }
-            
+
             return new AssertStmt(context, assertion, assertMessage);
         }
 
@@ -114,7 +114,7 @@ namespace Plang.Compiler.TypeChecker
         {
             var variable = exprVisitor.Visit(context.lvalue());
             var value = exprVisitor.Visit(context.rvalue());
-            
+
 
             // Check subtyping
             var valueType = value.Type;
@@ -212,7 +212,7 @@ namespace Plang.Compiler.TypeChecker
 
             return new RemoveStmt(context, variable, value);
         }
-    
+
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
         {
             var condition = exprVisitor.Visit(context.expr());
@@ -233,14 +233,14 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.MissingDeclaration(context.item, "foreach iterator variable", varName);
             }
             var collection = exprVisitor.Visit(context.collection);
-            
+
             // make sure that foreach is applied to either sequence or set type
-            
+
             // Check subtyping
             var itemType = var.Type;
 
             PLanguageType expectedItemType;
-            
+
             switch (collection.Type.Canonicalize())
             {
                 case SetType setType:
@@ -374,7 +374,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             method.CanSend = true;
-            
+
             return new SendStmt(context, machineExpr, evtExpr, args);
         }
 
@@ -402,14 +402,14 @@ namespace Plang.Compiler.TypeChecker
             }
 
             method.CanSend = true;
-            
+
             var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
 
             if (evtExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
             }
-            
+
             return new AnnounceStmt(context, evtExpr, args.Count == 0 ? null : args[0]);
         }
 
@@ -474,7 +474,7 @@ namespace Plang.Compiler.TypeChecker
             var cases = new Dictionary<PEvent, Function>();
             foreach (var caseContext in context.recvCase())
             {
-                
+
 
                 foreach (var eventIdContext in caseContext.eventList().eventId())
                 {
@@ -496,7 +496,7 @@ namespace Plang.Compiler.TypeChecker
                     }
 
                     FunctionBodyVisitor.PopulateMethod(config, recvHandler);
-                    
+
                     if (!table.Lookup(eventIdContext.GetText(), out PEvent pEvent))
                     {
                         throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());

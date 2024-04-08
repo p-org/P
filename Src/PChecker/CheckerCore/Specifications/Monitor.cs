@@ -103,7 +103,7 @@ namespace PChecker.Specifications.Monitors
         /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
         /// </remarks>
         protected TextWriter Logger => Runtime.Logger;
-        
+
         /// <summary>
         /// The runtime installed json logger;
         /// </summary>

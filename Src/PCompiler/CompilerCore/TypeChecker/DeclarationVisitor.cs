@@ -59,7 +59,7 @@ namespace Plang.Compiler.TypeChecker
             // (COLON type)?
             pEvent.PayloadType = ResolveType(context.type());
 
-            // SEMI 
+            // SEMI
             return pEvent;
         }
 
@@ -148,7 +148,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitForeignTypeDef(PParser.ForeignTypeDefContext context)
         {
-            // TYPE name=iden 
+            // TYPE name=iden
             var typedef = (TypeDef) nodesToDeclarations.Get(context);
             // SEMI
             typedef.Type = new ForeignType(typedef.Name);
@@ -157,9 +157,9 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitPTypeDef(PParser.PTypeDefContext context)
         {
-            // TYPE name=iden 
+            // TYPE name=iden
             var typedef = (TypeDef) nodesToDeclarations.Get(context);
-            // ASSIGN type 
+            // ASSIGN type
             typedef.Type = ResolveType(context.type());
             // SEMI
             return typedef;
@@ -231,9 +231,9 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitEventSetDecl(PParser.EventSetDeclContext context)
         {
-            // EVENTSET name=iden 
+            // EVENTSET name=iden
             var es = (NamedEventSet) nodesToDeclarations.Get(context);
-            // ASSIGN LBRACE eventSetLiteral RBRACE 
+            // ASSIGN LBRACE eventSetLiteral RBRACE
             es.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
             // SEMI
             return es;
@@ -260,10 +260,10 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
-            // MACHINE name=iden 
+            // MACHINE name=iden
             var machine = (Machine) nodesToDeclarations.Get(context);
 
-            // cardinality? 
+            // cardinality?
             var hasAssume = context.cardinality()?.ASSUME() != null;
             var hasAssert = context.cardinality()?.ASSERT() != null;
             var cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
@@ -329,7 +329,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
-            // SPEC name=Iden 
+            // SPEC name=Iden
             var specMachine = (Machine) nodesToDeclarations.Get(context);
 
             // spec machines neither send nor receive events.
@@ -428,7 +428,7 @@ namespace Plang.Compiler.TypeChecker
             var state = (State) nodesToDeclarations.Get(context);
             state.OwningMachine = CurrentMachine;
 
-            // START? 
+            // START?
             state.IsStart = context.START() != null;
 
             // temperature=(HOT | COLD)?
@@ -586,7 +586,7 @@ namespace Plang.Compiler.TypeChecker
 
             return actions.ToArray();
         }
-        
+
 
         public override object VisitOnEventGotoState(PParser.OnEventGotoStateContext context)
         {
@@ -611,7 +611,7 @@ namespace Plang.Compiler.TypeChecker
                 transitionFunction = null;
             }
 
-            // GOTO stateName 
+            // GOTO stateName
             var target = FindState(context.stateName());
 
             // ON eventList
@@ -668,7 +668,7 @@ namespace Plang.Compiler.TypeChecker
             // no function body
             fun.Role |= FunctionRole.Foreign;
 
-            // Creates 
+            // Creates
             foreach(var createdInterface in context._interfaces)
             {
                 if (CurrentScope.Lookup(createdInterface.GetText(), out Interface @interface))

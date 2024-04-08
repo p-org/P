@@ -1,4 +1,4 @@
-// P semantics XYZ: two machines, non-constant event expressions 
+// P semantics XYZ: two machines, non-constant event expressions
 // non-atomic event expressions
 // events are sent as payloads from Real1 to Real2,
 // and then retrieved in Real2 and sent back to Real1
@@ -14,7 +14,7 @@ event E6 assert 1: int;
 event E7 assert 1: bool;
 
 machine Main {
-    var XYZ: bool; 
+    var XYZ: bool;
 	var mac: machine;
 	var ev0: event;
 	var ev1: event;
@@ -26,10 +26,10 @@ machine Main {
 	var mAny: map[int,any];
 	
     start state Real1_Init {
-        entry { 
+        entry {
 			mac = new Real2(this);
 			sev += (0,E0);
-			sev += (1,E1); 
+			sev += (1,E1);
 			sev += (2,E2);
 			sev += (3,E3);
 			sev += (4,E4);
@@ -43,14 +43,14 @@ machine Main {
 			ev2 = E2;			
 			raise ev2, E1;  		
         } 	
-        on E2 do Action1;   
-		on null goto Real1_S1; 
+        on E2 do Action1;
+		on null goto Real1_S1;
 		ignore E0;
 		ignore E1;
 		ignore E3;
 		ignore E4;
 
-        exit {  
+        exit {
             send mac, sev[2], E1;	 //E2 with E1
 			send mac, sev[0], 100;   //E0 with 100
 			send mac, sAny[0] as event;  //E2 with null
@@ -63,15 +63,15 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-		    
+		
 			sev1 += (0, null as event);
 			sev1 += (1, null as event);
 			if (sev1[0] == sev1[1]) {
-				assert(false);                  //fails 
+				assert(false);                  //fails
 			}
 		}
 		ignore E4;
-		ignore E0;   
+		ignore E0;
 		ignore E1;
 	}
     fun Action1() {
@@ -91,12 +91,12 @@ machine Real2 {
 		}
 		on E2 do (payload: event) {
 			//assert(payload == E1);  //passes
-			if (payload == E1) 
-			{ 
+			if (payload == E1)
+			{
 				ev3 = E1;
 				//assert (payload != E1); //fails
 			}
-			else if (payload == E0) 
+			else if (payload == E0)
 			{
 				ev3 = E0;
 				//assert(payload != E0);  //fails
@@ -115,6 +115,6 @@ machine Real2 {
 		on E0 do (payload: any) {}
 		on E1 do (payload: any) {}
 		on E2 do (payload: event) {}   //might not be handled in Init
-		on E3 do (payload: bool) {}   //might not be handled in Init 
+		on E3 do (payload: bool) {}   //might not be handled in Init
 	}
 }

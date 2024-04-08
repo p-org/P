@@ -17,24 +17,24 @@ machine Main {
             new M2(this);
             goto T, 15;
         }
-        on E do { 
+        on E do {
             assert(false);    //unreachable
             goto S, m;
         }
         //exit { goto T, 5; }  //function may cause a change in current state; this is not allowed here
     }
     state S {
-        entry (x: mapInt) { 
+        entry (x: mapInt) {
             assert x[0] == 5;   //holds
         }
         on E do { ; }
     }
     state T {
-        entry (x: int) { 
+        entry (x: int) {
             assert x == 15;   //holds
             m[0] = 5;
             m[1] = 1;
-            goto S, m; 
+            goto S, m;
         }
     }
 }

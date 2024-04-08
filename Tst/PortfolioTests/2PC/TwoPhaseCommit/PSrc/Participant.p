@@ -29,7 +29,7 @@ machine Participant {
       // remove the transaction from the pending transactions set
       pendingWriteTrans -= (transId);
     }
-    
+
     on eCommitTrans do (transId:int) {
       // check that  commit transaction request is received for a pending transactions only.
       assert transId in pendingWriteTrans,

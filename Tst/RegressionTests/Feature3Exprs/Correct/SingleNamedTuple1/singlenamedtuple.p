@@ -1,8 +1,8 @@
 type T = (source: machine);
 //type T = machine;
- 
+
 event E: T;
- 
+
 machine M {
         start state _ {
 		entry (m: machine) {
@@ -11,11 +11,11 @@ machine M {
 		}
 	}
 }
- 
+
 machine Main {
 	start state _ {
 		ignore E;
- 
+
 		entry {
 			new M(this);
 		}

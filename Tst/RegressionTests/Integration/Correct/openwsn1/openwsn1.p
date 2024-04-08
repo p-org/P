@@ -8,7 +8,7 @@ GodMachine : This machine creates the network topology and non deterministically
 /*
 lets consider the static schedule :
 
-N1 -- N2 -- N3 
+N1 -- N2 -- N3
 	   |	|
 N4 ----------
 
@@ -16,7 +16,7 @@ let us consider N1 as the root node.
 N1 - Rank 0
 N2 - Rank 1
 N3 - Rank 2
-N4 - Rank 1 
+N4 - Rank 1
 */
 
 /*
@@ -26,7 +26,7 @@ how do you machine the non det back off
 
 //events in the System
 
-//this event is enqueued by the Timer machine. In real systems this will be replaced by the timer interrupt routine 
+//this event is enqueued by the Timer machine. In real systems this will be replaced by the timer interrupt routine
 
 event newSlot assert 1 : (bool, (machine,machine));
 event endSlot;
@@ -81,7 +81,7 @@ machine OpenWSN_Mote {
 	var myNeighbours: seq[machine];
 	//preferred neighbour (time parent)
 	var myTimeParent:(machine, int);
-	//last synchronized 
+	//last synchronized
 	var lastSynched: int;
 	//current slot
 	var currentSlot: (bool, (machine, machine)); //(isshared, machine)
@@ -101,7 +101,7 @@ machine OpenWSN_Mote {
 		
 		}
 		on Initialize goto WaitForNewSlot with (payload :(machine,seq[machine]))
-		{ 
+		{
 			slotTimer = payload.0;
 			myNeighbours = payload.1;
 		}
@@ -235,12 +235,12 @@ machine OpenWSN_Mote {
 		}
 		on Data goto WaitForNewSlot with (payload : (machine,int))
 		{
-			//Update my preferred parent 
+			//Update my preferred parent
 		if(myTimeParent.1 > payload.1)
 				myTimeParent = payload;
 				
 		if(payload.0 == myTimeParent.0)
-				lastSynched = 0; //synched 
+				lastSynched = 0; //synched
 			
 		send payload.0, Ack, (this, myRank);
 			

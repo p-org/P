@@ -11,7 +11,7 @@ machine Main {
        		var total: int;
        		s += (1);
        		s += (2);
-       		s += (2); 
+       		s += (2);
        		s += (3);
        		s += (4);
 
@@ -21,7 +21,7 @@ machine Main {
        			i = i + 1;
        		}
        		assert total == 10;
-       }    
-    } 
+       }
+    }
 }
 

@@ -35,6 +35,6 @@ namespace UnitTests
             Assert.AreEqual(-1, TypeCheckingUtils.PrintStmtNumArgs("{ 0}"));
             Assert.AreEqual(-1, TypeCheckingUtils.PrintStmtNumArgs("{0 }"));
         }
-        
+
     }
 }

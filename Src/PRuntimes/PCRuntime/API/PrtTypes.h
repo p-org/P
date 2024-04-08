@@ -123,9 +123,9 @@ extern "C" {
 		PRT_TYPE* innerType; /**< Inner type of the sequence */
 	} PRT_SETTYPE;
 
-	/** 
-	* \struct 
-	* The layout for tuple types. 
+	/**
+	* \struct
+	* The layout for tuple types.
 	*/
 	typedef struct PRT_TUPTYPE
 	{

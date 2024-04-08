@@ -41,7 +41,7 @@ namespace PChecker.Actors
         /// to replace the logger with a custom one.
         /// </summary>
         public override TextWriter Logger => LogWriter.Logger;
-        
+
         /// <summary>
         /// Used to log json trace outputs.
         /// </summary>

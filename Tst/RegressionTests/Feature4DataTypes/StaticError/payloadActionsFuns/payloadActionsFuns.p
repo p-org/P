@@ -8,9 +8,9 @@ machine Main {
 	var BOOL : bool;
 	var MACH : machine;
 	
-	fun foo_1(payload: (int, bool)) { 
-			INT = payload.0; 
-			BOOL = payload; 
+	fun foo_1(payload: (int, bool)) {
+			INT = payload.0;
+			BOOL = payload;
 	}
 	
 	fun foo_2(payload: (first:int, sec:bool)) {
@@ -45,7 +45,7 @@ machine Main {
 
 		
 		on null do (payload: any) {
-			MACH = payload;  
+			MACH = payload;
 			INT = payload;
 		}
 		

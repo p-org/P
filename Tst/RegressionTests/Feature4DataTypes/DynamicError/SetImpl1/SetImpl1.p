@@ -5,7 +5,7 @@ machine Main {
 	var t1 : (a: seq [int], b: map[int, seq[int]]);
 	var ts: (a: int, b: int);
 	var tt: (int, int);
-	var te: (int, event);       
+	var te: (int, event);
     var y : int;
 	var b: bool;
 	var e: event;
@@ -25,12 +25,12 @@ machine Main {
 		st += (4);
                 st += (5);
                 st -= (4);
-                st1 += (5);	       
+                st1 += (5);	
 		tmp = sizeof(st);
 		st2 += (sq);
 		assert (sq1 in st2 == false); //Fails
 		raise halt;
-       }    
-    } 
+       }
+    }
 }
 

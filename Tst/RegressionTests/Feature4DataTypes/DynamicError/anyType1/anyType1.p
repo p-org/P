@@ -1,6 +1,6 @@
 //XYZs "any" type in EQ and NE
 //TODO: Create separate XYZs for all failing asserts.
-event E assert 1; 
+event E assert 1;
 
 machine Main {
 	var vAny: any;

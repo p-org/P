@@ -13,7 +13,7 @@ namespace Plang.Compiler.TypeChecker
             params PParser.ProgramContext[] programUnits)
         {
             var handler = config.Handler;
-            
+
             // Step 1: Build the global scope of declarations
             var globalScope = BuildGlobalScope(config, programUnits);
 
@@ -61,7 +61,7 @@ namespace Plang.Compiler.TypeChecker
                 {
                     throw handler.IllegalFunctionUsedInSpecMachine(function, function.Owner);
                 }
-                
+
                 // A static function if it has side effects or is non-deterministic then it cannot be called from a spec machine
                 if (function.Owner == null && (function.IsNondeterministic == true || function.CanCreate == true || function.CanSend == true|| function.CanReceive == true))
                 {

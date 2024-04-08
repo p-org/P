@@ -1,7 +1,7 @@
 /********************************************************
  * This example explains the usage of foreach enumerator
  * ******************************************************/
- 
+
 
  machine Main {
  	var ints: set[int];
@@ -83,5 +83,5 @@
         mapI += (55, 2222);
         mapI += (4, 66);
     }
- } 
+ }
 

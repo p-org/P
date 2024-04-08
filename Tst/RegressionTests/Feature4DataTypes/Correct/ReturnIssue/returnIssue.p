@@ -1,4 +1,4 @@
-//XYZing return types 
+//XYZing return types
 type ArgType = int;
 type ResultType = int;
 
@@ -7,7 +7,7 @@ machine Main {
     {
 
     }
-   
+
     fun foo()
     {
         var s : ResultType;

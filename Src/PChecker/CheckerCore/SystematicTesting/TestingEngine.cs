@@ -684,7 +684,10 @@ namespace PChecker.SystematicTesting
                     }
 
                     ConstructReproducableTrace(runtime);
-                    TryEmitTraces(_checkerConfiguration.OutputDirectory, "trace_0");
+                    if (_checkerConfiguration.OutputDirectory != null)
+                    {
+                        TryEmitTraces(_checkerConfiguration.OutputDirectory, "trace_0");
+                    }
                 }
 
             }

@@ -32,9 +32,9 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
      */
     static boolean equals(PValue<?> val1, PValue<?> val2) {
         if (val1 == null) {
-            return val2 != null;
+            return val2 == null;
         }
-        return !val1.equals(val2);
+        return val1.equals(val2);
     }
 
     /**

@@ -39,6 +39,87 @@ public class PInt extends PValue<PInt> {
         value = val.value;
     }
 
+    /**
+     * Add operation
+     * @param val value to add
+     * @return PInt object after addition
+     */
+    public PInt add(PInt val) {
+        return new PInt(value + val.value);
+    }
+
+    /**
+     * Subtract operation
+     * @param val value to subtract
+     * @return PInt object after subtraction
+     */
+    public PInt sub(PInt val) {
+        return new PInt(value - val.value);
+    }
+
+    /**
+     * Multiply operation
+     * @param val value to multiply
+     * @return PInt object after multiplication
+     */
+    public PInt mul(PInt val) {
+        return new PInt(value * val.value);
+    }
+
+    /**
+     * Divide operation
+     * @param val value to divide
+     * @return PInt object after division
+     */
+    public PInt div(PInt val) {
+        return new PInt(value / val.value);
+    }
+
+    /**
+     * Modulo operation
+     * @param val value to modulo
+     * @return PInt object after modulo
+     */
+    public PInt mod(PInt val) {
+        return new PInt(value % val.value);
+    }
+
+    /**
+     * Less than operation
+     * @param val value to compare to
+     * @return PBool object after operation
+     */
+    public PBool lt(PInt val) {
+        return new PBool(value < val.value);
+    }
+
+    /**
+     * Less than or equal to operation
+     * @param val value to compare to
+     * @return PBool object after operation
+     */
+    public PBool le(PInt val) {
+        return new PBool(value <= val.value);
+    }
+
+    /**
+     * Greater than operation
+     * @param val value to compare to
+     * @return PBool object after operation
+     */
+    public PBool gt(PInt val) {
+        return new PBool(value > val.value);
+    }
+
+    /**
+     * Greater than or equal toperation
+     * @param val value to compare to
+     * @return PBool object after operation
+     */
+    public PBool ge(PInt val) {
+        return new PBool(value >= val.value);
+    }
+
     @Override
     public PInt clone() {
         return new PInt(value);

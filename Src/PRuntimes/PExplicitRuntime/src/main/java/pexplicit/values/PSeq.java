@@ -3,36 +3,41 @@ package pexplicit.values;
 import pexplicit.values.exceptions.InvalidIndexException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
  * Represents the PValue for P list/sequence
  */
-public class PSeq extends PCollection {
-    private final List<PValue<?>> seq;
+public class PSeq<T extends PValue<T>> extends PCollection<T> {
+    private final List<T> seq;
 
     /**
      * Constructor
      *
      * @param input_seq list of elements
      */
-    public PSeq(List<PValue<?>> input_seq) {
+    public PSeq(List<T> input_seq) {
         seq = new ArrayList<>();
-        for (PValue<?> entry : input_seq) {
+        for (T entry : input_seq) {
             seq.add(PValue.clone(entry));
         }
     }
 
     /**
-     * COpy constructor
+     * Copy constructor
      *
      * @param other Value to copy from.
      */
-    public PSeq(PSeq other) {
-        seq = new ArrayList<>();
-        for (PValue<?> entry : other.seq) {
-            seq.add(PValue.clone(entry));
-        }
+    public PSeq(PSeq<T> other) {
+        this(other.seq);
+    }
+
+    /**
+     * Empty constructor
+     */
+    public PSeq() {
+        this(new ArrayList<>());
     }
 
     /**
@@ -42,9 +47,9 @@ public class PSeq extends PCollection {
      * @return value at the index
      * @throws InvalidIndexException
      */
-    public PValue<?> getValue(int index) throws InvalidIndexException {
-        if (index >= seq.size() || index < 0) throw new InvalidIndexException(index, this);
-        return seq.get(index);
+    public T get(PInt index) throws InvalidIndexException {
+        if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        return seq.get(index.getValue());
     }
 
     /**
@@ -54,9 +59,11 @@ public class PSeq extends PCollection {
      * @param val   value to set to
      * @throws InvalidIndexException
      */
-    public void setValue(int index, PValue<?> val) throws InvalidIndexException {
-        if (index >= seq.size() || index < 0) throw new InvalidIndexException(index, this);
-        seq.set(index, val);
+    public PSeq<T> set(PInt index, T val) throws InvalidIndexException {
+        if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        List<T> newSeq = new ArrayList<>(seq);
+        newSeq.set(index.getValue(), val);
+        return new PSeq<>(newSeq);
     }
 
     /**
@@ -66,9 +73,24 @@ public class PSeq extends PCollection {
      * @param val   value to insert at the index.
      * @throws InvalidIndexException
      */
-    public void insertValue(int index, PValue<?> val) throws InvalidIndexException {
-        if (index > seq.size() || index < 0) throw new InvalidIndexException(index, this);
-        seq.add(index, val);
+    public PSeq<T> add(PInt index, T val) throws InvalidIndexException {
+        if (index.getValue() > seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        List<T> newSeq = new ArrayList<>(seq);
+        newSeq.add(index.getValue(), val);
+        return new PSeq<>(newSeq);
+    }
+
+    /**
+     * Remove a value at a given index.
+     *
+     * @param index index to remove the value at.
+     * @throws InvalidIndexException
+     */
+    public PSeq<T> removeAt(PInt index) throws InvalidIndexException {
+        if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        List<T> newSeq = new ArrayList<>(seq);
+        newSeq.remove(index.getValue());
+        return new PSeq<>(newSeq);
     }
 
     /**
@@ -76,18 +98,18 @@ public class PSeq extends PCollection {
      *
      * @return List of PValues corresponding to the PSeq.
      */
-    public List<PValue<?>> toList() {
+    public List<T> toList() {
         return seq;
     }
 
     @Override
-    public PSeq clone() {
+    public PSeq<T> clone() {
         return new PSeq(seq);
     }
 
     @Override
     public int hashCode() {
-        return ComputeHash.getHashCode(seq);
+        return ComputeHash.getHashCode((Collection<PValue<?>>) seq);
     }
 
     @Override
@@ -98,13 +120,13 @@ public class PSeq extends PCollection {
             return false;
         }
 
-        PSeq other = (PSeq) obj;
+        PSeq<T> other = (PSeq) obj;
         if (seq.size() != other.seq.size()) {
             return false;
         }
 
         for (int i = 0; i < seq.size(); i++) {
-            if (PValue.equals(other.seq.get(i), this.seq.get(i))) {
+            if (!PValue.equals((PValue<?>) other.seq.get(i), (PValue<?>) this.seq.get(i))) {
                 return false;
             }
         }
@@ -116,7 +138,7 @@ public class PSeq extends PCollection {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         String sep = "";
-        for (PValue<?> item : seq) {
+        for (T item : seq) {
             sb.append(sep);
             sb.append(item);
             sep = ", ";
@@ -126,12 +148,12 @@ public class PSeq extends PCollection {
     }
 
     @Override
-    public int size() {
-        return seq.size();
+    public PInt size() {
+        return new PInt(seq.size());
     }
 
     @Override
-    public boolean contains(PValue<?> item) {
-        return seq.contains(item);
+    public PBool contains(T item) {
+        return new PBool(seq.contains(item));
     }
 }

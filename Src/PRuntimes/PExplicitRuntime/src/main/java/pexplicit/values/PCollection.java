@@ -3,13 +3,13 @@ package pexplicit.values;
 /**
  * Represents the base class for PValues that are collections.
  */
-public abstract class PCollection extends PValue<PCollection> {
+public abstract class PCollection<T> extends PValue<PCollection<T>> {
     /**
      * Get the size of the collection.
      *
      * @return size
      */
-    public abstract int size();
+    public abstract PInt size();
 
     /**
      * Check if the collection contains the given item.
@@ -17,5 +17,5 @@ public abstract class PCollection extends PValue<PCollection> {
      * @param item item to check for.
      * @return true if the collection contains the item, otherwise false
      */
-    public abstract boolean contains(PValue<?> item);
+    public abstract PBool contains(T item);
 }

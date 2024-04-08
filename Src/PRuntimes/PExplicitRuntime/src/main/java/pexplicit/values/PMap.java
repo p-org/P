@@ -3,23 +3,24 @@ package pexplicit.values;
 import pexplicit.values.exceptions.KeyNotFoundException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Represents the PValue for P map
  */
-public class PMap extends PCollection {
-    private final Map<PValue<?>, PValue<?>> map;
+public class PMap<K extends PValue<K>, V extends PValue<V>> extends PCollection<K> {
+    private final Map<K, V> map;
 
     /**
      * Constructor
      *
      * @param input_map input map to set to
      */
-    public PMap(Map<PValue<?>, PValue<?>> input_map) {
+    public PMap(Map<K, V> input_map) {
         map = new HashMap<>();
-        for (Map.Entry<PValue<?>, PValue<?>> entry : input_map.entrySet()) {
+        for (Map.Entry<K, V> entry : input_map.entrySet()) {
             map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
         }
     }
@@ -29,11 +30,15 @@ public class PMap extends PCollection {
      *
      * @param other Value to copy from
      */
-    public PMap(PMap other) {
-        map = new HashMap<>();
-        for (Map.Entry<PValue<?>, PValue<?>> entry : other.map.entrySet()) {
-            map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
-        }
+    public PMap(PMap<K, V> other) {
+        this(other.map);
+    }
+
+    /**
+     * Empty constructor.
+     */
+    public PMap() {
+        this(new HashMap<>());
     }
 
     /**
@@ -43,8 +48,8 @@ public class PMap extends PCollection {
      * @return value corresponding to the key
      * @throws KeyNotFoundException
      */
-    public PValue<?> getValue(PValue<?> key) throws KeyNotFoundException {
-        if (!map.containsKey(key)) throw new KeyNotFoundException(key, map);
+    public V get(K key) throws KeyNotFoundException {
+        if (!map.containsKey(key)) throw new KeyNotFoundException(key, (Map<PValue<?>, PValue<?>>) map);
         return map.get(key);
     }
 
@@ -54,8 +59,34 @@ public class PMap extends PCollection {
      * @param key input key
      * @param val value to set
      */
-    public void putValue(PValue<?> key, PValue<?> val) {
-        map.put(key, val);
+    public PMap<K, V> put(K key, V val) {
+        Map<K, V> newMap = new HashMap<>(map);
+        newMap.put(key, val);
+        return new PMap(newMap);
+    }
+
+    /**
+     * Add an entry to the map
+     *
+     * @param key input key
+     * @param val value to set
+     */
+    public PMap<K, V> add(K key, V val) {
+        return put(key, val);
+    }
+
+    /**
+     * Remove a key from the map
+     *
+     * @param key input key
+     */
+    public PMap<K, V> remove(K key) {
+        if (!map.containsKey(key)) {
+            return this;
+        }
+        Map<K, V> newMap = new HashMap<>(map);
+        newMap.remove(key);
+        return new PMap(newMap);
     }
 
     /**
@@ -63,7 +94,7 @@ public class PMap extends PCollection {
      *
      * @return List of keys as a PSeq object
      */
-    public PSeq getKeys() {
+    public PSeq<K> getKeys() {
         return new PSeq(new ArrayList<>(map.keySet()));
     }
 
@@ -72,8 +103,8 @@ public class PMap extends PCollection {
      *
      * @return Map size
      */
-    public int size() {
-        return map.size();
+    public PInt size() {
+        return new PInt(map.size());
     }
 
     /**
@@ -82,18 +113,18 @@ public class PMap extends PCollection {
      * @param item item to check for.
      * @return true if key is present, false otherwise
      */
-    public boolean contains(PValue<?> item) {
-        return map.containsKey(item);
+    public PBool contains(K item) {
+        return new PBool(map.containsKey(item));
     }
 
     @Override
-    public PMap clone() {
+    public PMap<K, V> clone() {
         return new PMap(map);
     }
 
     @Override
     public int hashCode() {
-        return ComputeHash.getHashCode(map.values()) ^ ComputeHash.getHashCode(map.keySet());
+        return ComputeHash.getHashCode((Collection<PValue<?>>) map.values()) ^ ComputeHash.getHashCode((Collection<PValue<?>>) map.keySet());
     }
 
     @Override
@@ -110,7 +141,7 @@ public class PMap extends PCollection {
         for (PValue<?> key : map.keySet()) {
             if (!other.map.containsKey(key)) {
                 return false;
-            } else if (PValue.equals(other.map.get(key), this.map.get(key))) {
+            } else if (!PValue.equals((PValue<?>) other.map.get(key), this.map.get(key))) {
                 return false;
             }
         }
@@ -122,7 +153,7 @@ public class PMap extends PCollection {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         boolean hadElements = false;
-        for (PValue<?> key : map.keySet()) {
+        for (K key : map.keySet()) {
             if (hadElements) {
                 sb.append(", ");
             }

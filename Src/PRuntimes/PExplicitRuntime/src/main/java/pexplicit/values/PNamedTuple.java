@@ -4,7 +4,6 @@ import lombok.Getter;
 import pexplicit.values.exceptions.ComparingPValuesException;
 import pexplicit.values.exceptions.NamedTupleFieldNameException;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,17 +13,28 @@ import java.util.Map;
  */
 public class PNamedTuple extends PValue<PNamedTuple> {
     @Getter
-    private final List<String> fields;
     private final Map<String, PValue<?>> values;
 
     /**
      * Constructor
      *
-     * @param input_fields list of input field names
+     * @param input_fields List of field names
+     * @param input_values List of values corresponding to each field
+     */
+    public PNamedTuple(List<String> input_fields, List<PValue<?>> input_values) {
+        assert (input_fields.size() == input_values.size());
+        values = new HashMap<>();
+        for (int i=0; i<input_fields.size(); i++) {
+            values.put(input_fields.get(i), input_values.get(i));
+        }
+    }
+
+    /**
+     * Constructor
+     *
      * @param input_values Map from field name to corresponding field value
      */
-    public PNamedTuple(List<String> input_fields, Map<String, PValue<?>> input_values) {
-        fields = input_fields;
+    public PNamedTuple(Map<String, PValue<?>> input_values) {
         values = new HashMap<>();
         for (Map.Entry<String, PValue<?>> entry : input_values.entrySet()) {
             values.put(entry.getKey(), PValue.clone(entry.getValue()));
@@ -37,11 +47,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
      * @param other value to copy from
      */
     public PNamedTuple(PNamedTuple other) {
-        fields = new ArrayList<>(other.getFields());
-        values = new HashMap<>();
-        for (Map.Entry<String, PValue<?>> entry : other.values.entrySet()) {
-            values.put(entry.getKey(), PValue.clone(entry.getValue()));
-        }
+        this(other.values);
     }
 
     /**
@@ -96,12 +102,12 @@ public class PNamedTuple extends PValue<PNamedTuple> {
 
     @Override
     public PNamedTuple clone() {
-        return new PNamedTuple(fields, values);
+        return new PNamedTuple(values);
     }
 
     @Override
     public int hashCode() {
-        return ComputeHash.getHashCode(values.values()) ^ ComputeHash.getHashCode(fields);
+        return ComputeHash.getHashCode(values.values());
     }
 
     @Override
@@ -113,14 +119,14 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         }
 
         PNamedTuple other = (PNamedTuple) obj;
-        if (fields.size() != other.fields.size()) {
+        if (values.size() != other.values.size()) {
             return false;
         }
 
-        for (String name : fields) {
+        for (String name : values.keySet()) {
             if (!other.values.containsKey(name)) {
                 throw new ComparingPValuesException(other, this);
-            } else if (PValue.equals(other.values.get(name), this.values.get(name))) {
+            } else if (!PValue.equals(other.values.get(name), this.values.get(name))) {
                 return false;
             }
         }
@@ -132,7 +138,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         boolean hadElements = false;
-        for (String name : fields) {
+        for (String name : values.keySet()) {
             if (hadElements) {
                 sb.append(", ");
             }

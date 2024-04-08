@@ -466,7 +466,8 @@ namespace Plang.Compiler.Backend.PExplicit
                 if (entryFunc.Signature.Parameters.Any())
                 {
                     Debug.Assert(entryFunc.Signature.Parameters.Count() == 1);
-                    context.Write(output, $", payload");
+                    var payloadType = entryFunc.Signature.Parameters[0].Type;
+                    context.Write(output, $", ({GetPExplicitType(payloadType)}) payload");
                 }
                 context.WriteLine(output, ");");
 
@@ -508,8 +509,8 @@ namespace Plang.Compiler.Backend.PExplicit
                     if (actionFunc.Signature.Parameters.Count() == 1)
                     {
                         Debug.Assert(!actionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
-                        var payloadVSType = GetPExplicitType(actionFunc.Signature.Parameters[0].Type);
-                        context.Write(output, $", ({payloadVSType}) payload");
+                        var payloadVsType = GetPExplicitType(actionFunc.Signature.Parameters[0].Type);
+                        context.Write(output, $", ({payloadVsType}) payload");
                     }
                     context.WriteLine(output, ");");
                     context.WriteLine(output, "}");
@@ -552,28 +553,23 @@ namespace Plang.Compiler.Backend.PExplicit
 
         internal struct ControlFlowContext
         {
-            internal readonly LoopScope? LoopScope;
-            internal readonly BranchScope? BranchScope;
-
-            public ControlFlowContext(LoopScope? loopScope, BranchScope? branchScope)
+            public ControlFlowContext()
             {
-                this.LoopScope = loopScope;
-                this.BranchScope = branchScope;
             }
 
             internal static ControlFlowContext FreshFuncContext(CompilationContext context)
             {
-                return new ControlFlowContext(null, null);
+                return new ControlFlowContext();
             }
 
             internal static ControlFlowContext FreshLoopContext(CompilationContext context)
             {
-                return new ControlFlowContext(context.FreshLoopScope(), null);
+                return new ControlFlowContext();
             }
 
             internal ControlFlowContext FreshBranchSubContext(CompilationContext context)
             {
-                return new ControlFlowContext(LoopScope, context.FreshBranchScope());
+                return new ControlFlowContext();
             }
         }
 
@@ -757,65 +753,6 @@ namespace Plang.Compiler.Backend.PExplicit
             return null;
         }
 
-        private bool MustEarlyReturn(IPStmt stmt)
-        {
-            switch (stmt)
-            {
-                case CompoundStmt compoundStmt:
-                    return compoundStmt.Statements.Any((subStmt) => MustEarlyReturn(subStmt));
-                case IfStmt ifStmt:
-                    return MustEarlyReturn(ifStmt.ThenBranch) && MustEarlyReturn(ifStmt.ElseBranch);
-                case WhileStmt whileStmt:
-                    return MustEarlyReturn(whileStmt.Body);
-
-                case GotoStmt _:
-                case RaiseStmt _:
-                case ReturnStmt _:
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
-        private bool MustJumpOut(IPStmt stmt)
-        {
-            switch (stmt)
-            {
-                case CompoundStmt compoundStmt:
-                    return compoundStmt.Statements.Any((subStmt) => MustJumpOut(subStmt));
-                case IfStmt ifStmt:
-                    return MustJumpOut(ifStmt.ThenBranch) && MustJumpOut(ifStmt.ElseBranch);
-                case WhileStmt whileStmt:
-                    // Any breaks or continues inside this loop body will be "caught" by the loop,
-                    // so we only want to consider statements which return from the entire function.
-                    return MustEarlyReturn(whileStmt.Body);
-
-                case GotoStmt _:
-                case RaiseStmt _:
-                case ReturnStmt _:
-                case BreakStmt _:
-                case ContinueStmt _:
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
-        private void SetFlagsForPossibleReturn(CompilationContext context, StringWriter output, ControlFlowContext flowContext)
-        {
-            if (!(flowContext.LoopScope is null))
-            {
-                context.WriteLine(output, $"{flowContext.LoopScope.Value.LoopEarlyReturnFlag} = true;");
-            }
-
-            if (!(flowContext.BranchScope is null))
-            {
-                context.WriteLine(output, $"{flowContext.BranchScope.Value.JumpedOutFlag} = true;");
-            }
-        }
-
         private IPExpr UnnestCloneExpr(IPExpr expr)
         {
             switch (expr)
@@ -903,9 +840,12 @@ namespace Plang.Compiler.Backend.PExplicit
                         WriteExpr(context, output, returnStmt.ReturnValue);
                         if (inlineCastPrefix != "") context.Write(output, ")");
                         context.WriteLine(output, $";");
+                        context.Write(output, $"return {CompilationContext.ReturnValue};");
                     }
-
-                    SetFlagsForPossibleReturn(context, output, flowContext);
+                    else
+                    {
+                        context.Write(output, "return;");
+                    }
 
                     break;
 
@@ -921,8 +861,6 @@ namespace Plang.Compiler.Backend.PExplicit
                         WriteExpr(context, output, gotoStmt.Payload);
                     }
                     context.WriteLine(output, ");");
-
-                    SetFlagsForPossibleReturn(context, output, flowContext);
 
                     break;
 
@@ -941,8 +879,6 @@ namespace Plang.Compiler.Backend.PExplicit
                     }
                     context.WriteLine(output, ");");
 
-                    SetFlagsForPossibleReturn(context, output, flowContext);
-
                     break;
 
                 case PrintStmt printStmt:
@@ -952,12 +888,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     break;
 
                 case BreakStmt _:
-                    Debug.Assert(flowContext.LoopScope.HasValue);
-
-                    if (flowContext.BranchScope.HasValue)
-                    {
-                        context.WriteLine(output, $"{flowContext.BranchScope.Value.JumpedOutFlag} = true;");
-                    }
+                    context.WriteLine(output, "break;");
                     break;
 
                 case CompoundStmt compoundStmt:
@@ -965,9 +896,6 @@ namespace Plang.Compiler.Backend.PExplicit
                     {
                         WriteStmt(function, context, output, flowContext, subStmt);
                         context.WriteLine(output);
-
-                        if (MustJumpOut(subStmt))
-                            break;
                     }
                     break;
 
@@ -979,20 +907,9 @@ namespace Plang.Compiler.Backend.PExplicit
 
                     var loopContext = ControlFlowContext.FreshLoopContext(context);
 
-                    /* Prologue */
-                    context.WriteLine(output, $"boolean {loopContext.LoopScope.Value.LoopEarlyReturnFlag} = false;");
-
                     /* Loop body */
                     context.WriteLine(output, $"while (true) {{");
                     WriteStmt(function, context, output, loopContext, whileStmt.Body);
-                    context.WriteLine(output, "}");
-
-                    /* Epilogue */
-                    context.WriteLine(output, $"if ({loopContext.LoopScope.Value.LoopEarlyReturnFlag}) {{");
-                    if (flowContext.BranchScope.HasValue)
-                    {
-                        context.WriteLine(output, $"{flowContext.BranchScope.Value.JumpedOutFlag} = true;");
-                    }
                     context.WriteLine(output, "}");
 
                     break;
@@ -1009,9 +926,6 @@ namespace Plang.Compiler.Backend.PExplicit
                     var thenContext = flowContext.FreshBranchSubContext(context);
                     var elseContext = flowContext.FreshBranchSubContext(context);
 
-                    context.WriteLine(output, $"boolean {thenContext.BranchScope.Value.JumpedOutFlag} = false;");
-                    context.WriteLine(output, $"boolean {elseContext.BranchScope.Value.JumpedOutFlag} = false;");
-
                     /* Body */
 
                     context.WriteLine(output, $"if ({condTemp}.getValue()) {{");
@@ -1026,17 +940,6 @@ namespace Plang.Compiler.Backend.PExplicit
                         WriteStmt(function, context, output, elseContext, ifStmt.ElseBranch);
                         context.WriteLine(output, "}");
                     }
-
-                    /* Epilogue */
-
-                    context.WriteLine(output, $"if ({thenContext.BranchScope.Value.JumpedOutFlag} || {elseContext.BranchScope.Value.JumpedOutFlag}) {{");
-
-                    if (flowContext.BranchScope.HasValue)
-                    {
-                        context.WriteLine(output, $"{flowContext.BranchScope.Value.JumpedOutFlag} = true;");
-                    }
-
-                    context.WriteLine(output, "}");
 
                     break;
 
@@ -1090,10 +993,7 @@ namespace Plang.Compiler.Backend.PExplicit
                         {
                             context.Write(output, $"{structureTemp} = ");
                             WriteExpr(context, output, insertStmt.Variable);
-                            if (isMap)
-                                context.Write(output, $".add(");
-                            else
-                                context.Write(output, $".insert(");
+                            context.Write(output, $".add(");
 
                             {
                                 var castPrefixKey = "";
@@ -1836,70 +1736,50 @@ namespace Plang.Compiler.Backend.PExplicit
                     WriteExpr(context, output, cloneExpr.Term);
                     break;
                 case UnaryOpExpr unaryOpExpr:
-                    var lambdaTemp = context.FreshTempVar();
                     context.Write(output, "(");
                     WriteExpr(context, output, unaryOpExpr.SubExpr);
-                    context.Write(output, $").apply(({lambdaTemp}) -> {UnOpToStr(unaryOpExpr.Operation)}{lambdaTemp})");
+                    context.Write(output, $").{UnOpToStr(unaryOpExpr.Operation)}()");
                     break;
                 case BinOpExpr binOpExpr:
-                    var isPrimitive = binOpExpr.Lhs.Type.Canonicalize() is PrimitiveType && binOpExpr.Rhs.Type.Canonicalize() is PrimitiveType;
                     var isEquality = binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq;
-                    var isString = isPrimitive && binOpExpr.Lhs.Type.IsSameTypeAs(PrimitiveType.String);
-
-                    if (!(isPrimitive || isEquality))
-                    {
-                        var str = $"lhs type: {binOpExpr.Lhs}, rhs type: {binOpExpr.Rhs}" ;
-                        throw new NotImplementedException("Binary operations are currently only supported between primitive types and enums | " + str);
-                    }
 
                     if (isEquality)
                     {
-                        if (binOpExpr.Operation == BinOpType.Neq)
-                        {
-                            context.Write(output, "(");
-                        }
+                        context.Write(output, "new PBool(");
                         WriteExpr(context, output, binOpExpr.Lhs);
                         context.Write(output, ".equals(");
-
                         {
                             var castPrefix = GetInlineCastPrefix(binOpExpr.Rhs.Type, binOpExpr.Lhs.Type);
                             context.Write(output, castPrefix);
                             WriteExpr(context, output, binOpExpr.Rhs);
                             if (castPrefix != "") context.Write(output, ")");
                         }
+                        context.Write(output, ")");
 
-                        context.Write(output, $")");
                         if (binOpExpr.Operation == BinOpType.Neq)
                         {
-                            context.Write(output, ").apply(x -> !x)");
+                            context.Write(output, ".not()");
                         }
+
+                        context.Write(output, ")");
                     }
                     else
                     {
-                        var lhsLambdaTemp = context.FreshTempVar();
-                        var rhsLambdaTemp = context.FreshTempVar();
+                        var isPrimitive = binOpExpr.Lhs.Type.Canonicalize() is PrimitiveType && binOpExpr.Rhs.Type.Canonicalize() is PrimitiveType;
+                        if (!isPrimitive)
+                        {
+                            var str = $"lhs type: {binOpExpr.Lhs}, rhs type: {binOpExpr.Rhs}" ;
+                            throw new NotImplementedException("Binary operations are currently only supported between primitive types and enums | " + str);
+                        }
 
                         context.Write(output, "(");
                         WriteExpr(context, output, binOpExpr.Lhs);
-                        context.Write(output, ").apply(");
+                        context.Write(output, $").{BinOpToStr(binOpExpr.Operation)}(");
                         if (binOpExpr.Rhs is NullLiteralExpr)
-                            context.Write(output, $"{GetDefaultValue(binOpExpr.Lhs.Type)}.");
-                        else WriteExpr(context, output, binOpExpr.Rhs);
-                        string lambda;
-                        if (binOpExpr.Operation == BinOpType.Eq)
-                            lambda = $"{lhsLambdaTemp}.equals({rhsLambdaTemp})";
-                        else if (binOpExpr.Operation == BinOpType.Neq)
-                            lambda = $"!{lhsLambdaTemp}.equals({rhsLambdaTemp})";
-                        else if (isString)
-                            lambda = BinOpForStringToStr(binOpExpr.Operation, $"{lhsLambdaTemp}", $"{rhsLambdaTemp}");
+                            context.Write(output, $"{GetDefaultValue(binOpExpr.Lhs.Type)}");
                         else
-                            lambda = $"{lhsLambdaTemp} {BinOpToStr(binOpExpr.Operation)} {rhsLambdaTemp}";
-                        context.Write(
-                            output,
-                            $", ({lhsLambdaTemp}, {rhsLambdaTemp}) -> " +
-                            lambda +
-                            ")"
-                        );
+                            WriteExpr(context, output, binOpExpr.Rhs);
+                        context.Write(output, ")");
                     }
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
@@ -2002,20 +1882,31 @@ namespace Plang.Compiler.Backend.PExplicit
                     if (tuplePrefix != "") context.Write(output, ")");
                     break;
                 case NamedTupleExpr namedTupleExpr:
-                    context.Write(output, "new PNamedTuple(");
+                    context.WriteLine(output, "new PNamedTuple(");
                     var fields = (namedTupleExpr.Type.Canonicalize() as NamedTupleType).Fields;
                     var nttype = namedTupleExpr.Type as NamedTupleType;
+
+                    context.Write(output, "List.of(");
                     for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
                     {
-                        var fieldName = fields[i].Name;
+                        context.Write(output, $"\"{fields[i].Name}\"");
+                        if (i + 1 != namedTupleExpr.TupleFields.Count)
+                            context.Write(output, ", ");
+                    }
+                    context.WriteLine(output, "), ");
+                    
+                    context.Write(output, "Arrays.asList(");
+                    for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
+                    {
                         var field = namedTupleExpr.TupleFields[i];
-                        context.Write(output, $"\"{fieldName}\", ");
                         var castExpr = new CastExpr(field.SourceLocation, field, nttype.Types[i]);
                         WriteExpr(context, output, castExpr);
                         if (i + 1 != namedTupleExpr.TupleFields.Count)
                             context.Write(output, ", ");
                     }
-                    context.Write(output, ")");
+                    context.WriteLine(output, ")");
+
+                    context.WriteLine(output, ")");
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
                     context.Write(output, "new PTuple(");
@@ -2179,50 +2070,27 @@ namespace Plang.Compiler.Backend.PExplicit
             switch (binOpType)
             {
                 case BinOpType.Add:
-                    return "+";
+                    return "add";
                 case BinOpType.Sub:
-                    return "-";
+                    return "sub";
                 case BinOpType.Mul:
-                    return "*";
+                    return "mul";
                 case BinOpType.Div:
-                    return "/";
+                    return "div";
                 case BinOpType.Mod:
-                    return "%";
+                    return "mode";
                 case BinOpType.Lt:
-                    return "<";
+                    return "lt";
                 case BinOpType.Le:
-                    return "<=";
+                    return "le";
                 case BinOpType.Gt:
-                    return ">";
+                    return "gt";
                 case BinOpType.Ge:
-                    return ">=";
+                    return "ge";
                 case BinOpType.And:
-                    return "&&";
+                    return "and";
                 case BinOpType.Or:
-                    return "||";
-                case BinOpType.Eq:
-                    return "==";
-                case BinOpType.Neq:
-                    return "!=";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
-            }
-        }
-
-        private string BinOpForStringToStr(BinOpType binOpType, string lhs, string rhs)
-        {
-            switch (binOpType)
-            {
-                case BinOpType.Add:
-                    return $"{lhs}.concat({rhs})";
-                case BinOpType.Lt:
-                    return $"{lhs}.compareTo({rhs}) < 0";
-                case BinOpType.Le:
-                    return $"{lhs}.compareTo({rhs}) <= 0";
-                case BinOpType.Gt:
-                    return $"{lhs}.compareTo({rhs}) > 0";
-                case BinOpType.Ge:
-                    return $"{lhs}.compareTo({rhs}) >= 0";
+                    return "or";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
             }
@@ -2234,9 +2102,9 @@ namespace Plang.Compiler.Backend.PExplicit
             switch (operation)
             {
                 case UnaryOpType.Negate:
-                    return "-";
+                    return "negate";
                 case UnaryOpType.Not:
-                    return "!";
+                    return "not";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(operation));
             }
@@ -2329,7 +2197,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     return $"new {GetPExplicitType(type)}(\"\")";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                 case PermissionType _:
-                    return $"null";
+                    return "null";
                 case ForeignType _:
                     return $"new {GetPExplicitType(type)}()";
                 case SequenceType _:
@@ -2340,13 +2208,23 @@ namespace Plang.Compiler.Backend.PExplicit
                     return $"new {GetPExplicitType(type)}()";
                 case NamedTupleType namedTupleType:
                 {
-                    var allFieldDefaults = new List<string>();
-                    foreach (var field in namedTupleType.Fields)
+                    var result = "new PNamedTuple(List.of(";
+                    for (var i = 0; i < namedTupleType.Fields.Count; i++)
                     {
-                        var fieldDefault = GetDefaultValue(field.Type);
-                        allFieldDefaults.Add($"\"{field.Name}\", {fieldDefault}");
+                        var field = namedTupleType.Fields[i];
+                        result += $"\"{field.Name}\"";
+                        if (i + 1 != namedTupleType.Fields.Count)
+                            result += ", ";
                     }
-                    return $"new {GetPExplicitType(type)}({string.Join(", ", allFieldDefaults)})";
+                    result += "), Arrays.asList(";
+                    for (var i = 0; i < namedTupleType.Fields.Count; i++)
+                    {
+                        result += $"{GetDefaultValue(namedTupleType.Fields[i].Type)}";
+                        if (i + 1 != namedTupleType.Fields.Count)
+                            result += ", ";
+                    }
+                    result += "))";
+                    return result;
                 }
                 case TupleType tupleType:
                 {
@@ -2361,7 +2239,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 case EnumType enumType:
                     return $"new {GetPExplicitType(type)}({enumType.EnumDecl.Values.Min(elem => elem.Value)})";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    return $"null";
+                    return "null";
                 default:
                     return $"new {GetPExplicitType(type)}()";
             }
@@ -2384,6 +2262,7 @@ namespace Plang.Compiler.Backend.PExplicit
             context.WriteLine(output, "import pexplicit.utils.misc.*;");
             context.WriteLine(output, "import pexplicit.utils.serialize.*;");
             context.WriteLine(output, "import java.util.List;");
+            context.WriteLine(output, "import java.util.Arrays;");
             context.WriteLine(output, "import java.util.ArrayList;");
             context.WriteLine(output, "import java.util.Map;");
             context.WriteLine(output, "import java.util.HashMap;");

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Plang.Compiler.Backend.PExplicit;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
@@ -11,8 +10,6 @@ namespace Plang.Compiler.Backend.PExplicit
 {
     internal class CompilationContext : CompilationContextBase
     {
-        int nextLoopId;
-        int nextBranchId;
         int nextTempVarId;
         IDictionary<Continuation, int> continuationNames;
 
@@ -35,7 +32,7 @@ namespace Plang.Compiler.Backend.PExplicit
             if (!IsSafeJavaIdentifier(job.ProjectName))
                 throw new TranslationException(
                     $"Invalid project name '{ProjectName}'.  " +
-                    "When generating code for the 'Symbolic' target, the project name should " +
+                    "When generating code for the 'PExplicit' target, the project name should " +
                     "begin with an alphabetic character and contain only alphanumeric characters");
 
             MainClassName = ProjectName+"PModel";
@@ -98,35 +95,11 @@ namespace Plang.Compiler.Backend.PExplicit
             return $"var_{rawName}";
         }
 
-        internal LoopScope FreshLoopScope()
-        {
-            return new LoopScope(nextLoopId++);
-        }
-
-        internal BranchScope FreshBranchScope()
-        {
-            return new BranchScope(nextBranchId++);
-        }
-
         internal string FreshTempVar()
         {
             var id = nextTempVarId;
             nextTempVarId++;
             return $"temp_var_{id}";
-        }
-
-        internal void WriteCommaSeparated<T>(TextWriter output, IEnumerable<T> items, Action<T> writeItem)
-        {
-            var needComma = false;
-            foreach (var item in items)
-            {
-                if (needComma)
-                {
-                    Write(output, ", ");
-                }
-                writeItem(item);
-                needComma = true;
-            }
         }
         
         private static bool IsAsciiAlphabetic(char c)
@@ -163,30 +136,6 @@ namespace Plang.Compiler.Backend.PExplicit
 
             return true;
         }
-    }
-
-    internal struct LoopScope
-    {
-        internal readonly int id;
-
-        internal LoopScope(int id)
-        {
-            this.id = id;
-        }
-
-        internal string LoopEarlyReturnFlag => $"loop_early_ret_{id}";
-    }
-
-    internal struct BranchScope
-    {
-        internal readonly int id;
-
-        internal BranchScope(int id)
-        {
-            this.id = id;
-        }
-
-        internal string JumpedOutFlag => $"jumpedOut_{id}";
     }
 
 }

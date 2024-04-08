@@ -77,7 +77,7 @@ public class PTuple extends PValue<PTuple> {
         }
 
         for (int i = 0; i < fields.length; i++) {
-            if (PValue.equals(fields[i], other.fields[i])) {
+            if (!PValue.equals(fields[i], other.fields[i])) {
                 return false;
             }
         }

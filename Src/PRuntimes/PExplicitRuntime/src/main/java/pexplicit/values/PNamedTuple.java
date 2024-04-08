@@ -126,7 +126,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         for (String name : values.keySet()) {
             if (!other.values.containsKey(name)) {
                 throw new ComparingPValuesException(other, this);
-            } else if (!PValue.equals(other.values.get(name), this.values.get(name))) {
+            } else if (PValue.notEqual(other.values.get(name), this.values.get(name))) {
                 return false;
             }
         }

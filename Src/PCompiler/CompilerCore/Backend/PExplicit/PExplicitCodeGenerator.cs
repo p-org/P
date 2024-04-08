@@ -2078,7 +2078,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 case BinOpType.Div:
                     return "div";
                 case BinOpType.Mod:
-                    return "mode";
+                    return "mod";
                 case BinOpType.Lt:
                     return "lt";
                 case BinOpType.Le:

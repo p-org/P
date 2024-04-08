@@ -313,7 +313,7 @@ internal class AbstractScheduleObserver : ISendEventMonitor
     {
         if (op.Type == AsyncOperationType.Send)
         {
-            var operation = new Operation(op.Name, op.LastSentReceiver, op.LastSentLoc);
+            var operation = new Operation(op.Name, op.LastSentReceiver, op.LastEvent!.Loc);
             if (avoidSchedule.ContainsKey(operation))
             {
                 return true;
@@ -331,7 +331,7 @@ internal class AbstractScheduleObserver : ISendEventMonitor
     {
         if (op.Type == AsyncOperationType.Send)
         {
-            var operation = new Operation(op.Name, op.LastSentReceiver, op.LastSentLoc);
+            var operation = new Operation(op.Name, op.LastSentReceiver, op.LastEvent!.Loc);
             if (lookingForSchedule.ContainsKey(operation))
             {
                 return true;

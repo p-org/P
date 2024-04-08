@@ -51,7 +51,6 @@ namespace PChecker.SystematicTesting.Operations
         /// </summary>
         internal bool IsAwaiterControlled;
         public Event? LastEvent = null;
-        public int LastSentLoc = 0;
         public string LastSentReceiver = "";
 
         /// <summary>

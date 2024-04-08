@@ -87,7 +87,7 @@ internal class PCTCPScheduler: PrioritizedScheduler
         if (operation.Type == AsyncOperationType.Send)
         {
             op = new OperationWithId(operation.Name, operation.LastSentReceiver, operation
-                .LastSentLoc, _nextOperationId++);
+                .LastEvent!.Loc, _nextOperationId++);
         }
         else
         {

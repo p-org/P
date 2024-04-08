@@ -487,8 +487,8 @@ namespace Plang.Compiler.Backend.CSharp
             var payloadType = GetCSharpType(pEvent.PayloadType, true);
             context.WriteLine(output, $"internal partial class {declName} : PEvent");
             context.WriteLine(output, "{");
-            context.WriteLine(output, $"public {declName}() : base() {{}}");
-            context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
+            context.WriteLine(output, $"public {declName}() : base(-1) {{}}");
+            context.WriteLine(output, $"public {declName}({payloadType} payload, int loc): base(payload, loc)" + "{ }");
             context.WriteLine(output, $"public override IPrtValue Clone() {{ return new {declName}();}}");
             context.WriteLine(output, "}");
 
@@ -513,12 +513,12 @@ namespace Plang.Compiler.Backend.CSharp
             var cTorType = GetCSharpType(machine.PayloadType, true);
             context.Write(output, "public class ConstructorEvent : PEvent");
             context.Write(output, "{");
-            context.Write(output, $"public ConstructorEvent({cTorType} val) : base(val) {{ }}");
+            context.Write(output, $"public ConstructorEvent({cTorType} val, int loc) : base(val, loc) {{ }}");
             context.WriteLine(output, "}");
             context.WriteLine(output);
 
             context.WriteLine(output,
-                $"protected override Event GetConstructorEvent(IPrtValue value) {{ return new ConstructorEvent(({cTorType})value); }}");
+                $"protected override Event GetConstructorEvent(IPrtValue value) {{ return new ConstructorEvent(({cTorType})value, {_sendEventIndex++}); }}");
 
             // create the constructor to initialize the sends, creates and receives list
             WriteMachineConstructor(context, output, machine);
@@ -1165,7 +1165,6 @@ namespace Plang.Compiler.Backend.CSharp
                 case SendStmt sendStmt:
                     context.Write(output, "currentMachine.TrySendEvent(");
                     WriteExpr(context, output, sendStmt.MachineExpr);
-                    context.Write(output, $", {_sendEventIndex++}");
                     context.Write(output, ", (Event)");
                     WriteExpr(context, output, sendStmt.Evt);
 
@@ -1461,7 +1460,7 @@ namespace Plang.Compiler.Backend.CSharp
                     switch (eventName)
                     {
                         case "Halt":
-                            context.Write(output, "new PHalt()");
+                            context.Write(output, "new PHalt(" + _sendEventIndex++ + ")");
                             break;
 
                         case "DefaultEvent":
@@ -1470,7 +1469,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                         default:
                             var payloadExpr = GetDefaultValue(eventRefExpr.Value.PayloadType);
-                            context.Write(output, $"new {eventName}({payloadExpr})");
+                            context.Write(output, $"new {eventName}({payloadExpr}, {_sendEventIndex++})");
                             break;
                     }
 

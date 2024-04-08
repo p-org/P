@@ -132,16 +132,15 @@ namespace PChecker.Actors
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to an actor.
         /// </summary>
-        public virtual void SendEvent(ActorId targetId, Event initialEvent, int loc, Guid opGroupId = default) =>
-            SendEvent(targetId, initialEvent, null, loc, opGroupId);
+        public virtual void SendEvent(ActorId targetId, Event initialEvent, Guid opGroupId = default) =>
+            SendEvent(targetId, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Sends an <see cref="Event"/> to an actor. Returns immediately if the target was already
         /// running. Otherwise blocks until the target handles the event and reaches quiescense.
         /// </summary>
-        public virtual Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event initialEvent, int loc,
-            Guid opGroupId = default) =>
-            SendEventAndExecuteAsync(targetId, initialEvent, null, loc, opGroupId);
+        public virtual Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event initialEvent, Guid opGroupId = default) =>
+            SendEventAndExecuteAsync(targetId, initialEvent, null, opGroupId);
 
         /// <summary>
         /// Returns the operation group id of the actor with the specified id. Returns <see cref="Guid.Empty"/>
@@ -262,9 +261,9 @@ namespace PChecker.Actors
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to an actor.
         /// </summary>
-        internal virtual void SendEvent(ActorId targetId, Event e, Actor sender, int loc, Guid opGroupId)
+        internal virtual void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId)
         {
-            var enqueueStatus = EnqueueEvent(targetId, e, sender, loc, opGroupId, out var target);
+            var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
                 RunActorEventHandler(target, null, false);
@@ -275,10 +274,9 @@ namespace PChecker.Actors
         /// Sends an asynchronous <see cref="Event"/> to an actor. Returns immediately if the target was
         /// already running. Otherwise blocks until the target handles the event and reaches quiescense.
         /// </summary>
-        internal virtual async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender, int loc,
-            Guid opGroupId)
+        internal virtual async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender, Guid opGroupId)
         {
-            var enqueueStatus = EnqueueEvent(targetId, e, sender, loc, opGroupId, out var target);
+            var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
                 await RunActorEventHandlerAsync(target, null, false);
@@ -291,7 +289,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Enqueues an event to the actor with the specified id.
         /// </summary>
-        private EnqueueStatus EnqueueEvent(ActorId targetId, Event e, Actor sender, int loc, Guid opGroupId, out Actor target)
+        private EnqueueStatus EnqueueEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId, out Actor target)
         {
             if (e is null)
             {

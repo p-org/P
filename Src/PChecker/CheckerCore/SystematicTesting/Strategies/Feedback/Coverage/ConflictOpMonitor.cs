@@ -60,8 +60,8 @@ public class ConflictOpMonitor: ISendEventMonitor
             return false;
         }
 
-        var operation1 = new Operation(op1.Name, op1.LastSentReceiver, op1.LastSentLoc);
-        var operation2 = new Operation(op2.Name, op2.LastSentReceiver, op2.LastSentLoc);
+        var operation1 = new Operation(op1.Name, op1.LastSentReceiver, op1.LastEvent!.Loc);
+        var operation2 = new Operation(op2.Name, op2.LastSentReceiver, op2.LastEvent!.Loc);
 
         if (conflictOps.TryGetValue(operation1, out var ops)) {
             return ops.Contains(operation2);
@@ -104,7 +104,7 @@ public class ConflictOpMonitor: ISendEventMonitor
             return false;
         }
 
-        var operation = new Operation(op.Name, op.LastSentReceiver, op.LastSentLoc);
+        var operation = new Operation(op.Name, op.LastSentReceiver, op.LastEvent!.Loc);
         if (conflictOps.TryGetValue(operation, out var ops ))
         {
             return ops.Count != 0;

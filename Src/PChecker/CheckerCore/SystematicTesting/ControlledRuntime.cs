@@ -18,6 +18,7 @@ using PChecker.Actors.Managers;
 using PChecker.Actors.Managers.Mocks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
+using PChecker.Feedback;
 using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.Specifications.Monitors;
@@ -64,6 +65,13 @@ namespace PChecker.SystematicTesting
         /// The root task id.
         /// </summary>
         internal readonly int? RootTaskId;
+
+        /// <summary>
+        /// The observer that extracts the timeline information of the scheduling.
+        /// </summary>
+        internal readonly TimelineObserver TimelineObserver = new();
+
+        public List<ISendEventMonitor> SendEventMonitors = new();
 
 
         /// <summary>
@@ -148,6 +156,7 @@ namespace PChecker.SystematicTesting
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
             AssignAsyncControlFlowRuntime(this);
+            RegisterLog(TimelineObserver);
         }
 
         /// <inheritdoc/>
@@ -425,8 +434,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender,
-            Guid opGroupId)
+        internal override async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender, Guid opGroupId)
         {
             Assert(sender is StateMachine, "Only an actor can call 'SendEventAndExecuteAsync': avoid " +
                                            "calling it directly from the test method; instead call it through a test driver actor.");
@@ -460,6 +468,13 @@ namespace PChecker.SystematicTesting
                 "Cannot send event '{0}' to actor id '{1}' that is not bound to an actor instance.",
                 e.GetType().FullName, targetId.Value);
 
+            Scheduler.ScheduledOperation.LastEvent = e;
+            Scheduler.ScheduledOperation.LastSentReceiver = targetId.ToString();
+
+            foreach (var monitor in SendEventMonitors) {
+                monitor.OnSendEvent(sender.Id, e.Loc, targetId, LogWriter.JsonLogger.VcGenerator);
+            }
+
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender as StateMachine);
 
@@ -480,6 +495,9 @@ namespace PChecker.SystematicTesting
                 return EnqueueStatus.Dropped;
             }
 
+            foreach (var monitor in SendEventMonitors) {
+                monitor.OnSendEventDone(sender.Id, e.Loc, targetId, LogWriter.JsonLogger.VcGenerator);
+            }
             var enqueueStatus = EnqueueEvent(target, e, sender, opGroupId);
             if (enqueueStatus == EnqueueStatus.Dropped)
             {
@@ -517,6 +535,7 @@ namespace PChecker.SystematicTesting
 
             LogWriter.LogSendEvent(actor.Id, sender?.Id.Name, sender?.Id.Type, stateName,
                 e, opGroupId, isTargetHalted: false);
+
             return actor.Enqueue(e, opGroupId, eventInfo);
         }
 

@@ -84,7 +84,7 @@ namespace Plang.CSharpRuntime
             Assert(target.Permissions.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            ev = (Event)oneArgConstructor.Invoke(new[] { payload });
+            ev = (Event)oneArgConstructor.Invoke(new[] { payload , ev.Loc});
 
             AnnounceInternal(ev);
             SendEvent(target.Id, ev);
@@ -94,7 +94,7 @@ namespace Plang.CSharpRuntime
         {
             Assert(ev != null, "Machine cannot raise a null event");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            ev = (Event)oneArgConstructor.Invoke(new[] { payload });
+            ev = (Event)oneArgConstructor.Invoke(new[] { payload, ev.Loc });
             RaiseEvent(ev);
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
@@ -182,7 +182,7 @@ namespace Plang.CSharpRuntime
             }
 
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
+            var @event = (Event)oneArgConstructor.Invoke(new[] { payload, ev.Loc });
             var pText = payload == null ? "" : $" with payload {((IPrtValue)payload).ToEscapedString()}";
 
             Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
@@ -247,7 +247,7 @@ namespace Plang.CSharpRuntime
 
         public class InitializeParametersEvent : PEvent
         {
-            public InitializeParametersEvent(InitializeParameters payload) : base(payload)
+            public InitializeParametersEvent(InitializeParameters payload) : base(payload, 0)
             {
             }
         }

@@ -121,7 +121,7 @@ namespace Plang.Compiler.TypeChecker
                     }
 
                     names.Add(fieldName);
-                    fields[i] = new NamedTupleEntry { Name = fieldName, FieldNo = i, Type = Visit(field.type()) };
+                    fields[i] = new NamedTupleEntry(name: fieldName, fieldNo: i, type: Visit(field.type()));
                 }
 
                 var ret = new NamedTupleType(fields);

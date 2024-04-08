@@ -60,6 +60,7 @@ topDecl : typeDefDecl
         | namedModuleDecl
         | testDecl
         | implementationDecl
+        | scenarioDecl
         ;
 
 
@@ -106,6 +107,13 @@ varDecl : VAR idenList COLON type SEMI ;
 funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
         | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
+
+scenarioDecl : SCENARIO scenarioName=iden LPAREN scenarioParamList RPAREN scenarioBody;
+
+scenarioParamList: scenarioParam (COMMA scenarioParam)*;
+scenarioParam : name=iden COLON nonDefaultEvent;
+scenarioBody : LBRACE expr (COMMA expr)* RBRACE;
+
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=iden LBRACE stateBodyItem* RBRACE ;
 

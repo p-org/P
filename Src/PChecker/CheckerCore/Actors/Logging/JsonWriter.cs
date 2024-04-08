@@ -11,7 +11,7 @@ namespace PChecker.Actors.Logging
     /// <summary>
     /// Class for handling generating the vector clock for a log entry
     /// </summary>
-    internal class VectorClockGenerator
+    public class VectorClockGenerator
     {
         /// <summary>
         /// Nested class for handling FIFO send receive requests.
@@ -61,7 +61,7 @@ namespace PChecker.Actors.Logging
         /// <summary>
         /// Field declaration that keeps track of a global vector clock map of all the machines.
         /// </summary>
-        private readonly Dictionary<string, Dictionary<string, int>> _contextVcMap;
+        public readonly Dictionary<string, Dictionary<string, int>> ContextVcMap;
 
         /// <summary>
         /// Field declaration that keeps track of unprocessed send requests. I.e., when a send request happened
@@ -85,7 +85,7 @@ namespace PChecker.Actors.Logging
         /// </summary>
         public VectorClockGenerator()
         {
-            _contextVcMap = new Dictionary<string, Dictionary<string, int>>();
+            ContextVcMap = new Dictionary<string, Dictionary<string, int>>();
             _unhandledSendRequests = new Dictionary<string, Dictionary<string, int>>();
             _machines = new HashSet<string>();
             _sendRequestsCount = new Dictionary<string, FifoSendReceiveMapping>();
@@ -205,7 +205,7 @@ namespace PChecker.Actors.Logging
         {
             // Get a set of all machine names to update between the sender vc map and the current machine vc map (minus the current machine)
             var machinesToUpdateInVc =
-                new HashSet<string>(_contextVcMap[machine].Keys.Union(senderVcMap.Keys).Except(new[] { machine }));
+                new HashSet<string>(ContextVcMap[machine].Keys.Union(senderVcMap.Keys).Except(new[] { machine }));
 
             // Update local machine's vector clock in _contextVcMap, outside of itself, since it was already updated (incremented) from above
             // right before the switch case.
@@ -213,17 +213,17 @@ namespace PChecker.Actors.Logging
             // the current machine's vector clock. Details can be found here: https://en.wikipedia.org/wiki/Vector_clock
             foreach (var machineToUpdate in machinesToUpdateInVc)
             {
-                if (_contextVcMap[machine].TryGetValue(machineToUpdate, out var localMachineToUpdateValue))
+                if (ContextVcMap[machine].TryGetValue(machineToUpdate, out var localMachineToUpdateValue))
                 {
                     if (senderVcMap.TryGetValue(machineToUpdate, out var senderMachineToUpdateValue))
                     {
-                        _contextVcMap[machine][machineToUpdate] =
+                        ContextVcMap[machine][machineToUpdate] =
                             Math.Max(senderMachineToUpdateValue, localMachineToUpdateValue);
                     }
                 }
                 else
                 {
-                    _contextVcMap[machine].Add(machineToUpdate, senderVcMap[machineToUpdate]);
+                    ContextVcMap[machine].Add(machineToUpdate, senderVcMap[machineToUpdate]);
                 }
             }
         }
@@ -243,11 +243,11 @@ namespace PChecker.Actors.Logging
             if (MachineIsNew(machine))
             {
                 _machines.Add(machine);
-                _contextVcMap.Add(machine, new Dictionary<string, int> { { machine, 0 } });
+                ContextVcMap.Add(machine, new Dictionary<string, int> { { machine, 0 } });
             }
 
             // Always update the local machine count by one on any event.
-            _contextVcMap[machine][machine] += 1;
+            ContextVcMap[machine][machine] += 1;
 
             switch (logType)
             {
@@ -273,13 +273,13 @@ namespace PChecker.Actors.Logging
                     // Update the sendReqId with the send count of it.
                     sendReqId += $":_{_sendRequestsCount[hashedGeneralSendReqId].SentCount}";
                     var hashedSendReqId = HashString(sendReqId);
-                    _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(_contextVcMap[machine]));
+                    _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(ContextVcMap[machine]));
                     break;
 
                 // For MonitorProcessEvents, tie it to the senderMachine's current vector clock
                 // so that there is some association in the timeline
                 case "MonitorProcessEvent":
-                    if (logDetails.Sender != null) updateMachineVcMap(machine, _contextVcMap[logDetails.Sender]);
+                    if (logDetails.Sender != null) updateMachineVcMap(machine, ContextVcMap[logDetails.Sender]);
                     break;
 
                 // On dequeue OR receive event, has the string containing information about the current machine that dequeued (i.e. received the event),
@@ -317,7 +317,7 @@ namespace PChecker.Actors.Logging
             }
 
             // Update the log entry with the vector clock.
-            logEntry.Details.Clock = CopyVcMap(_contextVcMap[machine]);
+            logEntry.Details.Clock = CopyVcMap(ContextVcMap[machine]);
         }
     }
 
@@ -533,7 +533,7 @@ namespace PChecker.Actors.Logging
         /// <summary>
         /// Vector clock generator instance to help with vector clock generation.
         /// </summary>
-        private readonly VectorClockGenerator _vcGenerator;
+        internal VectorClockGenerator VcGenerator {get;}
 
         /// <summary>
         /// Getter for accessing log entry details.
@@ -552,7 +552,7 @@ namespace PChecker.Actors.Logging
         {
             _logs = new List<LogEntry>();
             _log = new LogEntry();
-            _vcGenerator = new VectorClockGenerator();
+            VcGenerator = new VectorClockGenerator();
         }
 
         /// <summary>
@@ -716,7 +716,7 @@ namespace PChecker.Actors.Logging
             {
                 if (updateVcMap)
                 {
-                    _vcGenerator.HandleLogEntry(_log);
+                    VcGenerator.HandleLogEntry(_log);
                 }
 
                 _logs.Add(_log);

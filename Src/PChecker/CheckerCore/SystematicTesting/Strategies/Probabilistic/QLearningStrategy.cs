@@ -3,17 +3,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using PChecker.Feedback;
 using System.Text;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
+using PChecker.SystematicTesting.Strategies.Feedback;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic
 {
     /// <summary>
     /// A probabilistic scheduling strategy that uses Q-learning.
     /// </summary>
-    internal class QLearningStrategy : RandomStrategy
+    internal class QLearningStrategy : RandomStrategy, IFeedbackGuidedStrategy
     {
         /// <summary>
         /// Map from program states to a map from next operations to their quality values.
@@ -78,11 +81,13 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// </summary>
         private int Epochs;
 
+        private bool _diversityFeedback;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="QLearningStrategy"/> class.
         /// It uses the specified random number generator.
         /// </summary>
-        public QLearningStrategy(int maxSteps, IRandomValueGenerator random)
+        public QLearningStrategy(int maxSteps, IRandomValueGenerator random, bool diversityFeedback)
             : base(maxSteps, random)
         {
             this.OperationQTable = new Dictionary<int, Dictionary<ulong, double>>();
@@ -97,6 +102,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             this.FailureInjectionReward = -1000;
             this.BasicActionReward = -1;
             this.Epochs = 0;
+            _diversityFeedback = diversityFeedback;
         }
 
         /// <inheritdoc/>
@@ -148,7 +154,6 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <inheritdoc/>
         public override bool PrepareForNextIteration()
         {
-            this.LearnQValues();
             this.ExecutionPath.Clear();
             this.PreviousOperation = 0;
             this.Epochs++;
@@ -358,18 +363,69 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             }
         }
 
-        /// <summary>
-        /// Learn Q values using data from the current execution.
-        /// </summary>
-        private void LearnQValues()
+        private readonly HashSet<int> _visitedTimelines = new();
+        private readonly List<List<int>> _savedTimelines = new();
+        private int ComputeDiversity(int timeline, List<int> hash)
         {
-            var pathBuilder = new StringBuilder();
+            if (!_visitedTimelines.Add(timeline))
+            {
+                return 0;
+            }
 
-            int idx = 0;
+            if (_savedTimelines.Count == 0)
+            {
+                return 20;
+            }
+
+            var maxSim = int.MinValue;
+            foreach (var record in _savedTimelines)
+            {
+                var similarity = 0;
+                for (int i = 0; i < hash.Count; i++)
+                {
+                    if (hash[i] == record[i])
+                    {
+                        similarity += 1;
+                    }
+                }
+
+                maxSim = Math.Max(maxSim, similarity);
+            }
+
+
+            return (hash.Count - maxSim) * 10 + 20;
+        }
+
+        public void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime)
+        {
+            var timelineHash = runtime.TimelineObserver.GetTimelineHash();
+            var timelineMinhash = runtime.TimelineObserver.GetTimelineMinhash();
+            
+            int priority = 1;
+
+            if (_diversityFeedback)
+            {
+                int diversityScore = ComputeDiversity(timelineHash, timelineMinhash);
+                if (patternObserver == null)
+                {
+                    priority = diversityScore;
+                }
+                else
+                {
+                    int coverageResult = patternObserver.ShouldSave();
+                    priority = diversityScore / coverageResult;
+                }
+
+                if (priority != 0)
+                {
+                    _savedTimelines.Add(timelineMinhash);
+                }
+                priority += 1;
+            }
+
             var node = this.ExecutionPath.First;
             while (node != null && node.Next != null)
             {
-                pathBuilder.Append($"{node.Value.op},");
 
                 var (_, _, state) = node.Value;
                 var (nextOp, nextType, nextState) = node.Next.Value;
@@ -386,8 +442,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
 
                 // Compute the reward. Program states that are visited with higher frequency result into lesser rewards.
                 var freq = this.TransitionFrequencies[nextState];
-                double reward = (nextType == AsyncOperationType.InjectFailure ?
-                    this.FailureInjectionReward : this.BasicActionReward) * freq;
+                double reward = ((nextType == AsyncOperationType.InjectFailure ?
+                    this.FailureInjectionReward : this.BasicActionReward) * freq) / priority;
                 if (reward > 0)
                 {
                     // The reward has underflowed.
@@ -407,8 +463,16 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                                         (this.LearningRate * (reward + (this.Gamma * maxQ)));
 
                 node = node.Next;
-                idx++;
             }
+        }
+
+        public int TotalSavedInputs()
+        {
+            return 0;
+        }
+
+        public void DumpStats(TextWriter writer)
+        {
         }
     }
 }

@@ -567,6 +567,9 @@ namespace Plang.Compiler.Backend
                         condCheck.Concat(SimplifyStatement(whileStmt.Body)));
 
                     return new List<IPStmt> { new WhileStmt(location, new BoolLiteralExpr(location, true), loopBody) };
+                // We do not rewrite constraint statements for now.
+                case ConstraintStmt constraintStmt:
+                    return new List<IPStmt>() { constraintStmt };
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));

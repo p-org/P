@@ -46,6 +46,32 @@ public class PBool extends PValue<PBool> {
         return value;
     }
 
+    /**
+     * Logical Not operation
+     * @return PBool object after operation
+     */
+    public PBool not() {
+        return new PBool(!value);
+    }
+
+    /**
+     * Logical And operation
+     * @param val value to and to
+     * @return PBool object after operation
+     */
+    public PBool and(PBool val) {
+        return new PBool(value && val.value);
+    }
+
+    /**
+     * Logical Or operation
+     * @param val value to or to
+     * @return PBool object after operation
+     */
+    public PBool or(PBool val) {
+        return new PBool(value || val.value);
+    }
+
     @Override
     public PBool clone() {
         return new PBool(value);

@@ -40,9 +40,17 @@ public class PInt extends PValue<PInt> {
     }
 
     /**
+     * Negation operation
+     * @return Result after operation
+     */
+    public PInt negate() {
+        return new PInt(-value);
+    }
+
+    /**
      * Add operation
      * @param val value to add
-     * @return PInt object after addition
+     * @return Result after addition
      */
     public PInt add(PInt val) {
         return new PInt(value + val.value);
@@ -51,7 +59,7 @@ public class PInt extends PValue<PInt> {
     /**
      * Subtract operation
      * @param val value to subtract
-     * @return PInt object after subtraction
+     * @return Result after subtraction
      */
     public PInt sub(PInt val) {
         return new PInt(value - val.value);
@@ -60,7 +68,7 @@ public class PInt extends PValue<PInt> {
     /**
      * Multiply operation
      * @param val value to multiply
-     * @return PInt object after multiplication
+     * @return Result after multiplication
      */
     public PInt mul(PInt val) {
         return new PInt(value * val.value);
@@ -69,7 +77,7 @@ public class PInt extends PValue<PInt> {
     /**
      * Divide operation
      * @param val value to divide
-     * @return PInt object after division
+     * @return Result after division
      */
     public PInt div(PInt val) {
         return new PInt(value / val.value);
@@ -78,7 +86,7 @@ public class PInt extends PValue<PInt> {
     /**
      * Modulo operation
      * @param val value to modulo
-     * @return PInt object after modulo
+     * @return Result after modulo
      */
     public PInt mod(PInt val) {
         return new PInt(value % val.value);
@@ -112,7 +120,7 @@ public class PInt extends PValue<PInt> {
     }
 
     /**
-     * Greater than or equal toperation
+     * Greater than or equal to operation
      * @param val value to compare to
      * @return PBool object after operation
      */

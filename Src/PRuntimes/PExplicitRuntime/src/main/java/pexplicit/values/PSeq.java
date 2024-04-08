@@ -126,7 +126,7 @@ public class PSeq<T extends PValue<T>> extends PCollection<T> {
         }
 
         for (int i = 0; i < seq.size(); i++) {
-            if (!PValue.equals((PValue<?>) other.seq.get(i), (PValue<?>) this.seq.get(i))) {
+            if (PValue.notEqual(other.seq.get(i), this.seq.get(i))) {
                 return false;
             }
         }

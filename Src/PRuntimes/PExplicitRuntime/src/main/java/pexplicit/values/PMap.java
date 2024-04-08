@@ -141,7 +141,7 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PCollection<
         for (PValue<?> key : map.keySet()) {
             if (!other.map.containsKey(key)) {
                 return false;
-            } else if (!PValue.equals((PValue<?>) other.map.get(key), this.map.get(key))) {
+            } else if (PValue.notEqual((PValue<?>) other.map.get(key), this.map.get(key))) {
                 return false;
             }
         }

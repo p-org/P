@@ -147,11 +147,9 @@
                 <configuration>
                     <systemPropertyVariables>
                         <propertyName>java.library.path</propertyName>
-                        <mode/>
                         <timeout/>
                         <schedules/>
                         <max.steps/>
-                        <pexplicit.args/>
                     </systemPropertyVariables>
                     <systemProperties>
                         <property>

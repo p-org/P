@@ -1,0 +1,32 @@
+# This workflow will build and test PExplicit, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: PExplicit on Ubuntu
+
+on: [push, pull_request]
+
+jobs:
+  PExplicit-Build-And-Test-Ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 8.0.x
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build PExplicit
+        working-directory: Src/PRuntimes/PExplicitRuntime
+        run: ./scripts/build.sh
+      - name: Test PExplicit
+        working-directory: Src/PRuntimes/PExplicitRuntime
+        run: mvn test

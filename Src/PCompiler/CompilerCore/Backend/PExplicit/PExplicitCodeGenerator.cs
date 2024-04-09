@@ -431,7 +431,7 @@ namespace Plang.Compiler.Backend.PExplicit
 
         private void WriteHandlerUpdate(CompilationContext context, StringWriter output, State state)
         {
-            context.Write(output, $"{context.GetNameForDecl(state)}.registerHandlers(");
+            context.WriteLine(output, $"{context.GetNameForDecl(state)}.registerHandlers(");
             var first = true;
             foreach (var handler in state.AllEventHandlers)
             {
@@ -536,7 +536,8 @@ namespace Plang.Compiler.Backend.PExplicit
                         if (transitionFunc.Signature.Parameters.Count() == 1)
                         {
                             Debug.Assert(!transitionFunc.Signature.Parameters[0].Type.IsSameTypeAs(PrimitiveType.Null));
-                            context.Write(output, $", payload");
+                            var payloadVsType = GetPExplicitType(transitionFunc.Signature.Parameters[0].Type);
+                            context.Write(output, $", ({payloadVsType}) payload");
                         }
                         context.WriteLine(output, ");");
                         context.WriteLine(output, "}");
@@ -573,35 +574,6 @@ namespace Plang.Compiler.Backend.PExplicit
             }
         }
 
-        private bool MayExitWithOutcome(Function func)
-        {
-            return (func.CanChangeState ?? false) || (func.CanRaiseEvent ?? false);
-        }
-
-        private enum FunctionReturnConvention
-        {
-            ReturnValue,
-            ReturnVoid,
-            ReturnValueOrExit
-        }
-
-        private FunctionReturnConvention GetReturnConvention(Function function)
-        {
-            var mayExit = MayExitWithOutcome(function);
-            var voidReturn = function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
-            if (voidReturn)
-            {
-                return FunctionReturnConvention.ReturnVoid;
-            }
-            else
-            {
-                if (mayExit)
-                    return FunctionReturnConvention.ReturnValueOrExit;
-                else
-                    return FunctionReturnConvention.ReturnValue;
-            }
-        }
-
         private void WriteForeignFunction(CompilationContext context, StringWriter output, Function function)
         {
             var isStatic = function.Owner == null;
@@ -613,15 +585,12 @@ namespace Plang.Compiler.Backend.PExplicit
 
             string returnType = null;
             var returnStatement = "";
-            switch (GetReturnConvention(function))
-            {
-                case FunctionReturnConvention.ReturnValue:
-                    returnType = "Object";
-                    returnStatement = "return ";
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    returnType = "void";
-                    break;
+            if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                returnType = "void";
+
+            } else {
+                returnType = "Object";
+                returnStatement = "return ";
             }
 
             var functionName = $"wrapper__{context.GetNameForDecl(function)}";
@@ -660,17 +629,10 @@ namespace Plang.Compiler.Backend.PExplicit
             var staticKeyword = isStatic ? "static " : "";
 
             string returnType = null;
-            switch (GetReturnConvention(function))
-            {
-                case FunctionReturnConvention.ReturnValue:
-                    returnType = GetPExplicitType(function.Signature.ReturnType);
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    returnType = "void";
-                    break;
-                case FunctionReturnConvention.ReturnValueOrExit:
-                    returnType = GetPExplicitType(function.Signature.ReturnType);
-                    break;
+            if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                returnType = "void";
+            } else {
+                returnType = GetPExplicitType(function.Signature.ReturnType);
             }
 
             context.ReturnType = function.Signature.ReturnType;
@@ -708,15 +670,8 @@ namespace Plang.Compiler.Backend.PExplicit
                 context.WriteLine(output);
             }
 
-            var returnConvention = GetReturnConvention(function);
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.ReturnValue:
-                case FunctionReturnConvention.ReturnValueOrExit:
-                    context.WriteLine(output, $"{GetPExplicitType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = new {GetPExplicitType(function.Signature.ReturnType)}({GetDefaultValue(function.Signature.ReturnType)});");
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    break;
+            if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                context.WriteLine(output, $"{GetPExplicitType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = new {GetPExplicitType(function.Signature.ReturnType)}({GetDefaultValue(function.Signature.ReturnType)});");
             }
 
             if (function is WhileFunction)
@@ -726,18 +681,6 @@ namespace Plang.Compiler.Backend.PExplicit
             } else
             {
                 WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
-            }
-
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.ReturnValue:
-                    context.WriteLine(output, $"return {CompilationContext.ReturnValue};");
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    break;
-                case FunctionReturnConvention.ReturnValueOrExit:
-                    context.WriteLine(output, $"return {CompilationContext.ReturnValue};");
-                    break;
             }
         }
 
@@ -1315,35 +1258,22 @@ namespace Plang.Compiler.Backend.PExplicit
 
         private void WriteForeignFunCallStmt(CompilationContext context, StringWriter output, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
-            var returnConvention = GetReturnConvention(function);
             string returnTemp = null;
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.ReturnValue:
-                    returnTemp = context.FreshTempVar();
-                    context.Write(output, $"{GetPExplicitType(function.Signature.ReturnType)} {returnTemp} = ({GetPExplicitType(function.Signature.ReturnType)})");
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    break;
-                default:
-                    throw new NotImplementedException("Cannot handle foreign function calls that can exit");
+            if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                returnTemp = context.FreshTempVar();
+                context.Write(output, $"{GetPExplicitType(function.Signature.ReturnType)} {returnTemp} = ({GetPExplicitType(function.Signature.ReturnType)})");
             }
 
             context.Write(output, $"ForeignFunctionInvoker.invoke(");
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.ReturnValue:
-                    context.Write(output, $"{GetDefaultValue(function.Signature.ReturnType)}, x -> ");
-                    context.Write(output, "{ return ");
-                    context.Write(output, $"wrapper__{context.GetNameForDecl(function)}(x);");
-                    context.Write(output, " }");
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    context.Write(output, $"x -> wrapper__{context.GetNameForDecl(function)}(x)");
-                    break;
-                default:
-                    throw new NotImplementedException("Cannot handle foreign function calls that can exit");
+            if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                context.Write(output, $"x -> wrapper__{context.GetNameForDecl(function)}(x)");
+            } else {
+                context.Write(output, $"{GetDefaultValue(function.Signature.ReturnType)}, x -> ");
+                context.Write(output, "{ return ");
+                context.Write(output, $"wrapper__{context.GetNameForDecl(function)}(x);");
+                context.Write(output, " }");
             }
+
             for (var i = 0; i < args.Count(); i++)
             {
                 var param = args.ElementAt(i);
@@ -1352,17 +1282,11 @@ namespace Plang.Compiler.Backend.PExplicit
             }
             context.WriteLine(output, ");");
 
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.ReturnValue:
-                    if (dest != null)
-                        WriteWithLValueMutationContext(context, output, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp};"));
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    Debug.Assert(dest == null);
-                    break;
-                default:
-                    throw new NotImplementedException("Cannot handle foreign function calls that can exit");
+            if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                Debug.Assert(dest == null);
+            } else {
+                if (dest != null)
+                    WriteWithLValueMutationContext(context, output, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp};"));
             }
         }
 
@@ -1374,17 +1298,10 @@ namespace Plang.Compiler.Backend.PExplicit
                 return;
             }
 
-            var returnConvention = GetReturnConvention(function);
             string returnTemp = null;
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.ReturnValue:
-                case FunctionReturnConvention.ReturnValueOrExit:
-                    returnTemp = context.FreshTempVar();
-                    context.Write(output, $"{GetPExplicitType(function.Signature.ReturnType)} {returnTemp} = ");
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    break;
+            if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                returnTemp = context.FreshTempVar();
+                context.Write(output, $"{GetPExplicitType(function.Signature.ReturnType)} {returnTemp} = ");
             }
 
             context.Write(output, $"{context.GetNameForDecl(function)}({CompilationContext.CurrentMachine}");
@@ -1399,16 +1316,11 @@ namespace Plang.Compiler.Backend.PExplicit
 
             context.WriteLine(output, ");");
 
-            switch (returnConvention)
-            {
-                case FunctionReturnConvention.ReturnValue:
-                case FunctionReturnConvention.ReturnValueOrExit:
-                    if (dest != null)
-                        WriteWithLValueMutationContext(context, output, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp};"));
-                    break;
-                case FunctionReturnConvention.ReturnVoid:
-                    Debug.Assert(dest == null);
-                    break;
+            if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                Debug.Assert(dest == null);
+            } else {
+                if (dest != null)
+                    WriteWithLValueMutationContext(context, output, dest, false, (lhs) => context.WriteLine(output, $"{lhs} = {returnTemp};"));
             }
         }
 

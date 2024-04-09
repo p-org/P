@@ -120,6 +120,7 @@ public class RuntimeExecutor {
             if (PExplicitGlobal.getConfig().getVerbosity() > 0) {
                 PExplicitLogger.printStackTrace(e, false);
             }
+            throw e;
         } catch (InterruptedException e) {
             PExplicitGlobal.setStatus("interrupted");
             throw new Exception("INTERRUPTED", e);

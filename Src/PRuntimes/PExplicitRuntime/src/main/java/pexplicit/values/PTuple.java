@@ -13,7 +13,7 @@ public class PTuple extends PValue<PTuple> {
     /**
      * Creates a new PTuple with the given fields
      */
-    public PTuple(PValue<?>[] input_fields) {
+    public PTuple(PValue<?> ... input_fields) {
         this.fields = new PValue<?>[input_fields.length];
         for (int i = 0; i < input_fields.length; i++) {
             this.fields[i] = PValue.clone(input_fields[i]);

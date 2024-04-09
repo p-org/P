@@ -3,8 +3,15 @@
 
 name: PExplicit on Ubuntu
 
-on: [push, pull_request]
-
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      args:
+        description: Additional arguments
+        default: ""
+        required: false
 jobs:
   PExplicit-Build-And-Test-Ubuntu:
     runs-on: ubuntu-latest

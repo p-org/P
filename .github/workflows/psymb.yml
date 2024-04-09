@@ -4,8 +4,8 @@
 name: PSymB on Ubuntu
 
 on:
-  push:
-  pull_request:
+#  push:
+#  pull_request:
   workflow_dispatch:
     inputs:
       args:

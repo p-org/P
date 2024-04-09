@@ -23,6 +23,9 @@ public class GotoEventHandler extends EventHandler {
         this.gotoState = dest;
     }
 
+    public void transitionFunction(PMachine target, PValue<?> payload) {
+    }
+
     /**
      * Handle the goto event at the target machine.
      *
@@ -31,6 +34,7 @@ public class GotoEventHandler extends EventHandler {
      */
     @Override
     public void handleEvent(PMachine target, PValue<?> payload) {
+        transitionFunction(target, payload);
         target.processStateTransition(gotoState, payload);
     }
 }

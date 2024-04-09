@@ -50,6 +50,24 @@ public class TestPExplicit {
   }
 
   private static void createExcludeList() {
+    /**
+     * TODO: Support type casting
+     */
+    // TODO: Cannot yet handle casting to variable of type (int,int) from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/bug3");
+    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/bug4");
+    // TODO: Cannot yet handle casting to variable of type (machine,machine) from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/PingPong");
+
+    /**
+     * TODO: Null events
+     */
+    // TODO: Null actions are not supported
+    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/BugRepro");
+    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/MoreThan32Events");
+
+
+
   }
 
   private static void initialize() {

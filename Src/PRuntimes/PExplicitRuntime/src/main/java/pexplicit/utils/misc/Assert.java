@@ -3,6 +3,7 @@ package pexplicit.utils.misc;
 import lombok.Getter;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.LivenessException;
+import pexplicit.values.PString;
 
 public class Assert {
     @Getter
@@ -16,6 +17,10 @@ public class Assert {
             failureMsg = "Property violated: " + msg;
             throw new BugFoundException(failureMsg);
         }
+    }
+
+    public static void fromModel(boolean p, PString msg) {
+        fromModel(p, msg.getValue());
     }
 
     public static void liveness(boolean p, String msg) {

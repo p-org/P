@@ -83,7 +83,9 @@ public class RuntimeExecutor {
     }
 
     private static void postprocess(boolean printStats) {
-        scheduler.updateResult();
+        if (!PExplicitGlobal.getStatus().equals("cex")) {
+            scheduler.updateResult();
+        }
 
         Instant end = Instant.now();
         if (printStats) {

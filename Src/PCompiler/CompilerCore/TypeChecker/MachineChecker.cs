@@ -11,13 +11,34 @@ namespace Plang.Compiler.TypeChecker
 {
     public static class MachineChecker
     {
-        public static void Validate(ITranslationErrorHandler handler, Machine machine)
+        public static void Validate(ITranslationErrorHandler handler, Machine machine, ICompilerConfiguration job)
         {
             var startState = FindStartState(machine, handler);
             var startStatePayloadType = GetStatePayload(startState);
             Debug.Assert(startStatePayloadType.IsSameTypeAs(machine.PayloadType));
             ValidateHandlers(handler, machine);
             ValidateTransitions(handler, machine);
+            // special validation for monitors:
+            // ensure that each eventhandler is in the observe set.
+            ValidateSpecObservesList(handler, machine, job);
+        }
+
+        private static void ValidateSpecObservesList(ITranslationErrorHandler handler, Machine machine, ICompilerConfiguration job)
+        {
+            if (machine.IsSpec)
+            {
+                foreach (var state in machine.AllStates())
+                {
+                    foreach (var pair in state.AllEventHandlers)
+                    {
+                        if (!machine.Observes.Events.Contains(pair.Key))
+                        {
+                            job.Output.WriteWarning(
+                                handler.SpecObservesSetIncompleteWarning(pair.Value.SourceLocation, pair.Key, machine));
+                        }
+                    }
+                }
+            }
         }
 
         private static void ValidateHandlers(ITranslationErrorHandler handler, Machine machine)

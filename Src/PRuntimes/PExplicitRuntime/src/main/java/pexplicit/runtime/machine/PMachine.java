@@ -186,6 +186,25 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     /**
+     * Raise an event
+
+     * @param event Event to raise
+     * @param payload Payload
+     */
+    public void raiseEvent(PEvent event, PValue<?> payload) {
+        processEventToCompletion(new PMessage(event, this, payload));
+    }
+
+    /**
+     * Raise an event
+
+     * @param event Event to raise
+     */
+    public void raiseEvent(PEvent event) {
+        processEventToCompletion(new PMessage(event, this, null));
+    }
+
+    /**
      * Goto a state
      *
      * @param state State to go to

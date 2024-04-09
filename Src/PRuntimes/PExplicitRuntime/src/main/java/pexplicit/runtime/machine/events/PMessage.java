@@ -30,6 +30,10 @@ public class PMessage extends PValue<PMessage> {
         this.payload = payload;
     }
 
+    public PMessage setTarget(PMachine target) {
+        return new PMessage(event, target, payload);
+    }
+
     @Override
     public PMessage clone() {
         return new PMessage(this.event, this.target, this.payload);

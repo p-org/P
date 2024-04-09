@@ -82,9 +82,11 @@ public class PNamedTuple extends PValue<PNamedTuple> {
      * @param val  value to set
      * @throws NamedTupleFieldNameException
      */
-    public void setField(String name, PValue<?> val) throws NamedTupleFieldNameException {
+    public PNamedTuple setField(String name, PValue<?> val) throws NamedTupleFieldNameException {
         if (!values.containsKey(name)) throw new NamedTupleFieldNameException(this, name);
-        values.put(name, val);
+        Map<String, PValue<?>> newValues = new HashMap<>(values);
+        newValues.put(name, val);
+        return new PNamedTuple(newValues);
     }
 
     /**
@@ -96,8 +98,8 @@ public class PNamedTuple extends PValue<PNamedTuple> {
      * @param val  value to set
      * @throws NamedTupleFieldNameException
      */
-    public void setField(PString name, PValue<?> val) throws NamedTupleFieldNameException {
-        setField(name.toString(), val);
+    public PNamedTuple setField(PString name, PValue<?> val) throws NamedTupleFieldNameException {
+        return setField(name.toString(), val);
     }
 
     @Override

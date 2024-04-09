@@ -3,7 +3,7 @@
 
 name: Tutorials
 
-on: [push, pull_request]
+on: #[push, pull_request]
 
 jobs:
   Build-MacOS:

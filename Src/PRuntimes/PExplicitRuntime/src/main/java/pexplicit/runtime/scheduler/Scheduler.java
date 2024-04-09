@@ -203,7 +203,7 @@ public abstract class Scheduler implements SchedulerInterface {
         List<PMonitor> listenersForEvent = PExplicitGlobal.getModel().getListeners().get(message.getEvent());
         if (listenersForEvent != null) {
             for (PMonitor m : listenersForEvent) {
-                m.processEventToCompletion(message);
+                m.processEventToCompletion(message.setTarget(m));
             }
         }
     }

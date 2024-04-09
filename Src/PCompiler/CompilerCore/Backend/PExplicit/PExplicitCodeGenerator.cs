@@ -1658,6 +1658,10 @@ namespace Plang.Compiler.Backend.PExplicit
                     if (isEquality)
                     {
                         context.Write(output, "new PBool(");
+                        if (binOpExpr.Operation == BinOpType.Neq)
+                        {
+                            context.Write(output, "!(");
+                        }
                         WriteExpr(context, output, binOpExpr.Lhs);
                         context.Write(output, ".equals(");
                         {
@@ -1667,12 +1671,10 @@ namespace Plang.Compiler.Backend.PExplicit
                             if (castPrefix != "") context.Write(output, ")");
                         }
                         context.Write(output, ")");
-
                         if (binOpExpr.Operation == BinOpType.Neq)
                         {
-                            context.Write(output, ".not()");
+                            context.Write(output, ")");
                         }
-
                         context.Write(output, ")");
                     }
                     else
@@ -1861,21 +1863,16 @@ namespace Plang.Compiler.Backend.PExplicit
                     }
 
                     WriteExpr(context, output, containsExpr.Collection);
-
-                    if (isMap)
-                        context.Write(output, ".containsKey(");
-                    else
-                        context.Write(output, ".contains(");
-
-                {
-                    var castPrefix = "";
-                    if (elementType != null) {
-                        castPrefix = GetInlineCastPrefix(containsExpr.Item.Type, elementType);
+                    context.Write(output, ".contains(");
+                    {
+                        var castPrefix = "";
+                        if (elementType != null) {
+                            castPrefix = GetInlineCastPrefix(containsExpr.Item.Type, elementType);
+                        }
+                        context.Write(output, castPrefix);
+                        WriteExpr(context, output, containsExpr.Item);
+                        if (castPrefix != "") context.Write(output, ")");
                     }
-                    context.Write(output, castPrefix);
-                    WriteExpr(context, output, containsExpr.Item);
-                    if (castPrefix != "") context.Write(output, ")");
-                }
                     context.Write(output, ")");
                     break;
                 case CtorExpr ctorExpr:
@@ -2091,8 +2088,10 @@ namespace Plang.Compiler.Backend.PExplicit
                     return "PEvent";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return "void";
-                default:
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "PValue<?>";
+                default:
+                    throw new NotImplementedException($"PExplicit type '{type.OriginalRepresentation}' not supported");
             }
         }
 
@@ -2152,8 +2151,10 @@ namespace Plang.Compiler.Backend.PExplicit
                     return $"new {GetPExplicitType(type)}({enumType.EnumDecl.Values.Min(elem => elem.Value)})";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "null";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return "null";
                 default:
-                    return $"new {GetPExplicitType(type)}()";
+                    throw new NotImplementedException($"PExplicit type '{type.OriginalRepresentation}' not supported");
             }
         }
 

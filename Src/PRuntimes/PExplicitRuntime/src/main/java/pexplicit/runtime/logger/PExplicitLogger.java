@@ -14,6 +14,7 @@ import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.values.PEvent;
+import pexplicit.values.PValue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -243,6 +244,30 @@ public class PExplicitLogger {
             String msg =
                     String.format("Machine %s transitioning to state %s", machine, newState);
             log.info(msg);
+        }
+    }
+
+    public static void logRepeatScheduleChoice(PMachine choice, int step, int idx) {
+        if (verbosity > 1) {
+            log.info(String.format("  @%d::%d %s (repeat)", step, idx, choice));
+        }
+    }
+
+    public static void logCurrentScheduleChoice(PMachine choice, int step, int idx) {
+        if (verbosity > 1) {
+            log.info(String.format("  @%d::%d %s", step, idx, choice));
+        }
+    }
+
+    public static void logRepeatDataChoice(PValue<?> choice, int step, int idx) {
+        if (verbosity > 1) {
+            log.info(String.format("  @%d::%d %s (repeat)", step, idx, choice));
+        }
+    }
+
+    public static void logCurrentDataChoice(PValue<?> choice, int step, int idx) {
+        if (verbosity > 1) {
+            log.info(String.format("  @%d::%d %s", step, idx, choice));
         }
     }
 

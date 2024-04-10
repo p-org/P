@@ -1,12 +1,13 @@
 package pexplicit.values.exceptions;
 
+import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.values.PValue;
 
 /**
  * Thrown when trying to compare two incompatible PValues.
  */
-public class ComparingPValuesException extends PExplicitRuntimeException {
+public class ComparingPValuesException extends BugFoundException {
     /**
      * Constructor.
      */

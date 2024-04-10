@@ -1,12 +1,13 @@
 package pexplicit.values.exceptions;
 
+import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.values.PNamedTuple;
 
 /**
  * Exception to capture the invalid field access for NamedTuples
  */
-public class NamedTupleFieldNameException extends PExplicitRuntimeException {
+public class NamedTupleFieldNameException extends BugFoundException {
 
     /**
      * Constructor for the exception

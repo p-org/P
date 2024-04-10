@@ -116,11 +116,8 @@ public abstract class State implements Serializable {
             // execute the event handler
             handler.handleEvent(machine, msg.getPayload());
             done = true;
-        }
-
-        // check if halt event
-        if (msg.getEvent().isHaltMachineEvent()) {
-            // execute the event handler
+        } else if (msg.getEvent().isHaltMachineEvent()) {
+            // halt the machine
             machine.halt();
             done = true;
         }

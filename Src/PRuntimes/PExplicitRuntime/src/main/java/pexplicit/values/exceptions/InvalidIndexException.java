@@ -1,5 +1,6 @@
 package pexplicit.values.exceptions;
 
+import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.values.PSeq;
 import pexplicit.values.PSet;
@@ -7,7 +8,7 @@ import pexplicit.values.PSet;
 /**
  * Thrown when trying to index into a PSeq/PSet with an invalid index.
  */
-public class InvalidIndexException extends PExplicitRuntimeException {
+public class InvalidIndexException extends BugFoundException {
     /**
      * Constructs a new InvalidIndexException with the specified message.
      */

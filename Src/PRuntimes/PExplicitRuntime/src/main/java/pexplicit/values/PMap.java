@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Represents the PValue for P map
  */
-public class PMap<K extends PValue<K>, V extends PValue<V>> extends PCollection<K> {
+public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<K, V>> implements PCollection<K> {
     private final Map<K, V> map;
 
     /**

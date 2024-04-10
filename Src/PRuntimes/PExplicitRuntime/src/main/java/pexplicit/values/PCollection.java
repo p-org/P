@@ -3,7 +3,7 @@ package pexplicit.values;
 /**
  * Represents the base class for PValues that are collections.
  */
-public abstract class PCollection<T> extends PValue<PCollection<T>> {
+public interface PCollection<T> {
     /**
      * Get the size of the collection.
      *

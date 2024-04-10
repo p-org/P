@@ -22,7 +22,7 @@ public class PString extends PValue<PString> {
      */
     public PString(String base, PValue<?> ... args) {
         this.base = base;
-        if (args.length == 0) {
+        if (args == null || args.length == 0) {
             this.args = null;
             this.value = base;
         } else {

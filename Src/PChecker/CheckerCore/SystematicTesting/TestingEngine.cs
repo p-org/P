@@ -1032,8 +1032,8 @@ namespace PChecker.SystematicTesting
                     // {
                     //     Logger.WriteLine($"... New timeline observed: {runtime.TimelineObserver.GetTimeline()}");
                     // }
-                    TryEmitTimeline(runtime.TimelineObserver);
-                    ShouldEmitTrace = true;
+                    // TryEmitTimeline(runtime.TimelineObserver);
+                    // ShouldEmitTrace = true;
                 }
                 // Also save the graph snapshot of the last iteration, if there is one.
                 Graph = coverageInfo.CoverageGraph;

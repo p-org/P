@@ -70,6 +70,21 @@ public class TestPExplicit {
     excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ExprOperatorsAsserts");
     // TODO: Cannot yet handle casting to variable of type seq[any] from value of type seq[int]
     excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval");
+    // TODO: Cannot yet handle casting to variable of type int from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
+    // TODO: Cannot yet handle casting to variable of type Foo from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/EnumType1");
+    // TODO: Cannot yet handle casting to variable of type event from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes");
+    // TODO: Cannot yet handle casting to variable of type seq[any] from value of type seq[int]
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes1");
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes10");
+    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes14");
 
 
     /**

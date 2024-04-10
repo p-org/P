@@ -7,6 +7,7 @@ import lombok.Getter;
  */
 @Getter
 public class PEnum extends PValue<PEnum> {
+    private final String type;
     private final String name;
     private final int value;
 
@@ -16,9 +17,10 @@ public class PEnum extends PValue<PEnum> {
      * @param name Name of the enum
      * @param val  integer value
      */
-    public PEnum(String name, int val) {
+    public PEnum(String type, String name, int val) {
+        this.type = type;
         this.name = name;
-        value = val;
+        this.value = val;
     }
 
     /**
@@ -27,8 +29,17 @@ public class PEnum extends PValue<PEnum> {
      * @param val PEnum value to copy from
      */
     public PEnum(PEnum val) {
+        type = val.type;
         name = val.name;
         value = val.value;
+    }
+
+    /**
+     * Convert to a PInt
+     * @return PInt object
+     */
+    public PInt toInt() {
+        return new PInt((int) value);
     }
 
     @Override
@@ -38,7 +49,7 @@ public class PEnum extends PValue<PEnum> {
 
     @Override
     public int hashCode() {
-        return name.hashCode() ^ Long.hashCode(value);
+        return Long.hashCode(value);
     }
 
     @Override
@@ -47,7 +58,7 @@ public class PEnum extends PValue<PEnum> {
         else if (!(obj instanceof PEnum)) {
             return false;
         }
-        return this.value == ((PEnum) obj).value && this.name.equals(((PEnum) obj).name);
+        return this.value == ((PEnum) obj).value;
     }
 
     @Override

@@ -317,7 +317,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             return;
         }
 
-        PMessage msg = new PMessage(event, this, null);
+        PMessage msg = new PMessage(event, this, payload);
 
         // do nothing if event is ignored in current state
         if (currentState.isIgnored(msg.getEvent())) {

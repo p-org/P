@@ -1692,13 +1692,17 @@ namespace Plang.Compiler.Backend.PExplicit
 
                     if (isEquality)
                     {
-                        context.Write(output, "new PBool(");
-                        if (binOpExpr.Operation == BinOpType.Neq)
+                        context.Write(output, "new PBool(PValue.");
+                        if (binOpExpr.Operation == BinOpType.Eq)
                         {
-                            context.Write(output, "!(");
+                            context.Write(output, "isEqual(");
+                        }
+                        else
+                        {
+                            context.Write(output, "notEqual(");
                         }
                         WriteExpr(context, output, binOpExpr.Lhs);
-                        context.Write(output, ".equals(");
+                        context.Write(output, ", ");
                         {
                             var castPrefix = GetInlineCastPrefix(binOpExpr.Rhs.Type, binOpExpr.Lhs.Type);
                             context.Write(output, castPrefix);
@@ -1706,10 +1710,6 @@ namespace Plang.Compiler.Backend.PExplicit
                             if (castPrefix != "") context.Write(output, ")");
                         }
                         context.Write(output, ")");
-                        if (binOpExpr.Operation == BinOpType.Neq)
-                        {
-                            context.Write(output, ")");
-                        }
                         context.Write(output, ")");
                     }
                     else
@@ -1875,7 +1875,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
                 {
-                    var unguarded = $"new { GetPExplicitType(PrimitiveType.Int) }({enumElemRefExpr.Value.Value} /* enum {enumElemRefExpr.Type.OriginalRepresentation} elem {enumElemRefExpr.Value.Name} */)";
+                    var unguarded = $"new { GetPExplicitType(enumElemRefExpr.Type) }(\"{enumElemRefExpr.Type.OriginalRepresentation}\", \"{enumElemRefExpr.Value.Name}\", {enumElemRefExpr.Value.Value})";
                     context.Write(output, unguarded);
                     break;
                 }
@@ -2124,7 +2124,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 case TupleType _:
                     return "PTuple";
                 case EnumType enumType:
-                    return $"PInt /* enum {enumType.OriginalRepresentation} */";
+                    return $"PEnum";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "PEvent";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
@@ -2193,7 +2193,19 @@ namespace Plang.Compiler.Backend.PExplicit
                     return $"new {GetPExplicitType(type)}({string.Join(", ", allFieldDefaults)})";
                 }
                 case EnumType enumType:
-                    return $"new {GetPExplicitType(type)}({enumType.EnumDecl.Values.Min(elem => elem.Value)})";
+                {
+                    int minValue = -1;
+                    string minName = "";
+                    foreach (var val in  enumType.EnumDecl.Values)
+                    {
+                        if (minName == "" || val.Value < minValue)
+                        {
+                            minName = val.Name;
+                            minValue = val.Value;
+                        }
+                    }
+                    return $"new {GetPExplicitType(type)}(\"{enumType.OriginalRepresentation}\", \"{minName}\", {minValue})";
+                }
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "null";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):

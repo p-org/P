@@ -30,11 +30,22 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
      * @param val2 second PValue
      * @return true if the two values are equal and false otherwise
      */
-    static boolean notEqual(PValue<?> val1, PValue<?> val2) {
+    public static boolean isEqual(PValue<?> val1, PValue<?> val2) {
         if (val1 == null) {
-            return val2 != null;
+            return val2 == null;
         }
-        return !val1.equals(val2);
+        return val1.equals(val2);
+    }
+
+    /**
+     * Checks whether two PValues are not equal
+     *
+     * @param val1 first PValue
+     * @param val2 second PValue
+     * @return true if the two values are not equal and false otherwise
+     */
+    public static boolean notEqual(PValue<?> val1, PValue<?> val2) {
+        return !isEqual(val1, val2);
     }
 
     /**

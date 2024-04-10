@@ -72,6 +72,14 @@ public class PBool extends PValue<PBool> {
         return new PBool(value || val.value);
     }
 
+    /**
+     * Convert to a PInt
+     * @return PInt object
+     */
+    public PInt toInt() {
+        return new PInt(value?1:0);
+    }
+
     @Override
     public PBool clone() {
         return new PBool(value);

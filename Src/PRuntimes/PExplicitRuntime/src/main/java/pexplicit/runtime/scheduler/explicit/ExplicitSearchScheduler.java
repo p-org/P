@@ -146,6 +146,9 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     // process message
     msg.getTarget().processEventToCompletion(msg);
+
+    // update done stepping flag
+    isDoneStepping = (schedule.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
   }
 
   /**
@@ -170,6 +173,8 @@ public class ExplicitSearchScheduler extends Scheduler {
     if (schedule.getChoiceNumber() < backtrackChoiceNumber) {
       // pick the current schedule choice
       result = schedule.getCurrentScheduleChoice(schedule.getChoiceNumber());
+      PExplicitLogger.logRepeatScheduleChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
+
       schedule.setChoiceNumber(schedule.getChoiceNumber()+1);
       return result;
     }
@@ -190,6 +195,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     // pick the first choice
     result = choices.get(0);
     schedule.setCurrentScheduleChoice(result, schedule.getChoiceNumber());
+    PExplicitLogger.logCurrentScheduleChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
 
     // remove the first choice from unexplored choices
     choices.remove(0);
@@ -215,6 +221,8 @@ public class ExplicitSearchScheduler extends Scheduler {
       // pick the current data choice
       result = schedule.getCurrentDataChoice(schedule.getChoiceNumber());
       assert (input_choices.contains(result));
+      PExplicitLogger.logRepeatDataChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
+
       schedule.setChoiceNumber(schedule.getChoiceNumber()+1);
       return result;
     }
@@ -236,6 +244,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     // pick the first choice
     result = choices.get(0);
     schedule.setCurrentDataChoice(result, schedule.getChoiceNumber());
+    PExplicitLogger.logCurrentDataChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
 
     // remove the first choice from unexplored choices
     choices.remove(0);

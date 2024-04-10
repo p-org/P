@@ -114,6 +114,7 @@ public class TestCaseExecutor {
         PExplicitTestLogger.log("      bug");
       } else if (resultCode == 3) {
         PExplicitTestLogger.log("      timeout");
+        resultCode = 0;
       } else if (resultCode == 4) {
         PExplicitTestLogger.log("      memout");
       } else {

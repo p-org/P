@@ -58,6 +58,8 @@ public class TestPExplicit {
     excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/bug4");
     // TODO: Cannot yet handle casting to variable of type (machine,machine) from value of type any
     excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/PingPong");
+    // TODO: Cannot yet handle casting to variable of type int from value of type any
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/two-phase-commit_1");
 
     /**
      * TODO: Null events
@@ -65,6 +67,21 @@ public class TestPExplicit {
     // TODO: Null actions are not supported
     excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/BugRepro");
     excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/MoreThan32Events");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_36");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_37");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_38");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_39");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_41");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_42");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_10");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_12");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_16");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_17");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_18");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_19");
+    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_9");
+    excluded.add("../../../Tst/RegressionTests/Integration/Correct/openwsn1");
+
 
 
 

@@ -2,6 +2,8 @@ package pexplicit.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
+import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.values.PValue;
 

@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * Represents the PValue for P set
  */
-public class PSet<T extends PValue<T>> extends PCollection<T> {
+public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PCollection<T> {
     private final List<T> entries;
     private final Set<T> unique_entries;
 

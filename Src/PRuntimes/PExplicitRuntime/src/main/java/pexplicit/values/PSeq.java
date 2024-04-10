@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Represents the PValue for P list/sequence
  */
-public class PSeq<T extends PValue<T>> extends PCollection<T> {
+public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PCollection<T> {
     private final List<T> seq;
 
     /**

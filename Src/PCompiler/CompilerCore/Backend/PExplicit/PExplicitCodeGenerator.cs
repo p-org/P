@@ -604,7 +604,7 @@ namespace Plang.Compiler.Backend.PExplicit
             {
                 if (i > 0)
                     context.WriteLine(output, ",");
-                string foreignType = GetForeignBoxedType(param.Type);
+                string foreignType = GetType(param.Type);
                 if (foreignType == "Object") {
                     context.Write(output, $"args.get({i})");
                 } else {
@@ -2019,7 +2019,7 @@ namespace Plang.Compiler.Backend.PExplicit
             }
         }
 
-        private string GetForeignBoxedType(PLanguageType type)
+        private string GetType(PLanguageType type)
         {
             switch (type.Canonicalize())
             {
@@ -2048,8 +2048,12 @@ namespace Plang.Compiler.Backend.PExplicit
                     return "PTuple";
                 case EnumType _:
                     return "PEnum";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
+                    return "void";
+                case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                    return "PValue<?>";
                 default:
-                    return "Object";
+                    throw new NotImplementedException($"PExplicit type '{type.OriginalRepresentation}' not supported");
             }
         }
 

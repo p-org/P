@@ -186,25 +186,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     /**
-     * Raise an event
-
-     * @param event Event to raise
-     * @param payload Payload
-     */
-    public void raiseEvent(PEvent event, PValue<?> payload) {
-        processEventToCompletion(new PMessage(event, this, payload));
-    }
-
-    /**
-     * Raise an event
-
-     * @param event Event to raise
-     */
-    public void raiseEvent(PEvent event) {
-        processEventToCompletion(new PMessage(event, this, null));
-    }
-
-    /**
      * Goto a state
      *
      * @param state State to go to
@@ -296,12 +277,20 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param message Message to process
      */
     void processEvent(PMessage message) {
-        PExplicitLogger.logEvent(message);
         if (isDeferred(message.getEvent())) {
             deferQueue.add(message);
             return;
         }
 
+        runEvent(message);
+    }
+
+    /**
+     * Run an event at the current state.
+     * @param message Message to process
+     */
+    void runEvent(PMessage message) {
+        PExplicitLogger.logEvent(message);
         if (isBlocked()) {
             PContinuation currBlockedBy = this.blockedBy;
             clearBlocked();
@@ -314,6 +303,40 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         } else {
             currentState.handleEvent(message, this);
         }
+    }
+
+    /**
+     * Raise an event
+
+     * @param event Event to raise
+     * @param payload Payload
+     */
+    public void raiseEvent(PEvent event, PValue<?> payload) {
+        // do nothing if already halted
+        if (isHalted()) {
+            return;
+        }
+
+        PMessage msg = new PMessage(event, this, null);
+
+        // do nothing if event is ignored in current state
+        if (currentState.isIgnored(msg.getEvent())) {
+            return;
+        }
+
+        // run the event (even if deferred)
+        runEvent(msg);
+
+        runDeferredEvents();
+    }
+
+    /**
+     * Raise an event
+
+     * @param event Event to raise
+     */
+    public void raiseEvent(PEvent event) {
+        raiseEvent(event, null);
     }
 
     /**

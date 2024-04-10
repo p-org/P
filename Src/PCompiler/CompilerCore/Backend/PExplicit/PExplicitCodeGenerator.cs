@@ -563,7 +563,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 return new ControlFlowContext();
             }
 
-            internal static ControlFlowContext FreshLoopContext(CompilationContext context)
+            internal ControlFlowContext FreshLoopContext(CompilationContext context)
             {
                 return new ControlFlowContext();
             }
@@ -707,12 +707,14 @@ namespace Plang.Compiler.Backend.PExplicit
             }
         }
 
-        private void WriteStmt(Function function, CompilationContext context, StringWriter output, ControlFlowContext flowContext, IPStmt stmt)
+        private bool WriteStmt(Function function, CompilationContext context, StringWriter output, ControlFlowContext flowContext, IPStmt stmt)
         {
+            var exited = false;
+
             if (TryGetCallInAssignment(stmt) is { } callExpr)
             {
                 WriteFunCallStmt(context, output, callExpr.Function, callExpr.Arguments, dest: (stmt as AssignStmt)?.Location);
-                return;
+                return false;
             }
 
             switch (stmt)
@@ -789,7 +791,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     {
                         context.Write(output, "return;");
                     }
-
+                    exited = true;
                     break;
 
                 case GotoStmt gotoStmt:
@@ -805,6 +807,12 @@ namespace Plang.Compiler.Backend.PExplicit
                     }
                     context.WriteLine(output, ");");
 
+                    if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                        context.WriteLine(output, "return;");
+                    } else {
+                        context.WriteLine(output, "return null;");
+                    }
+                    exited = true;
                     break;
 
                 case RaiseStmt raiseStmt:
@@ -822,6 +830,12 @@ namespace Plang.Compiler.Backend.PExplicit
                     }
                     context.WriteLine(output, ");");
 
+                    if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+                        context.WriteLine(output, "return;");
+                    } else {
+                        context.WriteLine(output, "return null;");
+                    }
+                    exited = true;
                     break;
 
                 case PrintStmt printStmt:
@@ -837,8 +851,13 @@ namespace Plang.Compiler.Backend.PExplicit
                 case CompoundStmt compoundStmt:
                     foreach (var subStmt in compoundStmt.Statements)
                     {
-                        WriteStmt(function, context, output, flowContext, subStmt);
+                        exited |= WriteStmt(function, context, output, flowContext, subStmt);
                         context.WriteLine(output);
+
+                        if (exited)
+                        {
+                            break;
+                        }
                     }
                     break;
 
@@ -848,11 +867,11 @@ namespace Plang.Compiler.Backend.PExplicit
                         throw new ArgumentOutOfRangeException("While statement condition should always be transformed to constant 'true' during IR simplification.");
                     }
 
-                    var loopContext = ControlFlowContext.FreshLoopContext(context);
+                    var loopContext = flowContext.FreshLoopContext(context);
 
                     /* Loop body */
                     context.WriteLine(output, $"while (true) {{");
-                    WriteStmt(function, context, output, loopContext, whileStmt.Body);
+                    exited = WriteStmt(function, context, output, loopContext, whileStmt.Body);
                     context.WriteLine(output, "}");
 
                     break;
@@ -873,14 +892,14 @@ namespace Plang.Compiler.Backend.PExplicit
 
                     context.WriteLine(output, $"if ({condTemp}.getValue()) {{");
                     context.WriteLine(output, "// 'then' branch");
-                    WriteStmt(function, context, output, thenContext, ifStmt.ThenBranch);
+                    exited = WriteStmt(function, context, output, thenContext, ifStmt.ThenBranch);
                     context.WriteLine(output, "}");
 
                     if (!(ifStmt.ElseBranch is null))
                     {
                         context.WriteLine(output, $"else {{");
                         context.WriteLine(output, "// 'else' branch");
-                        WriteStmt(function, context, output, elseContext, ifStmt.ElseBranch);
+                        exited &= WriteStmt(function, context, output, elseContext, ifStmt.ElseBranch);
                         context.WriteLine(output, "}");
                     }
 
@@ -1029,6 +1048,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 default:
                     throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported, found in {function.Name}");
             }
+            return exited;
         }
 
         private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)

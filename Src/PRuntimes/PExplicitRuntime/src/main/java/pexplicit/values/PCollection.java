@@ -3,7 +3,7 @@ package pexplicit.values;
 /**
  * Represents the base class for PValues that are collections.
  */
-public interface PCollection<T> {
+public interface PCollection {
     /**
      * Get the size of the collection.
      *
@@ -17,5 +17,5 @@ public interface PCollection<T> {
      * @param item item to check for.
      * @return true if the collection contains the item, otherwise false
      */
-    public abstract PBool contains(T item);
+    public abstract PBool contains(PValue<?> item);
 }

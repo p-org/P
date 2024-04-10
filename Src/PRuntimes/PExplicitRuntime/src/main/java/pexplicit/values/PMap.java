@@ -2,25 +2,22 @@ package pexplicit.values;
 
 import pexplicit.values.exceptions.KeyNotFoundException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Represents the PValue for P map
  */
-public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<K, V>> implements PCollection<K> {
-    private final Map<K, V> map;
+public class PMap extends PValue<PMap> implements PCollection {
+    private final Map<PValue<?>, PValue<?>> map;
 
     /**
      * Constructor
      *
      * @param input_map input map to set to
      */
-    public PMap(Map<K, V> input_map) {
+    public PMap(Map<PValue<?>, PValue<?>> input_map) {
         map = new HashMap<>();
-        for (Map.Entry<K, V> entry : input_map.entrySet()) {
+        for (Map.Entry<PValue<?>, PValue<?>> entry : input_map.entrySet()) {
             map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
         }
     }
@@ -30,7 +27,7 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<
      *
      * @param other Value to copy from
      */
-    public PMap(PMap<K, V> other) {
+    public PMap(PMap other) {
         this(other.map);
     }
 
@@ -48,7 +45,7 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<
      * @return value corresponding to the key
      * @throws KeyNotFoundException
      */
-    public V get(K key) throws KeyNotFoundException {
+    public PValue<?> get(PValue<?> key) throws KeyNotFoundException {
         if (!map.containsKey(key)) throw new KeyNotFoundException(key, (Map<PValue<?>, PValue<?>>) map);
         return map.get(key);
     }
@@ -59,8 +56,8 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<
      * @param key input key
      * @param val value to set
      */
-    public PMap<K, V> put(K key, V val) {
-        Map<K, V> newMap = new HashMap<>(map);
+    public PMap put(PValue<?> key, PValue<?> val) {
+        Map<PValue<?>, PValue<?>> newMap = new HashMap<>(map);
         newMap.put(key, val);
         return new PMap(newMap);
     }
@@ -71,7 +68,7 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<
      * @param key input key
      * @param val value to set
      */
-    public PMap<K, V> add(K key, V val) {
+    public PMap add(PValue<?> key, PValue<?> val) {
         return put(key, val);
     }
 
@@ -80,11 +77,11 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<
      *
      * @param key input key
      */
-    public PMap<K, V> remove(K key) {
+    public PMap remove(PValue<?> key) {
         if (!map.containsKey(key)) {
             return this;
         }
-        Map<K, V> newMap = new HashMap<>(map);
+        Map<PValue<?>, PValue<?>> newMap = new HashMap<>(map);
         newMap.remove(key);
         return new PMap(newMap);
     }
@@ -94,8 +91,17 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<
      *
      * @return List of keys as a PSeq object
      */
-    public PSeq<K> getKeys() {
+    public PSeq getKeys() {
         return new PSeq(new ArrayList<>(map.keySet()));
+    }
+
+    /**
+     * Convert the PMap to a List of PValues representing map keys.
+     *
+     * @return List of PValues corresponding to the PMap keys.
+     */
+    public List<PValue<?>> toList() {
+        return new ArrayList<>(map.keySet());
     }
 
     /**
@@ -113,12 +119,12 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<
      * @param item item to check for.
      * @return true if key is present, false otherwise
      */
-    public PBool contains(K item) {
+    public PBool contains(PValue<?> item) {
         return new PBool(map.containsKey(item));
     }
 
     @Override
-    public PMap<K, V> clone() {
+    public PMap clone() {
         return new PMap(map);
     }
 
@@ -153,7 +159,7 @@ public class PMap<K extends PValue<K>, V extends PValue<V>> extends PValue<PMap<
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         boolean hadElements = false;
-        for (K key : map.keySet()) {
+        for (PValue<?> key : map.keySet()) {
             if (hadElements) {
                 sb.append(", ");
             }

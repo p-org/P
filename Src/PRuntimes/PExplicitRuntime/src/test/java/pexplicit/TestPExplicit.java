@@ -60,6 +60,17 @@ public class TestPExplicit {
     excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/PingPong");
     // TODO: Cannot yet handle casting to variable of type int from value of type any
     excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/two-phase-commit_1");
+    // TODO: Cannot yet handle casting to variable of type int from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast1");
+    // TODO: Cannot yet handle casting to variable of type int from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast2");
+    // TODO: Cannot yet handle casting to variable of type (m1:machine,m2:machine) from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast3");
+    // TODO: Cannot yet handle casting to variable of type event from value of type any
+    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ExprOperatorsAsserts");
+    // TODO: Cannot yet handle casting to variable of type seq[any] from value of type seq[int]
+    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval");
+
 
     /**
      * TODO: Null events

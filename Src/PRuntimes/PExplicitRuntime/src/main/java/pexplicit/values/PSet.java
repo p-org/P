@@ -8,16 +8,16 @@ import java.util.*;
 /**
  * Represents the PValue for P set
  */
-public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PCollection<T> {
-    private final List<T> entries;
-    private final Set<T> unique_entries;
+public class PSet extends PValue<PSet> implements PCollection {
+    private final List<PValue<?>> entries;
+    private final Set<PValue<?>> unique_entries;
 
     /**
      * Constructor
      *
      * @param input_set the list of PValues to be added in this PSet.
      */
-    public PSet(List<T> input_set) {
+    public PSet(List<PValue<?>> input_set) {
         entries = new ArrayList<>(input_set);
         unique_entries = new HashSet<>(input_set);
     }
@@ -27,7 +27,7 @@ public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PColle
      *
      * @param other value to copy from.
      */
-    public PSet(PSet<T> other) {
+    public PSet(PSet other) {
         this(other.entries);
     }
 
@@ -45,7 +45,7 @@ public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PColle
      * @return value at the index.
      * @throws InvalidIndexException
      */
-    public T get(PInt index) throws InvalidIndexException {
+    public PValue<?> get(PInt index) throws InvalidIndexException {
         if (index.getValue() >= entries.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
         return entries.get(index.getValue());
     }
@@ -57,7 +57,7 @@ public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PColle
      * @param val
      * @throws PExplicitRuntimeException
      */
-    public PSet<T> set(PInt index, T val) throws PExplicitRuntimeException {
+    public PSet set(PInt index, PValue<?> val) throws PExplicitRuntimeException {
         throw new PExplicitRuntimeException("Set value of a set is not allowed!");
     }
 
@@ -66,13 +66,13 @@ public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PColle
      *
      * @param val Value to insert at.
      */
-    public PSet<T> add(T val) {
+    public PSet add(PValue<?> val) {
         if (unique_entries.contains(val)) {
             return this;
         }
-        List<T> newEntries = new ArrayList<>(entries);
+        List<PValue<?>> newEntries = new ArrayList<>(entries);
         newEntries.add(val);
-        return new PSet<>(newEntries);
+        return new PSet(newEntries);
     }
 
     /**
@@ -80,13 +80,13 @@ public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PColle
      *
      * @param val Value to remove.
      */
-    public PSet<T> remove(T val) {
+    public PSet remove(PValue<?> val) {
         if (!unique_entries.contains(val)) {
             return this;
         }
-        List<T> newEntries = new ArrayList<>(entries);
+        List<PValue<?>> newEntries = new ArrayList<>(entries);
         newEntries.remove(val);
-        return new PSet<>(newEntries);
+        return new PSet(newEntries);
     }
 
     /**
@@ -94,12 +94,12 @@ public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PColle
      *
      * @return List of values
      */
-    public List<T> toList() {
-        return entries;
+    public List<PValue<?>> toList() {
+        return new ArrayList<>(entries);
     }
 
     @Override
-    public PSet<T> clone() {
+    public PSet clone() {
         return new PSet(entries);
     }
 
@@ -134,7 +134,7 @@ public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PColle
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         String sep = "";
-        for (T item : entries) {
+        for (PValue<?> item : entries) {
             sb.append(sep);
             sb.append(item);
             sep = ", ";
@@ -149,7 +149,7 @@ public class PSet<T extends PValue<T>> extends PValue<PSet<T>> implements PColle
     }
 
     @Override
-    public PBool contains(T item) {
+    public PBool contains(PValue<?> item) {
         return new PBool(unique_entries.contains(item));
     }
 }

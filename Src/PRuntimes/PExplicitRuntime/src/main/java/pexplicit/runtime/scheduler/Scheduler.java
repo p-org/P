@@ -85,7 +85,11 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     public PInt getRandomInt(PInt bound) {
         List<PValue<?>> choices = new ArrayList<>();
-        for (int i = 0; i < bound.getValue(); i++) {
+        int boundInt = bound.getValue();
+        if (boundInt == 0) {
+            boundInt = 1;
+        }
+        for (int i = 0; i < boundInt; i++) {
             choices.add(new PInt(i));
         }
         return (PInt) getNextDataChoice(choices);
@@ -128,7 +132,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * @return data choice
      */
     public PValue<?> getRandomEntry(PMap map) {
-        return getRandomEntry(map.getKeys().toList());
+        return getRandomEntry(map.toList());
     }
 
     /**

@@ -9,17 +9,17 @@ import java.util.List;
 /**
  * Represents the PValue for P list/sequence
  */
-public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PCollection<T> {
-    private final List<T> seq;
+public class PSeq extends PValue<PSeq> implements PCollection {
+    private final List<PValue<?>> seq;
 
     /**
      * Constructor
      *
      * @param input_seq list of elements
      */
-    public PSeq(List<T> input_seq) {
+    public PSeq(List<PValue<?>> input_seq) {
         seq = new ArrayList<>();
-        for (T entry : input_seq) {
+        for (PValue<?> entry : input_seq) {
             seq.add(PValue.clone(entry));
         }
     }
@@ -29,7 +29,7 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
      *
      * @param other Value to copy from.
      */
-    public PSeq(PSeq<T> other) {
+    public PSeq(PSeq other) {
         this(other.seq);
     }
 
@@ -47,7 +47,7 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
      * @return value at the index
      * @throws InvalidIndexException
      */
-    public T get(PInt index) throws InvalidIndexException {
+    public PValue<?> get(PInt index) throws InvalidIndexException {
         if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
         return seq.get(index.getValue());
     }
@@ -59,11 +59,11 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
      * @param val   value to set to
      * @throws InvalidIndexException
      */
-    public PSeq<T> set(PInt index, T val) throws InvalidIndexException {
+    public PSeq set(PInt index, PValue<?> val) throws InvalidIndexException {
         if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
-        List<T> newSeq = new ArrayList<>(seq);
+        List<PValue<?>> newSeq = new ArrayList<>(seq);
         newSeq.set(index.getValue(), val);
-        return new PSeq<>(newSeq);
+        return new PSeq(newSeq);
     }
 
     /**
@@ -73,11 +73,11 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
      * @param val   value to insert at the index.
      * @throws InvalidIndexException
      */
-    public PSeq<T> add(PInt index, T val) throws InvalidIndexException {
+    public PSeq add(PInt index, PValue<?> val) throws InvalidIndexException {
         if (index.getValue() > seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
-        List<T> newSeq = new ArrayList<>(seq);
+        List newSeq = new ArrayList<>(seq);
         newSeq.add(index.getValue(), val);
-        return new PSeq<>(newSeq);
+        return new PSeq(newSeq);
     }
 
     /**
@@ -86,11 +86,11 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
      * @param index index to remove the value at.
      * @throws InvalidIndexException
      */
-    public PSeq<T> removeAt(PInt index) throws InvalidIndexException {
+    public PSeq removeAt(PInt index) throws InvalidIndexException {
         if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
-        List<T> newSeq = new ArrayList<>(seq);
+        List newSeq = new ArrayList<>(seq);
         newSeq.remove(index.getValue());
-        return new PSeq<>(newSeq);
+        return new PSeq(newSeq);
     }
 
     /**
@@ -98,12 +98,12 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
      *
      * @return List of PValues corresponding to the PSeq.
      */
-    public List<T> toList() {
-        return seq;
+    public List<PValue<?>> toList() {
+        return new ArrayList<>(seq);
     }
 
     @Override
-    public PSeq<T> clone() {
+    public PSeq clone() {
         return new PSeq(seq);
     }
 
@@ -120,7 +120,7 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
             return false;
         }
 
-        PSeq<T> other = (PSeq) obj;
+        PSeq other = (PSeq) obj;
         if (seq.size() != other.seq.size()) {
             return false;
         }
@@ -138,7 +138,7 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         String sep = "";
-        for (T item : seq) {
+        for (PValue<?> item : seq) {
             sb.append(sep);
             sb.append(item);
             sep = ", ";
@@ -153,7 +153,7 @@ public class PSeq<T extends PValue<T>> extends PValue<PSeq<T>> implements PColle
     }
 
     @Override
-    public PBool contains(T item) {
+    public PBool contains(PValue<?> item) {
         return new PBool(seq.contains(item));
     }
 }

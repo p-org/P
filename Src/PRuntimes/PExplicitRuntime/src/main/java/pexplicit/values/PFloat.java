@@ -129,6 +129,14 @@ public class PFloat extends PValue<PFloat> {
         return new PBool(value >= val.value);
     }
 
+    /**
+     * Convert to a PInt
+     * @return PInt object
+     */
+    public PInt toInt() {
+        return new PInt((int) value);
+    }
+
 
     @Override
     public PFloat clone() {

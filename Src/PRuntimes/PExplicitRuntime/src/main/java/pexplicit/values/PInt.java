@@ -120,6 +120,14 @@ public class PInt extends PValue<PInt> {
     }
 
     /**
+     * Convert to a PFloat
+     * @return PFloat object
+     */
+    public PFloat toFloat() {
+        return new PFloat(value);
+    }
+
+    /**
      * Greater than or equal to operation
      * @param val value to compare to
      * @return PBool object after operation

@@ -604,7 +604,7 @@ namespace Plang.Compiler.Backend.PExplicit
             {
                 if (i > 0)
                     context.WriteLine(output, ",");
-                string foreignType = GetType(param.Type);
+                string foreignType = GetForeignType(param.Type);
                 if (foreignType == "Object") {
                     context.Write(output, $"args.get({i})");
                 } else {
@@ -670,17 +670,26 @@ namespace Plang.Compiler.Backend.PExplicit
                 context.WriteLine(output);
             }
 
-            if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
+            if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            {
                 context.WriteLine(output, $"{GetPExplicitType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = new {GetPExplicitType(function.Signature.ReturnType)}({GetDefaultValue(function.Signature.ReturnType)});");
             }
 
+            bool exited = false;
             if (function is WhileFunction)
             {
                 /* Loop body */
-                WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
+                exited = WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
             } else
             {
-                WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
+                exited = WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
+            }
+            if (!exited)
+            {
+                if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+                {
+                    context.Write(output, $"return {CompilationContext.ReturnValue};");
+                }
             }
         }
 
@@ -1092,6 +1101,8 @@ namespace Plang.Compiler.Backend.PExplicit
 
             context.WriteLine(output, $"switch ({messageName}.getEvent().toString())");
             context.WriteLine(output, "{");
+
+            bool allCasesExited = true;
             foreach (var (caseEvent, caseFun) in continuation.Cases)
             {
                 context.WriteLine(output, $"case \"{caseEvent.Name}\":");
@@ -1118,7 +1129,7 @@ namespace Plang.Compiler.Backend.PExplicit
                         context.WriteLine(output, $"{GetPExplicitType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(local.Type)};");
                     }
                 }
-                WriteStmt(continuation, context, output, caseContext, caseFun.Body);
+                allCasesExited &= WriteStmt(continuation, context, output, caseContext, caseFun.Body);
                 context.WriteLine(output, "}");
                 context.WriteLine(output, "break;");
             }
@@ -1127,7 +1138,7 @@ namespace Plang.Compiler.Backend.PExplicit
             context.WriteLine(output, "Assert.fromModel(false, \"Unexpected event received in a continuation.\");");
             context.WriteLine(output, "}");
             context.WriteLine(output, "}");
-            if (continuation.After != null)
+            if (continuation.After != null && !allCasesExited)
             {
                 var afterCaseContext = ControlFlowContext.FreshFuncContext(context);
                 WriteStmt(continuation, context, output, afterCaseContext, continuation.After);
@@ -1204,7 +1215,7 @@ namespace Plang.Compiler.Backend.PExplicit
         private string GetInlineCastPrefix(PLanguageType valueType, PLanguageType locationType) {
             if (valueType.Equals(locationType))
             {
-                return "";
+                return $"(({GetPExplicitType(locationType)}) ";
             }
             
             var valueIsMachineRef = valueType.IsSameTypeAs(PrimitiveType.Machine) || valueType is PermissionType;
@@ -1258,11 +1269,15 @@ namespace Plang.Compiler.Backend.PExplicit
             {
                 if (locationElementType.IsSameTypeAs(PrimitiveType.Any) || locationElementType.IsSameTypeAs(PrimitiveType.Data))
                 {
-                    return $"({GetPExplicitType(locationType)}) PValue.castToAnyCollection(";
+                    throw new NotImplementedException(
+                        $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
+                        $"from value of type {valueType.CanonicalRepresentation}");
                 }
                 else if (valueElementType.IsSameTypeAs(PrimitiveType.Any) || valueElementType.IsSameTypeAs(PrimitiveType.Data))
                 {
-                    return $"({GetPExplicitType(locationType)}) PValue.castFromAnyCollection({GetDefaultValue(locationElementType)}, ";
+                    throw new NotImplementedException(
+                        $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
+                        $"from value of type {valueType.CanonicalRepresentation}");
                 }
             }
 
@@ -1740,12 +1755,12 @@ namespace Plang.Compiler.Backend.PExplicit
                         case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
                             context.Write(output, "(");
                             WriteExpr(context, output, coerceExpr.SubExpr);
-                            context.Write(output, $").apply(x -> x.floatValue())");
+                            context.Write(output, $").toFloat()");
                             break;
                         case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Int):
                             context.Write(output, "(");
                             WriteExpr(context, output, coerceExpr.SubExpr);
-                            context.Write(output, $").apply(x -> x.intValue())");
+                            context.Write(output, $").toInt()");
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(
@@ -1830,6 +1845,10 @@ namespace Plang.Compiler.Backend.PExplicit
                     context.WriteLine(output, "), ");
                     
                     context.Write(output, "Arrays.asList(");
+                    if (namedTupleExpr.TupleFields.Count == 1)
+                    {
+                        context.Write(output, "(PValue<?>) ");
+                    }
                     for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
                     {
                         var field = namedTupleExpr.TupleFields[i];
@@ -2039,7 +2058,7 @@ namespace Plang.Compiler.Backend.PExplicit
             }
         }
 
-        private string GetType(PLanguageType type)
+        private string GetForeignType(PLanguageType type)
         {
             switch (type.Canonicalize())
             {
@@ -2071,7 +2090,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return "void";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
-                    return "PValue<?>";
+                    return "? extends PValue<?>";
                 default:
                     throw new NotImplementedException($"PExplicit type '{type.OriginalRepresentation}' not supported");
             }
@@ -2095,13 +2114,11 @@ namespace Plang.Compiler.Backend.PExplicit
                 case ForeignType foreignType:
                     return foreignType.CanonicalRepresentation;
                 case SequenceType sequenceType:
-                    return $"PSeq<{GetPExplicitType(sequenceType.ElementType)}>";
+                    return "PSeq";
                 case SetType setType:
-                    return $"PSet<{GetPExplicitType(setType.ElementType)}>";
+                    return "PSet";
                 case MapType mapType:
-                    return $"PMap<" +
-                           $"{GetPExplicitType(mapType.KeyType)}, " +
-                           $"{GetPExplicitType(mapType.ValueType)}>";
+                    return "PMap";
                 case NamedTupleType _:
                     return "PNamedTuple";
                 case TupleType _:
@@ -2152,6 +2169,10 @@ namespace Plang.Compiler.Backend.PExplicit
                             result += ", ";
                     }
                     result += "), Arrays.asList(";
+                    if (namedTupleType.Fields.Count == 1)
+                    {
+                        result += "(PValue<?>) ";
+                    }
                     for (var i = 0; i < namedTupleType.Fields.Count; i++)
                     {
                         result += $"{GetDefaultValue(namedTupleType.Fields[i].Type)}";

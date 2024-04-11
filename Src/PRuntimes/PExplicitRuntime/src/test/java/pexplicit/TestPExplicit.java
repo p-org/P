@@ -50,41 +50,43 @@ public class TestPExplicit {
   }
 
   private static void createExcludeList() {
-    /**
-     * TODO: Support type casting
-     */
-    // TODO: Cannot yet handle casting to variable of type (int,int) from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/bug3");
-    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/bug4");
-    // TODO: Cannot yet handle casting to variable of type (machine,machine) from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/PingPong");
-    // TODO: Cannot yet handle casting to variable of type int from value of type any
-    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/two-phase-commit_1");
-    // TODO: Cannot yet handle casting to variable of type int from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast1");
-    // TODO: Cannot yet handle casting to variable of type int from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast2");
-    // TODO: Cannot yet handle casting to variable of type (m1:machine,m2:machine) from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast3");
-    // TODO: Cannot yet handle casting to variable of type event from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ExprOperatorsAsserts");
-    // TODO: Cannot yet handle casting to variable of type seq[any] from value of type seq[int]
-    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval");
-    // TODO: Cannot yet handle casting to variable of type int from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
-    // TODO: Cannot yet handle casting to variable of type Foo from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/EnumType1");
-    // TODO: Cannot yet handle casting to variable of type event from value of type any
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes");
-    // TODO: Cannot yet handle casting to variable of type seq[any] from value of type seq[int]
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes1");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes10");
-    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes14");
+//    /**
+//     * TODO: Support type casting
+//     */
+//    // TODO: Cannot yet handle casting to variable of type (int,int) from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/bug3");
+//    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/bug4");
+//    // TODO: Cannot yet handle casting to variable of type (machine,machine) from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/PingPong");
+//    // TODO: Cannot yet handle casting to variable of type int from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/two-phase-commit_1");
+//    // TODO: Cannot yet handle casting to variable of type int from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast1");
+//    // TODO: Cannot yet handle casting to variable of type int from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast2");
+//    // TODO: Cannot yet handle casting to variable of type (m1:machine,m2:machine) from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/cast3");
+//    // TODO: Cannot yet handle casting to variable of type event from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ExprOperatorsAsserts");
+//    // TODO: Cannot yet handle casting to variable of type seq[any] from value of type seq[int]
+//    excluded.add("../../../Tst/RegressionTests/Feature3Exprs/Correct/ShortCircuitEval");
+//    // TODO: Cannot yet handle casting to variable of type int from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs1");
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs2");
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs3");
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs4");
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs5");
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/CastInExprs6");
+//    // TODO: Cannot yet handle casting to variable of type Foo from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/EnumType1");
+//    // TODO: Cannot yet handle casting to variable of type event from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes");
+//    // TODO: Cannot yet handle casting to variable of type seq[any] from value of type seq[int]
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes1");
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes10");
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/nonAtomicDataTypes14");
+//    // TODO: Cannot yet handle casting to variable of type (first:int,second:int) from value of type any
+//    excluded.add("../../../Tst/RegressionTests/Feature4DataTypes/DynamicError/typedef2");
 
 
     /**

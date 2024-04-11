@@ -746,10 +746,8 @@ namespace Plang.Compiler.Backend.PExplicit
                                 context.WriteLine(output, $"{locationTemp} = {GetDefaultValue(assignStmt.Location.Type)};");
                             } else
                             {
-                                var inlineCastPrefix = GetInlineCastPrefix(assignStmt.Value.Type, assignStmt.Location.Type);
-                                context.Write(output, $"{locationTemp} = ({GetPExplicitType(assignStmt.Location.Type)}) {inlineCastPrefix}");
+                                context.Write(output, $"{locationTemp} = ({GetPExplicitType(assignStmt.Location.Type)}) ");
                                 WriteExpr(context, output, expr);
-                                if (inlineCastPrefix != "") context.Write(output, ")");
                                 context.WriteLine(output, ";");
                             }
                         }
@@ -767,10 +765,8 @@ namespace Plang.Compiler.Backend.PExplicit
                         false,
                         locationTemp =>
                         {
-                            var inlineCastPrefix = GetInlineCastPrefix(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type);
-                            context.Write(output, $"{locationTemp} = ({GetPExplicitType(moveStmt.ToLocation.Type)}) {inlineCastPrefix}");
+                            context.Write(output, $"{locationTemp} = ({GetPExplicitType(moveStmt.ToLocation.Type)}) ");
                             WriteExpr(context, output, new VariableAccessExpr(moveStmt.FromVariable.SourceLocation, moveStmt.FromVariable));
-                            if (inlineCastPrefix != "") context.Write(output, ")");
                             context.WriteLine(output, ";");
                         }
                     );
@@ -789,10 +785,8 @@ namespace Plang.Compiler.Backend.PExplicit
                     if (!(returnStmt.ReturnValue is null))
                     {
                         context.Write(output, $"{CompilationContext.ReturnValue} = ");
-                        var inlineCastPrefix = GetInlineCastPrefix(returnStmt.ReturnValue.Type, context.ReturnType);
-                        context.Write(output, $"({GetPExplicitType(context.ReturnType)}) {inlineCastPrefix}");
+                        context.Write(output, $"({GetPExplicitType(context.ReturnType)}) ");
                         WriteExpr(context, output, returnStmt.ReturnValue);
-                        if (inlineCastPrefix != "") context.Write(output, ")");
                         context.WriteLine(output, $";");
                         context.Write(output, $"return {CompilationContext.ReturnValue};");
                     }
@@ -966,26 +960,9 @@ namespace Plang.Compiler.Backend.PExplicit
                             WriteExpr(context, output, insertStmt.Variable);
                             context.Write(output, $".add(");
 
-                            {
-                                var castPrefixKey = "";
-                                if (keyType != null) {
-                                    castPrefixKey = GetInlineCastPrefix(insertStmt.Index.Type, keyType);
-                                }
-                                context.Write(output, castPrefixKey);
-                                WriteExpr(context, output, insertStmt.Index);
-                                if (castPrefixKey != "") context.Write(output, ")");
-                                context.Write(output, ", ");
-                            }
-
-                            {
-                                var castPrefix = "";
-                                if (elementType != null) {
-                                    castPrefix = GetInlineCastPrefix(insertStmt.Value.Type, elementType);
-                                }
-                                context.Write(output, castPrefix);
-                                WriteExpr(context, output, insertStmt.Value);
-                                if (castPrefix != "") context.Write(output, ")");
-                            }
+                            WriteExpr(context, output, insertStmt.Index);
+                            context.Write(output, ", ");
+                            WriteExpr(context, output, insertStmt.Value);
 
                             context.WriteLine(output, ");");
                         }
@@ -1212,85 +1189,6 @@ namespace Plang.Compiler.Backend.PExplicit
             }
         }
 
-        private string GetInlineCastPrefix(PLanguageType valueType, PLanguageType locationType) {
-            if (valueType.Equals(locationType))
-            {
-                return "";
-            }
-            
-            var valueIsMachineRef = valueType.IsSameTypeAs(PrimitiveType.Machine) || valueType is PermissionType;
-            var locationIsMachineRef = locationType.IsSameTypeAs(PrimitiveType.Machine) || locationType is PermissionType;
-
-            if (valueIsMachineRef && locationIsMachineRef)
-                return "";
-
-            valueType = valueType.Canonicalize();
-            locationType = locationType.Canonicalize();
-            if ((valueType is NamedTupleType) && locationType is NamedTupleType)
-            {
-                return "";
-            }
-
-            if ((valueType is TupleType) && locationType is TupleType)
-            {
-                return "";
-            }
-
-            PLanguageType locationElementType = null;
-            PLanguageType valueElementType = null;
-            var isMap = PLanguageType.TypeIsOfKind(locationType, TypeKind.Map);
-            var isSet = PLanguageType.TypeIsOfKind(locationType, TypeKind.Set);
-            var isSeq = PLanguageType.TypeIsOfKind(locationType, TypeKind.Sequence);
-            if (isMap)
-            {
-                locationElementType = ((MapType) locationType).ValueType;
-                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Map))
-                {
-                    valueElementType = ((MapType) valueType).ValueType;
-                }
-            }
-            else if (isSet)
-            {
-                locationElementType = ((SetType) locationType).ElementType;
-                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Set))
-                {
-                    valueElementType = ((SetType) valueType).ElementType;
-                }
-            }
-            else if (isSeq)
-            {
-                locationElementType = ((SequenceType) locationType).ElementType;
-                if (PLanguageType.TypeIsOfKind(valueType, TypeKind.Sequence))
-                {
-                    valueElementType = ((SequenceType) valueType).ElementType;
-                }
-            }
-            if (locationElementType != null && valueElementType != null)
-            {
-                if (locationElementType.IsSameTypeAs(PrimitiveType.Any) || locationElementType.IsSameTypeAs(PrimitiveType.Data))
-                {
-                    throw new NotImplementedException(
-                        $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
-                        $"from value of type {valueType.CanonicalRepresentation}");
-                }
-                else if (valueElementType.IsSameTypeAs(PrimitiveType.Any) || valueElementType.IsSameTypeAs(PrimitiveType.Data))
-                {
-                    throw new NotImplementedException(
-                        $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
-                        $"from value of type {valueType.CanonicalRepresentation}");
-                }
-            }
-
-            if (locationType.IsAssignableFrom(valueType))
-            {
-                return "";
-            }
-
-            throw new NotImplementedException(
-                $"Cannot yet handle casting to variable of type {locationType.CanonicalRepresentation} " +
-                $"from value of type {valueType.CanonicalRepresentation}");
-        }
-
         private void WriteForeignFunCallStmt(CompilationContext context, StringWriter output, Function function, IReadOnlyList<IPExpr> args, IPExpr dest=null)
         {
             string returnTemp = null;
@@ -1391,7 +1289,7 @@ namespace Plang.Compiler.Backend.PExplicit
                             context.Write(output, $"{GetPExplicitType(elementType)} {elementTemp}");
                             if (needOrigValue)
                             {
-                                context.Write(output, $" = {mapTemp}.getOrDefault({indexTemp}, ");
+                                context.Write(output, $" = ({GetPExplicitType(elementType)}) {mapTemp}.getOrDefault({indexTemp}, ");
                                 context.Write(output, GetDefaultValue(elementType));
                                 context.WriteLine(output, ");");
                             }
@@ -1409,27 +1307,9 @@ namespace Plang.Compiler.Backend.PExplicit
                             keyType = ((MapType) mapAccessExpr.MapExpr.Type.Canonicalize()).KeyType;
                             valueType = ((MapType) mapAccessExpr.MapExpr.Type.Canonicalize()).ValueType;
 
-                            {
-                                var castPrefixKey = "";
-                                if (keyType != null) {
-                                    castPrefixKey = GetInlineCastPrefix(indexType, keyType);
-                                }
-                                context.Write(output, castPrefixKey);
-                                context.Write(output, $"{indexTemp}");
-                                if (castPrefixKey != "") context.Write(output, ")");
-                                context.Write(output, ", ");
-                            }
-
-                            {
-                                var castPrefix = "";
-                                if (valueType != null) {
-                                    castPrefix = GetInlineCastPrefix(elementType, valueType);
-                                }
-                                context.Write(output, castPrefix);
-                                context.Write(output, $"{elementTemp}");
-                                if (castPrefix != "") context.Write(output, ")");
-                            }
-
+                            context.Write(output, $"{indexTemp}");
+                            context.Write(output, ", ");
+                            context.Write(output, $"{elementTemp}");
                             context.WriteLine(output, ");");
                         }
                     );
@@ -1449,10 +1329,7 @@ namespace Plang.Compiler.Backend.PExplicit
                             if (needOrigValue)
                             {
                                 context.Write(output, $" = ({fieldType})");
-                                var namedPrefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type);
-                                context.Write(output, namedPrefix);
                                 context.Write(output, $"{namedTupleTemp}.getField(\"{namedTupleAccessExpr.FieldName}\");");
-                                if (namedPrefix != "") context.Write(output, ")");
                                 context.WriteLine(output, ";");
                             }
                             else
@@ -1464,7 +1341,7 @@ namespace Plang.Compiler.Backend.PExplicit
 
                             context.WriteLine(
                                 output,
-                                $"{namedTupleTemp} = {namedTupleTemp}.setField(" +
+                                $"{namedTupleTemp} = ({GetPExplicitType(namedTupleAccessExpr.SubExpr.Type)}) {namedTupleTemp}.setField(" +
                                 $"\"{namedTupleAccessExpr.FieldName}\", " +
                                 $"{fieldTemp});");
                         }
@@ -1485,10 +1362,7 @@ namespace Plang.Compiler.Backend.PExplicit
                             if (needOrigValue)
                             {
                                 context.Write(output, $" = ({fieldType})");
-                                var tuplePrefix = GetInlineCastPrefix((tupleAccessExpr.SubExpr.Type as TupleType)?.Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type);
-                                context.Write(output, tuplePrefix);
                                 context.Write(output, $"{tupleTemp}.getField({tupleAccessExpr.FieldNo})");
-                                if (tuplePrefix != "") context.Write(output, ")");
                                 context.WriteLine(output, ";");
                             }
                             else
@@ -1500,7 +1374,7 @@ namespace Plang.Compiler.Backend.PExplicit
 
                             context.WriteLine(
                                 output,
-                                $"{tupleTemp} = {tupleTemp}.setField(" +
+                                $"{tupleTemp} = ({GetPExplicitType(tupleAccessExpr.SubExpr.Type)}) {tupleTemp}.setField(" +
                                 $"{tupleAccessExpr.FieldNo}," +
                                 $"{fieldTemp});");
                         }
@@ -1527,7 +1401,7 @@ namespace Plang.Compiler.Backend.PExplicit
                             context.Write(output, $"{GetPExplicitType(elementType)} {elementTemp}");
                             if (needOrigValue)
                             {
-                                context.WriteLine(output, $" = {seqTemp}.get({indexTemp});");
+                                context.WriteLine(output, $" = ({GetPExplicitType(elementType)}) {seqTemp}.get({indexTemp});");
                             }
                             else
                             {
@@ -1541,16 +1415,7 @@ namespace Plang.Compiler.Backend.PExplicit
                             PLanguageType valueType;
                             valueType = ((SequenceType) seqAccessExpr.SeqExpr.Type.Canonicalize()).ElementType;
 
-                            {
-                                var castPrefix = "";
-                                if (valueType != null) {
-                                    castPrefix = GetInlineCastPrefix(elementType, valueType);
-                                }
-                                context.Write(output, castPrefix);
-                                context.Write(output, $"{elementTemp}");
-                                if (castPrefix != "") context.Write(output, ")");
-                            }
-
+                            context.Write(output, $"{elementTemp}");
                             context.WriteLine(output, ");");
                         }
                     );
@@ -1576,7 +1441,7 @@ namespace Plang.Compiler.Backend.PExplicit
                             context.Write(output, $"{GetPExplicitType(elementType)} {elementTemp}");
                             if (needOrigValue)
                             {
-                                context.WriteLine(output, $" = {setTemp}.get({indexTemp});");
+                                context.WriteLine(output, $" = ({GetPExplicitType(elementType)}) {setTemp}.get({indexTemp});");
                             }
                             else
                             {
@@ -1597,7 +1462,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     context.Write(output, $"{GetPExplicitType(variableAccessExpr.Type)} {guardedTemp}");
                     if (needOrigValue)
                     {
-                        context.WriteLine(output, $" = {unguarded};    ");
+                        context.WriteLine(output, $" = ({GetPExplicitType(variableAccessExpr.Type)}) {unguarded};    ");
                     }
                     else
                     {
@@ -1703,12 +1568,7 @@ namespace Plang.Compiler.Backend.PExplicit
                         }
                         WriteExpr(context, output, binOpExpr.Lhs);
                         context.Write(output, ", ");
-                        {
-                            var castPrefix = GetInlineCastPrefix(binOpExpr.Rhs.Type, binOpExpr.Lhs.Type);
-                            context.Write(output, castPrefix);
-                            WriteExpr(context, output, binOpExpr.Rhs);
-                            if (castPrefix != "") context.Write(output, ")");
-                        }
+                        WriteExpr(context, output, binOpExpr.Rhs);
                         context.Write(output, ")");
                         context.Write(output, ")");
                     }
@@ -1743,10 +1603,7 @@ namespace Plang.Compiler.Backend.PExplicit
                         context.Write(output,  GetDefaultValue(castExpr.Type));
                     } else
                     {
-                        var castPrefix = GetInlineCastPrefix(castExpr.SubExpr.Type, castExpr.Type);
-                        context.Write(output, castPrefix);
                         WriteExpr(context, output, castExpr.SubExpr);
-                        if (castPrefix != "") context.Write(output, ")");
                     }
                     break;
                 case CoerceExpr coerceExpr:
@@ -1810,12 +1667,9 @@ namespace Plang.Compiler.Backend.PExplicit
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, $"(({GetPExplicitType(namedTupleAccessExpr.Type)})(");
-                    var prefix = GetInlineCastPrefix(namedTupleAccessExpr.Entry.Type, namedTupleAccessExpr.Type);
-                    context.Write(output, prefix);
                     context.Write(output, "(");
                     WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
                     context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\")))");
-                    if (prefix != "") context.Write(output, ")");
                     break;
                 case ThisRefExpr _:
                     context.Write(output, $"new PMachineValue(this)");
@@ -1823,12 +1677,9 @@ namespace Plang.Compiler.Backend.PExplicit
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, $"({GetPExplicitType(tupleAccessExpr.Type)})(");
                     var tupleType = (tupleAccessExpr.SubExpr.Type.Canonicalize() as TupleType);
-                    var tuplePrefix = GetInlineCastPrefix(tupleType.Types[tupleAccessExpr.FieldNo], tupleAccessExpr.Type);
                     context.Write(output, "(");
-                    context.Write(output, tuplePrefix);
                     WriteExpr(context, output, tupleAccessExpr.SubExpr);
                     context.Write(output, $").getField({tupleAccessExpr.FieldNo}))");
-                    if (tuplePrefix != "") context.Write(output, ")");
                     break;
                 case NamedTupleExpr namedTupleExpr:
                     context.WriteLine(output, "new PNamedTuple(");
@@ -1903,15 +1754,7 @@ namespace Plang.Compiler.Backend.PExplicit
 
                     WriteExpr(context, output, containsExpr.Collection);
                     context.Write(output, ".contains(");
-                    {
-                        var castPrefix = "";
-                        if (elementType != null) {
-                            castPrefix = GetInlineCastPrefix(containsExpr.Item.Type, elementType);
-                        }
-                        context.Write(output, castPrefix);
-                        WriteExpr(context, output, containsExpr.Item);
-                        if (castPrefix != "") context.Write(output, ")");
-                    }
+                    WriteExpr(context, output, containsExpr.Item);
                     context.Write(output, ")");
                     break;
                 case CtorExpr ctorExpr:

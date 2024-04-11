@@ -3,6 +3,8 @@ package pexplicit.values;
 import pexplicit.values.exceptions.TupleInvalidIndexException;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents the PValue for P unnamed tuple
@@ -48,9 +50,11 @@ public class PTuple extends PValue<PTuple> {
     /**
      * Sets the field at the given index. Throws an exception if the index is invalid.
      */
-    public void setField(int index, PValue<?> val) throws TupleInvalidIndexException {
+    public PTuple setField(int index, PValue<?> val) throws TupleInvalidIndexException {
         if (index >= fields.length) throw new TupleInvalidIndexException(this, index);
-        fields[index] = val;
+        PValue<?>[] newFields = fields.clone();
+        newFields[index] = val;
+        return new PTuple(newFields);
     }
 
     @Override

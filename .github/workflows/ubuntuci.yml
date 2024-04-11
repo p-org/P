@@ -1,6 +1,7 @@
 name: CI on Ubuntu
 
 on: #[push, pull_request]
+  workflow_dispatch:
 
 jobs:
   Build-And-Test-Ubuntu:

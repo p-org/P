@@ -97,8 +97,24 @@ namespace PChecker.SystematicTesting
         {
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
+            WriteIndented = true,
+            Converters = { new EncodingConverter() }
         };
+
+        internal class EncodingConverter : JsonConverter<Encoding>
+        {
+            public override Encoding Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                var name = reader.GetString();
+                if (name == null)
+                    return null;
+                return Encoding.GetEncoding(name);
+            }
+            public override void Write(Utf8JsonWriter writer, Encoding value, JsonSerializerOptions options)
+            {
+                writer.WriteStringValue(value.WebName);
+            }
+        }
 
         /// <summary>
         /// The profiler.

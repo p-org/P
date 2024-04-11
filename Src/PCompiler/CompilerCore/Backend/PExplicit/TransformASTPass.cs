@@ -143,17 +143,9 @@ namespace Plang.Compiler.Backend.PExplicit
             {
                 if (handler.Key.IsNullEvent)
                 {
-                    throw new NotImplementedException($"Null actions are not supported, found in state {transformedState.Name} of machine {transformedState.OwningMachine.Name}");
+                    throw new NotImplementedException($"Null events are not supported, found in state {transformedState.Name} of machine {transformedState.OwningMachine.Name}");
                 }
                 transformedState[handler.Key] = TransformAction(handler.Value, functionMap);
-            }
-
-            if (transformedState.Exit != null)
-            {
-                if (transformedState.Exit.CanReceive == true)
-                {
-                    throw new NotImplementedException($"Receive in state exit functions are not supported, found in state {transformedState.Name} of machine {transformedState.OwningMachine.Name}");
-                }
             }
 
             return transformedState;
@@ -606,6 +598,10 @@ namespace Plang.Compiler.Backend.PExplicit
                                 var canReceiveInCase = false;
                                 foreach (var c in recv.Cases)
                                 {
+                                    if (c.Key.IsNullEvent)
+                                    {
+                                        throw new NotImplementedException($"Null events are not supported, found in a receive statement of machine {machine.Name}");
+                                    }
                                     if (c.Value.CanReceive == true)
                                     {
                                         canReceiveInCase = true;

@@ -9,6 +9,7 @@ import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.exceptions.NotImplementedException;
+import pexplicit.utils.misc.Assert;
 import pexplicit.utils.serialize.SerializableBiFunction;
 import pexplicit.utils.serialize.SerializableRunnable;
 import pexplicit.values.PEvent;
@@ -51,9 +52,16 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     @Getter
     private boolean halted = false;
 
+    @Getter
     private final Map<String, PContinuation> continuationMap = new TreeMap<>();
 
     private PContinuation blockedBy = null;
+    @Getter
+    private State blockedExitState;
+    @Getter
+    private State blockedEntryState;
+    @Getter
+    private PValue<?> blockedEntryPayload;
 
     /**
      * TODO
@@ -96,8 +104,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         PExplicitLogger.logMachineStart(this);
         assert (currentState == startState);
         started = true;
-
-        startState.entry(this, payload);
+        enterNewState(startState, payload);
     }
 
     public void halt() {
@@ -183,6 +190,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     public void sendEvent(PMachineValue target, PEvent event, PValue<?> payload) {
         PMessage msg = new PMessage(event, target.getValue(), payload);
         sendBuffer.add(msg);
+        PExplicitGlobal.getScheduler().runMonitors(msg);
     }
 
     /**
@@ -265,6 +273,11 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * Run events from the deferred queue
      */
     void runDeferredEvents() {
+        // do nothing if already halted
+        if (isHalted()) {
+            return;
+        }
+
         List<PMessage> deferredMessages = new ArrayList<>(deferQueue.getElements());
         deferQueue.clear();
         for (PMessage msg: deferredMessages) {
@@ -293,13 +306,22 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         PExplicitLogger.logEvent(message);
         if (isBlocked()) {
             PContinuation currBlockedBy = this.blockedBy;
+            PEvent event = message.getEvent();
             clearBlocked();
-            currBlockedBy.getHandleFun().apply(this, message);
-            if (!isBlocked()) {
-                for (PContinuation c : continuationMap.values()) {
-                    c.getClearFun().run();
-                }
+
+            // make sure event is handled (or is halt event)
+            if (currBlockedBy.getCaseEvents().contains(event.toString())) {
+                currBlockedBy.getHandleFun().apply(this, message);
+            } else if (event.isHaltMachineEvent()) {
+                this.halt();
+            } else {
+                Assert.fromModel(false,
+                        String.format("Unexpected event %s received in a receive for machine %s in state %s",
+                        event, this, this.currentState));
             }
+
+            // post process
+            currBlockedBy.runAfter(this);
         } else {
             currentState.handleEvent(message, this);
         }
@@ -345,15 +367,53 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param payload Entry function payload for the new state
      */
     public void processStateTransition(State newState, PValue<?> payload) {
-        PExplicitLogger.logStateTransition(this, newState);
+        if (isBlocked()) {
+            blockedExitState = currentState;
+            blockedEntryState = newState;
+            blockedEntryPayload = payload;
+            return;
+        }
 
         if (currentState != null) {
             // execute exit function of current state
-            currentState.exit(this);
+            exitCurrentState();
+
+            if (isBlocked()) {
+                blockedEntryState = newState;
+                blockedEntryPayload = payload;
+                return;
+            }
         }
+
+        // enter the new state
+        enterNewState(newState, payload);
+    }
+
+    public void exitCurrentState() {
+        // do nothing if already halted
+        if (isHalted()) {
+            return;
+        }
+
+        blockedExitState = null;
+
+        PExplicitLogger.logStateExit(this);
+        currentState.exit(this);
+    }
+
+    public void enterNewState(State newState, PValue<?> payload) {
+        // do nothing if already halted
+        if (isHalted()) {
+            return;
+        }
+
+        blockedEntryState= null;
+        blockedEntryPayload= null;
 
         // change current state to new state
         currentState = newState;
+
+        PExplicitLogger.logStateEntry(this);
 
         // change current state to new state
         newState.entry(this, payload);

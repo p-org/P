@@ -234,16 +234,24 @@ public class PExplicitLogger {
     }
 
     /**
-     * Log when a machine transitions to a new state
+     * Log when a machine enters a new state
      *
-     * @param machine  Machine that is processing the state transition
-     * @param newState New state
+     * @param machine  Machine that is entering the state
      */
-    public static void logStateTransition(PMachine machine, State newState) {
+    public static void logStateEntry(PMachine machine) {
         if (verbosity > 3) {
-            String msg =
-                    String.format("Machine %s transitioning to state %s", machine, newState);
-            log.info(msg);
+            log.info(String.format("Machine %s entering state %s", machine, machine.getCurrentState()));
+        }
+    }
+
+    /**
+     * Log when a machine exits the current state
+     *
+     * @param machine  Machine that is exiting the state
+     */
+    public static void logStateExit(PMachine machine) {
+        if (verbosity > 3) {
+            log.info(String.format("Machine %s exiting state %s", machine, machine.getCurrentState()));
         }
     }
 

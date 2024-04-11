@@ -28,6 +28,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     private List<GeneratorRecord> _savedGenerators = new ();
     private int _pendingMutations = 0;
+    private bool _shouldExploreNew = false;
     private HashSet<GeneratorRecord> _visitedGenerators = new HashSet<GeneratorRecord>();
     private GeneratorRecord? _currentParent = null;
 
@@ -251,7 +252,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
                 _pendingMutations = 50;
             }
 
-            if (_currentParent == null)
+            if (_currentParent == null && !_shouldExploreNew)
             {
                 _currentParent = _savedGenerators.First();
                 _visitedGenerators.Add(_currentParent);
@@ -261,6 +262,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
             if (_pendingMutations == 0)
             {
+                _shouldExploreNew = false;
                 bool found = false;
                 foreach (var generator in _savedGenerators)
                 {
@@ -274,15 +276,23 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
                 if (!found)
                 {
-                    _visitedGenerators.Clear();
-                    _currentParent = _savedGenerators.First();
-                    _visitedGenerators.Add(_currentParent);
-                    _pendingMutations = _currentParent.Priority;
+                    if (_rnd.NextDouble() < 0.5)
+                    {
+                        _visitedGenerators.Clear();
+                        _currentParent = _savedGenerators.First();
+                        _visitedGenerators.Add(_currentParent);
+                        _pendingMutations = _currentParent.Priority;
+                    }
+                    else
+                    {
+                        _shouldExploreNew = true;
+                        _currentParent = null;
+                    }
                     _pendingMutations = 50;
                 }
             }
 
-            Generator = MutateGenerator(_currentParent.Generator);
+            Generator = _shouldExploreNew ? NewGenerator() : MutateGenerator(_currentParent.Generator);
             _pendingMutations -= 1;
         }
     }

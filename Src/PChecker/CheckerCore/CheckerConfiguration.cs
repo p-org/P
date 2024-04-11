@@ -349,8 +349,8 @@ namespace PChecker
             RandomGeneratorSeed = null;
             IncrementalSchedulingSeed = false;
             PerformFullExploration = false;
-            MaxFairSchedulingSteps = 10000; // 10 times the unfair steps
-            MaxUnfairSchedulingSteps = 10000;
+            MaxFairSchedulingSteps = 50000; // 10 times the unfair steps
+            MaxUnfairSchedulingSteps = 50000;
             UserExplicitlySetMaxFairSchedulingSteps = false;
             TestingProcessId = 0;
             ConsiderDepthBoundHitAsBug = false;

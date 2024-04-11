@@ -747,7 +747,7 @@ namespace Plang.Compiler.Backend.PExplicit
                             } else
                             {
                                 var inlineCastPrefix = GetInlineCastPrefix(assignStmt.Value.Type, assignStmt.Location.Type);
-                                context.Write(output, $"{locationTemp} = {inlineCastPrefix}");
+                                context.Write(output, $"{locationTemp} = ({GetPExplicitType(assignStmt.Location.Type)}) {inlineCastPrefix}");
                                 WriteExpr(context, output, expr);
                                 if (inlineCastPrefix != "") context.Write(output, ")");
                                 context.WriteLine(output, ";");
@@ -768,7 +768,7 @@ namespace Plang.Compiler.Backend.PExplicit
                         locationTemp =>
                         {
                             var inlineCastPrefix = GetInlineCastPrefix(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type);
-                            context.Write(output, $"{locationTemp} = {inlineCastPrefix}");
+                            context.Write(output, $"{locationTemp} = ({GetPExplicitType(moveStmt.ToLocation.Type)}) {inlineCastPrefix}");
                             WriteExpr(context, output, new VariableAccessExpr(moveStmt.FromVariable.SourceLocation, moveStmt.FromVariable));
                             if (inlineCastPrefix != "") context.Write(output, ")");
                             context.WriteLine(output, ";");
@@ -790,7 +790,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     {
                         context.Write(output, $"{CompilationContext.ReturnValue} = ");
                         var inlineCastPrefix = GetInlineCastPrefix(returnStmt.ReturnValue.Type, context.ReturnType);
-                        context.Write(output, $"{inlineCastPrefix}");
+                        context.Write(output, $"({GetPExplicitType(context.ReturnType)}) {inlineCastPrefix}");
                         WriteExpr(context, output, returnStmt.ReturnValue);
                         if (inlineCastPrefix != "") context.Write(output, ")");
                         context.WriteLine(output, $";");
@@ -1215,7 +1215,7 @@ namespace Plang.Compiler.Backend.PExplicit
         private string GetInlineCastPrefix(PLanguageType valueType, PLanguageType locationType) {
             if (valueType.Equals(locationType))
             {
-                return $"(({GetPExplicitType(locationType)}) ";
+                return "";
             }
             
             var valueIsMachineRef = valueType.IsSameTypeAs(PrimitiveType.Machine) || valueType is PermissionType;

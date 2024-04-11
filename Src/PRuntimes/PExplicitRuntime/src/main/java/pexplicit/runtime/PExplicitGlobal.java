@@ -51,13 +51,13 @@ public class PExplicitGlobal {
      * Mapping from machine type to list of all machine instances
      */
     @Getter
-    private static Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
+    private static final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
 
     /**
      * Set of machines
      */
     @Getter
-    private static SortedSet<PMachine> machineSet = new TreeSet<>();
+    private static final SortedSet<PMachine> machineSet = new TreeSet<>();
 
     /**
      * Get a machine of a given type and index if exists, else return null.

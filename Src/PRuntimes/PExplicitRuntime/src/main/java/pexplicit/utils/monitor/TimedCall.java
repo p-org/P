@@ -21,6 +21,8 @@ public class TimedCall implements Callable<Integer> {
       this.scheduler.run();
     } catch (OutOfMemoryError e) {
       throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
+    } catch (NullPointerException | StackOverflowError e) {
+      throw new BugFoundException(e.getMessage(), e);
     } catch (MemoutException | BugFoundException | TimeoutException | InterruptedException e) {
       throw e;
     }

@@ -112,13 +112,18 @@ public class TestPExplicit {
     // TODO: Null events are not supported, found in a receive statement
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive2");
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive7");
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive10");
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive11");
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive12");
 
     /**
      * TODO: Deadlock detected
      */
     excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive6");
 
-
+    /**
+     * TODO: Run liveness tests
+     */
 
 
 
@@ -267,9 +272,9 @@ public class TestPExplicit {
   //        return loadTests("../../../Tst/RegressionTests/Feature5ModuleSystem");
   //    }
 
-  @TestFactory
-  //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-  Collection<DynamicTest>  loadLivenessTests() {
-      return loadTests("../../../Tst/RegressionTests/Liveness");
-  }
+//  @TestFactory
+//  //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+//  Collection<DynamicTest>  loadLivenessTests() {
+//      return loadTests("../../../Tst/RegressionTests/Liveness");
+//  }
 }

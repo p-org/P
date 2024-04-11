@@ -20,26 +20,6 @@ public class PMachineValue extends PValue<PMachineValue> {
     }
 
     /**
-     * Constructor
-     *
-     * @param val object from where value to set to
-     */
-
-    public PMachineValue(Object val) {
-        if (val instanceof PMachineValue) value = ((PMachineValue) val).value;
-        else value = (PMachine) val;
-    }
-
-    /**
-     * Copy constructor
-     *
-     * @param val value to copy from
-     */
-    public PMachineValue(PMachineValue val) {
-        value = val.value;
-    }
-
-    /**
      * Get the unique machine identifier
      *
      * @return unique machine instance id

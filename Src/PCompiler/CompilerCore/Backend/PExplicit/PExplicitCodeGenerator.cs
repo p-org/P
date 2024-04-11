@@ -672,7 +672,7 @@ namespace Plang.Compiler.Backend.PExplicit
 
             if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                context.WriteLine(output, $"{GetPExplicitType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = new {GetPExplicitType(function.Signature.ReturnType)}({GetDefaultValue(function.Signature.ReturnType)});");
+                context.WriteLine(output, $"{GetPExplicitType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = {GetDefaultValue(function.Signature.ReturnType)};");
             }
 
             bool exited = false;

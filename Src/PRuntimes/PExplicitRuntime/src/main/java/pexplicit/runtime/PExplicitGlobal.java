@@ -4,12 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import pexplicit.commandline.PExplicitConfig;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.machine.PMonitor;
-import pexplicit.runtime.machine.events.StateEvents;
 import pexplicit.runtime.scheduler.Scheduler;
-import pexplicit.values.PEvent;
 
-import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -84,7 +80,7 @@ public class PExplicitGlobal {
     /**
      * Add a machine.
      *
-     * @param machine  Machine to add
+     * @param machine      Machine to add
      * @param machineCount Machine type count
      */
     public static void addGlobalMachine(PMachine machine, int machineCount) {

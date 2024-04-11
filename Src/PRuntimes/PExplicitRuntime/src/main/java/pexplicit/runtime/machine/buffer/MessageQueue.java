@@ -49,6 +49,7 @@ public abstract class MessageQueue implements Serializable {
 
     /**
      * Check whether the peek is valid
+     *
      * @return true if peek is valid, else false
      */
     private boolean isPeekValid() {
@@ -63,6 +64,7 @@ public abstract class MessageQueue implements Serializable {
     /**
      * Get the peek message corresponding to the peek index
      * Assumes peek index is already valid
+     *
      * @return peek message corresponding to the peek index
      */
     private PMessage getPeekMsg() {

@@ -2,7 +2,10 @@ package pexplicit.values;
 
 import pexplicit.values.exceptions.KeyNotFoundException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the PValue for P map
@@ -46,7 +49,7 @@ public class PMap extends PValue<PMap> implements PCollection {
      * @throws KeyNotFoundException
      */
     public PValue<?> get(PValue<?> key) throws KeyNotFoundException {
-        if (!map.containsKey(key)) throw new KeyNotFoundException(key, (Map<PValue<?>, PValue<?>>) map);
+        if (!map.containsKey(key)) throw new KeyNotFoundException(key, map);
         return map.get(key);
     }
 
@@ -154,16 +157,15 @@ public class PMap extends PValue<PMap> implements PCollection {
 
     @Override
     public int hashCode() {
-        return ComputeHash.getHashCode((Collection<PValue<?>>) map.values()) ^ ComputeHash.getHashCode((Collection<PValue<?>>) map.keySet());
+        return ComputeHash.getHashCode(map.values()) ^ ComputeHash.getHashCode(map.keySet());
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 
-        if (!(obj instanceof PMap)) return false;
+        if (!(obj instanceof PMap other)) return false;
 
-        PMap other = (PMap) obj;
         if (map.size() != other.map.size()) {
             return false;
         }
@@ -171,7 +173,7 @@ public class PMap extends PValue<PMap> implements PCollection {
         for (PValue<?> key : map.keySet()) {
             if (!other.map.containsKey(key)) {
                 return false;
-            } else if (PValue.notEqual((PValue<?>) other.map.get(key), this.map.get(key))) {
+            } else if (PValue.notEqual(other.map.get(key), this.map.get(key))) {
                 return false;
             }
         }

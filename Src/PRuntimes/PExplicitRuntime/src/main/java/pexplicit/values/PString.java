@@ -20,7 +20,7 @@ public class PString extends PValue<PString> {
      * @param base Base string.
      * @param args Arguments, if any.
      */
-    public PString(String base, PValue<?> ... args) {
+    public PString(String base, PValue<?>... args) {
         this.base = base;
         if (args == null || args.length == 0) {
             this.args = null;
@@ -45,7 +45,7 @@ public class PString extends PValue<PString> {
 
     /**
      * Concatenation operation
-
+     *
      * @param val PString value to concatenate
      * @return PString object after operation
      */
@@ -57,7 +57,7 @@ public class PString extends PValue<PString> {
 
     /**
      * Less than operation
-
+     *
      * @param val PString value to compare to
      * @return PBool object after operation
      */
@@ -67,7 +67,7 @@ public class PString extends PValue<PString> {
 
     /**
      * Less than or equal to operation
-
+     *
      * @param val PString value to compare to
      * @return PBool object after operation
      */
@@ -77,7 +77,7 @@ public class PString extends PValue<PString> {
 
     /**
      * Greater than operation
-
+     *
      * @param val PString value to compare to
      * @return PBool object after operation
      */
@@ -87,7 +87,7 @@ public class PString extends PValue<PString> {
 
     /**
      * Greater than or equal to operation
-
+     *
      * @param val PString value to compare to
      * @return PBool object after operation
      */

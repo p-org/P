@@ -9,7 +9,7 @@ import java.io.Serializable;
  */
 public class DeferQueue extends MessageQueue implements Serializable {
 
-  public DeferQueue(PMachine owner) {
-    super(owner);
-  }
+    public DeferQueue(PMachine owner) {
+        super(owner);
+    }
 }

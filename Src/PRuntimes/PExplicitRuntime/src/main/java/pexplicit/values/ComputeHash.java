@@ -35,7 +35,7 @@ public class ComputeHash {
     /**
      * Compute hash value for a PMachine and an array of PValues.
      */
-    public static int getHashCode(PMachine machine, PValue<?> ... values) {
+    public static int getHashCode(PMachine machine, PValue<?>... values) {
         int hashValue = 0x802CBBDB;
         if (machine != null) hashValue = hashValue ^ machine.hashCode();
         for (PValue<?> val : values) {

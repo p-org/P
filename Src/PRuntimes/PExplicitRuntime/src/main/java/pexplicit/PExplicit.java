@@ -2,15 +2,13 @@ package pexplicit;
 
 import org.reflections.Reflections;
 import pexplicit.commandline.PExplicitOptions;
+import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.PModel;
 import pexplicit.runtime.logger.Log4JConfig;
 import pexplicit.runtime.logger.PExplicitLogger;
-
-import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PTestDriver;
 import pexplicit.utils.exceptions.BugFoundException;
-import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.utils.monitor.TimeMonitor;
 import pexplicit.utils.random.RandomNumberGenerator;
@@ -104,6 +102,7 @@ public class PExplicit {
 
     /**
      * Sanitize the model name by removing trailing "PModel" keyword
+     *
      * @param name Name of the PModel class
      * @return Class name without trailing "PModel"
      */

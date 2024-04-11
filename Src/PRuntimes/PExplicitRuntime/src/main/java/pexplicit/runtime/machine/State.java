@@ -103,7 +103,7 @@ public abstract class State implements Serializable {
     /**
      * Handle an event by executing the corresponding event handler.
      *
-     * @param msg PMessage to handle
+     * @param msg     PMessage to handle
      * @param machine PMachine to handle the event at
      */
     public void handleEvent(PMessage msg, PMachine machine) {

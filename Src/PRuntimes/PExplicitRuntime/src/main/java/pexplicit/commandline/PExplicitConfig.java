@@ -17,25 +17,35 @@ public class PExplicitConfig {
     @Setter
     String testDriver = testDriverDefault;
     // name of the project
-    @Setter String projectName = "default";
+    @Setter
+    String projectName = "default";
     // name of the output folder
-    @Setter String outputFolder = "output";
+    @Setter
+    String outputFolder = "output";
     // time limit in seconds (0 means infinite)
-    @Setter double timeLimit = 0;
+    @Setter
+    double timeLimit = 0;
     // memory limit in megabytes (0 means infinite)
-    @Setter double memLimit = (Runtime.getRuntime().maxMemory() / 2.0 / 1024.0 / 1024.0);
+    @Setter
+    double memLimit = (Runtime.getRuntime().maxMemory() / 2.0 / 1024.0 / 1024.0);
     // level of verbosity for the logging
-    @Setter int verbosity = 0;
+    @Setter
+    int verbosity = 0;
     // strategy of exploration
-    @Setter String strategy = "dfs";
+    @Setter
+    String strategy = "dfs";
     // max number of schedules bound provided by the user
-    @Setter int maxSchedules = 1;
+    @Setter
+    int maxSchedules = 1;
     // max steps/depth bound provided by the user
-    @Setter int maxStepBound = 10000;
+    @Setter
+    int maxStepBound = 10000;
     // fail on reaching the maximum scheduling step bound
-    @Setter boolean failOnMaxStepBound = false;
+    @Setter
+    boolean failOnMaxStepBound = false;
     // random seed
-    @Setter long randomSeed = System.currentTimeMillis();
+    @Setter
+    long randomSeed = System.currentTimeMillis();
     // buffer semantics
     @Setter
     BufferSemantics bufferSemantics = BufferSemantics.SenderQueue;

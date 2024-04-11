@@ -42,6 +42,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Negation operation
+     *
      * @return Result after operation
      */
     public PFloat negate() {
@@ -50,6 +51,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Add operation
+     *
      * @param val value to add
      * @return Result after addition
      */
@@ -59,6 +61,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Subtract operation
+     *
      * @param val value to subtract
      * @return Result after subtraction
      */
@@ -68,6 +71,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Multiply operation
+     *
      * @param val value to multiply
      * @return Result after multiplication
      */
@@ -77,6 +81,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Divide operation
+     *
      * @param val value to divide
      * @return Result after division
      */
@@ -86,6 +91,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Modulo operation
+     *
      * @param val value to modulo
      * @return Result after modulo
      */
@@ -95,6 +101,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Less than operation
+     *
      * @param val value to compare to
      * @return PBool object after operation
      */
@@ -104,6 +111,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Less than or equal to operation
+     *
      * @param val value to compare to
      * @return PBool object after operation
      */
@@ -113,6 +121,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Greater than operation
+     *
      * @param val value to compare to
      * @return PBool object after operation
      */
@@ -122,6 +131,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Greater than or equal to operation
+     *
      * @param val value to compare to
      * @return PBool object after operation
      */
@@ -131,6 +141,7 @@ public class PFloat extends PValue<PFloat> {
 
     /**
      * Convert to a PInt
+     *
      * @return PInt object
      */
     public PInt toInt() {

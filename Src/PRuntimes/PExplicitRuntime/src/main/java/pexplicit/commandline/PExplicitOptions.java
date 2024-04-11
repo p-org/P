@@ -1,9 +1,10 @@
 package pexplicit.commandline;
 
-import static java.lang.System.exit;
-
-import java.io.*;
 import org.apache.commons.cli.*;
+
+import java.io.PrintWriter;
+
+import static java.lang.System.exit;
 
 /**
  * Represents the CLI options for PExplicit runtime

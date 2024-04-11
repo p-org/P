@@ -41,6 +41,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Negation operation
+     *
      * @return Result after operation
      */
     public PInt negate() {
@@ -49,6 +50,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Add operation
+     *
      * @param val value to add
      * @return Result after addition
      */
@@ -58,6 +60,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Subtract operation
+     *
      * @param val value to subtract
      * @return Result after subtraction
      */
@@ -67,6 +70,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Multiply operation
+     *
      * @param val value to multiply
      * @return Result after multiplication
      */
@@ -76,6 +80,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Divide operation
+     *
      * @param val value to divide
      * @return Result after division
      */
@@ -85,6 +90,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Modulo operation
+     *
      * @param val value to modulo
      * @return Result after modulo
      */
@@ -94,6 +100,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Less than operation
+     *
      * @param val value to compare to
      * @return PBool object after operation
      */
@@ -103,6 +110,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Less than or equal to operation
+     *
      * @param val value to compare to
      * @return PBool object after operation
      */
@@ -112,6 +120,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Greater than operation
+     *
      * @param val value to compare to
      * @return PBool object after operation
      */
@@ -121,6 +130,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Convert to a PFloat
+     *
      * @return PFloat object
      */
     public PFloat toFloat() {
@@ -129,6 +139,7 @@ public class PInt extends PValue<PInt> {
 
     /**
      * Greater than or equal to operation
+     *
      * @param val value to compare to
      * @return PBool object after operation
      */

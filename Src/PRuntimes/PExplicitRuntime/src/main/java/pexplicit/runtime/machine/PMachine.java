@@ -19,7 +19,6 @@ import pexplicit.values.PValue;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.ArrayList;
 import java.util.function.Function;
 
 /**
@@ -114,6 +113,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * Check if this machine can run.
+     *
      * @return true if machine has started and is not halted, else false
      */
     public boolean canRun() {
@@ -154,7 +154,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * Create a new machine instance
      *
      * @param machineType Machine type
-     * @param payload payload associated with machine's constructor
+     * @param payload     payload associated with machine's constructor
      * @param constructor Machine constructor
      * @return New machine as a PMachineValue
      */
@@ -184,8 +184,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     /**
      * Send an event to a target machine
      *
-     * @param target Target machine
-     * @param event PEvent to send
+     * @param target  Target machine
+     * @param event   PEvent to send
      * @param payload Payload corresponding to the event
      */
     public void sendEvent(PMachineValue target, PEvent event, PValue<?> payload) {
@@ -201,7 +201,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     /**
      * Goto a state
      *
-     * @param state State to go to
+     * @param state   State to go to
      * @param payload Payload for entry function of the state
      */
     public void gotoState(State state, PValue<?> payload) {
@@ -210,20 +210,22 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * Register a continuation
-     * @param name Name of the continuation
+     *
+     * @param name      Name of the continuation
      * @param handleFun Function executed when unblocking
-     * @param clearFun Function that clears corresponding continuation variables
+     * @param clearFun  Function that clears corresponding continuation variables
      */
     protected void registerContinuation(
             String name,
             SerializableBiFunction<PMachine, PMessage> handleFun,
             SerializableRunnable clearFun,
-            String ... caseEvents) {
+            String... caseEvents) {
         continuationMap.put(name, new PContinuation(handleFun, clearFun, caseEvents));
     }
 
     /**
      * TODO
+     *
      * @param continuationName
      */
     public void blockUntil(String continuationName) {
@@ -285,13 +287,14 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         List<PMessage> deferredMessages = new ArrayList<>(deferQueue.getElements());
         deferQueue.clear();
-        for (PMessage msg: deferredMessages) {
+        for (PMessage msg : deferredMessages) {
             processEvent(msg);
         }
     }
 
     /**
      * Process an event at the current state.
+     *
      * @param message Message to process
      */
     void processEvent(PMessage message) {
@@ -305,6 +308,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * Run an event at the current state.
+     *
      * @param message Message to process
      */
     void runEvent(PMessage message) {
@@ -322,7 +326,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             } else {
                 Assert.fromModel(false,
                         String.format("Unexpected event %s received in a receive for machine %s in state %s",
-                        event, this, this.currentState));
+                                event, this, this.currentState));
             }
 
             // post process
@@ -334,8 +338,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * Raise an event
-
-     * @param event Event to raise
+     *
+     * @param event   Event to raise
      * @param payload Payload
      */
     public void raiseEvent(PEvent event, PValue<?> payload) {
@@ -359,7 +363,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * Raise an event
-
+     *
      * @param event Event to raise
      */
     public void raiseEvent(PEvent event) {
@@ -368,8 +372,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     /**
      * Process state transition to a new state
+     *
      * @param newState New state to transition to
-     * @param payload Entry function payload for the new state
+     * @param payload  Entry function payload for the new state
      */
     public void processStateTransition(State newState, PValue<?> payload) {
         if (isBlocked()) {
@@ -412,8 +417,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             return;
         }
 
-        blockedEntryState= null;
-        blockedEntryPayload= null;
+        blockedEntryState = null;
+        blockedEntryPayload = null;
 
         // change current state to new state
         currentState = newState;

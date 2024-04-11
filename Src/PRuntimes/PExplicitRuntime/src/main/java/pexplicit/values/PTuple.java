@@ -3,8 +3,6 @@ package pexplicit.values;
 import pexplicit.values.exceptions.TupleInvalidIndexException;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Represents the PValue for P unnamed tuple
@@ -15,7 +13,7 @@ public class PTuple extends PValue<PTuple> {
     /**
      * Creates a new PTuple with the given fields
      */
-    public PTuple(PValue<?> ... input_fields) {
+    public PTuple(PValue<?>... input_fields) {
         this.fields = new PValue<?>[input_fields.length];
         for (int i = 0; i < input_fields.length; i++) {
             this.fields[i] = PValue.clone(input_fields[i]);
@@ -71,11 +69,10 @@ public class PTuple extends PValue<PTuple> {
     public boolean equals(Object obj) {
         if (obj == this) return true;
 
-        if (!(obj instanceof PTuple)) {
+        if (!(obj instanceof PTuple other)) {
             return false;
         }
 
-        PTuple other = (PTuple) obj;
         if (fields.length != other.fields.length) {
             return false;
         }

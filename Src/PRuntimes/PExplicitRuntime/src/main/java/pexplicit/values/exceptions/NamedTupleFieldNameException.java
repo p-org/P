@@ -1,7 +1,6 @@
 package pexplicit.values.exceptions;
 
 import pexplicit.utils.exceptions.BugFoundException;
-import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.values.PNamedTuple;
 
 /**

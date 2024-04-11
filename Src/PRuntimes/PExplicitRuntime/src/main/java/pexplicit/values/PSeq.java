@@ -3,7 +3,6 @@ package pexplicit.values;
 import pexplicit.values.exceptions.InvalidIndexException;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -48,7 +47,8 @@ public class PSeq extends PValue<PSeq> implements PCollection {
      * @throws InvalidIndexException
      */
     public PValue<?> get(PInt index) throws InvalidIndexException {
-        if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        if (index.getValue() >= seq.size() || index.getValue() < 0)
+            throw new InvalidIndexException(index.getValue(), this);
         return seq.get(index.getValue());
     }
 
@@ -60,7 +60,8 @@ public class PSeq extends PValue<PSeq> implements PCollection {
      * @throws InvalidIndexException
      */
     public PSeq set(PInt index, PValue<?> val) throws InvalidIndexException {
-        if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        if (index.getValue() >= seq.size() || index.getValue() < 0)
+            throw new InvalidIndexException(index.getValue(), this);
         List<PValue<?>> newSeq = new ArrayList<>(seq);
         newSeq.set(index.getValue(), val);
         return new PSeq(newSeq);
@@ -74,7 +75,8 @@ public class PSeq extends PValue<PSeq> implements PCollection {
      * @throws InvalidIndexException
      */
     public PSeq add(PInt index, PValue<?> val) throws InvalidIndexException {
-        if (index.getValue() > seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        if (index.getValue() > seq.size() || index.getValue() < 0)
+            throw new InvalidIndexException(index.getValue(), this);
         List newSeq = new ArrayList<>(seq);
         newSeq.add(index.getValue(), val);
         return new PSeq(newSeq);
@@ -87,7 +89,8 @@ public class PSeq extends PValue<PSeq> implements PCollection {
      * @throws InvalidIndexException
      */
     public PSeq removeAt(PInt index) throws InvalidIndexException {
-        if (index.getValue() >= seq.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        if (index.getValue() >= seq.size() || index.getValue() < 0)
+            throw new InvalidIndexException(index.getValue(), this);
         List newSeq = new ArrayList<>(seq);
         newSeq.remove(index.getValue());
         return new PSeq(newSeq);
@@ -109,18 +112,17 @@ public class PSeq extends PValue<PSeq> implements PCollection {
 
     @Override
     public int hashCode() {
-        return ComputeHash.getHashCode((Collection<PValue<?>>) seq);
+        return ComputeHash.getHashCode(seq);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 
-        if (!(obj instanceof PSeq)) {
+        if (!(obj instanceof PSeq other)) {
             return false;
         }
 
-        PSeq other = (PSeq) obj;
         if (seq.size() != other.seq.size()) {
             return false;
         }

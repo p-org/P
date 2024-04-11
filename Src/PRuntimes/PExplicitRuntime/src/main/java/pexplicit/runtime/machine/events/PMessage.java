@@ -2,10 +2,8 @@ package pexplicit.runtime.machine.events;
 
 import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.values.ComputeHash;
 import pexplicit.values.PEvent;
-import pexplicit.values.PTuple;
 import pexplicit.values.PValue;
 
 /**
@@ -48,22 +46,17 @@ public class PMessage extends PValue<PMessage> {
     public boolean equals(Object obj) {
         if (obj == this) return true;
 
-        if (!(obj instanceof PMessage)) {
+        if (!(obj instanceof PMessage other)) {
             return false;
         }
 
-        PMessage other = (PMessage) obj;
         if (this.target != other.target) {
             return false;
         }
         if (this.event != other.event) {
             return false;
         }
-        if (this.payload != other.payload) {
-            return false;
-        }
-
-        return true;
+        return this.payload == other.payload;
     }
 
     @Override

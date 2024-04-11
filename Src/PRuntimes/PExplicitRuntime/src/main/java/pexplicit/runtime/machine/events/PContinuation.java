@@ -12,11 +12,11 @@ import java.util.Set;
 
 @Getter
 public class PContinuation {
-    private Set<String> caseEvents;
-    private SerializableBiFunction<PMachine, PMessage> handleFun;
-    private SerializableRunnable clearFun;
+    private final Set<String> caseEvents;
+    private final SerializableBiFunction<PMachine, PMessage> handleFun;
+    private final SerializableRunnable clearFun;
 
-    public PContinuation(SerializableBiFunction<PMachine, PMessage> handleFun, SerializableRunnable clearFun, String ... ev) {
+    public PContinuation(SerializableBiFunction<PMachine, PMessage> handleFun, SerializableRunnable clearFun, String... ev) {
         this.handleFun = handleFun;
         this.clearFun = clearFun;
         this.caseEvents = new HashSet<>(Set.of(ev));

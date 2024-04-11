@@ -9,7 +9,7 @@ public interface PCollection {
      *
      * @return size
      */
-    public abstract PInt size();
+    PInt size();
 
     /**
      * Check if the collection contains the given item.
@@ -17,5 +17,5 @@ public interface PCollection {
      * @param item item to check for.
      * @return true if the collection contains the item, otherwise false
      */
-    public abstract PBool contains(PValue<?> item);
+    PBool contains(PValue<?> item);
 }

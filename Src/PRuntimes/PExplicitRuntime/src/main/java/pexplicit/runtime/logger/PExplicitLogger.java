@@ -8,12 +8,9 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.monitor.MemoryMonitor;
-import pexplicit.values.PEvent;
 import pexplicit.values.PValue;
 
 import java.io.PrintWriter;
@@ -130,6 +127,7 @@ public class PExplicitLogger {
 
     /**
      * Log at the start of an iteration
+     *
      * @param iter Iteration number
      * @param step Starting step number
      */
@@ -153,6 +151,7 @@ public class PExplicitLogger {
 
     /**
      * Log at the end of an iteration
+     *
      * @param step Step number
      */
     public static void logFinishedIteration(int step) {
@@ -165,9 +164,9 @@ public class PExplicitLogger {
      * Logs message at the end of a run.
      *
      * @param totalIter Total number of completed iterations
-     * @param newIter Number of newly complexted iterations
+     * @param newIter   Number of newly complexted iterations
      * @param timeSpent Time spent in seconds
-     * @param result Result of the run
+     * @param result    Result of the run
      */
     public static void logEndOfRun(int totalIter, int newIter, long timeSpent, String result) {
         log.info("--------------------");
@@ -236,7 +235,7 @@ public class PExplicitLogger {
     /**
      * Log when a machine enters a new state
      *
-     * @param machine  Machine that is entering the state
+     * @param machine Machine that is entering the state
      */
     public static void logStateEntry(PMachine machine) {
         if (verbosity > 3) {
@@ -247,7 +246,7 @@ public class PExplicitLogger {
     /**
      * Log when a machine exits the current state
      *
-     * @param machine  Machine that is exiting the state
+     * @param machine Machine that is exiting the state
      */
     public static void logStateExit(PMachine machine) {
         if (verbosity > 3) {

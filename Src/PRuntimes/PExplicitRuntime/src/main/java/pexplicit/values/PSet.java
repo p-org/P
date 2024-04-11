@@ -3,7 +3,10 @@ package pexplicit.values;
 import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.values.exceptions.InvalidIndexException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Represents the PValue for P set
@@ -46,7 +49,8 @@ public class PSet extends PValue<PSet> implements PCollection {
      * @throws InvalidIndexException
      */
     public PValue<?> get(PInt index) throws InvalidIndexException {
-        if (index.getValue() >= entries.size() || index.getValue() < 0) throw new InvalidIndexException(index.getValue(), this);
+        if (index.getValue() >= entries.size() || index.getValue() < 0)
+            throw new InvalidIndexException(index.getValue(), this);
         return entries.get(index.getValue());
     }
 
@@ -105,18 +109,17 @@ public class PSet extends PValue<PSet> implements PCollection {
 
     @Override
     public int hashCode() {
-        return ComputeHash.getHashCode((Collection<PValue<?>>) unique_entries);
+        return ComputeHash.getHashCode(unique_entries);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 
-        if (!(obj instanceof PSet)) {
+        if (!(obj instanceof PSet other)) {
             return false;
         }
 
-        PSet other = (PSet) obj;
         if (unique_entries.size() != other.unique_entries.size()) {
             return false;
         }

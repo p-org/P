@@ -48,6 +48,7 @@ public class PBool extends PValue<PBool> {
 
     /**
      * Logical Not operation
+     *
      * @return PBool object after operation
      */
     public PBool not() {
@@ -56,6 +57,7 @@ public class PBool extends PValue<PBool> {
 
     /**
      * Logical And operation
+     *
      * @param val value to and to
      * @return PBool object after operation
      */
@@ -65,6 +67,7 @@ public class PBool extends PValue<PBool> {
 
     /**
      * Logical Or operation
+     *
      * @param val value to or to
      * @return PBool object after operation
      */
@@ -74,10 +77,11 @@ public class PBool extends PValue<PBool> {
 
     /**
      * Convert to a PInt
+     *
      * @return PInt object
      */
     public PInt toInt() {
-        return new PInt(value?1:0);
+        return new PInt(value ? 1 : 0);
     }
 
     @Override

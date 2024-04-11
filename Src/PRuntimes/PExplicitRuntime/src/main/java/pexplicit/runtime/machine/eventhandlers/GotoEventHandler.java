@@ -2,7 +2,6 @@ package pexplicit.runtime.machine.eventhandlers;
 
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.State;
-import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.values.PEvent;
 import pexplicit.values.PValue;
 

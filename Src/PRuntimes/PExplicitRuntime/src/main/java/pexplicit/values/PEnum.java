@@ -36,10 +36,11 @@ public class PEnum extends PValue<PEnum> {
 
     /**
      * Convert to a PInt
+     *
      * @return PInt object
      */
     public PInt toInt() {
-        return new PInt((int) value);
+        return new PInt(value);
     }
 
     @Override

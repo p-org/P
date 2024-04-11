@@ -24,7 +24,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
     public PNamedTuple(List<String> input_fields, List<PValue<?>> input_values) {
         assert (input_fields.size() == input_values.size());
         values = new HashMap<>();
-        for (int i=0; i<input_fields.size(); i++) {
+        for (int i = 0; i < input_fields.size(); i++) {
             values.put(input_fields.get(i), input_values.get(i));
         }
     }
@@ -116,11 +116,10 @@ public class PNamedTuple extends PValue<PNamedTuple> {
     public boolean equals(Object obj) {
         if (obj == this) return true;
 
-        if (!(obj instanceof PNamedTuple)) {
+        if (!(obj instanceof PNamedTuple other)) {
             return false;
         }
 
-        PNamedTuple other = (PNamedTuple) obj;
         if (values.size() != other.values.size()) {
             return false;
         }

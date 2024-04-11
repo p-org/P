@@ -8,7 +8,8 @@ import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.values.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
@@ -31,19 +32,21 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * Run the scheduler.
      *
-     * @throws TimeoutException Throws timeout exception if timeout is reached
+     * @throws TimeoutException     Throws timeout exception if timeout is reached
      * @throws InterruptedException Throws interrupt exception if interrupted
      */
     public abstract void run() throws TimeoutException, InterruptedException;
 
     /**
      * Run an iteration.
+     *
      * @throws TimeoutException Throws timeout exception if timeout is reached.
      */
     protected abstract void runIteration() throws TimeoutException;
 
     /**
      * Run a step in the current iteration.
+     *
      * @throws TimeoutException Throws timeout exception if timeout is reached.
      */
     protected abstract void runStep() throws TimeoutException;
@@ -55,12 +58,14 @@ public abstract class Scheduler implements SchedulerInterface {
 
     /**
      * Get the next schedule choice.
+     *
      * @return PMachine as schedule choice
      */
     protected abstract PMachine getNextScheduleChoice();
 
     /**
      * Get the next data choice.
+     *
      * @return PValue as data choice
      */
     protected abstract PValue<?> getNextDataChoice(List<PValue<?>> input_choices);
@@ -143,7 +148,7 @@ public abstract class Scheduler implements SchedulerInterface {
         assert (schedule.getStepNumber() == 0);
 
         // start monitors first
-        for (PMonitor monitor: PExplicitGlobal.getModel().getMonitors()) {
+        for (PMonitor monitor : PExplicitGlobal.getModel().getMonitors()) {
             startMachine(monitor);
         }
 
@@ -173,6 +178,7 @@ public abstract class Scheduler implements SchedulerInterface {
 
     /**
      * Allocate a machine
+     *
      * @param machineType
      * @param constructor
      * @return

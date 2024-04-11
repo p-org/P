@@ -8,6 +8,7 @@ import pexplicit.runtime.machine.buffer.SenderQueue;
 import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.machine.events.PMessage;
+import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.utils.serialize.SerializableBiFunction;
@@ -188,6 +189,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param payload Payload corresponding to the event
      */
     public void sendEvent(PMachineValue target, PEvent event, PValue<?> payload) {
+        if (PValue.isEqual(target, null)) {
+            throw new BugFoundException("Machine in send event cannot be null.");
+        }
+
         PMessage msg = new PMessage(event, target.getValue(), payload);
         sendBuffer.add(msg);
         PExplicitGlobal.getScheduler().runMonitors(msg);

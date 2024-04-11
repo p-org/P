@@ -851,6 +851,10 @@ namespace Plang.Compiler.Backend.PExplicit
                     context.WriteLine(output, "break;");
                     break;
 
+                case ContinueStmt _:
+                    context.WriteLine(output, "continue;");
+                    break;
+
                 case CompoundStmt compoundStmt:
                     foreach (var subStmt in compoundStmt.Statements)
                     {
@@ -1106,9 +1110,13 @@ namespace Plang.Compiler.Backend.PExplicit
                         context.WriteLine(output, $"{GetPExplicitType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(local.Type)};");
                     }
                 }
-                allCasesExited &= WriteStmt(continuation, context, output, caseContext, caseFun.Body);
+                bool caseExited = WriteStmt(continuation, context, output, caseContext, caseFun.Body);
+                allCasesExited &= caseExited;
                 context.WriteLine(output, "}");
-                context.WriteLine(output, "break;");
+                if (!caseExited)
+                {
+                    context.WriteLine(output, "break;");
+                }
             }
             context.WriteLine(output, "default:");
             context.WriteLine(output, "{");

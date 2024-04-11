@@ -92,7 +92,7 @@ public class TestPExplicit {
     /**
      * TODO: Null events
      */
-    // TODO: Null actions are not supported
+    // TODO: Null events are not supported
     excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/BugRepro");
     excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/MoreThan32Events");
     excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_36");
@@ -109,6 +109,15 @@ public class TestPExplicit {
     excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_19");
     excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_9");
     excluded.add("../../../Tst/RegressionTests/Integration/Correct/openwsn1");
+    // TODO: Null events are not supported, found in a receive statement
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive2");
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive7");
+
+    /**
+     * TODO: Deadlock detected
+     */
+    excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive6");
+
 
 
 

@@ -96,6 +96,15 @@ public class PMap extends PValue<PMap> implements PCollection {
     }
 
     /**
+     * Get the list of values in the map
+     *
+     * @return List of values as a PSeq object
+     */
+    public PSeq getValues() {
+        return new PSeq(new ArrayList<>(map.values()));
+    }
+
+    /**
      * Convert the PMap to a List of PValues representing map keys.
      *
      * @return List of PValues corresponding to the PMap keys.

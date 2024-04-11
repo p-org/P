@@ -16,13 +16,13 @@ public class Schedule implements Serializable {
      * Mapping from machine type to list of machine instances
      */
     @Getter
-    private Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
+    private final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
 
     /**
      * Set of machines
      */
     @Getter
-    private SortedSet<PMachine> machineSet = new TreeSet<>();
+    private final SortedSet<PMachine> machineSet = new TreeSet<>();
 
     /**
      * List of choices

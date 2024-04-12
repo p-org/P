@@ -634,9 +634,18 @@ namespace PChecker.SystematicTesting
             if (obj == null) {
                 return "null";
             }
-            if (obj is Dictionary<string, object> dictionary) {
+            if (obj is Dictionary<string, object> dictionaryStr) {
                 var newDictionary = new Dictionary<string, object>();
-                foreach (var item in dictionary) {
+                foreach (var item in dictionaryStr) {
+                    var newVal = RecursivelyReplaceNullWithString(item.Value);
+                    if (newVal != null)
+                        newDictionary[item.Key] = newVal;
+                }
+                return newDictionary;
+            }
+            else if (obj is Dictionary<int, object> dictionaryInt) {
+                var newDictionary = new Dictionary<int, object>();
+                foreach (var item in dictionaryInt) {
                     var newVal = RecursivelyReplaceNullWithString(item.Value);
                     if (newVal != null)
                         newDictionary[item.Key] = newVal;

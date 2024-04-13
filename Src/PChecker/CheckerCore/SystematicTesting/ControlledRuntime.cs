@@ -67,14 +67,6 @@ namespace PChecker.SystematicTesting
         internal readonly int? RootTaskId;
 
         /// <summary>
-        /// The observer that extracts the timeline information of the scheduling.
-        /// </summary>
-        internal readonly TimelineObserver TimelineObserver = new();
-
-        public List<ISendEventMonitor> SendEventMonitors = new();
-
-
-        /// <summary>
         /// Returns the current hashed state of the monitors.
         /// </summary>
         /// <remarks>
@@ -156,7 +148,6 @@ namespace PChecker.SystematicTesting
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
             AssignAsyncControlFlowRuntime(this);
-            RegisterLog(TimelineObserver);
         }
 
         /// <inheritdoc/>
@@ -471,10 +462,6 @@ namespace PChecker.SystematicTesting
             Scheduler.ScheduledOperation.LastEvent = e;
             Scheduler.ScheduledOperation.LastSentReceiver = targetId.ToString();
 
-            foreach (var monitor in SendEventMonitors) {
-                monitor.OnSendEvent(sender.Id, e.Loc, targetId, LogWriter.JsonLogger.VcGenerator);
-            }
-
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender as StateMachine);
 
@@ -495,9 +482,6 @@ namespace PChecker.SystematicTesting
                 return EnqueueStatus.Dropped;
             }
 
-            foreach (var monitor in SendEventMonitors) {
-                monitor.OnSendEventDone(sender.Id, e.Loc, targetId, LogWriter.JsonLogger.VcGenerator);
-            }
             var enqueueStatus = EnqueueEvent(target, e, sender, opGroupId);
             if (enqueueStatus == EnqueueStatus.Dropped)
             {

@@ -1,15 +1,18 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using PChecker.Actors;
+using PChecker.Actors.Events;
 using PChecker.Actors.Logging;
 using PChecker.SystematicTesting.Operations;
 
 namespace PChecker.Feedback;
 
 
-public class ConflictOpMonitor: ISendEventMonitor
+internal class ConflictOpMonitor: ActorRuntimeLogBase
 {
 
+    public VectorClockGenerator VectorClockGenerator;
 
     // This dictionary stores all operations received by a machine.
     // Each operation is labeled with ActorId, source location, and its corresponding
@@ -18,12 +21,12 @@ public class ConflictOpMonitor: ISendEventMonitor
 
     private Dictionary<Operation, HashSet<Operation>> conflictOps = new();
     
-    
-    public void OnSendEvent(ActorId sender, int loc, ActorId receiver, VectorClockGenerator currentVc)
+    public override void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName, Event e,
+        Guid opGroupId, bool isTargetHalted)
     {
-        var receiverKey = receiver.ToString();
-        var senderKey = sender.ToString();
-        var currentOp = new Operation(senderKey, receiverKey, loc);
+        var receiverKey = e.Receiver;
+        var senderKey = e.Sender;
+        var currentOp = new Operation(senderKey, receiverKey, e.Loc);
         if (!incomingOps.ContainsKey(receiverKey))
         {
             incomingOps.Add(receiverKey, new HashSet<(Operation, Dictionary<string, int>)>());
@@ -32,7 +35,7 @@ public class ConflictOpMonitor: ISendEventMonitor
 
 
 
-        if (currentVc.ContextVcMap.TryGetValue(sender.Name, out var vectorClock))
+        if (VectorClockGenerator.ContextVcMap.TryGetValue(senderKey, out var vectorClock))
         {
 
             foreach (var op in opsSet)
@@ -51,8 +54,6 @@ public class ConflictOpMonitor: ISendEventMonitor
             .ToDictionary(entry => entry.Key, entry => entry.Value)));
         }
     }
-
-    public void OnSendEventDone(ActorId sender, int loc, ActorId receiver, VectorClockGenerator currentVc) {}
 
     internal bool IsRacing(AsyncOperation op1, AsyncOperation op2)
     {

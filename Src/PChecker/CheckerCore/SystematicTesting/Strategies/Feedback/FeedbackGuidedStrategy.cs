@@ -18,7 +18,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     public record GeneratorRecord(int Priority, StrategyGenerator Generator, List<int> MinHash);
 
-    protected StrategyGenerator Generator;
+    internal StrategyGenerator Generator;
 
     private readonly int _maxScheduledSteps;
 
@@ -170,11 +170,10 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     /// <summary>
     /// This method observes the results of previous run and prepare for the next run.
     /// </summary>
-    /// <param name="runtime">The ControlledRuntime of previous run.</param>
-    public virtual void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime)
+    public virtual void ObserveRunningResults(EventPatternObserver patternObserver, TimelineObserver timelineObserver)
     {
-        var timelineHash = runtime.TimelineObserver.GetTimelineHash();
-        var timelineMinhash = runtime.TimelineObserver.GetTimelineMinhash();
+        var timelineHash = timelineObserver.GetTimelineHash();
+        var timelineMinhash = timelineObserver.GetTimelineMinhash();
 
         int diversityScore = ComputeDiversity(timelineHash, timelineMinhash);
 

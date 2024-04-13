@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PChecker.Feedback;
 using PChecker.Generator.Mutator;
 using PChecker.Generator.Object;
 using PChecker.SystematicTesting.Operations;
@@ -16,21 +17,21 @@ internal class PctcpScheduleGenerator: PCTCPScheduler, IScheduleGenerator<PctcpS
     public RandomChoices<double> SwitchPointChoices;
 
     public PctcpScheduleGenerator(System.Random random, RandomChoices<int>? priorityChoices, RandomChoices<double>?
-            switchPointChoices, int numSwitchPoints, int maxScheduleLength, VectorClockWrapper wrapper):
+            switchPointChoices, int numSwitchPoints, int maxScheduleLength):
         base(numSwitchPoints, maxScheduleLength,
             new ParametricProvider(
                 priorityChoices != null ? new RandomChoices<int>(priorityChoices) : new RandomChoices<int>(random),
                 switchPointChoices != null ? new RandomChoices<double>(switchPointChoices) : new
-        RandomChoices<double>(random)), wrapper)
+        RandomChoices<double>(random)))
     {
         Random = random;
         var provider = (ParametricProvider) Provider;
         PriorityChoices = provider.PriorityChoices;
         SwitchPointChoices = provider.SwitchPointChoices;
     }
-    public PctcpScheduleGenerator(CheckerConfiguration checkerConfiguration, VectorClockWrapper wrapper):
+    public PctcpScheduleGenerator(CheckerConfiguration checkerConfiguration):
         this(new System.Random((int?)checkerConfiguration.RandomGeneratorSeed ?? Guid.NewGuid().GetHashCode()), null,
-        null, checkerConfiguration.StrategyBound,  0, wrapper)
+        null, checkerConfiguration.StrategyBound,  0)
     {
     }
 
@@ -41,13 +42,13 @@ internal class PctcpScheduleGenerator: PCTCPScheduler, IScheduleGenerator<PctcpS
 
     public PctcpScheduleGenerator New()
     {
-        return new PctcpScheduleGenerator(Random, null, null, MaxPrioritySwitchPoints, ScheduleLength, VcWrapper);
+        return new PctcpScheduleGenerator(Random, null, null, MaxPrioritySwitchPoints, ScheduleLength);
     }
 
     public PctcpScheduleGenerator Copy()
     {
         return new PctcpScheduleGenerator(Random, PriorityChoices, SwitchPointChoices, MaxPrioritySwitchPoints,
-            ScheduleLength, VcWrapper);
+            ScheduleLength);
     }
 
     public AsyncOperation? NextRandomOperation(List<AsyncOperation> enabledOperations, AsyncOperation current)

@@ -11,8 +11,7 @@ internal class PctcpScheduleMutator: IMutator<PctcpScheduleGenerator>
             Utils.MutateRandomChoices(prev.PriorityChoices, _meanMutationCount, _meanMutationSize, _random),
             Utils.MutateRandomChoices(prev.SwitchPointChoices, _meanMutationCount, _meanMutationSize, _random),
             prev.MaxPrioritySwitchPoints,
-            prev.ScheduleLength,
-            prev.VcWrapper
+            prev.ScheduleLength
         );
     }
 

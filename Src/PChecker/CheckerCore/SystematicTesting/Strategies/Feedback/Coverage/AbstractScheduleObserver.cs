@@ -1,10 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using PChecker.Actors;
+using PChecker.Actors.Events;
 using PChecker.Actors.Logging;
+using PChecker.Feedback;
 using PChecker.SystematicTesting.Operations;
 
-internal class AbstractScheduleObserver : ISendEventMonitor
+internal class AbstractScheduleObserver : ActorRuntimeLogBase
 {
     AbstractSchedule abstractSchedule;
     Dictionary<string, List<Operation>> opQueue = new();
@@ -15,7 +18,6 @@ internal class AbstractScheduleObserver : ISendEventMonitor
     public Dictionary<string, HashSet<Constraint>> lookingForSendTo = new();
     public Dictionary<string, HashSet<Constraint>> relevantConstraintsByReceiver = new();
     public Dictionary<Operation, HashSet<Constraint>> relevantConstraintsByOp = new();
-    public bool newConstraint = false;
 
     public Dictionary<Constraint, long> visitedConstraints = new();
     public Dictionary<Constraint, long> allVisitedConstraints = new();
@@ -23,7 +25,6 @@ internal class AbstractScheduleObserver : ISendEventMonitor
     public void OnNewAbstractSchedule(AbstractSchedule schedule)
     {
         abstractSchedule = schedule;
-        newConstraint = false;
 
         // Reset everything;
         opQueue.Clear();
@@ -238,18 +239,16 @@ internal class AbstractScheduleObserver : ISendEventMonitor
         }
     }
 
-    public void OnSendEvent(ActorId sender, int loc, ActorId receiver, VectorClockGenerator currentVc)
+    public override void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName, Event e,
+        Guid opGroupId, bool isTargetHalted)
     {
-        var receiverName = receiver.ToString();
-        var senderName = sender.ToString();
-
-        OnNewOp(new Operation(senderName, receiverName, loc));
+        OnNewOp(new Operation(e.Sender, e.Receiver, e.Loc));
     }
 
-    public void OnSendEventDone(ActorId sender, int loc, ActorId receiver, VectorClockGenerator currentVc)
+    public override void OnDequeueEvent(ActorId id, string stateName, Event e)
     {
-        var receiverName = receiver.ToString();
-        var senderName = sender.ToString();
+        var receiverName = e.Receiver;
+        var senderName = e.Sender;
 
         if (!opQueue.ContainsKey(receiverName))
         {
@@ -257,20 +256,19 @@ internal class AbstractScheduleObserver : ISendEventMonitor
         }
         var queue = opQueue[receiverName];
 
-        queue.Add(new Operation(senderName, receiverName, loc));
-        OnExecute(new Operation(senderName, receiverName, loc));
+        queue.Add(new Operation(senderName, receiverName, e.Loc));
+        OnExecute(new Operation(senderName, receiverName, e.Loc));
 
-        if (queue.Count > 1) {
-            var op1 = queue[queue.Count - 2];
-            var op2 = queue[queue.Count - 1];
+        if (queue.Count <= 1) return;
+        var op1 = queue[^2];
+        var op2 = queue[^1];
 
-            var c = new Constraint(op1, op2, true);
+        var c = new Constraint(op1, op2, true);
 
-            if (!visitedConstraints.ContainsKey(c)) {
-                visitedConstraints[c] = 0;
-            }
-            visitedConstraints[c] += 1;
+        if (!visitedConstraints.ContainsKey(c)) {
+            visitedConstraints[c] = 0;
         }
+        visitedConstraints[c] += 1;
     }
 
     public int GetTraceHash() {

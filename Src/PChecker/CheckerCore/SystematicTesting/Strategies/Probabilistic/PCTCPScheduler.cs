@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using PChecker.Actors.Logging;
+using PChecker.Feedback;
 using PChecker.IO.Debugging;
 using PChecker.SystematicTesting.Operations;
 using PChecker.SystematicTesting.Strategies.Probabilistic.pctcp;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic;
 
-
-internal class PCTCPScheduler: PrioritizedScheduler
+internal class PCTCPScheduler : PrioritizedScheduler
 {
     public readonly PriorizationProvider Provider;
 
@@ -26,27 +27,28 @@ internal class PCTCPScheduler: PrioritizedScheduler
     private Dictionary<int, OperationWithId> _operationMap = new();
     private Dictionary<int, Chain> _chainMap = new();
     private Dictionary<int, int> _nextOperationMap = new();
-    internal VectorClockWrapper VcWrapper;
+    public VectorClockGenerator vcGenerator;
 
-    public PCTCPScheduler(int maxPrioritySwitchPoints, int scheduleLength, PriorizationProvider provider,
-        VectorClockWrapper vcWrapper)
+    public PCTCPScheduler(int maxPrioritySwitchPoints, int scheduleLength, PriorizationProvider provider)
     {
         Provider = provider;
         ScheduledSteps = 0;
         ScheduleLength = scheduleLength;
         MaxPrioritySwitchPoints = maxPrioritySwitchPoints;
         _numSwitchPointsLeft = maxPrioritySwitchPoints;
-        VcWrapper = vcWrapper;
 
         double switchPointProbability = 0.1;
         if (ScheduleLength != 0)
         {
             switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
         }
-        _nextPriorityChangePoint = Generator.Mutator.Utils.SampleGeometric(switchPointProbability, Provider.SwitchPointChoice());
+
+        _nextPriorityChangePoint =
+            Generator.Mutator.Utils.SampleGeometric(switchPointProbability, Provider.SwitchPointChoice());
     }
 
-    public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
+    public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops,
+        out AsyncOperation next)
     {
         next = null;
         var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
@@ -56,6 +58,7 @@ internal class PCTCPScheduler: PrioritizedScheduler
             {
                 MovePriorityChangePointForward();
             }
+
             return false;
         }
 
@@ -72,9 +75,9 @@ internal class PCTCPScheduler: PrioritizedScheduler
     private void OnNewOperation(AsyncOperation operation)
     {
         Dictionary<String, int> vc;
-        if (VcWrapper.CurrentVC.ContextVcMap.ContainsKey(operation.Name))
+        if (vcGenerator.ContextVcMap.ContainsKey(operation.Name))
         {
-            vc = VcWrapper.CurrentVC
+            vc = vcGenerator
                 .ContextVcMap[operation.Name]
                 .ToDictionary(entry => entry.Key, entry => entry.Value);
         }
@@ -142,6 +145,7 @@ internal class PCTCPScheduler: PrioritizedScheduler
                 }
             }
         }
+
         return false;
     }
 
@@ -162,6 +166,7 @@ internal class PCTCPScheduler: PrioritizedScheduler
                 hasLess = true;
             }
         }
+
         return hasLess;
     }
 
@@ -170,6 +175,7 @@ internal class PCTCPScheduler: PrioritizedScheduler
         _nextPriorityChangePoint += 1;
         Debug.WriteLine("<PCTLog> Moving priority change to '{0}'.", _nextPriorityChangePoint);
     }
+
     private OperationWithId GetHighestPriorityEnabledOperation(IEnumerable<AsyncOperation> choices)
     {
         OperationWithId highestPriorityOp = null;
@@ -197,6 +203,7 @@ internal class PCTCPScheduler: PrioritizedScheduler
                 }
             }
         }
+
         return highestPriorityOp;
     }
 
@@ -225,6 +232,7 @@ internal class PCTCPScheduler: PrioritizedScheduler
                     return (chain.Ops.Last().Id, opId, pairs);
                 }
             }
+
             var temp = _predMap[opId].Where(it => _nextOperationMap.ContainsKey(it)
                                                   && !pairs.ContainsKey(_nextOperationMap[it]))
                 .ToList();
@@ -233,8 +241,8 @@ internal class PCTCPScheduler: PrioritizedScheduler
                 queue.Enqueue(_nextOperationMap[predOp]);
                 pairs[_nextOperationMap[predOp]] = (predOp, opId);
             }
-
         }
+
         return (-1, -1, pairs);
     }
 
@@ -268,10 +276,10 @@ internal class PCTCPScheduler: PrioritizedScheduler
                 _chains.Remove(opChain);
                 break;
             }
+
             pred = pairs[op].Item1;
             op = pairs[op].Item2;
         } while (true);
-
     }
 
     /// <summary>
@@ -314,7 +322,10 @@ internal class PCTCPScheduler: PrioritizedScheduler
                     {
                         switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
                     }
-                    _nextPriorityChangePoint = Generator.Mutator.Utils.SampleGeometric(switchPointProbability, Provider.SwitchPointChoice()) + ScheduledSteps;
+
+                    _nextPriorityChangePoint =
+                        Generator.Mutator.Utils.SampleGeometric(switchPointProbability, Provider.SwitchPointChoice()) +
+                        ScheduledSteps;
                 }
             }
         }
@@ -359,8 +370,9 @@ internal class PCTCPScheduler: PrioritizedScheduler
         {
             switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
         }
-        _nextPriorityChangePoint = Generator.Mutator.Utils.SampleGeometric(switchPointProbability, Provider.SwitchPointChoice());
+
+        _nextPriorityChangePoint =
+            Generator.Mutator.Utils.SampleGeometric(switchPointProbability, Provider.SwitchPointChoice());
         return true;
     }
-
 }

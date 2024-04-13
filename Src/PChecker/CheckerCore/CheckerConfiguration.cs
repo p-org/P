@@ -293,34 +293,16 @@ namespace PChecker
         public string JvmArgs;
 
         /// <summary>
-        /// For feedback strategy, save input if the pattern are partially matched.
-        /// </summary>
-        [DataMember]
-        public bool SavePartialMatch;
-
-        /// <summary>
         /// For feedback strategy, discard saved generators if the size of the buffer is greater than N.
         /// </summary>
         [DataMember]
         public int DiscardAfter;
 
         /// <summary>
-        /// For feedback strategy, schedule generator mutations based on diversity.
+        /// For QL strategy, schedule generator mutations based on diversity.
         /// </summary>
         [DataMember]
         public bool DiversityBasedPriority;
-
-        /// <summary>
-        /// For feedback strategy, ignore the pattern feedback.
-        /// </summary>
-        [DataMember]
-        public bool IgnorePatternFeedback;
-
-        /// <summary>
-        /// For feedback strategy, use priority based sampling.
-        /// </summary>
-        [DataMember]
-        public bool PriorityBasedSampling;
 
         /// <summary>
         /// Enable conflict analysis for scheduling optimization.
@@ -373,11 +355,8 @@ namespace PChecker
 
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
-            SavePartialMatch = true;
             DiscardAfter = 100;
             DiversityBasedPriority = true;
-            IgnorePatternFeedback = false;
-            PriorityBasedSampling = true;
             EnableConflictAnalysis = false;
 
             PSymArgs = "";

@@ -35,7 +35,10 @@ public class PContinuation {
      * @param machine Machine that just executed this continuation
      */
     public void runAfter(PMachine machine) {
-        // process pending state exit function first
+        // When a continuation is processed/unblocks, the machine might unblock or may get blocked on
+        // a different continuation.
+
+        // If machine unblocks (i.e., no pending continuation), then we run any pending state exit function first.
         if (!machine.isBlocked()) {
             State blockedExitState = machine.getBlockedStateExit();
             if (blockedExitState != null) {
@@ -43,35 +46,42 @@ public class PContinuation {
                 machine.exitCurrentState();
             }
         } else {
-            // blocked on a different continuation, do nothing
+            // blocked on a different continuation encountered when processing this continuation, do nothing
             return;
         }
 
-        // at this point, there should be no pending state exit function
+        // At this point, the machine might remain unblocked or may get blocked on a different continuation
+        // encountered when executing the pending state exit function.
+
+        // In all cases, at this point there should be no pending state exit function at this point.
         assert (machine.getBlockedStateExit() == null);
 
-        // process any pending new state entry function
+        // If machine unblocks (i.e., no pending continuation), then we run any pending state new state entry function.
         if (!machine.isBlocked()) {
             State blockedEntryState = machine.getBlockedNewStateEntry();
             if (blockedEntryState != null) {
                 machine.enterNewState(blockedEntryState, machine.getBlockedNewStateEntryPayload());
             }
         } else {
-            // blocked on a different continuation, do nothing
+            // blocked on a different continuation encountered when processing pending state exit function, do nothing
             return;
         }
 
-        // at this point, there should be no pending exit or new state entry functions
+        // At this point, the machine might remain unblocked or may get blocked on a different continuation
+        // encountered in the pending new state entry function.
+
+        // In all cases, there should be no pending exit or new state entry functions at this point.
         assert (machine.getBlockedStateExit() == null);
         assert (machine.getBlockedNewStateEntry() == null);
 
-        // cleanup continuation variables if unblocked completely
+        // If machine unblocks (i.e., no pending continuation), cleanup continuation variables since machine is
+        // completely unblocked
         if (!machine.isBlocked()) {
             for (PContinuation c : machine.getContinuationMap().values()) {
                 c.getClearFun().run();
             }
         } else {
-            // blocked on a different continuation, do nothing
+            // blocked on a different continuation encountered when processing pending new state entry function, do nothing
             return;
         }
     }

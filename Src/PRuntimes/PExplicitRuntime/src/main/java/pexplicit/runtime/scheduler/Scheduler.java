@@ -1,10 +1,14 @@
 package pexplicit.runtime.scheduler;
 
+import lombok.Getter;
+import lombok.Setter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.events.PMessage;
+import pexplicit.utils.exceptions.DeadlockException;
+import pexplicit.utils.exceptions.LivenessException;
 import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.values.*;
 
@@ -21,6 +25,10 @@ public abstract class Scheduler implements SchedulerInterface {
      * Current schedule
      */
     public final Schedule schedule;
+
+    @Getter
+    @Setter
+    protected int stepNumLogs = 0;
 
     /**
      * Constructor
@@ -69,6 +77,13 @@ public abstract class Scheduler implements SchedulerInterface {
      * @return PValue as data choice
      */
     protected abstract PValue<?> getNextDataChoice(List<PValue<?>> input_choices);
+
+    public void updateLogNumber() {
+        stepNumLogs += 1;
+        if (stepNumLogs >= PExplicitGlobal.getConfig().getMaxStepLogBound()) {
+            throw new LivenessException("Detected potential infinite loop in an atomic block");
+        }
+    }
 
     /**
      * Get the next random boolean choice
@@ -169,11 +184,8 @@ public abstract class Scheduler implements SchedulerInterface {
         // add machine to schedule
         schedule.makeMachine(machine);
 
-        // log machine creation
-        PExplicitLogger.logCreateMachine(machine);
-
         // run create machine event
-        processEventAtTarget(new PMessage(PEvent.createMachine, machine, null));
+        processCreateEvent(new PMessage(PEvent.createMachine, machine, null));
     }
 
     /**
@@ -198,9 +210,6 @@ public abstract class Scheduler implements SchedulerInterface {
 
         // add machine to schedule
         schedule.makeMachine(machine);
-
-        // log machine creation
-        PExplicitLogger.logCreateMachine(machine);
         return machine;
     }
 
@@ -213,17 +222,32 @@ public abstract class Scheduler implements SchedulerInterface {
         List<PMonitor> listenersForEvent = PExplicitGlobal.getModel().getListeners().get(message.getEvent());
         if (listenersForEvent != null) {
             for (PMonitor m : listenersForEvent) {
+                // log monitor process event
+                PExplicitLogger.logMonitorProcessEvent(m, message);
+
                 m.processEventToCompletion(message.setTarget(m));
             }
         }
     }
 
     /**
-     * Process the event at the target machine
+     * Process the create machine event at the target machine
      *
      * @param message Message to process
      */
-    public void processEventAtTarget(PMessage message) {
+    public void processCreateEvent(PMessage message) {
+        message.getTarget().processEventToCompletion(message);
+    }
+
+    /**
+     * Process the dequeue event at the target machine
+     *
+     * @param message Message to process
+     */
+    public void processDequeueEvent(PMessage message) {
+        // log monitor process event
+        PExplicitLogger.logDequeueEvent(message.getTarget(), message);
+
         message.getTarget().processEventToCompletion(message);
     }
 
@@ -239,5 +263,31 @@ public abstract class Scheduler implements SchedulerInterface {
         }
         PMessage message = new PMessage(event, null, payload);
         runMonitors(message);
+    }
+
+    /**
+     * Check for deadlock at the end of a completed schedule
+     */
+    public void checkDeadlock() {
+        for (PMachine machine: schedule.getMachineSet()) {
+            if (machine.canRun() && machine.isBlocked()) {
+                throw new DeadlockException(String.format("Deadlock detected. %s is waiting to receive an event, but no other controlled tasks are enabled.", machine));
+            }
+        }
+    }
+
+    /**
+     * Check for liveness at the end of a completed schedule
+     */
+    public void checkLiveness(boolean terminated) {
+        for (PMachine monitor: PExplicitGlobal.getModel().getMonitors()) {
+            if (monitor.getCurrentState().isHotState()) {
+                if (terminated) {
+                    throw new LivenessException(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
+                } else {
+                    throw new LivenessException(String.format("Monitor %s detected potential liveness bug in hot state %s", monitor, monitor.getCurrentState()));
+                }
+            }
+        }
     }
 }

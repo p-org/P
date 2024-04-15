@@ -8,13 +8,20 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMonitor;
+import pexplicit.runtime.machine.State;
+import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.machine.events.PMessage;
+import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pexplicit.utils.monitor.MemoryMonitor;
+import pexplicit.values.PEvent;
 import pexplicit.values.PValue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 
 /**
  * Represents the main PExplicit logger
@@ -44,18 +51,8 @@ public class PExplicitLogger {
         context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
     }
 
-    /**
-     * Disable the logger
-     */
-    public static void disable() {
-        Configurator.setLevel(PExplicitLogger.class.getName(), Level.OFF);
-    }
-
-    /**
-     * Enable the logger
-     */
-    public static void enable() {
-        Configurator.setLevel(PExplicitLogger.class.getName(), Level.ALL);
+    public static void logInfo(String message) {
+        log.info(message);
     }
 
     /**
@@ -63,38 +60,10 @@ public class PExplicitLogger {
      *
      * @param message Message to print
      */
-    public static void log(String message) {
-        if (verbosity > 0) {
+    public static void logVerbose(String message) {
+        if (verbosity > 3) {
             log.info(message);
         }
-    }
-
-    /**
-     * Logs the given info message.
-     *
-     * @param message Message to print
-     */
-
-    public static void info(String message) {
-        log.info(message);
-    }
-
-    /**
-     * Logs the given warning message.
-     *
-     * @param message Message to print
-     */
-    public static void warn(String message) {
-        log.warn(message);
-    }
-
-    /**
-     * Logs the given error message.
-     *
-     * @param message Message to print
-     */
-    public static void error(String message) {
-        log.error(message);
     }
 
     /**
@@ -105,24 +74,53 @@ public class PExplicitLogger {
         ScratchLogger.Initialize();
     }
 
+    public static void logRunTest() {
+        log.info(String.format(".. Test case :: " + PExplicitGlobal.getConfig().getTestDriver()));
+        log.info(String.format("... Checker is using '%s' strategy (seed:%s)",
+                PExplicitGlobal.getConfig().getStrategy(), PExplicitGlobal.getConfig().getRandomSeed()));
+        if (verbosity > 3) {
+            log(LogType.TestLog, String.format("Running test %s.",
+                    PExplicitGlobal.getConfig().getTestDriver()));
+        }
+    }
+
+    /**
+     * Logs message at the end of a run.
+     *
+     * @param scheduler Explicit state search scheduler
+     * @param timeSpent Time spent in seconds
+     */
+    public static void logEndOfRun(ExplicitSearchScheduler scheduler, long timeSpent) {
+        if (verbosity == 0) {
+            log.info("");
+        }
+        log.info("--------------------");
+        log.info("... Checking statistics:");
+        if (PExplicitGlobal.getStatus().equals("cex")) {
+            log.info("..... Found 1 bug.");
+        } else {
+            log.info("..... Found 0 bugs.");
+        }
+        log.info("... Scheduling statistics:");
+        log.info(String.format("..... Explored at least %d distinct schedules", scheduler.getIteration()));
+        log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
+                scheduler.getMinSteps(), (scheduler.getTotalSteps()/scheduler.getIteration()), scheduler.getMaxSteps()));
+        log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
+        log.info(String.format(".. Result: " + PExplicitGlobal.getResult()));
+        log.info(". Done");
+    }
+
     /**
      * Print error trace
      *
      * @param e          Exception object
-     * @param stderrOnly Print to stderr only
      */
-    public static void printStackTrace(Exception e, boolean stderrOnly) {
-        if (stderrOnly) {
-            System.err.println("... Stack trace:");
-            e.printStackTrace(System.err);
-        } else {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-
-            info("... Stack trace:");
-            info(sw.toString());
-        }
+    public static void logStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        log.info("--------------------");
+        log.info(sw.toString());
     }
 
     /**
@@ -161,47 +159,66 @@ public class PExplicitLogger {
     }
 
     /**
-     * Logs message at the end of a run.
-     *
-     * @param totalIter Total number of completed iterations
-     * @param newIter   Number of newly complexted iterations
-     * @param timeSpent Time spent in seconds
-     * @param result    Result of the run
-     */
-    public static void logEndOfRun(int totalIter, int newIter, long timeSpent, String result) {
-        log.info("--------------------");
-        log.info(
-                String.format(
-                        "Explored %d schedules%s",
-                        totalIter, ((totalIter == newIter) ? "" : String.format(" (%d new)", newIter))));
-        log.info(
-                String.format(
-                        "Took %d seconds and %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
-        log.info(String.format("Result: " + result));
-        log.info("--------------------");
-    }
-
-
-    /**
      * Log when backtracking to a new choice number
      *
      * @param choiceNum Choice number to which backtracking to
      */
     public static void logBacktrack(int choiceNum) {
-        if (verbosity > 3) {
-            log.info(String.format("Backtracking to choice %d", choiceNum));
+        if (verbosity > 1) {
+            log.info(String.format("  Backtracking to choice @?::%d", choiceNum));
         }
     }
 
-    /**
-     * Log when a machine is starting
-     *
-     * @param machine Machine that is starting
-     */
-    public static void logMachineStart(PMachine machine) {
+    public static void logNewScheduleChoice(List<PMachine> choices, int step, int idx) {
+        if (verbosity > 1) {
+            log.info(String.format("    @%d::%d new schedule choice: %s", step, idx, choices));
+        }
+    }
+
+    public static void logNewDataChoice(List<PValue<?>> choices, int step, int idx) {
+        if (verbosity > 1) {
+            log.info(String.format("    @%d::%d new data choice: %s", step, idx, choices));
+        }
+    }
+
+    public static void logRepeatScheduleChoice(PMachine choice, int step, int idx) {
+        if (verbosity > 2) {
+            log.info(String.format("    @%d::%d %s (repeat)", step, idx, choice));
+        }
+    }
+
+    public static void logCurrentScheduleChoice(PMachine choice, int step, int idx) {
+        if (verbosity > 2) {
+            log.info(String.format("    @%d::%d %s", step, idx, choice));
+        }
+    }
+
+    public static void logRepeatDataChoice(PValue<?> choice, int step, int idx) {
+        if (verbosity > 2) {
+            log.info(String.format("    @%d::%d %s (repeat)", step, idx, choice));
+        }
+    }
+
+    public static void logCurrentDataChoice(PValue<?> choice, int step, int idx) {
+        if (verbosity > 2) {
+            log.info(String.format("    @%d::%d %s", step, idx, choice));
+        }
+    }
+
+    private static void log(LogType type, String message) {
+        log.info(String.format("    <%s> %s", type, message));
+    }
+
+    public static void logModel(String message) {
         if (verbosity > 3) {
-            String msg = String.format("Machine %s starting", machine.toString());
-            log.info(msg);
+            log(LogType.PrintLog, message);
+        }
+    }
+
+    public static void logBugFound(String message) {
+        if (verbosity > 3) {
+            log(LogType.ErrorLog, message);
+            log(LogType.StrategyLog, String.format("Found bug using %s strategy.", PExplicitGlobal.getConfig().getStrategy()));
         }
     }
 
@@ -209,26 +226,20 @@ public class PExplicitLogger {
      * Log when a machine is created
      *
      * @param machine Machine that is created
+     * @param creator Machine that created this machine
      */
-    public static void logCreateMachine(PMachine machine) {
+    public static void logCreateMachine(PMachine machine, PMachine creator) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
         if (verbosity > 3) {
-            String msg = "Machine " + machine + " was created";
-            log.info(msg);
+            log(LogType.CreateLog, String.format("%s was created by %s.", machine, creator));
         }
     }
 
-    /**
-     * Log when a machine processes an event
-     *
-     * @param message Message that is being processed
-     */
-    public static void logEvent(PMessage message) {
+    public static void logSendEvent(PMachine sender, PMessage message) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
         if (verbosity > 3) {
-            String msg =
-                    String.format(
-                            "Machine %s is handling event %s in state %s",
-                            message.getTarget(), message.getEvent(), message.getTarget().getCurrentState());
-            log.info(msg);
+            log(LogType.SendLog, String.format("%s in state %s sent event %s to %s.",
+                    sender, sender.getCurrentState(), message.getEvent(), message.getTarget()));
         }
     }
 
@@ -238,8 +249,9 @@ public class PExplicitLogger {
      * @param machine Machine that is entering the state
      */
     public static void logStateEntry(PMachine machine) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
         if (verbosity > 3) {
-            log.info(String.format("Machine %s entering state %s", machine, machine.getCurrentState()));
+            log(LogType.StateLog, String.format("%s enters state %s.", machine, machine.getCurrentState()));
         }
     }
 
@@ -249,33 +261,47 @@ public class PExplicitLogger {
      * @param machine Machine that is exiting the state
      */
     public static void logStateExit(PMachine machine) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
         if (verbosity > 3) {
-            log.info(String.format("Machine %s exiting state %s", machine, machine.getCurrentState()));
+            log(LogType.StateLog, String.format("%s exits state %s.", machine, machine.getCurrentState()));
         }
     }
 
-    public static void logRepeatScheduleChoice(PMachine choice, int step, int idx) {
-        if (verbosity > 1) {
-            log.info(String.format("  @%d::%d %s (repeat)", step, idx, choice));
+    public static void logRaiseEvent(PMachine machine, PEvent event) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
+        if (verbosity > 3) {
+            log(LogType.RaiseLog, String.format("%s raised event %s in state %s.", machine, event, machine.getCurrentState()));
         }
     }
 
-    public static void logCurrentScheduleChoice(PMachine choice, int step, int idx) {
-        if (verbosity > 1) {
-            log.info(String.format("  @%d::%d %s", step, idx, choice));
+    public static void logStateTransition(PMachine machine, State newState) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
+        if (verbosity > 3) {
+            log(LogType.GotoLog, String.format("%s is transitioning from state %s to state %s.", machine, machine.getCurrentState(), newState));
         }
     }
 
-    public static void logRepeatDataChoice(PValue<?> choice, int step, int idx) {
-        if (verbosity > 1) {
-            log.info(String.format("  @%d::%d %s (repeat)", step, idx, choice));
+    public static void logReceive(PMachine machine, PContinuation continuation) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
+        if (verbosity > 3) {
+            log(LogType.ReceiveLog, String.format("%s is waiting to dequeue an event of type %s or %s in state %s.",
+                    machine, continuation.getCaseEvents(), PEvent.haltEvent, machine.getCurrentState()));
         }
     }
 
-    public static void logCurrentDataChoice(PValue<?> choice, int step, int idx) {
-        if (verbosity > 1) {
-            log.info(String.format("  @%d::%d %s", step, idx, choice));
+    public static void logMonitorProcessEvent(PMonitor monitor, PMessage message) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
+        if (verbosity > 3) {
+            log(LogType.MonitorLog, String.format("%s is processing event %s in state %s.",
+                    monitor, message.getEvent(), monitor.getCurrentState()));
         }
     }
 
+    public static void logDequeueEvent(PMachine machine, PMessage message) {
+        PExplicitGlobal.getScheduler().updateLogNumber();
+        if (verbosity > 3) {
+            log(LogType.DequeueLog, String.format("%s dequeued event %s in state %s.",
+                    machine, message.getEvent(), machine.getCurrentState()));
+        }
+    }
 }

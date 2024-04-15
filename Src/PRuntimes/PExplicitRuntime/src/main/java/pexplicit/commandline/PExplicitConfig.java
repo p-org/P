@@ -46,6 +46,9 @@ public class PExplicitConfig {
     // random seed
     @Setter
     long randomSeed = System.currentTimeMillis();
+    // max number of logs (i.e., internal steps) within a single schedule step
+    @Setter
+    int maxStepLogBound = 1000;
     // buffer semantics
     @Setter
     BufferSemantics bufferSemantics = BufferSemantics.SenderQueue;

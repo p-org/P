@@ -150,15 +150,15 @@ public class PExplicit {
         }
         if (driver == null) {
             if (!name.equals(defaultTestDriver)) {
-                PExplicitLogger.info("No test driver found named \"" + name + "\"");
+                PExplicitLogger.logInfo("No test driver found named \"" + name + "\"");
             }
-            PExplicitLogger.info(
+            PExplicitLogger.logInfo(
                     String.format(
                             "Error: We found '%d' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).",
                             subTypesDriver.size()));
-            PExplicitLogger.info("Possible options are:");
+            PExplicitLogger.logInfo("Possible options are:");
             for (Class<? extends PTestDriver> td : subTypesDriver) {
-                PExplicitLogger.info(String.format("%s", td.getSimpleName()));
+                PExplicitLogger.logInfo(String.format("%s", td.getSimpleName()));
             }
             if (!name.equals(defaultTestDriver)) {
                 throw new Exception("No test driver found named \"" + PExplicitGlobal.getConfig().getTestDriver() + "\"");

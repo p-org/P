@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.ScratchLogger;
 import pexplicit.runtime.logger.StatWriter;
@@ -112,7 +113,10 @@ public class ExplicitSearchScheduler extends Scheduler {
                 !PExplicitGlobal.getConfig().isFailOnMaxStepBound() || (schedule.getStepNumber() < PExplicitGlobal.getConfig().getMaxStepBound()),
                 "Step bound of " + PExplicitGlobal.getConfig().getMaxStepBound() + " reached.");
         if (PExplicitGlobal.getConfig().getMaxSchedules() > 0) {
-            isDoneIterating = (iteration >= PExplicitGlobal.getConfig().getMaxSchedules());
+            if (iteration >= PExplicitGlobal.getConfig().getMaxSchedules()) {
+                isDoneIterating = true;
+                PExplicitGlobal.setStatus(STATUS.SCHEDULEOUT);
+            }
         }
     }
 
@@ -326,6 +330,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             } else {
                 result += String.format("partially correct up to step %d with %d choices remaining", maxStepNumber, numUnexplored);
             }
+
         }
         PExplicitGlobal.setResult(result);
     }

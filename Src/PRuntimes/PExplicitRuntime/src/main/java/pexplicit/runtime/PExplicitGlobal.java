@@ -38,7 +38,7 @@ public class PExplicitGlobal {
      **/
     @Getter
     @Setter
-    private static String status = "incomplete";
+    private static STATUS status = STATUS.INCOMPLETE;
 
     /**
      * Result of the run

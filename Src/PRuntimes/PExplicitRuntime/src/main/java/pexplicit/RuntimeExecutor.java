@@ -62,12 +62,8 @@ public class RuntimeExecutor {
     }
 
     private static void preprocess() {
-        PExplicitLogger.info(String.format(".. Test case :: " + PExplicitGlobal.getConfig().getTestDriver()));
-        PExplicitLogger.info(
-                String.format(
-                        "... Checker is using '%s' strategy (seed:%s)",
-                        PExplicitGlobal.getConfig().getStrategy(), PExplicitGlobal.getConfig().getRandomSeed()));
-        PExplicitLogger.info("--------------------");
+        // log run test
+        PExplicitLogger.logRunTest();
 
         executor = Executors.newSingleThreadExecutor();
 
@@ -87,15 +83,9 @@ public class RuntimeExecutor {
             scheduler.updateResult();
         }
 
-        Instant end = Instant.now();
         if (printStats) {
             printStats();
         }
-        PExplicitLogger.logEndOfRun(
-                scheduler.getIteration(),
-                scheduler.getIteration(),
-                Duration.between(TimeMonitor.getStart(), end).getSeconds(),
-                PExplicitGlobal.getResult());
     }
 
     private static void process(boolean resume) throws Exception {
@@ -113,12 +103,7 @@ public class RuntimeExecutor {
         } catch (BugFoundException e) {
             PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
             PExplicitGlobal.setResult(String.format("found cex of length %d", scheduler.schedule.getStepNumber()));
-
-            postprocess(true);
-            PExplicitLogger.info(e.toString());
-            if (PExplicitGlobal.getConfig().getVerbosity() > 0) {
-                PExplicitLogger.printStackTrace(e, false);
-            }
+            PExplicitLogger.logStackTrace(e);
             throw e;
         } catch (InterruptedException e) {
             PExplicitGlobal.setStatus(STATUS.INTERRUPTED);
@@ -130,6 +115,7 @@ public class RuntimeExecutor {
             future.cancel(true);
             executor.shutdownNow();
             postprocess(PExplicitGlobal.getStatus() != STATUS.BUG_FOUND);
+            PExplicitLogger.logEndOfRun(scheduler, Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
         }
     }
 

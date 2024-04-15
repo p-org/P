@@ -35,11 +35,25 @@ public class ExplicitSearchScheduler extends Scheduler {
     @Getter
     private int iteration = 0;
 
+    private boolean scheduleTerminated = false;
+
     /**
-     * Max step number explored
+     * Min steps
      */
     @Getter
-    private int maxStepNumber = 0;
+    private int minSteps = 0;
+
+    /**
+     * Max steps
+     */
+    @Getter
+    private int maxSteps = 0;
+
+    /**
+     * Total steps
+     */
+    @Getter
+    private int totalSteps = 0;
 
     /**
      * Backtrack choice number
@@ -79,8 +93,6 @@ public class ExplicitSearchScheduler extends Scheduler {
     @Override
     public void run() throws TimeoutException {
         PExplicitGlobal.setResult("incomplete");
-        start();
-
         if (PExplicitGlobal.getConfig().getVerbosity() == 0) {
             printProgressHeader(true);
         }
@@ -88,6 +100,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         while (!isDoneIterating) {
             iteration++;
             PExplicitLogger.logStartIteration(iteration, schedule.getStepNumber());
+            start();
             runIteration();
             postProcessIteration();
         }
@@ -101,17 +114,32 @@ public class ExplicitSearchScheduler extends Scheduler {
     @Override
     protected void runIteration() throws TimeoutException {
         isDoneStepping = false;
+        scheduleTerminated = false;
         while (!isDoneStepping) {
             printProgress(false);
             runStep();
         }
         printProgress(false);
-        if (schedule.getStepNumber() > maxStepNumber) {
-            maxStepNumber = schedule.getStepNumber();
+
+        totalSteps += schedule.getStepNumber();
+        if (minSteps == -1 || schedule.getStepNumber() < minSteps) {
+            minSteps = schedule.getStepNumber();
         }
+        if (maxSteps == -1 || schedule.getStepNumber() > maxSteps) {
+            maxSteps = schedule.getStepNumber();
+        }
+
+        if (scheduleTerminated) {
+            // schedule terminated, check for deadlock
+            checkDeadlock();
+        }
+        // check for liveness
+        checkLiveness(scheduleTerminated);
+
         Assert.fromModel(
                 !PExplicitGlobal.getConfig().isFailOnMaxStepBound() || (schedule.getStepNumber() < PExplicitGlobal.getConfig().getMaxStepBound()),
                 "Step bound of " + PExplicitGlobal.getConfig().getMaxStepBound() + " reached.");
+
         if (PExplicitGlobal.getConfig().getMaxSchedules() > 0) {
             if (iteration >= PExplicitGlobal.getConfig().getMaxSchedules()) {
                 isDoneIterating = true;
@@ -131,11 +159,15 @@ public class ExplicitSearchScheduler extends Scheduler {
         TimeMonitor.checkTimeout();
         MemoryMonitor.checkMemout();
 
+        // reset number of logs in current step
+        stepNumLogs = 0;
+
         // get a scheduling choice as sender machine
         PMachine sender = getNextScheduleChoice();
 
         if (sender == null) {
-            // no scheduling choice remains, done with this schedule
+            // done with this schedule
+            scheduleTerminated = true;
             isDoneStepping = true;
             PExplicitLogger.logFinishedIteration(schedule.getStepNumber());
             return;
@@ -153,7 +185,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         PExplicitLogger.logStartStep(schedule.getStepNumber(), sender, msg);
 
         // process message
-        msg.getTarget().processEventToCompletion(msg);
+        processDequeueEvent(msg);
 
         // update done stepping flag
         isDoneStepping = (schedule.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
@@ -194,6 +226,11 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (choices.isEmpty()) {
             // no existing unexplored choices, so try generating new choices
             choices = getNewScheduleChoices();
+            if (choices.size() > 1) {
+                // log new choice
+                PExplicitLogger.logNewScheduleChoice(choices, schedule.getStepNumber(), schedule.getChoiceNumber());
+            }
+
             if (choices.isEmpty()) {
                 // no unexplored choices remaining
                 schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
@@ -244,6 +281,11 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (choices.isEmpty()) {
             // no existing unexplored choices, so try generating new choices
             choices = input_choices;
+            if (choices.size() > 1) {
+                // log new choice
+                PExplicitLogger.logNewDataChoice(choices, schedule.getStepNumber(), schedule.getChoiceNumber());
+            }
+
             if (choices.isEmpty()) {
                 // no unexplored choices remaining
                 schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
@@ -285,7 +327,6 @@ public class ExplicitSearchScheduler extends Scheduler {
                     machine.reset();
                 }
                 reset();
-                start();
                 return;
             } else {
                 schedule.clearChoice(cIdx);
@@ -318,7 +359,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         String result = "";
         int maxStepBound = PExplicitGlobal.getConfig().getMaxStepBound();
         int numUnexplored = schedule.getNumUnexploredChoices();
-        if (maxStepNumber < maxStepBound) {
+        if (maxSteps < maxStepBound) {
             if (numUnexplored == 0) {
                 result += "correct for any depth";
             } else {
@@ -326,9 +367,9 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
         } else {
             if (numUnexplored == 0) {
-                result += String.format("correct up to step %d", maxStepNumber);
+                result += String.format("correct up to step %d", maxSteps);
             } else {
-                result += String.format("partially correct up to step %d with %d choices remaining", maxStepNumber, numUnexplored);
+                result += String.format("partially correct up to step %d with %d choices remaining", maxSteps, numUnexplored);
             }
 
         }
@@ -340,15 +381,15 @@ public class ExplicitSearchScheduler extends Scheduler {
         double memoryUsed = MemoryMonitor.getMemSpent();
 
         printProgress(true);
-        PExplicitLogger.log("\n--------------------");
 
         // print basic statistics
         StatWriter.log("time-seconds", String.format("%.1f", timeUsed));
         StatWriter.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
         StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
         StatWriter.log("#-schedules", String.format("%d", iteration));
-        StatWriter.log("max-steps", String.format("%d", maxStepNumber));
-        PExplicitLogger.log(String.format("Max Schedule Length       %d", maxStepNumber));
+        StatWriter.log("steps-min", String.format("%d", minSteps));
+        StatWriter.log("steps-max", String.format("%d", maxSteps));
+        StatWriter.log("steps-avg", String.format("%d", totalSteps/iteration));
         StatWriter.log("#-choices-unexplored", String.format("%d", schedule.getNumUnexploredChoices()));
         StatWriter.log("%-choices-unexplored-data", String.format("%.1f", schedule.getUnexploredDataChoicesPercent()));
     }
@@ -375,9 +416,11 @@ public class ExplicitSearchScheduler extends Scheduler {
         s.append(StringUtils.center("Unexplored", 24));
 
         if (consolePrint) {
+            System.out.println("--------------------");
             System.out.println(s);
         } else {
-            PExplicitLogger.info(s.toString());
+            PExplicitLogger.logVerbose("--------------------");
+            PExplicitLogger.logVerbose(s.toString());
         }
     }
 
@@ -400,7 +443,6 @@ public class ExplicitSearchScheduler extends Scheduler {
                 if (consolePrint) {
                     s.append('\r');
                 } else {
-                    PExplicitLogger.info("--------------------");
                     printProgressHeader(false);
                 }
                 s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
@@ -418,7 +460,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 if (consolePrint) {
                     System.out.print(s);
                 } else {
-                    PExplicitLogger.log(s.toString());
+                    PExplicitLogger.logVerbose(s.toString());
                 }
             }
         }

@@ -26,8 +26,8 @@ public class TestPExplicit {
     private static final List<String> excluded = new ArrayList<>();
     private static String timeout = "60";
     private static String schedules = "100";
-    private static String maxSteps = "300";
-    private static String runArgs = "--sch-coverage dfs";
+    private static String maxSteps = "10000";
+    private static String runArgs = "--sch-coverage dfs -v";
     private static boolean initialized = false;
 
     private static void setRunArgs() {
@@ -79,13 +79,12 @@ public class TestPExplicit {
         excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive12");
 
         /**
-         * TODO: Deadlock detected
+         * TODO: liveness with temperatures
          */
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive6");
-
-        /**
-         * TODO: Run liveness tests
-         */
+        excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1");
+        excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1_falsePass");
+        excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET");
+        excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET2");
     }
 
     private static void initialize() {
@@ -231,10 +230,9 @@ public class TestPExplicit {
     //        return loadTests("../../../Tst/RegressionTests/Feature5ModuleSystem");
     //    }
 
-    // TODO Unsupported: liveness checking
-//  @TestFactory
-//  //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-//  Collection<DynamicTest>  loadLivenessTests() {
-//      return loadTests("../../../Tst/RegressionTests/Liveness");
-//  }
+  @TestFactory
+  //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+  Collection<DynamicTest>  loadLivenessTests() {
+      return loadTests("../../../Tst/RegressionTests/Liveness");
+  }
 }

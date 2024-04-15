@@ -842,7 +842,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     break;
 
                 case PrintStmt printStmt:
-                    context.Write(output, "PExplicitLogger.log(");
+                    context.Write(output, "PExplicitLogger.logModel(");
                     WriteExpr(context, output, printStmt.Message);
                     context.WriteLine(output, ".toString());");
                     break;

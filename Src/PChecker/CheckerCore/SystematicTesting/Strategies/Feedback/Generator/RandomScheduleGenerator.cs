@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using PChecker.Generator.Mutator;
 using PChecker.Generator.Object;
 using PChecker.SystematicTesting.Operations;
@@ -23,8 +24,9 @@ internal class RandomScheduleGenerator: IScheduleGenerator<RandomScheduleGenerat
     {
     }
 
-    public AsyncOperation? NextRandomOperation(List<AsyncOperation> enabledOperations, AsyncOperation current)
+    public AsyncOperation? NextRandomOperation(List<AsyncOperation> ops, AsyncOperation current)
     {
+        var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
         if (enabledOperations.Count == 0)
         {
             return null;

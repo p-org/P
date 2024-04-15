@@ -153,7 +153,6 @@ namespace Plang.Compiler.Backend.CSharp
         {
             context.WriteLine(output, "using PChecker;");
             context.WriteLine(output, "using PChecker.Actors;");
-            context.WriteLine(output, "using PChecker.Matcher;");
             context.WriteLine(output, "using PChecker.Actors.Events;");
             context.WriteLine(output, "using PChecker.Runtime;");
             context.WriteLine(output, "using PChecker.Specifications;");
@@ -724,7 +723,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
             else if (function.Role == FunctionRole.Scenario)
             {
-                functionParameters = "List<EventObj> events";
+                functionParameters = "List<Event> events";
             }
             else
             {
@@ -811,7 +810,7 @@ namespace Plang.Compiler.Backend.CSharp
             int numOfStmt = function.Body.Statements.Count + 1;
             context.WriteLine(output, $"int state = {numOfStmt};");
             var eventPredicates = string.Join(" or ", function.Signature.ParameterEvents.Select(it => it.Name));
-            context.WriteLine(output, $"events = events.Where(it => it.Event is {eventPredicates}).ToList();");
+            context.WriteLine(output, $"events = events.Where(it => it is {eventPredicates}).ToList();");
             WriteConstraintsRecursive(context, output, function, 0, new HashSet<Variable>(), 0);
             context.WriteLine(output, "return state;");
         }
@@ -830,8 +829,8 @@ namespace Plang.Compiler.Backend.CSharp
             var paramName = context.Names.GetNameForDecl(param);
             context.WriteLine(output, $"for (var i{index} = {start} ; i{index} < events.Count; i{index} ++) " + "{");
             context.WriteLine(output, $"var {paramName}_obj = events[i{index}];");
-            context.WriteLine(output, $"if ({paramName}_obj.Event is not {e.Name}) continue;");
-            context.WriteLine(output, $"var {paramName} = ((PEvent) {paramName}_obj.Event).Payload;");
+            context.WriteLine(output, $"if ({paramName}_obj is not {e.Name}) continue;");
+            context.WriteLine(output, $"var {paramName} = ((PEvent) {paramName}_obj).Payload;");
 
             foreach (var bodyStatement in function.Body.Statements)
             {

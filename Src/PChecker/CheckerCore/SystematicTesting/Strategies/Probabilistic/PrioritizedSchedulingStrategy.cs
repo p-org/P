@@ -33,7 +33,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
 
         private int _scheduledSteps;
 
-        private PrioritizedScheduler _scheduler;
+        internal readonly PrioritizedScheduler Scheduler;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PrioritizedSchedulingStrategy"/> class.
@@ -42,14 +42,14 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         {
             RandomValueGenerator = random;
             MaxScheduledSteps = maxSteps;
-            _scheduler = scheduler;
+            Scheduler = scheduler;
         }
 
         /// <inheritdoc/>
         public bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {
             _scheduledSteps++;
-            return _scheduler.GetNextOperation(current, ops, out next);
+            return Scheduler.GetNextOperation(current, ops, out next);
         }
 
         /// <inheritdoc/>
@@ -100,7 +100,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
 
         public bool PrepareForNextIteration() {
             _scheduledSteps = 0;
-            return _scheduler.PrepareForNextIteration();
+            return Scheduler.PrepareForNextIteration();
         }
 
 
@@ -108,7 +108,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         public void Reset()
         {
             _scheduledSteps = 0;
-            _scheduler.Reset();
+            Scheduler.Reset();
         }
     }
 }

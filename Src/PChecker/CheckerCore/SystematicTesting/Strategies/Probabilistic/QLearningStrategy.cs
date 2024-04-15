@@ -396,10 +396,10 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             return (hash.Count - maxSim) * 10 + 20;
         }
 
-        public void ObserveRunningResults(EventPatternObserver patternObserver, ControlledRuntime runtime)
+        public void ObserveRunningResults(EventPatternObserver patternObserver, TimelineObserver timelineObserver)
         {
-            var timelineHash = runtime.TimelineObserver.GetTimelineHash();
-            var timelineMinhash = runtime.TimelineObserver.GetTimelineMinhash();
+            var timelineHash = timelineObserver.GetTimelineHash();
+            var timelineMinhash = timelineObserver.GetTimelineMinhash();
             
             int priority = 1;
 

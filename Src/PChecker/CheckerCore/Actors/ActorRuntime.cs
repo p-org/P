@@ -264,6 +264,8 @@ namespace PChecker.Actors
         /// </summary>
         internal virtual void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId)
         {
+            e.Sender = sender.ToString();
+            e.Receiver = targetId.ToString();
             var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {

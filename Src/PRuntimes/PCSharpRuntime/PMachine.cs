@@ -86,6 +86,8 @@ namespace Plang.CSharpRuntime
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event)oneArgConstructor.Invoke(new[] { payload , ev.Loc});
 
+            ev.Sender = Id.ToString();
+            ev.Receiver = target.Id.ToString();
             AnnounceInternal(ev);
             SendEvent(target.Id, ev);
         }

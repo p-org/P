@@ -57,11 +57,11 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     private PContinuation blockedBy = null;
     @Getter
-    private State blockedExitState;
+    private State blockedStateExit;
     @Getter
-    private State blockedEntryState;
+    private State blockedNewStateEntry;
     @Getter
-    private PValue<?> blockedEntryPayload;
+    private PValue<?> blockedNewStateEntryPayload;
 
     /**
      * TODO
@@ -321,6 +321,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             // make sure event is handled (or is halt event)
             if (currBlockedBy.getCaseEvents().contains(event.toString())) {
                 currBlockedBy.getHandleFun().apply(this, message);
+
+                // post process
+                currBlockedBy.runAfter(this);
             } else if (event.isHaltMachineEvent()) {
                 this.halt();
             } else {
@@ -328,9 +331,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
                         String.format("Unexpected event %s received in a receive for machine %s in state %s",
                                 event, this, this.currentState));
             }
-
-            // post process
-            currBlockedBy.runAfter(this);
         } else {
             currentState.handleEvent(message, this);
         }
@@ -378,9 +378,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      */
     public void processStateTransition(State newState, PValue<?> payload) {
         if (isBlocked()) {
-            blockedExitState = currentState;
-            blockedEntryState = newState;
-            blockedEntryPayload = payload;
+            blockedStateExit = currentState;
+            blockedNewStateEntry = newState;
+            blockedNewStateEntryPayload = payload;
             return;
         }
 
@@ -389,8 +389,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             exitCurrentState();
 
             if (isBlocked()) {
-                blockedEntryState = newState;
-                blockedEntryPayload = payload;
+                blockedNewStateEntry = newState;
+                blockedNewStateEntryPayload = payload;
                 return;
             }
         }
@@ -405,7 +405,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             return;
         }
 
-        blockedExitState = null;
+        blockedStateExit = null;
 
         PExplicitLogger.logStateExit(this);
         currentState.exit(this);
@@ -417,8 +417,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             return;
         }
 
-        blockedEntryState = null;
-        blockedEntryPayload = null;
+        blockedNewStateEntry = null;
+        blockedNewStateEntryPayload = null;
 
         // change current state to new state
         currentState = newState;

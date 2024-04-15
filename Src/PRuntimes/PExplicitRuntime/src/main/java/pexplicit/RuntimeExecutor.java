@@ -1,6 +1,7 @@
 package pexplicit;
 
 import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
@@ -55,7 +56,7 @@ public class RuntimeExecutor {
         double searchTime = TimeMonitor.stopInterval();
         scheduler.recordStats();
         if (PExplicitGlobal.getResult().equals("correct for any depth")) {
-            PExplicitGlobal.setStatus("verified");
+            PExplicitGlobal.setStatus(STATUS.VERIFIED);
         }
         StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
     }
@@ -82,7 +83,7 @@ public class RuntimeExecutor {
     }
 
     private static void postprocess(boolean printStats) {
-        if (!PExplicitGlobal.getStatus().equals("cex")) {
+        if (PExplicitGlobal.getStatus() != STATUS.BUG_FOUND) {
             scheduler.updateResult();
         }
 
@@ -103,15 +104,14 @@ public class RuntimeExecutor {
             future = executor.submit(timedCall);
             TimeMonitor.startInterval();
             runWithTimeout((long) PExplicitGlobal.getConfig().getTimeLimit());
-            PExplicitGlobal.setStatus("completed");
         } catch (TimeoutException e) {
-            PExplicitGlobal.setStatus("timeout");
+            PExplicitGlobal.setStatus(STATUS.TIMEOUT);
             throw new Exception("TIMEOUT", e);
         } catch (MemoutException | OutOfMemoryError e) {
-            PExplicitGlobal.setStatus("memout");
+            PExplicitGlobal.setStatus(STATUS.MEMOUT);
             throw new Exception("MEMOUT", e);
         } catch (BugFoundException e) {
-            PExplicitGlobal.setStatus("cex");
+            PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
             PExplicitGlobal.setResult(String.format("found cex of length %d", scheduler.schedule.getStepNumber()));
 
             postprocess(true);
@@ -121,15 +121,15 @@ public class RuntimeExecutor {
             }
             throw e;
         } catch (InterruptedException e) {
-            PExplicitGlobal.setStatus("interrupted");
+            PExplicitGlobal.setStatus(STATUS.INTERRUPTED);
             throw new Exception("INTERRUPTED", e);
         } catch (RuntimeException e) {
-            PExplicitGlobal.setStatus("error");
+            PExplicitGlobal.setStatus(STATUS.ERROR);
             throw new Exception("ERROR", e);
         } finally {
             future.cancel(true);
             executor.shutdownNow();
-            postprocess(!PExplicitGlobal.getStatus().equals("cex"));
+            postprocess(PExplicitGlobal.getStatus() != STATUS.BUG_FOUND);
         }
     }
 

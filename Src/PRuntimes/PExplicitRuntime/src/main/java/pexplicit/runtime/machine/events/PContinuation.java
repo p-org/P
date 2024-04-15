@@ -26,29 +26,53 @@ public class PContinuation {
         return !event.isHaltMachineEvent() && !caseEvents.contains(event.toString());
     }
 
+    /**
+     * Run after a machine executes this continuation
+     * First, if machine is unblocked, run any pending state exit function
+     * Second, if still unblocked, run any pending new state entry function
+     * Third, if still unblocked, clear all continuation variables
+     *
+     * @param machine Machine that just executed this continuation
+     */
     public void runAfter(PMachine machine) {
-        // process any pending exit state
+        // process pending state exit function first
         if (!machine.isBlocked()) {
-            State blockedExitState = machine.getBlockedExitState();
+            State blockedExitState = machine.getBlockedStateExit();
             if (blockedExitState != null) {
                 assert (machine.getCurrentState() == blockedExitState);
                 machine.exitCurrentState();
             }
+        } else {
+            // blocked on a different continuation, do nothing
+            return;
         }
 
-        // process any pending entry state
+        // at this point, there should be no pending state exit function
+        assert (machine.getBlockedStateExit() == null);
+
+        // process any pending new state entry function
         if (!machine.isBlocked()) {
-            State blockedEntryState = machine.getBlockedEntryState();
+            State blockedEntryState = machine.getBlockedNewStateEntry();
             if (blockedEntryState != null) {
-                machine.enterNewState(blockedEntryState, machine.getBlockedEntryPayload());
+                machine.enterNewState(blockedEntryState, machine.getBlockedNewStateEntryPayload());
             }
+        } else {
+            // blocked on a different continuation, do nothing
+            return;
         }
 
-        // cleanup continuations if unblocked completely
+        // at this point, there should be no pending exit or new state entry functions
+        assert (machine.getBlockedStateExit() == null);
+        assert (machine.getBlockedNewStateEntry() == null);
+
+        // cleanup continuation variables if unblocked completely
         if (!machine.isBlocked()) {
             for (PContinuation c : machine.getContinuationMap().values()) {
                 c.getClearFun().run();
             }
+        } else {
+            // blocked on a different continuation, do nothing
+            return;
         }
     }
 

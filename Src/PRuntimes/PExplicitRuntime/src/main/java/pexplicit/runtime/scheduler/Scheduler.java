@@ -26,6 +26,16 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     public final Schedule schedule;
 
+    /**
+     * Whether done with current iteration
+     */
+    protected boolean isDoneStepping = false;
+
+    /**
+     * Whether schedule terminated
+     */
+    protected boolean scheduleTerminated = false;
+
     @Getter
     @Setter
     protected int stepNumLogs = 0;
@@ -33,8 +43,15 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * Constructor
      */
+    protected Scheduler(Schedule sch) {
+        this.schedule = sch;
+    }
+
+    /**
+     * Constructor
+     */
     protected Scheduler() {
-        this.schedule = new Schedule();
+        this(new Schedule());
     }
 
     /**
@@ -62,7 +79,8 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * Reset the scheduler.
      */
-    protected abstract void reset();
+    protected void reset() {
+    }
 
     /**
      * Get the next schedule choice.
@@ -122,7 +140,8 @@ public abstract class Scheduler implements SchedulerInterface {
      * @return data choice
      */
     protected PValue<?> getRandomEntry(List<PValue<?>> choices) {
-        return getNextDataChoice(choices);
+        PInt randomEntryIdx = getRandomInt(new PInt(choices.size()));
+        return choices.get(randomEntryIdx.getValue());
     }
 
     /**
@@ -160,7 +179,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Starts monitors and main machine.
      */
     protected void start() {
-        assert (schedule.getStepNumber() == 0);
+        schedule.start();
 
         // start monitors first
         for (PMonitor monitor : PExplicitGlobal.getModel().getMonitors()) {
@@ -186,6 +205,30 @@ public abstract class Scheduler implements SchedulerInterface {
 
         // run create machine event
         processCreateEvent(new PMessage(PEvent.createMachine, machine, null));
+    }
+
+    /**
+     * Execute a step by popping a message from the sender FIFO buffer and handling it
+     *
+     * @param sender Sender machine
+     */
+    public void executeStep(PMachine sender) {
+        // pop message from sender queue
+        PMessage msg = sender.getSendBuffer().remove();
+
+        if (!msg.getEvent().isCreateMachineEvent()) {
+            // update step number
+            schedule.setStepNumber(schedule.getStepNumber() + 1);
+        }
+
+        // log start step
+        PExplicitLogger.logStartStep(schedule.getStepNumber(), sender, msg);
+
+        // process message
+        processDequeueEvent(msg);
+
+        // update done stepping flag
+        isDoneStepping = (schedule.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
     }
 
     /**

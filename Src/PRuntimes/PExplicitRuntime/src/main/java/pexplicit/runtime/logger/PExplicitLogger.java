@@ -9,6 +9,7 @@ import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.STATUS;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
@@ -49,6 +50,11 @@ public class PExplicitLogger {
         consoleAppender.start();
 
         context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
+
+        // initialize all loggers and writers
+        StatWriter.Initialize();
+        ScratchLogger.Initialize();
+        ScheduleWriter.Initialize();
     }
 
     public static void logInfo(String message) {
@@ -64,14 +70,6 @@ public class PExplicitLogger {
         if (verbosity > 3) {
             log.info(message);
         }
-    }
-
-    /**
-     * Initialize all loggers and writers
-     */
-    public static void InitializeLoggers() {
-        StatWriter.Initialize();
-        ScratchLogger.Initialize();
     }
 
     public static void logRunTest() {
@@ -96,13 +94,13 @@ public class PExplicitLogger {
         }
         log.info("--------------------");
         log.info("... Checking statistics:");
-        if (PExplicitGlobal.getStatus().equals("cex")) {
+        if (PExplicitGlobal.getStatus() == STATUS.BUG_FOUND) {
             log.info("..... Found 1 bug.");
         } else {
             log.info("..... Found 0 bugs.");
         }
         log.info("... Scheduling statistics:");
-        log.info(String.format("..... Explored at least %d distinct schedules", scheduler.getIteration()));
+        log.info(String.format("..... Explored %d distinct schedules", scheduler.getIteration()));
         log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
                 scheduler.getMinSteps(), (scheduler.getTotalSteps()/scheduler.getIteration()), scheduler.getMaxSteps()));
         log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
@@ -302,6 +300,13 @@ public class PExplicitLogger {
         if (verbosity > 3) {
             log(LogType.DequeueLog, String.format("%s dequeued event %s in state %s.",
                     machine, message.getEvent(), machine.getCurrentState()));
+        }
+    }
+
+    public static void logStartReplay() {
+        if (verbosity > 0) {
+            log.info("--------------------");
+            log.info(String.format("Replaying schedule"));
         }
     }
 }

@@ -51,6 +51,16 @@ public class Schedule implements Serializable {
     public Schedule() {
     }
 
+    public void start() {
+        setStepNumber(0);
+        setChoiceNumber(0);
+        for (PMachine machine : getMachineSet()) {
+            machine.reset();
+        }
+        getMachineListByType().clear();
+        getMachineSet().clear();
+    }
+
     /**
      * Get a fresh new choice
      *

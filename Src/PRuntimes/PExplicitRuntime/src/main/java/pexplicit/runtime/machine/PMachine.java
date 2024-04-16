@@ -101,7 +101,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     public void start(PValue<?> payload) {
-        PExplicitLogger.logMachineStart(this);
         assert (currentState == startState);
         started = true;
         enterNewState(startState, payload);
@@ -312,7 +311,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param message Message to process
      */
     void runEvent(PMessage message) {
-        PExplicitLogger.logEvent(message);
         if (isBlocked()) {
             PContinuation currBlockedBy = this.blockedBy;
             PEvent event = message.getEvent();

@@ -94,7 +94,6 @@ public class PExplicit {
      * Initializes loggers, random number generator, time.memory monitors.
      */
     private static void setup() {
-        PExplicitLogger.InitializeLoggers();
         RandomNumberGenerator.setup(PExplicitGlobal.getConfig().getRandomSeed());
         MemoryMonitor.setup(PExplicitGlobal.getConfig().getMemLimit());
         TimeMonitor.setup(PExplicitGlobal.getConfig().getTimeLimit());

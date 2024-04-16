@@ -35,8 +35,6 @@ public class ExplicitSearchScheduler extends Scheduler {
     @Getter
     private int iteration = 0;
 
-    private boolean scheduleTerminated = false;
-
     /**
      * Min steps
      */
@@ -65,11 +63,6 @@ public class ExplicitSearchScheduler extends Scheduler {
      * Whether done with all iterations
      */
     private boolean isDoneIterating = false;
-
-    /**
-     * Whether done with current iteration
-     */
-    private boolean isDoneStepping = false;
 
     /**
      * Time of last status report
@@ -173,22 +166,8 @@ public class ExplicitSearchScheduler extends Scheduler {
             return;
         }
 
-        // pop message from sender queue
-        PMessage msg = sender.getSendBuffer().remove();
-
-        if (!msg.getEvent().isCreateMachineEvent()) {
-            // update step number
-            schedule.setStepNumber(schedule.getStepNumber() + 1);
-        }
-
-        // log start step
-        PExplicitLogger.logStartStep(schedule.getStepNumber(), sender, msg);
-
-        // process message
-        processDequeueEvent(msg);
-
-        // update done stepping flag
-        isDoneStepping = (schedule.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
+        // execute a step from message in the sender queue
+        executeStep(sender);
     }
 
     /**
@@ -196,10 +175,7 @@ public class ExplicitSearchScheduler extends Scheduler {
      */
     @Override
     protected void reset() {
-        schedule.setStepNumber(0);
-        schedule.setChoiceNumber(0);
-        schedule.getMachineListByType().clear();
-        schedule.getMachineSet().clear();
+        super.reset();
     }
 
     /**
@@ -323,10 +299,6 @@ public class ExplicitSearchScheduler extends Scheduler {
             if (choice.isUnexploredNonEmpty()) {
                 PExplicitLogger.logBacktrack(cIdx);
                 backtrackChoiceNumber = cIdx;
-                for (PMachine machine : schedule.getMachineSet()) {
-                    machine.reset();
-                }
-                reset();
                 return;
             } else {
                 schedule.clearChoice(cIdx);
@@ -356,6 +328,10 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     public void updateResult() {
+        if (PExplicitGlobal.getStatus() == STATUS.BUG_FOUND) {
+            return;
+        }
+
         String result = "";
         int maxStepBound = PExplicitGlobal.getConfig().getMaxStepBound();
         int numUnexplored = schedule.getNumUnexploredChoices();

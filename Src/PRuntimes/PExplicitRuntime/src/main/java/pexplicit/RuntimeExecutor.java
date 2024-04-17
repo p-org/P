@@ -63,8 +63,9 @@ public class RuntimeExecutor {
     }
 
     private static void preprocess() {
-        // log run test
-        PExplicitLogger.logRunTest();
+        PExplicitLogger.logInfo(String.format(".. Test case :: " + PExplicitGlobal.getConfig().getTestDriver()));
+        PExplicitLogger.logInfo(String.format("... Checker is using '%s' strategy (seed:%s)",
+                PExplicitGlobal.getConfig().getStrategy(), PExplicitGlobal.getConfig().getRandomSeed()));
 
         executor = Executors.newSingleThreadExecutor();
 

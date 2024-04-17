@@ -85,6 +85,9 @@ public class ExplicitSearchScheduler extends Scheduler {
      */
     @Override
     public void run() throws TimeoutException {
+        // log run test
+        PExplicitLogger.logRunTest();
+
         PExplicitGlobal.setResult("incomplete");
         if (PExplicitGlobal.getConfig().getVerbosity() == 0) {
             printProgressHeader(true);

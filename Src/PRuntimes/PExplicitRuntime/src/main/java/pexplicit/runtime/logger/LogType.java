@@ -6,12 +6,11 @@ public enum LogType {
     ErrorLog,
     StrategyLog,
     CreateLog,
-    SendLog,
     StateLog,
+    SendLog,
+    DequeueLog,
     RaiseLog,
     GotoLog,
     ReceiveLog,
-    MonitorLog,
-    DequeueLog,
-
+    MonitorLog
 }

@@ -200,6 +200,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         }
 
         PMessage msg = new PMessage(event, target.getValue(), payload);
+
+        // log send event
+        PExplicitLogger.logSendEvent(this, msg);
+
         sendBuffer.add(msg);
         PExplicitGlobal.getScheduler().runMonitors(msg);
     }
@@ -236,6 +240,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      */
     public void blockUntil(String continuationName) {
         blockedBy = continuationMap.get(continuationName);
+
+        // log receive
+        PExplicitLogger.logReceive(this, blockedBy);
     }
 
     public boolean isBlocked() {
@@ -353,12 +360,15 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             return;
         }
 
-        PMessage msg = new PMessage(event, this, payload);
-
         // do nothing if event is ignored in current state
-        if (currentState.isIgnored(msg.getEvent())) {
+        if (currentState.isIgnored(event)) {
             return;
         }
+
+        PMessage msg = new PMessage(event, this, payload);
+
+        // log raise event
+        PExplicitLogger.logRaiseEvent(this, event);
 
         // run the event (even if deferred)
         runEvent(msg);
@@ -388,6 +398,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             blockedNewStateEntryPayload = payload;
             return;
         }
+
+        // log state transition
+        PExplicitLogger.logStateTransition(this, newState);
 
         if (currentState != null) {
             // execute exit function of current state

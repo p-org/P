@@ -23,6 +23,9 @@ public class ReplayScheduler extends Scheduler {
         PExplicitLogger.logStartReplay();
         ScheduleWriter.logHeader();
 
+        // log run test
+        PExplicitLogger.logRunTest();
+
         for (PMachine machine : schedule.getMachineSet()) {
             machine.reset();
         }

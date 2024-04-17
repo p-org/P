@@ -1,12 +1,10 @@
 package pexplicit.runtime.logger;
 
 import lombok.Setter;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
@@ -16,6 +14,7 @@ import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
+import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.values.PEvent;
 import pexplicit.values.PValue;
@@ -55,6 +54,7 @@ public class PExplicitLogger {
         StatWriter.Initialize();
         ScratchLogger.Initialize();
         ScheduleWriter.Initialize();
+        TextWriter.Initialize();
     }
 
     public static void logInfo(String message) {
@@ -69,16 +69,6 @@ public class PExplicitLogger {
     public static void logVerbose(String message) {
         if (verbosity > 3) {
             log.info(message);
-        }
-    }
-
-    public static void logRunTest() {
-        log.info(String.format(".. Test case :: " + PExplicitGlobal.getConfig().getTestDriver()));
-        log.info(String.format("... Checker is using '%s' strategy (seed:%s)",
-                PExplicitGlobal.getConfig().getStrategy(), PExplicitGlobal.getConfig().getRandomSeed()));
-        if (verbosity > 3) {
-            log(LogType.TestLog, String.format("Running test %s.",
-                    PExplicitGlobal.getConfig().getTestDriver()));
         }
     }
 
@@ -203,20 +193,41 @@ public class PExplicitLogger {
         }
     }
 
-    private static void log(LogType type, String message) {
-        log.info(String.format("    <%s> %s", type, message));
+    private static boolean isReplaying() {
+        return (PExplicitGlobal.getScheduler() instanceof ReplayScheduler);
+    }
+
+    private static boolean typedLogEnabled() {
+        return (verbosity > 4) || isReplaying();
+    }
+
+    private static void typedLog(LogType type, String message) {
+        if (isReplaying()) {
+            TextWriter.typedLog(type, message);
+        } else {
+            log.info(String.format("    <%s> %s", type, message));
+        }
+    }
+
+    public static void logRunTest() {
+        if (typedLogEnabled()) {
+            typedLog(LogType.TestLog, String.format("Running test %s.",
+                    PExplicitGlobal.getConfig().getTestDriver()));
+        }
     }
 
     public static void logModel(String message) {
-        if (verbosity > 3) {
-            log(LogType.PrintLog, message);
+        if (typedLogEnabled()) {
+            typedLog(LogType.PrintLog, message);
         }
     }
 
     public static void logBugFound(String message) {
-        if (verbosity > 3) {
-            log(LogType.ErrorLog, message);
-            log(LogType.StrategyLog, String.format("Found bug using %s strategy.", PExplicitGlobal.getConfig().getStrategy()));
+        if (typedLogEnabled()) {
+            typedLog(LogType.ErrorLog, message);
+            typedLog(LogType.StrategyLog, String.format("Found bug using '%s' strategy.", PExplicitGlobal.getConfig().getStrategy()));
+            typedLog(LogType.StrategyLog, "Checking statistics:");
+            typedLog(LogType.StrategyLog, "Found 1 bug.");
         }
     }
 
@@ -228,16 +239,20 @@ public class PExplicitLogger {
      */
     public static void logCreateMachine(PMachine machine, PMachine creator) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.CreateLog, String.format("%s was created by %s.", machine, creator));
+        if (typedLogEnabled()) {
+            typedLog(LogType.CreateLog, String.format("%s was created by %s.", machine, creator));
         }
     }
 
     public static void logSendEvent(PMachine sender, PMessage message) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.SendLog, String.format("%s in state %s sent event %s to %s.",
-                    sender, sender.getCurrentState(), message.getEvent(), message.getTarget()));
+        if (typedLogEnabled()) {
+            String payloadMsg = "";
+            if (message.getPayload() != null) {
+                payloadMsg = String.format(" with payload %s", message.getPayload());
+            }
+            typedLog(LogType.SendLog, String.format("%s in state %s sent event %s%s to %s.",
+                    sender, sender.getCurrentState(), message.getEvent(), payloadMsg, message.getTarget()));
         }
     }
 
@@ -248,8 +263,8 @@ public class PExplicitLogger {
      */
     public static void logStateEntry(PMachine machine) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.StateLog, String.format("%s enters state %s.", machine, machine.getCurrentState()));
+        if (typedLogEnabled()) {
+            typedLog(LogType.StateLog, String.format("%s enters state %s.", machine, machine.getCurrentState()));
         }
     }
 
@@ -260,46 +275,50 @@ public class PExplicitLogger {
      */
     public static void logStateExit(PMachine machine) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.StateLog, String.format("%s exits state %s.", machine, machine.getCurrentState()));
+        if (typedLogEnabled()) {
+            typedLog(LogType.StateLog, String.format("%s exits state %s.", machine, machine.getCurrentState()));
         }
     }
 
     public static void logRaiseEvent(PMachine machine, PEvent event) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.RaiseLog, String.format("%s raised event %s in state %s.", machine, event, machine.getCurrentState()));
+        if (typedLogEnabled()) {
+            typedLog(LogType.RaiseLog, String.format("%s raised event %s in state %s.", machine, event, machine.getCurrentState()));
         }
     }
 
     public static void logStateTransition(PMachine machine, State newState) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.GotoLog, String.format("%s is transitioning from state %s to state %s.", machine, machine.getCurrentState(), newState));
+        if (typedLogEnabled()) {
+            typedLog(LogType.GotoLog, String.format("%s is transitioning from state %s to state %s.", machine, machine.getCurrentState(), newState));
         }
     }
 
     public static void logReceive(PMachine machine, PContinuation continuation) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.ReceiveLog, String.format("%s is waiting to dequeue an event of type %s or %s in state %s.",
+        if (typedLogEnabled()) {
+            typedLog(LogType.ReceiveLog, String.format("%s is waiting to dequeue an event of type %s or %s in state %s.",
                     machine, continuation.getCaseEvents(), PEvent.haltEvent, machine.getCurrentState()));
         }
     }
 
     public static void logMonitorProcessEvent(PMonitor monitor, PMessage message) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.MonitorLog, String.format("%s is processing event %s in state %s.",
+        if (typedLogEnabled()) {
+            typedLog(LogType.MonitorLog, String.format("%s is processing event %s in state %s.",
                     monitor, message.getEvent(), monitor.getCurrentState()));
         }
     }
 
     public static void logDequeueEvent(PMachine machine, PMessage message) {
         PExplicitGlobal.getScheduler().updateLogNumber();
-        if (verbosity > 3) {
-            log(LogType.DequeueLog, String.format("%s dequeued event %s in state %s.",
-                    machine, message.getEvent(), machine.getCurrentState()));
+        if (typedLogEnabled()) {
+            String payloadMsg = "";
+            if (message.getPayload() != null) {
+                payloadMsg = String.format(" with payload %s", message.getPayload());
+            }
+            typedLog(LogType.DequeueLog, String.format("%s dequeued event %s%s in state %s.",
+                    machine, message.getEvent(), payloadMsg, machine.getCurrentState()));
         }
     }
 

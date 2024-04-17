@@ -26,7 +26,7 @@ public class ScheduleWriter {
             schFile.createNewFile();
             log = new PrintWriter(schFile);
         } catch (IOException e) {
-            System.out.println("Failed to set printer to the ScheduleWriter!!");
+            System.out.println("Failed to set printer to the ScheduleWriter.");
         }
     }
 

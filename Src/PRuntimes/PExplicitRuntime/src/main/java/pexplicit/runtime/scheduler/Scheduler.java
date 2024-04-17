@@ -225,7 +225,7 @@ public abstract class Scheduler implements SchedulerInterface {
         PExplicitLogger.logStartStep(schedule.getStepNumber(), sender, msg);
 
         // process message
-        processDequeueEvent(msg);
+        processDequeueEvent(sender, msg);
 
         // update done stepping flag
         isDoneStepping = (schedule.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
@@ -287,9 +287,14 @@ public abstract class Scheduler implements SchedulerInterface {
      *
      * @param message Message to process
      */
-    public void processDequeueEvent(PMessage message) {
-        // log monitor process event
-        PExplicitLogger.logDequeueEvent(message.getTarget(), message);
+    public void processDequeueEvent(PMachine sender, PMessage message) {
+        if (message.getEvent().isCreateMachineEvent()) {
+            // log create machine
+            PExplicitLogger.logCreateMachine(message.getTarget(), sender);
+        } else {
+            // log monitor process event
+            PExplicitLogger.logDequeueEvent(message.getTarget(), message);
+        }
 
         message.getTarget().processEventToCompletion(message);
     }

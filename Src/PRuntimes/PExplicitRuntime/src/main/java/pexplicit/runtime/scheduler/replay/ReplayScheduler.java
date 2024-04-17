@@ -77,7 +77,10 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     protected PMachine getNextScheduleChoice() {
-        assert (schedule.getChoiceNumber() < schedule.size());
+        if (schedule.getChoiceNumber() >= schedule.size()) {
+            return null;
+        }
+
         // pick the current schedule choice
         PMachine result = schedule.getCurrentScheduleChoice(schedule.getChoiceNumber());
         ScheduleWriter.logScheduleChoice(result);
@@ -89,7 +92,10 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     protected PValue<?> getNextDataChoice(List<PValue<?>> input_choices) {
-        assert (schedule.getChoiceNumber() < schedule.size());
+        if (schedule.getChoiceNumber() >= schedule.size()) {
+            return null;
+        }
+
         // pick the current data choice
         PValue<?> result = schedule.getCurrentDataChoice(schedule.getChoiceNumber());
         assert (input_choices.contains(result));

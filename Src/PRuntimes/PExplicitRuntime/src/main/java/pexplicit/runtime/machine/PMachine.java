@@ -124,10 +124,17 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      */
     public void reset() {
         this.currentState = startState;
+
         this.sendBuffer.clear();
         this.deferQueue.clear();
+
         this.started = false;
         this.halted = false;
+
+        this.blockedBy = null;
+        this.blockedStateExit = null;
+        this.blockedNewStateEntry = null;
+        this.blockedNewStateEntryPayload = null;
     }
 
     /**

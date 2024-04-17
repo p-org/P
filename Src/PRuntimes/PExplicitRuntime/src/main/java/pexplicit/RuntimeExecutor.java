@@ -100,10 +100,17 @@ public class RuntimeExecutor {
             PExplicitGlobal.setScheduler(replayer);
             try {
                 replayer.run();
-                throw new Exception("Failed to replay bug", e);
-            } catch (BugFoundException e2) {
-                throw e2;
+            } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
+                PExplicitLogger.logStackTrace((Exception) replayException);
+                throw new BugFoundException(replayException.getMessage(), replayException);
+            } catch (BugFoundException replayException) {
+                PExplicitLogger.logStackTrace(replayException);
+                throw replayException;
+            } catch (Exception replayException) {
+                PExplicitLogger.logStackTrace(replayException);
+                throw new Exception("Error when replaying the bug", replayException);
             }
+            throw new Exception("Failed to replay bug", e);
         } catch (InterruptedException e) {
             PExplicitGlobal.setStatus(STATUS.INTERRUPTED);
             throw new Exception("INTERRUPTED", e);

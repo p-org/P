@@ -14,7 +14,7 @@ public class PEvent extends PValue<PEvent> {
     /**
      * Special halt event
      */
-    public static final PEvent haltEvent = new PEvent("PHalt");
+    public static final PEvent haltEvent = new PEvent("_halt");
 
     /**
      * Name of the event

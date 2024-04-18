@@ -29,16 +29,16 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * Whether done with current iteration
      */
-    protected boolean isDoneStepping = false;
+    protected transient boolean isDoneStepping = false;
 
     /**
      * Whether schedule terminated
      */
-    protected boolean scheduleTerminated = false;
+    protected transient boolean scheduleTerminated = false;
 
     @Getter
     @Setter
-    protected int stepNumLogs = 0;
+    protected transient int stepNumLogs = 0;
 
     /**
      * Constructor

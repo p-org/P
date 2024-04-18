@@ -14,6 +14,8 @@ import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
+import pexplicit.runtime.scheduler.explicit.SearchStatistics;
+import pexplicit.runtime.scheduler.explicit.StateCachingMode;
 import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.values.PEvent;
@@ -90,9 +92,12 @@ public class PExplicitLogger {
             log.info("..... Found 0 bugs.");
         }
         log.info("... Scheduling statistics:");
-        log.info(String.format("..... Explored %d distinct schedules", scheduler.getIteration()));
+        if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
+            log.info(String.format("..... Explored %d distinct states", SearchStatistics.totalDistinctStates));
+        }
+        log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
         log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
-                scheduler.getMinSteps(), (scheduler.getTotalSteps()/scheduler.getIteration()), scheduler.getMaxSteps()));
+                SearchStatistics.minSteps, (SearchStatistics.totalSteps/SearchStatistics.iteration), SearchStatistics.maxSteps));
         log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         log.info(String.format(".. Result: " + PExplicitGlobal.getResult()));
         log.info(". Done");

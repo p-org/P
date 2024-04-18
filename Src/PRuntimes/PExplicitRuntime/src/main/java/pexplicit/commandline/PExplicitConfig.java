@@ -3,6 +3,7 @@ package pexplicit.commandline;
 import lombok.Getter;
 import lombok.Setter;
 import pexplicit.runtime.machine.buffer.BufferSemantics;
+import pexplicit.runtime.scheduler.explicit.StateCachingMode;
 
 /**
  * Represents the configuration for PExplicit runtime.
@@ -52,6 +53,9 @@ public class PExplicitConfig {
     // buffer semantics
     @Setter
     BufferSemantics bufferSemantics = BufferSemantics.SenderQueue;
+    // state caching mode
+    @Setter
+    StateCachingMode stateCachingMode = StateCachingMode.Fingerprint;
 
     public void setToDfs() {
         this.setStrategy("dfs");

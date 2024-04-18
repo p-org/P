@@ -1,6 +1,7 @@
 package pexplicit.commandline;
 
 import org.apache.commons.cli.*;
+import pexplicit.runtime.scheduler.explicit.StateCachingMode;
 
 import java.io.PrintWriter;
 
@@ -147,6 +148,21 @@ public class PExplicitOptions {
         addOption(randomSeed);
 
         /*
+         * Invisible/expert options
+         */
+
+        // whether or not to disable state caching
+        Option stateCachingMode =
+                Option.builder()
+                        .longOpt("state-caching")
+                        .desc("State caching mode: none, fingerprint, exact (default: fingerprint)")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("Caching Mode (string)")
+                        .build();
+        addHiddenOption(stateCachingMode);
+
+        /*
          * Help menu options
          */
         Option help = Option.builder("h").longOpt("help").desc("Show help menu").build();
@@ -279,6 +295,24 @@ public class PExplicitOptions {
                     } catch (NumberFormatException ex) {
                         optionError(
                                 option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                // invisible expert options
+                case "state-caching":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setStateCachingMode(StateCachingMode.None);
+                            break;
+                        case "fingerprint":
+                            config.setStateCachingMode(StateCachingMode.Fingerprint);
+                            break;
+                        case "exact":
+                            config.setStateCachingMode(StateCachingMode.Exact);
+                            break;
+                        default:
+                            optionError(
+                                    option,
+                                    String.format("Unrecognized state caching mode, got %s", option.getValue()));
                     }
                     break;
                 case "h":

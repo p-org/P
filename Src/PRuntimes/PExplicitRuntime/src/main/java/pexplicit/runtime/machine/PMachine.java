@@ -138,22 +138,76 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     /**
-     * TODO
+     * Get names of local variables as an ordered list
      *
-     * @return
+     * @return List of strings
      */
-    protected List<Object> getLocalVars() {
-        throw new NotImplementedException();
+    public List<String> getLocalVarNames() {
+        List<String> result = new ArrayList<>();
+
+        result.add("_currentState");
+
+        result.add("_sendBuffer");
+        result.add("_deferQueue");
+
+        result.add("_started");
+        result.add("_halted");
+
+        result.add("_blockedBy");
+        result.add("_blockedStateExit");
+        result.add("_blockedNewStateEntry");
+        result.add("_blockedNewStateEntryPayload");
+
+        return result;
     }
 
     /**
-     * TODO
+     * Get values of local variables as an ordered list
      *
-     * @param localVars
-     * @return
+     * @return List of values
      */
-    protected int setLocalVars(List<Object> localVars) {
-        throw new NotImplementedException();
+    public List<Object> getLocalVarValues() {
+        List<Object> result = new ArrayList<>();
+
+        result.add(currentState);
+
+        result.add(sendBuffer.getElements());
+        result.add(deferQueue.getElements());
+
+        result.add(started);
+        result.add(halted);
+
+        result.add(blockedBy);
+        result.add(blockedStateExit);
+        result.add(blockedNewStateEntry);
+        result.add(blockedNewStateEntryPayload);
+
+        return result;
+    }
+
+    /**
+     * Set local variables
+     *
+     * @param values Ordered list of values to set to
+     * @return Next index in the list of values
+     */
+    protected int setLocalVarValues(List<Object> values) {
+        int idx = 0;
+
+        currentState = (State) values.get(idx++);
+
+        sendBuffer.setElements((List<PMessage>) values.get(idx++));
+        deferQueue.setElements((List<PMessage>) values.get(idx++));
+
+        started = (boolean) values.get(idx++);
+        halted = (boolean) values.get(idx++);
+
+        blockedBy = (PContinuation) values.get(idx++);
+        blockedStateExit = (State) values.get(idx++);
+        blockedNewStateEntry = (State) values.get(idx++);
+        blockedNewStateEntryPayload = (PValue<?>) values.get(idx++);
+
+        return idx;
     }
 
     /**
@@ -175,11 +229,11 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     /**
-     * TODO
+     * Create a new machine instance
      *
-     * @param machineType
-     * @param constructor
-     * @return
+     * @param machineType Machine type
+     * @param constructor Machine constructor
+     * @return New machine as a PMachineValue
      */
     public PMachineValue create(
             Class<? extends PMachine> machineType,
@@ -234,9 +288,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     /**
-     * TODO
+     * Block at a continuation
      *
-     * @param continuationName
+     * @param continuationName Continuation name
      */
     public void blockUntil(String continuationName) {
         blockedBy = continuationMap.get(continuationName);

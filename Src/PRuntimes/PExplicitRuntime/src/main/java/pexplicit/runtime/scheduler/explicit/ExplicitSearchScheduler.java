@@ -143,6 +143,37 @@ public class ExplicitSearchScheduler extends Scheduler {
         TimeMonitor.checkTimeout();
         MemoryMonitor.checkMemout();
 
+        // check if we can skip the remaining schedule
+        if (skipRemainingSchedule()) {
+            scheduleTerminated = false;
+            skipLiveness = true;
+            isDoneStepping = true;
+            PExplicitLogger.logFinishedIteration(schedule.getStepNumber());
+            return;
+        }
+
+        // get a scheduling choice as sender machine
+        PMachine sender = getNextScheduleChoice();
+
+        if (sender == null) {
+            // done with this schedule
+            scheduleTerminated = true;
+            skipLiveness = false;
+            isDoneStepping = true;
+            PExplicitLogger.logFinishedIteration(schedule.getStepNumber());
+            return;
+        }
+
+        // execute a step from message in the sender queue
+        executeStep(sender);
+    }
+
+    /**
+     * Check if the remaining schedule can be skipped if current state is already in state cache
+     *
+     * @return true if remaining schedule can be skipped
+     */
+    boolean skipRemainingSchedule() {
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             // perform state caching only if beyond backtrack choice number
             if (schedule.getChoiceNumber() > backtrackChoiceNumber) {
@@ -167,33 +198,12 @@ public class ExplicitSearchScheduler extends Scheduler {
                         Assert.cycle(false, "Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule");
                     } else {
                         // done with this schedule
-                        scheduleTerminated = false;
-                        skipLiveness = true;
-                        isDoneStepping = true;
-                        PExplicitLogger.logFinishedIteration(schedule.getStepNumber());
-                        return;
+                        return true;
                     }
                 }
             }
         }
-
-        // reset number of logs in current step
-        stepNumLogs = 0;
-
-        // get a scheduling choice as sender machine
-        PMachine sender = getNextScheduleChoice();
-
-        if (sender == null) {
-            // done with this schedule
-            scheduleTerminated = true;
-            skipLiveness = false;
-            isDoneStepping = true;
-            PExplicitLogger.logFinishedIteration(schedule.getStepNumber());
-            return;
-        }
-
-        // execute a step from message in the sender queue
-        executeStep(sender);
+        return false;
     }
 
     /**

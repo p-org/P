@@ -221,6 +221,9 @@ public abstract class Scheduler implements SchedulerInterface {
             schedule.setStepNumber(schedule.getStepNumber() + 1);
         }
 
+        // reset number of logs in current step
+        stepNumLogs = 0;
+
         // log start step
         PExplicitLogger.logStartStep(schedule.getStepNumber(), sender, msg);
 

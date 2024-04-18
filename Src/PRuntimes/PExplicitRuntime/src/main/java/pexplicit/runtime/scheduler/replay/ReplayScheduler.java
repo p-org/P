@@ -41,6 +41,11 @@ public class ReplayScheduler extends Scheduler {
             runStep();
         }
 
+        // check if cycle detected error
+        if (Assert.getFailureType().equals("cycle")) {
+            Assert.cycle(false, "Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule");
+        }
+
         if (scheduleTerminated) {
             // schedule terminated, check for deadlock
             checkDeadlock();
@@ -83,6 +88,10 @@ public class ReplayScheduler extends Scheduler {
 
         // pick the current schedule choice
         PMachine result = schedule.getCurrentScheduleChoice(schedule.getChoiceNumber());
+        if (result == null) {
+            return null;
+        }
+
         ScheduleWriter.logScheduleChoice(result);
         PExplicitLogger.logRepeatScheduleChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
 

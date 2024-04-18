@@ -193,13 +193,16 @@ public class ExplicitSearchScheduler extends Scheduler {
                     SearchStatistics.totalDistinctStates++;
                 } else {
                     // present in state cache
+
+                    // check if possible cycle
                     if (visitedAtIteration == SearchStatistics.iteration) {
-                        // cycle detected since revisited same state at a different step in the same schedule
-                        Assert.cycle(false, "Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule");
-                    } else {
-                        // done with this schedule
-                        return true;
+                        if (PExplicitGlobal.getConfig().isFailOnMaxStepBound()) {
+                            // cycle detected since revisited same state at a different step in the same schedule
+                            Assert.cycle(false, "Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule");
+                        }
                     }
+                    // done with this schedule
+                    return true;
                 }
             }
         }

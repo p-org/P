@@ -4,6 +4,8 @@ import pexplicit.runtime.machine.PMachine;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.SortedSet;
 
 /**
  * Static class to compute hash values
@@ -40,6 +42,20 @@ public class ComputeHash {
         if (machine != null) hashValue = hashValue ^ machine.hashCode();
         for (PValue<?> val : values) {
             if (val != null) hashValue = hashValue ^ val.hashCode();
+        }
+        return hashValue;
+    }
+
+    /**
+     * Compute hash value for a PMachine local variables.
+     */
+    public static int getHashCode(SortedSet<PMachine> machines) {
+        int hashValue = 0x802CBBDB;
+        for (PMachine machine : machines) {
+            hashValue = hashValue ^ machine.hashCode();
+            for (Object value: machine.getLocalVarValues()) {
+                hashValue = hashValue ^ Objects.hashCode(value);
+            }
         }
         return hashValue;
     }

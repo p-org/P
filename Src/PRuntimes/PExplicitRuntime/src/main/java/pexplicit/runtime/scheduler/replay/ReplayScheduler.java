@@ -55,9 +55,6 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     protected void runStep() throws TimeoutException {
-        // reset number of logs in current step
-        stepNumLogs = 0;
-
         // get a scheduling choice as sender machine
         PMachine sender = getNextScheduleChoice();
 

@@ -92,14 +92,14 @@ namespace Plang.Compiler.Backend.PExplicit
 
         internal static string GetVar(string rawName)
         {
-            return $"{rawName}";
+            return $"var_{rawName}";
         }
 
         internal string FreshTempVar()
         {
             var id = nextTempVarId;
             nextTempVarId++;
-            return $"temp_{id}";
+            return $"temp_var_{id}";
         }
         
         private static bool IsAsciiAlphabetic(char c)

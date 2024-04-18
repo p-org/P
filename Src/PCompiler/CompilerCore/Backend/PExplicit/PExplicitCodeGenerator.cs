@@ -1071,7 +1071,7 @@ namespace Plang.Compiler.Backend.PExplicit
                     var arg =caseFun.Signature.Parameters[0];
                     var argValue = new Variable($"{arg.Name}_payload", continuation.SourceLocation, VariableRole.Param);
                     argValue.Type = PrimitiveType.Any;
-                    context.WriteLine(output, $"PValue<?> {arg.Name}_payload = {messageName}.getPayload();");
+                    context.WriteLine(output, $"PValue<?> var_{arg.Name}_payload = {messageName}.getPayload();");
                     var assignMsg = new AssignStmt(continuation.SourceLocation, new VariableAccessExpr(continuation.SourceLocation, arg), new VariableAccessExpr(continuation.SourceLocation, argValue));
                     context.WriteLine(output, $"{GetPExplicitType(arg.Type)} {CompilationContext.GetVar(arg.Name)} = {GetDefaultValue(arg.Type)};");
                     WriteStmt(continuation, context, output, caseContext, assignMsg);

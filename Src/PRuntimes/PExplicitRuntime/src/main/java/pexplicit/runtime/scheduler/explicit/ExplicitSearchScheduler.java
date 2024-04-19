@@ -28,33 +28,28 @@ import java.util.concurrent.TimeoutException;
  */
 public class ExplicitSearchScheduler extends Scheduler {
     /**
+     * Map from state hash to iteration when first visited
+     */
+    private final transient Map<Object, Integer> stateCache = new HashMap<>();
+    /**
      * Backtrack choice number
      */
     @Getter
     private transient int backtrackChoiceNumber = 0;
-
     /**
      * Whether done with all iterations
      */
     private transient boolean isDoneIterating = false;
-
     /**
      * Whether to skip liveness check (because of early schedule termination due to state caching)
      */
     private transient boolean skipLiveness = false;
-
     /**
      * Time of last status report
      */
     @Getter
     @Setter
     private transient Instant lastReportTime = Instant.now();
-
-    /**
-     * Map from state hash to iteration when first visited
-     */
-    private final transient Map<Object, Integer> stateCache = new HashMap<>();
-
     private transient StepState storedStep;
 
     /**

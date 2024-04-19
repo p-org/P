@@ -23,16 +23,14 @@ import java.util.function.Function;
  */
 public abstract class Scheduler implements SchedulerInterface {
     /**
+     * Current schedule
+     */
+    public final Schedule schedule;
+    /**
      * Current step state
      */
     @Getter
     protected StepState stepState = new StepState();
-
-    /**
-     * Current schedule
-     */
-    public final Schedule schedule;
-
     /**
      * Whether done with current iteration
      */

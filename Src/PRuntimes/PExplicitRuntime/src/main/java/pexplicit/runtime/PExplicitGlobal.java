@@ -13,51 +13,45 @@ import java.util.*;
  */
 public class PExplicitGlobal {
     /**
+     * Mapping from machine type to list of all machine instances
+     */
+    @Getter
+    private static final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
+    /**
+     * Set of machines
+     */
+    @Getter
+    private static final SortedSet<PMachine> machineSet = new TreeSet<>();
+    /**
      * PModel
      **/
     @Getter
     @Setter
     private static PModel model = null;
-
     /**
      * Global configuration
      **/
     @Getter
     @Setter
     private static PExplicitConfig config = null;
-
     /**
      * Scheduler
      **/
     @Getter
     @Setter
     private static Scheduler scheduler = null;
-
     /**
      * Status of the run
      **/
     @Getter
     @Setter
     private static STATUS status = STATUS.INCOMPLETE;
-
     /**
      * Result of the run
      **/
     @Getter
     @Setter
     private static String result = "error";
-
-    /**
-     * Mapping from machine type to list of all machine instances
-     */
-    @Getter
-    private static final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
-
-    /**
-     * Set of machines
-     */
-    @Getter
-    private static final SortedSet<PMachine> machineSet = new TreeSet<>();
 
     /**
      * Get a machine of a given type and index if exists, else return null.

@@ -53,7 +53,7 @@ public class ComputeHash {
         int hashValue = 0x802CBBDB;
         for (PMachine machine : machines) {
             hashValue = hashValue ^ machine.hashCode();
-            for (Object value: machine.getLocalVarValues()) {
+            for (Object value : machine.getLocalVarValues()) {
                 hashValue = hashValue ^ Objects.hashCode(value);
             }
         }

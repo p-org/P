@@ -1,8 +1,5 @@
 package pexplicit.runtime.logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
 import lombok.Getter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
@@ -11,9 +8,14 @@ import pexplicit.values.PBool;
 import pexplicit.values.PInt;
 import pexplicit.values.PValue;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+
 public class ScheduleWriter {
     static PrintWriter log = null;
-    @Getter static String fileName = "";
+    @Getter
+    static String fileName = "";
     private static int logIdx = 0;
 
     public static void Initialize() {

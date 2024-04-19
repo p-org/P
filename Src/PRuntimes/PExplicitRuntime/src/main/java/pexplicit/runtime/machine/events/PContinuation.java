@@ -82,7 +82,6 @@ public class PContinuation {
             }
         } else {
             // blocked on a different continuation encountered when processing pending new state entry function, do nothing
-            return;
         }
     }
 

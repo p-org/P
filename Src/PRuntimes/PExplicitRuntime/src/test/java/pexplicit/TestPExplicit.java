@@ -230,9 +230,9 @@ public class TestPExplicit {
     //        return loadTests("../../../Tst/RegressionTests/Feature5ModuleSystem");
     //    }
 
-  @TestFactory
-  //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-  Collection<DynamicTest>  loadLivenessTests() {
-      return loadTests("../../../Tst/RegressionTests/Liveness");
-  }
+    @TestFactory
+        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
+    Collection<DynamicTest> loadLivenessTests() {
+        return loadTests("../../../Tst/RegressionTests/Liveness");
+    }
 }

@@ -53,7 +53,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     /**
      * Map from state hash to iteration when first visited
      */
-    private transient Map<Object, Integer> stateCache = new HashMap<>();
+    private final transient Map<Object, Integer> stateCache = new HashMap<>();
 
     private transient StepState storedStep;
 
@@ -224,6 +224,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     /**
      * Get the hashing key corresponding to the current protocol state
+     *
      * @return
      */
     Object getCurrentStateKey() {
@@ -235,7 +236,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         } else {
             // use exact values from each machine vars
             List<List<Object>> machineValues = new ArrayList<>();
-            for (PMachine machine: stepState.getMachineSet()) {
+            for (PMachine machine : stepState.getMachineSet()) {
                 machineValues.add(machine.getLocalVarValues());
             }
             stateKey = machineValues;
@@ -373,7 +374,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 backtrackChoiceNumber = cIdx;
                 int newStepNumber = 0;
                 if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()) {
-                    StepState choiceStep =  choice.getChoiceStep();
+                    StepState choiceStep = choice.getChoiceStep();
                     if (choiceStep != null) {
                         newStepNumber = choice.getChoiceStep().getStepNumber();
                     }
@@ -454,7 +455,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
         StatWriter.log("steps-min", String.format("%d", SearchStatistics.minSteps));
         StatWriter.log("steps-max", String.format("%d", SearchStatistics.maxSteps));
-        StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps/SearchStatistics.iteration));
+        StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps / SearchStatistics.iteration));
         StatWriter.log("#-choices-unexplored", String.format("%d", schedule.getNumUnexploredChoices()));
         StatWriter.log("%-choices-unexplored-data", String.format("%.1f", schedule.getUnexploredDataChoicesPercent()));
     }
@@ -462,11 +463,11 @@ public class ExplicitSearchScheduler extends Scheduler {
     private void printCurrentStatus(double newRuntime) {
 
         String s = "--------------------" +
-                 String.format("\n    Status after %.2f seconds:", newRuntime) +
-                 String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()) +
-                 String.format("\n      Depth:            %d", stepState.getStepNumber()) +
-                 String.format("\n      Schedules:        %d", SearchStatistics.iteration) +
-                 String.format("\n      Unexplored:       %d", schedule.getNumUnexploredChoices());
+                String.format("\n    Status after %.2f seconds:", newRuntime) +
+                String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()) +
+                String.format("\n      Depth:            %d", stepState.getStepNumber()) +
+                String.format("\n      Schedules:        %d", SearchStatistics.iteration) +
+                String.format("\n      Unexplored:       %d", schedule.getNumUnexploredChoices());
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             s += String.format("\n      DistinctStates:   %d", SearchStatistics.totalDistinctStates);
         }

@@ -19,22 +19,6 @@ public class PMonitor extends PMachine {
     }
 
     @Override
-    public int hashCode() {
-        return name.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        else if (!(obj instanceof PMachine)) {
-            return false;
-        }
-        if (this.name == null)
-            return (((PMachine) obj).name == null);
-        return this.name.equals(((PMachine) obj).name);
-    }
-
-    @Override
     public String toString() {
         return String.format("%s", name);
     }

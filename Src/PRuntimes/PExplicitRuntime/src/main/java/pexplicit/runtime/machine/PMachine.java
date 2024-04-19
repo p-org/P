@@ -528,13 +528,14 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     @Override
     public int compareTo(PMachine rhs) {
-        return (instanceId - rhs.getInstanceId()) ^ (typeId - rhs.getTypeId());
+        return (this.hashCode() - rhs.hashCode());
     }
 
     @Override
     public int hashCode() {
-        if (name == null) return instanceId;
-        return name.hashCode() ^ instanceId;
+        if (name == null)
+            return instanceId ^ typeId;
+        return name.hashCode() ^ instanceId ^ typeId;
     }
 
     @Override
@@ -543,10 +544,14 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         else if (!(obj instanceof PMachine)) {
             return false;
         }
-        if (this.name == null)
-            return (((PMachine) obj).name == null) && this.instanceId == (((PMachine) obj).instanceId);
+        if (this.name == null) {
+            return (((PMachine) obj).name == null)
+                    && this.instanceId == (((PMachine) obj).instanceId)
+                    && this.typeId == (((PMachine) obj).typeId);
+            }
         return this.name.equals(((PMachine) obj).name)
-                && this.instanceId == (((PMachine) obj).instanceId);
+                && this.instanceId == (((PMachine) obj).instanceId)
+                && this.typeId == (((PMachine) obj).typeId);
     }
 
     @Override

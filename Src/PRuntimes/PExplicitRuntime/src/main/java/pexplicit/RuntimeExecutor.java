@@ -94,7 +94,7 @@ public class RuntimeExecutor {
             throw new Exception("MEMOUT", e);
         } catch (BugFoundException e) {
             PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
-            PExplicitGlobal.setResult(String.format("found cex of length %d", scheduler.schedule.getStepNumber()));
+            PExplicitGlobal.setResult(String.format("found cex of length %d", scheduler.currentStep.getStepNumber()));
             PExplicitLogger.logStackTrace(e);
 
             ReplayScheduler replayer = new ReplayScheduler(scheduler.schedule);

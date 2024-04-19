@@ -9,7 +9,6 @@ import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.ScratchLogger;
 import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.scheduler.Choice;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.utils.misc.Assert;
@@ -56,6 +55,8 @@ public class ExplicitSearchScheduler extends Scheduler {
      */
     private transient Map<Object, Integer> stateCache = new HashMap<>();
 
+    private transient StepState storedStep;
+
     /**
      * Constructor.
      */
@@ -78,10 +79,11 @@ public class ExplicitSearchScheduler extends Scheduler {
             printProgressHeader(true);
         }
         isDoneIterating = false;
+        start();
+
         while (!isDoneIterating) {
             SearchStatistics.iteration++;
-            PExplicitLogger.logStartIteration(SearchStatistics.iteration, schedule.getStepNumber());
-            start();
+            PExplicitLogger.logStartIteration(SearchStatistics.iteration, currentStep.getStepNumber());
             runIteration();
             postProcessIteration();
         }
@@ -103,12 +105,12 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
         printProgress(false);
 
-        SearchStatistics.totalSteps += schedule.getStepNumber();
-        if (SearchStatistics.minSteps == -1 || schedule.getStepNumber() < SearchStatistics.minSteps) {
-            SearchStatistics.minSteps = schedule.getStepNumber();
+        SearchStatistics.totalSteps += currentStep.getStepNumber();
+        if (SearchStatistics.minSteps == -1 || currentStep.getStepNumber() < SearchStatistics.minSteps) {
+            SearchStatistics.minSteps = currentStep.getStepNumber();
         }
-        if (SearchStatistics.maxSteps == -1 || schedule.getStepNumber() > SearchStatistics.maxSteps) {
-            SearchStatistics.maxSteps = schedule.getStepNumber();
+        if (SearchStatistics.maxSteps == -1 || currentStep.getStepNumber() > SearchStatistics.maxSteps) {
+            SearchStatistics.maxSteps = currentStep.getStepNumber();
         }
 
         if (scheduleTerminated) {
@@ -121,7 +123,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
 
         Assert.fromModel(
-                !PExplicitGlobal.getConfig().isFailOnMaxStepBound() || (schedule.getStepNumber() < PExplicitGlobal.getConfig().getMaxStepBound()),
+                !PExplicitGlobal.getConfig().isFailOnMaxStepBound() || (currentStep.getStepNumber() < PExplicitGlobal.getConfig().getMaxStepBound()),
                 "Step bound of " + PExplicitGlobal.getConfig().getMaxStepBound() + " reached.");
 
         if (PExplicitGlobal.getConfig().getMaxSchedules() > 0) {
@@ -148,7 +150,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             scheduleTerminated = false;
             skipLiveness = true;
             isDoneStepping = true;
-            PExplicitLogger.logFinishedIteration(schedule.getStepNumber());
+            PExplicitLogger.logFinishedIteration(currentStep.getStepNumber());
             return;
         }
 
@@ -160,8 +162,12 @@ public class ExplicitSearchScheduler extends Scheduler {
             scheduleTerminated = true;
             skipLiveness = false;
             isDoneStepping = true;
-            PExplicitLogger.logFinishedIteration(schedule.getStepNumber());
+            PExplicitLogger.logFinishedIteration(currentStep.getStepNumber());
             return;
+        }
+
+        if (PExplicitGlobal.getConfig().isBacktrackingEnabled()) {
+            currentStep.storeMachinesState();
         }
 
         // execute a step from message in the sender queue
@@ -176,7 +182,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     boolean skipRemainingSchedule() {
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             // perform state caching only if beyond backtrack choice number
-            if (schedule.getChoiceNumber() > backtrackChoiceNumber) {
+            if (currentStep.getChoiceNumber() > backtrackChoiceNumber) {
                 // increment state count
                 SearchStatistics.totalStates++;
 
@@ -199,10 +205,13 @@ public class ExplicitSearchScheduler extends Scheduler {
                         if (PExplicitGlobal.getConfig().isFailOnMaxStepBound()) {
                             // cycle detected since revisited same state at a different step in the same schedule
                             Assert.cycle(false, "Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule");
+                        } else {
+                            // do nothing, allow cycle to run till max bound reached
                         }
+                    } else {
+                        // done with this schedule
+                        return true;
                     }
-                    // done with this schedule
-                    return true;
                 }
             }
         }
@@ -217,12 +226,12 @@ public class ExplicitSearchScheduler extends Scheduler {
         Object stateKey = null;
         if (PExplicitGlobal.getConfig().getStateCachingMode() == StateCachingMode.Fingerprint) {
             // use fingerprinting by hashing values from each machine vars
-            int fingerprint = ComputeHash.getHashCode(schedule.getMachineSet());
+            int fingerprint = ComputeHash.getHashCode(currentStep.getMachineSet());
             stateKey = fingerprint;
         } else {
             // use exact values from each machine vars
             List<List<Object>> machineValues = new ArrayList<>();
-            for (PMachine machine: schedule.getMachineSet()) {
+            for (PMachine machine: currentStep.getMachineSet()) {
                 machineValues.add(machine.getLocalVarValues());
             }
             stateKey = machineValues;
@@ -247,46 +256,46 @@ public class ExplicitSearchScheduler extends Scheduler {
     public PMachine getNextScheduleChoice() {
         PMachine result;
 
-        if (schedule.getChoiceNumber() < backtrackChoiceNumber) {
+        if (currentStep.getChoiceNumber() < backtrackChoiceNumber) {
             // pick the current schedule choice
-            result = schedule.getCurrentScheduleChoice(schedule.getChoiceNumber());
-            PExplicitLogger.logRepeatScheduleChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
+            result = schedule.getCurrentScheduleChoice(currentStep.getChoiceNumber());
+            PExplicitLogger.logRepeatScheduleChoice(result, currentStep.getStepNumber(), currentStep.getChoiceNumber());
 
-            schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
+            currentStep.setChoiceNumber(currentStep.getChoiceNumber() + 1);
             return result;
         }
 
         // get existing unexplored choices, if any
-        List<PMachine> choices = schedule.getUnexploredScheduleChoices(schedule.getChoiceNumber());
+        List<PMachine> choices = schedule.getUnexploredScheduleChoices(currentStep.getChoiceNumber());
 
         if (choices.isEmpty()) {
             // no existing unexplored choices, so try generating new choices
             choices = getNewScheduleChoices();
             if (choices.size() > 1) {
                 // log new choice
-                PExplicitLogger.logNewScheduleChoice(choices, schedule.getStepNumber(), schedule.getChoiceNumber());
+                PExplicitLogger.logNewScheduleChoice(choices, currentStep.getStepNumber(), currentStep.getChoiceNumber());
             }
 
             if (choices.isEmpty()) {
                 // no unexplored choices remaining
-                schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
+                currentStep.setChoiceNumber(currentStep.getChoiceNumber() + 1);
                 return null;
             }
         }
 
         // pick the first choice
         result = choices.get(0);
-        schedule.setCurrentScheduleChoice(result, schedule.getChoiceNumber());
-        PExplicitLogger.logCurrentScheduleChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
+        schedule.setCurrentScheduleChoice(result, currentStep.getChoiceNumber());
+        PExplicitLogger.logCurrentScheduleChoice(result, currentStep.getStepNumber(), currentStep.getChoiceNumber());
 
         // remove the first choice from unexplored choices
         choices.remove(0);
 
         // set unexplored choices
-        schedule.setUnexploredScheduleChoices(choices, schedule.getChoiceNumber());
+        schedule.setUnexploredScheduleChoices(choices, currentStep.getChoiceNumber());
 
         // increment choice number
-        schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
+        currentStep.setChoiceNumber(currentStep.getChoiceNumber() + 1);
 
         return result;
     }
@@ -300,18 +309,18 @@ public class ExplicitSearchScheduler extends Scheduler {
     public PValue<?> getNextDataChoice(List<PValue<?>> input_choices) {
         PValue<?> result;
 
-        if (schedule.getChoiceNumber() < backtrackChoiceNumber) {
+        if (currentStep.getChoiceNumber() < backtrackChoiceNumber) {
             // pick the current data choice
-            result = schedule.getCurrentDataChoice(schedule.getChoiceNumber());
+            result = schedule.getCurrentDataChoice(currentStep.getChoiceNumber());
             assert (input_choices.contains(result));
-            PExplicitLogger.logRepeatDataChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
+            PExplicitLogger.logRepeatDataChoice(result, currentStep.getStepNumber(), currentStep.getChoiceNumber());
 
-            schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
+            currentStep.setChoiceNumber(currentStep.getChoiceNumber() + 1);
             return result;
         }
 
         // get existing unexplored choices, if any
-        List<PValue<?>> choices = schedule.getUnexploredDataChoices(schedule.getChoiceNumber());
+        List<PValue<?>> choices = schedule.getUnexploredDataChoices(currentStep.getChoiceNumber());
         assert (input_choices.containsAll(choices));
 
         if (choices.isEmpty()) {
@@ -319,29 +328,29 @@ public class ExplicitSearchScheduler extends Scheduler {
             choices = input_choices;
             if (choices.size() > 1) {
                 // log new choice
-                PExplicitLogger.logNewDataChoice(choices, schedule.getStepNumber(), schedule.getChoiceNumber());
+                PExplicitLogger.logNewDataChoice(choices, currentStep.getStepNumber(), currentStep.getChoiceNumber());
             }
 
             if (choices.isEmpty()) {
                 // no unexplored choices remaining
-                schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
+                currentStep.setChoiceNumber(currentStep.getChoiceNumber() + 1);
                 return null;
             }
         }
 
         // pick the first choice
         result = choices.get(0);
-        schedule.setCurrentDataChoice(result, schedule.getChoiceNumber());
-        PExplicitLogger.logCurrentDataChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
+        schedule.setCurrentDataChoice(result, currentStep.getChoiceNumber());
+        PExplicitLogger.logCurrentDataChoice(result, currentStep.getStepNumber(), currentStep.getChoiceNumber());
 
         // remove the first choice from unexplored choices
         choices.remove(0);
 
         // set unexplored choices
-        schedule.setUnexploredDataChoices(choices, schedule.getChoiceNumber());
+        schedule.setUnexploredDataChoices(choices, currentStep.getChoiceNumber());
 
         // increment choice number
-        schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
+        currentStep.setChoiceNumber(currentStep.getChoiceNumber() + 1);
 
         return result;
     }
@@ -357,8 +366,18 @@ public class ExplicitSearchScheduler extends Scheduler {
             Choice choice = schedule.getChoice(cIdx);
             schedule.clearCurrent(cIdx);
             if (choice.isUnexploredNonEmpty()) {
-                PExplicitLogger.logBacktrack(cIdx);
                 backtrackChoiceNumber = cIdx;
+                int newStepNumber = 0;
+                if (PExplicitGlobal.getConfig().isBacktrackingEnabled()) {
+                    newStepNumber = choice.getChoiceStep().getStepNumber();
+                }
+                PExplicitLogger.logBacktrack(cIdx, newStepNumber);
+                if (newStepNumber == 0) {
+                    currentStep.resetToZero();
+                    start();
+                } else {
+                    currentStep.setTo(choice.getChoiceStep());
+                }
                 return;
             } else {
                 schedule.clearChoice(cIdx);
@@ -369,7 +388,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     private List<PMachine> getNewScheduleChoices() {
         // prioritize create machine events
-        for (PMachine machine : schedule.getMachineSet()) {
+        for (PMachine machine : currentStep.getMachineSet()) {
             if (machine.getSendBuffer().nextIsCreateMachineMsg()) {
                 return new ArrayList<>(Collections.singletonList(machine));
             }
@@ -378,7 +397,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         // now there are no create machine events remaining
         List<PMachine> choices = new ArrayList<>();
 
-        for (PMachine machine : schedule.getMachineSet()) {
+        for (PMachine machine : currentStep.getMachineSet()) {
             if (machine.getSendBuffer().nextHasTargetRunning()) {
                 choices.add(machine);
             }
@@ -439,7 +458,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         String s = "--------------------" +
                  String.format("\n    Status after %.2f seconds:", newRuntime) +
                  String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()) +
-                 String.format("\n      Depth:            %d", schedule.getStepNumber()) +
+                 String.format("\n      Depth:            %d", currentStep.getStepNumber()) +
                  String.format("\n      Schedules:        %d", SearchStatistics.iteration) +
                  String.format("\n      Unexplored:       %d", schedule.getNumUnexploredChoices());
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
@@ -495,7 +514,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
                 s.append(
                         StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
-                s.append(StringUtils.center(String.format("%d", schedule.getStepNumber()), 7));
+                s.append(StringUtils.center(String.format("%d", currentStep.getStepNumber()), 7));
 
                 s.append(StringUtils.center(String.format("%d", SearchStatistics.iteration), 12));
                 s.append(

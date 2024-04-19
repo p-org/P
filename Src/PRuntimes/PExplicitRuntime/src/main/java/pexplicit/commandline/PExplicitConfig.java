@@ -56,6 +56,9 @@ public class PExplicitConfig {
     // state caching mode
     @Setter
     StateCachingMode stateCachingMode = StateCachingMode.Fingerprint;
+    // use stateful backtracking
+    @Setter
+    boolean backtrackingEnabled = false;
 
     public void setToDfs() {
         this.setStrategy("dfs");

@@ -4,7 +4,6 @@ import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.ScheduleWriter;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.utils.misc.Assert;
@@ -26,9 +25,7 @@ public class ReplayScheduler extends Scheduler {
         // log run test
         PExplicitLogger.logRunTest();
 
-        for (PMachine machine : schedule.getMachineSet()) {
-            machine.reset();
-        }
+        currentStep.resetToZero();
         start();
         runIteration();
     }
@@ -54,7 +51,7 @@ public class ReplayScheduler extends Scheduler {
         checkLiveness(scheduleTerminated);
 
         Assert.fromModel(
-                !PExplicitGlobal.getConfig().isFailOnMaxStepBound() || (schedule.getStepNumber() < PExplicitGlobal.getConfig().getMaxStepBound()),
+                !PExplicitGlobal.getConfig().isFailOnMaxStepBound() || (currentStep.getStepNumber() < PExplicitGlobal.getConfig().getMaxStepBound()),
                 "Step bound of " + PExplicitGlobal.getConfig().getMaxStepBound() + " reached.");
     }
 
@@ -67,7 +64,7 @@ public class ReplayScheduler extends Scheduler {
             // done with this schedule
             scheduleTerminated = true;
             isDoneStepping = true;
-            PExplicitLogger.logFinishedIteration(schedule.getStepNumber());
+            PExplicitLogger.logFinishedIteration(currentStep.getStepNumber());
             return;
         }
 
@@ -82,36 +79,36 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     protected PMachine getNextScheduleChoice() {
-        if (schedule.getChoiceNumber() >= schedule.size()) {
+        if (currentStep.getChoiceNumber() >= schedule.size()) {
             return null;
         }
 
         // pick the current schedule choice
-        PMachine result = schedule.getCurrentScheduleChoice(schedule.getChoiceNumber());
+        PMachine result = schedule.getCurrentScheduleChoice(currentStep.getChoiceNumber());
         if (result == null) {
             return null;
         }
 
         ScheduleWriter.logScheduleChoice(result);
-        PExplicitLogger.logRepeatScheduleChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
+        PExplicitLogger.logRepeatScheduleChoice(result, currentStep.getStepNumber(), currentStep.getChoiceNumber());
 
-        schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
+        currentStep.setChoiceNumber(currentStep.getChoiceNumber() + 1);
         return result;
     }
 
     @Override
     protected PValue<?> getNextDataChoice(List<PValue<?>> input_choices) {
-        if (schedule.getChoiceNumber() >= schedule.size()) {
+        if (currentStep.getChoiceNumber() >= schedule.size()) {
             return null;
         }
 
         // pick the current data choice
-        PValue<?> result = schedule.getCurrentDataChoice(schedule.getChoiceNumber());
+        PValue<?> result = schedule.getCurrentDataChoice(currentStep.getChoiceNumber());
         assert (input_choices.contains(result));
         ScheduleWriter.logDataChoice(result);
-        PExplicitLogger.logRepeatDataChoice(result, schedule.getStepNumber(), schedule.getChoiceNumber());
+        PExplicitLogger.logRepeatDataChoice(result, currentStep.getStepNumber(), currentStep.getChoiceNumber());
 
-        schedule.setChoiceNumber(schedule.getChoiceNumber() + 1);
+        currentStep.setChoiceNumber(currentStep.getChoiceNumber() + 1);
         return result;
     }
 }

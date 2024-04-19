@@ -156,7 +156,8 @@ public class ExplicitSearchScheduler extends Scheduler {
             return;
         }
 
-        if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()) {
+        if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()
+                && stepState.getStepNumber() != 0) {
             stepState.storeMachinesState();
             schedule.setStepBeginState(stepState);
         }

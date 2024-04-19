@@ -97,7 +97,7 @@ public class PExplicitLogger {
         }
         log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
         log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
-                SearchStatistics.minSteps, (SearchStatistics.totalSteps/SearchStatistics.iteration), SearchStatistics.maxSteps));
+                SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
         log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         log.info(String.format(".. Result: " + PExplicitGlobal.getResult()));
         log.info(". Done");
@@ -106,7 +106,7 @@ public class PExplicitLogger {
     /**
      * Print error trace
      *
-     * @param e          Exception object
+     * @param e Exception object
      */
     public static void logStackTrace(Exception e) {
         StringWriter sw = new StringWriter();
@@ -333,7 +333,7 @@ public class PExplicitLogger {
     public static void logStartReplay() {
         if (verbosity > 0) {
             log.info("--------------------");
-            log.info(String.format("Replaying schedule"));
+            log.info("Replaying schedule");
         }
     }
 }

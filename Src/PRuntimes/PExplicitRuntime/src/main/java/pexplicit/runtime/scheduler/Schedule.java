@@ -8,7 +8,8 @@ import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a single (possibly partial) schedule.

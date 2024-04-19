@@ -325,7 +325,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Check for deadlock at the end of a completed schedule
      */
     public void checkDeadlock() {
-        for (PMachine machine: stepState.getMachineSet()) {
+        for (PMachine machine : stepState.getMachineSet()) {
             if (machine.canRun() && machine.isBlocked()) {
                 throw new DeadlockException(String.format("Deadlock detected. %s is waiting to receive an event, but no other controlled tasks are enabled.", machine));
             }
@@ -336,7 +336,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Check for liveness at the end of a completed schedule
      */
     public void checkLiveness(boolean terminated) {
-        for (PMachine monitor: PExplicitGlobal.getModel().getMonitors()) {
+        for (PMachine monitor : PExplicitGlobal.getModel().getMonitors()) {
             if (monitor.getCurrentState().isHotState()) {
                 if (terminated) {
                     throw new LivenessException(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));

@@ -60,7 +60,7 @@ public class StepState implements Serializable {
     public void resetToZero() {
         this.stepNumber = 0;
         this.choiceNumber = 0;
-        for (PMachine machine: PExplicitGlobal.getMachineSet()) {
+        for (PMachine machine : PExplicitGlobal.getMachineSet()) {
             machine.reset();
         }
         machineListByType.clear();
@@ -76,7 +76,7 @@ public class StepState implements Serializable {
         machineLocalStates = input.machineLocalStates;
 
         int i = 0;
-        for (PMachine machine: PExplicitGlobal.getMachineSet()) {
+        for (PMachine machine : PExplicitGlobal.getMachineSet()) {
             MachineLocalState ms = machineLocalStates.get(i++);
             if (ms == null) {
                 machine.reset();
@@ -161,7 +161,7 @@ public class StepState implements Serializable {
             List<String> fields = machine.getLocalVarNames();
             List<Object> values = machineLocalStates.get(i++).getLocals();
             int j = 0;
-            for (String field: fields) {
+            for (String field : fields) {
                 Object val = values.get(j++);
                 s.append(String.format("  %s -> %s\n", field, val));
             }

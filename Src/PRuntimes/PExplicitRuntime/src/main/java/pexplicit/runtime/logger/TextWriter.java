@@ -11,7 +11,7 @@ public class TextWriter {
     static PrintWriter log = null;
     @Getter
     static String fileName = "";
-    private static int logIdx = 0;
+    private static final int logIdx = 0;
 
     public static void Initialize() {
         try {

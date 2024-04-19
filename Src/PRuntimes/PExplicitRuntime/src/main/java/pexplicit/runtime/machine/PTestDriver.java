@@ -12,9 +12,9 @@ import java.util.Map;
  * Represents the base class for a P test driver.
  */
 public abstract class PTestDriver implements Serializable {
-    public PMachine mainMachine;
     public final List<PMonitor> monitorList;
     public final Map<PEvent, List<PMonitor>> observerMap;
+    public PMachine mainMachine;
 
     /**
      * Test driver constructor

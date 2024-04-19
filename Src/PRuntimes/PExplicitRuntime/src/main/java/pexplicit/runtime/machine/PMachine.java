@@ -29,31 +29,25 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     @Getter
     private static final Map<String, PMachine> nameToMachine = new HashMap<>();
     protected static int globalMachineId = mainMachineId;
-
-    @Getter
-    protected int instanceId;
     @Getter
     protected final int typeId;
     @Getter
     protected final String name;
-
     private final Set<State> states;
     private final State startState;
     @Getter
-    private State currentState;
-
-    @Getter
     private final SenderQueue sendBuffer;
     private final DeferQueue deferQueue;
-
+    @Getter
+    private final Map<String, PContinuation> continuationMap = new TreeMap<>();
+    @Getter
+    protected int instanceId;
+    @Getter
+    private State currentState;
     @Getter
     private boolean started = false;
     @Getter
     private boolean halted = false;
-
-    @Getter
-    private final Map<String, PContinuation> continuationMap = new TreeMap<>();
-
     private PContinuation blockedBy = null;
     @Getter
     private State blockedStateExit;

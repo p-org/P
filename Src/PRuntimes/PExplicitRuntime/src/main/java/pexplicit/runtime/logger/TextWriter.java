@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 public class TextWriter {
+    private static final int logIdx = 0;
     static PrintWriter log = null;
     @Getter
     static String fileName = "";
-    private static final int logIdx = 0;
 
     public static void Initialize() {
         try {

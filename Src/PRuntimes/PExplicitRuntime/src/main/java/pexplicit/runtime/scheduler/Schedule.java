@@ -2,7 +2,9 @@ package pexplicit.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
+import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;
@@ -13,18 +15,6 @@ import java.util.*;
  */
 public class Schedule implements Serializable {
     /**
-     * Mapping from machine type to list of machine instances
-     */
-    @Getter
-    private final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
-
-    /**
-     * Set of machines
-     */
-    @Getter
-    private final SortedSet<PMachine> machineSet = new TreeSet<>();
-
-    /**
      * List of choices
      */
     @Getter
@@ -32,33 +22,9 @@ public class Schedule implements Serializable {
     private List<Choice> choices = new ArrayList<>();
 
     /**
-     * Step number
-     */
-    @Getter
-    @Setter
-    private int stepNumber = 0;
-
-    /**
-     * Choice number
-     */
-    @Getter
-    @Setter
-    private int choiceNumber = 0;
-
-    /**
      * Constructor
      */
     public Schedule() {
-    }
-
-    public void start() {
-        setStepNumber(0);
-        setChoiceNumber(0);
-        for (PMachine machine : getMachineSet()) {
-            machine.reset();
-        }
-        getMachineListByType().clear();
-        getMachineSet().clear();
     }
 
     /**
@@ -172,6 +138,12 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         choices.get(idx).setUnexploredScheduleChoices(machines);
+        if (PExplicitGlobal.getConfig().isBacktrackingEnabled()
+                && !machines.isEmpty()
+                && PExplicitGlobal.getScheduler().currentStep != null
+                && PExplicitGlobal.getScheduler().currentStep.getStepNumber() != 0) {
+            choices.get(idx).setChoiceStep(PExplicitGlobal.getScheduler().currentStep.copy());
+        }
     }
 
     /**
@@ -185,6 +157,12 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         choices.get(idx).setUnexploredDataChoices(values);
+        if (PExplicitGlobal.getConfig().isBacktrackingEnabled()
+                && !values.isEmpty()
+                && PExplicitGlobal.getScheduler().currentStep != null
+                && PExplicitGlobal.getScheduler().currentStep.getStepNumber() != 0) {
+            choices.get(idx).setChoiceStep(PExplicitGlobal.getScheduler().currentStep.copy());
+        }
     }
 
     /**
@@ -260,53 +238,5 @@ public class Schedule implements Serializable {
      */
     public int size() {
         return choices.size();
-    }
-
-    /**
-     * Add a machine to the schedule.
-     *
-     * @param machine Machine to add
-     */
-    public void makeMachine(PMachine machine) {
-        if (!machineListByType.containsKey(machine.getClass())) {
-            machineListByType.put(machine.getClass(), new ArrayList<>());
-        }
-        machineListByType.get(machine.getClass()).add(machine);
-        machineSet.add(machine);
-    }
-
-    /**
-     * Check if a machine of a given type and index exists in the schedule.
-     *
-     * @param type Machine type
-     * @param idx  Machine index
-     * @return true if machine is in this schedule, false otherwise
-     */
-    public boolean hasMachine(Class<? extends PMachine> type, int idx) {
-        if (!machineListByType.containsKey(type))
-            return false;
-        return idx < machineListByType.get(type).size();
-    }
-
-    /**
-     * Get a machine of a given type and index.
-     *
-     * @param type Machine type
-     * @param idx  Machine index
-     * @return Machine
-     */
-    public PMachine getMachine(Class<? extends PMachine> type, int idx) {
-        assert (hasMachine(type, idx));
-        return machineListByType.get(type).get(idx);
-    }
-
-    /**
-     * Get the number of machines of a given type in the schedule.
-     *
-     * @param type Machine type
-     * @return Number of machine of a given type
-     */
-    public int getMachineCount(Class<? extends PMachine> type) {
-        return machineListByType.getOrDefault(type, new ArrayList<>()).size();
     }
 }

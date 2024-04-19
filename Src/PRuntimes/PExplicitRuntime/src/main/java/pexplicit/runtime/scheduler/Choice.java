@@ -3,6 +3,7 @@ package pexplicit.runtime.scheduler;
 import lombok.Getter;
 import lombok.Setter;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;
@@ -22,6 +23,8 @@ public class Choice implements Serializable {
     List<PMachine> unexploredScheduleChoices = new ArrayList<>();
     @Setter
     List<PValue<?>> unexploredDataChoices = new ArrayList<>();
+    @Setter
+    StepState choiceStep = null;
 
     /**
      * Constructor
@@ -39,6 +42,7 @@ public class Choice implements Serializable {
         currentDataChoice = old.currentDataChoice;
         unexploredScheduleChoices = new ArrayList<>(old.unexploredScheduleChoices);
         unexploredDataChoices = new ArrayList<>(old.unexploredDataChoices);
+        choiceStep = old.choiceStep;
     }
 
     /**
@@ -91,6 +95,7 @@ public class Choice implements Serializable {
     public void clearUnexplored() {
         unexploredScheduleChoices.clear();
         unexploredDataChoices.clear();
+        choiceStep = null;
     }
 
     /**

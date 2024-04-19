@@ -7,6 +7,7 @@ import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.events.PMessage;
+import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.utils.exceptions.DeadlockException;
 import pexplicit.utils.exceptions.LivenessException;
 import pexplicit.utils.exceptions.NotImplementedException;
@@ -21,6 +22,11 @@ import java.util.function.Function;
  * Represents the base class that all schedulers extend.
  */
 public abstract class Scheduler implements SchedulerInterface {
+    /**
+     * Current step state
+     */
+    public StepState currentStep = new StepState();
+
     /**
      * Current schedule
      */
@@ -179,8 +185,6 @@ public abstract class Scheduler implements SchedulerInterface {
      * Starts monitors and main machine.
      */
     protected void start() {
-        schedule.start();
-
         // start monitors first
         for (PMonitor monitor : PExplicitGlobal.getModel().getMonitors()) {
             startMachine(monitor);
@@ -201,7 +205,7 @@ public abstract class Scheduler implements SchedulerInterface {
         }
 
         // add machine to schedule
-        schedule.makeMachine(machine);
+        currentStep.makeMachine(machine);
 
         // run create machine event
         processCreateEvent(new PMessage(PEvent.createMachine, machine, null));
@@ -218,20 +222,20 @@ public abstract class Scheduler implements SchedulerInterface {
 
         if (!msg.getEvent().isCreateMachineEvent()) {
             // update step number
-            schedule.setStepNumber(schedule.getStepNumber() + 1);
+            currentStep.setStepNumber(currentStep.getStepNumber() + 1);
         }
 
         // reset number of logs in current step
         stepNumLogs = 0;
 
         // log start step
-        PExplicitLogger.logStartStep(schedule.getStepNumber(), sender, msg);
+        PExplicitLogger.logStartStep(currentStep.getStepNumber(), sender, msg);
 
         // process message
         processDequeueEvent(sender, msg);
 
         // update done stepping flag
-        isDoneStepping = (schedule.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
+        isDoneStepping = (currentStep.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
     }
 
     /**
@@ -245,7 +249,7 @@ public abstract class Scheduler implements SchedulerInterface {
             Class<? extends PMachine> machineType,
             Function<Integer, ? extends PMachine> constructor) {
         // get machine count for given type from schedule
-        int machineCount = schedule.getMachineCount(machineType);
+        int machineCount = currentStep.getMachineCount(machineType);
 
         PMachine machine = PExplicitGlobal.getGlobalMachine(machineType, machineCount);
         if (machine == null) {
@@ -255,7 +259,7 @@ public abstract class Scheduler implements SchedulerInterface {
         }
 
         // add machine to schedule
-        schedule.makeMachine(machine);
+        currentStep.makeMachine(machine);
         return machine;
     }
 
@@ -320,7 +324,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Check for deadlock at the end of a completed schedule
      */
     public void checkDeadlock() {
-        for (PMachine machine: schedule.getMachineSet()) {
+        for (PMachine machine: currentStep.getMachineSet()) {
             if (machine.canRun() && machine.isBlocked()) {
                 throw new DeadlockException(String.format("Deadlock detected. %s is waiting to receive an event, but no other controlled tasks are enabled.", machine));
             }

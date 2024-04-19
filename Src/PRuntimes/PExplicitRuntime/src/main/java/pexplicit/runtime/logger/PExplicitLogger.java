@@ -156,9 +156,9 @@ public class PExplicitLogger {
      *
      * @param choiceNum Choice number to which backtracking to
      */
-    public static void logBacktrack(int choiceNum) {
+    public static void logBacktrack(int choiceNum, int stepNum) {
         if (verbosity > 1) {
-            log.info(String.format("  Backtracking to choice @?::%d", choiceNum));
+            log.info(String.format("  Backtracking to choice @%d::%d", stepNum, choiceNum));
         }
     }
 

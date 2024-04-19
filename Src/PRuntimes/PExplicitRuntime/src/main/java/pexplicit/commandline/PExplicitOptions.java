@@ -162,6 +162,15 @@ public class PExplicitOptions {
                         .build();
         addHiddenOption(stateCachingMode);
 
+        // whether or not to disable stateful backtracking
+        Option backtrack =
+                Option.builder()
+                        .longOpt("no-backtrack")
+                        .desc("Disable stateful backtracking")
+                        .numberOfArgs(0)
+                        .build();
+        addHiddenOption(backtrack);
+
         /*
          * Help menu options
          */
@@ -314,6 +323,9 @@ public class PExplicitOptions {
                                     option,
                                     String.format("Unrecognized state caching mode, got %s", option.getValue()));
                     }
+                    break;
+                case "no-backtrack":
+                    config.setBacktrackingEnabled(false);
                     break;
                 case "h":
                 case "help":

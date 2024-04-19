@@ -171,8 +171,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         result.add(currentState);
 
-        result.add(sendBuffer.getElements());
-        result.add(deferQueue.getElements());
+        result.add(new ArrayList<>(sendBuffer.getElements()));
+        result.add(new ArrayList<>(deferQueue.getElements()));
 
         result.add(started);
         result.add(halted);
@@ -208,6 +208,14 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         blockedNewStateEntryPayload = (PValue<?>) values.get(idx++);
 
         return idx;
+    }
+
+    public MachineState getMachineState() {
+        return new MachineState(getLocalVarValues());
+    }
+
+    public void setMachineState(MachineState input) {
+        setLocalVarValues(input.getLocals());
     }
 
     /**

@@ -40,7 +40,7 @@ public class StepState implements Serializable {
     private SortedSet<PMachine> machineSet = new TreeSet<>();
 
     /**
-     * Local state of each machine in machineSet in order
+     * Local state of each machine (null if not in machineSet)
      */
     @Getter
     private List<MachineLocalState> machineLocalStates = new ArrayList<>();
@@ -76,20 +76,23 @@ public class StepState implements Serializable {
         machineLocalStates = input.machineLocalStates;
 
         int i = 0;
-        for (PMachine machine : machineSet) {
-            machine.setMachineState(machineLocalStates.get(i++));
-        }
         for (PMachine machine: PExplicitGlobal.getMachineSet()) {
-            if (!machineSet.contains(machine)) {
+            MachineLocalState ms = machineLocalStates.get(i++);
+            if (ms == null) {
                 machine.reset();
+            } else {
+                machine.setMachineState(ms);
             }
         }
     }
 
     public void storeMachinesState() {
         machineLocalStates.clear();
-        for (PMachine machine : machineSet) {
-            MachineLocalState ms = machine.copyMachineState();
+        for (PMachine machine : PExplicitGlobal.getMachineSet()) {
+            MachineLocalState ms = null;
+            if (machineSet.contains(machine)) {
+                ms = machine.copyMachineState();
+            }
             machineLocalStates.add(ms);
         }
     }

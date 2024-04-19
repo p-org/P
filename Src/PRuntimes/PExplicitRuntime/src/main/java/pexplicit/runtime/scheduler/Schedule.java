@@ -22,6 +22,13 @@ public class Schedule implements Serializable {
     private List<Choice> choices = new ArrayList<>();
 
     /**
+     * Step state at the start of a scheduler step.
+     * Used in stateful backtracking
+     */
+    @Setter
+    private StepState stepBeginState = null;
+
+    /**
      * Constructor
      */
     public Schedule() {
@@ -140,9 +147,9 @@ public class Schedule implements Serializable {
         choices.get(idx).setUnexploredScheduleChoices(machines);
         if (PExplicitGlobal.getConfig().isBacktrackingEnabled()
                 && !machines.isEmpty()
-                && PExplicitGlobal.getScheduler().currentStep != null
-                && PExplicitGlobal.getScheduler().currentStep.getStepNumber() != 0) {
-            choices.get(idx).setChoiceStep(PExplicitGlobal.getScheduler().currentStep.copy());
+                && stepBeginState != null
+                && stepBeginState.getStepNumber() != 0) {
+            choices.get(idx).setChoiceStep(stepBeginState.copy());
         }
     }
 
@@ -159,9 +166,9 @@ public class Schedule implements Serializable {
         choices.get(idx).setUnexploredDataChoices(values);
         if (PExplicitGlobal.getConfig().isBacktrackingEnabled()
                 && !values.isEmpty()
-                && PExplicitGlobal.getScheduler().currentStep != null
-                && PExplicitGlobal.getScheduler().currentStep.getStepNumber() != 0) {
-            choices.get(idx).setChoiceStep(PExplicitGlobal.getScheduler().currentStep.copy());
+                && stepBeginState != null
+                && stepBeginState.getStepNumber() != 0) {
+            choices.get(idx).setChoiceStep(stepBeginState.copy());
         }
     }
 

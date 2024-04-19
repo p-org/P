@@ -86,7 +86,7 @@ public class StepState implements Serializable {
     public void storeMachinesState() {
         machineStates.clear();
         for (PMachine machine : machineSet) {
-            MachineState ms = machine.getMachineState();
+            MachineState ms = machine.copyMachineState();
             machineStates.add(ms);
         }
     }
@@ -138,5 +138,22 @@ public class StepState implements Serializable {
      */
     public int getMachineCount(Class<? extends PMachine> type) {
         return machineListByType.getOrDefault(type, new ArrayList<>()).size();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        int i = 0;
+        for (PMachine machine : machineSet) {
+            s.append(String.format("%s::\n", machine));
+            List<String> fields = machine.getLocalVarNames();
+            List<Object> values = machineStates.get(i++).getLocals();
+            int j = 0;
+            for (String field: fields) {
+                Object val = values.get(j++);
+                s.append(String.format("  %s -> %s\n", field, val));
+            }
+        }
+        return s.toString();
     }
 }

@@ -346,6 +346,18 @@ namespace Plang.Compiler.Backend.PExplicit
 
             context.WriteLine(output, "@Generated");
             context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public List<Object> copyLocalVarValues() {");
+            context.WriteLine(output, "    List<Object> result = super.copyLocalVarValues();");
+            foreach (var field in machine.Fields)
+            {
+                context.WriteLine(output, $"    result.add({CompilationContext.GetVar(field.Name)});");
+            }
+            context.WriteLine(output, "    return result;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+
+            context.WriteLine(output, "@Generated");
+            context.WriteLine(output, "@Override");
             context.WriteLine(output, "protected int setLocalVarValues(List<Object> values) {");
             context.WriteLine(output, "    int idx = super.setLocalVarValues(values);");
             foreach (var field in machine.Fields)

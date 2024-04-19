@@ -25,7 +25,8 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * Current step state
      */
-    public StepState currentStep = new StepState();
+    @Getter
+    protected StepState stepState = new StepState();
 
     /**
      * Current schedule
@@ -205,7 +206,7 @@ public abstract class Scheduler implements SchedulerInterface {
         }
 
         // add machine to schedule
-        currentStep.makeMachine(machine);
+        stepState.makeMachine(machine);
 
         // run create machine event
         processCreateEvent(new PMessage(PEvent.createMachine, machine, null));
@@ -222,20 +223,20 @@ public abstract class Scheduler implements SchedulerInterface {
 
         if (!msg.getEvent().isCreateMachineEvent()) {
             // update step number
-            currentStep.setStepNumber(currentStep.getStepNumber() + 1);
+            stepState.setStepNumber(stepState.getStepNumber() + 1);
         }
 
         // reset number of logs in current step
         stepNumLogs = 0;
 
         // log start step
-        PExplicitLogger.logStartStep(currentStep.getStepNumber(), sender, msg);
+        PExplicitLogger.logStartStep(stepState.getStepNumber(), sender, msg);
 
         // process message
         processDequeueEvent(sender, msg);
 
         // update done stepping flag
-        isDoneStepping = (currentStep.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
+        isDoneStepping = (stepState.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
     }
 
     /**
@@ -249,7 +250,7 @@ public abstract class Scheduler implements SchedulerInterface {
             Class<? extends PMachine> machineType,
             Function<Integer, ? extends PMachine> constructor) {
         // get machine count for given type from schedule
-        int machineCount = currentStep.getMachineCount(machineType);
+        int machineCount = stepState.getMachineCount(machineType);
 
         PMachine machine = PExplicitGlobal.getGlobalMachine(machineType, machineCount);
         if (machine == null) {
@@ -259,7 +260,7 @@ public abstract class Scheduler implements SchedulerInterface {
         }
 
         // add machine to schedule
-        currentStep.makeMachine(machine);
+        stepState.makeMachine(machine);
         return machine;
     }
 
@@ -324,7 +325,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Check for deadlock at the end of a completed schedule
      */
     public void checkDeadlock() {
-        for (PMachine machine: currentStep.getMachineSet()) {
+        for (PMachine machine: stepState.getMachineSet()) {
             if (machine.canRun() && machine.isBlocked()) {
                 throw new DeadlockException(String.format("Deadlock detected. %s is waiting to receive an event, but no other controlled tasks are enabled.", machine));
             }

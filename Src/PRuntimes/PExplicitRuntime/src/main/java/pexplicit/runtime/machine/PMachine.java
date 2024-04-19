@@ -528,7 +528,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     @Override
     public int compareTo(PMachine rhs) {
-        return instanceId - rhs.getInstanceId();
+        return (instanceId - rhs.getInstanceId()) ^ (typeId - rhs.getTypeId());
     }
 
     @Override

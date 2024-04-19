@@ -19,11 +19,6 @@ public class PMonitor extends PMachine {
     }
 
     @Override
-    public int compareTo(PMachine rhs) {
-        return name.compareTo(rhs.getName());
-    }
-
-    @Override
     public int hashCode() {
         return name.hashCode();
     }

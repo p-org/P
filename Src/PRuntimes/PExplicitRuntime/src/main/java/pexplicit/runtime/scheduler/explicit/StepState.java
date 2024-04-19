@@ -156,7 +156,11 @@ public class StepState implements Serializable {
         s.append(String.format("@%d::%d\n", stepNumber, choiceNumber));
 
         int i = 0;
-        for (PMachine machine : machineSet) {
+        for (PMachine machine : PExplicitGlobal.getMachineSet()) {
+            if (!machineSet.contains(machine)) {
+                i++;
+                continue;
+            }
             s.append(String.format("%s:\n", machine));
             List<String> fields = machine.getLocalVarNames();
             List<Object> values = machineLocalStates.get(i++).getLocals();

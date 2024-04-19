@@ -33,28 +33,6 @@ public class Choice implements Serializable {
     }
 
     /**
-     * Copy-constructor for Choice
-     *
-     * @param old The choice to copy
-     */
-    private Choice(Choice old) {
-        currentScheduleChoice = old.currentScheduleChoice;
-        currentDataChoice = old.currentDataChoice;
-        unexploredScheduleChoices = new ArrayList<>(old.unexploredScheduleChoices);
-        unexploredDataChoices = new ArrayList<>(old.unexploredDataChoices);
-        choiceStep = old.choiceStep;
-    }
-
-    /**
-     * Copy the Choice
-     *
-     * @return A new cloned copy of the Choice
-     */
-    public Choice getCopy() {
-        return new Choice(this);
-    }
-
-    /**
      * Check if this choice has an unexplored choice remaining.
      *
      * @return true if this choice has an unexplored choice, false otherwise

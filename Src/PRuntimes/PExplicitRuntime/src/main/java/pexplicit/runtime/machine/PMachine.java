@@ -171,6 +171,30 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         result.add(currentState);
 
+        result.add(sendBuffer.getElements());
+        result.add(deferQueue.getElements());
+
+        result.add(started);
+        result.add(halted);
+
+        result.add(blockedBy);
+        result.add(blockedStateExit);
+        result.add(blockedNewStateEntry);
+        result.add(blockedNewStateEntryPayload);
+
+        return result;
+    }
+
+    /**
+     * Copy values of local variables as an ordered list
+     *
+     * @return List of values
+     */
+    public List<Object> copyLocalVarValues() {
+        List<Object> result = new ArrayList<>();
+
+        result.add(currentState);
+
         result.add(new ArrayList<>(sendBuffer.getElements()));
         result.add(new ArrayList<>(deferQueue.getElements()));
 
@@ -210,8 +234,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         return idx;
     }
 
-    public MachineState getMachineState() {
-        return new MachineState(getLocalVarValues());
+    public MachineState copyMachineState() {
+        return new MachineState(copyLocalVarValues());
     }
 
     public void setMachineState(MachineState input) {

@@ -9,7 +9,6 @@ import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.exceptions.BugFoundException;
-import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.utils.serialize.SerializableBiFunction;
 import pexplicit.utils.serialize.SerializableRunnable;
@@ -234,11 +233,11 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         return idx;
     }
 
-    public MachineState copyMachineState() {
-        return new MachineState(copyLocalVarValues());
+    public MachineLocalState copyMachineState() {
+        return new MachineLocalState(copyLocalVarValues());
     }
 
-    public void setMachineState(MachineState input) {
+    public void setMachineState(MachineLocalState input) {
         setLocalVarValues(input.getLocals());
     }
 

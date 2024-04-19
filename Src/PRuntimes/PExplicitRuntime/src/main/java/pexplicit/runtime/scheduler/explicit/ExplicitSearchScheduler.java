@@ -156,7 +156,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             return;
         }
 
-        if (PExplicitGlobal.getConfig().isBacktrackingEnabled()) {
+        if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()) {
             stepState.storeMachinesState();
             schedule.setStepBeginState(stepState);
         }
@@ -371,7 +371,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             if (choice.isUnexploredNonEmpty()) {
                 backtrackChoiceNumber = cIdx;
                 int newStepNumber = 0;
-                if (PExplicitGlobal.getConfig().isBacktrackingEnabled()) {
+                if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()) {
                     StepState choiceStep =  choice.getChoiceStep();
                     if (choiceStep != null) {
                         newStepNumber = choice.getChoiceStep().getStepNumber();

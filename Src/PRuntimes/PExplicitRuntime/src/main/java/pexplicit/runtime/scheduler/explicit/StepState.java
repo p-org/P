@@ -3,12 +3,15 @@ package pexplicit.runtime.scheduler.explicit;
 import lombok.Getter;
 import lombok.Setter;
 import pexplicit.runtime.PExplicitGlobal;
-import pexplicit.runtime.machine.MachineState;
+import pexplicit.runtime.machine.MachineLocalState;
 import pexplicit.runtime.machine.PMachine;
 
 import java.io.Serializable;
 import java.util.*;
 
+/**
+ * Represents the schedule state at a particular step
+ */
 public class StepState implements Serializable {
     /**
      * Step number
@@ -40,7 +43,7 @@ public class StepState implements Serializable {
      * Local state of each machine in machineSet in order
      */
     @Getter
-    private List<MachineState> machineStates = new ArrayList<>();
+    private List<MachineLocalState> machineLocalStates = new ArrayList<>();
 
     public StepState copy() {
         StepState stepState = new StepState();
@@ -49,7 +52,7 @@ public class StepState implements Serializable {
         stepState.choiceNumber = this.choiceNumber;
         stepState.machineListByType = new HashMap<>(this.machineListByType);
         stepState.machineSet = new TreeSet<>(this.machineSet);
-        stepState.machineStates = new ArrayList<>(this.machineStates);
+        stepState.machineLocalStates = new ArrayList<>(this.machineLocalStates);
         return stepState;
     }
 
@@ -62,7 +65,7 @@ public class StepState implements Serializable {
         }
         machineListByType.clear();
         machineSet.clear();
-        machineStates.clear();
+        machineLocalStates.clear();
     }
 
     public void setTo(StepState input) {
@@ -70,11 +73,11 @@ public class StepState implements Serializable {
         choiceNumber = input.choiceNumber;
         machineListByType = input.machineListByType;
         machineSet = input.machineSet;
-        machineStates = input.machineStates;
+        machineLocalStates = input.machineLocalStates;
 
         int i = 0;
         for (PMachine machine : machineSet) {
-            machine.setMachineState(machineStates.get(i++));
+            machine.setMachineState(machineLocalStates.get(i++));
         }
         for (PMachine machine: PExplicitGlobal.getMachineSet()) {
             if (!machineSet.contains(machine)) {
@@ -84,10 +87,10 @@ public class StepState implements Serializable {
     }
 
     public void storeMachinesState() {
-        machineStates.clear();
+        machineLocalStates.clear();
         for (PMachine machine : machineSet) {
-            MachineState ms = machine.copyMachineState();
-            machineStates.add(ms);
+            MachineLocalState ms = machine.copyMachineState();
+            machineLocalStates.add(ms);
         }
     }
 
@@ -142,12 +145,18 @@ public class StepState implements Serializable {
 
     @Override
     public String toString() {
+        if (this == null) {
+            return "null";
+        }
+
         StringBuilder s = new StringBuilder();
+        s.append(String.format("@%d::%d\n", stepNumber, choiceNumber));
+
         int i = 0;
         for (PMachine machine : machineSet) {
-            s.append(String.format("%s::\n", machine));
+            s.append(String.format("%s:\n", machine));
             List<String> fields = machine.getLocalVarNames();
-            List<Object> values = machineStates.get(i++).getLocals();
+            List<Object> values = machineLocalStates.get(i++).getLocals();
             int j = 0;
             for (String field: fields) {
                 Object val = values.get(j++);

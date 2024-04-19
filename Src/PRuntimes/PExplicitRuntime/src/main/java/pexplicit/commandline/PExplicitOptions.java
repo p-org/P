@@ -325,7 +325,7 @@ public class PExplicitOptions {
                     }
                     break;
                 case "no-backtrack":
-                    config.setBacktrackingEnabled(false);
+                    config.setStatefulBacktrackEnabled(false);
                     break;
                 case "h":
                 case "help":

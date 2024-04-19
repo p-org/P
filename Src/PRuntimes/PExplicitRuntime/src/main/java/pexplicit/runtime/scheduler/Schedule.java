@@ -145,7 +145,7 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         choices.get(idx).setUnexploredScheduleChoices(machines);
-        if (PExplicitGlobal.getConfig().isBacktrackingEnabled()
+        if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()
                 && !machines.isEmpty()
                 && stepBeginState != null
                 && stepBeginState.getStepNumber() != 0) {
@@ -164,7 +164,7 @@ public class Schedule implements Serializable {
             choices.add(newChoice());
         }
         choices.get(idx).setUnexploredDataChoices(values);
-        if (PExplicitGlobal.getConfig().isBacktrackingEnabled()
+        if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()
                 && !values.isEmpty()
                 && stepBeginState != null
                 && stepBeginState.getStepNumber() != 0) {

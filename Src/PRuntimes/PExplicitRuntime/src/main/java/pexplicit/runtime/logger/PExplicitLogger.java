@@ -222,6 +222,9 @@ public class PExplicitLogger {
     }
 
     public static void logModel(String message) {
+        if (verbosity > 0) {
+            log.info(message);
+        }
         if (typedLogEnabled()) {
             typedLog(LogType.PrintLog, message);
         }

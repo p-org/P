@@ -6,6 +6,7 @@ namespace Plang.Compiler
         Symbolic,
         CSharp,
         Java,
-        Stately
+        Stately,
+        Uclid5,
     }
 }

@@ -63,8 +63,9 @@ namespace Plang.Compiler.Backend.Uclid5 {
             // Declare state space
             EmitLine("// State space: machines, buffer, and next machine to step");
             EmitLine("var UPVerifier_Machines: [UPVerifier_MachineRef]UPVerifier_Machine;");
+            EmitLine("var UPVerifier_MTurn: UPVerifier_MachineRef;");
             EmitLine("var UPVerifier_Buffer: [UPVerifier_Event]boolean;");
-            EmitLine("var UPVerifier_Turn: UPVerifier_MachineRef;");
+            EmitLine("var UPVerifier_ETurn: UPVerifier_Event;");
             EmitLine("\n");
             
             // Init captures the state of affairs before anything executes
@@ -80,9 +81,16 @@ namespace Plang.Compiler.Backend.Uclid5 {
             EmitLine("}");
             EmitLine("\n");
             
+            // create all the event handler procedures
+            foreach (var eh in globalScope.Machines.SelectMany(m => m.States.SelectMany(s => s.AllEventHandlers)))
+            {
+                DeclareEventHandler(eh.Value);
+            }
+            
             // Next picks a random machine and calls the appropriate procedure to step that machine
             EmitLine("next {");
-            EmitLine("havoc UPVerifier_Turn;");
+            EmitLine("havoc UPVerifier_MTurn;");
+            EmitLine("havoc UPVerifier_ETurn;");
             // close the next block
             EmitLine("}");
             EmitLine("\n");
@@ -153,22 +161,20 @@ namespace Plang.Compiler.Backend.Uclid5 {
                 throw new NotSupportedException($"Not supported type expression: {t.ToString()}");
                 // return t.GetType().ToString();
             }
-            void DeclareEvents(IEnumerable<PEvent> es)
+            void DeclareEvents(IEnumerable<PEvent> events)
             {
-                var sum = String.Join("\n\t\t| ", es.Select(e => ProcessEvent(e)));
+                var es = events.ToList();
+                var sum = String.Join("\n\t\t| ", es.Select(ProcessEvent));
                 EmitLine($"data UPVerifier_Event = \n\t\t| {sum}\n");
 
                 string[] attributes = ["Source", "Target", "Payload"];
                 foreach (var attribute in attributes)
                 {
                     var cases = $"if (e is {es.First().Name}) then e.{es.First().Name}_{attribute}";
-                    foreach (var e in es.Skip(1).SkipLast(1))
-                    {
-                        cases += $"\n\t\telse if (e is {e.Name}) then e.{e.Name}_{attribute}";
-                    }
+                    cases = es.Skip(1).SkipLast(1).Aggregate(cases, (current, e) => current + $"\n\t\telse if (e is {e.Name}) then e.{e.Name}_{attribute}");
                     cases += $"\n\t\telse e.{es.Last().Name}_{attribute}";
-                    var outtype = attribute == "Payload" ? "UPVerifier_Event" : "UPVerifier_MachineRef"; 
-                    EmitLine($"function UPVerifier_{attribute} (e: UPVerifier_Event) : {outtype} = \n\t\t{cases}");
+                    var outType = attribute == "Payload" ? "UPVerifier_Event" : "UPVerifier_MachineRef"; 
+                    EmitLine($"function UPVerifier_{attribute} (e: UPVerifier_Event) : {outType} = \n\t\t{cases}");
                     if (attribute != "Payload")
                     {
                         EmitLine("");
@@ -182,26 +188,24 @@ namespace Plang.Compiler.Backend.Uclid5 {
                 return $"{e.Name} ({e.Name}_Source: UPVerifier_MachineRef, {e.Name}_Target: UPVerifier_MachineRef, {e.Name}_Payload: {payload})";
             }
             
-            void DeclareMachines(IEnumerable<Machine> ms)
+            void DeclareMachines(IEnumerable<Machine> machines)
             {
-                var sum = String.Join("\n\t\t| ", ms.Select(m => ProcessMachine(m)));
+                var ms = machines.ToList();
+                var sum = String.Join("\n\t\t| ", ms.Select(ProcessMachine));
                 EmitLine($"data UPVerifier_Machine = \n\t\t| {sum}\n");
                 
-                var entry_cases = $"if (m is {ms.First().Name}) then m.{ms.First().Name}_Entry";
-                foreach (var m in ms.Skip(1).SkipLast(1))
-                {
-                    entry_cases += $"\n\t\telse if (m is {m.Name}) then m.{m.Name}_Entry";
-                }
-                entry_cases += $"\n\t\telse m.{ms.Last().Name}_Entry";
-                EmitLine($"function UPVerifier_Entry (m: UPVerifier_Machine) : boolean = \n\t\t{entry_cases}\n");
+                var entryCases = $"if (m is {ms.First().Name}) then m.{ms.First().Name}_Entry";
+                entryCases = ms.Skip(1).SkipLast(1).Aggregate(entryCases, (current, m) => current + $"\n\t\telse if (m is {m.Name}) then m.{m.Name}_Entry");
+                entryCases += $"\n\t\telse m.{ms.Last().Name}_Entry";
+                EmitLine($"function UPVerifier_Entry (m: UPVerifier_Machine) : boolean = \n\t\t{entryCases}\n");
                 
-                var start_cases = $"if (m is {ms.First().Name}) then m.{ms.First().Name}_State == {GetStartState(ms.First())}";
+                var startCases = $"if (m is {ms.First().Name}) then m.{ms.First().Name}_State == {ms.First().Name}_{GetStartState(ms.First())}";
                 foreach (var m in ms.Skip(1).SkipLast(1))
                 {
-                    start_cases += $"\n\t\telse if (m is {m.Name}) then m.{m.Name}_State == {GetStartState(m)}";
+                    startCases += $"\n\t\telse if (m is {m.Name}) then m.{m.Name}_State == {m.Name}_{GetStartState(m)}";
                 }
-                start_cases += $"\n\t\telse m.{ms.Last().Name}_State == {GetStartState(ms.Last())}";
-                EmitLine($"function UPVerifier_Start (m: UPVerifier_Machine) : boolean = \n\t\t{start_cases}");
+                startCases += $"\n\t\telse m.{ms.Last().Name}_State == {ms.Last().Name}_{GetStartState(ms.Last())}";
+                EmitLine($"function UPVerifier_Start (m: UPVerifier_Machine) : boolean = \n\t\t{startCases}");
             }
 
             String GetStartState(Machine m)
@@ -214,6 +218,67 @@ namespace Plang.Compiler.Backend.Uclid5 {
                 var states = "enum {" + String.Join(", ", m.States.Select(s => $"{m.Name}_{s.Name}")) + "}";
                 var fields = String.Join(", ", m.Fields.Select(f => $"{m.Name}_{f.Name}: {ProcessType(f.Type)}"));
                 return $"{m.Name} ({m.Name}_Entry: boolean, {m.Name}_State: {states}, {fields})";
+            }
+
+            void DeclareEventHandler(IStateAction h)
+            {
+                switch (h)
+                {
+                    case EventDoAction action:
+                        var e = action.Trigger;
+                        var f = action.Target;
+                        var m = f.Owner;
+                        EmitLine($"// Handler for event {e.Name} in machine {m.Name}");
+                        EmitLine($"procedure {m.Name}_handle_{e.Name} (r: UPVerifier_MachineRef, e: UPVerifier_Event)");
+                        EmitLine("\tmodifies UPVerifier_Machines;");
+                        EmitLine("\tmodifies UPVerifier_Buffer;");
+                        EmitLine("\trequires UPVerifier_Buffer[e];");
+                        EmitLine($"\trequires UPVerifier_Machines[r] is {m.Name};");
+                        EmitLine($"\trequires e is {e.Name};");
+                        EmitLine($"\tensures (forall (r1: UPVerifier_MachineRef) r != r1 ==> old(UPVerifier_Machines)[r1] == UPVerifier_Machines[r1]);");
+                        EmitLine($"\tensures (forall (e1: UPVerifier_Event) e != e1 ==> (old(UPVerifier_Buffer)[e1] == UPVerifier_Buffer[e1] || (UPVerifier_Source(e1) == r && !old(UPVerifier_Buffer)[e1])));");
+                        // open procedure
+                        EmitLine("{");
+                        EmitLine("var m: UPVerifier_Machine;");
+                        
+                        if (f.Signature.Parameters.Count > 1)
+                        {
+                            throw new NotSupportedException($"Only one event handler argument supported: {h}");
+                        } else if (f.Signature.Parameters.Count == 1)
+                        {
+                            var arg = f.Signature.Parameters.First();
+                            EmitLine($"var {arg.Name}: {ProcessType(arg.Type)};");
+                            EmitLine($"{arg.Name} = UPVerifier_Payload(e);");
+                        }
+                        EmitLine("UPVerifier_Buffer[e -> false];");
+                        // make all modifications to m 
+                        EmitLine("m = UPVerifier_Machines[r];");
+
+                        ProcessStatement(f.Body);
+                        
+                        EmitLine("UPVerifier_Machines[r -> m];");
+                        // close procedure
+                        EmitLine("}\n");
+                        return; 
+                }
+                // throw new NotSupportedException($"Not supported event handler: {h}");
+            }
+
+            void ProcessStatement(IPStmt stmt)
+            {
+                switch (stmt)
+                {
+                    case CompoundStmt cstmt:
+                        foreach (var s in cstmt.Statements)
+                        {
+                            ProcessStatement(s);
+                        }
+                        break;
+                    case AssignStmt astmt:
+                        // TODO: handle expressions
+                        EmitLine($"// {astmt.Location} = {astmt.Value};");
+                        break;
+                }
             }
         }
     }

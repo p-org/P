@@ -5,6 +5,7 @@ using System.Linq;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
@@ -145,6 +146,10 @@ namespace Plang.Compiler.Backend.Uclid5 {
                         {
                             return "UPVerifier_MachineRef";
                         }
+                        if (pt.Equals(PrimitiveType.Event))
+                        {
+                            return "UPVerifier_Event";
+                        }
                         break;
                     case TypeDefType tdt:
                         return tdt.TypeDefDecl.Name;
@@ -158,7 +163,7 @@ namespace Plang.Compiler.Backend.Uclid5 {
                         return $"[{ProcessType(mt.KeyType)}]{ProcessType(mt.ValueType)}";
                 }
 
-                throw new NotSupportedException($"Not supported type expression: {t.ToString()}");
+                throw new NotSupportedException($"Not supported type expression: {t} ({t.OriginalRepresentation})");
                 // return t.GetType().ToString();
             }
             void DeclareEvents(IEnumerable<PEvent> events)
@@ -233,12 +238,17 @@ namespace Plang.Compiler.Backend.Uclid5 {
                         EmitLine("\tmodifies UPVerifier_Machines;");
                         EmitLine("\tmodifies UPVerifier_Buffer;");
                         EmitLine("\trequires UPVerifier_Buffer[e];");
-                        EmitLine($"\trequires UPVerifier_Machines[r] is {m.Name};");
+                        EmitLine($"\trequires UPVerifier_Source(e) == r;");
                         EmitLine($"\trequires e is {e.Name};");
+                        EmitLine($"\trequires UPVerifier_Machines[r] is {m.Name};");
                         EmitLine($"\tensures (forall (r1: UPVerifier_MachineRef) r != r1 ==> old(UPVerifier_Machines)[r1] == UPVerifier_Machines[r1]);");
                         EmitLine($"\tensures (forall (e1: UPVerifier_Event) e != e1 ==> (old(UPVerifier_Buffer)[e1] == UPVerifier_Buffer[e1] || (UPVerifier_Source(e1) == r && !old(UPVerifier_Buffer)[e1])));");
                         // open procedure
                         EmitLine("{");
+                        foreach (var v in f.LocalVariables)
+                        {
+                            EmitLine($"var {v.Name}: {ProcessType(v.Type)};");
+                        }
                         EmitLine("var m: UPVerifier_Machine;");
                         
                         if (f.Signature.Parameters.Count > 1)
@@ -262,6 +272,7 @@ namespace Plang.Compiler.Backend.Uclid5 {
                         return; 
                 }
                 // throw new NotSupportedException($"Not supported event handler: {h}");
+                EmitLine($"// Not handled yet: {h}");
             }
 
             void ProcessStatement(IPStmt stmt)
@@ -273,12 +284,47 @@ namespace Plang.Compiler.Backend.Uclid5 {
                         {
                             ProcessStatement(s);
                         }
-                        break;
+                        return;
                     case AssignStmt astmt:
-                        // TODO: handle expressions
-                        EmitLine($"// {astmt.Location} = {astmt.Value};");
-                        break;
+                        var lhs = ProcessAssignmentLHS(astmt.Location);
+                        var rhs = ProcessExpr(astmt.Value);
+                        EmitLine($"// {lhs} = {rhs};");
+                        return;
+                    case IfStmt ifstmt:
+                        var cond = ProcessExpr(ifstmt.Condition);
+                        EmitLine($"if ({cond}) {{");
+                        ProcessStatement(ifstmt.ThenBranch);
+                        EmitLine("} else {");
+                        ProcessStatement(ifstmt.ElseBranch);
+                        EmitLine("}");
+                        return;
                 }
+                EmitLine($"// Not handled yet: {stmt}");
+            }
+
+            String ProcessAssignmentLHS(IPExpr lhs)
+            {
+                switch (lhs)
+                {
+                    case VariableAccessExpr vax:
+                        return vax.Variable.Name;
+                }
+                // throw new NotSupportedException($"Not supported lhs: {lhs}");
+                return $"NotHandledLHS({lhs})";
+            }
+
+            String ProcessExpr(IPExpr expr)
+            {
+                switch (expr)
+                {
+                    case NamedTupleAccessExpr ntax:
+                        return $"{ProcessExpr(ntax.SubExpr)}.{ntax.FieldName}";
+                    case VariableAccessExpr vax:
+                        return vax.Variable.Name;
+                }
+                
+                // throw new NotSupportedException($"Not supported expr: {expr}");
+                return $"NotHandledExpr({expr})";
             }
         }
     }

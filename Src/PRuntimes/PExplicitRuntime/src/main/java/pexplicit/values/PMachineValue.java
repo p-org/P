@@ -2,6 +2,8 @@ package pexplicit.values;
 
 import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMonitor;
+import pexplicit.utils.exceptions.BugFoundException;
 
 /**
  * Represents the PValue for P machine
@@ -25,6 +27,9 @@ public class PMachineValue extends PValue<PMachineValue> {
      * @return unique machine instance id
      */
     public int getId() {
+        if (value instanceof PMonitor) {
+            throw new BugFoundException(String.format("Cannot fetch id from a PMonitor: %s", value));
+        }
         return value.getInstanceId();
     }
 

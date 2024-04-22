@@ -25,10 +25,8 @@ import java.util.function.Function;
  */
 public abstract class PMachine implements Serializable, Comparable<PMachine> {
     @Getter
-    private static final int mainMachineId = 2;
-    @Getter
     private static final Map<String, PMachine> nameToMachine = new HashMap<>();
-    protected static int globalMachineId = mainMachineId;
+    protected static int globalMachineId = 1;
     @Getter
     protected final int typeId;
     @Getter
@@ -40,6 +38,11 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     private final DeferQueue deferQueue;
     @Getter
     private final Map<String, PContinuation> continuationMap = new TreeMap<>();
+    /**
+     * Unique identifier across all PMachines/PMonitors
+     * For PMachines, instanceId runs from 1 to #PMachines
+     * For PMonitors, instanceId runs from -1 to -#PMonitors
+     */
     @Getter
     protected int instanceId;
     @Getter
@@ -68,7 +71,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     public PMachine(String name, int id, State startState, State... states) {
         // initialize name, ids
         this.name = name;
-        this.instanceId = globalMachineId++;
+        this.instanceId = ++globalMachineId;
         this.typeId = id;
         nameToMachine.put(toString(), this);
 
@@ -528,14 +531,15 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
     @Override
     public int compareTo(PMachine rhs) {
-        return (this.hashCode() - rhs.hashCode());
+        if (rhs == null) {
+            return this.instanceId;
+        }
+        return (this.instanceId - rhs.instanceId);
     }
 
     @Override
     public int hashCode() {
-        if (name == null)
-            return instanceId ^ typeId;
-        return name.hashCode() ^ instanceId ^ typeId;
+        return this.instanceId;
     }
 
     @Override
@@ -545,13 +549,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             return false;
         }
         if (this.name == null) {
-            return (((PMachine) obj).name == null)
-                    && this.instanceId == (((PMachine) obj).instanceId)
-                    && this.typeId == (((PMachine) obj).typeId);
-            }
+            return (((PMachine) obj).name == null);
+        }
         return this.name.equals(((PMachine) obj).name)
-                && this.instanceId == (((PMachine) obj).instanceId)
-                && this.typeId == (((PMachine) obj).typeId);
+                && this.instanceId == (((PMachine) obj).instanceId);
     }
 
     @Override

@@ -5,6 +5,12 @@ package pexplicit.runtime.machine;
  */
 public class PMonitor extends PMachine {
     /**
+     * Global monitor id
+     * Runs from -(#Monitors) to 0
+     */
+    protected static int globalMonitorId = 0;
+
+    /**
      * Monitor constructor
      *
      * @param name       Name of the monitor
@@ -14,8 +20,8 @@ public class PMonitor extends PMachine {
      */
     public PMonitor(String name, int id, State startState, State... states) {
         super(name, id, startState, states);
-        this.instanceId = 0;
         globalMachineId--;
+        this.instanceId = --globalMonitorId;
     }
 
     @Override

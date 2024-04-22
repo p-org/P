@@ -68,7 +68,9 @@ public class PExplicitGlobal {
         if (idx >= machinesOfType.size()) {
             return null;
         }
-        return machineListByType.get(type).get(idx);
+        PMachine result = machineListByType.get(type).get(idx);
+        assert (machineSet.contains(result));
+        return result;
     }
 
     /**
@@ -81,6 +83,7 @@ public class PExplicitGlobal {
         if (!machineListByType.containsKey(machine.getClass())) {
             machineListByType.put(machine.getClass(), new ArrayList<>());
         }
+        assert (machineCount == machineListByType.get(machine.getClass()).size());
         machineListByType.get(machine.getClass()).add(machine);
         machineSet.add(machine);
         assert (machineListByType.get(machine.getClass()).get(machineCount) == machine);

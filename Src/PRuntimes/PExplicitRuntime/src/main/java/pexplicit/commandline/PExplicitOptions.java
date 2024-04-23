@@ -155,7 +155,7 @@ public class PExplicitOptions {
         Option stateCachingMode =
                 Option.builder()
                         .longOpt("state-caching")
-                        .desc("State caching mode: none, fingerprint, exact (default: fingerprint)")
+                        .desc("State caching mode: none, hashcode, siphash24, murmur3_128, sha256, exact (default: murmur3_128)")
                         .numberOfArgs(1)
                         .hasArg()
                         .argName("Caching Mode (string)")
@@ -312,8 +312,17 @@ public class PExplicitOptions {
                         case "none":
                             config.setStateCachingMode(StateCachingMode.None);
                             break;
-                        case "fingerprint":
-                            config.setStateCachingMode(StateCachingMode.Fingerprint);
+                        case "hashcode":
+                            config.setStateCachingMode(StateCachingMode.HashCode);
+                            break;
+                        case "siphash24":
+                            config.setStateCachingMode(StateCachingMode.SipHash24);
+                            break;
+                        case "murmur3_128":
+                            config.setStateCachingMode(StateCachingMode.Murmur3_128);
+                            break;
+                        case "sha256":
+                            config.setStateCachingMode(StateCachingMode.Sha256);
                             break;
                         case "exact":
                             config.setStateCachingMode(StateCachingMode.Exact);

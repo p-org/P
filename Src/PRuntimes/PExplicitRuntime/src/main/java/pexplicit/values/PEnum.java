@@ -21,6 +21,7 @@ public class PEnum extends PValue<PEnum> {
         this.type = type;
         this.name = name;
         this.value = val;
+        setRep();
     }
 
     /**
@@ -32,6 +33,7 @@ public class PEnum extends PValue<PEnum> {
         type = val.type;
         name = val.name;
         value = val.value;
+        setRep();
     }
 
     /**
@@ -49,8 +51,13 @@ public class PEnum extends PValue<PEnum> {
     }
 
     @Override
-    public int hashCode() {
-        return Long.hashCode(value);
+    protected void setHashCode() {
+        hashCode = Long.hashCode(value);
+    }
+
+    @Override
+    protected void setStringRep() {
+        stringRep = name;
     }
 
     @Override
@@ -60,10 +67,5 @@ public class PEnum extends PValue<PEnum> {
             return false;
         }
         return this.value == ((PEnum) obj).value;
-    }
-
-    @Override
-    public String toString() {
-        return name;
     }
 }

@@ -1,10 +1,7 @@
-package pexplicit.runtime.machine.events;
+package pexplicit.values;
 
 import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.values.ComputeHash;
-import pexplicit.values.PEvent;
-import pexplicit.values.PValue;
 
 /**
  * Represents a message containing details about the event, target machine, and event payload.
@@ -26,6 +23,7 @@ public class PMessage extends PValue<PMessage> {
         this.event = event;
         this.target = target;
         this.payload = payload;
+        setRep();
     }
 
     public PMessage setTarget(PMachine target) {
@@ -38,8 +36,18 @@ public class PMessage extends PValue<PMessage> {
     }
 
     @Override
-    public int hashCode() {
-        return ComputeHash.getHashCode(target, event, payload);
+    protected void setHashCode() {
+        hashCode = ComputeHash.getHashCode(target, event, payload);
+    }
+
+    @Override
+    protected void setStringRep() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%s@%s", event, target));
+        if (payload != null) {
+            sb.append(String.format(" :payload %s", payload));
+        }
+        stringRep = sb.toString();
     }
 
     @Override
@@ -57,15 +65,5 @@ public class PMessage extends PValue<PMessage> {
             return false;
         }
         return this.payload == other.payload;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%s@%s", event, target));
-        if (payload != null) {
-            sb.append(String.format(" :payload %s", payload));
-        }
-        return sb.toString();
     }
 }

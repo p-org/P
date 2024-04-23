@@ -7,13 +7,13 @@ import pexplicit.runtime.machine.buffer.DeferQueue;
 import pexplicit.runtime.machine.buffer.SenderQueue;
 import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.events.PContinuation;
-import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.utils.serialize.SerializableBiFunction;
 import pexplicit.utils.serialize.SerializableRunnable;
 import pexplicit.values.PEvent;
 import pexplicit.values.PMachineValue;
+import pexplicit.values.PMessage;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;

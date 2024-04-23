@@ -12,7 +12,7 @@ import org.apache.logging.log4j.core.appender.OutputStreamAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.machine.events.PMessage;
+import pexplicit.values.PMessage;
 
 import java.io.File;
 import java.io.FileOutputStream;

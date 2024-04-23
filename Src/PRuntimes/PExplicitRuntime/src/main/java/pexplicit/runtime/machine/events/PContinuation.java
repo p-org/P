@@ -6,6 +6,7 @@ import pexplicit.runtime.machine.State;
 import pexplicit.utils.serialize.SerializableBiFunction;
 import pexplicit.utils.serialize.SerializableRunnable;
 import pexplicit.values.PEvent;
+import pexplicit.values.PMessage;
 
 import java.util.HashSet;
 import java.util.Set;

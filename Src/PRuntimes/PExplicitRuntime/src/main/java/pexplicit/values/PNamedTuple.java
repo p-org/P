@@ -27,6 +27,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         for (int i = 0; i < input_fields.size(); i++) {
             values.put(input_fields.get(i), input_values.get(i));
         }
+        setRep();
     }
 
     /**
@@ -39,6 +40,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         for (Map.Entry<String, PValue<?>> entry : input_values.entrySet()) {
             values.put(entry.getKey(), PValue.clone(entry.getValue()));
         }
+        setRep();
     }
 
     /**
@@ -108,8 +110,26 @@ public class PNamedTuple extends PValue<PNamedTuple> {
     }
 
     @Override
-    public int hashCode() {
-        return ComputeHash.getHashCode(values.values());
+    protected void setHashCode() {
+        hashCode = ComputeHash.getHashCode(values.values());
+    }
+
+    @Override
+    protected void setStringRep() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        boolean hadElements = false;
+        for (String name : values.keySet()) {
+            if (hadElements) {
+                sb.append(", ");
+            }
+            sb.append(name);
+            sb.append(": ");
+            sb.append(values.get(name));
+            hadElements = true;
+        }
+        sb.append(")");
+        stringRep = sb.toString();
     }
 
     @Override
@@ -132,23 +152,5 @@ public class PNamedTuple extends PValue<PNamedTuple> {
             }
         }
         return true;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("(");
-        boolean hadElements = false;
-        for (String name : values.keySet()) {
-            if (hadElements) {
-                sb.append(", ");
-            }
-            sb.append(name);
-            sb.append(": ");
-            sb.append(values.get(name));
-            hadElements = true;
-        }
-        sb.append(")");
-        return sb.toString();
     }
 }

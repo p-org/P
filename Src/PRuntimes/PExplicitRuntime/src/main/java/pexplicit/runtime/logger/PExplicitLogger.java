@@ -12,13 +12,13 @@ import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
-import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
 import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.values.PEvent;
+import pexplicit.values.PMessage;
 import pexplicit.values.PValue;
 
 import java.io.PrintWriter;

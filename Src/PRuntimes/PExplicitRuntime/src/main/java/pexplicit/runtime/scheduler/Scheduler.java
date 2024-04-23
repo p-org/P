@@ -6,7 +6,6 @@ import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
-import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.utils.exceptions.DeadlockException;
 import pexplicit.utils.exceptions.LivenessException;
@@ -44,6 +43,10 @@ public abstract class Scheduler implements SchedulerInterface {
     @Getter
     @Setter
     protected transient int stepNumLogs = 0;
+    /**
+     * Whether last step was a sticky step (i.e., createMachine step)
+     */
+    protected boolean isStickyStep = true;
 
     /**
      * Constructor
@@ -85,6 +88,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Reset the scheduler.
      */
     protected void reset() {
+        isStickyStep = true;
     }
 
     /**
@@ -219,7 +223,8 @@ public abstract class Scheduler implements SchedulerInterface {
         // pop message from sender queue
         PMessage msg = sender.getSendBuffer().remove();
 
-        if (!msg.getEvent().isCreateMachineEvent()) {
+        isStickyStep = msg.getEvent().isCreateMachineEvent();
+        if (!isStickyStep) {
             // update step number
             stepState.setStepNumber(stepState.getStepNumber() + 1);
         }

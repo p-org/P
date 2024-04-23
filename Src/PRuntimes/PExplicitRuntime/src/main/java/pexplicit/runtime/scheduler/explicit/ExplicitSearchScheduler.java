@@ -1,5 +1,6 @@
 package pexplicit.runtime.scheduler.explicit;
 
+import com.google.common.hash.Hashing;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +12,7 @@ import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.scheduler.Choice;
 import pexplicit.runtime.scheduler.Scheduler;
+import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.utils.monitor.TimeMonitor;
@@ -181,7 +183,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     boolean skipRemainingSchedule() {
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             // perform state caching only if beyond backtrack choice number
-            if (stepState.getChoiceNumber() > backtrackChoiceNumber) {
+            if (!isStickyStep && stepState.getChoiceNumber() > backtrackChoiceNumber) {
                 // increment state count
                 SearchStatistics.totalStates++;
 
@@ -223,18 +225,16 @@ public class ExplicitSearchScheduler extends Scheduler {
      * @return
      */
     Object getCurrentStateKey() {
-        Object stateKey = null;
-        if (PExplicitGlobal.getConfig().getStateCachingMode() == StateCachingMode.Fingerprint) {
-            // use fingerprinting by hashing values from each machine vars
-            int fingerprint = ComputeHash.getHashCode(stepState.getMachineSet());
-            stateKey = fingerprint;
-        } else {
-            // use exact values from each machine vars
-            List<List<Object>> machineValues = new ArrayList<>();
-            for (PMachine machine : stepState.getMachineSet()) {
-                machineValues.add(machine.getLocalVarValues());
-            }
-            stateKey = machineValues;
+        Object stateKey;
+        switch (PExplicitGlobal.getConfig().getStateCachingMode()) {
+            case HashCode -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet());
+            case SipHash24 -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.sipHash24());
+            case Murmur3_128 ->
+                    stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.murmur3_128((int) PExplicitGlobal.getConfig().getRandomSeed()));
+            case Sha256 -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.sha256());
+            case Exact -> stateKey = ComputeHash.getExactString(stepState.getMachineSet());
+            default ->
+                    throw new PExplicitRuntimeException(String.format("Unexpected state caching mode: %s", PExplicitGlobal.getConfig().getStateCachingMode()));
         }
         return stateKey;
     }
@@ -376,6 +376,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 }
                 PExplicitLogger.logBacktrack(cIdx, newStepNumber);
                 if (newStepNumber == 0) {
+                    reset();
                     stepState.resetToZero();
                 } else {
                     stepState.setTo(choice.getChoiceStep());

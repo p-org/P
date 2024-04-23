@@ -23,6 +23,7 @@ public class PMap extends PValue<PMap> implements PCollection {
         for (Map.Entry<PValue<?>, PValue<?>> entry : input_map.entrySet()) {
             map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
         }
+        setRep();
     }
 
     /**
@@ -156,8 +157,26 @@ public class PMap extends PValue<PMap> implements PCollection {
     }
 
     @Override
-    public int hashCode() {
-        return ComputeHash.getHashCode(map.values()) ^ ComputeHash.getHashCode(map.keySet());
+    protected void setHashCode() {
+        hashCode = ComputeHash.getHashCode(map.values()) ^ ComputeHash.getHashCode(map.keySet());
+    }
+
+    @Override
+    protected void setStringRep() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        boolean hadElements = false;
+        for (PValue<?> key : map.keySet()) {
+            if (hadElements) {
+                sb.append(", ");
+            }
+            sb.append(key);
+            sb.append("-> ");
+            sb.append(map.get(key));
+            hadElements = true;
+        }
+        sb.append("}");
+        stringRep = sb.toString();
     }
 
     @Override
@@ -178,23 +197,5 @@ public class PMap extends PValue<PMap> implements PCollection {
             }
         }
         return true;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("(");
-        boolean hadElements = false;
-        for (PValue<?> key : map.keySet()) {
-            if (hadElements) {
-                sb.append(", ");
-            }
-            sb.append(key);
-            sb.append("-> ");
-            sb.append(map.get(key));
-            hadElements = true;
-        }
-        sb.append(")");
-        return sb.toString();
     }
 }

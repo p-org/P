@@ -19,6 +19,7 @@ public class PMachineValue extends PValue<PMachineValue> {
      */
     public PMachineValue(PMachine val) {
         value = val;
+        setRep();
     }
 
     /**
@@ -39,8 +40,13 @@ public class PMachineValue extends PValue<PMachineValue> {
     }
 
     @Override
-    public int hashCode() {
-        return value.hashCode();
+    protected void setHashCode() {
+        hashCode = value.hashCode();
+    }
+
+    @Override
+    protected void setStringRep() {
+        stringRep = value.toString();
     }
 
     @Override
@@ -50,10 +56,5 @@ public class PMachineValue extends PValue<PMachineValue> {
             return false;
         }
         return this.value.equals(((PMachineValue) obj).value);
-    }
-
-    @Override
-    public String toString() {
-        return value.toString();
     }
 }

@@ -55,7 +55,7 @@ public class PExplicitConfig {
     BufferSemantics bufferSemantics = BufferSemantics.SenderQueue;
     // state caching mode
     @Setter
-    StateCachingMode stateCachingMode = StateCachingMode.Fingerprint;
+    StateCachingMode stateCachingMode = StateCachingMode.Murmur3_128;
     // use stateful backtracking
     @Setter
     boolean statefulBacktrackEnabled = true;

@@ -16,6 +16,7 @@ public class PInt extends PValue<PInt> {
      */
     public PInt(int val) {
         value = val;
+        setRep();
     }
 
     /**
@@ -28,6 +29,7 @@ public class PInt extends PValue<PInt> {
             value = ((PInt) val).value;
         else
             value = (int) val;
+        setRep();
     }
 
     /**
@@ -37,6 +39,7 @@ public class PInt extends PValue<PInt> {
      */
     public PInt(PInt val) {
         value = val.value;
+        setRep();
     }
 
     /**
@@ -153,8 +156,13 @@ public class PInt extends PValue<PInt> {
     }
 
     @Override
-    public int hashCode() {
-        return ((Integer) value).hashCode();
+    protected void setHashCode() {
+        hashCode = ((Integer) value).hashCode();
+    }
+
+    @Override
+    protected void setStringRep() {
+        stringRep = Long.toString(value);
     }
 
     @Override
@@ -165,10 +173,5 @@ public class PInt extends PValue<PInt> {
             return false;
         }
         return this.value == ((PInt) obj).value;
-    }
-
-    @Override
-    public String toString() {
-        return Long.toString(value);
     }
 }

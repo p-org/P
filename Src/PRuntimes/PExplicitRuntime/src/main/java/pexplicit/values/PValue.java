@@ -1,6 +1,7 @@
 package pexplicit.values;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Interface that must be implemented by all P data types.
@@ -8,6 +9,15 @@ import java.io.Serializable;
  * @param <T> T is the type of P Value
  */
 public abstract class PValue<T extends PValue<T>> implements Serializable {
+    /**
+     * Hash code corresponding to the PValue
+     */
+    protected int hashCode;
+    /**
+     * String representation of the PValue
+     */
+    protected String stringRep;
+
     /**
      * Create a safe clone of the passed PValue
      *
@@ -49,18 +59,45 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
     }
 
     /**
+     * Returns the hash code for the PValue
+     *
+     * @return hash code
+     */
+    public int hashCode() {
+        return hashCode;
+    }
+
+    /**
+     * Returns the string representation of the PValue
+     *
+     * @return string representation of the PValue
+     */
+    public String toString() {
+        return stringRep;
+    }
+
+    protected void setRep() {
+//        setHashCode();
+        setStringRep();
+        hashCode = Objects.hashCode(stringRep);
+    }
+
+    /**
+     * Computes the hash representation for the PValue
+     */
+    protected abstract void setHashCode();
+
+    /**
+     * Computes the string representation for the PValue
+     */
+    protected abstract void setStringRep();
+
+    /**
      * Function to create a deep clone of the PValue
      *
      * @return deep clone of the PValue
      */
     public abstract T clone();
-
-    /**
-     * Returns the hash code for the PValue
-     *
-     * @return hash code
-     */
-    public abstract int hashCode();
 
     /**
      * Checks if the current PValue is equal to the passed PValue
@@ -69,12 +106,5 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
      * @return true if the two values are equal and false otherwise
      */
     public abstract boolean equals(Object other);
-
-    /**
-     * Returns the string representation of the PValue
-     *
-     * @return string representation of the PValue
-     */
-    public abstract String toString();
 
 }

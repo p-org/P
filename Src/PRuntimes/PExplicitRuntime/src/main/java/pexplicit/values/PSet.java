@@ -23,6 +23,7 @@ public class PSet extends PValue<PSet> implements PCollection {
     public PSet(List<PValue<?>> input_set) {
         entries = new ArrayList<>(input_set);
         unique_entries = new HashSet<>(input_set);
+        setRep();
     }
 
     /**
@@ -108,8 +109,22 @@ public class PSet extends PValue<PSet> implements PCollection {
     }
 
     @Override
-    public int hashCode() {
-        return ComputeHash.getHashCode(unique_entries);
+    protected void setHashCode() {
+        hashCode = ComputeHash.getHashCode(unique_entries);
+    }
+
+    @Override
+    protected void setStringRep() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        String sep = "";
+        for (PValue<?> item : entries) {
+            sb.append(sep);
+            sb.append(item);
+            sep = ", ";
+        }
+        sb.append("}");
+        stringRep = sb.toString();
     }
 
     @Override
@@ -130,20 +145,6 @@ public class PSet extends PValue<PSet> implements PCollection {
             }
         }
         return true;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("(");
-        String sep = "";
-        for (PValue<?> item : entries) {
-            sb.append(sep);
-            sb.append(item);
-            sep = ", ";
-        }
-        sb.append(")");
-        return sb.toString();
     }
 
     @Override

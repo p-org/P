@@ -21,6 +21,7 @@ public class PSeq extends PValue<PSeq> implements PCollection {
         for (PValue<?> entry : input_seq) {
             seq.add(PValue.clone(entry));
         }
+        setRep();
     }
 
     /**
@@ -111,8 +112,22 @@ public class PSeq extends PValue<PSeq> implements PCollection {
     }
 
     @Override
-    public int hashCode() {
-        return ComputeHash.getHashCode(seq);
+    protected void setHashCode() {
+        hashCode = ComputeHash.getHashCode(seq);
+    }
+
+    @Override
+    protected void setStringRep() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        String sep = "";
+        for (PValue<?> item : seq) {
+            sb.append(sep);
+            sb.append(item);
+            sep = ", ";
+        }
+        sb.append("]");
+        stringRep = sb.toString();
     }
 
     @Override
@@ -133,20 +148,6 @@ public class PSeq extends PValue<PSeq> implements PCollection {
             }
         }
         return true;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        String sep = "";
-        for (PValue<?> item : seq) {
-            sb.append(sep);
-            sb.append(item);
-            sep = ", ";
-        }
-        sb.append("]");
-        return sb.toString();
     }
 
     @Override

@@ -16,6 +16,7 @@ public class PFloat extends PValue<PFloat> {
      */
     public PFloat(double val) {
         value = val;
+        setRep();
     }
 
     /**
@@ -29,6 +30,7 @@ public class PFloat extends PValue<PFloat> {
             value = ((PFloat) val).value;
         else
             value = (double) val;
+        setRep();
     }
 
     /**
@@ -38,6 +40,7 @@ public class PFloat extends PValue<PFloat> {
      */
     public PFloat(PFloat val) {
         value = val.value;
+        setRep();
     }
 
     /**
@@ -155,8 +158,13 @@ public class PFloat extends PValue<PFloat> {
     }
 
     @Override
-    public int hashCode() {
-        return Double.valueOf(value).hashCode();
+    protected void setHashCode() {
+        hashCode = Double.valueOf(value).hashCode();
+    }
+
+    @Override
+    protected void setStringRep() {
+        stringRep = Double.toString(value);
     }
 
     @Override
@@ -167,10 +175,5 @@ public class PFloat extends PValue<PFloat> {
             return false;
         }
         return this.value == ((PFloat) obj).value;
-    }
-
-    @Override
-    public String toString() {
-        return Double.toString(value);
     }
 }

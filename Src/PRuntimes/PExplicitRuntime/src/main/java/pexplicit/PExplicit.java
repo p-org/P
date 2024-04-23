@@ -12,6 +12,7 @@ import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.utils.monitor.TimeMonitor;
 import pexplicit.utils.random.RandomNumberGenerator;
+import pexplicit.values.ComputeHash;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
@@ -32,6 +33,7 @@ public class PExplicit {
         // parse the commandline arguments to create the configuration
         PExplicitGlobal.setConfig(PExplicitOptions.ParseCommandlineArgs(args));
         PExplicitLogger.Initialize(PExplicitGlobal.getConfig().getVerbosity());
+        ComputeHash.Initialize();
 
         // get reflections corresponding to the model
         Reflections reflections = new Reflections("pexplicit.model");

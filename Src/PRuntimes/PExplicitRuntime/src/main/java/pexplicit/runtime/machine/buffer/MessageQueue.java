@@ -2,8 +2,8 @@ package pexplicit.runtime.machine.buffer;
 
 import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.utils.misc.Assert;
+import pexplicit.values.PMessage;
 
 import java.io.Serializable;
 import java.util.ArrayList;

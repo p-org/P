@@ -3,10 +3,10 @@ package pexplicit.runtime.machine;
 import pexplicit.runtime.machine.eventhandlers.DeferEventHandler;
 import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.eventhandlers.IgnoreEventHandler;
-import pexplicit.runtime.machine.events.PMessage;
 import pexplicit.runtime.machine.events.StateEvents;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.PEvent;
+import pexplicit.values.PMessage;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;

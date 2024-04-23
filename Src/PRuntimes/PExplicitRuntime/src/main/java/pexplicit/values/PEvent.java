@@ -28,6 +28,7 @@ public class PEvent extends PValue<PEvent> {
      */
     public PEvent(String name) {
         this.name = name;
+        setRep();
     }
 
     /**
@@ -37,6 +38,7 @@ public class PEvent extends PValue<PEvent> {
      */
     public PEvent(PEvent event) {
         this.name = event.name;
+        setRep();
     }
 
     public boolean isCreateMachineEvent() {
@@ -53,21 +55,21 @@ public class PEvent extends PValue<PEvent> {
     }
 
     @Override
+    protected void setHashCode() {
+        hashCode = Objects.hash(name);
+    }
+
+    @Override
+    protected void setStringRep() {
+        stringRep = name;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
         else if (!(obj instanceof PEvent)) {
             return false;
         }
         return this.name.equals(((PEvent) obj).name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name);
-    }
-
-    @Override
-    public String toString() {
-        return name;
     }
 }

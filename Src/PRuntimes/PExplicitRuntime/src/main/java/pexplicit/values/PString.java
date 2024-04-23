@@ -32,6 +32,7 @@ public class PString extends PValue<PString> {
             }
             this.value = MessageFormat.format(base, args);
         }
+        setRep();
     }
 
     /**
@@ -101,8 +102,13 @@ public class PString extends PValue<PString> {
     }
 
     @Override
-    public int hashCode() {
-        return value.hashCode();
+    protected void setHashCode() {
+        hashCode = value.hashCode();
+    }
+
+    @Override
+    protected void setStringRep() {
+        stringRep = value;
     }
 
     @Override
@@ -112,10 +118,5 @@ public class PString extends PValue<PString> {
             return false;
         }
         return this.value.equals(((PString) obj).value);
-    }
-
-    @Override
-    public String toString() {
-        return value;
     }
 }

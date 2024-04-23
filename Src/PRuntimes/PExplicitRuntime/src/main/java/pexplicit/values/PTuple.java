@@ -18,6 +18,7 @@ public class PTuple extends PValue<PTuple> {
         for (int i = 0; i < input_fields.length; i++) {
             this.fields[i] = PValue.clone(input_fields[i]);
         }
+        setRep();
     }
 
     /**
@@ -28,6 +29,7 @@ public class PTuple extends PValue<PTuple> {
         for (int i = 0; i < other.fields.length; i++) {
             this.fields[i] = PValue.clone(other.fields[i]);
         }
+        setRep();
     }
 
     /**
@@ -61,8 +63,22 @@ public class PTuple extends PValue<PTuple> {
     }
 
     @Override
-    public int hashCode() {
-        return Arrays.hashCode(fields);
+    protected void setHashCode() {
+        hashCode = Arrays.hashCode(fields);
+    }
+
+    @Override
+    protected void setStringRep() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        String sep = "";
+        for (PValue<?> field : fields) {
+            sb.append(sep);
+            sb.append(field);
+            sep = ", ";
+        }
+        sb.append(")");
+        stringRep = sb.toString();
     }
 
     @Override
@@ -83,19 +99,5 @@ public class PTuple extends PValue<PTuple> {
             }
         }
         return true;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("(");
-        String sep = "";
-        for (PValue<?> field : fields) {
-            sb.append(sep);
-            sb.append(field);
-            sep = ", ";
-        }
-        sb.append(")");
-        return sb.toString();
     }
 }

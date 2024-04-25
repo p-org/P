@@ -32,6 +32,22 @@ public class Choice implements Serializable {
     public Choice() {
     }
 
+    public Choice transferUnexplored() {
+        Choice newChoice = new Choice();
+        newChoice.currentScheduleChoice = this.currentScheduleChoice;
+        newChoice.currentDataChoice = this.currentDataChoice;
+
+        newChoice.unexploredScheduleChoices = this.unexploredScheduleChoices;
+        newChoice.unexploredDataChoices = this.unexploredDataChoices;
+        newChoice.choiceStep = this.choiceStep;
+
+        this.unexploredScheduleChoices = new ArrayList<>();
+        this.unexploredDataChoices = new ArrayList<>();
+        this.choiceStep = null;
+
+        return newChoice;
+    }
+
     /**
      * Check if this choice has an unexplored choice remaining.
      *
@@ -73,15 +89,9 @@ public class Choice implements Serializable {
     public void clearUnexplored() {
         unexploredScheduleChoices.clear();
         unexploredDataChoices.clear();
-        choiceStep = null;
-    }
-
-    /**
-     * Clear this choice
-     */
-    public void clear() {
-        clearCurrent();
-        clearUnexplored();
+        if (choiceStep != null) {
+            choiceStep.clear();
+        }
     }
 
     @Override

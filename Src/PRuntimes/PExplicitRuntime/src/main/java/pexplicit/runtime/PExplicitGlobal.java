@@ -5,6 +5,8 @@ import lombok.Setter;
 import pexplicit.commandline.PExplicitConfig;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.scheduler.Scheduler;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategy;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 import java.util.*;
 
@@ -40,6 +42,9 @@ public class PExplicitGlobal {
     @Getter
     @Setter
     private static Scheduler scheduler = null;
+    @Getter
+    @Setter
+    private static SearchStrategyMode searchStrategyMode;
     /**
      * Status of the run
      **/

@@ -15,6 +15,7 @@ import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchTask;
 import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.values.PEvent;
@@ -96,6 +97,8 @@ public class PExplicitLogger {
             log.info(String.format("..... Explored %d distinct states", SearchStatistics.totalDistinctStates));
         }
         log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
+        log.info(String.format("..... Finished %d search tasks (%d pending)",
+                scheduler.getSearchStrategy().getFinishedTasks().size(), scheduler.getSearchStrategy().getPendingTasks().size()));
         log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
                 SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
         log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
@@ -117,15 +120,55 @@ public class PExplicitLogger {
     }
 
     /**
+     * Log at the start of a search task
+     *
+     * @param task Search task
+     */
+    public static void logStartTask(SearchTask task) {
+        if (verbosity > 0) {
+            log.info("=====================");
+            log.info(String.format("Starting %s", task.toStringDetailed()));
+        }
+    }
+
+    /**
+     * Log at the end of a search task
+     *
+     * @param task Search task
+     */
+    public static void logEndTask(SearchTask task, int numSchedules) {
+        if (verbosity > 0) {
+            log.info(String.format("  Finished %s after exploring %d schedules", task, numSchedules));
+        }
+    }
+
+    public static void logNewTasks(List<SearchTask> tasks) {
+        if (verbosity > 0) {
+            log.info(String.format("    Added %d new tasks", tasks.size()));
+        }
+        if (verbosity > 1) {
+            for (SearchTask task : tasks) {
+                log.info(String.format("      %s", task.toStringDetailed()));
+            }
+        }
+    }
+
+    public static void logNextTask(SearchTask task) {
+        if (verbosity > 1) {
+            log.info(String.format("    Next task is %s", task.toStringDetailed()));
+        }
+    }
+
+    /**
      * Log at the start of an iteration
      *
      * @param iter Iteration number
      * @param step Starting step number
      */
-    public static void logStartIteration(int iter, int step) {
+    public static void logStartIteration(SearchTask task, int iter, int step) {
         if (verbosity > 0) {
             log.info("--------------------");
-            log.info("Starting Schedule: " + iter + " from step: " + step);
+            log.info(String.format("[%s] Starting schedule %s from step %s", task, iter, step));
         }
     }
 
@@ -233,7 +276,7 @@ public class PExplicitLogger {
     public static void logBugFound(String message) {
         if (typedLogEnabled()) {
             typedLog(LogType.ErrorLog, message);
-            typedLog(LogType.StrategyLog, String.format("Found bug using '%s' strategy.", PExplicitGlobal.getConfig().getStrategy()));
+            typedLog(LogType.StrategyLog, String.format("Found bug using '%s' strategy.", PExplicitGlobal.getConfig().getSearchStrategyMode()));
             typedLog(LogType.StrategyLog, "Checking statistics:");
             typedLog(LogType.StrategyLog, "Found 1 bug.");
         }

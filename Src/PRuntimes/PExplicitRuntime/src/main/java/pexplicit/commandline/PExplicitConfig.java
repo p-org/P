@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import pexplicit.runtime.machine.buffer.BufferSemantics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 /**
  * Represents the configuration for PExplicit runtime.
@@ -32,9 +33,6 @@ public class PExplicitConfig {
     // level of verbosity for the logging
     @Setter
     int verbosity = 0;
-    // strategy of exploration
-    @Setter
-    String strategy = "dfs";
     // max number of schedules bound provided by the user
     @Setter
     int maxSchedules = 1;
@@ -59,12 +57,13 @@ public class PExplicitConfig {
     // use stateful backtracking
     @Setter
     boolean statefulBacktrackEnabled = true;
-
-    public void setToDfs() {
-        this.setStrategy("dfs");
-    }
-
-    public void setToReplay() {
-        this.setStrategy("replay");
-    }
+    // search strategy mode
+    @Setter
+    SearchStrategyMode searchStrategyMode = SearchStrategyMode.Random;
+    // max number of schedules per search task
+    @Setter
+    int maxSchedulesPerTask = 100;
+    //max number of children search tasks
+    @Setter
+    int maxChildrenPerTask = 2;
 }

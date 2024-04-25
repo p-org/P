@@ -56,6 +56,12 @@ public class StepState implements Serializable {
         return stepState;
     }
 
+    public void clear() {
+        machineListByType.clear();
+        machineSet.clear();
+        machineLocalStates.clear();
+    }
+
 
     public void resetToZero() {
         this.stepNumber = 0;

@@ -65,7 +65,7 @@ public class RuntimeExecutor {
     private static void preprocess() {
         PExplicitLogger.logInfo(String.format(".. Test case :: " + PExplicitGlobal.getConfig().getTestDriver()));
         PExplicitLogger.logInfo(String.format("... Checker is using '%s' strategy (seed:%s)",
-                PExplicitGlobal.getConfig().getStrategy(), PExplicitGlobal.getConfig().getRandomSeed()));
+                PExplicitGlobal.getConfig().getSearchStrategyMode(), PExplicitGlobal.getConfig().getRandomSeed()));
 
         executor = Executors.newSingleThreadExecutor();
 
@@ -74,7 +74,7 @@ public class RuntimeExecutor {
         double preSearchTime =
                 TimeMonitor.findInterval(TimeMonitor.getStart());
         StatWriter.log("project-name", String.format("%s", PExplicitGlobal.getConfig().getProjectName()));
-        StatWriter.log("strategy", String.format("%s", PExplicitGlobal.getConfig().getStrategy()));
+        StatWriter.log("strategy", String.format("%s", PExplicitGlobal.getConfig().getSearchStrategyMode()));
         StatWriter.log("time-limit-seconds", String.format("%.1f", PExplicitGlobal.getConfig().getTimeLimit()));
         StatWriter.log("memory-limit-MB", String.format("%.1f", PExplicitGlobal.getConfig().getMemLimit()));
         StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime));

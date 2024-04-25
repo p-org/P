@@ -27,7 +27,7 @@ public class Schedule implements Serializable {
      * Used in stateful backtracking
      */
     @Setter
-    private StepState stepBeginState = null;
+    private transient StepState stepBeginState = null;
 
     /**
      * Constructor
@@ -55,22 +55,13 @@ public class Schedule implements Serializable {
     }
 
     /**
-     * Set the choice at a choice depth.
-     *
-     * @param idx    Choice depth
-     * @param choice Choice object
-     */
-    public void setChoice(int idx, Choice choice) {
-        choices.set(idx, choice);
-    }
-
-    /**
      * Clear choice at a choice depth
      *
      * @param idx Choice depth
      */
     public void clearChoice(int idx) {
-        choices.get(idx).clear();
+        choices.get(idx).clearCurrent();
+        choices.get(idx).clearUnexplored();
     }
 
     /**
@@ -81,32 +72,22 @@ public class Schedule implements Serializable {
     public int getNumUnexploredChoices() {
         int numUnexplored = 0;
         for (Choice c : choices) {
-            if (c.isUnexploredNonEmpty()) {
-                numUnexplored += c.unexploredScheduleChoices.size() + c.unexploredDataChoices.size();
-            }
+            numUnexplored += c.unexploredScheduleChoices.size() + c.unexploredDataChoices.size();
         }
         return numUnexplored;
     }
 
     /**
-     * Get the percentage of unexplored choices in this schedule that are data choices
+     * Get the number of unexplored data choices in this schedule
      *
-     * @return Percentage of unexplored choices that are data choices
+     * @return Number of unexplored data choices
      */
-    public double getUnexploredDataChoicesPercent() {
-        int totalUnexplored = getNumUnexploredChoices();
-        if (totalUnexplored == 0) {
-            return 0;
-        }
-
-        int numUnexploredData = 0;
+    public int getNumUnexploredDataChoices() {
+        int numUnexplored = 0;
         for (Choice c : choices) {
-            if (c.isUnexploredDataChoicesNonEmpty()) {
-                numUnexploredData += c.unexploredDataChoices.size();
-            }
+            numUnexplored += c.unexploredDataChoices.size();
         }
-
-        return (numUnexploredData * 100.0) / totalUnexplored;
+        return numUnexplored;
     }
 
     /**
@@ -228,15 +209,6 @@ public class Schedule implements Serializable {
      */
     public void clearCurrent(int idx) {
         choices.get(idx).clearCurrent();
-    }
-
-    /**
-     * Clear unexplored choices at a choice depth
-     *
-     * @param idx Choice depth
-     */
-    public void clearUnexplored(int idx) {
-        choices.get(idx).clearUnexplored();
     }
 
     /**

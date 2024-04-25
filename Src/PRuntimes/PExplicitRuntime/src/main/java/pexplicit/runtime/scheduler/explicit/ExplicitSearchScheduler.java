@@ -12,6 +12,7 @@ import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.scheduler.Choice;
 import pexplicit.runtime.scheduler.Scheduler;
+import pexplicit.runtime.scheduler.explicit.strategy.*;
 import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.utils.monitor.MemoryMonitor;
@@ -34,6 +35,12 @@ public class ExplicitSearchScheduler extends Scheduler {
      */
     private final transient Map<Object, Integer> stateCache = new HashMap<>();
     /**
+     * Search strategy orchestrator
+     */
+    @Getter
+    @Setter
+    private final transient SearchStrategy searchStrategy;
+    /**
      * Backtrack choice number
      */
     @Getter
@@ -52,13 +59,26 @@ public class ExplicitSearchScheduler extends Scheduler {
     @Getter
     @Setter
     private transient Instant lastReportTime = Instant.now();
-    private transient StepState storedStep;
+
 
     /**
      * Constructor.
      */
     public ExplicitSearchScheduler() {
         super();
+        switch (PExplicitGlobal.getConfig().getSearchStrategyMode()) {
+            case DepthFirst:
+                searchStrategy = new SearchStrategyDfs();
+                break;
+            case Random:
+                searchStrategy = new SearchStrategyRandom();
+                break;
+            case AStar:
+                searchStrategy = new SearchStrategyAStar();
+                break;
+            default:
+                throw new RuntimeException("Unrecognized search strategy: " + PExplicitGlobal.getConfig().getSearchStrategyMode());
+        }
     }
 
     /**
@@ -75,16 +95,34 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (PExplicitGlobal.getConfig().getVerbosity() == 0) {
             printProgressHeader(true);
         }
-        isDoneIterating = false;
+        searchStrategy.createFirstTask();
 
-        while (!isDoneIterating) {
-            SearchStatistics.iteration++;
-            PExplicitLogger.logStartIteration(SearchStatistics.iteration, stepState.getStepNumber());
-            if (stepState.getStepNumber() == 0) {
-                start();
+        while (true) {
+            PExplicitLogger.logStartTask(searchStrategy.getCurrTask());
+            isDoneIterating = false;
+            while (!isDoneIterating) {
+                SearchStatistics.iteration++;
+                PExplicitLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepState.getStepNumber());
+                if (stepState.getStepNumber() == 0) {
+                    start();
+                }
+                runIteration();
+                postProcessIteration();
             }
-            runIteration();
-            postProcessIteration();
+            addRemainingChoicesAsChildrenTasks();
+            endCurrTask();
+            PExplicitLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask());
+
+            if (searchStrategy.getPendingTasks().isEmpty() || PExplicitGlobal.getStatus() == STATUS.SCHEDULEOUT) {
+                // all tasks completed or schedule limit reached
+                break;
+            }
+
+            // schedule limit not reached and there are pending tasks
+            // set the next task
+            SearchTask nextTask = setNextTask();
+            assert (nextTask != null);
+            PExplicitLogger.logNextTask(nextTask);
         }
     }
 
@@ -356,9 +394,90 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     private void postProcessIteration() {
+        int maxSchedulesPerTask = PExplicitGlobal.getConfig().getMaxSchedulesPerTask();
+        if (maxSchedulesPerTask > 0 && searchStrategy.getNumSchedulesInCurrTask() >= maxSchedulesPerTask) {
+            isDoneIterating = true;
+        }
+
         if (!isDoneIterating) {
             postIterationCleanup();
         }
+    }
+
+    private void addRemainingChoicesAsChildrenTasks() {
+        SearchTask parentTask = searchStrategy.getCurrTask();
+        int numChildrenAdded = 0;
+        for (int i = 0; i < schedule.size(); i++) {
+            Choice choice = schedule.getChoice(i);
+            // if choice at this depth is non-empty
+            if (choice.isUnexploredNonEmpty()) {
+                if (PExplicitGlobal.getConfig().getMaxChildrenPerTask() > 0 && numChildrenAdded == (PExplicitGlobal.getConfig().getMaxChildrenPerTask() - 1)) {
+                    setChildTask(choice, i, parentTask, false);
+                    break;
+                }
+                // top search task should be always exact
+                setChildTask(choice, i, parentTask, true);
+                numChildrenAdded++;
+            }
+
+            if (i >= parentTask.getCurrChoiceNumber()) {
+                parentTask.addPrefixChoice(choice, i);
+            }
+        }
+
+        PExplicitLogger.logNewTasks(parentTask.getChildren());
+    }
+
+    private void endCurrTask() {
+        SearchTask currTask = searchStrategy.getCurrTask();
+        currTask.cleanup();
+        searchStrategy.getFinishedTasks().add(currTask.getId());
+    }
+
+    private void setChildTask(Choice choice, int choiceNum, SearchTask parentTask, boolean isExact) {
+        SearchTask newTask = searchStrategy.createTask(choice.transferUnexplored(), choiceNum, parentTask);
+
+        if (!isExact) {
+            for (int i = choiceNum + 1; i < schedule.size(); i++) {
+                newTask.addSuffixChoice(schedule.getChoice(i));
+            }
+        }
+
+        parentTask.addChild(newTask);
+        searchStrategy.addNewTask(newTask);
+    }
+
+    /** Set next backtrack task with given orchestration mode */
+    public SearchTask setNextTask() {
+        SearchTask nextTask = searchStrategy.setNextTask();
+        if (nextTask != null) {
+            schedule.setChoices(nextTask.getAllChoices());
+            postIterationCleanup();
+        }
+        return nextTask;
+    }
+
+    public int getNumUnexploredChoices() {
+        return schedule.getNumUnexploredChoices() + searchStrategy.getNumPendingChoices();
+    }
+
+    public int getNumUnexploredDataChoices() {
+        return schedule.getNumUnexploredDataChoices() + searchStrategy.getNumPendingDataChoices();
+    }
+
+    /**
+     * Get the percentage of unexplored choices that are data choices
+     *
+     * @return Percentage of unexplored choices that are data choices
+     */
+    public double getUnexploredDataChoicesPercent() {
+        int totalUnexplored = getNumUnexploredChoices();
+        if (totalUnexplored == 0) {
+            return 0;
+        }
+
+        int numUnexploredData = getNumUnexploredDataChoices();
+        return (numUnexploredData * 100.0) / totalUnexplored;
     }
 
     private void postIterationCleanup() {
@@ -371,7 +490,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()) {
                     StepState choiceStep = choice.getChoiceStep();
                     if (choiceStep != null) {
-                        newStepNumber = choice.getChoiceStep().getStepNumber();
+                        newStepNumber = choiceStep.getStepNumber();
                     }
                 }
                 PExplicitLogger.logBacktrack(cIdx, newStepNumber);
@@ -416,7 +535,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         String result = "";
         int maxStepBound = PExplicitGlobal.getConfig().getMaxStepBound();
-        int numUnexplored = schedule.getNumUnexploredChoices();
+        int numUnexplored = getNumUnexploredChoices();
         if (SearchStatistics.maxSteps < maxStepBound) {
             if (numUnexplored == 0) {
                 result += "correct for any depth";
@@ -452,8 +571,10 @@ public class ExplicitSearchScheduler extends Scheduler {
         StatWriter.log("steps-min", String.format("%d", SearchStatistics.minSteps));
         StatWriter.log("steps-max", String.format("%d", SearchStatistics.maxSteps));
         StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps / SearchStatistics.iteration));
-        StatWriter.log("#-choices-unexplored", String.format("%d", schedule.getNumUnexploredChoices()));
-        StatWriter.log("%-choices-unexplored-data", String.format("%.1f", schedule.getUnexploredDataChoicesPercent()));
+        StatWriter.log("#-choices-unexplored", String.format("%d", getNumUnexploredChoices()));
+        StatWriter.log("%-choices-unexplored-data", String.format("%.1f", getUnexploredDataChoicesPercent()));
+        StatWriter.log("#-tasks-finished", String.format("%d", searchStrategy.getFinishedTasks().size()));
+        StatWriter.log("#-tasks-pending", String.format("%d", searchStrategy.getPendingTasks().size()));
     }
 
     private void printCurrentStatus(double newRuntime) {
@@ -463,7 +584,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()) +
                 String.format("\n      Depth:            %d", stepState.getStepNumber()) +
                 String.format("\n      Schedules:        %d", SearchStatistics.iteration) +
-                String.format("\n      Unexplored:       %d", schedule.getNumUnexploredChoices());
+                String.format("\n      Unexplored:       %d", getNumUnexploredChoices());
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             s += String.format("\n      DistinctStates:   %d", SearchStatistics.totalDistinctStates);
         }
@@ -523,7 +644,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 s.append(
                         StringUtils.center(
                                 String.format(
-                                        "%d (%.0f %% data)", schedule.getNumUnexploredChoices(), schedule.getUnexploredDataChoicesPercent()),
+                                        "%d (%.0f %% data)", getNumUnexploredChoices(), getUnexploredDataChoicesPercent()),
                                 24));
 
                 if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {

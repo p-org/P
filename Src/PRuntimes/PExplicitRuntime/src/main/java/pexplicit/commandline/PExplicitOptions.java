@@ -2,6 +2,7 @@ package pexplicit.commandline;
 
 import org.apache.commons.cli.*;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 import java.io.PrintWriter;
 
@@ -98,7 +99,7 @@ public class PExplicitOptions {
         Option strategy =
                 Option.builder("st")
                         .longOpt("strategy")
-                        .desc("Exploration strategy: dfs (default: dfs)")
+                        .desc("Exploration strategy: dfs, random, astar (default: dfs)")
                         .numberOfArgs(1)
                         .hasArg()
                         .argName("Strategy (string)")
@@ -147,6 +148,7 @@ public class PExplicitOptions {
                         .build();
         addOption(randomSeed);
 
+
         /*
          * Invisible/expert options
          */
@@ -170,6 +172,28 @@ public class PExplicitOptions {
                         .numberOfArgs(0)
                         .build();
         addHiddenOption(backtrack);
+
+        // max number of schedules to explore per search task
+        Option maxSchedulesPerTask =
+                Option.builder()
+                        .longOpt("schedules-per-task")
+                        .desc("Max number of schedules to explore per search task (default: 100)")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("(integer)")
+                        .build();
+        addHiddenOption(maxSchedulesPerTask);
+
+        // max number of children per search task
+        Option maxChildrenPerTask =
+                Option.builder()
+                        .longOpt("children-per-task")
+                        .desc("Max number of children to generate per search task (default: 2)")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("(integer)")
+                        .build();
+        addHiddenOption(maxChildrenPerTask);
 
         /*
          * Help menu options
@@ -267,7 +291,13 @@ public class PExplicitOptions {
                 case "strategy":
                     switch (option.getValue()) {
                         case "dfs":
-                            config.setToDfs();
+                            config.setSearchStrategyMode(SearchStrategyMode.DepthFirst);
+                            break;
+                        case "random":
+                            config.setSearchStrategyMode(SearchStrategyMode.Random);
+                            break;
+                        case "astar":
+                            config.setSearchStrategyMode (SearchStrategyMode.AStar);
                             break;
                         default:
                             optionError(
@@ -336,6 +366,22 @@ public class PExplicitOptions {
                 case "no-backtrack":
                     config.setStatefulBacktrackEnabled(false);
                     break;
+                case "schedules-per-task":
+                    try {
+                        config.setMaxSchedulesPerTask(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(
+                                option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                case "children-per-task":
+                    try {
+                        config.setMaxChildrenPerTask(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(
+                                option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
                 case "h":
                 case "help":
                     formatter.printHelp(
@@ -358,6 +404,10 @@ public class PExplicitOptions {
                 default:
                     optionError(option, String.format("Unrecognized option %s", option));
             }
+        }
+
+        if (config.getSearchStrategyMode() == SearchStrategyMode.DepthFirst) {
+            config.setMaxSchedulesPerTask(0);
         }
 
         return config;

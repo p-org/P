@@ -122,7 +122,6 @@ public class ExplicitSearchScheduler extends Scheduler {
             // set the next task
             SearchTask nextTask = setNextTask();
             assert (nextTask != null);
-            PExplicitLogger.logNextTask(nextTask);
         }
     }
 

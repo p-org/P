@@ -20,7 +20,7 @@ namespace Plang.Compiler.TypeChecker
             // Step 2: Validate machine specifications
             foreach (var machine in globalScope.Machines)
             {
-                MachineChecker.Validate(handler, machine);
+                MachineChecker.Validate(handler, machine, config);
             }
 
             // Step 3: Fill function bodies

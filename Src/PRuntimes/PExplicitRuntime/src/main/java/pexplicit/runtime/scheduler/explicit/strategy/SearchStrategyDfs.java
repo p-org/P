@@ -5,9 +5,11 @@ public class SearchStrategyDfs extends SearchStrategy {
     }
 
     public void addNewTask(SearchTask task) {
+        assert (pendingTasks.isEmpty());
     }
 
     public SearchTask popNextTask() {
-        throw new RuntimeException("Cannot pop the next task in dfs strategy since there should be just a single task");
+        assert (pendingTasks.size() == 1);
+        return getTask(pendingTasks.iterator().next());
     }
 }

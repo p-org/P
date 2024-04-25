@@ -153,12 +153,6 @@ public class PExplicitLogger {
         }
     }
 
-    public static void logNextTask(SearchTask task) {
-        if (verbosity > 1) {
-            log.info(String.format("    Next task is %s", task.toStringDetailed()));
-        }
-    }
-
     /**
      * Log at the start of an iteration
      *

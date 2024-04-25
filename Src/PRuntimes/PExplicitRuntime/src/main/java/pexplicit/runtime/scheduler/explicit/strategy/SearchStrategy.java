@@ -70,7 +70,7 @@ public abstract class SearchStrategy implements Serializable {
         return (id < allTasks.size());
     }
 
-    private SearchTask getTask(int id) {
+    protected SearchTask getTask(int id) {
         assert (isValidTaskId(id));
         return allTasks.get(id);
     }
@@ -81,7 +81,6 @@ public abstract class SearchStrategy implements Serializable {
         }
 
         SearchTask nextTask = popNextTask();
-        assert (!nextTask.isInitialTask());
         setCurrTask(nextTask);
 
         return nextTask;

@@ -99,7 +99,7 @@ public class PExplicitOptions {
         Option strategy =
                 Option.builder("st")
                         .longOpt("strategy")
-                        .desc("Exploration strategy: dfs, random, astar (default: dfs)")
+                        .desc("Exploration strategy: dfs, random, astar (default: random)")
                         .numberOfArgs(1)
                         .hasArg()
                         .argName("Strategy (string)")

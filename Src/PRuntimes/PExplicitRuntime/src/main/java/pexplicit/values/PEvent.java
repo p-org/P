@@ -1,7 +1,5 @@
 package pexplicit.values;
 
-import java.util.Objects;
-
 /**
  * Represents a P event
  */
@@ -28,7 +26,7 @@ public class PEvent extends PValue<PEvent> {
      */
     public PEvent(String name) {
         this.name = name;
-        setRep();
+        initialize();
     }
 
     /**
@@ -38,7 +36,7 @@ public class PEvent extends PValue<PEvent> {
      */
     public PEvent(PEvent event) {
         this.name = event.name;
-        setRep();
+        initialize();
     }
 
     public boolean isCreateMachineEvent() {
@@ -55,13 +53,8 @@ public class PEvent extends PValue<PEvent> {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = Objects.hash(name);
-    }
-
-    @Override
-    protected void setStringRep() {
-        stringRep = name;
+    protected String _asString() {
+        return name;
     }
 
     @Override

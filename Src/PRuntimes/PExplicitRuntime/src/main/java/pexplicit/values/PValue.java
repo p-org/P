@@ -12,11 +12,16 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
     /**
      * Hash code corresponding to the PValue
      */
-    protected int hashCode;
+    private int hashCode;
     /**
      * String representation of the PValue
      */
-    protected String stringRep;
+    private String stringRep;
+
+    protected void initialize() {
+        stringRep = _asString();
+        hashCode = Objects.hashCode(stringRep);
+    }
 
     /**
      * Create a safe clone of the passed PValue
@@ -63,6 +68,7 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
      *
      * @return hash code
      */
+    @Override
     public int hashCode() {
         return hashCode;
     }
@@ -72,25 +78,15 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
      *
      * @return string representation of the PValue
      */
+    @Override
     public String toString() {
         return stringRep;
     }
 
-    protected void setRep() {
-//        setHashCode();
-        setStringRep();
-        hashCode = Objects.hashCode(stringRep);
-    }
-
-    /**
-     * Computes the hash representation for the PValue
-     */
-    protected abstract void setHashCode();
-
     /**
      * Computes the string representation for the PValue
      */
-    protected abstract void setStringRep();
+    protected abstract String _asString();
 
     /**
      * Function to create a deep clone of the PValue

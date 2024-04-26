@@ -27,7 +27,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         for (int i = 0; i < input_fields.size(); i++) {
             values.put(input_fields.get(i), input_values.get(i));
         }
-        setRep();
+        initialize();
     }
 
     /**
@@ -40,7 +40,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
         for (Map.Entry<String, PValue<?>> entry : input_values.entrySet()) {
             values.put(entry.getKey(), PValue.clone(entry.getValue()));
         }
-        setRep();
+        initialize();
     }
 
     /**
@@ -110,12 +110,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = ComputeHash.getHashCode(values.values());
-    }
-
-    @Override
-    protected void setStringRep() {
+    protected String _asString() {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         boolean hadElements = false;
@@ -129,7 +124,7 @@ public class PNamedTuple extends PValue<PNamedTuple> {
             hadElements = true;
         }
         sb.append(")");
-        stringRep = sb.toString();
+        return sb.toString();
     }
 
     @Override

@@ -19,7 +19,7 @@ public class PMachineValue extends PValue<PMachineValue> {
      */
     public PMachineValue(PMachine val) {
         value = val;
-        setRep();
+        initialize();
     }
 
     /**
@@ -40,13 +40,8 @@ public class PMachineValue extends PValue<PMachineValue> {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = value.hashCode();
-    }
-
-    @Override
-    protected void setStringRep() {
-        stringRep = value.toString();
+    protected String _asString() {
+        return value.toString();
     }
 
     @Override

@@ -5,7 +5,6 @@ import lombok.Setter;
 import pexplicit.commandline.PExplicitConfig;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.scheduler.Scheduler;
-import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategy;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 import java.util.*;

@@ -1,8 +1,6 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import pexplicit.runtime.PExplicitGlobal;
-import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.scheduler.Choice;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 
@@ -42,13 +40,6 @@ public abstract class SearchStrategy implements Serializable {
         return newTask;
     }
 
-    private void setCurrTask(SearchTask task) {
-        assert (pendingTasks.contains(task.getId()));
-        pendingTasks.remove(task.getId());
-        currTaskId = task.getId();
-        currTaskStartIteration = SearchStatistics.iteration;
-    }
-
     public void createFirstTask() {
         assert (allTasks.size() == 0);
         SearchTask firstTask = createTask(null, 0, null);
@@ -59,11 +50,16 @@ public abstract class SearchStrategy implements Serializable {
         return getTask(currTaskId);
     }
 
+    private void setCurrTask(SearchTask task) {
+        assert (pendingTasks.contains(task.getId()));
+        pendingTasks.remove(task.getId());
+        currTaskId = task.getId();
+        currTaskStartIteration = SearchStatistics.iteration;
+    }
 
     public int getNumSchedulesInCurrTask() {
         return SearchStatistics.iteration - currTaskStartIteration;
     }
-
 
 
     private boolean isValidTaskId(int id) {
@@ -93,7 +89,7 @@ public abstract class SearchStrategy implements Serializable {
      */
     public int getNumPendingChoices() {
         int numUnexplored = 0;
-        for (Integer tid: pendingTasks) {
+        for (Integer tid : pendingTasks) {
             SearchTask task = getTask(tid);
             numUnexplored += task.getNumUnexploredScheduleChoices() + task.getNumUnexploredDataChoices();
         }
@@ -107,7 +103,7 @@ public abstract class SearchStrategy implements Serializable {
      */
     public int getNumPendingDataChoices() {
         int numUnexplored = 0;
-        for (Integer tid: pendingTasks) {
+        for (Integer tid : pendingTasks) {
             SearchTask task = getTask(tid);
             numUnexplored += task.getNumUnexploredDataChoices();
         }

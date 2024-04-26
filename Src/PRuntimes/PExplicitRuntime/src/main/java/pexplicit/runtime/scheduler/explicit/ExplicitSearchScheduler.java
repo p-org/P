@@ -446,7 +446,9 @@ public class ExplicitSearchScheduler extends Scheduler {
         searchStrategy.addNewTask(newTask);
     }
 
-    /** Set next backtrack task with given orchestration mode */
+    /**
+     * Set next backtrack task with given orchestration mode
+     */
     public SearchTask setNextTask() {
         SearchTask nextTask = searchStrategy.setNextTask();
         if (nextTask != null) {

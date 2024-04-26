@@ -18,11 +18,6 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
      */
     private String stringRep;
 
-    protected void initialize() {
-        stringRep = _asString();
-        hashCode = Objects.hashCode(stringRep);
-    }
-
     /**
      * Create a safe clone of the passed PValue
      *
@@ -61,6 +56,11 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
      */
     public static boolean notEqual(PValue<?> val1, PValue<?> val2) {
         return !isEqual(val1, val2);
+    }
+
+    protected void initialize() {
+        stringRep = _asString();
+        hashCode = Objects.hashCode(stringRep);
     }
 
     /**

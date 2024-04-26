@@ -2,8 +2,6 @@ package pexplicit.values;
 
 import pexplicit.values.exceptions.TupleInvalidIndexException;
 
-import java.util.Arrays;
-
 /**
  * Represents the PValue for P unnamed tuple
  */
@@ -18,7 +16,7 @@ public class PTuple extends PValue<PTuple> {
         for (int i = 0; i < input_fields.length; i++) {
             this.fields[i] = PValue.clone(input_fields[i]);
         }
-        setRep();
+        initialize();
     }
 
     /**
@@ -29,7 +27,7 @@ public class PTuple extends PValue<PTuple> {
         for (int i = 0; i < other.fields.length; i++) {
             this.fields[i] = PValue.clone(other.fields[i]);
         }
-        setRep();
+        initialize();
     }
 
     /**
@@ -63,12 +61,7 @@ public class PTuple extends PValue<PTuple> {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = Arrays.hashCode(fields);
-    }
-
-    @Override
-    protected void setStringRep() {
+    protected String _asString() {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         String sep = "";
@@ -78,7 +71,7 @@ public class PTuple extends PValue<PTuple> {
             sep = ", ";
         }
         sb.append(")");
-        stringRep = sb.toString();
+        return sb.toString();
     }
 
     @Override

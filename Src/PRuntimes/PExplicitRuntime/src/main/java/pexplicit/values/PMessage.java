@@ -23,7 +23,7 @@ public class PMessage extends PValue<PMessage> {
         this.event = event;
         this.target = target;
         this.payload = payload;
-        setRep();
+        initialize();
     }
 
     public PMessage setTarget(PMachine target) {
@@ -36,18 +36,13 @@ public class PMessage extends PValue<PMessage> {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = ComputeHash.getHashCode(target, event, payload);
-    }
-
-    @Override
-    protected void setStringRep() {
+    protected String _asString() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("%s@%s", event, target));
         if (payload != null) {
             sb.append(String.format(" :payload %s", payload));
         }
-        stringRep = sb.toString();
+        return sb.toString();
     }
 
     @Override

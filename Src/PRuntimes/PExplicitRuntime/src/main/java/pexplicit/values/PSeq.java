@@ -21,7 +21,7 @@ public class PSeq extends PValue<PSeq> implements PCollection {
         for (PValue<?> entry : input_seq) {
             seq.add(PValue.clone(entry));
         }
-        setRep();
+        initialize();
     }
 
     /**
@@ -112,12 +112,7 @@ public class PSeq extends PValue<PSeq> implements PCollection {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = ComputeHash.getHashCode(seq);
-    }
-
-    @Override
-    protected void setStringRep() {
+    protected String _asString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         String sep = "";
@@ -127,7 +122,7 @@ public class PSeq extends PValue<PSeq> implements PCollection {
             sep = ", ";
         }
         sb.append("]");
-        stringRep = sb.toString();
+        return sb.toString();
     }
 
     @Override

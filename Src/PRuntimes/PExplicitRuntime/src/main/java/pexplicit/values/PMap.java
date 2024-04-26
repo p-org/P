@@ -23,7 +23,7 @@ public class PMap extends PValue<PMap> implements PCollection {
         for (Map.Entry<PValue<?>, PValue<?>> entry : input_map.entrySet()) {
             map.put(PValue.clone(entry.getKey()), PValue.clone(entry.getValue()));
         }
-        setRep();
+        initialize();
     }
 
     /**
@@ -157,12 +157,7 @@ public class PMap extends PValue<PMap> implements PCollection {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = ComputeHash.getHashCode(map.values()) ^ ComputeHash.getHashCode(map.keySet());
-    }
-
-    @Override
-    protected void setStringRep() {
+    protected String _asString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         boolean hadElements = false;
@@ -176,7 +171,7 @@ public class PMap extends PValue<PMap> implements PCollection {
             hadElements = true;
         }
         sb.append("}");
-        stringRep = sb.toString();
+        return sb.toString();
     }
 
     @Override

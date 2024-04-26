@@ -16,7 +16,7 @@ public class PBool extends PValue<PBool> {
      */
     public PBool(boolean val) {
         value = val;
-        setRep();
+        initialize();
     }
 
     /**
@@ -27,7 +27,7 @@ public class PBool extends PValue<PBool> {
     public PBool(Object val) {
         if (val instanceof PBool) value = ((PBool) val).value;
         else value = (boolean) val;
-        setRep();
+        initialize();
     }
 
     /**
@@ -37,7 +37,7 @@ public class PBool extends PValue<PBool> {
      */
     public PBool(PBool val) {
         value = val.value;
-        setRep();
+        initialize();
     }
 
     /**
@@ -93,13 +93,8 @@ public class PBool extends PValue<PBool> {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = Boolean.valueOf(value).hashCode();
-    }
-
-    @Override
-    protected void setStringRep() {
-        stringRep = Boolean.toString(value);
+    protected String _asString() {
+        return Boolean.toString(value);
     }
 
     @Override

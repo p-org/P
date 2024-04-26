@@ -21,7 +21,7 @@ public class PEnum extends PValue<PEnum> {
         this.type = type;
         this.name = name;
         this.value = val;
-        setRep();
+        initialize();
     }
 
     /**
@@ -33,7 +33,7 @@ public class PEnum extends PValue<PEnum> {
         type = val.type;
         name = val.name;
         value = val.value;
-        setRep();
+        initialize();
     }
 
     /**
@@ -51,13 +51,8 @@ public class PEnum extends PValue<PEnum> {
     }
 
     @Override
-    protected void setHashCode() {
-        hashCode = Long.hashCode(value);
-    }
-
-    @Override
-    protected void setStringRep() {
-        stringRep = name;
+    protected String _asString() {
+        return name;
     }
 
     @Override

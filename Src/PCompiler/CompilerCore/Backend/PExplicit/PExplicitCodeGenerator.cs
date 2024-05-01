@@ -946,8 +946,9 @@ namespace Plang.Compiler.Backend.PExplicit
                         (structureTemp) =>
                         {
                             context.Write(output, $"{structureTemp} = ");
+                            context.Write(output, $"(({GetPExplicitType(insertStmt.Variable.Type)}) ");
                             WriteExpr(context, output, insertStmt.Variable);
-                            context.Write(output, $".add(");
+                            context.Write(output, $").add(");
 
                             WriteExpr(context, output, insertStmt.Index);
                             context.Write(output, ", ");
@@ -970,8 +971,9 @@ namespace Plang.Compiler.Backend.PExplicit
                         (structureTemp) =>
                         {
                             context.Write(output, $"{structureTemp} = ");
+                            context.Write(output, $"(({GetPExplicitType(addStmt.Variable.Type)}) ");
                             WriteExpr(context, output, addStmt.Variable);
-                            context.Write(output, $".add(");
+                            context.Write(output, $").add(");
                             WriteExpr(context, output, addStmt.Value);
                             context.WriteLine(output, ");");
                         }
@@ -993,12 +995,13 @@ namespace Plang.Compiler.Backend.PExplicit
                         (structureTemp) =>
                         {
                             context.Write(output, $"{structureTemp} = ");
+                            context.Write(output, $"(({GetPExplicitType(removeStmt.Variable.Type)}) ");
                             WriteExpr(context, output, removeStmt.Variable);
 
                             if (isMap || isSet)
-                                context.Write(output, $".remove(");
+                                context.Write(output, $").remove(");
                             else
-                                context.Write(output, $".removeAt(");
+                                context.Write(output, $").removeAt(");
 
                             WriteExpr(context, output, removeStmt.Value);
                             context.WriteLine(output, ");");

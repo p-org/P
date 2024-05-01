@@ -83,15 +83,52 @@ namespace Plang.Compiler.Backend.Uclid5 {
             EmitLine("\n");
             
             // create all the event handler procedures
-            foreach (var eh in globalScope.Machines.SelectMany(m => m.States.SelectMany(s => s.AllEventHandlers)))
+            foreach (var m in globalScope.Machines)
             {
-                DeclareEventHandler(eh.Value);
+                foreach (var s in m.States)
+                {
+                    foreach (var eh in s.AllEventHandlers)
+                    {
+                        DeclareEventHandler(s, eh.Value);
+                    }
+                }
             }
+            
+            // create all the entry procedures
+            // TODO
             
             // Next picks a random machine and calls the appropriate procedure to step that machine
             EmitLine("next {");
             EmitLine("havoc UPVerifier_MTurn;");
             EmitLine("havoc UPVerifier_ETurn;");
+            // if UPVerifier_ETurn is a live event destined for the right place, then handle it
+            EmitLine("if (UPVerifier_Buffer[UPVerifier_ETurn]) {");
+            foreach (var m in globalScope.Machines)
+            {
+                foreach (var s in m.States)
+                {
+                    foreach (var h in s.AllEventHandlers)
+                    {
+                        EmitLine($"(UPVerifier_Machines[UPVerifier_MTurn] is {m.Name} && UPVerifier_Machines[UPVerifier_MTurn].{m.Name}_state is {s.Name} && UPVerifier_Target(UPVerifier_ETurn) == UPVerifier_MTurn && UPVerifier_ETurn is {h.Key.Name}) : {{");
+                        EmitLine($"call {m.Name}_{s.Name}_handle_{h.Key.Name}(UPVerifier_MTurn, UPVerifier_MTurn);");
+                        EmitLine($"}}");
+                    }
+                }
+            }
+            EmitLine("} else {");
+            // else do an entry
+            EmitLine("case");
+            foreach (var m in globalScope.Machines)
+            {
+                foreach (var s in m.States)
+                {
+                    EmitLine($"(UPVerifier_Machines[UPVerifier_MTurn] is {m.Name} && UPVerifier_Machines[UPVerifier_MTurn].{m.Name}_state is {s.Name}) : {{");
+                    EmitLine($"call {m.Name}_{s.Name}_entry(UPVerifier_MTurn);");
+                    EmitLine($"}}");
+                }
+            }
+            EmitLine("esac");
+            EmitLine("}");
             // close the next block
             EmitLine("}");
             EmitLine("\n");
@@ -225,7 +262,7 @@ namespace Plang.Compiler.Backend.Uclid5 {
                 return $"{m.Name} ({m.Name}_Entry: boolean, {m.Name}_State: {states}, {fields})";
             }
 
-            void DeclareEventHandler(IStateAction h)
+            void DeclareEventHandler(State s, IStateAction h)
             {
                 switch (h)
                 {
@@ -234,7 +271,7 @@ namespace Plang.Compiler.Backend.Uclid5 {
                         var f = action.Target;
                         var m = f.Owner;
                         EmitLine($"// Handler for event {e.Name} in machine {m.Name}");
-                        EmitLine($"procedure {m.Name}_handle_{e.Name} (r: UPVerifier_MachineRef, e: UPVerifier_Event)");
+                        EmitLine($"procedure {m.Name}_{s.Name}_handle_{e.Name} (r: UPVerifier_MachineRef, e: UPVerifier_Event)");
                         EmitLine("\tmodifies UPVerifier_Machines;");
                         EmitLine("\tmodifies UPVerifier_Buffer;");
                         EmitLine("\trequires UPVerifier_Buffer[e];");

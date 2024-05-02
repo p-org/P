@@ -159,6 +159,11 @@ namespace Plang.Compiler
             return IssueError(context, $"choose expects a parameter of type int (max value) or a collection type (seq, set, or map) got a parameter of type {subExprType}");
         }
 
+        public Exception IllegalChooseSubExprValue(PParser.ChooseExprContext context, int numChoices)
+        {
+            return IssueError(context, $"choose expects a parameter with at most 10000 choices, got {numChoices} choices instead.");
+        }
+
         public Exception IllegalFunctionUsedInSpecMachine(Function function, Machine callerOwner)
         {
             return IssueError(function.SourceLocation,

@@ -136,21 +136,27 @@ namespace Plang.CSharpRuntime
             switch (param)
             {
                 case PrtInt maxValue:
+                {
+                    TryAssert(maxValue <= 10000, $"choose expects a parameter with at most 10000 choices, got {maxValue} choices instead.");
                     return (PrtInt)TryRandomInt(maxValue);
+                }
 
                 case PrtSeq seq:
                 {
                     TryAssert(seq.Any(), "Trying to choose from an empty sequence!");
+                    TryAssert(seq.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {seq.Count} choices instead.");
                     return seq[TryRandomInt(seq.Count)];
                 }
                 case PrtSet set:
                 {
                     TryAssert(set.Any(), "Trying to choose from an empty set!");
+                    TryAssert(set.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {set.Count} choices instead.");
                     return set.ElementAt(TryRandomInt(set.Count));
                 }
                 case PrtMap map:
                 {
                     TryAssert(map.Any(), "Trying to choose from an empty map!");
+                    TryAssert(map.Keys.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {map.Keys.Count} choices instead.");
                     return map.Keys.ElementAt(TryRandomInt(map.Keys.Count));
                 }
                 default:

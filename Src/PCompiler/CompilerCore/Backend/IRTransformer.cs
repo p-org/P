@@ -434,7 +434,6 @@ namespace Plang.Compiler.Backend
                                 new CompoundStmt(ifStmt.ElseBranch.SourceLocation, elseBranch))
                         })
                         .ToList();
-
                 case AddStmt addStmt:
                     var (addVar, addVarDeps) = SimplifyLvalue(addStmt.Variable);
                     var (addVal, addValDeps) = SimplifyArgPack(new[] { addStmt.Value });

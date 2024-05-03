@@ -17,22 +17,11 @@ namespace PChecker.Utilities
         /// Emits the testing coverage report.
         /// </summary>
         /// <param name="report">TestReport</param>
-        /// <param name="processId">Optional process id that produced the report</param>
-        /// <param name="isDebug">Is a debug report</param>
-        internal static void EmitTestingCoverageReport(TestReport report, uint? processId = null, bool isDebug = false)
+        internal static void EmitTestingCoverageReport(TestReport report)
         {
             var file = Path.GetFileNameWithoutExtension(report.CheckerConfiguration.AssemblyToBeAnalyzed);
-            if (isDebug && processId != null)
-            {
-                file += "_" + processId;
-            }
 
             var directory = report.CheckerConfiguration.OutputDirectory;
-            if (isDebug)
-            {
-                directory += $"Debug{Path.DirectorySeparatorChar}";
-                Directory.CreateDirectory(directory);
-            }
 
             EmitTestingCoverageOutputFiles(report, directory, file);
         }

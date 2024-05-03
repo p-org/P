@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using PChecker.SystematicTesting;
+using PChecker.Utilities;
 
 namespace PChecker.Testing
 {
@@ -31,13 +32,23 @@ namespace PChecker.Testing
         private readonly TestingEngine TestingEngine;
 
         /// <summary>
+        /// Set if ctrl-c or ctrl-break occurred.
+        /// </summary>
+        public static bool IsProcessCanceled;
+        
+        /// <summary>
+        /// The testing profiler.
+        /// </summary>
+        private readonly Profiler Profiler;
+        
+        /// <summary>
         /// Creates a Coyote testing process.
         /// </summary>
         public static TestingProcess Create(CheckerConfiguration checkerConfiguration)
         {
             return new TestingProcess(checkerConfiguration);
         }
-
+        
         /// <summary>
         /// Get the current test report.
         /// </summary>
@@ -54,7 +65,14 @@ namespace PChecker.Testing
         /// </summary>
         public void Run()
         {
+            Profiler.StartMeasuringExecutionTime();
             RunAsync().Wait();
+            Profiler.StopMeasuringExecutionTime();
+            if (!IsProcessCanceled)
+            {
+                // Merges and emits the test report.
+                EmitTestReport();
+            }
         }
 
         private async Task RunAsync()
@@ -90,11 +108,6 @@ namespace PChecker.Testing
         {
             Name = Name + "." + checkerConfiguration.TestingProcessId;
 
-            if (checkerConfiguration.SchedulingStrategy is "portfolio")
-            {
-                TestingPortfolio.ConfigureStrategyForCurrentProcess(checkerConfiguration);
-            }
-
             if (checkerConfiguration.RandomGeneratorSeed.HasValue)
             {
                 checkerConfiguration.RandomGeneratorSeed = checkerConfiguration.RandomGeneratorSeed.Value +
@@ -102,9 +115,11 @@ namespace PChecker.Testing
             }
 
             checkerConfiguration.EnableColoredConsoleOutput = true;
-
+            
             _checkerConfiguration = checkerConfiguration;
             TestingEngine = TestingEngine.Create(_checkerConfiguration);
+            Profiler = new Profiler();
+            IsProcessCanceled = false;
         }
 
 
@@ -119,6 +134,47 @@ namespace PChecker.Testing
             Console.WriteLine($"... Emitting traces:");
             TestingEngine.TryEmitTraces(_checkerConfiguration.OutputDirectory, file);
             return Task.CompletedTask;
+        }
+        
+        /// <summary>
+        /// Emits the test report.
+        /// </summary>
+        private void EmitTestReport()
+        {
+            TestReport testReport = GetTestReport();
+            if (testReport == null)
+            {
+                Environment.ExitCode = (int)ExitCode.InternalError;
+                return;
+            }
+
+            if (_checkerConfiguration.ReportActivityCoverage)
+            {
+                Console.WriteLine($"... Emitting coverage report:");
+                Reporter.EmitTestingCoverageReport(testReport);
+            }
+
+            if (_checkerConfiguration.DebugActivityCoverage)
+            {
+                Console.WriteLine($"... Emitting debug coverage report:");
+                Reporter.EmitTestingCoverageReport(testReport);
+            }
+
+            Console.WriteLine(testReport.GetText(_checkerConfiguration, "..."));
+            Console.WriteLine($"... Elapsed {Profiler.Results()} sec.");
+
+            if (testReport.InternalErrors.Count > 0)
+            {
+                Environment.ExitCode = (int)ExitCode.InternalError;
+            }
+            else if (testReport.NumOfFoundBugs > 0)
+            {
+                Environment.ExitCode = (int)ExitCode.BugFound;
+            }
+            else
+            {
+                Environment.ExitCode = (int)ExitCode.Success;
+            }
         }
     }
 }

@@ -24,18 +24,11 @@ namespace PChecker.Actors.Events
         internal EventOriginInfo OriginInfo { get; private set; }
 
         /// <summary>
-        /// User-defined hash of the event. The default value is 0. Override to
-        /// improve the accuracy of stateful techniques during testing.
-        /// </summary>
-        internal int HashedState { get; set; }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="EventInfo"/> class.
         /// </summary>
         internal EventInfo(Event e)
         {
             EventName = e.GetType().FullName;
-            HashedState = 0;
         }
 
         /// <summary>

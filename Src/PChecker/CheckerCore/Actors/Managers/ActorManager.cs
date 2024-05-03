@@ -5,18 +5,19 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using PChecker.Actors.Events;
+using PChecker.SystematicTesting;
 
-namespace PChecker.Actors.Managers
+namespace PChecker.Actors.Managers.Mocks
 {
     /// <summary>
-    /// Manages an actor in production.
+    /// Implements an actor manager that is used during testing.
     /// </summary>
-    internal class ActorManager : IActorManager
+    internal sealed class ActorManager : IActorManager
     {
         /// <summary>
         /// The runtime that executes the actor being managed.
         /// </summary>
-        private readonly ActorRuntime Runtime;
+        private readonly ControlledRuntime Runtime;
 
         /// <summary>
         /// The actor being managed.
@@ -30,18 +31,46 @@ namespace PChecker.Actors.Managers
         public Guid OperationGroupId { get; set; }
 
         /// <summary>
+        /// Program counter used for state-caching. Distinguishes
+        /// scheduling from non-deterministic choices.
+        /// </summary>
+        internal int ProgramCounter;
+
+        /// <summary>
+        /// True if a transition statement was called in the current action, else false.
+        /// </summary>
+        internal bool IsTransitionStatementCalledInCurrentAction;
+
+        /// <summary>
+        /// True if the actor is executing an on exit action, else false.
+        /// </summary>
+        internal bool IsInsideOnExit;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ActorManager"/> class.
         /// </summary>
-        internal ActorManager(ActorRuntime runtime, Actor instance, Guid operationGroupId)
+        internal ActorManager(ControlledRuntime runtime, Actor instance, Guid operationGroupId)
         {
             Runtime = runtime;
             Instance = instance;
             IsEventHandlerRunning = true;
             OperationGroupId = operationGroupId;
+            ProgramCounter = 0;
+            IsTransitionStatementCalledInCurrentAction = false;
+            IsInsideOnExit = false;
         }
 
         /// <inheritdoc/>
-        public int GetCachedState() => 0;
+        public int GetCachedState()
+        {
+            unchecked
+            {
+                var hash = 19;
+                hash = (hash * 31) + IsEventHandlerRunning.GetHashCode();
+                hash = (hash * 31) + ProgramCounter;
+                return hash;
+            }
+        }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -60,7 +89,7 @@ namespace PChecker.Actors.Managers
         public void OnEnqueueEvent(Event e, Guid opGroupId, EventInfo eventInfo) =>
             Runtime.LogWriter.LogEnqueueEvent(Instance.Id, e);
 
-        //// <inheritdoc/>
+        /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnRaiseEvent(Event e, Guid opGroupId, EventInfo eventInfo) =>
             Runtime.LogWriter.LogRaiseEvent(Instance.Id, default, e);
@@ -97,8 +126,10 @@ namespace PChecker.Actors.Managers
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo) =>
+        public void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo)
+        {
             Runtime.TryHandleDroppedEvent(e, Instance.Id);
+        }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

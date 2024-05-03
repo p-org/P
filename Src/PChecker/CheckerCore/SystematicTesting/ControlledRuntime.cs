@@ -365,14 +365,14 @@ namespace PChecker.SystematicTesting
             IActorManager actorManager;
             if (actor is StateMachine stateMachine)
             {
-                actorManager = new MockStateMachineManager(this, stateMachine, opGroupId);
+                actorManager = new StateMachineManager(this, stateMachine, opGroupId);
             }
             else
             {
-                actorManager = new MockActorManager(this, actor, opGroupId);
+                actorManager = new ActorManager(this, actor, opGroupId);
             }
 
-            IEventQueue eventQueue = new MockEventQueue(actorManager, actor);
+            IEventQueue eventQueue = new EventQueue(actorManager, actor);
             actor.Configure(this, id, actorManager, eventQueue);
             actor.SetupEventHandlers();
 
@@ -775,11 +775,11 @@ namespace PChecker.SystematicTesting
             var caller = Scheduler.GetExecutingOperation<ActorOperation>()?.Actor;
             if (caller is StateMachine callerStateMachine)
             {
-                (callerStateMachine.Manager as MockStateMachineManager).ProgramCounter++;
+                (callerStateMachine.Manager as StateMachineManager).ProgramCounter++;
             }
             else if (caller is Actor callerActor)
             {
-                (callerActor.Manager as MockActorManager).ProgramCounter++;
+                (callerActor.Manager as ActorManager).ProgramCounter++;
             }
 
             var choice = Scheduler.GetNextNondeterministicBooleanChoice(maxValue);
@@ -793,11 +793,11 @@ namespace PChecker.SystematicTesting
             var caller = Scheduler.GetExecutingOperation<ActorOperation>()?.Actor;
             if (caller is StateMachine callerStateMachine)
             {
-                (callerStateMachine.Manager as MockStateMachineManager).ProgramCounter++;
+                (callerStateMachine.Manager as StateMachineManager).ProgramCounter++;
             }
             else if (caller is Actor callerActor)
             {
-                (callerActor.Manager as MockActorManager).ProgramCounter++;
+                (callerActor.Manager as ActorManager).ProgramCounter++;
             }
 
             var choice = Scheduler.GetNextNondeterministicIntegerChoice(maxValue);
@@ -1108,11 +1108,11 @@ namespace PChecker.SystematicTesting
         {
             if (actor is StateMachine stateMachine)
             {
-                (stateMachine.Manager as MockStateMachineManager).ProgramCounter = 0;
+                (stateMachine.Manager as StateMachineManager).ProgramCounter = 0;
             }
             else if (actor != null)
             {
-                (actor.Manager as MockActorManager).ProgramCounter = 0;
+                (actor.Manager as ActorManager).ProgramCounter = 0;
             }
         }
 

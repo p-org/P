@@ -201,62 +201,7 @@ namespace PChecker.Actors
         /// </summary>
         private Actor CreateActor(ActorId id, Type type, string name, Actor creator, Guid opGroupId)
         {
-            if (!type.IsSubclassOf(typeof(Actor)))
-            {
-                Assert(false, "Type '{0}' is not an actor.", type.FullName);
-            }
-
-            if (id is null)
-            {
-                id = new ActorId(type, name, this);
-            }
-            else if (id.Runtime != null && id.Runtime != this)
-            {
-                Assert(false, "Unbound actor id '{0}' was created by another runtime.", id.Value);
-            }
-            else if (id.Type != type.FullName)
-            {
-                Assert(false, "Cannot bind actor id '{0}' of type '{1}' to an actor of type '{2}'.",
-                    id.Value, id.Type, type.FullName);
-            }
-            else
-            {
-                id.Bind(this);
-            }
-
-            // The operation group id of the actor is set using the following precedence:
-            // (1) To the specified actor creation operation group id, if it is non-empty.
-            // (2) To the operation group id of the creator actor, if it exists.
-            // (3) To the empty operation group id.
-            if (opGroupId == Guid.Empty && creator != null)
-            {
-                opGroupId = creator.OperationGroupId;
-            }
-
-            var actor = ActorFactory.Create(type);
-            IActorManager actorManager;
-            if (actor is StateMachine stateMachine)
-            {
-                actorManager = new StateMachineManager(this, stateMachine, opGroupId);
-            }
-            else
-            {
-                actorManager = new ActorManager(this, actor, opGroupId);
-            }
-
-            IEventQueue eventQueue = new EventQueue(actorManager);
-            actor.Configure(this, id, actorManager, eventQueue);
-            actor.SetupEventHandlers();
-
-            if (!ActorMap.TryAdd(id, actor))
-            {
-                var info = "This typically occurs if either the actor id was created by another runtime instance, " +
-                           "or if a actor id from a previous runtime generation was deserialized, but the current runtime " +
-                           "has not increased its generation value.";
-                Assert(false, "An actor with id '{0}' was already created in generation '{1}'. {2}", id.Value, id.Generation, info);
-            }
-
-            return actor;
+            throw new NotImplementedException();
         }
 
         /// <summary>

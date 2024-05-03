@@ -5,18 +5,19 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using PChecker.Actors.Events;
+using PChecker.SystematicTesting;
 
-namespace PChecker.Actors.Managers
+namespace PChecker.Actors.Managers.Mocks
 {
     /// <summary>
-    /// Manages a state machine in production.
+    /// Implements a state machine manager that is used during testing.
     /// </summary>
-    internal class StateMachineManager : IActorManager
+    internal sealed class StateMachineManager : IActorManager
     {
         /// <summary>
         /// The runtime that executes the state machine being managed.
         /// </summary>
-        private readonly ActorRuntime Runtime;
+        private readonly ControlledRuntime Runtime;
 
         /// <summary>
         /// The state machine being managed.
@@ -30,18 +31,34 @@ namespace PChecker.Actors.Managers
         public Guid OperationGroupId { get; set; }
 
         /// <summary>
+        /// Program counter used for state-caching. Distinguishes
+        /// scheduling from non-deterministic choices.
+        /// </summary>
+        internal int ProgramCounter;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="StateMachineManager"/> class.
         /// </summary>
-        internal StateMachineManager(ActorRuntime runtime, StateMachine instance, Guid operationGroupId)
+        internal StateMachineManager(ControlledRuntime runtime, StateMachine instance, Guid operationGroupId)
         {
             Runtime = runtime;
             Instance = instance;
             IsEventHandlerRunning = true;
             OperationGroupId = operationGroupId;
+            ProgramCounter = 0;
         }
 
         /// <inheritdoc/>
-        public int GetCachedState() => 0;
+        public int GetCachedState()
+        {
+            unchecked
+            {
+                var hash = 19;
+                hash = (hash * 31) + IsEventHandlerRunning.GetHashCode();
+                hash = (hash * 31) + ProgramCounter;
+                return hash;
+            }
+        }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,8 +116,10 @@ namespace PChecker.Actors.Managers
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo) =>
+        public void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo)
+        {
             Runtime.TryHandleDroppedEvent(e, Instance.Id);
+        }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

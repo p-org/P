@@ -28,11 +28,23 @@ namespace PChecker.Actors
     public abstract class Actor
     {
         /// <summary>
-        /// Cache of actor types to a map of event types to action declarations.
+        /// Cache of actor types to a map of action names to action declarations.
         /// </summary>
-        private static readonly ConcurrentDictionary<Type, Dictionary<Type, MethodInfo>> ActionCache =
-            new ConcurrentDictionary<Type, Dictionary<Type, MethodInfo>>();
-
+        private static readonly ConcurrentDictionary<Type, Dictionary<string, MethodInfo>> ActionCache =
+            new ConcurrentDictionary<Type, Dictionary<string, MethodInfo>>();
+        
+        /// <summary>
+        /// Cache of state machine types to a set of all possible states types.
+        /// </summary>
+        private static readonly ConcurrentDictionary<Type, HashSet<Type>> StateTypeCache =
+            new ConcurrentDictionary<Type, HashSet<Type>>();
+        
+        /// <summary>
+        /// Cache of state machine types to a set of all available state instances.
+        /// </summary>
+        private static readonly ConcurrentDictionary<Type, HashSet<StateMachine.State>> StateInstanceCache =
+            new ConcurrentDictionary<Type, HashSet<StateMachine.State>>();
+        
         /// <summary>
         /// A set of lockable objects used to protect static initialization of the ActionCache while
         /// also enabling multithreaded initialization of different Actor types.

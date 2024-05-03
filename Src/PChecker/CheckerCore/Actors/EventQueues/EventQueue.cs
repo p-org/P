@@ -3,14 +3,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using PChecker.Actors.Events;
 using PChecker.Actors.Managers;
 
-namespace PChecker.Actors.EventQueues
+namespace PChecker.Actors.EventQueues.Mocks
 {
     /// <summary>
-    /// Implements a queue of events.
+    /// Implements a queue of events that is used during testing.
     /// </summary>
     internal sealed class EventQueue : IEventQueue
     {
@@ -20,14 +21,19 @@ namespace PChecker.Actors.EventQueues
         private readonly IActorManager ActorManager;
 
         /// <summary>
-        /// The internal queue.
+        /// The actor that owns this queue.
         /// </summary>
-        private readonly LinkedList<(Event e, Guid opGroupId)> Queue;
+        private readonly Actor Actor;
+
+        /// <summary>
+        /// The internal queue that contains events with their metadata.
+        /// </summary>
+        private readonly LinkedList<(Event e, Guid opGroupId, EventInfo info)> Queue;
 
         /// <summary>
         /// The raised event and its metadata, or null if no event has been raised.
         /// </summary>
-        private (Event e, Guid opGroupId) RaisedEvent;
+        private (Event e, Guid opGroupId, EventInfo info) RaisedEvent;
 
         /// <summary>
         /// Map from the types of events that the owner of the queue is waiting to receive
@@ -47,19 +53,24 @@ namespace PChecker.Actors.EventQueues
         /// </summary>
         private bool IsClosed;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// The size of the queue.
+        /// </summary>
         public int Size => Queue.Count;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Checks if an event has been raised.
+        /// </summary>
         public bool IsEventRaised => RaisedEvent != default;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventQueue"/> class.
         /// </summary>
-        internal EventQueue(IActorManager actorManager)
+        internal EventQueue(IActorManager actorManager, Actor actor)
         {
             ActorManager = actorManager;
-            Queue = new LinkedList<(Event, Guid)>();
+            Actor = actor;
+            Queue = new LinkedList<(Event, Guid, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
         }
@@ -67,44 +78,37 @@ namespace PChecker.Actors.EventQueues
         /// <inheritdoc/>
         public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
         {
-            var enqueueStatus = EnqueueStatus.EventHandlerRunning;
-            lock (Queue)
+            if (IsClosed)
             {
-                if (IsClosed)
-                {
-                    return EnqueueStatus.Dropped;
-                }
+                return EnqueueStatus.Dropped;
+            }
 
-                if (EventWaitTypes != null &&
-                    EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
-                    (predicate is null || predicate(e)))
+            if (EventWaitTypes.TryGetValue(e.GetType(), out var predicate) &&
+                (predicate is null || predicate(e)))
+            {
+                EventWaitTypes.Clear();
+                ActorManager.OnReceiveEvent(e, opGroupId, info);
+                ReceiveCompletionSource.SetResult(e);
+                return EnqueueStatus.EventHandlerRunning;
+            }
+
+            ActorManager.OnEnqueueEvent(e, opGroupId, info);
+            Queue.AddLast((e, opGroupId, info));
+
+            if (!ActorManager.IsEventHandlerRunning)
+            {
+                if (TryDequeueEvent(true).e is null)
                 {
-                    EventWaitTypes = null;
-                    enqueueStatus = EnqueueStatus.Received;
+                    return EnqueueStatus.NextEventUnavailable;
                 }
                 else
                 {
-                    Queue.AddLast((e, opGroupId));
-                    if (!ActorManager.IsEventHandlerRunning)
-                    {
-                        ActorManager.IsEventHandlerRunning = true;
-                        enqueueStatus = EnqueueStatus.EventHandlerNotRunning;
-                    }
+                    ActorManager.IsEventHandlerRunning = true;
+                    return EnqueueStatus.EventHandlerNotRunning;
                 }
             }
 
-            if (enqueueStatus is EnqueueStatus.Received)
-            {
-                ActorManager.OnReceiveEvent(e, opGroupId, info);
-                ReceiveCompletionSource.SetResult(e);
-                return enqueueStatus;
-            }
-            else
-            {
-                ActorManager.OnEnqueueEvent(e, opGroupId, info);
-            }
-
-            return enqueueStatus;
+            return EnqueueStatus.EventHandlerRunning;
         }
 
         /// <inheritdoc/>
@@ -114,7 +118,7 @@ namespace PChecker.Actors.EventQueues
             // have priority over the events in the inbox.
             if (RaisedEvent != default)
             {
-                if (ActorManager.IsEventIgnored(RaisedEvent.e, RaisedEvent.opGroupId, null))
+                if (ActorManager.IsEventIgnored(RaisedEvent.e, RaisedEvent.opGroupId, RaisedEvent.info))
                 {
                     // TODO: should the user be able to raise an ignored event?
                     // The raised event is ignored in the current state.
@@ -122,63 +126,98 @@ namespace PChecker.Actors.EventQueues
                 }
                 else
                 {
-                    (var e, var opGroupId) = RaisedEvent;
+                    var raisedEvent = RaisedEvent;
                     RaisedEvent = default;
-                    return (DequeueStatus.Raised, e, opGroupId, null);
+                    return (DequeueStatus.Raised, raisedEvent.e, raisedEvent.opGroupId, raisedEvent.info);
                 }
             }
 
-            lock (Queue)
+            var hasDefaultHandler = ActorManager.IsDefaultHandlerAvailable();
+            if (hasDefaultHandler)
             {
-                // Try to dequeue the next event, if there is one.
-                var node = Queue.First;
-                while (node != null)
-                {
-                    // Iterates through the events in the inbox.
-                    if (ActorManager.IsEventIgnored(node.Value.e, node.Value.opGroupId, null))
-                    {
-                        // Removes an ignored event.
-                        var nextNode = node.Next;
-                        Queue.Remove(node);
-                        node = nextNode;
-                        continue;
-                    }
-                    else if (ActorManager.IsEventDeferred(node.Value.e, node.Value.opGroupId, null))
-                    {
-                        // Skips a deferred event.
-                        node = node.Next;
-                        continue;
-                    }
+                Actor.Runtime.NotifyDefaultEventHandlerCheck(Actor);
+            }
 
-                    // Found next event that can be dequeued.
-                    Queue.Remove(node);
-                    return (DequeueStatus.Success, node.Value.e, node.Value.opGroupId, null);
-                }
+            // Try to dequeue the next event, if there is one.
+            var (e, opGroupId, info) = TryDequeueEvent();
+            if (e != null)
+            {
+                // Found next event that can be dequeued.
+                return (DequeueStatus.Success, e, opGroupId, info);
+            }
 
-                // No event can be dequeued, so check if there is a default event handler.
-                if (!ActorManager.IsDefaultHandlerAvailable())
-                {
-                    // There is no default event handler installed, so do not return an event.
-                    // Setting IsEventHandlerRunning must happen inside the lock as it needs
-                    // to be synchronized with the enqueue and starting a new event handler.
-                    ActorManager.IsEventHandlerRunning = false;
-                    return (DequeueStatus.NotAvailable, null, Guid.Empty, null);
-                }
+            // No event can be dequeued, so check if there is a default event handler.
+            if (!hasDefaultHandler)
+            {
+                // There is no default event handler installed, so do not return an event.
+                ActorManager.IsEventHandlerRunning = false;
+                return (DequeueStatus.NotAvailable, null, Guid.Empty, null);
             }
 
             // TODO: check op-id of default event.
             // A default event handler exists.
-            return (DequeueStatus.Default, DefaultEvent.Instance, Guid.Empty, null);
+            var stateName = Actor is StateMachine stateMachine ?
+                NameResolver.GetStateNameForLogging(stateMachine.CurrentState) : string.Empty;
+            var eventOrigin = new EventOriginInfo(Actor.Id, Actor.GetType().FullName, stateName);
+            return (DequeueStatus.Default, DefaultEvent.Instance, Guid.Empty, new EventInfo(DefaultEvent.Instance, eventOrigin));
+        }
+
+        /// <summary>
+        /// Dequeues the next event and its metadata, if there is one available, else returns null.
+        /// </summary>
+        private (Event e, Guid opGroupId, EventInfo info) TryDequeueEvent(bool checkOnly = false)
+        {
+            (Event, Guid, EventInfo) nextAvailableEvent = default;
+
+            // Iterates through the events and metadata in the inbox.
+            var node = Queue.First;
+            while (node != null)
+            {
+                var nextNode = node.Next;
+                var currentEvent = node.Value;
+
+                if (ActorManager.IsEventIgnored(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                {
+                    if (!checkOnly)
+                    {
+                        // Removes an ignored event.
+                        Queue.Remove(node);
+                    }
+
+                    node = nextNode;
+                    continue;
+                }
+
+                // Skips a deferred event.
+                if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                {
+                    nextAvailableEvent = currentEvent;
+                    if (!checkOnly)
+                    {
+                        Queue.Remove(node);
+                    }
+
+                    break;
+                }
+
+                node = nextNode;
+            }
+
+            return nextAvailableEvent;
         }
 
         /// <inheritdoc/>
         public void RaiseEvent(Event e, Guid opGroupId)
         {
-            RaisedEvent = (e, opGroupId);
-            ActorManager.OnRaiseEvent(e, opGroupId, null);
+            var stateName = Actor is StateMachine stateMachine ?
+                NameResolver.GetStateNameForLogging(stateMachine.CurrentState) : string.Empty;
+            var eventOrigin = new EventOriginInfo(Actor.Id, Actor.GetType().FullName, stateName);
+            var info = new EventInfo(e, eventOrigin);
+            RaisedEvent = (e, opGroupId, info);
+            ActorManager.OnRaiseEvent(e, opGroupId, info);
         }
 
-        //// <inheritdoc/>
+        /// <inheritdoc/>
         public Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
         {
             var eventWaitTypes = new Dictionary<Type, Func<Event, bool>>
@@ -214,57 +253,59 @@ namespace PChecker.Actors.EventQueues
         }
 
         /// <summary>
-        /// Waits for an event to be enqueued based on the conditions defined in the event wait types.
+        /// Waits for an event to be enqueued.
         /// </summary>
         private Task<Event> ReceiveEventAsync(Dictionary<Type, Func<Event, bool>> eventWaitTypes)
         {
-            (Event e, Guid opGroupId) receivedEvent = default;
-            lock (Queue)
+            Actor.Runtime.NotifyReceiveCalled(Actor);
+
+            (Event e, Guid opGroupId, EventInfo info) receivedEvent = default;
+            var node = Queue.First;
+            while (node != null)
             {
-                var node = Queue.First;
-                while (node != null)
+                // Dequeue the first event that the caller waits to receive, if there is one in the queue.
+                if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
+                    (predicate is null || predicate(node.Value.e)))
                 {
-                    // Dequeue the first event that the caller waits to receive, if there is one in the queue.
-                    if (eventWaitTypes.TryGetValue(node.Value.e.GetType(), out var predicate) &&
-                        (predicate is null || predicate(node.Value.e)))
-                    {
-                        receivedEvent = node.Value;
-                        Queue.Remove(node);
-                        break;
-                    }
-
-                    node = node.Next;
+                    receivedEvent = node.Value;
+                    Queue.Remove(node);
+                    break;
                 }
 
-                if (receivedEvent == default)
-                {
-                    ReceiveCompletionSource = new TaskCompletionSource<Event>();
-                    EventWaitTypes = eventWaitTypes;
-                }
+                node = node.Next;
             }
 
             if (receivedEvent == default)
             {
-                // Note that EventWaitTypes is racy, so should not be accessed outside
-                // the lock, this is why we access eventWaitTypes instead.
-                ActorManager.OnWaitEvent(eventWaitTypes.Keys);
+                ReceiveCompletionSource = new TaskCompletionSource<Event>();
+                EventWaitTypes = eventWaitTypes;
+                ActorManager.OnWaitEvent(EventWaitTypes.Keys);
                 return ReceiveCompletionSource.Task;
             }
 
-            ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, null);
+            ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
             return Task.FromResult(receivedEvent.e);
         }
 
-        //// <inheritdoc/>
-        public int GetCachedState() => 0;
+        /// <inheritdoc/>
+        public int GetCachedState()
+        {
+            unchecked
+            {
+                var hash = 19;
+                foreach (var (_, _, info) in Queue)
+                {
+                    hash = (hash * 31) + info.EventName.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
 
         /// <inheritdoc/>
         public void Close()
         {
-            lock (Queue)
-            {
-                IsClosed = true;
-            }
+            IsClosed = true;
         }
 
         /// <summary>
@@ -277,9 +318,9 @@ namespace PChecker.Actors.EventQueues
                 return;
             }
 
-            foreach (var (e, opGroupId) in Queue)
+            foreach (var (e, opGroupId, info) in Queue)
             {
-                ActorManager.OnDropEvent(e, opGroupId, null);
+                ActorManager.OnDropEvent(e, opGroupId, info);
             }
 
             Queue.Clear();

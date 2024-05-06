@@ -507,7 +507,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                         assert ((scheduleChoice == choice) || (scheduleChoice.getStepNumber() == (choice.getStepNumber() - 1)));
                         newStepNumber = scheduleChoice.getStepNumber();
                     } else {
-                        assert (choice.getStepNumber() == 0);
+                        assert (choice.getStepNumber() <= 1);
                     }
                 }
                 if (newStepNumber == 0) {

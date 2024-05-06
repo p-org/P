@@ -297,7 +297,7 @@ public class PExplicitOptions {
                             config.setSearchStrategyMode(SearchStrategyMode.Random);
                             break;
                         case "astar":
-                            config.setSearchStrategyMode(SearchStrategyMode.AStar);
+                            config.setSearchStrategyMode(SearchStrategyMode.Astar);
                             break;
                         default:
                             optionError(

@@ -26,17 +26,15 @@ public class ScheduleChoice extends Choice<PMachine> {
      */
     public void clearUnexplored() {
         unexplored.clear();
-        choiceState = null;
     }
 
     public Choice copyCurrent() {
-        return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, new ArrayList<>(), null);
+        return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, new ArrayList<>(), this.choiceState);
     }
 
     public Choice transferChoice() {
         ScheduleChoice newChoice = new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, this.unexplored, this.choiceState);
         this.unexplored = new ArrayList<>();
-        this.choiceState = null;
         return newChoice;
     }
 

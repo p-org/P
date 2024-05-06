@@ -1,7 +1,6 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 
 import java.io.Serializable;

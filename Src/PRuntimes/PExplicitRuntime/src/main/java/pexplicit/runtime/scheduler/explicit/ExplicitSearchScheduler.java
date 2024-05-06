@@ -4,15 +4,14 @@ import com.google.common.hash.Hashing;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.ScratchLogger;
 import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.Scheduler;
+import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.explicit.strategy.*;
 import pexplicit.utils.exceptions.PExplicitRuntimeException;
@@ -518,7 +517,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                     stepState.setTo(scheduleChoice.getChoiceState());
 
                     assert (!scheduleChoice.getCurrent().getSendBuffer().isEmpty());
-                    for (PMachine machine: scheduleChoice.getUnexplored()) {
+                    for (PMachine machine : scheduleChoice.getUnexplored()) {
                         assert (!machine.getSendBuffer().isEmpty());
                     }
                 }

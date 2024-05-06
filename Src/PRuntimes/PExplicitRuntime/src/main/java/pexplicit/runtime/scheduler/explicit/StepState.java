@@ -1,7 +1,6 @@
 package pexplicit.runtime.scheduler.explicit;
 
 import lombok.Getter;
-import lombok.Setter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.MachineLocalState;
 import pexplicit.runtime.machine.PMachine;

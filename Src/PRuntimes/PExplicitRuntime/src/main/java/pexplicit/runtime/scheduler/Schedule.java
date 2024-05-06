@@ -2,7 +2,6 @@ package pexplicit.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.tuple.Pair;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.scheduler.choice.Choice;
@@ -65,7 +64,7 @@ public class Schedule implements Serializable {
      * @param choiceNum Choice depth
      */
     public void removeChoicesAfter(int choiceNum) {
-        choices.subList(choiceNum+1, choices.size()).clear();
+        choices.subList(choiceNum + 1, choices.size()).clear();
     }
 
     /**
@@ -100,8 +99,8 @@ public class Schedule implements Serializable {
      * Set the schedule choice at a choice depth.
      *
      * @param stepNum    Step number
-     * @param choiceNum    Choice number
-     * @param current Machine to set as current schedule choice
+     * @param choiceNum  Choice number
+     * @param current    Machine to set as current schedule choice
      * @param unexplored List of machine to set as unexplored schedule choices
      */
     public void setScheduleChoice(int stepNum, int choiceNum, PMachine current, List<PMachine> unexplored) {
@@ -122,8 +121,8 @@ public class Schedule implements Serializable {
      * Set the data choice at a choice depth.
      *
      * @param stepNum    Step number
-     * @param choiceNum    Choice number
-     * @param current PValue to set as current schedule choice
+     * @param choiceNum  Choice number
+     * @param current    PValue to set as current schedule choice
      * @param unexplored List of PValue to set as unexplored schedule choices
      */
     public void setDataChoice(int stepNum, int choiceNum, PValue<?> current, List<PValue<?>> unexplored) {
@@ -190,7 +189,7 @@ public class Schedule implements Serializable {
         if (choice instanceof ScheduleChoice scheduleChoice) {
             return scheduleChoice;
         } else {
-            for (int i = choice.getChoiceNumber()-1; i >= 0; i--) {
+            for (int i = choice.getChoiceNumber() - 1; i >= 0; i--) {
                 Choice c = choices.get(i);
                 if (c instanceof ScheduleChoice scheduleChoice) {
                     return scheduleChoice;

@@ -59,9 +59,9 @@ public class StepState implements Serializable {
     }
 
     public void setTo(StepState input) {
-        machineListByType = input.machineListByType;
-        machineSet = input.machineSet;
-        machineLocalStates = input.machineLocalStates;
+        machineListByType = new HashMap<>(input.machineListByType);
+        machineSet = new TreeSet<>(input.machineSet);
+        machineLocalStates = new HashMap<>(input.machineLocalStates);
         assert (machineSet.size() == machineLocalStates.size());
 
         for (PMachine machine : PExplicitGlobal.getMachineSet()) {

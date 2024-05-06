@@ -109,8 +109,8 @@ public class Schedule implements Serializable {
         }
         assert (choiceNum < choices.size());
         if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()
-                && stepBeginState != null
                 && stepNum != 0) {
+            assert (stepBeginState != null);
             choices.set(choiceNum, new ScheduleChoice(stepNum, choiceNum, current, unexplored, stepBeginState));
         } else {
             choices.set(choiceNum, new ScheduleChoice(stepNum, choiceNum, current, unexplored, null));

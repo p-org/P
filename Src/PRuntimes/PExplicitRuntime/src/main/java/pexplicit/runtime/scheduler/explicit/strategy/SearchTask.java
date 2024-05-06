@@ -18,12 +18,12 @@ public class SearchTask implements Serializable {
     private final List<SearchTask> children = new ArrayList<>();
     @Getter
     private final int currChoiceNumber;
+    private final List<Choice> prefixChoices = new ArrayList<>();
+    private final List<Choice> suffixChoices = new ArrayList<>();
     @Getter
     private int numUnexploredScheduleChoices = 0;
     @Getter
     private int numUnexploredDataChoices = 0;
-    private final List<Choice> prefixChoices = new ArrayList<>();
-    private final List<Choice> suffixChoices = new ArrayList<>();
 
     public SearchTask(int id, int choiceNum, SearchTask parentTask) {
         this.id = id;

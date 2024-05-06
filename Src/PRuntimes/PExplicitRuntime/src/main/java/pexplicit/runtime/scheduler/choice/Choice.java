@@ -2,7 +2,6 @@ package pexplicit.runtime.scheduler.choice;
 
 import lombok.Getter;
 import lombok.Setter;
-import pexplicit.values.PValue;
 
 import java.io.Serializable;
 import java.util.List;
@@ -59,6 +58,7 @@ public abstract class Choice<T> implements Serializable {
 
     /**
      * Copy current choice as a new Choice object
+     *
      * @return Choice object with the copied current choice
      */
     abstract public Choice copyCurrent();

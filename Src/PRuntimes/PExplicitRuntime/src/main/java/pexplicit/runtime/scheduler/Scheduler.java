@@ -7,6 +7,7 @@ import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.scheduler.explicit.StepState;
+import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.*;
@@ -146,6 +147,9 @@ public abstract class Scheduler implements SchedulerInterface {
     public PInt getRandomInt(PInt bound) {
         List<PValue<?>> choices = new ArrayList<>();
         int boundInt = bound.getValue();
+        if (boundInt > 10000) {
+            throw new BugFoundException(String.format("choose expects a parameter with at most 10,000 choices, got %d choices instead.", boundInt));
+        }
         if (boundInt == 0) {
             boundInt = 1;
         }

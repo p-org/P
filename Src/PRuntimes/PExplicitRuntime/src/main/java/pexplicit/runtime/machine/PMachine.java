@@ -216,8 +216,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         currentState = (State) values.get(idx++);
 
-        sendBuffer.setElements((List<PMessage>) values.get(idx++));
-        deferQueue.setElements((List<PMessage>) values.get(idx++));
+        sendBuffer.setElements(new ArrayList<>((List<PMessage>) values.get(idx++)));
+        deferQueue.setElements(new ArrayList<>((List<PMessage>) values.get(idx++)));
 
         started = (boolean) values.get(idx++);
         halted = (boolean) values.get(idx++);

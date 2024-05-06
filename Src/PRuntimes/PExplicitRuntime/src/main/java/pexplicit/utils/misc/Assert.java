@@ -2,6 +2,7 @@ package pexplicit.utils.misc;
 
 import lombok.Getter;
 import pexplicit.utils.exceptions.BugFoundException;
+import pexplicit.utils.exceptions.DeadlockException;
 import pexplicit.utils.exceptions.LivenessException;
 import pexplicit.values.PString;
 
@@ -23,19 +24,21 @@ public class Assert {
         fromModel(p, msg.getValue());
     }
 
-    public static void liveness(boolean p, String msg) {
-        if (!p) {
-            failureType = "liveness";
-            failureMsg = "Property violated: " + msg;
-            throw new LivenessException(failureMsg);
-        }
+    public static void deadlock(String msg) {
+        failureType = "deadlock";
+        failureMsg = "Property violated: " + msg;
+        throw new DeadlockException(failureMsg);
     }
 
-    public static void cycle(boolean p, String msg) {
-        if (!p) {
-            failureType = "cycle";
-            failureMsg = "Property violated: " + msg;
-            throw new LivenessException(failureMsg);
-        }
+    public static void liveness(String msg) {
+        failureType = "liveness";
+        failureMsg = "Property violated: " + msg;
+        throw new LivenessException(failureMsg);
+    }
+
+    public static void cycle(String msg) {
+        failureType = "cycle";
+        failureMsg = "Property violated: " + msg;
+        throw new LivenessException(failureMsg);
     }
 }

@@ -12,12 +12,15 @@ import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
+import pexplicit.runtime.scheduler.choice.Choice;
+import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchTask;
 import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.monitor.MemoryMonitor;
+import pexplicit.values.ComputeHash;
 import pexplicit.values.PEvent;
 import pexplicit.values.PMessage;
 import pexplicit.values.PValue;
@@ -25,6 +28,7 @@ import pexplicit.values.PValue;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.SortedSet;
 
 /**
  * Represents the main PExplicit logger
@@ -189,13 +193,16 @@ public class PExplicitLogger {
     }
 
     /**
-     * Log when backtracking to a new choice number
+     * Log when backtracking to a new choice
      *
-     * @param choiceNum Choice number to which backtracking to
+     * @param choice Choice to which backtracking to
      */
-    public static void logBacktrack(int choiceNum, int stepNum) {
+    public static void logBacktrack(Choice choice) {
         if (verbosity > 1) {
-            log.info(String.format("  Backtracking to choice @%d::%d", stepNum, choiceNum));
+            log.info(String.format("  Backtracking to %s choice @%d::%d",
+                    ((choice instanceof ScheduleChoice) ? "schedule" : "data"),
+                    choice.getStepNumber(),
+                    choice.getChoiceNumber()));
         }
     }
 
@@ -235,12 +242,21 @@ public class PExplicitLogger {
         }
     }
 
+    public static void logNewState(int step, int idx, Object stateKey, SortedSet<PMachine> machines) {
+        if (verbosity > 3) {
+            log.info(String.format("    @%d::%d new state with key %s", step, idx, stateKey));
+            if (verbosity > 4) {
+                log.info(String.format("      %s", ComputeHash.getExactString(machines)));
+            }
+        }
+    }
+
     private static boolean isReplaying() {
         return (PExplicitGlobal.getScheduler() instanceof ReplayScheduler);
     }
 
     private static boolean typedLogEnabled() {
-        return (verbosity > 4) || isReplaying();
+        return (verbosity > 5) || isReplaying();
     }
 
     private static void typedLog(LogType type, String message) {

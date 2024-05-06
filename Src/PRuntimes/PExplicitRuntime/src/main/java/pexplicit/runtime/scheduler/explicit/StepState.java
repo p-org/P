@@ -14,23 +14,8 @@ import java.util.*;
  */
 public class StepState implements Serializable {
     /**
-     * Step number
-     */
-    @Getter
-    @Setter
-    private int stepNumber = 0;
-
-    /**
-     * Choice number
-     */
-    @Getter
-    @Setter
-    private int choiceNumber = 0;
-
-    /**
      * Mapping from machine type to list of machine instances
      */
-    @Getter
     private Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
 
     /**
@@ -40,19 +25,22 @@ public class StepState implements Serializable {
     private SortedSet<PMachine> machineSet = new TreeSet<>();
 
     /**
-     * Local state of each machine (null if not in machineSet)
+     * Local state of each machine (if present in machineSet)
      */
-    @Getter
-    private List<MachineLocalState> machineLocalStates = new ArrayList<>();
+    private Map<PMachine, MachineLocalState> machineLocalStates = new HashMap<>();
 
-    public StepState copy() {
+    public StepState copyState() {
         StepState stepState = new StepState();
 
-        stepState.stepNumber = this.stepNumber;
-        stepState.choiceNumber = this.choiceNumber;
         stepState.machineListByType = new HashMap<>(this.machineListByType);
         stepState.machineSet = new TreeSet<>(this.machineSet);
-        stepState.machineLocalStates = new ArrayList<>(this.machineLocalStates);
+
+        stepState.machineLocalStates = new HashMap<>();
+        for (PMachine machine : this.machineSet) {
+            stepState.machineLocalStates.put(machine, machine.copyMachineState());
+        }
+
+        assert (stepState.machineSet.size() == stepState.machineLocalStates.size());
         return stepState;
     }
 
@@ -64,26 +52,21 @@ public class StepState implements Serializable {
 
 
     public void resetToZero() {
-        this.stepNumber = 0;
-        this.choiceNumber = 0;
         for (PMachine machine : PExplicitGlobal.getMachineSet()) {
             machine.reset();
         }
         machineListByType.clear();
         machineSet.clear();
-        machineLocalStates.clear();
     }
 
     public void setTo(StepState input) {
-        stepNumber = input.stepNumber;
-        choiceNumber = input.choiceNumber;
         machineListByType = input.machineListByType;
         machineSet = input.machineSet;
         machineLocalStates = input.machineLocalStates;
+        assert (machineSet.size() == machineLocalStates.size());
 
-        int i = 0;
         for (PMachine machine : PExplicitGlobal.getMachineSet()) {
-            MachineLocalState ms = machineLocalStates.get(i++);
+            MachineLocalState ms = machineLocalStates.get(machine);
             if (ms == null) {
                 machine.reset();
             } else {
@@ -91,18 +74,6 @@ public class StepState implements Serializable {
             }
         }
     }
-
-    public void storeMachinesState() {
-        machineLocalStates.clear();
-        for (PMachine machine : PExplicitGlobal.getMachineSet()) {
-            MachineLocalState ms = null;
-            if (machineSet.contains(machine)) {
-                ms = machine.copyMachineState();
-            }
-            machineLocalStates.add(ms);
-        }
-    }
-
 
     /**
      * Add a machine to the schedule.
@@ -159,17 +130,10 @@ public class StepState implements Serializable {
         }
 
         StringBuilder s = new StringBuilder();
-        s.append(String.format("@%d::%d\n", stepNumber, choiceNumber));
-
-        int i = 0;
-        for (PMachine machine : PExplicitGlobal.getMachineSet()) {
-            if (!machineSet.contains(machine)) {
-                i++;
-                continue;
-            }
+        for (PMachine machine : machineSet) {
             s.append(String.format("%s:\n", machine));
             List<String> fields = machine.getLocalVarNames();
-            List<Object> values = machineLocalStates.get(i++).getLocals();
+            List<Object> values = machineLocalStates.get(machine).getLocals();
             int j = 0;
             for (String field : fields) {
                 Object val = values.get(j++);

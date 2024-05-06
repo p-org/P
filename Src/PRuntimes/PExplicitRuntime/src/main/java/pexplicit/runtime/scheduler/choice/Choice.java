@@ -1,59 +1,39 @@
-package pexplicit.runtime.scheduler;
+package pexplicit.runtime.scheduler.choice;
 
 import lombok.Getter;
 import lombok.Setter;
-import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Represents a schedule or data choice
  */
-@Getter
-public class Choice implements Serializable {
+public abstract class Choice<T> implements Serializable {
+    @Getter
     @Setter
-    PMachine currentScheduleChoice = null;
+    protected T current;
+    @Getter
     @Setter
-    PValue<?> currentDataChoice = null;
-    @Setter
-    List<PMachine> unexploredScheduleChoices = new ArrayList<>();
-    @Setter
-    List<PValue<?>> unexploredDataChoices = new ArrayList<>();
-    @Setter
-    StepState choiceStep = null;
+    protected List<T> unexplored;
 
     /**
-     * Constructor
+     * Step number
      */
-    public Choice() {
-    }
+    @Getter
+    protected int stepNumber = 0;
+    /**
+     * Choice number
+     */
+    @Getter
+    protected int choiceNumber = 0;
 
-    public Choice transferUnexplored() {
-        Choice newChoice = new Choice();
-        newChoice.currentScheduleChoice = this.currentScheduleChoice;
-        newChoice.currentDataChoice = this.currentDataChoice;
-
-        newChoice.unexploredScheduleChoices = this.unexploredScheduleChoices;
-        newChoice.unexploredDataChoices = this.unexploredDataChoices;
-        newChoice.choiceStep = this.choiceStep;
-
-        this.unexploredScheduleChoices = new ArrayList<>();
-        this.unexploredDataChoices = new ArrayList<>();
-        this.choiceStep = null;
-
-        return newChoice;
-    }
-
-    public Choice copyCurrent() {
-        Choice newChoice = new Choice();
-        newChoice.currentScheduleChoice = this.currentScheduleChoice;
-        newChoice.currentDataChoice = this.currentDataChoice;
-
-        return newChoice;
+    protected Choice(T c, List<T> u, int stepNum, int choiceNum) {
+        this.current = c;
+        this.unexplored = u;
+        this.stepNumber = stepNum;
+        this.choiceNumber = choiceNum;
     }
 
     /**
@@ -62,61 +42,33 @@ public class Choice implements Serializable {
      * @return true if this choice has an unexplored choice, false otherwise
      */
     public boolean isUnexploredNonEmpty() {
-        return isUnexploredScheduleChoicesNonEmpty() || isUnexploredDataChoicesNonEmpty();
-    }
-
-    /**
-     * Check if this choice has an unexplored schedule choice remaining.
-     *
-     * @return true if this choice has an unexplored schedule choice, false otherwise
-     */
-    public boolean isUnexploredScheduleChoicesNonEmpty() {
-        return !getUnexploredScheduleChoices().isEmpty();
-    }
-
-    /**
-     * Check if this choice has an unexplored data choice remaining.
-     *
-     * @return true if this choice has an unexplored data choice, false otherwise
-     */
-    public boolean isUnexploredDataChoicesNonEmpty() {
-        return !getUnexploredDataChoices().isEmpty();
+        return !unexplored.isEmpty();
     }
 
     /**
      * Clear current choices
      */
     public void clearCurrent() {
-        currentScheduleChoice = null;
-        currentDataChoice = null;
+        this.current = null;
     }
 
     /**
      * Clean unexplored choices
      */
-    public void clearUnexplored() {
-        unexploredScheduleChoices.clear();
-        unexploredDataChoices.clear();
-        if (choiceStep != null) {
-            choiceStep.clear();
-        }
-    }
+    abstract public void clearUnexplored();
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if (currentScheduleChoice != null) {
-            sb.append(String.format("curr@%s", currentScheduleChoice));
-        }
-        if (currentDataChoice != null) {
-            sb.append(String.format("curr:%s", currentDataChoice));
-        }
-        if (unexploredScheduleChoices != null && !unexploredScheduleChoices.isEmpty()) {
-            sb.append(String.format(" rem@%s", unexploredScheduleChoices));
-        }
-        if (unexploredDataChoices != null && !unexploredDataChoices.isEmpty()) {
-            sb.append(String.format(" rem:%s", unexploredDataChoices));
-        }
-        return sb.toString();
-    }
+    /**
+     * Copy current choice as a new Choice object
+     * @return Choice object with the copied current choice
+     */
+    abstract public Choice copyCurrent();
+
+    /**
+     * Copy this choice to a new choice and clear any unexplored choices.
+     *
+     * @return New choice same as original choice
+     */
+    abstract public Choice transferChoice();
+
+    abstract public String toString();
 }

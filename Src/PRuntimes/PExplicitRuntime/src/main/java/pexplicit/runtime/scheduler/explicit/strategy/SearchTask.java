@@ -1,13 +1,13 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import pexplicit.runtime.scheduler.Choice;
+import pexplicit.runtime.scheduler.choice.Choice;
+import pexplicit.runtime.scheduler.choice.DataChoice;
+import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class SearchTask implements Serializable {
     @Getter
@@ -18,23 +18,17 @@ public class SearchTask implements Serializable {
     private final List<SearchTask> children = new ArrayList<>();
     @Getter
     private final int currChoiceNumber;
-    private final Choice currChoice;
     @Getter
     private int numUnexploredScheduleChoices = 0;
     @Getter
     private int numUnexploredDataChoices = 0;
-    private final Map<Integer, Choice> prefixChoices = new HashMap<>();
+    private final List<Choice> prefixChoices = new ArrayList<>();
     private final List<Choice> suffixChoices = new ArrayList<>();
 
-    public SearchTask(int id, Choice choice, int choiceNum, SearchTask parentTask) {
+    public SearchTask(int id, int choiceNum, SearchTask parentTask) {
         this.id = id;
-        this.currChoice = choice;
         this.currChoiceNumber = choiceNum;
         this.parentTask = parentTask;
-        if (!isInitialTask()) {
-            numUnexploredScheduleChoices += choice.getUnexploredScheduleChoices().size();
-            numUnexploredDataChoices += choice.getUnexploredDataChoices().size();
-        }
     }
 
     public boolean isInitialTask() {
@@ -46,41 +40,28 @@ public class SearchTask implements Serializable {
     }
 
     public void cleanup() {
-        if (currChoice != null) {
-            currChoice.clearUnexplored();
-        }
+        prefixChoices.clear();
         suffixChoices.clear();
     }
 
-    public void addPrefixChoice(Choice choice, int choiceNum) {
-        assert (!choice.isUnexploredNonEmpty());
-        prefixChoices.put(choiceNum, choice);
+    public void addPrefixChoice(Choice choice) {
+        prefixChoices.add(choice.copyCurrent());
     }
 
     public void addSuffixChoice(Choice choice) {
         // TODO: check if we need copy here
-        suffixChoices.add(choice);
-        numUnexploredScheduleChoices += choice.getUnexploredScheduleChoices().size();
-        numUnexploredDataChoices += choice.getUnexploredDataChoices().size();
+        suffixChoices.add(choice.transferChoice());
+        if (choice instanceof ScheduleChoice scheduleChoice) {
+            numUnexploredScheduleChoices += scheduleChoice.getUnexplored().size();
+        } else {
+            numUnexploredDataChoices += ((DataChoice) choice).getUnexplored().size();
+        }
     }
 
     public List<Choice> getAllChoices() {
-        List<Choice> result = new ArrayList<>(suffixChoices);
-        result.add(0, currChoice);
-
-        SearchTask task = this;
-        int i = currChoiceNumber - 1;
-        while (i >= 0) {
-            Choice c = task.prefixChoices.get(i);
-            if (c == null) {
-                assert (!task.isInitialTask());
-                task = task.parentTask;
-            } else {
-                result.add(0, c);
-                i--;
-            }
-        }
-        assert (result.size() == (currChoiceNumber + 1 + suffixChoices.size()));
+        List<Choice> result = new ArrayList<>(prefixChoices);
+        result.addAll(suffixChoices);
+        assert (result.size() == (currChoiceNumber + suffixChoices.size()));
         return result;
     }
 
@@ -107,15 +88,9 @@ public class SearchTask implements Serializable {
         if (isInitialTask()) {
             return String.format("%s @0::0 (parent: null)", this);
         }
-        if (currChoice.getChoiceStep() != null) {
-            return String.format("%s @%d::%d (parent: %s)",
-                    this,
-                    currChoice.getChoiceStep().getStepNumber(),
-                    currChoiceNumber,
-                    parentTask);
-        }
-        return String.format("%s @?::%d (parent: %s)",
+        return String.format("%s @%d::%d (parent: %s)",
                 this,
+                suffixChoices.get(0).getStepNumber(),
                 currChoiceNumber,
                 parentTask);
     }

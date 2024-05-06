@@ -74,7 +74,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             case Random:
                 searchStrategy = new SearchStrategyRandom();
                 break;
-            case AStar:
+            case Astar:
                 searchStrategy = new SearchStrategyAStar();
                 break;
             default:

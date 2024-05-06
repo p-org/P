@@ -13,8 +13,6 @@ import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 public class PExplicitConfig {
     // default name of the test driver
     final String testDriverDefault = "DefaultImpl";
-    // max internal steps before throwing an exception
-    final int maxInternalSteps = 100;
     // name of the test driver
     @Setter
     String testDriver = testDriverDefault;
@@ -62,7 +60,7 @@ public class PExplicitConfig {
     SearchStrategyMode searchStrategyMode = SearchStrategyMode.Random;
     // max number of schedules per search task
     @Setter
-    int maxSchedulesPerTask = 100;
+    int maxSchedulesPerTask = 10;
     //max number of children search tasks
     @Setter
     int maxChildrenPerTask = 2;

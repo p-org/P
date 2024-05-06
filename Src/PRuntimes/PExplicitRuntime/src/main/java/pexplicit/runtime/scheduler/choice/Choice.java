@@ -48,6 +48,14 @@ public class Choice implements Serializable {
         return newChoice;
     }
 
+    public Choice copyCurrent() {
+        Choice newChoice = new Choice();
+        newChoice.currentScheduleChoice = this.currentScheduleChoice;
+        newChoice.currentDataChoice = this.currentDataChoice;
+
+        return newChoice;
+    }
+
     /**
      * Check if this choice has an unexplored choice remaining.
      *

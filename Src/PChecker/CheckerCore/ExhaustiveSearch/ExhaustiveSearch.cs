@@ -110,7 +110,7 @@ namespace PChecker.ExhaustiveSearch
                 }
             }
 
-            arguments.Append($"{_checkerConfiguration.PSymArgs} ");
+            arguments.Append($"{_checkerConfiguration.CheckerArgs} ");
 
             return arguments.ToString();
         }

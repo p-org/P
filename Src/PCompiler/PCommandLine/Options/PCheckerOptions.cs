@@ -62,6 +62,9 @@ namespace Plang.Options
             var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
             schCoverage.AllowedValues = new List<string>() { "learn", "random", "dfs", "stateless" };
             schCoverage.IsHidden = true;
+            var schExplicit = schedulingGroup.AddArgument("sch-explicit", null, "Choose the scheduling strategy for explicit mode (options: random, dfs, astar). (default: random)");
+            schExplicit.AllowedValues = new List<string>() { "random", "dfs", "astar" };
+            schExplicit.IsHidden = true;
 
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
@@ -72,9 +75,9 @@ namespace Plang.Options
             advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the schedule that found a bug", typeof(bool));
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test schedules whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
+            advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of JVM arguments to pass, each starting with a colon").IsHidden = true;
+            advancedGroup.AddArgument("checker-args", null, "Specify a concatenated list of additional checker arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
-            advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
-
         }
 
         /// <summary>
@@ -245,6 +248,9 @@ namespace Plang.Options
                 case "sch-coverage":
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
                     break;
+                case "sch-explicit":
+                    checkerConfiguration.SchedulingStrategy = (string)option.Value;
+                    break;
                 case "replay":
                 {
                     var filename = (string)option.Value;
@@ -308,11 +314,12 @@ namespace Plang.Options
                 case "fail-on-maxsteps":
                     checkerConfiguration.ConsiderDepthBoundHitAsBug = true;
                     break;
-                case "psym-args":
-                    checkerConfiguration.PSymArgs = ((string)option.Value).Replace(':', ' ');
-                    break;
                 case "jvm-args":
                     checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
+                    break;
+                case "checker-args":
+                case "psym-args":
+                    checkerConfiguration.CheckerArgs = ((string)option.Value).Replace(':', ' ');
                     break;
                 case "pproj":
                     // do nothing, since already configured through UpdateConfigurationWithPProjectFile
@@ -347,7 +354,8 @@ namespace Plang.Options
                 checkerConfiguration.SchedulingStrategy != "replay" &&
                 checkerConfiguration.SchedulingStrategy != "learn" &&
                 checkerConfiguration.SchedulingStrategy != "dfs" &&
-                checkerConfiguration.SchedulingStrategy != "stateless")
+                checkerConfiguration.SchedulingStrategy != "stateless" &&
+                checkerConfiguration.SchedulingStrategy != "astar")
             {
                 Error.CheckerReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }

@@ -236,7 +236,6 @@ namespace Plang.Parser
                             outputLanguages.Add(CompilerOutput.Symbolic);
                             break;
                         case "explicit":
-                        case "pexplicit":
                             outputLanguages.Add(CompilerOutput.PExplicit);
                             break;
                         case "pobserve":

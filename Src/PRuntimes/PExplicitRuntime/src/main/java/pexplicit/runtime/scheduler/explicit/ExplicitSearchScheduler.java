@@ -444,7 +444,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             newTask.addPrefixChoice(schedule.getChoice(i));
         }
 
-        newTask.addSuffixChoice(choice.transferChoice());
+        newTask.addSuffixChoice(choice);
 
         if (!isExact) {
             for (int i = choiceNum + 1; i < schedule.size(); i++) {

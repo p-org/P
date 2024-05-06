@@ -49,13 +49,12 @@ public class SearchTask implements Serializable {
     }
 
     public void addSuffixChoice(Choice choice) {
-        // TODO: check if we need copy here
-        suffixChoices.add(choice.transferChoice());
         if (choice instanceof ScheduleChoice scheduleChoice) {
             numUnexploredScheduleChoices += scheduleChoice.getUnexplored().size();
         } else {
             numUnexploredDataChoices += ((DataChoice) choice).getUnexplored().size();
         }
+        suffixChoices.add(choice.transferChoice());
     }
 
     public List<Choice> getAllChoices() {

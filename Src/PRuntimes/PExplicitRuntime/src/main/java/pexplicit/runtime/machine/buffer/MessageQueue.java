@@ -2,6 +2,7 @@ package pexplicit.runtime.machine.buffer;
 
 import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.PMessage;
 
@@ -140,11 +141,8 @@ public abstract class MessageQueue implements Serializable {
         // dequeue the peek
         if (dequeue) {
             if (msgIdx == -1) {
-                if (elements.isEmpty()) {
-                    Assert.fromModel(false, "Cannot dequeue from empty queue");
-                } else {
-                    Assert.fromModel(false, "Cannot dequeue since all events in the queue are deferred");
-                }
+                assert (elements.isEmpty());
+                throw new PExplicitRuntimeException("Cannot dequeue from empty queue");
             } else {
                 msg = elements.remove(msgIdx);
                 if (msgIdx < elements.size()) {

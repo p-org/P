@@ -600,18 +600,19 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     private void printCurrentStatus(double newRuntime) {
-
-        String s = "--------------------" +
-                String.format("\n    Status after %.2f seconds:", newRuntime) +
-                String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()) +
-                String.format("\n      Depth:            %d", stepNumber) +
-                String.format("\n      Schedules:        %d", SearchStatistics.iteration) +
-                String.format("\n      Unexplored:       %d", getNumUnexploredChoices());
+        StringBuilder s = new StringBuilder("--------------------");
+        s.append(String.format("\n    Status after %.2f seconds:", newRuntime));
+        s.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
+        s.append(String.format("\n      Step:             %d", stepNumber));
+        s.append(String.format("\n      Schedules:        %d", SearchStatistics.iteration));
+        s.append(String.format("\n      Unexplored:       %d", getNumUnexploredChoices()));
+        s.append(String.format("\n      FinishedTasks:    %d", searchStrategy.getFinishedTasks().size()));
+        s.append(String.format("\n      PendingTasks:     %d", searchStrategy.getPendingTasks().size()));
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-            s += String.format("\n      DistinctStates:   %d", SearchStatistics.totalDistinctStates);
+            s.append(String.format("\n      States:           %d", SearchStatistics.totalStates));
+            s.append(String.format("\n      DistinctStates:   %d", SearchStatistics.totalDistinctStates));
         }
-
-        ScratchLogger.log(s);
+        ScratchLogger.log(s.toString());
     }
 
     private void printProgressHeader(boolean consolePrint) {

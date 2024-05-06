@@ -1,7 +1,7 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import pexplicit.runtime.scheduler.Choice;
+import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 
 import java.io.Serializable;
@@ -33,8 +33,8 @@ public abstract class SearchStrategy implements Serializable {
      */
     int currTaskStartIteration = 0;
 
-    public SearchTask createTask(Choice choice, int choiceNum, SearchTask parentTask) {
-        SearchTask newTask = new SearchTask(allTasks.size(), choice, choiceNum, parentTask);
+    public SearchTask createTask(int choiceNum, SearchTask parentTask) {
+        SearchTask newTask = new SearchTask(allTasks.size(), choiceNum, parentTask);
         allTasks.add(newTask);
         pendingTasks.add(newTask.getId());
         return newTask;
@@ -42,7 +42,7 @@ public abstract class SearchStrategy implements Serializable {
 
     public void createFirstTask() {
         assert (allTasks.size() == 0);
-        SearchTask firstTask = createTask(null, 0, null);
+        SearchTask firstTask = createTask(0, null);
         setCurrTask(firstTask);
     }
 

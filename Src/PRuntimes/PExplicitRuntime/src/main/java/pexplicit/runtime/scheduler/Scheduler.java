@@ -7,9 +7,8 @@ import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.scheduler.explicit.StepState;
-import pexplicit.utils.exceptions.DeadlockException;
-import pexplicit.utils.exceptions.LivenessException;
 import pexplicit.utils.exceptions.NotImplementedException;
+import pexplicit.utils.misc.Assert;
 import pexplicit.values.*;
 
 import java.util.ArrayList;
@@ -25,6 +24,18 @@ public abstract class Scheduler implements SchedulerInterface {
      * Current schedule
      */
     public final Schedule schedule;
+    /**
+     * Step number
+     */
+    @Getter
+    @Setter
+    protected int stepNumber = 0;
+    /**
+     * Choice number
+     */
+    @Getter
+    @Setter
+    protected int choiceNumber = 0;
     /**
      * Current step state
      */
@@ -88,6 +99,8 @@ public abstract class Scheduler implements SchedulerInterface {
      * Reset the scheduler.
      */
     protected void reset() {
+        stepNumber = 0;
+        choiceNumber = 0;
         isStickyStep = true;
     }
 
@@ -108,7 +121,7 @@ public abstract class Scheduler implements SchedulerInterface {
     public void updateLogNumber() {
         stepNumLogs += 1;
         if (stepNumLogs >= PExplicitGlobal.getConfig().getMaxStepLogBound()) {
-            throw new LivenessException("Detected potential infinite loop in an atomic block");
+            Assert.liveness("Detected potential infinite loop in an atomic block");
         }
     }
 
@@ -226,20 +239,20 @@ public abstract class Scheduler implements SchedulerInterface {
         isStickyStep = msg.getEvent().isCreateMachineEvent();
         if (!isStickyStep) {
             // update step number
-            stepState.setStepNumber(stepState.getStepNumber() + 1);
+            stepNumber++;
         }
 
         // reset number of logs in current step
         stepNumLogs = 0;
 
         // log start step
-        PExplicitLogger.logStartStep(stepState.getStepNumber(), sender, msg);
+        PExplicitLogger.logStartStep(stepNumber, sender, msg);
 
         // process message
         processDequeueEvent(sender, msg);
 
         // update done stepping flag
-        isDoneStepping = (stepState.getStepNumber() >= PExplicitGlobal.getConfig().getMaxStepBound());
+        isDoneStepping = (stepNumber >= PExplicitGlobal.getConfig().getMaxStepBound());
     }
 
     /**
@@ -330,7 +343,7 @@ public abstract class Scheduler implements SchedulerInterface {
     public void checkDeadlock() {
         for (PMachine machine : stepState.getMachineSet()) {
             if (machine.canRun() && machine.isBlocked()) {
-                throw new DeadlockException(String.format("Deadlock detected. %s is waiting to receive an event, but no other controlled tasks are enabled.", machine));
+                Assert.deadlock(String.format("Deadlock detected. %s is waiting to receive an event, but no other controlled tasks are enabled.", machine));
             }
         }
     }
@@ -342,9 +355,9 @@ public abstract class Scheduler implements SchedulerInterface {
         for (PMachine monitor : PExplicitGlobal.getModel().getMonitors()) {
             if (monitor.getCurrentState().isHotState()) {
                 if (terminated) {
-                    throw new LivenessException(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
+                    Assert.liveness(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
                 } else {
-                    throw new LivenessException(String.format("Monitor %s detected potential liveness bug in hot state %s", monitor, monitor.getCurrentState()));
+                    Assert.liveness(String.format("Monitor %s detected potential liveness bug in hot state %s", monitor, monitor.getCurrentState()));
                 }
             }
         }

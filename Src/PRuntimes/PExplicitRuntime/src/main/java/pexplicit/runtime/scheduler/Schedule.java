@@ -2,8 +2,12 @@ package pexplicit.runtime.scheduler;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.tuple.Pair;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.scheduler.choice.Choice;
+import pexplicit.runtime.scheduler.choice.DataChoice;
+import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.values.PValue;
 
@@ -36,15 +40,6 @@ public class Schedule implements Serializable {
     }
 
     /**
-     * Get a fresh new choice
-     *
-     * @return New choice object
-     */
-    public Choice newChoice() {
-        return new Choice();
-    }
-
-    /**
      * Get the choice at a choice depth
      *
      * @param idx Choice depth
@@ -65,14 +60,23 @@ public class Schedule implements Serializable {
     }
 
     /**
+     * Remove choices after a choice depth
+     *
+     * @param choiceNum Choice depth
+     */
+    public void removeChoicesAfter(int choiceNum) {
+        choices.subList(choiceNum+1, choices.size()).clear();
+    }
+
+    /**
      * Get the number of unexplored choices in this schedule
      *
      * @return Number of unexplored choices
      */
     public int getNumUnexploredChoices() {
         int numUnexplored = 0;
-        for (Choice c : choices) {
-            numUnexplored += c.unexploredScheduleChoices.size() + c.unexploredDataChoices.size();
+        for (Choice<?> c : choices) {
+            numUnexplored += c.getUnexplored().size();
         }
         return numUnexplored;
     }
@@ -84,74 +88,50 @@ public class Schedule implements Serializable {
      */
     public int getNumUnexploredDataChoices() {
         int numUnexplored = 0;
-        for (Choice c : choices) {
-            numUnexplored += c.unexploredDataChoices.size();
+        for (Choice<?> c : choices) {
+            if (c instanceof DataChoice) {
+                numUnexplored += c.getUnexplored().size();
+            }
         }
         return numUnexplored;
     }
 
     /**
-     * Set the current schedule choice at a choice depth.
+     * Set the schedule choice at a choice depth.
      *
-     * @param choice Machine to set as current schedule choice
-     * @param idx    Choice depth
+     * @param stepNum    Step number
+     * @param choiceNum    Choice number
+     * @param current Machine to set as current schedule choice
+     * @param unexplored List of machine to set as unexplored schedule choices
      */
-    public void setCurrentScheduleChoice(PMachine choice, int idx) {
-        if (idx >= choices.size()) {
-            choices.add(newChoice());
+    public void setScheduleChoice(int stepNum, int choiceNum, PMachine current, List<PMachine> unexplored) {
+        if (choiceNum == choices.size()) {
+            choices.add(null);
         }
-        choices.get(idx).setCurrentScheduleChoice(choice);
-    }
-
-    /**
-     * Set the current data choice at a choice depth.
-     *
-     * @param choice PValue to set as current data choice
-     * @param idx    Choice depth
-     */
-    public void setCurrentDataChoice(PValue<?> choice, int idx) {
-        if (idx >= choices.size()) {
-            choices.add(newChoice());
-        }
-        choices.get(idx).setCurrentDataChoice(choice);
-    }
-
-    /**
-     * Set unexplored schedule choices at a choice depth.
-     *
-     * @param machines List of machines to set as unexplored schedule choices
-     * @param idx      Choice depth
-     */
-    public void setUnexploredScheduleChoices(List<PMachine> machines, int idx) {
-        if (idx >= choices.size()) {
-            choices.add(newChoice());
-        }
-        choices.get(idx).setUnexploredScheduleChoices(machines);
+        assert (choiceNum < choices.size());
         if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()
-                && !machines.isEmpty()
                 && stepBeginState != null
-                && stepBeginState.getStepNumber() != 0) {
-            choices.get(idx).setChoiceStep(stepBeginState.copy());
+                && stepNum != 0) {
+            choices.set(choiceNum, new ScheduleChoice(stepNum, choiceNum, current, unexplored, stepBeginState));
+        } else {
+            choices.set(choiceNum, new ScheduleChoice(stepNum, choiceNum, current, unexplored, null));
         }
     }
 
     /**
-     * Set unexplored data choices at a choice depth.
+     * Set the data choice at a choice depth.
      *
-     * @param values List of PValue to set as unexplored data choices
-     * @param idx    Choice depth
+     * @param stepNum    Step number
+     * @param choiceNum    Choice number
+     * @param current PValue to set as current schedule choice
+     * @param unexplored List of PValue to set as unexplored schedule choices
      */
-    public void setUnexploredDataChoices(List<PValue<?>> values, int idx) {
-        if (idx >= choices.size()) {
-            choices.add(newChoice());
+    public void setDataChoice(int stepNum, int choiceNum, PValue<?> current, List<PValue<?>> unexplored) {
+        if (choiceNum == choices.size()) {
+            choices.add(null);
         }
-        choices.get(idx).setUnexploredDataChoices(values);
-        if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()
-                && !values.isEmpty()
-                && stepBeginState != null
-                && stepBeginState.getStepNumber() != 0) {
-            choices.get(idx).setChoiceStep(stepBeginState.copy());
-        }
+        assert (choiceNum < choices.size());
+        choices.set(choiceNum, new DataChoice(stepNum, choiceNum, current, unexplored));
     }
 
     /**
@@ -161,7 +141,8 @@ public class Schedule implements Serializable {
      * @return Current schedule choice
      */
     public PMachine getCurrentScheduleChoice(int idx) {
-        return choices.get(idx).getCurrentScheduleChoice();
+        assert (choices.get(idx) instanceof ScheduleChoice);
+        return ((ScheduleChoice) choices.get(idx)).getCurrent();
     }
 
     /**
@@ -171,7 +152,8 @@ public class Schedule implements Serializable {
      * @return Current data choice
      */
     public PValue<?> getCurrentDataChoice(int idx) {
-        return choices.get(idx).getCurrentDataChoice();
+        assert (choices.get(idx) instanceof DataChoice);
+        return ((DataChoice) choices.get(idx)).getCurrent();
     }
 
     /**
@@ -182,7 +164,8 @@ public class Schedule implements Serializable {
      */
     public List<PMachine> getUnexploredScheduleChoices(int idx) {
         if (idx < size()) {
-            return choices.get(idx).getUnexploredScheduleChoices();
+            assert (choices.get(idx) instanceof ScheduleChoice);
+            return ((ScheduleChoice) choices.get(idx)).getUnexplored();
         } else {
             return new ArrayList<>();
         }
@@ -196,10 +179,25 @@ public class Schedule implements Serializable {
      */
     public List<PValue<?>> getUnexploredDataChoices(int idx) {
         if (idx < size()) {
-            return choices.get(idx).getUnexploredDataChoices();
+            assert (choices.get(idx) instanceof DataChoice);
+            return ((DataChoice) choices.get(idx)).getUnexplored();
         } else {
             return new ArrayList<>();
         }
+    }
+
+    public ScheduleChoice getScheduleChoiceAt(Choice choice) {
+        if (choice instanceof ScheduleChoice scheduleChoice) {
+            return scheduleChoice;
+        } else {
+            for (int i = choice.getChoiceNumber()-1; i >= 0; i--) {
+                Choice c = choices.get(i);
+                if (c instanceof ScheduleChoice scheduleChoice) {
+                    return scheduleChoice;
+                }
+            }
+        }
+        return null;
     }
 
     /**

@@ -578,11 +578,11 @@ namespace Plang.Compiler.Backend.PExplicit
                 returnStatement = "return ";
             }
 
-            var functionName = $"wrapper__{context.GetNameForDecl(function)}";
+            var functionName = $"ffi_{context.GetNameForDecl(function)}";
 
             context.Write(output, $"{staticKeyword}{returnType} ");
             context.Write(output, functionName);
-            context.WriteLine(output, " (List<Object> args) { ");
+            context.WriteLine(output, "(List<Object> args) { ");
             context.Write(output, $"    {returnStatement}GlobalFunctions.{context.GetNameForDecl(function)}(");
             var i = 0;
             foreach (var param in function.Signature.Parameters)
@@ -593,7 +593,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 if (foreignType == "Object") {
                     context.Write(output, $"args.get({i})");
                 } else {
-                    context.Write(output, $"new {foreignType}(args.get({i}))");
+                    context.Write(output, $"({foreignType})args.get({i})");
                 }
                 i++;
             }
@@ -1193,13 +1193,14 @@ namespace Plang.Compiler.Backend.PExplicit
                 context.Write(output, $"{GetPExplicitType(function.Signature.ReturnType)} {returnTemp} = ({GetPExplicitType(function.Signature.ReturnType)})");
             }
 
-            context.Write(output, $"ForeignFunctionInvoker.invoke(");
             if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null)) {
-                context.Write(output, $"x -> wrapper__{context.GetNameForDecl(function)}(x)");
+                context.Write(output, $"ForeignFunctionInterface.accept(");
+                context.Write(output, $"x -> ffi_{context.GetNameForDecl(function)}(x)");
             } else {
-                context.Write(output, $"{GetDefaultValue(function.Signature.ReturnType)}, x -> ");
+                context.Write(output, $"ForeignFunctionInterface.apply(");
+                context.Write(output, $"x -> ");
                 context.Write(output, "{ return ");
-                context.Write(output, $"wrapper__{context.GetNameForDecl(function)}(x);");
+                context.Write(output, $"ffi_{context.GetNameForDecl(function)}(x);");
                 context.Write(output, " }");
             }
 
@@ -1931,7 +1932,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "? extends PValue<?>";
                 default:
-                    throw new NotImplementedException($"PExplicit type '{type.OriginalRepresentation}' not supported");
+                    return "Object";
             }
         }
 

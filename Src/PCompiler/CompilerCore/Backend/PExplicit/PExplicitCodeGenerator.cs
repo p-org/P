@@ -1645,26 +1645,29 @@ namespace Plang.Compiler.Backend.PExplicit
                     context.Write(output, $".getValues()");
                     break;
                 case MapAccessExpr mapAccessExpr:
+                    context.Write(output, $"(({GetPExplicitType(mapAccessExpr.MapExpr.Type)})");
                     WriteExpr(context, output, mapAccessExpr.MapExpr);
-                    context.Write(output, ".get(");
+                    context.Write(output, ").get(");
                     WriteExpr(context, output, mapAccessExpr.IndexExpr);
                     context.Write(output, ")");
                     break;
                 case SeqAccessExpr seqAccessExpr:
+                    context.Write(output, $"(({GetPExplicitType(seqAccessExpr.SeqExpr.Type)})");
                     WriteExpr(context, output, seqAccessExpr.SeqExpr);
-                    context.Write(output, ".get(");
+                    context.Write(output, ").get(");
                     WriteExpr(context, output, seqAccessExpr.IndexExpr);
                     context.Write(output, ")");
                     break;
                 case SetAccessExpr setAccessExpr:
+                    context.Write(output, $"(({GetPExplicitType(setAccessExpr.SetExpr.Type)})");
                     WriteExpr(context, output, setAccessExpr.SetExpr);
-                    context.Write(output, ".get(");
+                    context.Write(output, ").get(");
                     WriteExpr(context, output, setAccessExpr.IndexExpr);
                     context.Write(output, ")");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, $"(({GetPExplicitType(namedTupleAccessExpr.Type)})(");
-                    context.Write(output, "(");
+                    context.Write(output, $"(({GetPExplicitType(namedTupleAccessExpr.SubExpr.Type)})");
                     WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
                     context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\")))");
                     break;
@@ -1674,7 +1677,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, $"({GetPExplicitType(tupleAccessExpr.Type)})(");
                     var tupleType = (tupleAccessExpr.SubExpr.Type.Canonicalize() as TupleType);
-                    context.Write(output, "(");
+                    context.Write(output, $"(({GetPExplicitType(tupleAccessExpr.SubExpr.Type)})");
                     WriteExpr(context, output, tupleAccessExpr.SubExpr);
                     context.Write(output, $").getField({tupleAccessExpr.FieldNo}))");
                     break;

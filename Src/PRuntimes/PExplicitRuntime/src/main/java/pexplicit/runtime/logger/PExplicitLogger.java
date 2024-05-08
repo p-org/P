@@ -146,6 +146,17 @@ public class PExplicitLogger {
         }
     }
 
+    /**
+     * Log when the next task is selected
+     *
+     * @param task Next search task
+     */
+    public static void logNextTask(SearchTask task) {
+        if (verbosity > 1) {
+            log.info(String.format("  Next task: %s", task.toStringDetailed()));
+        }
+    }
+
     public static void logNewTasks(List<SearchTask> tasks) {
         if (verbosity > 0) {
             log.info(String.format("    Added %d new tasks", tasks.size()));

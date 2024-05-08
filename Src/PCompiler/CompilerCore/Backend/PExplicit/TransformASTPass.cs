@@ -720,59 +720,59 @@ namespace Plang.Compiler.Backend.PExplicit
                             case WhileStmt loop:
                                 if (CanReceive(loop.Body))
                                 {
-                                    throw new NotImplementedException($"Receive in a while statement is not yet supported, found in {machine.Name}");
-                                    // // turn the while statement into a recursive function
-                                    // var whileName = $"while_{whileNumber}";
-                                    // whileNumber++;
-                                    // var rec = new WhileFunction(whileName, loop.SourceLocation);
-                                    // rec.Owner = function.Owner;
-                                    // rec.ParentFunction = function;
-                                    // foreach (var param in function.Signature.Parameters) rec.AddParameter(param);
-                                    // var newVarMap = new Dictionary<Variable,Variable>();
-                                    // foreach (var local in function.LocalVariables)
-                                    // {
-                                    //     var machineVar = new Variable($"{whileName}_{local.Name}", local.SourceLocation, local.Role);
-                                    //     machineVar.Type = local.Type;
-                                    //     machine.AddField(machineVar);
-                                    //     newVarMap.Add(local, machineVar);
-                                    // }
-                                    // foreach (var i in function.CreatesInterfaces) rec.AddCreatesInterface(i);
-                                    // rec.CanChangeState = function.CanChangeState;
-                                    // rec.CanRaiseEvent = function.CanRaiseEvent;
-                                    // rec.CanReceive = function.CanReceive;
-                                    // rec.IsNondeterministic = function.IsNondeterministic;
-                                    // // make while loop body
-                                    // var loopBody = new List<IPStmt>();
-                                    // var bodyEnumerator = loop.Body.Statements.GetEnumerator();
-                                    // while (bodyEnumerator.MoveNext())
-                                    // {   
-                                    //     var stmt = bodyEnumerator.Current;
-                                    //     var replaceBreak = ReplaceBreaks(stmt, afterStmts);
-                                    //     if (replaceBreak != null) {
-                                    //         loopBody.Add(ReplaceVars(replaceBreak, newVarMap));
-                                    //     }
-                                    // }
-                                    // var recArgs = new List<VariableAccessExpr>();
-                                    // foreach (var param in rec.Signature.Parameters)
-                                    // {
-                                    //     recArgs.Add(new VariableAccessExpr(rec.SourceLocation, param));
-                                    // }
-                                    // // call the function
-                                    // var recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
-                                    // loopBody.Add(recCall);
-                                    // rec.AddCallee(rec);
-                                    // loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
-                                    // rec.Body = new CompoundStmt(rec.SourceLocation, loopBody);
-                                    // if (machine != null) machine.AddMethod(rec);
-                                    // // assign local variables
-                                    // foreach (var local in function.LocalVariables)
-                                    // {
-                                    //     result.Add(new AssignStmt(local.SourceLocation, new VariableAccessExpr(local.SourceLocation, newVarMap[local]), new VariableAccessExpr(local.SourceLocation, local)));
-                                    // }
-                                    // // replace the while statement with a function call
-                                    // result.Add(recCall);
-                                    // result.Add(new ReturnStmt(loop.SourceLocation, null));
-                                    // function.AddCallee(rec);
+                                    // throw new NotImplementedException($"Receive in a while statement is not yet supported, found in {machine.Name}");
+                                    // turn the while statement into a recursive function
+                                    var whileName = $"while_{whileNumber}";
+                                    whileNumber++;
+                                    var rec = new WhileFunction(whileName, loop.SourceLocation);
+                                    rec.Owner = function.Owner;
+                                    rec.ParentFunction = function;
+                                    foreach (var param in function.Signature.Parameters) rec.AddParameter(param);
+                                    var newVarMap = new Dictionary<Variable,Variable>();
+                                    foreach (var local in function.LocalVariables)
+                                    {
+                                        var machineVar = new Variable($"{whileName}_{local.Name}", local.SourceLocation, local.Role);
+                                        machineVar.Type = local.Type;
+                                        machine.AddField(machineVar);
+                                        newVarMap.Add(local, machineVar);
+                                    }
+                                    foreach (var i in function.CreatesInterfaces) rec.AddCreatesInterface(i);
+                                    rec.CanChangeState = function.CanChangeState;
+                                    rec.CanRaiseEvent = function.CanRaiseEvent;
+                                    rec.CanReceive = function.CanReceive;
+                                    rec.IsNondeterministic = function.IsNondeterministic;
+                                    // make while loop body
+                                    var loopBody = new List<IPStmt>();
+                                    var bodyEnumerator = loop.Body.Statements.GetEnumerator();
+                                    while (bodyEnumerator.MoveNext())
+                                    {   
+                                        var stmt = bodyEnumerator.Current;
+                                        var replaceBreak = ReplaceBreaks(stmt, afterStmts);
+                                        if (replaceBreak != null) {
+                                            loopBody.Add(ReplaceVars(replaceBreak, newVarMap));
+                                        }
+                                    }
+                                    var recArgs = new List<VariableAccessExpr>();
+                                    foreach (var param in rec.Signature.Parameters)
+                                    {
+                                        recArgs.Add(new VariableAccessExpr(rec.SourceLocation, param));
+                                    }
+                                    // call the function
+                                    var recCall = new FunCallStmt(loop.SourceLocation, rec, recArgs);
+                                    loopBody.Add(recCall);
+                                    rec.AddCallee(rec);
+                                    loopBody = new List<IPStmt>(((CompoundStmt) HandleReceives(new CompoundStmt(rec.SourceLocation, loopBody), rec, machine)).Statements);
+                                    rec.Body = new CompoundStmt(rec.SourceLocation, loopBody);
+                                    if (machine != null) machine.AddMethod(rec);
+                                    // assign local variables
+                                    foreach (var local in function.LocalVariables)
+                                    {
+                                        result.Add(new AssignStmt(local.SourceLocation, new VariableAccessExpr(local.SourceLocation, newVarMap[local]), new VariableAccessExpr(local.SourceLocation, local)));
+                                    }
+                                    // replace the while statement with a function call
+                                    result.Add(recCall);
+                                    result.Add(new ReturnStmt(loop.SourceLocation, null));
+                                    function.AddCallee(rec);
                                 }
                                 else
                                 {

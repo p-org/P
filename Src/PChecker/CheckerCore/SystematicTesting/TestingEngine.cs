@@ -706,6 +706,8 @@ namespace PChecker.SystematicTesting
                     var seconds = watch.Elapsed.TotalSeconds;
                     Logger.WriteLine($"Elapsed: {seconds}, " +
                                      $"# timelines: {TestReport.ExploredTimelines.Count}");
+                    var mostVisited = TestReport.ExploredTimelines.Values.Max();
+                    Logger.WriteLine($"Most visited: {mostVisited}");
                     if (Strategy is IFeedbackGuidedStrategy s)
                     {
                         s.DumpStats(Logger);
@@ -1038,8 +1040,9 @@ namespace PChecker.SystematicTesting
                 var coverageInfo = runtime.GetCoverageInfo();
                 report.CoverageInfo.Merge(coverageInfo);
                 TestReport.Merge(report);
-
-                TestReport.ExploredTimelines.Add(timelineObserver.GetTimelineHash());
+                var timelineHash = timelineObserver.GetTimelineHash();
+                TestReport.ExploredTimelines[timelineHash] =
+                    TestReport.ExploredTimelines.GetValueOrDefault(timelineHash, 0) + 1;
                 // Also save the graph snapshot of the last iteration, if there is one.
                 Graph = coverageInfo.CoverageGraph;
                 // Also save the graph snapshot of the last schedule, if there is one.

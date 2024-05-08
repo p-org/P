@@ -58,6 +58,8 @@ public class RuntimeExecutor {
         scheduler.recordStats();
         if (PExplicitGlobal.getResult().equals("correct for any depth")) {
             PExplicitGlobal.setStatus(STATUS.VERIFIED);
+        } else if (PExplicitGlobal.getResult().startsWith("correct up to step")) {
+            PExplicitGlobal.setStatus(STATUS.VERIFIED_UPTO_MAX_STEPS);
         }
         StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
     }

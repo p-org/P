@@ -1,5 +1,6 @@
 package pexplicit.values;
 
+import pexplicit.utils.misc.Assert;
 import pexplicit.values.exceptions.KeyNotFoundException;
 
 import java.util.ArrayList;
@@ -88,6 +89,13 @@ public class PMap extends PValue<PMap> implements PCollection {
      * @param val value to set
      */
     public PMap add(PValue<?> key, PValue<?> val) {
+        if (map.containsKey(key)) {
+            Assert.fromModel(
+                    false,
+                    String.format(
+                            "ArgumentException: An item with the same key has already been added. Key: %s, Value: %s",
+                            key, map.get(key)));
+        }
         return put(key, val);
     }
 

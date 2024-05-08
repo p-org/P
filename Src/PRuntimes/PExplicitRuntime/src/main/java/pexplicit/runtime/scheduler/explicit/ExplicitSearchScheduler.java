@@ -464,6 +464,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     public SearchTask setNextTask() {
         SearchTask nextTask = searchStrategy.setNextTask();
         if (nextTask != null) {
+            PExplicitLogger.logNextTask(nextTask);
             schedule.setChoices(nextTask.getAllChoices());
             postIterationCleanup();
         }
@@ -504,7 +505,9 @@ public class ExplicitSearchScheduler extends Scheduler {
                 if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()) {
                     scheduleChoice = schedule.getScheduleChoiceAt(choice);
                     if (scheduleChoice != null && scheduleChoice.getChoiceState() != null) {
-                        assert ((scheduleChoice == choice) || (scheduleChoice.getStepNumber() == (choice.getStepNumber() - 1)));
+                        assert ((scheduleChoice == choice) ||
+                                (scheduleChoice.getStepNumber() == (choice.getStepNumber() - 1)) ||
+                                (scheduleChoice.getStepNumber() == choice.getStepNumber()));
                         newStepNumber = scheduleChoice.getStepNumber();
                     } else {
                         assert (choice.getStepNumber() <= 1);

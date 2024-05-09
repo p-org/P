@@ -31,16 +31,18 @@ namespace Plang.Compiler.Backend.Uclid5
             this.EmitLine("// The main module contains the entire P program");
             this.EmitLine($"module main {{");
 
+            var machines = globalScope.AllDecls.OfType<Machine>().ToList();
+            
             GenerateBuiltInTypeDefs();
             GenerateUserEnumDefs(globalScope.AllDecls.OfType<PEnum>());
             GenerateUserTypeDefs(globalScope.AllDecls.OfType<TypeDef>());
             GenerateEventDefs(globalScope.AllDecls.OfType<PEvent>());
-            GenerateMachineDefs(globalScope.AllDecls.OfType<Machine>());
+            GenerateMachineDefs(machines);
             GenerateBuiltInVarDecls();
             GenerateInitBlock();
-            GenerateEntryProcedures(globalScope.Machines);
-            GenerateHandlerProcedures(globalScope.Machines);
-            GenerateNextBlock(globalScope.Machines);
+            GenerateEntryProcedures(machines);
+            GenerateHandlerProcedures(machines);
+            GenerateNextBlock(machines);
             GenerateControlBlock();
 
             // close the main module
@@ -137,10 +139,6 @@ namespace Plang.Compiler.Backend.Uclid5
         {
             return $"{Buffer()}[{e}]";
         }
-        private static string GetPayload(string arg)
-        {
-            return $"{Prefix()}{Payload()}({arg})";
-        }
         private static string GetSource(string arg)
         {
             return $"{Prefix()}{Source()}({arg})";
@@ -228,22 +226,17 @@ namespace Plang.Compiler.Backend.Uclid5
             var sum = string.Join("\n\t\t| ", es.Select(ProcessEvent));
             this.EmitLine($"datatype {EventT()} = \n\t\t| {sum};\n");
 
-            string[] attributes = [Source(), Target(), Payload()];
+            string[] attributes = [Source(), Target()];
             foreach (var attribute in attributes)
             {
                 var cases = $"if ({IsEventInstance("e", es.First())}) then e.{es.First().Name}_{attribute}";
                 cases = es.Skip(1).SkipLast(1).Aggregate(cases,
                     (current, e) => current + $"\n\t\telse if ({IsEventInstance("e", e)}) then e.{e.Name}_{attribute}");
                 cases += $"\n\t\telse e.{es.Last().Name}_{attribute}";
-                var outType = attribute == Payload() ? EventT() : RefT();
-                this.EmitLine($"define {Prefix()}{attribute} (e: {EventT()}) : {outType} = \n\t\t{cases};");
-                if (attribute != Payload())
-                {
-                    this.EmitLine("");
-                }
+                this.EmitLine($"define {Prefix()}{attribute} (e: {EventT()}) : {RefT()} = \n\t\t{cases};");
+                this.EmitLine("");
             }
-
-            this.EmitLine("\n");
+            this.EmitLine("");
             return;
 
             string ProcessEvent(PEvent e)
@@ -373,6 +366,8 @@ namespace Plang.Compiler.Backend.Uclid5
                     {
                         switch (eh.Value)
                         {
+                            case EventDefer eventDefer:
+                                throw new NotSupportedException($"Not supported handler {eventDefer})");
                             case EventDoAction action:
                                 var e = action.Trigger;
                                 var f = action.Target;
@@ -392,7 +387,7 @@ namespace Plang.Compiler.Backend.Uclid5
                                 {
                                     if (v.Type.Equals(e.PayloadType))
                                     {
-                                        this.EmitLine($"assume({v.Name} == {GetPayload(IncomingEvent())});");
+                                        this.EmitLine($"assume({v.Name} == {IncomingEvent()}.{e.Name}_{Payload()});");
                                     }
                                 }
                                 this.EmitLine($"{Buffer()} = {UpdateBuffer(IncomingEvent(), false)};");
@@ -400,7 +395,11 @@ namespace Plang.Compiler.Backend.Uclid5
                                 GenerateGenericHandlerPost(m);
                                 // close procedure
                                 this.EmitLine("}\n");
-                                return;
+                                break;
+                            case EventGotoState eventGotoState:
+                                throw new NotSupportedException($"Not supported handler {eventGotoState})");
+                            case EventIgnore eventIgnore:
+                                throw new NotSupportedException($"Not supported handler {eventIgnore})");
                         }
                     }
                 }
@@ -451,7 +450,7 @@ namespace Plang.Compiler.Backend.Uclid5
                         this.EmitLine(
                             $"({IsMachineInstance(GetMachine(CurrentMRef()), m)} && {IsMachineStateInstance(GetMachine(CurrentMRef()), m, s)} && !{InEntry(GetMachine(CurrentMRef()))} && {GetTarget(CurrentEvent())} == {CurrentMRef()} && {IsEventInstance(CurrentEvent(), h.Key)}) : {{");
                         this.EmitLine(
-                            $"call {EventHandlerName(m.Name, s.Name, h.Key.Name)}({CurrentEvent()}, {CurrentMRef()});");
+                            $"call {EventHandlerName(m.Name, s.Name, h.Key.Name)}({CurrentMRef()}, {CurrentEvent()});");
                         this.EmitLine($"}}");
                     }
                 }
@@ -512,7 +511,6 @@ namespace Plang.Compiler.Backend.Uclid5
                 case SendStmt { Evt: EventRefExpr } sstmt:
                     var eref = (EventRefExpr) sstmt.Evt;
                     var name = eref.Value.Name;
-                    var payloadType = eref.Value.PayloadType.OriginalRepresentation;
                     var args = String.Join(", ", sstmt.Arguments.Select(ExprToString));
                     this.EmitLine(
                         $"{Buffer()} = {Buffer()}[{name}({This()}, {ExprToString(sstmt.MachineExpr)}, {args}) -> true];");

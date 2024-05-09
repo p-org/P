@@ -167,7 +167,7 @@ namespace Plang.Compiler.Backend.Uclid5
         }
         private static string IsMachineStateInstance(string x, Machine m, State s)
         {
-            return $"{GetState(x, m.Name)} == {m.Name}_{s.Name}";
+            return $"is_{m.Name}_{s.Name}({GetState(x, m.Name)})";
         }
         private static string GetState(string m, string kind)
         {
@@ -268,22 +268,22 @@ namespace Plang.Compiler.Backend.Uclid5
             this.EmitLine($"define {Prefix()}{Entry()} (m: {MachineT()}) : boolean = \n\t\t{entryCases};\n");
 
             var startCases =
-                $"if ({IsMachineInstance("m", ms.First())}) then m.{ms.First().Name}_{State()} == {ms.First().Name}_{GetStartState(ms.First())}";
+                $"if ({IsMachineInstance("m", ms.First())}) then m.{ms.First().Name}_{State()} == {ms.First().Name}_{GetStartState(ms.First())}()";
             foreach (var m in ms.Skip(1).SkipLast(1))
             {
-                startCases += $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{m.Name}_{State()} == {m.Name}_{GetStartState(m)}";
+                startCases += $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{m.Name}_{State()} == {m.Name}_{GetStartState(m)}()";
             }
 
-            startCases += $"\n\t\telse m.{ms.Last().Name}_{State()} == {ms.Last().Name}_{GetStartState(ms.Last())}";
+            startCases += $"\n\t\telse m.{ms.Last().Name}_{State()} == {ms.Last().Name}_{GetStartState(ms.Last())}()";
             this.EmitLine($"define {Prefix()}{Start()} (m: {MachineT()}) : boolean = \n\t\t{startCases};");
             this.EmitLine("\n");
             return;
 
             string ProcessMachine(Machine m)
             {
-                var states = "enum {" + string.Join(", ", m.States.Select(s => $"{m.Name}_{s.Name}")) + "}";
+                var states = string.Join(" | ", m.States.Select(s => $"{m.Name}_{s.Name}()"));
                 var statesName = $"{MachineStateT(m)}";
-                EmitLine($"type {statesName} = {states};");
+                EmitLine($"datatype {statesName} = {states};");
                 var fields = string.Join(", ", m.Fields.Select(f => $"{m.Name}_{f.Name}: {TypeToString(f.Type)}"));
                 if (m.Fields.Any())
                 {
@@ -506,7 +506,7 @@ namespace Plang.Compiler.Backend.Uclid5
                     this.EmitLine("}");
                     return;
                 case GotoStmt gstmt:
-                    this.EmitLine($"state = {gstmt.State.Name};");
+                    this.EmitLine($"state = {gstmt.State.OwningMachine.Name}_{gstmt.State.Name}();");
                     this.EmitLine($"entry = true;");
                     return;
                 case SendStmt { Evt: EventRefExpr } sstmt:
@@ -515,7 +515,7 @@ namespace Plang.Compiler.Backend.Uclid5
                     var payloadType = eref.Value.PayloadType.OriginalRepresentation;
                     var args = String.Join(", ", sstmt.Arguments.Select(ExprToString));
                     this.EmitLine(
-                        $"{Buffer()} = {Buffer()}[{name}(r, {ExprToString(sstmt.MachineExpr)}, {args}) -> true];");
+                        $"{Buffer()} = {Buffer()}[{name}({This()}, {ExprToString(sstmt.MachineExpr)}, {args}) -> true];");
                     return;
                 case AssertStmt astmt:
                     this.EmitLine($"// print({ExprToString(astmt.Message)});");

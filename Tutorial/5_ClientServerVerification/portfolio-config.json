@@ -1,0 +1,7 @@
+{
+    "pproj": {
+        "help"    : "Name of the .pproj file in the project directory",
+        "default" : "ClientServer.pproj",
+        "metavar" : "F"
+    }
+}

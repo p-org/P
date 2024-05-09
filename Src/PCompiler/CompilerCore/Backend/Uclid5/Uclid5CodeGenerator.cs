@@ -41,6 +41,7 @@ namespace Plang.Compiler.Backend.Uclid5
             GenerateEntryProcedures(globalScope.Machines);
             GenerateHandlerProcedures(globalScope.Machines);
             GenerateNextBlock(globalScope.Machines);
+            GenerateControlBlock();
 
             // close the main module
             this.EmitLine("}");
@@ -128,6 +129,10 @@ namespace Plang.Compiler.Backend.Uclid5
         {
             return $"{Prefix()}Buffer";
         }
+        private static string UpdateBuffer(string r, bool t)
+        {
+            return $"{Buffer()}[{r} -> {t.ToString().ToLower()}]";
+        }
         private static string LiveEvent(string e)
         {
             return $"{Buffer()}[{e}]";
@@ -152,13 +157,45 @@ namespace Plang.Compiler.Backend.Uclid5
         {
             return $"{Prefix()}{Start()}({arg})";
         }
-        private static string IsInstance(string x, string constructor)
+        private static string IsEventInstance(string x, PEvent e)
         {
-            return $"is_{constructor}({x})";
+            return $"is_{e.Name}({x})";
+        }
+        private static string IsMachineInstance(string x, Machine m)
+        {
+            return $"is_{m.Name}({x})";
+        }
+        private static string IsMachineStateInstance(string x, Machine m, State s)
+        {
+            return $"{GetState(x, m.Name)} == {m.Name}_{s.Name}";
         }
         private static string GetState(string m, string kind)
         {
             return $"{m}.{kind}_State";
+        }
+
+        private static string MachineStateT(Machine m)
+        {
+            return $"{m.Name}_StateT";
+        }
+
+        private static string EventHandlerName(string m, string s, string e)
+        {
+            return $"{m}_{s}_handle_{e}";
+        }
+        private static string EntryHandlerName(string m, string s)
+        {
+            return $"{m}_{s}_handle_entry";
+        }
+
+        private static string This()
+        {
+            return "this";
+        }
+
+        private static string IncomingEvent()
+        {
+            return "curr";
         }
 
         private void GenerateUserEnumDefs(IEnumerable<PEnum> enums)
@@ -189,17 +226,17 @@ namespace Plang.Compiler.Backend.Uclid5
             this.EmitLine("// Events, their types, and helper functions");
             var es = events.ToList();
             var sum = string.Join("\n\t\t| ", es.Select(ProcessEvent));
-            this.EmitLine($"datatype {EventT()} = \n\t\t| {sum}\n");
+            this.EmitLine($"datatype {EventT()} = \n\t\t| {sum};\n");
 
             string[] attributes = [Source(), Target(), Payload()];
             foreach (var attribute in attributes)
             {
-                var cases = $"if ({IsInstance("e", es.First().Name)}) then e.{es.First().Name}_{attribute}";
+                var cases = $"if ({IsEventInstance("e", es.First())}) then e.{es.First().Name}_{attribute}";
                 cases = es.Skip(1).SkipLast(1).Aggregate(cases,
-                    (current, e) => current + $"\n\t\telse if ({IsInstance("e", e.Name)}) then e.{e.Name}_{attribute}");
+                    (current, e) => current + $"\n\t\telse if ({IsEventInstance("e", e)}) then e.{e.Name}_{attribute}");
                 cases += $"\n\t\telse e.{es.Last().Name}_{attribute}";
                 var outType = attribute == Payload() ? EventT() : RefT();
-                this.EmitLine($"define {Prefix()}{attribute} (e:$ {EventT()}) : {outType} = \n\t\t{cases}");
+                this.EmitLine($"define {Prefix()}{attribute} (e: {EventT()}) : {outType} = \n\t\t{cases};");
                 if (attribute != Payload())
                 {
                     this.EmitLine("");
@@ -222,31 +259,37 @@ namespace Plang.Compiler.Backend.Uclid5
             this.EmitLine("// Machines, their types, and helper functions");
             var ms = machines.ToList();
             var sum = string.Join("\n\t\t| ", ms.Select(ProcessMachine));
-            this.EmitLine($"datatype {MachineT()} = \n\t\t| {sum}\n");
+            this.EmitLine($"datatype {MachineT()} = \n\t\t| {sum};\n");
 
-            var entryCases = $"if ({IsInstance("m", ms.First().Name)}) then m.{ms.First().Name}_{Entry()}";
+            var entryCases = $"if ({IsMachineInstance("m", ms.First())}) then m.{ms.First().Name}_{Entry()}";
             entryCases = ms.Skip(1).SkipLast(1).Aggregate(entryCases,
-                (current, m) => current + $"\n\t\telse if ({IsInstance("m", m.Name)}) then m.{m.Name}_{Entry()}");
+                (current, m) => current + $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{m.Name}_{Entry()}");
             entryCases += $"\n\t\telse m.{ms.Last().Name}_{Entry()}";
-            this.EmitLine($"define {Prefix()}{Entry()} (m: {MachineT()}) : boolean = \n\t\t{entryCases}\n");
+            this.EmitLine($"define {Prefix()}{Entry()} (m: {MachineT()}) : boolean = \n\t\t{entryCases};\n");
 
             var startCases =
-                $"if ({IsInstance("m", ms.First().Name)}) then m.{ms.First().Name}_{State()} == {ms.First().Name}_{GetStartState(ms.First())}";
+                $"if ({IsMachineInstance("m", ms.First())}) then m.{ms.First().Name}_{State()} == {ms.First().Name}_{GetStartState(ms.First())}";
             foreach (var m in ms.Skip(1).SkipLast(1))
             {
-                startCases += $"\n\t\telse if ({IsInstance("m", m.Name)}) then m.{m.Name}_{State()} == {m.Name}_{GetStartState(m)}";
+                startCases += $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{m.Name}_{State()} == {m.Name}_{GetStartState(m)}";
             }
 
             startCases += $"\n\t\telse m.{ms.Last().Name}_{State()} == {ms.Last().Name}_{GetStartState(ms.Last())}";
-            this.EmitLine($"define {Prefix()}{Start()} (m: {MachineT()}) : boolean = \n\t\t{startCases}");
+            this.EmitLine($"define {Prefix()}{Start()} (m: {MachineT()}) : boolean = \n\t\t{startCases};");
             this.EmitLine("\n");
             return;
 
             string ProcessMachine(Machine m)
             {
                 var states = "enum {" + string.Join(", ", m.States.Select(s => $"{m.Name}_{s.Name}")) + "}";
+                var statesName = $"{MachineStateT(m)}";
+                EmitLine($"type {statesName} = {states};");
                 var fields = string.Join(", ", m.Fields.Select(f => $"{m.Name}_{f.Name}: {TypeToString(f.Type)}"));
-                return $"{m.Name} ({m.Name}_{Entry()}: boolean, {m.Name}_{State()}: {states}, {fields})";
+                if (m.Fields.Any())
+                {
+                    fields = ", " + fields;
+                }
+                return $"{m.Name} ({m.Name}_{Entry()}: boolean, {m.Name}_{State()}: {statesName}{fields})";
             }
         }
 
@@ -277,6 +320,48 @@ namespace Plang.Compiler.Backend.Uclid5
             this.EmitLine("\n");
         }
 
+        private void GenerateGenericHandlerSpec(Machine m, State s)
+        {
+            this.EmitLine($"\tmodifies {Machines()};");
+            this.EmitLine($"\tmodifies {Buffer()};");
+            this.EmitLine($"\trequires {IsMachineInstance(GetMachine(This()), m)};");
+            this.EmitLine($"\trequires {IsMachineStateInstance(GetMachine(This()), m, s)};");
+            this.EmitLine(
+                $"\tensures (forall (r1: {RefT()}) :: {This()} != r1 ==> old({Machines()})[r1] == {GetMachine("r1")});");
+        }
+
+        private void GenerateGenericHandlerVars(Machine m, Function f)
+        {
+            foreach (var v in m.Fields)
+            {
+                this.EmitLine($"var {v.Name}: {TypeToString(v.Type)};");
+            }
+            
+            this.EmitLine("var entry: boolean;");
+            this.EmitLine($"var state: {MachineStateT(m)};");
+            
+            foreach (var v in f.LocalVariables)
+            {
+                this.EmitLine($"var {v.Name}: {TypeToString(v.Type)};");
+            }
+
+            foreach (var v in f.Signature.Parameters)
+            {
+                this.EmitLine($"var {v.Name}: {TypeToString(v.Type)};");
+            }
+        }
+
+        private void GenerateGenericHandlerPost(Machine m)
+        {
+            var fields = string.Join(", ", m.Fields.Select(variable => variable.Name));
+            if (fields.Any())
+            {
+                fields = ", " + fields;
+            }
+            var newMachine = $"{m.Name}(entry, state{fields})";
+            this.EmitLine($"{Machines()} = {UpdateMachine(This(), newMachine)};");
+        }
+        
         private void GenerateHandlerProcedures(IEnumerable<Machine> machines)
         {
             // create all the event handler procedures
@@ -293,54 +378,26 @@ namespace Plang.Compiler.Backend.Uclid5
                                 var f = action.Target;
                                 this.EmitLine($"// Handler for event {e.Name} in machine {m.Name}");
                                 this.EmitLine(
-                                    $"procedure {m.Name}_{s.Name}_handle_{e.Name} (r: {RefT()}, e: {EventT()})");
-                                this.EmitLine($"\tmodifies {Machines()};");
-                                this.EmitLine($"\tmodifies {Buffer()};");
-                                this.EmitLine($"\trequires {LiveEvent("e")};");
-                                this.EmitLine($"\trequires {GetSource("e")} == r;");
-                                this.EmitLine($"\trequires {IsInstance("e", e.Name)};");
-                                this.EmitLine($"\trequires {IsInstance(GetMachine("r"), m.Name)};");
-                                this.EmitLine($"\trequires {IsInstance(GetState(GetMachine("r"), m.Name), s.Name)};");
-                                this.EmitLine($"\trequires !{InEntry(GetMachine("r"))};");
-                                this.EmitLine(
-                                    $"\tensures (forall (r1: {RefT()}) r != r1 ==> old({Machines()})[r1] == {GetMachine("r1")});");
-                                this.EmitLine(
-                                    $"\tensures (forall (e1: {EventT()}) e != e1 ==> (old({Buffer()})[e1] == {LiveEvent("e1")} || ({GetSource("e1")} == r && !old({Buffer()})[e1])));");
+                                    $"procedure {EventHandlerName(m.Name, s.Name, e.Name)} ({This()}: {RefT()}, {IncomingEvent()}: {EventT()})");
+                                GenerateGenericHandlerSpec(m, s);
+                                this.EmitLine($"\trequires {LiveEvent(IncomingEvent())};");
+                                this.EmitLine($"\trequires {GetSource(IncomingEvent())} == {This()};");
+                                this.EmitLine($"\trequires {IsEventInstance(IncomingEvent(), e)};");
+                                this.EmitLine($"\trequires !{InEntry(GetMachine(This()))};");
                                 // open procedure
                                 this.EmitLine("{");
-                                foreach (var v in f.LocalVariables)
+                                GenerateGenericHandlerVars(m, f);
+                                // find the variable that corresponds to the payload and assume that it is equal to the payload of the event coming in
+                                foreach (var v in f.Signature.Parameters)
                                 {
-                                    this.EmitLine($"var {v.Name}: {TypeToString(v.Type)};");
-                                }
-                                
-                                foreach (var v in m.Fields)
-                                {
-                                    this.EmitLine($"var {v.Name}: {TypeToString(v.Type)};");
-                                }
-                                
-                                this.EmitLine("var entry: boolean;");
-                                this.EmitLine("var state: TODO;");
-
-                                switch (f.Signature.Parameters.Count)
-                                {
-                                    case > 1:
-                                        throw new NotSupportedException(
-                                            $"Only one event handler argument supported: {action}");
-                                    case 1:
+                                    if (v.Type.Equals(e.PayloadType))
                                     {
-                                        var arg = f.Signature.Parameters.First();
-                                        this.EmitLine($"var {arg.Name}: {TypeToString(arg.Type)};");
-                                        this.EmitLine($"{arg.Name} = {GetPayload("e")};");
-                                        break;
+                                        this.EmitLine($"assume({v.Name} == {GetPayload(IncomingEvent())});");
                                     }
                                 }
-
-                                this.EmitLine("UPVerifier_Buffer[e -> false];");
-
+                                this.EmitLine($"{Buffer()} = {UpdateBuffer(IncomingEvent(), false)};");
                                 GenerateStmt(f.Body);
-
-                                var newMachine = $"{m.Name}(entry, state, {string.Join(", ", m.Fields.Select(f => f.Name))})";
-                                this.EmitLine($"{Machines()} = {UpdateMachine("r", newMachine)};");
+                                GenerateGenericHandlerPost(m);
                                 // close procedure
                                 this.EmitLine("}\n");
                                 return;
@@ -360,40 +417,14 @@ namespace Plang.Compiler.Backend.Uclid5
                     if (f is null) continue;
 
                     this.EmitLine($"// Handler for entry in machine {m.Name} at state {s.Name}");
-                    this.EmitLine($"procedure {m.Name}_{s.Name}_handle_entry (r: {RefT()})");
-                    this.EmitLine($"\tmodifies {Machines()};");
-                    this.EmitLine($"\tmodifies {Buffer()};");
-                    this.EmitLine($"\trequires {IsInstance(GetMachine("r"), m.Name)};");
-                    this.EmitLine($"\trequires {IsInstance(GetState(GetMachine("r"),m.Name), s.Name)};");
-                    this.EmitLine($"\trequires {InEntry(GetMachine("r"))};");
-                    this.EmitLine($"\tensures !{InEntry(GetMachine("r"))};");
+                    this.EmitLine($"procedure {EntryHandlerName(m.Name, s.Name)}({This()}: {RefT()})");
+                    GenerateGenericHandlerSpec(m, s);
                     // open procedure
                     this.EmitLine("{");
-                    foreach (var v in f.LocalVariables)
-                    {
-                        this.EmitLine($"var {v.Name}: {TypeToString(v.Type)};");
-                    }
-
-                    foreach (var v in m.Fields)
-                    {
-                        this.EmitLine($"var {v.Name}: {TypeToString(v.Type)};");
-                    }
-                    
-                    this.EmitLine("var entry: boolean;");
-                    this.EmitLine("var state: TODO;");
-
-                    if (f.Signature.Parameters.Count > 0)
-                    {
-                        this.EmitLine($"// NotSupportedArguments: {f.Signature}");
-                        // throw new NotSupportedException($"No entry handler arguments supported: {f}");
-                    }
-
+                    GenerateGenericHandlerVars(m, f);
                     this.EmitLine($"entry = false;");
-
                     GenerateStmt(f.Body);
-
-                    var newMachine = $"{m.Name}(entry, state, {string.Join(", ", m.Fields.Select(f => f.Name))})";
-                    this.EmitLine($"{Machines()} = {UpdateMachine("r", newMachine)};");
+                    GenerateGenericHandlerPost(m);
                     // close procedure
                     this.EmitLine("}\n");
                 }
@@ -410,6 +441,7 @@ namespace Plang.Compiler.Backend.Uclid5
             this.EmitLine($"havoc {CurrentEvent()};");
             // if UPVerifier_ETurn is a live event destined for the right place, then handle it
             this.EmitLine($"if ({LiveEvent(CurrentEvent())}) {{");
+            this.EmitLine("case");
             foreach (var m in machines)
             {
                 foreach (var s in m.States)
@@ -417,13 +449,14 @@ namespace Plang.Compiler.Backend.Uclid5
                     foreach (var h in s.AllEventHandlers)
                     {
                         this.EmitLine(
-                            $"({IsInstance(GetMachine(CurrentMRef()), m.Name)} && {IsInstance(GetState(GetMachine(CurrentMRef()), m.Name), s.Name)} && !{InEntry(GetMachine(CurrentMRef()))} && {GetTarget(CurrentEvent())} == {CurrentMRef()} && {IsInstance(CurrentEvent(), h.Key.Name)}) : {{");
+                            $"({IsMachineInstance(GetMachine(CurrentMRef()), m)} && {IsMachineStateInstance(GetMachine(CurrentMRef()), m, s)} && !{InEntry(GetMachine(CurrentMRef()))} && {GetTarget(CurrentEvent())} == {CurrentMRef()} && {IsEventInstance(CurrentEvent(), h.Key)}) : {{");
                         this.EmitLine(
-                            $"call {m.Name}_{s.Name}_handle_{h.Key.Name}({CurrentEvent()}, {CurrentMRef()});");
+                            $"call {EventHandlerName(m.Name, s.Name, h.Key.Name)}({CurrentEvent()}, {CurrentMRef()});");
                         this.EmitLine($"}}");
                     }
                 }
-            }
+            } 
+            this.EmitLine("esac");
 
             this.EmitLine("} else {");
             // else do an entry
@@ -434,8 +467,8 @@ namespace Plang.Compiler.Backend.Uclid5
                 {
                     if (s.Entry is null) continue;
                     this.EmitLine(
-                        $"({IsInstance(GetMachine(CurrentMRef()), m.Name)} && {IsInstance(GetState(GetMachine(CurrentMRef()), m.Name), s.Name)} && {InEntry(GetMachine(CurrentMRef()))}): {{");
-                    this.EmitLine($"call {m.Name}_{s.Name}_handle_entry({CurrentMRef()});");
+                        $"({IsMachineInstance(GetMachine(CurrentMRef()), m)} && {IsMachineStateInstance(GetMachine(CurrentMRef()), m, s)} && {InEntry(GetMachine(CurrentMRef()))}): {{");
+                    this.EmitLine($"call {EntryHandlerName(m.Name, s.Name)}({CurrentMRef()});");
                     this.EmitLine($"}}");
                 }
             }
@@ -473,7 +506,6 @@ namespace Plang.Compiler.Backend.Uclid5
                     this.EmitLine("}");
                     return;
                 case GotoStmt gstmt:
-                    var m = gstmt.State.OwningMachine;
                     this.EmitLine($"state = {gstmt.State.Name};");
                     this.EmitLine($"entry = true;");
                     return;
@@ -483,12 +515,18 @@ namespace Plang.Compiler.Backend.Uclid5
                     var payloadType = eref.Value.PayloadType.OriginalRepresentation;
                     var args = String.Join(", ", sstmt.Arguments.Select(ExprToString));
                     this.EmitLine(
-                        $"{Buffer()} = {Buffer()}[{name}(r, {ExprToString(sstmt.MachineExpr)}, {payloadType}({args}))] = true;");
+                        $"{Buffer()} = {Buffer()}[{name}(r, {ExprToString(sstmt.MachineExpr)}, {args}) -> true];");
                     return;
                 case AssertStmt astmt:
+                    this.EmitLine($"// print({ExprToString(astmt.Message)});");
                     this.EmitLine($"assert({ExprToString(astmt.Assertion)});");
                     return;
+                case PrintStmt { Message: StringExpr} pstmt:
+                    this.EmitLine($"// print({ExprToString(pstmt.Message)});");
+                    return;
             }
+            // this.EmitLine($"NotHandledStmt({stmt});");
+            
         }
 
 
@@ -523,7 +561,6 @@ namespace Plang.Compiler.Backend.Uclid5
                 case MapType mt:
                     return $"[{TypeToString(mt.KeyType)}]{TypeToString(mt.ValueType)}";
             }
-
             throw new NotSupportedException($"Not supported type expression: {t} ({t.OriginalRepresentation})");
         }
 
@@ -532,8 +569,8 @@ namespace Plang.Compiler.Backend.Uclid5
             return lhs switch
             {
                 VariableAccessExpr vax => vax.Variable.Name,
-                // throw new NotSupportedException($"Not supported lhs: {lhs}");
-                _ => $"NotHandledLhs({lhs})"
+                _ => throw new NotSupportedException($"Not supported lhs: {lhs}"),
+                // _ => $"NotHandledLhs({lhs})"
             };
         }
 
@@ -546,9 +583,22 @@ namespace Plang.Compiler.Backend.Uclid5
                 IntLiteralExpr i => i.Value.ToString(),
                 BinOpExpr bexpr =>
                     $"{ExprToString(bexpr.Lhs)} {BinOpToString(bexpr.Operation)} {ExprToString(bexpr.Rhs)}",
-                // throw new NotSupportedException($"Not supported expr: {expr}");
-                _ => $"NotHandledExpr({expr})"
+                ThisRefExpr => This(),
+                EnumElemRefExpr e => e.Value.Name,
+                NamedTupleExpr t => NamedTupleExprHelper(t),
+                StringExpr s => $"\"{s.BaseString}\" {(s.Args.Any() ? "%" : "")} {string.Join(", ", s.Args.Select(ExprToString))}",
+                _ => throw new NotSupportedException($"Not supported expr: {expr}"),
+                // _ => $"NotHandledExpr({expr})"
             };
+        }
+
+        private string NamedTupleExprHelper(NamedTupleExpr t)
+        {
+            var ty = (NamedTupleType)t.Type;
+            var names = ty.Fields.Select(f => f.Name);
+            var values = t.TupleFields.Select(ExprToString);
+            var args = string.Join(", ", names.Zip(values).Select(p => $"{p.First} := {p.Second}"));
+            return $"const_record({args})";
         }
 
         private string BinOpToString(BinOpType op)
@@ -572,6 +622,15 @@ namespace Plang.Compiler.Backend.Uclid5
             };
         }
 
+        private void GenerateControlBlock()
+        {
+            this.EmitLine("control {");
+            this.EmitLine("bmc(1);");
+            this.EmitLine("check;");
+            this.EmitLine("print_results;");
+            this.EmitLine("}");
+        }
+        
         private static string GetStartState(Machine m)
         {
             return m.StartState.Name;

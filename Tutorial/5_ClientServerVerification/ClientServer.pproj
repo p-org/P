@@ -1,0 +1,9 @@
+<!-- P Project file for the Client Server example -->
+<Project>
+<ProjectName>ClientServerVerification</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+<Target>UCLID5</Target>
+</Project>

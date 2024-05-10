@@ -229,7 +229,7 @@ namespace PChecker
         /// Defaults to true.
         /// </summary>
         [DataMember]
-        public bool IsJsonLogEnabled { get; set; } = true;
+        public bool IsJsonLogEnabled { get; set; } = false;
 
         /// <summary>
         /// If specified, requests a custom runtime log to be used instead of the default.

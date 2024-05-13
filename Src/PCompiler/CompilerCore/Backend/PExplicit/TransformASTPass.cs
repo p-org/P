@@ -190,7 +190,7 @@ namespace Plang.Compiler.Backend.PExplicit
             callNum++;
         }
 
-        static private List<IPStmt> ReplaceReturn(IReadOnlyList<IPStmt> body, IPExpr location)
+        private static List<IPStmt> ReplaceReturn(IReadOnlyList<IPStmt> body, IPExpr location)
         {
             var newBody = new List<IPStmt>();
             foreach (var stmt in body)
@@ -468,7 +468,7 @@ namespace Plang.Compiler.Backend.PExplicit
             }
         }
 
-        static private Function TransformFunction(Function function, Machine machine)
+        private static Function TransformFunction(Function function, Machine machine)
         {
             if (function.CanReceive != true) {
                 return function;
@@ -492,7 +492,7 @@ namespace Plang.Compiler.Backend.PExplicit
             return transformedFunction;
         }
 
-        static private IPStmt ReplaceBreaks(IPStmt stmt, List<IPStmt> afterStmts)
+        static private IPStmt InlineAfterAndReplaceBreaks(IPStmt stmt, List<IPStmt> afterStmts)
         {
             if (stmt == null) return null;
             var statements = new List<IPStmt>();
@@ -501,11 +501,11 @@ namespace Plang.Compiler.Backend.PExplicit
                 case CompoundStmt compoundStmt:
                     foreach (var inner in compoundStmt.Statements)
                     {
-                        statements.Add(ReplaceBreaks(inner, afterStmts));
+                        statements.Add(InlineAfterAndReplaceBreaks(inner, afterStmts));
                     }
                     return new CompoundStmt(compoundStmt.SourceLocation, statements);
                 case IfStmt ifStmt:
-                    return new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, ReplaceBreaks(ifStmt.ThenBranch, afterStmts), ReplaceBreaks(ifStmt.ElseBranch, afterStmts));
+                    return new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, InlineAfterAndReplaceBreaks(ifStmt.ThenBranch, afterStmts), InlineAfterAndReplaceBreaks(ifStmt.ElseBranch, afterStmts));
                 case ReceiveStmt receiveStmt:
                     var cases = new Dictionary<PEvent, Function>();
                     foreach(var entry in receiveStmt.Cases)
@@ -521,7 +521,7 @@ namespace Plang.Compiler.Backend.PExplicit
                         foreach (var param in entry.Value.Signature.Parameters) replacement.Signature.Parameters.Add(param);
                         replacement.Signature.ReturnType = entry.Value.Signature.ReturnType;
                         foreach (var callee in entry.Value.Callees) replacement.AddCallee(callee);
-                        replacement.Body = (CompoundStmt) ReplaceBreaks(entry.Value.Body, afterStmts);
+                        replacement.Body = (CompoundStmt) InlineAfterAndReplaceBreaks(entry.Value.Body, afterStmts);
                         cases.Add(entry.Key, replacement);
                     }
                     return new ReceiveStmt(receiveStmt.SourceLocation, cases);
@@ -542,7 +542,7 @@ namespace Plang.Compiler.Backend.PExplicit
             }
         }
 
-        static private bool CanReceive(IPStmt stmt)
+        private static bool CanReceive(IPStmt stmt)
         {
             if (stmt == null) return false;
             switch(stmt)
@@ -567,7 +567,7 @@ namespace Plang.Compiler.Backend.PExplicit
             }
         }
 
-        static private IPStmt HandleReceives(IPStmt statement, Function function, Machine machine)
+        private static IPStmt HandleReceives(IPStmt statement, Function function, Machine machine)
         {
             switch (statement)
             {
@@ -604,6 +604,12 @@ namespace Plang.Compiler.Backend.PExplicit
                                     thenStmts = new List<IPStmt>(cond.ThenBranch.Statements);
                                 if (cond.ElseBranch != null)
                                     elseStmts = new List<IPStmt>(cond.ElseBranch.Statements);
+                                if (CanReceive(cond) && (after != null))
+                                {
+                                    thenStmts.Add(after);
+                                    elseStmts.Add(after);
+                                    after = null;
+                                }
                                 IPStmt thenBody = new CompoundStmt(cond.SourceLocation, thenStmts);
                                 IPStmt elseBody = new CompoundStmt(cond.SourceLocation, elseStmts);
                                 thenBody = HandleReceives(thenBody, function, machine);
@@ -747,7 +753,7 @@ namespace Plang.Compiler.Backend.PExplicit
                                     while (bodyEnumerator.MoveNext())
                                     {   
                                         var stmt = bodyEnumerator.Current;
-                                        var replaceBreak = ReplaceBreaks(stmt, afterStmts);
+                                        var replaceBreak = InlineAfterAndReplaceBreaks(stmt, afterStmts);
                                         if (replaceBreak != null) {
                                             loopBody.Add(ReplaceVars(replaceBreak, newVarMap));
                                         }

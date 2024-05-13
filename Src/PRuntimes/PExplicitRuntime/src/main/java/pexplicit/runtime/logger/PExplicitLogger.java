@@ -256,7 +256,7 @@ public class PExplicitLogger {
     public static void logNewState(int step, int idx, Object stateKey, SortedSet<PMachine> machines) {
         if (verbosity > 3) {
             log.info(String.format("    @%d::%d new state with key %s", step, idx, stateKey));
-            if (verbosity > 4) {
+            if (verbosity > 6) {
                 log.info(String.format("      %s", ComputeHash.getExactString(machines)));
             }
         }

@@ -706,8 +706,6 @@ namespace PChecker.SystematicTesting
                     var seconds = watch.Elapsed.TotalSeconds;
                     Logger.WriteLine($"Elapsed: {seconds}, " +
                                      $"# timelines: {TestReport.ExploredTimelines.Count}");
-                    var mostVisited = TestReport.ExploredTimelines.Values.Max();
-                    Logger.WriteLine($"Most visited: {mostVisited}");
                     if (Strategy is IFeedbackGuidedStrategy s)
                     {
                         s.DumpStats(Logger);

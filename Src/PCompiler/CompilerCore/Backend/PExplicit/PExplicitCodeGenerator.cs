@@ -1022,6 +1022,8 @@ namespace Plang.Compiler.Backend.PExplicit
                     break;
                 case ReceiveSplitStmt splitStmt:
                     context.WriteLine(output, $"{CompilationContext.CurrentMachine}.blockUntil(\"{context.GetContinuationName(splitStmt.Cont)}\");");
+                    context.Write(output, "return;");
+                    exited = true;
                     break;
                 default:
                     throw new NotImplementedException($"Statement type '{stmt.GetType().Name}' is not supported, found in {function.Name}");

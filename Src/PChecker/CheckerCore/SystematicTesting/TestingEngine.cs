@@ -432,7 +432,10 @@ namespace PChecker.SystematicTesting
 
                         if (Profiler.GetCurrentMemoryUsage() > _checkerConfiguration.MemoryLimit)
                         {
-                            throw new OutOfMemoryException();
+                            if (_checkerConfiguration.MemoryLimit != 0)
+                            {
+                                throw new OutOfMemoryException();
+                            }
                         }
 
                         // Runs a new testing schedule.

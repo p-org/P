@@ -172,7 +172,7 @@ namespace PChecker.Scheduling
             }
 
             Console.WriteLine(GlobalTestReport.GetText(_checkerConfiguration, "..."));
-            Console.WriteLine($"... Elapsed {Profiler.Results()} sec.");
+            Console.WriteLine($"... Elapsed {Profiler.GetElapsedTime():0.##} sec and used {Profiler.GetMaxMemoryUsage():0.##} GB.");
 
             if (GlobalTestReport.InternalErrors.Count > 0)
             {

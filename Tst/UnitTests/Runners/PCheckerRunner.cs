@@ -95,6 +95,7 @@ namespace UnitTests.Runners
     <OutputPath>.</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include=""$(PFolder)/Src/PRuntimes/PCSharpRuntime/CSharpRuntime.csproj"" />
     <ProjectReference Include=""$(PFolder)/Src/PChecker/CheckerCore/CheckerCore.csproj"" />
   </ItemGroup>
 </Project>";

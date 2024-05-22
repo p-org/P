@@ -1,31 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>Plang</RootNamespace>
-    <ToolCommandName>p</ToolCommandName>
-    <AssemblyName>p</AssemblyName>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <LangVersion>latest</LangVersion>
+    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
+    <RootNamespace>Plang.CSharpRuntime</RootNamespace>
+    <AssemblyName>PCSharpRuntime</AssemblyName>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Description>The P Programming Language Compiler</Description>
+    <Description>The P Programming Language C# Runtime</Description>
     <PackageProjectUrl>https://github.com/p-org/P</PackageProjectUrl>
     <Copyright>The P team</Copyright>
     <PackageTags>P programming language;safe asynchrony;state machines;model checkers</PackageTags>
-    <PackAsTool>true</PackAsTool>
-    <Title>P</Title>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>P C# Runtime</Title>
     <Authors>The P team</Authors>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
-    <InvariantGlobalization>true</InvariantGlobalization>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\PChecker\CheckerCore\CheckerCore.csproj" />
-    <ProjectReference Include="..\..\PRuntimes\PCSharpRuntime\CSharpRuntime.csproj" />
-    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
     <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />
     <None Include="../../../README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\PChecker\CheckerCore\CheckerCore.csproj" />
   </ItemGroup>
 </Project>

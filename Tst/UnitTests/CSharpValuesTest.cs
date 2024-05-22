@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
-using PChecker.PRuntime;
-using PChecker.PRuntime.Values;
+using Plang.CSharpRuntime;
+using Plang.CSharpRuntime.Values;
 
 namespace UnitTests
 {

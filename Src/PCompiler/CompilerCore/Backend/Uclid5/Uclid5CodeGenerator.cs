@@ -16,6 +16,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private CompilationContext _ctx;
 
     private CompiledFile _src;
+    
+    private HashSet<PLanguageType> _optionsToDeclare;
 
     private static string BuiltinPrefix => "UPVerifier_";
     private static string UserPrefix => "User_";
@@ -45,6 +47,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         _ctx = new CompilationContext(job);
         _src = new CompiledFile(_ctx.FileName);
+        _optionsToDeclare = [];
         GenerateMain(globalScope);
         return new List<CompiledFile> { _src };
     }
@@ -66,6 +69,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         GenerateEntryProcedures(machines);
         GenerateHandlerProcedures(machines);
         GenerateNextBlock(machines);
+        GenerateOptionTypes();
         GenerateControlBlock(machines);
 
         // close the main module
@@ -99,6 +103,25 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string GetLocalName(string r)
     {
         return $"{LocalPrefix}{r}";
+    }
+
+    private static string GetOptionTypeName(string r)
+    {
+        return $"Option_{r}";
+    }
+
+    private static string ConstructOptionSome(string t, string r)
+    {
+        return $"{GetOptionTypeName(t)}_Some({r})";
+    }
+    private static string SelectOptionValue(string t, string r)
+    {
+        return $"{r}.{GetOptionTypeName(t)}_Some_Value";
+    }
+    
+    private static string IsOptionSome(string t, string r)
+    {
+        return $"is_{GetOptionTypeName(t)}_Some({r})";
     }
 
     private static string GetMachine(string r)
@@ -446,7 +469,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     case MapAccessExpr max:
                         var map = ExprToString(max.MapExpr);
                         var index = ExprToString(max.IndexExpr);
-                        EmitLine($"{map} = {map}[{index} -> {ExprToString(astmt.Value)}];");
+                        var valueType = TypeToString(((MapType)max.MapExpr.Type).ValueType);
+                        EmitLine($"{map} = {map}[{index} -> {ConstructOptionSome(valueType, ExprToString(astmt.Value))}];");
                         return;
                 }
 
@@ -483,7 +507,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
 
-    private static string TypeToString(PLanguageType t)
+    private string TypeToString(PLanguageType t)
     {
         switch (t)
         {
@@ -512,7 +536,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
             case SetType st:
                 return $"[{TypeToString(st.ElementType)}]boolean";
             case MapType mt:
-                return $"[{TypeToString(mt.KeyType)}]{TypeToString(mt.ValueType)}";
+                this._optionsToDeclare.Add(mt.ValueType);
+                return $"[{TypeToString(mt.KeyType)}]{GetOptionTypeName(TypeToString(mt.ValueType))}";
         }
 
         throw new NotSupportedException($"Not supported type expression: {t} ({t.OriginalRepresentation})");
@@ -532,7 +557,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
             NamedTupleExpr t => NamedTupleExprHelper(t),
             StringExpr s =>
                 $"\"{s.BaseString}\" {(s.Args.Count != 0 ? "%" : "")} {string.Join(", ", s.Args.Select(ExprToString))}",
-            MapAccessExpr maex => $"{ExprToString(maex.MapExpr)}[{ExprToString(maex.IndexExpr)}]",
+            MapAccessExpr maex => 
+                SelectOptionValue(TypeToString(((MapType)maex.MapExpr.Type).ValueType), $"{ExprToString(maex.MapExpr)}[{ExprToString(maex.IndexExpr)}]"),
+            ContainsExpr cexp => cexp.Collection.Type switch
+            {
+                MapType mapType => IsOptionSome(TypeToString(mapType.ValueType), $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
+                SetType _ => $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
+                _ => throw new NotSupportedException($"Not supported expr: {expr} of {cexp.Type.OriginalRepresentation}")
+            },
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
         };
@@ -568,6 +600,19 @@ public class Uclid5CodeGenerator : ICodeGenerator
         };
     }
 
+    private void GenerateOptionTypes()
+    {
+        foreach (var ptype in _optionsToDeclare)
+        {
+            var t = TypeToString(ptype);
+            var opt = GetOptionTypeName(t);
+            EmitLine($"datatype {opt} = ");
+            EmitLine($"\t| {opt}_Some ({opt}_Some_Value: {t})");
+            EmitLine($"\t| {opt}_None ();");
+        }
+        EmitLine("\n");
+    }
+    
     private void GenerateControlBlock(IEnumerable<Machine> ms)
     {
         var machines = ms.ToList();

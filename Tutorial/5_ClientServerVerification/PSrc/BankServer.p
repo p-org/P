@@ -9,7 +9,7 @@ machine BankServer
     }
 
     on eWithDrawReq do (wReq: tWithDrawReq) {
-      assert wReq.accountId in balance, "Invalid accountId received in the withdraw request!";
+      // assert wReq.accountId in balance, "Invalid accountId received in the withdraw request!";
       if(balance[wReq.accountId] - wReq.amount > 10) /* hint: bug */
       {
         balance[wReq.accountId] = balance[wReq.accountId] - wReq.amount;

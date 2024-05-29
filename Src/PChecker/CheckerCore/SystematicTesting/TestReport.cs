@@ -179,6 +179,28 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
+        /// Returns a simple string testing report with only the keys and values.
+        /// </summary>
+        public string GetSummaryText(string runtime) {
+            var report = new StringBuilder();
+
+            report.AppendFormat("bugs:{0}", NumOfFoundBugs);
+            report.AppendLine();
+
+            var totalExploredSchedules = NumOfExploredFairSchedules +
+                                         NumOfExploredUnfairSchedules;
+            report.AppendFormat("schedules:{0}", totalExploredSchedules);
+            report.AppendLine();
+
+            report.AppendFormat("max_depth:{0}", MaxExploredFairSteps < 0 ? 0 : MaxExploredFairSteps);
+            report.AppendLine();
+
+            report.AppendFormat("time_seconds:{0}", runtime);
+
+            return report.ToString();
+        }
+
+        /// <summary>
         /// Returns the testing report as a string, given a checkerConfiguration and an optional prefix.
         /// </summary>
         public string GetText(CheckerConfiguration checkerConfiguration, string prefix = "")

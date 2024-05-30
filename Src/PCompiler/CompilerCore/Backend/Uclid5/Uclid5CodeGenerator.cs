@@ -350,8 +350,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var eh in s.AllEventHandlers)
             switch (eh.Value)
             {
-                case EventDefer eventDefer:
-                    throw new NotSupportedException($"Not supported handler {eventDefer})");
                 case EventDoAction action:
                     var e = action.Trigger;
                     var f = action.Target;
@@ -378,10 +376,26 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     // close procedure
                     EmitLine("}\n");
                     break;
-                case EventGotoState eventGotoState:
-                    throw new NotSupportedException($"Not supported handler {eventGotoState})");
-                case EventIgnore eventIgnore:
-                    throw new NotSupportedException($"Not supported handler {eventIgnore})");
+                case EventGotoState action:
+                    var trigger = action.Trigger;
+                    var target = action.Target;
+                    EmitLine($"// Handler for event {trigger.Name} in machine {m.Name}");
+                    EmitLine(
+                        $"procedure {EventHandlerName(m.Name, s.Name, trigger.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
+                    GenerateGenericHandlerSpec(m, s);
+                    EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
+                    EmitLine($"\trequires {GetSource(IncomingEvent)} == {This};");
+                    EmitLine($"\trequires {IsEventInstance(IncomingEvent, trigger)};");
+                    EmitLine($"\trequires !{InEntry(GetMachine(This))};");
+                    // open procedure
+                    EmitLine("{");
+                    EmitLine($"{Buffer} = {UpdateBuffer(IncomingEvent, false)};");
+                    // TODO check the default value
+                    GenerateStmt(new GotoStmt(action.SourceLocation, target, new DefaultExpr(trigger.SourceLocation, trigger.PayloadType)));
+                    GenerateGenericHandlerPost(m);
+                    // close procedure
+                    EmitLine("}\n");
+                    break;
             }
     }
 
@@ -460,6 +474,16 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 foreach (var s in cstmt.Statements) GenerateStmt(s);
 
                 return;
+            case AssignStmt { Value: FunCallExpr } cstmt:
+                var call = cstmt.Value as FunCallExpr;
+                switch (cstmt.Location)
+                {
+                    case VariableAccessExpr vax:
+                        EmitLine($"call ({GetLocalName(vax.Variable.Name)}) = {call.Function.Name}({string.Join(", ", call.Arguments.Select(ExprToString))});");
+                        return;
+                }
+                throw new NotSupportedException(
+                    $"Not supported assignment expression: {cstmt} ({cstmt.SourceLocation})");
             case AssignStmt astmt:
                 switch (astmt.Location)
                 {
@@ -477,7 +501,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 throw new NotSupportedException(
                     $"Not supported assignment expression: {astmt} ({astmt.SourceLocation})");
             case IfStmt ifstmt:
-                var cond = ExprToString(ifstmt.Condition);
+                var cond = (ifstmt.Condition) switch
+                {
+                    NondetExpr => "*",
+                    _ => ExprToString(ifstmt.Condition),
+                };
                 EmitLine($"if ({cond}) {{");
                 GenerateStmt(ifstmt.ThenBranch);
                 EmitLine("} else {");
@@ -502,8 +530,22 @@ public class Uclid5CodeGenerator : ICodeGenerator
             case PrintStmt { Message: StringExpr } pstmt:
                 EmitLine($"// print({ExprToString(pstmt.Message)});");
                 return;
+            case FunCallStmt fapp:
+                EmitLine($"call {fapp.Function.Name}({string.Join(", ", fapp.ArgsList.Select(ExprToString))});");
+                return;
+            case AddStmt astmt:
+                var set = ExprToString(astmt.Variable);
+                var key = ExprToString(astmt.Value);
+                EmitLine($"{set} = {set}[{key} -> true];");
+                return;
+            case InsertStmt istmt:
+                var imap = ExprToString(istmt.Variable);
+                var idx = ExprToString(istmt.Index);
+                var value = ConstructOptionSome(TypeToString(istmt.Value.Type), ExprToString(istmt.Value));
+                EmitLine($"{imap} = {imap}[{idx} -> {value}];");
+                return;
         }
-        // this.EmitLine($"NotHandledStmt({stmt});");
+        throw new NotSupportedException($"Not supported statement: {stmt}");
     }
 
 

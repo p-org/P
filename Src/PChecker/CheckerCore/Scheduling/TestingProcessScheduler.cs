@@ -178,7 +178,7 @@ namespace PChecker.Scheduling
             var directory = GlobalTestReport.CheckerConfiguration.OutputDirectory;
             var pintPath = directory + file + "_pchecker_summary.txt";
             Console.WriteLine($"..... Writing {pintPath}");
-            File.WriteAllText(pintPath, GlobalTestReport.GetSummaryText($"{Profiler.GetElapsedTime():0.##}"));
+            File.WriteAllText(pintPath, GlobalTestReport.GetSummaryText(Profiler));
 
             Console.WriteLine($"... Elapsed {Profiler.GetElapsedTime():0.##} sec and used {Profiler.GetMaxMemoryUsage():0.##} GB.");
 

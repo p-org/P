@@ -41,6 +41,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string Buffer => $"{BuiltinPrefix}Buffer";
     private static string This => "this";
     private static string IncomingEvent => "curr";
+    private static string ReturnVar => $"{BuiltinPrefix}Ret";
+    
     public bool HasCompilationStage => false;
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -66,6 +68,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         GenerateMachineDefs(machines);
         GenerateBuiltInVarDecls();
         GenerateInitBlock();
+        GenerateHelperProcedures(globalScope.AllDecls.OfType<Function>());
         GenerateEntryProcedures(machines);
         GenerateHandlerProcedures(machines);
         GenerateNextBlock(machines);
@@ -311,6 +314,23 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("\n");
     }
 
+    private void GenerateHelperProcedures(IEnumerable<Function> functions)
+    {
+        foreach (var f in functions)
+        {
+            var ps = f.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}").Prepend($"{This}: {RefT}");
+            EmitLine($"procedure [noinline] {f.Name}({string.Join(", ", ps)})");
+            if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            {
+                EmitLine($"\treturns ({ReturnVar}: {TypeToString(f.Signature.ReturnType)})");
+            }
+            EmitLine("{");
+            GenerateStmt(f.Body);
+            EmitLine("}\n");
+        }
+        EmitLine("\n");
+    }
+    
     private void GenerateGenericHandlerSpec(Machine m, State s)
     {
         EmitLine($"\tmodifies {Machines};");
@@ -355,7 +375,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     var f = action.Target;
                     EmitLine($"// Handler for event {e.Name} in machine {m.Name}");
                     EmitLine(
-                        $"procedure {EventHandlerName(m.Name, s.Name, e.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
+                        $"procedure [noinline] {EventHandlerName(m.Name, s.Name, e.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
                     GenerateGenericHandlerSpec(m, s);
                     EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
                     EmitLine($"\trequires {GetSource(IncomingEvent)} == {This};");
@@ -381,7 +401,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     var target = action.Target;
                     EmitLine($"// Handler for event {trigger.Name} in machine {m.Name}");
                     EmitLine(
-                        $"procedure {EventHandlerName(m.Name, s.Name, trigger.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
+                        $"procedure [noinline] {EventHandlerName(m.Name, s.Name, trigger.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
                     GenerateGenericHandlerSpec(m, s);
                     EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
                     EmitLine($"\trequires {GetSource(IncomingEvent)} == {This};");
@@ -408,7 +428,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             if (f is null) continue;
 
             EmitLine($"// Handler for entry in machine {m.Name} at state {s.Name}");
-            EmitLine($"procedure {EntryHandlerName(m.Name, s.Name)}({This}: {RefT})");
+            EmitLine($"procedure [noinline] {EntryHandlerName(m.Name, s.Name)}({This}: {RefT})");
             GenerateGenericHandlerSpec(m, s);
             // open procedure
             EmitLine("{");
@@ -479,7 +499,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 switch (cstmt.Location)
                 {
                     case VariableAccessExpr vax:
-                        EmitLine($"call ({GetLocalName(vax.Variable.Name)}) = {call.Function.Name}({string.Join(", ", call.Arguments.Select(ExprToString))});");
+                        EmitLine($"call ({GetLocalName(vax.Variable.Name)}) = {call.Function.Name}({string.Join(", ", call.Arguments.Select(ExprToString).Prepend(This))});");
                         return;
                 }
                 throw new NotSupportedException(
@@ -531,7 +551,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"// print({ExprToString(pstmt.Message)});");
                 return;
             case FunCallStmt fapp:
-                EmitLine($"call {fapp.Function.Name}({string.Join(", ", fapp.ArgsList.Select(ExprToString))});");
+                EmitLine($"call {fapp.Function.Name}({string.Join(", ", fapp.ArgsList.Select(ExprToString).Prepend(This))});");
                 return;
             case AddStmt astmt:
                 var set = ExprToString(astmt.Variable);
@@ -544,8 +564,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var value = ConstructOptionSome(TypeToString(istmt.Value.Type), ExprToString(istmt.Value));
                 EmitLine($"{imap} = {imap}[{idx} -> {value}];");
                 return;
+            case null:
+                return;
         }
-        throw new NotSupportedException($"Not supported statement: {stmt}");
+        throw new NotSupportedException($"Not supported statement: {stmt} ({stmt.SourceLocation})");
     }
 
 

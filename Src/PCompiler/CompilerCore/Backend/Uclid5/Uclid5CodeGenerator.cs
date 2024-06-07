@@ -162,6 +162,21 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return $"{BuiltinPrefix}{Entry}({arg})";
     }
 
+    private static string GetEntry(Machine m)
+    {
+        return $"{GetMachineName(m.Name)}_{Entry}";
+    }
+    
+    private static string GetState(Machine m)
+    {
+        return $"{GetMachineName(m.Name)}_{State}";
+    }
+
+    private static string GetField(Machine m, Variable f)
+    {
+        return $"{GetMachineName(m.Name)}_{f.Name}";
+    }
+
     private static string InStart(string arg)
     {
         return $"{BuiltinPrefix}{Start}({arg})";
@@ -254,21 +269,21 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var sum = string.Join("\n\t\t| ", ms.Select(ProcessMachine));
         EmitLine($"datatype {MachineT} = \n\t\t| {sum};\n");
 
-        var entryCases = $"if ({IsMachineInstance("m", ms.First())}) then m.{GetMachineName(ms.First().Name)}_{Entry}";
+        var entryCases = $"if ({IsMachineInstance("m", ms.First())}) then m.{GetEntry(ms.First())}";
         entryCases = ms.Skip(1).SkipLast(1).Aggregate(entryCases,
             (current, m) =>
-                current + $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{GetMachineName(m.Name)}_{Entry}");
-        entryCases += $"\n\t\telse m.{GetMachineName(ms.Last().Name)}_{Entry}";
+                current + $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{GetEntry(m)}");
+        entryCases += $"\n\t\telse m.{GetEntry(ms.Last())}";
         EmitLine($"define {BuiltinPrefix}{Entry} (m: {MachineT}) : boolean = \n\t\t{entryCases};\n");
 
         var startCases =
-            $"if ({IsMachineInstance("m", ms.First())}) then m.{GetMachineName(ms.First().Name)}_{State} == {GetMachineName(ms.First().Name)}_{GetStartState(ms.First())}()";
+            $"if ({IsMachineInstance("m", ms.First())}) then m.{GetState(ms.First())} == {GetMachineName(ms.First().Name)}_{GetStartState(ms.First())}()";
         foreach (var m in ms.Skip(1).SkipLast(1))
             startCases +=
-                $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{GetMachineName(m.Name)}_{State} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
+                $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{GetState(m)} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
 
         startCases +=
-            $"\n\t\telse m.{GetMachineName(ms.Last().Name)}_{State} == {GetMachineName(ms.Last().Name)}_{GetStartState(ms.Last())}()";
+            $"\n\t\telse m.{GetState(ms.Last())} == {GetMachineName(ms.Last().Name)}_{GetStartState(ms.Last())}()";
         EmitLine($"define {BuiltinPrefix}{Start} (m: {MachineT}) : boolean = \n\t\t{startCases};");
         EmitLine("\n");
         return;
@@ -283,7 +298,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             if (m.Fields.Any()) fields = ", " + fields;
 
             return
-                $"{GetMachineName(m.Name)} ({GetMachineName(m.Name)}_{Entry}: boolean, {GetMachineName(m.Name)}_{State}: {statesName}{fields})";
+                $"{GetMachineName(m.Name)} ({GetEntry(m)}: boolean, {GetState(m)}: {statesName}{fields})";
         }
     }
 
@@ -351,6 +366,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v.Name)}: {TypeToString(v.Type)};");
 
         foreach (var v in f.Signature.Parameters) EmitLine($"var {GetLocalName(v.Name)}: {TypeToString(v.Type)};");
+        
+        // assign the entry, state, and field variables to the correct values
+        EmitLine($"entry = {GetMachine("this")}.{GetEntry(m)};");
+        EmitLine($"state = {GetMachine("this")}.{GetState(m)};");
+        foreach (var v in m.Fields) EmitLine($"{GetLocalName(v.Name)} = {GetMachine("this")}.{GetField(m, v)};");
     }
 
     private void GenerateGenericHandlerPost(Machine m)
@@ -384,14 +404,16 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     // open procedure
                     EmitLine("{");
                     GenerateGenericHandlerVars(m, f);
-                    // find the variable that corresponds to the payload and assume that it is equal to the payload of the event coming in
+                    // find the variable that corresponds to the payload and set it equal to the payload of the event coming in
                     foreach (var v in f.Signature.Parameters)
                         if (v.Type.Equals(e.PayloadType))
                             EmitLine(
-                                $"assume({GetLocalName(v.Name)} == {IncomingEvent}.{GetEventName(e.Name)}_{Payload});");
+                                $"{GetLocalName(v.Name)} = {IncomingEvent}.{GetEventName(e.Name)}_{Payload};");
 
-                    EmitLine($"{Buffer} = {UpdateBuffer(IncomingEvent, false)};");
+                    EmitLine($"{Buffer} = {UpdateBuffer(IncomingEvent, false)};\n");
+                    EmitLine("// Begin handler body");
                     GenerateStmt(f.Body);
+                    EmitLine("// End handler body\n");
                     GenerateGenericHandlerPost(m);
                     // close procedure
                     EmitLine("}\n");
@@ -433,8 +455,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
             // open procedure
             EmitLine("{");
             GenerateGenericHandlerVars(m, f);
-            EmitLine("entry = false;");
+            EmitLine("entry = false;\n");
+            EmitLine("// Begin handler body");
             GenerateStmt(f.Body);
+            EmitLine("// End handler body\n");
             GenerateGenericHandlerPost(m);
             // close procedure
             EmitLine("}\n");
@@ -614,8 +638,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
             NamedTupleAccessExpr ntax => $"{ExprToString(ntax.SubExpr)}.{ntax.FieldName}",
             VariableAccessExpr vax => GetLocalName(vax.Variable.Name),
             IntLiteralExpr i => i.Value.ToString(),
+            BoolLiteralExpr b => b.Value.ToString().ToLower(),
             BinOpExpr bexpr =>
                 $"{ExprToString(bexpr.Lhs)} {BinOpToString(bexpr.Operation)} {ExprToString(bexpr.Rhs)}",
+            UnaryOpExpr uexpr => $"{UnaryOpToString(uexpr.Operation)} {ExprToString(uexpr.SubExpr)}",
             ThisRefExpr => This,
             EnumElemRefExpr e => GetUserName(e.Value.Name),
             NamedTupleExpr t => NamedTupleExprHelper(t),
@@ -664,6 +690,16 @@ public class Uclid5CodeGenerator : ICodeGenerator
         };
     }
 
+    private string UnaryOpToString(UnaryOpType op)
+    {
+        return op switch
+        {
+            UnaryOpType.Negate => "-",
+            UnaryOpType.Not => "!",
+            _ => throw new NotImplementedException($"{op} is not implemented yet!")
+        };
+    }
+
     private void GenerateOptionTypes()
     {
         foreach (var ptype in _optionsToDeclare)
@@ -682,17 +718,18 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var machines = ms.ToList();
 
         EmitLine("control {");
+        EmitLine("set_solver_option(\":timeout\", 6000);");
         EmitLine("bmc(1);");
 
         foreach (var m in machines)
         foreach (var s in m.States)
         {
-            if (s.Entry is null) continue;
-            EmitLine($"verify({EntryHandlerName(m.Name, s.Name)});");
             foreach (var h in s.AllEventHandlers)
             {
                 EmitLine($"verify({EventHandlerName(m.Name, s.Name, h.Key.Name)});");
             }
+            if (s.Entry is null) continue;
+            EmitLine($"verify({EntryHandlerName(m.Name, s.Name)});");
         }
 
         EmitLine("check;");

@@ -117,6 +117,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         return $"{GetOptionTypeName(t)}_Some({r})";
     }
+    private static string ConstructOptionNone(string t)
+    {
+        return $"{GetOptionTypeName(t)}_None()";
+    }
     private static string SelectOptionValue(string t, string r)
     {
         return $"{r}.{GetOptionTypeName(t)}_Some_Value";
@@ -181,6 +185,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         return $"{BuiltinPrefix}{Start}({arg})";
     }
+    
+    private static string InDefault(string arg)
+    {
+        return $"{BuiltinPrefix}Default({arg})";
+    }
+
 
     private static string IsEventInstance(string x, PEvent e)
     {
@@ -261,7 +271,31 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 $"{GetEventName(e.Name)} ({GetEventName(e.Name)}_{Source}: {RefT}, {GetEventName(e.Name)}_{Target}: {RefT}, {GetEventName(e.Name)}_{Payload}: {payload})";
         }
     }
+    
+    private string InStartPredicate(Machine m, string mname)
+    {
+        return $"{mname}.{GetState(m)} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
+    }
 
+    private string InDefaultPredicate(Machine m, string mname)
+    {
+        var cond = $"{mname}.{GetState(m)} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
+        foreach (var f in m.Fields)
+        {
+            switch (f.Type)
+            {
+                case MapType mapType:
+                    cond += $" && {mname}.{GetField(m, f)} == const({ConstructOptionNone(TypeToString(mapType.ValueType))}, {TypeToString(mapType)})";
+                    break;
+                case SetType setType:
+                    cond += $" && {mname}.{GetField(m, f)} == const(false, {TypeToString(setType)})";
+                    break;
+                // TODO; defaults for all types?
+            }
+        }
+        return cond;
+    }
+    
     private void GenerateMachineDefs(IEnumerable<Machine> machines)
     {
         EmitLine("// Machines, their types, and helper functions");
@@ -269,6 +303,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var sum = string.Join("\n\t\t| ", ms.Select(ProcessMachine));
         EmitLine($"datatype {MachineT} = \n\t\t| {sum};\n");
 
+        if (ms.Count == 1)
+        {
+            EmitLine($"define {BuiltinPrefix}{Entry} (m: {MachineT}) : boolean = \n\t\tm.{GetEntry(ms.First())};\n");
+            EmitLine($"define {BuiltinPrefix}{Start} (m: {MachineT}) : boolean = \n\t\t{InStartPredicate(ms.First(), "m")};\n");
+            EmitLine($"define {BuiltinPrefix}Default (m: {MachineT}) : boolean = \n\t\t{InDefaultPredicate(ms.First(), "m")};");
+            EmitLine("\n");
+            return;
+        }
+        
         var entryCases = $"if ({IsMachineInstance("m", ms.First())}) then m.{GetEntry(ms.First())}";
         entryCases = ms.Skip(1).SkipLast(1).Aggregate(entryCases,
             (current, m) =>
@@ -277,14 +320,25 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"define {BuiltinPrefix}{Entry} (m: {MachineT}) : boolean = \n\t\t{entryCases};\n");
 
         var startCases =
-            $"if ({IsMachineInstance("m", ms.First())}) then m.{GetState(ms.First())} == {GetMachineName(ms.First().Name)}_{GetStartState(ms.First())}()";
+            $"if ({IsMachineInstance("m", ms.First())}) then {InStartPredicate(ms.First(), "m")}";
         foreach (var m in ms.Skip(1).SkipLast(1))
             startCases +=
-                $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{GetState(m)} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
+                $"\n\t\telse if ({IsMachineInstance("m", m)}) then {InStartPredicate(m, "m")}";
 
         startCases +=
-            $"\n\t\telse m.{GetState(ms.Last())} == {GetMachineName(ms.Last().Name)}_{GetStartState(ms.Last())}()";
-        EmitLine($"define {BuiltinPrefix}{Start} (m: {MachineT}) : boolean = \n\t\t{startCases};");
+            $"\n\t\telse {InStartPredicate(ms.Last(), "m")}";
+        EmitLine($"define {BuiltinPrefix}{Start} (m: {MachineT}) : boolean = \n\t\t{startCases};\n");
+        
+        var defaultCases =
+            $"if ({IsMachineInstance("m", ms.First())}) then {InDefaultPredicate(ms.First(), "m")}";
+        foreach (var m in ms.Skip(1).SkipLast(1))
+            defaultCases +=
+                $"\n\t\telse if ({IsMachineInstance("m", m)}) then {InDefaultPredicate(m, "m")}";
+
+        defaultCases +=
+            $"\n\t\telse {InDefaultPredicate(ms.Last(), "m")}";
+        EmitLine($"define {BuiltinPrefix}Default (m: {MachineT}) : boolean = \n\t\t{defaultCases};");
+        
         EmitLine("\n");
         return;
 
@@ -322,6 +376,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"assume(forall (r: {RefT}) :: {InStart(GetMachine("r"))});");
         EmitLine("// Every machine begins with their entry flag set");
         EmitLine($"assume(forall (r: {RefT}) :: {InEntry(GetMachine("r"))});");
+        EmitLine("// Every machine begins with fields in default");
+        EmitLine($"assume(forall (r: {RefT}) :: {InDefault(GetMachine("r"))});");
         EmitLine("// The buffer starts completely empty");
         EmitLine($"{Buffer} = const(false, [{EventT}]boolean);");
         // close the init block

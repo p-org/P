@@ -454,7 +454,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         $"procedure [noinline] {EventHandlerName(m.Name, s.Name, e.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
                     GenerateGenericHandlerSpec(m, s);
                     EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
-                    EmitLine($"\trequires {GetSource(IncomingEvent)} == {This};");
+                    EmitLine($"\trequires {GetTarget(IncomingEvent)} == {This};");
                     EmitLine($"\trequires {IsEventInstance(IncomingEvent, e)};");
                     EmitLine($"\trequires !{InEntry(GetMachine(This))};");
                     // open procedure
@@ -482,7 +482,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         $"procedure [noinline] {EventHandlerName(m.Name, s.Name, trigger.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
                     GenerateGenericHandlerSpec(m, s);
                     EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
-                    EmitLine($"\trequires {GetSource(IncomingEvent)} == {This};");
+                    EmitLine($"\trequires {GetTarget(IncomingEvent)} == {This};");
                     EmitLine($"\trequires {IsEventInstance(IncomingEvent, trigger)};");
                     EmitLine($"\trequires !{InEntry(GetMachine(This))};");
                     // open procedure
@@ -774,7 +774,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var machines = ms.ToList();
 
         EmitLine("control {");
-        EmitLine("set_solver_option(\":timeout\", 6000);");
+        EmitLine("set_solver_option(\":Timeout\", 60);");
         EmitLine("bmc(1);");
 
         foreach (var m in machines)

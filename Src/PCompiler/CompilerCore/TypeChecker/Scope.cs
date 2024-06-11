@@ -656,5 +656,15 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion Conflict API
+        
+        public void Update(Variable v)
+        {
+            Variable vv;
+            if (variables.TryGetValue(v.Name, out vv))
+            {
+                variables[v.Name] = v;
+            }
+            return;
+        }
     }
 }

@@ -3,6 +3,7 @@ using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.Util;
+using System.Collections.Generic;
 // using System;
 
 namespace Plang.Compiler.TypeChecker

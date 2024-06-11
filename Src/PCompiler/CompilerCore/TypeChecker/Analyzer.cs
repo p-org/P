@@ -174,8 +174,6 @@ namespace Plang.Compiler.TypeChecker
                 DeclarationStubVisitor.PopulateStubs(globalScope, programUnit, nodesToDeclarations);
             }
             
-            Console.WriteLine("GlobalScope " + globalScope.Variables.Count() + globalScope.Variables.ElementAt(0).Name);
-
             // Step 2: Validate declarations and fill with types
             foreach (var programUnit in programUnits)
             {

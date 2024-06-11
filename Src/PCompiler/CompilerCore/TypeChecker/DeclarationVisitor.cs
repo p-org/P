@@ -5,6 +5,7 @@ using System.Linq;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Plang.Compiler.Util;
@@ -16,7 +17,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly StackProperty<Machine> currentMachine = new StackProperty<Machine>();
         private readonly StackProperty<Scope> currentScope;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
-        private readonly IDictionary<string, Variable> globalConstantVariables = new Dictionary<string, Variable>();
+        private IDictionary<string, Variable> globalConstantVariables = new Dictionary<string, Variable>();
             
         private DeclarationVisitor(
             ITranslationErrorHandler handler,
@@ -62,20 +63,18 @@ namespace Plang.Compiler.TypeChecker
         {
             // COLON type
             var variableType = ResolveType(context.type());
+            Console.WriteLine("variableType:" + variableType);
 
             // VAR idenList
-            var variables = new Variable[context.idenList()._names.Count];
             var varNameCtxs = context.idenList()._names;
             for (var i = 0; i < varNameCtxs.Count; i++)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
                 variable.Type = variableType;
-                variables[i] = variable;
+                currentScope.Value.Update(variable);
             }
-            // CurrentMachine.AddFields(variables);
-
             // SEMI
-            return variables;
+            return globalConstantVariables;
         } 
         
         #endregion GlobalConstantVariables 
@@ -345,7 +344,7 @@ namespace Plang.Compiler.TypeChecker
             currentScope.Value.Get(machine.Name, out Interface @interface);
             @interface.ReceivableEvents = machine.Receives;
             @interface.PayloadType = machine.PayloadType;
-
+            
             return machine;
         }
 
@@ -429,6 +428,7 @@ namespace Plang.Compiler.TypeChecker
             for (var i = 0; i < varNameCtxs.Count; i++)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
+                // Console.WriteLine("Local Variable:" + variable.Name);
                 CheckGlobalConstantVariableRedeclare(variable);
                 variable.Type = variableType;
                 variables[i] = variable;

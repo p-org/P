@@ -59,6 +59,7 @@ THIS      : 'this' ;
 TYPE      : 'type' ;
 VALUES    : 'values' ;
 VAR       : 'var' ;
+VAL       : 'val' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;

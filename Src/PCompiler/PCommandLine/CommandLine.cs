@@ -46,7 +46,7 @@ namespace Plang
                 case  "-v":
                 case  "-version":
                 case "--version":
-                    CommandLineOutput.WriteInfo($"P version {typeof(CommandLine).Assembly.GetName().Version}");
+                    CommandLineOutput.WriteInfo($"[ZZ]P version {typeof(CommandLine).Assembly.GetName().Version}");
                     break;
                 case   "help":
                 case  "-h":

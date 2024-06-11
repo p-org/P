@@ -52,6 +52,12 @@ namespace Plang.Compiler
             return IssueError(location,
                 $"'{duplicate.Name}' duplicates declaration '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
         }
+        
+        public Exception GlobalConstantVariableRedeclare(ParserRuleContext location, IPDecl duplicate, IPDecl existing)
+        {
+            return IssueError(location,
+                $"'{duplicate.Name}' redeclares a global constant variable '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
+        }
 
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)
         {

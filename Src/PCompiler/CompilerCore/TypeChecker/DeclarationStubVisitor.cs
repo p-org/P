@@ -3,6 +3,7 @@ using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.Util;
+// using System;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -29,6 +30,21 @@ namespace Plang.Compiler.TypeChecker
             var visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
             visitor.Visit(context);
         }
+        
+        #region GlobalConstantVariables
+        
+        public override object VisitGlobalValDecl(PParser.GlobalValDeclContext context)
+        {
+            foreach (var varName in context.idenList()._names)
+            {
+                var decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.GlobalConstant);
+                nodesToDeclarations.Put(varName, decl);
+            }
+
+            return null;
+        }
+        
+        #endregion GlobalConstantVariables 
 
         #region Events
 

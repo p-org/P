@@ -60,8 +60,10 @@ topDecl : typeDefDecl
         | namedModuleDecl
         | testDecl
         | implementationDecl
+        | globalValDecl
         ;
 
+globalValDecl : VAL idenList COLON type SEMI ;
 
 typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
             | TYPE name=iden ASSIGN type SEMI # PTypeDef

@@ -16,13 +16,18 @@ namespace Plang.Compiler.TypeChecker
         private readonly StackProperty<Machine> currentMachine = new StackProperty<Machine>();
         private readonly StackProperty<Scope> currentScope;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
-
+        private readonly IDictionary<string, Variable> globalConstantVariables = new Dictionary<string, Variable>();
+            
         private DeclarationVisitor(
             ITranslationErrorHandler handler,
             Scope topLevelScope,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             Handler = handler;
+            foreach (var variable in topLevelScope.Variables)
+            {
+                globalConstantVariables.Add(variable.Name, variable);
+            }
             currentScope = new StackProperty<Scope>(topLevelScope);
             this.nodesToDeclarations = nodesToDeclarations;
         }
@@ -41,6 +46,40 @@ namespace Plang.Compiler.TypeChecker
             visitor.Visit(context);
         }
 
+        private void CheckGlobalConstantVariableRedeclare(Variable decl)
+        {
+            Variable existingDecl;
+            if (globalConstantVariables.TryGetValue(decl.Name, out existingDecl))
+            {
+                throw Handler.GlobalConstantVariableRedeclare(decl.SourceLocation, decl, existingDecl); 
+            }
+            return;
+        }
+
+        #region GlobalConstantVariables 
+        
+        public override object VisitGlobalValDecl(PParser.GlobalValDeclContext context)
+        {
+            // COLON type
+            var variableType = ResolveType(context.type());
+
+            // VAR idenList
+            var variables = new Variable[context.idenList()._names.Count];
+            var varNameCtxs = context.idenList()._names;
+            for (var i = 0; i < varNameCtxs.Count; i++)
+            {
+                var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
+                variable.Type = variableType;
+                variables[i] = variable;
+            }
+            // CurrentMachine.AddFields(variables);
+
+            // SEMI
+            return variables;
+        } 
+        
+        #endregion GlobalConstantVariables 
+        
         #region Events
 
         public override object VisitEventDecl(PParser.EventDeclContext context)
@@ -390,6 +429,7 @@ namespace Plang.Compiler.TypeChecker
             for (var i = 0; i < varNameCtxs.Count; i++)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
+                CheckGlobalConstantVariableRedeclare(variable);
                 variable.Type = variableType;
                 variables[i] = variable;
             }

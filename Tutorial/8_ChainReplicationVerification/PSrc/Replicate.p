@@ -1,6 +1,6 @@
-type tWriteRequest  = (source: machine, k: int, v: int, id: int);
-type tReadRequest   = (source: machine, k: int, id: int);
-type tReadResponse  = (source: machine, k: int, v: int, status: bool, id: int);
+type tWriteRequest  = (source: machine, k: int, v: int);
+type tReadRequest   = (source: machine, k: int);
+type tReadResponse  = (source: machine, k: int, v: int, status: bool);
 
 event eWriteRequest  : tWriteRequest;
 event eWriteResponse : tWriteRequest;
@@ -31,29 +31,29 @@ machine Replicate {
     state Head {
         on eWriteRequest do (req: tWriteRequest) {
             kv[req.k] = req.v;
-            send next, ePropagateWrite, (source = req.source, k = req.k, v = req.v, id = req.id);
+            send next, ePropagateWrite, (source = req.source, k = req.k, v = req.v);
         }
     }
 
     state Body {
         on ePropagateWrite do (req: tWriteRequest) {
             kv[req.k] = req.v;
-            send next, ePropagateWrite, (source = req.source, k = req.k, v = req.v, id = req.id);
+            send next, ePropagateWrite, (source = req.source, k = req.k, v = req.v);
         }
     }
 
     state Tail {
         on ePropagateWrite do (req: tWriteRequest) {
             kv[req.k] = req.v;
-            send req.source, eWriteResponse, (source = req.source, k = req.k, v = req.v, id = req.id);
+            send req.source, eWriteResponse, (source = req.source, k = req.k, v = req.v);
         }
 
         on eReadRequest do (req: tReadRequest) {
             if (req.k in kv) {
-                send req.source, eReadResponse, (source = req.source, k = req.k, v = kv[req.k], status = true, id = req.id);
+                send req.source, eReadResponse, (source = req.source, k = req.k, v = kv[req.k], status = true);
             } else {
                 send req.source, eReadResponse, (source = req.source, 
-                    k = req.k, v = -1, status = false, id = req.id);
+                    k = req.k, v = -1, status = false);
             }
         }
     }

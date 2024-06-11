@@ -78,7 +78,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         // close the main module
         EmitLine("}");
     }
-
+    
     private void GenerateBuiltInTypeDefs()
     {
         EmitLine("// Built-in types");
@@ -366,7 +366,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"var {CurrentEvent}: {EventT};");
         EmitLine("\n");
     }
-
+    
     private void GenerateInitBlock()
     {
         // Init captures the state of affairs before anything executes

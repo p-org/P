@@ -52,7 +52,7 @@ namespace Plang.Compiler.TypeChecker
             Variable existingDecl;
             if (globalConstantVariables.TryGetValue(decl.Name, out existingDecl))
             {
-                throw Handler.GlobalConstantVariableRedeclare(decl.SourceLocation, decl, existingDecl); 
+                throw Handler.RedeclareGlobalConstantVariable(decl.SourceLocation, decl, existingDecl); 
             }
             return;
         }

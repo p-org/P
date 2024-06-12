@@ -24,7 +24,9 @@ namespace Plang.Compiler
 
         Exception DuplicateDeclaration(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
         
-        Exception GlobalConstantVariableRedeclare(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
+        Exception RedeclareGlobalConstantVariable(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
+        
+        Exception ModifyGlobalConstantVariable(ParserRuleContext location, IPDecl existing);
 
         Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount);
 

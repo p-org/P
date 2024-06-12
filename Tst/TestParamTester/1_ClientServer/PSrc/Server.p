@@ -13,12 +13,11 @@ if there is enough money in the account then it updates the new balance in the d
 and sends a response back to the client.
 *************************************************************/
 
-val zz3: int;
+val zz3: bool;
 
 machine BankServer
 {
   var database: Database;
-  var zz1: int;
 
   start state Init {
     entry (initialBalance: map[int, int]){
@@ -80,6 +79,7 @@ machine Database
 // Function to read the bank balance corresponding to the accountId
 fun ReadBankBalance(database: Database, accountId: int) : int {
     var currentBalance: int;
+    currentBalance = zz1 + 2;
     send database, eReadQuery, (accountId = accountId,);
     receive {
       case eReadQueryResp: (resp: (accountId: int, balance: int)) {

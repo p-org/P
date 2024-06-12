@@ -26,6 +26,7 @@ namespace Plang.Compiler.TypeChecker
             this.machine = machine;
             this.method = method;
             table = method.Scope;
+            // Console.WriteLine("Table: " + String.Join(", ", table.GetGlobalConstantVariables().Select(x =>x.Name).ToArray()));
             exprVisitor = new ExprVisitor(method, config.Handler);
         }
 

@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
 using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 
 namespace Plang.Compiler
 {
@@ -52,6 +55,14 @@ namespace Plang.Compiler
             {
                 IRTransformer.SimplifyMethod(fun);
             }
+
+            var globalVars = scope.GetGlobalVariables();
+            IDictionary<string, IExprTerm> globalConsts = new Dictionary<string, IExprTerm>();
+            foreach (var v in globalVars)
+            {
+                globalConsts[v.Name] = new IntLiteralExpr(null, 1);
+            }
+            scope.SetGlobalConstants(globalConsts);
 
             DirectoryInfo parentDirectory = job.OutputDirectory;
             foreach (var entry in job.OutputLanguages.Distinct())

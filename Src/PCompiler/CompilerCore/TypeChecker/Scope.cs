@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
@@ -31,6 +33,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
+        private readonly IDictionary<Variable, IExprTerm> globalConstants = new Dictionary<Variable, IExprTerm>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -656,7 +659,9 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion Conflict API
-        
+
+        #region Global Constant Variables
+
         public void Update(Variable v)
         {
             Variable vv;
@@ -666,5 +671,87 @@ namespace Plang.Compiler.TypeChecker
             }
             return;
         }
+        
+        public List<Variable> GetGlobalVariables()
+        {
+            List<Variable> res = new List<Variable>();
+            foreach (var v in variables.Values)
+            {
+                if (v.Role == VariableRole.GlobalConstant)
+                {
+                    res.Add(v);
+                }    
+            }
+            return res;
+        }
+        
+        public IDictionary<Variable, IExprTerm> GetGlobalConstants()
+        {
+            var res = new Dictionary<Variable, IExprTerm>();
+            foreach (var v in globalConstants)
+            {
+                res[v.Key] = v.Value;
+            }
+            return res;
+        }
+
+        public void SetGlobalConstants(IDictionary<string, IExprTerm> constConfig)
+        {
+            foreach (var v in variables.Values)
+            {
+                if (v.Role == VariableRole.GlobalConstant)
+                {
+                    globalConstants[v] = constConfig[v.Name];
+                }    
+            }
+            return;
+        }
+
+        public void ValidateGlobalConstantVariablesUnique(ITranslationErrorHandler handler)
+        {
+            var current = this;
+            IDictionary<string, Variable> allVariables = new Dictionary<string, Variable>();
+            while (current != null)
+            {
+                foreach (var v in current.variables.Values) {
+                    if (allVariables.Keys.Contains(v.Name))
+                    {
+                        if (v.Role == VariableRole.GlobalConstant)
+                        {
+                            var vv = allVariables[v.Name];
+                            throw handler.DuplicateDeclaration(vv.SourceLocation, vv, v);
+                        }
+                    }
+                    allVariables[v.Name] = v;
+                }
+                current = current.Parent;
+            }
+            return;
+        }
+        
+        public bool LookupLvalue(ITranslationErrorHandler handler, string name, ParserRuleContext pos, out Variable tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    if (tree.Role == VariableRole.GlobalConstant)
+                    {
+                        throw handler.ModifyGlobalConstantVariable(pos, tree); 
+                    }
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        #endregion Global Constant Variables
+        
+
     }
 }

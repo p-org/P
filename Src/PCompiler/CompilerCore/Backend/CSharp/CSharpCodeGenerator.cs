@@ -21,6 +21,7 @@ namespace Plang.Compiler.Backend.CSharp
         /// This compiler has a compilation stage.
         /// </summary>
         public bool HasCompilationStage => true;
+        public IDictionary<Variable, IExprTerm> globalConstants = new Dictionary<Variable, IExprTerm>();
 
         public void Compile(ICompilerConfiguration job)
         {
@@ -91,9 +92,14 @@ namespace Plang.Compiler.Backend.CSharp
 
             WriteSourcePrologue(context, source.Stream);
 
+            globalConstants = globalScope.GetGlobalConstants();
+
+            WriteGlobalConstantVariables(context, source.Stream);
+            
             // write the top level declarations
             foreach (var decl in globalScope.AllDecls)
             {
+                // Console.WriteLine("top-level decl: " + decl.Name);
                 WriteDecl(context, source.Stream, decl);
             }
 
@@ -250,12 +256,30 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case EnumElem _:
                     break;
-
+                
                 default:
                     declName = context.Names.GetNameForDecl(decl);
                     context.WriteLine(output, $"// TODO: {decl.GetType().Name} {declName}");
                     break;
             }
+        }
+
+        private void WriteGlobalConstantVariables(CompilationContext context, StringWriter output)
+        {
+            WriteNameSpacePrologue(context, output);
+            context.WriteLine(output, $"public static class {ICodeGenerator.globalConfigName}");
+            context.WriteLine(output, "{");
+            foreach (var iter in globalConstants)
+            {
+                if (iter.Key.Role == VariableRole.GlobalConstant)
+                {
+                    context.Write(output, $"  public static int {iter.Key.Name} = ");
+                    WriteExpr(context, output, iter.Value);
+                    context.WriteLine(output, $";");
+                }
+            }
+            context.WriteLine(output, "}");
+            WriteNameSpaceEpilogue(context, output);
         }
 
         private void WriteMonitor(CompilationContext context, StringWriter output, Machine machine)
@@ -1199,7 +1223,15 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case VariableAccessExpr variableAccessExpr:
-                    context.Write(output, context.Names.GetNameForDecl(variableAccessExpr.Variable));
+                    if (globalConstants.Keys.Contains(variableAccessExpr.Variable))
+                    {
+                        // Console.WriteLine($"variableAccessExpr.Variable: {variableAccessExpr.Variable.Name}");
+                        context.Write(output, $"({ICodeGenerator.globalConfigName}.{variableAccessExpr.Variable.Name})");
+                    }
+                    else
+                    {
+                        context.Write(output, context.Names.GetNameForDecl(variableAccessExpr.Variable));
+                    }
                     break;
 
                 default:

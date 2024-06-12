@@ -273,7 +273,9 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 if (iter.Key.Role == VariableRole.GlobalConstant)
                 {
-                    context.Write(output, $"  public static int {iter.Key.Name} = ");
+                    var type = iter.Key.Type;
+                        context.Write(output,
+                            $"  public static {GetCSharpType(type, true)} {context.Names.GetNameForDecl(iter.Key)} = ");
                     WriteExpr(context, output, iter.Value);
                     context.WriteLine(output, $";");
                 }

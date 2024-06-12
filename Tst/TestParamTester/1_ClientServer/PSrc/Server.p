@@ -13,7 +13,7 @@ if there is enough money in the account then it updates the new balance in the d
 and sends a response back to the client.
 *************************************************************/
 
-val zz3: bool;
+val zz3: int;
 
 machine BankServer
 {

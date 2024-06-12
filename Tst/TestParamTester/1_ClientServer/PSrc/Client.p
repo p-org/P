@@ -22,7 +22,7 @@ event eWithDrawReq : tWithDrawReq;
 event eWithDrawResp: tWithDrawResp;
 
 val zz1 : int;
-val zz2 : bool;
+val zz2 : int;
 
 machine Client
 {

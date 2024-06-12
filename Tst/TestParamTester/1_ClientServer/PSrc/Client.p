@@ -21,8 +21,8 @@ event eWithDrawReq : tWithDrawReq;
 // event: withdraw response (from bank server to client)
 event eWithDrawResp: tWithDrawResp;
 
-val zz1 : int;
-val zz2 : int;
+constant zz1 : int;
+constant zz2 : int;
 
 machine Client
 {
@@ -36,6 +36,7 @@ machine Client
 
     entry (input : (serv : BankServer, accountId: int, balance : int))
     {
+      print format("global varaible zz3 = {0}", zz3);
       server = input.serv;
       currentBalance =  input.balance;
       accountId = input.accountId;

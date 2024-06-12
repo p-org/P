@@ -33,7 +33,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
-        private readonly IDictionary<Variable, IExprTerm> globalConstants = new Dictionary<Variable, IExprTerm>();
+        private readonly IDictionary<Variable, List<IExprTerm>> globalConstants = new Dictionary<Variable, List<IExprTerm>>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -685,9 +685,9 @@ namespace Plang.Compiler.TypeChecker
             return res;
         }
         
-        public IDictionary<Variable, IExprTerm> GetGlobalConstants()
+        public IDictionary<Variable, List<IExprTerm>> GetGlobalConstants()
         {
-            var res = new Dictionary<Variable, IExprTerm>();
+            var res = new Dictionary<Variable, List<IExprTerm>>();
             foreach (var v in globalConstants)
             {
                 res[v.Key] = v.Value;
@@ -695,7 +695,7 @@ namespace Plang.Compiler.TypeChecker
             return res;
         }
 
-        public void SetGlobalConstants(IDictionary<string, IExprTerm> constConfig)
+        public void SetGlobalConstants(IDictionary<string, List<IExprTerm>> constConfig)
         {
             foreach (var v in variables.Values)
             {

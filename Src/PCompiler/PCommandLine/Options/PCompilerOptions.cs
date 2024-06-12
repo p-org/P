@@ -37,9 +37,12 @@ namespace Plang.Options
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
+            Parser.AddArgument("quantified-events", "qe", "Events to be quantified over in generated predicates").IsMultiValue = true;
+            Parser.AddArgument("term-depth", "td", "Max depth of terms in the predicates");
+            Parser.AddArgument("predicate-depth", "pd", "Max number of logical connectives in the predicates");
 
-            var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately" };
+            var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately, pinfer). (default: bugfinding)");
+            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately", "pinfer" };
             modes.IsHidden = true;
 
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
@@ -183,9 +186,21 @@ namespace Plang.Options
                         case "stately":
                             compilerConfiguration.OutputLanguages.Add(CompilerOutput.Stately);
                             break;
+                        case "pinfer":
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Predicates);
+                            break;
                         default:
                             throw new Exception($"Unexpected mode: '{option.Value}'");
                     }
+                    break;
+                case "quantified-events":
+                    compilerConfiguration.QuantifiedEvents = [.. ((string)option.Value).Split(' ')];
+                    break;
+                case "term-depth":
+                    compilerConfiguration.TermDepth = int.Parse((string)option.Value);
+                    break;
+                case "predicate-depth":
+                    compilerConfiguration.PredicateDepth = int.Parse((string)option.Value);
                     break;
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;
@@ -249,6 +264,19 @@ namespace Plang.Options
             {
                 compilerConfiguration.OutputDirectory = Directory.CreateDirectory("PGenerated");
                 compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
+            }
+
+            if (compilerConfiguration.OutputLanguages.Contains(CompilerOutput.Predicates))
+            {
+                if (compilerConfiguration.TermDepth == null)
+                {
+                    Error.CompilerReportAndExit("Predicate inference requires a term depth to be specified.");
+                }
+
+                if (compilerConfiguration.PredicateDepth == null)
+                {
+                    Error.CompilerReportAndExit("Predicate inference requires a predicate depth to be specified.");
+                }
             }
         }
 

@@ -15,7 +15,9 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         EventHandler = 1 << 4,
         ExitHandler = 1 << 5,
         ReceiveHandler = 1 << 6,
-        Foreign = 1 << 7
+        Foreign = 1 << 7,
+        Predicate = 1 << 8,
+        Function = 1 << 9
     }
 
     public class Function : IPDecl, IHasScope

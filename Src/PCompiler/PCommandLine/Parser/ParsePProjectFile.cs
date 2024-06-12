@@ -242,6 +242,9 @@ namespace Plang.Parser
                         case "stately":
                             outputLanguages.Add(CompilerOutput.Stately);
                             break;
+                        case "pinfer":
+                            outputLanguages.Add(CompilerOutput.Predicates);
+                            break;
                         default:
                             throw new CommandlineParsingError(
                                 $"Expected CSharp, Java, Stately, or Symbolic as target, received {projectXml.Element("Target")?.Value}");

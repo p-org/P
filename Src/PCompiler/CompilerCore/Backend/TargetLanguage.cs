@@ -17,6 +17,7 @@ namespace Plang.Compiler.Backend
             RegisterCodeGenerator(CompilerOutput.Java, new JavaCompiler());
             RegisterCodeGenerator(CompilerOutput.Symbolic, new SymbolicCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Stately, new StatelyCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.Predicates, new PInfer.PInferPredicateGenerator());
         }
 
         private static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)

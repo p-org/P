@@ -20,5 +20,8 @@ namespace Plang.Compiler
         ILocationResolver LocationResolver { get; }
         ITranslationErrorHandler Handler { get; }
         bool Debug { get; }
+        int? TermDepth { get; }
+        int? PredicateDepth { get; }
+        List<string> QuantifiedEvents { get; }
     }
 }

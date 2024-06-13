@@ -14,7 +14,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public string Main { get; set; }
         public IPModuleExpr ModExpr { get; set; }
         
-        public IDictionary<string, IPExpr> ParamExpr { get; set; }
+        public IDictionary<string, List<IPExpr>> ParamExpr { get; set; }
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
     }

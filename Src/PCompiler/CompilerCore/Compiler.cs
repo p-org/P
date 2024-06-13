@@ -56,16 +56,6 @@ namespace Plang.Compiler
                 IRTransformer.SimplifyMethod(fun);
             }
 
-            var globalVars = scope.GetGlobalVariables();
-            IDictionary<string, List<IExprTerm>> globalConsts = new Dictionary<string, List<IExprTerm>>();
-            foreach (var v in globalVars)
-            {
-                globalConsts[v.Name] = new List<IExprTerm>();
-                globalConsts[v.Name].Add(new IntLiteralExpr(null, 1));
-                globalConsts[v.Name].Add(new IntLiteralExpr(null, 2));
-            }
-            scope.SetGlobalConstants(globalConsts);
-
             DirectoryInfo parentDirectory = job.OutputDirectory;
             foreach (var entry in job.OutputLanguages.Distinct())
             {

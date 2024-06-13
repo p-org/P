@@ -194,7 +194,7 @@ expr : primitive                                      # PrimitiveExpr
 	 | CHOOSE LPAREN expr? RPAREN					  # ChooseExpr
 	 | formatedString								  # StringExpr
      ;
-
+     
 formatedString	:	StringLiteral
 				|	FORMAT LPAREN StringLiteral (COMMA rvalueList)? RPAREN
 				;	
@@ -247,8 +247,8 @@ intListLiteralBody : IntLiteral
              | IntLiteral (COMMA IntLiteral)+ 
              ;
 intListLiteral : LBRACK intListLiteralBody RBRACK;
-paramBody : name=iden ASSIGN value=intListLiteral
-          | name=iden ASSIGN value=intListLiteral (COMMA names=iden ASSIGN value=intListLiteral)+
+paramBody : name=iden IN value=intListLiteral
+          | name=iden IN value=intListLiteral (COMMA names=iden IN value=intListLiteral)+
           ;
 param : LPAREN paramBody RPAREN;
 

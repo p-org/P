@@ -33,7 +33,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
-        private readonly IDictionary<Variable, List<IExprTerm>> globalConstants = new Dictionary<Variable, List<IExprTerm>>();
+        // private readonly IDictionary<Variable, List<IExprTerm>> globalConstants = new Dictionary<Variable, List<IExprTerm>>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -613,7 +613,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             var safetyTest = new SafetyTest(tree, name);
-            safetyTest.ParamExpr = new Dictionary<string, IPExpr>(); 
+            safetyTest.ParamExpr = new Dictionary<string, List<IPExpr>>(); 
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -625,13 +625,10 @@ namespace Plang.Compiler.TypeChecker
         public SafetyTest Put(string name, PParser.ParametricSafetyTestDeclContext tree)
         {
             // check if test is from an imported project, if so, return null
-            string filePath = config.LocationResolver.GetLocation(tree).File.FullName;
-            foreach (var dependencyPath in config.ProjectDependencies)
+            var filePath = config.LocationResolver.GetLocation(tree).File.FullName;
+            if (config.ProjectDependencies.Any(dependencyPath => filePath.StartsWith(dependencyPath)))
             {
-                if (filePath.StartsWith(dependencyPath))
-                {
-                    return null;
-                }
+                return null;
             }
 
             var safetyTest = new SafetyTest(tree, name);
@@ -707,27 +704,27 @@ namespace Plang.Compiler.TypeChecker
             return res;
         }
         
-        public IDictionary<Variable, List<IExprTerm>> GetGlobalConstants()
-        {
-            var res = new Dictionary<Variable, List<IExprTerm>>();
-            foreach (var v in globalConstants)
-            {
-                res[v.Key] = v.Value;
-            }
-            return res;
-        }
-
-        public void SetGlobalConstants(IDictionary<string, List<IExprTerm>> constConfig)
-        {
-            foreach (var v in variables.Values)
-            {
-                if (v.Role == VariableRole.GlobalConstant)
-                {
-                    globalConstants[v] = constConfig[v.Name];
-                }    
-            }
-            return;
-        }
+        // public IDictionary<Variable, List<IExprTerm>> GetGlobalConstants()
+        // {
+        //     var res = new Dictionary<Variable, List<IExprTerm>>();
+        //     foreach (var v in globalConstants)
+        //     {
+        //         res[v.Key] = v.Value;
+        //     }
+        //     return res;
+        // }
+        //
+        // public void SetGlobalConstants(IDictionary<string, List<IExprTerm>> constConfig)
+        // {
+        //     foreach (var v in variables.Values)
+        //     {
+        //         if (v.Role == VariableRole.GlobalConstant)
+        //         {
+        //             globalConstants[v] = constConfig[v.Name];
+        //         }    
+        //     }
+        //     return;
+        // }
 
         public void ValidateGlobalConstantVariablesUnique(ITranslationErrorHandler handler)
         {

@@ -21,6 +21,16 @@ machine TestWithMultipleClients
   }
 }
 
+constant globalnumClients: int;
+
+machine TestWithConfig {
+  start state Init {
+    entry {
+      SetupClientServerSystem(globalnumClients);
+    }
+  }
+}
+
 // creates a random map from accountId's to account balance of size `numAccounts`
 fun CreateRandomInitialAccounts(numAccounts: int) : map[int, int]
 {

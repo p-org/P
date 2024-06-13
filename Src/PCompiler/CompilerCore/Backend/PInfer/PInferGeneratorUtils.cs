@@ -8,6 +8,38 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
 {
+
+    public class TypeVar : PLanguageType
+    {
+
+        public TypeVar(string name) : base(TypeKind.Base)
+        {
+            Name = $"{name}_{NextId++}";
+            AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => []);
+        }
+        public override string OriginalRepresentation => Name;
+
+        public override string CanonicalRepresentation => Name;
+
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
+
+        public override PLanguageType Canonicalize()
+        {
+            return this;
+        }
+
+        public override bool IsAssignableFrom(PLanguageType otherType)
+        {
+            if (otherType is TypeVar other)
+            {
+                return Name == other.Name;
+            }
+            return false;
+        }
+
+        public string Name { get; }
+        private static int NextId = 0;
+    }
     public enum Notation {
         Prefix, Infix
     }
@@ -116,10 +148,10 @@ namespace Plang.Compiler.Backend.PInfer
             List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float];
             List<PLanguageType> comparisonTypes = [PrimitiveType.Int, PrimitiveType.Float, PrimitiveType.Bool, PrimitiveType.String, PrimitiveType.Machine];
             var ltInst = from type in numericTypes
-                            select BinaryPredicate($"<", type);
+                            select BinaryPredicate("<", type);
             var eqInst = from type in comparisonTypes
-                            select BinaryPredicate($"==", type);
-            return ltInst.Concat(eqInst).ToList();
+                            select BinaryPredicate("==", type);
+            return ltInst.Concat(eqInst).Concat([BinaryPredicate("==", new TypeVar("T"))]).ToList();
         }
     }
 

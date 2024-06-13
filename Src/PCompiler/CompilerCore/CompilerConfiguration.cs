@@ -25,7 +25,6 @@ namespace Plang.Compiler
             ProjectDependencies = new List<string>();
             Debug = false;
             TermDepth = null;
-            PredicateDepth = null;
             QuantifiedEvents = null;
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
@@ -78,7 +77,6 @@ namespace Plang.Compiler
         public bool Debug { get; set; }
 
         public int? TermDepth { get; set; }
-        public int? PredicateDepth { get; set; }
         public List<string> QuantifiedEvents { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)

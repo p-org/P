@@ -39,7 +39,6 @@ namespace Plang.Options
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
             Parser.AddArgument("quantified-events", "qe", "Events to be quantified over in generated predicates").IsMultiValue = true;
             Parser.AddArgument("term-depth", "td", "Max depth of terms in the predicates");
-            Parser.AddArgument("predicate-depth", "pd", "Max number of logical connectives in the predicates");
 
             var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately, pinfer). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately", "pinfer" };
@@ -199,9 +198,6 @@ namespace Plang.Options
                 case "term-depth":
                     compilerConfiguration.TermDepth = int.Parse((string)option.Value);
                     break;
-                case "predicate-depth":
-                    compilerConfiguration.PredicateDepth = int.Parse((string)option.Value);
-                    break;
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;
                     break;
@@ -271,11 +267,6 @@ namespace Plang.Options
                 if (compilerConfiguration.TermDepth == null)
                 {
                     Error.CompilerReportAndExit("Predicate inference requires a term depth to be specified.");
-                }
-
-                if (compilerConfiguration.PredicateDepth == null)
-                {
-                    Error.CompilerReportAndExit("Predicate inference requires a predicate depth to be specified.");
                 }
             }
         }

@@ -21,7 +21,6 @@ namespace Plang.Compiler
         ITranslationErrorHandler Handler { get; }
         bool Debug { get; }
         int? TermDepth { get; }
-        int? PredicateDepth { get; }
         List<string> QuantifiedEvents { get; }
     }
 }

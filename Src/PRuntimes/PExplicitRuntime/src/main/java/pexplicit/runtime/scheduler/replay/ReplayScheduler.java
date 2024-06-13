@@ -7,6 +7,8 @@ import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.Scheduler;
+import pexplicit.runtime.scheduler.choice.DataChoice;
+import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.PValue;
 
@@ -88,32 +90,31 @@ public class ReplayScheduler extends Scheduler {
         }
 
         // pick the current schedule choice
-        PMachineId pid = schedule.getCurrentScheduleChoice(choiceNumber);
-        if (pid == null) {
+        ScheduleChoice result = schedule.getCurrentScheduleChoice(choiceNumber);
+        if (result == null) {
             return null;
         }
 
-        PMachine result = PExplicitGlobal.getGlobalMachine(pid);
         ScheduleWriter.logScheduleChoice(result);
         PExplicitLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 
         choiceNumber++;
-        return result;
+        return PExplicitGlobal.getGlobalMachine(result.getValue());
     }
 
     @Override
-    protected PValue<?> getNextDataChoice(List<PValue<?>> input_choices) {
+    protected PValue<?> getNextDataChoice(List<DataChoice> input_choices) {
         if (choiceNumber >= schedule.size()) {
             return null;
         }
 
         // pick the current data choice
-        PValue<?> result = schedule.getCurrentDataChoice(choiceNumber);
+        DataChoice result = schedule.getCurrentDataChoice(choiceNumber);
         assert (input_choices.contains(result));
         ScheduleWriter.logDataChoice(result);
         PExplicitLogger.logRepeatDataChoice(result, stepNumber, choiceNumber);
 
         choiceNumber++;
-        return result;
+        return result.getValue();
     }
 }

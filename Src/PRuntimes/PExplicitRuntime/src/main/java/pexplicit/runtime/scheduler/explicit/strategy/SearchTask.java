@@ -1,9 +1,9 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import pexplicit.runtime.scheduler.choice.Choice;
-import pexplicit.runtime.scheduler.choice.DataChoice;
-import pexplicit.runtime.scheduler.choice.ScheduleChoice;
+import pexplicit.runtime.scheduler.choice.DataSearchUnit;
+import pexplicit.runtime.scheduler.choice.SearchUnit;
+import pexplicit.runtime.scheduler.choice.ScheduleSearchUnit;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -18,8 +18,8 @@ public class SearchTask implements Serializable {
     private final List<SearchTask> children = new ArrayList<>();
     @Getter
     private final int currChoiceNumber;
-    private final List<Choice> prefixChoices = new ArrayList<>();
-    private final List<Choice> suffixChoices = new ArrayList<>();
+    private final List<SearchUnit> prefixSearchUnits = new ArrayList<>();
+    private final List<SearchUnit> suffixSearchUnits = new ArrayList<>();
     @Getter
     private int numUnexploredScheduleChoices = 0;
     @Getter
@@ -40,27 +40,27 @@ public class SearchTask implements Serializable {
     }
 
     public void cleanup() {
-        prefixChoices.clear();
-        suffixChoices.clear();
+        prefixSearchUnits.clear();
+        suffixSearchUnits.clear();
     }
 
-    public void addPrefixChoice(Choice choice) {
-        prefixChoices.add(choice.copyCurrent());
+    public void addPrefixChoice(SearchUnit searchUnit) {
+        prefixSearchUnits.add(searchUnit.copyCurrent());
     }
 
-    public void addSuffixChoice(Choice choice) {
-        if (choice instanceof ScheduleChoice scheduleChoice) {
+    public void addSuffixChoice(SearchUnit searchUnit) {
+        if (searchUnit instanceof ScheduleSearchUnit scheduleChoice) {
             numUnexploredScheduleChoices += scheduleChoice.getUnexplored().size();
         } else {
-            numUnexploredDataChoices += ((DataChoice) choice).getUnexplored().size();
+            numUnexploredDataChoices += ((DataSearchUnit) searchUnit).getUnexplored().size();
         }
-        suffixChoices.add(choice.transferChoice());
+        suffixSearchUnits.add(searchUnit.transferChoice());
     }
 
-    public List<Choice> getAllChoices() {
-        List<Choice> result = new ArrayList<>(prefixChoices);
-        result.addAll(suffixChoices);
-        assert (result.size() == (currChoiceNumber + suffixChoices.size()));
+    public List<SearchUnit> getAllChoices() {
+        List<SearchUnit> result = new ArrayList<>(prefixSearchUnits);
+        result.addAll(suffixSearchUnits);
+        assert (result.size() == (currChoiceNumber + suffixSearchUnits.size()));
         return result;
     }
 
@@ -89,7 +89,7 @@ public class SearchTask implements Serializable {
         }
         return String.format("%s @%d::%d (parent: %s)",
                 this,
-                suffixChoices.get(0).getStepNumber(),
+                suffixSearchUnits.get(0).getStepNumber(),
                 currChoiceNumber,
                 parentTask);
     }

@@ -3,6 +3,8 @@ package pexplicit.runtime.logger;
 import lombok.Getter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.scheduler.choice.DataChoice;
+import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.PBool;
 import pexplicit.values.PInt;
@@ -42,12 +44,12 @@ public class ScheduleWriter {
         logIdx++;
     }
 
-    public static void logDataChoice(PValue<?> choice) {
+    public static void logDataChoice(DataChoice choice) {
         Class type = choice.getClass();
-        if (choice instanceof PBool boolChoice) {
+        if (choice.getValue() instanceof PBool boolChoice) {
             logComment("boolean choice");
             log(boolChoice.getValue() ? "True" : "False");
-        } else if (choice instanceof PInt intChoice) {
+        } else if (choice.getValue() instanceof PInt intChoice) {
             logComment("integer choice");
             log(intChoice.toString());
         } else {
@@ -55,9 +57,9 @@ public class ScheduleWriter {
         }
     }
 
-    public static void logScheduleChoice(PMachine choice) {
+    public static void logScheduleChoice(ScheduleChoice choice) {
         logComment("schedule choice");
-        log(String.format("(%d)", choice.getInstanceId()));
+        log(String.format("(%d)", PExplicitGlobal.getGlobalMachine(choice.getValue()).getInstanceId()));
     }
 
     public static void logHeader() {

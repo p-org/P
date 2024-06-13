@@ -1,13 +1,11 @@
 package pexplicit.runtime.scheduler;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import pexplicit.runtime.PExplicitGlobal;
-import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
-import pexplicit.runtime.scheduler.choice.Choice;
-import pexplicit.runtime.scheduler.choice.DataChoice;
-import pexplicit.runtime.scheduler.choice.ScheduleChoice;
+import pexplicit.runtime.scheduler.choice.*;
 import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.values.PValue;
 
@@ -20,11 +18,11 @@ import java.util.List;
  */
 public class Schedule implements Serializable {
     /**
-     * List of choices
+     * List of current choices
      */
     @Getter
     @Setter
-    private List<Choice> choices = new ArrayList<>();
+    private List<SearchUnit> searchUnits = new ArrayList<>();
 
     /**
      * Step state at the start of a scheduler step.
@@ -45,8 +43,8 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return Choice at depth idx
      */
-    public Choice getChoice(int idx) {
-        return choices.get(idx);
+    public SearchUnit getChoice(int idx) {
+        return searchUnits.get(idx);
     }
 
     /**
@@ -55,8 +53,8 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      */
     public void clearChoice(int idx) {
-        choices.get(idx).clearCurrent();
-        choices.get(idx).clearUnexplored();
+        searchUnits.get(idx).clearCurrent();
+        searchUnits.get(idx).clearUnexplored();
     }
 
     /**
@@ -65,7 +63,7 @@ public class Schedule implements Serializable {
      * @param choiceNum Choice depth
      */
     public void removeChoicesAfter(int choiceNum) {
-        choices.subList(choiceNum + 1, choices.size()).clear();
+        searchUnits.subList(choiceNum + 1, searchUnits.size()).clear();
     }
 
     /**
@@ -75,7 +73,7 @@ public class Schedule implements Serializable {
      */
     public int getNumUnexploredChoices() {
         int numUnexplored = 0;
-        for (Choice<?> c : choices) {
+        for (SearchUnit<?> c : searchUnits) {
             numUnexplored += c.getUnexplored().size();
         }
         return numUnexplored;
@@ -88,8 +86,8 @@ public class Schedule implements Serializable {
      */
     public int getNumUnexploredDataChoices() {
         int numUnexplored = 0;
-        for (Choice<?> c : choices) {
-            if (c instanceof DataChoice) {
+        for (SearchUnit<?> c : searchUnits) {
+            if (c instanceof DataSearchUnit) {
                 numUnexplored += c.getUnexplored().size();
             }
         }
@@ -104,17 +102,17 @@ public class Schedule implements Serializable {
      * @param current    Machine to set as current schedule choice
      * @param unexplored List of machine to set as unexplored schedule choices
      */
-    public void setScheduleChoice(int stepNum, int choiceNum, PMachineId current, List<PMachineId> unexplored) {
-        if (choiceNum == choices.size()) {
-            choices.add(null);
+    public void setScheduleChoice(int stepNum, int choiceNum, ScheduleChoice current, List<ScheduleChoice> unexplored) {
+        if (choiceNum == searchUnits.size()) {
+            searchUnits.add(null);
         }
-        assert (choiceNum < choices.size());
+        assert (choiceNum < searchUnits.size());
         if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()
                 && stepNum != 0) {
             assert (stepBeginState != null);
-            choices.set(choiceNum, new ScheduleChoice(stepNum, choiceNum, current, unexplored, stepBeginState));
+            searchUnits.set(choiceNum, new ScheduleSearchUnit(stepNum, choiceNum, current, unexplored, stepBeginState));
         } else {
-            choices.set(choiceNum, new ScheduleChoice(stepNum, choiceNum, current, unexplored, null));
+            searchUnits.set(choiceNum, new ScheduleSearchUnit(stepNum, choiceNum, current, unexplored, null));
         }
     }
 
@@ -126,12 +124,12 @@ public class Schedule implements Serializable {
      * @param current    PValue to set as current schedule choice
      * @param unexplored List of PValue to set as unexplored schedule choices
      */
-    public void setDataChoice(int stepNum, int choiceNum, PValue<?> current, List<PValue<?>> unexplored) {
-        if (choiceNum == choices.size()) {
-            choices.add(null);
+    public void setDataChoice(int stepNum, int choiceNum, DataChoice current, List<DataChoice> unexplored) {
+        if (choiceNum == searchUnits.size()) {
+            searchUnits.add(null);
         }
-        assert (choiceNum < choices.size());
-        choices.set(choiceNum, new DataChoice(stepNum, choiceNum, current, unexplored));
+        assert (choiceNum < searchUnits.size());
+        searchUnits.set(choiceNum, new DataSearchUnit(stepNum, choiceNum, current, unexplored));
     }
 
     /**
@@ -140,9 +138,9 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return Current schedule choice
      */
-    public PMachineId getCurrentScheduleChoice(int idx) {
-        assert (choices.get(idx) instanceof ScheduleChoice);
-        return ((ScheduleChoice) choices.get(idx)).getCurrent();
+    public ScheduleChoice getCurrentScheduleChoice(int idx) {
+        assert (searchUnits.get(idx) instanceof ScheduleSearchUnit);
+        return ((ScheduleSearchUnit) searchUnits.get(idx)).getCurrent();
     }
 
     /**
@@ -151,9 +149,9 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return Current data choice
      */
-    public PValue<?> getCurrentDataChoice(int idx) {
-        assert (choices.get(idx) instanceof DataChoice);
-        return ((DataChoice) choices.get(idx)).getCurrent();
+    public DataChoice getCurrentDataChoice(int idx) {
+        assert (searchUnits.get(idx) instanceof DataSearchUnit);
+        return ((DataSearchUnit) searchUnits.get(idx)).getCurrent();
     }
 
     /**
@@ -162,10 +160,10 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return List of machines, or null if index is invalid
      */
-    public List<PMachineId> getUnexploredScheduleChoices(int idx) {
+    public List<ScheduleChoice> getUnexploredScheduleChoices(int idx) {
         if (idx < size()) {
-            assert (choices.get(idx) instanceof ScheduleChoice);
-            return ((ScheduleChoice) choices.get(idx)).getUnexplored();
+            assert (searchUnits.get(idx) instanceof ScheduleSearchUnit);
+            return ((ScheduleSearchUnit) searchUnits.get(idx)).getUnexplored();
         } else {
             return new ArrayList<>();
         }
@@ -177,22 +175,22 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return List of PValue, or null if index is invalid
      */
-    public List<PValue<?>> getUnexploredDataChoices(int idx) {
+    public List<DataChoice> getUnexploredDataChoices(int idx) {
         if (idx < size()) {
-            assert (choices.get(idx) instanceof DataChoice);
-            return ((DataChoice) choices.get(idx)).getUnexplored();
+            assert (searchUnits.get(idx) instanceof DataSearchUnit);
+            return ((DataSearchUnit) searchUnits.get(idx)).getUnexplored();
         } else {
             return new ArrayList<>();
         }
     }
 
-    public ScheduleChoice getScheduleChoiceAt(Choice choice) {
-        if (choice instanceof ScheduleChoice scheduleChoice) {
+    public ScheduleSearchUnit getScheduleChoiceAt(SearchUnit searchUnit) {
+        if (searchUnit instanceof ScheduleSearchUnit scheduleChoice) {
             return scheduleChoice;
         } else {
-            for (int i = choice.getChoiceNumber() - 1; i >= 0; i--) {
-                Choice c = choices.get(i);
-                if (c instanceof ScheduleChoice scheduleChoice) {
+            for (int i = searchUnit.getChoiceNumber() - 1; i >= 0; i--) {
+                SearchUnit c = searchUnits.get(i);
+                if (c instanceof ScheduleSearchUnit scheduleChoice) {
                     return scheduleChoice;
                 }
             }
@@ -206,7 +204,7 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      */
     public void clearCurrent(int idx) {
-        choices.get(idx).clearCurrent();
+        searchUnits.get(idx).clearCurrent();
     }
 
     /**
@@ -215,6 +213,6 @@ public class Schedule implements Serializable {
      * @return Number of choices in the schedule
      */
     public int size() {
-        return choices.size();
+        return searchUnits.size();
     }
 }

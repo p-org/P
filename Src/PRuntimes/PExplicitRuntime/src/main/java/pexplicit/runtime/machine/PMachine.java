@@ -28,7 +28,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     private static final Map<String, PMachine> nameToMachine = new HashMap<>();
     protected static int globalMachineId = 1;
     @Getter
-    protected final int typeId;
+    protected final PMachineId pid;
     @Getter
     protected final String name;
     private final Set<State> states;
@@ -72,7 +72,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         // initialize name, ids
         this.name = name;
         this.instanceId = ++globalMachineId;
-        this.typeId = id;
+        this.pid = new PMachineId(this.getClass(), id);
         nameToMachine.put(toString(), this);
 
         // initialize states

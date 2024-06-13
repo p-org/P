@@ -9,6 +9,7 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
@@ -217,7 +218,7 @@ public class PExplicitLogger {
         }
     }
 
-    public static void logNewScheduleChoice(List<PMachine> choices, int step, int idx) {
+    public static void logNewScheduleChoice(List<PMachineId> choices, int step, int idx) {
         if (verbosity > 1) {
             log.info(String.format("    @%d::%d new schedule choice: %s", step, idx, choices));
         }

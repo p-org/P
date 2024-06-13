@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.DataChoice;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
@@ -103,7 +104,7 @@ public class Schedule implements Serializable {
      * @param current    Machine to set as current schedule choice
      * @param unexplored List of machine to set as unexplored schedule choices
      */
-    public void setScheduleChoice(int stepNum, int choiceNum, PMachine current, List<PMachine> unexplored) {
+    public void setScheduleChoice(int stepNum, int choiceNum, PMachineId current, List<PMachineId> unexplored) {
         if (choiceNum == choices.size()) {
             choices.add(null);
         }
@@ -139,7 +140,7 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return Current schedule choice
      */
-    public PMachine getCurrentScheduleChoice(int idx) {
+    public PMachineId getCurrentScheduleChoice(int idx) {
         assert (choices.get(idx) instanceof ScheduleChoice);
         return ((ScheduleChoice) choices.get(idx)).getCurrent();
     }
@@ -161,7 +162,7 @@ public class Schedule implements Serializable {
      * @param idx Choice depth
      * @return List of machines, or null if index is invalid
      */
-    public List<PMachine> getUnexploredScheduleChoices(int idx) {
+    public List<PMachineId> getUnexploredScheduleChoices(int idx) {
         if (idx < size()) {
             assert (choices.get(idx) instanceof ScheduleChoice);
             return ((ScheduleChoice) choices.get(idx)).getUnexplored();

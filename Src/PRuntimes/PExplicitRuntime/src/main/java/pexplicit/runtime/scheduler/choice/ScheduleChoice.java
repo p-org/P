@@ -2,7 +2,7 @@ package pexplicit.runtime.scheduler.choice;
 
 import lombok.Getter;
 import lombok.Setter;
-import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.explicit.StepState;
 
 import java.util.ArrayList;
@@ -10,13 +10,13 @@ import java.util.List;
 
 @Getter
 @Setter
-public class ScheduleChoice extends Choice<PMachine> {
+public class ScheduleChoice extends Choice<PMachineId> {
     private StepState choiceState = null;
 
     /**
      * Constructor
      */
-    public ScheduleChoice(int stepNum, int choiceNum, PMachine c, List<PMachine> u, StepState s) {
+    public ScheduleChoice(int stepNum, int choiceNum, PMachineId c, List<PMachineId> u, StepState s) {
         super(c, u, stepNum, choiceNum);
         this.choiceState = s;
     }

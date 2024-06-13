@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import pexplicit.commandline.PExplicitConfig;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
@@ -60,19 +61,18 @@ public class PExplicitGlobal {
     /**
      * Get a machine of a given type and index if exists, else return null.
      *
-     * @param type Machine type
-     * @param idx  Machine index
+     * @param pid Machine pid
      * @return Machine
      */
-    public static PMachine getGlobalMachine(Class<? extends PMachine> type, int idx) {
-        List<PMachine> machinesOfType = machineListByType.get(type);
+    public static PMachine getGlobalMachine(PMachineId pid) {
+        List<PMachine> machinesOfType = machineListByType.get(pid.getType());
         if (machinesOfType == null) {
             return null;
         }
-        if (idx >= machinesOfType.size()) {
+        if (pid.getTypeId() >= machinesOfType.size()) {
             return null;
         }
-        PMachine result = machineListByType.get(type).get(idx);
+        PMachine result = machineListByType.get(pid.getType()).get(pid.getTypeId());
         assert (machineSet.contains(result));
         return result;
     }

@@ -613,6 +613,28 @@ namespace Plang.Compiler.TypeChecker
             }
 
             var safetyTest = new SafetyTest(tree, name);
+            safetyTest.ParamExpr = new Dictionary<string, IPExpr>(); 
+            CheckConflicts(safetyTest,
+                Namespace(implementations),
+                Namespace(safetyTests),
+                Namespace(refinementTests));
+            safetyTests.Add(name, safetyTest);
+            return safetyTest;
+        }
+        
+        public SafetyTest Put(string name, PParser.ParametricSafetyTestDeclContext tree)
+        {
+            // check if test is from an imported project, if so, return null
+            string filePath = config.LocationResolver.GetLocation(tree).File.FullName;
+            foreach (var dependencyPath in config.ProjectDependencies)
+            {
+                if (filePath.StartsWith(dependencyPath))
+                {
+                    return null;
+                }
+            }
+
+            var safetyTest = new SafetyTest(tree, name);
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),

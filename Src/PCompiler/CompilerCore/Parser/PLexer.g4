@@ -70,6 +70,7 @@ CHOOSE    : 'choose' ;
 MODULE         : 'module' ;
 IMPLEMENTATION : 'implementation' ;
 TEST           : 'test' ;
+PARAMTEST      : 'paramtest' ;
 REFINES        : 'refines' ;
 
 // module constructors

@@ -15,4 +15,6 @@ test tcMultipleClients [main=TestWithMultipleClients]:
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, AbstractBank, { TestWithSingleClient });
 
-
+paramtest (zz1 = [1,2], zz2 = [1,2], zz3 = [1,2]) tcSingleClientZZZZ [main=TestWithSingleClient]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, Bank, { TestWithSingleClient });

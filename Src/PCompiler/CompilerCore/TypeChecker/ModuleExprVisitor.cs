@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Linq.Expressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
+using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.ModuleExprs;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -16,6 +21,11 @@ namespace Plang.Compiler.TypeChecker
             Scope globalScope)
         {
             var modExprVisitor = new ModuleExprVisitor(handler, globalScope);
+            var dummyFunction = new Function(null)
+            {
+                Scope = globalScope
+            };
+            var exprVisitor = new ExprVisitor(dummyFunction, handler);
 
             // first do all the named modules
             foreach (var mod in globalScope.NamedModules)
@@ -27,10 +37,28 @@ namespace Plang.Compiler.TypeChecker
             // all the test declarations
             foreach (var test in globalScope.SafetyTests)
             {
-                var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
-                test.ModExpr = modExprVisitor.Visit(context.modExpr());
-            }
+                if (test.ParamExpr == null)
+                {
+                    var context = (PParser.ParametricSafetyTestDeclContext)test.SourceLocation;
+                    test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                    var expr = (NamedTupleExpr)exprVisitor.Visit(context.globalParam);
+                    var names = ((NamedTupleType)expr.Type).Names.ToList();
+                    var values = expr.TupleFields.ToList();
+                    IDictionary<string, IPExpr> dic = new Dictionary<string, IPExpr>();
+                    for (var i = 0; i < names.Count; i = i + 1)
+                    {
+                        dic[names[i]] = values[i];
+                    }
 
+                    test.ParamExpr = dic;
+                }
+                else
+                {
+                    var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
+                    test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                }
+            }
+            
             foreach (var test in globalScope.RefinementTests)
             {
                 var context = (PParser.RefinementTestDeclContext)test.SourceLocation;

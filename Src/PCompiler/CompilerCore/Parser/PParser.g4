@@ -243,8 +243,17 @@ modExpr : LPAREN modExpr RPAREN												  # ParenModuleExpr
 bindExpr : (mName=iden | mName=iden RARROW iName=iden) ;
 
 namedModuleDecl : MODULE name=iden ASSIGN modExpr SEMI ;
+intListLiteralBody : IntLiteral
+             | IntLiteral (COMMA IntLiteral)+ 
+             ;
+intListLiteral : LBRACK intListLiteralBody RBRACK;
+paramBody : name=iden ASSIGN value=intListLiteral
+          | name=iden ASSIGN value=intListLiteral (COMMA names=iden ASSIGN value=intListLiteral)+
+          ;
+param : LPAREN paramBody RPAREN;
 
 testDecl : TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI                  # SafetyTestDecl
+         | PARAMTEST globalParam=param testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # ParametricSafetyTestDecl
          | TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
          ;
 

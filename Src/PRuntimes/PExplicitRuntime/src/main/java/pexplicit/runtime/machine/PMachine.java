@@ -73,6 +73,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         this.name = name;
         this.instanceId = ++globalMachineId;
         this.pid = new PMachineId(this.getClass(), id);
+        this.pid.setName(this.toString());
         nameToMachine.put(toString(), this);
 
         // initialize states

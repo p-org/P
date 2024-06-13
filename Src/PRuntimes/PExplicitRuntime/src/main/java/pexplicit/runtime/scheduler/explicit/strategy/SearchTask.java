@@ -1,13 +1,13 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import pexplicit.runtime.scheduler.choice.Choice;
-import pexplicit.runtime.scheduler.choice.DataChoice;
-import pexplicit.runtime.scheduler.choice.ScheduleChoice;
+import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.machine.PMachineId;
+import pexplicit.runtime.scheduler.choice.*;
+import pexplicit.values.PValue;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class SearchTask implements Serializable {
     @Getter
@@ -18,8 +18,10 @@ public class SearchTask implements Serializable {
     private final List<SearchTask> children = new ArrayList<>();
     @Getter
     private final int currChoiceNumber;
+    @Getter
     private final List<Choice> prefixChoices = new ArrayList<>();
-    private final List<Choice> suffixChoices = new ArrayList<>();
+    @Getter
+    private final Map<Integer, SearchUnit> searchUnits = new HashMap<>();
     @Getter
     private int numUnexploredScheduleChoices = 0;
     @Getter
@@ -41,27 +43,20 @@ public class SearchTask implements Serializable {
 
     public void cleanup() {
         prefixChoices.clear();
-        suffixChoices.clear();
+        searchUnits.clear();
     }
 
     public void addPrefixChoice(Choice choice) {
         prefixChoices.add(choice.copyCurrent());
     }
 
-    public void addSuffixChoice(Choice choice) {
-        if (choice instanceof ScheduleChoice scheduleChoice) {
-            numUnexploredScheduleChoices += scheduleChoice.getUnexplored().size();
+    public void addSuffixSearchUnit(int choiceNum, SearchUnit unit) {
+        if (unit instanceof ScheduleSearchUnit scheduleSearchUnit) {
+            numUnexploredScheduleChoices += scheduleSearchUnit.getUnexplored().size();
         } else {
-            numUnexploredDataChoices += ((DataChoice) choice).getUnexplored().size();
+            numUnexploredDataChoices += ((DataSearchUnit) unit).getUnexplored().size();
         }
-        suffixChoices.add(choice.transferChoice());
-    }
-
-    public List<Choice> getAllChoices() {
-        List<Choice> result = new ArrayList<>(prefixChoices);
-        result.addAll(suffixChoices);
-        assert (result.size() == (currChoiceNumber + suffixChoices.size()));
-        return result;
+        searchUnits.put(choiceNum, unit.transferUnit());
     }
 
     @Override
@@ -89,8 +84,128 @@ public class SearchTask implements Serializable {
         }
         return String.format("%s @%d::%d (parent: %s)",
                 this,
-                suffixChoices.get(0).getStepNumber(),
+                prefixChoices.get(currChoiceNumber).getStepNumber(),
                 currChoiceNumber,
                 parentTask);
     }
+
+    public List<Integer> getSearchUnitKeys(boolean reversed) {
+        List<Integer> keys = new ArrayList<>(searchUnits.keySet());
+        if (reversed)
+            Collections.sort(keys, Collections.reverseOrder());
+        else
+            Collections.sort(keys);
+        return keys;
+    }
+
+
+    /**
+     * Get the number of search units in the task
+     *
+     * @return Number of search units in the task
+     */
+    public int size() {
+        return searchUnits.size();
+    }
+
+    /**
+     * Get the search unit at a choice depth
+     *
+     * @param idx Choice depth
+     * @return Search unit at depth idx
+     */
+    public SearchUnit getSearchUnit(int idx) {
+        return searchUnits.get(idx);
+    }
+
+    /**
+     * Get unexplored schedule choices at a choice depth.
+     *
+     * @param idx Choice depth
+     * @return List of machines, or null if index is invalid
+     */
+    public List<PMachineId> getScheduleSearchUnit(int idx) {
+        SearchUnit searchUnit = searchUnits.get(idx);
+        if (searchUnit != null) {
+            assert (searchUnit instanceof ScheduleSearchUnit);
+            return ((ScheduleSearchUnit) searchUnit).getUnexplored();
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Get unexplored data choices at a choice depth.
+     *
+     * @param idx Choice depth
+     * @return List of PValue, or null if index is invalid
+     */
+    public List<PValue<?>> getDataSearchUnit(int idx) {
+        SearchUnit searchUnit = searchUnits.get(idx);
+        if (searchUnit != null) {
+            assert (searchUnit instanceof DataSearchUnit);
+            return ((DataSearchUnit) searchUnit).getUnexplored();
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Set the schedule search unit at a choice depth.
+     *
+     * @param choiceNum  Choice number
+     * @param unexplored List of machine to set as unexplored schedule choices
+     */
+    public void setScheduleSearchUnit(int choiceNum, List<PMachineId> unexplored) {
+        searchUnits.put(choiceNum, new ScheduleSearchUnit(unexplored));
+    }
+
+    /**
+     * Set the data search unit at a choice depth.
+     *
+     * @param choiceNum  Choice number
+     * @param unexplored List of PValue to set as unexplored schedule choices
+     */
+    public void setDataSearchUnit(int choiceNum, List<PValue<?>> unexplored) {
+        searchUnits.put(choiceNum, new DataSearchUnit(unexplored));
+    }
+
+    /**
+     * Get the number of unexplored choices in this task
+     *
+     * @return Number of unexplored choices
+     */
+    public int getNumUnexploredChoices() {
+        int numUnexplored = 0;
+        for (SearchUnit<?> c : searchUnits.values()) {
+            numUnexplored += c.getUnexplored().size();
+        }
+        return numUnexplored;
+    }
+
+    /**
+     * Get the number of unexplored data choices in this task
+     *
+     * @return Number of unexplored data choices
+     */
+    public int getNumUnexploredDataChoices() {
+        int numUnexplored = 0;
+        for (SearchUnit<?> c : searchUnits.values()) {
+            if (c instanceof DataSearchUnit) {
+                numUnexplored += c.getUnexplored().size();
+            }
+        }
+        return numUnexplored;
+    }
+
+
+    /**
+     * Clear search unit at a choice depth
+     *
+     * @param idx Choice depth
+     */
+    public void clearSearchUnit(int idx) {
+        searchUnits.remove(idx);
+    }
+
 }

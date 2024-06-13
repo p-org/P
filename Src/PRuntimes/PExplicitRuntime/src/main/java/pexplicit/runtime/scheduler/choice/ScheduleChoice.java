@@ -16,26 +16,13 @@ public class ScheduleChoice extends Choice<PMachineId> {
     /**
      * Constructor
      */
-    public ScheduleChoice(int stepNum, int choiceNum, PMachineId c, List<PMachineId> u, StepState s) {
-        super(c, u, stepNum, choiceNum);
+    public ScheduleChoice(int stepNum, int choiceNum, PMachineId c, StepState s) {
+        super(c, stepNum, choiceNum);
         this.choiceState = s;
     }
 
-    /**
-     * Clean unexplored choices
-     */
-    public void clearUnexplored() {
-        unexplored.clear();
-    }
-
     public Choice copyCurrent() {
-        return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, new ArrayList<>(), this.choiceState);
-    }
-
-    public Choice transferChoice() {
-        ScheduleChoice newChoice = new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, this.unexplored, this.choiceState);
-        this.unexplored = new ArrayList<>();
-        return newChoice;
+        return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, this.choiceState);
     }
 
     @Override
@@ -43,9 +30,6 @@ public class ScheduleChoice extends Choice<PMachineId> {
         StringBuilder sb = new StringBuilder();
         if (current != null) {
             sb.append(String.format("curr@%s", current));
-        }
-        if (unexplored != null && !unexplored.isEmpty()) {
-            sb.append(String.format(" rem@%s", unexplored));
         }
         return sb.toString();
     }

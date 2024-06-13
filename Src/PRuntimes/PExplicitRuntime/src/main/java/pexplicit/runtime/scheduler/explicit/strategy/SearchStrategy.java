@@ -88,9 +88,11 @@ public abstract class SearchStrategy implements Serializable {
      */
     public int getNumPendingChoices() {
         int numUnexplored = 0;
+        SearchTask task = getCurrTask();
+        numUnexplored += task.getNumUnexploredChoices();
         for (Integer tid : pendingTasks) {
-            SearchTask task = getTask(tid);
-            numUnexplored += task.getNumUnexploredScheduleChoices() + task.getNumUnexploredDataChoices();
+            task = getTask(tid);
+            numUnexplored += task.getNumUnexploredChoices();
         }
         return numUnexplored;
     }
@@ -102,8 +104,10 @@ public abstract class SearchStrategy implements Serializable {
      */
     public int getNumPendingDataChoices() {
         int numUnexplored = 0;
+        SearchTask task = getCurrTask();
+        numUnexplored += task.getNumUnexploredDataChoices();
         for (Integer tid : pendingTasks) {
-            SearchTask task = getTask(tid);
+            task = getTask(tid);
             numUnexplored += task.getNumUnexploredDataChoices();
         }
         return numUnexplored;

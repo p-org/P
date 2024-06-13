@@ -49,15 +49,6 @@ public class Schedule implements Serializable {
     }
 
     /**
-     * Clear choice at a choice depth
-     *
-     * @param idx Choice depth
-     */
-    public void clearChoice(int idx) {
-        choices.get(idx).clearCurrent();
-    }
-
-    /**
      * Remove choices after a choice depth
      *
      * @param choiceNum Choice depth
@@ -99,7 +90,7 @@ public class Schedule implements Serializable {
             choices.add(null);
         }
         assert (choiceNum < choices.size());
-        choices.set(choiceNum, new DataChoice(stepNum, choiceNum, current));
+        choices.set(choiceNum, new DataChoice(current));
     }
 
     /**

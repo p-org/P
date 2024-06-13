@@ -1,7 +1,6 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.choice.*;
 import pexplicit.values.PValue;
@@ -22,10 +21,6 @@ public class SearchTask implements Serializable {
     private final List<Choice> prefixChoices = new ArrayList<>();
     @Getter
     private final Map<Integer, SearchUnit> searchUnits = new HashMap<>();
-    @Getter
-    private int numUnexploredScheduleChoices = 0;
-    @Getter
-    private int numUnexploredDataChoices = 0;
 
     public SearchTask(int id, int choiceNum, SearchTask parentTask) {
         this.id = id;
@@ -51,11 +46,6 @@ public class SearchTask implements Serializable {
     }
 
     public void addSuffixSearchUnit(int choiceNum, SearchUnit unit) {
-        if (unit instanceof ScheduleSearchUnit scheduleSearchUnit) {
-            numUnexploredScheduleChoices += scheduleSearchUnit.getUnexplored().size();
-        } else {
-            numUnexploredDataChoices += ((DataSearchUnit) unit).getUnexplored().size();
-        }
         searchUnits.put(choiceNum, unit.transferUnit());
     }
 
@@ -82,11 +72,19 @@ public class SearchTask implements Serializable {
         if (isInitialTask()) {
             return String.format("%s @0::0 (parent: null)", this);
         }
-        return String.format("%s @%d::%d (parent: %s)",
-                this,
-                prefixChoices.get(currChoiceNumber).getStepNumber(),
-                currChoiceNumber,
-                parentTask);
+        Choice c = prefixChoices.get(currChoiceNumber);
+        if (c instanceof ScheduleChoice scheduleChoice) {
+            return String.format("%s @%d::%d (parent: %s)",
+                    this,
+                    scheduleChoice.getStepNumber(),
+                    currChoiceNumber,
+                    parentTask);
+        } else {
+            return String.format("%s -::%d (parent: %s)",
+                    this,
+                    currChoiceNumber,
+                    parentTask);
+        }
     }
 
     public List<Integer> getSearchUnitKeys(boolean reversed) {
@@ -202,10 +200,10 @@ public class SearchTask implements Serializable {
     /**
      * Clear search unit at a choice depth
      *
-     * @param idx Choice depth
+     * @param choiceNum Choice depth
      */
-    public void clearSearchUnit(int idx) {
-        searchUnits.remove(idx);
+    public void clearSearchUnit(int choiceNum) {
+        searchUnits.remove(choiceNum);
     }
 
 }

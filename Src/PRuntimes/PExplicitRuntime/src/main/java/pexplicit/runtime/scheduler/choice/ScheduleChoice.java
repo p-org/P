@@ -5,19 +5,30 @@ import lombok.Setter;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.explicit.StepState;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Getter
 @Setter
 public class ScheduleChoice extends Choice<PMachineId> {
+    /**
+     * Step number
+     */
+    private int stepNumber = 0;
+    /**
+     * Choice number
+     */
+    private int choiceNumber = 0;
+
+    /**
+     * Protocol state at the schedule step
+     */
     private StepState choiceState = null;
 
     /**
      * Constructor
      */
     public ScheduleChoice(int stepNum, int choiceNum, PMachineId c, StepState s) {
-        super(c, stepNum, choiceNum);
+        super(c);
+        this.stepNumber = stepNum;
+        this.choiceNumber = choiceNum;
         this.choiceState = s;
     }
 

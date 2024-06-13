@@ -10,12 +10,12 @@ public class DataChoice extends Choice<PValue<?>> {
     /**
      * Constructor
      */
-    public DataChoice(int stepNum, int choiceNum, PValue<?> c) {
-        super(c, stepNum, choiceNum);
+    public DataChoice(PValue<?> c) {
+        super(c);
     }
 
     public Choice copyCurrent() {
-        return new DataChoice(this.stepNumber, this.choiceNumber, this.current);
+        return new DataChoice(this.current);
     }
 
     @Override

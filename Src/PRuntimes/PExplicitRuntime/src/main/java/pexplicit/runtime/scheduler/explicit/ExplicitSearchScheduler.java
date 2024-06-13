@@ -343,8 +343,11 @@ public class ExplicitSearchScheduler extends Scheduler {
         schedule.setScheduleChoice(stepNumber, choiceNumber, result.getPid());
 
         // update search unit in search task
-        if (!choices.isEmpty())
+        if (choices.isEmpty()) {
+            searchStrategy.getCurrTask().clearSearchUnit(choiceNumber);
+        } else {
             searchStrategy.getCurrTask().setScheduleSearchUnit(choiceNumber, choices);
+        }
 
         // increment choice number
         choiceNumber++;
@@ -403,8 +406,11 @@ public class ExplicitSearchScheduler extends Scheduler {
         schedule.setDataChoice(stepNumber, choiceNumber, result);
 
         // update search unit in search task
-        if (!choices.isEmpty())
+        if (choices.isEmpty()) {
+            searchStrategy.getCurrTask().clearSearchUnit(choiceNumber);
+        } else {
             searchStrategy.getCurrTask().setDataSearchUnit(choiceNumber, choices);
+        }
 
         // increment choice number
         choiceNumber++;

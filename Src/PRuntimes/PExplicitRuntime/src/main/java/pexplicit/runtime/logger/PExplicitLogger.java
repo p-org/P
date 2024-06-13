@@ -13,11 +13,8 @@ import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
-import pexplicit.runtime.scheduler.Schedule;
-import pexplicit.runtime.scheduler.choice.DataChoice;
+import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
-import pexplicit.runtime.scheduler.choice.ScheduleSearchUnit;
-import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
@@ -210,48 +207,48 @@ public class PExplicitLogger {
     /**
      * Log when backtracking to a new choice
      *
-     * @param searchUnit Choice to which backtracking to
+     * @param choice Choice to which backtracking to
      */
-    public static void logBacktrack(SearchUnit searchUnit) {
+    public static void logBacktrack(Choice choice) {
         if (verbosity > 1) {
             log.info(String.format("  Backtracking to %s choice @%d::%d",
-                    ((searchUnit instanceof ScheduleSearchUnit) ? "schedule" : "data"),
-                    searchUnit.getStepNumber(),
-                    searchUnit.getChoiceNumber()));
+                    ((choice instanceof ScheduleChoice) ? "schedule" : "data"),
+                    choice.getStepNumber(),
+                    choice.getChoiceNumber()));
         }
     }
 
-    public static void logNewScheduleChoice(List<ScheduleChoice> choices, int step, int idx) {
+    public static void logNewScheduleChoice(List<PMachineId> choices, int step, int idx) {
         if (verbosity > 1) {
             log.info(String.format("    @%d::%d new schedule choice: %s", step, idx, choices));
         }
     }
 
-    public static void logNewDataChoice(List<DataChoice> choices, int step, int idx) {
+    public static void logNewDataChoice(List<PValue<?>> choices, int step, int idx) {
         if (verbosity > 1) {
             log.info(String.format("    @%d::%d new data choice: %s", step, idx, choices));
         }
     }
 
-    public static void logRepeatScheduleChoice(ScheduleChoice choice, int step, int idx) {
+    public static void logRepeatScheduleChoice(PMachine choice, int step, int idx) {
         if (verbosity > 2) {
             log.info(String.format("    @%d::%d %s (repeat)", step, idx, choice));
         }
     }
 
-    public static void logCurrentScheduleChoice(ScheduleChoice choice, int step, int idx) {
+    public static void logCurrentScheduleChoice(PMachine choice, int step, int idx) {
         if (verbosity > 2) {
             log.info(String.format("    @%d::%d %s", step, idx, choice));
         }
     }
 
-    public static void logRepeatDataChoice(DataChoice choice, int step, int idx) {
+    public static void logRepeatDataChoice(PValue<?> choice, int step, int idx) {
         if (verbosity > 2) {
             log.info(String.format("    @%d::%d %s (repeat)", step, idx, choice));
         }
     }
 
-    public static void logCurrentDataChoice(DataChoice choice, int step, int idx) {
+    public static void logCurrentDataChoice(PValue<?> choice, int step, int idx) {
         if (verbosity > 2) {
             log.info(String.format("    @%d::%d %s", step, idx, choice));
         }

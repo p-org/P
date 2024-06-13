@@ -7,7 +7,6 @@ import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
-import pexplicit.runtime.scheduler.choice.DataChoice;
 import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.NotImplementedException;
@@ -119,7 +118,7 @@ public abstract class Scheduler implements SchedulerInterface {
      *
      * @return PValue as data choice
      */
-    protected abstract PValue<?> getNextDataChoice(List<DataChoice> input_choices);
+    protected abstract PValue<?> getNextDataChoice(List<PValue<?>> input_choices);
 
     public void updateLogNumber() {
         stepNumLogs += 1;
@@ -134,9 +133,9 @@ public abstract class Scheduler implements SchedulerInterface {
      * @return boolean data choice
      */
     public PBool getRandomBool() {
-        List<DataChoice> choices = new ArrayList<>();
-        choices.add(new DataChoice(PBool.PTRUE));
-        choices.add(new DataChoice(PBool.PFALSE));
+        List<PValue<?>> choices = new ArrayList<>();
+        choices.add(PBool.PTRUE);
+        choices.add(PBool.PFALSE);
         return (PBool) getNextDataChoice(choices);
     }
 
@@ -147,7 +146,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * @return integer data choice
      */
     public PInt getRandomInt(PInt bound) {
-        List<DataChoice> choices = new ArrayList<>();
+        List<PValue<?>> choices = new ArrayList<>();
         int boundInt = bound.getValue();
         if (boundInt > 10000) {
             throw new BugFoundException(String.format("choose expects a parameter with at most 10,000 choices, got %d choices instead.", boundInt));
@@ -156,7 +155,7 @@ public abstract class Scheduler implements SchedulerInterface {
             boundInt = 1;
         }
         for (int i = 0; i < boundInt; i++) {
-            choices.add(new DataChoice(new PInt(i)));
+            choices.add(new PInt(i));
         }
         return (PInt) getNextDataChoice(choices);
     }

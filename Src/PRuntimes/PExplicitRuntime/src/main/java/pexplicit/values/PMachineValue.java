@@ -1,9 +1,7 @@
 package pexplicit.values;
 
 import lombok.Getter;
-import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachine;
-import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.utils.exceptions.BugFoundException;
 
@@ -12,8 +10,7 @@ import pexplicit.utils.exceptions.BugFoundException;
  */
 @Getter
 public class PMachineValue extends PValue<PMachineValue> {
-    private final PMachineId pid;
-    private final String name;
+    private final PMachine value;
 
     /**
      * Constructor
@@ -21,18 +18,8 @@ public class PMachineValue extends PValue<PMachineValue> {
      * @param val machine value to set to
      */
     public PMachineValue(PMachine val) {
-        pid = val.getPid();
-        name =  val.toString();
+        value = val;
         initialize();
-    }
-
-    private PMachineValue(PMachineId inp_pid, String inp_name) {
-        pid = inp_pid;
-        name = inp_name;
-    }
-
-    public PMachine getValue() {
-        return PExplicitGlobal.getGlobalMachine(pid);
     }
 
     /**
@@ -41,7 +28,6 @@ public class PMachineValue extends PValue<PMachineValue> {
      * @return unique machine instance id
      */
     public int getId() {
-        PMachine value = getValue();
         if (value instanceof PMonitor) {
             throw new BugFoundException(String.format("Cannot fetch id from a PMonitor: %s", value));
         }
@@ -50,12 +36,12 @@ public class PMachineValue extends PValue<PMachineValue> {
 
     @Override
     public PMachineValue clone() {
-        return new PMachineValue(pid, name);
+        return new PMachineValue(value);
     }
 
     @Override
     protected String _asString() {
-        return name;
+        return value.toString();
     }
 
     @Override
@@ -64,6 +50,6 @@ public class PMachineValue extends PValue<PMachineValue> {
         else if (!(obj instanceof PMachineValue)) {
             return false;
         }
-        return this.pid.equals(((PMachineValue) obj).pid);
+        return this.value.equals(((PMachineValue) obj).value);
     }
 }

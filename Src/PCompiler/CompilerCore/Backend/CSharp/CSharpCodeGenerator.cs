@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices.JavaScript;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -22,7 +21,6 @@ namespace Plang.Compiler.Backend.CSharp
         /// This compiler has a compilation stage.
         /// </summary>
         public bool HasCompilationStage => true;
-        // public IDictionary<Variable, List<IExprTerm>> globalConstants = new Dictionary<Variable, List<IExprTerm>>();
         private List<Variable> _globalVariables = [];
 
         private string GetGlobalAndLocalVariableName(CompilationContext context, Variable v)

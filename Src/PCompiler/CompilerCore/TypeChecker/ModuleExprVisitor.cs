@@ -102,7 +102,7 @@ namespace Plang.Compiler.TypeChecker
 
     internal class ModuleExprVisitor : PParserBaseVisitor<IPModuleExpr>
     {
-        private readonly Scope _globalScope;
+        private readonly Scope globalScope;
         private readonly ITranslationErrorHandler handler;
 
         public ModuleExprVisitor(
@@ -110,13 +110,13 @@ namespace Plang.Compiler.TypeChecker
             Scope globalScope)
         {
             this.handler = handler;
-            this._globalScope = globalScope;
+            this.globalScope = globalScope;
         }
 
         public override IPModuleExpr VisitNamedModule([NotNull] PParser.NamedModuleContext context)
         {
             // check if the named module is declared
-            if (!_globalScope.Get(context.GetText(), out NamedModule mod))
+            if (!globalScope.Get(context.GetText(), out NamedModule mod))
             {
                 throw handler.MissingDeclaration(context, "module", context.GetText());
             }
@@ -142,7 +142,7 @@ namespace Plang.Compiler.TypeChecker
             var eventList = new List<PEvent>();
             foreach (var eventName in context.nonDefaultEventList()._events)
             {
-                if (!_globalScope.Get(eventName.GetText(), out PEvent @event))
+                if (!globalScope.Get(eventName.GetText(), out PEvent @event))
                 {
                     throw handler.MissingDeclaration(eventName, "event", eventName.GetText());
                 }
@@ -159,7 +159,7 @@ namespace Plang.Compiler.TypeChecker
             var interfaceList = new List<Interface>();
             foreach (var interfaceName in context.idenList()._names)
             {
-                if (!_globalScope.Get(interfaceName.GetText(), out Interface @interface))
+                if (!globalScope.Get(interfaceName.GetText(), out Interface @interface))
                 {
                     throw handler.MissingDeclaration(interfaceName, "interface", interfaceName.GetText());
                 }
@@ -172,12 +172,12 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPModuleExpr VisitRenameModuleExpr([NotNull] PParser.RenameModuleExprContext context)
         {
-            if (!_globalScope.Get(context.newName.GetText(), out Interface newInterface))
+            if (!globalScope.Get(context.newName.GetText(), out Interface newInterface))
             {
                 throw handler.MissingDeclaration(context.newName, "interface", context.newName.GetText());
             }
 
-            if (!_globalScope.Get(context.oldName.GetText(), out Interface oldInterface))
+            if (!globalScope.Get(context.oldName.GetText(), out Interface oldInterface))
             {
                 throw handler.MissingDeclaration(context.oldName, "interface", context.oldName.GetText());
             }
@@ -196,7 +196,7 @@ namespace Plang.Compiler.TypeChecker
             var monList = new List<Machine>();
             foreach (var monName in context.idenList()._names)
             {
-                if (!_globalScope.Get(monName.GetText(), out Machine monitor))
+                if (!globalScope.Get(monName.GetText(), out Machine monitor))
                 {
                     throw handler.MissingDeclaration(monName, "spec machine", monName.GetText());
                 }
@@ -222,12 +222,12 @@ namespace Plang.Compiler.TypeChecker
             var machine = context.mName.GetText();
             var @interface = context.iName?.GetText() ?? machine;
 
-            if (!_globalScope.Get(@interface, out Interface i))
+            if (!globalScope.Get(@interface, out Interface i))
             {
                 throw handler.MissingDeclaration(context.iName ?? context.mName, "interface", @interface);
             }
 
-            if (!_globalScope.Get(machine, out Machine m))
+            if (!globalScope.Get(machine, out Machine m))
             {
                 throw handler.MissingDeclaration(context.mName, "machine", machine);
             }

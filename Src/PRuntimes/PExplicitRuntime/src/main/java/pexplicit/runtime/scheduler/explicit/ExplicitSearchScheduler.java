@@ -534,17 +534,18 @@ public class ExplicitSearchScheduler extends Scheduler {
             if (newStepNumber == 0) {
                 reset();
                 stepState.resetToZero();
+                schedule.clear();
             } else {
                 stepNumber = newStepNumber;
                 choiceNumber = scheduleChoice.getChoiceNumber();
                 stepState.setTo(scheduleChoice.getChoiceState());
                 assert (!PExplicitGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
+                schedule.removeChoicesAfter(backtrackChoiceNumber);
             }
-            schedule.removeChoicesAfter(backtrackChoiceNumber);
             PExplicitLogger.logBacktrack(newStepNumber, cIdx, unit);
             return;
         }
-        schedule.removeChoicesAfter(0);
+        schedule.clear();
         isDoneIterating = true;
     }
 

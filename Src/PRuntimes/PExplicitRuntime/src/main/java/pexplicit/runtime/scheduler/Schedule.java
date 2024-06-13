@@ -126,12 +126,10 @@ public class Schedule implements Serializable {
     }
 
     /**
-     * Clear current choices at a choice depth
-     *
-     * @param idx Choice depth
+     * Clear current choices
      */
-    public void clearCurrent(int idx) {
-        choices.get(idx).clearCurrent();
+    public void clear() {
+        choices.clear();
     }
 
     /**

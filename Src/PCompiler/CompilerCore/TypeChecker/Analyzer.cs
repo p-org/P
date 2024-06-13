@@ -32,7 +32,7 @@ namespace Plang.Compiler.TypeChecker
                 // machineFunction.AddGlobalConstantVariables(handler, globalConstantVariables);
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
-            
+           
             // Step 2: Validate no static handlers
             foreach (var machine in globalScope.Machines)
             {

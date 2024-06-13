@@ -60,7 +60,7 @@ namespace Plang.Compiler.TypeChecker
         {
             // COLON type
             var variableType = ResolveType(context.type());
-            Console.WriteLine("variableType:" + variableType);
+            // Console.WriteLine("variableType:" + variableType);
 
             // VAR idenList
             foreach (var t in context.idenList()._names)

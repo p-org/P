@@ -59,7 +59,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public void AddGlobalConstantVariables(ITranslationErrorHandler handler, List<Variable> gvars)
         {
             var localNames = localVariables.Select(x => x.Name);
-            Console.WriteLine("localNames:" + localNames.ToArray());
+            // Console.WriteLine("localNames:" + localNames.ToArray());
             foreach (var g in gvars)
             {
                 var res = localVariables.Find(x => x.Name == g.Name);

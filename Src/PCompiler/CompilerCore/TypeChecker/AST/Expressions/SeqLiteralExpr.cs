@@ -4,18 +4,12 @@ using System.Collections.Generic;
 
 namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
-    public class SeqLiteralExpr : IExprTerm
+    public class SeqLiteralExpr(ParserRuleContext sourceLocation, List<IPExpr> values, PLanguageType type)
+        : IExprTerm
     {
-        public SeqLiteralExpr(ParserRuleContext sourceLocation, List<IPExpr> values, PLanguageType type)
-        {
-            SourceLocation = sourceLocation;
-            Value = values;
-            Type = type;
-        }
+        public List<IPExpr> Value { get; } = values;
 
-        public List<IPExpr> Value { get; }
-
-        public ParserRuleContext SourceLocation { get; }
-        public PLanguageType Type { get; }
+        public ParserRuleContext SourceLocation { get; } = sourceLocation;
+        public PLanguageType Type { get; } = type;
     }
 }

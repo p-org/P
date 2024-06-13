@@ -5,7 +5,6 @@ using System.Linq;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
-using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Plang.Compiler.Util;
@@ -49,12 +48,10 @@ namespace Plang.Compiler.TypeChecker
 
         private void CheckGlobalConstantVariableRedeclare(Variable decl)
         {
-            Variable existingDecl;
-            if (globalConstantVariables.TryGetValue(decl.Name, out existingDecl))
+            if (globalConstantVariables.TryGetValue(decl.Name, out var existingDecl))
             {
                 throw Handler.RedeclareGlobalConstantVariable(decl.SourceLocation, decl, existingDecl); 
             }
-            return;
         }
 
         #region GlobalConstantVariables 
@@ -66,10 +63,9 @@ namespace Plang.Compiler.TypeChecker
             Console.WriteLine("variableType:" + variableType);
 
             // VAR idenList
-            var varNameCtxs = context.idenList()._names;
-            for (var i = 0; i < varNameCtxs.Count; i++)
+            foreach (var t in context.idenList()._names)
             {
-                var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
+                var variable = (Variable) nodesToDeclarations.Get(t);
                 variable.Type = variableType;
                 currentScope.Value.Update(variable);
             }

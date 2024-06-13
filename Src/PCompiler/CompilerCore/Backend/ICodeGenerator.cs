@@ -6,7 +6,7 @@ namespace Plang.Compiler.Backend
 {
     public interface ICodeGenerator
     {
-        public const string globalConfigName = "GlobalConfig";
+        public const string GlobalConfigName = "GlobalConfig";
             
         /// <summary>
         /// Generate target language source files from a P project.

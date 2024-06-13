@@ -26,7 +26,7 @@ namespace Plang.Compiler
         
         Exception RedeclareGlobalConstantVariable(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
 
-        Exception UndeclareGlobalConstantVariable(ParserRuleContext location, string name);
+        Exception UndeclaredGlobalConstantVariable(ParserRuleContext location, string name);
         
         Exception ModifyGlobalConstantVariable(ParserRuleContext location, IPDecl existing);
 

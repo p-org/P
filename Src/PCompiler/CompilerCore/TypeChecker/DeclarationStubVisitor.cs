@@ -3,8 +3,6 @@ using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.Util;
-using System.Collections.Generic;
-// using System;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -240,11 +238,9 @@ namespace Plang.Compiler.TypeChecker
         {
             var symbolName = context.testName.GetText();
             var decl = CurrentScope.Put(symbolName, context);
-            if (decl != null)
-            {
-                decl.Main = context.mainMachine?.GetText();
-                nodesToDeclarations.Put(context, decl);
-            }
+            if (decl == null) return null;
+            decl.Main = context.mainMachine?.GetText();
+            nodesToDeclarations.Put(context, decl);
             return null ;
         }
 

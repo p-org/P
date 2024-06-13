@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics.Contracts;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Statements;

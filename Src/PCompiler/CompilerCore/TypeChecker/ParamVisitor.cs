@@ -1,15 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Linq.Expressions;
-using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
-using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker.AST;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
-using Plang.Compiler.TypeChecker.AST.ModuleExprs;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker

@@ -59,7 +59,7 @@ namespace Plang.Compiler
                 $"'{duplicate.Name}' redeclares a global constant variable '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
         }
         
-        public Exception UndeclareGlobalConstantVariable(ParserRuleContext location, string name)
+        public Exception UndeclaredGlobalConstantVariable(ParserRuleContext location, string name)
         {
             return IssueError(location,
                 $"'global constant variable {name}' is not undeclared");

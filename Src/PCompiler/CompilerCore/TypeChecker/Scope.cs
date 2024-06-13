@@ -32,8 +32,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
         private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
-        private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
-        // private readonly IDictionary<Variable, List<IExprTerm>> globalConstants = new Dictionary<Variable, List<IExprTerm>>();
+        private readonly IDictionary<string, Variable> _variables = new Dictionary<string, Variable>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -77,7 +76,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<State> States => states.Values;
         public IEnumerable<NamedTupleType> Tuples => tuples.Values;
         public IEnumerable<TypeDef> Typedefs => typedefs.Values;
-        public IEnumerable<Variable> Variables => variables.Values;
+        public IEnumerable<Variable> Variables => _variables.Values;
         public IEnumerable<SafetyTest> SafetyTests => safetyTests.Values;
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
@@ -184,7 +183,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Get(string name, out Variable tree)
         {
-            return variables.TryGetValue(name, out tree);
+            return _variables.TryGetValue(name, out tree);
         }
 
         public bool Get(string name, out SafetyTest tree)
@@ -568,8 +567,8 @@ namespace Plang.Compiler.TypeChecker
         public Variable Put(string name, ParserRuleContext tree, VariableRole role)
         {
             var variable = new Variable(name, tree, role);
-            CheckConflicts(variable, Namespace(variables));
-            variables.Add(name, variable);
+            CheckConflicts(variable, Namespace(_variables));
+            _variables.Add(name, variable);
             return variable;
         }
 
@@ -684,55 +683,25 @@ namespace Plang.Compiler.TypeChecker
         public void Update(Variable v)
         {
             Variable vv;
-            if (variables.TryGetValue(v.Name, out vv))
+            if (_variables.TryGetValue(v.Name, out vv))
             {
-                variables[v.Name] = v;
+                _variables[v.Name] = v;
             }
             return;
         }
         
         public List<Variable> GetGlobalVariables()
         {
-            List<Variable> res = new List<Variable>();
-            foreach (var v in variables.Values)
-            {
-                if (v.Role == VariableRole.GlobalConstant)
-                {
-                    res.Add(v);
-                }    
-            }
-            return res;
+            return _variables.Values.Where(v => v.Role == VariableRole.GlobalConstant).ToList();
         }
         
-        // public IDictionary<Variable, List<IExprTerm>> GetGlobalConstants()
-        // {
-        //     var res = new Dictionary<Variable, List<IExprTerm>>();
-        //     foreach (var v in globalConstants)
-        //     {
-        //         res[v.Key] = v.Value;
-        //     }
-        //     return res;
-        // }
-        //
-        // public void SetGlobalConstants(IDictionary<string, List<IExprTerm>> constConfig)
-        // {
-        //     foreach (var v in variables.Values)
-        //     {
-        //         if (v.Role == VariableRole.GlobalConstant)
-        //         {
-        //             globalConstants[v] = constConfig[v.Name];
-        //         }    
-        //     }
-        //     return;
-        // }
-
         public void ValidateGlobalConstantVariablesUnique(ITranslationErrorHandler handler)
         {
             var current = this;
             IDictionary<string, Variable> allVariables = new Dictionary<string, Variable>();
             while (current != null)
             {
-                foreach (var v in current.variables.Values) {
+                foreach (var v in current._variables.Values) {
                     if (allVariables.Keys.Contains(v.Name))
                     {
                         if (v.Role == VariableRole.GlobalConstant)

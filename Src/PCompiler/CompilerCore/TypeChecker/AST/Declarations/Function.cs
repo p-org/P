@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection.Metadata;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Statements;
 
@@ -24,7 +23,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     {
         private readonly HashSet<Function> callees = new HashSet<Function>();
         private readonly HashSet<Function> callers = new HashSet<Function>();
-        private readonly List<Variable> globalConstantVariables = new List<Variable>();
+        private readonly List<Variable> _globalConstantVariables = [];
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
 
@@ -66,7 +65,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 var res = localVariables.Find(x => x.Name == g.Name);
                 if (res == null)
                 {
-                    globalConstantVariables.Add(g);
+                    _globalConstantVariables.Add(g);
                 }
                 else
                 {

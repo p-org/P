@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Linq.Expressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
-using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -46,7 +43,7 @@ namespace Plang.Compiler.TypeChecker
                         var v = globalScope.Variables.FirstOrDefault(x => x.Name == name);
                         if (v == null)
                         {
-                            throw handler.UndeclareGlobalConstantVariable(context.globalParam, name);
+                            throw handler.UndeclaredGlobalConstantVariable(context.globalParam, name);
                         }
                         var expectedType = new SequenceType(v.Type);
                         if (!value.Type.Equals(expectedType))
@@ -105,7 +102,7 @@ namespace Plang.Compiler.TypeChecker
 
     internal class ModuleExprVisitor : PParserBaseVisitor<IPModuleExpr>
     {
-        private readonly Scope globalScope;
+        private readonly Scope _globalScope;
         private readonly ITranslationErrorHandler handler;
 
         public ModuleExprVisitor(
@@ -113,13 +110,13 @@ namespace Plang.Compiler.TypeChecker
             Scope globalScope)
         {
             this.handler = handler;
-            this.globalScope = globalScope;
+            this._globalScope = globalScope;
         }
 
         public override IPModuleExpr VisitNamedModule([NotNull] PParser.NamedModuleContext context)
         {
             // check if the named module is declared
-            if (!globalScope.Get(context.GetText(), out NamedModule mod))
+            if (!_globalScope.Get(context.GetText(), out NamedModule mod))
             {
                 throw handler.MissingDeclaration(context, "module", context.GetText());
             }
@@ -145,7 +142,7 @@ namespace Plang.Compiler.TypeChecker
             var eventList = new List<PEvent>();
             foreach (var eventName in context.nonDefaultEventList()._events)
             {
-                if (!globalScope.Get(eventName.GetText(), out PEvent @event))
+                if (!_globalScope.Get(eventName.GetText(), out PEvent @event))
                 {
                     throw handler.MissingDeclaration(eventName, "event", eventName.GetText());
                 }
@@ -162,7 +159,7 @@ namespace Plang.Compiler.TypeChecker
             var interfaceList = new List<Interface>();
             foreach (var interfaceName in context.idenList()._names)
             {
-                if (!globalScope.Get(interfaceName.GetText(), out Interface @interface))
+                if (!_globalScope.Get(interfaceName.GetText(), out Interface @interface))
                 {
                     throw handler.MissingDeclaration(interfaceName, "interface", interfaceName.GetText());
                 }
@@ -175,12 +172,12 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPModuleExpr VisitRenameModuleExpr([NotNull] PParser.RenameModuleExprContext context)
         {
-            if (!globalScope.Get(context.newName.GetText(), out Interface newInterface))
+            if (!_globalScope.Get(context.newName.GetText(), out Interface newInterface))
             {
                 throw handler.MissingDeclaration(context.newName, "interface", context.newName.GetText());
             }
 
-            if (!globalScope.Get(context.oldName.GetText(), out Interface oldInterface))
+            if (!_globalScope.Get(context.oldName.GetText(), out Interface oldInterface))
             {
                 throw handler.MissingDeclaration(context.oldName, "interface", context.oldName.GetText());
             }
@@ -199,7 +196,7 @@ namespace Plang.Compiler.TypeChecker
             var monList = new List<Machine>();
             foreach (var monName in context.idenList()._names)
             {
-                if (!globalScope.Get(monName.GetText(), out Machine monitor))
+                if (!_globalScope.Get(monName.GetText(), out Machine monitor))
                 {
                     throw handler.MissingDeclaration(monName, "spec machine", monName.GetText());
                 }
@@ -225,12 +222,12 @@ namespace Plang.Compiler.TypeChecker
             var machine = context.mName.GetText();
             var @interface = context.iName?.GetText() ?? machine;
 
-            if (!globalScope.Get(@interface, out Interface i))
+            if (!_globalScope.Get(@interface, out Interface i))
             {
                 throw handler.MissingDeclaration(context.iName ?? context.mName, "interface", @interface);
             }
 
-            if (!globalScope.Get(machine, out Machine m))
+            if (!_globalScope.Get(machine, out Machine m))
             {
                 throw handler.MissingDeclaration(context.mName, "machine", machine);
             }

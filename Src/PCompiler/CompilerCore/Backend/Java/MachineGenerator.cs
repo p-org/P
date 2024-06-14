@@ -76,7 +76,7 @@ namespace Plang.Compiler.Backend.Java {
         {
             var cname = Names.GetNameForDecl(_currentMachine);
 
-            WriteLine($"public static class {cname} extends prt.Monitor<{cname}.{Constants.StateEnumName}> {{");
+            WriteLine($"public static class {cname} extends prt.Monitor<{cname}.{Constants.StateEnumName}> implements Serializable {{");
 
             WriteLine();
             WriteSupplierCDef(cname);

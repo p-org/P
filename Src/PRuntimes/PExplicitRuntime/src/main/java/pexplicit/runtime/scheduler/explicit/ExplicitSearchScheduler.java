@@ -455,26 +455,29 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) {
-        SearchTask newTask = searchStrategy.createTask(choiceNum, parentTask);
+        SearchTask newTask = searchStrategy.createTask(parentTask);
 
-        for (int i = 0; i <= choiceNum; i++) {
-            newTask.addPrefixChoice(schedule.getChoice(i));
-        }
+        int maxChoiceNum = choiceNum;
 
         newTask.addSuffixSearchUnit(choiceNum, unit);
 
         if (!isExact) {
             for (int i: parentTask.getSearchUnitKeys(false)) {
                 if (i > choiceNum) {
+                    if (i > maxChoiceNum) {
+                        maxChoiceNum = i;
+                    }
                     newTask.addSuffixSearchUnit(i, parentTask.getSearchUnit(i));
                 }
             }
         }
 
+        for (int i = 0; i <= maxChoiceNum; i++) {
+            newTask.addPrefixChoice(schedule.getChoice(i));
+        }
+
         parentTask.addChild(newTask);
         searchStrategy.addNewTask(newTask);
-
-        assert (choiceNum >= parentTask.getCurrChoiceNumber());
     }
 
     /**
@@ -534,14 +537,13 @@ public class ExplicitSearchScheduler extends Scheduler {
             if (newStepNumber == 0) {
                 reset();
                 stepState.resetToZero();
-                schedule.clear();
             } else {
                 stepNumber = newStepNumber;
                 choiceNumber = scheduleChoice.getChoiceNumber();
                 stepState.setTo(scheduleChoice.getChoiceState());
                 assert (!PExplicitGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
-                schedule.removeChoicesAfter(backtrackChoiceNumber);
             }
+            schedule.removeChoicesAfter(backtrackChoiceNumber);
             PExplicitLogger.logBacktrack(newStepNumber, cIdx, unit);
             return;
         }

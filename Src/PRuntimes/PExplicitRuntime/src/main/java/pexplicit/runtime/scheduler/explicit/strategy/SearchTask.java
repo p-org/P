@@ -16,15 +16,14 @@ public class SearchTask implements Serializable {
     @Getter
     private final List<SearchTask> children = new ArrayList<>();
     @Getter
-    private final int currChoiceNumber;
+    private int currChoiceNumber = 0;
     @Getter
     private final List<Choice> prefixChoices = new ArrayList<>();
     @Getter
     private final Map<Integer, SearchUnit> searchUnits = new HashMap<>();
 
-    public SearchTask(int id, int choiceNum, SearchTask parentTask) {
+    public SearchTask(int id, SearchTask parentTask) {
         this.id = id;
-        this.currChoiceNumber = choiceNum;
         this.parentTask = parentTask;
     }
 
@@ -47,6 +46,9 @@ public class SearchTask implements Serializable {
 
     public void addSuffixSearchUnit(int choiceNum, SearchUnit unit) {
         searchUnits.put(choiceNum, unit.transferUnit());
+        if (choiceNum > currChoiceNumber) {
+            currChoiceNumber = choiceNum;
+        }
     }
 
     @Override
@@ -72,19 +74,10 @@ public class SearchTask implements Serializable {
         if (isInitialTask()) {
             return String.format("%s @0::0 (parent: null)", this);
         }
-        Choice c = prefixChoices.get(currChoiceNumber);
-        if (c instanceof ScheduleChoice scheduleChoice) {
-            return String.format("%s @%d::%d (parent: %s)",
-                    this,
-                    scheduleChoice.getStepNumber(),
-                    currChoiceNumber,
-                    parentTask);
-        } else {
-            return String.format("%s -::%d (parent: %s)",
-                    this,
-                    currChoiceNumber,
-                    parentTask);
-        }
+        return String.format("%s ?::%d (parent: %s)",
+                this,
+                currChoiceNumber,
+                parentTask);
     }
 
     public List<Integer> getSearchUnitKeys(boolean reversed) {

@@ -54,7 +54,9 @@ public class Schedule implements Serializable {
      * @param choiceNum Choice depth
      */
     public void removeChoicesAfter(int choiceNum) {
-        choices.subList(choiceNum + 1, choices.size()).clear();
+        if ((choiceNum + 1) < choices.size()) {
+            choices.subList(choiceNum + 1, choices.size()).clear();
+        }
     }
 
     /**
@@ -117,6 +119,9 @@ public class Schedule implements Serializable {
 
     public ScheduleChoice getScheduleChoiceAt(int choiceNum) {
         for (int i = choiceNum; i >= 0; i--) {
+            if (choiceNum >= choices.size()) {
+                continue;
+            }
             Choice c = choices.get(i);
             if (c instanceof ScheduleChoice scheduleChoice) {
                 return scheduleChoice;

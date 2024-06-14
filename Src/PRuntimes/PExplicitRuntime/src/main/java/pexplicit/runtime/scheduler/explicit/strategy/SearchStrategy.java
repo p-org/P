@@ -32,8 +32,8 @@ public abstract class SearchStrategy implements Serializable {
      */
     int currTaskStartIteration = 0;
 
-    public SearchTask createTask(int choiceNum, SearchTask parentTask) {
-        SearchTask newTask = new SearchTask(allTasks.size(), choiceNum, parentTask);
+    public SearchTask createTask(SearchTask parentTask) {
+        SearchTask newTask = new SearchTask(allTasks.size(), parentTask);
         allTasks.add(newTask);
         pendingTasks.add(newTask.getId());
         return newTask;
@@ -41,7 +41,7 @@ public abstract class SearchStrategy implements Serializable {
 
     public void createFirstTask() {
         assert (allTasks.size() == 0);
-        SearchTask firstTask = createTask(0, null);
+        SearchTask firstTask = createTask(null);
         setCurrTask(firstTask);
     }
 

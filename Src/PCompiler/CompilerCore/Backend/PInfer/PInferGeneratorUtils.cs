@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
+using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
@@ -48,25 +50,33 @@ namespace Plang.Compiler.Backend.PInfer
         public Notation Notation { get; }
         public FunctionSignature Signature { get; }
         public string Name { get; }
+        public Function Function { get; }
+    }
+
+    public class PredicateCallExpr : FunCallExpr
+    {
+        public PredicateCallExpr(IPredicate predicate, IReadOnlyList<IPExpr> arguments) : base(null, predicate.Function, arguments)
+        {
+        }
     }
 
     public class BuiltinPredicate : IPredicate
     {
         public BuiltinPredicate(string name, Notation notation, params PLanguageType[] signature)
         {
-            Name = name;
             Notation = notation;
-            Signature = new FunctionSignature();
             int i = 0;
+            Function = new Function(name, null);
             foreach (var type in signature)
             {
-                Signature.Parameters.Add(new Variable($"x{i++}", null, VariableRole.Param) { Type = type });
+                Function.Signature.Parameters.Add(new Variable($"x{i++}", null, VariableRole.Param) { Type = type });
             }
-            Signature.ReturnType = PrimitiveType.Bool;
+            Function.Signature.ReturnType = PrimitiveType.Bool;
         }
-        public string Name { get; }
+        public string Name => Function.Name;
         public Notation Notation { get; }
-        public FunctionSignature Signature { get; }
+        public FunctionSignature Signature => Function.Signature;
+        public Function Function { get; }
         public PLanguageType Type => PrimitiveType.Bool;
         public ParserRuleContext SourceLocation => null;
     }
@@ -146,12 +156,9 @@ namespace Plang.Compiler.Backend.PInfer
 
         private static List<IPredicate> MkBuiltin() {
             List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float];
-            List<PLanguageType> comparisonTypes = [PrimitiveType.Int, PrimitiveType.Float, PrimitiveType.Bool, PrimitiveType.String, PrimitiveType.Machine];
             var ltInst = from type in numericTypes
                             select BinaryPredicate("<", type);
-            var eqInst = from type in comparisonTypes
-                            select BinaryPredicate("==", type);
-            return ltInst.Concat(eqInst).Concat([BinaryPredicate("==", new TypeVar("T"))]).ToList();
+            return ltInst.ToList();
         }
     }
 

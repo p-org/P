@@ -62,6 +62,10 @@ namespace Plang.Compiler.Backend.PInfer
             PopulatePredicate();
             CompilationContext ctx = new(job);
             CompiledFile fp = new(ctx.FileName);
+            foreach (var pred in PredicateStore.Store)
+            {
+                ctx.WriteLine(fp.Stream, GeneratePredicateDefn(pred));
+            }
             return [fp];
         }
 
@@ -69,6 +73,8 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (predicate is BuiltinPredicate)
             {
+                // built-in predicates will be defined as static functions
+                // inside the generated Java class.
                 return "";
             }
             else

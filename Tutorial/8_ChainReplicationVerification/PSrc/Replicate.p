@@ -52,8 +52,7 @@ machine Replicate {
             if (req.k in kv) {
                 send req.source, eReadResponse, (source = req.source, k = req.k, v = kv[req.k], status = true);
             } else {
-                send req.source, eReadResponse, (source = req.source, 
-                    k = req.k, v = -1, status = false);
+                send req.source, eReadResponse, (source = req.source, k = req.k, v = -1, status = false);
             }
         }
     }

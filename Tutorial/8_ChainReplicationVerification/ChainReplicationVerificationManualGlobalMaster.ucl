@@ -1,0 +1,686 @@
+// The main module contains the entire P program
+module main {
+    // Built-in types
+    type UPVerifier_MachineRef;
+    type UPVerifier_Null = enum { UPVerifier_Null };
+    type UPVerifier_String;
+    
+
+    // User's enumerated types
+    type User_tRole = enum {User_HEAD, User_BODY, User_TAIL};
+    
+
+    // User's non-enumerated type types
+    type User_tWriteRequest = record {source: UPVerifier_MachineRef, k: integer, v: integer};
+    type User_tReadRequest = record {source: UPVerifier_MachineRef, k: integer};
+    type User_tReadResponse = record {source: UPVerifier_MachineRef, k: integer, v: integer, status: boolean};
+    
+
+    // Events, their types, and helper functions
+    datatype UPVerifier_Event = 
+		| Event_null (Event_null_Source: UPVerifier_MachineRef, Event_null_Target: UPVerifier_MachineRef, Event_null_Payload: UPVerifier_Null)
+		| Event_halt (Event_halt_Source: UPVerifier_MachineRef, Event_halt_Target: UPVerifier_MachineRef, Event_halt_Payload: UPVerifier_Null)
+		| Event_eWriteRequest (Event_eWriteRequest_Source: UPVerifier_MachineRef, Event_eWriteRequest_Target: UPVerifier_MachineRef, Event_eWriteRequest_Payload: User_tWriteRequest)
+		| Event_eWriteResponse (Event_eWriteResponse_Source: UPVerifier_MachineRef, Event_eWriteResponse_Target: UPVerifier_MachineRef, Event_eWriteResponse_Payload: User_tWriteRequest)
+		| Event_ePropagateWrite (Event_ePropagateWrite_Source: UPVerifier_MachineRef, Event_ePropagateWrite_Target: UPVerifier_MachineRef, Event_ePropagateWrite_Payload: User_tWriteRequest)
+		| Event_eReadRequest (Event_eReadRequest_Source: UPVerifier_MachineRef, Event_eReadRequest_Target: UPVerifier_MachineRef, Event_eReadRequest_Payload: User_tReadRequest)
+		| Event_eReadResponse (Event_eReadResponse_Source: UPVerifier_MachineRef, Event_eReadResponse_Target: UPVerifier_MachineRef, Event_eReadResponse_Payload: User_tReadResponse);
+
+    define UPVerifier_Source (e: UPVerifier_Event) : UPVerifier_MachineRef = 
+		if (is_Event_null(e)) then e.Event_null_Source
+		else if (is_Event_halt(e)) then e.Event_halt_Source
+		else if (is_Event_eWriteRequest(e)) then e.Event_eWriteRequest_Source
+		else if (is_Event_eWriteResponse(e)) then e.Event_eWriteResponse_Source
+		else if (is_Event_ePropagateWrite(e)) then e.Event_ePropagateWrite_Source
+		else if (is_Event_eReadRequest(e)) then e.Event_eReadRequest_Source
+		else e.Event_eReadResponse_Source;
+    
+    define UPVerifier_Target (e: UPVerifier_Event) : UPVerifier_MachineRef = 
+		if (is_Event_null(e)) then e.Event_null_Target
+		else if (is_Event_halt(e)) then e.Event_halt_Target
+		else if (is_Event_eWriteRequest(e)) then e.Event_eWriteRequest_Target
+		else if (is_Event_eWriteResponse(e)) then e.Event_eWriteResponse_Target
+		else if (is_Event_ePropagateWrite(e)) then e.Event_ePropagateWrite_Target
+		else if (is_Event_eReadRequest(e)) then e.Event_eReadRequest_Target
+		else e.Event_eReadResponse_Target;
+    
+    
+    // Machines, their types, and helper functions
+    datatype Machine_Client_StateT = Machine_Client_Loop();
+    datatype Machine_Replicate_StateT = Machine_Replicate_Boot() | Machine_Replicate_Head() | Machine_Replicate_Body() | Machine_Replicate_Tail() | Machine_Replicate_Fail();
+    datatype UPVerifier_Machine = 
+		| Machine_Client (Machine_Client_Entry: boolean, Machine_Client_State: Machine_Client_StateT, Machine_Client_head: UPVerifier_MachineRef, Machine_Client_tail: UPVerifier_MachineRef)
+		| Machine_Replicate (Machine_Replicate_Entry: boolean, Machine_Replicate_State: Machine_Replicate_StateT, Machine_Replicate_next: UPVerifier_MachineRef, Machine_Replicate_kv: [integer]Option_integer);
+
+    define UPVerifier_Entry (m: UPVerifier_Machine) : boolean = 
+		if (is_Machine_Client(m)) then m.Machine_Client_Entry
+		else m.Machine_Replicate_Entry;
+
+    define UPVerifier_Start (m: UPVerifier_Machine) : boolean = 
+		if (is_Machine_Client(m)) then m.Machine_Client_State == Machine_Client_Loop()
+		else m.Machine_Replicate_State == Machine_Replicate_Boot();
+
+    define UPVerifier_Default (m: UPVerifier_Machine) : boolean = 
+		if (is_Machine_Client(m)) then m.Machine_Client_State == Machine_Client_Loop()
+		else m.Machine_Replicate_State == Machine_Replicate_Boot() && m.Machine_Replicate_kv == const(Option_integer_None(), [integer]Option_integer);
+    
+
+    // State space: machines, buffer, and next machine to step
+    var UPVerifier_Machines: [UPVerifier_MachineRef]UPVerifier_Machine;
+    var UPVerifier_MTurn: UPVerifier_MachineRef;
+    var UPVerifier_Buffer: [UPVerifier_Event]boolean;
+    var UPVerifier_ETurn: UPVerifier_Event;
+    
+
+    init {
+        // Every machine begins in their start state
+        assume(forall (r: UPVerifier_MachineRef) :: UPVerifier_Start(UPVerifier_Machines[r]));
+        // Every machine begins with their entry flag set
+        assume(forall (r: UPVerifier_MachineRef) :: UPVerifier_Entry(UPVerifier_Machines[r]));
+        // Every machine begins with fields in default
+        assume(forall (r: UPVerifier_MachineRef) :: UPVerifier_Default(UPVerifier_Machines[r]));
+        // The buffer starts completely empty
+        UPVerifier_Buffer = const(false, [UPVerifier_Event]boolean);
+        
+        // ghost
+        ghost_kv = const(Option_integer_None(), [integer]Option_integer);
+        assume(head_id_is_smallest());
+        assume(tail_is_is_largest());
+        assume(unique_ref_ids());
+        assume(increasing_ids());
+        assume(is_tail_means_tail_id());
+    }
+    
+
+    procedure [noinline] RandomInt(this: UPVerifier_MachineRef)
+    	returns (UPVerifier_Ret: integer)
+    {
+    }
+
+    
+
+    // Handler for entry in machine Client at state Loop
+    procedure [noinline] Client_Loop_handle_entry(this: UPVerifier_MachineRef)
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	requires is_Machine_Client(UPVerifier_Machines[this]);
+    	requires is_Machine_Client_Loop(UPVerifier_Machines[this].Machine_Client_State);
+    	ensures (forall (r1: UPVerifier_MachineRef) :: this != r1 ==> old(UPVerifier_Machines)[r1] == UPVerifier_Machines[r1]);
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        var Local_head: UPVerifier_MachineRef;
+        var Local_tail: UPVerifier_MachineRef;
+        var entry: boolean;
+        var state: Machine_Client_StateT;
+        var Local_k: integer;
+        var Local_v: integer;
+        entry = UPVerifier_Machines[this].Machine_Client_Entry;
+        state = UPVerifier_Machines[this].Machine_Client_State;
+        Local_head = UPVerifier_Machines[this].Machine_Client_head;
+        Local_tail = UPVerifier_Machines[this].Machine_Client_tail;
+        entry = false;
+
+        // Begin handler body
+        call (Local_k) = RandomInt(this);
+        if (*) {
+            call (Local_v) = RandomInt(this);
+            UPVerifier_Buffer = UPVerifier_Buffer[Event_eWriteRequest(this, Local_head, const_record(source := this, k := Local_k, v := Local_v)) -> true];
+        } else {
+            UPVerifier_Buffer = UPVerifier_Buffer[Event_eReadRequest(this, Local_tail, const_record(source := this, k := Local_k)) -> true];
+        }
+        state = Machine_Client_Loop();
+        entry = true;
+        // End handler body
+
+        UPVerifier_Machines = UPVerifier_Machines[this -> Machine_Client(entry, state, Local_head, Local_tail)];
+    }
+
+    // Handler for entry in machine Replicate at state Boot
+    procedure [noinline] Replicate_Boot_handle_entry(this: UPVerifier_MachineRef)
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	requires is_Machine_Replicate(UPVerifier_Machines[this]);
+    	requires is_Machine_Replicate_Boot(UPVerifier_Machines[this].Machine_Replicate_State);
+    	ensures (forall (r1: UPVerifier_MachineRef) :: this != r1 ==> old(UPVerifier_Machines)[r1] == UPVerifier_Machines[r1]);
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        var Local_next: UPVerifier_MachineRef;
+        var Local_kv: [integer]Option_integer;
+        var entry: boolean;
+        var state: Machine_Replicate_StateT;
+        var Local_input: record {role: User_tRole};
+        entry = UPVerifier_Machines[this].Machine_Replicate_Entry;
+        state = UPVerifier_Machines[this].Machine_Replicate_State;
+        Local_next = UPVerifier_Machines[this].Machine_Replicate_next;
+        Local_kv = UPVerifier_Machines[this].Machine_Replicate_kv;
+        entry = false;
+
+        // Begin handler body
+        if (Local_input.role == User_HEAD) {
+            assume(ghost_id(this) == ghost_head_id); // ghost 
+            state = Machine_Replicate_Head();
+            entry = true;
+        } else {
+            if (Local_input.role == User_BODY) {
+                state = Machine_Replicate_Body();
+                entry = true;
+            } else {
+                assume(ghost_id(this) == ghost_tail_id); // ghost
+                state = Machine_Replicate_Tail();
+                entry = true;
+            }
+        }
+        // End handler body
+
+        UPVerifier_Machines = UPVerifier_Machines[this -> Machine_Replicate(entry, state, Local_next, Local_kv)];
+    }
+
+    // Handler for event eWriteRequest in machine Replicate
+    procedure [noinline] Replicate_Head_handle_eWriteRequest (this: UPVerifier_MachineRef, curr: UPVerifier_Event)
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	requires is_Machine_Replicate(UPVerifier_Machines[this]);
+    	requires is_Machine_Replicate_Head(UPVerifier_Machines[this].Machine_Replicate_State);
+    	ensures (forall (r1: UPVerifier_MachineRef) :: this != r1 ==> old(UPVerifier_Machines)[r1] == UPVerifier_Machines[r1]);
+    	requires UPVerifier_Buffer[curr];
+    	requires UPVerifier_Target(curr) == this;
+    	requires is_Event_eWriteRequest(curr);
+    	requires !UPVerifier_Entry(UPVerifier_Machines[this]);
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        var Local_next: UPVerifier_MachineRef;
+        var Local_kv: [integer]Option_integer;
+        var entry: boolean;
+        var state: Machine_Replicate_StateT;
+        var Local_req: User_tWriteRequest;
+        entry = UPVerifier_Machines[this].Machine_Replicate_Entry;
+        state = UPVerifier_Machines[this].Machine_Replicate_State;
+        Local_next = UPVerifier_Machines[this].Machine_Replicate_next;
+        Local_kv = UPVerifier_Machines[this].Machine_Replicate_kv;
+        Local_req = curr.Event_eWriteRequest_Payload;
+        UPVerifier_Buffer = UPVerifier_Buffer[curr -> false];
+
+        // Begin handler body
+        Local_kv = Local_kv[Local_req.k -> Option_integer_Some(Local_req.v)];
+        UPVerifier_Buffer = UPVerifier_Buffer[Event_ePropagateWrite(this, Local_next, const_record(source := Local_req.source, k := Local_req.k, v := Local_req.v)) -> true];
+        // End handler body
+
+        UPVerifier_Machines = UPVerifier_Machines[this -> Machine_Replicate(entry, state, Local_next, Local_kv)];
+    }
+
+    // Handler for event ePropagateWrite in machine Replicate
+    procedure [noinline] Replicate_Body_handle_ePropagateWrite (this: UPVerifier_MachineRef, curr: UPVerifier_Event)
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	requires is_Machine_Replicate(UPVerifier_Machines[this]);
+    	requires is_Machine_Replicate_Body(UPVerifier_Machines[this].Machine_Replicate_State);
+    	ensures (forall (r1: UPVerifier_MachineRef) :: this != r1 ==> old(UPVerifier_Machines)[r1] == UPVerifier_Machines[r1]);
+    	requires UPVerifier_Buffer[curr];
+    	requires UPVerifier_Target(curr) == this;
+    	requires is_Event_ePropagateWrite(curr);
+    	requires !UPVerifier_Entry(UPVerifier_Machines[this]);
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        var Local_next: UPVerifier_MachineRef;
+        var Local_kv: [integer]Option_integer;
+        var entry: boolean;
+        var state: Machine_Replicate_StateT;
+        var Local_req: User_tWriteRequest;
+        entry = UPVerifier_Machines[this].Machine_Replicate_Entry;
+        state = UPVerifier_Machines[this].Machine_Replicate_State;
+        Local_next = UPVerifier_Machines[this].Machine_Replicate_next;
+        Local_kv = UPVerifier_Machines[this].Machine_Replicate_kv;
+        Local_req = curr.Event_ePropagateWrite_Payload;
+        UPVerifier_Buffer = UPVerifier_Buffer[curr -> false];
+
+        // Begin handler body
+        Local_kv = Local_kv[Local_req.k -> Option_integer_Some(Local_req.v)];
+        UPVerifier_Buffer = UPVerifier_Buffer[Event_ePropagateWrite(this, Local_next, const_record(source := Local_req.source, k := Local_req.k, v := Local_req.v)) -> true];
+        // End handler body
+
+        UPVerifier_Machines = UPVerifier_Machines[this -> Machine_Replicate(entry, state, Local_next, Local_kv)];
+    }
+
+    // Handler for event ePropagateWrite in machine Replicate
+    procedure [noinline] Replicate_Tail_handle_ePropagateWrite (this: UPVerifier_MachineRef, curr: UPVerifier_Event)
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	modifies ghost_kv;
+    	requires is_Machine_Replicate(UPVerifier_Machines[this]);
+    	requires is_Machine_Replicate_Tail(UPVerifier_Machines[this].Machine_Replicate_State);
+    	ensures (forall (r1: UPVerifier_MachineRef) :: this != r1 ==> old(UPVerifier_Machines)[r1] == UPVerifier_Machines[r1]);
+    	requires UPVerifier_Buffer[curr];
+    	requires UPVerifier_Target(curr) == this;
+    	requires is_Event_ePropagateWrite(curr);
+    	requires !UPVerifier_Entry(UPVerifier_Machines[this]);
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        var Local_next: UPVerifier_MachineRef;
+        var Local_kv: [integer]Option_integer;
+        var entry: boolean;
+        var state: Machine_Replicate_StateT;
+        var Local_req: User_tWriteRequest;
+        entry = UPVerifier_Machines[this].Machine_Replicate_Entry;
+        state = UPVerifier_Machines[this].Machine_Replicate_State;
+        Local_next = UPVerifier_Machines[this].Machine_Replicate_next;
+        Local_kv = UPVerifier_Machines[this].Machine_Replicate_kv;
+        Local_req = curr.Event_ePropagateWrite_Payload;
+        UPVerifier_Buffer = UPVerifier_Buffer[curr -> false];
+
+        // Begin handler body
+        Local_kv = Local_kv[Local_req.k -> Option_integer_Some(Local_req.v)];
+        UPVerifier_Buffer = UPVerifier_Buffer[Event_eWriteResponse(this, Local_req.source, const_record(source := Local_req.source, k := Local_req.k, v := Local_req.v)) -> true];
+        // End handler body
+
+        // Begin Ghost Spec
+        ghost_kv = ghost_kv[Local_req.k -> Option_integer_Some(Local_req.v)];
+        // End Ghost Spec
+
+        UPVerifier_Machines = UPVerifier_Machines[this -> Machine_Replicate(entry, state, Local_next, Local_kv)];
+    }
+
+    // Handler for event eReadRequest in machine Replicate
+    procedure [noinline] Replicate_Tail_handle_eReadRequest (this: UPVerifier_MachineRef, curr: UPVerifier_Event)
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	requires is_Machine_Replicate(UPVerifier_Machines[this]);
+    	requires is_Machine_Replicate_Tail(UPVerifier_Machines[this].Machine_Replicate_State);
+    	ensures (forall (r1: UPVerifier_MachineRef) :: this != r1 ==> old(UPVerifier_Machines)[r1] == UPVerifier_Machines[r1]);
+    	requires UPVerifier_Buffer[curr];
+    	requires UPVerifier_Target(curr) == this;
+    	requires is_Event_eReadRequest(curr);
+    	requires !UPVerifier_Entry(UPVerifier_Machines[this]);
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        var Local_next: UPVerifier_MachineRef;
+        var Local_kv: [integer]Option_integer;
+        var entry: boolean;
+        var state: Machine_Replicate_StateT;
+        var Local_req: User_tReadRequest;
+        entry = UPVerifier_Machines[this].Machine_Replicate_Entry;
+        state = UPVerifier_Machines[this].Machine_Replicate_State;
+        Local_next = UPVerifier_Machines[this].Machine_Replicate_next;
+        Local_kv = UPVerifier_Machines[this].Machine_Replicate_kv;
+        Local_req = curr.Event_eReadRequest_Payload;
+        UPVerifier_Buffer = UPVerifier_Buffer[curr -> false];
+
+        // Begin handler body
+        if (is_Option_integer_Some(Local_kv[Local_req.k])) {
+            UPVerifier_Buffer = UPVerifier_Buffer[Event_eReadResponse(this, Local_req.source, const_record(source := Local_req.source, k := Local_req.k, v := Local_kv[Local_req.k].Option_integer_Some_Value, status := true)) -> true];
+        } else {
+            UPVerifier_Buffer = UPVerifier_Buffer[Event_eReadResponse(this, Local_req.source, const_record(source := Local_req.source, k := Local_req.k, v := - 1, status := false)) -> true];
+        }
+        // End handler body
+
+        // Begin Ghost Spec
+        assert ghost_kv[Local_req.k] == Local_kv[Local_req.k];
+        // End Ghost Spec
+
+        UPVerifier_Machines = UPVerifier_Machines[this -> Machine_Replicate(entry, state, Local_next, Local_kv)];
+    }
+
+    procedure [noinline] Fail_Head ()
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        var head_r: UPVerifier_MachineRef;
+        var next_r: UPVerifier_MachineRef;
+        
+        var head_next: UPVerifier_MachineRef;
+        var head_kv: [integer]Option_integer;
+        var head_entry: boolean;
+        var head_state: Machine_Replicate_StateT;
+        
+        var next_next: UPVerifier_MachineRef;
+        var next_kv: [integer]Option_integer;
+        var next_entry: boolean;
+        var next_state: Machine_Replicate_StateT;
+        
+        assume(is_head(head_r));
+        
+        head_entry = UPVerifier_Machines[head_r].Machine_Replicate_Entry;
+        head_state = UPVerifier_Machines[head_r].Machine_Replicate_State;
+        head_next = UPVerifier_Machines[head_r].Machine_Replicate_next;
+        head_kv = UPVerifier_Machines[head_r].Machine_Replicate_kv;
+        
+        next_entry = UPVerifier_Machines[next_r].Machine_Replicate_Entry;
+        next_state = UPVerifier_Machines[next_r].Machine_Replicate_State;
+        next_next = UPVerifier_Machines[next_r].Machine_Replicate_next;
+        next_kv = UPVerifier_Machines[next_r].Machine_Replicate_kv;
+        
+        // Begin handler body
+        if (is_body(next_r)) {
+            head_state = Machine_Replicate_Fail();
+            next_state = Machine_Replicate_Head();
+            UPVerifier_Machines = UPVerifier_Machines[head_r -> Machine_Replicate(head_entry, head_state, head_next, head_kv)];
+            UPVerifier_Machines = UPVerifier_Machines[next_r -> Machine_Replicate(next_entry, next_state, next_next, next_kv)];
+        }
+        
+        if (is_tail(next_r)) {
+            // do something else
+        }
+        // End handler body
+        
+    }
+    
+
+    procedure [noinline] Fail_Body ()
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        // Begin handler body
+        // End handler body
+    }
+
+    procedure [noinline] Fail_Tail ()
+    	modifies UPVerifier_Machines;
+    	modifies UPVerifier_Buffer;
+    	requires tail_sync();
+    	requires empty_on_boot();
+    	requires unique_tail();
+    	requires tail_is_tail_id();
+    	requires no_tail_means_no_ghost();
+    	ensures tail_sync();
+    	ensures empty_on_boot();
+    	ensures unique_tail();
+    	ensures tail_is_tail_id();
+    	ensures no_tail_means_no_ghost();
+        requires(head_id_is_smallest());
+        requires(tail_is_is_largest());
+        requires(unique_ref_ids());
+        requires(increasing_ids());
+        ensures(head_id_is_smallest());
+        ensures(tail_is_is_largest());
+        ensures(unique_ref_ids());
+        ensures(increasing_ids());
+        requires(is_tail_means_tail_id());
+        ensures(is_tail_means_tail_id());
+    {
+        // Begin handler body
+        // End handler body
+    }
+
+    datatype FailureT = head_failure() | body_failure() | tail_failure();
+    var failure: FailureT;
+    
+    next {
+        havoc UPVerifier_MTurn;
+        havoc UPVerifier_ETurn;
+        havoc failure;
+        
+        if (UPVerifier_Buffer[UPVerifier_ETurn]) {
+            case
+            (is_Machine_Replicate(UPVerifier_Machines[UPVerifier_MTurn]) && is_Machine_Replicate_Head(UPVerifier_Machines[UPVerifier_MTurn].Machine_Replicate_State) && !UPVerifier_Entry(UPVerifier_Machines[UPVerifier_MTurn]) && UPVerifier_Target(UPVerifier_ETurn) == UPVerifier_MTurn && is_Event_eWriteRequest(UPVerifier_ETurn)) : {
+                call Replicate_Head_handle_eWriteRequest(UPVerifier_MTurn, UPVerifier_ETurn);
+            }
+            (is_Machine_Replicate(UPVerifier_Machines[UPVerifier_MTurn]) && is_Machine_Replicate_Body(UPVerifier_Machines[UPVerifier_MTurn].Machine_Replicate_State) && !UPVerifier_Entry(UPVerifier_Machines[UPVerifier_MTurn]) && UPVerifier_Target(UPVerifier_ETurn) == UPVerifier_MTurn && is_Event_ePropagateWrite(UPVerifier_ETurn)) : {
+                call Replicate_Body_handle_ePropagateWrite(UPVerifier_MTurn, UPVerifier_ETurn);
+            }
+            (is_Machine_Replicate(UPVerifier_Machines[UPVerifier_MTurn]) && is_Machine_Replicate_Tail(UPVerifier_Machines[UPVerifier_MTurn].Machine_Replicate_State) && !UPVerifier_Entry(UPVerifier_Machines[UPVerifier_MTurn]) && UPVerifier_Target(UPVerifier_ETurn) == UPVerifier_MTurn && is_Event_ePropagateWrite(UPVerifier_ETurn)) : {
+                call Replicate_Tail_handle_ePropagateWrite(UPVerifier_MTurn, UPVerifier_ETurn);
+            }
+            (is_Machine_Replicate(UPVerifier_Machines[UPVerifier_MTurn]) && is_Machine_Replicate_Tail(UPVerifier_Machines[UPVerifier_MTurn].Machine_Replicate_State) && !UPVerifier_Entry(UPVerifier_Machines[UPVerifier_MTurn]) && UPVerifier_Target(UPVerifier_ETurn) == UPVerifier_MTurn && is_Event_eReadRequest(UPVerifier_ETurn)) : {
+                call Replicate_Tail_handle_eReadRequest(UPVerifier_MTurn, UPVerifier_ETurn);
+            }
+            esac
+        } else {
+            case
+            (is_Machine_Client(UPVerifier_Machines[UPVerifier_MTurn]) && is_Machine_Client_Loop(UPVerifier_Machines[UPVerifier_MTurn].Machine_Client_State) && UPVerifier_Entry(UPVerifier_Machines[UPVerifier_MTurn])): {
+                call Client_Loop_handle_entry(UPVerifier_MTurn);
+            }
+            (is_Machine_Replicate(UPVerifier_Machines[UPVerifier_MTurn]) && is_Machine_Replicate_Boot(UPVerifier_Machines[UPVerifier_MTurn].Machine_Replicate_State) && UPVerifier_Entry(UPVerifier_Machines[UPVerifier_MTurn])): {
+                call Replicate_Boot_handle_entry(UPVerifier_MTurn);
+            }
+            (failure == head_failure()) : {
+                call Fail_Head();
+            }
+            (failure == body_failure()) : {
+                call Fail_Body();
+            }
+            (failure == tail_failure()) : {
+                call Fail_Tail();
+            }
+            esac
+        }
+    }
+    
+
+    datatype Option_integer = 
+    	| Option_integer_Some (Option_integer_Some_Value: integer)
+    	| Option_integer_None ();
+
+
+    // Manual proof starts here
+
+    var ghost_kv: [integer]Option_integer;
+    
+    define get_m (r: UPVerifier_MachineRef) : UPVerifier_Machine = UPVerifier_Machines[r];
+    define get_next(r: UPVerifier_MachineRef) : UPVerifier_MachineRef = get_m(r).Machine_Replicate_next;
+    define get_kv(r: UPVerifier_MachineRef) : [integer]Option_integer = get_m(r).Machine_Replicate_kv;
+    
+    define is_client(r: UPVerifier_MachineRef) : boolean = is_Machine_Client(get_m(r));
+    define is_replicate(r: UPVerifier_MachineRef) : boolean = is_Machine_Replicate(get_m(r));
+    
+    define is_head(r: UPVerifier_MachineRef) : boolean = is_replicate(r) && is_Machine_Replicate_Head(get_m(r).Machine_Replicate_State);
+    define is_body(r: UPVerifier_MachineRef) : boolean = is_replicate(r) && is_Machine_Replicate_Body(get_m(r).Machine_Replicate_State);
+    define is_tail(r: UPVerifier_MachineRef) : boolean = is_replicate(r) && is_Machine_Replicate_Tail(get_m(r).Machine_Replicate_State);
+    define is_booting(r: UPVerifier_MachineRef) : boolean = is_replicate(r) && is_Machine_Replicate_Boot(get_m(r).Machine_Replicate_State);
+    define is_fail(r: UPVerifier_MachineRef) : boolean = is_replicate(r) && is_Machine_Replicate_Fail(get_m(r).Machine_Replicate_State);
+    define is_up(r: UPVerifier_MachineRef) : boolean = !is_booting(r) && !is_fail(r);
+    
+    // function that we will use to order the chain
+    function ghost_id(r: UPVerifier_MachineRef): integer;
+    
+    // keep track of the current head
+    var ghost_head_id : integer;
+    // keep track of the current tail
+    var ghost_tail_id : integer;
+    
+    // head_id is the smallest
+    define head_id_is_smallest() : boolean = forall (r: UPVerifier_MachineRef) :: !is_fail(r) ==> ghost_head_id <= ghost_id(r);
+    // tail_id is the largest
+    define tail_is_is_largest() : boolean = forall (r: UPVerifier_MachineRef) :: !is_fail(r) ==> ghost_id(r) <= ghost_tail_id;
+    
+    // refs correspond to a unique number
+    define unique_ref_ids() : boolean = forall (r1: UPVerifier_MachineRef, r2: UPVerifier_MachineRef) :: r1 != r2 ==> ghost_id(r1) != ghost_id(r2);
+    // next field increases the ref number, unless we are at the tail.
+    define increasing_ids() : boolean = forall (r: UPVerifier_MachineRef) :: (ghost_id(get_next(r)) > ghost_id(r)) || is_tail(r) || is_client(r);
+    
+    define tail_eq_kv(r: UPVerifier_MachineRef, kv: [integer]Option_integer) : boolean =
+        is_tail(r) ==> get_kv(r) == kv;
+        
+    define booting_eq_kv(r: UPVerifier_MachineRef, kv: [integer]Option_integer) : boolean =
+        is_booting(r) ==> get_kv(r) == kv;
+        
+    define empty() : [integer]Option_integer = const(Option_integer_None(), [integer]Option_integer);
+    
+    define tail_sync() : boolean = forall (r: UPVerifier_MachineRef) :: tail_eq_kv(r, ghost_kv);
+    define empty_on_boot() : boolean = forall (r: UPVerifier_MachineRef) :: booting_eq_kv(r, empty());
+    define unique_tail() : boolean = forall (r1: UPVerifier_MachineRef, r2: UPVerifier_MachineRef) :: r1 != r2 ==> !(is_tail(r1) && is_tail(r2));
+    define tail_is_tail_id() : boolean = forall (r: UPVerifier_MachineRef) :: is_tail(r) ==> (ghost_id(r) == ghost_tail_id);
+    define no_tail_means_no_ghost(): boolean =  forall (r: UPVerifier_MachineRef) :: (ghost_id(r) == ghost_tail_id && !is_tail(r)) ==> ghost_kv == empty();
+   
+    define is_tail_means_tail_id(): boolean =  forall (r: UPVerifier_MachineRef) :: (ghost_id(r) == ghost_tail_id) == is_tail(r);
+   
+    invariant ts: tail_sync();
+    invariant eb: empty_on_boot();
+    invariant ut: unique_tail();
+    invariant tt: tail_is_tail_id();
+    invariant tg: no_tail_means_no_ghost();
+    invariant hs: head_id_is_smallest();
+    invariant tl: tail_is_is_largest();
+    invariant ui: unique_ref_ids();
+    invariant ii: increasing_ids();
+    invariant ti: is_tail_means_tail_id();
+    
+    control {
+        set_solver_option(":Timeout", 1000);
+        v = induction(1);
+        verify(Client_Loop_handle_entry);
+        verify(Replicate_Boot_handle_entry);
+        verify(Replicate_Head_handle_eWriteRequest);
+        verify(Replicate_Body_handle_ePropagateWrite);
+        verify(Replicate_Tail_handle_ePropagateWrite);
+        verify(Replicate_Tail_handle_eReadRequest);
+        verify(Fail_Head);
+        verify(Fail_Body);
+        verify(Fail_Tail);
+        check;
+        print_results;
+        v.print_cex();
+    }
+}

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -16,7 +17,8 @@ namespace Plang.Compiler.Backend.PInfer
         public PInferPredicateGenerator()
         {
             Terms = [];
-            Predicates = [];
+            VisitedSet = new HashSet<IPExpr>(new ASTComparer());
+            Predicates = new HashSet<IPExpr>(new ASTComparer());
             FreeEvents = [];
         }
 
@@ -48,20 +50,30 @@ namespace Plang.Compiler.Backend.PInfer
             AggregateDefinedPredicates(globalScope);
             var i = 0;
             var termDepth = job.TermDepth.Value;
+            var indexType = PInferBuiltinTypes.Index;
+            var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
+            // PredicateStore.AddBuiltinPredicate("<", Notation.Prefix, indexType, indexType);
             foreach (var eventInst in quantifiedEvents) {
                 var eventAtom = new PEventVariable($"e{i}", eventInst.Name)
                 {
                     Type = ExplicateTypeDef(eventInst.PayloadType)
                 };
                 var expr = new VariableAccessExpr(null, eventAtom);
-                AddTerm(0, expr);
-                if (!FreeEvents.ContainsKey(expr))
+                AddTerm(0, expr,  [eventAtom]);
+                foreach (var (e, w) in TryMkTupleAccess(expr).Concat(TryMakeNamedTupleAccess(expr)))
                 {
-                    FreeEvents[expr] = [eventAtom];
+                    AddTerm(0, e, w);
                 }
+                var indexExpr = new FunCallExpr(null, indexFunc, [expr]);
+                var indexExpr1 = new FunCallExpr(null, indexFunc, [expr]);
+                HashSet<IPExpr> es = [];
+                es.Add(indexExpr);
+                AddTerm(0, indexExpr, [eventAtom]);
+                i += 1;
             }
             PopulateTerm(termDepth);
             PopulatePredicate();
+            MkEqComparison();
             CompiledFile fp = new(ctx.FileName);
             CompiledFile terms = new($"{job.ProjectName}.terms");
             CompiledFile predicates = new($"{job.ProjectName}.predicates");
@@ -69,7 +81,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 ctx.WriteLine(fp.Stream, GeneratePredicateDefn(pred));
             }
-            foreach (var term in AllTerms)
+            foreach (var term in VisitedSet)
             {
                 WriteToFile(term, ctx, terms.Stream);
             }
@@ -77,6 +89,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 WriteToFile(pred, ctx, predicates.Stream);
             }
+            Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
             return [fp, terms, predicates];
         }
 
@@ -150,16 +163,16 @@ namespace Plang.Compiler.Backend.PInfer
                 var rhs = GenerateCodeExpr(binOpExpr.Rhs, ctx);
                 return binOpExpr.Operation switch
                 {
-                    BinOpType.Add => $"({lhs} + {rhs})",
-                    BinOpType.Sub => $"({lhs} - {rhs})",
-                    BinOpType.Mul => $"({lhs} * {rhs})",
-                    BinOpType.Div => $"({lhs} / {rhs})",
-                    BinOpType.Mod => $"({lhs} % {rhs})",
-                    BinOpType.Eq => $"({lhs} == {rhs})",
-                    BinOpType.Lt => $"({lhs} < {rhs})",
-                    BinOpType.Gt => $"({lhs} > {rhs})",
-                    BinOpType.And => $"({lhs} && {rhs})",
-                    BinOpType.Or => $"({lhs} || {rhs})",
+                    BinOpType.Add => $"+(({lhs}) ({rhs}))",
+                    BinOpType.Sub => $"-(({lhs}) ({rhs}))",
+                    BinOpType.Mul => $"*(({lhs}) ({rhs}))",
+                    BinOpType.Div => $"/(({lhs}) ({rhs}))",
+                    BinOpType.Mod => $"%(({lhs}) ({rhs}))",
+                    BinOpType.Eq => $"==(({lhs}) ({rhs}))",
+                    BinOpType.Lt => $"<(({lhs}) ({rhs}))",
+                    BinOpType.Gt => $">(({lhs}) ({rhs}))",
+                    BinOpType.And => $"&&(({lhs}) ({rhs}))",
+                    BinOpType.Or => $"||(({lhs}) ({rhs}))",
                     _ => throw new Exception($"Unsupported BinOp Operatoion: {binOpExpr.Operation}"),
                 };
             }
@@ -225,7 +238,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private void PopulatePredicate()
         {
-            var allTerms = AllTerms;
+            var allTerms = VisitedSet;
             // Set of parameters types --> List of mappings of types and exprs
             var combinationCache = new Dictionary<HashSet<PLanguageType>,
                                                   IDictionary<PLanguageType, HashSet<IPExpr>>>();
@@ -250,6 +263,7 @@ namespace Plang.Compiler.Backend.PInfer
                             varMap[sigList[i]].Add(parameters[i]);
                         }
                     }
+                    combinationCache[sig] = varMap;
                 }
                 foreach (var parameters in CartesianProduct(sigList, varMap))
                 {
@@ -263,9 +277,13 @@ namespace Plang.Compiler.Backend.PInfer
 
         private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<PLanguageType, HashSet<IPExpr>> varMaps)
         {
-            if (types.Count == 0 || varMaps.Count == 0)
+            if (varMaps.Count == 0)
             {
                 return [];
+            }
+            if (types.Count == 0)
+            {
+                return [[]];
             }
             else
             {
@@ -284,72 +302,68 @@ namespace Plang.Compiler.Backend.PInfer
             else
             {
                 PopulateTerm(currentDepth - 1);
-                foreach (var term in TermsAtDepth(currentDepth - 1))
+                List<(IPExpr, HashSet<Variable>)> worklist = [];
+                foreach (var term in AllTerms)
                 {
                     // construct built-in exprs
-                    TryMkTupleAccess(term, currentDepth);
-                    TryMakeNamedTupleAccess(term, currentDepth);
+                    var tupleAccess = TryMkTupleAccess(term);
+                    var namedTupleAccess = TryMakeNamedTupleAccess(term);
+                    worklist.AddRange(tupleAccess);
+                    worklist.AddRange(namedTupleAccess);
                 }
-                MkEqComparison(currentDepth);
+                foreach (var (expr, events) in worklist)
+                {
+                    AddTerm(currentDepth, expr, events);
+                }
+                // construct function calls
                 foreach (Function func in FunctionStore.Store)
                 {
                     // function calls
                     var sig = func.Signature;
                     var retType = sig.ReturnType;
-                    // Console.WriteLine($"Func: {func.Name}; RetType: {retType}");
-                    var parameters = GetParameterCombinations(0, TermsAtDepth(currentDepth - 1), sig.Parameters.Select(x => x.Type).ToList(), []);
+                    var parameters = GetParameterCombinations(0, AllTerms, sig.Parameters.Select(x => x.Type).ToList(), []);
                     foreach (var parameter in parameters)
                     {
                         var expr = new FunCallExpr(null, func, parameter);
-                        AddTerm(currentDepth, expr);
-                        FreeEvents[expr] = GetUnboundedEventsMultiple([.. parameter]);
+                        AddTerm(currentDepth, expr, GetUnboundedEventsMultiple([.. parameter]));
                     }
                 }
             }
         }
 
-        private void MkEqComparison(int depth)
+        private void MkEqComparison()
         {
-            if (depth == 0 || depth >= Terms.Count)
+            var allTerms = VisitedSet.ToList();
+            for (var i = 0; i < allTerms.Count; ++i)
             {
-                return;
-            }
-            else
-            {
-                foreach (var ty in Terms[depth - 1].Keys)
+                for (var j = i + 1; j < allTerms.Count; ++j)
                 {
-                    foreach (var lhs in Terms[depth - 1][ty])
+                    if (IsAssignableFrom(allTerms[i].Type, allTerms[j].Type) && (allTerms[i] is not VariableAccessExpr) && (allTerms[j] is not VariableAccessExpr))
                     {
-                        foreach (var rhs in Terms[depth - 1][ty])
-                        {
-                            if (lhs != rhs)
-                            {
-                                var expr =  new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
-                                AddTerm(depth, expr);
-                                FreeEvents[expr] = GetUnboundedEventsMultiple(lhs, rhs);
-                            }
-                        }
+                        var lhs = allTerms[i];
+                        var rhs = allTerms[j];
+                        var expr = new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
+                        Predicates.Add(expr);
+                        FreeEvents[expr] = GetUnboundedEventsMultiple(lhs, rhs);
                     }
                 }
             }
         }
 
-        private void TryMkTupleAccess(IPExpr tuple, int depth)
+        private IEnumerable<(IPExpr, HashSet<Variable>)> TryMkTupleAccess(IPExpr tuple)
         {
             if (tuple.Type is TupleType tupleType)
             {
                 for (var i = 0; i < tupleType.Types.Count; ++i)
                 {
                     var expr = new TupleAccessExpr(null, tuple, i, tupleType.Types[i]);
-                    AddTerm(depth, expr);
-                    FreeEvents[expr] = GetUnboundedEventsMultiple(tuple);
+                    yield return (expr, GetUnboundedEventsMultiple(tuple));
                 }
             }
         }
 
-        private void TryMakeNamedTupleAccess(IPExpr tuple, int depth)
+        private IEnumerable<(IPExpr, HashSet<Variable>)> TryMakeNamedTupleAccess(IPExpr tuple)
         {
-            // Console.WriteLine($"Expr: {tuple}; Type: {tuple.Type}; Depth: {depth}");
             if (tuple.Type is NamedTupleType namedTupleType)
             {
                 for (var i = 0; i < namedTupleType.Fields.Count; ++i)
@@ -359,8 +373,7 @@ namespace Plang.Compiler.Backend.PInfer
                         Type = namedTupleType.Fields[i].Type,
                         FieldNo = i
                     });
-                    AddTerm(depth, expr);
-                    FreeEvents[expr] = GetUnboundedEventsMultiple(tuple);
+                    yield return (expr, GetUnboundedEventsMultiple(tuple));
                 }
             }
         }
@@ -411,8 +424,12 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private void AddTerm(int depth, IPExpr expr)
+        private void AddTerm(int depth, IPExpr expr, HashSet<Variable> unboundedEvents)
         {
+            if (VisitedSet.Contains(expr))
+            {
+                return;
+            }
             if (depth > Terms.Count)
             {
                 throw new Exception($"Depth {depth} reached before reaching Depth {depth - 1}");
@@ -426,13 +443,20 @@ namespace Plang.Compiler.Backend.PInfer
                 Terms[depth].Add(expr.Type, []);
             }
             Terms[depth][expr.Type].Add(expr);
+            FreeEvents[expr] = unboundedEvents;
+            VisitedSet.Add(expr);
         }
 
         private static bool IsAssignableFrom(PLanguageType type, PLanguageType otherType)
         {
+            // A slightly stricter version of type equality checking
+            // when checking type aliases, we only regard aliases with the same name and 
+            // they are referring to the same type
             if (type is TypeDefType typedef)
             {
-                return (otherType is TypeDefType otherTypeDef) && typedef.TypeDefDecl.Name == otherTypeDef.TypeDefDecl.Name;
+                return (otherType is TypeDefType otherTypeDef) 
+                        && typedef.TypeDefDecl.Name == otherTypeDef.TypeDefDecl.Name
+                        && typedef.TypeDefDecl.Type.Equals(otherTypeDef.TypeDefDecl.Type);
             }
             return type.IsAssignableFrom(otherType);
         }
@@ -452,7 +476,8 @@ namespace Plang.Compiler.Backend.PInfer
         }
 
         private List<Dictionary<PLanguageType, HashSet<IPExpr>>> Terms { get; }
-        private List<IPExpr> Predicates { get; }
+        private HashSet<IPExpr> Predicates { get; }
+        private HashSet<IPExpr> VisitedSet { get; }
         private Dictionary<IPExpr, HashSet<Variable>> FreeEvents { get; }
         private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {
                                                                 true => Terms[depth].Values.SelectMany(x => x),

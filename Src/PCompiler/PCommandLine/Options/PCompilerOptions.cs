@@ -37,8 +37,10 @@ namespace Plang.Options
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
-            Parser.AddArgument("quantified-events", "qe", "Events to be quantified over in generated predicates").IsMultiValue = true;
-            Parser.AddArgument("term-depth", "td", "Max depth of terms in the predicates");
+
+            var pInferGroup = Parser.GetOrCreateGroup("pinfer", "Options for PInfer predicate enumeration");
+            pInferGroup.AddArgument("quantified-events", "qe", "Events to be quantified over in generated predicates").IsMultiValue = true;
+            pInferGroup.AddArgument("term-depth", "td", "Max depth of terms in the predicates");
 
             var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately, pinfer). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately", "pinfer" };
@@ -193,7 +195,9 @@ namespace Plang.Options
                     }
                     break;
                 case "quantified-events":
-                    compilerConfiguration.QuantifiedEvents = [.. ((string)option.Value).Split(' ')];
+                    var events = (string[])option.Value;
+                    // Console.WriteLine($"quantified-events: {events.Length}");
+                    compilerConfiguration.QuantifiedEvents = [.. events];
                     break;
                 case "term-depth":
                     compilerConfiguration.TermDepth = int.Parse((string)option.Value);

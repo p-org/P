@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker;
@@ -10,6 +11,79 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
 {
+
+    public class ASTComparer : IEqualityComparer<IPExpr>
+    {
+        public bool Equals(IPExpr x, IPExpr y)
+        {
+            if (x == null && y == null)
+            {
+                return true;
+            }
+            if (x == null || y == null)
+            {
+                return false;
+            }
+            if (!x.Type.Equals(y.Type))
+            {
+                return false;
+            }
+            switch ((x, y))
+            {
+                case (VariableAccessExpr ex, VariableAccessExpr ey):
+                    return ex.Variable.Name.Equals(ey.Variable.Name);
+                case (IntLiteralExpr ex, IntLiteralExpr ey):
+                    return ex.Value == ey.Value;
+                case (BoolLiteralExpr ex, BoolLiteralExpr ey):
+                    return ex.Value == ey.Value;
+                case (FloatLiteralExpr ex, FloatLiteralExpr ey):
+                    return Math.Abs(ex.Value - ey.Value) <= 1e-7;
+                case (TupleAccessExpr ex, TupleAccessExpr ey):
+                    return ex.FieldNo == ey.FieldNo && Equals(ex.SubExpr, ey.SubExpr);
+                case (BinOpExpr ex, BinOpExpr ey):
+                    return ex.Operation.Equals(ey.Operation) && Equals(ex.Lhs, ey.Lhs) && Equals(ex.Rhs, ey.Rhs);
+                case (UnaryOpExpr ex, UnaryOpExpr ey):
+                    return ex.Operation.Equals(ey.Operation) && Equals(ex.SubExpr, ey.SubExpr);
+                case (NamedTupleAccessExpr ex, NamedTupleAccessExpr ey):
+                    return ex.FieldName.Equals(ey.FieldName) && Equals(ex.SubExpr, ey.SubExpr);
+                case (FunCallExpr ex, FunCallExpr ey):
+                    return ex.Function.Equals(ey.Function) && ex.Arguments.Count == ey.Arguments.Count && ex.Arguments.Zip(ey.Arguments, Equals).All(b => b);
+                default:
+                    if (x.GetType().Equals(y.GetType()))
+                    {
+                        throw new NotImplementedException();
+                    }
+                    return false;
+            }
+        }
+
+        public int GetHashCode([DisallowNull] IPExpr obj)
+        {
+            switch (obj)
+            {
+                case VariableAccessExpr ex:
+                    return ex.Variable.Name.GetHashCode();
+                case IntLiteralExpr ex:
+                    return ex.Value.GetHashCode();
+                case BoolLiteralExpr ex:
+                    return ex.Value.GetHashCode();
+                case FloatLiteralExpr ex:
+                    return ex.Value.GetHashCode();
+                case TupleAccessExpr ex:
+                    return (ex.FieldNo, ex.SubExpr).GetHashCode();
+                case BinOpExpr ex:
+                    return (ex.Operation, ex.Lhs, ex.Rhs).GetHashCode();
+                case UnaryOpExpr ex:
+                    return (ex.Operation, ex.SubExpr).GetHashCode();
+                case NamedTupleAccessExpr ex:
+                    return (ex.FieldName, ex.SubExpr).GetHashCode();
+                case FunCallExpr ex:
+                    return (ex.Function, ex.Arguments).GetHashCode();
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+    }
 
     public class PEventVariable : Variable
     {
@@ -94,6 +168,11 @@ namespace Plang.Compiler.Backend.PInfer
         public ParserRuleContext SourceLocation => null;
     }
 
+    public class PInferBuiltinTypes
+    {
+        public static readonly PLanguageType Index = new Index();
+    }
+
     public class DefinedPredicate : IPredicate
     {
         public DefinedPredicate(Function func)
@@ -128,6 +207,7 @@ namespace Plang.Compiler.Backend.PInfer
                 Signature.Parameters.Add(new Variable($"x{i++}", null, VariableRole.Param) { Type = type });
             }
             Signature.ReturnType = types[^1];
+            // Console.WriteLine($"{name}: {types[..^1]} -> {types[^1]}");
         }
 
         public Notation Notation { get; }
@@ -162,16 +242,23 @@ namespace Plang.Compiler.Backend.PInfer
     {
         public static List<IPredicate> Store = MkBuiltin();
 
+        public static void AddBuiltinPredicate(string name, Notation notation, params PLanguageType[] argTypes)
+        {
+            Store.Add(new BuiltinPredicate(name, notation, argTypes));
+        }
+
         private static IPredicate BinaryPredicate(string name, PLanguageType type)
         {
             return new BuiltinPredicate(name, Notation.Prefix, type, type);
         }
 
         private static List<IPredicate> MkBuiltin() {
-            List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float];
+            List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index];
             var ltInst = from type in numericTypes
                             select BinaryPredicate("<", type);
-            return ltInst.ToList();
+            var gtInst = from type in numericTypes
+                            select BinaryPredicate(">", type);
+            return ltInst.Concat(gtInst).ToList();
         }
     }
 
@@ -190,10 +277,7 @@ namespace Plang.Compiler.Backend.PInfer
             var arith = from ty in numericTypes
                                 from op in funcs
                                     select BinaryFunction(op, ty);
-            return Enumerable.Concat(arith,
-                            [new BuiltinFunction("index", Notation.Prefix,
-                                                          PrimitiveType.Event,
-                                                          new Index())]).ToList();
+            return arith.ToList();
         }
     }
 }

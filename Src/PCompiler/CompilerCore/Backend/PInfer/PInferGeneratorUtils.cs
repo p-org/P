@@ -11,6 +11,16 @@ using Plang.Compiler.TypeChecker.Types;
 namespace Plang.Compiler.Backend.PInfer
 {
 
+    public class PEventVariable : Variable
+    {
+        public PEventVariable(string name, string eventName) : base(name, null, VariableRole.Temp)
+        {
+            EventName = eventName;
+        }
+
+        public string EventName { get; }
+    }
+
     public class TypeVar : PLanguageType
     {
 
@@ -57,7 +67,10 @@ namespace Plang.Compiler.Backend.PInfer
     {
         public PredicateCallExpr(IPredicate predicate, IReadOnlyList<IPExpr> arguments) : base(null, predicate.Function, arguments)
         {
+            Predicate = predicate;
         }
+
+        public IPredicate Predicate { get; }
     }
 
     public class BuiltinPredicate : IPredicate

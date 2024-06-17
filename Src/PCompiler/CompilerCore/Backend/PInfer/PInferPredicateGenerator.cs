@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -47,7 +48,7 @@ namespace Plang.Compiler.Backend.PInfer
             var i = 0;
             var termDepth = job.TermDepth.Value;
             foreach (var eventInst in quantifiedEvents) {
-                var eventAtom = new Variable($"e{i}", null, VariableRole.Temp)
+                var eventAtom = new PEventVariable($"e{i}", eventInst.Name)
                 {
                     Type = eventInst.PayloadType
                 };
@@ -62,14 +63,28 @@ namespace Plang.Compiler.Backend.PInfer
             PopulatePredicate();
             CompilationContext ctx = new(job);
             CompiledFile fp = new(ctx.FileName);
+            CompiledFile terms = new($"{job.ProjectName}.terms");
+            CompiledFile predicates = new($"{job.ProjectName}.predicates");
             foreach (var pred in PredicateStore.Store)
             {
                 ctx.WriteLine(fp.Stream, GeneratePredicateDefn(pred));
             }
-            return [fp];
+            foreach (var term in AllTerms)
+            {
+                var events = FreeEvents[term].Select(x => ((PEventVariable) x).EventName);
+                ctx.WriteLine(terms.Stream, string.Join<string>(", ", [.. events]));
+                ctx.WriteLine(terms.Stream, GenerateCodeExpr(term, ctx));
+            }
+            foreach (var pred in Predicates)
+            {
+                var events = FreeEvents[pred].Select(x => ((PEventVariable) x).EventName);
+                ctx.WriteLine(predicates.Stream, string.Join<string>(", ", [.. events]));
+                ctx.WriteLine(predicates.Stream, GenerateCodeExpr(pred, ctx));
+            }
+            return [fp, terms, predicates];
         }
 
-        private static string GeneratePredicateDefn(IPredicate predicate)
+        private string GeneratePredicateDefn(IPredicate predicate)
         {
             if (predicate is BuiltinPredicate)
             {
@@ -92,9 +107,90 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private static string GenerateCodeFuncBody(Function func)
+        private string GenerateCodeExpr(IPExpr expr, CompilationContext ctx)
+        {
+            if (expr is VariableAccessExpr v)
+            {
+                return GenerateCodeVariable(v.Variable);
+            }
+            else if (expr is FunCallExpr f)
+            {
+                return GenerateFuncCall(f, ctx);
+            }
+            else if (expr is PredicateCallExpr p)
+            {
+                return GenerateCodePredicateCall(p, ctx);
+            }
+            else if (expr is TupleAccessExpr t)
+            {
+                return GenerateCodeTupleAccess(t, ctx);
+            }
+            else if (expr is NamedTupleAccessExpr n)
+            {
+                return GenerateCodeNamedTupleAccess(n, ctx);
+            }
+            else if (expr is BinOpExpr binOpExpr)
+            {
+                var lhs = GenerateCodeExpr(binOpExpr.Lhs, ctx);
+                var rhs = GenerateCodeExpr(binOpExpr.Rhs, ctx);
+                return binOpExpr.Operation switch
+                {
+                    BinOpType.Add => $"({lhs} + {rhs})",
+                    BinOpType.Sub => $"({lhs} - {rhs})",
+                    BinOpType.Mul => $"({lhs} * {rhs})",
+                    BinOpType.Div => $"({lhs} / {rhs})",
+                    BinOpType.Mod => $"({lhs} % {rhs})",
+                    BinOpType.Eq => $"({lhs} == {rhs})",
+                    BinOpType.Lt => $"({lhs} < {rhs})",
+                    BinOpType.Gt => $"({lhs} > {rhs})",
+                    BinOpType.And => $"({lhs} && {rhs})",
+                    BinOpType.Or => $"({lhs} || {rhs})",
+                    _ => throw new Exception($"Unsupported BinOp Operatoion: {binOpExpr.Operation}"),
+                };
+            }
+            else
+            {
+                throw new Exception($"Unsupported expression type {expr.GetType()}");
+            }
+        }
+
+        private static string GenerateCodeCall(string callee, params string[] args)
+        {
+            return $"{callee}({string.Join(", ", args)})";
+        }
+
+        private string GenerateCodeTupleAccess(TupleAccessExpr t, CompilationContext ctx)
+        {
+            return $"{GenerateCodeExpr(t.SubExpr, ctx)}[{t.FieldNo}]";
+        }
+
+        private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n, CompilationContext ctx)
+        {
+            return $"{GenerateCodeExpr(n.SubExpr, ctx)}.{n.FieldName}";
+        }
+
+        private string GenerateCodeFuncBody(Function func)
         {
             return "";
+        }
+
+        private string GenerateCodePredicateCall(PredicateCallExpr p, CompilationContext ctx)
+        {
+            if (p.Predicate is BuiltinPredicate)
+            {
+                switch (p.Predicate.Notation)
+                {
+                    case Notation.Infix:
+                        return $"{GenerateCodeExpr(p.Arguments[0], ctx)} {p.Predicate.Name} {GenerateCodeExpr(p.Arguments[1], ctx)}";
+                }
+            }
+            var args = (from e in p.Arguments select GenerateCodeExpr(e, ctx)).ToArray();
+            return GenerateCodeCall(p.Predicate.Name, args);
+        }
+
+        private string GenerateFuncCall(FunCallExpr funCallExpr, CompilationContext ctx)
+        {
+            return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e, ctx)).ToArray()) + ")";
         }
 
         private static string GenerateCodeVariable(Variable v)

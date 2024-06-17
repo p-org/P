@@ -43,6 +43,7 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new Exception($"Event {ename} not defined in global scope");
                 }
             }
+            CompilationContext ctx = new(job);
             AggregateFunctions(globalScope);
             AggregateDefinedPredicates(globalScope);
             var i = 0;
@@ -50,7 +51,7 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (var eventInst in quantifiedEvents) {
                 var eventAtom = new PEventVariable($"e{i}", eventInst.Name)
                 {
-                    Type = eventInst.PayloadType
+                    Type = ExplicateTypeDef(eventInst.PayloadType)
                 };
                 var expr = new VariableAccessExpr(null, eventAtom);
                 AddTerm(0, expr);
@@ -61,7 +62,6 @@ namespace Plang.Compiler.Backend.PInfer
             }
             PopulateTerm(termDepth);
             PopulatePredicate();
-            CompilationContext ctx = new(job);
             CompiledFile fp = new(ctx.FileName);
             CompiledFile terms = new($"{job.ProjectName}.terms");
             CompiledFile predicates = new($"{job.ProjectName}.predicates");
@@ -71,17 +71,23 @@ namespace Plang.Compiler.Backend.PInfer
             }
             foreach (var term in AllTerms)
             {
-                var events = FreeEvents[term].Select(x => ((PEventVariable) x).EventName);
-                ctx.WriteLine(terms.Stream, string.Join<string>(", ", [.. events]));
-                ctx.WriteLine(terms.Stream, GenerateCodeExpr(term, ctx));
+                WriteToFile(term, ctx, terms.Stream);
             }
             foreach (var pred in Predicates)
             {
-                var events = FreeEvents[pred].Select(x => ((PEventVariable) x).EventName);
-                ctx.WriteLine(predicates.Stream, string.Join<string>(", ", [.. events]));
-                ctx.WriteLine(predicates.Stream, GenerateCodeExpr(pred, ctx));
+                WriteToFile(pred, ctx, predicates.Stream);
             }
             return [fp, terms, predicates];
+        }
+
+        private void WriteToFile(IPExpr expr, CompilationContext ctx, StringWriter fp)
+        {
+            var events = FreeEvents[expr].Select(x => {
+                    var e = (PEventVariable) x;
+                    return $"({e.Name}:{e.EventName})";
+            });
+            var code = GenerateCodeExpr(expr, ctx) + " where " + string.Join(" ", events);
+            ctx.WriteLine(fp, code);
         }
 
         private string GeneratePredicateDefn(IPredicate predicate)
@@ -105,6 +111,15 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new Exception("Predicate with more than three parameters is pending to be supported");
                 }
             }
+        }
+
+        private PLanguageType ExplicateTypeDef(PLanguageType type)
+        {
+            if (type is TypeDefType typedef)
+            {
+                return typedef.TypeDefDecl.Type;
+            }
+            return type;
         }
 
         private string GenerateCodeExpr(IPExpr expr, CompilationContext ctx)
@@ -190,6 +205,16 @@ namespace Plang.Compiler.Backend.PInfer
 
         private string GenerateFuncCall(FunCallExpr funCallExpr, CompilationContext ctx)
         {
+            if (funCallExpr.Function is BuiltinFunction builtinFun)
+            {
+                switch (builtinFun.Notation)
+                {
+                    case Notation.Infix:
+                        return $"({GenerateCodeExpr(funCallExpr.Arguments[0], ctx)} {builtinFun.Name} {GenerateCodeExpr(funCallExpr.Arguments[1], ctx)})";
+                    default:
+                        break;
+                }
+            }
             return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e, ctx)).ToArray()) + ")";
         }
 
@@ -201,33 +226,52 @@ namespace Plang.Compiler.Backend.PInfer
         private void PopulatePredicate()
         {
             var allTerms = AllTerms;
-            // Set of parameters types --> List of mappings of types to exprs
+            // Set of parameters types --> List of mappings of types and exprs
             var combinationCache = new Dictionary<HashSet<PLanguageType>,
-                                                  List<IDictionary<PLanguageType, IPExpr>>>();
+                                                  IDictionary<PLanguageType, HashSet<IPExpr>>>();
             foreach (var pred in PredicateStore.Store)
             {
                 var sig = pred.Signature.ParameterTypes.ToHashSet();
                 var sigList = pred.Signature.ParameterTypes.ToList();
-                if (!combinationCache.TryGetValue(sig, out List<IDictionary<PLanguageType, IPExpr>> varMap))
+                if (!combinationCache.TryGetValue(sig, out IDictionary<PLanguageType, HashSet<IPExpr>> varMap))
                 {
                     var parameterCombs = GetParameterCombinations(0, allTerms, sigList, []);
-                    varMap = ([]);
+                    varMap = new Dictionary<PLanguageType, HashSet<IPExpr>>();
                     combinationCache.Add(sig, varMap);
                     foreach (var parameters in parameterCombs)
                     {
-                        combinationCache[sig].Add(
-                            (from i in Enumerable.Range(0, parameters.Count) 
-                                select KeyValuePair.Create(sigList[i], parameters[i])).ToDictionary()
-                        );
+                        foreach (var i in Enumerable.Range(0, parameters.Count))
+                        {
+                            if (!varMap.TryGetValue(sigList[i], out HashSet<IPExpr> exprs))
+                            {
+                                exprs = [];
+                                varMap.Add(sigList[i], exprs);
+                            }
+                            varMap[sigList[i]].Add(parameters[i]);
+                        }
                     }
                 }
-                foreach (var type2Inst in varMap)
+                foreach (var parameters in CartesianProduct(sigList, varMap))
                 {
-                    var parameters = (from ty in sigList select type2Inst[ty]).ToArray();
-                    var expr = new PredicateCallExpr(pred, parameters);
-                    FreeEvents[expr] = GetUnboundedEventsMultiple(parameters);
+                    var events = GetUnboundedEventsMultiple(parameters.ToArray());
+                    var expr = new PredicateCallExpr(pred, parameters.ToList());
+                    FreeEvents[expr] = events;
                     Predicates.Add(expr);
                 }
+            }
+        }
+
+        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<PLanguageType, HashSet<IPExpr>> varMaps)
+        {
+            if (types.Count == 0 || varMaps.Count == 0)
+            {
+                return [];
+            }
+            else
+            {
+                return from e in varMaps[types[0]]
+                        from rest in CartesianProduct(types.Skip(1).ToList(), varMaps)
+                        select rest.Prepend(e);
             }
         }
 
@@ -252,6 +296,7 @@ namespace Plang.Compiler.Backend.PInfer
                     // function calls
                     var sig = func.Signature;
                     var retType = sig.ReturnType;
+                    // Console.WriteLine($"Func: {func.Name}; RetType: {retType}");
                     var parameters = GetParameterCombinations(0, TermsAtDepth(currentDepth - 1), sig.Parameters.Select(x => x.Type).ToList(), []);
                     foreach (var parameter in parameters)
                     {
@@ -265,7 +310,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private void MkEqComparison(int depth)
         {
-            if (depth == 0)
+            if (depth == 0 || depth >= Terms.Count)
             {
                 return;
             }
@@ -304,6 +349,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private void TryMakeNamedTupleAccess(IPExpr tuple, int depth)
         {
+            // Console.WriteLine($"Expr: {tuple}; Type: {tuple.Type}; Depth: {depth}");
             if (tuple.Type is NamedTupleType namedTupleType)
             {
                 for (var i = 0; i < namedTupleType.Fields.Count; ++i)
@@ -324,10 +370,13 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (declParams.Count == 0)
             {
-                return [parameters];
+                List<IPExpr> copies = [];
+                copies.AddRange(parameters);
+                return [copies];
             }
             else
             {
+                // Console.WriteLine($"Current params: {string.Join(" ", declParams)}");
                 var declParam = declParams[0];
                 List<IPExpr> newParameters = [];
                 newParameters.AddRange(parameters);
@@ -405,7 +454,9 @@ namespace Plang.Compiler.Backend.PInfer
         private List<Dictionary<PLanguageType, HashSet<IPExpr>>> Terms { get; }
         private List<IPExpr> Predicates { get; }
         private Dictionary<IPExpr, HashSet<Variable>> FreeEvents { get; }
-        private IEnumerable<IPExpr> TermsAtDepth(int depth) => Terms[depth].Values.SelectMany(x => x);
+        private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {
+                                                                true => Terms[depth].Values.SelectMany(x => x),
+                                                                false => []};
         private IEnumerable<IPExpr> AllTerms => Terms.SelectMany(x => x.Values).SelectMany(x => x);
         private IEnumerable<IPExpr> TermsAtDepthWithType(int depth, PLanguageType type) => (from ty in Terms[depth].Keys
                                                                                                 where IsAssignableFrom(ty, type)

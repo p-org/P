@@ -164,7 +164,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private static IPredicate BinaryPredicate(string name, PLanguageType type)
         {
-            return new BuiltinPredicate(name, Notation.Infix, type, type);
+            return new BuiltinPredicate(name, Notation.Prefix, type, type);
         }
 
         private static List<IPredicate> MkBuiltin() {
@@ -181,7 +181,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         public static Function BinaryFunction(string name, PLanguageType type)
         {
-            return new BuiltinFunction(name, Notation.Infix, type, type, type);
+            return new BuiltinFunction(name, Notation.Prefix, type, type, type);
         }
 
         private static List<Function> MkBuiltin() {

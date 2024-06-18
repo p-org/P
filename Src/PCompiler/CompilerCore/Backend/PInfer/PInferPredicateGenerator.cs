@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -46,13 +45,12 @@ namespace Plang.Compiler.Backend.PInfer
                 }
             }
             CompilationContext ctx = new(job);
-            AggregateFunctions(globalScope);
-            AggregateDefinedPredicates(globalScope);
+            AggregateFunctions(job.CustomFunctions, globalScope);
+            AggregateDefinedPredicates(job.CustomPredicates, globalScope);
             var i = 0;
             var termDepth = job.TermDepth.Value;
             var indexType = PInferBuiltinTypes.Index;
             var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
-            // PredicateStore.AddBuiltinPredicate("<", Notation.Prefix, indexType, indexType);
             foreach (var eventInst in quantifiedEvents) {
                 var eventAtom = new PEventVariable($"e{i}", eventInst.Name)
                 {
@@ -240,27 +238,29 @@ namespace Plang.Compiler.Backend.PInfer
         {
             var allTerms = VisitedSet;
             // Set of parameters types --> List of mappings of types and exprs
-            var combinationCache = new Dictionary<HashSet<PLanguageType>,
-                                                  IDictionary<PLanguageType, HashSet<IPExpr>>>();
+            var combinationCache = new Dictionary<HashSet<string>,
+                                                  IDictionary<string, HashSet<IPExpr>>>();
             foreach (var pred in PredicateStore.Store)
             {
-                var sig = pred.Signature.ParameterTypes.ToHashSet();
+                var sig = pred.Signature.ParameterTypes.Select(ShowType).ToHashSet();
                 var sigList = pred.Signature.ParameterTypes.ToList();
-                if (!combinationCache.TryGetValue(sig, out IDictionary<PLanguageType, HashSet<IPExpr>> varMap))
+                var sigStrList = sigList.Select(ShowType).ToList();
+                Console.WriteLine($"Get Params for {pred.Name} with type {string.Join(" -> ", sigList.Select(ShowType))}");
+                if (!combinationCache.TryGetValue(sig, out IDictionary<string, HashSet<IPExpr>> varMap))
                 {
                     var parameterCombs = GetParameterCombinations(0, allTerms, sigList, []);
-                    varMap = new Dictionary<PLanguageType, HashSet<IPExpr>>();
+                    varMap = new Dictionary<string, HashSet<IPExpr>>();
                     combinationCache.Add(sig, varMap);
                     foreach (var parameters in parameterCombs)
                     {
                         foreach (var i in Enumerable.Range(0, parameters.Count))
                         {
-                            if (!varMap.TryGetValue(sigList[i], out HashSet<IPExpr> exprs))
+                            if (!varMap.TryGetValue(sigStrList[i], out HashSet<IPExpr> exprs))
                             {
                                 exprs = [];
-                                varMap.Add(sigList[i], exprs);
+                                varMap.Add(sigStrList[i], exprs);
                             }
-                            varMap[sigList[i]].Add(parameters[i]);
+                            varMap[sigStrList[i]].Add(parameters[i]);
                         }
                     }
                     combinationCache[sig] = varMap;
@@ -275,7 +275,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<PLanguageType, HashSet<IPExpr>> varMaps)
+        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<string, HashSet<IPExpr>> varMaps)
         {
             if (varMaps.Count == 0)
             {
@@ -287,7 +287,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             else
             {
-                return from e in varMaps[types[0]]
+                return from e in varMaps[ShowType(types[0])]
                         from rest in CartesianProduct(types.Skip(1).ToList(), varMaps)
                         select rest.Prepend(e);
             }
@@ -396,6 +396,7 @@ namespace Plang.Compiler.Backend.PInfer
                 IEnumerable<List<IPExpr>> result = [];
                 foreach (var expr in candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)))
                 {
+                    Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(expr.Type, declParam)}");
                     newParameters.Add(expr);
                     result = result.Concat(GetParameterCombinations(index + 1, candidateTerms, declParams.Skip(1).ToList(), newParameters));
                     newParameters.RemoveAt(newParameters.Count - 1);
@@ -404,22 +405,66 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private static void AggregateDefinedPredicates(Scope globalScope) {
-            foreach (var f in globalScope.Functions)
+        private static bool GetFunction(string locator, Scope globalScope, out Function function)
+        {
+            if (globalScope.Get(locator, out function))
             {
-                if ((f.Role & FunctionRole.Predicate) == FunctionRole.Predicate && f.Signature.ReturnType == PrimitiveType.Bool)
+                return true;
+            }
+            else if (locator.Contains('.'))
+            {
+                var split = locator.Split(".");
+                if (globalScope.Get(split[0], out Machine m))
                 {
-                    PredicateStore.Store.Add(new DefinedPredicate(f));
+                    foreach (var func in m.Methods)
+                    {
+                        if (func.Name == split[1])
+                        {
+                            function = func;
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        private static void AggregateDefinedPredicates(List<string> predicates, Scope globalScope) {
+            foreach (var name in predicates)
+            {
+                if (GetFunction(name, globalScope, out Function pred))
+                {
+                    if (pred.Signature.ReturnType.Equals(PrimitiveType.Bool))
+                    {
+                        PredicateStore.Store.Add(new DefinedPredicate(pred));
+                    }
+                    else
+                    {
+                        throw new Exception($"Predicate {name} should have return type `bool` ({pred.Signature.ReturnType} is returned)");
+                    }
+                }
+                else
+                {
+                    throw new Exception($"Predicate {name} is not defined");
                 }
             }
         }
 
-        private static void AggregateFunctions(Scope globalScope) {
-            foreach (var f in globalScope.Functions)
+        private static void AggregateFunctions(List<string> functions, Scope globalScope) {
+            foreach (var name in functions)
             {
-                if ((f.Role & FunctionRole.Function) == FunctionRole.Function)
+                if (globalScope.Get(name, out Function function))
                 {
-                    FunctionStore.Store.Add(f);
+                    FunctionStore.Store.Add(function);
+                }
+                else
+                {
+                    throw new Exception($"Function {name} not found");
                 }
             }
         }
@@ -452,13 +497,26 @@ namespace Plang.Compiler.Backend.PInfer
             // A slightly stricter version of type equality checking
             // when checking type aliases, we only regard aliases with the same name and 
             // they are referring to the same type
-            if (type is TypeDefType typedef)
+            if (type is TypeDefType || otherType is TypeDefType)
             {
-                return (otherType is TypeDefType otherTypeDef) 
+                return (otherType is TypeDefType otherTypeDef) && (type is TypeDefType typedef)
                         && typedef.TypeDefDecl.Name == otherTypeDef.TypeDefDecl.Name
                         && typedef.TypeDefDecl.Type.Equals(otherTypeDef.TypeDefDecl.Type);
             }
             return type.IsAssignableFrom(otherType);
+        }
+
+        public static string ShowType(PLanguageType type)
+        {
+            return type switch
+            {
+                PrimitiveType primitiveType => primitiveType.CanonicalRepresentation,
+                Index _ => "Index",
+                TypeDefType typedef => $"{typedef.TypeDefDecl.Name}({ShowType(typedef.TypeDefDecl.Type)})",
+                NamedTupleType namedTupleType => $"({string.Join(", ", namedTupleType.Types.Select(ShowType))})",
+                TupleType tupleType => $"({string.Join(", ", tupleType.Types.Select(ShowType))})",
+                _ => $"{type}",
+            };
         }
 
         private HashSet<Variable> GetUnboundedEventsMultiple(params IPExpr[] expr)

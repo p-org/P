@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -177,10 +176,6 @@ namespace Plang.Compiler.Backend.PInfer
     {
         public DefinedPredicate(Function func)
         {
-            if ((func.Role & FunctionRole.Predicate) != FunctionRole.Predicate)
-            {
-                throw new Exception($"Function {func.Name} is not defined as a predicate");
-            }
             if (func.Signature.ReturnType != PrimitiveType.Bool)
             {
                 throw new Exception($"Function {func.Name} does not return a boolean, which is required to be a predicate");

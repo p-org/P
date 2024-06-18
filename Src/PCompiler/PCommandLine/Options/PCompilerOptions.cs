@@ -41,6 +41,12 @@ namespace Plang.Options
             var pInferGroup = Parser.GetOrCreateGroup("pinfer", "Options for PInfer predicate enumeration");
             pInferGroup.AddArgument("quantified-events", "qe", "Events to be quantified over in generated predicates").IsMultiValue = true;
             pInferGroup.AddArgument("term-depth", "td", "Max depth of terms in the predicates");
+            var customPreds= pInferGroup.AddArgument("custom-predicates", "cp", "User-defined predicates in the P Model. Must have a return type of `bool`");
+            var customFuncs = pInferGroup.AddArgument("custom-functions", "cf", "User-defined functions");
+            customPreds.IsMultiValue = true;
+            customPreds.IsRequired = false;
+            customFuncs.IsMultiValue = true;
+            customFuncs.IsRequired = false;
 
             var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately, pinfer). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately", "pinfer" };
@@ -198,6 +204,14 @@ namespace Plang.Options
                     var events = (string[])option.Value;
                     // Console.WriteLine($"quantified-events: {events.Length}");
                     compilerConfiguration.QuantifiedEvents = [.. events];
+                    break;
+                case "custom-predicates":
+                    var preds = (string[])option.Value;
+                    compilerConfiguration.CustomPredicates = [.. preds];
+                    break;
+                case "custom-functions":
+                    var funcs = (string[])option.Value;
+                    compilerConfiguration.CustomFunctions = [.. funcs];
                     break;
                 case "term-depth":
                     compilerConfiguration.TermDepth = int.Parse((string)option.Value);

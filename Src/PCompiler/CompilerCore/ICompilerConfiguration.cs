@@ -22,5 +22,7 @@ namespace Plang.Compiler
         bool Debug { get; }
         int? TermDepth { get; }
         List<string> QuantifiedEvents { get; }
+        List<string> CustomPredicates { get; }
+        List<string> CustomFunctions { get; }
     }
 }

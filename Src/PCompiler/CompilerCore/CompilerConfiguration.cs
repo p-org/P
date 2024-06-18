@@ -26,6 +26,8 @@ namespace Plang.Compiler
             Debug = false;
             TermDepth = null;
             QuantifiedEvents = null;
+            CustomPredicates = [];
+            CustomFunctions = [];
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null, bool debug = false)
@@ -78,6 +80,8 @@ namespace Plang.Compiler
 
         public int? TermDepth { get; set; }
         public List<string> QuantifiedEvents { get; set; }
+        public List<string> CustomPredicates { get; set; }
+        public List<string> CustomFunctions { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)
         {

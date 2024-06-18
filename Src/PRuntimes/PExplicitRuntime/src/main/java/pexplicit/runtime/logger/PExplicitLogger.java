@@ -21,7 +21,8 @@ import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchTask;
-import pexplicit.runtime.scheduler.replay.ReplayScheduler;
+import pexplicit.runtime.scheduler.replay.ReceiverQueueReplayer;
+import pexplicit.runtime.scheduler.replay.SenderQueueReplayer;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.values.ComputeHash;
 import pexplicit.values.PEvent;
@@ -184,11 +185,11 @@ public class PExplicitLogger {
         }
     }
 
-    public static void logStartStep(int step, PMachine sender, PMessage msg) {
+    public static void logStartStep(int step, PMessage msg) {
         if (verbosity > 0) {
             log.info(String.format(
                     "  Step %d: %s sent %s to %s",
-                    step, sender, msg.getEvent(), msg.getTarget()));
+                    step, msg.getSender(), msg.getEvent(), msg.getTarget()));
             if (verbosity > 5) {
                 log.info(String.format("    payload: %s", msg.getPayload()));
             }
@@ -267,7 +268,8 @@ public class PExplicitLogger {
     }
 
     private static boolean isReplaying() {
-        return (PExplicitGlobal.getScheduler() instanceof ReplayScheduler);
+        return (PExplicitGlobal.getScheduler() instanceof SenderQueueReplayer ||
+                PExplicitGlobal.getScheduler() instanceof ReceiverQueueReplayer);
     }
 
     private static boolean typedLogEnabled() {
@@ -320,7 +322,7 @@ public class PExplicitLogger {
         }
     }
 
-    public static void logSendEvent(PMachine sender, PMessage message) {
+    public static void logSendEvent(PMessage message) {
         PExplicitGlobal.getScheduler().updateLogNumber();
         if (typedLogEnabled()) {
             String payloadMsg = "";
@@ -328,7 +330,7 @@ public class PExplicitLogger {
                 payloadMsg = String.format(" with payload %s", message.getPayload());
             }
             typedLog(LogType.SendLog, String.format("%s in state %s sent event %s%s to %s.",
-                    sender, sender.getCurrentState(), message.getEvent(), payloadMsg, message.getTarget()));
+                    message.getSender(), message.getSender().getCurrentState(), message.getEvent(), payloadMsg, message.getTarget()));
         }
     }
 
@@ -401,7 +403,11 @@ public class PExplicitLogger {
     public static void logStartReplay() {
         if (verbosity > 0) {
             log.info("--------------------");
-            log.info("Replaying schedule");
+            switch(PExplicitGlobal.getConfig().getBufferSemantics()) {
+                case SenderQueue -> log.info("Replaying schedule: sender queue semantics");
+                case ReceiverQueue -> log.info("Replaying schedule: receiver queue semantics");
+            }
+
         }
     }
 }

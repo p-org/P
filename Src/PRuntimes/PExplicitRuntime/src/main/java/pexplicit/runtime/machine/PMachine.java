@@ -3,10 +3,12 @@ package pexplicit.runtime.machine;
 import lombok.Getter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
+import pexplicit.runtime.logger.ScheduleWriter;
 import pexplicit.runtime.machine.buffer.DeferQueue;
-import pexplicit.runtime.machine.buffer.SenderQueue;
+import pexplicit.runtime.machine.buffer.FifoQueue;
 import pexplicit.runtime.machine.eventhandlers.EventHandler;
 import pexplicit.runtime.machine.events.PContinuation;
+import pexplicit.runtime.scheduler.replay.ReceiverQueueReplayer;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.utils.serialize.SerializableBiFunction;
@@ -34,7 +36,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     private final Set<State> states;
     private final State startState;
     @Getter
-    private final SenderQueue sendBuffer;
+    private final FifoQueue eventBuffer;
     private final DeferQueue deferQueue;
     @Getter
     private final Map<String, PContinuation> continuationMap = new TreeMap<>();
@@ -93,7 +95,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
                 });
 
         // initialize send buffer
-        this.sendBuffer = new SenderQueue(this);
+        this.eventBuffer = new FifoQueue(this);
         this.deferQueue = new DeferQueue(this);
     }
 
@@ -122,7 +124,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     public void reset() {
         this.currentState = startState;
 
-        this.sendBuffer.clear();
+        this.eventBuffer.clear();
         this.deferQueue.clear();
 
         this.started = false;
@@ -168,7 +170,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         result.add(currentState);
 
-        result.add(sendBuffer.getElements());
+        result.add(eventBuffer.getElements());
         result.add(deferQueue.getElements());
 
         result.add(started);
@@ -192,7 +194,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         result.add(currentState);
 
-        result.add(new ArrayList<>(sendBuffer.getElements()));
+        result.add(new ArrayList<>(eventBuffer.getElements()));
         result.add(new ArrayList<>(deferQueue.getElements()));
 
         result.add(started);
@@ -217,7 +219,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         currentState = (State) values.get(idx++);
 
-        sendBuffer.setElements(new ArrayList<>((List<PMessage>) values.get(idx++)));
+        eventBuffer.setElements(new ArrayList<>((List<PMessage>) values.get(idx++)));
         deferQueue.setElements(new ArrayList<>((List<PMessage>) values.get(idx++)));
 
         started = (boolean) values.get(idx++);
@@ -239,6 +241,17 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         setLocalVarValues(input.getLocals());
     }
 
+    private void addMessage(PMessage msg) {
+        if (PExplicitGlobal.getScheduler() instanceof ReceiverQueueReplayer) {
+            ScheduleWriter.logSend(msg);
+        }
+
+        switch(PExplicitGlobal.getConfig().getBufferSemantics()) {
+            case SenderQueue -> this.eventBuffer.add(msg);
+            case ReceiverQueue -> msg.getTarget().eventBuffer.add(msg);
+        }
+    }
+
     /**
      * Create a new machine instance
      *
@@ -252,8 +265,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             PValue<?> payload,
             Function<Integer, ? extends PMachine> constructor) {
         PMachine machine = PExplicitGlobal.getScheduler().allocateMachine(machineType, constructor);
-        PMessage msg = new PMessage(PEvent.createMachine, machine, payload);
-        sendBuffer.add(msg);
+        PMessage msg = new PMessage(PEvent.createMachine, machine, payload, this);
+        addMessage(msg);
         return new PMachineValue(machine);
     }
 
@@ -282,12 +295,13 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             throw new BugFoundException("Machine in send event cannot be null.");
         }
 
-        PMessage msg = new PMessage(event, target.getValue(), payload);
+        PMessage msg = new PMessage(event, target.getValue(), payload, this);
 
         // log send event
-        PExplicitLogger.logSendEvent(this, msg);
+        PExplicitLogger.logSendEvent(msg);
 
-        sendBuffer.add(msg);
+        addMessage(msg);
+
         PExplicitGlobal.getScheduler().runMonitors(msg);
     }
 
@@ -408,6 +422,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param message Message to process
      */
     void runEvent(PMessage message) {
+        if (PExplicitGlobal.getScheduler() instanceof ReceiverQueueReplayer) {
+            ScheduleWriter.logReceive(message);
+        }
+
         if (isBlocked()) {
             PContinuation currBlockedBy = this.blockedBy;
             PEvent event = message.getEvent();
@@ -448,7 +466,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             return;
         }
 
-        PMessage msg = new PMessage(event, this, payload);
+        PMessage msg = new PMessage(event, this, payload, this);
 
         // log raise event
         PExplicitLogger.logRaiseEvent(this, event);

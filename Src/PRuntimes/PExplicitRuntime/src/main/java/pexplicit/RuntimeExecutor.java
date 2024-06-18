@@ -4,8 +4,10 @@ import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.StatWriter;
+import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
-import pexplicit.runtime.scheduler.replay.ReplayScheduler;
+import pexplicit.runtime.scheduler.replay.ReceiverQueueReplayer;
+import pexplicit.runtime.scheduler.replay.SenderQueueReplayer;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.MemoutException;
 import pexplicit.utils.monitor.MemoryMonitor;
@@ -99,21 +101,31 @@ public class RuntimeExecutor {
             PExplicitGlobal.setResult(String.format("found cex of length %d", scheduler.getStepNumber()));
             PExplicitLogger.logStackTrace(e);
 
-            ReplayScheduler replayer = new ReplayScheduler(scheduler.schedule);
-            PExplicitGlobal.setScheduler(replayer);
+            SenderQueueReplayer senderQueueReplayer = new SenderQueueReplayer(scheduler.schedule);
+            PExplicitGlobal.setScheduler(senderQueueReplayer);
             try {
-                replayer.run();
-            } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
-                PExplicitLogger.logStackTrace((Exception) replayException);
-                throw new BugFoundException(replayException.getMessage(), replayException);
-            } catch (BugFoundException replayException) {
-                PExplicitLogger.logStackTrace(replayException);
-                throw replayException;
-            } catch (Exception replayException) {
-                PExplicitLogger.logStackTrace(replayException);
-                throw new Exception("Error when replaying the bug", replayException);
+                senderQueueReplayer.run();
+            } catch (NullPointerException | StackOverflowError | ClassCastException | BugFoundException senderQueueException) {
+                ReceiverQueueReplayer receiverQueueReplayer = new ReceiverQueueReplayer(senderQueueReplayer.getReceiverSemanticsSchedule());
+                PExplicitGlobal.setScheduler(receiverQueueReplayer);
+                try {
+                    receiverQueueReplayer.run();
+                } catch (NullPointerException | StackOverflowError | ClassCastException receiverQueueException) {
+                    PExplicitLogger.logStackTrace((Exception) receiverQueueException);
+                    throw new BugFoundException(receiverQueueException.getMessage(), receiverQueueException);
+                } catch (BugFoundException receiverQueueException) {
+                    PExplicitLogger.logStackTrace(receiverQueueException);
+                    throw receiverQueueException;
+                } catch (Exception receiverQueueException) {
+                    PExplicitLogger.logStackTrace(receiverQueueException);
+                    throw new Exception("Error when replaying the bug in receiver queue semantics", receiverQueueException);
+                }
+                throw new Exception("Failed to replay bug in receiver queue semantics", e);
+            } catch (Exception senderQueueException) {
+                PExplicitLogger.logStackTrace(senderQueueException);
+                throw new Exception("Error when replaying the bug in sender queue semantics", senderQueueException);
             }
-            throw new Exception("Failed to replay bug", e);
+            throw new Exception("Failed to replay bug in sender queue semantics", e);
         } catch (InterruptedException e) {
             PExplicitGlobal.setStatus(STATUS.INTERRUPTED);
             throw new Exception("INTERRUPTED", e);

@@ -1,10 +1,11 @@
 package pexplicit.runtime.scheduler.replay;
 
+import lombok.Getter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
-import pexplicit.runtime.logger.ScheduleWriter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
+import pexplicit.runtime.machine.buffer.BufferSemantics;
 import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.utils.misc.Assert;
@@ -13,15 +14,19 @@ import pexplicit.values.PValue;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-public class ReplayScheduler extends Scheduler {
-    public ReplayScheduler(Schedule sch) {
+public class SenderQueueReplayer extends Scheduler {
+    @Getter
+    Schedule receiverSemanticsSchedule;
+
+    public SenderQueueReplayer(Schedule sch) {
         super(sch);
+        PExplicitGlobal.getConfig().setBufferSemantics(BufferSemantics.SenderQueue);
+        receiverSemanticsSchedule = new Schedule();
     }
 
     @Override
     public void run() throws TimeoutException, InterruptedException {
         PExplicitLogger.logStartReplay();
-        ScheduleWriter.logHeader();
 
         // log run test
         PExplicitLogger.logRunTest();
@@ -61,10 +66,10 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     protected void runStep() throws TimeoutException {
-        // get a scheduling choice as sender machine
-        PMachine sender = getNextScheduleChoice();
+        // get a scheduling choice as a machine
+        PMachine schChoice = getNextScheduleChoice();
 
-        if (sender == null) {
+        if (schChoice == null) {
             // done with this schedule
             scheduleTerminated = true;
             isDoneStepping = true;
@@ -72,13 +77,8 @@ public class ReplayScheduler extends Scheduler {
             return;
         }
 
-        // execute a step from message in the sender queue
-        executeStep(sender);
-    }
-
-    @Override
-    protected void reset() {
-        super.reset();
+        // execute a step from message in the machine queue
+        executeStep(schChoice);
     }
 
     @Override
@@ -94,8 +94,11 @@ public class ReplayScheduler extends Scheduler {
         }
 
         PMachine result = PExplicitGlobal.getGlobalMachine(pid);
-        ScheduleWriter.logScheduleChoice(result);
         PExplicitLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
+
+        if (result != null) {
+            receiverSemanticsSchedule.setScheduleChoice(stepNumber, choiceNumber, result.getEventBuffer().peek().getTarget().getPid());
+        }
 
         choiceNumber++;
         return result;
@@ -110,8 +113,9 @@ public class ReplayScheduler extends Scheduler {
         // pick the current data choice
         PValue<?> result = schedule.getCurrentDataChoice(choiceNumber);
         assert (input_choices.contains(result));
-        ScheduleWriter.logDataChoice(result);
         PExplicitLogger.logRepeatDataChoice(result, stepNumber, choiceNumber);
+
+        receiverSemanticsSchedule.setDataChoice(stepNumber, choiceNumber, result);
 
         choiceNumber++;
         return result;

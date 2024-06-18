@@ -11,6 +11,7 @@ public class PMessage extends PValue<PMessage> {
     private final PEvent event;
     private final PMachine target;
     private final PValue<?> payload;
+    private final PMachine sender;
 
     /**
      * Constructor
@@ -19,20 +20,21 @@ public class PMessage extends PValue<PMessage> {
      * @param target  Target machine
      * @param payload Event payload
      */
-    public PMessage(PEvent event, PMachine target, PValue<?> payload) {
+    public PMessage(PEvent event, PMachine target, PValue<?> payload, PMachine sender) {
         this.event = event;
         this.target = target;
         this.payload = payload;
+        this.sender = sender;
         initialize();
     }
 
     public PMessage setTarget(PMachine target) {
-        return new PMessage(event, target, payload);
+        return new PMessage(event, target, payload, sender);
     }
 
     @Override
     public PMessage clone() {
-        return new PMessage(this.event, this.target, this.payload);
+        return new PMessage(this.event, this.target, this.payload, this.sender);
     }
 
     @Override

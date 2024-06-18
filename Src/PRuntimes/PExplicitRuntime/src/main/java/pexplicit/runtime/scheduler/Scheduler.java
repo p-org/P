@@ -229,17 +229,17 @@ public abstract class Scheduler implements SchedulerInterface {
         stepState.makeMachine(machine);
 
         // run create machine event
-        processCreateEvent(new PMessage(PEvent.createMachine, machine, null));
+        processCreateEvent(new PMessage(PEvent.createMachine, machine, null, machine));
     }
 
     /**
-     * Execute a step by popping a message from the sender FIFO buffer and handling it
+     * Execute a step by popping a message from the machine's FIFO buffer and handling it
      *
-     * @param sender Sender machine
+     * @param schChoice Machine
      */
-    public void executeStep(PMachine sender) {
-        // pop message from sender queue
-        PMessage msg = sender.getSendBuffer().remove();
+    public void executeStep(PMachine schChoice) {
+        // pop message from machine queue
+        PMessage msg = schChoice.getEventBuffer().remove();
 
         isStickyStep = msg.getEvent().isCreateMachineEvent();
         if (!isStickyStep) {
@@ -251,10 +251,10 @@ public abstract class Scheduler implements SchedulerInterface {
         stepNumLogs = 0;
 
         // log start step
-        PExplicitLogger.logStartStep(stepNumber, sender, msg);
+        PExplicitLogger.logStartStep(stepNumber, msg);
 
         // process message
-        processDequeueEvent(sender, msg);
+        processDequeueEvent(schChoice, msg);
 
         // update done stepping flag
         isDoneStepping = (stepNumber >= PExplicitGlobal.getConfig().getMaxStepBound());
@@ -316,10 +316,10 @@ public abstract class Scheduler implements SchedulerInterface {
      *
      * @param message Message to process
      */
-    public void processDequeueEvent(PMachine sender, PMessage message) {
+    public void processDequeueEvent(PMachine schChoice, PMessage message) {
         if (message.getEvent().isCreateMachineEvent()) {
             // log create machine
-            PExplicitLogger.logCreateMachine(message.getTarget(), sender);
+            PExplicitLogger.logCreateMachine(message.getTarget(), message.getSender());
         } else {
             // log monitor process event
             PExplicitLogger.logDequeueEvent(message.getTarget(), message);
@@ -338,7 +338,7 @@ public abstract class Scheduler implements SchedulerInterface {
         if (event == null) {
             throw new NotImplementedException("Machine cannot announce a null event");
         }
-        PMessage message = new PMessage(event, null, payload);
+        PMessage message = new PMessage(event, null, payload, null);
         runMonitors(message);
     }
 

@@ -12,7 +12,6 @@ import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Scheduler;
-import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.strategy.*;
@@ -198,10 +197,10 @@ public class ExplicitSearchScheduler extends Scheduler {
             schedule.setStepBeginState(stepState.copyState());
         }
 
-        // get a scheduling choice as sender machine
-        PMachine sender = getNextScheduleChoice();
+        // get a scheduling choice as a machine
+        PMachine schChoice = getNextScheduleChoice();
 
-        if (sender == null) {
+        if (schChoice == null) {
             // done with this schedule
             scheduleTerminated = true;
             skipLiveness = false;
@@ -210,8 +209,8 @@ public class ExplicitSearchScheduler extends Scheduler {
             return;
         }
 
-        // execute a step from message in the sender queue
-        executeStep(sender);
+        // execute a step from message in the event queue
+        executeStep(schChoice);
     }
 
     /**
@@ -282,14 +281,6 @@ public class ExplicitSearchScheduler extends Scheduler {
                     throw new PExplicitRuntimeException(String.format("Unexpected state caching mode: %s", PExplicitGlobal.getConfig().getStateCachingMode()));
         }
         return stateKey;
-    }
-
-    /**
-     * Reset the scheduler.
-     */
-    @Override
-    protected void reset() {
-        super.reset();
     }
 
     /**
@@ -541,7 +532,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 stepNumber = newStepNumber;
                 choiceNumber = scheduleChoice.getChoiceNumber();
                 stepState.setTo(scheduleChoice.getChoiceState());
-                assert (!PExplicitGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
+                assert (!PExplicitGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getEventBuffer().isEmpty());
             }
             schedule.removeChoicesAfter(backtrackChoiceNumber);
             PExplicitLogger.logBacktrack(newStepNumber, cIdx, unit);
@@ -554,7 +545,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     private List<PMachineId> getNewScheduleChoices() {
         // prioritize create machine events
         for (PMachine machine : stepState.getMachineSet()) {
-            if (machine.getSendBuffer().nextIsCreateMachineMsg()) {
+            if (machine.getEventBuffer().nextIsCreateMachineMsg()) {
                 return new ArrayList<>(Collections.singletonList(machine.getPid()));
             }
         }
@@ -563,7 +554,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         List<PMachineId> choices = new ArrayList<>();
 
         for (PMachine machine : stepState.getMachineSet()) {
-            if (machine.getSendBuffer().nextHasTargetRunning()) {
+            if (machine.getEventBuffer().nextHasTargetRunning()) {
                 choices.add(machine.getPid());
             }
         }

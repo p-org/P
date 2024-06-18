@@ -6,6 +6,7 @@ import pexplicit.runtime.machine.PMachine;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.PBool;
 import pexplicit.values.PInt;
+import pexplicit.values.PMessage;
 import pexplicit.values.PValue;
 
 import java.io.File;
@@ -56,8 +57,8 @@ public class ScheduleWriter {
     }
 
     public static void logScheduleChoice(PMachine choice) {
-        logComment("schedule choice");
-        log(String.format("(%d)", choice.getInstanceId()));
+        logComment(String.format("schedule choice: %s", choice));
+//        log(String.format("(%d)", choice.getInstanceId()));
     }
 
     public static void logHeader() {
@@ -73,5 +74,15 @@ public class ScheduleWriter {
         log("(1)");
         logComment("create Main(2)");
         log("(1)");
+    }
+
+    public static void logSend(PMessage msg) {
+        log(String.format("// send %s from %s to %s", msg.getEvent(), msg.getSender(), msg.getTarget()));
+        log(String.format("(%d)", msg.getSender().getInstanceId()));
+    }
+
+    public static void logReceive(PMessage msg) {
+        log(String.format("// receive %s at %s", msg.getEvent(), msg.getTarget()));
+        log(String.format("(%d)", msg.getTarget().getInstanceId()));
     }
 }

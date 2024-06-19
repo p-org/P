@@ -5,6 +5,7 @@ import lombok.Setter;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.utils.exceptions.BugFoundException;
@@ -271,8 +272,8 @@ public abstract class Scheduler implements SchedulerInterface {
             Function<Integer, ? extends PMachine> constructor) {
         // get machine count for given type from schedule
         int machineCount = stepState.getMachineCount(machineType);
-
-        PMachine machine = PExplicitGlobal.getGlobalMachine(machineType, machineCount);
+        PMachineId pid = new PMachineId(machineType, machineCount);
+        PMachine machine = PExplicitGlobal.getGlobalMachine(pid);
         if (machine == null) {
             // create a new machine
             machine = constructor.apply(machineCount);

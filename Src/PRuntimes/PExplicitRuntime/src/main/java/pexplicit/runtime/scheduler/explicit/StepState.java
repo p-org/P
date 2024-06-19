@@ -88,31 +88,6 @@ public class StepState implements Serializable {
     }
 
     /**
-     * Check if a machine of a given type and index exists in the schedule.
-     *
-     * @param type Machine type
-     * @param idx  Machine index
-     * @return true if machine is in this schedule, false otherwise
-     */
-    public boolean hasMachine(Class<? extends PMachine> type, int idx) {
-        if (!machineListByType.containsKey(type))
-            return false;
-        return idx < machineListByType.get(type).size();
-    }
-
-    /**
-     * Get a machine of a given type and index.
-     *
-     * @param type Machine type
-     * @param idx  Machine index
-     * @return Machine
-     */
-    public PMachine getMachine(Class<? extends PMachine> type, int idx) {
-        assert (hasMachine(type, idx));
-        return machineListByType.get(type).get(idx);
-    }
-
-    /**
      * Get the number of machines of a given type in the schedule.
      *
      * @param type Machine type

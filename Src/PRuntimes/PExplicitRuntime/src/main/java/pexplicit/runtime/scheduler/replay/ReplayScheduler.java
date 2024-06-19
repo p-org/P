@@ -4,6 +4,7 @@ import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.ScheduleWriter;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.utils.misc.Assert;
@@ -87,11 +88,12 @@ public class ReplayScheduler extends Scheduler {
         }
 
         // pick the current schedule choice
-        PMachine result = schedule.getCurrentScheduleChoice(choiceNumber);
-        if (result == null) {
+        PMachineId pid = schedule.getCurrentScheduleChoice(choiceNumber);
+        if (pid == null) {
             return null;
         }
 
+        PMachine result = PExplicitGlobal.getGlobalMachine(pid);
         ScheduleWriter.logScheduleChoice(result);
         PExplicitLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 

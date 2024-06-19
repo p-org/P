@@ -9,11 +9,14 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
 import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
+import pexplicit.runtime.scheduler.choice.ScheduleSearchUnit;
+import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
@@ -204,20 +207,21 @@ public class PExplicitLogger {
     }
 
     /**
-     * Log when backtracking to a new choice
+     * Log when backtracking to a search unit
      *
-     * @param choice Choice to which backtracking to
+     * @param stepNum Step number
+     * @param choiceNum Choice number
+     * @param unit Search unit to which backtracking to
      */
-    public static void logBacktrack(Choice choice) {
+    public static void logBacktrack(int stepNum, int choiceNum, SearchUnit unit) {
         if (verbosity > 1) {
             log.info(String.format("  Backtracking to %s choice @%d::%d",
-                    ((choice instanceof ScheduleChoice) ? "schedule" : "data"),
-                    choice.getStepNumber(),
-                    choice.getChoiceNumber()));
+                    ((unit instanceof ScheduleSearchUnit) ? "schedule" : "data"),
+                    stepNum, choiceNum));
         }
     }
 
-    public static void logNewScheduleChoice(List<PMachine> choices, int step, int idx) {
+    public static void logNewScheduleChoice(List<PMachineId> choices, int step, int idx) {
         if (verbosity > 1) {
             log.info(String.format("    @%d::%d new schedule choice: %s", step, idx, choices));
         }

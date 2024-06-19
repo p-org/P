@@ -244,7 +244,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private static IPredicate BinaryPredicate(string name, PLanguageType type)
         {
-            return new BuiltinPredicate(name, Notation.Prefix, type, type);
+            return new BuiltinPredicate(name, Notation.Infix, type, type);
         }
 
         private static List<IPredicate> MkBuiltin() {

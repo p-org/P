@@ -18,7 +18,7 @@ namespace Plang.Compiler.Backend.PInfer
             Terms = [];
             VisitedSet = new HashSet<IPExpr>(new ASTComparer());
             Predicates = new HashSet<IPExpr>(new ASTComparer());
-            FreeEvents = [];
+            FreeEvents = new Dictionary<IPExpr, HashSet<Variable>>(new ASTComparer());
         }
 
         public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -72,56 +72,19 @@ namespace Plang.Compiler.Backend.PInfer
             PopulateTerm(termDepth);
             PopulatePredicate();
             MkEqComparison();
-            CompiledFile fp = new(ctx.FileName);
             CompiledFile terms = new($"{job.ProjectName}.terms");
             CompiledFile predicates = new($"{job.ProjectName}.predicates");
-            foreach (var pred in PredicateStore.Store)
-            {
-                ctx.WriteLine(fp.Stream, GeneratePredicateDefn(pred));
-            }
+            JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, FreeEvents);
             foreach (var term in VisitedSet)
             {
-                WriteToFile(term, ctx, terms.Stream);
+                codegen.GenerateRawExpr(term);
             }
             foreach (var pred in Predicates)
             {
-                WriteToFile(pred, ctx, predicates.Stream);
+                codegen.GenerateRawExpr(pred);
             }
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
-            return [fp, terms, predicates];
-        }
-
-        private void WriteToFile(IPExpr expr, CompilationContext ctx, StringWriter fp)
-        {
-            var events = FreeEvents[expr].Select(x => {
-                    var e = (PEventVariable) x;
-                    return $"({e.Name}:{e.EventName})";
-            });
-            var code = GenerateCodeExpr(expr, ctx) + " where " + string.Join(" ", events);
-            ctx.WriteLine(fp, code);
-        }
-
-        private string GeneratePredicateDefn(IPredicate predicate)
-        {
-            if (predicate is BuiltinPredicate)
-            {
-                // built-in predicates will be defined as static functions
-                // inside the generated Java class.
-                return "";
-            }
-            else
-            {
-                var bodyCode = GenerateCodeFuncBody(predicate.Function);
-                if (predicate.Signature.Parameters.Count <= 3)
-                {
-                    var paramDefs = "(" + string.Join(", ", (from v in predicate.Signature.Parameters select GenerateCodeVariable(v)).ToArray()) + ")";
-                    return $"{paramDefs} -> {{ {bodyCode} }}";
-                }
-                else
-                {
-                    throw new Exception("Predicate with more than three parameters is pending to be supported");
-                }
-            }
+            return codegen.GenerateCode(new Java.CompilationContext(job), globalScope).Concat([terms, predicates]);
         }
 
         private PLanguageType ExplicateTypeDef(PLanguageType type)
@@ -131,107 +94,6 @@ namespace Plang.Compiler.Backend.PInfer
                 return typedef.TypeDefDecl.Type;
             }
             return type;
-        }
-
-        private string GenerateCodeExpr(IPExpr expr, CompilationContext ctx)
-        {
-            if (expr is VariableAccessExpr v)
-            {
-                return GenerateCodeVariable(v.Variable);
-            }
-            else if (expr is FunCallExpr f)
-            {
-                return GenerateFuncCall(f, ctx);
-            }
-            else if (expr is PredicateCallExpr p)
-            {
-                return GenerateCodePredicateCall(p, ctx);
-            }
-            else if (expr is TupleAccessExpr t)
-            {
-                return GenerateCodeTupleAccess(t, ctx);
-            }
-            else if (expr is NamedTupleAccessExpr n)
-            {
-                return GenerateCodeNamedTupleAccess(n, ctx);
-            }
-            else if (expr is BinOpExpr binOpExpr)
-            {
-                var lhs = GenerateCodeExpr(binOpExpr.Lhs, ctx);
-                var rhs = GenerateCodeExpr(binOpExpr.Rhs, ctx);
-                return binOpExpr.Operation switch
-                {
-                    BinOpType.Add => $"+(({lhs}) ({rhs}))",
-                    BinOpType.Sub => $"-(({lhs}) ({rhs}))",
-                    BinOpType.Mul => $"*(({lhs}) ({rhs}))",
-                    BinOpType.Div => $"/(({lhs}) ({rhs}))",
-                    BinOpType.Mod => $"%(({lhs}) ({rhs}))",
-                    BinOpType.Eq => $"==(({lhs}) ({rhs}))",
-                    BinOpType.Lt => $"<(({lhs}) ({rhs}))",
-                    BinOpType.Gt => $">(({lhs}) ({rhs}))",
-                    BinOpType.And => $"&&(({lhs}) ({rhs}))",
-                    BinOpType.Or => $"||(({lhs}) ({rhs}))",
-                    _ => throw new Exception($"Unsupported BinOp Operatoion: {binOpExpr.Operation}"),
-                };
-            }
-            else
-            {
-                throw new Exception($"Unsupported expression type {expr.GetType()}");
-            }
-        }
-
-        private static string GenerateCodeCall(string callee, params string[] args)
-        {
-            return $"{callee}({string.Join(", ", args)})";
-        }
-
-        private string GenerateCodeTupleAccess(TupleAccessExpr t, CompilationContext ctx)
-        {
-            return $"{GenerateCodeExpr(t.SubExpr, ctx)}[{t.FieldNo}]";
-        }
-
-        private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n, CompilationContext ctx)
-        {
-            return $"{GenerateCodeExpr(n.SubExpr, ctx)}.{n.FieldName}";
-        }
-
-        private string GenerateCodeFuncBody(Function func)
-        {
-            return "";
-        }
-
-        private string GenerateCodePredicateCall(PredicateCallExpr p, CompilationContext ctx)
-        {
-            if (p.Predicate is BuiltinPredicate)
-            {
-                switch (p.Predicate.Notation)
-                {
-                    case Notation.Infix:
-                        return $"{GenerateCodeExpr(p.Arguments[0], ctx)} {p.Predicate.Name} {GenerateCodeExpr(p.Arguments[1], ctx)}";
-                }
-            }
-            var args = (from e in p.Arguments select GenerateCodeExpr(e, ctx)).ToArray();
-            return GenerateCodeCall(p.Predicate.Name, args);
-        }
-
-        private string GenerateFuncCall(FunCallExpr funCallExpr, CompilationContext ctx)
-        {
-            if (funCallExpr.Function is BuiltinFunction builtinFun)
-            {
-                switch (builtinFun.Notation)
-                {
-                    case Notation.Infix:
-                        return $"({GenerateCodeExpr(funCallExpr.Arguments[0], ctx)} {builtinFun.Name} {GenerateCodeExpr(funCallExpr.Arguments[1], ctx)})";
-                    default:
-                        break;
-                }
-            }
-            return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e, ctx)).ToArray()) + ")";
-        }
-
-        private static string GenerateCodeVariable(Variable v)
-        {
-            return v.Name;
         }
 
         private void PopulatePredicate()
@@ -245,9 +107,9 @@ namespace Plang.Compiler.Backend.PInfer
                 var sig = pred.Signature.ParameterTypes.Select(ShowType).ToHashSet();
                 var sigList = pred.Signature.ParameterTypes.ToList();
                 var sigStrList = sigList.Select(ShowType).ToList();
-                Console.WriteLine($"Get Params for {pred.Name} with type {string.Join(" -> ", sigList.Select(ShowType))}");
                 if (!combinationCache.TryGetValue(sig, out IDictionary<string, HashSet<IPExpr>> varMap))
                 {
+                    // Console.WriteLine($"Generating combinations for {pred.Name} => {string.Join(", ", sigStrList)}");
                     var parameterCombs = GetParameterCombinations(0, allTerms, sigList, []);
                     varMap = new Dictionary<string, HashSet<IPExpr>>();
                     combinationCache.Add(sig, varMap);
@@ -321,6 +183,7 @@ namespace Plang.Compiler.Backend.PInfer
                     // function calls
                     var sig = func.Signature;
                     var retType = sig.ReturnType;
+                    // Console.WriteLine($"Generate for function: {func.Name} => {string.Join(", ", sig.Parameters.Select(x => ShowType(x.Type)).ToList())}");
                     var parameters = GetParameterCombinations(0, AllTerms, sig.Parameters.Select(x => x.Type).ToList(), []);
                     foreach (var parameter in parameters)
                     {
@@ -396,7 +259,7 @@ namespace Plang.Compiler.Backend.PInfer
                 IEnumerable<List<IPExpr>> result = [];
                 foreach (var expr in candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)))
                 {
-                    Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(expr.Type, declParam)}");
+                    // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(expr.Type, declParam)}");
                     newParameters.Add(expr);
                     result = result.Concat(GetParameterCombinations(index + 1, candidateTerms, declParams.Skip(1).ToList(), newParameters));
                     newParameters.RemoveAt(newParameters.Count - 1);

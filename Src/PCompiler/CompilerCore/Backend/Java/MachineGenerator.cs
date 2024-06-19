@@ -11,14 +11,14 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
-    internal class MachineGenerator : JavaSourceGenerator
+    public class MachineGenerator : JavaSourceGenerator
     {
 
         private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
         private HashSet<Function> _calledStaticFunctions = new HashSet<Function>(); // static functions allowed
         private bool debug = false;
 
-        internal MachineGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
+        public MachineGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
         {
             debug = job.Debug;
         }
@@ -134,7 +134,7 @@ namespace Plang.Compiler.Backend.Java {
         }
 
 
-        private void WriteFunction(Function f)
+        internal void WriteFunction(Function f)
         {
             if (f.IsForeign)
             {
@@ -179,7 +179,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine("}");
         }
 
-        private void WriteFunctionSignature(Function f)
+        internal void WriteFunctionSignature(Function f)
         {
             var fname = Names.GetNameForDecl(f);
 
@@ -652,7 +652,7 @@ namespace Plang.Compiler.Backend.Java {
             Write($")");
         }
 
-        private void WriteExpr(IPExpr expr)
+        internal void WriteExpr(IPExpr expr)
         {
             TypeManager.JType t;
 

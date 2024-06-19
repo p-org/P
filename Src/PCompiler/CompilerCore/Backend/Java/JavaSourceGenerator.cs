@@ -43,7 +43,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
         }
 
-        private void WriteImports()
+        internal void WriteImports()
         {
             foreach (var stmt in Constants.ImportStatements())
             {

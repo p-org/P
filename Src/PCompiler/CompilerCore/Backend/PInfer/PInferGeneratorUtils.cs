@@ -138,9 +138,27 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class PredicateCallExpr : FunCallExpr
     {
-        public PredicateCallExpr(IPredicate predicate, IReadOnlyList<IPExpr> arguments) : base(null, predicate.Function, arguments)
+        private PredicateCallExpr(IPredicate predicate, IReadOnlyList<IPExpr> arguments) : base(null, predicate.Function, arguments)
         {
             Predicate = predicate;
+        }
+
+        public static bool MkPredicateCall(IPredicate predicate, IReadOnlyList<IPExpr> arguments, out PredicateCallExpr predicateCall)
+        {
+            predicateCall = null;
+            if (predicate.Function.Signature.Parameters.Count != arguments.Count)
+            {
+                throw new Exception($"Predicate {predicate.Name} expects {predicate.Function.Signature.Parameters.Count} arguments, but got {arguments.Count}");
+            }
+            if (predicate is BuiltinPredicate)
+            {
+                if ((predicate.Function.Name == "<" || predicate.Function.Name == ">") && arguments[0] == arguments[1])
+                {
+                    return false;
+                }
+            }
+            predicateCall = new PredicateCallExpr(predicate, arguments);
+            return true;
         }
 
         public IPredicate Predicate { get; }
@@ -232,47 +250,73 @@ namespace Plang.Compiler.Backend.PInfer
         }
     }
 
-
     public static class PredicateStore
     {
-        public static List<IPredicate> Store = MkBuiltin();
+        private static readonly Dictionary<List<PLanguageType>, Dictionary<string, IPredicate>> _Store = [];
 
         public static void AddBuiltinPredicate(string name, Notation notation, params PLanguageType[] argTypes)
         {
-            Store.Add(new BuiltinPredicate(name, notation, argTypes));
+            var parameterTypes = argTypes.ToList();
+            if (!_Store.ContainsKey(parameterTypes))
+            {
+                _Store.Add(parameterTypes, []);
+            }
+            _Store[parameterTypes].Add(name, new BuiltinPredicate(name, notation, argTypes));
         }
 
-        private static IPredicate BinaryPredicate(string name, PLanguageType type)
+        public static void AddPredicate(IPredicate predicate)
         {
-            return new BuiltinPredicate(name, Notation.Infix, type, type);
+            var parameterTypes = predicate.Signature.Parameters.Select(p => p.Type).ToList();
+            if (!_Store.ContainsKey(parameterTypes))
+            {
+                _Store.Add(parameterTypes, []);
+            }
+            _Store[parameterTypes].Add(predicate.Name, predicate);
         }
 
-        private static List<IPredicate> MkBuiltin() {
+        public static void Initialize() {
             List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index];
-            var ltInst = from type in numericTypes
-                            select BinaryPredicate("<", type);
-            var gtInst = from type in numericTypes
-                            select BinaryPredicate(">", type);
-            return ltInst.Concat(gtInst).ToList();
+            // var ltInst = from type in numericTypes
+            //                 select BinaryPredicate("<", type);
+            // var gtInst = from type in numericTypes
+            //                 select BinaryPredicate(">", type);
+            foreach (var numType in numericTypes)
+            {
+                AddBuiltinPredicate("<", Notation.Infix, numType, numType);
+            }
         }
+        public static IEnumerable<IPredicate> Store => _Store.Values.SelectMany(x => x.Values);
     }
 
     public static class FunctionStore
     {
-        public static List<Function> Store = MkBuiltin();
+        public static Dictionary<List<PLanguageType>, Dictionary<string, Function>> _Store = [];
 
-        public static Function BinaryFunction(string name, PLanguageType type)
+        public static void AddFunction(Function func)
         {
-            return new BuiltinFunction(name, Notation.Prefix, type, type, type);
+            var parameterTypes = func.Signature.ParameterTypes.ToList();
+            if (!_Store.ContainsKey(parameterTypes))
+            {
+                _Store.Add(parameterTypes, []);
+            }
+            _Store[parameterTypes].Add(func.Name, func);
         }
 
-        private static List<Function> MkBuiltin() {
+        public static void Initialize() {
             List<string> funcs = ["+", "-", "*", "/", "%"];
             List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float];
-            var arith = from ty in numericTypes
-                                from op in funcs
-                                    select BinaryFunction(op, ty);
-            return arith.ToList();
+            // var arith = from ty in numericTypes
+            //                     from op in funcs
+            //                         select BinaryFunction(op, ty);
+            foreach (var numTypes in numericTypes)
+            {
+                foreach (var func in funcs)
+                {
+                    AddFunction(new BuiltinFunction(func, Notation.Infix, numTypes, numTypes, numTypes));
+                }
+            }
         }
+
+        public static IEnumerable<Function> Store => _Store.Values.SelectMany(x => x.Values);
     }
 }

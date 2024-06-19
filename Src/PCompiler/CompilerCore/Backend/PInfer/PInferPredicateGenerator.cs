@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -44,6 +43,8 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new Exception($"Event {ename} not defined in global scope");
                 }
             }
+            PredicateStore.Initialize();
+            FunctionStore.Initialize();
             CompilationContext ctx = new(job);
             AggregateFunctions(job.CustomFunctions, globalScope);
             AggregateDefinedPredicates(job.CustomPredicates, globalScope);
@@ -130,9 +131,10 @@ namespace Plang.Compiler.Backend.PInfer
                 foreach (var parameters in CartesianProduct(sigList, varMap))
                 {
                     var events = GetUnboundedEventsMultiple(parameters.ToArray());
-                    var expr = new PredicateCallExpr(pred, parameters.ToList());
-                    FreeEvents[expr] = events;
-                    Predicates.Add(expr);
+                    if (PredicateCallExpr.MkPredicateCall(pred, parameters.ToList(), out PredicateCallExpr expr)){
+                        FreeEvents[expr] = events;
+                        Predicates.Add(expr);
+                    }
                 }
             }
         }
@@ -304,7 +306,8 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     if (pred.Signature.ReturnType.Equals(PrimitiveType.Bool))
                     {
-                        PredicateStore.Store.Add(new DefinedPredicate(pred));
+                        // PredicateStore.Store.Add(new DefinedPredicate(pred));
+                        PredicateStore.AddPredicate(new DefinedPredicate(pred));
                     }
                     else
                     {
@@ -323,7 +326,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 if (globalScope.Get(name, out Function function))
                 {
-                    FunctionStore.Store.Add(function);
+                    FunctionStore.AddFunction(function);
                 }
                 else
                 {

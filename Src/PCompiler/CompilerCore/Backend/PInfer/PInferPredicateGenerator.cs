@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -9,7 +10,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
 {
-    public class PInferPredicateGenerator : ICodeGenerator
+    public class PInferPredicateGenerator : JavaCompiler
     {
 
         public PInferPredicateGenerator()
@@ -20,7 +21,7 @@ namespace Plang.Compiler.Backend.PInfer
             FreeEvents = new Dictionary<IPExpr, HashSet<Variable>>(new ASTComparer());
         }
 
-        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
+        public override IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
             if (!job.TermDepth.HasValue)
             {
@@ -43,9 +44,12 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new Exception($"Event {ename} not defined in global scope");
                 }
             }
+            Constants.PInferModeOn();
             PredicateStore.Initialize();
             FunctionStore.Initialize();
             CompilationContext ctx = new(job);
+            Java.CompilationContext javaCtx = new(job);
+            var eventDefSource = new EventDefGenerator(job, Java.Constants.EventDefnFileName, quantifiedEvents).GenerateCode(javaCtx, globalScope);
             AggregateFunctions(job.CustomFunctions, globalScope);
             AggregateDefinedPredicates(job.CustomPredicates, globalScope);
             var i = 0;
@@ -53,9 +57,10 @@ namespace Plang.Compiler.Backend.PInfer
             var indexType = PInferBuiltinTypes.Index;
             var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
             foreach (var eventInst in quantifiedEvents) {
-                var eventAtom = new PEventVariable($"e{i}", eventInst.Name)
+                var eventAtom = new PEventVariable($"e{i}")
                 {
-                    Type = ExplicateTypeDef(eventInst.PayloadType)
+                    Type = ExplicateTypeDef(eventInst.PayloadType),
+                    EventDecl = eventInst
                 };
                 var expr = new VariableAccessExpr(null, eventAtom);
                 AddTerm(0, expr,  [eventAtom]);
@@ -78,14 +83,18 @@ namespace Plang.Compiler.Backend.PInfer
             JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, FreeEvents);
             foreach (var term in VisitedSet)
             {
-                codegen.GenerateRawExpr(term);
+                ctx.WriteLine(terms.Stream, codegen.GenerateRawExpr(term));
             }
             foreach (var pred in Predicates)
             {
-                codegen.GenerateRawExpr(pred);
+                ctx.WriteLine(predicates.Stream, codegen.GenerateRawExpr(pred));
             }
+            GenerateBuildScript(job);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
-            return codegen.GenerateCode(new Java.CompilationContext(job), globalScope).Concat([terms, predicates]);
+            return codegen.GenerateCode(javaCtx, globalScope)
+                            .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
+                            .Concat(eventDefSource)
+                            .Concat([terms, predicates]);
         }
 
         private PLanguageType ExplicateTypeDef(PLanguageType type)

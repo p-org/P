@@ -16,7 +16,6 @@ namespace Plang.Compiler.Backend.PInfer
 
         public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
         {
-            Source = new CompiledFile(filename);
             Predicates = predicates;
             FreeEvents = freeEvents;
             Job = job;
@@ -28,13 +27,12 @@ namespace Plang.Compiler.Backend.PInfer
                     var e = (PEventVariable) x;
                     return $"({e.Name}:{e.EventName})";
             });
-            return GenerateCodeExpr(expr) + " where " + string.Join(" ", events);
+            return GenerateCodeExpr(expr).Replace("\"", "") + " where " + string.Join(" ", events);
         }
 
         protected override void GenerateCodeImpl()
         {
             WriteLine("public class " + Job.ProjectName + " implements Serializable {");
-            WriteLine(PreambleConstants.StaticMethods);
             foreach (var pred in PredicateStore.Store)
             {
                 WriteFunction(pred.Function);
@@ -43,52 +41,47 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 WriteFunction(func);
             }
-            Dictionary<string, (string, int)> repr2NameArityPi = [];
+            Dictionary<string, (string, List<Variable>)> repr2Metadata = [];
             var i = 0;
             foreach (var predicate in Predicates)
             {
                 var rawExpr = GenerateRawExpr(predicate);
                 var fname = $"predicate_{i++}";
-                WritePredicateDefn(predicate, fname);
-                repr2NameArityPi[rawExpr] = (fname, FreeEvents[predicate].Count);
+                var parameters = WritePredicateDefn(predicate, fname);
+                repr2Metadata[rawExpr] = (fname, parameters);
             }
-            WritePredicateInterface(repr2NameArityPi);
+            WritePredicateInterface(repr2Metadata);
             WriteLine("}");
         }
 
-        protected void WritePredicateInterface(IDictionary<string, (string, int)> nameMap)
+        protected void WritePredicateInterface(IDictionary<string, (string, List<Variable>)> nameMap)
         {
-            WriteLine("public boolean invoke(String repr, Event[] arguments) {");
+            WriteLine($"public boolean invoke(String repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
             WriteLine("switch (repr) {");
-            foreach (var (repr, (fname, arity)) in nameMap)
+            foreach (var (repr, (fname, parameters)) in nameMap)
             {
-                WriteLine($"case \"{repr}\": return {fname}({string.Join(", ", Enumerable.Range(0, arity).Select(i => $"arguments[{i}]"))});");
+                WriteLine($"case \"{repr}\": return {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{i}]"))});");
             }
             WriteLine("default: throw new RuntimeException(\"Invalid representation: \" + repr);");
             WriteLine("}");
             WriteLine("}");
         }
 
-        protected void WritePredicateDefn(IPExpr predicate, string fname)
+        protected List<Variable> WritePredicateDefn(IPExpr predicate, string fname)
         {
-            var parameters = FreeEvents[predicate];
-            WriteLine($"private boolean {fname}({string.Join(", ", parameters.Select(x => "Event " + x.Name))}) {{");
-            foreach (var param in parameters)
-            {
-                var casted = (PEventVariable) param;
-                WriteLine(@$"assert {PreambleConstants.CheckEventType(casted.Name, casted.EventName)}:
-                                {$"\"Expect {casted.Name} to be {casted.EventName} but got \" + {casted.Name}.name"};");
-            }
+            var parameters = FreeEvents[predicate].ToList();
+            WriteLine($"private boolean {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");
             WriteLine("return " + GenerateCodeExpr(predicate) + ";");
             WriteLine("}");
+            return parameters;
         }
 
-        protected override void WriteFileHeader()
-        {
-            WriteLine(Constants.DoNotEditWarning);
-            WriteImports();
-            WriteLine();
-        }
+        // protected override void WriteFileHeader()
+        // {
+        //     WriteLine(Constants.DoNotEditWarning[1..]);
+        //     WriteImports();
+        //     WriteLine();
+        // }
 
         private string GenerateCodeExpr(IPExpr expr)
         {
@@ -149,6 +142,10 @@ namespace Plang.Compiler.Backend.PInfer
 
         private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n)
         {
+            if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
+            {
+                return $"{GenerateCodeExpr(n.SubExpr)}.getPayload().{n.FieldName}";
+            }
             return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}";
         }
 
@@ -176,6 +173,10 @@ namespace Plang.Compiler.Backend.PInfer
                         return $"({GenerateCodeExpr(funCallExpr.Arguments[0])} {builtinFun.Name} {GenerateCodeExpr(funCallExpr.Arguments[1])})";
                     default:
                         break;
+                }
+                if (funCallExpr.Function.Name == "index")
+                {
+                    return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.getIndex()";
                 }
             }
             return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e)).ToArray()) + ")";

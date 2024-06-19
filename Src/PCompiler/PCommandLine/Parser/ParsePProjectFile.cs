@@ -243,7 +243,7 @@ namespace Plang.Parser
                             outputLanguages.Add(CompilerOutput.Stately);
                             break;
                         case "pinfer":
-                            outputLanguages.Add(CompilerOutput.Predicates);
+                            outputLanguages.Add(CompilerOutput.PInfer);
                             break;
                         default:
                             throw new CommandlineParsingError(

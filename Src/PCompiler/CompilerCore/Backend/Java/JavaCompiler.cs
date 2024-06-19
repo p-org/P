@@ -49,7 +49,7 @@ namespace Plang.Compiler.Backend.Java
         /// Generates all extracted Java code.  Later, this will also generate FFI stubs if they are
         /// absent.
         /// </summary>
-        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope scope)
+        public virtual IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope scope)
         {
             GenerateBuildScript(job);
 

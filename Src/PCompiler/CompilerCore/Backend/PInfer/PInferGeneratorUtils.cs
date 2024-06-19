@@ -86,12 +86,10 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class PEventVariable : Variable
     {
-        public PEventVariable(string name, string eventName) : base(name, null, VariableRole.Temp)
-        {
-            EventName = eventName;
-        }
+        public PEventVariable(string name) : base(name, null, VariableRole.Temp) {}
 
-        public string EventName { get; }
+        public string EventName => EventDecl.Name;
+        public PEvent EventDecl { get; set; }
     }
 
     public class TypeVar : PLanguageType
@@ -276,10 +274,6 @@ namespace Plang.Compiler.Backend.PInfer
 
         public static void Initialize() {
             List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index];
-            // var ltInst = from type in numericTypes
-            //                 select BinaryPredicate("<", type);
-            // var gtInst = from type in numericTypes
-            //                 select BinaryPredicate(">", type);
             foreach (var numType in numericTypes)
             {
                 AddBuiltinPredicate("<", Notation.Infix, numType, numType);
@@ -305,9 +299,6 @@ namespace Plang.Compiler.Backend.PInfer
         public static void Initialize() {
             List<string> funcs = ["+", "-", "*", "/", "%"];
             List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float];
-            // var arith = from ty in numericTypes
-            //                     from op in funcs
-            //                         select BinaryFunction(op, ty);
             foreach (var numTypes in numericTypes)
             {
                 foreach (var func in funcs)

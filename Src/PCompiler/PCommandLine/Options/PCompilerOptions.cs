@@ -194,7 +194,7 @@ namespace Plang.Options
                             compilerConfiguration.OutputLanguages.Add(CompilerOutput.Stately);
                             break;
                         case "pinfer":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Predicates);
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PInfer);
                             break;
                         default:
                             throw new Exception($"Unexpected mode: '{option.Value}'");
@@ -280,7 +280,7 @@ namespace Plang.Options
                 compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
             }
 
-            if (compilerConfiguration.OutputLanguages.Contains(CompilerOutput.Predicates))
+            if (compilerConfiguration.OutputLanguages.Contains(CompilerOutput.PInfer))
             {
                 if (compilerConfiguration.TermDepth == null)
                 {

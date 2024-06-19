@@ -43,7 +43,7 @@ namespace Plang.Compiler.Backend.Java
             return events;
         }
 
-        private void WriteEventDecl(PEvent e)
+        internal void WriteEventDecl(PEvent e, bool pinfer = false)
         {
             var eventName = Names.GetNameForDecl(e);
             var argType = Types.JavaTypeFor(e.PayloadType);
@@ -51,12 +51,28 @@ namespace Plang.Compiler.Backend.Java
             var payloadType = argType.TypeName;
             var payloadRefType = argType.ReferenceTypeName;
 
-            WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{payloadRefType}> implements Serializable {{");
+            if (pinfer)
+            {
+                WriteLine($"public static class {eventName} extends EventBase implements Serializable {{");
+            }
+            else
+            {
+                WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{payloadRefType}> implements Serializable {{");
+            }
 
             var hasPayload = !(argType is TypeManager.JType.JVoid);
             if (hasPayload)
             {
-                WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");
+                if (pinfer)
+                {
+                    WriteLine($"private int index;");
+                    WriteLine($"public {eventName}({payloadType} p, int index) {{ this.payload = p; this.index = index; }}");
+                    WriteLine($"public int getIndex() {{ return index; }}");
+                }
+                else
+                {
+                    WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");
+                }
                 WriteLine($"private {payloadType} payload; ");
                 WriteLine($"public {payloadRefType} getPayload() {{ return payload; }}");
             }

@@ -33,11 +33,16 @@ namespace Plang.Compiler.Backend.Java
         {
         }
 
+        protected override void GenerateCodeImpl()
+        {
+            GenerateCodeImplWrapper();
+        }
+
         /// <summary>
         /// Generates Java code for a given compilation job's user-defined types like enums
         /// and tuples.
         /// </summary>
-        protected override void GenerateCodeImpl()
+        protected void GenerateCodeImplWrapper(bool pinfer = false)
         {
             WriteLine($"public class {Constants.TypesNamespaceName} {{");
 
@@ -59,7 +64,7 @@ namespace Plang.Compiler.Backend.Java
                 WriteLine();
                 foreach (var t in tuples)
                 {
-                    WriteNamedTupleDecl(t);
+                    WriteNamedTupleDecl(t, pinfer);
                 }
                 WriteLine();
             }
@@ -84,7 +89,7 @@ namespace Plang.Compiler.Backend.Java
         }
 
 
-        private void WriteNamedTupleDecl(NamedTupleType t)
+        private void WriteNamedTupleDecl(NamedTupleType t, bool pinfer = false)
         {
             // This is a sequence of <type, field name> pairs.
             var fields =
@@ -109,16 +114,23 @@ namespace Plang.Compiler.Backend.Java
             }
 
             var tname = Names.NameForNamedTuple(t);
-            WriteLine($"public static class {tname} implements {Constants.PValueClass}<{tname}>, Serializable {{");
+            if (pinfer)
+            {
+                WriteLine($"public static class {tname} implements Serializable {{");
+            }
+            else
+            {
+                WriteLine($"public static class {tname} implements {Constants.PValueClass}<{tname}>, Serializable {{");
+            }
             WriteLine($"// {t.CanonicalRepresentation}");
 
             WriteNamedTupleFields(fields);
             WriteLine();
 
-            WriteNamedTupleConstructors(tname, fields);
+            WriteNamedTupleConstructors(tname, fields, pinfer);
             WriteLine();
 
-            WriteNamedTupleEqualityMethods(tname, fields);
+            WriteNamedTupleEqualityMethods(tname, fields, pinfer);
             WriteLine();
 
             WriteNamedTupleToString(tname, fields);
@@ -137,7 +149,7 @@ namespace Plang.Compiler.Backend.Java
             }
         }
 
-        private void WriteNamedTupleConstructors(string tname, List<(TypeManager.JType, string)> fields)
+        private void WriteNamedTupleConstructors(string tname, List<(TypeManager.JType, string)> fields, bool pinfer = false)
         {
             // Write the default constructor.
             WriteLine($"public {tname}() {{");
@@ -164,19 +176,21 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
 
             // Write the copy constructor for cloning.
-            WriteLine($"public {tname} deepClone() {{");
-            Write($"return new {tname}(");
-            foreach (var (sep, (jType, fieldName)) in fields.WithPrefixSep(", "))
-            {
-                Write(sep);
-                WriteClone(jType, () => Write(fieldName));
+            if (!pinfer) {
+                WriteLine($"public {tname} deepClone() {{");
+                Write($"return new {tname}(");
+                foreach (var (sep, (jType, fieldName)) in fields.WithPrefixSep(", "))
+                {
+                    Write(sep);
+                    WriteClone(jType, () => Write(fieldName));
+                }
+                WriteLine(");");
+                WriteLine("} // deepClone()");
+                WriteLine();
             }
-            WriteLine(");");
-            WriteLine("} // deepClone()");
-            WriteLine();
         }
 
-        private void WriteNamedTupleEqualityMethods(string tname, List<(TypeManager.JType, string)> fields)
+        private void WriteNamedTupleEqualityMethods(string tname, List<(TypeManager.JType, string)> fields, bool pinfer = false)
         {
             // .equals() implementation: this simply defers to deepEquals() but explicitly overriding it is useful
             // for calling assertEquals() in unit tests, for example.
@@ -207,7 +221,8 @@ namespace Plang.Compiler.Backend.Java
                 Write(" && ");
                 WriteLine(jType.IsPrimitive
                     ? $"this.{fieldName} == other.{fieldName}"
-                    : $"{Constants.PrtDeepEqualsMethodName}(this.{fieldName}, other.{fieldName})");
+                    : pinfer ? $"Objects.equals(this.{fieldName}, other.{fieldName})" :
+                               $"{Constants.PrtDeepEqualsMethodName}(this.{fieldName}, other.{fieldName})");
             }
             WriteLine(");");
             WriteLine("} // deepEquals()");

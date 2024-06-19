@@ -13,6 +13,12 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal static class Constants
     {
+        internal static bool PInferMode = false;
+        public static void PInferModeOn()
+        {
+            PInferMode = true;
+        }
+
         #region P Java runtime constants
 
         public static readonly string PRTNamespaceName = "prt";

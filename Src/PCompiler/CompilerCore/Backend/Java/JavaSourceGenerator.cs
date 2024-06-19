@@ -23,7 +23,7 @@ namespace Plang.Compiler.Backend.Java
         internal JavaSourceGenerator(ICompilerConfiguration job, string filename)
         {
             Job = job;
-            Source = new CompiledFile(filename);
+            Source = new CompiledFile(filename, $"{job.OutputDirectory}/{job.ProjectName}/pobserve");
         }
 
         private void Initialize(CompilationContext ctx, Scope scope)
@@ -88,6 +88,7 @@ namespace Plang.Compiler.Backend.Java
                 case TypeManager.JType.JInt _:
                 case TypeManager.JType.JFloat _:
                 case TypeManager.JType.JMachine _:
+                case TypeManager.JType.JEvent _:
                     writeTermToBeCloned();
                     break;
 

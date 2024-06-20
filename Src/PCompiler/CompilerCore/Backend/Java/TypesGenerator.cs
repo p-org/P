@@ -56,17 +56,18 @@ namespace Plang.Compiler.Backend.Java
                 }
                 WriteLine();
             }
-
-            var tuples = AllTuples(GlobalScope);
-            if (tuples.Any())
-            {
-                WriteLine("/* Tuples */");
-                WriteLine();
-                foreach (var t in tuples)
+            if (!pinfer) {
+                var tuples = AllTuples(GlobalScope);
+                if (tuples.Any())
                 {
-                    WriteNamedTupleDecl(t, pinfer);
+                    WriteLine("/* Tuples */");
+                    WriteLine();
+                    foreach (var t in tuples)
+                    {
+                        WriteNamedTupleDecl(t);
+                    }
+                    WriteLine();
                 }
-                WriteLine();
             }
 
             WriteLine("}");

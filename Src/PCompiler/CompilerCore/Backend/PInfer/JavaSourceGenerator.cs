@@ -83,7 +83,7 @@ namespace Plang.Compiler.Backend.PInfer
         //     WriteLine();
         // }
 
-        private string GenerateCodeExpr(IPExpr expr)
+        internal static string GenerateCodeExpr(IPExpr expr)
         {
             if (expr is VariableAccessExpr v)
             {
@@ -135,12 +135,12 @@ namespace Plang.Compiler.Backend.PInfer
             return $"{callee}({string.Join(", ", args)})";
         }
 
-        private string GenerateCodeTupleAccess(TupleAccessExpr t)
+        private static string GenerateCodeTupleAccess(TupleAccessExpr t)
         {
             return $"{GenerateCodeExpr(t.SubExpr)}[{t.FieldNo}]";
         }
 
-        private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n)
+        private static string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n)
         {
             // if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
             // {
@@ -149,7 +149,7 @@ namespace Plang.Compiler.Backend.PInfer
             return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}()";
         }
 
-        private string GenerateCodePredicateCall(PredicateCallExpr p)
+        private static string GenerateCodePredicateCall(PredicateCallExpr p)
         {
             if (p.Predicate is BuiltinPredicate)
             {
@@ -163,7 +163,7 @@ namespace Plang.Compiler.Backend.PInfer
             return GenerateCodeCall(p.Predicate.Name, args);
         }
 
-        private string GenerateFuncCall(FunCallExpr funCallExpr)
+        private static string GenerateFuncCall(FunCallExpr funCallExpr)
         {
             if (funCallExpr.Function is BuiltinFunction builtinFun)
             {

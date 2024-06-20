@@ -76,8 +76,8 @@ namespace Plang.Compiler.Backend.Java
             if (pinfer)
             {
                 var payloadName = "payload";
-                WriteLine($"private int index;");
-                WriteLine($"private JSONObject {payloadName}; ");
+                WriteLine($"private final int index;");
+                WriteLine($"private final JSONObject {payloadName}; ");
                 WriteLine($"public {eventName}(JSONObject p, int index) {{ this.{payloadName} = p; this.index = index; }}");
                 WriteLine($"public int index() {{ return index; }}");
                 if (!hasPayload)
@@ -96,11 +96,11 @@ namespace Plang.Compiler.Backend.Java
                         case NamedTupleType tupleType:
                             foreach (var field in tupleType.Fields)
                             {
-                                var jType = Types.JavaTypeFor(field.Type);
                                 var fieldType = field.Type.Canonicalize();
-                                if (jType.IsPrimitive)
+                                var jType = Types.JavaTypeFor(fieldType);
+                                if (jType.IsPrimitive || fieldType is PrimitiveType)
                                 {
-                                    WriteLine($"public {jType.TypeName} {field.Name}() {{ return {JsonObjectGet(payloadName, field.Name, field.Type)}; }}");
+                                    WriteLine($"public {jType.TypeName} {field.Name}() {{ return {JsonObjectGet(payloadName, field.Name, fieldType)}; }}");
                                 }
                                 else if (fieldType is NamedTupleType)
                                 {

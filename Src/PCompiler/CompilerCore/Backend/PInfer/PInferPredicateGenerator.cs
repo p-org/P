@@ -75,7 +75,9 @@ namespace Plang.Compiler.Backend.PInfer
                 AddTerm(0, indexExpr, [eventAtom]);
                 i += 1;
             }
+            Console.WriteLine($"Generating terms with max depth {termDepth} ...");
             PopulateTerm(termDepth);
+            Console.WriteLine($"Generating predicates ...");
             PopulatePredicate();
             MkEqComparison();
             CompiledFile terms = new($"{job.ProjectName}.terms");
@@ -92,7 +94,7 @@ namespace Plang.Compiler.Backend.PInfer
             GenerateBuildScript(job);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
             return codegen.GenerateCode(javaCtx, globalScope)
-                            // .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
+                            .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
                             .Concat(eventDefSource)
                             .Concat([terms, predicates]);
         }
@@ -120,7 +122,7 @@ namespace Plang.Compiler.Backend.PInfer
                 if (!combinationCache.TryGetValue(sig, out IDictionary<string, HashSet<IPExpr>> varMap))
                 {
                     // Console.WriteLine($"Generating combinations for {pred.Name} => {string.Join(", ", sigStrList)}");
-                    var parameterCombs = GetParameterCombinations(0, allTerms, sigList, []);
+                    var parameterCombs = GetParameterCombinations(sigList.Count, allTerms, sigList, []);
                     varMap = new Dictionary<string, HashSet<IPExpr>>();
                     combinationCache.Add(sig, varMap);
                     foreach (var parameters in parameterCombs)
@@ -176,7 +178,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 PopulateTerm(currentDepth - 1);
                 List<(IPExpr, HashSet<Variable>)> worklist = [];
-                foreach (var term in AllTerms)
+                foreach (var term in VisitedSet)
                 {
                     // construct built-in exprs
                     var tupleAccess = TryMkTupleAccess(term);
@@ -189,21 +191,32 @@ namespace Plang.Compiler.Backend.PInfer
                     AddTerm(currentDepth, expr, events);
                 }
                 // construct function calls
+                worklist = [];
                 foreach (Function func in FunctionStore.Store)
                 {
                     // function calls
                     var sig = func.Signature;
                     var retType = sig.ReturnType;
                     // Console.WriteLine($"Generate for function: {func.Name} => {string.Join(", ", sig.Parameters.Select(x => ShowType(x.Type)).ToList())}");
-                    var parameters = GetParameterCombinations(0, AllTerms, sig.Parameters.Select(x => x.Type).ToList(), []);
+                    var parameters = GetParameterCombinations(sig.Parameters.Count, VisitedSet, sig.Parameters.Select(x => x.Type).ToList(), []);
                     foreach (var parameter in parameters)
                     {
                         var expr = new FunCallExpr(null, func, parameter);
-                        AddTerm(currentDepth, expr, GetUnboundedEventsMultiple([.. parameter]));
+                        // AddTerm(currentDepth, expr, GetUnboundedEventsMultiple([.. parameter]));
+                        worklist.Add((expr, GetUnboundedEventsMultiple([.. parameter])));
                     }
+                }
+                foreach (var (expr, events) in worklist)
+                {
+                    AddTerm(currentDepth, expr, events);
                 }
             }
         }
+
+        private bool IsEventVariableAccess(IPExpr expr)
+        {
+            return expr is VariableAccessExpr v && v.Variable is PEventVariable;
+        } 
 
         private void MkEqComparison()
         {
@@ -212,7 +225,10 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 for (var j = i + 1; j < allTerms.Count; ++j)
                 {
-                    if (IsAssignableFrom(allTerms[i].Type, allTerms[j].Type) && (allTerms[i] is not VariableAccessExpr) && (allTerms[j] is not VariableAccessExpr))
+                    // Console.WriteLine($"Comparing {JavaCodegen.GenerateCodeExpr(allTerms[i])}: {ShowType(allTerms[i].Type)} and {JavaCodegen.GenerateCodeExpr(allTerms[j])}: {ShowType(allTerms[j].Type)}: {IsAssignableFrom(allTerms[i].Type, allTerms[j].Type)}");
+                    if (IsAssignableFrom(allTerms[i].Type, allTerms[j].Type)
+                            && !IsEventVariableAccess(allTerms[i])
+                            && !IsEventVariableAccess(allTerms[j]))
                     {
                         var lhs = allTerms[i];
                         var rhs = allTerms[j];
@@ -226,7 +242,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private IEnumerable<(IPExpr, HashSet<Variable>)> TryMkTupleAccess(IPExpr tuple)
         {
-            if (tuple.Type is TupleType tupleType)
+            if (ExplicateTypeDef(tuple.Type) is TupleType tupleType)
             {
                 for (var i = 0; i < tupleType.Types.Count; ++i)
                 {
@@ -238,7 +254,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private IEnumerable<(IPExpr, HashSet<Variable>)> TryMakeNamedTupleAccess(IPExpr tuple)
         {
-            if (tuple.Type is NamedTupleType namedTupleType)
+            if (ExplicateTypeDef(tuple.Type) is NamedTupleType namedTupleType)
             {
                 for (var i = 0; i < namedTupleType.Fields.Count; ++i)
                 {
@@ -255,7 +271,8 @@ namespace Plang.Compiler.Backend.PInfer
         private static IEnumerable<List<IPExpr>>
                 GetParameterCombinations(int index, IEnumerable<IPExpr> candidateTerms, List<PLanguageType> declParams, List<IPExpr> parameters)
         {
-            if (declParams.Count == 0)
+            // Console.WriteLine($"declParams: {declParams} | index: {index}");
+            if (index == 0)
             {
                 List<IPExpr> copies = [];
                 copies.AddRange(parameters);
@@ -270,9 +287,9 @@ namespace Plang.Compiler.Backend.PInfer
                 IEnumerable<List<IPExpr>> result = [];
                 foreach (var expr in candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)))
                 {
-                    // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(expr.Type, declParam)}");
+                    // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(expr.Type, declParam)}, {candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)).Count()}");
                     newParameters.Add(expr);
-                    result = result.Concat(GetParameterCombinations(index + 1, candidateTerms, declParams.Skip(1).ToList(), newParameters));
+                    result = result.Concat(GetParameterCombinations(index - 1, candidateTerms, declParams[1..], newParameters));
                     newParameters.RemoveAt(newParameters.Count - 1);
                 }
                 return result;

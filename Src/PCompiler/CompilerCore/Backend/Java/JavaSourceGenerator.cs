@@ -51,8 +51,8 @@ namespace Plang.Compiler.Backend.Java
             }
             if (Constants.PInferMode)
             {
-                WriteLine("import org.json.JSONObject;");
-                WriteLine("import org.json.JSONArray;");
+                WriteLine("import com.alibaba.fastjson2.JSONArray;");
+                WriteLine("import com.alibaba.fastjson2.JSONObject;");
             }
         }
 

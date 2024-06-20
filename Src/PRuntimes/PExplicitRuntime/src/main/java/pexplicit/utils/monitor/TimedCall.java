@@ -1,5 +1,6 @@
 package pexplicit.utils.monitor;
 
+import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.MemoutException;
@@ -7,11 +8,22 @@ import pexplicit.utils.exceptions.MemoutException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.concurrent.ThreadSafe;
+
+import lombok.Getter;
+import lombok.Setter;
+
 public class TimedCall implements Callable<Integer> {
     private final Scheduler scheduler;
 
-    public TimedCall(Scheduler scheduler, boolean resume) {
+    @Getter
+    @Setter
+    private long threadId;
+
+    public TimedCall(Scheduler scheduler, boolean resume, int localtID) {
         this.scheduler = scheduler;
+        this.threadId = Thread.currentThread().getId();
+        PExplicitGlobal.addTotIDtolocaltID(this.threadId, localtID);
     }
 
     @Override

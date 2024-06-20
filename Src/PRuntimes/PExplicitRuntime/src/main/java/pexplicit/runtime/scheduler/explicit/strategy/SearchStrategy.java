@@ -13,7 +13,7 @@ import java.util.Set;
 public abstract class SearchStrategy implements Serializable {
     /**
      * List of all search tasks
-     */
+     */ // Make 3 static
     final List<SearchTask> allTasks = new ArrayList<>();
     /**
      * Set of all search tasks that are pending

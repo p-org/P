@@ -248,10 +248,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @return New machine as a PMachineValue
      */
     public PMachineValue create(
-            Class<? extends PMachine> machineType,
-            PValue<?> payload,
-            Function<Integer, ? extends PMachine> constructor) {
-        PMachine machine = PExplicitGlobal.getScheduler().allocateMachine(machineType, constructor);
+            Class<? extends PMachine> machineType, PValue<?> payload, Function<Integer, ? extends PMachine> constructor) {        
+                int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
+                PMachine machine = ((PExplicitGlobal.getSchedulers()).get(localtID)).allocateMachine(machineType, constructor);
         PMessage msg = new PMessage(PEvent.createMachine, machine, payload);
         sendBuffer.add(msg);
         return new PMachineValue(machine);
@@ -288,7 +287,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         PExplicitLogger.logSendEvent(this, msg);
 
         sendBuffer.add(msg);
-        PExplicitGlobal.getScheduler().runMonitors(msg);
+        int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
+        ((PExplicitGlobal.getSchedulers()).get(localtID)).runMonitors(msg);
     }
 
     /**

@@ -85,6 +85,18 @@ namespace Plang.Compiler.Backend.Java
 
             WriteLine("private final int value;");
             WriteLine($"{e.Name}(int i) {{ value = i; }}");
+            if (Constants.PInferMode)
+            {
+                WriteLine($"public {e.Name} from(long i) {{");
+                WriteLine("switch (i) {");
+                foreach (var param in e.Values)
+                {
+                    WriteLine($"case {param.Value}: return {param.Name};");
+                }
+                WriteLine($"default: throw new IllegalArgumentException(\"Invalid enum value \" + i + \" for ${e.Name}\");");
+                WriteLine("}");
+                WriteLine("}");
+            }
 
             WriteLine("}");
         }

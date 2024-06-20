@@ -47,12 +47,19 @@ namespace Plang.Compiler.Backend.Java
 
         private string JsonObjectGet(string objName, string field, PLanguageType type = null)
         {
-            string ret = $"({objName}.get(\"{field}\"))";
             if (type != null)
             {
-                return $"(({Types.JavaTypeFor(type).TypeName}){ret})";
+                if (type is EnumType enumType)
+                {
+                    return $"{Constants.TypesNamespaceName}.{enumType.EnumDecl.Name}.from(" + JsonObjectGet(objName, field, PrimitiveType.Int) + ")";
+                }
+                else
+                {
+                    var javaType = Types.JavaTypeFor(type).ReferenceTypeName;
+                    return $"({objName}.get{javaType}(\"{field}\"))";
+                }
             }
-            return ret;
+            return $"({objName}.get(\"{field}\"))";
         }
 
         internal void WriteEventDecl(PEvent e, bool pinfer = false)
@@ -86,7 +93,7 @@ namespace Plang.Compiler.Backend.Java
                 }
                 else if (argType.IsPrimitive)
                 {
-                    WriteLine($"public {payloadType} payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType)} }}");
+                    WriteLine($"public {payloadType} payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType.Canonicalize())} }}");
                 }
                 else
                 {
@@ -104,7 +111,7 @@ namespace Plang.Compiler.Backend.Java
                                 }
                                 else if (fieldType is NamedTupleType)
                                 {
-                                    WriteLine($"public JSONObject {field.Name}() {{ return (JSONObject){JsonObjectGet(payloadName, field.Name)}; }}");
+                                    WriteLine($"public JSONObject {field.Name}() {{ return {payloadName}.getJSONObject(\"{field.Name}\"); }}");
                                 }
                                 else
                                 {

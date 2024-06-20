@@ -142,11 +142,11 @@ namespace Plang.Compiler.Backend.PInfer
 
         private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n)
         {
-            if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
-            {
-                return $"{GenerateCodeExpr(n.SubExpr)}.getPayload().{n.FieldName}";
-            }
-            return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}";
+            // if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
+            // {
+            //     return $"{GenerateCodeExpr(n.SubExpr)}.getPayload().{n.FieldName}";
+            // }
+            return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}()";
         }
 
         private string GenerateCodePredicateCall(PredicateCallExpr p)
@@ -176,7 +176,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 if (funCallExpr.Function.Name == "index")
                 {
-                    return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.getIndex()";
+                    return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.index()";
                 }
             }
             return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e)).ToArray()) + ")";
@@ -184,6 +184,10 @@ namespace Plang.Compiler.Backend.PInfer
 
         private static string GenerateCodeVariable(Variable v)
         {
+            if (v is PEventVariable eVar)
+            {
+                return $"{eVar.Name}.payload()";
+            }
             return v.Name;
         }
     }

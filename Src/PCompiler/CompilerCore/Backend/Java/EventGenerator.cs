@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -43,6 +45,16 @@ namespace Plang.Compiler.Backend.Java
             return events;
         }
 
+        private string JsonObjectGet(string objName, string field, PLanguageType type = null)
+        {
+            string ret = $"({objName}.get(\"{field}\"))";
+            if (type != null)
+            {
+                return $"(({Types.JavaTypeFor(type).TypeName}){ret})";
+            }
+            return ret;
+        }
+
         internal void WriteEventDecl(PEvent e, bool pinfer = false)
         {
             var eventName = Names.GetNameForDecl(e);
@@ -61,25 +73,64 @@ namespace Plang.Compiler.Backend.Java
             }
 
             var hasPayload = !(argType is TypeManager.JType.JVoid);
-            if (hasPayload)
+            if (pinfer)
             {
-                if (pinfer)
+                var payloadName = "payload";
+                WriteLine($"private int index;");
+                WriteLine($"private JSONObject {payloadName}; ");
+                WriteLine($"public {eventName}(JSONObject p, int index) {{ this.{payloadName} = p; this.index = index; }}");
+                WriteLine($"public int index() {{ return index; }}");
+                if (!hasPayload)
                 {
-                    WriteLine($"private int index;");
-                    WriteLine($"public {eventName}({payloadType} p, int index) {{ this.payload = p; this.index = index; }}");
-                    WriteLine($"public int getIndex() {{ return index; }}");
+                    WriteLine($"public {eventName} payload() {{ return this; }}");
+                }
+                else if (argType.IsPrimitive)
+                {
+                    WriteLine($"public {payloadType} payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType)} }}");
                 }
                 else
                 {
-                    WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");
+                    WriteLine($"public {eventName} payload() {{ return this; }}");
+                    switch (e.PayloadType.Canonicalize())
+                    {
+                        case NamedTupleType tupleType:
+                            foreach (var field in tupleType.Fields)
+                            {
+                                var jType = Types.JavaTypeFor(field.Type);
+                                var fieldType = field.Type.Canonicalize();
+                                if (jType.IsPrimitive)
+                                {
+                                    WriteLine($"public {jType.TypeName} {field.Name}() {{ return {JsonObjectGet(payloadName, field.Name, field.Type)}; }}");
+                                }
+                                else if (fieldType is NamedTupleType)
+                                {
+                                    WriteLine($"public JSONObject {field.Name}() {{ return (JSONObject){JsonObjectGet(payloadName, field.Name)}; }}");
+                                }
+                                else
+                                {
+                                    throw new Exception($"Unsupported type for field {field.Name} of {e.PayloadType}: {fieldType}");
+                                }
+                            }
+                            break;
+                        default:
+                            throw new Exception($"Unsupported type: {e.PayloadType} ({payloadType})");
+
+                    }
                 }
-                WriteLine($"private {payloadType} payload; ");
-                WriteLine($"public {payloadRefType} getPayload() {{ return payload; }}");
             }
             else
             {
-                WriteLine($"public {eventName}() {{ }}");
-                WriteLine($"public Void getPayload() {{ return null; }}");
+                if (hasPayload)
+                {
+                    WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");
+                    WriteLine($"private {payloadType} payload; ");
+                    WriteLine($"public {payloadRefType} getPayload() {{ return payload; }}");
+                }
+                else
+                {
+                    WriteLine($"public {eventName}() {{ }}");
+                    WriteLine($"public Void getPayload() {{ return null; }}");
+                }
             }
 
             WriteLine();

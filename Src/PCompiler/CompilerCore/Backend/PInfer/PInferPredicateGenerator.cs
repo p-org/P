@@ -92,7 +92,7 @@ namespace Plang.Compiler.Backend.PInfer
             GenerateBuildScript(job);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
             return codegen.GenerateCode(javaCtx, globalScope)
-                            .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
+                            // .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
                             .Concat(eventDefSource)
                             .Concat([terms, predicates]);
         }

@@ -49,6 +49,11 @@ namespace Plang.Compiler.Backend.Java
             {
                 WriteLine(stmt);
             }
+            if (Constants.PInferMode)
+            {
+                WriteLine("import org.json.JSONObject;");
+                WriteLine("import org.json.JSONArray;");
+            }
         }
 
         /// <summary>

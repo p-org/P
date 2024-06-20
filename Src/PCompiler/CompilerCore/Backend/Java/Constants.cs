@@ -138,6 +138,11 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
 
     <dependencies>
         <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+        <dependency>
             <groupId>p.runtime</groupId>
             <artifactId>PJavaRuntime</artifactId>
             <version>1.0-SNAPSHOT</version>

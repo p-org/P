@@ -53,6 +53,10 @@ namespace Plang.Compiler.Backend.Java
             {
                 WriteLine("import com.alibaba.fastjson2.JSONArray;");
                 WriteLine("import com.alibaba.fastjson2.JSONObject;");
+                WriteLine("import com.alibaba.fastjson2.JSONPath;");
+                WriteLine("import com.alibaba.fastjson2.JSONReader;");
+                WriteLine();
+                WriteLine("import java.io.*;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;");
             }
         }
 

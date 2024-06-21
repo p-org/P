@@ -18,6 +18,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private CompiledFile _src;
     
     private HashSet<PLanguageType> _optionsToDeclare;
+    private HashSet<SetType> _setCheckersToDeclare;
 
     private static string BuiltinPrefix => "UPVerifier_";
     private static string UserPrefix => "User_";
@@ -50,6 +51,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _ctx = new CompilationContext(job);
         _src = new CompiledFile(_ctx.FileName);
         _optionsToDeclare = [];
+        _setCheckersToDeclare = new HashSet<SetType>();
         GenerateMain(globalScope);
         return new List<CompiledFile> { _src };
     }
@@ -68,11 +70,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         GenerateMachineDefs(machines);
         GenerateBuiltInVarDecls();
         GenerateInitBlock();
-        GenerateHelperProcedures(globalScope.AllDecls.OfType<Function>());
+        GenerateGlobalProcedures(globalScope.AllDecls.OfType<Function>());
+        GenerateMachineProcedures(machines);
         GenerateEntryProcedures(machines);
         GenerateHandlerProcedures(machines);
         GenerateNextBlock(machines);
         GenerateOptionTypes();
+        GenerateCheckerVars();
         GenerateControlBlock(machines);
 
         // close the main module
@@ -88,6 +92,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("\n");
     }
 
+    private string GetLocation(IPAST node)
+    {
+        return _ctx.LocationResolver.GetLocation(node.SourceLocation).ToString();
+    }
+    
     private static string GetUserName(string r)
     {
         return $"{UserPrefix}{r}";
@@ -277,20 +286,26 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return $"{mname}.{GetState(m)} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
     }
 
+    private string DefaultValue(PLanguageType ty)
+    {
+        return ty switch
+        {
+            MapType mapType =>
+                $"const({ConstructOptionNone(TypeToString(mapType.ValueType))}, {TypeToString(mapType)})",
+            SetType setType => $"const(false, {TypeToString(setType)})",
+            _ => throw new ArgumentOutOfRangeException($"{ty} ({ty.GetType()})")
+        };
+    }
+    
     private string InDefaultPredicate(Machine m, string mname)
     {
         var cond = $"{mname}.{GetState(m)} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
         foreach (var f in m.Fields)
         {
-            switch (f.Type)
+            // TODO; defaults for all types?
+            if (f.Type.TypeKind == TypeKind.Map || f.Type.TypeKind == TypeKind.Set)
             {
-                case MapType mapType:
-                    cond += $" && {mname}.{GetField(m, f)} == const({ConstructOptionNone(TypeToString(mapType.ValueType))}, {TypeToString(mapType)})";
-                    break;
-                case SetType setType:
-                    cond += $" && {mname}.{GetField(m, f)} == const(false, {TypeToString(setType)})";
-                    break;
-                // TODO; defaults for all types?
+                cond += $" && {mname}.{GetField(m, f)} == {DefaultValue(f.Type)}";
             }
         }
         return cond;
@@ -385,7 +400,36 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("\n");
     }
 
-    private void GenerateHelperProcedures(IEnumerable<Function> functions)
+    private void GenerateMachineProcedures(List<Machine> ms)
+    {
+        foreach (var m in ms)
+        {
+            foreach (var f in m.Methods)
+            {
+                if (f.IsAnon)
+                {
+                    continue;
+                }
+                var ps = f.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}").Prepend($"{This}: {RefT}");
+                EmitLine($"procedure [noinline] {f.Name}({string.Join(", ", ps)})");
+                EmitLine($"\trequires {IsMachineInstance(GetMachine(This), m)};");
+                EmitLine(
+                    $"\tensures (forall (r1: {RefT}) :: {This} != r1 ==> old({Machines})[r1] == {GetMachine("r1")});");
+                if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+                {
+                    EmitLine($"\treturns ({ReturnVar}: {TypeToString(f.Signature.ReturnType)})");
+                }
+                EmitLine("{");
+                GenerateGenericHandlerVars(m, f);
+                GenerateStmt(f.Body);
+                GenerateGenericHandlerPost(m);
+                EmitLine("}\n");
+            }
+            EmitLine("\n");
+        }
+    }
+    
+    private void GenerateGlobalProcedures(IEnumerable<Function> functions)
     {
         foreach (var f in functions)
         {
@@ -404,8 +448,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
     
     private void GenerateGenericHandlerSpec(Machine m, State s)
     {
-        EmitLine($"\tmodifies {Machines};");
-        EmitLine($"\tmodifies {Buffer};");
         EmitLine($"\trequires {IsMachineInstance(GetMachine(This), m)};");
         EmitLine($"\trequires {IsMachineStateInstance(GetMachine(This), m, s)};");
         EmitLine(
@@ -583,7 +625,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         return;
                 }
                 throw new NotSupportedException(
-                    $"Not supported assignment expression: {cstmt} ({cstmt.SourceLocation})");
+                    $"Not supported assignment expression with call: {cstmt.Location} = {cstmt.Value} ({GetLocation(cstmt)})");
             case AssignStmt astmt:
                 switch (astmt.Location)
                 {
@@ -596,10 +638,20 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         var valueType = TypeToString(((MapType)max.MapExpr.Type).ValueType);
                         EmitLine($"{map} = {map}[{index} -> {ConstructOptionSome(valueType, ExprToString(astmt.Value))}];");
                         return;
+                    case NamedTupleAccessExpr {SubExpr: VariableAccessExpr} tax:
+                        var subExpr = ExprToString(tax.SubExpr);
+                        var entry = tax.Entry.Name;
+                        var field = tax.FieldName;
+                        var fields = ((NamedTupleType)((TypeDefType)tax.SubExpr.Type).TypeDefDecl.Type).Fields;
+                        var rhs = ExprToString(astmt.Value);
+                        var build = string.Join(", ", fields.Select(f => f.Name == entry ? $"{entry} := {rhs}" : $"{f.Name} := {subExpr}.{f.Name}"));
+                        EmitLine($"// subExpr: {subExpr}; entry {entry}; field: {field}");
+                        EmitLine($"{subExpr} = const_record({build});");
+                        return;
                 }
 
                 throw new NotSupportedException(
-                    $"Not supported assignment expression: {astmt} ({astmt.SourceLocation})");
+                    $"Not supported assignment expression: {astmt.Location} = {astmt.Value} ({GetLocation(astmt)})");
             case IfStmt ifstmt:
                 var cond = (ifstmt.Condition) switch
                 {
@@ -634,22 +686,80 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"call {fapp.Function.Name}({string.Join(", ", fapp.ArgsList.Select(ExprToString).Prepend(This))});");
                 return;
             case AddStmt astmt:
-                var set = ExprToString(astmt.Variable);
-                var key = ExprToString(astmt.Value);
-                EmitLine($"{set} = {set}[{key} -> true];");
+                var aset = ExprToString(astmt.Variable);
+                var akey = ExprToString(astmt.Value);
+                EmitLine($"{aset} = {aset}[{akey} -> true];");
                 return;
+            case RemoveStmt rstmt:
+                var rset = ExprToString(rstmt.Variable);
+                var rkey = ExprToString(rstmt.Value);
+
+                switch (rstmt.Variable.Type)
+                {
+                    case MapType mapType:
+                        EmitLine($"{rset} = {rset}[{rkey} -> {ConstructOptionNone(TypeToString(mapType.ValueType))}];");
+                        return;
+                    case SetType setType:
+                        EmitLine($"{rset} = {rset}[{rkey} -> false];");
+                        return;
+                    default:
+                        throw new NotSupportedException($"Only support remove statemetns for sets and maps, got {rstmt.Variable.Type}");
+                }
             case InsertStmt istmt:
                 var imap = ExprToString(istmt.Variable);
                 var idx = ExprToString(istmt.Index);
                 var value = ConstructOptionSome(TypeToString(istmt.Value.Type), ExprToString(istmt.Value));
                 EmitLine($"{imap} = {imap}[{idx} -> {value}];");
                 return;
+            case WhileStmt wstmt:
+                var wcond = ExprToString(wstmt.Condition);
+                EmitLine($"while ({wcond}) {{");
+                GenerateStmt(wstmt.Body);
+                EmitLine("}");
+                return;
+            case ForeachStmt fstmt:
+                var item = GetLocalName(fstmt.Item.Name);
+                var checker = GetCheckerName(fstmt.IterCollection.Type);
+                var collection = ExprToString(fstmt.IterCollection);
+                
+                switch (fstmt.IterCollection.Type)
+                {
+                    case SetType setType:
+                        // set the checker to default
+                        EmitLine($"{checker} = {DefaultValue(setType)};");
+                        // remember to declare it later
+                        _setCheckersToDeclare.Add(setType);
+                        // havoc the item
+                        EmitLine($"havoc {item};");
+                        EmitLine($"while ({checker} != {collection}) {{");
+                        // assume that the item is in the set but hasn't been visited
+                        EmitLine($"assume ({collection}[{item}] && !{checker}[{item}]);");
+                        // the body of the loop
+                        GenerateStmt(fstmt.Body);
+                        // update the checker
+                        EmitLine($"{checker} = {checker}[{item} -> true];");
+                        // havoc the item
+                        EmitLine($"havoc {item};");
+                        EmitLine("}");
+                        return;
+                    default:
+                        throw new NotSupportedException($"Foreach over non-sets is not supported yet: {fstmt} ({GetLocation(fstmt)}");
+                }
             case null:
                 return;
         }
-        throw new NotSupportedException($"Not supported statement: {stmt} ({stmt.SourceLocation})");
+        throw new NotSupportedException($"Not supported statement: {stmt} ({GetLocation(stmt)})");
     }
 
+    private string GetCheckerName(PLanguageType ty)
+    {
+        return ty switch
+        {
+            MapType mapType => $"{BuiltinPrefix}Checker_{TypeToString(mapType.KeyType)}",
+            SetType setType => $"{BuiltinPrefix}Checker_{TypeToString(setType.ElementType)}",
+            _ => throw new ArgumentOutOfRangeException(nameof(ty))
+        };
+    }
 
     private string TypeToString(PLanguageType t)
     {
@@ -711,6 +821,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 SetType _ => $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
                 _ => throw new NotSupportedException($"Not supported expr: {expr} of {cexp.Type.OriginalRepresentation}")
             },
+            DefaultExpr dexp => DefaultValue(dexp.Type),
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
         };
@@ -765,6 +876,16 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine($"datatype {opt} = ");
             EmitLine($"\t| {opt}_Some ({opt}_Some_Value: {t})");
             EmitLine($"\t| {opt}_None ();");
+        }
+        EmitLine("\n");
+    }
+    
+    private void GenerateCheckerVars()
+    {
+        foreach (var ptype in _setCheckersToDeclare)
+        {
+            var name = GetCheckerName(ptype);
+            EmitLine($"var {name}: {TypeToString(ptype)};");
         }
         EmitLine("\n");
     }

@@ -83,6 +83,7 @@ namespace Plang.Compiler.Backend.PInfer
             CompiledFile terms = new($"{job.ProjectName}.terms");
             CompiledFile predicates = new($"{job.ProjectName}.predicates");
             JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, FreeEvents);
+            IEnumerable<CompiledFile> compiledJavaSrc = codegen.GenerateCode(javaCtx, globalScope);
             foreach (var term in VisitedSet)
             {
                 ctx.WriteLine(terms.Stream, codegen.GenerateRawExpr(term));
@@ -93,11 +94,10 @@ namespace Plang.Compiler.Backend.PInfer
             }
             GenerateBuildScript(job);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
-            return codegen.GenerateCode(javaCtx, globalScope)
-                            .Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
-                            .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
-                            .Concat(eventDefSource)
-                            .Concat([terms, predicates]);
+            return compiledJavaSrc.Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
+                                .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
+                                .Concat(eventDefSource)
+                                .Concat([terms, predicates]);
         }
 
         private PLanguageType ExplicateTypeDef(PLanguageType type)

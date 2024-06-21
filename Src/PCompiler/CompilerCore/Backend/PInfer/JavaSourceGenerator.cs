@@ -83,7 +83,7 @@ namespace Plang.Compiler.Backend.PInfer
         //     WriteLine();
         // }
 
-        internal static string GenerateCodeExpr(IPExpr expr)
+        internal string GenerateCodeExpr(IPExpr expr)
         {
             if (expr is VariableAccessExpr v)
             {
@@ -130,26 +130,26 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private static string GenerateCodeCall(string callee, params string[] args)
+        private string GenerateCodeCall(string callee, params string[] args)
         {
             return $"{callee}({string.Join(", ", args)})";
         }
 
-        private static string GenerateCodeTupleAccess(TupleAccessExpr t)
+        private string GenerateCodeTupleAccess(TupleAccessExpr t)
         {
             return $"{GenerateCodeExpr(t.SubExpr)}[{t.FieldNo}]";
         }
 
-        private static string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n)
+        private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n)
         {
-            // if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
-            // {
-            //     return $"{GenerateCodeExpr(n.SubExpr)}.getPayload().{n.FieldName}";
-            // }
-            return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}()";
+            if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
+            {
+                return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}()";
+            }
+            return GenerateJSONObjectGet(GenerateCodeExpr(n.SubExpr), n.FieldName, n.Type.Canonicalize());
         }
 
-        private static string GenerateCodePredicateCall(PredicateCallExpr p)
+        private string GenerateCodePredicateCall(PredicateCallExpr p)
         {
             if (p.Predicate is BuiltinPredicate)
             {
@@ -163,7 +163,7 @@ namespace Plang.Compiler.Backend.PInfer
             return GenerateCodeCall(p.Predicate.Name, args);
         }
 
-        private static string GenerateFuncCall(FunCallExpr funCallExpr)
+        private string GenerateFuncCall(FunCallExpr funCallExpr)
         {
             if (funCallExpr.Function is BuiltinFunction builtinFun)
             {

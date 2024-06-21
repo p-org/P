@@ -87,7 +87,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"{e.Name}(int i) {{ value = i; }}");
             if (Constants.PInferMode)
             {
-                WriteLine($"public {e.Name} from(long i) {{");
+                WriteLine($"public static {e.Name} from(int i) {{");
                 WriteLine("switch (i) {");
                 foreach (var param in e.Values)
                 {

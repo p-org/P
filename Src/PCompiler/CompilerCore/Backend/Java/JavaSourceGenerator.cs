@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -122,6 +123,45 @@ namespace Plang.Compiler.Backend.Java
 
                 default:
                     throw new NotImplementedException(t.ToString());
+            }
+        }
+        private static string GenerateGetLong(string e, string fieldName)
+        {
+            return $"{e}.getLong(\"{fieldName}\")";
+        }
+
+        private static string GenerateGetMachine(string e, string fieldName)
+        {
+            return $"parseMachineId({e}.getString(\"${fieldName}\"))";
+        }
+
+        internal string GenerateJSONObjectGet(string e, string fieldName, PLanguageType type)
+        {
+            if (type is PermissionType)
+            {
+                return GenerateGetMachine(e, fieldName);
+            }
+            var t = type.Canonicalize();
+            var javaType = Types.JavaTypeFor(t);
+            if (t is EnumType enumType)
+            {
+                return $"{Constants.TypesNamespaceName}.{enumType.EnumDecl.Name}.from({GenerateGetLong(e, fieldName)}.intValue())";
+            }
+            else if (t is PrimitiveType || javaType.IsPrimitive)
+            {
+                if (javaType.ReferenceTypeName.Equals("Object"))
+                {
+                    return $"({e}.get(\"{fieldName}\"))";
+                }
+                return $"({e}.get{javaType.ReferenceTypeName}(\"{fieldName}\"))";
+            }
+            else if (t is NamedTupleType)
+            {
+                return $"({e}.getJSONObject(\"{fieldName}\"))";
+            }
+            else 
+            {
+                throw new Exception($"Unhandled initialization for type: {t}");
             }
         }
         protected void WriteLine(string s = "")

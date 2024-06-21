@@ -51,12 +51,15 @@ namespace Plang.Compiler.Backend.Java
             {
                 if (type is EnumType enumType)
                 {
-                    return $"{Constants.TypesNamespaceName}.{enumType.EnumDecl.Name}.from(" + JsonObjectGet(objName, field, PrimitiveType.Int) + ")";
+                    return $"{Constants.TypesNamespaceName}.{enumType.EnumDecl.Name}.from(" + JsonObjectGet(objName, field, PrimitiveType.Int) + ".intValue())";
                 }
                 else
                 {
                     var javaType = Types.JavaTypeFor(type).ReferenceTypeName;
-                    return $"({objName}.get{javaType}(\"{field}\"))";
+                    if (!javaType.Equals("Object"))
+                    {
+                        return $"({objName}.get{javaType}(\"{field}\"))";
+                    }
                 }
             }
             return $"({objName}.get(\"{field}\"))";

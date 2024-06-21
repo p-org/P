@@ -15,45 +15,9 @@ namespace Plang.Compiler.Backend.PInfer
             Events = events;
         }
 
-        private static string GenerateGetLong(string e, string fieldName)
-        {
-            return $"{e}.getLong(\"{fieldName}\")";
-        }
-
-        private static string GenerateGetMachine(string e, string fieldName)
-        {
-            return $"parseMachineId({e}.getString(\"${fieldName}\")";
-        }
-
         private static string GenerateEventInit(string eventName, params string[] parameters)
         {
             return $"events.add(new {Constants.EventNamespaceName}.{eventName}({string.Join(", ", parameters.Concat(["i"]))}));";
-        }
-
-        private string GenerateEventPayloadInit(string e, string fieldName, PLanguageType type)
-        {
-            var t = type.Canonicalize();
-            var javaType = Types.JavaTypeFor(t);
-            if (t is EnumType enumType)
-            {
-                return $"{Constants.TypesNamespaceName}.{enumType.EnumDecl.Name}.from({GenerateGetLong(e, fieldName)})";
-            }
-            else if (t is PrimitiveType primitiveType || javaType.IsPrimitive)
-            {
-                return $"({e}.get{javaType.ReferenceTypeName}(\"{fieldName}\"))";
-            }
-            else if (t is NamedTupleType)
-            {
-                return $"({e}.getJSONObject(\"{fieldName}\"))";
-            }
-            else if (t is PermissionType)
-            {
-                return GenerateGetMachine(e, fieldName);
-            }
-            else
-            {
-                throw new Exception($"Unhandled initialization for type: {PInferPredicateGenerator.ShowType(t)}");
-            }
         }
 
         private string CaseFor(PEvent e)
@@ -65,12 +29,12 @@ namespace Plang.Compiler.Backend.PInfer
             if (hasPayload)
             {
                 var payloadName = $"{e.Name}Payload";
-                result += $"var {payloadName} = {GenerateEventPayloadInit("e", "payload", payloadType)};\n";
+                result += $"var {payloadName} = {GenerateJSONObjectGet("e", "payload", payloadType)};\n";
                 if (payloadType is NamedTupleType type)
                 {
                     foreach (var field in type.Fields)
                     {
-                        result += $"eventPayload.put(\"{field.Name}\", {GenerateEventPayloadInit(payloadName, field.Name, field.Type)});\n";
+                        result += $"eventPayload.put(\"{field.Name}\", {GenerateJSONObjectGet(payloadName, field.Name, field.Type)});\n";
                     }
                 }
                 else
@@ -91,7 +55,7 @@ namespace Plang.Compiler.Backend.PInfer
         {
             var template = PreambleConstants.TraceReaderTemplate;
             string code = "";
-            foreach (var e in Events)
+            foreach (var e in Events.DistinctBy(x => x.Name))
             {
                 code += CaseFor(e);
             }

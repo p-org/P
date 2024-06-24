@@ -69,28 +69,40 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         var machines = globalScope.AllDecls.OfType<Machine>().ToList();
 
+        // things like the machine reference uninterpreted sort
         GenerateBuiltInTypes();
         
         GenerateUserEnums(globalScope.AllDecls.OfType<PEnum>());
         GenerateUserTypes(globalScope.AllDecls.OfType<TypeDef>());
         
+        // a datatype that captures all possible messages
         GenerateEventType(globalScope.AllDecls.OfType<PEvent>());
+        // a datatype that captures all possible state transitions
         GenerateGotoType(machines);
+        // the sum of the above two types
         GenerateLabelType();
         
+        // the state of machines (sum over all machine kinds) and a stage (entry flag)
         GenerateIndividualStateTypes(machines);
         
+        // a map from references to machine states and a set of active labels
         GenerateGlobalState();
         
+        // set variables to defaults, and machines to their start state
         GenerateInitBlock();
         
+        // non-handler functions
         GenerateGlobalProcedures(globalScope.AllDecls.OfType<Function>());
         GenerateMachineProcedures(machines);
+        
+        // these are the handlers for labels
         GenerateEntryProcedures(machines);
         GenerateHandlerProcedures(machines);
         
+        // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
         GenerateNextBlock(machines);
         
+        // These have to be done at the end because we don't know what we need until we generate the rest of the code
         GenerateOptionTypes();
         GenerateCheckerVars();
         
@@ -270,7 +282,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private void GenerateEventType(IEnumerable<PEvent> events)
     {
-        EmitLine("// Events, their types, and helper functions");
         var es = events.ToList();
         var sum = string.Join("\n\t\t| ", es.Select(ProcessEvent));
         EmitLine($"datatype {EventT} = \n\t\t| {sum};\n");
@@ -326,9 +337,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
             var prefix = $"{GotoPrefix}{g.Item1.Name}_{g.Item2.Name}";
             if (g.Item3 is null)
             {
-                return prefix + "()";
+                return prefix + $"({prefix}_{Target}: {RefT})";
             }
-            return prefix + $"({prefix}_{g.Item3.Name}: {TypeToString(g.Item3.Type)})";
+            return prefix + $"({prefix}_{Target}: {RefT}, {prefix}_{g.Item3.Name}: {TypeToString(g.Item3.Type)})";
         }
     }
 
@@ -372,7 +383,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
     
     private void GenerateIndividualStateTypes(IEnumerable<Machine> machines)
     {
-        EmitLine("// Machines, their types, and helper functions");
         var ms = machines.ToList();
         var sum = string.Join("\n\t\t| ", ms.Select(ProcessMachine));
         EmitLine($"datatype {MachineT} = \n\t\t| {sum};\n");
@@ -433,11 +443,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private void GenerateGlobalState()
     {
         // Declare state space
-        EmitLine("// State space: machines, buffer, and next machine to step");
         EmitLine($"var {Machines}: [{RefT}]{MachineT};");
-        EmitLine($"var {CurrentMRef}: {RefT};");
-        EmitLine($"var {Buffer}: [{EventT}]boolean;");
-        EmitLine($"var {CurrentEvent}: {EventT};");
+        EmitLine($"var {Buffer}: [{LabelT}]boolean;");
         EmitLine("\n");
     }
     
@@ -453,7 +460,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("// Every machine begins with fields in default");
         EmitLine($"assume(forall (r: {RefT}) :: {InDefault(GetMachine("r"))});");
         EmitLine("// The buffer starts completely empty");
-        EmitLine($"{Buffer} = const(false, [{EventT}]boolean);");
+        EmitLine($"{Buffer} = const(false, [{LabelT}]boolean);");
         // close the init block
         EmitLine("}");
         EmitLine("\n");
@@ -955,7 +962,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         EmitLine("control {");
         EmitLine("set_solver_option(\":Timeout\", 60);");
-        EmitLine("bmc(1);");
+        EmitLine("induction(1);");
 
         foreach (var m in machines)
         foreach (var s in m.States)

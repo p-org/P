@@ -103,7 +103,6 @@ public class RuntimeExecutor {
                 timedCalls.add( new TimedCall(schedulers.get(i), resume, i));
                 futures.add(executor.submit(timedCalls.get(i)));
             }
-            
             TimeMonitor.startInterval();
             runWithTimeout((long) PExplicitGlobal.getConfig().getTimeLimit());
         } catch (TimeoutException e) {

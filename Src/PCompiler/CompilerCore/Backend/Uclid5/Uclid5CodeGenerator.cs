@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -23,6 +24,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string BuiltinPrefix => "UPVerifier_";
     private static string UserPrefix => "User_";
     private static string EventPrefix => "Event_";
+    private static string GotoPrefix => "Goto_";
     private static string MachinePrefix => "Machine_";
     private static string LocalPrefix => "Local_";
     private static string RefT => $"{BuiltinPrefix}MachineRef";
@@ -30,6 +32,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string Null => $"{BuiltinPrefix}Null";
     private static string StringT => $"{BuiltinPrefix}String";
     private static string EventT => $"{BuiltinPrefix}Event";
+    private static string GotoT => $"{BuiltinPrefix}Goto";
     private static string Source => "Source";
     private static string Target => "Target";
     private static string Payload => "Payload";
@@ -63,27 +66,38 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         var machines = globalScope.AllDecls.OfType<Machine>().ToList();
 
-        GenerateBuiltInTypeDefs();
-        GenerateUserEnumDefs(globalScope.AllDecls.OfType<PEnum>());
-        GenerateUserTypeDefs(globalScope.AllDecls.OfType<TypeDef>());
-        GenerateEventDefs(globalScope.AllDecls.OfType<PEvent>());
-        GenerateMachineDefs(machines);
-        GenerateBuiltInVarDecls();
+        GenerateBuiltInTypes();
+        
+        GenerateUserEnums(globalScope.AllDecls.OfType<PEnum>());
+        GenerateUserTypes(globalScope.AllDecls.OfType<TypeDef>());
+        
+        GenerateEventType(globalScope.AllDecls.OfType<PEvent>());
+        GenerateGotoType(machines);
+        // GenerateLabelType();
+        
+        GenerateIndividualStateTypes(machines);
+        
+        GenerateGlobalState();
+        
         GenerateInitBlock();
+        
         GenerateGlobalProcedures(globalScope.AllDecls.OfType<Function>());
         GenerateMachineProcedures(machines);
         GenerateEntryProcedures(machines);
         GenerateHandlerProcedures(machines);
+        
         GenerateNextBlock(machines);
+        
         GenerateOptionTypes();
         GenerateCheckerVars();
+        
         GenerateControlBlock(machines);
 
         // close the main module
         EmitLine("}");
     }
     
-    private void GenerateBuiltInTypeDefs()
+    private void GenerateBuiltInTypes()
     {
         EmitLine("// Built-in types");
         EmitLine($"type {RefT};");
@@ -231,7 +245,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return $"{m}_{s}_handle_entry";
     }
 
-    private void GenerateUserEnumDefs(IEnumerable<PEnum> enums)
+    private void GenerateUserEnums(IEnumerable<PEnum> enums)
     {
         EmitLine("// User's enumerated types");
         foreach (var e in enums)
@@ -243,7 +257,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("\n");
     }
 
-    private void GenerateUserTypeDefs(IEnumerable<TypeDef> types)
+    private void GenerateUserTypes(IEnumerable<TypeDef> types)
     {
         EmitLine("// User's non-enumerated type types");
         foreach (var t in types) EmitLine($"type {GetUserName(t.Name)} = {TypeToString(t.Type)};");
@@ -251,7 +265,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("\n");
     }
 
-    private void GenerateEventDefs(IEnumerable<PEvent> events)
+    private void GenerateEventType(IEnumerable<PEvent> events)
     {
         EmitLine("// Events, their types, and helper functions");
         var es = events.ToList();
@@ -278,6 +292,40 @@ public class Uclid5CodeGenerator : ICodeGenerator
             var payload = TypeToString(e.PayloadType);
             return
                 $"{GetEventName(e.Name)} ({GetEventName(e.Name)}_{Source}: {RefT}, {GetEventName(e.Name)}_{Target}: {RefT}, {GetEventName(e.Name)}_{Payload}: {payload})";
+        }
+    }
+
+    private void GenerateGotoType(IEnumerable<Machine> machines)
+    {
+        List<(Machine, State, Variable)> gotos = [];
+        foreach (var m in machines)
+        foreach (var s in m.States)
+        {
+            var f = s.Entry;
+            // get the arguments to the entry handler
+            Variable a = null;
+            if (f is not null && s.Entry.Signature.Parameters.Count > 0)
+            {
+                a = s.Entry.Signature.Parameters[0];
+            }
+            gotos.Add((m, s, a));
+        }
+        
+        
+        var sum = string.Join("\n\t\t| ", gotos.Select(ProcessGoto));
+        
+        EmitLine($"datatype {GotoT} = \n\t\t| {sum};\n");
+        
+        EmitLine("");
+
+        string ProcessGoto((Machine, State, Variable) g)
+        {
+            var prefix = $"{GotoPrefix}{g.Item1.Name}_{g.Item2.Name}";
+            if (g.Item3 is null)
+            {
+                return prefix + "()";
+            }
+            return prefix + $"({prefix}_{g.Item3.Name}: {TypeToString(g.Item3.Type)})";
         }
     }
     
@@ -311,7 +359,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return cond;
     }
     
-    private void GenerateMachineDefs(IEnumerable<Machine> machines)
+    private void GenerateIndividualStateTypes(IEnumerable<Machine> machines)
     {
         EmitLine("// Machines, their types, and helper functions");
         var ms = machines.ToList();
@@ -371,7 +419,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateBuiltInVarDecls()
+    private void GenerateGlobalState()
     {
         // Declare state space
         EmitLine("// State space: machines, buffer, and next machine to step");

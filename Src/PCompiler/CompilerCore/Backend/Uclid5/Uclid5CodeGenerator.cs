@@ -31,8 +31,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string MachineT => $"{BuiltinPrefix}Machine";
     private static string Null => $"{BuiltinPrefix}Null";
     private static string StringT => $"{BuiltinPrefix}String";
+    private static string LabelT => $"{BuiltinPrefix}Label";
     private static string EventT => $"{BuiltinPrefix}Event";
+    private static string EventLabel => $"{LabelT}_Event";
     private static string GotoT => $"{BuiltinPrefix}Goto";
+    private static string GotoLabel => $"{LabelT}_Goto";
     private static string Source => "Source";
     private static string Target => "Target";
     private static string Payload => "Payload";
@@ -73,7 +76,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         
         GenerateEventType(globalScope.AllDecls.OfType<PEvent>());
         GenerateGotoType(machines);
-        // GenerateLabelType();
+        GenerateLabelType();
         
         GenerateIndividualStateTypes(machines);
         
@@ -327,6 +330,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
             }
             return prefix + $"({prefix}_{g.Item3.Name}: {TypeToString(g.Item3.Type)})";
         }
+    }
+
+    private void GenerateLabelType()
+    {
+        EmitLine($"datatype {LabelT} =");
+        EmitLine($"\t\t| {EventLabel}({LabelT}_{EventT}: {EventT})");
+        EmitLine($"\t\t| {GotoLabel}({LabelT}_{GotoT}: {GotoT});");
+        EmitLine("\n");
     }
     
     private string InStartPredicate(Machine m, string mname)

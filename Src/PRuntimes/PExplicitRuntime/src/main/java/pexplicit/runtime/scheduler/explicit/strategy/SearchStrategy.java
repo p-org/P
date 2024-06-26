@@ -37,7 +37,7 @@ public abstract class SearchStrategy implements Serializable {
      */
     int currTaskStartIteration = 0;
 
-    public SearchTask createTask(SearchTask parentTask) {
+    public static SearchTask createTask(SearchTask parentTask) {
         SearchTask newTask = new SearchTask(allTasks.size(), parentTask);
         allTasks.add(newTask);
         pendingTasks.add(newTask.getId());
@@ -49,12 +49,8 @@ public abstract class SearchStrategy implements Serializable {
     
     public static void createFirstTask() {
         assert (allTasks.size() == 0);
-        // SearchTask firstTask = createTask(null); // Need a static version of createTask here, so just put createTask implementation here for null argument
-        SearchTask newTask = new SearchTask(allTasks.size(), null);
-        allTasks.add(newTask);
-        pendingTasks.add(newTask.getId());
+        createTask(null); 
 
-        // setCurrTask(firstTask); // Add it to pending Task List instead of setting it to set current task; like in pendingTasks.add(newTask.getId());
     }
 
     public SearchTask getCurrTask() {

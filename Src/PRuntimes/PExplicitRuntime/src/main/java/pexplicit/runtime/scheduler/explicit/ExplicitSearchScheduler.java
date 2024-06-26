@@ -103,25 +103,17 @@ public class ExplicitSearchScheduler extends Scheduler {
      *
      * @throws TimeoutException Throws timeout exception if timeout is reached
      */
-    // @Override
-    // public void run() throws TimeoutException {
-     
-    //     PExplicitLogger.logInfo("Hello my dear friend" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()));
-        
-    // }
     @Override
     public void runParallel() throws TimeoutException {
         
-        // PExplicitLogger.logInfo("Check1.0");
-        // PExplicitLogger.logRunTest();  
+        // PExplicitLogger.logRunTest();  // TODO : Add log Info feature
         
-        // PExplicitLogger.logInfo("Check1.1");
        
 
-        // PExplicitGlobal.setResult("incomplete"); // PIN: Result object
+        // PExplicitGlobal.setResult("incomplete"); // TODO: Set Result object
 
 
-        // if (PExplicitGlobal.getConfig().getVerbosity() == 0) {
+        // if (PExplicitGlobal.getConfig().getVerbosity() == 0) {  // TODO : Add log Info feature
         //     printProgressHeader(true);
         // }
         
@@ -130,15 +122,15 @@ public class ExplicitSearchScheduler extends Scheduler {
             // schedule limit not reached and there are pending tasks
             // set the next task
             SearchTask nextTask = setNextTask();
-            if (nextTask == null ) {  // || TODO: PExplicitGlobal.getStatus() == STATUS.SCHEDULEOUT
+            if (nextTask == null ) {  // || PIN: PExplicitGlobal.getStatus() == STATUS.SCHEDULEOUT
                 // all tasks completed or schedule limit reached
                 break;
             }            
-            // PExplicitLogger.logStartTask(searchStrategy.getCurrTask());
+            // PExplicitLogger.logStartTask(searchStrategy.getCurrTask());   // TODO : Add log Info feature
             isDoneIterating = false;
             while (!isDoneIterating) {
-                // SearchStatistics.iteration++;
-                // PExplicitLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber);
+                // SearchStatistics.iteration++;   // TODO : Add log Info feature
+                // PExplicitLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); // TODO : Add log Info feature
                 if (stepNumber == 0) {
                     start();
                 }
@@ -147,7 +139,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
-            // PExplicitLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask());
+            // PExplicitLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask()); // TODO : Add log Info feature
 
 
 
@@ -473,7 +465,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
         }
 
-        // PExplicitLogger.logNewTasks(parentTask.getChildren());
+        // PExplicitLogger.logNewTasks(parentTask.getChildren()); // TODO : Add log Info feature
     }
 
     private void endCurrTask() {
@@ -483,7 +475,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) {
-        SearchTask newTask = searchStrategy.createTask(parentTask);
+        SearchTask newTask = SearchStrategy.createTask(parentTask);
 
         int maxChoiceNum = choiceNum;
 
@@ -514,7 +506,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     public SearchTask setNextTask() {
         SearchTask nextTask = searchStrategy.setNextTask();
         if (nextTask != null) {
-            // PExplicitLogger.logNextTask(nextTask);
+            // PExplicitLogger.logNextTask(nextTask);    // TODO : Add log Info feature
             schedule.setChoices(nextTask.getPrefixChoices());
             postIterationCleanup();
         }

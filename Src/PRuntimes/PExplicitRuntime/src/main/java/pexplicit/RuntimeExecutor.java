@@ -35,17 +35,11 @@ public class RuntimeExecutor {
             RuntimeException {
         try { // PIN: If thread gets exception, need to kill the other threads.
             if (timeLimit > 0) {
-                // PExplicitLogger.logInfo("Check0.1.3.1");
-                
                 for (Future<Integer> future: futures) {
                     // Future<Integer> future = futures.get(i);
                     future.get(timeLimit, TimeUnit.SECONDS);
                 }
-
-                // PExplicitLogger.logInfo("Check0.1.3.2");
                 
-                
-
             } else {
                 
                 for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
@@ -94,7 +88,7 @@ public class RuntimeExecutor {
 
         executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(PExplicitGlobal.getMaxThreads());
 
-        // PExplicitGlobal.setResult("error");
+        // PExplicitGlobal.setResult("error"); // TODO: Set Results, need to take care of.
 
         double preSearchTime =
                 TimeMonitor.findInterval(TimeMonitor.getStart());
@@ -109,8 +103,6 @@ public class RuntimeExecutor {
         try {
             ArrayList<TimedCall> timedCalls = new ArrayList<>();
             
-            // PExplicitLogger.logInfo("Check0.1.1");
-            
             SearchStrategy.createFirstTask();
             
             for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
@@ -122,22 +114,16 @@ public class RuntimeExecutor {
                 futures.add(future);
             }
 
-            // Thread.sleep(1000);
+            Thread.sleep(1000); // Sleep for 1 second, so that threads can pick up the task from the executor object
 
             // Get the number of pending tasks
             int pendingTasks = executor.getQueue().size();
             PExplicitLogger.logInfo("Number of pending tasks: " + pendingTasks);
 
-
-            // PExplicitLogger.logInfo("Check0.1.2");
-
             TimeMonitor.startInterval();
-
-            // PExplicitLogger.logInfo("Check0.1.3");
 
             runWithTimeout((long) PExplicitGlobal.getConfig().getTimeLimit());
 
-            // PExplicitLogger.logInfo("Check0.1.4");
         } catch (TimeoutException e) {
             PExplicitGlobal.setStatus(STATUS.TIMEOUT);
             throw new Exception("TIMEOUT", e);
@@ -149,9 +135,6 @@ public class RuntimeExecutor {
             
             
 
-            // for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-            //     PExplicitGlobal.setResult(String.format("found cex of length %d", (schedulers.get(i)).getStepNumber()));
-            // Terminate all schedulers at this point, and that scheduler which found this exception stores result.
 
             PExplicitLogger.logStackTrace(e);
 
@@ -205,15 +188,12 @@ public class RuntimeExecutor {
             localSchedulers.add(localCopy);
         }
 
-        // PExplicitLogger.logInfo("Check0.0");
 
         preprocess();
 
-        // PExplicitLogger.logInfo("Check0.1");
 
         process(false);
 
-        // PExplicitLogger.logInfo("Check0.2");
 
     }
 

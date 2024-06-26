@@ -31,9 +31,7 @@ public class TimedCall implements Callable<Integer> {
     public Integer call()
             throws MemoutException, BugFoundException, TimeoutException, InterruptedException {
         try {
-            // PExplicitLogger.logInfo("Check: Job submitted");
             this.scheduler.runParallel();
-            // PExplicitLogger.logInfo("-Check: Job completed-");
         } catch (OutOfMemoryError e) {
             throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
         } catch (NullPointerException | StackOverflowError | ClassCastException e) {

@@ -78,7 +78,7 @@ public class PExplicitLogger {
      */
     public static void logVerbose(String message) {
         if (verbosity > 3) {
-            log.info(message);
+            logInfo(message);
         }
     }
 
@@ -90,27 +90,27 @@ public class PExplicitLogger {
      */
     public static void logEndOfRun(ExplicitSearchScheduler scheduler, long timeSpent) {
         if (verbosity == 0) {
-            log.info("");
+            logInfo("");
         }
-        log.info("--------------------");
-        log.info("... Checking statistics:");
+        logInfo("--------------------");
+        logInfo("... Checking statistics:");
         if (PExplicitGlobal.getStatus() == STATUS.BUG_FOUND) {
-            log.info("..... Found 1 bug.");
+            logInfo("..... Found 1 bug.");
         } else {
-            log.info("..... Found 0 bugs.");
+            logInfo("..... Found 0 bugs.");
         }
-        log.info("... Scheduling statistics:");
+        logInfo("... Scheduling statistics:");
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-            log.info(String.format("..... Explored %d distinct states", SearchStatistics.totalDistinctStates));
+            logInfo(String.format("..... Explored %d distinct states", SearchStatistics.totalDistinctStates));
         }
-        log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
-        log.info(String.format("..... Finished %d search tasks (%d pending)",
+        logInfo(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
+        logInfo(String.format("..... Finished %d search tasks (%d pending)",
                 scheduler.getSearchStrategy().getFinishedTasks().size(), scheduler.getSearchStrategy().getPendingTasks().size()));
-        log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
+        logInfo(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
                 SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
-        log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
-        log.info(String.format(".. Result: " + PExplicitGlobal.getResult()));
-        log.info(". Done");
+        logInfo(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
+        logInfo(String.format(".. Result: " + PExplicitGlobal.getResult()));
+        logInfo(". Done");
     }
 
     /**
@@ -122,8 +122,8 @@ public class PExplicitLogger {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
-        log.info("--------------------");
-        log.info(sw.toString());
+        logInfo("--------------------");
+        logInfo(sw.toString());
     }
 
     /**
@@ -133,8 +133,8 @@ public class PExplicitLogger {
      */
     public static void logStartTask(SearchTask task) {
         if (verbosity > 0) {
-            log.info("=====================");
-            log.info(String.format("Starting %s", task.toStringDetailed()));
+            logInfo("=====================");
+            logInfo(String.format("Starting %s", task.toStringDetailed()));
         }
     }
 
@@ -145,7 +145,7 @@ public class PExplicitLogger {
      */
     public static void logEndTask(SearchTask task, int numSchedules) {
         if (verbosity > 0) {
-            log.info(String.format("  Finished %s after exploring %d schedules", task, numSchedules));
+            logInfo(String.format("  Finished %s after exploring %d schedules", task, numSchedules));
         }
     }
 
@@ -156,17 +156,17 @@ public class PExplicitLogger {
      */
     public static void logNextTask(SearchTask task) {
         if (verbosity > 1) {
-            log.info(String.format("  Next task: %s", task.toStringDetailed()));
+            logInfo(String.format("  Next task: %s", task.toStringDetailed()));
         }
     }
 
     public static void logNewTasks(List<SearchTask> tasks) {
         if (verbosity > 0) {
-            log.info(String.format("    Added %d new tasks", tasks.size()));
+            logInfo(String.format("    Added %d new tasks", tasks.size()));
         }
         if (verbosity > 1) {
             for (SearchTask task : tasks) {
-                log.info(String.format("      %s", task.toStringDetailed()));
+                logInfo(String.format("      %s", task.toStringDetailed()));
             }
         }
     }
@@ -179,18 +179,18 @@ public class PExplicitLogger {
      */
     public static void logStartIteration(SearchTask task, int iter, int step) {
         if (verbosity > 0) {
-            log.info("--------------------");
-            log.info(String.format("[%s] Starting schedule %s from step %s", task, iter, step));
+            logInfo("--------------------");
+            logInfo(String.format("[%s] Starting schedule %s from step %s", task, iter, step));
         }
     }
 
     public static void logStartStep(int step, PMachine sender, PMessage msg) {
         if (verbosity > 0) {
-            log.info(String.format(
+            logInfo(String.format(
                     "  Step %d: %s sent %s to %s",
                     step, sender, msg.getEvent(), msg.getTarget()));
             if (verbosity > 5) {
-                log.info(String.format("    payload: %s", msg.getPayload()));
+                logInfo(String.format("    payload: %s", msg.getPayload()));
             }
         }
     }
@@ -202,7 +202,7 @@ public class PExplicitLogger {
      */
     public static void logFinishedIteration(int step) {
         if (verbosity > 0) {
-            log.info(String.format("  Schedule finished at step %d", step));
+            logInfo(String.format("  Schedule finished at step %d", step));
         }
     }
 
@@ -215,7 +215,7 @@ public class PExplicitLogger {
      */
     public static void logBacktrack(int stepNum, int choiceNum, SearchUnit unit) {
         if (verbosity > 1) {
-            log.info(String.format("  Backtracking to %s choice @%d::%d",
+            logInfo(String.format("  Backtracking to %s choice @%d::%d",
                     ((unit instanceof ScheduleSearchUnit) ? "schedule" : "data"),
                     stepNum, choiceNum));
         }
@@ -223,45 +223,45 @@ public class PExplicitLogger {
 
     public static void logNewScheduleChoice(List<PMachineId> choices, int step, int idx) {
         if (verbosity > 1) {
-            log.info(String.format("    @%d::%d new schedule choice: %s", step, idx, choices));
+            logInfo(String.format("    @%d::%d new schedule choice: %s", step, idx, choices));
         }
     }
 
     public static void logNewDataChoice(List<PValue<?>> choices, int step, int idx) {
         if (verbosity > 1) {
-            log.info(String.format("    @%d::%d new data choice: %s", step, idx, choices));
+            logInfo(String.format("    @%d::%d new data choice: %s", step, idx, choices));
         }
     }
 
     public static void logRepeatScheduleChoice(PMachine choice, int step, int idx) {
         if (verbosity > 2) {
-            log.info(String.format("    @%d::%d %s (repeat)", step, idx, choice));
+            logInfo(String.format("    @%d::%d %s (repeat)", step, idx, choice));
         }
     }
 
     public static void logCurrentScheduleChoice(PMachine choice, int step, int idx) {
         if (verbosity > 2) {
-            log.info(String.format("    @%d::%d %s", step, idx, choice));
+            logInfo(String.format("    @%d::%d %s", step, idx, choice));
         }
     }
 
     public static void logRepeatDataChoice(PValue<?> choice, int step, int idx) {
         if (verbosity > 2) {
-            log.info(String.format("    @%d::%d %s (repeat)", step, idx, choice));
+            logInfo(String.format("    @%d::%d %s (repeat)", step, idx, choice));
         }
     }
 
     public static void logCurrentDataChoice(PValue<?> choice, int step, int idx) {
         if (verbosity > 2) {
-            log.info(String.format("    @%d::%d %s", step, idx, choice));
+            logInfo(String.format("    @%d::%d %s", step, idx, choice));
         }
     }
 
     public static void logNewState(int step, int idx, Object stateKey, SortedSet<PMachine> machines) {
         if (verbosity > 3) {
-            log.info(String.format("    @%d::%d new state with key %s", step, idx, stateKey));
+            logInfo(String.format("    @%d::%d new state with key %s", step, idx, stateKey));
             if (verbosity > 6) {
-                log.info(String.format("      %s", ComputeHash.getExactString(machines)));
+                logInfo(String.format("      %s", ComputeHash.getExactString(machines)));
             }
         }
     }
@@ -279,7 +279,7 @@ public class PExplicitLogger {
         if (isReplaying()) {
             TextWriter.typedLog(type, message);
         } else {
-            log.info(String.format("    <%s> %s", type, message));
+            logInfo(String.format("    <%s> %s", type, message));
         }
     }
 
@@ -292,7 +292,7 @@ public class PExplicitLogger {
 
     public static void logModel(String message) {
         if (verbosity > 0) {
-            log.info(message);
+            logInfo(message);
         }
         if (typedLogEnabled()) {
             typedLog(LogType.PrintLog, message);
@@ -410,8 +410,8 @@ public class PExplicitLogger {
 
     public static void logStartReplay() {
         if (verbosity > 0) {
-            log.info("--------------------");
-            log.info("Replaying schedule");
+            logInfo("--------------------");
+            logInfo("Replaying schedule");
         }
     }
 }

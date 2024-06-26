@@ -11,16 +11,16 @@ import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.checkerframework.checker.units.qual.A;
 /**
  * Represents global data structures represented with a singleton class
  */
 public class PExplicitGlobal {
-
-    // Need a bunch of semaphores?
-
     
+
     @Getter
-    private static final int maxThreads = 2;
+    private static final int maxThreads = PExplicitConfig.getNumThreads();
 
 
     private static AtomicLong threadsBlocking = new AtomicLong(0);
@@ -64,7 +64,10 @@ public class PExplicitGlobal {
 
     public static Map<Class<? extends PMachine>, List<PMachine>> getMachineListByType() {
         int localtID = tID_to_localtID.get(Thread.currentThread().getId());
-        return machineListByTypePerThread.get(localtID);  // If this key is not there; initialize it to an empty Hashmap and then return that there!      
+        if (!machineListByTypePerThread.containsKey(localtID)) {
+            machineListByTypePerThread.put(localtID, new HashMap<>()); // Initialize with an empty HashMap if key doesn't exist
+        }        
+        return machineListByTypePerThread.get(localtID);   
     }
 
     public static void putMachineListByType( Map<Class<? extends PMachine>, List<PMachine>> machineListByType  ) {
@@ -76,7 +79,17 @@ public class PExplicitGlobal {
      * Set of machines
      */
     @Getter
-    private static final SortedSet<PMachine> machineSet = new TreeSet<>();
+    private static final Map< Integer, SortedSet<PMachine>> machineSetPerThread = new ConcurrentHashMap<>();
+    
+    
+    public static SortedSet<PMachine> getMachineSet () {
+        int localtID = tID_to_localtID.get(Thread.currentThread().getId());
+        if (!machineSetPerThread.containsKey(localtID)) {
+            machineSetPerThread.put(localtID, new TreeSet<>());
+        }
+        return machineSetPerThread.get(localtID);
+    }
+    
     /**
      * PModel
      **/

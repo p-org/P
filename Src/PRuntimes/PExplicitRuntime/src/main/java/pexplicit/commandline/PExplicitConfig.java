@@ -64,4 +64,9 @@ public class PExplicitConfig {
     //max number of children search tasks
     @Setter
     int maxChildrenPerTask = 2;
+
+    @Getter
+    @Setter
+    private static int numThreads = 1;    
+
 }

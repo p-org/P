@@ -148,8 +148,16 @@ public class PExplicitOptions {
                         .build();
         addOption(randomSeed);
 
-        // Add here numThreads
-
+        // Number of threads
+        Option numThreads =
+                Option.builder()
+                        .longOpt("nproc")
+                        .desc("Specify the number of threads to use")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("No. of threads (integer)")
+                        .build();
+        addOption(numThreads);
         /*
          * Invisible/expert options
          */
@@ -336,6 +344,9 @@ public class PExplicitOptions {
                         optionError(
                                 option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
+                    break;
+                case "nproc":
+                    PExplicitConfig.setNumThreads(Integer.parseInt(option.getValue()));
                     break;
                 // invisible expert options
                 case "state-caching":

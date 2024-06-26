@@ -1,6 +1,7 @@
 package pexplicit.utils.monitor;
 
 import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.MemoutException;
@@ -30,7 +31,9 @@ public class TimedCall implements Callable<Integer> {
     public Integer call()
             throws MemoutException, BugFoundException, TimeoutException, InterruptedException {
         try {
-            this.scheduler.run();
+            // PExplicitLogger.logInfo("Check: Job submitted");
+            this.scheduler.runParallel();
+            // PExplicitLogger.logInfo("-Check: Job completed-");
         } catch (OutOfMemoryError e) {
             throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
         } catch (NullPointerException | StackOverflowError | ClassCastException e) {

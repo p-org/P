@@ -9,18 +9,38 @@ import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 /**
  * Represents global data structures represented with a singleton class
  */
 public class PExplicitGlobal {
 
-    //  @Getter
-    //  @Setter
-    // private static Map< >
+    // Need a bunch of semaphores?
+
     
     @Getter
     private static final int maxThreads = 2;
-    
+
+
+    private static AtomicLong threadsBlocking = new AtomicLong(0);
+
+    // Method to get the current value of threadSafeLong
+    public static long getThreadsBlocking() {
+        return threadsBlocking.get();
+    }
+
+    // Method to increment threadSafeLong
+    public static void incrementThreadsBlocking() {
+        threadsBlocking.incrementAndGet();
+    }
+
+    public static void decrementThreadsBlocking() {
+        threadsBlocking.decrementAndGet();
+    }
+
+    //  @Getter
+    //  @Setter
+    // private static Map< >    
     @Getter
     private static Map <Long, Integer> tID_to_localtID = new HashMap<>();
 
@@ -33,8 +53,24 @@ public class PExplicitGlobal {
     /**
      * Mapping from machine type to list of all machine instances
      */    
-     @Getter
-    private static final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
+    //  @Getter
+    // private static final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>(); // This is per thread; so make this map of tiD to same Map
+    /**
+     * Mapping from machine type to list of all machine instances
+     */    
+    @Getter
+    private static final Map< Integer, Map<Class<? extends PMachine>, List<PMachine>>> machineListByTypePerThread = new HashMap<>(); // This is per thread; so make this map of tiD to same Map
+
+    public static Map<Class<? extends PMachine>, List<PMachine>> getMachineListByType() {
+        int localtID = tID_to_localtID.get(Thread.currentThread().getId());
+        return machineListByTypePerThread.get(localtID);        
+    }
+
+    public static void putMachineListByType( Map<Class<? extends PMachine>, List<PMachine>> machineListByType  ) {
+        int localtID = tID_to_localtID.get(Thread.currentThread().getId());
+        machineListByTypePerThread.put(localtID, machineListByType);        
+    }
+
     /**
      * Set of machines
      */
@@ -93,6 +129,7 @@ public class PExplicitGlobal {
      * @return Machine
      */
     public static PMachine getGlobalMachine(PMachineId pid) {
+        Map<Class<? extends PMachine>, List<PMachine>> machineListByType = getMachineListByType();
         List<PMachine> machinesOfType = machineListByType.get(pid.getType());
         if (machinesOfType == null) {
             return null;
@@ -112,8 +149,10 @@ public class PExplicitGlobal {
      * @param machineCount Machine type count
      */
     public static void addGlobalMachine(PMachine machine, int machineCount) {
+        Map<Class<? extends PMachine>, List<PMachine>> machineListByType = getMachineListByType();
         if (!machineListByType.containsKey(machine.getClass())) {
-            machineListByType.put(machine.getClass(), new ArrayList<>());
+            machineListByType.put(machine.getClass(), new ArrayList<>()); 
+            putMachineListByType(machineListByType); // PIN: Need lock and key somewhere here! Also, is this local copy ok for future use in this function? Need lock and key for future use?
         }
         assert (machineCount == machineListByType.get(machine.getClass()).size());
         machineListByType.get(machine.getClass()).add(machine);

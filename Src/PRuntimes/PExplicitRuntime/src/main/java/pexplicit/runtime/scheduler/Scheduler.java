@@ -83,6 +83,15 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     public abstract void run() throws TimeoutException, InterruptedException;
 
+    
+    /**
+     * Run the scheduler.
+     *
+     * @throws TimeoutException     Throws timeout exception if timeout is reached
+     * @throws InterruptedException Throws interrupt exception if interrupted
+     */
+    public abstract void runParallel() throws TimeoutException, InterruptedException;
+
     /**
      * Run an iteration.
      *

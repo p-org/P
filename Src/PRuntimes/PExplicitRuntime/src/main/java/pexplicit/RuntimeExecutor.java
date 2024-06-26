@@ -5,6 +5,7 @@ import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategy;
 import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.MemoutException;
@@ -24,7 +25,7 @@ import pexplicit.commandline.PExplicitConfig;
  * Represents the runtime executor that executes the analysis engine
  */
 public class RuntimeExecutor {
-    private static ExecutorService executor;
+    private static ThreadPoolExecutor executor;
     private static ArrayList<Future<Integer>> futures = new ArrayList<>();
     private static ArrayList<ExplicitSearchScheduler> schedulers = new ArrayList<>();
 
@@ -32,13 +33,21 @@ public class RuntimeExecutor {
             throws TimeoutException,
             InterruptedException,
             RuntimeException {
-        try {
+        try { // PIN: If thread gets exception, need to kill the other threads.
             if (timeLimit > 0) {
-                for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
-                    Future<Integer> future = futures.get(i);
+                // PExplicitLogger.logInfo("Check0.1.3.1");
+                
+                for (Future<Integer> future: futures) {
+                    // Future<Integer> future = futures.get(i);
                     future.get(timeLimit, TimeUnit.SECONDS);
                 }
+
+                // PExplicitLogger.logInfo("Check0.1.3.2");
+                
+                
+
             } else {
+                
                 for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
                     Future<Integer> future = futures.get(i);
                     future.get();
@@ -83,7 +92,7 @@ public class RuntimeExecutor {
         PExplicitLogger.logInfo(String.format("... Checker is using '%s' strategy (seed:%s)",
                 PExplicitGlobal.getConfig().getSearchStrategyMode(), PExplicitGlobal.getConfig().getRandomSeed()));
 
-        executor = Executors.newFixedThreadPool(PExplicitGlobal.getMaxThreads());
+        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(PExplicitGlobal.getMaxThreads());
 
         // PExplicitGlobal.setResult("error");
 
@@ -99,12 +108,36 @@ public class RuntimeExecutor {
     private static void process(boolean resume) throws Exception {
         try {
             ArrayList<TimedCall> timedCalls = new ArrayList<>();
+            
+            // PExplicitLogger.logInfo("Check0.1.1");
+            
+            SearchStrategy.createFirstTask();
+            
             for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
                 timedCalls.add( new TimedCall(schedulers.get(i), resume, i));
-                futures.add(executor.submit(timedCalls.get(i)));
             }
+
+            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
+                Future<Integer> future = executor.submit(timedCalls.get(i));
+                futures.add(future);
+            }
+
+            // Thread.sleep(1000);
+
+            // Get the number of pending tasks
+            int pendingTasks = executor.getQueue().size();
+            PExplicitLogger.logInfo("Number of pending tasks: " + pendingTasks);
+
+
+            // PExplicitLogger.logInfo("Check0.1.2");
+
             TimeMonitor.startInterval();
+
+            // PExplicitLogger.logInfo("Check0.1.3");
+
             runWithTimeout((long) PExplicitGlobal.getConfig().getTimeLimit());
+
+            // PExplicitLogger.logInfo("Check0.1.4");
         } catch (TimeoutException e) {
             PExplicitGlobal.setStatus(STATUS.TIMEOUT);
             throw new Exception("TIMEOUT", e);
@@ -172,10 +205,16 @@ public class RuntimeExecutor {
             localSchedulers.add(localCopy);
         }
 
-        // PExplicitLogger.logInfo("Hello, World!");
+        // PExplicitLogger.logInfo("Check0.0");
 
         preprocess();
+
+        // PExplicitLogger.logInfo("Check0.1");
+
         process(false);
+
+        // PExplicitLogger.logInfo("Check0.2");
+
     }
 
 }

@@ -4,5 +4,6 @@ cd ./Src/PRuntimes/PExplicitRuntime/
 echo "-------------------Build Over---------------------------"
 cd -
 cd ../../scriptsRepo/src/P-Evaluation-Tests/
+echo "Running script ..."
 ./scripts/run_pexplicitzshrc.sh ../../../SyncedForkedRepo/P/Tutorial/1_ClientServer test -tc tcMultipleClients --seed 0 -t 10 -s 0 -v 3 --schedules-per-task 2
 cd -

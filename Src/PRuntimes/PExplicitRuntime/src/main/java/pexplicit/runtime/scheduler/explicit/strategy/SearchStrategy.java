@@ -8,21 +8,26 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Collections;
+
+import pexplicit.runtime.PExplicitGlobal;
 
 @Getter
 public abstract class SearchStrategy implements Serializable {
     /**
      * List of all search tasks
-     */ // Make 3 static
-    final List<SearchTask> allTasks = new ArrayList<>();
+     */ 
+    final static List<SearchTask> allTasks = Collections.synchronizedList(new ArrayList<>());
     /**
      * Set of all search tasks that are pending
      */
-    final Set<Integer> pendingTasks = new HashSet<>();
+    @Getter
+     final static  Set<Integer> pendingTasks = Collections.synchronizedSet(new HashSet<>()); // Is synchornized hash set
     /**
      * List of all search tasks that finished
      */
-    final List<Integer> finishedTasks = new ArrayList<>();
+    @Getter
+     final static List<Integer> finishedTasks = Collections.synchronizedList(new ArrayList<>());
     /**
      * Task id of the latest search task
      */
@@ -39,10 +44,17 @@ public abstract class SearchStrategy implements Serializable {
         return newTask;
     }
 
-    public void createFirstTask() {
+ 
+
+    
+    public static void createFirstTask() {
         assert (allTasks.size() == 0);
-        SearchTask firstTask = createTask(null);
-        setCurrTask(firstTask);
+        // SearchTask firstTask = createTask(null); // Need a static version of createTask here, so just put createTask implementation here for null argument
+        SearchTask newTask = new SearchTask(allTasks.size(), null);
+        allTasks.add(newTask);
+        pendingTasks.add(newTask.getId());
+
+        // setCurrTask(firstTask); // Add it to pending Task List instead of setting it to set current task; like in pendingTasks.add(newTask.getId());
     }
 
     public SearchTask getCurrTask() {
@@ -72,7 +84,13 @@ public abstract class SearchStrategy implements Serializable {
 
     public SearchTask setNextTask() {
         if (pendingTasks.isEmpty()) {
-            return null;
+            PExplicitGlobal.incrementThreadsBlocking();
+            while(pendingTasks.isEmpty()) {
+                if (PExplicitGlobal.getThreadsBlocking() == PExplicitGlobal.getMaxThreads())
+                    return null;
+                Thread.sleep(50000);
+            }
+            PExplicitGlobal.decrementThreadsBlocking();
         }
 
         SearchTask nextTask = popNextTask();

@@ -28,4 +28,12 @@ public class SearchStrategyRandom extends SearchStrategy {
         elementSet.remove(result);
         return result;
     }
+
+    public SearchTask popNextTaskAndCheckEmpty() {
+        if (isEmpty)
+            return false;
+        else popNextTask();
+    }
+
+
 }

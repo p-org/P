@@ -101,10 +101,10 @@ public class RuntimeExecutor {
 
     private static void process(boolean resume) throws Exception {
         try {
+            // create and add first task through scheduler 0
+            schedulers.get(0).getSearchStrategy().createFirstTask();
+
             ArrayList<TimedCall> timedCalls = new ArrayList<>();
-            
-            SearchStrategy.createFirstTask();
-            
             for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
                 timedCalls.add( new TimedCall(schedulers.get(i), resume, i));
             }

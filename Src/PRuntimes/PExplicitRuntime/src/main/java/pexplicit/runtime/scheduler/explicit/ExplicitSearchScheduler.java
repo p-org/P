@@ -47,7 +47,6 @@ public class ExplicitSearchScheduler extends Scheduler {
      * Search strategy orchestrator
      */
     @Getter
-    @Setter
     private final transient SearchStrategy searchStrategy;
     /**
      * Backtrack choice number
@@ -104,7 +103,7 @@ public class ExplicitSearchScheduler extends Scheduler {
      * @throws TimeoutException Throws timeout exception if timeout is reached
      */
     @Override
-    public void runParallel() throws TimeoutException {
+    public void runParallel() throws TimeoutException, InterruptedException {
         
         // PExplicitLogger.logRunTest();  // TODO : Add log Info feature
         
@@ -129,7 +128,8 @@ public class ExplicitSearchScheduler extends Scheduler {
             // PExplicitLogger.logStartTask(searchStrategy.getCurrTask());   // TODO : Add log Info feature
             isDoneIterating = false;
             while (!isDoneIterating) {
-                // SearchStatistics.iteration++;   // TODO : Add log Info feature
+                 searchStrategy.incrementIteration();
+                // TODO : Add log Info feature
                 // PExplicitLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); // TODO : Add log Info feature
                 if (stepNumber == 0) {
                     start();
@@ -448,7 +448,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
     }
 
-    private void addRemainingChoicesAsChildrenTasks() {
+    private void addRemainingChoicesAsChildrenTasks() throws InterruptedException {
         SearchTask parentTask = searchStrategy.getCurrTask();
         int numChildrenAdded = 0;
         for (int i: parentTask.getSearchUnitKeys(false)) {
@@ -474,7 +474,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         searchStrategy.getFinishedTasks().add(currTask.getId());
     }
 
-    private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) {
+    private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) throws InterruptedException {
         SearchTask newTask = SearchStrategy.createTask(parentTask);
 
         int maxChoiceNum = choiceNum;
@@ -503,7 +503,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     /**
      * Set next backtrack task with given orchestration mode
      */
-    public SearchTask setNextTask() {
+    public SearchTask setNextTask() throws InterruptedException {
         SearchTask nextTask = searchStrategy.setNextTask();
         if (nextTask != null) {
             // PExplicitLogger.logNextTask(nextTask);    // TODO : Add log Info feature

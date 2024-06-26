@@ -150,7 +150,7 @@ public class PExplicitGlobal {
             return null;
         }
         PMachine result = machineListByType.get(pid.getType()).get(pid.getTypeId());
-        assert (machineSet.contains(result));
+        assert (getMachineSet().contains(result));
         return result;
     }
 
@@ -168,7 +168,7 @@ public class PExplicitGlobal {
         }
         assert (machineCount == machineListByType.get(machine.getClass()).size());
         machineListByType.get(machine.getClass()).add(machine);
-        machineSet.add(machine);
+        getMachineSet().add(machine);
         assert (machineListByType.get(machine.getClass()).get(machineCount) == machine);
     }
 }

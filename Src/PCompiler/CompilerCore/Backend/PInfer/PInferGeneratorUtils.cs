@@ -89,6 +89,7 @@ namespace Plang.Compiler.Backend.PInfer
         public PEventVariable(string name) : base(name, null, VariableRole.Temp) {}
 
         public string EventName => EventDecl.Name;
+        public int Order { get; set; }
         public PEvent EventDecl { get; set; }
     }
 
@@ -277,6 +278,7 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (var numType in numericTypes)
             {
                 AddBuiltinPredicate("<", Notation.Infix, numType, numType);
+                // AddBuiltinPredicate("==", Notation.Infix, numType, numType);
             }
         }
         public static IEnumerable<IPredicate> Store => _Store.Values.SelectMany(x => x.Values);

@@ -5,6 +5,7 @@ using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
 {
@@ -12,11 +13,13 @@ namespace Plang.Compiler.Backend.PInfer
     {
         public HashSet<string> FuncNames = [];
         private readonly HashSet<IPExpr> Predicates;
+        private readonly HashSet<IPExpr> Terms;
         private readonly IDictionary<IPExpr, HashSet<Variable>> FreeEvents;
 
-        public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
+        public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, HashSet<IPExpr> terms, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
         {
             Predicates = predicates;
+            Terms = terms;
             FreeEvents = freeEvents;
             Job = job;
         }
@@ -33,6 +36,7 @@ namespace Plang.Compiler.Backend.PInfer
         protected override void GenerateCodeImpl()
         {
             WriteLine("public class " + Job.ProjectName + " implements Serializable {");
+            WriteLine("public record PredicateWrapper (String repr, boolean negate) {}");
             foreach (var pred in PredicateStore.Store)
             {
                 WriteFunction(pred.Function);
@@ -51,20 +55,75 @@ namespace Plang.Compiler.Backend.PInfer
                 repr2Metadata[rawExpr] = (fname, parameters);
             }
             WritePredicateInterface(repr2Metadata);
+            repr2Metadata = [];
+            foreach (var term in Terms)
+            {
+                var rawExpr = GenerateRawExpr(term);
+                var fname = $"term_{i++}";
+                repr2Metadata[rawExpr] = (fname, WriteTermDefn(term, fname));
+            }
+            WriteTermInterface(repr2Metadata);
+            WriteLine("}");
+        }
+
+        protected void WriteTermInterface(IDictionary<string, (string, List<Variable>)> nameMap)
+        {
+            WriteLine($"public Object termOf(String repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
+            WriteLine("return switch (repr) {");
+            foreach (var (repr, (fname, parameters)) in nameMap)
+            {
+                WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
+            }
+            WriteLine("default -> throw new RuntimeException(\"Invalid representation: \" + repr);");
+            WriteLine("};");
             WriteLine("}");
         }
 
         protected void WritePredicateInterface(IDictionary<string, (string, List<Variable>)> nameMap)
         {
-            WriteLine($"public boolean invoke(String repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
-            WriteLine("switch (repr) {");
+            WriteLine($"public boolean invoke(PredicateWrapper repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
+            WriteLine("return switch (repr.repr()) {");
             foreach (var (repr, (fname, parameters)) in nameMap)
             {
-                WriteLine($"case \"{repr}\": return {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{i}]"))});");
+                WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
             }
-            WriteLine("default: throw new RuntimeException(\"Invalid representation: \" + repr);");
+            WriteLine("default -> throw new RuntimeException(\"Invalid representation: \" + repr);");
+            WriteLine("};");
             WriteLine("}");
+
+            WriteLine($"public boolean conjoin(List<PredicateWrapper> repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
+            WriteLine("boolean result = true;");
+            WriteLine("for (PredicateWrapper wrapper: repr) {");
+            WriteLine("result = result && (wrapper.negate() != this.invoke(wrapper, arguments));");
             WriteLine("}");
+            WriteLine("return result;");
+            WriteLine("}");
+        }
+
+        protected List<Variable> WriteTermDefn(IPExpr term, string fname)
+        {
+            var parameters = FreeEvents[term].ToList();
+            var type = term.Type.Canonicalize();
+            var retType = "Object";
+            if (type is PrimitiveType)
+            {
+                retType = Types.JavaTypeFor(type).TypeName;
+            }
+            if (type is EnumType)
+            {
+                retType = "int";
+            }
+            WriteLine($"private {retType} {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");
+            if (type is EnumType)
+            {
+                WriteLine("return " + GenerateCodeExpr(term) + ".getValue();");
+            }
+            else
+            {
+                WriteLine("return " + GenerateCodeExpr(term) + ";");
+            }
+            WriteLine("}");
+            return parameters;
         }
 
         protected List<Variable> WritePredicateDefn(IPExpr predicate, string fname)

@@ -56,11 +56,12 @@ namespace Plang.Compiler.Backend.PInfer
             var termDepth = job.TermDepth.Value;
             var indexType = PInferBuiltinTypes.Index;
             var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
-            foreach (var eventInst in quantifiedEvents) {
+            foreach ((var eventInst, var order) in quantifiedEvents.Select((x, i) => (x, i))) {
                 var eventAtom = new PEventVariable($"e{i}")
                 {
                     Type = ExplicateTypeDef(eventInst.PayloadType),
-                    EventDecl = eventInst
+                    EventDecl = eventInst,
+                    Order = order
                 };
                 var expr = new VariableAccessExpr(null, eventAtom);
                 AddTerm(0, expr,  [eventAtom]);
@@ -82,7 +83,7 @@ namespace Plang.Compiler.Backend.PInfer
             MkEqComparison();
             CompiledFile terms = new($"{job.ProjectName}.terms");
             CompiledFile predicates = new($"{job.ProjectName}.predicates");
-            JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, FreeEvents);
+            JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, VisitedSet, FreeEvents);
             IEnumerable<CompiledFile> compiledJavaSrc = codegen.GenerateCode(javaCtx, globalScope);
             foreach (var term in VisitedSet)
             {

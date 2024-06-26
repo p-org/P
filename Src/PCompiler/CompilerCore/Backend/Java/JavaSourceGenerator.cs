@@ -132,7 +132,7 @@ namespace Plang.Compiler.Backend.Java
 
         private static string GenerateGetMachine(string e, string fieldName)
         {
-            return $"parseMachineId({e}.getString(\"${fieldName}\"))";
+            return $"parseMachineId({e}.getString(\"{fieldName}\"))";
         }
 
         internal string GenerateJSONObjectGet(string e, string fieldName, PLanguageType type)

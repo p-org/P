@@ -13,7 +13,8 @@ public class SearchStrategyAStar extends SearchStrategy {
                         }
                     });
 
-    public SearchStrategyAStar() {}
+    public SearchStrategyAStar() {
+    }
 
     public void addNewTask(SearchTask task) {
         elements.offer(task);

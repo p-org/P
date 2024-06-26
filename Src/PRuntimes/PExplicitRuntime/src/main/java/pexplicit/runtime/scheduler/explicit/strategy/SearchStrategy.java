@@ -1,16 +1,11 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
+import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Collections;
-
-import pexplicit.runtime.PExplicitGlobal;
+import java.util.*;
 
 @Getter
 public abstract class SearchStrategy implements Serializable {
@@ -22,12 +17,12 @@ public abstract class SearchStrategy implements Serializable {
      * Set of all search tasks that are pending
      */
     @Getter
-     final static  Set<Integer> pendingTasks = Collections.synchronizedSet(new HashSet<>()); // Is synchornized hash set
+    final static Set<Integer> pendingTasks = Collections.synchronizedSet(new HashSet<>()); // Is synchornized hash set
     /**
      * List of all search tasks that finished
      */
     @Getter
-     final static List<Integer> finishedTasks = Collections.synchronizedList(new ArrayList<>());
+    final static List<Integer> finishedTasks = Collections.synchronizedList(new ArrayList<>());
     /**
      * Task id of the latest search task
      */

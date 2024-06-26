@@ -13,8 +13,6 @@ import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
-import pexplicit.runtime.scheduler.choice.Choice;
-import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.choice.ScheduleSearchUnit;
 import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
@@ -209,9 +207,9 @@ public class PExplicitLogger {
     /**
      * Log when backtracking to a search unit
      *
-     * @param stepNum Step number
+     * @param stepNum   Step number
      * @param choiceNum Choice number
-     * @param unit Search unit to which backtracking to
+     * @param unit      Search unit to which backtracking to
      */
     public static void logBacktrack(int stepNum, int choiceNum, SearchUnit unit) {
         if (verbosity > 1) {

@@ -249,8 +249,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      */
     public PMachineValue create(
             Class<? extends PMachine> machineType, PValue<?> payload, Function<Integer, ? extends PMachine> constructor) {
-                int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-                PMachine machine = ((PExplicitGlobal.getSchedulers()).get(localtID)).allocateMachine(machineType, constructor);
+        int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
+        PMachine machine = ((PExplicitGlobal.getSchedulers()).get(localtID)).allocateMachine(machineType, constructor);
         PMessage msg = new PMessage(PEvent.createMachine, machine, payload);
         sendBuffer.add(msg);
         return new PMachineValue(machine);

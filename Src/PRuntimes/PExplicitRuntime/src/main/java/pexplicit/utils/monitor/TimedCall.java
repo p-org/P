@@ -1,18 +1,14 @@
 package pexplicit.utils.monitor;
 
+import lombok.Getter;
+import lombok.Setter;
 import pexplicit.runtime.PExplicitGlobal;
-import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.MemoutException;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
-
-import javax.annotation.concurrent.ThreadSafe;
-
-import lombok.Getter;
-import lombok.Setter;
 
 public class TimedCall implements Callable<Integer> {
     private final Scheduler scheduler;

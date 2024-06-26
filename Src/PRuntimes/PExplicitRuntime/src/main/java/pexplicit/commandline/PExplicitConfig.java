@@ -11,6 +11,9 @@ import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
  */
 @Getter
 public class PExplicitConfig {
+    @Getter
+    @Setter
+    private static int numThreads = 1;
     // default name of the test driver
     final String testDriverDefault = "DefaultImpl";
     // name of the test driver
@@ -64,9 +67,5 @@ public class PExplicitConfig {
     //max number of children search tasks
     @Setter
     int maxChildrenPerTask = 2;
-
-    @Getter
-    @Setter
-    private static int numThreads = 1;    
 
 }

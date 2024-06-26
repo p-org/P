@@ -5,7 +5,7 @@ import pexplicit.values.PValue;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DataSearchUnit extends SearchUnit<PValue<?>>{
+public class DataSearchUnit extends SearchUnit<PValue<?>> {
     /**
      * Constructor
      */

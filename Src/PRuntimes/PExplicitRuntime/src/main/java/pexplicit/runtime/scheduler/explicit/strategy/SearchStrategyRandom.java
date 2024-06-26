@@ -1,21 +1,17 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.Semaphore;
-
 import pexplicit.utils.random.RandomNumberGenerator;
+
+import java.util.*;
+import java.util.concurrent.Semaphore;
 
 public class SearchStrategyRandom extends SearchStrategy {
     private static final Semaphore lock = new Semaphore(1);
     private static final List<SearchTask> elementList = new ArrayList<>();
     private static final Set<SearchTask> elementSet = new HashSet<>();
 
-    public SearchStrategyRandom() {}
+    public SearchStrategyRandom() {
+    }
 
     public void addNewTask(SearchTask task) throws InterruptedException {
         lock.acquire();

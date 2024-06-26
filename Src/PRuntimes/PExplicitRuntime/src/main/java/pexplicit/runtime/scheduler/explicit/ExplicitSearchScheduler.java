@@ -92,7 +92,8 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     @Override
     public void run() throws TimeoutException {
-        return;
+
+
     }    
 
 
@@ -126,6 +127,13 @@ public class ExplicitSearchScheduler extends Scheduler {
         
 
         while (true) {
+            // schedule limit not reached and there are pending tasks
+            // set the next task
+            SearchTask nextTask = setNextTask();
+            if (nextTask == null ) {  // || TODO: PExplicitGlobal.getStatus() == STATUS.SCHEDULEOUT
+                // all tasks completed or schedule limit reached
+                break;
+            }            
             // PExplicitLogger.logStartTask(searchStrategy.getCurrTask());
             isDoneIterating = false;
             while (!isDoneIterating) {
@@ -141,15 +149,10 @@ public class ExplicitSearchScheduler extends Scheduler {
             endCurrTask();
             // PExplicitLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask());
 
-            if (searchStrategy.getPendingTasks().isEmpty() || PExplicitGlobal.getStatus() == STATUS.SCHEDULEOUT) {
-                // all tasks completed or schedule limit reached
-                break;
-            }
 
-            // schedule limit not reached and there are pending tasks
-            // set the next task
-            SearchTask nextTask = setNextTask();
-            assert (nextTask != null);
+
+
+
         }
     }
 

@@ -9,6 +9,7 @@ import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 /**
  * Represents global data structures represented with a singleton class
@@ -42,7 +43,7 @@ public class PExplicitGlobal {
     //  @Setter
     // private static Map< >    
     @Getter
-    private static Map <Long, Integer> tID_to_localtID = new HashMap<>();
+    private static Map <Long, Integer> tID_to_localtID = new ConcurrentHashMap<>();
 
 
     // Method to add to tID_to_localtID
@@ -59,11 +60,11 @@ public class PExplicitGlobal {
      * Mapping from machine type to list of all machine instances
      */    
     @Getter
-    private static final Map< Integer, Map<Class<? extends PMachine>, List<PMachine>>> machineListByTypePerThread = new HashMap<>(); // This is per thread; so make this map of tiD to same Map
+    private static final Map< Integer, Map<Class<? extends PMachine>, List<PMachine>>> machineListByTypePerThread = new ConcurrentHashMap<>(); // This is per thread; so make this map of tiD to same Map
 
     public static Map<Class<? extends PMachine>, List<PMachine>> getMachineListByType() {
         int localtID = tID_to_localtID.get(Thread.currentThread().getId());
-        return machineListByTypePerThread.get(localtID);        
+        return machineListByTypePerThread.get(localtID);  // If this key is not there; initialize it to an empty Hashmap and then return that there!      
     }
 
     public static void putMachineListByType( Map<Class<? extends PMachine>, List<PMachine>> machineListByType  ) {
@@ -105,9 +106,7 @@ public class PExplicitGlobal {
         return schedulers.get(localtID);        
     }
 
-    @Getter
-    @Setter
-    private static SearchStrategyMode searchStrategyMode;
+
     /**
      * Status of the run
      **/

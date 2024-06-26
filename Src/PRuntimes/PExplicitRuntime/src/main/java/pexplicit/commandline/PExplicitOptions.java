@@ -148,6 +148,7 @@ public class PExplicitOptions {
                         .build();
         addOption(randomSeed);
 
+        // Add here numThreads
 
         /*
          * Invisible/expert options

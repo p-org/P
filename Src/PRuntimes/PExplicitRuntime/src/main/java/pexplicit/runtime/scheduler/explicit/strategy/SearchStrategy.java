@@ -82,6 +82,7 @@ public abstract class SearchStrategy implements Serializable {
         return allTasks.get(id);
     }
 
+    @throws InterruptedException
     public SearchTask setNextTask() {
         if (pendingTasks.isEmpty()) {
             PExplicitGlobal.incrementThreadsBlocking();

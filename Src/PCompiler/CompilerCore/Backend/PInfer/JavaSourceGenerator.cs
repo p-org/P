@@ -13,10 +13,10 @@ namespace Plang.Compiler.Backend.PInfer
     {
         public HashSet<string> FuncNames = [];
         private readonly HashSet<IPExpr> Predicates;
-        private readonly HashSet<IPExpr> Terms;
+        private readonly IEnumerable<IPExpr> Terms;
         private readonly IDictionary<IPExpr, HashSet<Variable>> FreeEvents;
 
-        public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, HashSet<IPExpr> terms, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
+        public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
         {
             Predicates = predicates;
             Terms = terms;
@@ -68,7 +68,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         protected void WriteTermInterface(IDictionary<string, (string, List<Variable>)> nameMap)
         {
-            WriteLine($"public Object termOf(String repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
+            WriteLine($"public static Object termOf(String repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
             WriteLine("return switch (repr) {");
             foreach (var (repr, (fname, parameters)) in nameMap)
             {
@@ -81,7 +81,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         protected void WritePredicateInterface(IDictionary<string, (string, List<Variable>)> nameMap)
         {
-            WriteLine($"public boolean invoke(PredicateWrapper repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
+            WriteLine($"public static boolean invoke(PredicateWrapper repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
             WriteLine("return switch (repr.repr()) {");
             foreach (var (repr, (fname, parameters)) in nameMap)
             {
@@ -91,12 +91,11 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("};");
             WriteLine("}");
 
-            WriteLine($"public boolean conjoin(List<PredicateWrapper> repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
-            WriteLine("boolean result = true;");
+            WriteLine($"public static boolean conjoin(List<PredicateWrapper> repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
             WriteLine("for (PredicateWrapper wrapper: repr) {");
-            WriteLine("result = result && (wrapper.negate() != this.invoke(wrapper, arguments));");
+            WriteLine("if (wrapper.negate() != invoke(wrapper, arguments)) return false;");
             WriteLine("}");
-            WriteLine("return result;");
+            WriteLine("return true;");
             WriteLine("}");
         }
 
@@ -113,7 +112,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 retType = "int";
             }
-            WriteLine($"private {retType} {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");
+            WriteLine($"private static {retType} {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");
             if (type is EnumType)
             {
                 WriteLine("return " + GenerateCodeExpr(term) + ".getValue();");
@@ -129,7 +128,7 @@ namespace Plang.Compiler.Backend.PInfer
         protected List<Variable> WritePredicateDefn(IPExpr predicate, string fname)
         {
             var parameters = FreeEvents[predicate].ToList();
-            WriteLine($"private boolean {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");
+            WriteLine($"private static boolean {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");
             WriteLine("return " + GenerateCodeExpr(predicate) + ";");
             WriteLine("}");
             return parameters;

@@ -16,9 +16,12 @@ namespace Plang.Compiler.Backend.PInfer
         public PInferPredicateGenerator()
         {
             Terms = [];
-            VisitedSet = new HashSet<IPExpr>(new ASTComparer());
-            Predicates = new HashSet<IPExpr>(new ASTComparer());
-            FreeEvents = new Dictionary<IPExpr, HashSet<Variable>>(new ASTComparer());
+            var comparer = new ASTComparer();
+            VisitedSet = new HashSet<IPExpr>(comparer);
+            Predicates = new HashSet<IPExpr>(comparer);
+            FreeEvents = new Dictionary<IPExpr, HashSet<Variable>>(comparer);
+            TermOrder = new Dictionary<IPExpr, int>(comparer);
+            PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(comparer);
         }
 
         public override IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -83,19 +86,22 @@ namespace Plang.Compiler.Backend.PInfer
             MkEqComparison();
             CompiledFile terms = new($"{job.ProjectName}.terms");
             CompiledFile predicates = new($"{job.ProjectName}.predicates");
+            // var rawExpr = new HashSet<IPExpr>()
             JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, VisitedSet, FreeEvents);
             IEnumerable<CompiledFile> compiledJavaSrc = codegen.GenerateCode(javaCtx, globalScope);
             foreach (var term in VisitedSet)
             {
-                ctx.WriteLine(terms.Stream, codegen.GenerateRawExpr(term));
+                ctx.WriteLine(terms.Stream, $"{TermOrder[term]} " + codegen.GenerateRawExpr(term));
             }
             foreach (var pred in Predicates)
             {
+                ctx.WriteLine(predicates.Stream, string.Join(" ", PredicateBoundedTerm[pred]));
                 ctx.WriteLine(predicates.Stream, codegen.GenerateRawExpr(pred));
             }
             GenerateBuildScript(job);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
             return compiledJavaSrc.Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
+                                .Concat(new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents).GenerateCode(javaCtx, globalScope))
                                 .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
                                 .Concat(eventDefSource)
                                 .Concat([terms, predicates]);
@@ -147,6 +153,7 @@ namespace Plang.Compiler.Backend.PInfer
                     if (PredicateCallExpr.MkPredicateCall(pred, parameters.ToList(), out PredicateCallExpr expr)){
                         FreeEvents[expr] = events;
                         Predicates.Add(expr);
+                        PredicateBoundedTerm[expr] = parameters.Select(x => TermOrder[x]).ToHashSet();
                     }
                 }
             }
@@ -236,6 +243,7 @@ namespace Plang.Compiler.Backend.PInfer
                         var rhs = allTerms[j];
                         var expr = new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
                         Predicates.Add(expr);
+                        PredicateBoundedTerm[expr] = [TermOrder[lhs], TermOrder[rhs]];
                         FreeEvents[expr] = GetUnboundedEventsMultiple(lhs, rhs);
                     }
                 }
@@ -383,6 +391,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             Terms[depth][expr.Type].Add(expr);
             FreeEvents[expr] = unboundedEvents;
+            TermOrder[expr] = VisitedSet.Count;
             VisitedSet.Add(expr);
         }
 
@@ -431,6 +440,8 @@ namespace Plang.Compiler.Backend.PInfer
         private HashSet<IPExpr> Predicates { get; }
         private HashSet<IPExpr> VisitedSet { get; }
         private Dictionary<IPExpr, HashSet<Variable>> FreeEvents { get; }
+        private Dictionary<IPExpr, int> TermOrder { get; }
+        private Dictionary<IPExpr, HashSet<int>> PredicateBoundedTerm { get; }
         private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {
                                                                 true => Terms[depth].Values.SelectMany(x => x),
                                                                 false => []};

@@ -22,6 +22,8 @@ namespace Plang.Compiler.Backend.PInfer
             FreeEvents = new Dictionary<IPExpr, HashSet<Variable>>(comparer);
             TermOrder = new Dictionary<IPExpr, int>(comparer);
             PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(comparer);
+            PredicateOrder = new Dictionary<IPExpr, int>(comparer);
+            Contraditions = new Dictionary<IPExpr, HashSet<IPExpr>>(comparer);
         }
 
         public override IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -96,7 +98,16 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (var pred in Predicates)
             {
                 ctx.WriteLine(predicates.Stream, string.Join(" ", PredicateBoundedTerm[pred]));
-                ctx.WriteLine(predicates.Stream, codegen.GenerateRawExpr(pred));
+                string contraditingPredicates = "";
+                foreach (var c in Contraditions[pred])
+                {
+                    if (PredicateOrder.ContainsKey(c))
+                    {
+                        contraditingPredicates = $"{PredicateOrder[c]} " + contraditingPredicates;
+                    }
+                }
+                ctx.WriteLine(predicates.Stream, contraditingPredicates);
+                ctx.WriteLine(predicates.Stream, $"{PredicateOrder[pred]} " + codegen.GenerateRawExpr(pred));
             }
             GenerateBuildScript(job);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
@@ -150,8 +161,18 @@ namespace Plang.Compiler.Backend.PInfer
                 foreach (var parameters in CartesianProduct(sigList, varMap))
                 {
                     var events = GetUnboundedEventsMultiple(parameters.ToArray());
-                    if (PredicateCallExpr.MkPredicateCall(pred, parameters.ToList(), out PredicateCallExpr expr)){
+                    var param = parameters.ToList();
+                    if (PredicateCallExpr.MkPredicateCall(pred, param, out PredicateCallExpr expr)){
                         FreeEvents[expr] = events;
+                        PredicateOrder[expr] = Predicates.Count;
+                        Contraditions[expr] = [];
+                        foreach (var c in PredicateStore.GetContradictions(pred))
+                        {
+                            if (PredicateCallExpr.MkPredicateCall(c, param, out var contra))
+                            {
+                                Contraditions[expr].Add(contra);
+                            }
+                        }
                         Predicates.Add(expr);
                         PredicateBoundedTerm[expr] = parameters.Select(x => TermOrder[x]).ToHashSet();
                     }
@@ -241,7 +262,15 @@ namespace Plang.Compiler.Backend.PInfer
                     {
                         var lhs = allTerms[i];
                         var rhs = allTerms[j];
-                        var expr = new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
+                        // var expr = new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
+                        var expr = PredicateCallExpr.MkEqualityComparison(lhs, rhs);
+                        Contraditions[expr] = [];
+                        if (PredicateCallExpr.MkPredicateCall("<", [lhs, rhs], out var c))
+                        {
+                            Contraditions[expr].Add(c);
+                            Contraditions[c] = [expr];
+                        }
+                        PredicateOrder[expr] = Predicates.Count;
                         Predicates.Add(expr);
                         PredicateBoundedTerm[expr] = [TermOrder[lhs], TermOrder[rhs]];
                         FreeEvents[expr] = GetUnboundedEventsMultiple(lhs, rhs);
@@ -335,24 +364,49 @@ namespace Plang.Compiler.Backend.PInfer
             return false;
         }
 
-        private static void AggregateDefinedPredicates(List<string> predicates, Scope globalScope) {
+        private void AggregateDefinedPredicates(List<string> predicates, Scope globalScope) {
+            Dictionary<string, HashSet<DefinedPredicate>> contradictionSet = []; 
             foreach (var name in predicates)
             {
-                if (GetFunction(name, globalScope, out Function pred))
+                var funcName = name;
+                List<string> contradictions = [];
+                if (name.Contains(':'))
+                {
+                    var split = name.Split(":");
+                    funcName = split[0];
+                    contradictions = [.. split[1..]];
+                }
+                if (GetFunction(funcName, globalScope, out Function pred))
                 {
                     if (pred.Signature.ReturnType.Equals(PrimitiveType.Bool))
                     {
                         // PredicateStore.Store.Add(new DefinedPredicate(pred));
-                        PredicateStore.AddPredicate(new DefinedPredicate(pred));
+                        List<DefinedPredicate> contraPredicates = contradictions.SelectMany(x => {
+                            if (contradictionSet.TryGetValue(x, out var s)) {
+                                return s;
+                            }
+                            return [];
+                        }).ToList();
+                        var definedPred = new DefinedPredicate(pred);
+                        PredicateStore.AddPredicate(definedPred, contraPredicates);
+                        foreach (var c in contradictions)
+                        {
+                            if (!contradictionSet.TryGetValue(c, out HashSet<DefinedPredicate> value))
+                            {
+                                value = [];
+                                contradictionSet.Add(c, value);
+                            }
+                            value.Add(definedPred);
+                        }
                     }
                     else
                     {
-                        throw new Exception($"Predicate {name} should have return type `bool` ({pred.Signature.ReturnType} is returned)");
+                        throw new Exception($"Predicate {funcName} should have return type `bool` ({pred.Signature.ReturnType} is returned)");
                     }
                 }
                 else
                 {
-                    throw new Exception($"Predicate {name} is not defined");
+                    throw new Exception($"Predicate {funcName} is not defined");
                 }
             }
         }
@@ -441,6 +495,8 @@ namespace Plang.Compiler.Backend.PInfer
         private HashSet<IPExpr> VisitedSet { get; }
         private Dictionary<IPExpr, HashSet<Variable>> FreeEvents { get; }
         private Dictionary<IPExpr, int> TermOrder { get; }
+        private Dictionary<IPExpr, int> PredicateOrder { get; }
+        private Dictionary<IPExpr, HashSet<IPExpr>> Contraditions { get; }
         private Dictionary<IPExpr, HashSet<int>> PredicateBoundedTerm { get; }
         private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {
                                                                 true => Terms[depth].Values.SelectMany(x => x),

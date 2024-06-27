@@ -46,11 +46,16 @@ namespace Plang.Compiler.Backend.PInfer
                 case (NamedTupleAccessExpr ex, NamedTupleAccessExpr ey):
                     return ex.FieldName.Equals(ey.FieldName) && Equals(ex.SubExpr, ey.SubExpr);
                 case (FunCallExpr ex, FunCallExpr ey):
-                    return ex.Function.Equals(ey.Function) && ex.Arguments.Count == ey.Arguments.Count && ex.Arguments.Zip(ey.Arguments, Equals).All(b => b);
+                    return ex.Function.Name.Equals(ey.Function.Name) && ex.Arguments.Count == ey.Arguments.Count
+                            && ex.Arguments.Select(x => x.Type).Zip(ey.Arguments.Select(x => x.Type), Equals).All(b => b) && ex.Function.Signature.ReturnType.Equals(ey.Function.Signature.ReturnType);
+                case (DefinedPredicate ex, DefinedPredicate ey):
+                    return ex.Name.Equals(ey.Name) && ex.Function.Equals(ey.Function);
+                case (BuiltinPredicate ex, BuiltinPredicate ey):
+                    return ex.Name.Equals(ey.Name) && ex.Function.Equals(ey.Function);
                 default:
-                    if (x.GetType().Equals(y.GetType()))
+                    if (x.Type.Equals(y.Type))
                     {
-                        throw new NotImplementedException();
+                        throw new NotImplementedException($"Not implemented for {x} vs {y}");
                     }
                     return false;
             }
@@ -61,7 +66,7 @@ namespace Plang.Compiler.Backend.PInfer
             switch (obj)
             {
                 case VariableAccessExpr ex:
-                    return ex.Variable.Name.GetHashCode();
+                    return (ex.Variable.Name, PInferPredicateGenerator.ShowType(ex.Type)).GetHashCode();
                 case IntLiteralExpr ex:
                     return ex.Value.GetHashCode();
                 case BoolLiteralExpr ex:
@@ -69,17 +74,24 @@ namespace Plang.Compiler.Backend.PInfer
                 case FloatLiteralExpr ex:
                     return ex.Value.GetHashCode();
                 case TupleAccessExpr ex:
-                    return (ex.FieldNo, ex.SubExpr).GetHashCode();
+                    return (ex.FieldNo, GetHashCode(ex.SubExpr)).GetHashCode();
                 case BinOpExpr ex:
-                    return (ex.Operation, ex.Lhs, ex.Rhs).GetHashCode();
+                    return (ex.Operation, GetHashCode(ex.Lhs), GetHashCode(ex.Rhs)).GetHashCode();
                 case UnaryOpExpr ex:
-                    return (ex.Operation, ex.SubExpr).GetHashCode();
+                    return (ex.Operation, GetHashCode(ex.SubExpr)).GetHashCode();
                 case NamedTupleAccessExpr ex:
-                    return (ex.FieldName, ex.SubExpr).GetHashCode();
+                    return (ex.FieldName, GetHashCode(ex.SubExpr)).GetHashCode();
                 case FunCallExpr ex:
-                    return (ex.Function, ex.Arguments).GetHashCode();
+                    return (ex.Function.Name,
+                            string.Join(" ", ex.Arguments.Select(x => PInferPredicateGenerator.ShowType(x.Type))) 
+                                      + " " + PInferPredicateGenerator.ShowType(ex.Function.Signature.ReturnType),
+                            string.Join(" ", ex.Arguments.Select(GetHashCode))).GetHashCode();
+                case DefinedPredicate p:
+                    return (p.Name, p.Function.Signature).GetHashCode();
+                case BuiltinPredicate p:
+                    return (p.Name, p.Function.Signature).GetHashCode();
                 default:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException($"Not implemented for {obj}");
             }
         }
     }
@@ -140,6 +152,27 @@ namespace Plang.Compiler.Backend.PInfer
         private PredicateCallExpr(IPredicate predicate, IReadOnlyList<IPExpr> arguments) : base(null, predicate.Function, arguments)
         {
             Predicate = predicate;
+        }
+
+        public static PredicateCallExpr MkEqualityComparison(IPExpr lhs, IPExpr rhs)
+        {
+            return new PredicateCallExpr(PredicateStore.EqPredicate, [lhs, rhs]);
+        }
+
+        public static bool MkPredicateCall(string predicateName, IReadOnlyList<IPExpr> arguments, out PredicateCallExpr predicateCall)
+        {
+            // Console.WriteLine($"Mk predicate call with {predicateName} and {string.Join(", ", arguments.Select(x => x.Type).ToList())}");
+            if (predicateName.Equals("=="))
+            {
+                predicateCall = MkEqualityComparison(arguments[0], arguments[1]);
+                return true;
+            }
+            if (PredicateStore.TryGetPredicate(arguments.Select(x => x.Type).ToList(), predicateName, out var predicate))
+            {
+                return MkPredicateCall(predicate, arguments, out predicateCall);
+            }
+            predicateCall = null;
+            return false;
         }
 
         public static bool MkPredicateCall(IPredicate predicate, IReadOnlyList<IPExpr> arguments, out PredicateCallExpr predicateCall)
@@ -243,27 +276,91 @@ namespace Plang.Compiler.Backend.PInfer
             return this;
         }
 
+        public override bool Equals(object obj)
+        {
+            return obj is Index;
+        }
+
+        public override int GetHashCode()
+        {
+            return "$PlangType$$IndexType$".GetHashCode();
+        }
+
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             return otherType is Index;
         }
     }
 
+    internal class SignatureComparer : IEqualityComparer<List<PLanguageType>>
+    {
+        public bool Equals(List<PLanguageType> x, List<PLanguageType> y)
+        {
+            if (x.Count != y.Count)
+            {
+                return false;
+            }
+            for (int i = 0; i < x.Count; i++)
+            {
+                if (!x[i].Equals(y[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public int GetHashCode([DisallowNull] List<PLanguageType> obj)
+        {
+            return string.Join(", ", obj).GetHashCode();
+        }
+    }
+
     public static class PredicateStore
     {
-        private static readonly Dictionary<List<PLanguageType>, Dictionary<string, IPredicate>> _Store = [];
+        private static readonly Dictionary<List<PLanguageType>, Dictionary<string, IPredicate>> _Store = new Dictionary<List<PLanguageType>, Dictionary<string, IPredicate>>(new SignatureComparer());
+        public static readonly IPredicate EqPredicate = new BuiltinPredicate("==", Notation.Infix, PrimitiveType.Any, PrimitiveType.Any);
+        private static readonly Dictionary<IPredicate, HashSet<IPredicate>> ContraditionsMap = new Dictionary<IPredicate, HashSet<IPredicate>>(new ASTComparer());
 
-        public static void AddBuiltinPredicate(string name, Notation notation, params PLanguageType[] argTypes)
+        private static void MarkContradition(IPredicate p1, IPredicate p2)
+        {
+            if (!ContraditionsMap.ContainsKey(p1))
+            {
+                ContraditionsMap.Add(p1, new HashSet<IPredicate>());
+            }
+            if (!ContraditionsMap.ContainsKey(p2))
+            {
+                ContraditionsMap.Add(p2, new HashSet<IPredicate>());
+            }
+            ContraditionsMap[p1].Add(p2);
+            ContraditionsMap[p2].Add(p1);
+        }
+        
+        public static IEnumerable<IPredicate> GetContradictions(IPredicate predicate)
+        {
+            if (ContraditionsMap.TryGetValue(predicate, out var contradictions))
+            {
+                return contradictions;
+            }
+            return [];
+        }
+
+        public static void AddBuiltinPredicate(string name, Notation notation, IEnumerable<IPredicate> contraditions, params PLanguageType[] argTypes)
         {
             var parameterTypes = argTypes.ToList();
             if (!_Store.ContainsKey(parameterTypes))
             {
                 _Store.Add(parameterTypes, []);
             }
-            _Store[parameterTypes].Add(name, new BuiltinPredicate(name, notation, argTypes));
+            var pred = new BuiltinPredicate(name, notation, argTypes);
+            _Store[parameterTypes].Add(name, pred);
+            foreach (var c in contraditions)
+            {
+                MarkContradition(pred, c);
+            }
         }
 
-        public static void AddPredicate(IPredicate predicate)
+        public static void AddPredicate(IPredicate predicate, IEnumerable<IPredicate> contraditions)
         {
             var parameterTypes = predicate.Signature.Parameters.Select(p => p.Type).ToList();
             if (!_Store.ContainsKey(parameterTypes))
@@ -271,16 +368,35 @@ namespace Plang.Compiler.Backend.PInfer
                 _Store.Add(parameterTypes, []);
             }
             _Store[parameterTypes].Add(predicate.Name, predicate);
+            foreach (var c in contraditions)
+            {
+                MarkContradition(predicate, c);
+            }
         }
 
         public static void Initialize() {
             List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index];
             foreach (var numType in numericTypes)
             {
-                AddBuiltinPredicate("<", Notation.Infix, numType, numType);
+                AddBuiltinPredicate("<", Notation.Infix, [EqPredicate], numType, numType);
                 // AddBuiltinPredicate("==", Notation.Infix, numType, numType);
             }
         }
+
+        public static bool TryGetPredicate(List<PLanguageType> types, string predName, out IPredicate pred)
+        {
+            if (_Store.TryGetValue(types, out var predicates))
+            {
+                if (predicates.TryGetValue(predName, out pred))
+                {
+                    return true;
+                }
+                return false;
+            }
+            pred = null;
+            return false;
+        }
+
         public static IEnumerable<IPredicate> Store => _Store.Values.SelectMany(x => x.Values);
     }
 

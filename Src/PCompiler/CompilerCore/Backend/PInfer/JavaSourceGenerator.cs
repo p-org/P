@@ -26,11 +26,15 @@ namespace Plang.Compiler.Backend.PInfer
 
         public string GenerateRawExpr(IPExpr expr)
         {
-            var events = FreeEvents[expr].Select(x => {
-                    var e = (PEventVariable) x;
-                    return $"({e.Name}:{e.EventName})";
-            });
-            return GenerateCodeExpr(expr).Replace("\"", "") + " where " + string.Join(" ", events);
+            var result = GenerateCodeExpr(expr).Replace("\"", "");
+            if (FreeEvents.ContainsKey(expr)) {
+                var events = FreeEvents[expr].Select(x => {
+                        var e = (PEventVariable) x;
+                        return $"({e.Name}:{e.EventName})";
+                });
+                return result + " where " + string.Join(" ", events);
+            }
+            return result;
         }
 
         protected override void GenerateCodeImpl()
@@ -163,6 +167,11 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return GenerateCodeNamedTupleAccess(n);
             }
+            else if (expr is IPredicate)
+            {
+                var predicate = (IPredicate) expr;
+                return $"{predicate.Name} :: {string.Join(" -> ", predicate.Signature.ParameterTypes.Select(PInferPredicateGenerator.ShowType)) + " -> bool"}";
+            }
             else if (expr is BinOpExpr binOpExpr)
             {
                 var lhs = GenerateCodeExpr(binOpExpr.Lhs);
@@ -214,6 +223,10 @@ namespace Plang.Compiler.Backend.PInfer
                 switch (p.Predicate.Notation)
                 {
                     case Notation.Infix:
+                        if (p.Predicate.Name == "==")
+                        {
+                            return $"Objects.equals({GenerateCodeExpr(p.Arguments[0])}, {GenerateCodeExpr(p.Arguments[1])})";
+                        }
                         return $"{GenerateCodeExpr(p.Arguments[0])} {p.Predicate.Name} {GenerateCodeExpr(p.Arguments[1])}";
                 }
             }
@@ -228,6 +241,10 @@ namespace Plang.Compiler.Backend.PInfer
                 switch (builtinFun.Notation)
                 {
                     case Notation.Infix:
+                        if (builtinFun.Name == "==")
+                        {
+                            return $"Objects.equals({GenerateCodeExpr(funCallExpr.Arguments[0])}, {GenerateCodeExpr(funCallExpr.Arguments[1])})";
+                        }
                         return $"({GenerateCodeExpr(funCallExpr.Arguments[0])} {builtinFun.Name} {GenerateCodeExpr(funCallExpr.Arguments[1])})";
                     default:
                         break;

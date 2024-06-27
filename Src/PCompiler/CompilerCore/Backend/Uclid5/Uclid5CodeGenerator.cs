@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -15,41 +14,9 @@ namespace Plang.Compiler.Backend.Uclid5;
 public class Uclid5CodeGenerator : ICodeGenerator
 {
     private CompilationContext _ctx;
-
     private CompiledFile _src;
-    
     private HashSet<PLanguageType> _optionsToDeclare;
     private HashSet<SetType> _setCheckersToDeclare;
-
-    private static string BuiltinPrefix => "UPVerifier_";
-    private static string UserPrefix => "User_";
-    private static string EventPrefix => "Event_";
-    private static string GotoPrefix => "Goto_";
-    private static string MachinePrefix => "Machine_";
-    private static string LocalPrefix => "Local_";
-    private static string RefT => $"{BuiltinPrefix}MachineRef";
-    private static string MachineT => $"{BuiltinPrefix}Machine";
-    private static string Null => $"{BuiltinPrefix}Null";
-    private static string StringT => $"{BuiltinPrefix}String";
-    private static string LabelT => $"{BuiltinPrefix}Label";
-    private static string EventT => $"{BuiltinPrefix}Event";
-    private static string EventLabel => $"{LabelT}_Event";
-    private static string GotoT => $"{BuiltinPrefix}Goto";
-    private static string GotoLabel => $"{LabelT}_Goto";
-    private static string Source => "Source";
-    private static string Target => "Target";
-    private static string Payload => "Payload";
-    private static string Entry => "Entry";
-    private static string Start => "Start";
-    private static string State => "State";
-    private static string CurrentMRef => $"{BuiltinPrefix}MTurn";
-    private static string CurrentEvent => $"{BuiltinPrefix}ETurn";
-    private static string Machines => $"{BuiltinPrefix}Machines";
-    private static string Buffer => $"{BuiltinPrefix}Buffer";
-    private static string This => "this";
-    private static string IncomingEvent => "curr";
-    private static string ReturnVar => $"{BuiltinPrefix}Ret";
-    
     public bool HasCompilationStage => false;
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -62,256 +29,325 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return new List<CompiledFile> { _src };
     }
 
-    private void GenerateMain(Scope globalScope)
+    private void EmitLine(string str)
     {
-        EmitLine("// The main module contains the entire P program");
-        EmitLine("module main {");
-
-        var machines = globalScope.AllDecls.OfType<Machine>().ToList();
-
-        // things like the machine reference uninterpreted sort
-        GenerateBuiltInTypes();
-        
-        GenerateUserEnums(globalScope.AllDecls.OfType<PEnum>());
-        GenerateUserTypes(globalScope.AllDecls.OfType<TypeDef>());
-        
-        // a datatype that captures all possible messages
-        GenerateEventType(globalScope.AllDecls.OfType<PEvent>());
-        // a datatype that captures all possible state transitions
-        GenerateGotoType(machines);
-        // the sum of the above two types
-        GenerateLabelType();
-        
-        // the state of machines (sum over all machine kinds) and a stage (entry flag)
-        GenerateIndividualStateTypes(machines);
-        
-        // a map from references to machine states and a set of active labels
-        GenerateGlobalState();
-        
-        // set variables to defaults, and machines to their start state
-        GenerateInitBlock();
-        
-        // non-handler functions
-        GenerateGlobalProcedures(globalScope.AllDecls.OfType<Function>());
-        GenerateMachineProcedures(machines);
-        
-        // these are the handlers for labels
-        GenerateEntryProcedures(machines);
-        GenerateHandlerProcedures(machines);
-        
-        // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
-        GenerateNextBlock(machines);
-        
-        // These have to be done at the end because we don't know what we need until we generate the rest of the code
-        GenerateOptionTypes();
-        GenerateCheckerVars();
-        
-        GenerateControlBlock(machines);
-
-        // close the main module
-        EmitLine("}");
-    }
-    
-    private void GenerateBuiltInTypes()
-    {
-        EmitLine("// Built-in types");
-        EmitLine($"type {RefT};");
-        EmitLine($"type {Null} = enum {{ {Null} }};");
-        EmitLine($"type {StringT};");
-        EmitLine("\n");
+        _ctx.WriteLine(_src.Stream, str);
     }
 
-    private string GetLocation(IPAST node)
+    // Prefixes to avoid name clashes and keywords
+    private static string BuiltinPrefix => "P_";
+    private static string UserPrefix => "User_";
+    private static string EventPrefix => "PEvent_";
+    private static string GotoPrefix => "PGoto_";
+    private static string MachinePrefix => "PMachine_";
+    private static string LocalPrefix => "PLocal_";
+    private static string OptionPrefix => "POption_";
+    private static string CheckerPrefix => "PChecklist_";
+
+    // P values that don't have a direct UCLID5 equivalent
+    private static string PNull => $"{BuiltinPrefix}Null";
+    private static string PNullDeclaration => $"type {PNull} = enum {{{PNull}}};";
+
+    // P types that don't have a direct UCLID5 equivalent
+    private static string StringT => $"{BuiltinPrefix}String";
+    private static string StringTDeclaration => $"type {StringT};";
+
+    /********************************
+     * type StateADT = record {buffer: [LabelADT]boolean, machines: [MachineRefT]MachineStateADT};
+     * var state: StateT;
+     *******************************/
+    private static string StateAdt => $"{BuiltinPrefix}StateAdt";
+    private static string StateAdtBufferSelector => $"{StateAdt}_Buffer";
+    private static string StateAdtMachinesSelector => $"{StateAdt}_Machines";
+
+    private static string StateAdtConstruct(string buffer, string machines)
     {
-        return _ctx.LocationResolver.GetLocation(node.SourceLocation).ToString();
-    }
-    
-    private static string GetUserName(string r)
-    {
-        return $"{UserPrefix}{r}";
+        return $"const_record({StateAdtBufferSelector} := {buffer}, {StateAdtMachinesSelector} := {machines})";
     }
 
-    private static string GetEventName(string r)
+    private static string StateAdtSelectBuffer(string state)
     {
-        return $"{EventPrefix}{r}";
+        return $"{state}.{StateAdtBufferSelector}";
     }
 
-    private static string GetMachineName(string r)
+    private static string StateAdtSelectMachines(string state)
     {
-        return $"{MachinePrefix}{r}";
+        return $"{state}.{StateAdtMachinesSelector}";
     }
 
-    private static string GetLocalName(string r)
+    private static string StateAdtDeclaration()
     {
-        return $"{LocalPrefix}{r}";
+        return
+            $"type {StateAdt} = record {{{StateAdtBufferSelector}: [{LabelAdt}]boolean, {StateAdtMachinesSelector}: [{MachineRefT}]{MachineStateAdt}}};";
     }
 
-    private static string GetOptionTypeName(string r)
+    private static string StateVar => $"{BuiltinPrefix}State";
+    private static string StateVarDeclaration => $"var {StateVar}: {StateAdt};";
+
+    private static string DerefFunctionDeclaration =>
+        $"define {BuiltinPrefix}Deref({LocalPrefix}r: {MachineRefT}) : {MachineStateAdt} = {StateAdtSelectMachines(StateVar)}[{LocalPrefix}r];";
+
+    private static string Deref(string r)
     {
-        return $"Option_{r}";
+        return $"{BuiltinPrefix}Deref({r})";
     }
 
-    private static string ConstructOptionSome(string t, string r)
+    /********************************
+     * type MachineRef;
+     *
+     * type MachineStateADT = record {stage: boolean; machine: MachineADT};
+     *
+     * // where Mi are the declared machines, Si their P state names, and MiFjl their fields
+     * type MachineADT = | M0(M0_State: S0, M0F00, ..., M0F0n)
+     *                   | ...
+     *                   | Mk(Mk_State: Sk, MkFk0, ..., MkFkm)
+     *******************************/
+    private static string MachineRefT => $"{MachinePrefix}Ref_t";
+    private static string MachineRefTDeclaration => $"type {MachineRefT};";
+    private static string MachineStateAdt => $"{MachinePrefix}State_ADT";
+    private static string MachineStateAdtStageSelector => $"{MachineStateAdt}_Stage";
+    private static string MachineStateAdtMachineSelector => $"{MachineStateAdt}_Machine";
+
+    private static string MachineStateAdtConstruct(string stage, string machine)
     {
-        return $"{GetOptionTypeName(t)}_Some({r})";
-    }
-    private static string ConstructOptionNone(string t)
-    {
-        return $"{GetOptionTypeName(t)}_None()";
-    }
-    private static string SelectOptionValue(string t, string r)
-    {
-        return $"{r}.{GetOptionTypeName(t)}_Some_Value";
-    }
-    
-    private static string IsOptionSome(string t, string r)
-    {
-        return $"is_{GetOptionTypeName(t)}_Some({r})";
+        return
+            $"const_record({MachineStateAdtStageSelector} := {stage}, {MachineStateAdtMachineSelector} := {machine})";
     }
 
-    private static string GetMachine(string r)
+    private static string MachineStateAdtSelectStage(string state)
     {
-        return $"{Machines}[{r}]";
+        return $"{state}.{MachineStateAdtStageSelector}";
     }
 
-    private static string UpdateMachine(string r, string m)
+    private static string MachineStateAdtSelectMachine(string state)
     {
-        return $"{Machines}[{r} -> {m}]";
+        return $"{state}.{MachineStateAdtMachineSelector}";
     }
 
-    private static string UpdateBuffer(string r, bool t)
+    private static string MachineStateAdtDeclaration()
     {
-        return $"{Buffer}[{r} -> {t.ToString().ToLower()}]";
+        return
+            $"type {MachineStateAdt} = record {{{MachineStateAdtStageSelector}: boolean, {MachineStateAdtMachineSelector}: {MachineAdt}}};";
     }
 
-    private static string LiveEvent(string e)
-    {
-        return $"{Buffer}[{e}]";
-    }
+    private static string MachineAdt => $"{MachinePrefix}ADT";
 
-    private static string GetSource(string arg)
+    private string MachineAdtDeclaration(List<Machine> machines)
     {
-        return $"{BuiltinPrefix}{Source}({arg})";
-    }
+        var sum = string.Join("\n\t\t| ", machines.Select(ProcessMachine));
+        return $"datatype {MachineAdt} = \n\t\t| {sum};";
 
-    private static string GetTarget(string arg)
-    {
-        return $"{BuiltinPrefix}{Target}({arg})";
-    }
-
-    private static string InEntry(string arg)
-    {
-        return $"{BuiltinPrefix}{Entry}({arg})";
-    }
-
-    private static string GetEntry(Machine m)
-    {
-        return $"{GetMachineName(m.Name)}_{Entry}";
-    }
-    
-    private static string GetState(Machine m)
-    {
-        return $"{GetMachineName(m.Name)}_{State}";
-    }
-
-    private static string GetField(Machine m, Variable f)
-    {
-        return $"{GetMachineName(m.Name)}_{f.Name}";
-    }
-
-    private static string InStart(string arg)
-    {
-        return $"{BuiltinPrefix}{Start}({arg})";
-    }
-    
-    private static string InDefault(string arg)
-    {
-        return $"{BuiltinPrefix}Default({arg})";
-    }
-
-
-    private static string IsEventInstance(string x, PEvent e)
-    {
-        return $"is_{GetEventName(e.Name)}({x})";
-    }
-
-    private static string IsMachineInstance(string x, Machine m)
-    {
-        return $"is_{GetMachineName(m.Name)}({x})";
-    }
-
-    private static string IsMachineStateInstance(string x, Machine m, State s)
-    {
-        return $"is_{GetMachineName(m.Name)}_{s.Name}({x}.{GetMachineName(m.Name)}_State)";
-    }
-
-    private static string MachineStateT(Machine m)
-    {
-        return $"{GetMachineName(m.Name)}_StateT";
-    }
-
-    private static string EventHandlerName(string m, string s, string e)
-    {
-        return $"{m}_{s}_handle_{e}";
-    }
-
-    private static string EntryHandlerName(string m, string s)
-    {
-        return $"{m}_{s}_handle_entry";
-    }
-
-    private void GenerateUserEnums(IEnumerable<PEnum> enums)
-    {
-        EmitLine("// User's enumerated types");
-        foreach (var e in enums)
+        string ProcessMachine(Machine m)
         {
-            var variants = string.Join(", ", e.Values.Select(v => GetUserName(v.Name)));
-            EmitLine($"type {GetUserName(e.Name)} = enum {{{variants}}};");
+            var fields = string.Join(", ",
+                m.Fields.Select(f => $"{MachinePrefix}{m.Name}_{f.Name}: {TypeToString(f.Type)}"));
+            if (m.Fields.Any()) fields = ", " + fields;
+
+            return $"{MachinePrefix}{m.Name} ({MachinePrefix}{m.Name}_State: {MachinePrefix}{m.Name}_StateAdt{fields})";
         }
-
-        EmitLine("\n");
     }
 
-    private void GenerateUserTypes(IEnumerable<TypeDef> types)
+    private static string MachineAdtSelectState(string instance, Machine m)
     {
-        EmitLine("// User's non-enumerated type types");
-        foreach (var t in types) EmitLine($"type {GetUserName(t.Name)} = {TypeToString(t.Type)};");
-
-        EmitLine("\n");
+        return $"{instance}.{MachinePrefix}{m.Name}_State";
     }
 
-    private void GenerateEventType(IEnumerable<PEvent> events)
+    private static string MachineStateAdtSelectState(string state, Machine m)
     {
-        var es = events.ToList();
-        var sum = string.Join("\n\t\t| ", es.Select(ProcessEvent));
-        EmitLine($"datatype {EventT} = \n\t\t| {sum};\n");
+        return MachineAdtSelectState(MachineStateAdtSelectMachine(state), m);
+    }
 
-        string[] attributes = [Source, Target];
-        foreach (var attribute in attributes)
+    private static string MachineAdtSelectField(string instance, Machine m, Variable f)
+    {
+        return $"{instance}.{MachinePrefix}{m.Name}_{f.Name}";
+    }
+
+    private static string MachineStateAdtSelectField(string state, Machine m, Variable f)
+    {
+        return MachineAdtSelectField(MachineStateAdtSelectMachine(state), m, f);
+    }
+
+    private static string MachinePStateDeclaration(Machine m)
+    {
+        var states = string.Join(", ", m.States.Select(s => $"{MachinePrefix}{m.Name}_{s.Name}"));
+        return $"type {MachinePrefix}{m.Name}_StateAdt = enum {{{states}}};";
+    }
+
+    private static string MachineAdtIsM(string instance, Machine machine)
+    {
+        return $"is_{MachinePrefix}{machine.Name}({instance})";
+    }
+
+    private static string MachineStateAdtIsM(string state, Machine machine)
+    {
+        return $"is_{MachinePrefix}{machine.Name}({MachineStateAdtSelectMachine(state)})";
+    }
+
+    private static string MachineStateAdtInS(string state, Machine m, State s)
+    {
+        return MachineStateAdtIsM(state, m) +
+               $" && {MachineStateAdtSelectState(state, m)} == {MachinePrefix}{m.Name}_{s.Name}";
+    }
+
+
+    private static string InStartPredicateDeclaration(List<Machine> machines)
+    {
+        var input = $"{LocalPrefix}State";
+        var cases = machines.Select(ProcessMachine).ToList();
+        var body = cases.Aggregate("false", (acc, pair) => $"if ({pair.Item1}) then ({pair.Item2})\n\t\telse ({acc})");
+        return $"define {BuiltinPrefix}InStart({input}: {MachineStateAdt}) : boolean =\n\t\t{body};";
+
+        (string, string) ProcessMachine(Machine m)
         {
-            var cases = $"if ({IsEventInstance("e", es.First())}) then e.{GetEventName(es.First().Name)}_{attribute}";
-            cases = es.Skip(1).SkipLast(1).Aggregate(cases,
-                (current, e) =>
-                    current + $"\n\t\telse if ({IsEventInstance("e", e)}) then e.{GetEventName(e.Name)}_{attribute}");
-            cases += $"\n\t\telse e.{GetEventName(es.Last().Name)}_{attribute}";
-            EmitLine($"define {BuiltinPrefix}{attribute} (e: {EventT}) : {RefT} = \n\t\t{cases};");
-            EmitLine("");
+            var machine = $"{MachineStateAdtSelectMachine(input)}";
+            var state = $"{machine}.{MachinePrefix}{m.Name}_State";
+            var start = $"{MachinePrefix}{m.Name}_{m.StartState.Name}";
+            var check = $"{state} == {start}";
+            var guard = MachineAdtIsM(machine, m);
+            return (guard, check);
         }
+    }
 
-        EmitLine("");
-        return;
+    private static string InEntryPredicateDeclaration()
+    {
+        var input = $"{LocalPrefix}State";
+        return
+            $"define {BuiltinPrefix}InEntry({input}: {MachineStateAdt}) : boolean = {MachineStateAdtSelectStage(input)};";
+    }
 
-        string ProcessEvent(PEvent e)
+    /********************************
+     * type LabelAdt = record {target: MachineRef, action: EitherEventOrGotoAdt}
+     *
+     * datatype EitherEventOrGotoAdt = | EventLabel (event: EventAdt)
+     *                                 | GotoLabel (goto: GotoAdt)
+     *
+     * // where Ei is an event, Pi is the payload of the event and Ti is the type of the payload
+     * datatype EventAdt = | E0 (P0: T0)
+     *                     | ...
+     *                     | En (Pn: Tn)
+     *
+     * // where Si are as in MachineAdt and A0 are the arguments to the entry handler of the state
+     * datatype GotoAdt = | M0 (M0_State: S0, A0: T0)
+     *                    | ...
+     *                    | Mn (Mn_State: Sn, An: Tn)
+     *******************************/
+    private static string LabelAdt => $"{BuiltinPrefix}Label";
+    private static string LabelAdtTargetSelector => $"{LabelAdt}_Target";
+    private static string LabelAdtActionSelector => $"{LabelAdt}_Action";
+
+    private static string LabelAdtDeclaration()
+    {
+        return
+            $"type {LabelAdt} = record {{{LabelAdtTargetSelector}: {MachineRefT}, {LabelAdtActionSelector}: {EventOrGotoAdt}}};";
+    }
+
+    private static string LabelAdtConstruct(string target, string action)
+    {
+        return $"const_record({LabelAdtTargetSelector} := {target}, {LabelAdtActionSelector} := {action})";
+    }
+
+    private static string LabelAdtSelectTarget(string label)
+    {
+        return $"{label}.{LabelAdtTargetSelector}";
+    }
+
+    private static string LabelAdtSelectAction(string label)
+    {
+        return $"{label}.{LabelAdtActionSelector}";
+    }
+
+    private static string EventOrGotoAdt => $"{BuiltinPrefix}EventOrGoto";
+    private static string EventOrGotoAdtEventConstructor => $"{EventOrGotoAdt}_Event";
+    private static string EventOrGotoAdtGotoConstructor => $"{EventOrGotoAdt}_Goto";
+    private static string EventOrGotoAdtEventSelector => $"{EventOrGotoAdt}_Event_Event";
+    private static string EventOrGotoAdtGotoSelector => $"{EventOrGotoAdt}_Goto_Goto";
+
+    private static string EventOrGotoAdtDeclaration()
+    {
+        var e = $"| {EventOrGotoAdtEventConstructor}({EventOrGotoAdtEventSelector}: {EventAdt})";
+        var g = $"| {EventOrGotoAdtGotoConstructor}({EventOrGotoAdtGotoSelector}: {GotoAdt})";
+        return $"datatype {EventOrGotoAdt} = \n\t\t{e}\n\t\t{g};";
+    }
+
+    private static string EventOrGotoAdtConstructEvent(string e)
+    {
+        return $"{EventOrGotoAdtEventConstructor}({e})";
+    }
+
+    private static string EventOrGotoAdtConstructGoto(string g)
+    {
+        return $"{EventOrGotoAdtGotoConstructor}({g})";
+    }
+
+    private static string EventOrGotoAdtSelectEvent(string eventOrGoto)
+    {
+        return $"{eventOrGoto}.{EventOrGotoAdtEventSelector}";
+    }
+
+    private static string EventOrGotoAdtSelectGoto(string eventOrGoto)
+    {
+        return $"{eventOrGoto}.{EventOrGotoAdtGotoSelector}";
+    }
+
+    private static string EventOrGotoAdtIsEvent(string eventOrGoto)
+    {
+        return $"is_{EventOrGotoAdtEventConstructor}({eventOrGoto})";
+    }
+
+    private static string EventOrGotoAdtIsGoto(string eventOrGoto)
+    {
+        return $"is_{EventOrGotoAdtGotoConstructor}({eventOrGoto})";
+    }
+
+    private static string EventAdt => $"{EventPrefix}Adt";
+
+    private string EventAdtDeclaration(List<PEvent> events)
+    {
+        var declarationSum = string.Join("\n\t\t| ", events.Select(EventDeclarationCase));
+        return $"datatype {EventAdt} = \n\t\t| {declarationSum};";
+
+        string EventDeclarationCase(PEvent e)
         {
-            var payload = TypeToString(e.PayloadType);
+            var pt = TypeToString(e.PayloadType);
             return
-                $"{GetEventName(e.Name)} ({GetEventName(e.Name)}_{Source}: {RefT}, {GetEventName(e.Name)}_{Target}: {RefT}, {GetEventName(e.Name)}_{Payload}: {payload})";
+                $"{EventPrefix}{e.Name} ({EventPrefix}{e.Name}_Payload: {pt})";
         }
     }
 
-    private void GenerateGotoType(IEnumerable<Machine> machines)
+    private static string EventAdtSelectPayload(string eadt, PEvent e)
     {
-        List<(Machine, State, Variable)> gotos = [];
+        return $"{eadt}.{EventPrefix}{e.Name}_Payload";
+    }
+
+    private static string EventAdtConstruct(string payload, PEvent e)
+    {
+        return $"{EventPrefix}{e.Name}({payload})";
+    }
+
+    private static string EventAdtIsE(string instance, PEvent e)
+    {
+        return $"is_{EventPrefix}{e.Name}({instance})";
+    }
+
+    private static string EventOrGotoAdtIsE(string instance, PEvent e)
+    {
+        var isEvent = EventOrGotoAdtIsEvent(instance);
+        var selectEvent = EventOrGotoAdtSelectEvent(instance);
+        var correctEvent = EventAdtIsE(selectEvent, e);
+        return $"{isEvent} && {correctEvent}";
+    }
+
+    private static string LabelAdtIsE(string instance, PEvent e)
+    {
+        var action = LabelAdtSelectAction(instance);
+        return EventOrGotoAdtIsE(action, e);
+    }
+
+    private static string GotoAdt => $"{GotoPrefix}Adt";
+
+    private string GotoAdtDeclaration(IEnumerable<Machine> machines)
+    {
+        List<(State, Variable)> gotos = [];
         foreach (var m in machines)
         foreach (var s in m.States)
         {
@@ -322,38 +358,252 @@ public class Uclid5CodeGenerator : ICodeGenerator
             {
                 a = s.Entry.Signature.Parameters[0];
             }
-            gotos.Add((m, s, a));
+
+            gotos.Add((s, a));
         }
-        
-        
+
         var sum = string.Join("\n\t\t| ", gotos.Select(ProcessGoto));
-        
-        EmitLine($"datatype {GotoT} = \n\t\t| {sum};\n");
-        
+
+        return $"datatype {GotoAdt} = \n\t\t| {sum};";
+
+        string ProcessGoto((State, Variable) g)
+        {
+            var prefix = $"{GotoPrefix}{g.Item1.OwningMachine.Name}_{g.Item1.Name}";
+            if (g.Item2 is null)
+            {
+                return prefix + "()";
+            }
+
+            return prefix + $"({prefix}_{g.Item2.Name}: {TypeToString(g.Item2.Type)})";
+        }
+    }
+
+    private static string GotoAdtIsS(string instance, State s)
+    {
+        return $"is_{GotoPrefix}{s.OwningMachine.Name}_{s.Name}({instance})";
+    }
+
+    private static string EventOrGotoAdtIsS(string instance, State s)
+    {
+        var isGoto = EventOrGotoAdtIsGoto(instance);
+        var selectGoto = EventOrGotoAdtSelectGoto(instance);
+        var correctGoto = GotoAdtIsS(selectGoto, s);
+        return $"{isGoto} && {correctGoto}";
+    }
+
+    private static string LabelAdtIsS(string instance, State s)
+    {
+        var action = LabelAdtSelectAction(instance);
+        return EventOrGotoAdtIsS(action, s);
+    }
+
+    /********************************
+     * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
+     *******************************/
+    private void GenerateMain(Scope globalScope)
+    {
+        EmitLine("module main {");
+
+        var machines = globalScope.AllDecls.OfType<Machine>().ToList();
+        var events = globalScope.AllDecls.OfType<PEvent>().ToList();
+
+        EmitLine(PNullDeclaration);
+        EmitLine(StringTDeclaration);
         EmitLine("");
 
-        string ProcessGoto((Machine, State, Variable) g)
+        GenerateUserEnums(globalScope.AllDecls.OfType<PEnum>());
+        GenerateUserTypes(globalScope.AllDecls.OfType<TypeDef>());
+        EmitLine("");
+
+        EmitLine(EventAdtDeclaration(events));
+        EmitLine("");
+        EmitLine(GotoAdtDeclaration(machines));
+        EmitLine("");
+        EmitLine(EventOrGotoAdtDeclaration());
+        EmitLine(LabelAdtDeclaration());
+        EmitLine("");
+
+        EmitLine(MachineRefTDeclaration);
+        foreach (var m in machines)
         {
-            var prefix = $"{GotoPrefix}{g.Item1.Name}_{g.Item2.Name}";
-            if (g.Item3 is null)
-            {
-                return prefix + $"({prefix}_{Target}: {RefT})";
-            }
-            return prefix + $"({prefix}_{Target}: {RefT}, {prefix}_{g.Item3.Name}: {TypeToString(g.Item3.Type)})";
+            EmitLine(MachinePStateDeclaration(m));
+        }
+
+        EmitLine(MachineAdtDeclaration(machines));
+        EmitLine(MachineStateAdtDeclaration());
+        EmitLine("");
+
+        EmitLine(StateAdtDeclaration());
+        EmitLine(StateVarDeclaration);
+        EmitLine("");
+
+        EmitLine(InStartPredicateDeclaration(machines));
+        EmitLine(InEntryPredicateDeclaration());
+        EmitLine(DerefFunctionDeclaration);
+        EmitLine("");
+
+        GenerateInitBlock(machines);
+        EmitLine("");
+
+        // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
+        GenerateNextBlock(machines, events);
+        EmitLine("");
+
+        // These have to be done at the end because we don't know what we need until we generate the rest of the code
+        GenerateOptionTypes();
+        GenerateCheckerVars();
+        EmitLine("");
+
+        // non-handler functions
+        GenerateGlobalProcedures(globalScope.AllDecls.OfType<Function>());
+        //GenerateMachineProcedures(machines);
+        EmitLine("");
+
+        // // these are the handlers for labels
+        // GenerateGotoHandlerProcedures(machines);
+        // GenerateEventHandlerProcedures(machines);
+
+        GenerateControlBlock(machines, events);
+
+        // close the main module
+        EmitLine("}");
+    }
+
+    private void GenerateUserEnums(IEnumerable<PEnum> enums)
+    {
+        foreach (var e in enums)
+        {
+            var variants = string.Join(", ", e.Values.Select(v => UserPrefix + v.Name));
+            EmitLine($"type {UserPrefix}{e.Name} = enum {{{variants}}};");
         }
     }
 
-    private void GenerateLabelType()
+    private void GenerateUserTypes(IEnumerable<TypeDef> types)
     {
-        EmitLine($"datatype {LabelT} =");
-        EmitLine($"\t\t| {EventLabel}({LabelT}_{EventT}: {EventT})");
-        EmitLine($"\t\t| {GotoLabel}({LabelT}_{GotoT}: {GotoT});");
-        EmitLine("\n");
+        foreach (var t in types) EmitLine($"type {UserPrefix}{t.Name} = {TypeToString(t.Type)};");
     }
-    
-    private string InStartPredicate(Machine m, string mname)
+
+    private void GenerateInitBlock(List<Machine> machines)
     {
-        return $"{mname}.{GetState(m)} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
+        var state = Deref("r");
+        EmitLine("init {");
+        EmitLine("// Every machine begins in their start state");
+        EmitLine($"assume(forall (r: {MachineRefT}) :: {BuiltinPrefix}InStart({state}));");
+        EmitLine("// Every machine begins with their entry flag set");
+        EmitLine($"assume(forall (r: {MachineRefT}) :: {BuiltinPrefix}InEntry({state}));");
+        EmitLine("// Every machine begins with fields in default");
+        foreach (var m in machines)
+        {
+            foreach (var f in m.Fields)
+            {
+                if (f.Type.TypeKind.Equals(TypeKind.Map) || f.Type.TypeKind.Equals(TypeKind.Set) ||
+                    f.Type.TypeKind.Equals(TypeKind.NamedTuple))
+                {
+                    EmitLine(
+                        $"assume(forall (r: {MachineRefT}) :: {MachineStateAdtSelectField(state, m, f)} == {DefaultValue(f.Type)});");
+                }
+            }
+        }
+
+        EmitLine("// The buffer starts completely empty");
+        EmitLine($"{StateAdtSelectBuffer(StateVar)} = const(false, [{LabelAdt}]boolean);");
+        // close the init block
+        EmitLine("}");
+    }
+
+    private void GenerateNextBlock(List<Machine> machines, List<PEvent> events)
+    {
+        var currentLabel = $"{BuiltinPrefix}CurrentLabel";
+        // pick a random label and handle it
+        EmitLine("next {");
+        EmitLine($"var {currentLabel}: {LabelAdt};");
+        EmitLine($"if ({StateAdtSelectBuffer(StateVar)}[{currentLabel}]) {{");
+        EmitLine("case");
+        foreach (var m in machines)
+        {
+            foreach (var s in m.States)
+            {
+                EmitLine($"({GotoGuard(m, s)}) : {{");
+                EmitLine($"call {m.Name}_{s.Name}({currentLabel});");
+                EmitLine("}");
+                foreach (var e in events.Where(e => !e.IsNullEvent))
+                {
+                    EmitLine($"({EventGuard(m, s, e)}) : {{");
+                    if (s.HasHandler(e))
+                    {
+                        EmitLine($"call {m.Name}_{s.Name}_{e.Name}({currentLabel});");
+                    }
+                    else
+                    {
+                        EmitLine($"// There is no handler for {e.Name} in {s.Name} of {m.Name}");
+                        EmitLine("assert false;");
+                    }
+                    EmitLine("}");
+                }
+            }
+        }
+
+        EmitLine("esac");
+        EmitLine("}");
+        // close the next block
+        EmitLine("}");
+        return;
+
+        string EventGuard(Machine m, State s, PEvent e)
+        {
+            var correctMachine = MachineStateAdtIsM(Deref(LabelAdtSelectTarget(currentLabel)), m);
+            var correctState = MachineStateAdtInS(Deref(LabelAdtSelectTarget(currentLabel)), m, s);
+            var correctEvent = LabelAdtIsE(currentLabel, e);
+            return string.Join(" && ", [correctMachine, correctState, correctEvent]);
+        }
+
+        string GotoGuard(Machine m, State s)
+        {
+            var correctMachine = MachineStateAdtIsM(Deref(LabelAdtSelectTarget(currentLabel)), m);
+            var correctGoto = LabelAdtIsS(currentLabel, s);
+            return $"{correctMachine} && {correctGoto}";
+        }
+    }
+
+    private void GenerateGlobalProcedures(IEnumerable<Function> functions)
+    {
+        // TODO: these should be side-effect free
+        foreach (var f in functions)
+        {
+            var ps = f.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}");
+            EmitLine($"procedure [noinline] {f.Name}({string.Join(", ", ps)})");
+            if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            {
+                EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
+            }
+
+            EmitLine("{");
+            GenerateStmt(f.Body);
+            EmitLine("}");
+        }
+    }
+
+    private void GenerateControlBlock(List<Machine> machines, List<PEvent> events)
+    {
+        EmitLine("control {");
+        EmitLine("set_solver_option(\":Timeout\", 60);");
+        EmitLine("induction(1);");
+
+        foreach (var m in machines)
+        {
+            foreach (var s in m.States)
+            {
+                EmitLine($"verify({m.Name}_{s.Name});");
+                foreach (var e in events.Where(e => !e.IsNullEvent && s.HasHandler(e)))
+                {
+                    EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
+                }
+            }
+        }
+
+        EmitLine("check;");
+        EmitLine("print_results;");
+        EmitLine("}");
     }
 
     private string DefaultValue(PLanguageType ty)
@@ -361,318 +611,56 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return ty switch
         {
             MapType mapType =>
-                $"const({ConstructOptionNone(TypeToString(mapType.ValueType))}, {TypeToString(mapType)})",
+                $"const({OptionPrefix}{TypeToString(mapType.ValueType)}_None(), {TypeToString(mapType)})",
+            NamedTupleType ntt =>
+                $"const_record({string.Join(", ", ntt.Fields.Select(f => $"{f.Name} := {DefaultValue(f.Type)}"))})",
+            PrimitiveType pt when pt.Equals(PrimitiveType.Bool) => "false",
+            PrimitiveType pt when pt.Equals(PrimitiveType.Int) => "0",
             SetType setType => $"const(false, {TypeToString(setType)})",
-            _ => throw new ArgumentOutOfRangeException($"{ty} ({ty.GetType()})")
+            _ => throw new NotSupportedException($"Not supported default: {ty} ({ty.OriginalRepresentation})"),
         };
     }
-    
-    private string InDefaultPredicate(Machine m, string mname)
+
+    private void GenerateOptionTypes()
     {
-        var cond = $"{mname}.{GetState(m)} == {GetMachineName(m.Name)}_{GetStartState(m)}()";
-        foreach (var f in m.Fields)
+        foreach (var ptype in _optionsToDeclare)
         {
-            // TODO; defaults for all types?
-            if (f.Type.TypeKind == TypeKind.Map || f.Type.TypeKind == TypeKind.Set)
-            {
-                cond += $" && {mname}.{GetField(m, f)} == {DefaultValue(f.Type)}";
-            }
-        }
-        return cond;
-    }
-    
-    private void GenerateIndividualStateTypes(IEnumerable<Machine> machines)
-    {
-        var ms = machines.ToList();
-        var sum = string.Join("\n\t\t| ", ms.Select(ProcessMachine));
-        EmitLine($"datatype {MachineT} = \n\t\t| {sum};\n");
-
-        if (ms.Count == 1)
-        {
-            EmitLine($"define {BuiltinPrefix}{Entry} (m: {MachineT}) : boolean = \n\t\tm.{GetEntry(ms.First())};\n");
-            EmitLine($"define {BuiltinPrefix}{Start} (m: {MachineT}) : boolean = \n\t\t{InStartPredicate(ms.First(), "m")};\n");
-            EmitLine($"define {BuiltinPrefix}Default (m: {MachineT}) : boolean = \n\t\t{InDefaultPredicate(ms.First(), "m")};");
-            EmitLine("\n");
-            return;
-        }
-        
-        var entryCases = $"if ({IsMachineInstance("m", ms.First())}) then m.{GetEntry(ms.First())}";
-        entryCases = ms.Skip(1).SkipLast(1).Aggregate(entryCases,
-            (current, m) =>
-                current + $"\n\t\telse if ({IsMachineInstance("m", m)}) then m.{GetEntry(m)}");
-        entryCases += $"\n\t\telse m.{GetEntry(ms.Last())}";
-        EmitLine($"define {BuiltinPrefix}{Entry} (m: {MachineT}) : boolean = \n\t\t{entryCases};\n");
-
-        var startCases =
-            $"if ({IsMachineInstance("m", ms.First())}) then {InStartPredicate(ms.First(), "m")}";
-        foreach (var m in ms.Skip(1).SkipLast(1))
-            startCases +=
-                $"\n\t\telse if ({IsMachineInstance("m", m)}) then {InStartPredicate(m, "m")}";
-
-        startCases +=
-            $"\n\t\telse {InStartPredicate(ms.Last(), "m")}";
-        EmitLine($"define {BuiltinPrefix}{Start} (m: {MachineT}) : boolean = \n\t\t{startCases};\n");
-        
-        var defaultCases =
-            $"if ({IsMachineInstance("m", ms.First())}) then {InDefaultPredicate(ms.First(), "m")}";
-        foreach (var m in ms.Skip(1).SkipLast(1))
-            defaultCases +=
-                $"\n\t\telse if ({IsMachineInstance("m", m)}) then {InDefaultPredicate(m, "m")}";
-
-        defaultCases +=
-            $"\n\t\telse {InDefaultPredicate(ms.Last(), "m")}";
-        EmitLine($"define {BuiltinPrefix}Default (m: {MachineT}) : boolean = \n\t\t{defaultCases};");
-        
-        EmitLine("\n");
-        return;
-
-        string ProcessMachine(Machine m)
-        {
-            var states = string.Join(" | ", m.States.Select(s => $"{GetMachineName(m.Name)}_{s.Name}()"));
-            var statesName = $"{MachineStateT(m)}";
-            EmitLine($"datatype {statesName} = {states};");
-            var fields = string.Join(", ",
-                m.Fields.Select(f => $"{GetMachineName(m.Name)}_{f.Name}: {TypeToString(f.Type)}"));
-            if (m.Fields.Any()) fields = ", " + fields;
-
-            return
-                $"{GetMachineName(m.Name)} ({GetEntry(m)}: boolean, {GetState(m)}: {statesName}{fields})";
+            var t = TypeToString(ptype);
+            var opt = $"{OptionPrefix}{t}";
+            EmitLine($"datatype {opt} = ");
+            EmitLine($"\t| {opt}_Some ({opt}_Some_Value: {t})");
+            EmitLine($"\t| {opt}_None ();");
         }
     }
 
-    private void GenerateGlobalState()
+    private string OptionConstructSome(PLanguageType t, string value)
     {
-        // Declare state space
-        EmitLine($"var {Machines}: [{RefT}]{MachineT};");
-        EmitLine($"var {Buffer}: [{LabelT}]boolean;");
-        EmitLine("\n");
-    }
-    
-    private void GenerateInitBlock()
-    {
-        // Init captures the state of affairs before anything executes
-        // Every machine is in their start state, every machine is in Entry, and the buffer is empty
-        EmitLine("init {");
-        EmitLine("// Every machine begins in their start state");
-        EmitLine($"assume(forall (r: {RefT}) :: {InStart(GetMachine("r"))});");
-        EmitLine("// Every machine begins with their entry flag set");
-        EmitLine($"assume(forall (r: {RefT}) :: {InEntry(GetMachine("r"))});");
-        EmitLine("// Every machine begins with fields in default");
-        EmitLine($"assume(forall (r: {RefT}) :: {InDefault(GetMachine("r"))});");
-        EmitLine("// The buffer starts completely empty");
-        EmitLine($"{Buffer} = const(false, [{LabelT}]boolean);");
-        // close the init block
-        EmitLine("}");
-        EmitLine("\n");
+        return $"{OptionPrefix}{TypeToString(t)}_Some({value})";
     }
 
-    private void GenerateMachineProcedures(List<Machine> ms)
+    private string OptionConstructNone(PLanguageType t)
     {
-        foreach (var m in ms)
+        return $"{OptionPrefix}{TypeToString(t)}_None()";
+    }
+
+    private string OptionIsSome(PLanguageType t, string instance)
+    {
+        return $"is_{OptionPrefix}{TypeToString(t)}_Some({instance})";
+    }
+
+    private string OptionSelectValue(PLanguageType t, string instance)
+    {
+        return $"{instance}.{OptionPrefix}{TypeToString(t)}_Some_Value";
+    }
+
+    private void GenerateCheckerVars()
+    {
+        foreach (var ptype in _setCheckersToDeclare)
         {
-            foreach (var f in m.Methods)
-            {
-                if (f.IsAnon)
-                {
-                    continue;
-                }
-                var ps = f.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}").Prepend($"{This}: {RefT}");
-                EmitLine($"procedure [noinline] {f.Name}({string.Join(", ", ps)})");
-                EmitLine($"\trequires {IsMachineInstance(GetMachine(This), m)};");
-                EmitLine(
-                    $"\tensures (forall (r1: {RefT}) :: {This} != r1 ==> old({Machines})[r1] == {GetMachine("r1")});");
-                if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-                {
-                    EmitLine($"\treturns ({ReturnVar}: {TypeToString(f.Signature.ReturnType)})");
-                }
-                EmitLine("{");
-                GenerateGenericHandlerVars(m, f);
-                GenerateStmt(f.Body);
-                GenerateGenericHandlerPost(m);
-                EmitLine("}\n");
-            }
-            EmitLine("\n");
+            var name = $"{CheckerPrefix}{TypeToString(ptype)}";
+            EmitLine($"var {name}: {TypeToString(ptype)};");
         }
     }
-    
-    private void GenerateGlobalProcedures(IEnumerable<Function> functions)
-    {
-        foreach (var f in functions)
-        {
-            var ps = f.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}").Prepend($"{This}: {RefT}");
-            EmitLine($"procedure [noinline] {f.Name}({string.Join(", ", ps)})");
-            if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-            {
-                EmitLine($"\treturns ({ReturnVar}: {TypeToString(f.Signature.ReturnType)})");
-            }
-            EmitLine("{");
-            GenerateStmt(f.Body);
-            EmitLine("}\n");
-        }
-        EmitLine("\n");
-    }
-    
-    private void GenerateGenericHandlerSpec(Machine m, State s)
-    {
-        EmitLine($"\trequires {IsMachineInstance(GetMachine(This), m)};");
-        EmitLine($"\trequires {IsMachineStateInstance(GetMachine(This), m, s)};");
-        EmitLine(
-            $"\tensures (forall (r1: {RefT}) :: {This} != r1 ==> old({Machines})[r1] == {GetMachine("r1")});");
-    }
-
-    private void GenerateGenericHandlerVars(Machine m, Function f)
-    {
-        foreach (var v in m.Fields) EmitLine($"var {GetLocalName(v.Name)}: {TypeToString(v.Type)};");
-
-        EmitLine("var entry: boolean;");
-        EmitLine($"var state: {MachineStateT(m)};");
-
-        foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v.Name)}: {TypeToString(v.Type)};");
-
-        foreach (var v in f.Signature.Parameters) EmitLine($"var {GetLocalName(v.Name)}: {TypeToString(v.Type)};");
-        
-        // assign the entry, state, and field variables to the correct values
-        EmitLine($"entry = {GetMachine("this")}.{GetEntry(m)};");
-        EmitLine($"state = {GetMachine("this")}.{GetState(m)};");
-        foreach (var v in m.Fields) EmitLine($"{GetLocalName(v.Name)} = {GetMachine("this")}.{GetField(m, v)};");
-    }
-
-    private void GenerateGenericHandlerPost(Machine m)
-    {
-        var fields = string.Join(", ", m.Fields.Select(variable => GetLocalName(variable.Name)));
-        if (fields.Any()) fields = ", " + fields;
-
-        var newMachine = $"{GetMachineName(m.Name)}(entry, state{fields})";
-        EmitLine($"{Machines} = {UpdateMachine(This, newMachine)};");
-    }
-
-    private void GenerateHandlerProcedures(IEnumerable<Machine> machines)
-    {
-        // create all the event handler procedures
-        foreach (var m in machines)
-        foreach (var s in m.States)
-        foreach (var eh in s.AllEventHandlers)
-            switch (eh.Value)
-            {
-                case EventDoAction action:
-                    var e = action.Trigger;
-                    var f = action.Target;
-                    EmitLine($"// Handler for event {e.Name} in machine {m.Name}");
-                    EmitLine(
-                        $"procedure [noinline] {EventHandlerName(m.Name, s.Name, e.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
-                    GenerateGenericHandlerSpec(m, s);
-                    EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
-                    EmitLine($"\trequires {GetTarget(IncomingEvent)} == {This};");
-                    EmitLine($"\trequires {IsEventInstance(IncomingEvent, e)};");
-                    EmitLine($"\trequires !{InEntry(GetMachine(This))};");
-                    // open procedure
-                    EmitLine("{");
-                    GenerateGenericHandlerVars(m, f);
-                    // find the variable that corresponds to the payload and set it equal to the payload of the event coming in
-                    foreach (var v in f.Signature.Parameters)
-                        if (v.Type.Equals(e.PayloadType))
-                            EmitLine(
-                                $"{GetLocalName(v.Name)} = {IncomingEvent}.{GetEventName(e.Name)}_{Payload};");
-
-                    EmitLine($"{Buffer} = {UpdateBuffer(IncomingEvent, false)};\n");
-                    EmitLine("// Begin handler body");
-                    GenerateStmt(f.Body);
-                    EmitLine("// End handler body\n");
-                    GenerateGenericHandlerPost(m);
-                    // close procedure
-                    EmitLine("}\n");
-                    break;
-                case EventGotoState action:
-                    var trigger = action.Trigger;
-                    var target = action.Target;
-                    EmitLine($"// Handler for event {trigger.Name} in machine {m.Name}");
-                    EmitLine(
-                        $"procedure [noinline] {EventHandlerName(m.Name, s.Name, trigger.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
-                    GenerateGenericHandlerSpec(m, s);
-                    EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
-                    EmitLine($"\trequires {GetTarget(IncomingEvent)} == {This};");
-                    EmitLine($"\trequires {IsEventInstance(IncomingEvent, trigger)};");
-                    EmitLine($"\trequires !{InEntry(GetMachine(This))};");
-                    // open procedure
-                    EmitLine("{");
-                    EmitLine($"{Buffer} = {UpdateBuffer(IncomingEvent, false)};");
-                    // TODO check the default value
-                    GenerateStmt(new GotoStmt(action.SourceLocation, target, new DefaultExpr(trigger.SourceLocation, trigger.PayloadType)));
-                    GenerateGenericHandlerPost(m);
-                    // close procedure
-                    EmitLine("}\n");
-                    break;
-            }
-    }
-
-    private void GenerateEntryProcedures(IEnumerable<Machine> machines)
-    {
-        foreach (var m in machines)
-        foreach (var s in m.States)
-        {
-            var f = s.Entry;
-            if (f is null) continue;
-
-            EmitLine($"// Handler for entry in machine {m.Name} at state {s.Name}");
-            EmitLine($"procedure [noinline] {EntryHandlerName(m.Name, s.Name)}({This}: {RefT})");
-            GenerateGenericHandlerSpec(m, s);
-            // open procedure
-            EmitLine("{");
-            GenerateGenericHandlerVars(m, f);
-            EmitLine("entry = false;\n");
-            EmitLine("// Begin handler body");
-            GenerateStmt(f.Body);
-            EmitLine("// End handler body\n");
-            GenerateGenericHandlerPost(m);
-            // close procedure
-            EmitLine("}\n");
-        }
-    }
-
-
-    private void GenerateNextBlock(IEnumerable<Machine> ms)
-    {
-        var machines = ms.ToList();
-        // Next picks a random machine and calls the appropriate procedure to step that machine
-        EmitLine("next {");
-        EmitLine($"havoc {CurrentMRef};");
-        EmitLine($"havoc {CurrentEvent};");
-        // if UPVerifier_ETurn is a live event destined for the right place, then handle it
-        EmitLine($"if ({LiveEvent(CurrentEvent)}) {{");
-        EmitLine("case");
-        foreach (var m in machines)
-        foreach (var s in m.States)
-        foreach (var h in s.AllEventHandlers)
-        {
-            EmitLine(
-                $"({IsMachineInstance(GetMachine(CurrentMRef), m)} && {IsMachineStateInstance(GetMachine(CurrentMRef), m, s)} && !{InEntry(GetMachine(CurrentMRef))} && {GetTarget(CurrentEvent)} == {CurrentMRef} && {IsEventInstance(CurrentEvent, h.Key)}) : {{");
-            EmitLine(
-                $"call {EventHandlerName(m.Name, s.Name, h.Key.Name)}({CurrentMRef}, {CurrentEvent});");
-            EmitLine("}");
-        }
-
-        EmitLine("esac");
-
-        EmitLine("} else {");
-        // else do an entry
-        EmitLine("case");
-        foreach (var m in machines)
-        foreach (var s in m.States)
-        {
-            if (s.Entry is null) continue;
-            EmitLine(
-                $"({IsMachineInstance(GetMachine(CurrentMRef), m)} && {IsMachineStateInstance(GetMachine(CurrentMRef), m, s)} && {InEntry(GetMachine(CurrentMRef))}): {{");
-            EmitLine($"call {EntryHandlerName(m.Name, s.Name)}({CurrentMRef});");
-            EmitLine("}");
-        }
-
-        EmitLine("esac");
-        EmitLine("}");
-        // close the next block
-        EmitLine("}");
-        EmitLine("\n");
-    }
-
 
     private void GenerateStmt(IPStmt stmt)
     {
@@ -687,30 +675,40 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 switch (cstmt.Location)
                 {
                     case VariableAccessExpr vax:
-                        EmitLine($"call ({GetLocalName(vax.Variable.Name)}) = {call.Function.Name}({string.Join(", ", call.Arguments.Select(ExprToString).Prepend(This))});");
+                        if (call != null)
+                        {
+                            var v = GetLocalName(vax.Variable);
+                            var f = call.Function.Name;
+                            var fargs = string.Join(", ", call.Arguments.Select(ExprToString).Prepend("this"));
+                            EmitLine($"call ({v}) = {f}({fargs});");
+                        }
+
                         return;
                 }
+
                 throw new NotSupportedException(
                     $"Not supported assignment expression with call: {cstmt.Location} = {cstmt.Value} ({GetLocation(cstmt)})");
             case AssignStmt astmt:
                 switch (astmt.Location)
                 {
                     case VariableAccessExpr vax:
-                        EmitLine($"{GetLocalName(vax.Variable.Name)} = {ExprToString(astmt.Value)};");
+                        EmitLine($"{GetLocalName(vax.Variable)} = {ExprToString(astmt.Value)};");
                         return;
                     case MapAccessExpr max:
                         var map = ExprToString(max.MapExpr);
                         var index = ExprToString(max.IndexExpr);
-                        var valueType = TypeToString(((MapType)max.MapExpr.Type).ValueType);
-                        EmitLine($"{map} = {map}[{index} -> {ConstructOptionSome(valueType, ExprToString(astmt.Value))}];");
+                        EmitLine(
+                            $"{map} = {map}[{index} -> {OptionConstructSome(max.MapExpr.Type, ExprToString(astmt.Value))}];");
                         return;
-                    case NamedTupleAccessExpr {SubExpr: VariableAccessExpr} tax:
+                    case NamedTupleAccessExpr { SubExpr: VariableAccessExpr } tax:
                         var subExpr = ExprToString(tax.SubExpr);
                         var entry = tax.Entry.Name;
                         var field = tax.FieldName;
                         var fields = ((NamedTupleType)((TypeDefType)tax.SubExpr.Type).TypeDefDecl.Type).Fields;
                         var rhs = ExprToString(astmt.Value);
-                        var build = string.Join(", ", fields.Select(f => f.Name == entry ? $"{entry} := {rhs}" : $"{f.Name} := {subExpr}.{f.Name}"));
+                        var build = string.Join(", ",
+                            fields.Select(
+                                f => f.Name == entry ? $"{entry} := {rhs}" : $"{f.Name} := {subExpr}.{f.Name}"));
                         EmitLine($"// subExpr: {subExpr}; entry {entry}; field: {field}");
                         EmitLine($"{subExpr} = const_record({build});");
                         return;
@@ -730,17 +728,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 GenerateStmt(ifstmt.ElseBranch);
                 EmitLine("}");
                 return;
-            case GotoStmt gstmt:
-                EmitLine($"state = {GetMachineName(gstmt.State.OwningMachine.Name)}_{gstmt.State.Name}();");
-                EmitLine("entry = true;");
-                return;
-            case SendStmt { Evt: EventRefExpr } sstmt:
-                var eref = (EventRefExpr)sstmt.Evt;
-                var name = GetEventName(eref.Value.Name);
-                var args = string.Join(", ", sstmt.Arguments.Select(ExprToString));
-                EmitLine(
-                    $"{Buffer} = {Buffer}[{name}({This}, {ExprToString(sstmt.MachineExpr)}, {args}) -> true];");
-                return;
             case AssertStmt astmt:
                 EmitLine($"// print({ExprToString(astmt.Message)});");
                 EmitLine($"assert({ExprToString(astmt.Assertion)});");
@@ -749,7 +736,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"// print({ExprToString(pstmt.Message)});");
                 return;
             case FunCallStmt fapp:
-                EmitLine($"call {fapp.Function.Name}({string.Join(", ", fapp.ArgsList.Select(ExprToString).Prepend(This))});");
+                EmitLine(
+                    $"call {fapp.Function.Name}({string.Join(", ", fapp.ArgsList.Select(ExprToString).Prepend("this"))});");
                 return;
             case AddStmt astmt:
                 var aset = ExprToString(astmt.Variable);
@@ -763,18 +751,19 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 switch (rstmt.Variable.Type)
                 {
                     case MapType mapType:
-                        EmitLine($"{rset} = {rset}[{rkey} -> {ConstructOptionNone(TypeToString(mapType.ValueType))}];");
+                        EmitLine($"{rset} = {rset}[{rkey} -> {OptionConstructNone(mapType.ValueType)}];");
                         return;
-                    case SetType setType:
+                    case SetType _:
                         EmitLine($"{rset} = {rset}[{rkey} -> false];");
                         return;
                     default:
-                        throw new NotSupportedException($"Only support remove statemetns for sets and maps, got {rstmt.Variable.Type}");
+                        throw new NotSupportedException(
+                            $"Only support remove statements for sets and maps, got {rstmt.Variable.Type}");
                 }
             case InsertStmt istmt:
                 var imap = ExprToString(istmt.Variable);
                 var idx = ExprToString(istmt.Index);
-                var value = ConstructOptionSome(TypeToString(istmt.Value.Type), ExprToString(istmt.Value));
+                var value = OptionConstructSome(istmt.Value.Type, ExprToString(istmt.Value));
                 EmitLine($"{imap} = {imap}[{idx} -> {value}];");
                 return;
             case WhileStmt wstmt:
@@ -784,10 +773,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine("}");
                 return;
             case ForeachStmt fstmt:
-                var item = GetLocalName(fstmt.Item.Name);
-                var checker = GetCheckerName(fstmt.IterCollection.Type);
+                var item = GetLocalName(fstmt.Item);
+                var checker = $"{CheckerPrefix}{TypeToString(fstmt.IterCollection.Type)}";
                 var collection = ExprToString(fstmt.IterCollection);
-                
+
                 switch (fstmt.IterCollection.Type)
                 {
                     case SetType setType:
@@ -809,58 +798,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         EmitLine("}");
                         return;
                     default:
-                        throw new NotSupportedException($"Foreach over non-sets is not supported yet: {fstmt} ({GetLocation(fstmt)}");
+                        throw new NotSupportedException(
+                            $"Foreach over non-sets is not supported yet: {fstmt} ({GetLocation(fstmt)}");
                 }
             case null:
                 return;
         }
+
         throw new NotSupportedException($"Not supported statement: {stmt} ({GetLocation(stmt)})");
-    }
-
-    private string GetCheckerName(PLanguageType ty)
-    {
-        return ty switch
-        {
-            MapType mapType => $"{BuiltinPrefix}Checker_{TypeToString(mapType.KeyType)}",
-            SetType setType => $"{BuiltinPrefix}Checker_{TypeToString(setType.ElementType)}",
-            _ => throw new ArgumentOutOfRangeException(nameof(ty))
-        };
-    }
-
-    private string TypeToString(PLanguageType t)
-    {
-        switch (t)
-        {
-            case NamedTupleType ntt:
-                var fields = string.Join(", ",
-                    ntt.Fields.Select(nte => $"{nte.Name}: {TypeToString(nte.Type)}"));
-                return $"record {{{fields}}}";
-            case PrimitiveType pt when pt.Equals(PrimitiveType.Bool):
-                return "boolean";
-            case PrimitiveType pt when pt.Equals(PrimitiveType.Int):
-                return "integer";
-            case PrimitiveType pt when pt.Equals(PrimitiveType.String):
-                return StringT;
-            case PrimitiveType pt when pt.Equals(PrimitiveType.Null):
-                return Null;
-            case PrimitiveType pt when pt.Equals(PrimitiveType.Machine):
-                return RefT;
-            case PrimitiveType pt when pt.Equals(PrimitiveType.Event):
-                return EventT;
-            case TypeDefType tdt:
-                return GetUserName(tdt.TypeDefDecl.Name);
-            case PermissionType _:
-                return RefT;
-            case EnumType et:
-                return GetUserName(et.EnumDecl.Name);
-            case SetType st:
-                return $"[{TypeToString(st.ElementType)}]boolean";
-            case MapType mt:
-                this._optionsToDeclare.Add(mt.ValueType);
-                return $"[{TypeToString(mt.KeyType)}]{GetOptionTypeName(TypeToString(mt.ValueType))}";
-        }
-
-        throw new NotSupportedException($"Not supported type expression: {t} ({t.OriginalRepresentation})");
     }
 
     private string ExprToString(IPExpr expr)
@@ -868,24 +813,27 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return expr switch
         {
             NamedTupleAccessExpr ntax => $"{ExprToString(ntax.SubExpr)}.{ntax.FieldName}",
-            VariableAccessExpr vax => GetLocalName(vax.Variable.Name),
+            VariableAccessExpr vax => GetLocalName(vax.Variable),
             IntLiteralExpr i => i.Value.ToString(),
             BoolLiteralExpr b => b.Value.ToString().ToLower(),
             BinOpExpr bexpr =>
                 $"{ExprToString(bexpr.Lhs)} {BinOpToString(bexpr.Operation)} {ExprToString(bexpr.Rhs)}",
             UnaryOpExpr uexpr => $"{UnaryOpToString(uexpr.Operation)} {ExprToString(uexpr.SubExpr)}",
-            ThisRefExpr => This,
-            EnumElemRefExpr e => GetUserName(e.Value.Name),
+            ThisRefExpr => "this",
+            EnumElemRefExpr e => $"{UserPrefix}{e.Value.Name}",
             NamedTupleExpr t => NamedTupleExprHelper(t),
             StringExpr s =>
                 $"\"{s.BaseString}\" {(s.Args.Count != 0 ? "%" : "")} {string.Join(", ", s.Args.Select(ExprToString))}",
-            MapAccessExpr maex => 
-                SelectOptionValue(TypeToString(((MapType)maex.MapExpr.Type).ValueType), $"{ExprToString(maex.MapExpr)}[{ExprToString(maex.IndexExpr)}]"),
+            MapAccessExpr maex =>
+                OptionSelectValue(((MapType)maex.MapExpr.Type).ValueType,
+                    $"{ExprToString(maex.MapExpr)}[{ExprToString(maex.IndexExpr)}]"),
             ContainsExpr cexp => cexp.Collection.Type switch
             {
-                MapType mapType => IsOptionSome(TypeToString(mapType.ValueType), $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
+                MapType mapType => OptionIsSome(mapType.ValueType,
+                    $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
                 SetType _ => $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
-                _ => throw new NotSupportedException($"Not supported expr: {expr} of {cexp.Type.OriginalRepresentation}")
+                _ => throw new NotSupportedException(
+                    $"Not supported expr: {expr} of {cexp.Type.OriginalRepresentation}")
             },
             DefaultExpr dexp => DefaultValue(dexp.Type),
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
@@ -902,7 +850,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return $"const_record({args})";
     }
 
-    private string BinOpToString(BinOpType op)
+    private static string BinOpToString(BinOpType op)
     {
         return op switch
         {
@@ -923,7 +871,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         };
     }
 
-    private string UnaryOpToString(UnaryOpType op)
+    private static string UnaryOpToString(UnaryOpType op)
     {
         return op switch
         {
@@ -933,60 +881,217 @@ public class Uclid5CodeGenerator : ICodeGenerator
         };
     }
 
-    private void GenerateOptionTypes()
+    private string TypeToString(PLanguageType t)
     {
-        foreach (var ptype in _optionsToDeclare)
+        switch (t)
         {
-            var t = TypeToString(ptype);
-            var opt = GetOptionTypeName(t);
-            EmitLine($"datatype {opt} = ");
-            EmitLine($"\t| {opt}_Some ({opt}_Some_Value: {t})");
-            EmitLine($"\t| {opt}_None ();");
-        }
-        EmitLine("\n");
-    }
-    
-    private void GenerateCheckerVars()
-    {
-        foreach (var ptype in _setCheckersToDeclare)
-        {
-            var name = GetCheckerName(ptype);
-            EmitLine($"var {name}: {TypeToString(ptype)};");
-        }
-        EmitLine("\n");
-    }
-    
-    private void GenerateControlBlock(IEnumerable<Machine> ms)
-    {
-        var machines = ms.ToList();
-
-        EmitLine("control {");
-        EmitLine("set_solver_option(\":Timeout\", 60);");
-        EmitLine("induction(1);");
-
-        foreach (var m in machines)
-        foreach (var s in m.States)
-        {
-            foreach (var h in s.AllEventHandlers)
-            {
-                EmitLine($"verify({EventHandlerName(m.Name, s.Name, h.Key.Name)});");
-            }
-            if (s.Entry is null) continue;
-            EmitLine($"verify({EntryHandlerName(m.Name, s.Name)});");
+            case NamedTupleType ntt:
+                var fields = string.Join(", ",
+                    ntt.Fields.Select(nte => $"{nte.Name}: {TypeToString(nte.Type)}"));
+                return $"record {{{fields}}}";
+            case PrimitiveType pt when pt.Equals(PrimitiveType.Bool):
+                return "boolean";
+            case PrimitiveType pt when pt.Equals(PrimitiveType.Int):
+                return "integer";
+            case PrimitiveType pt when pt.Equals(PrimitiveType.String):
+                return StringT;
+            case PrimitiveType pt when pt.Equals(PrimitiveType.Null):
+                return PNull;
+            case PrimitiveType pt when pt.Equals(PrimitiveType.Machine):
+                return MachineRefT;
+            case PrimitiveType pt when pt.Equals(PrimitiveType.Event):
+                return EventAdt;
+            case TypeDefType tdt:
+                return $"{UserPrefix}{tdt.TypeDefDecl.Name}";
+            case PermissionType _:
+                return MachineRefT;
+            case EnumType et:
+                return $"{UserPrefix}{et.EnumDecl.Name}";
+            case SetType st:
+                return $"[{TypeToString(st.ElementType)}]boolean";
+            case MapType mt:
+                this._optionsToDeclare.Add(mt.ValueType);
+                return $"[{TypeToString(mt.KeyType)}]{OptionPrefix}{TypeToString(mt.ValueType)}";
         }
 
-        EmitLine("check;");
-        EmitLine("print_results;");
-        EmitLine("}");
+        throw new NotSupportedException($"Not supported type expression: {t} ({t.OriginalRepresentation})");
     }
 
-    private static string GetStartState(Machine m)
+    private string GetLocalName(Variable v)
     {
-        return m.StartState.Name;
+        return $"{LocalPrefix}{v.Name}";
     }
 
-    private void EmitLine(string str)
+    private string GetLocation(IPAST node)
     {
-        _ctx.WriteLine(_src.Stream, str);
+        return _ctx.LocationResolver.GetLocation(node.SourceLocation).ToString();
     }
 }
+
+
+//     private void GenerateMachineProcedures(List<Machine> ms)
+//     {
+//         foreach (var m in ms)
+//         {
+//             foreach (var f in m.Methods)
+//             {
+//                 if (f.IsAnon)
+//                 {
+//                     continue;
+//                 }
+//                 var ps = f.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}").Prepend($"{This}: {MachineRefT}");
+//                 EmitLine($"procedure [noinline] {f.Name}({string.Join(", ", ps)})");
+//                 EmitLine($"\trequires {IsMachineInstance(GetMachine(This), m)};");
+//                 EmitLine(
+//                     $"\tensures (forall (r1: {MachineRefT}) :: {This} != r1 ==> old({Machines})[r1] == {GetMachine("r1")});");
+//                 if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+//                 {
+//                     EmitLine($"\treturns ({ReturnVar}: {TypeToString(f.Signature.ReturnType)})");
+//                 }
+//                 EmitLine("{");
+//                 GenerateGenericHandlerVars(m, f);
+//                 GenerateStmt(f.Body);
+//                 GenerateGenericHandlerPost(m);
+//                 EmitLine("}\n");
+//             }
+//             EmitLine("");
+//         }
+//     }
+//     
+//     
+//     private void GenerateGenericHandlerSpec(Machine m, State s)
+//     {
+//         EmitLine($"\trequires {IsMachineInstance(GetMachine(This), m)};");
+//         EmitLine($"\trequires {IsMachineStateInstance(GetMachine(This), m, s)};");
+//         EmitLine(
+//             $"\tensures (forall (r1: {MachineRefT}) :: {This} != r1 ==> old({Machines})[r1] == {GetMachine("r1")});");
+//     }
+//
+//     private void GenerateGenericHandlerVars(Machine m, Function f)
+//     {
+//         foreach (var v in m.Fields) EmitLine($"var {GetLocalName(v.Name)}: {TypeToString(v.Type)};");
+//
+//         EmitLine("var entry: boolean;");
+//         EmitLine($"var state: {MachineStateAdt(m)};");
+//
+//         foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v.Name)}: {TypeToString(v.Type)};");
+//
+//         foreach (var v in f.Signature.Parameters) EmitLine($"var {GetLocalName(v.Name)}: {TypeToString(v.Type)};");
+//         
+//         // assign the entry, state, and field variables to the correct values
+//         EmitLine($"entry = {GetStage(GetMachine("this"))};");
+//         EmitLine($"state = {GetStateField(GetMachine("this"), m)};");
+//         foreach (var v in m.Fields) EmitLine($"{GetLocalName(v.Name)} = {GetMachine("this")}.{GetField(m, v)};");
+//     }
+//
+//     private void GenerateGenericHandlerPost(Machine m)
+//     {
+//         var fields = string.Join(", ", m.Fields.Select(variable => GetLocalName(variable.Name)));
+//         if (fields.Any()) fields = ", " + fields;
+//
+//         var newMachine = $"{MachineStateAdt}(entry, {GetMachineName(m.Name)}(state{fields}))";
+//         EmitLine($"{Machines} = {UpdateMachine(This, newMachine)};");
+//     }
+//     
+//     private void GenerateEventHandlerProcedures(IEnumerable<Machine> machines)
+//     {
+//         // create all the event handler procedures
+//         // foreach (var m in machines)
+//         // foreach (var s in m.States)
+//         // foreach (var eh in s.AllEventHandlers)
+//         //     switch (eh.Value)
+//         //     {
+//         //         case EventDoAction action:
+//         //             var e = action.Trigger;
+//         //             var f = action.Target;
+//         //             EmitLine($"// Handler for event {e.Name} in machine {m.Name}");
+//         //             EmitLine(
+//         //                 $"procedure [noinline] {GenerateEventHandlerName(m.Name, s.Name, e.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
+//         //             GenerateGenericHandlerSpec(m, s);
+//         //             EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
+//         //             EmitLine($"\trequires {GetTarget(IncomingEvent)} == {This};");
+//         //             EmitLine($"\trequires {IsEventInstance(IncomingEvent, e)};");
+//         //             EmitLine($"\trequires !{InEntry(GetMachine(This))};");
+//         //             // open procedure
+//         //             EmitLine("{");
+//         //             GenerateGenericHandlerVars(m, f);
+//         //             // find the variable that corresponds to the payload and set it equal to the payload of the event coming in
+//         //             foreach (var v in f.Signature.Parameters)
+//         //                 if (v.Type.Equals(e.PayloadType))
+//         //                     EmitLine(
+//         //                         $"{GetLocalName(v.Name)} = {IncomingEvent}.{GetEventName(e.Name)}_{Payload};");
+//         //
+//         //             EmitLine($"{Buffer} = {UpdateBuffer(IncomingEvent, false)};\n");
+//         //             EmitLine("// Begin handler body");
+//         //             GenerateStmt(f.Body);
+//         //             EmitLine("// End handler body\n");
+//         //             GenerateGenericHandlerPost(m);
+//         //             // close procedure
+//         //             EmitLine("}\n");
+//         //             break;
+//         //         case EventGotoState action:
+//         //             var trigger = action.Trigger;
+//         //             var target = action.Target;
+//         //             EmitLine($"// Handler for event {trigger.Name} in machine {m.Name}");
+//         //             EmitLine(
+//         //                 $"procedure [noinline] {GenerateEventHandlerName(m.Name, s.Name, trigger.Name)} ({This}: {RefT}, {IncomingEvent}: {EventT})");
+//         //             GenerateGenericHandlerSpec(m, s);
+//         //             EmitLine($"\trequires {LiveEvent(IncomingEvent)};");
+//         //             EmitLine($"\trequires {GetTarget(IncomingEvent)} == {This};");
+//         //             EmitLine($"\trequires {IsEventInstance(IncomingEvent, trigger)};");
+//         //             EmitLine($"\trequires !{InEntry(GetMachine(This))};");
+//         //             // open procedure
+//         //             EmitLine("{");
+//         //             EmitLine($"{Buffer} = {UpdateBuffer(IncomingEvent, false)};");
+//         //             // TODO check the default value
+//         //             GenerateStmt(new GotoStmt(action.SourceLocation, target, new DefaultExpr(trigger.SourceLocation, trigger.PayloadType)));
+//         //             GenerateGenericHandlerPost(m);
+//         //             // close procedure
+//         //             EmitLine("}\n");
+//         //             break;
+//         //     }
+//     }
+//
+//     private void GenerateGotoHandlerProcedures(IEnumerable<Machine> machines)
+//     {
+//         foreach (var m in machines)
+//         foreach (var s in m.States)
+//         {
+//             var f = s.Entry;
+//             if (f is null) continue;
+//
+//             EmitLine($"// Handler for entry in machine {m.Name} at state {s.Name}");
+//             EmitLine($"procedure [noinline] {GenerateGotoHandlerName(m.Name, s.Name)}({This}: {MachineRefT})");
+//             GenerateGenericHandlerSpec(m, s);
+//             // open procedure
+//             EmitLine("{");
+//             GenerateGenericHandlerVars(m, f);
+//             EmitLine("entry = false;\n");
+//             EmitLine("// Begin handler body");
+//             GenerateStmt(f.Body);
+//             EmitLine("// End handler body\n");
+//             GenerateGenericHandlerPost(m);
+//             // close procedure
+//             EmitLine("}\n");
+//         }
+//     }
+//
+//     private static string EventT => $"{BuiltinPrefix}Event";
+//     private static string EventLabelConstructor => $"{LabelT}_Event";
+//     private static string GotoT => $"{BuiltinPrefix}Goto";
+//     private static string GotoLabel => $"{LabelT}_Goto";
+//     private static string Stage => "Stage";
+//     private static string Machine => "Machine";
+//     private static string Target => "Target";
+//     private static string Payload => "Payload";
+//     private static string Entry => "Entry";
+//     private static string Start => "Start";
+//     private static string State => "State";
+//     private static string CurrentLabel => $"{BuiltinPrefix}LTurn";
+//     private static string Machines => $"{BuiltinPrefix}Machines";
+//     private static string Buffer => $"{BuiltinPrefix}Buffer";
+//     private static string This => "this";
+//     private static string ReturnVar => $"{BuiltinPrefix}Ret";
+//
+//
+// }

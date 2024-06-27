@@ -1,7 +1,6 @@
 package pexplicit.runtime.scheduler.choice;
 
 import pexplicit.runtime.machine.PMachineId;
-import pexplicit.runtime.scheduler.explicit.StepState;
 
 import java.util.ArrayList;
 import java.util.List;

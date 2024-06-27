@@ -1,12 +1,9 @@
 package pexplicit.runtime.scheduler.explicit;
 
 import com.google.common.hash.Hashing;
-
 import lombok.Getter;
 import lombok.Setter;
-
 import org.apache.commons.lang3.StringUtils;
-
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
@@ -15,7 +12,6 @@ import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Scheduler;
-import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.strategy.*;
@@ -28,26 +24,28 @@ import pexplicit.values.PValue;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Represents the scheduler for performing explicit-state model checking
  */
 public class ExplicitSearchScheduler extends Scheduler {
-    
+
     /**
      * Map from state hash to iteration when first visited
      */
-    private static final transient Map<Object, Integer> stateCache = new ConcurrentHashMap<>();  
+    private static final transient Map<Object, Integer> stateCache = new ConcurrentHashMap<>();
 
     /**
      * Search strategy orchestrator
      */
     @Getter
-    @Setter
     private final transient SearchStrategy searchStrategy;
     /**
      * Backtrack choice number
@@ -94,8 +92,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     public void run() throws TimeoutException {
 
 
-    }    
-
+    }
 
 
     /**
@@ -104,11 +101,10 @@ public class ExplicitSearchScheduler extends Scheduler {
      * @throws TimeoutException Throws timeout exception if timeout is reached
      */
     @Override
-    public void runParallel() throws TimeoutException {
-        
+    public void runParallel() throws TimeoutException, InterruptedException {
+
         // PExplicitLogger.logRunTest();  // TODO : Add log Info feature
-        
-       
+
 
         // PExplicitGlobal.setResult("incomplete"); // TODO: Set Result object
 
@@ -116,20 +112,21 @@ public class ExplicitSearchScheduler extends Scheduler {
         // if (PExplicitGlobal.getConfig().getVerbosity() == 0) {  // TODO : Add log Info feature
         //     printProgressHeader(true);
         // }
-        
+
 
         while (true) {
             // schedule limit not reached and there are pending tasks
             // set the next task
             SearchTask nextTask = setNextTask();
-            if (nextTask == null ) {  // || PIN: PExplicitGlobal.getStatus() == STATUS.SCHEDULEOUT
+            if (nextTask == null) {  // || PIN: PExplicitGlobal.getStatus() == STATUS.SCHEDULEOUT
                 // all tasks completed or schedule limit reached
                 break;
-            }            
+            }
             // PExplicitLogger.logStartTask(searchStrategy.getCurrTask());   // TODO : Add log Info feature
             isDoneIterating = false;
             while (!isDoneIterating) {
-                // SearchStatistics.iteration++;   // TODO : Add log Info feature
+                searchStrategy.incrementIteration();
+                // TODO : Add log Info feature
                 // PExplicitLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); // TODO : Add log Info feature
                 if (stepNumber == 0) {
                     start();
@@ -140,9 +137,6 @@ public class ExplicitSearchScheduler extends Scheduler {
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
             // PExplicitLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask()); // TODO : Add log Info feature
-
-
-
 
 
         }
@@ -448,10 +442,10 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
     }
 
-    private void addRemainingChoicesAsChildrenTasks() {
+    private void addRemainingChoicesAsChildrenTasks() throws InterruptedException {
         SearchTask parentTask = searchStrategy.getCurrTask();
         int numChildrenAdded = 0;
-        for (int i: parentTask.getSearchUnitKeys(false)) {
+        for (int i : parentTask.getSearchUnitKeys(false)) {
             SearchUnit unit = parentTask.getSearchUnit(i);
             // if search unit at this depth is non-empty
             if (!unit.getUnexplored().isEmpty()) {
@@ -474,7 +468,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         searchStrategy.getFinishedTasks().add(currTask.getId());
     }
 
-    private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) {
+    private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) throws InterruptedException {
         SearchTask newTask = SearchStrategy.createTask(parentTask);
 
         int maxChoiceNum = choiceNum;
@@ -482,7 +476,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         newTask.addSuffixSearchUnit(choiceNum, unit);
 
         if (!isExact) {
-            for (int i: parentTask.getSearchUnitKeys(false)) {
+            for (int i : parentTask.getSearchUnitKeys(false)) {
                 if (i > choiceNum) {
                     if (i > maxChoiceNum) {
                         maxChoiceNum = i;
@@ -503,7 +497,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     /**
      * Set next backtrack task with given orchestration mode
      */
-    public SearchTask setNextTask() {
+    public SearchTask setNextTask() throws InterruptedException {
         SearchTask nextTask = searchStrategy.setNextTask();
         if (nextTask != null) {
             // PExplicitLogger.logNextTask(nextTask);    // TODO : Add log Info feature
@@ -538,7 +532,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     private void postIterationCleanup() {
         SearchTask task = searchStrategy.getCurrTask();
-        for (int cIdx: task.getSearchUnitKeys(true)) {
+        for (int cIdx : task.getSearchUnitKeys(true)) {
             SearchUnit unit = task.getSearchUnit(cIdx);
             if (unit.getUnexplored().isEmpty()) {
                 task.clearSearchUnit(cIdx);

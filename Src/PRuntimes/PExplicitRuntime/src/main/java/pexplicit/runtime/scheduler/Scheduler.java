@@ -83,7 +83,7 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     public abstract void run() throws TimeoutException, InterruptedException;
 
-    
+
     /**
      * Run the scheduler.
      *

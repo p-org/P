@@ -33,7 +33,7 @@ import java.util.SortedSet;
 /**
  * Represents the main PExplicit logger
  */
-public class PExplicitLogger {
+public class PExplicitThreadLogger {
     static Logger log = null;
     static LoggerContext context = null;
     @Setter
@@ -47,9 +47,9 @@ public class PExplicitLogger {
      */
     public static void Initialize(int verb) {
         verbosity = verb;
-        log = Log4JConfig.getContext().getLogger(PExplicitLogger.class.getName());
+        log = Log4JConfig.getContext().getLogger(PExplicitThreadLogger.class.getName());
         org.apache.logging.log4j.core.Logger coreLogger =
-                (org.apache.logging.log4j.core.Logger) LogManager.getLogger(PExplicitLogger.class.getName());
+                (org.apache.logging.log4j.core.Logger) LogManager.getLogger(PExplicitThreadLogger.class.getName());
         context = coreLogger.getContext();
 
         PatternLayout layout = Log4JConfig.getPatternLayout();
@@ -265,12 +265,16 @@ public class PExplicitLogger {
     }
 
     private static boolean isReplaying() {
+        logInfo("Check2.0"); // Debugging
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
+        logInfo("Check2.1"); // Debugging
         return (((PExplicitGlobal.getSchedulers()).get(localtID)) instanceof ReplayScheduler);
     }
 
     private static boolean typedLogEnabled() {
+        logInfo("Check1.0"); // Debugging
         boolean rv = isReplaying();
+        logInfo("Check1.1"); // Debugging
         return (verbosity > 5) || rv;
     }
 
@@ -283,10 +287,13 @@ public class PExplicitLogger {
     }
 
     public static void logRunTest() {
+        logInfo("Check0.0"); // Debugging
         if (typedLogEnabled()) {
+            logInfo("Check0.1"); // Debugging
             typedLog(LogType.TestLog, String.format("Running test %s.",
                     PExplicitGlobal.getConfig().getTestDriver()));
         }
+        logInfo("Check0.2"); // Debugging
     }
 
     public static void logModel(String message) {

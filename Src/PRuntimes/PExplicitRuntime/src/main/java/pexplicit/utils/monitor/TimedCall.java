@@ -10,24 +10,25 @@ import pexplicit.utils.exceptions.MemoutException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 
+import pexplicit.runtime.logger.PExplicitLogger;
+
 public class TimedCall implements Callable<Integer> {
     private final Scheduler scheduler;
 
     @Getter
     @Setter
-    private long threadId;
+    private int threadId;
 
     public TimedCall(Scheduler scheduler, boolean resume, int localtID) {
         this.scheduler = scheduler;
-        this.threadId = Thread.currentThread().getId();
-        PExplicitGlobal.addTotIDtolocaltID(this.threadId, localtID);
+        this.threadId = localtID;
     }
 
     @Override
     public Integer call()
             throws MemoutException, BugFoundException, TimeoutException, InterruptedException {
         try {
-            this.scheduler.runParallel();
+            this.scheduler.runParallel(threadId);
         } catch (OutOfMemoryError e) {
             throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
         } catch (NullPointerException | StackOverflowError | ClassCastException e) {

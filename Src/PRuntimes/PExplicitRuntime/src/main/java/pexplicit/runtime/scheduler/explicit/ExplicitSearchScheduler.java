@@ -1,12 +1,15 @@
 package pexplicit.runtime.scheduler.explicit;
 
 import com.google.common.hash.Hashing;
+
 import lombok.Getter;
 import lombok.Setter;
+
 import org.apache.commons.lang3.StringUtils;
+
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
-import pexplicit.runtime.logger.PExplicitLogger;
+import pexplicit.runtime.logger.PExplicitThreadLogger;
 import pexplicit.runtime.logger.ScratchLogger;
 import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PMachine;
@@ -31,6 +34,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import pexplicit.runtime.logger.PExplicitThreadLogger;
 
 /**
  * Represents the scheduler for performing explicit-state model checking
@@ -101,18 +106,19 @@ public class ExplicitSearchScheduler extends Scheduler {
      * @throws TimeoutException Throws timeout exception if timeout is reached
      */
     @Override
-    public void runParallel() throws TimeoutException, InterruptedException {
+    public void runParallel(int localtID) throws TimeoutException, InterruptedException {
 
-        // PExplicitLogger.logRunTest();  // TODO : Add log Info feature
-
-
-        // PExplicitGlobal.setResult("incomplete"); // TODO: Set Result object
+        
+        // PExplicitThreadLogger.logRunTest();  // TODO : Add log Info feature
 
 
-        // if (PExplicitGlobal.getConfig().getVerbosity() == 0) {  // TODO : Add log Info feature
-        //     printProgressHeader(true);
-        // }
+        PExplicitGlobal.setResult("incomplete"); // TODO: Set Result object
 
+
+        if (PExplicitGlobal.getConfig().getVerbosity() == 0) {  // TODO : Add log Info feature
+            printProgressHeader(true);
+        }
+        PExplicitGlobal.addTotIDtolocaltID(Thread.currentThread().getId(), localtID);
 
         while (true) {
             // schedule limit not reached and there are pending tasks
@@ -122,21 +128,21 @@ public class ExplicitSearchScheduler extends Scheduler {
                 // all tasks completed or schedule limit reached
                 break;
             }
-            // PExplicitLogger.logStartTask(searchStrategy.getCurrTask());   // TODO : Add log Info feature
+            PExplicitThreadLogger.logStartTask(searchStrategy.getCurrTask());   // TODO : Add log Info feature
             isDoneIterating = false;
             while (!isDoneIterating) {
                 searchStrategy.incrementIteration();
-                // TODO : Add log Info feature
-                // PExplicitLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); // TODO : Add log Info feature
+                PExplicitThreadLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); // TODO : Add log Info feature
                 if (stepNumber == 0) {
                     start();
                 }
                 runIteration();
                 postProcessIteration();
             }
+
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
-            // PExplicitLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask()); // TODO : Add log Info feature
+            PExplicitThreadLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask()); // TODO : Add log Info feature
 
 
         }
@@ -203,7 +209,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             scheduleTerminated = false;
             skipLiveness = true;
             isDoneStepping = true;
-            PExplicitLogger.logFinishedIteration(stepNumber);
+            PExplicitThreadLogger.logFinishedIteration(stepNumber);
             return;
         }
 
@@ -220,7 +226,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             scheduleTerminated = true;
             skipLiveness = false;
             isDoneStepping = true;
-            PExplicitLogger.logFinishedIteration(stepNumber);
+            PExplicitThreadLogger.logFinishedIteration(stepNumber);
             return;
         }
 
@@ -258,7 +264,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             // increment distinct state count
             SearchStatistics.totalDistinctStates++;
             // log new state
-            PExplicitLogger.logNewState(stepNumber, choiceNumber, stateKey, stepState.getMachineSet());
+            PExplicitThreadLogger.logNewState(stepNumber, choiceNumber, stateKey, stepState.getMachineSet());
         } else {
             // present in state cache
 
@@ -319,7 +325,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             // pick the current schedule choice
             PMachineId pid = schedule.getCurrentScheduleChoice(choiceNumber);
             result = PExplicitGlobal.getGlobalMachine(pid);
-            PExplicitLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
+            PExplicitThreadLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 
             // increment choice number
             choiceNumber++;
@@ -334,7 +340,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             choices = getNewScheduleChoices();
             if (choices.size() > 1) {
                 // log new choice
-                PExplicitLogger.logNewScheduleChoice(choices, stepNumber, choiceNumber);
+                PExplicitThreadLogger.logNewScheduleChoice(choices, stepNumber, choiceNumber);
             }
 
             if (choices.isEmpty()) {
@@ -348,7 +354,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         // pick the first choice
         result = PExplicitGlobal.getGlobalMachine(choices.get(0));
-        PExplicitLogger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
+        PExplicitThreadLogger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
 
         // remove the first choice from unexplored choices
         choices.remove(0);
@@ -381,7 +387,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             // pick the current data choice
             result = schedule.getCurrentDataChoice(choiceNumber);
             assert (input_choices.contains(result));
-            PExplicitLogger.logRepeatDataChoice(result, stepNumber, choiceNumber);
+            PExplicitThreadLogger.logRepeatDataChoice(result, stepNumber, choiceNumber);
 
             // increment choice number
             choiceNumber++;
@@ -397,7 +403,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             choices = input_choices;
             if (choices.size() > 1) {
                 // log new choice
-                PExplicitLogger.logNewDataChoice(choices, stepNumber, choiceNumber);
+                PExplicitThreadLogger.logNewDataChoice(choices, stepNumber, choiceNumber);
             }
 
             if (choices.isEmpty()) {
@@ -411,7 +417,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         // pick the first choice
         result = choices.get(0);
-        PExplicitLogger.logCurrentDataChoice(result, stepNumber, choiceNumber);
+        PExplicitThreadLogger.logCurrentDataChoice(result, stepNumber, choiceNumber);
 
         // remove the first choice from unexplored choices
         choices.remove(0);
@@ -459,7 +465,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
         }
 
-        // PExplicitLogger.logNewTasks(parentTask.getChildren()); // TODO : Add log Info feature
+        PExplicitThreadLogger.logNewTasks(parentTask.getChildren()); // TODO : Add log Info feature
     }
 
     private void endCurrTask() {
@@ -500,7 +506,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     public SearchTask setNextTask() throws InterruptedException {
         SearchTask nextTask = searchStrategy.setNextTask();
         if (nextTask != null) {
-            // PExplicitLogger.logNextTask(nextTask);    // TODO : Add log Info feature
+            PExplicitThreadLogger.logNextTask(nextTask);    // TODO : Add log Info feature
             schedule.setChoices(nextTask.getPrefixChoices());
             postIterationCleanup();
         }
@@ -558,7 +564,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 assert (!PExplicitGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
             }
             schedule.removeChoicesAfter(backtrackChoiceNumber);
-            PExplicitLogger.logBacktrack(newStepNumber, cIdx, unit);
+            PExplicitThreadLogger.logBacktrack(newStepNumber, cIdx, unit);
             return;
         }
         schedule.clear();
@@ -667,8 +673,8 @@ public class ExplicitSearchScheduler extends Scheduler {
             System.out.println("--------------------");
             System.out.println(s);
         } else {
-            PExplicitLogger.logVerbose("--------------------");
-            PExplicitLogger.logVerbose(s.toString());
+            PExplicitThreadLogger.logVerbose("--------------------");
+            PExplicitThreadLogger.logVerbose(s.toString());
         }
     }
 
@@ -712,7 +718,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 if (consolePrint) {
                     System.out.print(s);
                 } else {
-                    PExplicitLogger.logVerbose(s.toString());
+                    PExplicitThreadLogger.logVerbose(s.toString());
                 }
             }
         }

@@ -13,7 +13,7 @@ import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 public class PExplicitConfig {
     @Getter
     @Setter
-    private static int numThreads = 1;
+    private static int numThreads = 2;
     // default name of the test driver
     final String testDriverDefault = "DefaultImpl";
     // name of the test driver

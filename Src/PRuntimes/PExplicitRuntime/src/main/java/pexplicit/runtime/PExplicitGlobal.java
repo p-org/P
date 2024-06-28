@@ -3,6 +3,7 @@ package pexplicit.runtime;
 import lombok.Getter;
 import lombok.Setter;
 import pexplicit.commandline.PExplicitConfig;
+import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Scheduler;

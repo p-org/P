@@ -32,6 +32,7 @@ public class RuntimeExecutor {
             RuntimeException {
         try { // PIN: If thread gets exception, need to kill the other threads.
             if (timeLimit > 0) {
+                
                 for (Future<Integer> future : futures) {
                     // Future<Integer> future = futures.get(i);
                     future.get(timeLimit, TimeUnit.SECONDS);

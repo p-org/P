@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
@@ -53,12 +54,19 @@ public class PExplicitThreadLogger {
         context = coreLogger.getContext();
 
         PatternLayout layout = Log4JConfig.getPatternLayout();
-        ConsoleAppender consoleAppender = ConsoleAppender.createDefaultAppenderForLayout(layout);
-        consoleAppender.start();
 
-        context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
+        String filename = "/Users/xashisk/ashish-ws/SyncedForkedRepo/P/output/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";
+        FileAppender fileAppender = FileAppender.newBuilder()
+                .setName("FileAppender")
+                .withFileName(filename)
+                .setLayout(layout)
+                .build();
+        
+        fileAppender.start(); 
 
-        // initialize all loggers and writers
+        context.getConfiguration().addAppender(fileAppender);
+        coreLogger.addAppender(fileAppender);
+
         StatWriter.Initialize();
         ScratchLogger.Initialize();
         ScheduleWriter.Initialize();

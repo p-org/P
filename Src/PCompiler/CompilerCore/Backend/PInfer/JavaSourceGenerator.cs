@@ -24,6 +24,20 @@ namespace Plang.Compiler.Backend.PInfer
             Job = job;
         }
 
+        private string SimplifiedJavaType(PLanguageType type)
+        {
+            if (type is EnumType || type is Index)
+            {
+                return "int";
+            }
+            var javaType = Types.JavaTypeFor(type);
+            if (javaType.IsPrimitive)
+            {
+                return javaType.TypeName;
+            }
+            return "JSONObject";
+        }
+
         public string GenerateRawExpr(IPExpr expr)
         {
             var result = GenerateCodeExpr(expr).Replace("\"", "");
@@ -32,7 +46,7 @@ namespace Plang.Compiler.Backend.PInfer
                         var e = (PEventVariable) x;
                         return $"({e.Name}:{e.EventName})";
                 });
-                return result + " where " + string.Join(" ", events);
+                return result + $" => {SimplifiedJavaType(expr.Type)} where " + string.Join(" ", events);
             }
             return result;
         }

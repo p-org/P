@@ -1,10 +1,6 @@
 public class PInferDriver {
     private record RawPredicate(String repr, Set<Integer> contradictions, Set<Integer> boundedTerms) {
 
-        public TwoPhaseCommit.PredicateWrapper toPredicate(boolean negation) {
-            return new TwoPhaseCommit.PredicateWrapper(this.repr, negation);
-        }
-
         public boolean contradictsWith(int predicateId) {
             return this.contradictions.contains(predicateId);
         }
@@ -318,15 +314,13 @@ public class PInferDriver {
             // 1 field
             for (int i = 0; i < terms.size(); ++i) {
                 Set<Integer> setOfE = Set.of(i);
-                if (termsToPredicates.containsKey(setOfE)) {
-                    boolean trivial = false;
-                    if (trivialityCheck) {
-                        trivial = isTrivial(comb, setOfE);
-                    }
-                    if (!trivial) {
-                        showTemplateInput(comb, List.of(terms.get(i)));
-                        numTasks += 1;
-                    }
+                boolean trivial = false;
+                if (trivialityCheck) {
+                    trivial = isTrivial(comb, setOfE);
+                }
+                if (!trivial) {
+                    showTemplateInput(comb, List.of(terms.get(i)));
+                    numTasks += 1;
                 }
             }
             // 2 fields

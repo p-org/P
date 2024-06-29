@@ -154,17 +154,21 @@ namespace Plang.Compiler.Backend.PInfer
             Predicate = predicate;
         }
 
-        public static PredicateCallExpr MkEqualityComparison(IPExpr lhs, IPExpr rhs)
+        public static bool MkEqualityComparison(IPExpr lhs, IPExpr rhs, out PredicateCallExpr predicateCallExpr)
         {
-            return new PredicateCallExpr(PredicateStore.EqPredicate, [lhs, rhs]);
+            if (lhs.Type is Index && rhs.Type is Index) {
+                predicateCallExpr = null;
+                return false;
+            }
+            predicateCallExpr = new PredicateCallExpr(PredicateStore.EqPredicate, [lhs, rhs]);
+            return true;
         }
 
         public static bool MkPredicateCall(string predicateName, IReadOnlyList<IPExpr> arguments, out PredicateCallExpr predicateCall)
         {
             // Console.WriteLine($"Mk predicate call with {predicateName} and {string.Join(", ", arguments.Select(x => x.Type).ToList())}");
-            if (predicateName.Equals("=="))
+            if (predicateName.Equals("==") && MkEqualityComparison(arguments[0], arguments[1], out predicateCall))
             {
-                predicateCall = MkEqualityComparison(arguments[0], arguments[1]);
                 return true;
             }
             if (PredicateStore.TryGetPredicate(arguments.Select(x => x.Type).ToList(), predicateName, out var predicate))

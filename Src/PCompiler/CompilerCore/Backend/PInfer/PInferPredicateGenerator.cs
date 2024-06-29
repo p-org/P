@@ -141,7 +141,7 @@ namespace Plang.Compiler.Backend.PInfer
                 if (!combinationCache.TryGetValue(sig, out IDictionary<string, HashSet<IPExpr>> varMap))
                 {
                     // Console.WriteLine($"Generating combinations for {pred.Name} => {string.Join(", ", sigStrList)}");
-                    var parameterCombs = GetParameterCombinations(sigList.Count, allTerms, sigList, []);
+                    var parameterCombs = GetParameterCombinations(sigList.Count, allTerms, sigList, [], 0);
                     varMap = new Dictionary<string, HashSet<IPExpr>>();
                     combinationCache.Add(sig, varMap);
                     foreach (var parameters in parameterCombs)
@@ -180,21 +180,28 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<string, HashSet<IPExpr>> varMaps)
+        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<string, HashSet<IPExpr>> varMaps, int termOrder = 0)
         {
-            if (varMaps.Count == 0)
+            if (types.Count == 0 || varMaps.Count == 0)
             {
-                return [];
+                yield break;
             }
-            if (types.Count == 0)
+            if (types.Count == 1)
             {
-                return [[]];
+                foreach (var e in varMaps[ShowType(types[0])].Where(x => TermOrder[x] >= termOrder))
+                {
+                    yield return [e];
+                }
             }
             else
             {
-                return from e in varMaps[ShowType(types[0])]
-                        from rest in CartesianProduct(types.Skip(1).ToList(), varMaps)
-                        select rest.Prepend(e);
+                foreach (var e in varMaps[ShowType(types[0])])
+                {
+                    foreach (var rest in CartesianProduct(types.Skip(1).ToList(), varMaps, TermOrder[e]))
+                    {
+                        yield return rest.Prepend(e);
+                    }
+                }
             }
         }
 
@@ -263,17 +270,19 @@ namespace Plang.Compiler.Backend.PInfer
                         var lhs = allTerms[i];
                         var rhs = allTerms[j];
                         // var expr = new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
-                        var expr = PredicateCallExpr.MkEqualityComparison(lhs, rhs);
-                        Contraditions[expr] = [];
-                        if (PredicateCallExpr.MkPredicateCall("<", [lhs, rhs], out var c))
+                        if (PredicateCallExpr.MkEqualityComparison(lhs, rhs, out var expr))
                         {
-                            Contraditions[expr].Add(c);
-                            Contraditions[c] = [expr];
+                            Contraditions[expr] = [];
+                            if (PredicateCallExpr.MkPredicateCall("<", [lhs, rhs], out var c))
+                            {
+                                Contraditions[expr].Add(c);
+                                Contraditions[c] = [expr];
+                            }
+                            PredicateOrder[expr] = Predicates.Count;
+                            Predicates.Add(expr);
+                            PredicateBoundedTerm[expr] = [TermOrder[lhs], TermOrder[rhs]];
+                            FreeEvents[expr] = GetUnboundedEventsMultiple(lhs, rhs);
                         }
-                        PredicateOrder[expr] = Predicates.Count;
-                        Predicates.Add(expr);
-                        PredicateBoundedTerm[expr] = [TermOrder[lhs], TermOrder[rhs]];
-                        FreeEvents[expr] = GetUnboundedEventsMultiple(lhs, rhs);
                     }
                 }
             }
@@ -307,8 +316,8 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private static IEnumerable<List<IPExpr>>
-                GetParameterCombinations(int index, IEnumerable<IPExpr> candidateTerms, List<PLanguageType> declParams, List<IPExpr> parameters)
+        private IEnumerable<List<IPExpr>>
+                GetParameterCombinations(int index, IEnumerable<IPExpr> candidateTerms, List<PLanguageType> declParams, List<IPExpr> parameters, int maxTermOrder = -1)
         {
             // Console.WriteLine($"declParams: {declParams} | index: {index}");
             if (index == 0)
@@ -324,11 +333,11 @@ namespace Plang.Compiler.Backend.PInfer
                 List<IPExpr> newParameters = [];
                 newParameters.AddRange(parameters);
                 IEnumerable<List<IPExpr>> result = [];
-                foreach (var expr in candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)))
+                foreach (var expr in candidateTerms.Where(x => (maxTermOrder < 0 || TermOrder[x] >= maxTermOrder) && IsAssignableFrom(x.Type, declParam)))
                 {
                     // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(expr.Type, declParam)}, {candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)).Count()}");
                     newParameters.Add(expr);
-                    result = result.Concat(GetParameterCombinations(index - 1, candidateTerms, declParams[1..], newParameters));
+                    result = result.Concat(GetParameterCombinations(index - 1, candidateTerms, declParams[1..], newParameters, maxTermOrder < 0 ? maxTermOrder : TermOrder[expr] + 1));
                     newParameters.RemoveAt(newParameters.Count - 1);
                 }
                 return result;

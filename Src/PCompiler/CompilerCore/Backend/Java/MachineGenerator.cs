@@ -252,9 +252,19 @@ namespace Plang.Compiler.Backend.Java {
 
             foreach (var s in _currentMachine.States)
             {
-                WriteStateBuilderDecl(s);
+                WriteStateBuilderDecl(s, true);
             }
             WriteLine("} // constructor");
+            WriteLine();
+
+            WriteLine($"public void reInitializeMonitor() {{");
+            
+            foreach (var s in _currentMachine.States)
+            {
+                WriteStateBuilderDecl(s, false);
+            }
+            WriteLine("}");
+
         }
 
         private void WriteEventsAccessor()
@@ -271,9 +281,14 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine("}");
         }
 
-        private void WriteStateBuilderDecl(State s)
+        private void WriteStateBuilderDecl(State s, bool isConstructor)
         {
-            WriteLine($"addState(prt.State.keyedOn({Names.IdentForState(s)})");
+            if (isConstructor) {
+                WriteLine($"addState(prt.State.keyedOn({Names.IdentForState(s)})");
+            } else {
+                WriteLine($"registerState(prt.State.keyedOn({Names.IdentForState(s)})");
+            }
+            
             if (s.IsStart)
             {
                 WriteLine($".isInitialState(true)");

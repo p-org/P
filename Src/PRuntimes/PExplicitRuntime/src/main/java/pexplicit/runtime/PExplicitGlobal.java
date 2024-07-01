@@ -17,6 +17,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class PExplicitGlobal {
 
+    @Getter
+    private static final int verbosity = (new PExplicitConfig ()).getVerbosity();
 
     @Getter
     private static final int maxThreads = PExplicitConfig.getNumThreads();

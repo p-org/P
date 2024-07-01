@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import pexplicit.runtime.logger.PExplicitThreadLogger;
 
 /**
  * Represents the scheduler for performing explicit-state model checking
@@ -119,6 +118,8 @@ public class ExplicitSearchScheduler extends Scheduler {
             printProgressHeader(true);
         }
         PExplicitGlobal.addTotIDtolocaltID(Thread.currentThread().getId(), localtID);
+
+        PExplicitThreadLogger.Initialize( PExplicitGlobal.getVerbosity());
 
         while (true) {
             // schedule limit not reached and there are pending tasks

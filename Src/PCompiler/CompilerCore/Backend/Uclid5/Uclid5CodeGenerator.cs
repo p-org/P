@@ -90,12 +90,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string StateVar => $"{BuiltinPrefix}State";
     private static string StateVarDeclaration => $"var {StateVar}: {StateAdt};";
 
-    private static string DerefFunctionDeclaration =>
-        $"define {BuiltinPrefix}Deref({LocalPrefix}r: {MachineRefT}) : {MachineStateAdt} = {StateAdtSelectMachines(StateVar)}[{LocalPrefix}r];";
-
     private static string Deref(string r)
     {
-        return $"{BuiltinPrefix}Deref({r})";
+        return $"{StateAdtSelectMachines(StateVar)}[{r}]";
     }
 
     /********************************
@@ -477,7 +474,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         EmitLine(InStartPredicateDeclaration(machines));
         EmitLine(InEntryPredicateDeclaration());
-        EmitLine(DerefFunctionDeclaration);
         EmitLine("");
 
         GenerateInitBlock(machines);
@@ -777,7 +773,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private void GenerateControlBlock(List<Machine> machines, List<PEvent> events)
     {
         EmitLine("control {");
-        EmitLine("set_solver_option(\":Timeout\", 1000);");
+        EmitLine("set_solver_option(\":Timeout\", 1);");
         EmitLine("induction(1);");
 
         foreach (var m in machines)

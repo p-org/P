@@ -154,7 +154,7 @@ public class PExplicitGlobal {
         Map<Class<? extends PMachine>, List<PMachine>> machineListByType = getMachineListByType();
         if (!machineListByType.containsKey(machine.getClass())) {
             machineListByType.put(machine.getClass(), new ArrayList<>());
-            putMachineListByType(machineListByType); // PIN: Need lock and key somewhere here! Also, is this local copy ok for future use in this function? Need lock and key for future use?
+            putMachineListByType(machineListByType); 
         }
         assert (machineCount == machineListByType.get(machine.getClass()).size());
         machineListByType.get(machine.getClass()).add(machine);

@@ -134,9 +134,11 @@ public abstract class SearchStrategy implements Serializable {
         int numUnexplored = 0;
         SearchTask task = getCurrTask();
         numUnexplored += task.getNumUnexploredDataChoices();
-        for (Integer tid : pendingTasks) {
-            task = getTask(tid);
-            numUnexplored += task.getNumUnexploredDataChoices();
+        synchronized (pendingTasks) {
+            for (Integer tid : pendingTasks) { // PIN: Take care of this in a better way.
+                task = getTask(tid);
+                numUnexplored += task.getNumUnexploredDataChoices();
+            }
         }
         return numUnexplored;
     }

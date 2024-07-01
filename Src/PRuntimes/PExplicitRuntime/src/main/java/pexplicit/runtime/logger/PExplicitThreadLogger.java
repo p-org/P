@@ -4,7 +4,7 @@ import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import pexplicit.commandline.PExplicitConfig;
 import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.PExplicitGlobal;
@@ -55,7 +55,8 @@ public class PExplicitThreadLogger {
 
         PatternLayout layout = Log4JConfig.getPatternLayout();
 
-        String filename = "/Users/xashisk/ashish-ws/SyncedForkedRepo/P/output/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";
+        String filename = (new PExplicitConfig()).getOutputFolder() + "/outputTID" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";
+        // String filename = "/Users/xashisk/ashish-ws/scriptsRepo/src/P-Evaluation-Tests/runs/pexplicit/test/output" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";
         FileAppender fileAppender = FileAppender.newBuilder()
                 .setName("FileAppender")
                 .withFileName(filename)
@@ -273,16 +274,12 @@ public class PExplicitThreadLogger {
     }
 
     private static boolean isReplaying() {
-        logInfo("Check2.0"); // Debugging
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        logInfo("Check2.1"); // Debugging
         return (((PExplicitGlobal.getSchedulers()).get(localtID)) instanceof ReplayScheduler);
     }
 
     private static boolean typedLogEnabled() {
-        logInfo("Check1.0"); // Debugging
         boolean rv = isReplaying();
-        logInfo("Check1.1"); // Debugging
         return (verbosity > 5) || rv;
     }
 
@@ -295,13 +292,10 @@ public class PExplicitThreadLogger {
     }
 
     public static void logRunTest() {
-        logInfo("Check0.0"); // Debugging
         if (typedLogEnabled()) {
-            logInfo("Check0.1"); // Debugging
             typedLog(LogType.TestLog, String.format("Running test %s.",
                     PExplicitGlobal.getConfig().getTestDriver()));
         }
-        logInfo("Check0.2"); // Debugging
     }
 
     public static void logModel(String message) {

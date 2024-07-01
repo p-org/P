@@ -634,7 +634,10 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
         StatWriter.log("steps-min", String.format("%d", SearchStatistics.minSteps));
         StatWriter.log("max-depth-explored", String.format("%d", SearchStatistics.maxSteps));
-        StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps / SearchStatistics.iteration));
+        if (SearchStatistics.iteration != 0) // PIN: Do in a better way?
+            StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps / SearchStatistics.iteration));
+        else
+            StatWriter.log("steps-avg", "inf");
         StatWriter.log("#-choices-unexplored", String.format("%d", getNumUnexploredChoices()));
         StatWriter.log("%-choices-unexplored-data", String.format("%.1f", getUnexploredDataChoicesPercent()));
         StatWriter.log("#-tasks-finished", String.format("%d", searchStrategy.getFinishedTasks().size()));

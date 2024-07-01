@@ -104,9 +104,14 @@ public class PExplicitLogger {
         logInfo(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
         logInfo(String.format("..... Finished %d search tasks (%d pending)",
                 scheduler.getSearchStrategy().getFinishedTasks().size(), scheduler.getSearchStrategy().getPendingTasks().size()));
-        logInfo(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
+        if (SearchStatistics.iteration != 0) // PIN: Find better way to do this
+            logInfo(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
                 SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
-        logInfo(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
+        else
+            logInfo(String.format("..... Number of steps explored: %d (min), inf (avg), %d (max).",
+        SearchStatistics.minSteps, SearchStatistics.maxSteps));
+        
+                logInfo(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         logInfo(String.format(".. Result: " + PExplicitGlobal.getResult()));
         logInfo(". Done");
     }

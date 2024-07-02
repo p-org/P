@@ -38,6 +38,10 @@ namespace Plang.Compiler.Backend.PInfer
             return "JSONObject";
         }
 
+        public string GenerateTypeName(IPExpr expr) {
+            return SimplifiedJavaType(expr.Type);
+        }
+
         public string GenerateRawExpr(IPExpr expr)
         {
             var result = GenerateCodeExpr(expr).Replace("\"", "");

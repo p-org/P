@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker;
@@ -86,29 +87,12 @@ namespace Plang.Compiler.Backend.PInfer
             Console.WriteLine($"Generating predicates ...");
             PopulatePredicate();
             MkEqComparison();
-            CompiledFile terms = new($"{job.ProjectName}.terms");
-            CompiledFile predicates = new($"{job.ProjectName}.predicates");
-            // var rawExpr = new HashSet<IPExpr>()
+            CompiledFile terms = new($"{job.ProjectName}.terms.json");
+            CompiledFile predicates = new($"{job.ProjectName}.predicates.json");
             JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, VisitedSet, FreeEvents);
             IEnumerable<CompiledFile> compiledJavaSrc = codegen.GenerateCode(javaCtx, globalScope);
-            foreach (var term in VisitedSet)
-            {
-                ctx.WriteLine(terms.Stream, $"{TermOrder[term]} " + codegen.GenerateRawExpr(term));
-            }
-            foreach (var pred in Predicates)
-            {
-                ctx.WriteLine(predicates.Stream, string.Join(" ", PredicateBoundedTerm[pred]));
-                string contraditingPredicates = "";
-                foreach (var c in Contraditions[pred])
-                {
-                    if (PredicateOrder.ContainsKey(c))
-                    {
-                        contraditingPredicates = $"{PredicateOrder[c]} " + contraditingPredicates;
-                    }
-                }
-                ctx.WriteLine(predicates.Stream, contraditingPredicates);
-                ctx.WriteLine(predicates.Stream, $"{PredicateOrder[pred]} " + codegen.GenerateRawExpr(pred));
-            }
+            WriteTerms(ctx, terms.Stream, codegen);
+            WritePredicates(ctx, predicates.Stream, codegen);
             GenerateBuildScript(job);
             var templateCodegen = new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
@@ -117,7 +101,57 @@ namespace Plang.Compiler.Backend.PInfer
                                 .Concat(new DriverGenerator(job, "PInferDriver.java", templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
                                 .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
                                 .Concat(eventDefSource)
+                                .Concat(new TemplateInstantiatorGenerator(job, "Main.java").GenerateCode(javaCtx, globalScope))
                                 .Concat([terms, predicates]);
+        }
+
+        private string GetEventVariableRepr(PEventVariable x)
+        {
+            return $"({x.Name}:{x.EventName})";
+        }
+
+        private void WritePredicates(CompilationContext ctx, StringWriter stream, JavaCodegen codegen)
+        {
+            ctx.WriteLine(stream, "[");
+            foreach ((var pred, var index) in Predicates.Select((x, i) => (x, i)))
+            {
+                ctx.WriteLine(stream, "{");
+                ctx.WriteLine(stream, $"\"order\": {PredicateOrder[pred]},");
+                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(pred)}\", ");
+                ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[pred])}], ");
+                if (Contraditions.TryGetValue(pred, out var contraditions))
+                {
+                    ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contraditions.Where(PredicateOrder.ContainsKey).Select(x => PredicateOrder[x]))}]");
+                }
+                else
+                {
+                    ctx.WriteLine(stream, $"\"contradictions\": []");
+                }
+                ctx.WriteLine(stream, "}");
+                if (index < Predicates.Count - 1)
+                {
+                    ctx.WriteLine(stream, ",");
+                }
+            }
+            ctx.WriteLine(stream, "]");
+        }
+
+        private void WriteTerms(CompilationContext ctx, StringWriter stream, JavaCodegen codegen)
+        {
+            ctx.WriteLine(stream, "[");
+            foreach ((var term, var index) in VisitedSet.Select((x, i) => (x, i)))
+            {
+                ctx.WriteLine(stream, "{");
+                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(term)}\",");
+                ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"\"{GetEventVariableRepr((PEventVariable) x)}\""))}],");
+                ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(term)}\"");
+                ctx.WriteLine(stream, "}");
+                if (index < VisitedSet.Count - 1)
+                {
+                    ctx.WriteLine(stream, ", ");
+                }
+            }
+            ctx.WriteLine(stream, "]");
         }
 
         private PLanguageType ExplicateTypeDef(PLanguageType type)

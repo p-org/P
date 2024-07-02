@@ -18,6 +18,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private CompiledFile _src;
     private HashSet<PLanguageType> _optionsToDeclare;
     private HashSet<SetType> _setCheckersToDeclare;
+    private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
     public bool HasCompilationStage => false;
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -25,7 +26,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _ctx = new CompilationContext(job);
         _src = new CompiledFile(_ctx.FileName);
         _optionsToDeclare = [];
-        _setCheckersToDeclare = new HashSet<SetType>();
+        _specListenMap = new Dictionary<PEvent, List<string>>();
+        _setCheckersToDeclare = [];
         GenerateMain(globalScope);
         return new List<CompiledFile> { _src };
     }
@@ -442,8 +444,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
      *  3) create a procedure per spec machine handler that operates on the variables from (1); and
      *  4) whenever a regular machine sends an event, we call the appropriate handler from (2).
      *******************************/
-    private Dictionary<PEvent, string> _specListenMap; // keep track of the procedure names for each event
-    
     private void SpecVariableDeclarations(List<Machine> specs)
     {
         foreach (var spec in specs)
@@ -480,6 +480,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     EmitLine($"var {LocalPrefix}{v.Name}: {TypeToString(v.Type)};");
                 }
                 
+                // declare local variables for the method and set them to their default value
+                foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
+                foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
+                
                 GenerateStmt(f.Body, spec);
                 
                 // update the global variables
@@ -502,7 +506,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
             foreach (var e in events)
             {
                 var procedureName = $"{SpecPrefix}{spec.Name}_{e.Name}";
-                _specListenMap.Add(e, procedureName);
+                if (_specListenMap.ContainsKey(e))
+                {
+                    _specListenMap[e].Add(procedureName);
+                }
+                else
+                {
+                    _specListenMap.Add(e, [procedureName]);
+                }
                 EmitLine($"procedure [inline] {procedureName}({SpecPrefix}Payload: {TypeToString(e.PayloadType)})");
                 EmitLine("{");
                 EmitLine("case");
@@ -1131,7 +1142,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"{LocalPrefix}State = {SpecPrefix}{specMachine.Name}_{gstmts.State.Name};");
                 return;
             case SendStmt sstmt when specMachine is null:
-                // TODO: call spec handlers in _specListenMap
                 if (sstmt.Arguments.Count > 1)
                 {
                     throw new NotSupportedException("We only support at most one argument to a send");
@@ -1143,6 +1153,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var slabels = StateAdtSelectBuffer(StateVar);
                 EmitLine($"{slabels} = {slabels}[{slabel} -> true];");
                 EmitLine($"{LocalPrefix}stage = true;");
+
+                foreach (var procedureName in _specListenMap.GetValueOrDefault(ev, []))
+                {
+                    EmitLine($"call {procedureName}({ExprToString(sstmt.Arguments[0])});");
+                }
+                
                 return;
             case null:
                 return;

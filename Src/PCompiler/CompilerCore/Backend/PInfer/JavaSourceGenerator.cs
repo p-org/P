@@ -111,7 +111,7 @@ namespace Plang.Compiler.Backend.PInfer
 
             WriteLine($"public static boolean conjoin(List<PredicateWrapper> repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
             WriteLine("for (PredicateWrapper wrapper: repr) {");
-            WriteLine("if (wrapper.negate() != invoke(wrapper, arguments)) return false;");
+            WriteLine("if (wrapper.negate() == invoke(wrapper, arguments)) return false;");
             WriteLine("}");
             WriteLine("return true;");
             WriteLine("}");

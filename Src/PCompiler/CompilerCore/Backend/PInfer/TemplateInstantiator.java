@@ -1,4 +1,4 @@
-public class PInferDriver {
+public class TemplateInstantiator {
     private record RawPredicate(String repr, Set<Integer> contradictions, Set<Integer> boundedTerms) {
 
         public boolean contradictsWith(int predicateId) {

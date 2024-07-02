@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.PInfer
             if (hasPayload)
             {
                 var payloadName = $"{e.Name}Payload";
-                result += $"var {payloadName} = {GenerateJSONObjectGet("e", "payload", payloadType)};\n";
+                result += $"var {payloadName} = {GenerateJSONObjectGet("details", "payload", payloadType)};\n";
                 if (payloadType is NamedTupleType type)
                 {
                     foreach (var field in type.Fields)

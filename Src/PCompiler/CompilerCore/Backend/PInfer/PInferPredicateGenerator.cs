@@ -110,9 +110,11 @@ namespace Plang.Compiler.Backend.PInfer
                 ctx.WriteLine(predicates.Stream, $"{PredicateOrder[pred]} " + codegen.GenerateRawExpr(pred));
             }
             GenerateBuildScript(job);
+            var templateCodegen = new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
             return compiledJavaSrc.Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
-                                .Concat(new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents).GenerateCode(javaCtx, globalScope))
+                                .Concat(templateCodegen.GenerateCode(javaCtx, globalScope))
+                                .Concat(new DriverGenerator(job, "PInferDriver.java", templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
                                 .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
                                 .Concat(eventDefSource)
                                 .Concat([terms, predicates]);

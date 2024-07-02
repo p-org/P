@@ -13,6 +13,7 @@ namespace Plang.Compiler.Backend.PInfer
         private readonly HashSet<IPExpr> Predicates;
         private readonly IDictionary<IPExpr, HashSet<Variable>> FreeEvents;
         private readonly List<IPExpr> Terms;
+        public readonly List<string> TemplateNames;
         public PInferTemplateGenerator(ICompilerConfiguration job, string filename, List<PEvent> quantifiedEvents,
                 HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
         {
@@ -20,6 +21,7 @@ namespace Plang.Compiler.Backend.PInfer
             Predicates = predicates;
             Terms = [.. terms];
             FreeEvents = freeEvents;
+            TemplateNames = [];
         }
 
         protected override void GenerateCodeImpl()
@@ -27,7 +29,10 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("public class Templates {");
             // Forall-only template
             // Two Quantifier Two Fields
-            GenerateForallTemplate(2, ["int", "int"]);
+            TemplateNames.Add(GenerateForallTemplate(2, ["int", "int"]));
+            TemplateNames.Add(GenerateForallTemplate(2, ["int"]));
+            TemplateNames.Add(GenerateForallTemplate(1, ["int", "int"]));
+            TemplateNames.Add(GenerateForallTemplate(1, ["int"]));
             WriteLine("}");
         }
 
@@ -53,7 +58,7 @@ namespace Plang.Compiler.Backend.PInfer
                 WriteLine($"this.f{i} = f{i};");
             }
             WriteLine("}");
-            WriteLine($"public static void execute(List<PEvents.EventBase> trace, List<{Job.ProjectName}.PredicateWrapper> predicates, String[] terms) {{");
+            WriteLine($"public static void execute(List<PEvents.EventBase> trace, List<{Job.ProjectName}.PredicateWrapper> predicates, List<String> terms) {{");
             for (var i = 0; i < numQuantifier; ++i)
             {
                 WriteLine($"for (PEvents.EventBase e{i}: trace) {{");
@@ -63,7 +68,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("try {");
             WriteLine($"boolean result = {Job.ProjectName}.conjoin(predicates, arguments);");
             WriteLine("if (!result) continue;");
-            WriteLine($"new {templateName}({string.Join(", ", fieldTypes.Select((ty, index) => $"{GenerateCoersion(ty, $"{Job.ProjectName}.termOf(terms[{index}], arguments)")}"))});");
+            WriteLine($"new {templateName}({string.Join(", ", fieldTypes.Select((ty, index) => $"{GenerateCoersion(ty, $"{Job.ProjectName}.termOf(terms.get({index}), arguments)")}"))});");
             WriteLine("} catch (Exception e) { continue; }");
 
             for (var i = 0; i < numQuantifier; ++i)

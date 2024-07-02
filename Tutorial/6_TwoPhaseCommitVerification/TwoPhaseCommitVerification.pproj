@@ -2,6 +2,7 @@
 <ProjectName>TwoPhaseCommitVerification</ProjectName>
 <InputFiles>
 	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
 <Target>UCLID5</Target>

@@ -44,6 +44,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string LocalPrefix => "PLocal_";
     private static string OptionPrefix => "POption_";
     private static string CheckerPrefix => "PChecklist_";
+    private static string SpecPrefix => "PSpec_";
 
     // P values that don't have a direct UCLID5 equivalent
     private static string PNull => $"{BuiltinPrefix}Null";
@@ -430,6 +431,109 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return EventOrGotoAdtIsS(action, s);
     }
 
+    
+    /********************************
+     * Spec machines are treated differently than regular machines. For example, there is only ever a single instance of
+     * each spec machine.
+     *
+     * To handle spec machines,
+     *  1) we create a global variable for each of their fields;
+     *  2) keep track of what events the spec machines are listening to and the corresponding handleers;
+     *  3) create a procedure per spec machine handler that operates on the variables from (1); and
+     *  4) whenever a regular machine sends an event, we call the appropriate handler from (2).
+     *******************************/
+    private Dictionary<PEvent, string> _specListenMap; // keep track of the procedure names for each event
+    
+    private void SpecVariableDeclarations(List<Machine> specs)
+    {
+        foreach (var spec in specs)
+        {
+            EmitLine($"type {SpecPrefix}{spec.Name}_StateAdt = enum {{{string.Join(", ", spec.States.Select(n => $"{SpecPrefix}{spec.Name}_{n.Name}"))}}};");
+            EmitLine($"var {SpecPrefix}{spec.Name}_State: {SpecPrefix}{spec.Name}_StateAdt;");
+            foreach (var f in spec.Fields)
+            {
+                EmitLine($"var {SpecPrefix}{spec.Name}_{f.Name}: {TypeToString(f.Type)};");
+            }
+        }
+    }
+
+    private void GenerateSpecProcedures(List<Machine> specs)
+    {
+        foreach (var spec in specs)
+        {
+            foreach (var f in spec.Methods)
+            {
+                var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}");
+                var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
+                var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
+                EmitLine($"procedure [inline] {name}({string.Join(", ", ps)})");
+                if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+                {
+                    EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
+                }
+                EmitLine("{");
+                
+                // declare local variables corresponding to the global spec variables
+                EmitLine($"var {LocalPrefix}State: {SpecPrefix}{spec.Name}_StateAdt;");
+                foreach (var v in spec.Fields)
+                {
+                    EmitLine($"var {LocalPrefix}{v.Name}: {TypeToString(v.Type)};");
+                }
+                
+                GenerateStmt(f.Body, spec);
+                
+                // update the global variables
+                EmitLine($"{SpecPrefix}{spec.Name}_State = {LocalPrefix}State;");
+                foreach (var v in spec.Fields)
+                {
+                    EmitLine($"{SpecPrefix}{spec.Name}_{v.Name} = {LocalPrefix}{v.Name};");
+                }
+                
+                EmitLine("}\n");
+            }
+        }
+    }
+
+    private void GenerateSpecHandlers(List<Machine> specs)
+    {
+        foreach (var spec in specs)
+        {
+            var events = spec.Observes.Events;
+            foreach (var e in events)
+            {
+                var procedureName = $"{SpecPrefix}{spec.Name}_{e.Name}";
+                _specListenMap.Add(e, procedureName);
+                EmitLine($"procedure [inline] {procedureName}({SpecPrefix}Payload: {TypeToString(e.PayloadType)})");
+                EmitLine("{");
+                EmitLine("case");
+                foreach (var state in spec.States)
+                {
+                    var handlers = state.AllEventHandlers.ToDictionary();
+                    if (state.HasHandler(e))
+                    {
+                        var handler = handlers[e];
+                        var precondition = $"{SpecPrefix}{spec.Name}_State == {SpecPrefix}{spec.Name}_{state.Name}";
+                        EmitLine($"({precondition}) : {{");
+                        switch (handler)
+                        {
+                            case EventDoAction eventDoAction:
+                                var f = eventDoAction.Target;
+                                var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
+                                var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
+                                EmitLine($"call {name}({SpecPrefix}Payload);");
+                                break;
+                            default:
+                                throw new NotSupportedException($"Not supported default: {handler}");
+                        }
+                        EmitLine("}");
+                    }
+                }
+                EmitLine("esac");
+                EmitLine("}");
+            }
+        }
+    }
+    
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
@@ -437,7 +541,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         EmitLine("module main {");
 
-        var machines = globalScope.AllDecls.OfType<Machine>().ToList();
+        var machines = (from m in globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
+        var specs = (from m in globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
         var events = globalScope.AllDecls.OfType<PEvent>().ToList();
 
         EmitLine(PNullDeclaration);
@@ -471,21 +576,31 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine(StateAdtDeclaration());
         EmitLine(StateVarDeclaration);
         EmitLine("");
+        
+        SpecVariableDeclarations(specs);
+        EmitLine("");
 
         EmitLine(InStartPredicateDeclaration(machines));
         EmitLine(InEntryPredicateDeclaration());
         EmitLine("");
 
-        GenerateInitBlock(machines);
+        GenerateInitBlock(machines, specs);
         EmitLine("");
 
         // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
         GenerateNextBlock(machines, events);
         EmitLine("");
-
-        // non-handler functions
+        
+        // global functions
         GenerateGlobalProcedures(globalScope.AllDecls.OfType<Function>());
-        GenerateMachineProcedures(machines);
+
+        // Spec support
+        GenerateSpecProcedures(specs); // generate spec methods, called by spec handlers
+        GenerateSpecHandlers(specs); // will populate _specListenMap, which is used when ever there is a send statement
+        EmitLine("");
+        
+        // non-handler functions for handlers
+        GenerateMachineProcedures(machines); // generate machine methods, called by handlers below
         EmitLine("");
 
         // generate the handlers
@@ -529,7 +644,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var t in types) EmitLine($"type {UserPrefix}{t.Name} = {TypeToString(t.Type)};");
     }
 
-    private void GenerateInitBlock(List<Machine> machines)
+    private void GenerateInitBlock(List<Machine> machines, List<Machine> specs)
     {
         var state = Deref("r");
         EmitLine("init {");
@@ -546,6 +661,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     $"assume(forall (r: {MachineRefT}) :: {MachineStateAdtSelectField(state, m, f)} == {DefaultValue(f.Type)});");
             }
         }
+        EmitLine("// Every spec begins with fields in default");
+        foreach (var m in specs)
+        {
+            foreach (var f in m.Fields)
+            {
+                EmitLine($"{SpecPrefix}{m.Name}_{f.Name} = {DefaultValue(f.Type)};");
+            }
+        }
+
 
         EmitLine("// The buffer starts completely empty");
         EmitLine($"{StateAdtSelectBuffer(StateVar)} = const(false, [{LabelAdt}]boolean);");
@@ -625,7 +749,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             }
 
             EmitLine("{");
-            GenerateStmt(f.Body);
+            GenerateStmt(f.Body, null);
             EmitLine("}\n");
         }
     }
@@ -667,7 +791,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     EmitLine($"{GetLocalName(v)} = {MachineStateAdtSelectField(currState, m, v)};");
                 foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
 
-                GenerateStmt(f.Body);
+                GenerateStmt(f.Body, null);
 
                 var fields = m.Fields.Select(GetLocalName).Prepend($"{LocalPrefix}state").ToList();
 
@@ -773,7 +897,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private void GenerateControlBlock(List<Machine> machines, List<PEvent> events)
     {
         EmitLine("control {");
-        EmitLine("set_solver_option(\":Timeout\", 1);");
+        EmitLine("set_solver_option(\":Timeout\", 1);"); // 1 second timeout per query
         EmitLine("induction(1);");
 
         foreach (var m in machines)
@@ -856,12 +980,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateStmt(IPStmt stmt)
+    // specMachine is null iff we are not generating a statement for a spec machine
+    private void GenerateStmt(IPStmt stmt, Machine specMachine)
     {
         switch (stmt)
         {
             case CompoundStmt cstmt:
-                foreach (var s in cstmt.Statements) GenerateStmt(s);
+                foreach (var s in cstmt.Statements) GenerateStmt(s, specMachine);
 
                 return;
             case AssignStmt { Value: FunCallExpr } cstmt:
@@ -870,7 +995,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     case VariableAccessExpr vax:
                         if (call == null) return;
-                        var v = GetLocalName(vax.Variable);
+                        var v = ExprToString(vax);
                         var f = call.Function.Name;
                         var fargs = call.Arguments.Select(ExprToString);
                         if (call.Function.Owner is not null)
@@ -888,7 +1013,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 switch (astmt.Location)
                 {
                     case VariableAccessExpr vax:
-                        EmitLine($"{GetLocalName(vax.Variable)} = {ExprToString(astmt.Value)};");
+                        EmitLine($"{ExprToString(vax)} = {ExprToString(astmt.Value)};");
                         return;
                     case MapAccessExpr max:
                         var map = ExprToString(max.MapExpr);
@@ -918,9 +1043,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     _ => ExprToString(ifstmt.Condition),
                 };
                 EmitLine($"if ({cond}) {{");
-                GenerateStmt(ifstmt.ThenBranch);
+                GenerateStmt(ifstmt.ThenBranch, specMachine);
                 EmitLine("} else {");
-                GenerateStmt(ifstmt.ElseBranch);
+                GenerateStmt(ifstmt.ElseBranch, specMachine);
                 EmitLine("}");
                 return;
             case AssertStmt astmt:
@@ -964,7 +1089,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             case WhileStmt wstmt:
                 var wcond = ExprToString(wstmt.Condition);
                 EmitLine($"while ({wcond}) {{");
-                GenerateStmt(wstmt.Body);
+                GenerateStmt(wstmt.Body, specMachine);
                 EmitLine("}");
                 return;
             case ForeachStmt fstmt:
@@ -985,7 +1110,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         // assume that the item is in the set but hasn't been visited
                         EmitLine($"assume ({collection}[{item}] && !{checker}[{item}]);");
                         // the body of the loop
-                        GenerateStmt(fstmt.Body);
+                        GenerateStmt(fstmt.Body, specMachine);
                         // update the checker
                         EmitLine($"{checker} = {checker}[{item} -> true];");
                         // havoc the item
@@ -996,13 +1121,17 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         throw new NotSupportedException(
                             $"Foreach over non-sets is not supported yet: {fstmt} ({GetLocation(fstmt)}");
                 }
-            case GotoStmt gstmt:
+            case GotoStmt gstmt when specMachine is null:
                 var gaction = EventOrGotoAdtConstructGoto(gstmt.State, gstmt.Payload);
                 var glabel = LabelAdtConstruct("this", gaction);
                 var glabels = StateAdtSelectBuffer(StateVar);
                 EmitLine($"{glabels} = {glabels}[{glabel} -> true];");
                 return;
-            case SendStmt sstmt:
+            case GotoStmt gstmts: // when specMachine is not null
+                EmitLine($"{LocalPrefix}State = {SpecPrefix}{specMachine.Name}_{gstmts.State.Name};");
+                return;
+            case SendStmt sstmt when specMachine is null:
+                // TODO: call spec handlers in _specListenMap
                 if (sstmt.Arguments.Count > 1)
                 {
                     throw new NotSupportedException("We only support at most one argument to a send");

@@ -24,7 +24,7 @@ public class PExplicitConfig {
     String projectName = "default";
     // name of the output folder
     @Setter
-    String outputFolder = "/Users/xashisk/ashish-ws/SyncedForkedRepo/P/output";
+    String outputFolder = "output";
     // time limit in seconds (0 means infinite)
     @Setter
     double timeLimit = 0;

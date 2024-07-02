@@ -55,8 +55,8 @@ public class PExplicitThreadLogger {
 
         PatternLayout layout = Log4JConfig.getPatternLayout();
 
-        String filename = (new PExplicitConfig()).getOutputFolder() + "/outputTID" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";
-        // String filename = "/Users/xashisk/ashish-ws/scriptsRepo/src/P-Evaluation-Tests/runs/pexplicit/test/output" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";
+        String filename = "/Users/xashisk/ashish-ws/SyncedForkedRepo/P/output/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";  // PIN: Configure output folder with CLI options.
+        // String filename = (new PExplicitConfig()).getOutputFolder() + "/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";  // This way gives error
         FileAppender fileAppender = FileAppender.newBuilder()
                 .setName("FileAppender")
                 .withFileName(filename)

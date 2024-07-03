@@ -605,6 +605,16 @@ namespace Plang.Compiler.TypeChecker
 
         #endregion
 
+        
+        public override object VisitPInvDecl(PParser.PInvDeclContext context)
+        {
+            // INVARIANT name=Iden
+            var inv = (PInvariant) nodesToDeclarations.Get(context);
+
+            // TODO: invariant body
+            return inv;
+        }
+        
         #region Functions
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)

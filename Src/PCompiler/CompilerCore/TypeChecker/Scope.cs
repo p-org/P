@@ -20,6 +20,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
         private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
+        private readonly IDictionary<string, PInvariant> invariants = new Dictionary<string, PInvariant>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
@@ -54,6 +55,7 @@ namespace Plang.Compiler.TypeChecker
                 .Concat(Events)
                 .Concat(EventSets)
                 .Concat(Functions)
+                .Concat(Invariants)
                 .Concat(Interfaces)
                 .Concat(Machines)
                 .Concat(States)
@@ -79,6 +81,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
+        public IEnumerable<PInvariant> Invariants => invariants.Values;
 
         public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
@@ -157,6 +160,11 @@ namespace Plang.Compiler.TypeChecker
         public bool Get(string name, out Function tree)
         {
             return functions.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out PInvariant tree)
+        {
+            return invariants.TryGetValue(name, out tree);
         }
 
         public bool Get(string name, out Interface tree)
@@ -546,6 +554,14 @@ namespace Plang.Compiler.TypeChecker
             return function;
         }
 
+        public PInvariant Put(string name, IPExpr body, PParser.InvDeclContext tree)
+        {
+            var invariant = new PInvariant(name, body, tree);
+            CheckConflicts(invariant, Namespace(invariants));
+            invariants.Add(name, invariant);
+            return invariant;
+        }
+        
         public EnumElem Put(string name, PParser.EnumElemContext tree)
         {
             var enumElem = new EnumElem(name, tree);

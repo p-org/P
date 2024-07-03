@@ -62,6 +62,7 @@ VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+INVARIANT : 'invariant';
 
 // module-system-specific keywords
 

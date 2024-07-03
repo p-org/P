@@ -555,6 +555,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var machines = (from m in globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var specs = (from m in globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
         var events = globalScope.AllDecls.OfType<PEvent>().ToList();
+        var invariants = globalScope.AllDecls.OfType<PInvariant>().ToList();
 
         EmitLine(PNullDeclaration);
         EmitLine(DefaultMachineDeclaration);
@@ -634,7 +635,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("");
         GenerateCheckerVars();
         EmitLine("");
-
+        
+        foreach (var inv in invariants)
+        {
+            EmitLine($"invariant {inv.Name}: {ExprToString(inv.Body)};");
+        }
+        EmitLine("");
+        
         GenerateControlBlock(machines, events);
 
         // close the main module
@@ -945,6 +952,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             PrimitiveType pt when pt.Equals(PrimitiveType.Bool) => "false",
             PrimitiveType pt when pt.Equals(PrimitiveType.Int) => "0",
             PrimitiveType pt when pt.Equals(PrimitiveType.String) => DefaultString,
+            PrimitiveType pt when pt.Equals(PrimitiveType.Machine) => DefaultMachineRef,
             SetType setType => $"const(false, {TypeToString(setType)})",
             TypeDefType tdType => DefaultValue(tdType.TypeDefDecl.Type),
             _ => throw new NotSupportedException($"Not supported default: {ty} ({ty.OriginalRepresentation})"),

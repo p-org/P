@@ -60,6 +60,7 @@ topDecl : typeDefDecl
         | namedModuleDecl
         | testDecl
         | implementationDecl
+        | invDecl
         ;
 
 
@@ -106,6 +107,8 @@ varDecl : VAR idenList COLON type SEMI ;
 funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
         | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
+
+invDecl: INVARIANT name=iden COLON expr SEMI # PInvDecl;
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=iden LBRACE stateBodyItem* RBRACE ;
 

@@ -274,6 +274,10 @@ namespace Plang.Compiler.TypeChecker
         {
             return null;
         }
+        public override object VisitQuantExpr(PParser.QuantExprContext context)
+        {
+            return null;
+        }
 
         public override object VisitUnaryExpr(PParser.UnaryExprContext context)
         {

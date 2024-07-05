@@ -1217,9 +1217,16 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     $"Not supported expr: {expr} of {cexp.Type.OriginalRepresentation}")
             },
             DefaultExpr dexp => DefaultValue(dexp.Type),
+            QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {ExprToString(qexpr.Body)})",
+            QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {ExprToString(qexpr.Body)})",
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
         };
+
+        string BoundVars(List<Variable> bound)
+        {
+            return $"{string.Join(", ", bound.Select(b => $"{LocalPrefix}{b.Name}: {TypeToString(b.Type)}"))}";
+        }
     }
 
     private string NamedTupleExprHelper(NamedTupleExpr t)

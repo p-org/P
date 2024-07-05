@@ -241,6 +241,28 @@ namespace Plang.Compiler.TypeChecker
             }
         }
 
+        public override IPExpr VisitQuantExpr(PParser.QuantExprContext context)
+        {
+            var bound = context.bound.funParam().Select(p =>
+            {
+                var symbolName = p.name.GetText();
+                var param = table.Put(symbolName, p, VariableRole.Param);
+                param.Type = TypeResolver.ResolveType(p.type(), table, handler);
+                return param;
+            }).Cast<Variable>().ToArray();
+            
+            var body = Visit(context.body);
+
+            // TODO: remove bound variables from table?
+
+            if (context.quant.Text == "forall")
+            {
+                return new QuantExpr(context, QuantType.Forall, bound.ToList(), body);
+            }
+            
+            return new QuantExpr(context, QuantType.Exists, bound.ToList(), body);
+        }
+        
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
             var lhs = Visit(context.lhs);

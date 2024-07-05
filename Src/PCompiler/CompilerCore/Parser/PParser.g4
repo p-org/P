@@ -192,6 +192,9 @@ expr : primitive                                      # PrimitiveExpr
      | lhs=expr op=(EQ | NE) rhs=expr                 # BinExpr
      | lhs=expr op=LAND rhs=expr                      # BinExpr
      | lhs=expr op=LOR rhs=expr                       # BinExpr
+     | quant=(FORALL | EXISTS) 
+        LPAREN bound=funParamList RPAREN 
+            COLON COLON body=expr                     # QuantExpr
 	 | CHOOSE LPAREN expr? RPAREN					  # ChooseExpr
 	 | formatedString								  # StringExpr
      ;

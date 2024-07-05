@@ -612,6 +612,7 @@ namespace Plang.Compiler.TypeChecker
             var inv = (Invariant) nodesToDeclarations.Get(context);
             
             var temporaryFunction = new Function(inv.Name, context);
+            temporaryFunction.Scope = CurrentScope;
             var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
             
             var body = exprVisitor.Visit(context.body);

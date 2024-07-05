@@ -140,6 +140,9 @@ COMMA  : ',' ;
 DOT    : '.' ;
 COLON  : ':' ;
 
+FORALL  : 'forall' ;
+EXISTS  : 'exists' ;
+
 // Identifiers
 
 Iden : PLetter PLetterOrDigit* ;

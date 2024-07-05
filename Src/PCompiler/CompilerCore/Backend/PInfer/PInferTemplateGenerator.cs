@@ -69,7 +69,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine($"boolean result = {Job.ProjectName}.conjoin(predicates, arguments);");
             WriteLine("if (!result) continue;");
             WriteLine($"new {templateName}({string.Join(", ", fieldTypes.Select((ty, index) => $"{GenerateCoersion(ty, $"{Job.ProjectName}.termOf(terms.get({index}), arguments)")}"))});");
-            WriteLine("} catch (Exception e) { continue; }");
+            WriteLine("} catch (Exception e) { if (e instanceof RuntimeException) throw (RuntimeException) e; }");
 
             for (var i = 0; i < numQuantifier; ++i)
             {

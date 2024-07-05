@@ -26,7 +26,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private string SimplifiedJavaType(PLanguageType type)
         {
-            if (type is EnumType || type is Index)
+            if (type is EnumType || type is Index || type is CollectionSize)
             {
                 return "int";
             }
@@ -34,6 +34,10 @@ namespace Plang.Compiler.Backend.PInfer
             if (javaType.IsPrimitive)
             {
                 return javaType.TypeName;
+            }
+            if (type is SequenceType || type is SetType)
+            {
+                return "JSONArray";
             }
             return "JSONObject";
         }
@@ -130,7 +134,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 retType = Types.JavaTypeFor(type).TypeName;
             }
-            if (type is EnumType)
+            if (type is EnumType || type is Index || type is CollectionSize)
             {
                 retType = "int";
             }
@@ -155,13 +159,6 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("}");
             return parameters;
         }
-
-        // protected override void WriteFileHeader()
-        // {
-        //     WriteLine(Constants.DoNotEditWarning[1..]);
-        //     WriteImports();
-        //     WriteLine();
-        // }
 
         internal string GenerateCodeExpr(IPExpr expr)
         {
@@ -270,6 +267,10 @@ namespace Plang.Compiler.Backend.PInfer
                 if (funCallExpr.Function.Name == "index")
                 {
                     return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.index()";
+                }
+                if (funCallExpr.Function.Name == "size")
+                {
+                    return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.size()";
                 }
             }
             return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e)).ToArray()) + ")";

@@ -26,7 +26,7 @@ namespace Plang.Compiler.Backend.PInfer
                 break;
                 ";
             }
-            WriteLine(template.Replace("%TEMPLATE%", insert));
+            WriteLine(template.Replace("%TEMPLATE%", insert).Replace("%PROJECT_NAME%", Job.ProjectName));
         }
     }
 }

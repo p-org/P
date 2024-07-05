@@ -76,7 +76,6 @@ namespace Plang.Compiler.Backend.PInfer
                     AddTerm(0, e, w);
                 }
                 var indexExpr = new FunCallExpr(null, indexFunc, [expr]);
-                var indexExpr1 = new FunCallExpr(null, indexFunc, [expr]);
                 HashSet<IPExpr> es = [];
                 es.Add(indexExpr);
                 AddTerm(0, indexExpr, [eventAtom]);
@@ -143,7 +142,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 ctx.WriteLine(stream, "{");
                 ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(term)}\",");
-                ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"\"{GetEventVariableRepr((PEventVariable) x)}\""))}],");
+                ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"{((PEventVariable) x).Order}"))}],");
                 ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(term)}\"");
                 ctx.WriteLine(stream, "}");
                 if (index < VisitedSet.Count - 1)
@@ -263,6 +262,19 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     AddTerm(currentDepth, expr, events);
                 }
+                // Map access
+                foreach (var term in VisitedSet)
+                {
+                    if (term.Type is MapType)
+                    {
+                        var mapType = (MapType) term.Type;
+                        var keyType = mapType.KeyType;
+                        foreach (var key in VisitedSet.Where(x => IsAssignableFrom(keyType, x.Type)))
+                        {
+                            var mapAccess = new MapAccessExpr(null, term, key, mapType.ValueType);
+                        }
+                    }
+                }
                 // construct function calls
                 worklist = [];
                 foreach (Function func in FunctionStore.Store)
@@ -369,7 +381,7 @@ namespace Plang.Compiler.Backend.PInfer
                 List<IPExpr> newParameters = [];
                 newParameters.AddRange(parameters);
                 IEnumerable<List<IPExpr>> result = [];
-                foreach (var expr in candidateTerms.Where(x => (maxTermOrder < 0 || TermOrder[x] >= maxTermOrder) && IsAssignableFrom(x.Type, declParam)))
+                foreach (var expr in candidateTerms.Where(x => (maxTermOrder < 0 || TermOrder[x] >= maxTermOrder) && IsAssignableFrom(declParam, x.Type)))
                 {
                     // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(expr.Type, declParam)}, {candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)).Count()}");
                     newParameters.Add(expr);
@@ -499,6 +511,10 @@ namespace Plang.Compiler.Backend.PInfer
             // A slightly stricter version of type equality checking
             // when checking type aliases, we only regard aliases with the same name and 
             // they are referring to the same type
+            if (type.Equals(PrimitiveType.Any))
+            {
+                return true;
+            }
             if (type is TypeDefType || otherType is TypeDefType)
             {
                 return (otherType is TypeDefType otherTypeDef) && (type is TypeDefType typedef)
@@ -517,6 +533,9 @@ namespace Plang.Compiler.Backend.PInfer
                 TypeDefType typedef => $"{typedef.TypeDefDecl.Name}({ShowType(typedef.TypeDefDecl.Type)})",
                 NamedTupleType namedTupleType => $"({string.Join(", ", namedTupleType.Types.Select(ShowType))})",
                 TupleType tupleType => $"({string.Join(", ", tupleType.Types.Select(ShowType))})",
+                SequenceType sequenceType => $"Seq<{ShowType(sequenceType.ElementType)}>",
+                SetType setType => $"Set<{ShowType(setType.ElementType)}>",
+                MapType mapType => $"Map<{ShowType(mapType.KeyType)}, {ShowType(mapType.ValueType)}>",
                 _ => $"{type}",
             };
         }

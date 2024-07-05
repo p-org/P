@@ -224,6 +224,7 @@ namespace Plang.Compiler.Backend.PInfer
     public class PInferBuiltinTypes
     {
         public static readonly PLanguageType Index = new Index();
+        public static readonly PLanguageType CollectionSize = new CollectionSize();
     }
 
     public class DefinedPredicate : IPredicate
@@ -296,6 +297,29 @@ namespace Plang.Compiler.Backend.PInfer
         }
     }
 
+    public class CollectionSize : PLanguageType
+    {
+        public CollectionSize() : base(TypeKind.Data)
+        {
+        }
+
+        public override string OriginalRepresentation => "ContainerSize";
+
+        public override string CanonicalRepresentation => OriginalRepresentation;
+
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions => null;
+
+        public override PLanguageType Canonicalize()
+        {
+            return this;
+        }
+
+        public override bool IsAssignableFrom(PLanguageType otherType)
+        {
+            return otherType is CollectionSize;
+        }
+    }
+
     internal class SignatureComparer : IEqualityComparer<List<PLanguageType>>
     {
         public bool Equals(List<PLanguageType> x, List<PLanguageType> y)
@@ -316,7 +340,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         public int GetHashCode([DisallowNull] List<PLanguageType> obj)
         {
-            return string.Join(", ", obj).GetHashCode();
+            return string.Join(", ", obj.Select(x => x.GetHashCode())).GetHashCode();
         }
     }
 
@@ -380,6 +404,9 @@ namespace Plang.Compiler.Backend.PInfer
 
         public static void Initialize() {
             List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index];
+            List<PLanguageType> containerTypes = [new SequenceType(PrimitiveType.Any),
+                                                new SetType(PrimitiveType.Any),
+                                                new MapType(PrimitiveType.Any, PrimitiveType.Any)];
             foreach (var numType in numericTypes)
             {
                 AddBuiltinPredicate("<", Notation.Infix, [EqPredicate], numType, numType);
@@ -427,6 +454,13 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     AddFunction(new BuiltinFunction(func, Notation.Infix, numTypes, numTypes, numTypes));
                 }
+            }
+            List<PLanguageType> containerTypes = [new SequenceType(PrimitiveType.Any),
+                                                  new SetType(PrimitiveType.Any),
+                                                  new MapType(PrimitiveType.Any, PrimitiveType.Any)];
+            foreach (var containerType in containerTypes)
+            {
+                AddFunction(new BuiltinFunction("size", Notation.Prefix, containerType, PInferBuiltinTypes.CollectionSize));
             }
         }
 

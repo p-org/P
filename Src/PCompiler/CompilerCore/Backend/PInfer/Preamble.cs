@@ -68,15 +68,12 @@ public class TraceParser {
 
         internal static string DriverCodeTemplate = @"
 public class PInferDriver {
-    private static String getTypeName(String termRepr) {
-        String[] s = termRepr.split(""=>"");
-        return s[1].strip().split("" "")[0];
-    }
 
-    private static void invoke(int numQuantifier, List<String> termTypes,
-                               List<TwoPhaseCommit.PredicateWrapper> predicates, List<String> terms,
+    private static void invoke(String templateName,
+                               List<%PROJECT_NAME%.PredicateWrapper> predicates,
+                               List<%PROJECT_NAME%.PredicateWrapper> existentialFilters,
+                               List<String> terms,
                                List<List<PEvents.EventBase>> traces) {
-        String templateName = ""Forall"" + numQuantifier + ""Events"" + String.join("""", termTypes);
         switch (templateName) {
             %TEMPLATE%
             default:
@@ -84,38 +81,30 @@ public class PInferDriver {
         }
     }
 
-    private static Set<String> getQuantifiedEvents(String repr) {
-        String quantifiers = repr.split(""where"")[1].strip();
-        Pattern p = Pattern.compile(""\\((e[0-9]+):\\w+\\)"");
-        Matcher m = p.matcher(quantifiers);
-        Set<String> quantifiedEvents = new HashSet<>();
-        while (m.find()) {
-            quantifiedEvents.add(m.group(1));
-        }
-        return quantifiedEvents;
-    }
-
     public static void main(String[] args) {
         String tracePath = args[0];
-        List<TwoPhaseCommit.PredicateWrapper> guards = new ArrayList<>();
+        String templateName = args[1];
+        List<%PROJECT_NAME%.PredicateWrapper> guards = new ArrayList<>();
+        List<%PROJECT_NAME%.PredicateWrapper> existentialFilters = new ArrayList<>();
         List<String> terms = new ArrayList<>();
-        Set<String> quantifiedEvents = new HashSet<>();
+        assert args[2].equals(""--predicates"");
         int i;
-        for (i = 1; !args[i].equals(""-t""); ++i) {
-            guards.add(new TwoPhaseCommit.PredicateWrapper(args[i], false));
-            quantifiedEvents.addAll(getQuantifiedEvents(args[i]));
+        for (i = 3; !args[i].equals(""--filters""); ++i) {
+            guards.add(new %PROJECT_NAME%.PredicateWrapper(args[i], false));
+        }
+        i += 1;
+        while (i < args.length && !args[i].equals(""--terms"")) {
+            existentialFilters.add(new %PROJECT_NAME%.PredicateWrapper(args[i], false));
+            i += 1;
         }
         i += 1;
         while (i < args.length) {
             terms.add(args[i]);
-            quantifiedEvents.addAll(getQuantifiedEvents(args[i]));
             i += 1;
         }
-
         TraceParser parser = new TraceParser(tracePath);
         var traces = parser.loadTrace();
-        List<String> termTypes = terms.stream().map(PInferDriver::getTypeName).toList();
-        invoke(quantifiedEvents.size(), termTypes, guards, terms, traces);
+        invoke(templateName, guards, existentialFilters, terms, traces);
     }
 }
 ";

@@ -117,8 +117,8 @@ in the body of each function definition as necessary for your project's business
 
         internal static string BuildFileName => "pom.xml";
 
-        internal static readonly string pomTemplate =
-            @"
+        internal static string PomTemplate(bool pinferMode) {
+            return @$"
 <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
 xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
     <modelVersion>4.0.0</modelVersion>
@@ -130,19 +130,19 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     <name>-package-name-</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <buildDirectory>${{project.basedir}}/PObserve</buildDirectory>
+        <maven.compiler.source>{(pinferMode ? 22 : 11)}</maven.compiler.source>
+        <maven.compiler.target>{(pinferMode ? 22 : 11)}</maven.compiler.target>
+        <buildDirectory>${{project.basedir}}/${(pinferMode ? "pinfer" : "pobserve")}</buildDirectory>
     </properties>
     <packaging>jar</packaging>
 
     <dependencies>
-        <dependency>
+        {(pinferMode ? @"<dependency>
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>2.0.51</version>
-        </dependency>
-        <dependency>
+        </dependency>" : "")}
+        {(pinferMode ? "" : @"<dependency>
             <groupId>p.runtime</groupId>
             <artifactId>PJavaRuntime</artifactId>
             <version>1.0-SNAPSHOT</version>
@@ -154,7 +154,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
+        </dependency>")}
     </dependencies>
 
     <build>
@@ -182,6 +182,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <sourceDirectory>.</sourceDirectory>
     </build>
 </project>";
+        }
 
         internal static readonly string pomForeignTemplate =
             @"

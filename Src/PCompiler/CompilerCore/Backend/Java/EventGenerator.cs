@@ -113,9 +113,13 @@ namespace Plang.Compiler.Backend.Java
                                 {
                                     WriteLine($"public {jType.TypeName} {field.Name}() {{ return {JsonObjectGet(payloadName, field.Name, fieldType)}; }}");
                                 }
-                                else if (fieldType is NamedTupleType)
+                                else if (fieldType is NamedTupleType || fieldType is MapType)
                                 {
                                     WriteLine($"public JSONObject {field.Name}() {{ return {payloadName}.getJSONObject(\"{field.Name}\"); }}");
+                                }
+                                else if (fieldType is SequenceType || fieldType is SetType)
+                                {
+                                    WriteLine($"public JSONArray {field.Name}() {{ return {payloadName}.getJSONArray(\"{field.Name}\"); }}");
                                 }
                                 else
                                 {

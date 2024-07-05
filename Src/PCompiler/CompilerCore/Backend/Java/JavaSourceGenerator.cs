@@ -15,7 +15,7 @@ namespace Plang.Compiler.Backend.Java
 
         internal NameManager Names => _context.Names;
         internal TypeManager Types => _context.Types;
-        internal String PackageName => $"{Job.PObservePackageName}";
+        internal String PackageName => Constants.PInferMode ? $"{Job.ProjectName}.pinfer" : $"{Job.PObservePackageName}";
 
         /// <summary>
         /// Constructs a new Java source generator for a particular output file.
@@ -24,7 +24,14 @@ namespace Plang.Compiler.Backend.Java
         internal JavaSourceGenerator(ICompilerConfiguration job, string filename)
         {
             Job = job;
-            Source = new CompiledFile(filename, $"{job.OutputDirectory}/{job.ProjectName}/pobserve");
+            if (Constants.PInferMode)
+            {
+                Source = new CompiledFile(filename, $"{job.OutputDirectory}/{job.ProjectName}/pinfer");
+            }
+            else
+            {
+                Source = new CompiledFile(filename, $"{job.OutputDirectory}/{job.ProjectName}/pobserve");
+            }
         }
 
         private void Initialize(CompilationContext ctx, Scope scope)
@@ -155,9 +162,13 @@ namespace Plang.Compiler.Backend.Java
                 }
                 return $"({e}.get{javaType.ReferenceTypeName}(\"{fieldName}\"))";
             }
-            else if (t is NamedTupleType)
+            else if (t is NamedTupleType || t is MapType)
             {
                 return $"({e}.getJSONObject(\"{fieldName}\"))";
+            }
+            else if (t is SequenceType || t is SetType)
+            {
+                return $"({e}.getJSONArray(\"{fieldName}\"))";
             }
             else 
             {

@@ -23,4 +23,4 @@ machine Client {
 
 fun RandomInt(): int;
 
-invariant clearly_false_invariant: 0 > 1;
+invariant disagree: forall (m1: Client, m2: Client) :: m1 == m2 ==> m1.tail != m2.head;

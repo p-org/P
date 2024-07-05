@@ -1220,6 +1220,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
             QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
             MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
+            TestExpr texpr => $"is_{texpr.Kind}({MachineStateAdtSelectMachine(Deref(ExprToString(texpr.Instance)))})",
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
         };
@@ -1233,7 +1234,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             var boundMachines = bound.Select(b => b.Type switch
             {
-                PermissionType {Origin: Machine} pt => new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), ((Machine) pt.Origin).Name),
+                PermissionType {Origin: Machine} pt => new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), MachinePrefix + ((Machine) pt.Origin).Name),
+                PermissionType {Origin: Interface} pt => new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), MachinePrefix + ((Interface) pt.Origin).Name),
                 _ => null,
             }).Where(v => v is not null).ToList();
 

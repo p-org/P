@@ -46,18 +46,36 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitNamedTupleAccessExpr(PParser.NamedTupleAccessExprContext context)
         {
             var subExpr = Visit(context.expr());
-            if (!(subExpr.Type.Canonicalize() is NamedTupleType tuple))
-            {
-                throw handler.TypeMismatch(subExpr, TypeKind.NamedTuple);
-            }
-
             var fieldName = context.field.GetText();
-            if (!tuple.LookupEntry(fieldName, out var entry))
-            {
-                throw handler.MissingNamedTupleEntry(context.field, tuple);
-            }
 
-            return new NamedTupleAccessExpr(context, subExpr, entry);
+            switch (subExpr.Type.Canonicalize())
+            {
+                case NamedTupleType tuple:
+                    if (!tuple.LookupEntry(fieldName, out var entry))
+                    {
+                        throw handler.MissingNamedTupleEntry(context.field, tuple);
+                    }
+
+                    return new NamedTupleAccessExpr(context, subExpr, entry);
+                
+                case PermissionType permission:
+                    var pname = permission.OriginalRepresentation;
+                    
+                    if (!(table.Lookup(pname, out Machine machine)))
+                    {
+                        throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+                    }
+                    
+                    if (!machine.LookupEntry(fieldName, out var field))
+                    {
+                        throw handler.MissingMachineField(context.field, machine);
+                    }
+                    
+                    return new MachineAccessExpr(context, machine, subExpr, field);
+                
+                default:
+                    throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+            }
         }
 
         public override IPExpr VisitTupleAccessExpr(PParser.TupleAccessExprContext context)
@@ -262,6 +280,17 @@ namespace Plang.Compiler.TypeChecker
             
             return new QuantExpr(context, QuantType.Exists, bound.ToList(), body);
         }
+
+        public override IPExpr VisitTestExpr(PParser.TestExprContext context)
+        {
+            var instance = Visit(context.instance);
+            var kind = context.kind.GetText();
+            
+            // TODO: check that the instance is a machine or an event
+            // TODO: check that the kind is a name of a machine or an event depending on the type of instance
+
+            return new TestExpr(context, instance, kind);
+        }
         
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
@@ -285,7 +314,8 @@ namespace Plang.Compiler.TypeChecker
             var logicCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
                 {"&&", (elhs, erhs) => new BinOpExpr(context, BinOpType.And, elhs, erhs)},
-                {"||", (elhs, erhs) => new BinOpExpr(context, BinOpType.Or, elhs, erhs)}
+                {"||", (elhs, erhs) => new BinOpExpr(context, BinOpType.Or, elhs, erhs)},
+                {"==>", (elhs, erhs) => new BinOpExpr(context, BinOpType.Then, elhs, erhs)}
             };
 
             var compCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
@@ -372,7 +402,8 @@ namespace Plang.Compiler.TypeChecker
                     return compCtors[op](lhs, rhs);
 
                 case "&&":
-                case "||":
+                case "||": 
+                case "==>":
                     if (!PrimitiveType.Bool.IsAssignableFrom(lhs.Type))
                     {
                         throw handler.TypeMismatch(context.lhs, lhs.Type, PrimitiveType.Bool);

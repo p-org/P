@@ -171,6 +171,7 @@ anonEventHandler : (LPAREN funParam RPAREN)? functionBody ;
 noParamAnonEventHandler : functionBody;
 
 expr : primitive                                      # PrimitiveExpr
+     | instance=expr IS kind=iden                     # TestExpr 
      | LPAREN unnamedTupleBody RPAREN                 # UnnamedTupleExpr
      | LPAREN namedTupleBody RPAREN                   # NamedTupleExpr
      | LPAREN expr RPAREN                             # ParenExpr
@@ -192,6 +193,7 @@ expr : primitive                                      # PrimitiveExpr
      | lhs=expr op=(EQ | NE) rhs=expr                 # BinExpr
      | lhs=expr op=LAND rhs=expr                      # BinExpr
      | lhs=expr op=LOR rhs=expr                       # BinExpr
+     | lhs=expr op=LTHEN rhs=expr                     # BinExpr
      | quant=(FORALL | EXISTS) 
         LPAREN bound=funParamList RPAREN 
             COLON COLON body=expr                     # QuantExpr

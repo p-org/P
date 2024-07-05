@@ -63,6 +63,7 @@ WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
 INVARIANT : 'invariant';
+IS        : 'is';
 
 // module-system-specific keywords
 
@@ -110,6 +111,7 @@ NONDET     : '$'  ;
 LNOT   : '!' ;
 LAND   : '&&' ;
 LOR    : '||' ;
+LTHEN  : '==>';
 
 EQ     : '==' ;
 NE     : '!=' ;

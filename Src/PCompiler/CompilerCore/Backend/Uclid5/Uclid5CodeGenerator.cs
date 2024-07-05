@@ -1217,8 +1217,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     $"Not supported expr: {expr} of {cexp.Type.OriginalRepresentation}")
             },
             DefaultExpr dexp => DefaultValue(dexp.Type),
-            QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {ExprToString(qexpr.Body)})",
-            QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {ExprToString(qexpr.Body)})",
+            QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
+            QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
+            MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
         };
@@ -1226,6 +1227,22 @@ public class Uclid5CodeGenerator : ICodeGenerator
         string BoundVars(List<Variable> bound)
         {
             return $"{string.Join(", ", bound.Select(b => $"{LocalPrefix}{b.Name}: {TypeToString(b.Type)}"))}";
+        }
+        
+        string Guard(List<Variable> bound)
+        {
+            var boundMachines = bound.Select(b => b.Type switch
+            {
+                PermissionType {Origin: Machine} pt => new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), ((Machine) pt.Origin).Name),
+                _ => null,
+            }).Where(v => v is not null).ToList();
+
+            if (boundMachines.Count != 0)
+            {
+                return string.Join(" && ", boundMachines.Select(ExprToString)) + " ==> ";
+            }
+
+            return "";
         }
     }
 
@@ -1255,6 +1272,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             BinOpType.Or => "||",
             BinOpType.Eq => "==",
             BinOpType.Neq => "!=",
+            BinOpType.Then => "==>",
             _ => throw new NotImplementedException($"{op} is not implemented yet!")
         };
     }

@@ -20,7 +20,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
         private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
-        private readonly IDictionary<string, PInvariant> invariants = new Dictionary<string, PInvariant>();
+        private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
@@ -71,6 +71,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<PEvent> Events => events.Values;
         public IEnumerable<NamedEventSet> EventSets => eventSets.Values;
         public IEnumerable<Function> Functions => functions.Values;
+        public IEnumerable<Invariant> Invariants => invariants.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
         public IEnumerable<Machine> Machines => machines.Values;
         public IEnumerable<State> States => states.Values;
@@ -81,7 +82,6 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
-        public IEnumerable<PInvariant> Invariants => invariants.Values;
 
         public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
@@ -162,7 +162,7 @@ namespace Plang.Compiler.TypeChecker
             return functions.TryGetValue(name, out tree);
         }
         
-        public bool Get(string name, out PInvariant tree)
+        public bool Get(string name, out Invariant tree)
         {
             return invariants.TryGetValue(name, out tree);
         }
@@ -300,7 +300,24 @@ namespace Plang.Compiler.TypeChecker
             tree = null;
             return false;
         }
+        
+        public bool Lookup(string name, out Invariant tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
 
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
         public bool Lookup(string name, out Interface tree)
         {
             var current = this;
@@ -554,9 +571,9 @@ namespace Plang.Compiler.TypeChecker
             return function;
         }
 
-        public PInvariant Put(string name, IPExpr body, PParser.InvDeclContext tree)
+        public Invariant Put(string name, PParser.InvariantDeclContext tree)
         {
-            var invariant = new PInvariant(name, body, tree);
+            var invariant = new Invariant(name, null, tree); // need to add expr later
             CheckConflicts(invariant, Namespace(invariants));
             invariants.Add(name, invariant);
             return invariant;

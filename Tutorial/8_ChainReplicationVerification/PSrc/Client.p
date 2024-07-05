@@ -22,3 +22,5 @@ machine Client {
 }
 
 fun RandomInt(): int;
+
+invariant clearly_false_invariant: 0 > 1;

@@ -606,12 +606,23 @@ namespace Plang.Compiler.TypeChecker
         #endregion
 
         
-        public override object VisitPInvDecl(PParser.PInvDeclContext context)
+        public override object VisitInvariantDecl(PParser.InvariantDeclContext context)
         {
-            // INVARIANT name=Iden
-            var inv = (PInvariant) nodesToDeclarations.Get(context);
+            // INVARIANT name=Iden body=Expr
+            var inv = (Invariant) nodesToDeclarations.Get(context);
+            
+            var temporaryFunction = new Function(inv.Name, context);
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            
+            var body = exprVisitor.Visit(context.body);
+            
+            if (!PrimitiveType.Bool.IsSameTypeAs(body.Type))
+            {
+                throw Handler.TypeMismatch(context.body, body.Type, PrimitiveType.Bool);
+            }
 
-            // TODO: invariant body
+            inv.Body = body;
+            
             return inv;
         }
         

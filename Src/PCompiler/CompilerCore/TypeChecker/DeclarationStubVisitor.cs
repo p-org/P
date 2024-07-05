@@ -30,6 +30,15 @@ namespace Plang.Compiler.TypeChecker
             visitor.Visit(context);
         }
 
+        public override object VisitInvariantDecl(PParser.InvariantDeclContext context)
+        {
+            var name = context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
+        
         #region Events
 
         public override object VisitEventDecl(PParser.EventDeclContext context)

@@ -47,6 +47,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string OptionPrefix => "POption_";
     private static string CheckerPrefix => "PChecklist_";
     private static string SpecPrefix => "PSpec_";
+    private static string InvariantPrefix => "PInv_";
 
     // P values that don't have a direct UCLID5 equivalent
     private static string PNull => $"{BuiltinPrefix}Null";
@@ -555,7 +556,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var machines = (from m in globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var specs = (from m in globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
         var events = globalScope.AllDecls.OfType<PEvent>().ToList();
-        var invariants = globalScope.AllDecls.OfType<PInvariant>().ToList();
+        var invariants = globalScope.AllDecls.OfType<Invariant>().ToList();
 
         EmitLine(PNullDeclaration);
         EmitLine(DefaultMachineDeclaration);
@@ -620,10 +621,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             foreach (var s in m.States)
             {
-                GenerateEntryHandler(s);
+                GenerateEntryHandler(s, invariants);
                 foreach (var e in events.Where(e => !e.IsNullEvent && s.HasHandler(e)))
                 {
-                    GenerateEventHandler(s, e);
+                    GenerateEventHandler(s, e, invariants);
                 }
             }
         }
@@ -638,7 +639,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         
         foreach (var inv in invariants)
         {
-            EmitLine($"invariant {inv.Name}: {ExprToString(inv.Body)};");
+            EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
+            EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}();");
         }
         EmitLine("");
         
@@ -826,7 +828,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateEntryHandler(State s)
+    private void GenerateEntryHandler(State s, List<Invariant> invariants)
     {
         if (s.Entry is null)
         {
@@ -855,6 +857,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
             $"\tensures (forall (r1: {MachineRefT}) :: {target} != r1 ==> {StateAdtSelectMachines($"old({StateVar})")}[r1] == {Deref("r1")});");
         EmitLine($"\tensures !{buffer}[{label}];");
 
+        foreach (var inv in invariants)
+        {
+            EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
+            EmitLine($"\tensures {InvariantPrefix}{inv.Name}();");
+        }
+
         var payload = f.Signature.Parameters.Count > 0 ? $", {GotoAdtSelectParam(g, f.Signature.Parameters[0].Name, s)}" : "";
 
         EmitLine("{");
@@ -864,7 +872,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
 
-    private void GenerateEventHandler(State s, PEvent ev)
+    private void GenerateEventHandler(State s, PEvent ev, List<Invariant> invariants)
     {
         var label = $"{LocalPrefix}Label";
         EmitLine($"procedure [noinline] {s.OwningMachine.Name}_{s.Name}_{ev.Name}({label}: {LabelAdt})");
@@ -883,6 +891,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine(
             $"\tensures (forall (r1: {MachineRefT}) :: {target} != r1 ==> {StateAdtSelectMachines($"old({StateVar})")}[r1] == {Deref("r1")});");
 
+        foreach (var inv in invariants)
+        {
+            EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
+            EmitLine($"\tensures {InvariantPrefix}{inv.Name}();");
+        }
+        
         var handler = s.AllEventHandlers.ToDictionary()[ev];
 
         switch (handler)

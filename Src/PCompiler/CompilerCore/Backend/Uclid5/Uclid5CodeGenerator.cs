@@ -557,6 +557,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var specs = (from m in globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
         var events = globalScope.AllDecls.OfType<PEvent>().ToList();
         var invariants = globalScope.AllDecls.OfType<Invariant>().ToList();
+        var pures = globalScope.AllDecls.OfType<Pure>().ToList();
 
         EmitLine(PNullDeclaration);
         EmitLine(DefaultMachineDeclaration);
@@ -635,6 +636,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         GenerateOptionTypes();
         EmitLine("");
         GenerateCheckerVars();
+        EmitLine("");
+
+        foreach (var pure in pures)
+        {
+            var args = string.Join(", ", pure.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}"));
+            EmitLine($"function {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)};");
+        }
         EmitLine("");
         
         foreach (var inv in invariants)
@@ -1221,6 +1229,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
             MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
             TestExpr texpr => $"is_{texpr.Kind}({MachineStateAdtSelectMachine(Deref(ExprToString(texpr.Instance)))})",
+            PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
         };

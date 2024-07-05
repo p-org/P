@@ -20,6 +20,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
         private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
+        private readonly IDictionary<string, Pure> pures = new Dictionary<string, Pure>();
         private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
@@ -56,6 +57,7 @@ namespace Plang.Compiler.TypeChecker
                 .Concat(EventSets)
                 .Concat(Functions)
                 .Concat(Invariants)
+                .Concat(Pures)
                 .Concat(Interfaces)
                 .Concat(Machines)
                 .Concat(States)
@@ -72,6 +74,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<NamedEventSet> EventSets => eventSets.Values;
         public IEnumerable<Function> Functions => functions.Values;
         public IEnumerable<Invariant> Invariants => invariants.Values;
+        public IEnumerable<Pure> Pures => pures.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
         public IEnumerable<Machine> Machines => machines.Values;
         public IEnumerable<State> States => states.Values;
@@ -165,6 +168,11 @@ namespace Plang.Compiler.TypeChecker
         public bool Get(string name, out Invariant tree)
         {
             return invariants.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out Pure tree)
+        {
+            return pures.TryGetValue(name, out tree);
         }
 
         public bool Get(string name, out Interface tree)
@@ -302,6 +310,23 @@ namespace Plang.Compiler.TypeChecker
         }
         
         public bool Lookup(string name, out Invariant tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
+        public bool Lookup(string name, out Pure tree)
         {
             var current = this;
             while (current != null)
@@ -571,6 +596,15 @@ namespace Plang.Compiler.TypeChecker
             return function;
         }
 
+
+        public Pure Put(string name, PParser.PureDeclContext tree)
+        {
+            var pure = new Pure(name, tree);
+            CheckConflicts(pure, Namespace(pures));
+            pures.Add(name, pure);
+            return pure;
+        }
+        
         public Invariant Put(string name, PParser.InvariantDeclContext tree)
         {
             var invariant = new Invariant(name, null, tree); // need to add expr later

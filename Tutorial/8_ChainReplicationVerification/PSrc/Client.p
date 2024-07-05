@@ -23,4 +23,8 @@ machine Client {
 
 fun RandomInt(): int;
 
-invariant disagree: forall (m1: Client, m2: Client) :: m1 == m2 ==> m1.tail != m2.head;
+pure target(e: event): machine;
+pure inflight(e: event): bool;
+
+invariant agree: forall (m1: Client, m2: Client) :: m1.tail == m2.tail && m1.head == m2.head;
+invariant no_write: forall (e: event) :: e is eWriteRequest && target(e) is Client ==> !inflight(e);

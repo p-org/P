@@ -38,6 +38,13 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
+        public override object VisitPureDecl(PParser.PureDeclContext context)
+        {
+            var name = context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return VisitChildrenWithNewScope(decl, context);
+        }
         
         #region Events
 

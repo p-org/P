@@ -57,6 +57,7 @@ topDecl : typeDefDecl
         | implMachineDecl
         | specMachineDecl
         | funDecl
+        | pureDecl
         | namedModuleDecl
         | testDecl
         | implementationDecl
@@ -107,6 +108,8 @@ varDecl : VAR idenList COLON type SEMI ;
 funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
         | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
+        
+pureDecl : PURE name=iden LPAREN funParamList? RPAREN (COLON type)? SEMI ;
 
 invariantDecl: INVARIANT name=iden COLON body=expr SEMI ;
 

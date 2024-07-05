@@ -604,7 +604,23 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion
+        
+        public override object VisitPureDecl(PParser.PureDeclContext context)
+        {
+            // PURE name=Iden
+            var pure = (Pure) nodesToDeclarations.Get(context);
 
+            // LPAREN funParamList? RPAREN
+            var paramList = context.funParamList() != null
+                ? (Variable[]) Visit(context.funParamList())
+                : new Variable[0];
+            pure.Signature.Parameters.AddRange(paramList);
+
+            // (COLON type)?
+            pure.Signature.ReturnType = ResolveType(context.type());
+
+            return pure;
+        }
         
         public override object VisitInvariantDecl(PParser.InvariantDeclContext context)
         {
@@ -612,7 +628,8 @@ namespace Plang.Compiler.TypeChecker
             var inv = (Invariant) nodesToDeclarations.Get(context);
             
             var temporaryFunction = new Function(inv.Name, context);
-            temporaryFunction.Scope = CurrentScope;
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            
             var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
             
             var body = exprVisitor.Visit(context.body);

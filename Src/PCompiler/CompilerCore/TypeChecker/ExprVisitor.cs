@@ -199,33 +199,58 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitFunCallExpr(PParser.FunCallExprContext context)
         {
             var funName = context.fun.GetText();
-            if (!table.Lookup(funName, out Function function))
+            if (table.Lookup(funName, out Function function))
             {
-                throw handler.MissingDeclaration(context.fun, "function", funName);
-            }
+                // Check the arguments
+                var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
+                ISet<Variable> linearVariables = new HashSet<Variable>();
 
-            // Check the arguments
-            var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-            ISet<Variable> linearVariables = new HashSet<Variable>();
-
-            if (function.Signature.Parameters.Count != arguments.Length)
-            {
-                throw handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count);
-            }
-
-            for (var i = 0; i < arguments.Length; i++)
-            {
-                var argument = arguments[i];
-                var paramType = function.Signature.Parameters[i].Type;
-                if (!paramType.IsAssignableFrom(argument.Type))
+                if (function.Signature.Parameters.Count != arguments.Length)
                 {
-                    throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
+                    throw handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count);
                 }
 
-            }
+                for (var i = 0; i < arguments.Length; i++)
+                {
+                    var argument = arguments[i];
+                    var paramType = function.Signature.Parameters[i].Type;
+                    if (!paramType.IsAssignableFrom(argument.Type))
+                    {
+                        throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
+                    }
 
-            method.AddCallee(function);
-            return new FunCallExpr(context, function, arguments);
+                }
+
+                method.AddCallee(function);
+                return new FunCallExpr(context, function, arguments);
+            }
+            if (table.Lookup(funName, out Pure pure))
+            {
+                // Check the arguments
+                var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
+                ISet<Variable> linearVariables = new HashSet<Variable>();
+
+                if (pure.Signature.Parameters.Count != arguments.Length)
+                {
+                    throw handler.IncorrectArgumentCount(context, arguments.Length, pure.Signature.Parameters.Count);
+                }
+
+                for (var i = 0; i < arguments.Length; i++)
+                {
+                    var argument = arguments[i];
+                    var paramType = pure.Signature.Parameters[i].Type;
+                    if (!paramType.IsAssignableFrom(argument.Type))
+                    {
+                        throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
+                    }
+
+                }
+                
+                return new PureCallExpr(context, pure, arguments);
+            }
+            
+            throw handler.MissingDeclaration(context.fun, "function", funName);
+
         }
 
         public override IPExpr VisitUnaryExpr(PParser.UnaryExprContext context)

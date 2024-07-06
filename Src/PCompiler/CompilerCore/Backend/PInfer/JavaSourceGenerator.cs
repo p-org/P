@@ -35,9 +35,13 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return javaType.TypeName;
             }
-            if (type is SequenceType || type is SetType)
+            if (type is SequenceType t)
             {
-                return "JSONArray";
+                return $"JSONArrayOf{SimplifiedJavaType(t.ElementType)}";
+            }
+            if (type is SetType s)
+            {
+                return $"JSONArrayOf{SimplifiedJavaType(s.ElementType)}";
             }
             return "JSONObject";
         }

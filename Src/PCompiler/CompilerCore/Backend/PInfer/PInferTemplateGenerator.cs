@@ -28,16 +28,19 @@ namespace Plang.Compiler.Backend.PInfer
         {
             WriteLine("public class Templates {");
             // Forall-only template
-            // Two Quantifier Two Fields
-            TemplateNames.Add(GenerateForallTemplate(2, ["int", "int"]));
-            TemplateNames.Add(GenerateForallTemplate(2, ["int"]));
-            TemplateNames.Add(GenerateForallTemplate(1, ["int", "int"]));
-            TemplateNames.Add(GenerateForallTemplate(1, ["int"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["int", "int"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["int"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["long", "long"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["long"]));
             WriteLine("}");
         }
 
         private string GenerateCoersion(string type, string value)
         {
+            if (type.Contains("JSONArray"))
+            {
+                return $"({value}.toArray())";
+            }
             return type switch {
                 "String" => $"String.valueOf({value})",
                 _ => $"(({type}) {value})"

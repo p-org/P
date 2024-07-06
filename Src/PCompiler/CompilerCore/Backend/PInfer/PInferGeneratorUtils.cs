@@ -49,9 +49,9 @@ namespace Plang.Compiler.Backend.PInfer
                     return ex.Function.Name.Equals(ey.Function.Name) && ex.Arguments.Count == ey.Arguments.Count
                             && ex.Arguments.Select(x => x.Type).Zip(ey.Arguments.Select(x => x.Type), Equals).All(b => b) && ex.Function.Signature.ReturnType.Equals(ey.Function.Signature.ReturnType);
                 case (DefinedPredicate ex, DefinedPredicate ey):
-                    return ex.Name.Equals(ey.Name) && ex.Function.Equals(ey.Function);
+                    return ex.Name.Equals(ey.Name) && ex.Function.Signature.ParameterTypes.Zip(ey.Function.Signature.ParameterTypes, Equals).All(x => x);
                 case (BuiltinPredicate ex, BuiltinPredicate ey):
-                    return ex.Name.Equals(ey.Name) && ex.Function.Equals(ey.Function);
+                    return ex.Name.Equals(ey.Name) && ex.Function.Signature.ParameterTypes.Zip(ey.Function.Signature.ParameterTypes, Equals).All(x => x);
                 default:
                     if (x.Type.Equals(y.Type))
                     {
@@ -188,7 +188,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             if (predicate is BuiltinPredicate)
             {
-                if ((predicate.Function.Name == "<" || predicate.Function.Name == ">") && arguments[0] == arguments[1])
+                if ((predicate.Function.Name == "<" || predicate.Function.Name == ">" || predicate.Function.Name == "==") && arguments[0] == arguments[1])
                 {
                     return false;
                 }

@@ -24,7 +24,7 @@ namespace Plang.Compiler.Backend.PInfer
             TermOrder = new Dictionary<IPExpr, int>(comparer);
             PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(comparer);
             PredicateOrder = new Dictionary<IPExpr, int>(comparer);
-            Contraditions = new Dictionary<IPExpr, HashSet<IPExpr>>(comparer);
+            Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(comparer);
         }
 
         public override IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -118,9 +118,9 @@ namespace Plang.Compiler.Backend.PInfer
                 ctx.WriteLine(stream, $"\"order\": {PredicateOrder[pred]},");
                 ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(pred)}\", ");
                 ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[pred])}], ");
-                if (Contraditions.TryGetValue(pred, out var contraditions))
+                if (Contradictions.TryGetValue(pred, out var contradictions))
                 {
-                    ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contraditions.Where(PredicateOrder.ContainsKey).Select(x => PredicateOrder[x]))}]");
+                    ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contradictions.Where(PredicateOrder.ContainsKey).Select(x => PredicateOrder[x]))}]");
                 }
                 else
                 {
@@ -200,12 +200,17 @@ namespace Plang.Compiler.Backend.PInfer
                     if (PredicateCallExpr.MkPredicateCall(pred, param, out PredicateCallExpr expr)){
                         FreeEvents[expr] = events;
                         PredicateOrder[expr] = Predicates.Count;
-                        Contraditions[expr] = [];
+                        Contradictions[expr] = [];
                         foreach (var c in PredicateStore.GetContradictions(pred))
                         {
                             if (PredicateCallExpr.MkPredicateCall(c, param, out var contra))
                             {
-                                Contraditions[expr].Add(contra);
+                                Contradictions[expr].Add(contra);
+                                if (!Contradictions.ContainsKey(contra))
+                                {
+                                    Contradictions[contra] = [];
+                                }
+                                Contradictions[contra].Add(expr);
                             }
                         }
                         Predicates.Add(expr);
@@ -320,11 +325,18 @@ namespace Plang.Compiler.Backend.PInfer
                         // var expr = new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
                         if (PredicateCallExpr.MkEqualityComparison(lhs, rhs, out var expr))
                         {
-                            Contraditions[expr] = [];
+                            if (!Contradictions.ContainsKey(expr))
+                            {
+                                Contradictions[expr] = [];
+                            }
                             if (PredicateCallExpr.MkPredicateCall("<", [lhs, rhs], out var c))
                             {
-                                Contraditions[expr].Add(c);
-                                Contraditions[c] = [expr];
+                                Contradictions[expr].Add(c);
+                                if (!Contradictions.ContainsKey(c))
+                                {
+                                    Contradictions[c] = [];
+                                }
+                                Contradictions[c].Add(expr);
                             }
                             PredicateOrder[expr] = Predicates.Count;
                             Predicates.Add(expr);
@@ -422,7 +434,8 @@ namespace Plang.Compiler.Backend.PInfer
         }
 
         private void AggregateDefinedPredicates(List<string> predicates, Scope globalScope) {
-            Dictionary<string, HashSet<DefinedPredicate>> contradictionSet = []; 
+            Dictionary<string, HashSet<IPredicate>> contradictionSet = []; 
+            contradictionSet["Eq"] = [PredicateStore.EqPredicate];
             foreach (var name in predicates)
             {
                 var funcName = name;
@@ -431,14 +444,14 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     var split = name.Split(":");
                     funcName = split[0];
-                    contradictions = [.. split[1..]];
+                    contradictions = [.. split[1].Split(",")];
                 }
                 if (GetFunction(funcName, globalScope, out Function pred))
                 {
                     if (pred.Signature.ReturnType.Equals(PrimitiveType.Bool))
                     {
                         // PredicateStore.Store.Add(new DefinedPredicate(pred));
-                        List<DefinedPredicate> contraPredicates = contradictions.SelectMany(x => {
+                        List<IPredicate> contraPredicates = contradictions.SelectMany(x => {
                             if (contradictionSet.TryGetValue(x, out var s)) {
                                 return s;
                             }
@@ -448,7 +461,7 @@ namespace Plang.Compiler.Backend.PInfer
                         PredicateStore.AddPredicate(definedPred, contraPredicates);
                         foreach (var c in contradictions)
                         {
-                            if (!contradictionSet.TryGetValue(c, out HashSet<DefinedPredicate> value))
+                            if (!contradictionSet.TryGetValue(c, out HashSet<IPredicate> value))
                             {
                                 value = [];
                                 contradictionSet.Add(c, value);
@@ -560,7 +573,7 @@ namespace Plang.Compiler.Backend.PInfer
         private Dictionary<IPExpr, HashSet<Variable>> FreeEvents { get; }
         private Dictionary<IPExpr, int> TermOrder { get; }
         private Dictionary<IPExpr, int> PredicateOrder { get; }
-        private Dictionary<IPExpr, HashSet<IPExpr>> Contraditions { get; }
+        private Dictionary<IPExpr, HashSet<IPExpr>> Contradictions { get; }
         private Dictionary<IPExpr, HashSet<int>> PredicateBoundedTerm { get; }
         private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {
                                                                 true => Terms[depth].Values.SelectMany(x => x),

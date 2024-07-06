@@ -15,7 +15,7 @@ type tWriteTransResp = (transId: TransactionId, status: tTransStatus);
 type tReadTransReq = (client: Client, key: string);
 // payload type associated with the `eReadTransResp` event where `val` is the value corresponding to
 // the `key` in the read request and `status` is the read status (e.g., success or failure)
-type tReadTransResp = (key: string, val: Value, status: tTransStatus);
+type tReadTransResp = (transId: TransactionId, key: string, val: Value, status: tTransStatus);
 
 // transaction status
 enum tTransStatus {

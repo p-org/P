@@ -183,8 +183,17 @@ namespace Plang.Compiler.Backend.Java
 
                 internal JMachine()
                 {
-                    _unboxedType = "long";
-                    _refType = "Long";
+                    if (Constants.PInferMode)
+                    {
+                        _unboxedType = "String";
+                        _refType = "String";
+                    }
+                    else
+                    {
+                        _unboxedType = "long";
+                        _refType = "Long";
+                    }
+                    
                 }
                 internal override string DefaultValue => ToJavaLiteral(0L);
                 internal static string ToJavaLiteral(long l)

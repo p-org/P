@@ -8,16 +8,6 @@ import com.alibaba.fastjson2.*;
 
 public class TraceParser {
     private final File jsonFile;
-    private final Pattern MACHINE_NAME_PATTERN = Pattern.compile(""\\(([0-9]+)\\)$"");
-
-    private long parseMachineId(String name) {
-        Matcher m = MACHINE_NAME_PATTERN.matcher(name);
-        if (m.find()) {
-            return Long.parseLong(m.group(1));
-        } else {
-            throw new RuntimeException(name + "" is not a valid machine name"");
-        }
-    }
 
     private JSONArray read() {
         try (
@@ -49,8 +39,8 @@ public class TraceParser {
                 if (e.getString((""type"")).equals(""SendEvent"")) {
                     JSONObject details = e.getJSONObject(""details"");
                     JSONObject eventPayload = new JSONObject();
-                    eventPayload.put(""sender"", parseMachineId(details.getString(""sender"")));
-                    eventPayload.put(""target"", parseMachineId(details.getString(""target"")));
+                    eventPayload.put(""sender"", details.getString(""sender""));
+                    eventPayload.put(""target"", details.getString(""target""));
                     String name = details.getString(""event"");
                     switch (name) {
                         %EVENT_INITIALIZATION%

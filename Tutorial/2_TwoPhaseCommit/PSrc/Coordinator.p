@@ -52,9 +52,9 @@ event ePrepareReq: tPrepareReq;
 // event: prepare response for a transaction (participant to coodinator)
 event ePrepareResp: tPrepareResp;
 // event: commit transaction (coordinator to participant)
-event eCommitTrans: int;
+event eCommitTrans: TransactionId;
 // event: abort transaction (coordinator to participant)
-event eAbortTrans: int;
+event eAbortTrans: TransactionId;
 
 /* User Defined Types */
 // payload type associated with the `ePrepareReq` event

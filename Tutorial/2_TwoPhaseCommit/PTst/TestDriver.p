@@ -54,9 +54,9 @@ machine SingleClientNoFailure {
     entry {
       var config: t2PCConfig;
 
-      config = (numClients = 1,
-                      numParticipants = 3,
-                      numTransPerClient = 2,
+      config = (numClients = 2,
+                      numParticipants = 4,
+                      numTransPerClient = 5,
                       failParticipants = 0);
 
             SetUpTwoPhaseCommitSystem(config);

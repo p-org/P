@@ -32,6 +32,10 @@ namespace Plang.Compiler.Backend.PInfer
             TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["int"]));
             TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["long", "long"]));
             TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["long"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["boolean"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["boolean", "boolean"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["String"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["String", "String"]));
             WriteLine("}");
         }
 

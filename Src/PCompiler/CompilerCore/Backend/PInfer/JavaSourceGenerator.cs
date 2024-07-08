@@ -270,7 +270,11 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 if (funCallExpr.Function.Name == "index")
                 {
-                    return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.index()";
+                    if (funCallExpr.Arguments[0] is VariableAccessExpr v && v.Variable is PEventVariable pv)
+                    {
+                        return $"{pv.Name}.index()";
+                    }
+                    throw new NotImplementedException("Index is not implemented for expressions other than a variable access");
                 }
                 if (funCallExpr.Function.Name == "size")
                 {

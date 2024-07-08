@@ -100,7 +100,7 @@ namespace Plang.Compiler.Backend.PInfer
                                 .Concat(new DriverGenerator(job, "PInferDriver.java", templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
                                 .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
                                 .Concat(eventDefSource)
-                                .Concat(new TemplateInstantiatorGenerator(job, "Main.java").GenerateCode(javaCtx, globalScope))
+                                .Concat(new TemplateInstantiatorGenerator(job, "Main.java", quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))
                                 .Concat([terms, predicates]);
         }
 
@@ -157,7 +157,9 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (type is TypeDefType typedef)
             {
-                return typedef.TypeDefDecl.Type;
+                if (typedef.TypeDefDecl.Type is not PrimitiveType) {
+                    return typedef.TypeDefDecl.Type;
+                }
             }
             return type;
         }
@@ -305,7 +307,10 @@ namespace Plang.Compiler.Backend.PInfer
 
         private bool IsEventVariableAccess(IPExpr expr)
         {
-            return expr is VariableAccessExpr v && v.Variable is PEventVariable;
+            // This function checks whether `expr` is an event variable access where the event is
+            // a compound data type
+            // Note: an event can carry only a primitive type (e.g. transaction id)
+            return expr is VariableAccessExpr v && v.Variable is PEventVariable pv && pv.Type.Canonicalize() is not PrimitiveType;
         } 
 
         private void MkEqComparison()
@@ -395,7 +400,7 @@ namespace Plang.Compiler.Backend.PInfer
                 IEnumerable<List<IPExpr>> result = [];
                 foreach (var expr in candidateTerms.Where(x => (maxTermOrder < 0 || TermOrder[x] >= maxTermOrder) && IsAssignableFrom(declParam, x.Type)))
                 {
-                    // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(expr.Type, declParam)}, {candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)).Count()}");
+                    // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(declParam, expr.Type)}, {candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)).Count()}");
                     newParameters.Add(expr);
                     result = result.Concat(GetParameterCombinations(index - 1, candidateTerms, declParams[1..], newParameters, maxTermOrder < 0 ? maxTermOrder : TermOrder[expr] + 1));
                     newParameters.RemoveAt(newParameters.Count - 1);

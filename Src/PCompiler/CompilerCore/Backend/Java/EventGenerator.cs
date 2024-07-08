@@ -97,7 +97,7 @@ namespace Plang.Compiler.Backend.Java
                 }
                 else if (argType.IsPrimitive)
                 {
-                    WriteLine($"public {payloadType} payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType.Canonicalize())} }}");
+                    WriteLine($"public {payloadType} payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType.Canonicalize())}; }}");
                 }
                 else
                 {

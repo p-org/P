@@ -2,7 +2,10 @@ package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
 import pexplicit.runtime.machine.PMachineId;
-import pexplicit.runtime.scheduler.choice.*;
+import pexplicit.runtime.scheduler.choice.Choice;
+import pexplicit.runtime.scheduler.choice.DataSearchUnit;
+import pexplicit.runtime.scheduler.choice.ScheduleSearchUnit;
+import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;
@@ -16,11 +19,11 @@ public class SearchTask implements Serializable {
     @Getter
     private final List<SearchTask> children = new ArrayList<>();
     @Getter
-    private int currChoiceNumber = 0;
-    @Getter
     private final List<Choice> prefixChoices = new ArrayList<>();
     @Getter
     private final Map<Integer, SearchUnit> searchUnits = new HashMap<>();
+    @Getter
+    private int currChoiceNumber = 0;
 
     public SearchTask(int id, SearchTask parentTask) {
         this.id = id;

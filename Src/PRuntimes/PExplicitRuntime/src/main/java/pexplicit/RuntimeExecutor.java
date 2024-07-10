@@ -4,6 +4,7 @@ import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.StatWriter;
+import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.exceptions.BugFoundException;
@@ -14,25 +15,35 @@ import pexplicit.utils.monitor.TimedCall;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
 /**
  * Represents the runtime executor that executes the analysis engine
  */
 public class RuntimeExecutor {
-    private static ExecutorService executor;
-    private static Future<Integer> future;
-    private static ExplicitSearchScheduler scheduler;
+    private static ThreadPoolExecutor executor;
+    private static ArrayList<Future<Integer>> futures = new ArrayList<>();
+    private static ArrayList<ExplicitSearchScheduler> schedulers = new ArrayList<>();
 
     private static void runWithTimeout(long timeLimit)
             throws TimeoutException,
             InterruptedException,
             RuntimeException {
-        try {
+        try { // PIN: If thread gets exception, need to kill the other threads.
             if (timeLimit > 0) {
-                future.get(timeLimit, TimeUnit.SECONDS);
+                
+                for (Future<Integer> future : futures) {
+                    // Future<Integer> future = futures.get(i);
+                    future.get(timeLimit, TimeUnit.SECONDS);
+                }
+
             } else {
-                future.get();
+
+                for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
+                    Future<Integer> future = futures.get(i);
+                    future.get();
+                }
             }
         } catch (TimeoutException | BugFoundException e) {
             throw e;
@@ -55,7 +66,11 @@ public class RuntimeExecutor {
 
     private static void printStats() {
         double searchTime = TimeMonitor.stopInterval();
-        scheduler.recordStats();
+        for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
+            ExplicitSearchScheduler scheduler = schedulers.get(i);
+            scheduler.recordStats();
+        }
+
         if (PExplicitGlobal.getResult().equals("correct for any depth")) {
             PExplicitGlobal.setStatus(STATUS.VERIFIED);
         } else if (PExplicitGlobal.getResult().startsWith("correct up to step")) {
@@ -69,9 +84,9 @@ public class RuntimeExecutor {
         PExplicitLogger.logInfo(String.format("... Checker is using '%s' strategy (seed:%s)",
                 PExplicitGlobal.getConfig().getSearchStrategyMode(), PExplicitGlobal.getConfig().getRandomSeed()));
 
-        executor = Executors.newSingleThreadExecutor();
+        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(PExplicitGlobal.getMaxThreads());
 
-        PExplicitGlobal.setResult("error");
+        // PExplicitGlobal.setResult("error"); // TODO: Set Results, need to take care of.
 
         double preSearchTime =
                 TimeMonitor.findInterval(TimeMonitor.getStart());
@@ -84,10 +99,29 @@ public class RuntimeExecutor {
 
     private static void process(boolean resume) throws Exception {
         try {
-            TimedCall timedCall = new TimedCall(scheduler, resume);
-            future = executor.submit(timedCall);
+            // create and add first task through scheduler 0
+            schedulers.get(0).getSearchStrategy().createFirstTask();
+
+            ArrayList<TimedCall> timedCalls = new ArrayList<>();
+            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
+                timedCalls.add(new TimedCall(schedulers.get(i), resume, i));
+            }
+
+            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
+                Future<Integer> future = executor.submit(timedCalls.get(i));
+                futures.add(future);
+            }
+
+            Thread.sleep(1000); // Sleep for 1 second, so that threads can pick up the task from the executor object
+
+            // Get the number of pending tasks
+            int pendingTasks = executor.getQueue().size();
+            PExplicitLogger.logInfo("Number of pending tasks: " + pendingTasks);
+
             TimeMonitor.startInterval();
+
             runWithTimeout((long) PExplicitGlobal.getConfig().getTimeLimit());
+
         } catch (TimeoutException e) {
             PExplicitGlobal.setStatus(STATUS.TIMEOUT);
             throw new Exception("TIMEOUT", e);
@@ -96,13 +130,21 @@ public class RuntimeExecutor {
             throw new Exception("MEMOUT", e);
         } catch (BugFoundException e) {
             PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
-            PExplicitGlobal.setResult(String.format("found cex of length %d", scheduler.getStepNumber()));
+
+
             PExplicitLogger.logStackTrace(e);
 
-            ReplayScheduler replayer = new ReplayScheduler(scheduler.schedule);
-            PExplicitGlobal.setScheduler(replayer);
+            ArrayList<ReplayScheduler> replayers = new ArrayList<>();
+            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
+                replayers.add(new ReplayScheduler((schedulers.get(i)).schedule));
+
+            ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
+            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
+                localSchedulers.set(i, replayers.get(i));
+
             try {
-                replayer.run();
+                for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
+                    (replayers.get(i)).run();
             } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
                 PExplicitLogger.logStackTrace((Exception) replayException);
                 throw new BugFoundException(replayException.getMessage(), replayException);
@@ -121,20 +163,34 @@ public class RuntimeExecutor {
             PExplicitGlobal.setStatus(STATUS.ERROR);
             throw new Exception("ERROR", e);
         } finally {
-            future.cancel(true);
+            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
+                Future<Integer> future = futures.get(i);
+                future.cancel(true);
+            }
             executor.shutdownNow();
-            scheduler.updateResult();
+            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
+                (schedulers.get(i)).updateResult();
             printStats();
-            PExplicitLogger.logEndOfRun(scheduler, Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
+                PExplicitLogger.logEndOfRun(schedulers.get(i), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
         }
     }
 
     public static void run() throws Exception {
-        scheduler = new ExplicitSearchScheduler();
-        PExplicitGlobal.setScheduler(scheduler);
+        ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
+        for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
+            ExplicitSearchScheduler localCopy = new ExplicitSearchScheduler();
+            schedulers.add(localCopy);
+            localSchedulers.add(localCopy);
+        }
+
 
         preprocess();
+
+
         process(false);
+
+
     }
 
 }

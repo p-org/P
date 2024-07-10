@@ -1,28 +1,28 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
+import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.scheduler.explicit.SearchStatistics;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 public abstract class SearchStrategy implements Serializable {
     /**
      * List of all search tasks
      */
-    final List<SearchTask> allTasks = new ArrayList<>();
+    final static List<SearchTask> allTasks = Collections.synchronizedList(new ArrayList<>());
     /**
      * Set of all search tasks that are pending
      */
-    final Set<Integer> pendingTasks = new HashSet<>();
+    @Getter
+    final static Set<Integer> pendingTasks = Collections.synchronizedSet(new HashSet<>()); // Is synchornized hash set
     /**
      * List of all search tasks that finished
      */
-    final List<Integer> finishedTasks = new ArrayList<>();
+    @Getter
+    final static List<Integer> finishedTasks = Collections.synchronizedList(new ArrayList<>());
     /**
      * Task id of the latest search task
      */
@@ -31,18 +31,22 @@ public abstract class SearchStrategy implements Serializable {
      * Starting iteration number for the current task
      */
     int currTaskStartIteration = 0;
+    /**
+     * Number of schedulers explored for the current task
+     */
+    int numSchedulesExplored = 0;
 
-    public SearchTask createTask(SearchTask parentTask) {
+    public static SearchTask createTask(SearchTask parentTask) {
         SearchTask newTask = new SearchTask(allTasks.size(), parentTask);
         allTasks.add(newTask);
         pendingTasks.add(newTask.getId());
         return newTask;
     }
 
-    public void createFirstTask() {
+    public void createFirstTask() throws InterruptedException {
         assert (allTasks.size() == 0);
-        SearchTask firstTask = createTask(null);
-        setCurrTask(firstTask);
+        SearchTask task = createTask(null);
+        addNewTask(task);
     }
 
     public SearchTask getCurrTask() {
@@ -54,10 +58,16 @@ public abstract class SearchStrategy implements Serializable {
         pendingTasks.remove(task.getId());
         currTaskId = task.getId();
         currTaskStartIteration = SearchStatistics.iteration;
+        numSchedulesExplored = 0;
     }
 
     public int getNumSchedulesInCurrTask() {
-        return SearchStatistics.iteration - currTaskStartIteration;
+        return numSchedulesExplored;
+    }
+
+    public void incrementIteration() {
+        numSchedulesExplored++;
+        SearchStatistics.iteration++;
     }
 
 
@@ -70,15 +80,30 @@ public abstract class SearchStrategy implements Serializable {
         return allTasks.get(id);
     }
 
-    public SearchTask setNextTask() {
-        if (pendingTasks.isEmpty()) {
-            return null;
+    public SearchTask setNextTask() throws InterruptedException {
+        SearchTask task = popNextTask();
+        if (task == null) {
+            PExplicitGlobal.incrementThreadsBlocking();
+            if (PExplicitGlobal.getThreadsBlocking() == PExplicitGlobal.getMaxThreads()) {
+                // all threads blocked, no task remains
+                return null;
+            }
+
+            // other threads still working and can add new tasks
+            // try popping in every 5 seconds
+            do {
+                // sleep for 5 seconds
+                Thread.sleep(5000);
+                // try popping again
+                task = popNextTask();
+            } while (task == null);
+
+            // got a non-null task
+            PExplicitGlobal.decrementThreadsBlocking();
         }
 
-        SearchTask nextTask = popNextTask();
-        setCurrTask(nextTask);
-
-        return nextTask;
+        setCurrTask(task);
+        return task;
     }
 
     /**
@@ -90,10 +115,13 @@ public abstract class SearchStrategy implements Serializable {
         int numUnexplored = 0;
         SearchTask task = getCurrTask();
         numUnexplored += task.getNumUnexploredChoices();
-        for (Integer tid : pendingTasks) {
-            task = getTask(tid);
-            numUnexplored += task.getNumUnexploredChoices();
+        synchronized (pendingTasks) {
+            for (Integer tid : pendingTasks) { // PIN: Take care of this in a better way.
+                task = getTask(tid);
+                numUnexplored += task.getNumUnexploredChoices();
+            }
         }
+
         return numUnexplored;
     }
 
@@ -106,14 +134,16 @@ public abstract class SearchStrategy implements Serializable {
         int numUnexplored = 0;
         SearchTask task = getCurrTask();
         numUnexplored += task.getNumUnexploredDataChoices();
-        for (Integer tid : pendingTasks) {
-            task = getTask(tid);
-            numUnexplored += task.getNumUnexploredDataChoices();
+        synchronized (pendingTasks) {
+            for (Integer tid : pendingTasks) { // PIN: Take care of this in a better way.
+                task = getTask(tid);
+                numUnexplored += task.getNumUnexploredDataChoices();
+            }
         }
         return numUnexplored;
     }
 
-    public abstract void addNewTask(SearchTask task);
+    public abstract void addNewTask(SearchTask task) throws InterruptedException;
 
-    abstract SearchTask popNextTask();
+    abstract SearchTask popNextTask() throws InterruptedException;
 }

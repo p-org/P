@@ -32,6 +32,12 @@ public class ReplayScheduler extends Scheduler {
     }
 
     @Override
+    public void runParallel(int tID) throws TimeoutException, InterruptedException {
+        run();
+    }
+
+
+    @Override
     protected void runIteration() throws TimeoutException {
         isDoneStepping = false;
         scheduleTerminated = false;

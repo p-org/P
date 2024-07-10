@@ -4,7 +4,8 @@ import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import pexplicit.commandline.PExplicitConfig;
+import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
@@ -33,7 +34,7 @@ import java.util.SortedSet;
 /**
  * Represents the main PExplicit logger
  */
-public class PExplicitLogger {
+public class PExplicitThreadLogger {
     static Logger log = null;
     static LoggerContext context = null;
     @Setter
@@ -47,18 +48,26 @@ public class PExplicitLogger {
      */
     public static void Initialize(int verb) {
         verbosity = verb;
-        log = Log4JConfig.getContext().getLogger(PExplicitLogger.class.getName());
+        log = Log4JConfig.getContext().getLogger(PExplicitThreadLogger.class.getName());
         org.apache.logging.log4j.core.Logger coreLogger =
-                (org.apache.logging.log4j.core.Logger) LogManager.getLogger(PExplicitLogger.class.getName());
+                (org.apache.logging.log4j.core.Logger) LogManager.getLogger(PExplicitThreadLogger.class.getName());
         context = coreLogger.getContext();
 
         PatternLayout layout = Log4JConfig.getPatternLayout();
-        ConsoleAppender consoleAppender = ConsoleAppender.createDefaultAppenderForLayout(layout);
-        consoleAppender.start();
 
-        context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
+        String filename = "/Users/xashisk/ashish-ws/SyncedForkedRepo/P/output/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";  // PIN: Configure output folder with CLI options.
+        // String filename = (new PExplicitConfig()).getOutputFolder() + "/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";  // This way gives error
+        FileAppender fileAppender = FileAppender.newBuilder()
+                .setName("FileAppender")
+                .withFileName(filename)
+                .setLayout(layout)
+                .build();
+        
+        fileAppender.start(); 
 
-        // initialize all loggers and writers
+        context.getConfiguration().addAppender(fileAppender);
+        coreLogger.addAppender(fileAppender);
+
         StatWriter.Initialize();
         ScratchLogger.Initialize();
         ScheduleWriter.Initialize();
@@ -104,14 +113,9 @@ public class PExplicitLogger {
         logInfo(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
         logInfo(String.format("..... Finished %d search tasks (%d pending)",
                 scheduler.getSearchStrategy().getFinishedTasks().size(), scheduler.getSearchStrategy().getPendingTasks().size()));
-        if (SearchStatistics.iteration != 0) // PIN: Find better way to do this
-            logInfo(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
+        logInfo(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
                 SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
-        else
-            logInfo(String.format("..... Number of steps explored: %d (min), inf (avg), %d (max).",
-        SearchStatistics.minSteps, SearchStatistics.maxSteps));
-        
-                logInfo(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
+        logInfo(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         logInfo(String.format(".. Result: " + PExplicitGlobal.getResult()));
         logInfo(". Done");
     }

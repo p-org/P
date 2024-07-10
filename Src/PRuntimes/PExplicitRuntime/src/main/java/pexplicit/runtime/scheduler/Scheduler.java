@@ -83,6 +83,15 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     public abstract void run() throws TimeoutException, InterruptedException;
 
+
+    /**
+     * Run the scheduler.
+     *
+     * @throws TimeoutException     Throws timeout exception if timeout is reached
+     * @throws InterruptedException Throws interrupt exception if interrupted
+     */
+    public abstract void runParallel(int tID) throws TimeoutException, InterruptedException;
+
     /**
      * Run an iteration.
      *
@@ -220,7 +229,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Runs the constructor of this machine.
      */
     public void startMachine(PMachine machine) {
-        if (!PExplicitGlobal.getMachineSet().contains(machine)) {
+        if (!(PExplicitGlobal.getMachineSet()).contains(machine)) {
             // add machine to global context
             PExplicitGlobal.addGlobalMachine(machine, 0);
         }

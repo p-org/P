@@ -203,7 +203,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 // Check the arguments
                 var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-                ISet<Variable> linearVariables = new HashSet<Variable>();
+                ISet<Variable> linearVariables = new System.Collections.Generic.HashSet<Variable>();
 
                 if (function.Signature.Parameters.Count != arguments.Length)
                 {
@@ -228,7 +228,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 // Check the arguments
                 var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-                ISet<Variable> linearVariables = new HashSet<Variable>();
+                ISet<Variable> linearVariables = new System.Collections.Generic.HashSet<Variable>();
 
                 if (pure.Signature.Parameters.Count != arguments.Length)
                 {
@@ -309,12 +309,19 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitTestExpr(PParser.TestExprContext context)
         {
             var instance = Visit(context.instance);
-            var kind = context.kind.GetText();
+            Machine m = null;
+            PEvent e = null;
+            string name = context.kind.GetText();
             
-            // TODO: check that the instance is a machine or an event
-            // TODO: check that the kind is a name of a machine or an event depending on the type of instance
-
-            return new TestExpr(context, instance, kind);
+            if (table.Lookup(name, out m))
+            {
+                return new TestExpr(context, instance, m);
+            } else if (table.Lookup(name, out e))
+            {
+                return new TestExpr(context, instance, e);
+            }
+            
+            throw handler.MissingDeclaration(context, "machine or event", name);
         }
         
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
@@ -673,7 +680,7 @@ namespace Plang.Compiler.TypeChecker
             var fields = context._values.Select(Visit).ToArray();
 
             var entries = new NamedTupleEntry[fields.Length];
-            var names = new HashSet<string>();
+            var names = new System.Collections.Generic.HashSet<string>();
             for (var i = 0; i < fields.Length; i++)
             {
                 var entryName = context._names[i].GetText();

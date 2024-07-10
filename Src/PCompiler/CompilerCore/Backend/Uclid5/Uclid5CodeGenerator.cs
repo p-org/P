@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -19,6 +20,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private HashSet<PLanguageType> _optionsToDeclare;
     private HashSet<SetType> _setCheckersToDeclare;
     private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
+    private Scope _globalScope;
+    
     public bool HasCompilationStage => false;
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -28,7 +31,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _optionsToDeclare = [];
         _specListenMap = new Dictionary<PEvent, List<string>>();
         _setCheckersToDeclare = [];
-        GenerateMain(globalScope);
+        _globalScope = globalScope;
+        GenerateMain();
         return new List<CompiledFile> { _src };
     }
 
@@ -549,15 +553,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void GenerateMain(Scope globalScope)
+    private void GenerateMain()
     {
         EmitLine("module main {");
 
-        var machines = (from m in globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
-        var specs = (from m in globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
-        var events = globalScope.AllDecls.OfType<PEvent>().ToList();
-        var invariants = globalScope.AllDecls.OfType<Invariant>().ToList();
-        var pures = globalScope.AllDecls.OfType<Pure>().ToList();
+        var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
+        var specs = (from m in _globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
+        var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
+        var invariants = _globalScope.AllDecls.OfType<Invariant>().ToList();
+        var pures = _globalScope.AllDecls.OfType<Pure>().ToList();
 
         EmitLine(PNullDeclaration);
         EmitLine(DefaultMachineDeclaration);
@@ -565,8 +569,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine(DefaultStringDeclaration);
         EmitLine("");
 
-        GenerateUserEnums(globalScope.AllDecls.OfType<PEnum>());
-        GenerateUserTypes(globalScope.AllDecls.OfType<TypeDef>());
+        GenerateUserEnums(_globalScope.AllDecls.OfType<PEnum>());
+        GenerateUserTypes(_globalScope.AllDecls.OfType<TypeDef>());
         EmitLine("");
 
         EmitLine(EventAdtDeclaration(events));
@@ -598,7 +602,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine(InEntryPredicateDeclaration());
         EmitLine("");
 
-        GenerateInitBlock(machines, specs);
+        GenerateInitBlock(machines, specs, _globalScope.AllDecls.OfType<AssumeOnStart>());
         EmitLine("");
 
         // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
@@ -606,7 +610,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("");
         
         // global functions
-        GenerateGlobalProcedures(globalScope.AllDecls.OfType<Function>());
+        GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>());
 
         // Spec support
         GenerateSpecProcedures(specs); // generate spec methods, called by spec handlers
@@ -641,7 +645,19 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var pure in pures)
         {
             var args = string.Join(", ", pure.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}"));
-            EmitLine($"function {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)};");
+            if (pure.Name == "inflight")
+            {
+                var label = pure.Signature.Parameters[0].Name;
+                EmitLine($"define {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)} = {StateAdtSelectBuffer(StateVar)}[{label}];");
+            } else if (pure.Name == "target")
+            {
+                var label = pure.Signature.Parameters[0].Name;
+                EmitLine($"define {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)} = {LabelAdtSelectTarget(label)};"); 
+            }
+            else
+            {
+                EmitLine($"function {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)};");
+            }
         }
         EmitLine("");
         
@@ -672,7 +688,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var t in types) EmitLine($"type {UserPrefix}{t.Name} = {TypeToString(t.Type)};");
     }
 
-    private void GenerateInitBlock(List<Machine> machines, List<Machine> specs)
+    private void GenerateInitBlock(List<Machine> machines, List<Machine> specs, IEnumerable<AssumeOnStart> starts)
     {
         var state = Deref("r");
         EmitLine("init {");
@@ -701,6 +717,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         EmitLine("// The buffer starts completely empty");
         EmitLine($"{StateAdtSelectBuffer(StateVar)} = const(false, [{LabelAdt}]boolean);");
+        
+        EmitLine("// User assumptions");
+        foreach (var assumes in starts)
+        {
+            EmitLine($"assume ({ExprToString(assumes.Body)}); // {assumes.Name}");
+        }
+        
         // close the init block
         EmitLine("}");
     }
@@ -863,7 +886,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\trequires {MachineStateAdtIsM(targetMachineState, s.OwningMachine)};");
         EmitLine(
             $"\tensures (forall (r1: {MachineRefT}) :: {target} != r1 ==> {StateAdtSelectMachines($"old({StateVar})")}[r1] == {Deref("r1")});");
-        EmitLine($"\tensures !{buffer}[{label}];");
 
         foreach (var inv in invariants)
         {
@@ -917,7 +939,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var f = eventDoAction.Target;
                 var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
                 var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
-                EmitLine($"\tensures !{buffer}[{label}];");
                 var payload = f.Signature.Parameters.Count > 0 ? $", {EventAdtSelectPayload(e, ev)}" : "";
                 EmitLine("{");
                 EmitLine($"{buffer} = {buffer}[{label} -> false];");
@@ -937,7 +958,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private void GenerateControlBlock(List<Machine> machines, List<PEvent> events)
     {
         EmitLine("control {");
-        EmitLine("set_solver_option(\":Timeout\", 1);"); // 1 second timeout per query
+        EmitLine("set_solver_option(\":Timeout\", 10);"); // 10 second timeout per query
         EmitLine("induction(1);");
 
         foreach (var m in machines)
@@ -1228,7 +1249,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
             QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
             QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
             MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
-            TestExpr texpr => $"is_{texpr.Kind}({MachineStateAdtSelectMachine(Deref(ExprToString(texpr.Instance)))})",
+            TestExpr {Kind: Machine m} texpr  => MachineStateAdtIsM(Deref(ExprToString(texpr.Instance)), m), // must deref because or else we don't have an ADT!
+            TestExpr {Kind: PEvent e} texpr  => EventAdtIsE(EventOrGotoAdtSelectEvent(LabelAdtSelectAction(ExprToString(texpr.Instance))), e),
             PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
@@ -1241,12 +1263,21 @@ public class Uclid5CodeGenerator : ICodeGenerator
         
         string Guard(List<Variable> bound)
         {
-            var boundMachines = bound.Select(b => b.Type switch
+            List<IPExpr> boundMachines = [];
+            foreach (var b in bound)
             {
-                PermissionType {Origin: Machine} pt => new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), MachinePrefix + ((Machine) pt.Origin).Name),
-                PermissionType {Origin: Interface} pt => new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), MachinePrefix + ((Interface) pt.Origin).Name),
-                _ => null,
-            }).Where(v => v is not null).ToList();
+                switch (b.Type)
+                {
+                    case PermissionType permissionType:
+                        var name = permissionType.OriginalRepresentation;
+            
+                        if (_globalScope.Lookup(name, out Machine m))
+                        {
+                            boundMachines.Add(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), m));
+                        }
+                        break;
+                }
+            }
 
             if (boundMachines.Count != 0)
             {
@@ -1317,7 +1348,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             case PrimitiveType pt when pt.Equals(PrimitiveType.Machine):
                 return MachineRefT;
             case PrimitiveType pt when pt.Equals(PrimitiveType.Event):
-                return EventAdt;
+                return LabelAdt;
             case TypeDefType tdt:
                 return $"{UserPrefix}{tdt.TypeDefDecl.Name}";
             case PermissionType _:

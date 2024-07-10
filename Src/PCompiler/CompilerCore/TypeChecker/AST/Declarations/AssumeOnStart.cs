@@ -6,13 +6,13 @@ using Plang.Compiler.TypeChecker.AST.Expressions;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
-    public class Invariant : IPDecl
+    public class AssumeOnStart : IPDecl
     {
-        public Invariant(string name, IPExpr body, ParserRuleContext sourceNode)
+        public AssumeOnStart(string name, IPExpr body, ParserRuleContext sourceNode)
         {
-            Debug.Assert(sourceNode is PParser.InvariantDeclContext);
-            Name = name;
+            Debug.Assert(sourceNode is PParser.AssumeOnStartDeclContext);
             Body = body;
+            Name = name;
             SourceLocation = sourceNode;
         }
         

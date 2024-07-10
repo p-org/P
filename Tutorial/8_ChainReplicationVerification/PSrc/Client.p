@@ -26,5 +26,7 @@ fun RandomInt(): int;
 pure target(e: event): machine;
 pure inflight(e: event): bool;
 
-invariant agree: forall (m1: Client, m2: Client) :: m1.tail == m2.tail && m1.head == m2.head;
-invariant no_write: forall (e: event) :: e is eWriteRequest && target(e) is Client ==> !inflight(e);
+invariant no_write_request_to_client: forall (e: event, m: machine) :: e is eWriteRequest && target(e) == m && m is Client ==> !inflight(e);
+invariant no_propagate_to_client: forall (e: event, m: machine) :: e is ePropagateWrite && target(e) == m && m is Client ==> !inflight(e);
+invariant no_read_request_to_client: forall (e: event, m: machine) :: e is eReadRequest && target(e) == m && m is Client ==> !inflight(e);
+invariant client_head_and_tail_are_not_clients: forall (c: Client) :: !(c.head is Client) && !(c.tail is Client);

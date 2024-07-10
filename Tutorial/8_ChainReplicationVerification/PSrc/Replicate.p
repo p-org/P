@@ -57,3 +57,5 @@ machine Replicate {
         }
     }
 }
+
+invariant client_is_never_next: forall (r: Replicate) :: !(r.next is Client);

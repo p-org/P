@@ -120,7 +120,7 @@ namespace Plang.Compiler
         public Exception MissingMachineField(PParser.IdenContext location, Machine machine)
         {
             return IssueError(location,
-                $"named tuple type {machine.Name} has no '{location.GetText()}' field");
+                $"machine {machine.Name} has no '{location.GetText()}' field");
         }
 
         public Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple)

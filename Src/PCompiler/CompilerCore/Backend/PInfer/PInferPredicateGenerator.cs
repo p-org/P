@@ -100,6 +100,7 @@ namespace Plang.Compiler.Backend.PInfer
                                 .Concat(new DriverGenerator(job, "PInferDriver.java", templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
                                 .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
                                 .Concat(eventDefSource)
+                                .Concat(new FromDaikonGenerator(job, "FromDaikon.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TemplateInstantiatorGenerator(job, "Main.java", quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))
                                 .Concat([terms, predicates]);
         }

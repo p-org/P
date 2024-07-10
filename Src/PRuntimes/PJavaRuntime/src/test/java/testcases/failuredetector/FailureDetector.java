@@ -310,8 +310,6 @@ public class FailureDetector {
     // PMachine Node elided
     public static class ReliableFailureDetector extends prt.Monitor {
 
-        public void reInitializeMonitor() {} // dummy implementation.
-
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
 
         private LinkedHashSet<Long> nodesShutdownAndNotDetected = new LinkedHashSet<Long>();

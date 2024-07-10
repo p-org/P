@@ -587,8 +587,6 @@ public class TwoPhaseCommit {
     // PMachine Participant elided
     public static class AtomicityInvariant extends prt.Monitor {
 
-        public void reInitializeMonitor() {}; // dummy implementation.
-
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
 
         private HashMap<Integer,HashMap<Integer,Integer>> participantsResponse = new HashMap<Integer,HashMap<Integer,Integer>>();
@@ -746,8 +744,6 @@ public class TwoPhaseCommit {
         } // constructor
     } // AtomicityInvariant monitor definition
     public static class Progress extends prt.Monitor {
-
-        public void reInitializeMonitor() {}; // dummy implementation.
 
         public List<Class<? extends PEvent<?>>> getEventTypes() { return List.of(); } //XXX: dummy implementation.
 

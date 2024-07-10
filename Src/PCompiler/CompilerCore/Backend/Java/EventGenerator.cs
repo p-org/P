@@ -54,6 +54,10 @@ namespace Plang.Compiler.Backend.Java
                     return $"(({Constants.TypesNamespaceName}.{enumType.EnumDecl.Name}) (payload.get(\"{field}\")))";
                     // return $"{Constants.TypesNamespaceName}.{enumType.EnumDecl.Name}.from(" + JsonObjectGet(objName, field, PrimitiveType.Int) + ".intValue())";
                 }
+                if (type.Equals(PrimitiveType.Any))
+                {
+                    return $"payload.get(\"{field}\")";
+                }
                 else
                 {
                     var javaType = Types.JavaTypeFor(type).ReferenceTypeName;
@@ -98,6 +102,10 @@ namespace Plang.Compiler.Backend.Java
                 else if (argType.IsPrimitive)
                 {
                     WriteLine($"public {payloadType} payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType.Canonicalize())}; }}");
+                }
+                else if (argType is TypeManager.JType.JAny)
+                {
+                    WriteLine($"public Object payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType.Canonicalize())}; }}");
                 }
                 else
                 {

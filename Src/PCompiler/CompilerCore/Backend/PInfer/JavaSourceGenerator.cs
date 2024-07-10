@@ -24,11 +24,15 @@ namespace Plang.Compiler.Backend.PInfer
             Job = job;
         }
 
-        private string SimplifiedJavaType(PLanguageType type)
+        internal string SimplifiedJavaType(PLanguageType type)
         {
             if (type is EnumType || type is Index || type is CollectionSize)
             {
                 return "int";
+            }
+            if (type is TypeDefType def)
+            {
+                return SimplifiedJavaType(def.TypeDefDecl.Type);
             }
             var javaType = Types.JavaTypeFor(type);
             if (javaType.IsPrimitive)
@@ -42,6 +46,10 @@ namespace Plang.Compiler.Backend.PInfer
             if (type is SetType s)
             {
                 return $"JSONArrayOf{SimplifiedJavaType(s.ElementType)}";
+            }
+            if (type.Equals(PrimitiveType.Any))
+            {
+                return "Object";
             }
             return "JSONObject";
         }

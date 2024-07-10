@@ -431,7 +431,7 @@ public class Main {
                 }
             }
 //            System.out.println(""StdErr: "" + daikonStdErr);
-            if (!hasResult) {
+            if (!hasResult && daikonStdErr.toString().contains(""No program point declarations were found."")) {
                 return null;
             }
             return properties;
@@ -490,6 +490,7 @@ public class Main {
             }
             this.templateName = templateNameBuilder.toString().strip();
             ProcessBuilder pb = new ProcessBuilder(""java"",
+                    ""-Xmx32g"",
                     ""-cp"",
                     System.getProperty(""java.class.path""),
                     ""daikon.Chicory"",

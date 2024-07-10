@@ -118,6 +118,7 @@ namespace Plang.Compiler.Backend.PInfer
                 ctx.WriteLine(stream, $"\"order\": {PredicateOrder[pred]},");
                 ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(pred)}\", ");
                 ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[pred])}], ");
+                var comparer = new ASTComparer();
                 if (Contradictions.TryGetValue(pred, out var contradictions))
                 {
                     ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contradictions.Where(PredicateOrder.ContainsKey).Select(x => PredicateOrder[x]))}]");
@@ -202,7 +203,7 @@ namespace Plang.Compiler.Backend.PInfer
                     if (PredicateCallExpr.MkPredicateCall(pred, param, out PredicateCallExpr expr)){
                         FreeEvents[expr] = events;
                         PredicateOrder[expr] = Predicates.Count;
-                        Contradictions[expr] = [];
+                        Contradictions[expr] = new HashSet<IPExpr>(new ASTComparer());
                         foreach (var c in PredicateStore.GetContradictions(pred))
                         {
                             if (PredicateCallExpr.MkPredicateCall(c, param, out var contra))
@@ -210,7 +211,7 @@ namespace Plang.Compiler.Backend.PInfer
                                 Contradictions[expr].Add(contra);
                                 if (!Contradictions.ContainsKey(contra))
                                 {
-                                    Contradictions[contra] = [];
+                                    Contradictions[contra] = new HashSet<IPExpr>(new ASTComparer());
                                 }
                                 Contradictions[contra].Add(expr);
                             }
@@ -332,14 +333,14 @@ namespace Plang.Compiler.Backend.PInfer
                         {
                             if (!Contradictions.ContainsKey(expr))
                             {
-                                Contradictions[expr] = [];
+                                Contradictions[expr] = new HashSet<IPExpr>(new ASTComparer());
                             }
                             if (PredicateCallExpr.MkPredicateCall("<", [lhs, rhs], out var c))
                             {
                                 Contradictions[expr].Add(c);
                                 if (!Contradictions.ContainsKey(c))
                                 {
-                                    Contradictions[c] = [];
+                                    Contradictions[c] = new HashSet<IPExpr>(new ASTComparer());
                                 }
                                 Contradictions[c].Add(expr);
                             }

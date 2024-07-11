@@ -247,14 +247,22 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (p.Predicate is BuiltinPredicate)
             {
-                switch (p.Predicate.Notation)
+                if (p.Predicate is MacroPredicate macro)
                 {
-                    case Notation.Infix:
-                        if (p.Predicate.Name == "==")
-                        {
-                            return $"Objects.equals({GenerateCodeExpr(p.Arguments[0])}, {GenerateCodeExpr(p.Arguments[1])})";
-                        }
-                        return $"{GenerateCodeExpr(p.Arguments[0])} {p.Predicate.Name} {GenerateCodeExpr(p.Arguments[1])}";
+                    string[] macroArgs = p.Arguments.Select(GenerateCodeExpr).ToArray();
+                    return macro.GenerateUnfoldedCall(macroArgs, Types, Names);
+                }
+                else 
+                {
+                    switch (p.Predicate.Notation)
+                    {
+                        case Notation.Infix:
+                            if (p.Predicate.Name == "==")
+                            {
+                                return $"Objects.equals({GenerateCodeExpr(p.Arguments[0])}, {GenerateCodeExpr(p.Arguments[1])})";
+                            }
+                            return $"{GenerateCodeExpr(p.Arguments[0])} {p.Predicate.Name} {GenerateCodeExpr(p.Arguments[1])}";
+                    }
                 }
             }
             var args = (from e in p.Arguments select GenerateCodeExpr(e)).ToArray();

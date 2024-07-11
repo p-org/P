@@ -58,6 +58,7 @@ namespace Plang.Compiler.Backend.PInfer
             var eventDefSource = new EventDefGenerator(job, Java.Constants.EventDefnFileName, quantifiedEvents).GenerateCode(javaCtx, globalScope);
             AggregateFunctions(job.CustomFunctions, globalScope);
             AggregateDefinedPredicates(job.CustomPredicates, globalScope);
+            PopulateEnumCmpPredicates(globalScope);
             var i = 0;
             var termDepth = job.TermDepth.Value;
             var indexType = PInferBuiltinTypes.Index;
@@ -103,6 +104,24 @@ namespace Plang.Compiler.Backend.PInfer
                                 .Concat(new FromDaikonGenerator(job, "FromDaikon.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TemplateInstantiatorGenerator(job, "Main.java", quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))
                                 .Concat([terms, predicates]);
+        }
+
+        private void PopulateEnumCmpPredicates(Scope globalScope)
+        {
+            foreach (var enumDecl in globalScope.Enums)
+            {
+                var ty = new EnumType(enumDecl);
+                var contraditionGroup = enumDecl.Name;
+                List<MacroPredicate> predicateGroup = [];
+                foreach (var elem in enumDecl.Values)
+                {
+                    MacroPredicate enumCmpPred = new($"enumCmp_{enumDecl.Name}_{elem.Name}", Notation.Prefix, (args, types, names) => {
+                        return $"({args[0]} == {Constants.TypesNamespaceName}.{enumDecl.Name}.{elem.Name})";
+                    }, ty);
+                    PredicateStore.AddBuiltinPredicate(enumCmpPred, predicateGroup);
+                    predicateGroup.Add(enumCmpPred);
+                }
+            }
         }
 
         private string GetEventVariableRepr(PEventVariable x)

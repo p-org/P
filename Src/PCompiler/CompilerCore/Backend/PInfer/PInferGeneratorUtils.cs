@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Antlr4.Runtime;
+using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -221,6 +222,20 @@ namespace Plang.Compiler.Backend.PInfer
         public ParserRuleContext SourceLocation => null;
     }
 
+    public class MacroPredicate : BuiltinPredicate
+    {
+        private Func<string[], TypeManager, NameManager, string> UnfoldMacro;
+        internal MacroPredicate(string name, Notation notation, Func<string[], TypeManager, NameManager, string> unfold, params PLanguageType[] signature) : base(name, notation, signature)
+        {
+            UnfoldMacro = unfold;
+        }
+
+        internal string GenerateUnfoldedCall(string[] args, TypeManager types, NameManager names)
+        {
+            return UnfoldMacro(args, types, names);
+        }
+    }
+
     public class PInferBuiltinTypes
     {
         public static readonly PLanguageType Index = new Index();
@@ -371,6 +386,20 @@ namespace Plang.Compiler.Backend.PInfer
                 return contradictions;
             }
             return [];
+        }
+
+        public static void AddBuiltinPredicate(BuiltinPredicate predicateInst, IEnumerable<IPredicate> contraditions)
+        {
+            var types = predicateInst.Signature.ParameterTypes.ToList();
+            if (!_Store.ContainsKey(types))
+            {
+                _Store.Add(types, []);
+            }
+            _Store[types].Add(predicateInst.Name, predicateInst);
+            foreach (var c in contraditions)
+            {
+                MarkContradition(predicateInst, c);
+            }
         }
 
         public static void AddBuiltinPredicate(string name, Notation notation, IEnumerable<IPredicate> contraditions, params PLanguageType[] argTypes)

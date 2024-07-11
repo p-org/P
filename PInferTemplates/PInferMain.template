@@ -542,7 +542,7 @@ public class Main {
             Set<Task> tasks = properties.get(guards);
             if (!tasks.isEmpty()) {
                 System.out.println("========================" + numSolved + "/" + numTasks + "==================================");
-                System.out.println("Predicates: " + converter.templateHeader + guards);
+                System.out.println(converter.templateHeader + guards);
                 var iter = tasks.iterator();
                 Task t = iter.next();
                 iter.remove();
@@ -550,7 +550,7 @@ public class Main {
                 Set<String> invariants = t.getDaikonOutput(converter);
                 numSolved += 1;
                 if (invariants != null) {
-                    System.out.println("Properties:");
+                    // System.out.println("Properties:");
                     while (iter.hasNext()) {
                         iter.next().start();
                     }

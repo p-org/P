@@ -122,6 +122,14 @@ namespace Plang.Compiler.Backend.PInfer
                     predicateGroup.Add(enumCmpPred);
                 }
             }
+            MacroPredicate isTrueCmp = new("IsTrue", Notation.Prefix, (args, types, names) => {
+                return $"({args[0]})";
+            }, PrimitiveType.Bool);
+            MacroPredicate isFalseCmp = new("IsFalse", Notation.Prefix, (args, types, names) => {
+                return $"(!{args[0]})";
+            }, PrimitiveType.Bool);
+            PredicateStore.AddBuiltinPredicate(isTrueCmp, [isFalseCmp]);
+            PredicateStore.AddBuiltinPredicate(isFalseCmp, [isTrueCmp]);
         }
 
         private string GetEventVariableRepr(PEventVariable x)

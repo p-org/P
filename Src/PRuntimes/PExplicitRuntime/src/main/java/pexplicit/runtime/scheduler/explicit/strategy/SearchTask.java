@@ -2,12 +2,18 @@ package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
 import pexplicit.runtime.PExplicitGlobal;
+import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachineId;
-import pexplicit.runtime.scheduler.choice.*;
+import pexplicit.runtime.scheduler.choice.Choice;
+import pexplicit.runtime.scheduler.choice.DataSearchUnit;
+import pexplicit.runtime.scheduler.choice.ScheduleSearchUnit;
+import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
 import pexplicit.values.PValue;
 
-import java.io.Serializable;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class SearchTask implements Serializable {
@@ -20,9 +26,16 @@ public class SearchTask implements Serializable {
     @Getter
     private int currChoiceNumber = 0;
     @Getter
-    private final List<Choice> prefixChoices = new ArrayList<>();
+    private int totalUnexploredChoices = 0;
     @Getter
-    private final Map<Integer, SearchUnit> searchUnits = new HashMap<>();
+    private int totalUnexploredDataChoices = 0;
+
+    @Getter
+    private List<Choice> prefixChoices = new ArrayList<>();
+    @Getter
+    private Map<Integer, SearchUnit> searchUnits = new HashMap<>();
+    @Getter
+    private String serializeFile = null;
 
     public SearchTask(int id, SearchTask parentTask) {
         this.id = id;
@@ -48,6 +61,11 @@ public class SearchTask implements Serializable {
     }
 
     public void addSuffixSearchUnit(int choiceNum, SearchUnit unit) {
+        totalUnexploredChoices += unit.getUnexplored().size();
+        if (unit instanceof DataSearchUnit) {
+            totalUnexploredDataChoices += unit.getUnexplored().size();
+        }
+
         searchUnits.put(choiceNum, unit.transferUnit());
         if (choiceNum > currChoiceNumber) {
             currChoiceNumber = choiceNum;
@@ -169,7 +187,7 @@ public class SearchTask implements Serializable {
      *
      * @return Number of unexplored choices
      */
-    public int getNumUnexploredChoices() {
+    public int getCurrentNumUnexploredChoices() {
         int numUnexplored = 0;
         for (SearchUnit<?> c : searchUnits.values()) {
             numUnexplored += c.getUnexplored().size();
@@ -182,7 +200,7 @@ public class SearchTask implements Serializable {
      *
      * @return Number of unexplored data choices
      */
-    public int getNumUnexploredDataChoices() {
+    public int getCurrentNumUnexploredDataChoices() {
         int numUnexplored = 0;
         for (SearchUnit<?> c : searchUnits.values()) {
             if (c instanceof DataSearchUnit) {
@@ -200,6 +218,48 @@ public class SearchTask implements Serializable {
      */
     public void clearSearchUnit(int choiceNum) {
         searchUnits.remove(choiceNum);
+    }
+
+    public void serializeTask() {
+        assert (serializeFile == null);
+        assert (prefixChoices != null);
+        assert (searchUnits != null);
+
+        serializeFile = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/" + this + ".ser";
+        try {
+            Files.createDirectories(Paths.get(PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/"));
+            FileOutputStream fos = new FileOutputStream(serializeFile);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(this.prefixChoices);
+            oos.writeObject(this.searchUnits);
+            long szBytes = Files.size(Paths.get(serializeFile));
+            PExplicitLogger.logSerializeTask(this, szBytes);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write task in file " + serializeFile, e);
+        }
+
+        prefixChoices = null;
+        searchUnits = null;
+    }
+
+    public void deserializeTask() {
+        assert (serializeFile != null);
+        assert (prefixChoices == null);
+        assert (searchUnits == null);
+
+        try {
+            PExplicitLogger.logDeserializeTask(this);
+            FileInputStream fis;
+            fis = new FileInputStream(serializeFile);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            prefixChoices = (ArrayList<Choice>) ois.readObject();
+            searchUnits = (HashMap<Integer, SearchUnit>) ois.readObject();
+            Files.delete(Paths.get(serializeFile));
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException("Failed to read task from file " + serializeFile, e);
+        }
+
+        serializeFile = null;
     }
 
 }

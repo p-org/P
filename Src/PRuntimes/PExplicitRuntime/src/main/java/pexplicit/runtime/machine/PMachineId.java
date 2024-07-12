@@ -3,8 +3,10 @@ package pexplicit.runtime.machine;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 @Getter
-public class PMachineId {
+public class PMachineId implements Serializable {
     Class<? extends PMachine> type;
     int typeId;
     @Setter

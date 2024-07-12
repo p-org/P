@@ -13,7 +13,7 @@ import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 public class PExplicitConfig {
     @Getter
     @Setter
-    private static int numThreads = 1;
+    private static int numThreads = 2;
     // default name of the test driver
     final String testDriverDefault = "DefaultImpl";
     // name of the test driver
@@ -36,7 +36,7 @@ public class PExplicitConfig {
     int verbosity = 0;
     // max number of schedules bound provided by the user
     @Setter
-    int maxSchedules = 1;
+    int maxSchedules = 4;
     // max steps/depth bound provided by the user
     @Setter
     int maxStepBound = 10000;

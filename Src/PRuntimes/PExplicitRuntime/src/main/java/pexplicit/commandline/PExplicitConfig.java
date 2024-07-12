@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import pexplicit.runtime.machine.buffer.BufferSemantics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
+import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 /**
@@ -52,9 +53,9 @@ public class PExplicitConfig {
     // state caching mode
     @Setter
     StateCachingMode stateCachingMode = StateCachingMode.Murmur3_128;
-    // use stateful backtracking
+    // stateful backtracking mode
     @Setter
-    boolean statefulBacktrackEnabled = true;
+    StatefulBacktrackingMode statefulBacktrackingMode = StatefulBacktrackingMode.IntraTask;
     // search strategy mode
     @Setter
     SearchStrategyMode searchStrategyMode = SearchStrategyMode.Random;

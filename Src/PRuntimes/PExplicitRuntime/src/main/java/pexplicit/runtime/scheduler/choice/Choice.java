@@ -29,7 +29,7 @@ public abstract class Choice<T> implements Serializable {
      *
      * @return Choice object with the copied current choice
      */
-    abstract public Choice copyCurrent();
+    abstract public Choice copyCurrent(boolean copyState);
 
     abstract public String toString();
 }

@@ -1,8 +1,10 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
+import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.choice.*;
+import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;
@@ -41,7 +43,8 @@ public class SearchTask implements Serializable {
     }
 
     public void addPrefixChoice(Choice choice) {
-        prefixChoices.add(choice.copyCurrent());
+        boolean copyState = (PExplicitGlobal.getConfig().getStatefulBacktrackingMode() == StatefulBacktrackingMode.All);
+        prefixChoices.add(choice.copyCurrent(copyState));
     }
 
     public void addSuffixSearchUnit(int choiceNum, SearchUnit unit) {

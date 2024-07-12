@@ -7,6 +7,7 @@ import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.DataChoice;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
+import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
 import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.values.PValue;
 
@@ -71,7 +72,7 @@ public class Schedule implements Serializable {
             choices.add(null);
         }
         assert (choiceNum < choices.size());
-        if (PExplicitGlobal.getConfig().isStatefulBacktrackEnabled()
+        if (PExplicitGlobal.getConfig().getStatefulBacktrackingMode() != StatefulBacktrackingMode.None
                 && stepNum != 0) {
             assert (stepBeginState != null);
             choices.set(choiceNum, new ScheduleChoice(stepNum, choiceNum, current, stepBeginState));

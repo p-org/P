@@ -27,7 +27,7 @@ public class TestPExplicit {
     private static String timeout = "30";
     private static String schedules = "100";
     private static String maxSteps = "10000";
-    private static String runArgs = "";
+    private static String runArgs = "--checker-args :--schedules-per-task:10";
     private static boolean initialized = false;
 
     private static void setRunArgs() {

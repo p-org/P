@@ -2,6 +2,7 @@ package pexplicit.runtime.scheduler.choice;
 
 import lombok.Getter;
 import lombok.Setter;
+import pexplicit.commandline.PExplicitConfig;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.explicit.StepState;
 
@@ -32,8 +33,12 @@ public class ScheduleChoice extends Choice<PMachineId> {
         this.choiceState = s;
     }
 
-    public Choice copyCurrent() {
-        return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, this.choiceState);
+    public Choice copyCurrent(boolean copyState) {
+        if (copyState) {
+            return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, this.choiceState);
+        } else {
+            return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, null);
+        }
     }
 
     @Override

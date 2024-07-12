@@ -2,6 +2,7 @@ package pexplicit.commandline;
 
 import org.apache.commons.cli.*;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
+import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 import java.io.PrintWriter;
@@ -165,13 +166,15 @@ public class PExplicitOptions {
         addHiddenOption(stateCachingMode);
 
         // whether or not to disable stateful backtracking
-        Option backtrack =
+        Option backtrackMode =
                 Option.builder()
-                        .longOpt("no-backtrack")
-                        .desc("Disable stateful backtracking")
-                        .numberOfArgs(0)
+                        .longOpt("stateful-backtrack")
+                        .desc("Stateful backtracking mode: none, intra-task, all (default: intra-task)")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("Backtrack Mode (string)")
                         .build();
-        addHiddenOption(backtrack);
+        addHiddenOption(backtrackMode);
 
         // max number of schedules to explore per search task
         Option maxSchedulesPerTask =
@@ -363,8 +366,22 @@ public class PExplicitOptions {
                                     String.format("Unrecognized state caching mode, got %s", option.getValue()));
                     }
                     break;
-                case "no-backtrack":
-                    config.setStatefulBacktrackEnabled(false);
+                case "stateful-backtrack":
+                    switch (option.getValue()) {
+                        case "none":
+                            config.setStatefulBacktrackingMode(StatefulBacktrackingMode.None);
+                            break;
+                        case "intra-task":
+                            config.setStatefulBacktrackingMode(StatefulBacktrackingMode.IntraTask);
+                            break;
+                        case "all":
+                            config.setStatefulBacktrackingMode(StatefulBacktrackingMode.All);
+                            break;
+                        default:
+                            optionError(
+                                    option,
+                                    String.format("Unrecognized stateful backtrack mode, got %s", option.getValue()));
+                    }
                     break;
                 case "schedules-per-task":
                     try {

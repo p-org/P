@@ -14,7 +14,7 @@ public class DataChoice extends Choice<PValue<?>> {
         super(c);
     }
 
-    public Choice copyCurrent() {
+    public Choice copyCurrent(boolean copyState) {
         return new DataChoice(this.current);
     }
 

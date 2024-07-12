@@ -754,7 +754,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     EmitLine("}");
                 }
 
-                foreach (var e in events.Where(e => !e.IsNullEvent))
+                foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent))
                 {
                     EmitLine($"({EventGuard(m, s, e)}) : {{");
                     if (s.HasHandler(e))
@@ -827,8 +827,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var currState = Deref("this");
 
                 EmitLine($"\trequires {MachineStateAdtIsM(currState, m)};");
-                EmitLine(
-                    $"\tensures (forall (r1: {MachineRefT}) :: this != r1 ==> {StateAdtSelectMachines($"old({StateVar})")}[r1] == {Deref("r1")});");
                 if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                 {
                     EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
@@ -891,8 +889,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\trequires {EventOrGotoAdtIsGoto(action)};");
         EmitLine($"\trequires {GotoAdtIsS(g, s)};");
         EmitLine($"\trequires {MachineStateAdtIsM(targetMachineState, s.OwningMachine)};");
-        EmitLine(
-            $"\tensures (forall (r1: {MachineRefT}) :: {target} != r1 ==> {StateAdtSelectMachines($"old({StateVar})")}[r1] == {Deref("r1")});");
 
         foreach (var inv in invariants)
         {
@@ -925,8 +921,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\trequires {EventOrGotoAdtIsEvent(action)};");
         EmitLine($"\trequires {EventAdtIsE(e, ev)};");
         EmitLine($"\trequires {MachineStateAdtIsM(targetMachineState, s.OwningMachine)};");
-        EmitLine(
-            $"\tensures (forall (r1: {MachineRefT}) :: {target} != r1 ==> {StateAdtSelectMachines($"old({StateVar})")}[r1] == {Deref("r1")});");
 
         foreach (var inv in invariants)
         {
@@ -1175,7 +1169,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         _setCheckersToDeclare.Add(setType);
                         // havoc the item
                         EmitLine($"havoc {item};");
-                        EmitLine($"while ({checker} != {collection}) {{");
+                        EmitLine($"while ({checker} != {collection})");
+                        foreach (var inv in  _globalScope.AllDecls.OfType<Invariant>())
+                        {
+                            EmitLine($"\tinvariant {ExprToString(inv.Body)};");
+                        }
+                        EmitLine("{");
                         // assume that the item is in the set but hasn't been visited
                         EmitLine($"assume ({collection}[{item}] && !{checker}[{item}]);");
                         // the body of the loop
@@ -1258,6 +1257,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
             TestExpr {Kind: Machine m} texpr  => MachineStateAdtIsM(Deref(ExprToString(texpr.Instance)), m), // must deref because or else we don't have an ADT!
             TestExpr {Kind: PEvent e} texpr  => EventAdtIsE(EventOrGotoAdtSelectEvent(LabelAdtSelectAction(ExprToString(texpr.Instance))), e),
+            TestExpr {Kind: State s} texpr => MachineStateAdtInS(Deref(ExprToString(texpr.Instance)), s.OwningMachine, s), // must deref for ADT!
             PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"

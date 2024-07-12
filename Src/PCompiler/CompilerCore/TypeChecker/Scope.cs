@@ -420,6 +420,16 @@ namespace Plang.Compiler.TypeChecker
                     return true;
                 }
 
+                // look inside machines to find the state.
+                // TODO: bug if multiple machines have the same state name
+                foreach (var m in current.Machines)
+                {
+                    if (m.Scope.Get(name, out tree))
+                    {
+                        return true;
+                    }
+                }
+
                 current = current.Parent;
             }
 

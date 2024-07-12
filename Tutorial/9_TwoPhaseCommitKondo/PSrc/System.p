@@ -47,33 +47,38 @@ machine Coordinator
 machine Participant {
     start state Undecided {
         on eVoteReq do {
-            if ($) {
-                send coordinator(), eVoteResp, (source = this, vote = YES);
-            } else {
-                send coordinator(), eVoteResp, (source = this, vote = NO);
-            }
+            send coordinator(), eVoteResp, (source = this, vote = preference(this));
         }
         
         on eCommit do {
-            goto Committed;
+            goto Accepted;
         }
         
         on eAbort do {
-            goto Aborted;
+            goto Rejected;
         }
     }
     
-    state Committed {ignore eVoteReq, eCommit, eAbort;}
-    state Aborted {ignore eVoteReq, eCommit, eAbort;}
+    state Accepted {ignore eVoteReq, eCommit, eAbort;}
+    state Rejected {ignore eVoteReq, eCommit, eAbort;}
 }
 
+// imports
+pure target(e: event): machine;
+pure inflight(e: event): bool;
 
 // Using these to avoid initialization
 pure participants(): set[machine];
 pure coordinator(): machine;
-// there is one machine that is a Coordinator and it is coordinator()
-axiom forall (m: machine) :: m == coordinator() == m is Coordinator;
-// every participant is in the set of participants
-axiom forall (m: machine) :: m in participants() == m is Participant;
+pure preference(m: machine) : Vote;
 
+axiom forall (m: machine) :: m == coordinator() == m is Coordinator; // there is one coordinator
+axiom forall (m: machine) :: m in participants() == m is Participant; // every participant is in the set of participants
 
+// make sure we never get a response that we're not expecting
+invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && target(e) == coordinator() ==> !inflight(e);
+invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && target(e) == coordinator() ==> !inflight(e);
+invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && target(e) == coordinator() ==> !inflight(e);
+invariant never_resp_to_participant: forall (e: event, p: Participant) :: e is eVoteResp && target(e) == p ==> !inflight(e);
+
+invariant safety: forall (p1: Participant) :: p1 is Accepted ==> (forall (p2: Participant) :: preference(p2) == YES);

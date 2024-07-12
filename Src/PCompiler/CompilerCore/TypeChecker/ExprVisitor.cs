@@ -6,6 +6,7 @@ using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
@@ -309,19 +310,24 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitTestExpr(PParser.TestExprContext context)
         {
             var instance = Visit(context.instance);
-            Machine m = null;
-            PEvent e = null;
             string name = context.kind.GetText();
             
-            if (table.Lookup(name, out m))
+            if (table.Lookup(name, out Machine m))
             {
                 return new TestExpr(context, instance, m);
-            } else if (table.Lookup(name, out e))
+            }
+            
+            if (table.Lookup(name, out PEvent e))
             {
                 return new TestExpr(context, instance, e);
             }
             
-            throw handler.MissingDeclaration(context, "machine or event", name);
+            if (table.Lookup(name, out State s))
+            {
+                return new TestExpr(context, instance, s);
+            }
+            
+            throw handler.MissingDeclaration(context, "machine, event, or state", name);
         }
         
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)

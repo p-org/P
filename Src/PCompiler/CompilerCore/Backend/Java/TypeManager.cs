@@ -295,9 +295,17 @@ namespace Plang.Compiler.Backend.Java
                 internal JList(JType t)
                 {
                     _contentType = t;
-                    _unboxedType = $"ArrayList<{t.ReferenceTypeName}>";
+                    if (Constants.PInferMode)
+                    {
+                        _unboxedType = $"{t.TypeName}[]";
+                    }
+                    else
+                    {
+                        _unboxedType = $"ArrayList<{t.ReferenceTypeName}>";
+                    }
                 }
 
+                internal override string DefaultValue => Constants.PInferMode ? $"new {TypeName}{{}}" : $"new {TypeName}()";
                 internal override bool IsPrimitive => false;
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "contains";
@@ -312,7 +320,14 @@ namespace Plang.Compiler.Backend.Java
 
                 internal override string GenerateCastFromObject(string objectName)
                 {
-                    return $"new ArrayList<{_contentType.ReferenceTypeName}>(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toList())";
+                    if (Constants.PInferMode)
+                    {
+                        return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({TypeName}::new))";
+                    }
+                    else
+                    {
+                        return $"(new ArrayList<{_contentType.ReferenceTypeName}>(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toList()))";
+                    }
                 }
             }
             internal class JMap : JType
@@ -382,9 +397,16 @@ namespace Plang.Compiler.Backend.Java
                 internal JSet(JType t)
                 {
                     _contentType = t;
-                    _unboxedType = $"LinkedHashSet<{t.ReferenceTypeName}>";
+                    if (Constants.PInferMode)
+                    {
+                        _unboxedType = $"{t.TypeName}[]";
+                    }
+                    else
+                    {
+                        _unboxedType = $"LinkedHashSet<{t.ReferenceTypeName}>";
+                    }
                 }
-
+                internal override string DefaultValue => Constants.PInferMode ? $"new {TypeName}{{}}" : $"new {TypeName}()";
                 internal override bool IsPrimitive => false;
 
                 // Note: There's no AccessorMethodName for a JSet because, unfortunately,
@@ -397,13 +419,12 @@ namespace Plang.Compiler.Backend.Java
                 internal override string InsertMethodName => "add";
                 internal override string MutatorMethodName => "add";
                 internal override string RemoveMethodName => "remove";
-                // internal override string GenerateFromJSON(string jsonVariable, string fieldName)
-                // {
-                //     var getArray = $"({jsonVariable}.getJSONArray(\"fieldName\"))";
-                //     return $"({getArray}.stream().map(x -> {_contentType.GenerateCastFromObject("x")}).collect(Collectors.toCollection(LinkedHashSet::new)))";
-                // }
                 internal override string GenerateCastFromObject(string objectName)
                 {
+                    if (Constants.PInferMode)
+                    {
+                        return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({TypeName}::new))";
+                    }
                     return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).collect(Collectors.toCollection(LinkedHashSet::new)))";
                 }
             }

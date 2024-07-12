@@ -264,6 +264,10 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 if (funCallExpr.Function.Name == "size")
                 {
+                    if (funCallExpr.Arguments[0].Type is SequenceType || funCallExpr.Arguments[0].Type is SetType)
+                    {
+                        return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.length";
+                    }
                     return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.size()";
                 }
             }

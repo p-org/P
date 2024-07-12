@@ -44,7 +44,7 @@ public class Main {
 
     public record RawTerm(String repr, String type, Set<Integer> events) {
         public String shortRepr() {
-            return repr.split("=>")[0].strip();
+            return repr.split("=>")[0].strip().replace(".getPayload()", "");
         }
     }
 

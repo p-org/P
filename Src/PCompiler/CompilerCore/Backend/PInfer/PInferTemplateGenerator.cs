@@ -8,20 +8,40 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
 {
+
+    internal class TypeNameComparison : Comparer<PLanguageType>
+    {
+        TypeManager Types;
+        public TypeNameComparison(TypeManager manager) {
+            Types = manager;
+        }
+        public override int Compare(PLanguageType x, PLanguageType y)
+        {
+            return Types.SimplifiedJavaType(x).CompareTo(Types.SimplifiedJavaType(y));
+        }
+    }
+
     public class PInferTemplateGenerator : JavaSourceGenerator
     {
         private readonly List<PEvent> QuantifiedEvents;
         private readonly HashSet<IPExpr> Predicates;
         private readonly IDictionary<IPExpr, HashSet<Variable>> FreeEvents;
         private readonly List<IPExpr> Terms;
+        IDictionary<IPExpr, HashSet<int>> PredicateBoundedTerms;
+        IDictionary<int, IPExpr> TermOrderToTerms;
         public readonly HashSet<string> TemplateNames;
         public PInferTemplateGenerator(ICompilerConfiguration job, string filename, List<PEvent> quantifiedEvents,
-                HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
+                HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms,
+                IDictionary<IPExpr, HashSet<Variable>> freeEvents,
+                IDictionary<IPExpr, HashSet<int>> predicateBoundedTerms,
+                IDictionary<int, IPExpr> termOrderToTerms) : base(job, filename)
         {
             QuantifiedEvents = quantifiedEvents;
             Predicates = predicates;
             Terms = [.. terms];
             FreeEvents = freeEvents;
+            PredicateBoundedTerms = predicateBoundedTerms;
+            TermOrderToTerms = termOrderToTerms;
             TemplateNames = [];
         }
 
@@ -36,10 +56,20 @@ namespace Plang.Compiler.Backend.PInfer
             TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.String]));
             TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.String, PrimitiveType.String]));
             TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.Any, PrimitiveType.Any]));
-            foreach (var tupleType in GlobalScope.Tuples)
+            var typeComparer = new TypeNameComparison(Types);
+            foreach (var p in Predicates)
             {
-                TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [tupleType]));
-                TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [tupleType, tupleType]));
+                var terms = PredicateBoundedTerms[p].Select(x => TermOrderToTerms[x]).ToList();
+                var types = terms.Select(t => t.Type).ToList();
+                types.Sort(typeComparer);
+                try
+                {
+                    TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [.. types]));
+                }
+                catch (NotImplementedException)
+                {
+                    continue;
+                }
             }
             WriteLine("}");
         }

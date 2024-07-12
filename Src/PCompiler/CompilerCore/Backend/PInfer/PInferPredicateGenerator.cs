@@ -22,6 +22,7 @@ namespace Plang.Compiler.Backend.PInfer
             Predicates = new HashSet<IPExpr>(comparer);
             FreeEvents = new Dictionary<IPExpr, HashSet<Variable>>(comparer);
             TermOrder = new Dictionary<IPExpr, int>(comparer);
+            OrderToTerm = new Dictionary<int, IPExpr>();
             PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(comparer);
             PredicateOrder = new Dictionary<IPExpr, int>(comparer);
             Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(comparer);
@@ -94,7 +95,8 @@ namespace Plang.Compiler.Backend.PInfer
             WriteTerms(ctx, terms.Stream, codegen);
             WritePredicates(ctx, predicates.Stream, codegen);
             GenerateBuildScript(job);
-            var templateCodegen = new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents);
+            var templateCodegen = new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents,
+                                                                PredicateBoundedTerm, OrderToTerm);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
             return compiledJavaSrc.Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
                                 .Concat(templateCodegen.GenerateCode(javaCtx, globalScope))
@@ -550,6 +552,7 @@ namespace Plang.Compiler.Backend.PInfer
             Terms[depth][expr.Type].Add(expr);
             FreeEvents[expr] = unboundedEvents;
             TermOrder[expr] = VisitedSet.Count;
+            OrderToTerm[VisitedSet.Count] = expr;
             VisitedSet.Add(expr);
         }
 
@@ -606,6 +609,7 @@ namespace Plang.Compiler.Backend.PInfer
         private HashSet<IPExpr> VisitedSet { get; }
         private Dictionary<IPExpr, HashSet<Variable>> FreeEvents { get; }
         private Dictionary<IPExpr, int> TermOrder { get; }
+        private Dictionary<int, IPExpr> OrderToTerm { get; }
         private Dictionary<IPExpr, int> PredicateOrder { get; }
         private Dictionary<IPExpr, HashSet<IPExpr>> Contradictions { get; }
         private Dictionary<IPExpr, HashSet<int>> PredicateBoundedTerm { get; }

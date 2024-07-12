@@ -561,6 +561,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var specs = (from m in _globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
         var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
         var invariants = _globalScope.AllDecls.OfType<Invariant>().ToList();
+        var axioms = _globalScope.AllDecls.OfType<Axiom>().ToList();
         var pures = _globalScope.AllDecls.OfType<Pure>().ToList();
 
         EmitLine(PNullDeclaration);
@@ -665,6 +666,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
             EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}();");
+        }
+        EmitLine("");
+        
+        foreach (var ax in axioms)
+        {
+            EmitLine($"axiom {ExprToString(ax.Body)};");
         }
         EmitLine("");
         
@@ -1227,8 +1234,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
             IntLiteralExpr i => i.Value.ToString(),
             BoolLiteralExpr b => b.Value.ToString().ToLower(),
             BinOpExpr bexpr =>
-                $"{ExprToString(bexpr.Lhs)} {BinOpToString(bexpr.Operation)} {ExprToString(bexpr.Rhs)}",
-            UnaryOpExpr uexpr => $"{UnaryOpToString(uexpr.Operation)} {ExprToString(uexpr.SubExpr)}",
+                $"({ExprToString(bexpr.Lhs)} {BinOpToString(bexpr.Operation)} {ExprToString(bexpr.Rhs)})",
+            UnaryOpExpr uexpr => $"({UnaryOpToString(uexpr.Operation)} {ExprToString(uexpr.SubExpr)})",
             ThisRefExpr => "this",
             EnumElemRefExpr e => $"{UserPrefix}{e.Value.Name}",
             NamedTupleExpr t => NamedTupleExprHelper(t),

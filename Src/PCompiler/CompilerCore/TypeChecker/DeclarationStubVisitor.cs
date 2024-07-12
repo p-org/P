@@ -1,3 +1,4 @@
+using System.Linq;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
@@ -33,6 +34,14 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitInvariantDecl(PParser.InvariantDeclContext context)
         {
             var name = context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+        
+        public override object VisitAxiomDecl(PParser.AxiomDeclContext context)
+        {
+            var name = $"axiom{CurrentScope.Axioms.Count()}";
             var decl = CurrentScope.Put(name, context);
             nodesToDeclarations.Put(context, decl);
             return null;

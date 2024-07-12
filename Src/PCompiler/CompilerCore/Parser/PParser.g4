@@ -62,6 +62,7 @@ topDecl : typeDefDecl
         | testDecl
         | implementationDecl
         | invariantDecl
+        | axiomDecl
         | assumeOnStartDecl
         ;
 
@@ -113,6 +114,7 @@ funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES inter
 pureDecl : PURE name=iden LPAREN funParamList? RPAREN (COLON type)? SEMI ;
 
 invariantDecl: INVARIANT name=iden COLON body=expr SEMI ;
+axiomDecl: AXIOM body=expr SEMI ;
 
 assumeOnStartDecl: ASSUME ON START name=iden COLON body=expr SEMI ;
 

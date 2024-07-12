@@ -64,6 +64,7 @@ WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
 INVARIANT : 'invariant';
+AXIOM     : 'axiom';
 IS        : 'is';
 
 // module-system-specific keywords

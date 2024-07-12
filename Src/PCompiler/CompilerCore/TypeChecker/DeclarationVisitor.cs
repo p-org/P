@@ -642,7 +642,30 @@ namespace Plang.Compiler.TypeChecker
             inv.Body = body;
             
             return inv;
-        }        
+        }
+        
+        public override object VisitAxiomDecl(PParser.AxiomDeclContext context)
+        {
+            // Axiom body=Expr
+            var inv = (Axiom) nodesToDeclarations.Get(context);
+            
+            var temporaryFunction = new Function(inv.Name, context);
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            
+            var body = exprVisitor.Visit(context.body);
+            
+            if (!PrimitiveType.Bool.IsSameTypeAs(body.Type))
+            {
+                throw Handler.TypeMismatch(context.body, body.Type, PrimitiveType.Bool);
+            }
+
+            inv.Body = body;
+            
+            return inv;
+        }
+        
         public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)
         {
             // assume on start: body=Expr

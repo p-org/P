@@ -6,10 +6,6 @@ event eVoteResp: tVoteResp;
 event eAbort;
 event eCommit;
 
-// Using these to avoid initialization
-pure participants(): set[machine];
-pure coordinator(): machine;
-
 machine Coordinator
 {
     var yesVotes: set[machine];
@@ -70,4 +66,14 @@ machine Participant {
     state Committed {ignore eVoteReq, eCommit, eAbort;}
     state Aborted {ignore eVoteReq, eCommit, eAbort;}
 }
+
+
+// Using these to avoid initialization
+pure participants(): set[machine];
+pure coordinator(): machine;
+// there is one machine that is a Coordinator and it is coordinator()
+axiom forall (m: machine) :: m == coordinator() == m is Coordinator;
+// every participant is in the set of participants
+axiom forall (m: machine) :: m in participants() == m is Participant;
+
 

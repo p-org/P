@@ -22,6 +22,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
         private readonly IDictionary<string, Pure> pures = new Dictionary<string, Pure>();
         private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
+        private readonly IDictionary<string, Axiom> axioms = new Dictionary<string, Axiom>();
         private readonly IDictionary<string, AssumeOnStart> assumeOnStarts = new Dictionary<string, AssumeOnStart>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
@@ -58,6 +59,7 @@ namespace Plang.Compiler.TypeChecker
                 .Concat(EventSets)
                 .Concat(Functions)
                 .Concat(Invariants)
+                .Concat(Axioms)
                 .Concat(AssumeOnStarts)
                 .Concat(Pures)
                 .Concat(Interfaces)
@@ -76,6 +78,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<NamedEventSet> EventSets => eventSets.Values;
         public IEnumerable<Function> Functions => functions.Values;
         public IEnumerable<Invariant> Invariants => invariants.Values;
+        public IEnumerable<Axiom> Axioms => axioms.Values;
         public IEnumerable<AssumeOnStart> AssumeOnStarts => assumeOnStarts.Values;
         public IEnumerable<Pure> Pures => pures.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
@@ -171,6 +174,11 @@ namespace Plang.Compiler.TypeChecker
         public bool Get(string name, out Invariant tree)
         {
             return invariants.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out Axiom tree)
+        {
+            return axioms.TryGetValue(name, out tree);
         }
         
         public bool Get(string name, out AssumeOnStart tree)
@@ -318,6 +326,23 @@ namespace Plang.Compiler.TypeChecker
         }
         
         public bool Lookup(string name, out Invariant tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
+        public bool Lookup(string name, out Axiom tree)
         {
             var current = this;
             while (current != null)
@@ -619,7 +644,15 @@ namespace Plang.Compiler.TypeChecker
             CheckConflicts(invariant, Namespace(invariants));
             invariants.Add(name, invariant);
             return invariant;
-        }        
+        }
+        
+        public Axiom Put(string name, PParser.AxiomDeclContext tree)
+        {
+            var axiom = new Axiom(name, null, tree); // need to add expr later
+            CheckConflicts(axiom, Namespace(axioms));
+            axioms.Add(name, axiom);
+            return axiom;
+        }
         
         public AssumeOnStart Put(string name, PParser.AssumeOnStartDeclContext tree)
         {

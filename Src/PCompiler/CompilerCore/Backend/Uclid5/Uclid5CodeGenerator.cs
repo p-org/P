@@ -338,9 +338,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         string EventDeclarationCase(PEvent e)
         {
-            var pt = TypeToString(e.PayloadType);
+            var pt = e.PayloadType.IsSameTypeAs(PrimitiveType.Null) ? "" : $"{EventPrefix}{e.Name}_Payload: {TypeToString(e.PayloadType)}";
             return
-                $"{EventPrefix}{e.Name} ({EventPrefix}{e.Name}_Payload: {pt})";
+                $"{EventPrefix}{e.Name} ({pt})";
         }
     }
 
@@ -1199,7 +1199,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 }
 
                 var ev = ((EventRefExpr)sstmt.Evt).Value;
-                var saction = EventOrGotoAdtConstructEvent(ev, sstmt.Arguments[0]);
+                var saction = EventOrGotoAdtConstructEvent(ev, sstmt.Arguments.Any() ? sstmt.Arguments.First() : null);
                 var slabel = LabelAdtConstruct(ExprToString(sstmt.MachineExpr), saction);
                 var slabels = StateAdtSelectBuffer(StateVar);
                 EmitLine($"{slabels} = {slabels}[{slabel} -> true];");

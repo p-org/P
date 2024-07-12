@@ -64,7 +64,7 @@ namespace Plang.Compiler.Backend.Java
                 WriteLine("import com.alibaba.fastjson2.JSONPath;");
                 WriteLine("import com.alibaba.fastjson2.JSONReader;");
                 WriteLine();
-                WriteLine("import java.io.*;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;");
+                WriteLine("import java.util.stream.Collectors;\nimport java.io.*;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;");
             }
         }
 

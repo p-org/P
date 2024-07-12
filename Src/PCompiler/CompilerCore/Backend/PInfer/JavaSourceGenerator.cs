@@ -24,38 +24,8 @@ namespace Plang.Compiler.Backend.PInfer
             Job = job;
         }
 
-        internal string SimplifiedJavaType(PLanguageType type)
-        {
-            if (type is EnumType || type is Index || type is CollectionSize)
-            {
-                return "int";
-            }
-            if (type is TypeDefType def)
-            {
-                return SimplifiedJavaType(def.TypeDefDecl.Type);
-            }
-            var javaType = Types.JavaTypeFor(type);
-            if (javaType.IsPrimitive)
-            {
-                return javaType.TypeName;
-            }
-            if (type is SequenceType t)
-            {
-                return $"JSONArrayOf{SimplifiedJavaType(t.ElementType)}";
-            }
-            if (type is SetType s)
-            {
-                return $"JSONArrayOf{SimplifiedJavaType(s.ElementType)}";
-            }
-            if (type.Equals(PrimitiveType.Any))
-            {
-                return "Object";
-            }
-            return "JSONObject";
-        }
-
         public string GenerateTypeName(IPExpr expr) {
-            return SimplifiedJavaType(expr.Type);
+            return Types.SimplifiedJavaType(expr.Type);
         }
 
         public string GenerateRawExpr(IPExpr expr)
@@ -66,7 +36,7 @@ namespace Plang.Compiler.Backend.PInfer
                         var e = (PEventVariable) x;
                         return $"({e.Name}:{e.EventName})";
                 });
-                return result + $" => {SimplifiedJavaType(expr.Type)} where " + string.Join(" ", events);
+                return result + $" => {Types.SimplifiedJavaType(expr.Type)} where " + string.Join(" ", events);
             }
             return result;
         }
@@ -106,7 +76,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         protected void WriteTermInterface(IDictionary<string, (string, List<Variable>)> nameMap)
         {
-            WriteLine($"public static Object termOf(String repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
+            WriteLine($"public static Object termOf(String repr, {Constants.PEventsClass}<?>[] arguments) {{");
             WriteLine("return switch (repr) {");
             foreach (var (repr, (fname, parameters)) in nameMap)
             {
@@ -119,7 +89,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         protected void WritePredicateInterface(IDictionary<string, (string, List<Variable>)> nameMap)
         {
-            WriteLine($"public static boolean invoke(PredicateWrapper repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
+            WriteLine($"public static boolean invoke(PredicateWrapper repr, {Constants.PEventsClass}<?>[] arguments) {{");
             WriteLine("return switch (repr.repr()) {");
             foreach (var (repr, (fname, parameters)) in nameMap)
             {
@@ -129,7 +99,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("};");
             WriteLine("}");
 
-            WriteLine($"public static boolean conjoin(List<PredicateWrapper> repr, {Constants.EventNamespaceName}.EventBase[] arguments) {{");
+            WriteLine($"public static boolean conjoin(List<PredicateWrapper> repr, {Constants.PEventsClass}<?>[] arguments) {{");
             WriteLine("for (PredicateWrapper wrapper: repr) {");
             WriteLine("if (wrapper.negate() == invoke(wrapper, arguments)) return false;");
             WriteLine("}");
@@ -148,7 +118,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             if (type is EnumType || type is Index || type is CollectionSize)
             {
-                retType = "int";
+                retType = "long";
             }
             WriteLine($"private static {retType} {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");
             if (type is EnumType)
@@ -236,11 +206,11 @@ namespace Plang.Compiler.Backend.PInfer
 
         private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n)
         {
-            if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
-            {
-                return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}()";
-            }
-            return GenerateJSONObjectGet(GenerateCodeExpr(n.SubExpr), n.FieldName, n.Type.Canonicalize());
+            // if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
+            // {
+            return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}";
+            // }
+            // return GenerateJSONObjectGet(GenerateCodeExpr(n.SubExpr), n.FieldName, n.Type.Canonicalize());
         }
 
         private string GenerateCodePredicateCall(PredicateCallExpr p)
@@ -304,7 +274,7 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (v is PEventVariable eVar)
             {
-                return $"{eVar.Name}.payload()";
+                return $"{eVar.Name}.getPayload()";
             }
             return v.Name;
         }

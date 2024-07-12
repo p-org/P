@@ -56,18 +56,16 @@ namespace Plang.Compiler.Backend.Java
                 }
                 WriteLine();
             }
-            if (!pinfer) {
-                var tuples = AllTuples(GlobalScope);
-                if (tuples.Any())
+            var tuples = AllTuples(GlobalScope);
+            if (tuples.Any())
+            {
+                WriteLine("/* Tuples */");
+                WriteLine();
+                foreach (var t in tuples)
                 {
-                    WriteLine("/* Tuples */");
-                    WriteLine();
-                    foreach (var t in tuples)
-                    {
-                        WriteNamedTupleDecl(t);
-                    }
-                    WriteLine();
+                    WriteNamedTupleDecl(t, pinfer);
                 }
+                WriteLine();
             }
 
             WriteLine("}");
@@ -97,6 +95,7 @@ namespace Plang.Compiler.Backend.Java
                 WriteLine($"default: throw new IllegalArgumentException(\"Invalid enum value \" + i + \" for ${e.Name}\");");
                 WriteLine("}");
                 WriteLine("}");
+                WriteLine($"public static {e.Name} from(Object x) {{ return (x instanceof {e.Name}) ? ({e.Name}) x : {e.Name}.from((int) x); }}");
             }
 
             WriteLine("}");
@@ -169,8 +168,14 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"public {tname}() {{");
             foreach (var (jtype, fieldName) in fields)
             {
-                WriteLine($"this.{fieldName} = {jtype.DefaultValue};");
-
+                if (jtype is TypeManager.JType.JEvent)
+                {
+                    WriteLine($"this.{fieldName} = null;");
+                }
+                else
+                {
+                    WriteLine($"this.{fieldName} = {jtype.DefaultValue};");
+                }
             }
             WriteLine($"}}");
             WriteLine();
@@ -189,19 +194,29 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"}}");
             WriteLine();
 
-            // Write the copy constructor for cloning.
-            if (!pinfer) {
-                WriteLine($"public {tname} deepClone() {{");
-                Write($"return new {tname}(");
-                foreach (var (sep, (jType, fieldName)) in fields.WithPrefixSep(", "))
+            if (pinfer)
+            {
+                // from JSONObject
+                WriteLine($"public {tname}(JSONObject json) {{");
+                foreach (var (ty, fieldName) in fields)
                 {
-                    Write(sep);
-                    WriteClone(jType, () => Write(fieldName));
+                    // WriteLine($"this.{fieldName} = new {ty.ReferenceTypeName}(json.getJSONObject(\"{fieldName}\"));");
+                    WriteLine($"this.{fieldName} = {ty.GenerateFromJSON("json", fieldName)};");
                 }
-                WriteLine(");");
-                WriteLine("} // deepClone()");
-                WriteLine();
+                WriteLine("}");
             }
+
+            // Write the copy constructor for cloning.
+            WriteLine($"public {tname} deepClone() {{");
+            Write($"return new {tname}(");
+            foreach (var (sep, (jType, fieldName)) in fields.WithPrefixSep(", "))
+            {
+                Write(sep);
+                WriteClone(jType, () => Write(fieldName));
+            }
+            WriteLine(");");
+            WriteLine("} // deepClone()");
+            WriteLine();
         }
 
         private void WriteNamedTupleEqualityMethods(string tname, List<(TypeManager.JType, string)> fields, bool pinfer = false)

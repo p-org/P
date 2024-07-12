@@ -26,6 +26,7 @@ namespace Plang.Compiler
             Debug = false;
             TermDepth = null;
             QuantifiedEvents = null;
+            ConfigEvent = null;
             CustomPredicates = [];
             CustomFunctions = [];
         }
@@ -82,6 +83,7 @@ namespace Plang.Compiler
         public List<string> QuantifiedEvents { get; set; }
         public List<string> CustomPredicates { get; set; }
         public List<string> CustomFunctions { get; set; }
+        public string ConfigEvent { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)
         {

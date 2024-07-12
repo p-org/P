@@ -4,6 +4,7 @@ using System.Linq;
 using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
 {
@@ -13,7 +14,7 @@ namespace Plang.Compiler.Backend.PInfer
         private readonly HashSet<IPExpr> Predicates;
         private readonly IDictionary<IPExpr, HashSet<Variable>> FreeEvents;
         private readonly List<IPExpr> Terms;
-        public readonly List<string> TemplateNames;
+        public readonly HashSet<string> TemplateNames;
         public PInferTemplateGenerator(ICompilerConfiguration job, string filename, List<PEvent> quantifiedEvents,
                 HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
         {
@@ -28,94 +29,76 @@ namespace Plang.Compiler.Backend.PInfer
         {
             WriteLine("public class Templates {");
             // Forall-only template
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["int", "int"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["int"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["long", "long"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["long"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["boolean"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["boolean", "boolean"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["String"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["String", "String"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["Object", "Object"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["JSONArrayOfint", "JSONArrayOfint"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["JSONArrayOfint", "int"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["JSONArrayOfString", "JSONArrayOfString"]));
-            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, ["JSONArrayOfString", "String"]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.Int, PrimitiveType.Int]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.Int]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.Bool]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.Bool, PrimitiveType.Bool]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.String]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.String, PrimitiveType.String]));
+            TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [PrimitiveType.Any, PrimitiveType.Any]));
+            foreach (var tupleType in GlobalScope.Tuples)
+            {
+                TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [tupleType]));
+                TemplateNames.Add(GenerateForallTemplate(QuantifiedEvents.Count, [tupleType, tupleType]));
+            }
             WriteLine("}");
         }
 
         private static string GenerateCoersion(string type, string value)
         {
-            if (type.Contains("JSONArray"))
-            {
-                return $"(({CoercedType(type)})(((JSONArray)({value})).toArray()))";
-            }
             return type switch {
                 "String" => $"String.valueOf({value})",
                 _ => $"(({type}) {value})"
             };
         }
 
-        private static string ContentTypeOf(string type)
+        private string GenerateForallTemplate(int numQuantifier, PLanguageType[] fieldTypes)
         {
-            if (type.StartsWith("JSONArrayOf"))
+            List<string> fieldTypeNames = fieldTypes.Select(Types.SimplifiedJavaType).ToList();
+            List<TypeManager.JType> fieldTypeDecls = fieldTypes.Select(Types.JavaTypeFor).ToList();
+            string templateName = $"Forall{numQuantifier}Events{string.Join("", fieldTypeNames)}";
+            if (TemplateNames.Contains(templateName))
             {
-                return type.Replace("JSONArrayOf", "");
+                return templateName;
             }
-            return type;
-        }
-
-        private static string CoercedType(string typeName)
-        {
-            if (typeName.StartsWith("JSONArrayOf"))
-            {
-                return typeName.Replace("JSONArrayOf", "") + "[]";
-            }
-            return typeName;
-        }
-
-        private string GenerateForallTemplate(int numQuantifier, string[] fieldTypes)
-        {
-            string templateName = $"Forall{numQuantifier}Events{string.Join("", fieldTypes)}";
             WriteLine($"public static class {templateName} {{");
-            foreach (var (ty, i) in fieldTypes.Select((val, index) => (CoercedType(val), index)))
+            foreach (var (ty, i) in fieldTypeDecls.Select((val, index) => (val.TypeName, index)))
             {
                 WriteLine($"private {ty} f{i};");
             }
-            WriteLine($"public {templateName} ({string.Join(", ", fieldTypes.Select((val, index) => $"{CoercedType(val)} f{index}"))}) {{");
-            foreach (var (ty, i) in fieldTypes.Select((val, index) => (val, index)))
+            WriteLine($"public {templateName} ({string.Join(", ", fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}"))}) {{");
+            foreach (var (_, i) in fieldTypes.Select((val, index) => (val, index)))
             {
                 WriteLine($"this.f{i} = f{i};");
             }
             WriteLine("}");
-            WriteLine($"public static void execute(List<PEvents.EventBase> trace, List<{Job.ProjectName}.PredicateWrapper> predicates, List<String> terms) {{");
+            WriteLine($"public static void execute(List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> predicates, List<String> terms) {{");
             for (var i = 0; i < numQuantifier; ++i)
             {
-                WriteLine($"for (PEvents.EventBase e{i}: trace) {{");
+                WriteLine($"for ({Constants.PEventsClass}<?> e{i}: trace) {{");
                 WriteLine($"if (!(e{i} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i].Name})) continue;");
             }
-            WriteLine($"PEvents.EventBase[] arguments = {{ {string.Join(", ", Enumerable.Range(0, numQuantifier).Select(i => $"e{i}"))} }};");
+            WriteLine($"{Constants.PEventsClass}<?>[] arguments = {{ {string.Join(", ", Enumerable.Range(0, numQuantifier).Select(i => $"e{i}"))} }};");
             WriteLine("try {");
             // WriteLine($"boolean result = ;");
             WriteLine($"if (!({Job.ProjectName}.conjoin(predicates, arguments))) continue;");
             List<string> parameters = [];
-            int c = 0;
-            foreach (var (ty, i) in fieldTypes.Select((val, index) => (val, index)))
+            foreach (var (ty, i) in fieldTypeDecls.Select((val, index) => (val, index)))
             {
-                if (ty.StartsWith("JSONArrayOf"))
-                {
-                    var paramName = $"p{c++}";
-                    var arrName = $"arr{c++}";
-                    var contentType = ContentTypeOf(ty);
-                    WriteLine($"JSONArray {arrName} = (JSONArray) {Job.ProjectName}.termOf(terms.get({i}), arguments);");
-                    WriteLine($"{contentType}[] {paramName} = new {contentType}[{arrName}.size()];");
-                    WriteLine($"for (int i = 0; i < {arrName}.size(); ++i) {{");
-                    WriteLine($"{paramName}[i] = ({contentType}) {arrName}.get(i);");
-                    WriteLine("}");
-                    parameters.Add(paramName);
-                } else {
-                    parameters.Add(GenerateCoersion(ty, $"{Job.ProjectName}.termOf(terms.get({i}), arguments)"));
-                }
+                // if (ty.StartsWith("JSONArrayOf"))
+                // {
+                //     var paramName = $"p{c++}";
+                //     var arrName = $"arr{c++}";
+                //     var contentType = ContentTypeOf(ty);
+                //     WriteLine($"JSONArray {arrName} = (JSONArray) {Job.ProjectName}.termOf(terms.get({i}), arguments);");
+                //     WriteLine($"{contentType}[] {paramName} = new {contentType}[{arrName}.size()];");
+                //     WriteLine($"for (int i = 0; i < {arrName}.size(); ++i) {{");
+                //     WriteLine($"{paramName}[i] = ({contentType}) {arrName}.get(i);");
+                //     WriteLine("}");
+                //     parameters.Add(paramName);
+                // } else {
+                parameters.Add(GenerateCoersion(ty.TypeName, $"{Job.ProjectName}.termOf(terms.get({i}), arguments)"));
+                // }
             }
             WriteLine($"new {templateName}({string.Join(", ", parameters)});");
             WriteLine("} catch (Exception e) { if (e instanceof RuntimeException) throw (RuntimeException) e; }");

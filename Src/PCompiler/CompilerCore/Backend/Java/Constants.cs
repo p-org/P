@@ -148,7 +148,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
             <artifactId>commons-cli</artifactId>
             <version>1.8.0</version>
         </dependency>" : "")}
-        {(pinferMode ? "" : @"<dependency>
+        <dependency>
             <groupId>p.runtime</groupId>
             <artifactId>PJavaRuntime</artifactId>
             <version>1.0-SNAPSHOT</version>
@@ -160,7 +160,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>")}
+        </dependency>
     </dependencies>
 
     <build>

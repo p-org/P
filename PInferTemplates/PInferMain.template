@@ -358,7 +358,10 @@ public class Main {
                     properties.add(prop);
                 }
             }
-//            System.out.println("StdErr: " + daikonStdErr);
+            var stderr = daikonStdErr.toString().trim();
+            if (stderr.contains("Exception")) {
+                System.out.println("Exception raised: " + stderr);
+            }
             if (!hasResult && daikonStdErr.toString().contains("No program point declarations were found.")) {
                 return null;
             }

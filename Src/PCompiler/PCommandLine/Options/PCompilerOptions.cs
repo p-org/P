@@ -43,6 +43,8 @@ namespace Plang.Options
             pInferGroup.AddArgument("term-depth", "td", "Max depth of terms in the predicates");
             var customPreds= pInferGroup.AddArgument("custom-predicates", "cp", "User-defined predicates in the P Model. Must have a return type of `bool`");
             var customFuncs = pInferGroup.AddArgument("custom-functions", "cf", "User-defined functions");
+            var configEvent = pInferGroup.AddArgument("config-event", "ce", "An event that carries with system configuration (optional)");
+            configEvent.IsRequired = false;
             customPreds.IsMultiValue = true;
             customPreds.IsRequired = false;
             customFuncs.IsMultiValue = true;
@@ -215,6 +217,9 @@ namespace Plang.Options
                     break;
                 case "term-depth":
                     compilerConfiguration.TermDepth = int.Parse((string)option.Value);
+                    break;
+                case "config-event":
+                    compilerConfiguration.ConfigEvent = (string)option.Value;
                     break;
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;

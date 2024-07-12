@@ -78,82 +78,42 @@ namespace Plang.Compiler.Backend.Java
             var payloadType = argType.TypeName;
             var payloadRefType = argType.ReferenceTypeName;
 
-            if (pinfer)
-            {
-                WriteLine($"public static class {eventName} extends EventBase implements Serializable {{");
-            }
-            else
-            {
-                WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{payloadRefType}> implements Serializable {{");
-            }
+            WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{payloadRefType}> implements Serializable {{");
 
             var hasPayload = !(argType is TypeManager.JType.JVoid);
             if (pinfer)
             {
-                var payloadName = "payload";
-                WriteLine($"private final int index;");
-                WriteLine($"private final JSONObject {payloadName}; ");
-                WriteLine($"public {eventName}(JSONObject p, int index) {{ this.{payloadName} = p; this.index = index; }}");
-                WriteLine($"public int index() {{ return index; }}");
-                if (!hasPayload)
+                WriteLine("private long index;");
+                WriteLine("private String sender;");
+                WriteLine("private String target;");
+                WriteLine("public long index() { return this.index; }");
+                WriteLine("public String sender() { return this.sender; }");
+                WriteLine("public String target() { return this.target; }");
+            }
+            if (hasPayload)
+            {
+                if (pinfer)
                 {
-                    WriteLine($"public {eventName} payload() {{ return this; }}");
-                }
-                else if (argType.IsPrimitive)
-                {
-                    WriteLine($"public {payloadType} payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType.Canonicalize())}; }}");
-                }
-                else if (argType is TypeManager.JType.JAny)
-                {
-                    WriteLine($"public Object payload() {{ return {JsonObjectGet(payloadName, "payload", e.PayloadType.Canonicalize())}; }}");
+                    WriteLine($"public {eventName}(long i, String sender, String target, {payloadType} p) {{ this.index = i; this.sender = sender; this.target = target; this.payload = p; }}");
                 }
                 else
                 {
-                    WriteLine($"public {eventName} payload() {{ return this; }}");
-                    switch (e.PayloadType.Canonicalize())
-                    {
-                        case NamedTupleType tupleType:
-                            foreach (var field in tupleType.Fields)
-                            {
-                                var fieldType = field.Type.Canonicalize();
-                                var jType = Types.JavaTypeFor(fieldType);
-                                if (jType.IsPrimitive || fieldType is PrimitiveType)
-                                {
-                                    WriteLine($"public {jType.TypeName} {field.Name}() {{ return {JsonObjectGet(payloadName, field.Name, fieldType)}; }}");
-                                }
-                                else if (fieldType is NamedTupleType || fieldType is MapType)
-                                {
-                                    WriteLine($"public JSONObject {field.Name}() {{ return {payloadName}.getJSONObject(\"{field.Name}\"); }}");
-                                }
-                                else if (fieldType is SequenceType || fieldType is SetType)
-                                {
-                                    WriteLine($"public JSONArray {field.Name}() {{ return {payloadName}.getJSONArray(\"{field.Name}\"); }}");
-                                }
-                                else
-                                {
-                                    throw new Exception($"Unsupported type for field {field.Name} of {e.PayloadType}: {fieldType}");
-                                }
-                            }
-                            break;
-                        default:
-                            throw new Exception($"Unsupported type: {e.PayloadType} ({payloadType})");
-
-                    }
+                    WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");
                 }
+                WriteLine($"private {payloadType} payload; ");
+                WriteLine($"public {payloadRefType} getPayload() {{ return payload; }}");
             }
             else
             {
-                if (hasPayload)
+                if (pinfer)
                 {
-                    WriteLine($"public {eventName}({payloadType} p) {{ this.payload = p; }}");
-                    WriteLine($"private {payloadType} payload; ");
-                    WriteLine($"public {payloadRefType} getPayload() {{ return payload; }}");
+                    WriteLine($"public {eventName}(int i, String sender, String target) {{ this.index = i; this.sender = sender; this.target = target; }}");
                 }
                 else
                 {
                     WriteLine($"public {eventName}() {{ }}");
-                    WriteLine($"public Void getPayload() {{ return null; }}");
                 }
+                WriteLine($"public Void getPayload() {{ return null; }}");
             }
 
             WriteLine();

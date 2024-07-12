@@ -15,9 +15,13 @@ namespace Plang.Compiler.Backend.PInfer
             Events = events;
         }
 
-        private static string GenerateEventInit(string eventName, params string[] parameters)
+        private static string GenerateEventInit(string eventName, string payloadRefType, bool hasPayload = false)
         {
-            return $"events.add(new {Constants.EventNamespaceName}.{eventName}({string.Join(", ", parameters.Concat(["i"]))}));";
+            if (!hasPayload)
+            {
+                return $"events.add(new {Constants.EventNamespaceName}.{eventName}(i, sender, target);";
+            }
+            return $"events.add(new {Constants.EventNamespaceName}.{eventName}(i, sender, target, new {payloadRefType}(eventPayload)));";
         }
 
         private string CaseFor(PEvent e)
@@ -41,11 +45,11 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     result += $"eventPayload.put(\"payload\", {payloadName});\n";
                 }
-                result += GenerateEventInit(e.Name, "eventPayload") + "\n";
+                result += GenerateEventInit(e.Name, javaType.ReferenceTypeName, true) + "\n";
             }
             else
             {
-                result += GenerateEventInit(e.Name, "new JSONObject()") + "\n";
+                result += GenerateEventInit(e.Name, null, false) + "\n";
             }
             result += "break;\n";
             return result;

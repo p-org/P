@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Plang.Compiler.Backend;
 using Plang.Compiler.TypeChecker;
@@ -21,6 +22,7 @@ namespace Plang.Compiler
         ITranslationErrorHandler Handler { get; }
         bool Debug { get; }
         int? TermDepth { get; }
+        string ConfigEvent { get; }
         List<string> QuantifiedEvents { get; }
         List<string> CustomPredicates { get; }
         List<string> CustomFunctions { get; }

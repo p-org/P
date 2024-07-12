@@ -16,7 +16,6 @@ namespace Plang.Compiler.Backend.PInfer
         protected override void GenerateCodeImpl()
         {
             WriteLine($"public class {Constants.EventNamespaceName} {{");
-            WriteLine("public static class EventBase {}");
             foreach (var e in PEvents.DistinctBy(x => x.SourceLocation))
             {
                WriteEventDecl(e, true);

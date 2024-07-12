@@ -186,7 +186,7 @@ namespace Plang.Compiler.Backend.Java {
             Write("private ");
 
             var isStatic = f.Owner == null;
-            if (isStatic)
+            if (isStatic || Constants.PInferMode)
             {
                 Write("static ");
             }

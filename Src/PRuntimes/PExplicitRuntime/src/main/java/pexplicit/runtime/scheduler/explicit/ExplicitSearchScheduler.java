@@ -12,7 +12,6 @@ import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Scheduler;
-import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.strategy.*;
@@ -112,9 +111,9 @@ public class ExplicitSearchScheduler extends Scheduler {
                 runIteration();
                 postProcessIteration();
             }
+            PExplicitLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask());
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
-            PExplicitLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask());
 
             if (searchStrategy.getPendingTasks().isEmpty() || PExplicitGlobal.getStatus() == STATUS.SCHEDULEOUT) {
                 // all tasks completed or schedule limit reached
@@ -431,7 +430,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     private void addRemainingChoicesAsChildrenTasks() {
         SearchTask parentTask = searchStrategy.getCurrTask();
         int numChildrenAdded = 0;
-        for (int i: parentTask.getSearchUnitKeys(false)) {
+        for (int i : parentTask.getSearchUnitKeys(false)) {
             SearchUnit unit = parentTask.getSearchUnit(i);
             // if search unit at this depth is non-empty
             if (!unit.getUnexplored().isEmpty()) {
@@ -462,7 +461,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         newTask.addSuffixSearchUnit(choiceNum, unit);
 
         if (!isExact) {
-            for (int i: parentTask.getSearchUnitKeys(false)) {
+            for (int i : parentTask.getSearchUnitKeys(false)) {
                 if (i > choiceNum) {
                     if (i > maxChoiceNum) {
                         maxChoiceNum = i;
@@ -476,6 +475,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             newTask.addPrefixChoice(schedule.getChoice(i));
         }
 
+        newTask.serializeTask();
         parentTask.addChild(newTask);
         searchStrategy.addNewTask(newTask);
     }
@@ -494,11 +494,11 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     public int getNumUnexploredChoices() {
-        return searchStrategy.getCurrTask().getNumUnexploredChoices() + searchStrategy.getNumPendingChoices();
+        return searchStrategy.getCurrTask().getCurrentNumUnexploredChoices() + searchStrategy.getNumPendingChoices();
     }
 
     public int getNumUnexploredDataChoices() {
-        return searchStrategy.getCurrTask().getNumUnexploredDataChoices() + searchStrategy.getNumPendingDataChoices();
+        return searchStrategy.getCurrTask().getCurrentNumUnexploredDataChoices() + searchStrategy.getNumPendingDataChoices();
     }
 
     /**
@@ -518,7 +518,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     private void postIterationCleanup() {
         SearchTask task = searchStrategy.getCurrTask();
-        for (int cIdx: task.getSearchUnitKeys(true)) {
+        for (int cIdx : task.getSearchUnitKeys(true)) {
             SearchUnit unit = task.getSearchUnit(cIdx);
             if (unit.getUnexplored().isEmpty()) {
                 task.clearSearchUnit(cIdx);

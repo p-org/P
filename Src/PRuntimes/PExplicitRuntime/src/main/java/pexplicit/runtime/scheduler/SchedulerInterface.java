@@ -2,6 +2,7 @@ package pexplicit.runtime.scheduler;
 
 import pexplicit.values.*;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
 
@@ -13,7 +14,7 @@ public interface SchedulerInterface extends Serializable {
     /**
      * Perform the search
      */
-    void run() throws TimeoutException, InterruptedException;
+    void run() throws TimeoutException, InterruptedException, IOException;
 
     /**
      * Return a random PBool based on the search and strategy.

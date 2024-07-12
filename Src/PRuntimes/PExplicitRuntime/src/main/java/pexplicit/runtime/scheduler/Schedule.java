@@ -63,9 +63,9 @@ public class Schedule implements Serializable {
     /**
      * Set the schedule choice at a choice depth.
      *
-     * @param stepNum    Step number
-     * @param choiceNum  Choice number
-     * @param current    Machine to set as current schedule choice
+     * @param stepNum   Step number
+     * @param choiceNum Choice number
+     * @param current   Machine to set as current schedule choice
      */
     public void setScheduleChoice(int stepNum, int choiceNum, PMachineId current) {
         if (choiceNum == choices.size()) {
@@ -84,9 +84,9 @@ public class Schedule implements Serializable {
     /**
      * Set the data choice at a choice depth.
      *
-     * @param stepNum    Step number
-     * @param choiceNum  Choice number
-     * @param current    PValue to set as current schedule choice
+     * @param stepNum   Step number
+     * @param choiceNum Choice number
+     * @param current   PValue to set as current schedule choice
      */
     public void setDataChoice(int stepNum, int choiceNum, PValue<?> current) {
         if (choiceNum == choices.size()) {

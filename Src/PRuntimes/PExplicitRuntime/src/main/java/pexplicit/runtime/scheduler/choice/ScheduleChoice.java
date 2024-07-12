@@ -2,7 +2,6 @@ package pexplicit.runtime.scheduler.choice;
 
 import lombok.Getter;
 import lombok.Setter;
-import pexplicit.commandline.PExplicitConfig;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.explicit.StepState;
 

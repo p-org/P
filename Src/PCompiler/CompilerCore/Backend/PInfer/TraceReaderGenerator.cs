@@ -15,13 +15,13 @@ namespace Plang.Compiler.Backend.PInfer
             Events = events;
         }
 
-        private static string GenerateEventInit(string eventName, string payloadRefType, bool hasPayload = false)
+        private static string GenerateEventInit(string eventName, TypeManager.JType payloadType, string payloadGet, bool hasPayload = false)
         {
             if (!hasPayload)
             {
                 return $"events.add(new {Constants.EventNamespaceName}.{eventName}(i, sender, target);";
             }
-            return $"events.add(new {Constants.EventNamespaceName}.{eventName}(i, sender, target, new {payloadRefType}(eventPayload)));";
+            return $"events.add(new {Constants.EventNamespaceName}.{eventName}(i, sender, target, {payloadType.GenerateCastFromObject(payloadGet)}));";
         }
 
         private string CaseFor(PEvent e)
@@ -32,24 +32,11 @@ namespace Plang.Compiler.Backend.PInfer
             var hasPayload = javaType is not TypeManager.JType.JVoid;
             if (hasPayload)
             {
-                var payloadName = $"{e.Name}Payload";
-                result += $"var {payloadName} = {GenerateJSONObjectGet("details", "payload", payloadType)};\n";
-                if (payloadType is NamedTupleType type)
-                {
-                    foreach (var field in type.Fields)
-                    {
-                        result += $"eventPayload.put(\"{field.Name}\", {GenerateJSONObjectGet(payloadName, field.Name, field.Type)});\n";
-                    }
-                }
-                else
-                {
-                    result += $"eventPayload.put(\"payload\", {payloadName});\n";
-                }
-                result += GenerateEventInit(e.Name, javaType.ReferenceTypeName, true) + "\n";
+                result += GenerateEventInit(e.Name, javaType, GenerateJSONObjectGet("details", "payload", payloadType), true) + "\n";
             }
             else
             {
-                result += GenerateEventInit(e.Name, null, false) + "\n";
+                result += GenerateEventInit(e.Name, null, null, false) + "\n";
             }
             result += "break;\n";
             return result;

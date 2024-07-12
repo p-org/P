@@ -131,7 +131,7 @@ namespace Plang.Compiler.Backend.Java
                 {
                     return $"({jsonVariable}.get{ReferenceTypeName}(\"{fieldName}\"))";
                 }
-                throw new Exception($"Cannot generate from JSON for {TypeName}");
+                return GenerateCastFromObject($"({jsonVariable}.get(\"{fieldName}\"))");
             }
 
             internal virtual string GenerateCastFromObject(string objectName)
@@ -165,7 +165,7 @@ namespace Plang.Compiler.Backend.Java
                 internal override string DefaultValue => "null";
                 internal override string GenerateCastFromObject(string objectName)
                 {
-                    return objectName;
+                    return $"((Object){objectName})";
                 }
                 internal override string GenerateFromString(string varName)
                 {
@@ -226,6 +226,10 @@ namespace Plang.Compiler.Backend.Java
                 {
                     return d + "f";
                 }
+                internal override string GenerateFromString(string objectName)
+                {
+                    return $"Float.parseFloat({objectName})";
+                }
             }
 
             internal class JString : JType
@@ -275,6 +279,14 @@ namespace Plang.Compiler.Backend.Java
                     }
                     return $"(Long.parseLong({objectName}))";
                 }
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    if (Constants.PInferMode)
+                    {
+                        return $"((String){objectName})";
+                    }
+                    return $"(Long.parseLong({objectName}.toString()))";
+                }
             }
 
             internal class JList : JType
@@ -292,10 +304,15 @@ namespace Plang.Compiler.Backend.Java
                 internal override string MutatorMethodName => "set";
                 internal override string InsertMethodName => "add";
                 internal override string RemoveMethodName => "remove";
-                internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                // internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                // {
+                //     var getArray = $"({jsonVariable}.getJSONArray(\"fieldName\"))";
+                //     return $"new ArrayList<{_contentType.ReferenceTypeName}>({getArray}.stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toList())";
+                // }
+
+                internal override string GenerateCastFromObject(string objectName)
                 {
-                    var getArray = $"({jsonVariable}.getJSONArray(\"fieldName\"))";
-                    return $"new ArrayList<>({getArray}.stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toList())";
+                    return $"new ArrayList<{_contentType.ReferenceTypeName}>(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toList())";
                 }
             }
             internal class JMap : JType
@@ -330,10 +347,23 @@ namespace Plang.Compiler.Backend.Java
                 /// The type of a collection containing the keys of this Map.
                 /// </summary>
                 internal string ValueCollectionType => $"ArrayList<{_v.ReferenceTypeName}>";
-                internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                // internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                // {
+                //     var getObj = $"({jsonVariable}.getJSONObject(\"fieldName\"))";
+                //     var body = @$"{getObj}
+                //                     .entrySet()
+                //                     .stream()
+                //                     .collect(
+                //                         Collectors.toMap(
+                //                             e -> {_k.GenerateFromString("(String)(e.getKey())")},
+                //                             e -> {_v.GenerateCastFromObject("(e.getValue())")}
+                //                         )
+                //                     )";
+                //     return $"new {ReferenceTypeName}({body})";
+                // }
+                internal override string GenerateCastFromObject(string objectName)
                 {
-                    var getObj = $"({jsonVariable}.getJSONObject(\"fieldName\"))";
-                    var body = @$"{getObj}
+                    var body = @$"((JSONObject){objectName})
                                     .entrySet()
                                     .stream()
                                     .collect(
@@ -367,10 +397,14 @@ namespace Plang.Compiler.Backend.Java
                 internal override string InsertMethodName => "add";
                 internal override string MutatorMethodName => "add";
                 internal override string RemoveMethodName => "remove";
-                internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                // internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                // {
+                //     var getArray = $"({jsonVariable}.getJSONArray(\"fieldName\"))";
+                //     return $"({getArray}.stream().map(x -> {_contentType.GenerateCastFromObject("x")}).collect(Collectors.toCollection(LinkedHashSet::new)))";
+                // }
+                internal override string GenerateCastFromObject(string objectName)
                 {
-                    var getArray = $"({jsonVariable}.getJSONArray(\"fieldName\"))";
-                    return $"({getArray}.stream().map(x -> {_contentType.GenerateCastFromObject("x")}).collect(Collectors.toCollection(LinkedHashSet::new)))";
+                    return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).collect(Collectors.toCollection(LinkedHashSet::new)))";
                 }
             }
 
@@ -420,6 +454,10 @@ namespace Plang.Compiler.Backend.Java
                 {
                     return $"({ReferenceTypeName}.from({jsonVariable}.get(\"{fieldName}\")))";
                 }
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    return $"({ReferenceTypeName}.from({objectName}))";
+                }
             }
 
             //TODO: not sure about this one.  Is the base class sufficient?
@@ -451,7 +489,11 @@ namespace Plang.Compiler.Backend.Java
 
                 internal override string GenerateFromJSON(string jsonVariable, string fieldName)
                 {
-                    return "null";
+                    return DefaultValue;
+                }
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    return DefaultValue;
                 }
             }
         }

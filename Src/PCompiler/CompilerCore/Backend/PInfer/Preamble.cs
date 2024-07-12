@@ -41,7 +41,6 @@ public class TraceParser {{
                 JSONObject e = trace.getJSONObject(i);
                 if (e.getString((""type"")).equals(""SendEvent"") || e.getString((""type"")).equals(""Announce"")) {{
                     JSONObject details = e.getJSONObject(""details"");
-                    JSONObject eventPayload = new JSONObject();
                     String sender = details.getString(""sender"");
                     String target = details.getString(""target"");
                     String name = details.getString(""event"");

@@ -60,7 +60,6 @@ namespace Plang.Compiler.TypeChecker
                     return new NamedTupleAccessExpr(context, subExpr, entry);
                 
                 case PermissionType {Origin: Machine} permission:
-                    var pname = permission.OriginalRepresentation;
                     var machine = (Machine) permission.Origin;
                     
                     if (!machine.LookupEntry(fieldName, out var field))
@@ -68,6 +67,20 @@ namespace Plang.Compiler.TypeChecker
                         throw handler.MissingMachineField(context.field, machine);
                     }
                     return new MachineAccessExpr(context, machine, subExpr, field);
+                
+                case PermissionType {Origin: Interface} permission:
+                    var pname = permission.Origin.Name;
+                   
+                    if (!table.Lookup(pname, out Machine m))
+                    {
+                        throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+                    }
+                    
+                    if (!m.LookupEntry(fieldName, out var mfield))
+                    {
+                        throw handler.MissingMachineField(context.field, m);
+                    }
+                    return new MachineAccessExpr(context, m, subExpr, mfield);
                 
                 case PermissionType {Origin: NamedEventSet} permission:
 
@@ -87,7 +100,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                     
                     throw handler.MissingEventField(context.field, pevents.First());
-                    
+                
                 default:
                     throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
             }

@@ -67,14 +67,16 @@ machine Participant {
     state Rejected {ignore eVoteReq, eCommit, eAbort;}
 }
 
-// Using these to avoid initialization
+// using these to avoid initialization
 pure participants(): set[machine];
 pure coordinator(): machine;
 pure preference(m: machine) : Vote;
 
+// assumptions about how the system is setup and the pure functions above
 assume on start one_coordinator: forall (m: machine) :: m == coordinator() == m is Coordinator;
 assume on start participant_set: forall (m: machine) :: m in participants() == m is Participant;
 
+// making sure that our assumptions about pure functions are not pulled out from underneath us
 invariant one_coordinator: forall (m: machine) :: m == coordinator() == m is Coordinator;
 invariant participant_set: forall (m: machine) :: m in participants() == m is Participant;
 
@@ -84,11 +86,15 @@ invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && e targ
 invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && e targets coordinator() ==> !flying e;
 invariant never_resp_to_participant: forall (e: event, p: Participant) :: e is eVoteResp && e targets p ==> !flying e;
 
-// the invariant we care about
+// the main invariant we care about
 invariant safety: forall (p1: Participant) :: p1 is Accepted ==> (forall (p2: Participant) :: preference(p2) == YES);
 
 // supporting invariants
 invariant  a1: forall (e: eVoteResp) :: flying e ==> e.source in participants();
 invariant  a2: forall (e: eVoteResp) :: flying e ==> e.vote == preference(e.source);
-invariant a3b: forall (e: eAbort)    :: flying e ==> coordinator() is Aborted; // TODO: or going to
-invariant a3a: forall (e: eCommit)   :: flying e ==> coordinator() is Committed; // TODO: or going to
+invariant a3b: forall (e: eAbort)    :: flying e ==> coordinator() is Aborted; // TODO: or going to Aborted state
+invariant a3a: forall (e: eCommit)   :: flying e ==> coordinator() is Committed; // TODO: or going to Committed state
+// bug in their a4? their version should only hold if the network is append only?
+invariant  a4: forall (p: Participant) :: p is Accepted ==> coordinator() is Committed;
+invariant  a5: forall (m: machine, c: Coordinator) :: m in c.yesVotes ==> preference(m) == YES;
+invariant  a6: coordinator() is Committed ==> (forall (m: machine) :: m in participants() ==> preference(m) == YES);

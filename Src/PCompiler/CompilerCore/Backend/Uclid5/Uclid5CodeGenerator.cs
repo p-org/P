@@ -981,12 +981,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             foreach (var s in m.States)
             {
-                if (s.Entry is not null)
-                {
-                    EmitLine($"verify({m.Name}_{s.Name});");
-                }
+                EmitLine($"verify({m.Name}_{s.Name});");
 
-                foreach (var e in events.Where(e => !e.IsNullEvent && s.HasHandler(e)))
+                foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
                 {
                     EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
                 }

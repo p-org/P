@@ -747,12 +747,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             foreach (var s in m.States)
             {
-                if (s.Entry is not null)
-                {
-                    EmitLine($"({GotoGuard(m, s)}) : {{");
-                    EmitLine($"call {m.Name}_{s.Name}({currentLabel});");
-                    EmitLine("}");
-                }
+                EmitLine($"({GotoGuard(m, s)}) : {{");
+                EmitLine($"call {m.Name}_{s.Name}({currentLabel});");
+                EmitLine("}");
 
                 foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent))
                 {
@@ -819,14 +816,19 @@ public class Uclid5CodeGenerator : ICodeGenerator
             foreach (var f in m.Methods)
             {
                 var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}")
-                    .Prepend($"this: {MachineRefT}");
+                    .Prepend($"this: {MachineRefT}").Append($"{LocalPrefix}state: {MachinePrefix}{m.Name}_StateAdt");
                 var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
                 var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
                 EmitLine($"procedure [inline] {name}({string.Join(", ", ps)})");
 
                 var currState = Deref("this");
-
-                EmitLine($"\trequires {MachineStateAdtIsM(currState, m)};");
+                
+                foreach (var inv in _globalScope.AllDecls.OfType<Invariant>())
+                {
+                    EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
+                    EmitLine($"\tensures {InvariantPrefix}{inv.Name}();");
+                }
+                
                 if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                 {
                     EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
@@ -836,13 +838,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
                 // declare necessary local variables
                 EmitLine($"var {LocalPrefix}stage: boolean;");
-                EmitLine($"var {LocalPrefix}state: {MachinePrefix}{m.Name}_StateAdt;");
                 foreach (var v in m.Fields) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
                 foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
 
                 // initialize all the local variables to the correct values
-                EmitLine($"{LocalPrefix}stage = false;"); // this can be set to true by a send statement
-                EmitLine($"{LocalPrefix}state = {MachineStateAdtSelectState(currState, m)};");
+                EmitLine($"{LocalPrefix}stage = false;"); // this can be set to true by a goto statement
                 foreach (var v in m.Fields)
                     EmitLine($"{GetLocalName(v)} = {MachineStateAdtSelectField(currState, m, v)};");
                 foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
@@ -866,24 +866,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private void GenerateEntryHandler(State s, List<Invariant> invariants)
     {
-        if (s.Entry is null)
-        {
-            return;
-        }
-
         var label = $"{LocalPrefix}Label";
-        EmitLine($"procedure [noinline] {s.OwningMachine.Name}_{s.Name}({label}: {LabelAdt})");
-
         var target = LabelAdtSelectTarget(label);
         var targetMachineState = Deref(target);
         var action = LabelAdtSelectAction(label);
         var g = EventOrGotoAdtSelectGoto(action);
         var buffer = StateAdtSelectBuffer(StateVar);
-
-        var f = s.Entry;
-        var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
-        var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
-
+        var newState = $"{MachinePrefix}{s.OwningMachine.Name}_{s.Name}";
+        
+        EmitLine($"procedure [noinline] {s.OwningMachine.Name}_{s.Name}({label}: {LabelAdt})");
         EmitLine($"\trequires {StateAdtSelectBuffer(StateVar)}[{label}];");
         EmitLine($"\trequires {MachineStateAdtIsM(targetMachineState, s.OwningMachine)};");
         EmitLine($"\trequires {EventOrGotoAdtIsGoto(action)};");
@@ -895,12 +886,35 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
             EmitLine($"\tensures {InvariantPrefix}{inv.Name}();");
         }
-
-        var payload = f.Signature.Parameters.Count > 0 ? $", {GotoAdtSelectParam(g, f.Signature.Parameters[0].Name, s)}" : "";
-
+        
         EmitLine("{");
-        EmitLine($"{buffer} = {buffer}[{label} -> false];");
-        EmitLine($"call {name}({target}{payload});");
+        
+        if (s.Entry is null)
+        {
+            EmitLine($"var {LocalPrefix}stage: boolean;");
+            EmitLine($"var {LocalPrefix}state: {MachinePrefix}{s.OwningMachine.Name}_StateAdt;");
+            EmitLine($"{LocalPrefix}stage = false;");
+            EmitLine($"{LocalPrefix}state = {newState};");
+            EmitLine($"{buffer} = {buffer}[{label} -> false];");
+            var fields = s.OwningMachine.Fields.Select(v => MachineStateAdtSelectField(targetMachineState, s.OwningMachine, v)).Prepend($"{LocalPrefix}state").ToList();
+            // make a new machine
+            var newMachine = MachineAdtConstructM(s.OwningMachine, fields);
+            // make a new machine state
+            var newMachineState = MachineStateAdtConstruct($"{LocalPrefix}stage", newMachine);
+            // update the machine map
+            EmitLine(
+                $"{StateAdtSelectMachines(StateVar)} = {StateAdtSelectMachines(StateVar)}[{target} -> {newMachineState}];");
+        }
+        else
+        {
+            var f = s.Entry;
+            var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
+            var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
+            var payload = f.Signature.Parameters.Count > 0 ? $", {GotoAdtSelectParam(g, f.Signature.Parameters[0].Name, s)}" : "";
+            EmitLine($"{buffer} = {buffer}[{label} -> false];");
+            EmitLine($"call {name}({target}{payload}, {newState});");
+        }
+        
         EmitLine("}\n");
     }
 
@@ -941,9 +955,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
                 var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
                 var payload = f.Signature.Parameters.Count > 0 ? $", {EventAdtSelectPayload(e, ev)}" : "";
+                var currState = $", {MachinePrefix}{s.OwningMachine.Name}_{s.Name}";
                 EmitLine("{");
                 EmitLine($"{buffer} = {buffer}[{label} -> false];");
-                EmitLine($"call {name}({target}{payload});");
+                EmitLine($"call {name}({target}{payload}{currState});");
                 EmitLine("}\n");
                 return;
             case EventIgnore _:
@@ -959,7 +974,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private void GenerateControlBlock(List<Machine> machines, List<PEvent> events)
     {
         EmitLine("control {");
-        EmitLine("set_solver_option(\":Timeout\", 10);"); // 10 second timeout per query
+        EmitLine($"set_solver_option(\":Timeout\", {60 * 1});"); // timeout per query in seconds
         EmitLine("induction(1);");
 
         foreach (var m in machines)
@@ -1172,7 +1187,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         EmitLine($"while ({checker} != {collection})");
                         foreach (var inv in  _globalScope.AllDecls.OfType<Invariant>())
                         {
-                            EmitLine($"\tinvariant {ExprToString(inv.Body)};");
+                            EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}();");
                         }
                         EmitLine("{");
                         // assume that the item is in the set but hasn't been visited
@@ -1256,7 +1271,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
             MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
             TestExpr {Kind: Machine m} texpr  => MachineStateAdtIsM(Deref(ExprToString(texpr.Instance)), m), // must deref because or else we don't have an ADT!
-            TestExpr {Kind: PEvent e} texpr  => EventAdtIsE(EventOrGotoAdtSelectEvent(LabelAdtSelectAction(ExprToString(texpr.Instance))), e),
+            TestExpr {Kind: PEvent e} texpr  => LabelAdtIsE(ExprToString(texpr.Instance), e),
             TestExpr {Kind: State s} texpr => MachineStateAdtInS(Deref(ExprToString(texpr.Instance)), s.OwningMachine, s), // must deref for ADT!
             PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",
             _ => throw new NotSupportedException($"Not supported expr: {expr}")

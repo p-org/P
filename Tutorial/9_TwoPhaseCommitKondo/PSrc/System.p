@@ -10,14 +10,18 @@ machine Coordinator
 {
     var yesVotes: set[machine];
     
-    start state Undecided {
+    start state Init {
         entry {
             var p: machine;
             foreach (p in participants()) {
                 send p, eVoteReq;
             }
+            goto WaitForResponses;
         }
+        ignore eVoteResp;
+    }
     
+    state WaitForResponses {
         on eVoteResp do (resp: tVoteResp) {
             var p: machine;
             
@@ -72,8 +76,11 @@ pure participants(): set[machine];
 pure coordinator(): machine;
 pure preference(m: machine) : Vote;
 
-axiom forall (m: machine) :: m == coordinator() == m is Coordinator; // there is one coordinator
-axiom forall (m: machine) :: m in participants() == m is Participant; // every participant is in the set of participants
+assume on start one_coordinator: forall (m: machine) :: m == coordinator() == m is Coordinator;
+assume on start participant_set: forall (m: machine) :: m in participants() == m is Participant;
+
+invariant one_coordinator: forall (m: machine) :: m == coordinator() == m is Coordinator;
+invariant participant_set: forall (m: machine) :: m in participants() == m is Participant;
 
 // make sure we never get a response that we're not expecting
 invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && target(e) == coordinator() ==> !inflight(e);

@@ -66,6 +66,8 @@ CHOOSE    : 'choose' ;
 INVARIANT : 'invariant';
 AXIOM     : 'axiom';
 IS        : 'is';
+FLYING    : 'flying';
+TARGETS   : 'targets';
 
 // module-system-specific keywords
 

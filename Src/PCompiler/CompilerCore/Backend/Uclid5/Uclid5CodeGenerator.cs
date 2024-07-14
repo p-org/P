@@ -372,6 +372,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var action = LabelAdtSelectAction(instance);
         return EventOrGotoAdtIsE(action, e);
     }
+    
+    private static string LabelAdtSelectPayloadField(string instance, PEvent e, NamedTupleEntry field)
+    {
+        var action = LabelAdtSelectAction(instance);
+        return $"{EventAdtSelectPayload(EventOrGotoAdtSelectEvent(action), e)}.{field.Name}";
+    }
 
     private static string GotoAdt => $"{GotoPrefix}Adt";
 
@@ -646,19 +652,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var pure in pures)
         {
             var args = string.Join(", ", pure.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}"));
-            if (pure.Name == "inflight")
-            {
-                var label = pure.Signature.Parameters[0].Name;
-                EmitLine($"define {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)} = {StateAdtSelectBuffer(StateVar)}[{label}];");
-            } else if (pure.Name == "target")
-            {
-                var label = pure.Signature.Parameters[0].Name;
-                EmitLine($"define {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)} = {LabelAdtSelectTarget(label)};"); 
-            }
-            else
-            {
-                EmitLine($"function {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)};");
-            }
+            EmitLine($"function {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)};");
         }
         EmitLine("");
         
@@ -1267,10 +1261,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
             QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
             QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound)}{ExprToString(qexpr.Body)})",
             MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
+            EventAccessExpr eax => LabelAdtSelectPayloadField(ExprToString(eax.SubExpr), eax.PEvent, eax.Entry),
             TestExpr {Kind: Machine m} texpr  => MachineStateAdtIsM(Deref(ExprToString(texpr.Instance)), m), // must deref because or else we don't have an ADT!
             TestExpr {Kind: PEvent e} texpr  => LabelAdtIsE(ExprToString(texpr.Instance), e),
             TestExpr {Kind: State s} texpr => MachineStateAdtInS(Deref(ExprToString(texpr.Instance)), s.OwningMachine, s), // must deref for ADT!
             PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",
+            FlyingExpr fexpr => $"{StateAdtSelectBuffer(StateVar)}[{ExprToString(fexpr.Instance)}]",
+            TargetsExpr texpr => $"({LabelAdtSelectTarget(ExprToString(texpr.Instance))} == {ExprToString(texpr.Target)})",
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
         };
@@ -1282,25 +1279,33 @@ public class Uclid5CodeGenerator : ICodeGenerator
         
         string Guard(List<Variable> bound)
         {
-            List<IPExpr> boundMachines = [];
+            List<IPExpr> bounds = [];
             foreach (var b in bound)
             {
                 switch (b.Type)
                 {
-                    case PermissionType permissionType:
-                        var name = permissionType.OriginalRepresentation;
+                    case PermissionType {Origin: Machine} pt:
+                        bounds.Add(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), pt.Origin));
+                        break;
+                    case PermissionType {Origin: Interface} pt:
+                        var name = pt.OriginalRepresentation;
             
                         if (_globalScope.Lookup(name, out Machine m))
                         {
-                            boundMachines.Add(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), m));
+                            bounds.Add(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), m));
                         }
+
+                        break;
+                    case PermissionType {Origin: NamedEventSet} pt:
+                        var e = ((NamedEventSet)pt.Origin).Events.First();
+                        bounds.Add(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), e));
                         break;
                 }
             }
 
-            if (boundMachines.Count != 0)
+            if (bounds.Count != 0)
             {
-                return string.Join(" && ", boundMachines.Select(ExprToString)) + " ==> ";
+                return string.Join(" && ", bounds.Select(ExprToString)) + " ==> ";
             }
 
             return "";
@@ -1370,8 +1375,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 return LabelAdt;
             case TypeDefType tdt:
                 return $"{UserPrefix}{tdt.TypeDefDecl.Name}";
-            case PermissionType _:
+            case PermissionType {Origin: Machine} _:
                 return MachineRefT;
+            case PermissionType {Origin: Interface} _:
+                return MachineRefT;
+            case PermissionType {Origin: NamedEventSet} _:
+                return LabelAdt;
             case EnumType et:
                 return $"{UserPrefix}{et.EnumDecl.Name}";
             case SetType st:

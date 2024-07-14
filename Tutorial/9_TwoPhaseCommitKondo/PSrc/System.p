@@ -18,7 +18,7 @@ machine Coordinator
             }
             goto WaitForResponses;
         }
-        ignore eVoteResp;
+        ignore eVoteResp; // TODO: remove this and prove it
     }
     
     state WaitForResponses {
@@ -67,10 +67,6 @@ machine Participant {
     state Rejected {ignore eVoteReq, eCommit, eAbort;}
 }
 
-// imports
-pure target(e: event): machine;
-pure inflight(e: event): bool;
-
 // Using these to avoid initialization
 pure participants(): set[machine];
 pure coordinator(): machine;
@@ -83,9 +79,16 @@ invariant one_coordinator: forall (m: machine) :: m == coordinator() == m is Coo
 invariant participant_set: forall (m: machine) :: m in participants() == m is Participant;
 
 // make sure we never get a response that we're not expecting
-invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && target(e) == coordinator() ==> !inflight(e);
-invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && target(e) == coordinator() ==> !inflight(e);
-invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && target(e) == coordinator() ==> !inflight(e);
-invariant never_resp_to_participant: forall (e: event, p: Participant) :: e is eVoteResp && target(e) == p ==> !inflight(e);
+invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && e targets coordinator() ==> !flying e;
+invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && e targets coordinator() ==> !flying e;
+invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && e targets coordinator() ==> !flying e;
+invariant never_resp_to_participant: forall (e: event, p: Participant) :: e is eVoteResp && e targets p ==> !flying e;
 
+// the invariant we care about
 invariant safety: forall (p1: Participant) :: p1 is Accepted ==> (forall (p2: Participant) :: preference(p2) == YES);
+
+// supporting invariants
+invariant  a1: forall (e: eVoteResp) :: flying e ==> e.source in participants();
+invariant  a2: forall (e: eVoteResp) :: flying e ==> e.vote == preference(e.source);
+invariant a3b: forall (e: eAbort)    :: flying e ==> coordinator() is Aborted; // TODO: or going to
+invariant a3a: forall (e: eCommit)   :: flying e ==> coordinator() is Committed; // TODO: or going to

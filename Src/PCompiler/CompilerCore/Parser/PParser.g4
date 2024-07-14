@@ -179,12 +179,14 @@ anonEventHandler : (LPAREN funParam RPAREN)? functionBody ;
 noParamAnonEventHandler : functionBody;
 
 expr : primitive                                      # PrimitiveExpr
-     | instance=expr IS kind=iden                     # TestExpr 
      | LPAREN unnamedTupleBody RPAREN                 # UnnamedTupleExpr
      | LPAREN namedTupleBody RPAREN                   # NamedTupleExpr
      | LPAREN expr RPAREN                             # ParenExpr
      | expr DOT field=iden                            # NamedTupleAccessExpr
      | expr DOT field=int                             # TupleAccessExpr
+     | instance=expr IS kind=iden                     # TestExpr
+     | instance=expr TARGETS target=expr              # TargetsExpr
+     | FLYING instance=expr                           # FlyingExpr
      | seq=expr LBRACK index=expr RBRACK              # SeqAccessExpr
      | fun=KEYS LPAREN expr RPAREN                    # KeywordExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr

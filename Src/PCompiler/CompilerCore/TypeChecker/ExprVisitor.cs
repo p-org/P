@@ -59,21 +59,35 @@ namespace Plang.Compiler.TypeChecker
 
                     return new NamedTupleAccessExpr(context, subExpr, entry);
                 
-                case PermissionType permission:
+                case PermissionType {Origin: Machine} permission:
                     var pname = permission.OriginalRepresentation;
-                    
-                    if (!(table.Lookup(pname, out Machine machine)))
-                    {
-                        throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
-                    }
+                    var machine = (Machine) permission.Origin;
                     
                     if (!machine.LookupEntry(fieldName, out var field))
                     {
                         throw handler.MissingMachineField(context.field, machine);
                     }
-                    
                     return new MachineAccessExpr(context, machine, subExpr, field);
                 
+                case PermissionType {Origin: NamedEventSet} permission:
+
+                    var pevents = ((NamedEventSet)permission.Origin).Events.ToList();
+
+                    foreach (var pevent in pevents)
+                    {
+                        switch (pevent.PayloadType.Canonicalize())
+                        {
+                            case NamedTupleType namedTupleType:
+                                if (namedTupleType.LookupEntry(fieldName, out var pentry))
+                                {
+                                    return new EventAccessExpr(context, pevent, subExpr, pentry);
+                                }
+                                break;
+                        }
+                    }
+                    
+                    throw handler.MissingEventField(context.field, pevents.First());
+                    
                 default:
                     throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
             }
@@ -328,6 +342,23 @@ namespace Plang.Compiler.TypeChecker
             }
             
             throw handler.MissingDeclaration(context, "machine, event, or state", name);
+        }
+        
+        public override IPExpr VisitTargetsExpr(PParser.TargetsExprContext context)
+        {
+            var instance = Visit(context.instance);
+            var target = Visit(context.target);
+            
+            // TODO: type check to make sure instance is an event and machine is a machine
+            return new TargetsExpr(context, instance, target);
+        }
+        
+        public override IPExpr VisitFlyingExpr(PParser.FlyingExprContext context)
+        {
+            var instance = Visit(context.instance);
+            
+            // TODO: type check to make sure instance is an event
+            return new FlyingExpr(context, instance);
         }
         
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)

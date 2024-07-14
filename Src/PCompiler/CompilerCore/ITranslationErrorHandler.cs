@@ -38,6 +38,7 @@ namespace Plang.Compiler
 
         Exception MissingNamedTupleEntry(PParser.IdenContext location, NamedTupleType namedTuple);
         Exception MissingMachineField(PParser.IdenContext location, Machine machine);
+        Exception MissingEventField(PParser.IdenContext location, PEvent pevent);
 
         Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple);
 

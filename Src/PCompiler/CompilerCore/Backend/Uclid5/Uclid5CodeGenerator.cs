@@ -22,7 +22,57 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
     private Scope _globalScope;
     
-    public bool HasCompilationStage => false;
+    public bool HasCompilationStage => true;
+
+    public void Compile(ICompilerConfiguration job)
+    {
+        var filename = $"{job.ProjectName}.ucl";
+        var stdout = "";
+        var stderr = "";
+        
+        // compile the csproj file
+        var args = new[] { "-M", filename };
+
+        var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "uclid", args);
+        if (exitCode != 0)
+        {
+            throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
+        }
+
+        var failed = Regex.Matches(stdout,  "UNDEF -> ").Count + Regex.Matches(stdout,  "FAILED -> ").Count;
+
+        Dictionary<string, int> checks = [];
+            
+        job.Output.WriteInfo($"Failed to verify {failed} conditions.");
+        foreach (Match match in Regex.Matches(stdout, @"UNDEF -> verify_(.*) \[")) // TODO: add failed as well
+        {
+            foreach (var check in match.Groups[1].Captures)
+            {
+                var c = check.ToString() ?? "";
+                var underscoreRegex = new Regex(Regex.Escape("_"));
+
+                if ( Regex.Matches(c,  "_").Count <= 1)
+                {
+                    c = underscoreRegex.Replace(c, " entering ", 1);
+                }
+                else
+                {
+                    c = underscoreRegex.Replace(c, " in ", 1);
+                }
+                c = underscoreRegex.Replace(c, " handling ", 1);
+                
+                if (!checks.TryAdd(c, 1))
+                {
+                    checks[c] += 1;
+                }
+            }
+        }
+
+        foreach (var kv in checks)
+        {
+            job.Output.WriteInfo($"- {kv.Value} for {kv.Key}");
+        }
+    }
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
     {
@@ -968,7 +1018,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private void GenerateControlBlock(List<Machine> machines, List<PEvent> events)
     {
         EmitLine("control {");
-        EmitLine($"set_solver_option(\":Timeout\", {60 * 1});"); // timeout per query in seconds
+        EmitLine($"set_solver_option(\":Timeout\", {30 * 1});"); // timeout per query in seconds
         EmitLine("induction(1);");
 
         foreach (var m in machines)

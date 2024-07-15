@@ -315,6 +315,9 @@ public class Main {
 
     private static class Task {
 
+        private static enum Type {
+            FORALL, EXISTS, FORALLEXISTS
+        }
         private final List<String> tracePaths;
         private final List<RawPredicate> predicates;
         private final List<RawTerm> terms;
@@ -324,11 +327,11 @@ public class Main {
         private final StringBuilder daikonStdErr;
         private Process runningProg;
         private Thread outputThread;
-        private boolean forallExists;
+        private Type taskType;
 
-        public Task(List<String> tracePaths, List<RawPredicate> predicates, List<RawTerm> terms, List<RawPredicate> existentialFilter, boolean forallExists) {
+        public Task(List<String> tracePaths, List<RawPredicate> predicates, List<RawTerm> terms, List<RawPredicate> existentialFilter, Type taskType) {
             this.tracePaths = tracePaths;
-            this.forallExists = forallExists;
+            this.taskType = taskType;
             this.predicates = predicates;
             this.terms = terms.stream().sorted(Comparator.comparing(t -> t.type)).toList();
             this.existentialFilter = existentialFilter;
@@ -408,9 +411,9 @@ public class Main {
 
         public void start() throws IOException {
             StringBuilder templateNameBuilder;
-            if (existentialFilter.isEmpty()) {
+            if (taskType == Type.FORALL) {
                 templateNameBuilder = new StringBuilder("Forall");
-            } else if (!forallExists) {
+            } else if (taskType == Type.EXISTS) {
                 templateNameBuilder = new StringBuilder("Exists");
             }else {
                 templateNameBuilder = new StringBuilder("ForallExists");
@@ -492,9 +495,10 @@ public class Main {
         return boundedEvents.size() == QUANTIFIED_EVENTS;
     }
 
-    private static void specMiningForall(PredicateCombinationEnumerator enumerator, List<RawTerm> terms,
+    private static void specMiningForallOrExists(PredicateCombinationEnumerator enumerator, List<RawTerm> terms,
                                          Map<Set<Integer>, List<RawPredicate>> termsToPredicates,
                                          List<String> tracePath,
+                                         boolean isForall,
                                          boolean trivialityCheck) throws IOException, InterruptedException {
         TermTupleEnumerator termTupleEnumerator = new TermTupleEnumerator(termsToPredicates, terms.size());
         Map<String, Set<Task>> properties = new HashMap<>();
@@ -506,16 +510,15 @@ public class Main {
             // 1 field
             for (int i = 0; i < terms.size(); ++i) {
                 Set<Integer> setOfE = Set.of(i);
-                if (!termsToPredicates.containsKey(setOfE) || !checkQuantifierCover(comb, terms, setOfE)) {
-                    continue;
-                }
                 boolean trivial = false;
                 if (trivialityCheck) {
-                    trivial = isTrivial(comb, setOfE);
+                    trivial = isTrivial(comb, setOfE) || !termsToPredicates.containsKey(setOfE) || !checkQuantifierCover(comb, terms, setOfE);
                 }
                 if (!trivial) {
                     numTasks += 1;
-                    var task = new Task(tracePath, comb, List.of(terms.get(i)), List.of(), false);
+                    List<RawPredicate> guards = isForall ? comb : List.of();
+                    List<RawPredicate> existentialFilter = isForall ? List.of() : comb;
+                    var task = new Task(tracePath, guards, List.of(terms.get(i)), existentialFilter, isForall ? Task.Type.FORALL : Task.Type.EXISTS);
                     properties.get(key).add(task);
                 }
             }
@@ -532,15 +535,17 @@ public class Main {
                 }
                 if (!trivial) {
                     numTasks += 1;
-                    var task = new Task(tracePath, comb, List.of(terms.get(termTuple.car()), terms.get(termTuple.cdr())), List.of(), false);
+                    List<RawPredicate> guards = isForall ? comb : List.of();
+                    List<RawPredicate> existentialFilter = isForall ? List.of() : comb;
+                    var task = new Task(tracePath, guards, List.of(terms.get(termTuple.car()), terms.get(termTuple.cdr())), existentialFilter, isForall ? Task.Type.FORALL : Task.Type.EXISTS);
                     properties.get(key).add(task);
                 }
             }
             termTupleEnumerator.reset();
         }
-        System.out.println("Forall-only Number of tasks: " + numTasks);
+        System.out.println("Forall/Exists-only Number of tasks: " + numTasks);
         int numSolved = 0;
-        FromDaikon converter = new FromDaikon(termsToPredicates, terms, "forall");
+        FromDaikon converter = new FromDaikon(termsToPredicates, terms, isForall ? "forall" : "exists");
         for (var guards: properties.keySet()) {
             Set<Task> tasks = properties.get(guards);
             if (!tasks.isEmpty()) {
@@ -622,7 +627,7 @@ public class Main {
         mustIncludeOpt.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(mustIncludeOpt);
 
-        Option mustIncludeFilterOpt = new Option("f", "include-filter", true,
+        Option mustIncludeFilterOpt = new Option("f", "include-filters", true,
                 "A list of predicate ids that must be included in the existential filter");
         mustIncludeFilterOpt.setRequired(false);
         mustIncludeFilterOpt.setArgs(Option.UNLIMITED_VALUES);
@@ -651,24 +656,35 @@ public class Main {
         CommandLine cmd = parseArgs(args, opts);
         String predicatePath = cmd.getOptionValue("predicates");
         String termsPath = cmd.getOptionValue("terms");
-        int predicateDepth = Integer.parseInt(cmd.getOptionValue("guard-depth"));
+        int predicateDepth = Integer.parseInt(cmd.getOptionValue("guard-depth", "0"));
+        int filterDepth = Integer.parseInt(cmd.getOptionValue("filter-depth", "0"));
         int checkTrivial = cmd.hasOption("skip-trivial") ? 1 : 0;
         List<String> traceFiles = List.of(cmd.getOptionValues("logs"));
         List<RawPredicate> predicateList = new ArrayList<>();
         try {
             Map<Set<Integer>, List<RawPredicate>> termsToPredicates = getTermsToPredicates(new FileInputStream(predicatePath), predicateList);
             List<RawTerm> terms = getTerms(new FileInputStream(termsPath));
-            if (cmd.getOptionValue("template").equals("forall")) {
-                Set<Integer> mustIncludeSet = Set.of();
+            var opt = cmd.getOptionValue("template");
+            Set<Integer> mustIncludeGuardSet = Set.of();
+            Set<Integer> mustIncludeFilterSet = Set.of();
+            if (opt.equals("forall")) {
                 if (cmd.hasOption("include-guards")) {
-                    mustIncludeSet = Arrays.stream(cmd.getOptionValues("include-guards"))
+                    mustIncludeGuardSet = Arrays.stream(cmd.getOptionValues("include-guards"))
                             .mapToInt(Integer::parseInt)
                             .boxed()
                             .collect(Collectors.toSet());
                 }
-                specMiningForall(new PredicateCombinationEnumerator(Math.max(predicateDepth - mustIncludeSet.size(), 0),
-                                predicateList, mustIncludeSet), terms,
-                        termsToPredicates, traceFiles, checkTrivial == 1);
+                specMiningForallOrExists(new PredicateCombinationEnumerator(Math.max(predicateDepth - mustIncludeGuardSet.size(), 0),
+                                predicateList, mustIncludeGuardSet), terms, termsToPredicates, traceFiles, true, checkTrivial == 1);
+            } else if (opt.equals("exists")) {
+                if (cmd.hasOption("include-filters")) {
+                    mustIncludeFilterSet = Arrays.stream(cmd.getOptionValues("include-filters"))
+                            .mapToInt(Integer::parseInt)
+                            .boxed()
+                            .collect(Collectors.toSet());
+                }
+                specMiningForallOrExists(new PredicateCombinationEnumerator(Math.max(filterDepth - mustIncludeFilterSet.size(), 0),
+                        predicateList, mustIncludeFilterSet), terms, termsToPredicates, traceFiles, false, checkTrivial == 1);
             }
         } catch (InterruptedException e) {
             System.exit(1);

@@ -51,6 +51,18 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new Exception($"Event {ename} not defined in global scope");
                 }
             }
+            PEvent configEvent = null;
+            if (job.ConfigEvent != null)
+            {
+                if (globalScope.Get(job.ConfigEvent, out PEvent e))
+                {
+                    configEvent = e;
+                }
+                else
+                {
+                    throw new Exception($"Event {job.ConfigEvent} not defined in global scope");
+                }
+            }
             Constants.PInferModeOn();
             PredicateStore.Initialize();
             FunctionStore.Initialize();
@@ -96,7 +108,7 @@ namespace Plang.Compiler.Backend.PInfer
             WritePredicates(ctx, predicates.Stream, codegen);
             GenerateBuildScript(job);
             var templateCodegen = new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents,
-                                                                PredicateBoundedTerm, OrderToTerm);
+                                                                PredicateBoundedTerm, OrderToTerm, configEvent);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
             return compiledJavaSrc.Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
                                 .Concat(templateCodegen.GenerateCode(javaCtx, globalScope))

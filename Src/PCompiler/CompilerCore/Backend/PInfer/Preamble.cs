@@ -90,8 +90,8 @@ public class PInferDriver {
 }
 ";
 
-        internal static string MainProg = ReadTemplate("PInferMain.template");
-        internal static string FromDaikonProg = ReadTemplate("FromDaikon.template");
+        internal static string MainProg = ReadTemplate("Main.java");
+        internal static string FromDaikonProg = ReadTemplate("FromDaikon.java");
 
         internal static string ReadTemplate(string filename)
         {

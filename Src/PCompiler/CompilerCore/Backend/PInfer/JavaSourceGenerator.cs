@@ -77,26 +77,40 @@ namespace Plang.Compiler.Backend.PInfer
         protected void WriteTermInterface(IDictionary<string, (string, List<Variable>)> nameMap)
         {
             WriteLine($"public static Object termOf(String repr, {Constants.PEventsClass}<?>[] arguments) {{");
-            WriteLine("return switch (repr) {");
-            foreach (var (repr, (fname, parameters)) in nameMap)
+            if (nameMap.Count == 0)
             {
-                WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
+                WriteLine("return null;");
             }
-            WriteLine("default -> throw new RuntimeException(\"Invalid representation: \" + repr);");
-            WriteLine("};");
+            else
+            {
+                WriteLine("return switch (repr) {");
+                foreach (var (repr, (fname, parameters)) in nameMap)
+                {
+                    WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
+                }
+                WriteLine("default -> throw new RuntimeException(\"Invalid representation: \" + repr);");
+                WriteLine("};");
+            }
             WriteLine("}");
         }
 
         protected void WritePredicateInterface(IDictionary<string, (string, List<Variable>)> nameMap)
         {
             WriteLine($"public static boolean invoke(PredicateWrapper repr, {Constants.PEventsClass}<?>[] arguments) {{");
-            WriteLine("return switch (repr.repr()) {");
-            foreach (var (repr, (fname, parameters)) in nameMap)
+            if (nameMap.Count == 0)
             {
-                WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
+                WriteLine("return false;");
+            } 
+            else
+            {
+                WriteLine("return switch (repr.repr()) {");
+                foreach (var (repr, (fname, parameters)) in nameMap)
+                {
+                    WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
+                }
+                WriteLine("default -> throw new RuntimeException(\"Invalid representation: \" + repr);");
+                WriteLine("};");
             }
-            WriteLine("default -> throw new RuntimeException(\"Invalid representation: \" + repr);");
-            WriteLine("};");
             WriteLine("}");
 
             WriteLine($"public static boolean conjoin(List<PredicateWrapper> repr, {Constants.PEventsClass}<?>[] arguments) {{");

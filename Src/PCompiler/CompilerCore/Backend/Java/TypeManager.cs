@@ -38,7 +38,12 @@ namespace Plang.Compiler.Backend.Java
             {
                 return "Object";
             }
-            return string.Join("", javaType.TypeName.Where(x => (x >= 'A' && x <= 'Z') || (x >= 'a' && x <= 'z')));
+            var name = string.Join("", javaType.TypeName.Where(x => (x >= 'A' && x <= 'Z') || (x >= 'a' && x <= 'z')));
+            if (javaType is JType.JSet || javaType is JType.JList)
+            {
+                return $"ArrayOf{name}";
+            }
+            return name;
         }
 
         internal class JType
@@ -628,6 +633,12 @@ namespace Plang.Compiler.Backend.Java
 
                 case TupleType t:
                     return JavaTypeFor(t.ToNamedTuple());
+                
+                case PInfer.Index:
+                    return new JType.JInt();
+                
+                case PInfer.CollectionSize:
+                    return new JType.JInt();
 
                 default:
                     throw new NotImplementedException($"{type} values not implemented");

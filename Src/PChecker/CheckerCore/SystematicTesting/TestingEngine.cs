@@ -91,6 +91,13 @@ namespace PChecker.SystematicTesting
         private readonly List<List<LogEntry>> JsonVerboseLogs;
 
         /// <summary>
+        /// Field declaration for PInferLogs
+        /// Similar to the field above, instead this maintains
+        /// a simplified representation of logs for PInfer
+        /// </summary>
+        private readonly List<List<PInferLog>> PInferLogs;
+
+        /// <summary>
         /// Field declaration with default JSON serializer options
         /// </summary>
         private JsonSerializerOptions jsonSerializerConfig = new()
@@ -280,6 +287,11 @@ namespace PChecker.SystematicTesting
             if (checkerConfiguration.IsVerbose)
             {
                 JsonVerboseLogs = new List<List<LogEntry>>();
+            }
+
+            if (checkerConfiguration.PInferMode)
+            {
+                PInferLogs = [];
             }
 
             if (checkerConfiguration.SchedulingStrategy is "replay")
@@ -497,6 +509,19 @@ namespace PChecker.SystematicTesting
                     JsonSerializer.Serialize(jsonStreamFile, JsonVerboseLogs, jsonSerializerConfig);
                 }
 
+                if (_checkerConfiguration.PInferMode)
+                {
+                    var directory = _checkerConfiguration.OutputDirectory;
+                    var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
+                    file += "_" + _checkerConfiguration.TestingProcessId;
+                    var jsonPath = directory + file  + "_pinfer_trace.json";
+                    
+                    Logger.WriteLine("... Emitting trace for PInfer:");
+                    Logger.WriteLine($"..... Writing {jsonPath}");
+                    using var jsonStreamFile = File.Create(jsonPath);
+                    JsonSerializer.Serialize(jsonStreamFile, PInferLogs, jsonSerializerConfig);
+                }
+
             }, CancellationTokenSource.Token);
         }
 
@@ -579,6 +604,15 @@ namespace PChecker.SystematicTesting
                 if (_checkerConfiguration.IsVerbose)
                 {
                     JsonVerboseLogs.Add(JsonLogger.Logs);
+                }
+
+                if (_checkerConfiguration.PInferMode)
+                {
+                    PInferLogs.Add(JsonLogger.Logs.Where(
+                        x => (x.Type == JsonWriter.LogType.Announce.ToString() 
+                            || x.Type == JsonWriter.LogType.SendEvent.ToString()) 
+                            && (_checkerConfiguration.AllowedEvents == null || _checkerConfiguration.AllowedEvents.Contains(x.Details.Event))
+                    ).Select(x => JsonWriter.ToPInferLog(x.Details)).ToList());
                 }
 
                 runtime.LogWriter.LogCompletion();

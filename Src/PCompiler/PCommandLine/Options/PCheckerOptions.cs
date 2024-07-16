@@ -44,6 +44,9 @@ namespace Plang.Options
             basicGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
             basicGroup.AddArgument("verbose", "v", "Enable verbose log output during exploration", typeof(bool));
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
+            basicGroup.AddArgument("pinfer", "pinfer", "Enable trace dumping for PInfer", typeof(bool));
+            var eventFilterOpt = basicGroup.AddArgument("events-filter", "ef", "Filter event types for PInfer traces (only effective when --pinfer is enabled)");
+            eventFilterOpt.IsMultiValue = true;
 
             var exploreGroup = Parser.GetOrCreateGroup("explore", "Systematic exploration options");
             exploreGroup.AddArgument("iterations", "i", "Number of schedules to explore", typeof(uint)).IsHidden = true;
@@ -182,6 +185,12 @@ namespace Plang.Options
                     break;
                 case "verbose":
                     checkerConfiguration.IsVerbose = true;
+                    break;
+                case "pinfer":
+                    checkerConfiguration.PInferMode = true;
+                    break;
+                case "events-filter":
+                    checkerConfiguration.AllowedEvents = [.. ((string[]) option.Value)];
                     break;
                 case "debug":
                     checkerConfiguration.EnableDebugging = true;

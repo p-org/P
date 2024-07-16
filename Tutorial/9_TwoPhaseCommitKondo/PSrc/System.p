@@ -96,14 +96,13 @@ invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && e targ
 invariant never_resp_to_participant: forall (e: event, p: Participant) :: e is eVoteResp && e targets p ==> !flying e;
 
 // the main invariant we care about
-// invariant safety: forall (p1: Participant) :: p1 is Accepted ==> (forall (p2: Participant) :: preference(p2) == YES);
+invariant safety: forall (p1: Participant) :: p1 is Accepted ==> (forall (p2: Participant) :: preference(p2) == YES);
 
 // supporting invariants
-// invariant  a1: forall (e: eVoteResp) :: flying e ==> e.source in participants();
-// invariant  a2: forall (e: eVoteResp) :: flying e ==> e.vote == preference(e.source);
+invariant  a1: forall (e: eVoteResp) :: flying e ==> e.source in participants();
+invariant  a2: forall (e: eVoteResp) :: flying e ==> e.vote == preference(e.source);
 invariant a3b: forall (e: eAbort)    :: flying e ==> coordinator() is Aborted;
-// invariant a3a: forall (e: eCommit)   :: flying e ==> coordinator() is Committed;
-// // bug in their a4? their version should only hold if the network is append only?
-// invariant  a4: forall (p: Participant) :: p is Accepted ==> coordinator() is Committed;
-// invariant  a5: forall (m: machine, c: Coordinator) :: m in c.yesVotes ==> preference(m) == YES;
-// invariant  a6: coordinator() is Committed ==> (forall (m: machine) :: m in participants() ==> preference(m) == YES);
+invariant a3a: forall (e: eCommit)   :: flying e ==> coordinator() is Committed;
+invariant  a4: forall (p: Participant) :: p is Accepted ==> coordinator() is Committed;
+invariant  a5: forall (p: Participant, c: Coordinator) :: p in c.yesVotes ==> preference(p) == YES;
+invariant  a6: coordinator() is Committed ==> (forall (p: Participant) :: p in participants() ==> preference(p) == YES);

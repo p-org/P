@@ -15,7 +15,7 @@ namespace Plang.Compiler.TypeChecker
     {
         private readonly ITranslationErrorHandler handler;
         private readonly Function method;
-        private readonly Scope table;
+        private Scope table;
 
         public ExprVisitor(Function method, ITranslationErrorHandler handler)
         {
@@ -314,6 +314,11 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitQuantExpr(PParser.QuantExprContext context)
         {
+            var oldTable = table;
+            table = table.MakeChildScope();
+
+            bool diff = context.diff != null;
+
             var bound = context.bound.funParam().Select(p =>
             {
                 var symbolName = p.name.GetText();
@@ -321,17 +326,34 @@ namespace Plang.Compiler.TypeChecker
                 param.Type = TypeResolver.ResolveType(p.type(), table, handler);
                 return param;
             }).Cast<Variable>().ToArray();
+
+            if (diff && bound.ToList().Count != 1)
+            {
+                // we have the "new" annotation so the bound must be a single thing and it must be an event
+                throw handler.InternalError(context, new ArgumentException($"Difference quantifiers must have exactly one bound variable", nameof(context)));
+            }
+
+            if (diff)
+            {
+                switch (bound[0].Type.Canonicalize())
+                {
+                    case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Event):
+                        break;
+                    default:
+                        throw handler.TypeMismatch(context.bound, bound[0].Type, PrimitiveType.Event);
+                }
+            }
             
             var body = Visit(context.body);
 
-            // TODO: remove bound variables from table?
+            table = oldTable;
 
             if (context.quant.Text == "forall")
             {
-                return new QuantExpr(context, QuantType.Forall, bound.ToList(), body);
+                return new QuantExpr(context, QuantType.Forall, bound.ToList(), body, diff);
             }
             
-            return new QuantExpr(context, QuantType.Exists, bound.ToList(), body);
+            return new QuantExpr(context, QuantType.Exists, bound.ToList(), body, diff);
         }
 
         public override IPExpr VisitTestExpr(PParser.TestExprContext context)

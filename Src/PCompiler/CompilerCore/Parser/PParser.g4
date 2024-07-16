@@ -153,8 +153,9 @@ statement : LBRACE statement* RBRACE							# CompoundStmt
 		  | lvalue INSERT LPAREN rvalue RPAREN SEMI				# AddStmt
           | lvalue REMOVE expr SEMI								# RemoveStmt
           | WHILE LPAREN expr RPAREN statement					# WhileStmt
-          | FOREACH LPAREN item=iden IN collection=expr
-                                        RPAREN statement		# ForeachStmt
+          | FOREACH LPAREN item=iden IN collection=expr RPAREN 
+                             (INVARIANT invariants+=expr SEMI)*
+                                                     statement  # ForeachStmt
           | IF LPAREN expr RPAREN thenBranch=statement
                             (ELSE elseBranch=statement)?		# IfStmt
           | NEW iden LPAREN rvalueList? RPAREN SEMI				# CtorStmt
@@ -204,9 +205,10 @@ expr : primitive                                      # PrimitiveExpr
      | lhs=expr op=LAND rhs=expr                      # BinExpr
      | lhs=expr op=LOR rhs=expr                       # BinExpr
      | lhs=expr op=LTHEN rhs=expr                     # BinExpr
-     | quant=(FORALL | EXISTS) 
-        LPAREN bound=funParamList RPAREN 
-            COLON COLON body=expr                     # QuantExpr
+     | quant=(FORALL | EXISTS)
+        diff=NEW? 
+            LPAREN bound=funParamList RPAREN 
+                COLON COLON body=expr                 # QuantExpr
 	 | CHOOSE LPAREN expr? RPAREN					  # ChooseExpr
 	 | formatedString								  # StringExpr
      ;

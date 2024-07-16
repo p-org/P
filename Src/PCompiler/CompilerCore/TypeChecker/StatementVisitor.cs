@@ -258,9 +258,12 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.TypeMismatch(context.item, itemType, expectedItemType);
 
             var body = Visit(context.statement());
-            return new ForeachStmt(context, var, collection, body);
-        }
 
+            var invs = context._invariants.Select(exprVisitor.Visit).ToList();
+            
+            return new ForeachStmt(context, var, collection, body, invs);
+        }
+        
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
         {
             var condition = exprVisitor.Visit(context.expr());

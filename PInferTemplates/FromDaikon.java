@@ -3,7 +3,8 @@ import java.util.stream.Collectors;
 public class FromDaikon {
     private Map<Set<Integer>, List<Main.RawPredicate>> termsToPredicates;
     private List<Main.RawTerm> terms;
-    public String templateHeader;
+    private String templateHeaderCar;
+    private String templateHeaderCdr;
     private static final String[] QUANTIFIERS = { %QUANTIFIERS% };
     private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()" };
     private static final Map<String, String> substs = new HashMap<>();
@@ -12,6 +13,8 @@ public class FromDaikon {
                       List<Main.RawTerm> terms, String templateFamily) {
         this.termsToPredicates = termsToPredicates;
         this.terms = terms;
+        this.templateHeaderCar = "";
+        this.templateHeaderCdr = "";
         StringBuilder sb = new StringBuilder();
         switch (templateFamily.toLowerCase()) {
             case "forall":
@@ -19,26 +22,35 @@ public class FromDaikon {
                     sb.append("∀e").append(i)
                             .append(": ").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
                 }
+                templateHeaderCar = sb.toString();
                 break;
             case "exists":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
                     sb.append("∃e").append(i)
                             .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
                 }
+                templateHeaderCar = sb.toString();
                 break;
             case "forall-exists":
                 for (int i = 0; i < QUANTIFIERS.length - 1; ++i) {
                     sb.append("∀e").append(i)
                             .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
                 }
+                templateHeaderCar = sb.toString();
+                sb = new StringBuilder();
                 sb.append("∃e").append(QUANTIFIERS.length - 1)
                         .append(":").append(QUANTIFIERS[QUANTIFIERS.length - 1]).append(". ");
+                templateHeaderCdr = sb.toString();
+                break;
             default:
                 throw new IllegalArgumentException("Unknown template family: " + templateFamily);
         }
-        templateHeader = sb.toString();
         substs.put("toString", "");
         substs.put("one of", "∈");
+    }
+
+    public String getFormulaHeader(String guards, String filters) {
+        return this.templateHeaderCar + guards + " -> " + this.templateHeaderCdr + filters;
     }
 
     public String convertOutput(String line, List<Main.RawPredicate> predicates, List<Main.RawPredicate> filters, List<Main.RawTerm> terms) {

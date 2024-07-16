@@ -327,7 +327,7 @@ namespace Plang.Compiler.Backend.Java
                 {
                     if (Constants.PInferMode)
                     {
-                        return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({TypeName}::new))";
+                        return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({ReferenceTypeName}::new))";
                     }
                     else
                     {
@@ -428,7 +428,7 @@ namespace Plang.Compiler.Backend.Java
                 {
                     if (Constants.PInferMode)
                     {
-                        return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({TypeName}::new))";
+                        return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({ReferenceTypeName}::new))";
                     }
                     return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).collect(Collectors.toCollection(LinkedHashSet::new)))";
                 }

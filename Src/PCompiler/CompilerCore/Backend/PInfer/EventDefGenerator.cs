@@ -8,14 +8,21 @@ namespace Plang.Compiler.Backend.PInfer
     class EventDefGenerator : EventGenerator
     {
         private IEnumerable<PEvent> PEvents;
-        internal EventDefGenerator(ICompilerConfiguration job, string filename, IEnumerable<PEvent> events) : base(job, filename)
+        private PEvent ConfigEvent;
+        internal EventDefGenerator(ICompilerConfiguration job, string filename, IEnumerable<PEvent> events, PEvent configEvent) : base(job, filename)
         {
             PEvents = events;
+            ConfigEvent = configEvent;
         }
 
         protected override void GenerateCodeImpl()
         {
             WriteLine($"public class {Constants.EventNamespaceName} {{");
+            if (ConfigEvent != null)
+            {
+                WriteEventDecl(ConfigEvent, true);
+                WriteLine();
+            }
             foreach (var e in PEvents.DistinctBy(x => x.SourceLocation))
             {
                WriteEventDecl(e, true);

@@ -68,7 +68,7 @@ namespace Plang.Compiler.Backend.PInfer
             FunctionStore.Initialize();
             CompilationContext ctx = new(job);
             Java.CompilationContext javaCtx = new(job);
-            var eventDefSource = new EventDefGenerator(job, Java.Constants.EventDefnFileName, quantifiedEvents).GenerateCode(javaCtx, globalScope);
+            var eventDefSource = new EventDefGenerator(job, Java.Constants.EventDefnFileName, quantifiedEvents, configEvent).GenerateCode(javaCtx, globalScope);
             AggregateFunctions(job.CustomFunctions, globalScope);
             AggregateDefinedPredicates(job.CustomPredicates, globalScope);
             PopulateEnumCmpPredicates(globalScope);
@@ -110,7 +110,7 @@ namespace Plang.Compiler.Backend.PInfer
             var templateCodegen = new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents,
                                                                 PredicateBoundedTerm, OrderToTerm, configEvent);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
-            return compiledJavaSrc.Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
+            return compiledJavaSrc.Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents.Concat([configEvent])).GenerateCode(javaCtx, globalScope))
                                 .Concat(templateCodegen.GenerateCode(javaCtx, globalScope))
                                 .Concat(new DriverGenerator(job, "PInferDriver.java", templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
                                 .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))

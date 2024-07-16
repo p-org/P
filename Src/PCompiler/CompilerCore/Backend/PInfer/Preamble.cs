@@ -69,7 +69,7 @@ public class PInferDriver {
         switch (templateName) {
             %TEMPLATE%
             default:
-                throw new RuntimeException(""Unknown template: "" + templateName);
+                System.err.println(""Unknown template: "" + templateName);
         }
     }
 

@@ -9,8 +9,8 @@ namespace Plang.Compiler.Backend.PInfer
 {
     public class TraceReaderGenerator : MachineGenerator
     {
-        List<PEvent> Events;
-        public TraceReaderGenerator(ICompilerConfiguration job, string filename, List<PEvent> events) : base(job, filename)
+        IEnumerable<PEvent> Events;
+        public TraceReaderGenerator(ICompilerConfiguration job, string filename, IEnumerable<PEvent> events) : base(job, filename)
         {
             Events = events;
         }
@@ -46,7 +46,7 @@ namespace Plang.Compiler.Backend.PInfer
         {
             var template = PreambleConstants.TraceReaderTemplate;
             string code = "";
-            foreach (var e in Events.DistinctBy(x => x.Name))
+            foreach (var e in Events.Where(e => e != null).DistinctBy(x => x.Name))
             {
                 code += CaseFor(e);
             }

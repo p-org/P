@@ -364,6 +364,11 @@ public class Main {
             var stderr = daikonStdErr.toString().trim();
             if (stderr.contains("Exception")) {
                 System.out.println("Exception raised: " + stderr);
+                return properties;
+            }
+            if (stderr.contains("Unknown template")) {
+                System.out.println("Skipping unknown template: " + stderr);
+                return properties;
             }
             if (!hasResult && daikonStdErr.toString().contains("No program point declarations were found.")) {
                 return null;
@@ -415,7 +420,7 @@ public class Main {
                 templateNameBuilder = new StringBuilder("Forall");
             } else if (taskType == Type.EXISTS) {
                 templateNameBuilder = new StringBuilder("Exists");
-            }else {
+            } else {
                 templateNameBuilder = new StringBuilder("ForallExists");
             }
             templateNameBuilder.append(QUANTIFIED_EVENTS).append("Events");
@@ -438,7 +443,6 @@ public class Main {
                     predicates.stream().map(x -> x.repr).collect(Collectors.joining("@@")),
                     existentialFilter.stream().map(x -> x.repr).collect(Collectors.joining("@@")),
                     terms.stream().map(x -> x.repr).collect(Collectors.joining("@@")));
-//            System.out.println(String.join(" ", pb.command()));
             runningProg = pb.start();
             watch();
         }
@@ -550,7 +554,7 @@ public class Main {
             Set<Task> tasks = properties.get(guards);
             if (!tasks.isEmpty()) {
                 System.out.println("========================" + numSolved + "/" + numTasks + "==================================");
-                System.out.println(converter.templateHeader + guards);
+                System.out.println(converter.getFormulaHeader(guards, ""));
                 var iter = tasks.iterator();
                 Task t = iter.next();
                 iter.remove();
@@ -575,13 +579,89 @@ public class Main {
                     System.out.println("Vacuous after guards filter, skipped " + tasks.size());
                     numSolved += tasks.size();
                 }
-                Runtime.getRuntime().exec(new String[]{"rm", "-f", "./*.gz"}).waitFor();
             }
         }
     }
 
-    private static void specMiningForallExists(int guardDepth, List<RawPredicate> predicateList, List<RawTerm> terms, String tracePath) throws IOException, InterruptedException {
-
+    private static void specMiningForallExists(int guardDepth, int filterDepth,
+                                               List<RawPredicate> predicateList,
+                                               List<RawTerm> terms,
+                                               Map<Set<Integer>, List<RawPredicate>> termsToPredicates,
+                                               Set<Integer> guardsMustInclude,
+                                               Set<Integer> filterMustInclude,
+                                               List<String> tracePath,
+                                               boolean trivialityCheck) throws IOException, InterruptedException {
+        List<RawPredicate> guardCandidates = new ArrayList<>();
+        List<RawPredicate> filterCandidates = new ArrayList<>();
+        for (RawPredicate p : predicateList) {
+            var boundedEvents = p.terms().stream().map(x -> terms.get(x).events()).flatMap(Collection::stream).collect(Collectors.toSet());
+            if (!boundedEvents.contains(QUANTIFIED_EVENTS - 1)) {
+                guardCandidates.add(p);
+            } else {
+                filterCandidates.add(p);
+            }
+        }
+        PredicateCombinationEnumerator guardEnumerator = new PredicateCombinationEnumerator(guardDepth, guardCandidates, guardsMustInclude);
+        PredicateCombinationEnumerator filterEnumerator = new PredicateCombinationEnumerator(filterDepth, filterCandidates, filterMustInclude);
+        TermTupleEnumerator termTupleEnumerator = new TermTupleEnumerator(termsToPredicates, terms.size());
+        Map<String, Map<String, List<Task>>> tasks = new HashMap<>();
+        int numTasks = 0;
+        while (guardEnumerator.hasNext()) {
+            var guards = guardEnumerator.next();
+            var guardsKey = guards.stream().map(RawPredicate::shortRepr).collect(Collectors.joining(" && "));
+            tasks.put(guardsKey, new HashMap<>());
+            while (filterEnumerator.hasNext()) {
+                var filters = filterEnumerator.next();
+                var filtersKey = filters.stream().map(RawPredicate::shortRepr).collect(Collectors.joining(" && "));
+                tasks.get(guardsKey).put(filtersKey, new ArrayList<>());
+                while (termTupleEnumerator.hasNext()) {
+                    var termTuple = termTupleEnumerator.next();
+                    // maintain assumption: last term only related to existentially quantified events
+                    var carTerm = terms.get(termTuple.car());
+                    var cdrTerm = terms.get(termTuple.cdr());
+                    if (!cdrTerm.events().equals(Set.of(QUANTIFIED_EVENTS - 1))) continue;
+                    List<RawPredicate> chosenPredicates = new ArrayList<>(guards);
+                    var termList = List.of(carTerm, cdrTerm);
+                    chosenPredicates.addAll(filters);
+                    if (trivialityCheck) {
+                        if (!checkQuantifierCover(chosenPredicates, terms, Set.of(termTuple.car(), termTuple.cdr()))
+                                || isTrivial(chosenPredicates, Set.of(termTuple.car(), termTuple.cdr()))) {
+                            continue;
+                        }
+                    }
+                    tasks.get(guardsKey).get(filtersKey).add(
+                            new Task(tracePath, guards, termList, filters, Task.Type.FORALLEXISTS)
+                    );
+                    numTasks += 1;
+                }
+                termTupleEnumerator.reset();
+            }
+        }
+        System.out.println("Forall-Exists Number of tasks: " + numTasks);
+        int numSolved = 0;
+        FromDaikon converter = new FromDaikon(termsToPredicates, terms, "forall-exists");
+        for (var guards: tasks.keySet()) {
+            for (var filters: tasks.get(guards).keySet()) {
+                var taskSet = tasks.get(guards).get(filters);
+                if (!taskSet.isEmpty()) {
+                    System.out.println("========================" + numSolved + "/" + numTasks + "==================================");
+                    System.out.println(converter.getFormulaHeader(guards, filters));
+                    for (var task: taskSet) {
+                        task.start();
+                    }
+                    Set<String> invariants = new HashSet<>();
+                    for (var task: taskSet) {
+                        var result = task.getDaikonOutput(converter);
+                        if (result != null) {
+                            invariants.addAll(result);
+                        }
+                    }
+                    numSolved += tasks.size();
+                    System.out.println(String.join("\n", invariants));
+                    System.out.println("==========================================================");
+                }
+            }
+        }
     }
 
     private static Options argParserSetup() {
@@ -651,7 +731,6 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
-
         Options opts = argParserSetup();
         CommandLine cmd = parseArgs(args, opts);
         String predicatePath = cmd.getOptionValue("predicates");
@@ -667,24 +746,29 @@ public class Main {
             var opt = cmd.getOptionValue("template");
             Set<Integer> mustIncludeGuardSet = Set.of();
             Set<Integer> mustIncludeFilterSet = Set.of();
-            if (opt.equals("forall")) {
-                if (cmd.hasOption("include-guards")) {
-                    mustIncludeGuardSet = Arrays.stream(cmd.getOptionValues("include-guards"))
-                            .mapToInt(Integer::parseInt)
-                            .boxed()
-                            .collect(Collectors.toSet());
-                }
-                specMiningForallOrExists(new PredicateCombinationEnumerator(Math.max(predicateDepth - mustIncludeGuardSet.size(), 0),
+            if (cmd.hasOption("include-guards")) {
+                mustIncludeGuardSet = Arrays.stream(cmd.getOptionValues("include-guards"))
+                        .mapToInt(Integer::parseInt)
+                        .boxed()
+                        .collect(Collectors.toSet());
+            }
+            if (cmd.hasOption("include-filters")) {
+                mustIncludeFilterSet = Arrays.stream(cmd.getOptionValues("include-filters"))
+                        .mapToInt(Integer::parseInt)
+                        .boxed()
+                        .collect(Collectors.toSet());
+            }
+            switch (opt) {
+                case "forall" ->
+                        specMiningForallOrExists(new PredicateCombinationEnumerator(Math.max(predicateDepth - mustIncludeGuardSet.size(), 0),
                                 predicateList, mustIncludeGuardSet), terms, termsToPredicates, traceFiles, true, checkTrivial == 1);
-            } else if (opt.equals("exists")) {
-                if (cmd.hasOption("include-filters")) {
-                    mustIncludeFilterSet = Arrays.stream(cmd.getOptionValues("include-filters"))
-                            .mapToInt(Integer::parseInt)
-                            .boxed()
-                            .collect(Collectors.toSet());
-                }
-                specMiningForallOrExists(new PredicateCombinationEnumerator(Math.max(filterDepth - mustIncludeFilterSet.size(), 0),
-                        predicateList, mustIncludeFilterSet), terms, termsToPredicates, traceFiles, false, checkTrivial == 1);
+                case "exists" ->
+                        specMiningForallOrExists(new PredicateCombinationEnumerator(Math.max(filterDepth - mustIncludeFilterSet.size(), 0),
+                                predicateList, mustIncludeFilterSet), terms, termsToPredicates, traceFiles, false, checkTrivial == 1);
+                case "forall-exists" -> specMiningForallExists(Math.max(predicateDepth - mustIncludeGuardSet.size(), 0),
+                        Math.max(filterDepth - mustIncludeFilterSet.size(), 0),
+                        predicateList,
+                        terms, termsToPredicates, mustIncludeGuardSet, mustIncludeFilterSet, traceFiles, checkTrivial == 1);
             }
         } catch (InterruptedException e) {
             System.exit(1);

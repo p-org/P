@@ -40,7 +40,7 @@ namespace Plang.Options
 
             var basicGroup = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicGroup.AddArgument("timeout", "t", "Timeout in seconds (disabled by default)", typeof(uint));
-            basicGroup.AddArgument("memout", null, "Memory limit in Giga bytes (disabled by default)", typeof(double)).IsHidden = true;
+            basicGroup.AddArgument("memout", "m", "Memory limit in Giga bytes (disabled by default)", typeof(double));
             basicGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
             basicGroup.AddArgument("verbose", "v", "Enable verbose log output during exploration", typeof(bool));
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;

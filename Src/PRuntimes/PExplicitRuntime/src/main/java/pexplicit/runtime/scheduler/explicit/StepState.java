@@ -13,11 +13,6 @@ import java.util.*;
  */
 public class StepState implements Serializable {
     /**
-     * Mapping from machine type to list of machine instances
-     */
-    private Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
-
-    /**
      * Set of machines
      */
     @Getter
@@ -31,7 +26,6 @@ public class StepState implements Serializable {
     public StepState copyState() {
         StepState stepState = new StepState();
 
-        stepState.machineListByType = new HashMap<>(this.machineListByType);
         stepState.machineSet = new TreeSet<>(this.machineSet);
 
         stepState.machineLocalStates = new HashMap<>();
@@ -44,7 +38,6 @@ public class StepState implements Serializable {
     }
 
     public void clear() {
-        machineListByType.clear();
         machineSet.clear();
         machineLocalStates.clear();
     }
@@ -54,12 +47,10 @@ public class StepState implements Serializable {
         for (PMachine machine : PExplicitGlobal.getMachineSet()) {
             machine.reset();
         }
-        machineListByType.clear();
         machineSet.clear();
     }
 
     public void setTo(StepState input) {
-        machineListByType = new HashMap<>(input.machineListByType);
         machineSet = new TreeSet<>(input.machineSet);
         machineLocalStates = new HashMap<>(input.machineLocalStates);
         assert (machineSet.size() == machineLocalStates.size());
@@ -80,10 +71,6 @@ public class StepState implements Serializable {
      * @param machine Machine to add
      */
     public void makeMachine(PMachine machine) {
-        if (!machineListByType.containsKey(machine.getClass())) {
-            machineListByType.put(machine.getClass(), new ArrayList<>());
-        }
-        machineListByType.get(machine.getClass()).add(machine);
         machineSet.add(machine);
     }
 
@@ -94,7 +81,13 @@ public class StepState implements Serializable {
      * @return Number of machine of a given type
      */
     public int getMachineCount(Class<? extends PMachine> type) {
-        return machineListByType.getOrDefault(type, new ArrayList<>()).size();
+        int result = 0;
+        for (PMachine m: machineSet) {
+            if (type.isInstance(m)) {
+                result++;
+            }
+        }
+        return result;
     }
 
     @Override

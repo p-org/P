@@ -21,7 +21,6 @@ machine Coordinator
             }
             goto WaitForResponses;
         }
-        ignore eVoteResp; // TODO: remove this and prove it
     }
     
     state WaitForResponses {
@@ -89,11 +88,13 @@ assume on start participant_set: forall (m: machine) :: m in participants() == m
 invariant one_coordinator: forall (m: machine) :: m == coordinator() == m is Coordinator;
 invariant participant_set: forall (m: machine) :: m in participants() == m is Participant;
 
-// make sure we never get a response that we're not expecting
+// make sure we never get a message that we're not expecting
 invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && e targets coordinator() ==> !flying e;
 invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && e targets coordinator() ==> !flying e;
 invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && e targets coordinator() ==> !flying e;
 invariant never_resp_to_participant: forall (e: event, p: Participant) :: e is eVoteResp && e targets p ==> !flying e;
+invariant never_resp_to_init: forall (e: event, c: Coordinator) :: e is eVoteResp && e targets c && c is Init ==> !flying e;
+invariant req_implies_not_init: forall (e: event, c: Coordinator) :: e is eVoteReq && c is Init ==> !flying e;
 
 // the main invariant we care about
 invariant safety: forall (p1: Participant) :: p1 is Accepted ==> (forall (p2: Participant) :: preference(p2) == YES);

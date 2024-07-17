@@ -45,7 +45,7 @@ public class FromDaikon {
             default:
                 throw new IllegalArgumentException("Unknown template family: " + templateFamily);
         }
-        substs.put("toString", "");
+        substs.put(".toString", "");
         substs.put("one of", "∈");
     }
 

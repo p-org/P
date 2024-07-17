@@ -328,8 +328,10 @@ public class Main {
         private Process runningProg;
         private Thread outputThread;
         private Type taskType;
+        private TaskPool poolRef;
 
-        public Task(List<String> tracePaths, List<RawPredicate> predicates, List<RawTerm> terms, List<RawPredicate> existentialFilter, Type taskType) {
+        public Task(List<String> tracePaths, List<RawPredicate> predicates, List<RawTerm> terms,
+                    List<RawPredicate> existentialFilter, Type taskType, TaskPool poolRef) {
             this.tracePaths = tracePaths;
             this.taskType = taskType;
             this.predicates = predicates;
@@ -339,6 +341,7 @@ public class Main {
             this.daikonStdErr = new StringBuilder();
             this.runningProg = null;
             this.outputThread = null;
+            this.poolRef = poolRef;
         }
 
         public Set<String> getDaikonOutput(FromDaikon converter) throws InterruptedException {
@@ -376,6 +379,12 @@ public class Main {
             return properties;
         }
 
+        public void kill() {
+            if (runningProg != null) {
+                runningProg.destroy();
+            }
+        }
+
         public String showTask() {
             StringBuilder builder = new StringBuilder();
             builder.append("Template: ").append(templateName).append("\n");
@@ -409,6 +418,11 @@ public class Main {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
+                }
+                try {
+                    poolRef.notifyFinished();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
             outputThread.start();
@@ -445,6 +459,37 @@ public class Main {
                     terms.stream().map(x -> x.repr).collect(Collectors.joining("@@")));
             runningProg = pb.start();
             watch();
+        }
+    }
+
+    private static class TaskPool {
+        int ptr = 0;
+        int chunkSize;
+        int running;
+        List<Task> tasks;
+        public TaskPool(int chunkSize) {
+            this.chunkSize = chunkSize;
+            this.running = 0;
+            this.tasks = new ArrayList<>();
+            this.ptr = 0;
+        }
+        
+        public void addTask(Task task) throws IOException {
+            tasks.add(task);
+            _startTasks();
+        }
+        
+        public synchronized void notifyFinished() throws IOException {
+            assert running > 0;
+            running -= 1;
+            _startTasks();
+        }
+        
+        public synchronized void _startTasks() throws IOException {
+            while (running < chunkSize && ptr < tasks.size()) {
+                tasks.get(ptr++).start();
+                running += 1;
+            }
         }
     }
 
@@ -506,11 +551,14 @@ public class Main {
                                          boolean trivialityCheck) throws IOException, InterruptedException {
         TermTupleEnumerator termTupleEnumerator = new TermTupleEnumerator(termsToPredicates, terms.size());
         Map<String, Set<Task>> properties = new HashMap<>();
+        List<String> propertyKeys = new ArrayList<>();
         int numTasks = 0;
+        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors());
         while (enumerator.hasNext()) {
             List<RawPredicate> comb = enumerator.next();
             String key = comb.stream().map(x -> x.shortRepr).collect(Collectors.joining(" && "));
             properties.put(key, new HashSet<>());
+            propertyKeys.add(key);
             // 1 field
             for (int i = 0; i < terms.size(); ++i) {
                 Set<Integer> setOfE = Set.of(i);
@@ -522,7 +570,8 @@ public class Main {
                     numTasks += 1;
                     List<RawPredicate> guards = isForall ? comb : List.of();
                     List<RawPredicate> existentialFilter = isForall ? List.of() : comb;
-                    var task = new Task(tracePath, guards, List.of(terms.get(i)), existentialFilter, isForall ? Task.Type.FORALL : Task.Type.EXISTS);
+                    var task = new Task(tracePath, guards, List.of(terms.get(i)), existentialFilter, isForall ? Task.Type.FORALL : Task.Type.EXISTS, taskPool);
+                    taskPool.addTask(task);
                     properties.get(key).add(task);
                 }
             }
@@ -541,7 +590,8 @@ public class Main {
                     numTasks += 1;
                     List<RawPredicate> guards = isForall ? comb : List.of();
                     List<RawPredicate> existentialFilter = isForall ? List.of() : comb;
-                    var task = new Task(tracePath, guards, List.of(terms.get(termTuple.car()), terms.get(termTuple.cdr())), existentialFilter, isForall ? Task.Type.FORALL : Task.Type.EXISTS);
+                    var task = new Task(tracePath, guards, List.of(terms.get(termTuple.car()), terms.get(termTuple.cdr())), existentialFilter, isForall ? Task.Type.FORALL : Task.Type.EXISTS, taskPool);
+                    taskPool.addTask(task);
                     properties.get(key).add(task);
                 }
             }
@@ -550,7 +600,7 @@ public class Main {
         System.out.println("Forall/Exists-only Number of tasks: " + numTasks);
         int numSolved = 0;
         FromDaikon converter = new FromDaikon(termsToPredicates, terms, isForall ? "forall" : "exists");
-        for (var guards: properties.keySet()) {
+        for (var guards: propertyKeys) {
             Set<Task> tasks = properties.get(guards);
             if (!tasks.isEmpty()) {
                 System.out.println("========================" + numSolved + "/" + numTasks + "==================================");
@@ -558,14 +608,10 @@ public class Main {
                 var iter = tasks.iterator();
                 Task t = iter.next();
                 iter.remove();
-                t.start();
                 Set<String> invariants = t.getDaikonOutput(converter);
                 numSolved += 1;
                 if (invariants != null) {
                     // System.out.println("Properties:");
-                    while (iter.hasNext()) {
-                        iter.next().start();
-                    }
                     for (Task task: tasks) {
                         var result = task.getDaikonOutput(converter);
                         if (result != null) {
@@ -606,20 +652,31 @@ public class Main {
         TermTupleEnumerator termTupleEnumerator = new TermTupleEnumerator(termsToPredicates, terms.size());
         Map<String, Map<String, List<Task>>> tasks = new HashMap<>();
         int numTasks = 0;
+        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors());
+        Map<String, List<String>> keysSequences = new HashMap<>();
+        List<String> guardKeySequence = new ArrayList<>();
         while (guardEnumerator.hasNext()) {
             var guards = guardEnumerator.next();
             var guardsKey = guards.stream().map(RawPredicate::shortRepr).collect(Collectors.joining(" && "));
             tasks.put(guardsKey, new HashMap<>());
+            keysSequences.put(guardsKey, new ArrayList<>());
+            guardKeySequence.add(guardsKey);
             while (filterEnumerator.hasNext()) {
                 var filters = filterEnumerator.next();
                 var filtersKey = filters.stream().map(RawPredicate::shortRepr).collect(Collectors.joining(" && "));
                 tasks.get(guardsKey).put(filtersKey, new ArrayList<>());
+                keysSequences.get(guardsKey).add(filtersKey);
                 while (termTupleEnumerator.hasNext()) {
                     var termTuple = termTupleEnumerator.next();
                     // maintain assumption: last term only related to existentially quantified events
                     var carTerm = terms.get(termTuple.car());
                     var cdrTerm = terms.get(termTuple.cdr());
-                    if (!cdrTerm.events().equals(Set.of(QUANTIFIED_EVENTS - 1))) continue;
+                    if (carTerm.events().contains(QUANTIFIED_EVENTS - 1) == cdrTerm.events().contains(QUANTIFIED_EVENTS - 1)) continue;
+                    if (carTerm.events().contains(QUANTIFIED_EVENTS - 1)) {
+                        var t = carTerm;
+                        carTerm = cdrTerm;
+                        cdrTerm = t;
+                    }
                     List<RawPredicate> chosenPredicates = new ArrayList<>(guards);
                     var termList = List.of(carTerm, cdrTerm);
                     chosenPredicates.addAll(filters);
@@ -629,9 +686,9 @@ public class Main {
                             continue;
                         }
                     }
-                    tasks.get(guardsKey).get(filtersKey).add(
-                            new Task(tracePath, guards, termList, filters, Task.Type.FORALLEXISTS)
-                    );
+                    var task = new Task(tracePath, guards, termList, filters, Task.Type.FORALLEXISTS, taskPool);
+                    tasks.get(guardsKey).get(filtersKey).add(task);
+                    taskPool.addTask(task);
                     numTasks += 1;
                 }
                 termTupleEnumerator.reset();
@@ -640,15 +697,12 @@ public class Main {
         System.out.println("Forall-Exists Number of tasks: " + numTasks);
         int numSolved = 0;
         FromDaikon converter = new FromDaikon(termsToPredicates, terms, "forall-exists");
-        for (var guards: tasks.keySet()) {
-            for (var filters: tasks.get(guards).keySet()) {
+        for (var guards: guardKeySequence) {
+            for (var filters: keysSequences.get(guards)) {
                 var taskSet = tasks.get(guards).get(filters);
                 if (!taskSet.isEmpty()) {
                     System.out.println("========================" + numSolved + "/" + numTasks + "==================================");
                     System.out.println(converter.getFormulaHeader(guards, filters));
-                    for (var task: taskSet) {
-                        task.start();
-                    }
                     Set<String> invariants = new HashSet<>();
                     for (var task: taskSet) {
                         var result = task.getDaikonOutput(converter);

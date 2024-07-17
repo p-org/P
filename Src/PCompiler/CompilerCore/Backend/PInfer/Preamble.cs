@@ -39,16 +39,13 @@ public class TraceParser {{
             List<{Constants.PEventsClass}<?>> events = new ArrayList<>();
             for (int i = 0; i < trace.size(); i++) {{
                 JSONObject e = trace.getJSONObject(i);
-                if (e.getString((""type"")).equals(""SendEvent"") || e.getString((""type"")).equals(""Announce"")) {{
-                    JSONObject details = e.getJSONObject(""details"");
-                    String sender = details.getString(""sender"");
-                    String target = details.getString(""target"");
-                    String name = details.getString(""event"");
-                    switch (name) {{
-                        %EVENT_INITIALIZATION%
-                        default:
-                            break;
-                    }}
+                String sender = e.containsKey(""sender"") ? e.getString(""sender"") : null;
+                String target = e.containsKey(""target"") ? e.getString(""target"") : null;
+                String name = e.getString(""event"");
+                switch (name) {{
+                    %EVENT_INITIALIZATION%
+                    default:
+                        break;
                 }}
             }}
             result.add(events);

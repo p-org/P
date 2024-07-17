@@ -32,7 +32,7 @@ namespace Plang.Compiler.Backend.PInfer
             var hasPayload = javaType is not TypeManager.JType.JVoid;
             if (hasPayload)
             {
-                result += GenerateEventInit(e.Name, javaType, GenerateJSONObjectGet("details", "payload", payloadType), true) + "\n";
+                result += GenerateEventInit(e.Name, javaType, GenerateJSONObjectGet("e", "payload", payloadType), true) + "\n";
             }
             else
             {

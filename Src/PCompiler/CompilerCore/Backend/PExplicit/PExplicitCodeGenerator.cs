@@ -1935,7 +1935,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return "void";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
-                    return "? extends PValue<?>";
+                    return "Object";
                 default:
                     return "Object";
             }

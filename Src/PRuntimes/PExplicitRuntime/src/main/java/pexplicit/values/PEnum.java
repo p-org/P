@@ -7,6 +7,8 @@ import lombok.Getter;
  */
 @Getter
 public class PEnum extends PValue<PEnum> {
+    static PEnum min = null;
+
     private final String type;
     private final String name;
     private final int value;
@@ -21,6 +23,9 @@ public class PEnum extends PValue<PEnum> {
         this.type = type;
         this.name = name;
         this.value = val;
+        if (min == null || this.value < min.value) {
+            min = this;
+        }
         initialize();
     }
 
@@ -33,6 +38,9 @@ public class PEnum extends PValue<PEnum> {
         type = val.type;
         name = val.name;
         value = val.value;
+        if (min == null || this.value < min.value) {
+            min = this;
+        }
         initialize();
     }
 
@@ -53,6 +61,11 @@ public class PEnum extends PValue<PEnum> {
     @Override
     protected String _asString() {
         return name;
+    }
+
+    @Override
+    public PEnum getDefault() {
+        return min.clone();
     }
 
     @Override

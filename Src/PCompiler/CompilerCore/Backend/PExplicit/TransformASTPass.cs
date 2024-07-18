@@ -712,14 +712,6 @@ namespace Plang.Compiler.Backend.PExplicit
                                 }
                                 var continuation = GetContinuation(function, cases, after, recv.SourceLocation);
                                 if (machine != null) machine.AddMethod(continuation);
-                                foreach (var v in continuation.StoreParameters)
-                                {
-                                    machine.AddField(v);
-                                }
-                                foreach (var store in continuation.StoreStmts)
-                                {
-                                    result.Add(store);
-                                }
                                 var split = new ReceiveSplitStmt(compound.SourceLocation, continuation);
                                 result.Add(split);
                                 break;

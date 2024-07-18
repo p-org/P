@@ -161,6 +161,11 @@ public class PInt extends PValue<PInt> {
     }
 
     @Override
+    public PInt getDefault() {
+        return new PInt(0);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;

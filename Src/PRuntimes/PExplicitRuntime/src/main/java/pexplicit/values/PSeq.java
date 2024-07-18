@@ -126,6 +126,11 @@ public class PSeq extends PValue<PSeq> implements PCollection {
     }
 
     @Override
+    public PSeq getDefault() {
+        return new PSeq();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 

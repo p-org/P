@@ -45,6 +45,11 @@ public class PMachineValue extends PValue<PMachineValue> {
     }
 
     @Override
+    public PMachineValue getDefault() {
+        return null;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
         else if (!(obj instanceof PMachineValue)) {

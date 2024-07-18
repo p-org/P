@@ -89,6 +89,13 @@ public abstract class PValue<T extends PValue<T>> implements Serializable {
     protected abstract String _asString();
 
     /**
+     * Function to create a default value of the PValue
+     *
+     * @return default value
+     */
+    public abstract T getDefault();
+
+    /**
      * Function to create a deep clone of the PValue
      *
      * @return deep clone of the PValue

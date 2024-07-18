@@ -183,6 +183,11 @@ public class PMap extends PValue<PMap> implements PCollection {
     }
 
     @Override
+    public PMap getDefault() {
+        return new PMap();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 

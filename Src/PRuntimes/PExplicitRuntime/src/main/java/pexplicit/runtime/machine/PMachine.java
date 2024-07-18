@@ -10,13 +10,13 @@ import pexplicit.runtime.machine.events.PContinuation;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.utils.serialize.SerializableBiFunction;
-import pexplicit.utils.serialize.SerializableRunnable;
 import pexplicit.values.PEvent;
 import pexplicit.values.PMachineValue;
 import pexplicit.values.PMessage;
 import pexplicit.values.PValue;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
 
@@ -132,6 +132,24 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         this.blockedStateExit = null;
         this.blockedNewStateEntry = null;
         this.blockedNewStateEntryPayload = null;
+
+        for (PContinuation continuation : continuationMap.values()) {
+            continuation.clearVars();
+        }
+
+        Field[] declaredFields = this.getClass().getDeclaredFields();
+        for (Field field : declaredFields) {
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                try {
+                    Object curr = field.get(this);
+                    if (curr != null) {
+                        field.set(this, ((PValue<?>) curr).getDefault());
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     /**
@@ -154,6 +172,19 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add("_blockedStateExit");
         result.add("_blockedNewStateEntry");
         result.add("_blockedNewStateEntryPayload");
+
+        for (PContinuation continuation : continuationMap.values()) {
+            for (Map.Entry<String, PValue<?>> entry : continuation.getVars().entrySet()) {
+                result.add(entry.getKey());
+            }
+        }
+
+        Field[] declaredFields = this.getClass().getDeclaredFields();
+        for (Field field : declaredFields) {
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                result.add(field.getName());
+            }
+        }
 
         return result;
     }
@@ -179,6 +210,23 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add(blockedNewStateEntry);
         result.add(blockedNewStateEntryPayload);
 
+        for (PContinuation continuation : continuationMap.values()) {
+            for (Map.Entry<String, PValue<?>> entry : continuation.getVars().entrySet()) {
+                result.add(entry.getValue());
+            }
+        }
+
+        Field[] declaredFields = this.getClass().getDeclaredFields();
+        for (Field field : declaredFields) {
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                try {
+                    result.add(field.get(this));
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
         return result;
     }
 
@@ -202,6 +250,23 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add(blockedStateExit);
         result.add(blockedNewStateEntry);
         result.add(blockedNewStateEntryPayload);
+
+        for (PContinuation continuation : continuationMap.values()) {
+            for (Map.Entry<String, PValue<?>> entry : continuation.getVars().entrySet()) {
+                result.add(entry.getValue());
+            }
+        }
+
+        Field[] declaredFields = this.getClass().getDeclaredFields();
+        for (Field field : declaredFields) {
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                try {
+                    result.add(field.get(this));
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
 
         return result;
     }
@@ -227,6 +292,23 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         blockedStateExit = (State) values.get(idx++);
         blockedNewStateEntry = (State) values.get(idx++);
         blockedNewStateEntryPayload = (PValue<?>) values.get(idx++);
+
+        for (PContinuation continuation : continuationMap.values()) {
+            for (Map.Entry<String, PValue<?>> entry : continuation.getVars().entrySet()) {
+                entry.setValue((PValue<?>) values.get(idx++));
+            }
+        }
+
+        Field[] declaredFields = this.getClass().getDeclaredFields();
+        for (Field field : declaredFields) {
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                try {
+                    field.set(this, values.get(idx++));
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
 
         return idx;
     }
@@ -306,14 +388,26 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      *
      * @param name      Name of the continuation
      * @param handleFun Function executed when unblocking
-     * @param clearFun  Function that clears corresponding continuation variables
+     * @return New PContinuation
      */
-    protected void registerContinuation(
+    protected PContinuation registerContinuation(
             String name,
             SerializableBiFunction<PMachine, PMessage> handleFun,
-            SerializableRunnable clearFun,
             String... caseEvents) {
-        continuationMap.put(name, new PContinuation(handleFun, clearFun, caseEvents));
+        PContinuation continuation = new PContinuation(handleFun, caseEvents);
+        continuationMap.put(name, continuation);
+        return continuation;
+    }
+
+    /**
+     * Get a continuation
+     *
+     * @param name Name of the continuation
+     * @return Corresponding PContinuation
+     */
+    protected PContinuation getContinuation(String name) {
+        assert (continuationMap.containsKey(name));
+        return continuationMap.get(name);
     }
 
     /**

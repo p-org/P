@@ -163,6 +163,11 @@ public class PFloat extends PValue<PFloat> {
     }
 
     @Override
+    public PFloat getDefault() {
+        return new PFloat(0.0);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;

@@ -4,23 +4,50 @@ import lombok.Getter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.State;
 import pexplicit.utils.serialize.SerializableBiFunction;
-import pexplicit.utils.serialize.SerializableRunnable;
 import pexplicit.values.PEvent;
 import pexplicit.values.PMessage;
+import pexplicit.values.PValue;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Getter
 public class PContinuation {
     private final Set<String> caseEvents;
     private final SerializableBiFunction<PMachine, PMessage> handleFun;
-    private final SerializableRunnable clearFun;
+    @Getter
+    private final Map<String, PValue<?>> vars;
 
-    public PContinuation(SerializableBiFunction<PMachine, PMessage> handleFun, SerializableRunnable clearFun, String... ev) {
+    public PContinuation(SerializableBiFunction<PMachine, PMessage> handleFun, String... ev) {
         this.handleFun = handleFun;
-        this.clearFun = clearFun;
         this.caseEvents = new HashSet<>(Set.of(ev));
+        this.vars = new HashMap<>();
+    }
+
+    public void addVar(String name, PValue<?> value) {
+        assert (!vars.containsKey(name));
+        vars.put(name, value);
+    }
+
+    public void setVar(String name, PValue<?> value) {
+        assert (vars.containsKey(name));
+        vars.put(name, value);
+    }
+
+    public PValue<?> getVar(String name) {
+        assert (vars.containsKey(name));
+        return vars.get(name);
+    }
+
+    public void clearVars() {
+        for (Map.Entry<String, PValue<?>> entry : vars.entrySet()) {
+            PValue<?> val = entry.getValue();
+            if (val != null) {
+                entry.setValue(val.getDefault());
+            }
+        }
     }
 
     public boolean isDeferred(PEvent event) {
@@ -79,7 +106,7 @@ public class PContinuation {
         // completely unblocked
         if (!machine.isBlocked()) {
             for (PContinuation c : machine.getContinuationMap().values()) {
-                c.getClearFun().run();
+                c.clearVars();
             }
         } else {
             // blocked on a different continuation encountered when processing pending new state entry function, do nothing

@@ -2,7 +2,6 @@ package pexplicit.runtime.scheduler;
 
 import pexplicit.values.*;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
 

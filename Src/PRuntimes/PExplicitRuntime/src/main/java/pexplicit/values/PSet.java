@@ -123,6 +123,11 @@ public class PSet extends PValue<PSet> implements PCollection {
     }
 
     @Override
+    public PSet getDefault() {
+        return new PSet();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 

@@ -107,6 +107,11 @@ public class PString extends PValue<PString> {
     }
 
     @Override
+    public PString getDefault() {
+        return new PString("");
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
         else if (!(obj instanceof PString)) {

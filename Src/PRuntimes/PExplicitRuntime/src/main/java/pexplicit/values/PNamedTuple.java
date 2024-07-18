@@ -128,6 +128,20 @@ public class PNamedTuple extends PValue<PNamedTuple> {
     }
 
     @Override
+    public PNamedTuple getDefault() {
+        Map<String, PValue<?>> defaultValues = new HashMap<>();
+        for (Map.Entry<String, PValue<?>> entry : values.entrySet()) {
+            PValue<?> val = entry.getValue();
+            if (val == null) {
+                defaultValues.put(entry.getKey(), null);
+            } else {
+                defaultValues.put(entry.getKey(), val.getDefault());
+            }
+        }
+        return new PNamedTuple(defaultValues);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 

@@ -307,66 +307,65 @@ namespace Plang.Compiler.Backend.PExplicit
             }
 
             foreach (var field in machine.Fields)
-                context.WriteLine(output, $"private {GetPExplicitType(field.Type)} {CompilationContext.GetVar(field.Name)} = {GetDefaultValue(field.Type)};");
-
+                context.WriteLine(output, $"public {GetPExplicitType(field.Type)} {CompilationContext.GetVar(field.Name)} = {GetDefaultValue(field.Type)};");
             context.WriteLine(output);
 
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, "public void reset() {");
-            context.WriteLine(output, "    super.reset();");
-            foreach (var field in machine.Fields)
-                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = {GetDefaultValue(field.Type)};");
-            context.WriteLine(output, "}");
-            context.WriteLine(output);
-
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, "public List<String> getLocalVarNames() {");
-            context.WriteLine(output, "    List<String> result = super.getLocalVarNames();");
-            foreach (var field in machine.Fields)
-            {
-                context.WriteLine(output, $"    result.add(\"{CompilationContext.GetVar(field.Name)}\");");
-            }
-            context.WriteLine(output, "    return result;");
-            context.WriteLine(output, "}");
-            context.WriteLine(output);
-
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, "public List<Object> getLocalVarValues() {");
-            context.WriteLine(output, "    List<Object> result = super.getLocalVarValues();");
-            foreach (var field in machine.Fields)
-            {
-                context.WriteLine(output, $"    result.add({CompilationContext.GetVar(field.Name)});");
-            }
-            context.WriteLine(output, "    return result;");
-            context.WriteLine(output, "}");
-            context.WriteLine(output);
-
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, "public List<Object> copyLocalVarValues() {");
-            context.WriteLine(output, "    List<Object> result = super.copyLocalVarValues();");
-            foreach (var field in machine.Fields)
-            {
-                context.WriteLine(output, $"    result.add({CompilationContext.GetVar(field.Name)});");
-            }
-            context.WriteLine(output, "    return result;");
-            context.WriteLine(output, "}");
-            context.WriteLine(output);
-
-            context.WriteLine(output, "@Generated");
-            context.WriteLine(output, "@Override");
-            context.WriteLine(output, "protected int setLocalVarValues(List<Object> values) {");
-            context.WriteLine(output, "    int idx = super.setLocalVarValues(values);");
-            foreach (var field in machine.Fields)
-            {
-                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetPExplicitType(field.Type)}) values.get(idx++);");
-            }
-            context.WriteLine(output, "    return idx;");
-            context.WriteLine(output, "}");
-            context.WriteLine(output);
+            // context.WriteLine(output, "@Generated");
+            // context.WriteLine(output, "@Override");
+            // context.WriteLine(output, "public void reset() {");
+            // context.WriteLine(output, "    super.reset();");
+            // foreach (var field in machine.Fields)
+            //     context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = {GetDefaultValue(field.Type)};");
+            // context.WriteLine(output, "}");
+            // context.WriteLine(output);
+            //
+            // context.WriteLine(output, "@Generated");
+            // // context.WriteLine(output, "@Override");
+            // context.WriteLine(output, "public List<String> getLocalVarNames() {");
+            // context.WriteLine(output, "    List<String> result = super.getLocalVarNames();");
+            // foreach (var field in machine.Fields)
+            // {
+            //     context.WriteLine(output, $"    result.add(\"{CompilationContext.GetVar(field.Name)}\");");
+            // }
+            // context.WriteLine(output, "    return result;");
+            // context.WriteLine(output, "}");
+            // context.WriteLine(output);
+            //
+            // context.WriteLine(output, "@Generated");
+            // context.WriteLine(output, "@Override");
+            // context.WriteLine(output, "public List<Object> getLocalVarValues() {");
+            // context.WriteLine(output, "    List<Object> result = super.getLocalVarValues();");
+            // foreach (var field in machine.Fields)
+            // {
+            //     context.WriteLine(output, $"    result.add({CompilationContext.GetVar(field.Name)});");
+            // }
+            // context.WriteLine(output, "    return result;");
+            // context.WriteLine(output, "}");
+            // context.WriteLine(output);
+            //
+            // context.WriteLine(output, "@Generated");
+            // context.WriteLine(output, "@Override");
+            // context.WriteLine(output, "public List<Object> copyLocalVarValues() {");
+            // context.WriteLine(output, "    List<Object> result = super.copyLocalVarValues();");
+            // foreach (var field in machine.Fields)
+            // {
+            //     context.WriteLine(output, $"    result.add({CompilationContext.GetVar(field.Name)});");
+            // }
+            // context.WriteLine(output, "    return result;");
+            // context.WriteLine(output, "}");
+            // context.WriteLine(output);
+            //
+            // context.WriteLine(output, "@Generated");
+            // context.WriteLine(output, "@Override");
+            // context.WriteLine(output, "protected int setLocalVarValues(List<Object> values) {");
+            // context.WriteLine(output, "    int idx = super.setLocalVarValues(values);");
+            // foreach (var field in machine.Fields)
+            // {
+            //     context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetPExplicitType(field.Type)}) values.get(idx++);");
+            // }
+            // context.WriteLine(output, "    return idx;");
+            // context.WriteLine(output, "}");
+            // context.WriteLine(output);
         }
 
         private void WriteMachineConstructor(CompilationContext context, StringWriter output, Machine machine)
@@ -393,21 +392,7 @@ namespace Plang.Compiler.Backend.PExplicit
                 if (method is Continuation)
                 {
                     var cont = (Continuation) method;
-                    context.WriteLine(output, "registerContinuation(");
-                    context.WriteLine(output, $"\"{context.GetContinuationName(cont)}\"");
-                    context.WriteLine(output, $", (machine, msg) -> {context.GetContinuationName(cont)}(machine, msg)");
-                    context.WriteLine(output, $", () -> clear_{context.GetContinuationName(cont)}()");
-                    foreach (var (caseEvent, _) in cont.Cases)
-                    {
-                        context.Write(output, $", \"{caseEvent.Name}\"");
-                    }
-                    context.WriteLine(output, ");");
-
-                    // context.Write(output, $"continuations.put(\"{context.GetContinuationName(cont)}\", ");
-                    // context.Write(output, $"(pc) -> ((continuation_outcome, msg) -> {context.GetContinuationName(cont)}(");
-                    // context.Write(output, "continuation_outcome");
-                    // context.WriteLine(output, $", msg)));");
-                    // context.WriteLine(output, $"clearContinuationVars.add(() -> clear_{context.GetContinuationName(cont)}());");
+                    context.WriteLine(output, $"register_{context.GetContinuationName(cont)}();");
                 }
             }
 
@@ -1021,7 +1006,13 @@ namespace Plang.Compiler.Backend.PExplicit
                     context.WriteLine(output, ");");
                     break;
                 case ReceiveSplitStmt splitStmt:
-                    context.WriteLine(output, $"{CompilationContext.CurrentMachine}.blockUntil(\"{context.GetContinuationName(splitStmt.Cont)}\");");
+                    Continuation continuation = splitStmt.Cont;
+                    context.WriteLine(output, $"PContinuation {context.GetContinuationName(continuation)} = getContinuation(\"{context.GetContinuationName(continuation)}\");");
+                    foreach (var local in continuation.LocalParameters)
+                    {
+                        context.WriteLine(output, $"{context.GetContinuationName(continuation)}.setVar(\"{continuation.StoreForLocal[local].Name}\", {CompilationContext.GetVar(local.Name)});");
+                    }
+                    context.WriteLine(output, $"{CompilationContext.CurrentMachine}.blockUntil(\"{context.GetContinuationName(continuation)}\");");
                     context.Write(output, "return;");
                     exited = true;
                     break;
@@ -1039,11 +1030,20 @@ namespace Plang.Compiler.Backend.PExplicit
                 throw new NotImplementedException($"Receive statement in a function with non-void return type is not supported. Found in function named {continuation.ParentFunction.Name}.");
             }
 
-            context.Write(output, $"void clear_{context.GetContinuationName(continuation)}() ");
+            context.Write(output, $"void register_{context.GetContinuationName(continuation)}() ");
             context.WriteLine(output, "{");
+            context.Write(output, $"PContinuation {context.GetContinuationName(continuation)} = registerContinuation(");
+            context.WriteLine(output, $"\"{context.GetContinuationName(continuation)}\"");
+            context.WriteLine(output, $", (machine, msg) -> {context.GetContinuationName(continuation)}(machine, msg)");
+            foreach (var (caseEvent, _) in continuation.Cases)
+            {
+                context.Write(output, $", \"{caseEvent.Name}\"");
+            }
+            context.WriteLine(output, ");");
+
             foreach (var param in continuation.StoreParameters)
             {
-                context.WriteLine(output, $"{GetPExplicitType(param.Type)} {CompilationContext.GetVar(param.Name)} = {GetDefaultValue(param.Type)};");
+                context.WriteLine(output, $"{context.GetContinuationName(continuation)}.addVar(\"{param.Name}\", {GetDefaultValue(param.Type)});");
             }
             context.WriteLine(output, "}");
 
@@ -1063,11 +1063,12 @@ namespace Plang.Compiler.Backend.PExplicit
             context.WriteLine(output, "{");
 
             var continuationLocalParams = new HashSet<string>();
+            context.WriteLine(output, $"PContinuation {context.GetContinuationName(continuation)} = getContinuation(\"{context.GetContinuationName(continuation)}\");");
             foreach (var local in continuation.LocalParameters)
             {
                 continuationLocalParams.Add(local.Name);
                 context.Write(output, $"{GetPExplicitType(local.Type)} {CompilationContext.GetVar(local.Name)}");
-                context.WriteLine(output, $"= {CompilationContext.GetVar(continuation.StoreForLocal[local].Name)};");
+                context.WriteLine(output, $" = ({GetPExplicitType(local.Type)}) {context.GetContinuationName(continuation)}.getVar(\"{continuation.StoreForLocal[local].Name}\");");
             }
 
             context.WriteLine(output, $"switch ({messageName}.getEvent().toString())");

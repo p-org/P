@@ -46,6 +46,11 @@ public class PMessage extends PValue<PMessage> {
     }
 
     @Override
+    public PMessage getDefault() {
+        return null;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 

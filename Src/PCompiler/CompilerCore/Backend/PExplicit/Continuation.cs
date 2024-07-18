@@ -25,7 +25,6 @@ namespace Plang.Compiler.Backend.PExplicit
             var localAccess = new VariableAccessExpr(SourceLocation, local);
             var storeAccess = new VariableAccessExpr(SourceLocation, store);
             var storeStmt = new AssignStmt(SourceLocation, storeAccess, localAccess);
-            storeStmts.Add(storeStmt);
             storeForLocal.Add(local, store);
         }
 
@@ -33,11 +32,9 @@ namespace Plang.Compiler.Backend.PExplicit
         public IPStmt After { get; } 
         public IEnumerable<Variable> StoreParameters => storeParameters;
         public IEnumerable<Variable> LocalParameters => localParameters;
-        public IEnumerable<AssignStmt> StoreStmts => storeStmts;
         public IReadOnlyDictionary<Variable, Variable> StoreForLocal => storeForLocal;
         private readonly List<Variable> storeParameters = new List<Variable>();
         private readonly List<Variable> localParameters = new List<Variable>();
-        private readonly List<AssignStmt> storeStmts = new List<AssignStmt>();
         private readonly Dictionary<Variable, Variable> storeForLocal = new Dictionary<Variable, Variable>();
     }
 }

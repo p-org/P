@@ -75,6 +75,20 @@ public class PTuple extends PValue<PTuple> {
     }
 
     @Override
+    public PTuple getDefault() {
+        PValue<?>[] defaultFields = new PValue<?>[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            PValue<?> val = fields[i];
+            if (val == null) {
+                defaultFields[i] = null;
+            } else {
+                defaultFields[i] = val.getDefault();
+            }
+        }
+        return new PTuple(defaultFields);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
 

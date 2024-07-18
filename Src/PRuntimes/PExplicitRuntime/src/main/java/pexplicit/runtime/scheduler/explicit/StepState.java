@@ -82,7 +82,7 @@ public class StepState implements Serializable {
      */
     public int getMachineCount(Class<? extends PMachine> type) {
         int result = 0;
-        for (PMachine m: machineSet) {
+        for (PMachine m : machineSet) {
             if (type.isInstance(m)) {
                 result++;
             }

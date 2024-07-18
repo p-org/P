@@ -58,6 +58,11 @@ public class PEvent extends PValue<PEvent> {
     }
 
     @Override
+    public PEvent getDefault() {
+        return null;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
         else if (!(obj instanceof PEvent)) {

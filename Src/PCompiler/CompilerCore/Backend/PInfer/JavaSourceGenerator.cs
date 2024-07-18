@@ -45,14 +45,22 @@ namespace Plang.Compiler.Backend.PInfer
         {
             WriteLine("public class " + Job.ProjectName + " implements Serializable {");
             WriteLine("public record PredicateWrapper (String repr, boolean negate) {}");
+            Constants.PInferMode = false;
             foreach (var pred in PredicateStore.Store)
             {
+                var t = pred.Function.Owner;
+                pred.Function.Owner = null;
                 WriteFunction(pred.Function);
+                pred.Function.Owner = t;
             }
             foreach (var func in FunctionStore.Store)
             {
+                var t = func.Owner;
+                func.Owner = null;
                 WriteFunction(func);
+                func.Owner = t;
             }
+            Constants.PInferModeOn();
             Dictionary<string, (string, List<Variable>)> repr2Metadata = [];
             var i = 0;
             foreach (var predicate in Predicates)
@@ -243,11 +251,27 @@ namespace Plang.Compiler.Backend.PInfer
                         case Notation.Infix:
                             if (p.Predicate.Name == "==")
                             {
+                                if (p.Arguments[0].Type is SequenceType || p.Arguments[0].Type is SetType)
+                                {
+                                    return $"Arrays.equals({GenerateCodeExpr(p.Arguments[0])}, {GenerateCodeExpr(p.Arguments[1])})";
+                                }
                                 return $"Objects.equals({GenerateCodeExpr(p.Arguments[0])}, {GenerateCodeExpr(p.Arguments[1])})";
                             }
                             return $"{GenerateCodeExpr(p.Arguments[0])} {p.Predicate.Name} {GenerateCodeExpr(p.Arguments[1])}";
                     }
                 }
+            }
+            else if (p.Predicate is DefinedPredicate)
+            {
+                var coercedArgs = p.Arguments.Select(x => {
+                    switch (x.Type)
+                    {
+                        case SequenceType s: return $"((ArrayList<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>) List.of({GenerateCodeExpr(x)}))";
+                        case SetType s: return $"((HashSet<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>) Set.of({GenerateCodeExpr(x)}))";
+                        default: return GenerateCodeExpr(x);
+                    }
+                }).ToArray();
+                return GenerateCodeCall(p.Predicate.Name, coercedArgs);
             }
             var args = (from e in p.Arguments select GenerateCodeExpr(e)).ToArray();
             return GenerateCodeCall(p.Predicate.Name, args);

@@ -725,13 +725,13 @@ public class Main {
     private static Options argParserSetup() {
         Options options = new Options();
         Option predicatePathOpt = new Option("p", "predicates", true,
-                "Path to predicates.json");
-        predicatePathOpt.setRequired(true);
+                "Path to predicates.json (Default: %PROJECT_NAME%.predicates.json)");
+        predicatePathOpt.setRequired(false);
         options.addOption(predicatePathOpt);
 
         Option termsPathOpt = new Option("t", "terms", true,
-                "Path to terms.json");
-        termsPathOpt.setRequired(true);
+                "Path to terms.json (Default: %PROJECT_NAME%.terms.json)");
+        termsPathOpt.setRequired(false);
         options.addOption(termsPathOpt);
 
         Option predDepthOpt = new Option("gd", "guard-depth", true,
@@ -791,8 +791,8 @@ public class Main {
     public static void main(String[] args) throws Exception {
         Options opts = argParserSetup();
         CommandLine cmd = parseArgs(args, opts);
-        String predicatePath = cmd.getOptionValue("predicates");
-        String termsPath = cmd.getOptionValue("terms");
+        String predicatePath = cmd.hasOption("predicates") ? cmd.getOptionValue("predicates") : "%PROJECT_NAME%.predicates.json";
+        String termsPath = cmd.hasOption("terms") ? cmd.getOptionValue("terms") : "%PROJECT_NAME%.terms.json";
         int predicateDepth = Integer.parseInt(cmd.getOptionValue("guard-depth", "0"));
         int filterDepth = Integer.parseInt(cmd.getOptionValue("filter-depth", "0"));
         int checkTrivial = cmd.hasOption("skip-trivial") ? 1 : 0;

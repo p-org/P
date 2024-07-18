@@ -648,7 +648,6 @@ public class Main {
             }
         }
         PredicateCombinationEnumerator guardEnumerator = new PredicateCombinationEnumerator(guardDepth, guardCandidates, guardsMustInclude);
-        PredicateCombinationEnumerator filterEnumerator = new PredicateCombinationEnumerator(filterDepth, filterCandidates, filterMustInclude);
         TermTupleEnumerator termTupleEnumerator = new TermTupleEnumerator(termsToPredicates, terms.size());
         Map<String, Map<String, List<Task>>> tasks = new HashMap<>();
         int numTasks = 0;
@@ -661,6 +660,7 @@ public class Main {
             tasks.put(guardsKey, new HashMap<>());
             keysSequences.put(guardsKey, new ArrayList<>());
             guardKeySequence.add(guardsKey);
+            PredicateCombinationEnumerator filterEnumerator = new PredicateCombinationEnumerator(filterDepth, filterCandidates, filterMustInclude);
             while (filterEnumerator.hasNext()) {
                 var filters = filterEnumerator.next();
                 var filtersKey = filters.stream().map(RawPredicate::shortRepr).collect(Collectors.joining(" && "));
@@ -711,7 +711,11 @@ public class Main {
                         }
                     }
                     numSolved += tasks.size();
-                    System.out.println(String.join("\n", invariants));
+                    if (invariants.size() > 0) {
+                        System.out.println(String.join("\n", invariants));
+                    } else {
+                        System.out.println("Infeasible guards / filters");
+                    }
                     System.out.println("==========================================================");
                 }
             }

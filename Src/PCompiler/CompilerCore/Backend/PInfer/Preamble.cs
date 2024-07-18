@@ -95,7 +95,7 @@ public class PInferDriver {
             var currentDir = AppDomain.CurrentDomain.BaseDirectory;
             DirectoryInfo info = new(currentDir);
             return string.Join("\n", File.ReadAllLines(
-                Path.Combine(Path.Combine(info.Parent.Parent.Parent.Parent.Parent.ToString(), "PinferTemplates"), filename)
+                Path.Combine(Path.Combine(info.Parent.Parent.Parent.Parent.Parent.ToString(), "PInferTemplates"), filename)
             ));
         }
 

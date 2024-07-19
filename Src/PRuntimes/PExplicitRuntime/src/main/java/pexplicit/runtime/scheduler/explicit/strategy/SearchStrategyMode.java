@@ -3,7 +3,8 @@ package pexplicit.runtime.scheduler.explicit.strategy;
 public enum SearchStrategyMode {
     DepthFirst("dfs"),
     Random("random"),
-    Astar("astar");
+    Astar("astar"),
+    Replay("replay");
 
     private String name;
 

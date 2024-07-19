@@ -3,8 +3,12 @@ package pexplicit;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
+import pexplicit.runtime.logger.ScratchLogger;
 import pexplicit.runtime.logger.StatWriter;
+import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
+import pexplicit.runtime.scheduler.explicit.SearchStatistics;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchTask;
 import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.exceptions.BugFoundException;
@@ -55,14 +59,22 @@ public class RuntimeExecutor {
     }
 
     private static void printStats() {
-        double searchTime = TimeMonitor.stopInterval();
-        scheduler.recordStats();
-        if (PExplicitGlobal.getResult().equals("correct for any depth")) {
-            PExplicitGlobal.setStatus(STATUS.VERIFIED);
-        } else if (PExplicitGlobal.getResult().startsWith("correct up to step")) {
-            PExplicitGlobal.setStatus(STATUS.VERIFIED_UPTO_MAX_STEPS);
+        double timeUsed = (Duration.between(TimeMonitor.getStart(), Instant.now()).toMillis() / 1000.0);
+        double memoryUsed = MemoryMonitor.getMemSpent();
+
+        StatWriter.log("time-seconds", String.format("%.1f", timeUsed));
+        StatWriter.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
+        StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
+
+        if (PExplicitGlobal.getConfig().getSearchStrategyMode() != SearchStrategyMode.Replay) {
+            StatWriter.log("max-depth-explored", String.format("%d", SearchStatistics.maxSteps));
+            scheduler.recordStats();
+            if (PExplicitGlobal.getResult().equals("correct for any depth")) {
+                PExplicitGlobal.setStatus(STATUS.VERIFIED);
+            } else if (PExplicitGlobal.getResult().startsWith("correct up to step")) {
+                PExplicitGlobal.setStatus(STATUS.VERIFIED_UPTO_MAX_STEPS);
+            }
         }
-        StatWriter.log("time-search-seconds", String.format("%.1f", searchTime));
     }
 
     private static void preprocess() {
@@ -70,24 +82,19 @@ public class RuntimeExecutor {
         PExplicitLogger.logInfo(String.format("... Checker is using '%s' strategy (seed:%s)",
                 PExplicitGlobal.getConfig().getSearchStrategyMode(), PExplicitGlobal.getConfig().getRandomSeed()));
 
-        executor = Executors.newSingleThreadExecutor();
-
         PExplicitGlobal.setResult("error");
 
-        double preSearchTime =
-                TimeMonitor.findInterval(TimeMonitor.getStart());
         StatWriter.log("project-name", String.format("%s", PExplicitGlobal.getConfig().getProjectName()));
         StatWriter.log("strategy", String.format("%s", PExplicitGlobal.getConfig().getSearchStrategyMode()));
         StatWriter.log("time-limit-seconds", String.format("%.1f", PExplicitGlobal.getConfig().getTimeLimit()));
         StatWriter.log("memory-limit-MB", String.format("%.1f", PExplicitGlobal.getConfig().getMemLimit()));
-        StatWriter.log("time-pre-seconds", String.format("%.1f", preSearchTime));
     }
 
     private static void process(boolean resume) throws Exception {
+        executor = Executors.newSingleThreadExecutor();
         try {
             TimedCall timedCall = new TimedCall(scheduler, resume);
             future = executor.submit(timedCall);
-            TimeMonitor.startInterval();
             runWithTimeout((long) PExplicitGlobal.getConfig().getTimeLimit());
         } catch (TimeoutException e) {
             PExplicitGlobal.setStatus(STATUS.TIMEOUT);
@@ -135,7 +142,10 @@ public class RuntimeExecutor {
         }
     }
 
-    public static void run() throws Exception {
+    public static void runSearch() throws Exception {
+        SearchTask.Initialize();
+        ScratchLogger.Initialize();
+
         scheduler = new ExplicitSearchScheduler();
         PExplicitGlobal.setScheduler(scheduler);
 
@@ -143,4 +153,45 @@ public class RuntimeExecutor {
         process(false);
     }
 
+    private static void replaySchedule(String fileName) throws Exception {
+        PExplicitLogger.logInfo(String.format("... Reading buggy trace from %s", fileName));
+
+        ReplayScheduler replayer = new ReplayScheduler(Schedule.readFromFile(fileName));
+        PExplicitGlobal.setScheduler(replayer);
+        try {
+            replayer.run();
+        } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
+            PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
+            PExplicitGlobal.setResult(String.format("found cex of length %d", replayer.getStepNumber()));
+            PExplicitLogger.logStackTrace((Exception) replayException);
+            throw new BugFoundException(replayException.getMessage(), replayException);
+        } catch (BugFoundException replayException) {
+            PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
+            PExplicitGlobal.setResult(String.format("found cex of length %d", replayer.getStepNumber()));
+            PExplicitLogger.logStackTrace(replayException);
+            throw replayException;
+        } catch (Exception replayException) {
+            PExplicitLogger.logStackTrace(replayException);
+            throw new Exception("Error when replaying the bug", replayException);
+        } finally {
+            printStats();
+            PExplicitLogger.logEndOfRun(null, Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+        }
+    }
+
+    public static void replay() throws Exception {
+        preprocess();
+        replaySchedule(PExplicitGlobal.getConfig().getReplayFile());
+    }
+
+    public static void run() throws Exception {
+        // initialize stats writer
+        StatWriter.Initialize();
+
+        if (PExplicitGlobal.getConfig().getSearchStrategyMode() == SearchStrategyMode.Replay) {
+            replay();
+        } else {
+            runSearch();
+        }
+    }
 }

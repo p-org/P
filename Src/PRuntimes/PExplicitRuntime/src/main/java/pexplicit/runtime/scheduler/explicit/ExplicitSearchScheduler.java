@@ -22,7 +22,6 @@ import pexplicit.utils.monitor.TimeMonitor;
 import pexplicit.values.ComputeHash;
 import pexplicit.values.PValue;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -597,22 +596,15 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     public void recordStats() {
-        double timeUsed = (Duration.between(TimeMonitor.getStart(), Instant.now()).toMillis() / 1000.0);
-        double memoryUsed = MemoryMonitor.getMemSpent();
-
         printProgress(true);
 
         // print basic statistics
-        StatWriter.log("time-seconds", String.format("%.1f", timeUsed));
-        StatWriter.log("memory-max-MB", String.format("%.1f", MemoryMonitor.getMaxMemSpent()));
-        StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
         StatWriter.log("#-executions", String.format("%d", SearchStatistics.iteration));
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             StatWriter.log("#-states", String.format("%d", SearchStatistics.totalStates));
             StatWriter.log("#-distinct-states", String.format("%d", SearchStatistics.totalDistinctStates));
         }
         StatWriter.log("steps-min", String.format("%d", SearchStatistics.minSteps));
-        StatWriter.log("max-depth-explored", String.format("%d", SearchStatistics.maxSteps));
         StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps / SearchStatistics.iteration));
         StatWriter.log("#-choices-unexplored", String.format("%d", getNumUnexploredChoices()));
         StatWriter.log("%-choices-unexplored-data", String.format("%.1f", getUnexploredDataChoicesPercent()));

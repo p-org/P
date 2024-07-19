@@ -43,6 +43,24 @@ public class SearchTask implements Serializable {
         this.parentTask = parentTask;
     }
 
+    public static void Initialize() {
+        String taskPath = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/";
+        try {
+            Files.createDirectories(Paths.get(taskPath));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to initialize tasks at " + taskPath, e);
+        }
+    }
+
+    public static void Cleanup() {
+        String taskPath = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/";
+        try {
+            FileUtils.deleteDirectory(new File(taskPath));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to cleanup tasks at " + taskPath, e);
+        }
+    }
+
     public boolean isInitialTask() {
         return id == 0;
     }
@@ -110,7 +128,6 @@ public class SearchTask implements Serializable {
             Collections.sort(keys);
         return keys;
     }
-
 
     /**
      * Get the number of search units in the task
@@ -211,7 +228,6 @@ public class SearchTask implements Serializable {
         return numUnexplored;
     }
 
-
     /**
      * Clear search unit at a choice depth
      *
@@ -219,24 +235,6 @@ public class SearchTask implements Serializable {
      */
     public void clearSearchUnit(int choiceNum) {
         searchUnits.remove(choiceNum);
-    }
-
-    public static void Initialize() {
-        String taskPath = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/";
-        try {
-            Files.createDirectories(Paths.get(taskPath));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to initialize tasks at " + taskPath, e);
-        }
-    }
-
-    public static void Cleanup() {
-        String taskPath = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/";
-        try {
-            FileUtils.deleteDirectory(new File(taskPath));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to cleanup tasks at " + taskPath, e);
-        }
     }
 
     public void writeToFile() {

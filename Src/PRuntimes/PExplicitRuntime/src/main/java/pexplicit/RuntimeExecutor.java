@@ -5,6 +5,7 @@ import pexplicit.runtime.STATUS;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchTask;
 import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.exceptions.MemoutException;
@@ -124,6 +125,7 @@ public class RuntimeExecutor {
             future.cancel(true);
             executor.shutdownNow();
             scheduler.updateResult();
+            SearchTask.Cleanup();
             printStats();
             PExplicitLogger.logEndOfRun(scheduler, Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
         }

@@ -659,7 +659,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     protected void printProgress(boolean forcePrint) {
-        if (forcePrint || (TimeMonitor.findInterval(getLastReportTime()) > 5)) {
+        if (forcePrint || (TimeMonitor.findInterval(getLastReportTime()) > 10)) {
             setLastReportTime(Instant.now());
             double newRuntime = TimeMonitor.getRuntime();
             printCurrentStatus(newRuntime);

@@ -1,6 +1,7 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
+import org.apache.commons.io.FileUtils;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachineId;
@@ -220,6 +221,24 @@ public class SearchTask implements Serializable {
         searchUnits.remove(choiceNum);
     }
 
+    public static void Initialize() {
+        String taskPath = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/";
+        try {
+            Files.createDirectories(Paths.get(taskPath));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to initialize tasks at " + taskPath, e);
+        }
+    }
+
+    public static void Cleanup() {
+        String taskPath = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/";
+        try {
+            FileUtils.deleteDirectory(new File(taskPath));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to cleanup tasks at " + taskPath, e);
+        }
+    }
+
     public void serializeTask() {
         assert (serializeFile == null);
         assert (prefixChoices != null);
@@ -227,7 +246,6 @@ public class SearchTask implements Serializable {
 
         serializeFile = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/" + this + ".ser";
         try {
-            Files.createDirectories(Paths.get(PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/"));
             FileOutputStream fos = new FileOutputStream(serializeFile);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(this.prefixChoices);

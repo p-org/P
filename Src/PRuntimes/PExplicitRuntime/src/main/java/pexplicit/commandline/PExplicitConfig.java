@@ -61,7 +61,7 @@ public class PExplicitConfig {
     SearchStrategyMode searchStrategyMode = SearchStrategyMode.Random;
     // max number of schedules per search task
     @Setter
-    int maxSchedulesPerTask = 10;
+    int maxSchedulesPerTask = 500;
     //max number of children search tasks
     @Setter
     int maxChildrenPerTask = 2;

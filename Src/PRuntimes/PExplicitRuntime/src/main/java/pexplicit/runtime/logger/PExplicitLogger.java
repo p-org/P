@@ -167,17 +167,6 @@ public class PExplicitLogger {
     }
 
     /**
-     * Log when serializing a schedule
-     *
-     * @param schedule Schedule to serialize
-     * @param szBytes  Bytes written
-     */
-    public static void logSerializeSchedule(Schedule schedule, String fileName, long szBytes) {
-        if (verbosity > 1) {
-        }
-    }
-
-    /**
      * Log when serializing a task
      *
      * @param task    Task to serialize

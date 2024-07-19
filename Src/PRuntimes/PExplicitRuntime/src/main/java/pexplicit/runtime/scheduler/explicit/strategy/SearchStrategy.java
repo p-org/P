@@ -76,7 +76,7 @@ public abstract class SearchStrategy implements Serializable {
         }
 
         SearchTask nextTask = popNextTask();
-        nextTask.deserializeTask();
+        nextTask.readFromFile();
         setCurrTask(nextTask);
 
         return nextTask;

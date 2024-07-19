@@ -44,6 +44,9 @@ public class PExplicitConfig {
     // random seed
     @Setter
     long randomSeed = System.currentTimeMillis();
+    // name of the replay file
+    @Setter
+    String replayFile = "";
     // max number of logs (i.e., internal steps) within a single schedule step
     @Setter
     int maxStepLogBound = 1000;

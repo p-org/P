@@ -8,7 +8,6 @@ import pexplicit.runtime.logger.Log4JConfig;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.StatWriter;
 import pexplicit.runtime.machine.PTestDriver;
-import pexplicit.runtime.scheduler.explicit.strategy.SearchTask;
 import pexplicit.utils.exceptions.BugFoundException;
 import pexplicit.utils.monitor.MemoryMonitor;
 import pexplicit.utils.monitor.TimeMonitor;
@@ -35,7 +34,6 @@ public class PExplicit {
         PExplicitGlobal.setConfig(PExplicitOptions.ParseCommandlineArgs(args));
         PExplicitLogger.Initialize(PExplicitGlobal.getConfig().getVerbosity());
         ComputeHash.Initialize();
-        SearchTask.Initialize();
 
         // get reflections corresponding to the model
         Reflections reflections = new Reflections("pexplicit.model");

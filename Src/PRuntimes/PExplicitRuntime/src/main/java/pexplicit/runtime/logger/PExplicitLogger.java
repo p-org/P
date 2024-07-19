@@ -58,10 +58,6 @@ public class PExplicitLogger {
         consoleAppender.start();
 
         context.getConfiguration().addLoggerAppender(coreLogger, consoleAppender);
-
-        // initialize all loggers and writers
-        StatWriter.Initialize();
-        ScratchLogger.Initialize();
     }
 
     public static void logInfo(String message) {
@@ -96,15 +92,17 @@ public class PExplicitLogger {
         } else {
             log.info("..... Found 0 bugs.");
         }
-        log.info("... Scheduling statistics:");
-        if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-            log.info(String.format("..... Explored %d distinct states", SearchStatistics.totalDistinctStates));
+        if (scheduler != null) {
+            log.info("... Scheduling statistics:");
+            if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
+                log.info(String.format("..... Explored %d distinct states", SearchStatistics.totalDistinctStates));
+            }
+            log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
+            log.info(String.format("..... Finished %d search tasks (%d pending)",
+                    scheduler.getSearchStrategy().getFinishedTasks().size(), scheduler.getSearchStrategy().getPendingTasks().size()));
+            log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
+                    SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
         }
-        log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
-        log.info(String.format("..... Finished %d search tasks (%d pending)",
-                scheduler.getSearchStrategy().getFinishedTasks().size(), scheduler.getSearchStrategy().getPendingTasks().size()));
-        log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
-                SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
         log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         log.info(String.format(".. Result: " + PExplicitGlobal.getResult()));
         log.info(". Done");
@@ -172,7 +170,7 @@ public class PExplicitLogger {
      * Log when serializing a schedule
      *
      * @param schedule Schedule to serialize
-     * @param szBytes Bytes written
+     * @param szBytes  Bytes written
      */
     public static void logSerializeSchedule(Schedule schedule, String fileName, long szBytes) {
         if (verbosity > 1) {

@@ -3,7 +3,6 @@ package pexplicit.runtime.scheduler;
 import lombok.Getter;
 import lombok.Setter;
 import pexplicit.runtime.PExplicitGlobal;
-import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.choice.Choice;
 import pexplicit.runtime.scheduler.choice.DataChoice;
@@ -12,12 +11,7 @@ import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
 import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.values.PValue;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +37,22 @@ public class Schedule implements Serializable {
      * Constructor
      */
     public Schedule() {
+    }
+
+    public static Schedule readFromFile(String fileName) {
+        assert (fileName != null);
+        Schedule result = null;
+
+        try {
+            FileInputStream fis;
+            fis = new FileInputStream(fileName);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            result = (Schedule) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException("Failed to read schedule from file " + fileName, e);
+        }
+
+        return result;
     }
 
     /**

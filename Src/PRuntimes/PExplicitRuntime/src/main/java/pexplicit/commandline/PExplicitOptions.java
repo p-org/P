@@ -149,6 +149,22 @@ public class PExplicitOptions {
                         .build();
         addOption(randomSeed);
 
+        /*
+         * Replay options
+         */
+
+        // replay file
+        Option replayFile =
+                Option.builder("r")
+                        .longOpt("replay")
+                        .desc("Schedule file to replay")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("File Name (string)")
+                        .build();
+        addOption(replayFile);
+
+
 
         /*
          * Invisible/expert options
@@ -339,6 +355,12 @@ public class PExplicitOptions {
                                 option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
+                // replay options
+                case "r":
+                case "replay":
+                    config.setReplayFile(option.getValue());
+                    config.setSearchStrategyMode(SearchStrategyMode.Replay);
+                    break;
                 // invisible expert options
                 case "state-caching":
                     switch (option.getValue()) {
@@ -425,6 +447,15 @@ public class PExplicitOptions {
 
         if (config.getSearchStrategyMode() == SearchStrategyMode.DepthFirst) {
             config.setMaxSchedulesPerTask(0);
+        }
+
+        if (config.getSearchStrategyMode() == SearchStrategyMode.Replay) {
+            if (config.getVerbosity() == 0) {
+                config.setVerbosity(1);
+            }
+            if (config.getReplayFile().startsWith(config.getOutputFolder())) {
+                config.setOutputFolder(config.getOutputFolder() + "Replay");
+            }
         }
 
         return config;

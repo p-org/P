@@ -302,16 +302,22 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string LabelAdt => $"{BuiltinPrefix}Label";
     private static string LabelAdtTargetSelector => $"{LabelAdt}_Target";
     private static string LabelAdtActionSelector => $"{LabelAdt}_Action";
+    private static string LabelAdtActionCountSelector => $"{LabelAdt}_ActionCount";
 
     private static string LabelAdtDeclaration()
     {
         return
-            $"type {LabelAdt} = record {{{LabelAdtTargetSelector}: {MachineRefT}, {LabelAdtActionSelector}: {EventOrGotoAdt}}};";
+            $"type {LabelAdt} = record {{{LabelAdtTargetSelector}: {MachineRefT}, {LabelAdtActionSelector}: {EventOrGotoAdt}, {LabelAdtActionCountSelector}: integer}};";
     }
 
+    private void IncrementActionCount()
+    {
+        EmitLine($"{BuiltinPrefix}ActionCount = {BuiltinPrefix}ActionCount + 1;");
+    }
+    
     private static string LabelAdtConstruct(string target, string action)
     {
-        return $"const_record({LabelAdtTargetSelector} := {target}, {LabelAdtActionSelector} := {action})";
+        return $"const_record({LabelAdtTargetSelector} := {target}, {LabelAdtActionSelector} := {action}, {LabelAdtActionCountSelector} := {BuiltinPrefix}ActionCount)";
     }
 
     private static string LabelAdtSelectTarget(string label)
@@ -323,6 +329,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         return $"{label}.{LabelAdtActionSelector}";
     }
+    
+    private static string LabelAdtSelectActionCount(string label)
+    {
+        return $"{label}.{LabelAdtActionCountSelector}";
+    }
+
 
     private static string EventOrGotoAdt => $"{BuiltinPrefix}EventOrGoto";
     private static string EventOrGotoAdtEventConstructor => $"{EventOrGotoAdt}_Event";
@@ -642,6 +654,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("");
         EmitLine(EventOrGotoAdtDeclaration());
         EmitLine(LabelAdtDeclaration());
+        EmitLine($"var {BuiltinPrefix}ActionCount: integer;");
         EmitLine("");
 
         EmitLine(MachineRefTDeclaration);
@@ -723,6 +736,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             EmitLine($"axiom {ExprToString(ax.Body)};");
         }
+        EmitLine("");
+        
+        // invariant to ensure unique action IDs
+        EmitLine($"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectBuffer(StateVar)}[a1] && {StateAdtSelectBuffer(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+        EmitLine($"invariant _{InvariantPrefix}Unique_Actions: {InvariantPrefix}Unique_Actions();");
+        EmitLine($"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectBuffer(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+        EmitLine($"invariant _{InvariantPrefix}Increasing_Action_Count: {InvariantPrefix}Increasing_Action_Count();");
         EmitLine("");
         
         GenerateControlBlock(machines, events);
@@ -933,6 +953,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\trequires {EventOrGotoAdtIsGoto(action)};");
         EmitLine($"\trequires {GotoAdtIsS(g, s)};");
         EmitLine($"\trequires {MachineStateAdtInS(targetMachineState, s.OwningMachine, s)};");
+        EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
+        EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
+        EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
+        EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
 
         foreach (var inv in invariants)
         {
@@ -993,6 +1017,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\trequires {MachineStateAdtInS(targetMachineState, s.OwningMachine, s)};");
         EmitLine($"\trequires {EventOrGotoAdtIsEvent(action)};");
         EmitLine($"\trequires {EventAdtIsE(e, ev)};");
+        EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
+        EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
+        EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
+        EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
 
         foreach (var inv in invariants)
         {
@@ -1218,12 +1246,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var value = OptionConstructSome(istmt.Value.Type, ExprToString(istmt.Value));
                 EmitLine($"{imap} = {imap}[{idx} -> {value}];");
                 return;
-            case WhileStmt wstmt:
-                var wcond = ExprToString(wstmt.Condition);
-                EmitLine($"while ({wcond}) {{");
-                GenerateStmt(wstmt.Body, specMachine);
-                EmitLine("}");
-                return;
             case ForeachStmt fstmt:
                 var item = GetLocalName(fstmt.Item);
                 var checker = GetCheckerName(fstmt.IterCollection.Type);
@@ -1243,6 +1265,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         {
                             EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}();");
                         }
+                        EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
+                        EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
+                        // ensure uniqueness for the new ones too
+                        EmitLine($"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}buffer[a1] && {LocalPrefix}buffer[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+                        EmitLine($"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}buffer[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+                        
                         // ensure we only ever add sends
                         EmitLine($"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectBuffer(StateVar)}[e] ==> {LocalPrefix}buffer[e];");
 
@@ -1274,6 +1302,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var glabels = StateAdtSelectBuffer(StateVar);
                 var newState = $"{MachinePrefix}{gstmt.State.OwningMachine.Name}_{gstmt.State.Name}";
                 EmitLine($"{glabels} = {glabels}[{glabel} -> true];");
+                IncrementActionCount();
                 EmitLine($"{LocalPrefix}state = {newState};");
                 EmitLine($"{LocalPrefix}stage = true;");
                 return;
@@ -1292,7 +1321,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var slabel = LabelAdtConstruct(ExprToString(sstmt.MachineExpr), saction);
                 var slabels = $"{LocalPrefix}buffer";
                 EmitLine($"{slabels} = {slabels}[{slabel} -> true];");
-                
+                IncrementActionCount();
                 foreach (var procedureName in _specListenMap.GetValueOrDefault(ev, []))
                 {
                     EmitLine($"call {procedureName}({ExprToString(sstmt.Arguments[0])});");

@@ -49,7 +49,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)
         {
-            var name = context.name.GetText();
+            var name = $"init{CurrentScope.AssumeOnStarts.Count()}";
             var decl = CurrentScope.Put(name, context);
             nodesToDeclarations.Put(context, decl);
             return null;

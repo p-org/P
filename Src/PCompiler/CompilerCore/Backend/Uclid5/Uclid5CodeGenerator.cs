@@ -540,12 +540,16 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"var {LocalPrefix}state: {SpecPrefix}{spec.Name}_StateAdt;");
                 foreach (var v in spec.Fields)
                 {
-                    EmitLine($"var {LocalPrefix}{v.Name}: {TypeToString(v.Type)};");
+                    EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
                 }
                 
                 // declare local variables for the method and set them to their default value
                 foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
                 foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
+                
+                // Set the local variables corresponding to the global spec variables to the correct starting value
+                foreach (var v in spec.Fields)
+                    EmitLine($"{GetLocalName(v)} = {SpecPrefix}{spec.Name}_{v.Name};");
                 
                 GenerateStmt(f.Body, spec);
                 
@@ -553,7 +557,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"{SpecPrefix}{spec.Name}_State = {LocalPrefix}state;");
                 foreach (var v in spec.Fields)
                 {
-                    EmitLine($"{SpecPrefix}{spec.Name}_{v.Name} = {LocalPrefix}{v.Name};");
+                    EmitLine($"{SpecPrefix}{spec.Name}_{v.Name} = {GetLocalName(v)};");
                 }
                 
                 EmitLine("}\n");
@@ -1333,6 +1337,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference)}{ExprToString(qexpr.Body)})",
             QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference)}{ExprToString(qexpr.Body)})",
             MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
+            SpecAccessExpr sax => $"{SpecPrefix}{sax.Spec.Name}_{sax.FieldName}",
             EventAccessExpr eax => LabelAdtSelectPayloadField(ExprToString(eax.SubExpr), eax.PEvent, eax.Entry),
             TestExpr {Kind: Machine m} texpr  => MachineStateAdtIsM(Deref(ExprToString(texpr.Instance)), m), // must deref because or else we don't have an ADT!
             TestExpr {Kind: PEvent e} texpr  => LabelAdtIsE(ExprToString(texpr.Instance), e),

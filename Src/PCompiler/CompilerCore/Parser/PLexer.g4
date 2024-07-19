@@ -67,7 +67,7 @@ CHOOSE    : 'choose' ;
 INVARIANT  : 'invariant';
 AXIOM      : 'axiom';
 IS         : 'is';
-FLYING     : 'flying';
+FLYING     : 'inflight';
 TARGETS    : 'targets';
 
 // module-system-specific keywords
@@ -149,6 +149,7 @@ COLON  : ':' ;
 
 FORALL  : 'forall' ;
 EXISTS  : 'exists' ;
+INIT    : 'init';
 
 // Identifiers
 

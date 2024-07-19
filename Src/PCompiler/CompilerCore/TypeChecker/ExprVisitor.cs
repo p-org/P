@@ -46,7 +46,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitNamedTupleAccessExpr(PParser.NamedTupleAccessExprContext context)
         {
-            var subExpr = Visit(context.expr());
+            IPExpr subExpr = Visit(context.expr());
             var fieldName = context.field.GetText();
 
             switch (subExpr.Type.Canonicalize())
@@ -100,6 +100,24 @@ namespace Plang.Compiler.TypeChecker
                     }
                     
                     throw handler.MissingEventField(context.field, pevents.First());
+                
+                case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Machine):
+                    Machine spec;
+
+                    switch (subExpr)
+                    {
+                        case SpecRefExpr specRefExpr:
+                            spec = specRefExpr.Value;
+                            break;
+                        default:
+                            throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+                    }
+                    
+                    if (!spec.LookupEntry(fieldName, out var sfield))
+                    {
+                        throw handler.MissingMachineField(context.field, spec);
+                    }
+                    return new SpecAccessExpr(context, spec, subExpr, sfield);
                 
                 default:
                     throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
@@ -671,7 +689,12 @@ namespace Plang.Compiler.TypeChecker
                     return new EventRefExpr(context, evt);
                 }
 
-                throw handler.MissingDeclaration(context.iden(), "variable, enum element, or event", symbolName);
+                if (table.Lookup(symbolName, out Machine mac) && mac.IsSpec)
+                {
+                    return new SpecRefExpr(context, mac);
+                }
+
+                throw handler.MissingDeclaration(context.iden(), "variable, enum element, spec machine, or event", symbolName);
             }
 
             if (context.floatLiteral() != null)

@@ -116,7 +116,7 @@ pureDecl : PURE name=iden LPAREN funParamList? RPAREN (COLON type)? SEMI ;
 invariantDecl: INVARIANT name=iden COLON body=expr SEMI ;
 axiomDecl: AXIOM body=expr SEMI ;
 
-assumeOnStartDecl: ASSUME ON START name=iden COLON body=expr SEMI ;
+assumeOnStartDecl: INIT body=expr SEMI ;
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=iden LBRACE stateBodyItem* RBRACE ;
 

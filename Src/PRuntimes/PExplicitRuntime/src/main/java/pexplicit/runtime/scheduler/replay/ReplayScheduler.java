@@ -3,6 +3,7 @@ package pexplicit.runtime.scheduler.replay;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.logger.ScheduleWriter;
+import pexplicit.runtime.logger.TextWriter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Schedule;
@@ -21,6 +22,10 @@ public class ReplayScheduler extends Scheduler {
     @Override
     public void run() throws TimeoutException, InterruptedException {
         PExplicitLogger.logStartReplay();
+
+        ScheduleWriter.Initialize();
+        TextWriter.Initialize();
+
         ScheduleWriter.logHeader();
 
         // log run test

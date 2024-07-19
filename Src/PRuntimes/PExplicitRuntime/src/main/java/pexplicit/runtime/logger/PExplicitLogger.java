@@ -61,8 +61,6 @@ public class PExplicitLogger {
         // initialize all loggers and writers
         StatWriter.Initialize();
         ScratchLogger.Initialize();
-        ScheduleWriter.Initialize();
-        TextWriter.Initialize();
     }
 
     public static void logInfo(String message) {

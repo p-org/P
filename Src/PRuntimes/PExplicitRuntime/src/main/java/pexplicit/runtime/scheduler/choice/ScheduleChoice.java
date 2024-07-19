@@ -20,7 +20,7 @@ public class ScheduleChoice extends Choice<PMachineId> {
     /**
      * Protocol state at the schedule step
      */
-    private StepState choiceState = null;
+    private transient StepState choiceState = null;
 
     /**
      * Constructor

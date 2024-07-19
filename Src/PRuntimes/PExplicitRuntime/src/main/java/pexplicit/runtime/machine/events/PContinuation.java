@@ -8,13 +8,14 @@ import pexplicit.values.PEvent;
 import pexplicit.values.PMessage;
 import pexplicit.values.PValue;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 @Getter
-public class PContinuation {
+public class PContinuation implements Serializable {
     private final Set<String> caseEvents;
     private final SerializableBiFunction<PMachine, PMessage> handleFun;
     @Getter

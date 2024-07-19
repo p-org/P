@@ -359,7 +359,6 @@ public class PExplicitOptions {
                 case "r":
                 case "replay":
                     config.setReplayFile(option.getValue());
-                    config.setSearchStrategyMode(SearchStrategyMode.Replay);
                     break;
                 // invisible expert options
                 case "state-caching":
@@ -449,7 +448,8 @@ public class PExplicitOptions {
             config.setMaxSchedulesPerTask(0);
         }
 
-        if (config.getSearchStrategyMode() == SearchStrategyMode.Replay) {
+        if (config.getReplayFile() != "") {
+            config.setSearchStrategyMode(SearchStrategyMode.Replay);
             if (config.getVerbosity() == 0) {
                 config.setVerbosity(1);
             }

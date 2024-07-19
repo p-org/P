@@ -309,63 +309,6 @@ namespace Plang.Compiler.Backend.PExplicit
             foreach (var field in machine.Fields)
                 context.WriteLine(output, $"public {GetPExplicitType(field.Type)} {CompilationContext.GetVar(field.Name)} = {GetDefaultValue(field.Type)};");
             context.WriteLine(output);
-
-            // context.WriteLine(output, "@Generated");
-            // context.WriteLine(output, "@Override");
-            // context.WriteLine(output, "public void reset() {");
-            // context.WriteLine(output, "    super.reset();");
-            // foreach (var field in machine.Fields)
-            //     context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = {GetDefaultValue(field.Type)};");
-            // context.WriteLine(output, "}");
-            // context.WriteLine(output);
-            //
-            // context.WriteLine(output, "@Generated");
-            // // context.WriteLine(output, "@Override");
-            // context.WriteLine(output, "public List<String> getLocalVarNames() {");
-            // context.WriteLine(output, "    List<String> result = super.getLocalVarNames();");
-            // foreach (var field in machine.Fields)
-            // {
-            //     context.WriteLine(output, $"    result.add(\"{CompilationContext.GetVar(field.Name)}\");");
-            // }
-            // context.WriteLine(output, "    return result;");
-            // context.WriteLine(output, "}");
-            // context.WriteLine(output);
-            //
-            // context.WriteLine(output, "@Generated");
-            // context.WriteLine(output, "@Override");
-            // context.WriteLine(output, "public List<Object> getLocalVarValues() {");
-            // context.WriteLine(output, "    List<Object> result = super.getLocalVarValues();");
-            // foreach (var field in machine.Fields)
-            // {
-            //     context.WriteLine(output, $"    result.add({CompilationContext.GetVar(field.Name)});");
-            // }
-            // context.WriteLine(output, "    return result;");
-            // context.WriteLine(output, "}");
-            // context.WriteLine(output);
-            //
-            // context.WriteLine(output, "@Generated");
-            // context.WriteLine(output, "@Override");
-            // context.WriteLine(output, "public List<Object> copyLocalVarValues() {");
-            // context.WriteLine(output, "    List<Object> result = super.copyLocalVarValues();");
-            // foreach (var field in machine.Fields)
-            // {
-            //     context.WriteLine(output, $"    result.add({CompilationContext.GetVar(field.Name)});");
-            // }
-            // context.WriteLine(output, "    return result;");
-            // context.WriteLine(output, "}");
-            // context.WriteLine(output);
-            //
-            // context.WriteLine(output, "@Generated");
-            // context.WriteLine(output, "@Override");
-            // context.WriteLine(output, "protected int setLocalVarValues(List<Object> values) {");
-            // context.WriteLine(output, "    int idx = super.setLocalVarValues(values);");
-            // foreach (var field in machine.Fields)
-            // {
-            //     context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetPExplicitType(field.Type)}) values.get(idx++);");
-            // }
-            // context.WriteLine(output, "    return idx;");
-            // context.WriteLine(output, "}");
-            // context.WriteLine(output);
         }
 
         private void WriteMachineConstructor(CompilationContext context, StringWriter output, Machine machine)

@@ -100,6 +100,10 @@ public class RuntimeExecutor {
             PExplicitGlobal.setResult(String.format("found cex of length %d", scheduler.getStepNumber()));
             PExplicitLogger.logStackTrace(e);
 
+            String schFile = PExplicitGlobal.getConfig().getOutputFolder() + "/" + PExplicitGlobal.getConfig().getProjectName() + "_0_0.schedule";
+            PExplicitLogger.logInfo(String.format("Writing buggy trace in %s", schFile));
+            scheduler.schedule.writeToFile(schFile);
+
             ReplayScheduler replayer = new ReplayScheduler(scheduler.schedule);
             PExplicitGlobal.setScheduler(replayer);
             try {

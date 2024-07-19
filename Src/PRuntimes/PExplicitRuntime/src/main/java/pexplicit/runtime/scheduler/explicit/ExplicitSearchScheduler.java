@@ -475,7 +475,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             newTask.addPrefixChoice(schedule.getChoice(i));
         }
 
-        newTask.serializeTask();
+        newTask.writeToFile();
         parentTask.addChild(newTask);
         searchStrategy.addNewTask(newTask);
     }

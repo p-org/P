@@ -13,6 +13,7 @@ import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
+import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.choice.ScheduleSearchUnit;
 import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
@@ -164,6 +165,17 @@ public class PExplicitLogger {
             for (SearchTask task : tasks) {
                 log.info(String.format("      %s", task.toStringDetailed()));
             }
+        }
+    }
+
+    /**
+     * Log when serializing a schedule
+     *
+     * @param schedule Schedule to serialize
+     * @param szBytes Bytes written
+     */
+    public static void logSerializeSchedule(Schedule schedule, String fileName, long szBytes) {
+        if (verbosity > 1) {
         }
     }
 

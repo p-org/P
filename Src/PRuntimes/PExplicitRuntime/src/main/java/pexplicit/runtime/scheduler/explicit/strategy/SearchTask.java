@@ -239,7 +239,7 @@ public class SearchTask implements Serializable {
         }
     }
 
-    public void serializeTask() {
+    public void writeToFile() {
         assert (serializeFile == null);
         assert (prefixChoices != null);
         assert (searchUnits != null);
@@ -260,7 +260,7 @@ public class SearchTask implements Serializable {
         searchUnits = null;
     }
 
-    public void deserializeTask() {
+    public void readFromFile() {
         assert (serializeFile != null);
         assert (prefixChoices == null);
         assert (searchUnits == null);

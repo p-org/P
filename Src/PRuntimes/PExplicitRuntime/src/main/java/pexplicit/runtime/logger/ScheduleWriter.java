@@ -21,7 +21,7 @@ public class ScheduleWriter {
     public static void Initialize() {
         try {
             // get new file name
-            fileName = PExplicitGlobal.getConfig().getOutputFolder() + "/" + PExplicitGlobal.getConfig().getProjectName() + "_0_0.schedule";
+            fileName = PExplicitGlobal.getConfig().getOutputFolder() + "/" + PExplicitGlobal.getConfig().getProjectName() + "_0_0.steps";
             // Define new file printer
             File schFile = new File(fileName);
             schFile.getParentFile().mkdirs();

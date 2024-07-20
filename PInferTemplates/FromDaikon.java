@@ -39,8 +39,8 @@ public class FromDaikon {
                 templateHeaderCar = sb.toString();
                 sb = new StringBuilder();
                 for (int i = QUANTIFIERS.length - numExtQuantfiers; i < QUANTIFIERS.length; ++i) {
-                    sb.append("∃e").append(QUANTIFIERS.length - 1)
-                            .append(":").append(i == QUANTIFIERS.length - 1 ? "." : ", ");
+                    sb.append("∃e").append(i)
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? "." : ", ");
                 }
                 templateHeaderCdr = sb.toString();
                 break;

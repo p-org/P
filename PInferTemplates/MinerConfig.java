@@ -99,13 +99,6 @@ public class MinerConfig {
         numTermsToChoose.setRequired(false);
         options.addOption(numTermsToChoose);
 
-        Option numTermsExtQuantified = new Option("num-ext-terms",
-                "num-ext-terms",
-                true,
-                "Number of terms that involves existentially quantified events; used when the template is a forall-exists (Default when enabled: 1)");
-        numTermsExtQuantified.setRequired(false);
-        options.addOption(numTermsExtQuantified);
-
         Option trivialityCheck = new Option("st", "skip-trivial", false,
                 "Filter out trivial combinations of predicates and terms");
         trivialityCheck.setRequired(false);

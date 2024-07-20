@@ -187,9 +187,6 @@ public class Main {
                     Set<Integer> existsQuantifiedTerms = termComb.stream()
                             .filter(x -> !Collections.disjoint(terms.get(x).events(), existsQuantifiedEvents))
                             .collect(Collectors.toSet());
-                    if (existsQuantifiedTerms.size() != minerConfig.numExtTerms) {
-                        continue;
-                    }
                     List<Integer> arrangedTerms = new ArrayList<>(termComb.stream()
                             .filter(x -> !existsQuantifiedTerms.contains(x)).toList());
                     List<Integer> forallQuantifiedTerms = new ArrayList<>(arrangedTerms);

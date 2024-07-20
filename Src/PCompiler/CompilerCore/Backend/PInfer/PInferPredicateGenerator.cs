@@ -11,8 +11,10 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
 {
-    public class PInferPredicateGenerator : JavaCompiler
+    public class PInferPredicateGenerator : ICodeGenerator
     {
+
+        public bool HasCompilationStage => true;
 
         public PInferPredicateGenerator()
         {
@@ -28,7 +30,19 @@ namespace Plang.Compiler.Backend.PInfer
             Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(comparer);
         }
 
-        public override IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
+        public void Compile(ICompilerConfiguration job)
+        {
+            string stdout;
+            string stderr;
+            var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "mvn", ["compile"]);
+            if (exitCode != 0)
+            {
+                throw new Exception($"Failed to compile Java code: {stderr}");
+            }
+            job.Output.WriteInfo($"{stdout}");
+        }
+
+        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
             if (!job.TermDepth.HasValue)
             {
@@ -110,7 +124,8 @@ namespace Plang.Compiler.Backend.PInfer
             IEnumerable<CompiledFile> compiledJavaSrc = codegen.GenerateCode(javaCtx, globalScope);
             WriteTerms(ctx, terms.Stream, codegen);
             WritePredicates(ctx, predicates.Stream, codegen);
-            GenerateBuildScript(job);
+            var javaCompiler = new JavaCompiler();
+            javaCompiler.GenerateBuildScript(job);
             var templateCodegen = new PInferTemplateGenerator(job, quantifiedEvents, Predicates, VisitedSet, FreeEvents,
                                                                 PredicateBoundedTerm, OrderToTerm, configEvent);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");

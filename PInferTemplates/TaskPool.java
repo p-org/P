@@ -151,7 +151,7 @@ public class TaskPool {
                     continue;
                 }
                 if (line.contains("=====") && start) break;
-                if (start && (prop = converter.convertOutput(line, guards, filters, forallQuantifiedTerms, existsQuantifiedTerms)) != null) {
+                if (start && (prop = converter.convertOutput(line, forallQuantifiedTerms, existsQuantifiedTerms)) != null) {
                     properties.add(prop);
                 }
             }

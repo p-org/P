@@ -55,13 +55,12 @@ public class FromDaikon {
         return this.templateHeaderCar + guards + " -> " + this.templateHeaderCdr + filters;
     }
 
-    public String convertOutput(String line, List<Main.RawPredicate> predicates, List<Main.RawPredicate> filters, 
-                                List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
+    public String convertOutput(String line, List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
         if (!checkValidity(line, terms)) {
             return null;
         }
         for (int i = 0; i < forallTerms.size(); ++i) {
-            line = line.replace("f" + i, terms.get(i).shortRepr());
+            line = line.replace("f" + i, forallTerms.get(i).shortRepr());
         }
         for (int i = 0; i < existsTerms.size(); ++i) {
             line = line.replace("f" + (i + forallTerms.size()), existsTerms.get(i).shortRepr());

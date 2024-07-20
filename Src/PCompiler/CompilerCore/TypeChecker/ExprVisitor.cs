@@ -414,6 +414,14 @@ namespace Plang.Compiler.TypeChecker
             return new FlyingExpr(context, instance);
         }
         
+        public override IPExpr VisitSentExpr(PParser.SentExprContext context)
+        {
+            var instance = Visit(context.instance);
+            
+            // TODO: type check to make sure instance is an event
+            return new SentExpr(context, instance);
+        }
+        
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
             var lhs = Visit(context.lhs);

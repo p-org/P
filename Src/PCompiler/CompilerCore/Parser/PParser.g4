@@ -188,6 +188,7 @@ expr : primitive                                      # PrimitiveExpr
      | instance=expr IS kind=iden                     # TestExpr
      | instance=expr TARGETS target=expr              # TargetsExpr
      | FLYING instance=expr                           # FlyingExpr
+     | SENT instance=expr                             # SentExpr
      | seq=expr LBRACK index=expr RBRACK              # SeqAccessExpr
      | fun=KEYS LPAREN expr RPAREN                    # KeywordExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr

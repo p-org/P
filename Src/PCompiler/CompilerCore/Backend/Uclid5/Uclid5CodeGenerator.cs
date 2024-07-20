@@ -119,21 +119,26 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string DefaultStringDeclaration => $"const {DefaultString}: {StringT};";
 
     /********************************
-     * type StateADT = record {buffer: [LabelADT]boolean, machines: [MachineRefT]MachineStateADT};
+     * type StateADT = record {sent: [LabelADT]boolean, received: [LabelADT]boolean, machines: [MachineRefT]MachineStateADT};
      * var state: StateT;
      *******************************/
     private static string StateAdt => $"{BuiltinPrefix}StateAdt";
-    private static string StateAdtBufferSelector => $"{StateAdt}_Buffer";
+    private static string StateAdtSentSelector => $"{StateAdt}_Sent";
+    private static string StateAdtReceivedSelector => $"{StateAdt}_Received";
     private static string StateAdtMachinesSelector => $"{StateAdt}_Machines";
 
-    private static string StateAdtConstruct(string buffer, string machines)
+    private static string StateAdtConstruct(string sent, string received, string machines)
     {
-        return $"const_record({StateAdtBufferSelector} := {buffer}, {StateAdtMachinesSelector} := {machines})";
+        return $"const_record({StateAdtSentSelector} := {sent}, {StateAdtReceivedSelector} := {received}, {StateAdtMachinesSelector} := {machines})";
     }
 
-    private static string StateAdtSelectBuffer(string state)
+    private static string StateAdtSelectSent(string state)
     {
-        return $"{state}.{StateAdtBufferSelector}";
+        return $"{state}.{StateAdtSentSelector}";
+    }
+    private static string StateAdtSelectReceived(string state)
+    {
+        return $"{state}.{StateAdtReceivedSelector}";
     }
 
     private static string StateAdtSelectMachines(string state)
@@ -144,7 +149,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string StateAdtDeclaration()
     {
         return
-            $"type {StateAdt} = record {{{StateAdtBufferSelector}: [{LabelAdt}]boolean, {StateAdtMachinesSelector}: [{MachineRefT}]{MachineStateAdt}}};";
+            $"type {StateAdt} = record {{{StateAdtSentSelector}: [{LabelAdt}]boolean, {StateAdtReceivedSelector}: [{LabelAdt}]boolean, {StateAdtMachinesSelector}: [{MachineRefT}]{MachineStateAdt}}};";
+    }
+
+    private static string InFlight(string state, string action)
+    {
+        return $"{StateAdtSelectSent(state)}[{action}] && !{StateAdtSelectReceived(state)}[{action}]";
     }
 
     private static string StateVar => $"{BuiltinPrefix}State";
@@ -738,11 +748,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
         EmitLine("");
         
-        // invariant to ensure unique action IDs
-        EmitLine($"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectBuffer(StateVar)}[a1] && {StateAdtSelectBuffer(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+        // invariants to ensure unique action IDs
+        EmitLine($"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectSent(StateVar)}[a1] && {StateAdtSelectSent(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
         EmitLine($"invariant _{InvariantPrefix}Unique_Actions: {InvariantPrefix}Unique_Actions();");
-        EmitLine($"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectBuffer(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+        EmitLine($"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
         EmitLine($"invariant _{InvariantPrefix}Increasing_Action_Count: {InvariantPrefix}Increasing_Action_Count();");
+        // invariants to ensure received is a subset of sent
+        EmitLine($"define {InvariantPrefix}Received_Subset_Sent(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectReceived(StateVar)}[a] ==> {StateAdtSelectSent(StateVar)}[a];");
+        EmitLine($"invariant _{InvariantPrefix}Received_Subset_Sent: {InvariantPrefix}Received_Subset_Sent();");
         EmitLine("");
         
         GenerateControlBlock(machines, events);
@@ -791,9 +804,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
             }
         }
 
-
         EmitLine("// The buffer starts completely empty");
-        EmitLine($"{StateAdtSelectBuffer(StateVar)} = const(false, [{LabelAdt}]boolean);");
+        EmitLine($"{StateAdtSelectSent(StateVar)} = const(false, [{LabelAdt}]boolean);");
+        EmitLine($"{StateAdtSelectReceived(StateVar)} = const(false, [{LabelAdt}]boolean);");
         
         EmitLine("// User assumptions");
         foreach (var assumes in starts)
@@ -811,7 +824,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         // pick a random label and handle it
         EmitLine("next {");
         EmitLine($"var {currentLabel}: {LabelAdt};");
-        EmitLine($"if ({StateAdtSelectBuffer(StateVar)}[{currentLabel}]) {{");
+        EmitLine($"if ({InFlight(StateVar, currentLabel)}) {{");
         EmitLine("case");
         foreach (var m in machines)
         {
@@ -908,14 +921,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 // declare necessary local variables
                 EmitLine($"var {LocalPrefix}state: {MachinePrefix}{m.Name}_StateAdt;");
                 EmitLine($"var {LocalPrefix}stage: boolean;");
-                EmitLine($"var {LocalPrefix}buffer: [{LabelAdt}]boolean;");
+                EmitLine($"var {LocalPrefix}sent: [{LabelAdt}]boolean;");
                 foreach (var v in m.Fields) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
                 foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
 
                 // initialize all the local variables to the correct values
                 EmitLine($"{LocalPrefix}state = {MachineStateAdtSelectState(currState, m)};");
                 EmitLine($"{LocalPrefix}stage = false;"); // this can be set to true by a goto statement
-                EmitLine($"{LocalPrefix}buffer = {StateAdtSelectBuffer(StateVar)};");
+                EmitLine($"{LocalPrefix}sent = {StateAdtSelectSent(StateVar)};");
                 foreach (var v in m.Fields)
                     EmitLine($"{GetLocalName(v)} = {MachineStateAdtSelectField(currState, m, v)};");
                 foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
@@ -932,7 +945,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine(
                     $"{StateAdtSelectMachines(StateVar)} = {StateAdtSelectMachines(StateVar)}[this -> {newMachineState}];");
                 // update the buffer
-                EmitLine($"{StateAdtSelectBuffer(StateVar)} = {LocalPrefix}buffer;");
+                EmitLine($"{StateAdtSelectSent(StateVar)} = {LocalPrefix}sent;");
 
                 EmitLine("}\n");
             }
@@ -946,10 +959,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var targetMachineState = Deref(target);
         var action = LabelAdtSelectAction(label);
         var g = EventOrGotoAdtSelectGoto(action);
-        var buffer = StateAdtSelectBuffer(StateVar);
+        var received = StateAdtSelectReceived(StateVar);
         
         EmitLine($"procedure [noinline] {s.OwningMachine.Name}_{s.Name}({label}: {LabelAdt})");
-        EmitLine($"\trequires {StateAdtSelectBuffer(StateVar)}[{label}];");
+        EmitLine($"\trequires {InFlight(StateVar, label)};");
         EmitLine($"\trequires {EventOrGotoAdtIsGoto(action)};");
         EmitLine($"\trequires {GotoAdtIsS(g, s)};");
         EmitLine($"\trequires {MachineStateAdtInS(targetMachineState, s.OwningMachine, s)};");
@@ -957,6 +970,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
         EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
         EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
+        EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
+        EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
+        
 
         foreach (var inv in invariants)
         {
@@ -970,12 +986,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             EmitLine($"var {LocalPrefix}stage: boolean;");
             EmitLine($"var {LocalPrefix}state: {MachinePrefix}{s.OwningMachine.Name}_StateAdt;");
-            EmitLine($"var {LocalPrefix}buffer: [{LabelAdt}]boolean;");
+            EmitLine($"var {LocalPrefix}received: [{LabelAdt}]boolean;");
             
             EmitLine($"{LocalPrefix}stage = false;");
             EmitLine($"{LocalPrefix}state = {MachineStateAdtSelectState(targetMachineState, s.OwningMachine)};");
-            EmitLine($"{buffer} = {buffer}[{label} -> false];");
-            EmitLine($"{LocalPrefix}buffer = {buffer};");
+            EmitLine($"{received} = {received}[{label} -> true];");
+            EmitLine($"{LocalPrefix}received = {received};");
             
             var fields = s.OwningMachine.Fields.Select(v => MachineStateAdtSelectField(targetMachineState, s.OwningMachine, v)).Prepend($"{LocalPrefix}state").ToList();
             // make a new machine
@@ -986,7 +1002,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine(
                 $"{StateAdtSelectMachines(StateVar)} = {StateAdtSelectMachines(StateVar)}[{target} -> {newMachineState}];");
             // update the buffer
-            EmitLine($"{buffer} = {LocalPrefix}buffer;");
+            EmitLine($"{received} = {LocalPrefix}received;");
         }
         else
         {
@@ -994,7 +1010,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
             var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
             var payload = f.Signature.Parameters.Count > 0 ? $", {GotoAdtSelectParam(g, f.Signature.Parameters[0].Name, s)}" : "";
-            EmitLine($"{buffer} = {buffer}[{label} -> false];");
+            EmitLine($"{received} = {received}[{label} -> true];");
             EmitLine($"call {name}({target}{payload});");
         }
         
@@ -1011,9 +1027,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var targetMachineState = Deref(target);
         var action = LabelAdtSelectAction(label);
         var e = EventOrGotoAdtSelectEvent(action);
-        var buffer = StateAdtSelectBuffer(StateVar);
+        var received = StateAdtSelectReceived(StateVar);
 
-        EmitLine($"\trequires {StateAdtSelectBuffer(StateVar)}[{label}];");
+        EmitLine($"\trequires {InFlight(StateVar, label)};");
         EmitLine($"\trequires {MachineStateAdtInS(targetMachineState, s.OwningMachine, s)};");
         EmitLine($"\trequires {EventOrGotoAdtIsEvent(action)};");
         EmitLine($"\trequires {EventAdtIsE(e, ev)};");
@@ -1021,6 +1037,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
         EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
         EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
+        EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
+        EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
 
         foreach (var inv in invariants)
         {
@@ -1042,7 +1060,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
                 var payload = f.Signature.Parameters.Count > 0 ? $", {EventAdtSelectPayload(e, ev)}" : "";
                 EmitLine("{");
-                EmitLine($"{buffer} = {buffer}[{label} -> false];");
+                EmitLine($"{received} = {received}[{label} -> true];");
                 EmitLine($"call {name}({target}{payload});");
                 EmitLine("}\n");
                 return;
@@ -1267,12 +1285,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         }
                         EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
                         EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
+                        EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent();");
                         // ensure uniqueness for the new ones too
-                        EmitLine($"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}buffer[a1] && {LocalPrefix}buffer[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
-                        EmitLine($"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}buffer[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+                        EmitLine($"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+                        EmitLine($"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
                         
                         // ensure we only ever add sends
-                        EmitLine($"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectBuffer(StateVar)}[e] ==> {LocalPrefix}buffer[e];");
+                        EmitLine($"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
 
                         // user given invariants
                         foreach (var inv in fstmt.Invariants)
@@ -1299,7 +1318,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             case GotoStmt gstmt when specMachine is null:
                 var gaction = EventOrGotoAdtConstructGoto(gstmt.State, gstmt.Payload);
                 var glabel = LabelAdtConstruct("this", gaction);
-                var glabels = StateAdtSelectBuffer(StateVar);
+                var glabels = StateAdtSelectSent(StateVar);
                 var newState = $"{MachinePrefix}{gstmt.State.OwningMachine.Name}_{gstmt.State.Name}";
                 EmitLine($"{glabels} = {glabels}[{glabel} -> true];");
                 IncrementActionCount();
@@ -1319,7 +1338,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var ev = ((EventRefExpr)sstmt.Evt).Value;
                 var saction = EventOrGotoAdtConstructEvent(ev, sstmt.Arguments.Any() ? sstmt.Arguments.First() : null);
                 var slabel = LabelAdtConstruct(ExprToString(sstmt.MachineExpr), saction);
-                var slabels = $"{LocalPrefix}buffer";
+                var slabels = $"{LocalPrefix}sent";
                 EmitLine($"{slabels} = {slabels}[{slabel} -> true];");
                 IncrementActionCount();
                 foreach (var procedureName in _specListenMap.GetValueOrDefault(ev, []))
@@ -1372,7 +1391,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
             TestExpr {Kind: PEvent e} texpr  => LabelAdtIsE(ExprToString(texpr.Instance), e),
             TestExpr {Kind: State s} texpr => MachineStateAdtInS(Deref(ExprToString(texpr.Instance)), s.OwningMachine, s), // must deref for ADT!
             PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",
-            FlyingExpr fexpr => $"{StateAdtSelectBuffer(StateVar)}[{ExprToString(fexpr.Instance)}]",
+            FlyingExpr fexpr => $"{InFlight(StateVar, ExprToString(fexpr.Instance))}",
+            SentExpr sexpr => $"{StateAdtSelectSent(StateVar)}[{ExprToString(sexpr.Instance)}]",
             TargetsExpr texpr => $"({LabelAdtSelectTarget(ExprToString(texpr.Instance))} == {ExprToString(texpr.Target)})",
             _ => throw new NotSupportedException($"Not supported expr: {expr}")
             // _ => $"NotHandledExpr({expr})"
@@ -1407,15 +1427,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         bounds.Add(ExprToString(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), e)));
                         if (difference)
                         {
-                            bounds.Add($"{LocalPrefix}buffer[{LocalPrefix}{b.Name}]");
-                            bounds.Add($"!{StateAdtSelectBuffer(StateVar)}[{LocalPrefix}{b.Name}]");
+                            bounds.Add($"{LocalPrefix}sent[{LocalPrefix}{b.Name}]");
+                            bounds.Add($"!{StateAdtSelectSent(StateVar)}[{LocalPrefix}{b.Name}]");
                         }
                         break;
                     case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Event):
                         if (difference)
                         {
-                            bounds.Add($"{LocalPrefix}buffer[{LocalPrefix}{b.Name}]");
-                            bounds.Add($"!{StateAdtSelectBuffer(StateVar)}[{LocalPrefix}{b.Name}]");
+                            bounds.Add($"{LocalPrefix}sent[{LocalPrefix}{b.Name}]");
+                            bounds.Add($"!{StateAdtSelectSent(StateVar)}[{LocalPrefix}{b.Name}]");
                         }
                         break;
                 }

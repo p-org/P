@@ -69,6 +69,7 @@ AXIOM      : 'axiom';
 IS         : 'is';
 FLYING     : 'inflight';
 TARGETS    : 'targets';
+SENT       : 'sent';
 
 // module-system-specific keywords
 

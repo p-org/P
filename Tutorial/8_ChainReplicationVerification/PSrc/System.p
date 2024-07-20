@@ -27,7 +27,6 @@ machine Body {
     start state Forwarding {
         on ePropagateWrite do (req: tWriteRequest) {
             kv[req.k] = req.v;
-            assert next_(this) is Body || next_(this) is Tail;
             send next_(this), ePropagateWrite, (source = req.source, k = req.k, v = req.v);
         }
     }

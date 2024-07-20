@@ -80,17 +80,17 @@ namespace Plang.Compiler.Backend.PInfer
         private void GenerateForTerms(List<IPExpr> terms)
         {
             HashSet<string> existsQuantifiedEvents = [];
-            HashSet<string> forallQuantifiedEvents = [.. QuantifiedEvents];
+            HashSet<string> forallQuantifiedEvents = [];
             for (int i = 0; i <= QuantifiedEvents.Count; ++i)
             {
-                existsQuantifiedEvents = [.. existsQuantifiedEvents, .. forallQuantifiedEvents.Take(i)];
-                forallQuantifiedEvents = forallQuantifiedEvents.Skip(i).ToHashSet();
+                existsQuantifiedEvents = QuantifiedEvents.TakeLast(i).ToHashSet();
+                forallQuantifiedEvents = QuantifiedEvents.SkipLast(i).ToHashSet();
                 // determine if the term bounds existentially quantified events
                 List<PLanguageType> forallTypes = [];
                 List<PLanguageType> existsTypes = [];
                 foreach (var term in terms)
                 {
-                    var boundedEvents = FreeEvents[term].Select(x => x.Name).ToHashSet();
+                    var boundedEvents = FreeEvents[term].Select(x => x.EventName).ToHashSet();
                     if (boundedEvents.Overlaps(existsQuantifiedEvents))
                     {
                         if (!Types.JavaTypeFor(term.Type).IsPrimitive)
@@ -225,7 +225,7 @@ namespace Plang.Compiler.Backend.PInfer
                 WriteLine($"if (!(e{i} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i]})) continue;");
             }
             WriteLine("try {");
-            if (numForall > 1)
+            if (numForall > 0)
             {
                 WriteLine($"{Constants.PEventsClass}<?>[] guardsArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall).Select(i => $"e{i}"))} }};");
                 WriteLine($"if (!({Job.ProjectName}.conjoin(guards, guardsArgs))) continue;");

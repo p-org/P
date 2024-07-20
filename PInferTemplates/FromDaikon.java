@@ -53,7 +53,7 @@ public class FromDaikon {
     }
 
     public String getFormulaHeader(String guards, String filters) {
-        return this.templateHeaderCar + guards + " -> " + this.templateHeaderCdr + filters;
+        return this.templateHeaderCar + runSubst(guards) + " -> " + this.templateHeaderCdr + runSubst(filters);
     }
 
     public String convertOutput(String line, List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
@@ -66,6 +66,10 @@ public class FromDaikon {
         for (int i = 0; i < existsTerms.size(); ++i) {
             line = line.replace("f" + (i + forallTerms.size()), existsTerms.get(i).shortRepr());
         }
+        return runSubst(line);
+    }
+
+    private String runSubst(String line) {
         for (var subst : substs.entrySet()) {
             line = line.replace(subst.getKey(), subst.getValue());
         }

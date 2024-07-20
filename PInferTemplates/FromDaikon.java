@@ -10,36 +10,38 @@ public class FromDaikon {
     private static final Map<String, String> substs = new HashMap<>();
 
     public FromDaikon(Map<Set<Integer>, List<Main.RawPredicate>> termsToPredicates,
-                      List<Main.RawTerm> terms, String templateFamily) {
+                      List<Main.RawTerm> terms, String templateFamily, int numExtQuantfiers) {
         this.termsToPredicates = termsToPredicates;
         this.terms = terms;
         this.templateHeaderCar = "";
         this.templateHeaderCdr = "";
         StringBuilder sb = new StringBuilder();
-        switch (templateFamily.toLowerCase()) {
-            case "forall":
+        switch (templateFamily) {
+            case "Forall":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
                     sb.append("∀e").append(i)
                             .append(": ").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
                 }
                 templateHeaderCar = sb.toString();
                 break;
-            case "exists":
+            case "Exists":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
                     sb.append("∃e").append(i)
                             .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
                 }
                 templateHeaderCar = sb.toString();
                 break;
-            case "forall-exists":
-                for (int i = 0; i < QUANTIFIERS.length - 1; ++i) {
+            case "ForallExists":
+                for (int i = 0; i < QUANTIFIERS.length - numExtQuantfiers; ++i) {
                     sb.append("∀e").append(i)
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - numExtQuantfiers - 1 ? "." : ", ");
                 }
                 templateHeaderCar = sb.toString();
                 sb = new StringBuilder();
-                sb.append("∃e").append(QUANTIFIERS.length - 1)
-                        .append(":").append(QUANTIFIERS[QUANTIFIERS.length - 1]).append(". ");
+                for (int i = QUANTIFIERS.length - numExtQuantfiers; i < QUANTIFIERS.length; ++i) {
+                    sb.append("∃e").append(QUANTIFIERS.length - 1)
+                            .append(":").append(i == QUANTIFIERS.length - 1 ? "." : ", ");
+                }
                 templateHeaderCdr = sb.toString();
                 break;
             default:
@@ -53,12 +55,16 @@ public class FromDaikon {
         return this.templateHeaderCar + guards + " -> " + this.templateHeaderCdr + filters;
     }
 
-    public String convertOutput(String line, List<Main.RawPredicate> predicates, List<Main.RawPredicate> filters, List<Main.RawTerm> terms) {
+    public String convertOutput(String line, List<Main.RawPredicate> predicates, List<Main.RawPredicate> filters, 
+                                List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
         if (!checkValidity(line, terms)) {
             return null;
         }
-        for (int i = 0; i < terms.size(); i++) {
+        for (int i = 0; i < forallTerms.size(); ++i) {
             line = line.replace("f" + i, terms.get(i).shortRepr());
+        }
+        for (int i = 0; i < existsTerms.size(); ++i) {
+            line = line.replace("f" + (i + forallTerms.size()), existsTerms.get(i).shortRepr());
         }
         for (var subst : substs.entrySet()) {
             line = line.replace(subst.getKey(), subst.getValue());

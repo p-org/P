@@ -14,9 +14,9 @@ namespace Plang.Compiler.Backend.PInfer
         public HashSet<string> FuncNames = [];
         private readonly HashSet<IPExpr> Predicates;
         private readonly IEnumerable<IPExpr> Terms;
-        private readonly IDictionary<IPExpr, HashSet<Variable>> FreeEvents;
+        private readonly IDictionary<IPExpr, HashSet<PEventVariable>> FreeEvents;
 
-        public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms, IDictionary<IPExpr, HashSet<Variable>> freeEvents) : base(job, filename)
+        public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms, IDictionary<IPExpr, HashSet<PEventVariable>> freeEvents) : base(job, filename)
         {
             Predicates = predicates;
             Terms = terms;
@@ -61,7 +61,7 @@ namespace Plang.Compiler.Backend.PInfer
                 func.Owner = t;
             }
             Constants.PInferModeOn();
-            Dictionary<string, (string, List<Variable>)> repr2Metadata = [];
+            Dictionary<string, (string, List<PEventVariable>)> repr2Metadata = [];
             var i = 0;
             foreach (var predicate in Predicates)
             {
@@ -82,7 +82,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("}");
         }
 
-        protected void WriteTermInterface(IDictionary<string, (string, List<Variable>)> nameMap)
+        protected void WriteTermInterface(IDictionary<string, (string, List<PEventVariable>)> nameMap)
         {
             WriteLine($"public static Object termOf(String repr, {Constants.PEventsClass}<?>[] arguments) {{");
             if (nameMap.Count == 0)
@@ -94,7 +94,7 @@ namespace Plang.Compiler.Backend.PInfer
                 WriteLine("return switch (repr) {");
                 foreach (var (repr, (fname, parameters)) in nameMap)
                 {
-                    WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
+                    WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(parameters[i].EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
                 }
                 WriteLine("default -> throw new RuntimeException(\"Invalid representation: \" + repr);");
                 WriteLine("};");
@@ -102,7 +102,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("}");
         }
 
-        protected void WritePredicateInterface(IDictionary<string, (string, List<Variable>)> nameMap)
+        protected void WritePredicateInterface(IDictionary<string, (string, List<PEventVariable>)> nameMap)
         {
             WriteLine($"public static boolean invoke(PredicateWrapper repr, {Constants.PEventsClass}<?>[] arguments) {{");
             if (nameMap.Count == 0)
@@ -114,7 +114,7 @@ namespace Plang.Compiler.Backend.PInfer
                 WriteLine("return switch (repr.repr()) {");
                 foreach (var (repr, (fname, parameters)) in nameMap)
                 {
-                    WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) parameters[i]).EventDecl)}) arguments[{((PEventVariable) parameters[i]).Order}]"))});");
+                    WriteLine($"case \"{repr}\" -> {fname}({string.Join(", ", Enumerable.Range(0, parameters.Count).Select(i => $"({Constants.EventNamespaceName}.{Names.GetNameForDecl(parameters[i].EventDecl)}) arguments[{parameters[i].Order}]"))});");
                 }
                 WriteLine("default -> throw new RuntimeException(\"Invalid representation: \" + repr);");
                 WriteLine("};");
@@ -129,7 +129,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("}");
         }
 
-        protected List<Variable> WriteTermDefn(IPExpr term, string fname)
+        protected List<PEventVariable> WriteTermDefn(IPExpr term, string fname)
         {
             var parameters = FreeEvents[term].ToList();
             var type = term.Type.Canonicalize();
@@ -142,7 +142,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 retType = "long";
             }
-            WriteLine($"private static {retType} {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");
+            WriteLine($"private static {retType} {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(x.EventDecl)} " + x.Name))}) {{");
             if (type is EnumType)
             {
                 WriteLine("return " + GenerateCodeExpr(term) + ".getValue();");
@@ -155,7 +155,7 @@ namespace Plang.Compiler.Backend.PInfer
             return parameters;
         }
 
-        protected List<Variable> WritePredicateDefn(IPExpr predicate, string fname)
+        protected List<PEventVariable> WritePredicateDefn(IPExpr predicate, string fname)
         {
             var parameters = FreeEvents[predicate].ToList();
             WriteLine($"private static boolean {fname}({string.Join(", ", parameters.Select(x => $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(((PEventVariable) x).EventDecl)} " + x.Name))}) {{");

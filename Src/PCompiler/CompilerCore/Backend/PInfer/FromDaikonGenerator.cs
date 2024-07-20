@@ -9,7 +9,7 @@ namespace Plang.Compiler.Backend.PInfer
     internal class FromDaikonGenerator : MachineGenerator
     {
         private readonly List<PEvent> QuantifiedEvents;
-        public FromDaikonGenerator(ICompilerConfiguration job, string filename, List<PEvent> quantifiedEvents) : base(job, filename)
+        public FromDaikonGenerator(ICompilerConfiguration job, List<PEvent> quantifiedEvents) : base(job, PreambleConstants.FromDaikonFileName)
         {
             QuantifiedEvents = quantifiedEvents;
         }

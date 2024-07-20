@@ -8,7 +8,7 @@ namespace Plang.Compiler.Backend.PInfer
     internal class DriverGenerator : MachineGenerator
     {
         private IEnumerable<string> TemplateNames;
-        public DriverGenerator(ICompilerConfiguration job, string filename, IEnumerable<string> templateNames) : base(job, filename)
+        public DriverGenerator(ICompilerConfiguration job, IEnumerable<string> templateNames) : base(job, PreambleConstants.DriverCodeFileName)
         {
             TemplateNames = templateNames;
         }
@@ -20,8 +20,8 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (string name in TemplateNames)
             {
                 insert += @$"case ""{name}"":
-                for (List<{Constants.PEventsClass}<?>> trace: traces) {{
-                    Templates.{name}.execute(trace, predicates, existentialFilters, terms);
+                for (List<{Constants.PEventsClass}<?>> ts: eventsTrace) {{
+                    Templates.{name}.execute(ts, guards, filters, forallTerms, existsTerms);
                 }}
                 break;
                 ";

@@ -7,7 +7,15 @@ namespace Plang.Compiler.Backend.PInfer
 {
     internal class PreambleConstants
     {
-        internal static string CheckEventTypeFunName = "checkEventType";
+        internal static string MinerConfigFileName = "MinerConfig.java";
+        internal static string MainFileName = "Main.java";
+        internal static string TemplatesFileName = "Templates.java";
+        internal static string TraceParserFileName = "TraceParser.java";
+        internal static string DriverCodeFileName = "PInferDriver.java";
+        internal static string FromDaikonFileName = "FromDaikon.java";
+        internal static string TaskPoolFileName = "TaskPool.java";
+        internal static string PredicateEnumeratorFileName = "PredicateEnumerator.java";
+        internal static string TermEnumeratorFileName = "TermEnumerator.java";
         internal static string TraceReaderTemplate = @$"
 import com.alibaba.fastjson2.*;
 
@@ -58,15 +66,21 @@ public class TraceParser {{
         internal static string DriverCodeTemplate = @"
 public class PInferDriver {
 
-    private static void invoke(String templateName,
-                               List<%PROJECT_NAME%.PredicateWrapper> predicates,
-                               List<%PROJECT_NAME%.PredicateWrapper> existentialFilters,
-                               List<String> terms,
-                               List<List<%EVENT_BASE%>> traces) {
-        switch (templateName) {
-            %TEMPLATE%
-            default:
-                System.err.println(""Unknown template: "" + templateName);
+    private static void instantiateTemplate(String templateName,
+                               List<%PROJECT_NAME%.PredicateWrapper> guards,
+                               List<%PROJECT_NAME%.PredicateWrapper> filters,
+                               List<String> forallTerms,
+                               List<String> existsTerms,
+                               String[] schedules) {
+        TraceParser parser = new TraceParser();
+        for (String sch: schedules) {
+            List<List<%EVENT_BASE%>> eventsTrace = parser.loadTrace(sch);
+            switch (templateName) {
+                %TEMPLATE%
+                default:
+                    System.err.println(""Unknown template: "" + templateName);
+                    return;
+            }
         }
     }
 
@@ -74,21 +88,21 @@ public class PInferDriver {
         String[] traceFiles = args[0].split(""\\*"");
         String templateName = args[1];
         List<%PROJECT_NAME%.PredicateWrapper> guards = Arrays.stream(args[2].split(""@@"")).filter(x -> !x.isBlank()).map(x -> new %PROJECT_NAME%.PredicateWrapper(x, false)).toList();
-        List<%PROJECT_NAME%.PredicateWrapper> existentialFilters = Arrays.stream(args[3].split(""@@"")).filter(x -> !x.isBlank()).map(x -> new %PROJECT_NAME%.PredicateWrapper(x, false)).toList();
-        List<String> terms = Arrays.stream(args[4].split(""@@"")).filter(x -> !x.isBlank()).toList();
+        List<%PROJECT_NAME%.PredicateWrapper> filters = Arrays.stream(args[3].split(""@@"")).filter(x -> !x.isBlank()).map(x -> new %PROJECT_NAME%.PredicateWrapper(x, false)).toList();
+        List<String> forallTerms = Arrays.stream(args[4].split(""@@"")).filter(x -> !x.isBlank()).toList();
+        List<String> existsTerms = Arrays.stream(args[5].split(""@@"")).filter(x -> !x.isBlank()).toList();
 
-        TraceParser parser = new TraceParser();
-        List<List<%EVENT_BASE%>> traces = new ArrayList<>();
-        for (String fp : traceFiles) {
-            traces.addAll(parser.loadTrace(fp));
-        }
-        invoke(templateName, guards, existentialFilters, terms, traces);
+        instantiateTemplate(templateName, guards, filters, forallTerms, existsTerms, traceFiles);
     }
 }
 ";
 
-        internal static string MainProg = ReadTemplate("Main.java");
-        internal static string FromDaikonProg = ReadTemplate("FromDaikon.java");
+        internal static string MainProg = ReadTemplate(MainFileName);
+        internal static string FromDaikonProg = ReadTemplate(FromDaikonFileName);
+        internal static string MinerConfigProg = ReadTemplate(MinerConfigFileName);
+        internal static string TaskPoolProg = ReadTemplate(TaskPoolFileName);
+        internal static string PredicateEnumeratorProg = ReadTemplate(PredicateEnumeratorFileName);
+        internal static string TermEnumeratorProg = ReadTemplate(TermEnumeratorFileName);
 
         internal static string ReadTemplate(string filename)
         {
@@ -97,11 +111,6 @@ public class PInferDriver {
             return string.Join("\n", File.ReadAllLines(
                 Path.Combine(Path.Combine(info.Parent.Parent.Parent.Parent.Parent.ToString(), "PInferTemplates"), filename)
             ));
-        }
-
-        public static string CheckEventType(string varname, string eventType)
-        {
-            return $"{CheckEventTypeFunName}({varname}, \"{eventType}\")";
         }
     }
 }

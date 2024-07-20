@@ -10,7 +10,7 @@ namespace Plang.Compiler.Backend.PInfer
     public class TraceReaderGenerator : MachineGenerator
     {
         IEnumerable<PEvent> Events;
-        public TraceReaderGenerator(ICompilerConfiguration job, string filename, IEnumerable<PEvent> events) : base(job, filename)
+        public TraceReaderGenerator(ICompilerConfiguration job, IEnumerable<PEvent> events) : base(job, PreambleConstants.TraceParserFileName)
         {
             Events = events;
         }

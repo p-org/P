@@ -23,22 +23,23 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class PInferTemplateGenerator : JavaSourceGenerator
     {
-        private readonly List<PEvent> QuantifiedEvents;
+        private readonly List<string> QuantifiedEvents;
         private readonly HashSet<IPExpr> Predicates;
-        private readonly IDictionary<IPExpr, HashSet<Variable>> FreeEvents;
+        private readonly IDictionary<IPExpr, HashSet<PEventVariable>> FreeEvents;
         private readonly List<IPExpr> Terms;
+        private TypeNameComparison TypeNameCmp;
         IDictionary<IPExpr, HashSet<int>> PredicateBoundedTerms;
         IDictionary<int, IPExpr> TermOrderToTerms;
         PEvent ConfigEvent;
         public readonly HashSet<string> TemplateNames;
-        public PInferTemplateGenerator(ICompilerConfiguration job, string filename, List<PEvent> quantifiedEvents,
+        public PInferTemplateGenerator(ICompilerConfiguration job, List<PEvent> quantifiedEvents,
                 HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms,
-                IDictionary<IPExpr, HashSet<Variable>> freeEvents,
+                IDictionary<IPExpr, HashSet<PEventVariable>> freeEvents,
                 IDictionary<IPExpr, HashSet<int>> predicateBoundedTerms,
                 IDictionary<int, IPExpr> termOrderToTerms,
-                PEvent configEvent) : base(job, filename)
+                PEvent configEvent) : base(job, PreambleConstants.TemplatesFileName)
         {
-            QuantifiedEvents = quantifiedEvents;
+            QuantifiedEvents = quantifiedEvents.Select(x => x.Name).ToList();
             Predicates = predicates;
             Terms = [.. terms];
             FreeEvents = freeEvents;
@@ -50,50 +51,70 @@ namespace Plang.Compiler.Backend.PInfer
 
         protected override void GenerateCodeImpl()
         {
+            TypeNameCmp = new TypeNameComparison(Types);
             WriteLine("public class Templates {");
             // Forall-only template
-            PLanguageType[][] primitiveArgs = [
-                [PrimitiveType.Int, PrimitiveType.Int],
-                [PrimitiveType.Int],
-                [PrimitiveType.Bool],
-                [PrimitiveType.Bool, PrimitiveType.Bool],
-                [PrimitiveType.String],
-                [PrimitiveType.String, PrimitiveType.String],
-                [PrimitiveType.Any, PrimitiveType.Any]
+            PLanguageType[] primitiveArgs = [
+                PrimitiveType.Int,
+                PrimitiveType.Bool,
+                PrimitiveType.String,
+                PrimitiveType.Float,
+                PrimitiveType.Any
             ];
-            foreach (var args in primitiveArgs)
+            foreach (var primType in primitiveArgs)
             {
-                GenerateForallTemplate(QuantifiedEvents.Count, args);
-                GenerateExistsTemplate(QuantifiedEvents.Count, args);
-                GenerateForallExistsTemplate(QuantifiedEvents.Count, args);
+                GenerateForSingleType(primType, 1);
             }
             foreach (var tupleType in Terms.Select(x => x.Type))
             {
-                GenerateForallTemplate(QuantifiedEvents.Count, [tupleType]);
-                GenerateForallTemplate(QuantifiedEvents.Count, [tupleType, tupleType]);
-                GenerateExistsTemplate(QuantifiedEvents.Count, [tupleType]);
-                GenerateExistsTemplate(QuantifiedEvents.Count, [tupleType, tupleType]);
-                GenerateForallExistsTemplate(QuantifiedEvents.Count, [tupleType]);
-                GenerateForallExistsTemplate(QuantifiedEvents.Count, [tupleType, tupleType]);
+                GenerateForSingleType(tupleType, 1);
             }
-            var typeComparer = new TypeNameComparison(Types);
             foreach (var p in Predicates)
             {
                 var terms = PredicateBoundedTerms[p].Select(x => TermOrderToTerms[x]).ToList();
                 var types = terms.Select(t => t.Type).ToList();
-                types.Sort(typeComparer);
-                try
-                {
-                    GenerateForallTemplate(QuantifiedEvents.Count, [.. types]);
-                    GenerateExistsTemplate(QuantifiedEvents.Count, [.. types]);
-                    GenerateForallExistsTemplate(QuantifiedEvents.Count, [.. types]);
-                }
-                catch (NotImplementedException)
-                {
-                    continue;
-                }
             }
             WriteLine("}");
+        }
+
+        private void GenerateForTerms(List<IPExpr> terms)
+        {
+            HashSet<string> existsQuantifiedEvents = [];
+            HashSet<string> forallQuantifiedEvents = [.. QuantifiedEvents];
+            for (int i = 0; i <= QuantifiedEvents.Count; ++i)
+            {
+                existsQuantifiedEvents = [.. existsQuantifiedEvents, .. forallQuantifiedEvents.Take(i)];
+                forallQuantifiedEvents = forallQuantifiedEvents.Skip(i).ToHashSet();
+                // determine if the term bounds existentially quantified events
+                List<PLanguageType> forallTypes = [];
+                List<PLanguageType> existsTypes = [];
+                foreach (var term in terms)
+                {
+                    var boundedEvents = FreeEvents[term].Select(x => x.Name).ToHashSet();
+                    if (boundedEvents.Overlaps(existsQuantifiedEvents))
+                    {
+                        existsTypes.Add(term.Type);
+                    }
+                    else
+                    {
+                        forallTypes.Add(term.Type);
+                    }
+                }
+                GenerateTemplate(QuantifiedEvents.Count - i, i, forallTypes, existsTypes);
+            }
+        }
+
+        private void GenerateForSingleType(PLanguageType ty, int nTerms = 2)
+        {
+            for (int i = 0; i <= QuantifiedEvents.Count; ++i)
+            {
+                for (int j = 0; j <= nTerms; ++j)
+                {
+                    List<PLanguageType> forallTypes = Enumerable.Range(0, nTerms - j).Select(_ => ty).ToList();
+                    List<PLanguageType> existsTypes = Enumerable.Range(0, j).Select(_ => ty).ToList();
+                    GenerateTemplate(QuantifiedEvents.Count - i, i, forallTypes, existsTypes);
+                }
+            }
         }
 
         private static string GenerateCoersion(string type, string value)
@@ -103,11 +124,20 @@ namespace Plang.Compiler.Backend.PInfer
                 _ => $"(({type}) {value})"
             };
         }
-        private string GenerateTemplateName(string templateType, int numQuantifier, PLanguageType[] fieldTypes)
+        private string GenerateTemplateName(IEnumerable<PLanguageType> forallTypes, IEnumerable<PLanguageType> existsTypes)
         {
-            List<string> fieldTypeNames = fieldTypes.Select(Types.SimplifiedJavaType).ToList();
-            List<TypeManager.JType> fieldTypeDecls = fieldTypes.Select(Types.JavaTypeFor).ToList();
-            return $"{templateType}{numQuantifier}Events{string.Join("", fieldTypeNames)}";
+            string forallTypeNames = string.Join("", forallTypes.Select(Types.SimplifiedJavaType));
+            string existsTypeNames = string.Join("", existsTypes.Select(Types.SimplifiedJavaType));
+            string templateName = "";
+            if (forallTypeNames.Length != 0)
+            {
+                templateName += $"Forall{forallTypeNames}";
+            }
+            if (existsTypeNames.Length != 0)
+            {
+                templateName += $"Exists{existsTypeNames}";
+            }
+            return templateName;
         }
 
         private void WriteDefAndConstructor(string templateName, IEnumerable<TypeManager.JType> fieldTypeDecls, bool existsN = false)
@@ -158,66 +188,81 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private void GenerateForallExistsTemplate(int numQuantifier, PLanguageType[] fieldTypes)
+        private void GenerateTemplate(int numForall, int numExists,
+                            List<PLanguageType> forallTermTypes,
+                            List<PLanguageType> existsTermTypes)
         {
-            // assumption: the first term is related to the existentially quantified event and
-            //             is of a primitive type.
-            // other terms are not related to the existentially quantified events.
-            string templateName = GenerateTemplateName("ForallExists", numQuantifier, fieldTypes);
-            TypeManager.JType[] fieldTypeDecls = fieldTypes.Select(Types.JavaTypeFor).ToArray();
-            if (!fieldTypeDecls[0].IsPrimitive || numQuantifier < 2)
-            {
-                return;
-            }
+            forallTermTypes.Sort(TypeNameCmp);
+            existsTermTypes.Sort(TypeNameCmp);
+            string templateName = GenerateTemplateName(forallTermTypes, existsTermTypes);
             if (TemplateNames.Contains(templateName))
             {
                 return;
             }
-            bool generateExistsN = ConfigEvent != null;
             TemplateNames.Add(templateName);
-            TypeManager.JType termArr = new TypeManager.JType.JList(fieldTypeDecls[^1]);
-            TypeManager.JType[] arrayContained = [termArr];
-            WriteDefAndConstructor(templateName, fieldTypeDecls.SkipLast(1).Concat(arrayContained), generateExistsN);
-            WriteLine($"public static void execute(List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> predicates, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> terms) {{");
+            // convert to Java types
+            var forallTypeDecls = forallTermTypes.Select(Types.JavaTypeFor).ToList();
+            var existsTypeDecls = existsTermTypes.Select(Types.JavaTypeFor).ToList();
+            var fullDecls = forallTypeDecls.Concat(existsTypeDecls.Select(x => new TypeManager.JType.JList(x))).ToList();
+            // exists-n (e.g. quorum)
+            bool generateExistsN = ConfigEvent != null && numExists != 0;
+            WriteDefAndConstructor(templateName, fullDecls, generateExistsN);
+            WriteLine($"public static void execute(List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> guards, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> forallTerms, List<String> existsTerms) {{");
             if (generateExistsN)
             {
                 WriteLine($"for ({Constants.PEventsClass}<?> eConfig: trace) {{");
                 WriteLine($"if (!(eConfig instanceof {Constants.EventNamespaceName}.{ConfigEvent.Name})) continue;");
             }
-            for (int i = 0; i < numQuantifier - 1; ++i)
+            for (int i = 0; i < numForall; ++i)
             {
                 // forall-quantifications
                 WriteLine($"for ({Constants.PEventsClass}<?> e{i}: trace) {{");
-                WriteLine($"if (!(e{i} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i].Name})) continue;");
+                WriteLine($"if (!(e{i} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i]})) continue;");
             }
             WriteLine("try {");
-            if (numQuantifier > 1)
+            if (numForall > 1)
             {
-                WriteLine($"{Constants.PEventsClass}<?>[] guardsArgs = {{ {string.Join(", ", Enumerable.Range(0, numQuantifier - 1).Select(i => $"e{i}"))} }};");
-                WriteLine($"if (!({Job.ProjectName}.conjoin(predicates, guardsArgs))) continue;");
+                WriteLine($"{Constants.PEventsClass}<?>[] guardsArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall).Select(i => $"e{i}"))} }};");
+                WriteLine($"if (!({Job.ProjectName}.conjoin(guards, guardsArgs))) continue;");
             }
-            var lastIndex = numQuantifier - 1;
-            // aggregation array
-            WriteLine($"List<{fieldTypeDecls[0].ReferenceTypeName}> termsList = new ArrayList<>();");
-            WriteLine($"for ({Constants.PEventsClass}<?> e{lastIndex}: trace) {{");
-            WriteLine($"if (!(e{lastIndex} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[lastIndex].Name})) continue;");
-            WriteLine($"{Constants.PEventsClass}<?>[] filterArgs = {{ {string.Join(", ", Enumerable.Range(0, numQuantifier).Select(i => $"e{i}"))} }};");
+            // define aggregation arrays for each existentially quantified terms
+            for (int i = 0; i < existsTypeDecls.Count; ++i)
+            {
+                WriteLine($"List<{existsTypeDecls[i].ReferenceTypeName}> et{i} = new ArrayList<>();");
+            }
+            for (int i = 0; i < numExists; ++i)
+            {
+                WriteLine($"for ({Constants.PEventsClass}<?> e{i + numForall}: trace) {{");
+                WriteLine($"if (!(e{i + numForall} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i + numForall]})) continue;");
+            }
+            WriteLine($"{Constants.PEventsClass}<?>[] filterArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall + numExists).Select(i => $"e{i}"))} }};");
             WriteLine($"if (!({Job.ProjectName}.conjoin(filters, filterArgs))) continue;");
-            WriteLine($"termsList.add({GenerateCoersion(fieldTypeDecls[^1].TypeName, $"{Job.ProjectName}.termOf(terms.getLast(), filterArgs)")});");
-            WriteLine("}"); // existential quantification
-            WriteLine($"{termArr.ReferenceTypeName} termsArr = new {fieldTypeDecls[^1].TypeName}[termsList.size()];");
-            WriteLine("for (int i = 0; i < termsList.size(); ++i) {");
-            WriteLine($"termsArr[i] = termsList.get(i);");
-            WriteLine("}"); // copy loop
+            // aggregate existentially quantified terms
+            for (int i = 0; i < existsTermTypes.Count; ++i)
+            {
+                WriteLine($"et{i}.add({GenerateCoersion(existsTypeDecls[i].TypeName, $"{Job.ProjectName}.termOf(existsTerms.get({i}), filterArgs)")});");
+            }
+            for (int i = 0; i < numExists; ++i)
+            {
+                WriteLine("}"); // existential quantifications
+            }
+            // convert to array
+            for (int i = 0; i < existsTermTypes.Count; ++i)
+            {
+                WriteLine($"{existsTypeDecls[i].TypeName}[] et{i}Arr = new {existsTypeDecls[i].TypeName}[et{i}.size()];");
+                WriteLine($"for (int i = 0; i < et{i}.size(); ++i) {{");
+                WriteLine($"et{i}Arr[i] = et{i}.get(i);");
+                WriteLine("}"); // copy loop
+            }
             string[] configEventAccess = [];
             if (generateExistsN)
             {
                 configEventAccess = GenerateConfigEventFieldAccess("eConfig");
             }
-            WriteLine($"new {templateName}({string.Join(", ", configEventAccess.Concat(fieldTypeDecls.SkipLast(1).Select((x, i) => GenerateCoersion(x.TypeName, $"{Job.ProjectName}.termOf(terms.get({i}), guardsArgs)"))).Concat(["termsArr"]))});");
+            var forallTermsInsts = forallTypeDecls.Select((x, i) => GenerateCoersion(x.TypeName, $"{Job.ProjectName}.termOf(forallTerms.get({i}), guardsArgs)")).ToList();
+            WriteLine($"new {templateName}({string.Join(", ", configEventAccess.Concat(forallTermsInsts).Concat(Enumerable.Range(0, existsTermTypes.Count).Select(i => $"et{i}Arr")))});");
             WriteLine("} catch (Exception e) { if (e instanceof RuntimeException) throw (RuntimeException) e; }");
-
-            for (int i = 0; i < numQuantifier - 1; ++i)
+            for (int i = 0; i < numForall; ++i)
             {
                 WriteLine("}"); // forall-quantification
             }
@@ -227,99 +272,6 @@ namespace Plang.Compiler.Backend.PInfer
             }
             WriteLine("}"); // execute
             WriteLine("}"); // class def
-        }
-
-        private void GenerateExistsTemplate(int numQuantifier, PLanguageType[] fieldTypes)
-        {
-            // assumption: selected terms are all of primitive types
-            // (otherwise, Daikon cannot generate meaningful properties)
-            string templateName = GenerateTemplateName("Exists", numQuantifier, fieldTypes);
-            if (TemplateNames.Contains(templateName))
-            {
-                return;
-            }
-            var fieldTypeDecls = fieldTypes.Select(Types.JavaTypeFor).ToList();
-            if (!fieldTypeDecls.All(x => x.IsPrimitive))
-            {
-                return;
-            }
-            TemplateNames.Add(templateName);
-            var arrayContained = fieldTypeDecls.Select(x => new TypeManager.JType.JList(x)).ToArray();
-            WriteDefAndConstructor(templateName, arrayContained);
-            WriteLine($"public static void execute(List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> predicates, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> terms) {{");
-            for (int i = 0 ; i < fieldTypes.Length; ++i)
-            {
-                WriteLine($"List<{fieldTypeDecls[i].ReferenceTypeName}> es{i} = new ArrayList<>();");
-            }
-            for (var i = 0; i < numQuantifier; ++i)
-            {
-                WriteLine($"for ({Constants.PEventsClass}<?> e{i}: trace) {{");
-                WriteLine($"if (!(e{i} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i].Name})) continue;");
-            }
-            WriteLine($"{Constants.PEventsClass}<?>[] arguments = {{ {string.Join(", ", Enumerable.Range(0, numQuantifier).Select(i => $"e{i}"))} }};");
-            WriteLine("try {");
-            WriteLine($"if (!({Job.ProjectName}.conjoin(predicates, arguments))) continue;");
-            List<string> parameters = [];
-            foreach (var (ty, i) in fieldTypeDecls.Select((val, index) => (val, index)))
-            {
-                parameters.Add(GenerateCoersion(ty.TypeName, $"{Job.ProjectName}.termOf(terms.get({i}), arguments)"));
-            }
-            for (var i = 0; i < fieldTypeDecls.Count; ++i)
-            {
-                WriteLine($"es{i}.add({parameters[i]});");
-            }
-            WriteLine("} catch (Exception e) { if (e instanceof RuntimeException) throw (RuntimeException) e; }");
-            for (var i = 0; i < numQuantifier; ++i)
-            {
-                WriteLine("}"); // for-loop
-            }
-            for (var i = 0; i < fieldTypeDecls.Count; ++i)
-            {
-                WriteLine($"{fieldTypeDecls[i].TypeName}[] e{i}arr = new {fieldTypeDecls[i].TypeName}[es{i}.size()];");
-                WriteLine($"for (int i = 0; i < es{i}.size(); i++) {{");
-                WriteLine($"e{i}arr[i] = {GenerateCoersion(fieldTypeDecls[i].TypeName, $"es{i}.get(i)")};");
-                WriteLine("}");
-            }
-            WriteLine($"new {templateName}({string.Join(", ", Enumerable.Range(0, fieldTypes.Length).Select(n => $"e{n}arr"))});");
-            WriteLine("}"); // execute
-            WriteLine("}"); // class def
-        }
-
-        private void GenerateForallTemplate(int numQuantifier, PLanguageType[] fieldTypes)
-        {
-            string templateName = GenerateTemplateName("Forall", numQuantifier, fieldTypes);
-            if (TemplateNames.Contains(templateName))
-            {
-                return;
-            }
-            var fieldTypeDecls = fieldTypes.Select(Types.JavaTypeFor).ToList();
-            TemplateNames.Add(templateName);
-            // Class def and constructors
-            WriteDefAndConstructor(templateName, fieldTypeDecls);
-            // Execute method
-            WriteLine($"public static void execute(List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> predicates, List<{Job.ProjectName}.PredicateWrapper> ___filtersDiscarded, List<String> terms) {{");
-            for (var i = 0; i < numQuantifier; ++i)
-            {
-                WriteLine($"for ({Constants.PEventsClass}<?> e{i}: trace) {{");
-                WriteLine($"if (!(e{i} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i].Name})) continue;");
-            }
-            WriteLine($"{Constants.PEventsClass}<?>[] arguments = {{ {string.Join(", ", Enumerable.Range(0, numQuantifier).Select(i => $"e{i}"))} }};");
-            WriteLine("try {");
-            WriteLine($"if (!({Job.ProjectName}.conjoin(predicates, arguments))) continue;");
-            List<string> parameters = [];
-            foreach (var (ty, i) in fieldTypeDecls.Select((val, index) => (val, index)))
-            {
-                parameters.Add(GenerateCoersion(ty.TypeName, $"{Job.ProjectName}.termOf(terms.get({i}), arguments)"));
-            }
-            WriteLine($"new {templateName}({string.Join(", ", parameters)});");
-            WriteLine("} catch (Exception e) { if (e instanceof RuntimeException) throw (RuntimeException) e; }");
-
-            for (var i = 0; i < numQuantifier; ++i)
-            {
-                WriteLine("}");
-            }
-            WriteLine("}");
-            WriteLine("}");
         }
     }
 }

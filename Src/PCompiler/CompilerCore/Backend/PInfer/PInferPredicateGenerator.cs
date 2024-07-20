@@ -20,7 +20,7 @@ namespace Plang.Compiler.Backend.PInfer
             var comparer = new ASTComparer();
             VisitedSet = new HashSet<IPExpr>(comparer);
             Predicates = new HashSet<IPExpr>(comparer);
-            FreeEvents = new Dictionary<IPExpr, HashSet<Variable>>(comparer);
+            FreeEvents = new Dictionary<IPExpr, HashSet<PEventVariable>>(comparer);
             TermOrder = new Dictionary<IPExpr, int>(comparer);
             OrderToTerm = new Dictionary<int, IPExpr>();
             PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(comparer);
@@ -97,6 +97,10 @@ namespace Plang.Compiler.Backend.PInfer
             }
             Console.WriteLine($"Generating terms with max depth {termDepth} ...");
             PopulateTerm(termDepth);
+            if (VisitedSet.Count == 0)
+            {
+                throw new Exception("No terms generated");
+            }
             Console.WriteLine($"Generating predicates ...");
             PopulatePredicate();
             MkEqComparison();
@@ -107,16 +111,20 @@ namespace Plang.Compiler.Backend.PInfer
             WriteTerms(ctx, terms.Stream, codegen);
             WritePredicates(ctx, predicates.Stream, codegen);
             GenerateBuildScript(job);
-            var templateCodegen = new PInferTemplateGenerator(job, "Templates.java", quantifiedEvents, Predicates, VisitedSet, FreeEvents,
+            var templateCodegen = new PInferTemplateGenerator(job, quantifiedEvents, Predicates, VisitedSet, FreeEvents,
                                                                 PredicateBoundedTerm, OrderToTerm, configEvent);
             Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
-            return compiledJavaSrc.Concat(new TraceReaderGenerator(job, "TraceParser.java", quantifiedEvents.Concat([configEvent])).GenerateCode(javaCtx, globalScope))
+            return compiledJavaSrc.Concat(new TraceReaderGenerator(job, quantifiedEvents.Concat([configEvent])).GenerateCode(javaCtx, globalScope))
                                 .Concat(templateCodegen.GenerateCode(javaCtx, globalScope))
-                                .Concat(new DriverGenerator(job, "PInferDriver.java", templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
+                                .Concat(new DriverGenerator(job, templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
                                 .Concat(new PInferTypesGenerator(job, Constants.TypesDefnFileName).GenerateCode(javaCtx, globalScope))
                                 .Concat(eventDefSource)
-                                .Concat(new FromDaikonGenerator(job, "FromDaikon.java", quantifiedEvents).GenerateCode(javaCtx, globalScope))
-                                .Concat(new TemplateInstantiatorGenerator(job, "Main.java", quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))
+                                .Concat(new MinerConfigGenerator(job, quantifiedEvents.Count, VisitedSet.Count).GenerateCode(javaCtx, globalScope))
+                                .Concat(new TaskPookGenerator(job).GenerateCode(javaCtx, globalScope))
+                                .Concat(new FromDaikonGenerator(job, quantifiedEvents).GenerateCode(javaCtx, globalScope))
+                                .Concat(new PredicateEnumeratorGenerator(job).GenerateCode(javaCtx, globalScope))
+                                .Concat(new TermEnumeratorGenerator(job).GenerateCode(javaCtx, globalScope))
+                                .Concat(new TemplateInstantiatorGenerator(job, quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))
                                 .Concat([terms, predicates]);
         }
 
@@ -185,7 +193,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 ctx.WriteLine(stream, "{");
                 ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(term)}\",");
-                ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"{((PEventVariable) x).Order}"))}],");
+                ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"{x.Order}"))}],");
                 ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(term)}\"");
                 ctx.WriteLine(stream, "}");
                 if (index < VisitedSet.Count - 1)
@@ -299,7 +307,7 @@ namespace Plang.Compiler.Backend.PInfer
             else
             {
                 PopulateTerm(currentDepth - 1);
-                List<(IPExpr, HashSet<Variable>)> worklist = [];
+                List<(IPExpr, HashSet<PEventVariable>)> worklist = [];
                 foreach (var term in VisitedSet)
                 {
                     // construct built-in exprs
@@ -396,7 +404,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private IEnumerable<(IPExpr, HashSet<Variable>)> TryMkTupleAccess(IPExpr tuple)
+        private IEnumerable<(IPExpr, HashSet<PEventVariable>)> TryMkTupleAccess(IPExpr tuple)
         {
             if (ExplicateTypeDef(tuple.Type) is TupleType tupleType)
             {
@@ -408,7 +416,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private IEnumerable<(IPExpr, HashSet<Variable>)> TryMakeNamedTupleAccess(IPExpr tuple)
+        private IEnumerable<(IPExpr, HashSet<PEventVariable>)> TryMakeNamedTupleAccess(IPExpr tuple)
         {
             if (ExplicateTypeDef(tuple.Type) is NamedTupleType namedTupleType)
             {
@@ -543,7 +551,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private void AddTerm(int depth, IPExpr expr, HashSet<Variable> unboundedEvents)
+        private void AddTerm(int depth, IPExpr expr, HashSet<PEventVariable> unboundedEvents)
         {
             if (VisitedSet.Contains(expr))
             {
@@ -602,14 +610,14 @@ namespace Plang.Compiler.Backend.PInfer
             };
         }
 
-        private HashSet<Variable> GetUnboundedEventsMultiple(params IPExpr[] expr)
+        private HashSet<PEventVariable> GetUnboundedEventsMultiple(params IPExpr[] expr)
         {
             return expr.SelectMany(GetUnboundedEvents).ToHashSet();
         }
 
-        private HashSet<Variable> GetUnboundedEvents(IPExpr expr)
+        private HashSet<PEventVariable> GetUnboundedEvents(IPExpr expr)
         {
-            if (!FreeEvents.TryGetValue(expr, out HashSet<Variable> unboundedEvents))
+            if (!FreeEvents.TryGetValue(expr, out HashSet<PEventVariable> unboundedEvents))
             {
                 throw new Exception($"Expression {expr} has not been proceesed");
             }
@@ -619,7 +627,7 @@ namespace Plang.Compiler.Backend.PInfer
         private List<Dictionary<PLanguageType, HashSet<IPExpr>>> Terms { get; }
         private HashSet<IPExpr> Predicates { get; }
         private HashSet<IPExpr> VisitedSet { get; }
-        private Dictionary<IPExpr, HashSet<Variable>> FreeEvents { get; }
+        private Dictionary<IPExpr, HashSet<PEventVariable>> FreeEvents { get; }
         private Dictionary<IPExpr, int> TermOrder { get; }
         private Dictionary<int, IPExpr> OrderToTerm { get; }
         private Dictionary<IPExpr, int> PredicateOrder { get; }

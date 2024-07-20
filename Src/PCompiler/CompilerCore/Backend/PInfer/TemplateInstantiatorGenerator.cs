@@ -5,7 +5,7 @@ namespace Plang.Compiler.Backend.PInfer
     internal class TemplateInstantiatorGenerator : MachineGenerator
     {
         private readonly int NumQuantifiers;
-        public TemplateInstantiatorGenerator(ICompilerConfiguration job, string filename, int numQuantifiers) : base(job, filename)
+        public TemplateInstantiatorGenerator(ICompilerConfiguration job, int numQuantifiers) : base(job, PreambleConstants.MainFileName)
         {
             NumQuantifiers = numQuantifiers;
         }

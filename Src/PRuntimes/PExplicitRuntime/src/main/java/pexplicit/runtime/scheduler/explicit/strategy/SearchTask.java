@@ -1,7 +1,6 @@
 package pexplicit.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import org.apache.commons.io.FileUtils;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachineId;
@@ -54,11 +53,13 @@ public class SearchTask implements Serializable {
 
     public static void Cleanup() {
         String taskPath = PExplicitGlobal.getConfig().getOutputFolder() + "/tasks/";
-        try {
-            FileUtils.deleteDirectory(new File(taskPath));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to cleanup tasks at " + taskPath, e);
+        File taskDir = new File(taskPath);
+        String[] entries = taskDir.list();
+        for (String s : entries) {
+            File currentFile = new File(taskDir.getPath(), s);
+            currentFile.delete();
         }
+        taskDir.delete();
     }
 
     public boolean isInitialTask() {

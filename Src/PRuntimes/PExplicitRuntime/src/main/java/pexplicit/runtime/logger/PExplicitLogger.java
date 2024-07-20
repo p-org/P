@@ -13,7 +13,6 @@ import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.machine.PMonitor;
 import pexplicit.runtime.machine.State;
 import pexplicit.runtime.machine.events.PContinuation;
-import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.choice.ScheduleSearchUnit;
 import pexplicit.runtime.scheduler.choice.SearchUnit;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;

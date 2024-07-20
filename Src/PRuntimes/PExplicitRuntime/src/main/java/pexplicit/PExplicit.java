@@ -82,8 +82,6 @@ public class PExplicit {
             }
         } finally {
             // log end-of-run metrics
-            StatWriter.log("result", PExplicitGlobal.getResult());
-            StatWriter.log("status", String.format("%s", PExplicitGlobal.getStatus()));
             StatWriter.log("exit-code", String.format("%d", exit_code));
 
             // exit

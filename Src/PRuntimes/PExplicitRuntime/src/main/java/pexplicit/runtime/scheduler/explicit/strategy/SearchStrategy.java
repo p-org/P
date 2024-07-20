@@ -110,7 +110,7 @@ public abstract class SearchStrategy implements Serializable {
         return numUnexplored;
     }
 
-    public abstract void addNewTask(SearchTask task);
-
     abstract SearchTask popNextTask();
+
+    public abstract void addNewTask(SearchTask task);
 }

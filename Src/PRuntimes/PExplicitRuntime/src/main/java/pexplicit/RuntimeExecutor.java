@@ -75,6 +75,9 @@ public class RuntimeExecutor {
                 PExplicitGlobal.setStatus(STATUS.VERIFIED_UPTO_MAX_STEPS);
             }
         }
+
+        StatWriter.log("result", PExplicitGlobal.getResult());
+        StatWriter.log("status", String.format("%s", PExplicitGlobal.getStatus()));
     }
 
     private static void preprocess() {
@@ -136,9 +139,9 @@ public class RuntimeExecutor {
             future.cancel(true);
             executor.shutdownNow();
             scheduler.updateResult();
-            SearchTask.Cleanup();
             printStats();
             PExplicitLogger.logEndOfRun(scheduler, Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+            SearchTask.Cleanup();
         }
     }
 

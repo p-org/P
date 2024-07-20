@@ -49,6 +49,7 @@ public class FromDaikon {
         }
         substs.put(".toString", "");
         substs.put("one of", "∈");
+        substs.put(".getPayload()", "");
     }
 
     public String getFormulaHeader(String guards, String filters) {

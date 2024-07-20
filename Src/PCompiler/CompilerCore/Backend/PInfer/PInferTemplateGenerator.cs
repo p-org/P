@@ -72,7 +72,7 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (var p in Predicates)
             {
                 var terms = PredicateBoundedTerms[p].Select(x => TermOrderToTerms[x]).ToList();
-                var types = terms.Select(t => t.Type).ToList();
+                GenerateForTerms(terms);
             }
             WriteLine("}");
         }
@@ -93,6 +93,11 @@ namespace Plang.Compiler.Backend.PInfer
                     var boundedEvents = FreeEvents[term].Select(x => x.Name).ToHashSet();
                     if (boundedEvents.Overlaps(existsQuantifiedEvents))
                     {
+                        if (!Types.JavaTypeFor(term.Type).IsPrimitive)
+                        {
+                            // TODO: need to think about it ...
+                            return;
+                        }
                         existsTypes.Add(term.Type);
                     }
                     else

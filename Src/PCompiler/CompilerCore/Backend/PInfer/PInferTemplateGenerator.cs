@@ -24,6 +24,7 @@ namespace Plang.Compiler.Backend.PInfer
     public class PInferTemplateGenerator : JavaSourceGenerator
     {
         private readonly List<string> QuantifiedEvents;
+        private readonly List<string> EventVariableNames;
         private readonly HashSet<IPExpr> Predicates;
         private readonly IDictionary<IPExpr, HashSet<PEventVariable>> FreeEvents;
         private readonly List<IPExpr> Terms;
@@ -39,7 +40,8 @@ namespace Plang.Compiler.Backend.PInfer
                 IDictionary<int, IPExpr> termOrderToTerms,
                 PEvent configEvent) : base(job, PreambleConstants.TemplatesFileName)
         {
-            QuantifiedEvents = quantifiedEvents.Select(x => x.Name).ToList();
+            QuantifiedEvents = quantifiedEvents.Select((x, i) => x.Name).ToList();
+            EventVariableNames = quantifiedEvents.Select((x, i) => $"e{i}").ToList();
             Predicates = predicates;
             Terms = [.. terms];
             FreeEvents = freeEvents;
@@ -81,16 +83,16 @@ namespace Plang.Compiler.Backend.PInfer
         {
             HashSet<string> existsQuantifiedEvents = [];
             HashSet<string> forallQuantifiedEvents = [];
-            for (int i = 0; i <= QuantifiedEvents.Count; ++i)
+            for (int i = 0; i <= EventVariableNames.Count; ++i)
             {
-                existsQuantifiedEvents = QuantifiedEvents.TakeLast(i).ToHashSet();
-                forallQuantifiedEvents = QuantifiedEvents.SkipLast(i).ToHashSet();
+                existsQuantifiedEvents = EventVariableNames.TakeLast(i).ToHashSet();
+                forallQuantifiedEvents = EventVariableNames.SkipLast(i).ToHashSet();
                 // determine if the term bounds existentially quantified events
                 List<PLanguageType> forallTypes = [];
                 List<PLanguageType> existsTypes = [];
                 foreach (var term in terms)
                 {
-                    var boundedEvents = FreeEvents[term].Select(x => x.EventName).ToHashSet();
+                    var boundedEvents = FreeEvents[term].Select(x => x.Name).ToHashSet();
                     if (boundedEvents.Overlaps(existsQuantifiedEvents))
                     {
                         existsTypes.Add(term.Type);

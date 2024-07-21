@@ -37,7 +37,7 @@ namespace Plang.Compiler.Backend.PInfer
             var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "mvn", ["compile"]);
             if (exitCode != 0)
             {
-                throw new Exception($"Failed to compile Java code: {stderr}");
+                throw new Exception($"Failed to compile Java code: {stdout} {stderr}");
             }
             job.Output.WriteInfo($"{stdout}");
         }

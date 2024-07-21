@@ -93,11 +93,6 @@ namespace Plang.Compiler.Backend.PInfer
                     var boundedEvents = FreeEvents[term].Select(x => x.EventName).ToHashSet();
                     if (boundedEvents.Overlaps(existsQuantifiedEvents))
                     {
-                        if (!Types.JavaTypeFor(term.Type).IsPrimitive)
-                        {
-                            // TODO: need to think about it ...
-                            return;
-                        }
                         existsTypes.Add(term.Type);
                     }
                     else
@@ -197,6 +192,11 @@ namespace Plang.Compiler.Backend.PInfer
                             List<PLanguageType> forallTermTypes,
                             List<PLanguageType> existsTermTypes)
         {
+            if (existsTermTypes.Any(x => !Types.JavaTypeFor(x).IsPrimitive))
+            {
+                // TODO: do we need to handle array of non-primitive types?
+                return;
+            }
             forallTermTypes.Sort(TypeNameCmp);
             existsTermTypes.Sort(TypeNameCmp);
             string templateName = GenerateTemplateName(forallTermTypes, existsTermTypes);

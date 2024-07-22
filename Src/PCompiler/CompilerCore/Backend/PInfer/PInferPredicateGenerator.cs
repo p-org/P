@@ -294,6 +294,10 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 yield break;
             }
+            // TODO: fix canonicity
+            // Maintain `order` for each type
+            // Term order should be defined as the maximum `event order` of bounded events instead of
+            // ids of terms
             if (types.Count == 1)
             {
                 foreach (var e in varMaps[ShowType(types[0])].Where(x => TermOrder[x] >= termOrder))

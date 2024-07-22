@@ -266,8 +266,8 @@ namespace Plang.Compiler.Backend.PInfer
                 var coercedArgs = p.Arguments.Select(x => {
                     switch (x.Type)
                     {
-                        case SequenceType s: return $"((ArrayList<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>) List.of({GenerateCodeExpr(x)}))";
-                        case SetType s: return $"((HashSet<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>) Set.of({GenerateCodeExpr(x)}))";
+                        case SequenceType s: return $"(new ArrayList<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>(Arrays.asList({GenerateCodeExpr(x)})))";
+                        case SetType s: return $"(new HashSet<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>(Set.of({GenerateCodeExpr(x)})))";
                         default: return GenerateCodeExpr(x);
                     }
                 }).ToArray();

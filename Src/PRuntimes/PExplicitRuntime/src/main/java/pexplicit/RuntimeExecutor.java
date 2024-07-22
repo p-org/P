@@ -16,7 +16,9 @@ import pexplicit.utils.monitor.TimedCall;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.*;
+import java.util.*;
 
 /**
  * Represents the runtime executor that executes the analysis engine
@@ -129,23 +131,36 @@ public class RuntimeExecutor {
             PExplicitGlobal.setStatus(STATUS.MEMOUT);
             throw new Exception("MEMOUT", e);
         } catch (BugFoundException e) {
+            
+
+            
             PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
 
 
             PExplicitLogger.logStackTrace(e);
 
-            ArrayList<ReplayScheduler> replayers = new ArrayList<>();
-            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-                replayers.add(new ReplayScheduler((schedulers.get(i)).schedule));
+            // ArrayList<ReplayScheduler> replayers = new ArrayList<>();
+            
 
-            ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
-            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-                localSchedulers.set(i, replayers.get(i));
+            // PExplicitGlobal.setBuggytID(e.getBuggyLocalTID());
+            // for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
+            //     if( e.getBuggyLocalTID() == i )
+            //         replayers.add(new ReplayScheduler((schedulers.get(i)).schedule));
+
+
+            ReplayScheduler replayer = new ReplayScheduler( e.getBuggySchedule() );
+            
+            PExplicitGlobal.setRepScheduler(replayer); 
+
+
+            // ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
+            // for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
+            //     if( BugFoundException.getBuggyLocalTID() == i )
+            //         localSchedulers.set(i, replayers.get(i));
 
             try {
-                for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-                    (replayers.get(i)).run();
-            } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
+                    replayer.run();
+                    } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
                 PExplicitLogger.logStackTrace((Exception) replayException);
                 throw new BugFoundException(replayException.getMessage(), replayException);
             } catch (BugFoundException replayException) {
@@ -177,11 +192,11 @@ public class RuntimeExecutor {
     }
 
     public static void run() throws Exception {
-        ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
+        // ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
         for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
             ExplicitSearchScheduler localCopy = new ExplicitSearchScheduler();
             schedulers.add(localCopy);
-            localSchedulers.add(localCopy);
+            // localSchedulers.add(localCopy);
         }
 
 

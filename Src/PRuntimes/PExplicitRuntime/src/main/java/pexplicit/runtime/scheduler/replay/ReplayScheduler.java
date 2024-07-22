@@ -23,10 +23,10 @@ public class ReplayScheduler extends Scheduler {
         PExplicitLogger.logStartReplay();
         ScheduleWriter.logHeader();
 
-        // log run test
+        // log run test // Add PexplicitGobal.tIDtoLocalTID here
         PExplicitLogger.logRunTest();
 
-        stepState.resetToZero();
+        // stepState.resetToZero();
         start();
         runIteration();
     }
@@ -99,7 +99,7 @@ public class ReplayScheduler extends Scheduler {
             return null;
         }
 
-        PMachine result = PExplicitGlobal.getGlobalMachine(pid);
+        PMachine result = PExplicitGlobal.getScheduler().getGlobalMachine(pid);
         ScheduleWriter.logScheduleChoice(result);
         PExplicitLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 

@@ -270,8 +270,9 @@ public class PExplicitLogger {
     }
 
     private static boolean isReplaying() {
-        int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        return (((PExplicitGlobal.getSchedulers()).get(localtID)) instanceof ReplayScheduler);
+        // int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
+        // return (((PExplicitGlobal.getSchedulers()).get(localtID)) instanceof ReplayScheduler);
+        return (PExplicitGlobal.getRepScheduler() != null);
     }
 
     private static boolean typedLogEnabled() {
@@ -327,16 +328,16 @@ public class PExplicitLogger {
     }
 
     public static void logSendEvent(PMachine sender, PMessage message) {
-        int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
-        if (typedLogEnabled()) {
-            String payloadMsg = "";
-            if (message.getPayload() != null) {
-                payloadMsg = String.format(" with payload %s", message.getPayload());
-            }
-            typedLog(LogType.SendLog, String.format("%s in state %s sent event %s%s to %s.",
-                    sender, sender.getCurrentState(), message.getEvent(), payloadMsg, message.getTarget()));
-        }
+        // int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId()); // TODO: PIN: Write this function body!
+        // ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        // if (typedLogEnabled()) {
+        //     String payloadMsg = "";
+        //     if (message.getPayload() != null) {
+        //         payloadMsg = String.format(" with payload %s", message.getPayload());
+        //     }
+        //     typedLog(LogType.SendLog, String.format("%s in state %s sent event %s%s to %s.",
+        //             sender, sender.getCurrentState(), message.getEvent(), payloadMsg, message.getTarget()));
+        // }
     }
 
     /**
@@ -344,12 +345,15 @@ public class PExplicitLogger {
      *
      * @param machine Machine that is entering the state
      */
-    public static void logStateEntry(PMachine machine) {
-        int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
-        if (typedLogEnabled()) {
-            typedLog(LogType.StateLog, String.format("%s enters state %s.", machine, machine.getCurrentState()));
-        }
+    public static void logStateEntry(PMachine machine) { 
+        // int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId()); // TODO: PIN: Write this function body!
+        
+        // System.out.println("Debug1.1: " + localtID); // Debug this
+        
+        // ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber(); // Check this line
+        // if (typedLogEnabled()) {
+        //     typedLog(LogType.StateLog, String.format("%s enters state %s.", machine, machine.getCurrentState()));
+        // }
     }
 
     /**

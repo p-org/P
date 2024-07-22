@@ -6,11 +6,16 @@ import pexplicit.commandline.PExplicitConfig;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
+import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.Scheduler;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.jetbrains.annotations.Async;
+
+import pexplicit.runtime.scheduler.replay.ReplayScheduler;
 
 /**
  * Represents global data structures represented with a singleton class
@@ -22,16 +27,10 @@ public class PExplicitGlobal {
 
     @Getter
     private static final int maxThreads = PExplicitConfig.getNumThreads();
-    /**
-     * Mapping from machine type to list of all machine instances
-     */
-    @Getter
-    private static final Map<Integer, Map<Class<? extends PMachine>, List<PMachine>>> machineListByTypePerThread = new ConcurrentHashMap<>(); // This is per thread; so make this map of tiD to same Map
-    /**
-     * Set of machines
-     */
-    @Getter
-    private static final Map<Integer, SortedSet<PMachine>> machineSetPerThread = new ConcurrentHashMap<>();
+
+
+
+
     private static AtomicLong threadsBlocking = new AtomicLong(0);
     //  @Getter
     //  @Setter
@@ -63,9 +62,23 @@ public class PExplicitGlobal {
     // @Setter
     // private static Scheduler scheduler = null; // Remove this!
 
+    // @Getter
+    // @Setter
+    // private static int buggytID = -1;
     @Getter
     @Setter
-    private static ArrayList<Scheduler> schedulers = new ArrayList<>();
+    private static Scheduler buggyScheduler = null;
+
+
+
+    @Getter
+    @Setter
+    private static Map<Integer, Scheduler> schedulers = new ConcurrentHashMap<>();
+
+    @Getter
+    @Setter
+    private static ReplayScheduler repScheduler = null;
+
     /**
      * Status of the run
      **/
@@ -98,67 +111,21 @@ public class PExplicitGlobal {
         tID_to_localtID.put(tID, localtID);
     }
 
-    public static Map<Class<? extends PMachine>, List<PMachine>> getMachineListByType() {
-        int localtID = tID_to_localtID.get(Thread.currentThread().getId());
-        if (!machineListByTypePerThread.containsKey(localtID)) {
-            machineListByTypePerThread.put(localtID, new HashMap<>()); // Initialize with an empty HashMap if key doesn't exist
-        }
-        return machineListByTypePerThread.get(localtID);
-    }
 
-    public static void putMachineListByType(Map<Class<? extends PMachine>, List<PMachine>> machineListByType) {
-        int localtID = tID_to_localtID.get(Thread.currentThread().getId());
-        machineListByTypePerThread.put(localtID, machineListByType);
-    }
-
-    public static SortedSet<PMachine> getMachineSet() {
-        int localtID = tID_to_localtID.get(Thread.currentThread().getId());
-        if (!machineSetPerThread.containsKey(localtID)) {
-            machineSetPerThread.put(localtID, new TreeSet<>());
-        }
-        return machineSetPerThread.get(localtID);
-    }
 
     public static Scheduler getScheduler() {
+        if (repScheduler != null)
+            return repScheduler;
         int localtID = tID_to_localtID.get(Thread.currentThread().getId());
         return schedulers.get(localtID);
     }
 
-    /**
-     * Get a machine of a given type and index if exists, else return null.
-     *
-     * @param pid Machine pid
-     * @return Machine
-     */
-    public static PMachine getGlobalMachine(PMachineId pid) {
-        Map<Class<? extends PMachine>, List<PMachine>> machineListByType = getMachineListByType();
-        List<PMachine> machinesOfType = machineListByType.get(pid.getType());
-        if (machinesOfType == null) {
-            return null;
-        }
-        if (pid.getTypeId() >= machinesOfType.size()) {
-            return null;
-        }
-        PMachine result = machineListByType.get(pid.getType()).get(pid.getTypeId());
-        assert (getMachineSet().contains(result));
-        return result;
+    public static void putSchedulers( Integer ltID, Scheduler sch ) {
+        schedulers.put(ltID, sch);
     }
 
-    /**
-     * Add a machine.
-     *
-     * @param machine      Machine to add
-     * @param machineCount Machine type count
-     */
-    public static void addGlobalMachine(PMachine machine, int machineCount) {
-        Map<Class<? extends PMachine>, List<PMachine>> machineListByType = getMachineListByType();
-        if (!machineListByType.containsKey(machine.getClass())) {
-            machineListByType.put(machine.getClass(), new ArrayList<>());
-            putMachineListByType(machineListByType); 
-        }
-        assert (machineCount == machineListByType.get(machine.getClass()).size());
-        machineListByType.get(machine.getClass()).add(machine);
-        getMachineSet().add(machine);
-        assert (machineListByType.get(machine.getClass()).get(machineCount) == machine);
-    }
+  
+
+
 }
+

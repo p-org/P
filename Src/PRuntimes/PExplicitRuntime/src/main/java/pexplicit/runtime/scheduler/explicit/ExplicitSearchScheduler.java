@@ -118,6 +118,8 @@ public class ExplicitSearchScheduler extends Scheduler {
             printProgressHeader(true);
         }
         PExplicitGlobal.addTotIDtolocaltID(Thread.currentThread().getId(), localtID);
+        PExplicitGlobal.putSchedulers(localtID, this);
+
 
         PExplicitThreadLogger.Initialize( PExplicitGlobal.getVerbosity());
 
@@ -325,7 +327,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (choiceNumber < backtrackChoiceNumber) {
             // pick the current schedule choice
             PMachineId pid = schedule.getCurrentScheduleChoice(choiceNumber);
-            result = PExplicitGlobal.getGlobalMachine(pid);
+            result = PExplicitGlobal.getScheduler().getGlobalMachine(pid);
             PExplicitThreadLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 
             // increment choice number
@@ -354,7 +356,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
 
         // pick the first choice
-        result = PExplicitGlobal.getGlobalMachine(choices.get(0));
+        result = PExplicitGlobal.getScheduler().getGlobalMachine(choices.get(0));
         PExplicitThreadLogger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
 
         // remove the first choice from unexplored choices
@@ -562,7 +564,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 stepNumber = newStepNumber;
                 choiceNumber = scheduleChoice.getChoiceNumber();
                 stepState.setTo(scheduleChoice.getChoiceState());
-                assert (!PExplicitGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
+                assert (!PExplicitGlobal.getScheduler().getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
             }
             schedule.removeChoicesAfter(backtrackChoiceNumber);
             PExplicitThreadLogger.logBacktrack(newStepNumber, cIdx, unit);

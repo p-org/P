@@ -51,7 +51,7 @@ public class StepState implements Serializable {
 
 
     public void resetToZero() {
-        for (PMachine machine : PExplicitGlobal.getMachineSet()) {
+        for (PMachine machine : PExplicitGlobal.getScheduler().getMachineSet()) {
             machine.reset();
         }
         machineListByType.clear();
@@ -64,7 +64,7 @@ public class StepState implements Serializable {
         machineLocalStates = new HashMap<>(input.machineLocalStates);
         assert (machineSet.size() == machineLocalStates.size());
 
-        for (PMachine machine : PExplicitGlobal.getMachineSet()) {
+        for (PMachine machine : PExplicitGlobal.getScheduler().getMachineSet()) {
             MachineLocalState ms = machineLocalStates.get(machine);
             if (ms == null) {
                 machine.reset();

@@ -112,6 +112,8 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 for (int j = 0; j <= nTerms; ++j)
                 {
+                    if ((nTerms - j == 0) ^ (QuantifiedEvents.Count - i == 0)) continue;
+                    if ((j == 0) ^ (i == 0)) continue;
                     List<PLanguageType> forallTypes = Enumerable.Range(0, nTerms - j).Select(_ => ty).ToList();
                     List<PLanguageType> existsTypes = Enumerable.Range(0, j).Select(_ => ty).ToList();
                     GenerateTemplate(QuantifiedEvents.Count - i, i, forallTypes, existsTypes);
@@ -242,8 +244,11 @@ namespace Plang.Compiler.Backend.PInfer
                 WriteLine($"for ({Constants.PEventsClass}<?> e{i + numForall}: trace) {{");
                 WriteLine($"if (!(e{i + numForall} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i + numForall]})) continue;");
             }
-            WriteLine($"{Constants.PEventsClass}<?>[] filterArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall + numExists).Select(i => $"e{i}"))} }};");
-            WriteLine($"if (!({Job.ProjectName}.conjoin(filters, filterArgs))) continue;");
+            if (numExists > 0)
+            {
+                WriteLine($"{Constants.PEventsClass}<?>[] filterArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall + numExists).Select(i => $"e{i}"))} }};");
+                WriteLine($"if (!({Job.ProjectName}.conjoin(filters, filterArgs))) continue;");
+            }
             // aggregate existentially quantified terms
             for (int i = 0; i < existsTermTypes.Count; ++i)
             {

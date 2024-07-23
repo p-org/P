@@ -151,7 +151,7 @@ public class RuntimeExecutor {
             ReplayScheduler replayer = new ReplayScheduler( e.getBuggySchedule() );
             
             PExplicitGlobal.setRepScheduler(replayer); 
-
+            PExplicitGlobal.addTotIDtolocaltID(Thread.currentThread().getId(), e.getBuggyLocalTID());
 
             // ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
             // for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)

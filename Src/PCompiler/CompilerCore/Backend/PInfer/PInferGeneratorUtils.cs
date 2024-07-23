@@ -402,7 +402,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        public static void AddBuiltinPredicate(string name, Notation notation, IEnumerable<IPredicate> contraditions, params PLanguageType[] argTypes)
+        public static BuiltinPredicate AddBuiltinPredicate(string name, Notation notation, IEnumerable<IPredicate> contraditions, params PLanguageType[] argTypes)
         {
             var parameterTypes = argTypes.ToList();
             if (!_Store.ContainsKey(parameterTypes))
@@ -415,6 +415,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 MarkContradition(pred, c);
             }
+            return pred;
         }
 
         public static void AddPredicate(IPredicate predicate, IEnumerable<IPredicate> contraditions)
@@ -438,7 +439,8 @@ namespace Plang.Compiler.Backend.PInfer
                                                 new MapType(PrimitiveType.Any, PrimitiveType.Any)];
             foreach (var numType in numericTypes)
             {
-                AddBuiltinPredicate("<", Notation.Infix, [EqPredicate], numType, numType);
+                var ltPred = AddBuiltinPredicate("<", Notation.Infix, [EqPredicate], numType, numType);
+                AddBuiltinPredicate(">", Notation.Infix, [ltPred, EqPredicate], numType, numType);
                 // AddBuiltinPredicate("==", Notation.Infix, numType, numType);
             }
         }

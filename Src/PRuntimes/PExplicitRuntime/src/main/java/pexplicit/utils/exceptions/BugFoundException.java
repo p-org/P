@@ -22,14 +22,14 @@ public class BugFoundException extends RuntimeException {
     public BugFoundException(String message) {
         super(message);
         buggyLocalTID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        buggySchedule = (PExplicitGlobal.getSchedulers().get( (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId()) )).schedule;
+        buggySchedule = (PExplicitGlobal.getScheduler()).schedule;
         PExplicitLogger.logBugFound(message);
     }
 
     public BugFoundException(String message, Throwable cause) {
         super(message, cause);
         buggyLocalTID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        buggySchedule = (PExplicitGlobal.getSchedulers().get( (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId()) )).schedule;
+        buggySchedule = (PExplicitGlobal.getScheduler()).schedule;
         PExplicitLogger.logBugFound(message);
     }
 }

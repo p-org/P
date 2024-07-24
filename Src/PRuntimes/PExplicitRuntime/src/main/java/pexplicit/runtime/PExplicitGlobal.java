@@ -71,7 +71,7 @@ public class PExplicitGlobal {
 
 
 
-    @Getter
+
     @Setter
     private static Map<Integer, Scheduler> schedulers = new ConcurrentHashMap<>();
 

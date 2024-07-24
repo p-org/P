@@ -133,7 +133,8 @@ public class RuntimeExecutor {
         } catch (BugFoundException e) {
             
 
-            
+            executor.shutdownNow(); // This shutsdown all the threads. TODO / PIN: Need for other exceptions?
+
             PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
 
 

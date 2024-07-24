@@ -7,6 +7,8 @@ import org.apache.logging.log4j.core.LoggerContext;
 import pexplicit.commandline.PExplicitConfig;
 import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.checkerframework.checker.units.qual.Current;
+
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.STATUS;
 import pexplicit.runtime.machine.PMachine;
@@ -55,6 +57,8 @@ public class PExplicitThreadLogger {
 
         PatternLayout layout = Log4JConfig.getPatternLayout();
 
+        // My working dir: /Users/xashisk/ashish-ws/scriptsRepo/src/P-Evaluation-Tests/runs/pexplicit/test
+        // Required dir: "/Users/xashisk/ashish-ws/SyncedForkedRepo/P/output/LogThread"
         String filename = "/Users/xashisk/ashish-ws/SyncedForkedRepo/P/output/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";  // PIN: Configure output folder with CLI options.
         // String filename = (new PExplicitConfig()).getOutputFolder() + "/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";  // This way gives error
         FileAppender fileAppender = FileAppender.newBuilder()
@@ -275,7 +279,7 @@ public class PExplicitThreadLogger {
 
     private static boolean isReplaying() {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        return (((PExplicitGlobal.getSchedulers()).get(localtID)) instanceof ReplayScheduler);
+        return (((PExplicitGlobal.getScheduler())) instanceof ReplayScheduler);
     }
 
     private static boolean typedLogEnabled() {
@@ -324,7 +328,7 @@ public class PExplicitThreadLogger {
      */
     public static void logCreateMachine(PMachine machine, PMachine creator) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.CreateLog, String.format("%s was created by %s.", machine, creator));
         }
@@ -332,7 +336,7 @@ public class PExplicitThreadLogger {
 
     public static void logSendEvent(PMachine sender, PMessage message) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             String payloadMsg = "";
             if (message.getPayload() != null) {
@@ -350,7 +354,7 @@ public class PExplicitThreadLogger {
      */
     public static void logStateEntry(PMachine machine) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.StateLog, String.format("%s enters state %s.", machine, machine.getCurrentState()));
         }
@@ -363,7 +367,7 @@ public class PExplicitThreadLogger {
      */
     public static void logStateExit(PMachine machine) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.StateLog, String.format("%s exits state %s.", machine, machine.getCurrentState()));
         }
@@ -371,7 +375,7 @@ public class PExplicitThreadLogger {
 
     public static void logRaiseEvent(PMachine machine, PEvent event) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.RaiseLog, String.format("%s raised event %s in state %s.", machine, event, machine.getCurrentState()));
         }
@@ -379,7 +383,7 @@ public class PExplicitThreadLogger {
 
     public static void logStateTransition(PMachine machine, State newState) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.GotoLog, String.format("%s is transitioning from state %s to state %s.", machine, machine.getCurrentState(), newState));
         }
@@ -387,7 +391,7 @@ public class PExplicitThreadLogger {
 
     public static void logReceive(PMachine machine, PContinuation continuation) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.ReceiveLog, String.format("%s is waiting to dequeue an event of type %s or %s in state %s.",
                     machine, continuation.getCaseEvents(), PEvent.haltEvent, machine.getCurrentState()));
@@ -396,7 +400,7 @@ public class PExplicitThreadLogger {
 
     public static void logMonitorProcessEvent(PMonitor monitor, PMessage message) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.MonitorLog, String.format("%s is processing event %s in state %s.",
                     monitor, message.getEvent(), monitor.getCurrentState()));
@@ -405,7 +409,7 @@ public class PExplicitThreadLogger {
 
     public static void logDequeueEvent(PMachine machine, PMessage message) {
         int localtID = (PExplicitGlobal.getTID_to_localtID()).get(Thread.currentThread().getId());
-        ((PExplicitGlobal.getSchedulers()).get(localtID)).updateLogNumber();
+        ((PExplicitGlobal.getScheduler())).updateLogNumber();
         if (typedLogEnabled()) {
             String payloadMsg = "";
             if (message.getPayload() != null) {

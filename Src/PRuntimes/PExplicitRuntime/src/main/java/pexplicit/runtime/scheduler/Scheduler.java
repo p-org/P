@@ -13,11 +13,6 @@ import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -31,37 +26,22 @@ public abstract class Scheduler implements SchedulerInterface {
      * Mapping from machine type to list of all machine instances
      */
     @Getter
-    private final Map<Integer, Map<Class<? extends PMachine>, List<PMachine>>> machineListByTypePerThread = new ConcurrentHashMap<>(); // This is per thread; so make this map of tiD to same Map
+    @Setter
+    private Map<Class<? extends PMachine>,List<PMachine>> machineListByType = new ConcurrentHashMap<>(); 
     /**
      * Set of machines
      */
     @Getter
-    private final Map<Integer, SortedSet<PMachine>> machineSetPerThread = new ConcurrentHashMap<>(); 
+    @Setter
+    private SortedSet<PMachine> machineSet = Collections.synchronizedSortedSet( new TreeSet<>()); 
 
-    public Map<Class<? extends PMachine>, List<PMachine>> getMachineListByType() {
-        int localtID = PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId());
-        if (!machineListByTypePerThread.containsKey(localtID)) {
-            machineListByTypePerThread.put(localtID, new HashMap<>()); // Initialize with an empty HashMap if key doesn't exist
-        }
-        return machineListByTypePerThread.get(localtID);
+
+    public void putMachineListByType(Map<Class<? extends PMachine>, List<PMachine>> machinelistbytype) {
+        machineListByType = machinelistbytype;
     }
 
-    public void putMachineListByType(Map<Class<? extends PMachine>, List<PMachine>> machineListByType) {
-        int localtID = PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId());
-        machineListByTypePerThread.put(localtID, machineListByType);
-    }
-
-    public SortedSet<PMachine> getMachineSet() {
-        int localtID = PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId());
-        if (!machineSetPerThread.containsKey(localtID)) {
-            machineSetPerThread.put(localtID, new TreeSet<>());
-        }
-        return machineSetPerThread.get(localtID);
-    }
-
-    public void putMachineSet( SortedSet<PMachine> machineSet) {
-        int localtID = PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId());
-        machineSetPerThread.put(localtID, machineSet);
+    public void putMachineSet( SortedSet<PMachine> machineset) {
+        machineSet = machineset;
     }
 
     /**

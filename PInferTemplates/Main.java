@@ -142,6 +142,7 @@ public class Main {
         }
         System.out.println("Forall/Exists-only Number of tasks: " + numTasks);
         taskPool.waitForAll();
+        System.out.println("Number properties mined: " + taskPool.getNumMined());
     }
 
     private static void specMiningForallExists(List<RawPredicate> predicateList,
@@ -216,6 +217,7 @@ public class Main {
         }
         System.out.println("Forall-Exists Number of tasks: " + numTasks);
         taskPool.waitForAll();
+        System.out.println("Number properties mined: " + taskPool.getNumMined());
     }
 
     public static void main(String[] args) throws Exception {

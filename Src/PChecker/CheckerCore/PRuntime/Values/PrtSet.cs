@@ -37,6 +37,19 @@ namespace PChecker.PRuntime.Values
             }
         }
 
+        public override int GetHashCode()
+        {
+            if (!IsDirty)
+            {
+                return hashCode;
+            }
+
+            hashCode = ComputeHashCode();
+            IsDirty = false;
+
+            return hashCode;
+        }
+
         public IEnumerator<IPrtValue> GetEnumerator()
         {
             return set.GetEnumerator();

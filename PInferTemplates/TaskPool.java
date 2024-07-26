@@ -113,8 +113,11 @@ public class TaskPool {
         private final String templatePrefix;
         private final String guardsStr;
         private final String filtersStr;
+        private final int numForall;
+        private final int numExists;
 
         public Task(List<String> tracePaths,
+                    int numForall, int numExists,
                     List<Main.RawPredicate> guards,
                     List<Main.RawPredicate> filters,
                     List<Main.RawTerm> forallQuantifiedTerms,
@@ -134,6 +137,8 @@ public class TaskPool {
             this.runningProg = null;
             this.outputThread = null;
             this.poolRef = poolRef;
+            this.numForall = numForall;
+            this.numExists = numExists;
         }
 
         public String guardsStr() {
@@ -246,7 +251,7 @@ public class TaskPool {
                     templateNameBuilder.append("Exists").append(existsTypes);
                     break;
                 case "ForallExists":
-                    templateNameBuilder.append("Forall").append(forallTypes).append("Exists").append(existsTypes);
+                    templateNameBuilder.append("Forall").append(numForall).append(forallTypes).append("Exists").append(numExists).append(existsTypes);
                     break;                
             }
             this.templateName = templateNameBuilder.toString().strip();

@@ -129,6 +129,8 @@ public class Main {
                     List<RawTerm> forallTerms = isForall ? termComb.stream().map(terms::get).toList() : List.of();
                     List<RawTerm> existsTerms = isForall ? List.of() : termComb.stream().map(terms::get).toList();
                     var task = new TaskPool.Task(minerConfig.traces,
+                            minerConfig.numForallQuantifiers,
+                            minerConfig.numExistsQuantifiers,
                             guards,
                             filters,
                             forallTerms,
@@ -202,6 +204,8 @@ public class Main {
                         }
                     }
                     var task = new TaskPool.Task(minerConfig.traces,
+                            minerConfig.numForallQuantifiers,
+                            minerConfig.numExistsQuantifiers,
                             guards,
                             filters,
                             forallQuantifiedTerms.stream().map(terms::get).toList(),

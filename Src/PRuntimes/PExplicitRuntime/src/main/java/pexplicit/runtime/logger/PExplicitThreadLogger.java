@@ -60,7 +60,7 @@ public class PExplicitThreadLogger {
         // My working dir: /Users/xashisk/ashish-ws/scriptsRepo/src/P-Evaluation-Tests/runs/pexplicit/test
         // Required dir: "/Users/xashisk/ashish-ws/SyncedForkedRepo/P/output/LogThread"
         // System.out.println("What this variable stores:" + PExplicitGlobal.getConfig().getOutputFolder());
-        String filename = "PExplicitGlobal.getConfig().getOutputFolder()" + "/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";  // PIN: Configure output folder with CLI options.
+        String filename = PExplicitGlobal.getConfig().getOutputFolder() + "/LogThread" + PExplicitGlobal.getTID_to_localtID().get(Thread.currentThread().getId()) + ".log";  // PIN: Configure output folder with CLI options.
         FileAppender fileAppender = FileAppender.newBuilder()
                 .setName("FileAppender")
                 .withFileName(filename)

@@ -15,8 +15,6 @@ import pexplicit.utils.monitor.TimedCall;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.*;
 import java.util.*;
 
@@ -27,6 +25,7 @@ public class RuntimeExecutor {
     private static ThreadPoolExecutor executor;
     private static ArrayList<Future<Integer>> futures = new ArrayList<>();
     private static ArrayList<ExplicitSearchScheduler> schedulers = new ArrayList<>();
+    private static List<Thread> threads = new ArrayList<>();
 
     private static void runWithTimeout(long timeLimit)
             throws TimeoutException,
@@ -86,7 +85,16 @@ public class RuntimeExecutor {
         PExplicitLogger.logInfo(String.format("... Checker is using '%s' strategy (seed:%s)",
                 PExplicitGlobal.getConfig().getSearchStrategyMode(), PExplicitGlobal.getConfig().getRandomSeed()));
 
-        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(PExplicitGlobal.getMaxThreads());
+        ThreadFactory threadFactory = new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                threads.add(thread);
+                return thread;
+            }
+        };
+
+        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(PExplicitGlobal.getMaxThreads(), threadFactory);
 
         // PExplicitGlobal.setResult("error"); // TODO: Set Results, need to take care of.
 
@@ -108,6 +116,7 @@ public class RuntimeExecutor {
             for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
                 timedCalls.add(new TimedCall(schedulers.get(i), resume, i));
             }
+
 
             for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
                 Future<Integer> future = executor.submit(timedCalls.get(i));
@@ -131,11 +140,20 @@ public class RuntimeExecutor {
             PExplicitGlobal.setStatus(STATUS.MEMOUT);
             throw new Exception("MEMOUT", e);
         } catch (BugFoundException e) {
+
+            for (Thread thread : threads) {
+                if (thread != Thread.currentThread()) {
+                    thread.interrupt();
+                }
+            }
+
+            // Useful for debugging purposes
+            // List<Runnable> notExecutedTasks = executor.shutdownNow();
+            // System.out.println("Executor has been shut down. " + notExecutedTasks.size() + " tasks were not executed.");
             
 
-            executor.shutdownNow(); // This shutsdown all the threads. TODO / PIN: Need for other exceptions?
-
             PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
+
 
 
             PExplicitLogger.logStackTrace(e);

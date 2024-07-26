@@ -7,7 +7,7 @@ cd ../../scriptsRepo/src/P-Evaluation-Tests/
 echo "Running script ..."
 # ./scripts/run_pexplicitzshrc.sh /Users/xashisk/ashish-ws/SyncedForkedRepo/P/Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_8 test  --seed 0 -t 10 -s 0 -v 3 --schedules-per-task 2 --nproc 1 --no-backtrack
 
-./scripts/run_pexplicitzshrc.sh /Users/xashisk/ashish-ws/SyncedForkedRepo/P/Tst/RegressionTests/Feature1SMLevelDecls/DynamicError/AlonBug test  --seed 0 -t 10 -s 0 -v 3 --schedules-per-task 2 --nproc 1 --no-backtrack
+./scripts/run_pexplicitzshrc.sh /Users/xashisk/ashish-ws/SyncedForkedRepo/P/Tst/RegressionTests/Feature1SMLevelDecls/DynamicError/AlonBug test  --seed 0 -t 10 -s 0 -v 3 --schedules-per-task 2 --nproc 4 --no-backtrack
 
 
 # ./scripts/run_pexplicitzshrc.sh /Users/xashisk/ashish-ws/SyncedForkedRepo/P/Tst/RegressionTests/Feature2Stmts/DynamicError/GotoStmt1 test  --seed 0 -t 10 -s 0 -v 3 --schedules-per-task 2 --nproc 1 --no-backtrack

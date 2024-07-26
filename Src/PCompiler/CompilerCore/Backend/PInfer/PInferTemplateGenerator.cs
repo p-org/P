@@ -128,18 +128,18 @@ namespace Plang.Compiler.Backend.PInfer
                 _ => $"(({type}) {value})"
             };
         }
-        private string GenerateTemplateName(IEnumerable<PLanguageType> forallTypes, IEnumerable<PLanguageType> existsTypes)
+        private string GenerateTemplateName(int numForall, int numExists, IEnumerable<PLanguageType> forallTypes, IEnumerable<PLanguageType> existsTypes)
         {
             string forallTypeNames = string.Join("", forallTypes.Select(Types.SimplifiedJavaType));
             string existsTypeNames = string.Join("", existsTypes.Select(Types.SimplifiedJavaType));
             string templateName = "";
             if (forallTypeNames.Length != 0)
             {
-                templateName += $"Forall{forallTypeNames}";
+                templateName += $"Forall{numForall}{forallTypeNames}";
             }
             if (existsTypeNames.Length != 0)
             {
-                templateName += $"Exists{existsTypeNames}";
+                templateName += $"Exists{numExists}{existsTypeNames}";
             }
             return templateName;
         }
@@ -203,7 +203,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             forallTermTypes.Sort(TypeNameCmp);
             existsTermTypes.Sort(TypeNameCmp);
-            string templateName = GenerateTemplateName(forallTermTypes, existsTermTypes);
+            string templateName = GenerateTemplateName(numForall, numExists, forallTermTypes, existsTermTypes);
             if (TemplateNames.Contains(templateName))
             {
                 return;

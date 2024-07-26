@@ -52,7 +52,7 @@ public class TaskPool {
             }
             if (!invariants.isEmpty()) {
                 System.out.println(String.join("\n", invariants));
-                this.numMined += 1;
+                this.numMined += invariants.size();
             } else {
                 System.out.println("Infeasible guards / filters");
             }

@@ -153,7 +153,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             List<NamedTupleEntry> configConstants = [];
             if (existsN) {
-                PLanguageType configType = ConfigEvent.PayloadType;
+                PLanguageType configType = ConfigEvent.PayloadType.Canonicalize();
                 if (configType is NamedTupleType tuple)
                 {
                     foreach (var entry in tuple.Fields)
@@ -165,7 +165,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 else
                 {
-                    throw new Exception($"Config event {ConfigEvent.Name} should have a named-tuple type");
+                    throw new Exception($"Config event {ConfigEvent.Name} should have a named-tuple type, got {configType}");
                 }
             }
             WriteLine($"public {templateName} ({string.Join(", ", configConstants.Select(entry => $"{Types.JavaTypeFor(entry.Type).TypeName} {entry.Name}").Concat(fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}")))}) {{");
@@ -182,7 +182,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         private string[] GenerateConfigEventFieldAccess(string varName)
         {
-            if (ConfigEvent.PayloadType is NamedTupleType tupleType)
+            if (ConfigEvent.PayloadType.Canonicalize() is NamedTupleType tupleType)
             {
                 return tupleType.Fields.Select(x => $"((({Constants.EventNamespaceName}.{ConfigEvent.Name}){varName}).getPayload().{x.Name})").ToArray();
             }
@@ -259,6 +259,18 @@ namespace Plang.Compiler.Backend.PInfer
                 WriteLine("}"); // existential quantifications
             }
             // convert to array
+            // first, check whether any list is empty
+            for (int i = 0; i < existsTermTypes.Count; ++i)
+            {
+                if (numForall > 0)
+                {
+                    WriteLine($"if (et{i}.isEmpty()) continue;");
+                }
+                else
+                {
+                    WriteLine($"if (et{i}.isEmpty()) return;");
+                }
+            }
             for (int i = 0; i < existsTermTypes.Count; ++i)
             {
                 WriteLine($"{existsTypeDecls[i].TypeName}[] et{i}Arr = new {existsTypeDecls[i].TypeName}[et{i}.size()];");

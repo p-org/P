@@ -60,12 +60,21 @@ public class FromDaikon {
         if (!checkValidity(line, terms)) {
             return null;
         }
+        boolean didSth = false;
         for (int i = 0; i < forallTerms.size(); ++i) {
+            if (!didSth && line.contains("f" + i)) {
+              didSth = true;
+            }
             line = line.replace("f" + i, forallTerms.get(i).shortRepr());
         }
         for (int i = 0; i < existsTerms.size(); ++i) {
-            line = line.replace("f" + (i + forallTerms.size()), existsTerms.get(i).shortRepr());
+            String fieldPHName = "f" + (i + forallTerms.size());
+            if (!didSth && line.contains(fieldPHName)) {
+              didSth = true;
+            }
+            line = line.replace(fieldPHName, existsTerms.get(i).shortRepr());
         }
+        if (!didSth) return null;
         return runSubst(line);
     }
 

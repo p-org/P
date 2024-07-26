@@ -53,7 +53,8 @@ public class TraceParser {{
                 switch (name) {{
                     %EVENT_INITIALIZATION%
                     default:
-                        throw new RuntimeException(""Unspecified event type: "" + name + "". Wrong trace?"");
+                        continue;
+                        // throw new RuntimeException(""Unspecified event type: "" + name + "". Wrong trace?"");
                 }}
             }}
             result.add(events);

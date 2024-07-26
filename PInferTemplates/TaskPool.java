@@ -3,6 +3,7 @@ public class TaskPool {
     int chunkSize;
     int running;
     int numFinished;
+    int numMined;
     List<Task> tasks;
     Map<String, Map<String, Integer>> headerToNumTasks;
     Map<String, Map<String, List<Task>>> taskIndex;
@@ -16,6 +17,7 @@ public class TaskPool {
         this.taskIndex = new HashMap<>();
         this.ptr = 0;
         this.numFinished = 0;
+        this.numMined = 0;
         this.converter = converter;
     }
 
@@ -38,21 +40,27 @@ public class TaskPool {
     }
 
     private void showResults(String guards, String filters)  throws InterruptedException {
-        System.out.println("========================" + numFinished + "/" + tasks.size() + "==================================");
-        System.out.println(converter.getFormulaHeader(guards, filters));
-        Set<String> invariants = new HashSet<>();
-        for (var task : taskIndex.get(guards).get(filters)) {
-            var result = task.getDaikonOutput(converter);
-            if (result != null) {
-                invariants.addAll(result);
+        synchronized(this) {
+            System.out.println("========================" + numFinished + "/" + tasks.size() + "==================================");
+            System.out.println(converter.getFormulaHeader(guards, filters));
+            Set<String> invariants = new HashSet<>();
+            for (var task : taskIndex.get(guards).get(filters)) {
+                var result = task.getDaikonOutput(converter);
+                if (result != null) {
+                    invariants.addAll(result);
+                }
+            }
+            if (!invariants.isEmpty()) {
+                System.out.println(String.join("\n", invariants));
+                this.numMined += 1;
+            } else {
+                System.out.println("Infeasible guards / filters");
             }
         }
-        if (!invariants.isEmpty()) {
-            System.out.println(String.join("\n", invariants));
-        } else {
-            System.out.println("Infeasible guards / filters");
-        }
-        System.out.println("==========================================================");
+    }
+
+    public synchronized int getNumMined() {
+      return this.numMined;
     }
 
     public void notifyFinished(Task t) throws IOException, InterruptedException {
@@ -74,8 +82,8 @@ public class TaskPool {
 
     public void waitForAll() throws InterruptedException {
         synchronized (this) {
-            if (ptr < tasks.size()) {
-                while (ptr < tasks.size()) {
+            if (numFinished < tasks.size()) {
+                while (numFinished < tasks.size()) {
                     wait(0);
                 }
             }

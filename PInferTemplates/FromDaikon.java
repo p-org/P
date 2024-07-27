@@ -5,6 +5,7 @@ public class FromDaikon {
     private List<Main.RawTerm> terms;
     private String templateHeaderCar;
     private String templateHeaderCdr;
+    private int numExists;
     private static final String[] QUANTIFIERS = { %QUANTIFIERS% };
     private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()" };
     private static final Map<String, String> substs = new HashMap<>();
@@ -15,6 +16,7 @@ public class FromDaikon {
         this.terms = terms;
         this.templateHeaderCar = "";
         this.templateHeaderCdr = "";
+        this.numExists = numExtQuantfiers;
         StringBuilder sb = new StringBuilder();
         switch (templateFamily) {
             case "Forall":
@@ -50,6 +52,7 @@ public class FromDaikon {
         substs.put(".toString", "");
         substs.put("one of", "∈");
         substs.put(".getPayload()", "");
+        substs.put("[] elements", "");
     }
 
     public String getFormulaHeader(String guards, String filters) {
@@ -88,6 +91,13 @@ public class FromDaikon {
     private boolean checkValidity(String line, List<Main.RawTerm> terms) {
         for (var stub : FILTERED_INVS) {
             if (line.contains(stub)) return false;
+        }
+        if (line.contains("_num_e_exists_")) {
+            // check # exists is related not only existentially quantified events
+            for (int i = 0; i < QUANTIFIERS.length - numExists; ++i) {
+                if (line.contains("f" + i)) return true;
+            }
+            return false;
         }
         return true;
     }

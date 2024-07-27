@@ -14,6 +14,7 @@ public class MinerConfig {
     public final Set<Integer> mustIncludeGuards;
     public final Set<Integer> mustIncludeFilters;
     public final String templateCategory;
+    public final boolean verbose;
 
     public MinerConfig(CommandLine cmdOptions) {
         numForallQuantifiers = Integer.parseInt(cmdOptions.getOptionValue("num-forall", "%QUANTIFIED_EVENTS%"));
@@ -32,6 +33,7 @@ public class MinerConfig {
         atomicPredicatesPath = cmdOptions.getOptionValue("predicates", "%PROJECT_NAME%.predicates.json");
         termsPath = cmdOptions.getOptionValue("terms", "%PROJECT_NAME%.terms.json");
         checkTrivialCombinations = cmdOptions.hasOption("skip-trivial");
+        verbose = cmdOptions.hasOption("verbose");
         traces = List.of(cmdOptions.getOptionValues("logs"));
         StringBuilder templateMetadata = new StringBuilder();
         StringBuilder templateNamePrefixBuilder = new StringBuilder();
@@ -125,6 +127,10 @@ public class MinerConfig {
         mustIncludeFilterOpt.setRequired(false);
         mustIncludeFilterOpt.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(mustIncludeFilterOpt);
+
+        Option verbose = new Option("v", "verbose", false, "Print all debugging outputs (e.g. Daikon StdErr) from Daikon");
+        verbose.setRequired(false);
+        options.addOption(verbose);
 
         return options;
     }

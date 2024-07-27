@@ -433,7 +433,7 @@ namespace Plang.Compiler.Backend.PInfer
         }
 
         public static void Initialize() {
-            List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index];
+            List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index, PInferBuiltinTypes.CollectionSize];
             List<PLanguageType> containerTypes = [new SequenceType(PrimitiveType.Any),
                                                 new SetType(PrimitiveType.Any),
                                                 new MapType(PrimitiveType.Any, PrimitiveType.Any)];

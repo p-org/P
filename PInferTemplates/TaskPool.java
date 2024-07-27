@@ -8,8 +8,9 @@ public class TaskPool {
     Map<String, Map<String, Integer>> headerToNumTasks;
     Map<String, Map<String, List<Task>>> taskIndex;
     final FromDaikon converter;
+    final boolean verbose;
 
-    public TaskPool(int chunkSize, FromDaikon converter) {
+    public TaskPool(int chunkSize, FromDaikon converter, boolean verbose) {
         this.chunkSize = chunkSize;
         this.running = 0;
         this.tasks = new ArrayList<>();
@@ -19,6 +20,7 @@ public class TaskPool {
         this.numFinished = 0;
         this.numMined = 0;
         this.converter = converter;
+        this.verbose = verbose;
     }
 
     public void addTask(Task task) throws IOException {
@@ -45,7 +47,7 @@ public class TaskPool {
             System.out.println(converter.getFormulaHeader(guards, filters));
             Set<String> invariants = new HashSet<>();
             for (var task : taskIndex.get(guards).get(filters)) {
-                var result = task.getDaikonOutput(converter);
+                var result = task.getDaikonOutput(converter, verbose);
                 if (result != null) {
                     invariants.addAll(result);
                 }
@@ -149,7 +151,7 @@ public class TaskPool {
             return filtersStr;
         }
 
-        public Set<String> getDaikonOutput(FromDaikon converter) throws InterruptedException {
+        public Set<String> getDaikonOutput(FromDaikon converter, boolean verbose) throws InterruptedException {
             assert this.outputThread != null;
             String result = daikonOutput.toString();
             String prop;
@@ -169,11 +171,11 @@ public class TaskPool {
                 }
             }
             var stderr = daikonStdErr.toString().trim();
-            if (stderr.contains("Exception")) {
+            if (verbose && stderr.contains("Exception")) {
                 System.out.println("Exception raised: " + stderr);
                 return properties;
             }
-            if (stderr.contains("Unknown template")) {
+            if (verbose && stderr.contains("Unknown template")) {
                 System.out.println("Skipping unknown template: " + stderr);
                 return properties;
             }
@@ -243,17 +245,7 @@ public class TaskPool {
             for (var t: existsQuantifiedTerms) {
                 existsTypes.append(t.type());
             }
-            switch (templatePrefix) {
-                case "Forall":
-                    templateNameBuilder.append("Forall").append(forallTypes);
-                    break;
-                case "Exists":
-                    templateNameBuilder.append("Exists").append(existsTypes);
-                    break;
-                case "ForallExists":
-                    templateNameBuilder.append("Forall").append(numForall).append(forallTypes).append("Exists").append(numExists).append(existsTypes);
-                    break;                
-            }
+            templateNameBuilder.append("Forall").append(numForall).append(forallTypes).append("Exists").append(numExists).append(existsTypes);
             this.templateName = templateNameBuilder.toString().strip();
             ProcessBuilder pb = new ProcessBuilder("java",
                     "-Xmx32g",

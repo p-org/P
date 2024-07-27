@@ -108,7 +108,7 @@ public class Main {
         List<String> propertyKeys = new ArrayList<>();
         int numTasks = 0;
         FromDaikon converter = new FromDaikon(termsToPredicates, terms, isForall ? "Forall" : "Exists", 0);
-        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter);
+        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter, minerConfig.verbose);
         while (enumerator.hasNext()) {
             List<RawPredicate> predicateComb = enumerator.next();
             String key = predicateComb.stream().map(RawPredicate::shortRepr).collect(Collectors.joining(" && "));
@@ -170,7 +170,7 @@ public class Main {
         Map<String, Map<String, List<TaskPool.Task>>> tasks = new HashMap<>();
         int numTasks = 0;
         FromDaikon converter = new FromDaikon(termsToPredicates, terms, "ForallExists", minerConfig.numExistsQuantifiers);
-        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter);
+        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter, minerConfig.verbose);
         Map<String, List<String>> keysSequences = new HashMap<>();
         List<String> guardKeySequence = new ArrayList<>();
         while (guardEnumerator.hasNext()) {
@@ -190,6 +190,7 @@ public class Main {
                     Set<Integer> existsQuantifiedTerms = termComb.stream()
                             .filter(x -> !Collections.disjoint(terms.get(x).events(), existsQuantifiedEvents))
                             .collect(Collectors.toSet());
+                    if (existsQuantifiedTerms.isEmpty() && filters.isEmpty()) continue;
                     List<Integer> arrangedTerms = new ArrayList<>(termComb.stream()
                             .filter(x -> !existsQuantifiedTerms.contains(x)).toList());
                     List<Integer> forallQuantifiedTerms = new ArrayList<>(arrangedTerms);

@@ -112,8 +112,8 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 for (int j = 0; j <= nTerms; ++j)
                 {
-                    if ((nTerms - j == 0) ^ (QuantifiedEvents.Count - i == 0)) continue;
-                    if ((j == 0) ^ (i == 0)) continue;
+                    if ((nTerms - j != 0) && (QuantifiedEvents.Count - i == 0)) continue;
+                    if ((j != 0) && (i == 0)) continue;
                     List<PLanguageType> forallTypes = Enumerable.Range(0, nTerms - j).Select(_ => ty).ToList();
                     List<PLanguageType> existsTypes = Enumerable.Range(0, j).Select(_ => ty).ToList();
                     GenerateTemplate(QuantifiedEvents.Count - i, i, forallTypes, existsTypes);
@@ -133,18 +133,12 @@ namespace Plang.Compiler.Backend.PInfer
             string forallTypeNames = string.Join("", forallTypes.Select(Types.SimplifiedJavaType));
             string existsTypeNames = string.Join("", existsTypes.Select(Types.SimplifiedJavaType));
             string templateName = "";
-            if (forallTypeNames.Length != 0)
-            {
-                templateName += $"Forall{numForall}{forallTypeNames}";
-            }
-            if (existsTypeNames.Length != 0)
-            {
-                templateName += $"Exists{numExists}{existsTypeNames}";
-            }
+            templateName += $"Forall{numForall}{forallTypeNames}";
+            templateName += $"Exists{numExists}{existsTypeNames}";
             return templateName;
         }
 
-        private void WriteDefAndConstructor(string templateName, IEnumerable<TypeManager.JType> fieldTypeDecls, bool existsN = false)
+        private void WriteDefAndConstructor(string templateName, IEnumerable<TypeManager.JType> fieldTypeDecls, bool hasExists, bool existsN = false)
         {
             WriteLine($"public static class {templateName} {{");
             foreach (var (ty, i) in fieldTypeDecls.Select((val, index) => (val.TypeName, index)))
@@ -168,14 +162,19 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new Exception($"Config event {ConfigEvent.Name} should have a named-tuple type, got {configType}");
                 }
             }
-            WriteLine($"public {templateName} ({string.Join(", ", configConstants.Select(entry => $"{Types.JavaTypeFor(entry.Type).TypeName} {entry.Name}").Concat(fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}")))}) {{");
+            if (hasExists)
+            {
+                WriteLine("private int _num_e_exists_;");
+            }
+            List<string> existsCount = hasExists ? ["_num_e_exists_"] : [];
+            WriteLine($"public {templateName} ({string.Join(", ", existsCount.Select(x => $"int {x}").Concat(configConstants.Select(entry => $"{Types.JavaTypeFor(entry.Type).TypeName} {entry.Name}").Concat(fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}"))))}) {{");
             for (int i = 0; i < fieldTypeDecls.Count(); ++i)
             {
                 WriteLine($"this.f{i} = f{i};");
             }
-            foreach(var entry in configConstants)
+            foreach(var entry in configConstants.Select(x => x.Name).Concat(existsCount))
             {
-                WriteLine($"this.{entry.Name} = {entry.Name};");
+                WriteLine($"this.{entry} = {entry};");
             }
             WriteLine("}");
         }
@@ -215,7 +214,7 @@ namespace Plang.Compiler.Backend.PInfer
             var fullDecls = forallTypeDecls.Concat(existsTypeDecls.Select(x => new TypeManager.JType.JList(x))).ToList();
             // exists-n (e.g. quorum)
             bool generateExistsN = ConfigEvent != null && numExists != 0;
-            WriteDefAndConstructor(templateName, fullDecls, generateExistsN);
+            WriteDefAndConstructor(templateName, fullDecls, numExists != 0, generateExistsN);
             WriteLine($"public static void execute(List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> guards, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> forallTerms, List<String> existsTerms) {{");
             if (generateExistsN)
             {
@@ -239,6 +238,10 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 WriteLine($"List<{existsTypeDecls[i].ReferenceTypeName}> et{i} = new ArrayList<>();");
             }
+            if (numExists > 0)
+            {
+                WriteLine($"int numExistsComb = 0;");
+            }
             for (int i = 0; i < numExists; ++i)
             {
                 WriteLine($"for ({Constants.PEventsClass}<?> e{i + numForall}: trace) {{");
@@ -248,6 +251,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 WriteLine($"{Constants.PEventsClass}<?>[] filterArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall + numExists).Select(i => $"e{i}"))} }};");
                 WriteLine($"if (!({Job.ProjectName}.conjoin(filters, filterArgs))) continue;");
+                WriteLine($"numExistsComb += 1;");
             }
             // aggregate existentially quantified terms
             for (int i = 0; i < existsTermTypes.Count; ++i)
@@ -260,6 +264,10 @@ namespace Plang.Compiler.Backend.PInfer
             }
             // convert to array
             // first, check whether any list is empty
+            if (numForall > 0 && numExists > 0)
+            {
+                WriteLine("if (numExistsComb == 0) continue;");
+            }
             for (int i = 0; i < existsTermTypes.Count; ++i)
             {
                 if (numForall > 0)
@@ -283,8 +291,9 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 configEventAccess = GenerateConfigEventFieldAccess("eConfig");
             }
+            List<string> existsComb = numExists > 0 ? ["numExistsComb"] : [];
             var forallTermsInsts = forallTypeDecls.Select((x, i) => GenerateCoersion(x.TypeName, $"{Job.ProjectName}.termOf(forallTerms.get({i}), guardsArgs)")).ToList();
-            WriteLine($"new {templateName}({string.Join(", ", configEventAccess.Concat(forallTermsInsts).Concat(Enumerable.Range(0, existsTermTypes.Count).Select(i => $"et{i}Arr")))});");
+            WriteLine($"new {templateName}({string.Join(", ", existsComb.Concat(configEventAccess.Concat(forallTermsInsts).Concat(Enumerable.Range(0, existsTermTypes.Count).Select(i => $"et{i}Arr"))))});");
             WriteLine("} catch (Exception e) { if (e instanceof RuntimeException) throw (RuntimeException) e; }");
             for (int i = 0; i < numForall; ++i)
             {

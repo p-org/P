@@ -417,6 +417,10 @@ namespace Plang.Compiler.TypeChecker
         {
             return null;
         }
+        public override object VisitAssumeStmt(PParser.AssumeStmtContext context)
+        {
+            return null;
+        }
 
         public override object VisitReturnStmt(PParser.ReturnStmtContext context)
         {

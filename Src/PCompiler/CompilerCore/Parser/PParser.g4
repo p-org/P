@@ -144,6 +144,7 @@ stateName : state=iden ;
 functionBody : LBRACE varDecl* statement* RBRACE ;
 statement : LBRACE statement* RBRACE							# CompoundStmt
           | ASSERT assertion=expr (COMMA message=expr)? SEMI	# AssertStmt
+          | ASSUME assumption=expr (COMMA message=expr)? SEMI	# AssumeStmt
           | PRINT message=expr SEMI								# PrintStmt
           | RETURN expr? SEMI									# ReturnStmt
           | BREAK SEMI											# BreakStmt

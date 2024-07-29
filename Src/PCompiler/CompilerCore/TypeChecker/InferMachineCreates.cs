@@ -53,6 +53,10 @@ namespace Plang.Compiler.TypeChecker
                 case AssertStmt assertStmt:
                     return InferCreatesForExpr(assertStmt.Assertion, handler)
                         .Union(InferCreatesForExpr(assertStmt.Message, handler));
+                
+                case AssumeStmt assumeStmt:
+                    return InferCreatesForExpr(assumeStmt.Assumption, handler)
+                        .Union(InferCreatesForExpr(assumeStmt.Message, handler));
 
                 case AssignStmt assignStmt:
                     return InferCreatesForExpr(assignStmt.Location, handler)

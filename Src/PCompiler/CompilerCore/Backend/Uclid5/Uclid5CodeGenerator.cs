@@ -1078,6 +1078,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         EmitLine("control {");
         EmitLine($"set_solver_option(\":Timeout\", {60 * 1});"); // timeout per query in seconds
+        EmitLine("set_solver_option(\":model.compact\", true);");
+        EmitLine("set_solver_option(\":smt.mbqi\", true);");
+        EmitLine("set_solver_option(\":smt.ematching\", true);");
+        EmitLine("set_solver_option(\":smt.pull-nested-quantifiers\", true);");
+        EmitLine("set_solver_option(\":smt.macro-finder\", true);");
         EmitLine("induction(1);");
 
         foreach (var m in machines)
@@ -1187,6 +1192,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
                 throw new NotSupportedException(
                     $"Not supported assignment expression with call: {cstmt.Location} = {cstmt.Value} ({GetLocation(cstmt)})");
+            case AssignStmt {Value: ChooseExpr} cstmt:
+                throw new NotSupportedException("TODO HERE");
             case AssignStmt astmt:
                 switch (astmt.Location)
                 {
@@ -1229,6 +1236,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
             case AssertStmt astmt:
                 EmitLine($"// {((StringExpr)astmt.Message).BaseString}");
                 EmitLine($"assert({ExprToString(astmt.Assertion)});");
+                return;
+            case AssumeStmt astmt:
+                EmitLine($"// {((StringExpr)astmt.Message).BaseString}");
+                EmitLine($"assume({ExprToString(astmt.Assumption)});");
                 return;
             case PrintStmt { Message: StringExpr } pstmt:
                 EmitLine($"// {((StringExpr)pstmt.Message).BaseString}");
@@ -1395,8 +1406,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     $"Not supported expr: {expr} of {cexp.Type.OriginalRepresentation}")
             },
             DefaultExpr dexp => DefaultValue(dexp.Type),
-            QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference)}{ExprToString(qexpr.Body)})",
-            QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference)}{ExprToString(qexpr.Body)})",
+            QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, true)}{ExprToString(qexpr.Body)})",
+            QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, false)}{ExprToString(qexpr.Body)})",
             MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
             SpecAccessExpr sax => $"{SpecPrefix}{sax.Spec.Name}_{sax.FieldName}",
             EventAccessExpr eax => LabelAdtSelectPayloadField(ExprToString(eax.SubExpr), eax.PEvent, eax.Entry),
@@ -1416,8 +1427,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
             return $"{string.Join(", ", bound.Select(b => $"{LocalPrefix}{b.Name}: {TypeToString(b.Type)}"))}";
         }
         
-        string Guard(List<Variable> bound, bool difference)
+        string Guard(List<Variable> bound, bool difference, bool universal)
         {
+            var impliesOrAnd = universal ? "==>" : "&&";
+            
             List<string> bounds = [];
             foreach (var b in bound)
             {
@@ -1456,7 +1469,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
             if (bounds.Count != 0)
             {
-                return "(" + string.Join(" && ", bounds) + ") ==> ";
+                return "(" + string.Join(" && ", bounds) + $") {impliesOrAnd} ";
             }
 
             return "";

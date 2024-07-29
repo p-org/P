@@ -18,21 +18,18 @@ machine Coordinator
         entry {
             var p: machine;
             var r: Round;
+            assume !(r in yesVotes);
             
-            if (!(r in yesVotes)) {
-                yesVotes[r] = default(set[machine]);
-                
-                foreach (p in participants()) 
-                    invariant forall new (e: event) :: forall (m: machine) :: e targets m ==> m in participants();
-                    invariant forall new (e: event) :: e is eVoteReq;
-                {
-                    send p, eVoteReq, (round = r,);
-                }
-                
-                goto WaitForResponses;
+            yesVotes[r] = default(set[machine]);
+            
+            foreach (p in participants()) 
+                invariant forall new (e: event) :: forall (m: machine) :: e targets m ==> m in participants();
+                invariant forall new (e: event) :: e is eVoteReq;
+            {
+                send p, eVoteReq, (round = r,);
             }
             
-            goto Init;
+            goto WaitForResponses;
         }
         
         defer eVoteResp;

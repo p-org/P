@@ -99,7 +99,7 @@ invariant req_implies_not_init: forall (e: event, c: Coordinator) :: e is eVoteR
 // the main invariant we care about
 invariant safety: forall (p1: Participant) :: p1 is Accepted ==> (forall (p2: Participant) :: preference(p2) == YES);
 
-// supporting invariants
+// supporting invariants, based on the Kondo paper
 invariant  a1: forall (e: eVoteResp) :: inflight e ==> e.source in participants();
 invariant  a2: forall (e: eVoteResp) :: inflight e ==> e.vote == preference(e.source);
 invariant a3b: forall (e: eAbort)    :: inflight e ==> coordinator() is Aborted;

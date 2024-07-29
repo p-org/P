@@ -1,5 +1,5 @@
 <Project>
-<ProjectName>TwoPhaseCommitKondo</ProjectName>
+<ProjectName>TwoPhaseCommitVerification</ProjectName>
 <InputFiles>
 	<PFile>./PSrc/</PFile>
 </InputFiles>

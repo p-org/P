@@ -78,6 +78,17 @@ public class FromDaikon {
             line = line.replace(fieldPHName, existsTerms.get(i).shortRepr());
         }
         if (!didSth) return null;
+        if (line.contains("_num_e_exists_")) {
+            // check # exists is related not only existentially quantified events
+            boolean containsForallEv = false;
+            for (int i = 0; i < QUANTIFIERS.length - numExists; ++i) {
+                if (line.contains("e" + i)) {
+                  containsForallEv = true;
+                  break;
+                }
+            }
+            if (!containsForallEv) return null;
+        }
         return runSubst(line);
     }
 
@@ -92,13 +103,7 @@ public class FromDaikon {
         for (var stub : FILTERED_INVS) {
             if (line.contains(stub)) return false;
         }
-        if (line.contains("_num_e_exists_")) {
-            // check # exists is related not only existentially quantified events
-            for (int i = 0; i < QUANTIFIERS.length - numExists; ++i) {
-                if (line.contains("f" + i)) return true;
-            }
-            return false;
-        }
+        
         return true;
     }
 }

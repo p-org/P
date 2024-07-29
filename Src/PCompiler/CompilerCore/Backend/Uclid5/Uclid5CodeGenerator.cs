@@ -1193,7 +1193,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     case VariableAccessExpr vax:
                         EmitLine($"{ExprToString(vax)} = {ExprToString(astmt.Value)};");
                         return;
-                    case MapAccessExpr max:
+                    case MapAccessExpr {MapExpr: VariableAccessExpr} max:
                         var map = ExprToString(max.MapExpr);
                         var index = ExprToString(max.IndexExpr);
                         var t = ((MapType)max.MapExpr.Type).ValueType;
@@ -1237,12 +1237,25 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine(
                     $"call {fapp.Function.Name}({string.Join(", ", fapp.ArgsList.Select(ExprToString).Prepend("this"))});");
                 return;
-            case AddStmt astmt:
+            case AddStmt {Variable: VariableAccessExpr} astmt:
+                // v += (y)
                 var aset = ExprToString(astmt.Variable);
                 var akey = ExprToString(astmt.Value);
                 EmitLine($"{aset} = {aset}[{akey} -> true];");
                 return;
-            case RemoveStmt rstmt:
+            case AddStmt {Variable: MapAccessExpr} astmt when ((MapAccessExpr)astmt.Variable).MapExpr is VariableAccessExpr:
+                // m[x] += (y)
+                // m = m[x -> some((m[x].some)[y -> true])]
+                var mapInP = ((MapAccessExpr)astmt.Variable);
+                var mapTypeInP = (MapType) mapInP.MapExpr.Type;
+                var mapM = ExprToString(mapInP.MapExpr);
+                var locX = ExprToString(mapInP.IndexExpr);
+                var valY = ExprToString(astmt.Value);
+                var someMx = OptionSelectValue(mapTypeInP.ValueType, $"{mapM}[{locX}]");
+                var someUpdated = OptionConstructSome(mapTypeInP.ValueType, $"{someMx}[{valY} -> true]");
+                EmitLine($"{mapM} = {mapM}[{locX} -> {someUpdated}];");
+                return;
+            case RemoveStmt {Variable: VariableAccessExpr} rstmt:
                 var rset = ExprToString(rstmt.Variable);
                 var rkey = ExprToString(rstmt.Value);
 
@@ -1258,7 +1271,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         throw new NotSupportedException(
                             $"Only support remove statements for sets and maps, got {rstmt.Variable.Type}");
                 }
-            case InsertStmt istmt:
+            case InsertStmt {Variable: VariableAccessExpr} istmt:
                 var imap = ExprToString(istmt.Variable);
                 var idx = ExprToString(istmt.Index);
                 var value = OptionConstructSome(istmt.Value.Type, ExprToString(istmt.Value));

@@ -111,7 +111,7 @@ funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES inter
         | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
         
-pureDecl : PURE name=iden LPAREN funParamList? RPAREN (COLON type)? SEMI ;
+pureDecl : PURE name=iden LPAREN funParamList? RPAREN COLON type (ASSIGN body=expr)? SEMI ;
 
 invariantDecl: INVARIANT name=iden COLON body=expr SEMI ;
 axiomDecl: AXIOM body=expr SEMI ;

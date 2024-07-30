@@ -18,6 +18,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private CompilationContext _ctx;
     private CompiledFile _src;
     private HashSet<PLanguageType> _optionsToDeclare;
+    private HashSet<PLanguageType> _chooseToDeclare;
     private HashSet<SetType> _setCheckersToDeclare;
     private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
     private Scope _globalScope;
@@ -81,6 +82,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _ctx = new CompilationContext(job);
         _src = new CompiledFile(_ctx.FileName);
         _optionsToDeclare = [];
+        _chooseToDeclare = [];
         _specListenMap = new Dictionary<PEvent, List<string>>();
         _setCheckersToDeclare = [];
         _globalScope = globalScope;
@@ -101,6 +103,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private static string MachinePrefix => "PMachine_";
     private static string LocalPrefix => "PLocal_";
     private static string OptionPrefix => "POption_";
+    private static string ChoosePrefix => "PChoose_";
     private static string CheckerPrefix => "PChecklist_";
     private static string SpecPrefix => "PSpec_";
     private static string InvariantPrefix => "PInv_";
@@ -623,7 +626,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                                 EmitLine($"call {name}({SpecPrefix}Payload);");
                                 break;
                             default:
-                                throw new NotSupportedException($"Not supported default: {handler}");
+                                throw new NotSupportedException($"Not supported handler ({handler}) at {GetLocation(handler)}");
                         }
                         EmitLine("}");
                     }
@@ -726,6 +729,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         GenerateOptionTypes();
         EmitLine("");
         GenerateCheckerVars();
+        EmitLine("");
+        GenerateChooseProcedures();
         EmitLine("");
 
         foreach (var pure in pures)
@@ -1069,7 +1074,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine("}\n");
                 return;
             default:
-                throw new NotSupportedException($"Not supported default: {handler}");
+                throw new NotSupportedException($"Not supported handler ({handler}) at {GetLocation(handler)}");
         }
     }
 
@@ -1133,6 +1138,34 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine($"\t| {opt}_None ();");
         }
     }
+    
+    private void GenerateChooseProcedures()
+    {
+        foreach (var choosePt in _chooseToDeclare)
+        {
+            var proc = GetChooseName(choosePt);
+            EmitLine($"procedure [noinline] {proc}(inp: {TypeToString(choosePt)})");
+            switch (choosePt)
+            {
+                case MapType mapType:
+                    EmitLine($"\treturns (outp: {TypeToString(mapType.KeyType)})");
+                    EmitLine($"\tensures {OptionIsSome(mapType.ValueType, "inp[outp]")};");
+                    break;
+                case SetType setType:
+                    EmitLine($"\treturns (outp: {TypeToString(setType.ElementType)})");
+                    EmitLine($"\tensures inp[outp];");
+                    break;
+                case PrimitiveType pt when pt.Equals(PrimitiveType.Int):
+                    EmitLine($"\treturns (outp: {TypeToString(pt)})");
+                    EmitLine($"\tensures 0 <= outp && outp <= inp;");
+                    break;
+                default:
+                    throw new NotSupportedException($"Not supported choose type: {choosePt} ({choosePt.OriginalRepresentation})");
+            }
+            EmitLine("{");
+            EmitLine("}\n");
+        }
+    }
 
     private string OptionConstructSome(PLanguageType t, string value)
     {
@@ -1170,30 +1203,29 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             case CompoundStmt cstmt:
                 foreach (var s in cstmt.Statements) GenerateStmt(s, specMachine);
-
                 return;
-            case AssignStmt { Value: FunCallExpr } cstmt:
+            case AssignStmt { Value: FunCallExpr, Location: VariableAccessExpr} cstmt:
                 var call = cstmt.Value as FunCallExpr;
-                switch (cstmt.Location)
+                var avax = cstmt.Location as VariableAccessExpr;
+                if (call == null) return;
+                var v = ExprToString(avax);
+                var f = call.Function.Name;
+                var fargs = call.Arguments.Select(ExprToString);
+                if (call.Function.Owner is not null)
                 {
-                    case VariableAccessExpr vax:
-                        if (call == null) return;
-                        var v = ExprToString(vax);
-                        var f = call.Function.Name;
-                        var fargs = call.Arguments.Select(ExprToString);
-                        if (call.Function.Owner is not null)
-                        {
-                            fargs = fargs.Prepend("this");
-                        }
-                        EmitLine($"call ({v}) = {f}({string.Join(", ", fargs)});");
-
-                        return;
+                    fargs = fargs.Prepend("this");
                 }
-
-                throw new NotSupportedException(
-                    $"Not supported assignment expression with call: {cstmt.Location} = {cstmt.Value} ({GetLocation(cstmt)})");
-            case AssignStmt {Value: ChooseExpr} cstmt:
-                throw new NotSupportedException("TODO HERE");
+                EmitLine($"call ({v}) = {f}({string.Join(", ", fargs)});");
+                return;
+            case AssignStmt {Value: ChooseExpr, Location: VariableAccessExpr} cstmt:
+                var chooseExpr = (ChooseExpr)cstmt.Value;
+                _chooseToDeclare.Add(chooseExpr.SubExpr.Type);
+                var cvax = (VariableAccessExpr)cstmt.Location;
+                var cv = ExprToString(cvax);
+                var cf = GetChooseName(chooseExpr.SubExpr.Type);
+                var arg = ExprToString(chooseExpr.SubExpr);
+                EmitLine($"call ({cv}) = {cf}({arg});");
+                return;
             case AssignStmt astmt:
                 switch (astmt.Location)
                 {
@@ -1397,14 +1429,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
             MapAccessExpr maex =>
                 OptionSelectValue(((MapType)maex.MapExpr.Type).ValueType,
                     $"{ExprToString(maex.MapExpr)}[{ExprToString(maex.IndexExpr)}]"),
-            ContainsExpr cexp => cexp.Collection.Type switch
-            {
-                MapType mapType => OptionIsSome(mapType.ValueType,
-                    $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
-                SetType _ => $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
-                _ => throw new NotSupportedException(
-                    $"Not supported expr: {expr} of {cexp.Type.OriginalRepresentation}")
-            },
+            ContainsExpr cexp when cexp.Collection.Type is MapType => OptionIsSome(((MapType) cexp.Collection.Type).ValueType, $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
+            ContainsExpr cexp when cexp.Collection.Type is SetType => $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
             DefaultExpr dexp => DefaultValue(dexp.Type),
             QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, true)}{ExprToString(qexpr.Body)})",
             QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, false)}{ExprToString(qexpr.Body)})",
@@ -1418,7 +1444,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             FlyingExpr fexpr => $"{InFlight(StateVar, ExprToString(fexpr.Instance))}",
             SentExpr sexpr => $"{StateAdtSelectSent(StateVar)}[{ExprToString(sexpr.Instance)}]",
             TargetsExpr texpr => $"({LabelAdtSelectTarget(ExprToString(texpr.Instance))} == {ExprToString(texpr.Target)})",
-            _ => throw new NotSupportedException($"Not supported expr: {expr}")
+            _ => throw new NotSupportedException($"Not supported expr ({expr}) at {GetLocation(expr)}")
             // _ => $"NotHandledExpr({expr})"
         };
 
@@ -1550,11 +1576,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
             case SetType st:
                 return $"[{TypeToString(st.ElementType)}]boolean";
             case MapType mt:
-                this._optionsToDeclare.Add(mt.ValueType);
+                _optionsToDeclare.Add(mt.ValueType);
                 return $"[{TypeToString(mt.KeyType)}]{GetOptionName(mt.ValueType)}";
         }
 
-        throw new NotSupportedException($"Not supported type expression: {t} ({t.OriginalRepresentation})");
+        throw new NotSupportedException($"Not supported type expression {t} ({t.OriginalRepresentation})");
     }
 
     private string GetLocalName(Variable v)
@@ -1575,6 +1601,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return Regex.Replace(output, "[^a-zA-Z0-9_.]+", "", RegexOptions.Compiled);
     }
 
+
+    private string GetChooseName(PLanguageType t)
+    {
+        var output = $"{ChoosePrefix}{TypeToString(t)}";
+        return Regex.Replace(output, "[^a-zA-Z0-9_.]+", "", RegexOptions.Compiled);
+    }
 
     private string GetLocation(IPAST node)
     {

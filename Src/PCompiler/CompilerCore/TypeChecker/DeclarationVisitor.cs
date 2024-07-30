@@ -607,18 +607,46 @@ namespace Plang.Compiler.TypeChecker
         
         public override object VisitPureDecl(PParser.PureDeclContext context)
         {
-            // PURE name=Iden
+            // PURE name=Iden body=Expr
             var pure = (Pure) nodesToDeclarations.Get(context);
-
+            
             // LPAREN funParamList? RPAREN
             var paramList = context.funParamList() != null
                 ? (Variable[]) Visit(context.funParamList())
                 : new Variable[0];
             pure.Signature.Parameters.AddRange(paramList);
+            
+            var temporaryFunction = new Function(pure.Name, context)
+            {
+                Scope = CurrentScope.MakeChildScope()
+            };
+
+            foreach (var p in paramList)
+            {
+                var param = temporaryFunction.Scope.Put(p.Name, p.SourceLocation, VariableRole.Param);
+                param.Type = p.Type;
+                nodesToDeclarations.Put(p.SourceLocation, param);
+                temporaryFunction.Signature.Parameters.Add(param);
+            }
+
+            pure.Scope = temporaryFunction.Scope;
 
             // (COLON type)?
             pure.Signature.ReturnType = ResolveType(context.type());
+            
+            if (context.body is not null)
+            {
+                var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+                var body = exprVisitor.Visit(context.body);
+                
+                if (!pure.Signature.ReturnType.IsSameTypeAs(body.Type))
+                {
+                    throw Handler.TypeMismatch(context.body, body.Type, pure.Signature.ReturnType);
+                }
 
+                pure.Body = body;
+            }
+            
             return pure;
         }
         

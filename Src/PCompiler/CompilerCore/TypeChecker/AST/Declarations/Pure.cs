@@ -15,11 +15,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             Name = name;
             SourceLocation = sourceNode;
         }
-
-        public Pure ParentPure { get; set; }
+        
         public FunctionSignature Signature { get; } = new FunctionSignature();
 
         public string Name { get; set; }
+        public IPExpr Body { get; set; }
         public ParserRuleContext SourceLocation { get; }
         
         public Scope Scope { get; set; }

@@ -735,8 +735,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         foreach (var pure in pures)
         {
-            var args = string.Join(", ", pure.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}"));
-            EmitLine($"function {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)};");
+            var args = string.Join(", ", pure.Signature.Parameters.Select(p => $"{LocalPrefix}{p.Name}: {TypeToString(p.Type)}"));
+            if (pure.Body is null)
+            {
+                EmitLine($"function {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)};");
+            }
+            else
+            {
+                EmitLine($"define {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)} = {ExprToString(pure.Body)};");
+            }
         }
         EmitLine("");
         

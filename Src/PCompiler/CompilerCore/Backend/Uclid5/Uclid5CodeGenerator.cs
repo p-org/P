@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -42,38 +43,23 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         var failed = Regex.Matches(stdout,  "UNDEF -> ").Count + Regex.Matches(stdout,  "FAILED -> ").Count;
         var succeeded = Regex.Matches(stdout, "PASSED -> ").Count;
-
-        Dictionary<string, int> checks = [];
             
         job.Output.WriteInfo($"Successfully verified {succeeded} conditions.");
         job.Output.WriteInfo($"Failed to verify {failed} conditions.");
-        foreach (Match match in Regex.Matches(stdout, @"UNDEF -> verify_(.*) \[")) // TODO: add failed as well
+
+        var undefs = Regex.Matches(stdout, @"UNDEF -> .*, line (\d+)");
+        var fails = Regex.Matches(stdout, @"FAILED -> .*, line (\d+)");
+        
+        var query = File.ReadLines(job.OutputDirectory.FullName + "/" + filename).ToArray();
+        
+        foreach (Match match in fails.Concat(undefs))
         {
             foreach (var check in match.Groups[1].Captures)
             {
-                var c = check.ToString() ?? "";
-                var underscoreRegex = new Regex(Regex.Escape("_"));
-
-                if ( Regex.Matches(c,  "_").Count <= 1)
-                {
-                    c = underscoreRegex.Replace(c, " entering ", 1);
-                }
-                else
-                {
-                    c = underscoreRegex.Replace(c, " in ", 1);
-                }
-                c = underscoreRegex.Replace(c, " handling ", 1);
-                
-                if (!checks.TryAdd(c, 1))
-                {
-                    checks[c] += 1;
-                }
+                var c = Int32.Parse(check.ToString()) - 1;
+                var line = query[c];
+                job.Output.WriteInfo($"- {line.Split("//").Last()}");
             }
-        }
-
-        foreach (var kv in checks)
-        {
-            job.Output.WriteInfo($"- {kv.Value} for {kv.Key}");
         }
     }
 
@@ -855,8 +841,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     }
                     else
                     {
-                        EmitLine($"// There is no handler for {e.Name} in {s.Name} of {m.Name}");
-                        EmitLine("assert false;");
+                        EmitLine($"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
                     }
 
                     EmitLine("}");
@@ -920,7 +905,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 foreach (var inv in _globalScope.AllDecls.OfType<Invariant>())
                 {
                     EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
-                    EmitLine($"\tensures {InvariantPrefix}{inv.Name}();");
+                    EmitLine($"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(f)}");
                 }
                 
                 if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
@@ -989,7 +974,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var inv in invariants)
         {
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
-            EmitLine($"\tensures {InvariantPrefix}{inv.Name}();");
+            EmitLine($"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(s)}");
         }
         
         EmitLine("{");
@@ -1052,13 +1037,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
         EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
 
+        var handler = s.AllEventHandlers.ToDictionary()[ev];
+        
         foreach (var inv in invariants)
         {
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
-            EmitLine($"\tensures {InvariantPrefix}{inv.Name}();");
+            EmitLine($"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(handler)}");
         }
-        
-        var handler = s.AllEventHandlers.ToDictionary()[ev];
 
         switch (handler)
         {
@@ -1090,11 +1075,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         EmitLine("control {");
         EmitLine($"set_solver_option(\":Timeout\", {60 * 1});"); // timeout per query in seconds
-        EmitLine("set_solver_option(\":model.compact\", true);");
-        EmitLine("set_solver_option(\":smt.mbqi\", true);");
-        EmitLine("set_solver_option(\":smt.ematching\", true);");
-        EmitLine("set_solver_option(\":smt.pull-nested-quantifiers\", true);");
-        EmitLine("set_solver_option(\":smt.macro-finder\", true);");
         EmitLine("induction(1);");
 
         foreach (var m in machines)
@@ -1344,7 +1324,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         EmitLine($"while ({checker} != {collection})");
                         foreach (var inv in  _globalScope.AllDecls.OfType<Invariant>())
                         {
-                            EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}();");
+                            EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
                         }
                         EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
                         EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
@@ -1359,7 +1339,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         // user given invariants
                         foreach (var inv in fstmt.Invariants)
                         {
-                            EmitLine($"\tinvariant {ExprToString(inv)};");
+                            EmitLine($"\tinvariant {ExprToString(inv)}; // Failed to verify loop invariant at {GetLocation(inv)}");
                         }
                         
                         EmitLine("{");

@@ -110,21 +110,20 @@ invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && e targ
 invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && e targets coordinator() ==> !inflight e;
 invariant never_resp_to_participant: forall (e: event, p: Participant) :: e is eVoteResp && e targets p ==> !inflight e;
 
-// the main invariant we care about
-invariant safety: forall (p1: Participant, r: Round) :: r in p1.commited ==> (forall (p2: Participant) :: preference(p2, r) == YES);
+// the main invariant we care about 
+invariant safety: forall (c: Coordinator, p1: Participant, r: Round) :: (r in p1.commited ==> (forall (p2: Participant) :: preference(p2, r) == YES));
 
-// supporting invariants
-invariant  a1: forall (e: eVoteResp) :: inflight e ==> e.source in participants();
-invariant  a2: forall (e: eVoteResp) :: inflight e ==> e.vote == preference(e.source, e.round);
-invariant a3a: forall (c: Coordinator, e: eCommit)   :: inflight e ==> e.round in c.commited;
-invariant a3b: forall (c: Coordinator, e: eAbort)    :: inflight e ==> e.round in c.aborted;
-invariant  a4: forall (c: Coordinator, r: Round, p: Participant) :: r in p.commited ==> r in c.commited;
-invariant  a5: forall (p: Participant, c: Coordinator, r: Round) :: r in c.yesVotes && p in c.yesVotes[r] ==> preference(p, r) == YES;
-invariant  a6: forall (c: Coordinator, r: Round) :: r in c.commited ==> (forall (p: Participant) :: p in participants() ==> preference(p, r) == YES);
+// supporting invariants from non-round proof
+invariant  a1: forall (e: eVoteResp) :: sent e ==> e.source is Participant;
+invariant  a2: forall (e: eVoteResp) :: sent e ==> e.vote == preference(e.source, e.round);
+invariant a3a: forall (c: Coordinator, e: eCommit) :: sent e ==> e.round in c.commited;
+invariant a3b: forall (c: Coordinator, e: eAbort)  :: sent e ==> e.round in c.aborted;
+invariant  a4: forall (c: Coordinator, r: Round, p1: Participant) :: r in p1.commited ==> r in c.commited;
+invariant  a5: forall (p: Participant, c: Coordinator, r: Round) :: (r in c.yesVotes && p in c.yesVotes[r]) ==> preference(p, r) == YES;
+invariant  a6: forall (c: Coordinator, r: Round) :: r in c.commited ==> (forall (p2: Participant) :: preference(p2, r) == YES);
 
-invariant  a7: forall (c: Coordinator, r: Round) :: !(r in c.commited) || !(r in c.aborted);
-invariant  a8: forall (c: Coordinator, r: Round) :: !(r in c.yesVotes) ==> !(r in c.commited) && !(r in c.aborted);
-invariant a9a: forall (c: Coordinator, e: eVoteReq)  :: inflight e ==> e.round in c.yesVotes;
-invariant a9b: forall (c: Coordinator, e: eVoteResp) :: inflight e ==> e.round in c.yesVotes;
-invariant a9c: forall (c: Coordinator, e: eAbort)    :: inflight e ==> e.round in c.yesVotes;
-invariant a9d: forall (c: Coordinator, e: eCommit)   :: inflight e ==> e.round in c.yesVotes;
+// make sure that votes have been initialized
+invariant a7a: forall (c: Coordinator, e: eVoteReq)  :: sent e ==> e.round in c.yesVotes;
+invariant a7b: forall (c: Coordinator, e: eVoteResp) :: sent e ==> e.round in c.yesVotes;
+
+

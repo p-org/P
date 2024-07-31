@@ -24,7 +24,7 @@ namespace Plang.Compiler
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;
-            Timeout = -1;
+            Timeout = 60;
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null, bool debug = false)

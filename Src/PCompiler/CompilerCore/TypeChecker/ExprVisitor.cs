@@ -357,6 +357,8 @@ namespace Plang.Compiler.TypeChecker
                 {
                     case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Event):
                         break;
+                    case PermissionType {Origin: NamedEventSet} _:
+                        break;
                     default:
                         throw handler.TypeMismatch(context.bound, bound[0].Type, PrimitiveType.Event);
                 }

@@ -45,6 +45,8 @@ namespace Plang.Options
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
 
             Parser.AddArgument("debug", "d", "Enable debug logs", typeof(bool)).IsHidden = true;
+            
+            Parser.AddArgument("timeout", "t", "Set SMT solver timeout in seconds", typeof(int)).IsHidden = true;
         }
 
         /// <summary>
@@ -160,6 +162,9 @@ namespace Plang.Options
                     break;
                 case "debug":
                     compilerConfiguration.Debug = true;
+                    break;
+                case "timeout":
+                    compilerConfiguration.Timeout = (int)option.Value;
                     break;
                 case "mode":
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();

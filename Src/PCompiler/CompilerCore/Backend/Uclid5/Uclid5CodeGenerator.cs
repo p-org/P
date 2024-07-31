@@ -47,18 +47,18 @@ public class Uclid5CodeGenerator : ICodeGenerator
         job.Output.WriteInfo($"Successfully verified {succeeded} conditions.");
         job.Output.WriteInfo($"Failed to verify {failed} conditions.");
 
-        var undefs = Regex.Matches(stdout, @"UNDEF -> .*, line (\d+)");
-        var fails = Regex.Matches(stdout, @"FAILED -> .*, line (\d+)");
+        var undefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
+        var fails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
         
         var query = File.ReadLines(job.OutputDirectory.FullName + "/" + filename).ToArray();
         
         foreach (Match match in fails.Concat(undefs))
         {
-            foreach (var check in match.Groups[1].Captures)
+            foreach (var feedback in match.Groups[1].Captures.Zip(match.Groups[2].Captures))
             {
-                var c = Int32.Parse(check.ToString()) - 1;
-                var line = query[c];
-                job.Output.WriteInfo($"- {line.Split("//").Last()}");
+                var line = query[Int32.Parse(feedback.Second.ToString()) - 1];
+                var step = feedback.First.ToString().Contains("[Step #0]") ? "(base case)" : "";
+                job.Output.WriteInfo($"  -{line.Split("//").Last()} {step}");
             }
         }
     }
@@ -736,7 +736,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var inv in invariants)
         {
             EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
-            EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}();");
+            EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} globally");
         }
         EmitLine("");
         
@@ -901,12 +901,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"procedure [inline] {name}({string.Join(", ", ps)})");
 
                 var currState = Deref("this");
-                
-                foreach (var inv in _globalScope.AllDecls.OfType<Invariant>())
-                {
-                    EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
-                    EmitLine($"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(f)}");
-                }
                 
                 if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                 {
@@ -1074,7 +1068,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private void GenerateControlBlock(List<Machine> machines, List<PEvent> events)
     {
         EmitLine("control {");
-        EmitLine($"set_solver_option(\":Timeout\", {60 * 1});"); // timeout per query in seconds
+        EmitLine($"set_solver_option(\":Timeout\", {_ctx.Job.Timeout});"); // timeout per query in seconds
         EmitLine("induction(1);");
 
         foreach (var m in machines)

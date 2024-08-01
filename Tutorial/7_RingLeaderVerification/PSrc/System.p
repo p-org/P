@@ -44,4 +44,4 @@ invariant SelfPendingMax: forall (n: machine, m: machine, e: eNominate) :: (infl
 
 // Main theorems
 invariant LeaderMax: forall (x: machine, y: machine) :: x is Won ==> le(y, x);
-invariant UniqueLeader: forall (x: machine, y: machine) :: (x is Won && y is Won) ==> (x == y);
+invariant UniqueLeader: forall (x: machine, y: machine) :: (x is Won && y is Won) ==> (le(x, y) && le(y, x));

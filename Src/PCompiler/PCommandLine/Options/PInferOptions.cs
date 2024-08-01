@@ -17,11 +17,11 @@ namespace Plang.Options
         {
             Parser = new("p infer", "The P Specification Miner");
             var minerConfigGroup = Parser.GetOrCreateGroup("miner-config", "SpecMiner Configuration");
-            var stOpt = minerConfigGroup.AddArgument("skip-trivial", "st", "Skip trivial guard-filter-term combinations.");
-            var ngOpt = minerConfigGroup.AddArgument("num-guard-predicates", "ng", "Number of atomic predicates to conjoin in the guard (default: 0)");
-            var nfOpt = minerConfigGroup.AddArgument("num-filter-predicates", "nf", "Number of atomic predicates to conjoin in the filter (default: 0)");
-            var arityOpt = minerConfigGroup.AddArgument("inv-arity", "ia", "Arity (# terms involved) of invariants to mine (default: 2)");
-            var quantifiersOpt = minerConfigGroup.AddArgument("forall-quantifiers", "nforall", "Number of preceding `forall` quantifiers. Default: # of events quantified (i.e. all events are forall-quantified)");
+            var stOpt = minerConfigGroup.AddArgument("skip-trivial", "st", "Skip trivial guard-filter-term combinations.", typeof(bool));
+            var ngOpt = minerConfigGroup.AddArgument("num-guard-predicates", "ng", "Number of atomic predicates to conjoin in the guard (default: 0)", typeof(int));
+            var nfOpt = minerConfigGroup.AddArgument("num-filter-predicates", "nf", "Number of atomic predicates to conjoin in the filter (default: 0)", typeof(int));
+            var arityOpt = minerConfigGroup.AddArgument("inv-arity", "ia", "Arity (# terms involved) of invariants to mine (default: 2)", typeof(int));
+            var quantifiersOpt = minerConfigGroup.AddArgument("forall-quantifiers", "nforall", "Number of preceding `forall` quantifiers. Default: # of events quantified (i.e. all events are forall-quantified)", typeof(int));
             var mustIncludeGuardsOpt = minerConfigGroup.AddArgument("hint-guards", "hg", "Hint guards to include in the specification (default: none)");
             var mustIncludeFiltersOpt = minerConfigGroup.AddArgument("hint-filters", "hf", "Hint filters to include in the specification (default: none)");
             var verboseMode = minerConfigGroup.AddArgument("verbose", "verbose", "Verbose mode, print stderr of Daikon (default: false)");
@@ -96,19 +96,19 @@ namespace Plang.Options
             switch (arg.LongName)
             {
                 case "skip-trivial":
-                    config.SkipTrivialCombinations = bool.Parse((string)arg.Value);
+                    config.SkipTrivialCombinations = (bool) arg.Value;
                     break;
                 case "num-guard-predicates":
-                    config.NumGuardPredicates = int.Parse((string)arg.Value);
+                    config.NumGuardPredicates = (int) arg.Value;
                     break;
                 case "num-filter-predicates":
-                    config.NumFilterPredicates = int.Parse((string)arg.Value);
+                    config.NumFilterPredicates = (int) arg.Value;
                     break;
                 case "inv-arity":
-                    config.InvArity = int.Parse((string)arg.Value);
+                    config.InvArity = (int) arg.Value;
                     break;
                 case "forall-quantifiers":
-                    config.NumForallQuantifiers = int.Parse((string)arg.Value);
+                    config.NumForallQuantifiers =  (int) arg.Value;
                     break;
                 case "hint-guards":
                     config.MustIncludeGuard = [.. ((string[])arg.Value).Select(int.Parse)];

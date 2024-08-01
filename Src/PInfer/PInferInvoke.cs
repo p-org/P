@@ -61,6 +61,10 @@ namespace Plang.PInfer
             {
                 args.Add("-st");
             }
+            args.Add("-p");
+            args.Add(Path.Combine(configuration.OutputDirectory, "PInfer", $"{configuration.ProjectName}.predicates.json"));
+            args.Add("-t");
+            args.Add(Path.Combine(configuration.OutputDirectory, "PInfer", $"{configuration.ProjectName}.terms.json"));
             if (configuration.MustIncludeGuard.Count() > 0)
             {
                 args.Add("-g");

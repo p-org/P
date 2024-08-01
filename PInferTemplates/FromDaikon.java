@@ -96,6 +96,10 @@ public class FromDaikon {
         for (var subst : substs.entrySet()) {
             line = line.replace(subst.getKey(), subst.getValue());
         }
+        if (line.contains(" in ")) {
+            line = line.replace(" in ", " == ");
+            line = line.replace("[]", "");
+        }
         return line;
     }
 

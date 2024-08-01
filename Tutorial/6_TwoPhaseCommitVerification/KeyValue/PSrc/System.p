@@ -130,6 +130,21 @@ machine Participant {
     }
 }
 
+spec StrongConsistency observes eReadResp, eWriteResp {
+    var kv : map[int, int];
+    start state WaitForEvents {
+        on eWriteResp do (resp: tWriteResp) {
+            if (resp.vote == YES) {
+                kv[resp.key] = resp.value;
+            }
+        }
+        on eReadResp do (resp: tReadResp) {
+            if (resp.key in kv) {
+                assert resp.value == kv[resp.key];
+            }
+        }
+    }
+}
 
 // using these to avoid initialization
 pure participants(): set[machine];

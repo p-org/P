@@ -1248,7 +1248,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 return;
             case AssertStmt astmt:
                 EmitLine($"// {((StringExpr)astmt.Message).BaseString}");
-                EmitLine($"assert({ExprToString(astmt.Assertion)});");
+                EmitLine($"assert({ExprToString(astmt.Assertion)}); // Failed to verify assertion at {GetLocation(astmt)}");
                 return;
             case AssumeStmt astmt:
                 EmitLine($"// {((StringExpr)astmt.Message).BaseString}");

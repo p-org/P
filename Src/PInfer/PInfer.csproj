@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>The PInfer CommandLine User Interface.</Description>
+        <AssemblyName>PInfer</AssemblyName>
+        <RootNamespace>PInfer</RootNamespace>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
+        <TargetFramework>net8.0</TargetFramework>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Description>The P PInfer CLI</Description>
+        <PackageProjectUrl>https://github.com/p-org/P</PackageProjectUrl>
+        <Copyright>The P team</Copyright>
+        <PackageTags>P programming language;safe asynchrony;state machines;model checkers</PackageTags>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Title>P Infer CLI</Title>
+        <Authors>The P team</Authors>
+        <RepositoryUrl>https://github.com/p-org/P</RepositoryUrl>
+    </PropertyGroup>
+</Project>

@@ -6,6 +6,7 @@ using PChecker.IO.Debugging;
 using PChecker.Scheduling;
 using Plang.Compiler;
 using Plang.Options;
+using Plang.PInfer;
 
 namespace Plang
 {
@@ -42,6 +43,9 @@ namespace Plang
                 case "check":
                     RunChecker(args.Skip(1).ToArray());
                     break;
+                case "infer":
+                    RunPInfer(args.Skip(1).ToArray());
+                    break;
                 case   "version":
                 case  "-v":
                 case  "-version":
@@ -54,7 +58,7 @@ namespace Plang
                     PrintCommandHelp();
                     break;
                 default:
-                    CommandLineOutput.WriteError($"Expected (compile | check) as the command input but received `{args[0]}`");
+                    CommandLineOutput.WriteError($"Expected (compile | check | infer) as the command input but received `{args[0]}`");
                     PrintCommandHelp();
                     break;
             }
@@ -142,6 +146,12 @@ namespace Plang
             var configuration = new PCompilerOptions().Parse(args);
             ICompiler compiler = new Compiler.Compiler();
             compiler.Compile(configuration);
+        }
+
+        public static void RunPInfer(string[] args)
+        {
+            var configuration = new PInferOptions().Parse(args);
+            PInferInvoke.invokeMain(configuration);
         }
     }
 }

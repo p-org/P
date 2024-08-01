@@ -105,7 +105,7 @@ namespace Plang.Options
             return compilerConfiguration;
         }
 
-        private static void FindLocalPProject(List<CommandLineArgument> result)
+        public static void FindLocalPProject(List<CommandLineArgument> result)
         {
             foreach (var arg in result)
             {

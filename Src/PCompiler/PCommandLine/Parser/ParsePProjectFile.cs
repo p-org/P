@@ -143,7 +143,7 @@ namespace Plang.Parser
         /// </summary>
         /// <param name="projectFullPath">Path to the pproj file</param>
         /// <returns>project name</returns>
-        private string GetProjectName(FileInfo projectFullPath)
+        public static string GetProjectName(FileInfo projectFullPath)
         {
             string projectName;
             var projectXml = XElement.Load(projectFullPath.FullName);
@@ -185,7 +185,7 @@ namespace Plang.Parser
         /// </summary>
         /// <param name="fullPathName"></param>
         /// <returns>If present returns the passed directory path, else the current directory</returns>
-        private DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
+        public static DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
         {
             var projectXml = XElement.Load(fullPathName.FullName);
             if (projectXml.Elements("OutputDir").Any())

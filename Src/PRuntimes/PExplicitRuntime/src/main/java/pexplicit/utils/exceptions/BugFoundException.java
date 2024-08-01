@@ -32,4 +32,10 @@ public class BugFoundException extends RuntimeException {
         buggySchedule = (PExplicitGlobal.getScheduler()).schedule;
         PExplicitLogger.logBugFound(message);
     }
+
+    public BugFoundException() { /* this constructor is only needed at the end of the code in RuntimeExecutor to throw some bugFoundException, so that PExplicit sets
+    the value of exit_code correctly */
+
+    }
+    
 }

@@ -41,7 +41,9 @@ public class RuntimeExecutor {
                     future.get();
                 }
             }
-        } catch (TimeoutException | BugFoundException e) {
+        } catch (TimeoutException e) {
+            throw e;
+        } catch (BugFoundException e) { // Dont merge with TimeoutException catch block, easier for seeing race conditions
             throw e;
         } catch (OutOfMemoryError e) {
             throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
@@ -145,7 +147,8 @@ public class RuntimeExecutor {
         //     throw new Exception("MEMOUT", e);
         // } 
         catch (BugFoundException e) {
-            
+
+
             for (Thread thread : threads) {
                 if (thread != Thread.currentThread()) {
                     thread.interrupt();
@@ -154,8 +157,8 @@ public class RuntimeExecutor {
 
             // (schedulers.get( PExplicitGlobal.getTID_to_localtID().get( Thread.currentThread().getId() ))).updateResult(); // Update result field before setting status
 
-            PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
-            PExplicitGlobal.setResult("cex"); // TODO: Why and where after setting status and result here are they changed before line 237?
+            // PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
+            // PExplicitGlobal.setResult("cex"); 
 
 
             PExplicitLogger.logStackTrace(e);
@@ -172,7 +175,7 @@ public class RuntimeExecutor {
                 PExplicitLogger.logStackTrace((Exception) replayException);
                 throw new BugFoundException(replayException.getMessage(), replayException);
             } catch (BugFoundException replayException) {
-                PExplicitLogger.logStackTrace(replayException);
+                PExplicitLogger.logStackTrace(replayException); // This should be throw exception again!
                 throw replayException;
             } catch (Exception replayException) {
                 PExplicitLogger.logStackTrace(replayException);
@@ -188,12 +191,7 @@ public class RuntimeExecutor {
         //     PExplicitGlobal.setStatus(STATUS.ERROR);
         //     throw new Exception("ERROR", e);
         // } 
-        finally {
-            // for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
-            //     Future<Integer> future = futures.get(i);
-            //     future.cancel(true);
-            // } // If we waiting for threads by future.get(), we dont need to cancel threads by future.cancel; especially if we have executor.shutdownNow as next command.
-            
+        finally {        
             executor.shutdownNow(); // forcibly shutdown EVERY thread
             
             Boolean isMemOutException = false;
@@ -225,25 +223,28 @@ public class RuntimeExecutor {
                 PExplicitGlobal.setStatus(STATUS.VERIFIED_UPTO_MAX_STEPS);
                 PExplicitGlobal.setResult("Correct");
                 printStats();
-                PExplicitLogger.logEndOfRun(schedulers.get(0), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+                PExplicitLogger.logEndOfRun(schedulers.get(0), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds()); // PIN:
             }
             else if (isMemOutException) {  // Memory Error (atleast one thread throws MemOut Exception)
                 PExplicitGlobal.setStatus(STATUS.MEMOUT);
                 PExplicitGlobal.setResult("MemOut");
                 printStats();
                 PExplicitLogger.logEndOfRun(schedulers.get(memOutScheduleIndex), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+                throw new Exception("MEMOUT"); 
             }
             else if (isBugFoundException) {  // Bug Found Exception (atleast one thread throws BugFound Exception AND no thread throws MemOut Exception) 
                 PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
                 PExplicitGlobal.setResult("cex");
                 printStats();
                 PExplicitLogger.logEndOfRun(schedulers.get(buggyScheduleIndex), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+                throw new BugFoundException();
             }
             else if (AllTimeOutException) {  // All threads timeout
                 PExplicitGlobal.setStatus(STATUS.TIMEOUT);
                 PExplicitGlobal.setResult("TimeOut");
                 printStats();
                 PExplicitLogger.logEndOfRun(schedulers.get(0), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+                throw new Exception("TIMEOUT"); 
             }
             else {  // Some other case
                 PExplicitGlobal.setStatus(STATUS.ERROR);
@@ -252,11 +253,6 @@ public class RuntimeExecutor {
                 throw new Exception("ERROR"); 
             }
 
-            // for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-            //     (schedulers.get(i)).updateResult();
-            
-            // for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-            //     PExplicitLogger.logEndOfRun(schedulers.get(i), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
         }
     }
 

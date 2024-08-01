@@ -2,11 +2,14 @@ package pexplicit.runtime.scheduler.replay;
 
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
+import pexplicit.runtime.logger.PExplicitThreadLogger;
 import pexplicit.runtime.logger.ScheduleWriter;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Schedule;
 import pexplicit.runtime.scheduler.Scheduler;
+import pexplicit.runtime.scheduler.explicit.SearchStatistics;
+import pexplicit.runtime.scheduler.explicit.strategy.SearchTask;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.PValue;
 
@@ -33,7 +36,7 @@ public class ReplayScheduler extends Scheduler {
 
     @Override
     public void runParallel(int tID) throws TimeoutException, InterruptedException {
-        run();
+
     }
 
 

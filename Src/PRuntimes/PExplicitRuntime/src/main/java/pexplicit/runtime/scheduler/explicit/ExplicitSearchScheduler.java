@@ -111,10 +111,10 @@ public class ExplicitSearchScheduler extends Scheduler {
         // PExplicitThreadLogger.logRunTest();  // TODO : Add log Info feature
 
 
-        PExplicitGlobal.setResult("incomplete"); // TODO: Set Result object
+        PExplicitGlobal.setResult("incomplete"); 
 
 
-        if (PExplicitGlobal.getConfig().getVerbosity() == 0) {  // TODO : Add log Info feature
+        if (PExplicitGlobal.getConfig().getVerbosity() == 0) {  
             printProgressHeader(true);
         }
         PExplicitGlobal.addTotIDtolocaltID(Thread.currentThread().getId(), localtID);
@@ -131,11 +131,11 @@ public class ExplicitSearchScheduler extends Scheduler {
                 // all tasks completed or schedule limit reached
                 break;
             }
-            PExplicitThreadLogger.logStartTask(searchStrategy.getCurrTask());   // TODO : Add log Info feature
+            PExplicitThreadLogger.logStartTask(searchStrategy.getCurrTask());   
             isDoneIterating = false;
             while (!isDoneIterating) {
                 searchStrategy.incrementIteration();
-                PExplicitThreadLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); // TODO : Add log Info feature
+                PExplicitThreadLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); 
                 if (stepNumber == 0) {
                     start();
                 }
@@ -145,7 +145,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
-            PExplicitThreadLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask()); // TODO : Add log Info feature
+            PExplicitThreadLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask()); 
 
 
         }

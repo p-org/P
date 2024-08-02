@@ -49,6 +49,10 @@ namespace Plang.Options
             PInferConfiguration pinferConfig = new();
             List<CommandLineArgument> fetch = [];
             PCompilerOptions.FindLocalPProject(fetch);
+            if (fetch.Count() == 0)
+            {
+                Error.ReportAndExit("No .pproj found");
+            }
             var projectFile = (string)fetch[0].Value;
             if (!CheckFileValidity.IsLegalPProjFile(projectFile, out var projectFilePath))
             {
@@ -128,48 +132,61 @@ namespace Plang.Options
         private static void WritePredicates(PInferConfiguration config)
         {
             var filePath = Path.Combine(config.OutputDirectory, "PInfer", config.ProjectName + ".predicates.json");
-            using StreamReader r = new(filePath);
-            string json = r.ReadToEnd();
-            var predicates = JsonSerializer.Deserialize<List<AtomicPredicates>>(json);
-            List<(int, string, string)> extractInfo = predicates.Select(x => (x.Order, x.Repr.Split("=>")[0].Trim(), x.Repr.Split("where")[1].Trim())).ToList();
-            int reprLength = 0;
-            int eventLength = 0;
-            foreach (var pi in extractInfo)
+            try
             {
-                reprLength = Math.Max(reprLength, pi.Item2.Length);
-                eventLength = Math.Max(eventLength, pi.Item3.Length);
+                using StreamReader r = new(filePath);
+                string json = r.ReadToEnd();
+                var predicates = JsonSerializer.Deserialize<List<AtomicPredicates>>(json);
+                List<(int, string, string)> extractInfo = predicates.Select(x => (x.Order, x.Repr.Split("=>")[0].Trim(), x.Repr.Split("where")[1].Trim())).ToList();
+                int reprLength = 0;
+                int eventLength = 0;
+                foreach (var pi in extractInfo)
+                {
+                    reprLength = Math.Max(reprLength, pi.Item2.Length);
+                    eventLength = Math.Max(eventLength, pi.Item3.Length);
+                }
+                var formatStr = $"| {{0, -5}} | {{1, -{reprLength + 1}}} | {{2, -{eventLength + 1}}} |";
+                Console.WriteLine("Available Atomic Predicates:");
+                Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Bounded Events"));
+                foreach (var (order, repr, events) in extractInfo)
+                {
+                    Console.WriteLine(string.Format(formatStr, order, repr, events));
+                }
             }
-            var formatStr = $"| {{0, -5}} | {{1, -{reprLength + 1}}} | {{2, -{eventLength + 1}}} |";
-            Console.WriteLine("Available Atomic Predicates:");
-            Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Bounded Events"));
-            foreach (var (order, repr, events) in extractInfo)
+            catch (Exception e)
             {
-                Console.WriteLine(string.Format(formatStr, order, repr, events));
+                Error.ReportAndExit(e.Message + " PSpecMiner might have not been compiled?");
             }
         }
 
         private static void WriteTerms(PInferConfiguration config)
         {
             var filePath = Path.Combine(config.OutputDirectory, "PInfer", config.ProjectName + ".terms.json");
-            using StreamReader r = new(filePath);
-            string json = r.ReadToEnd();
-            var terms = JsonSerializer.Deserialize<List<Terms>>(json);
-            List<(string, string, string)> extractInfo = terms.Select(x => (x.Repr.Split("=>")[0].Trim(), x.TypeStr, x.Repr.Split("where")[1].Trim())).ToList();
-            int reprLength = 0;
-            int typeLength = 0;
-            int eventLength = 0;
-            foreach (var pi in extractInfo)
-            {
-                reprLength = Math.Max(reprLength, pi.Item1.Length);
-                typeLength = Math.Max(typeLength, pi.Item2.Length);
-                eventLength = Math.Max(eventLength, pi.Item3.Length);
+            try{
+                using StreamReader r = new(filePath);
+                string json = r.ReadToEnd();
+                var terms = JsonSerializer.Deserialize<List<Terms>>(json);
+                List<(string, string, string)> extractInfo = terms.Select(x => (x.Repr.Split("=>")[0].Trim(), x.TypeStr, x.Repr.Split("where")[1].Trim())).ToList();
+                int reprLength = 0;
+                int typeLength = 0;
+                int eventLength = 0;
+                foreach (var pi in extractInfo)
+                {
+                    reprLength = Math.Max(reprLength, pi.Item1.Length);
+                    typeLength = Math.Max(typeLength, pi.Item2.Length);
+                    eventLength = Math.Max(eventLength, pi.Item3.Length);
+                }
+                Console.WriteLine("Available Terms:");
+                var formatStr = $"| {{0, -5}} | {{1, -{reprLength + 3}}} | {{2, -{typeLength + 3}}} | {{3, -{eventLength + 3}}} |";
+                Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Type", "Bounded Events"));
+                foreach (var ((repr, ty, eventTypes), id) in extractInfo.Select((x, i) => (x, i)))
+                {
+                    Console.WriteLine(string.Format(formatStr, id, repr, ty, eventTypes));
+                }
             }
-            Console.WriteLine("Available Terms:");
-            var formatStr = $"| {{0, -5}} | {{1, -{reprLength + 3}}} | {{2, -{typeLength + 3}}} | {{3, -{eventLength + 3}}} |";
-            Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Type", "Bounded Events"));
-            foreach (var ((repr, ty, eventTypes), id) in extractInfo.Select((x, i) => (x, i)))
+            catch (Exception e)
             {
-                Console.WriteLine(string.Format(formatStr, id, repr, ty, eventTypes));
+                Error.ReportAndExit(e.Message + " PSpecMiner might have not been compiled?");
             }
         }
     }

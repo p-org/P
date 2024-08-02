@@ -77,7 +77,7 @@ public class FromDaikon {
             }
             line = line.replace(fieldPHName, existsTerms.get(i).shortRepr());
         }
-        if (!didSth) return null;
+        if (!didSth && !line.contains("_num_e_exists_")) return null;
         if (line.contains("_num_e_exists_")) {
             // check # exists is related not only existentially quantified events
             boolean containsForallEv = false;
@@ -87,7 +87,16 @@ public class FromDaikon {
                   break;
                 }
             }
-            if (!containsForallEv) return null;
+            if (!containsForallEv) {
+                boolean ok = true;
+                for (int i = QUANTIFIERS.length - numExists; i < QUANTIFIERS.length; ++i) {
+                    if (line.contains("e" + i)) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (!ok) return null;
+            }
         }
         return runSubst(line);
     }

@@ -23,6 +23,10 @@ namespace Plang.PInfer
             {
                 UseShellExecute = true
             };
+            if (configuration.Verbose)
+            {
+                Console.WriteLine($"Run with {string.Join(" ", args.Concat(GetMinerConfigArgs(configuration)))}");
+            }
             process = Process.Start(startInfo);
             process.WaitForExit();
         }

@@ -29,6 +29,15 @@ namespace Plang.PInfer
             }
             process = Process.Start(startInfo);
             process.WaitForExit();
+            Console.WriteLine("Cleaning up ...");
+            var dirInfo = new DirectoryInfo("./");
+            foreach (var file in dirInfo.GetFiles())
+            {
+                if (file.Name.EndsWith(".inv.gz") || file.Name.EndsWith(".dtrace.gz"))
+                {
+                    file.Delete();
+                }
+            }
         }
 
         private static void ShowConfig(PInferConfiguration config)

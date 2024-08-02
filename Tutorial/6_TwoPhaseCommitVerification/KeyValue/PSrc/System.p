@@ -1,15 +1,26 @@
+/*********************************************************
+Clients send read and write requests to a coordinator. On write requests, the coordinator does a two phase commit with 
+all participants. On read requests, the coordinator just asks a random participant to respond to the client.
+
+All participants must agree on every commited write. The monitor keeps track of all write responses, which is the ground 
+truth for what is commited. Every participant must be maintaining a subset of this. 
+**********************************************************/
+
 enum tVote {YES, NO}
 
 type tRound = int;
 type tKey   = int;
 type tValue = int;
 
-type tVoteResp  = (key: tKey, value: tValue, origin: machine, round: tRound, vote: tVote, source: machine);
-type tVoteReq   = (key: tKey, value: tValue, origin: machine, round: tRound);
-type tWriteReq  = (key: tKey, value: tValue, origin: machine);
-type tWriteResp = (key: tKey, value: tValue, vote: tVote);
-type tReadReq   = (key: tKey, origin: machine);
-type tReadResp  = (key: tKey, value: tValue);
+type rvPair    = (round: tRound, value: tValue);
+type krvTriple = (key: tKey, round: tRound, value: tValue);
+
+type tVoteResp  = (origin: machine, triple: krvTriple, vote: tVote, source: machine);
+type tVoteReq   = (origin: machine, triple: krvTriple);
+type tWriteReq  = (origin: machine, key: tKey, value: tValue);
+type tReadReq   = (origin: machine, key: tKey);
+type tWriteResp = (triple: krvTriple, vote: tVote);
+type tReadResp  = (key: tKey, versions: set[rvPair], source: machine);
 
 event eVoteReq : tVoteReq;
 event eVoteResp: tVoteResp;
@@ -33,9 +44,9 @@ machine Client {
             
             if ($) {
                 v = RandomInt();
-                send coordinator(), eWriteReq, (key = k, value = v, origin = this);
+                send coordinator(), eWriteReq, (origin = this, key = k, value = v);
             } else {
-                send coordinator(), eReadReq, (key = k, origin = this);
+                send coordinator(), eReadReq, (origin = this, key = k);
             }
             
             goto Loop;
@@ -46,29 +57,30 @@ machine Client {
 
 machine Coordinator
 {
-    var yesVotes: map[tRound, set[machine]];
-    var commited: set[tRound];
-    var aborted: set[tRound];
-    var kv: map[tKey, tValue];
+    var yesVotes: map[krvTriple, set[machine]];
+    var commited: set[krvTriple];
+    var aborted : set[krvTriple];
     
     start state Serving {
         on eReadReq do (req: tReadReq) {
-            send req.origin, eReadResp, (key = req.key, value = kv[req.key]);
+            var p: machine;
+            assume (p in participants());
+            send p, eReadReq, req;
         }
-    
+        
         on eWriteReq do (req: tWriteReq) {
             var p: machine;
             var r: tRound;
-            assume !(r in yesVotes);
+            assume (forall (t: krvTriple) :: t in yesVotes ==> t.round != r);
             
-            yesVotes[r] = default(set[machine]);
+            yesVotes[(key = req.key, round = r, value = req.value)] = default(set[machine]);
             
-            foreach (p in participants()) 
+            foreach (p in participants())
                 invariant forall new (e: event) :: forall (m: machine) :: e targets m ==> m in participants();
                 invariant forall new (e: event) :: e is eVoteReq;
-                invariant forall new (e: eVoteReq) :: e.round == r && e.key == req.key && e.value == req.value && e.origin == req.origin;
+                invariant forall new (e: eVoteReq) :: e.triple.round == r && e.triple.key == req.key && e.triple.value == req.value && e.origin == req.origin;
             {
-                send p, eVoteReq, (key = req.key, value = req.value, origin = req.origin, round = r);
+                send p, eVoteReq, (origin = req.origin, triple = (key = req.key, round = r, value = req.value));
             }
         }
         
@@ -76,20 +88,19 @@ machine Coordinator
             var p: machine;
             
             if (resp.vote == YES) {
-                yesVotes[resp.round] += (resp.source);
+                yesVotes[resp.triple] += (resp.source);
                 
-                if (yesVotes[resp.round] == participants()) {
+                if (yesVotes[resp.triple] == participants()) {
                     foreach (p in participants()) 
                         invariant forall new (e: event) :: forall (m: machine) :: e targets m ==> m in participants();
                         invariant forall new (e: event) :: e is eCommit;
-                        invariant forall new (e: eCommit) :: e.round == resp.round && e.key == resp.key && e.value == resp.value && e.origin == resp.origin;
+                        invariant forall new (e: eCommit) :: e.triple == resp.triple && e.origin == resp.origin;
                     {
-                        send p, eCommit, (key = resp.key, value = resp.value, origin = resp.origin, round = resp.round);
+                        send p, eCommit, (origin = resp.origin, triple = resp.triple);
                     }
                     
-                    commited += (resp.round);
-                    kv[resp.key] = resp.value;
-                    send resp.origin, eWriteResp, (key = resp.key, value = kv[resp.key], vote = YES);
+                    commited += (resp.triple);
+                    send resp.origin, eWriteResp, (triple = resp.triple, vote = resp.vote);
                     goto Serving;
                 }
                 
@@ -97,13 +108,13 @@ machine Coordinator
                 foreach (p in participants()) 
                     invariant forall new (e: event) :: forall (m: machine) :: e targets m ==> m in participants();
                     invariant forall new (e: event) :: e is eAbort;
-                    invariant forall new (e: eAbort) :: e.round == resp.round && e.key == resp.key && e.value == resp.value && e.origin == resp.origin;
+                    invariant forall new (e: eAbort) :: e.triple == resp.triple && e.origin == resp.origin;
                 {
-                    send p, eAbort, (key = resp.key, value = resp.value, origin = resp.origin, round = resp.round);
+                    send p, eAbort, (origin = resp.origin, triple = resp.triple);
                 }
                 
-                aborted += (resp.round);
-                send resp.origin, eWriteResp, (key = resp.key, value = kv[resp.key], vote = NO);
+                aborted += (resp.triple);
+                send resp.origin, eWriteResp, (triple = resp.triple, vote = resp.vote);
                 goto Serving;
             }
         }
@@ -111,37 +122,50 @@ machine Coordinator
 }
 
 machine Participant {
-    var commited: set[tRound];
-    var aborted: set[tRound];
-    var kv: map[tKey, tValue];
+    var commited: set[krvTriple];
+    var aborted: set[krvTriple];
+    var kv: map[tKey, set[rvPair]];
 
     start state Acting {
         on eVoteReq do (req: tVoteReq) {
-            send coordinator(), eVoteResp, (key = req.key, value = req.value, origin = req.origin, round = req.round, vote = preference(this, req.round), source = this);
+            send coordinator(), eVoteResp, (origin = req.origin, triple = req.triple, vote = preference(this, req.triple), source = this);
         }
         
         on eCommit do (req: tVoteReq) {
-            commited += (req.round);
+            commited += (req.triple);
+            if (!(req.triple.key in kv)) {
+                kv[req.triple.key] = default(set[rvPair]);
+            }
+            kv[req.triple.key] += ((round = req.triple.round, value = req.triple.value));
         }
         
         on eAbort do (req: tVoteReq) {
-            aborted += (req.round);
+            aborted += (req.triple);
+        }
+        
+        on eReadReq do (req: tReadReq) {
+            if (req.key in kv) {
+                send req.origin, eReadResp, (key = req.key, versions = kv[req.key], source = this);
+            } else {
+                send req.origin, eReadResp, (key = req.key, versions = default(set[rvPair]), source = this);
+            }
         }
     }
 }
 
-spec StrongConsistency observes eReadResp, eWriteResp {
-    var kv : map[int, int];
+spec Consistency observes eReadResp, eWriteResp {
+    var kv: map[tKey, set[rvPair]];
     start state WaitForEvents {
         on eWriteResp do (resp: tWriteResp) {
             if (resp.vote == YES) {
-                kv[resp.key] = resp.value;
+                kv[resp.triple.key] += ((round = resp.triple.round, value = resp.triple.value));
             }
         }
         on eReadResp do (resp: tReadResp) {
-            if (resp.key in kv) {
-                assert resp.value == kv[resp.key];
-            }
+            // Everything we send back was actually written.
+            assert subset(resp.versions, kv[resp.key]);
+            // Everyone agrees on what we send back
+            assert (forall (t: krvTriple) :: (resp.key == t.key && (round = t.round, value = t.value) in resp.versions) ==> (forall (p: Participant) :: preference(p, t) == YES));
         }
     }
 }
@@ -149,15 +173,19 @@ spec StrongConsistency observes eReadResp, eWriteResp {
 // using these to avoid initialization
 pure participants(): set[machine];
 pure coordinator(): machine;
-pure preference(m: machine, r: tRound) : tVote;
+pure preference(m: machine, triple: krvTriple) : tVote;
+
+pure subset(small: set[rvPair], large: set[rvPair]) : bool = forall (rv: rvPair) :: rv in small ==> rv in large;
 
 // assumptions about how the system is setup and the pure functions above
-init forall (m: machine) :: m == coordinator() == m is Coordinator;
+init coordinator() is Coordinator;
+init forall (c1: machine, c2: machine) :: (c1 is Coordinator && c2 is Coordinator) ==> c1 == c2;
 init forall (m: machine) :: m in participants() == m is Participant;
 
 // making sure that our assumptions about pure functions are not pulled out from underneath us
-invariant one_coordinator: forall (m: machine) :: m == coordinator() == m is Coordinator;
-invariant participant_set: forall (m: machine) :: m in participants() == m is Participant;
+invariant c_is_coordinator: coordinator() is Coordinator;
+invariant one_coordinator:  forall (c1: machine, c2: machine) :: (c1 is Coordinator && c2 is Coordinator) ==> c1 == c2;
+invariant participant_set:  forall (m: machine) :: m in participants() == m is Participant;
 
 // make sure we never get a message that we're not expecting
 invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && e targets coordinator() ==> !inflight e;
@@ -165,7 +193,6 @@ invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && e targ
 invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && e targets coordinator() ==> !inflight e;
 invariant never_resp_to_participant: forall (e: event, p: Participant) :: e is eVoteResp && e targets p ==> !inflight e;
 invariant never_writeReq_to_participant: forall (e: event, p: Participant) :: e is eWriteReq && e targets p ==> !inflight e;
-invariant never_readReq_to_participant: forall (e: event, p: Participant) :: e is eReadReq && e targets p ==> !inflight e;
 invariant never_writeResp_to_participant: forall (e: event, p: Participant) :: e is eWriteResp && e targets p ==> !inflight e;
 invariant never_readResp_to_participant: forall (e: event, p: Participant) :: e is eReadResp && e targets p ==> !inflight e;
 invariant never_writeResp_to_coordinator: forall (e: event, c: Coordinator) :: e is eWriteResp && e targets c ==> !inflight e;
@@ -181,20 +208,23 @@ invariant writeReq_origin_is_client: forall (e: eWriteReq) :: inflight e ==> e.o
 invariant voteReq_origin_is_client: forall (e: eVoteReq) :: inflight e ==> e.origin is Client;
 invariant voteResp_origin_is_client: forall (e: eVoteResp) :: inflight e ==> e.origin is Client;
 
-// the main invariant we care about 
-invariant safety: forall (c: Coordinator, p1: Participant, r: tRound) :: (r in p1.commited ==> (forall (p2: Participant) :: preference(p2, r) == YES));
+// aux invariants for consistency monitor first assertion
+invariant p_subset_monitor_kv: forall (p: Participant, k: tKey) :: k in p.kv ==> subset(p.kv[k], Consistency.kv[k]);
+invariant c_commited_means_in_monitor_kv: forall (c: Coordinator, t: krvTriple) :: t in c.commited ==> ((round = t.round, value = t.value) in Consistency.kv[t.key]);
 
-// supporting invariants from non-round proof
+// aux invariants for consistency monitor second assertion
+// essentially the 2pc property, but restated for kv elements
+invariant in_kv_means_all_preferred: forall (p1: Participant, t: krvTriple) :: (t.key in p1.kv && (round = t.round, value = t.value) in p1.kv[t.key]) ==> (forall (p2: Participant) :: preference(p2, t) == YES);
+
+// supporting invariants for the 2pc property
 invariant  a1: forall (e: eVoteResp) :: sent e ==> e.source is Participant;
-invariant  a2: forall (e: eVoteResp) :: sent e ==> e.vote == preference(e.source, e.round);
-invariant a3a: forall (c: Coordinator, e: eCommit) :: sent e ==> e.round in c.commited;
-invariant a3b: forall (c: Coordinator, e: eAbort)  :: sent e ==> e.round in c.aborted;
-invariant  a4: forall (c: Coordinator, r: tRound, p1: Participant) :: r in p1.commited ==> r in c.commited;
-invariant  a5: forall (p: Participant, c: Coordinator, r: tRound) :: (r in c.yesVotes && p in c.yesVotes[r]) ==> preference(p, r) == YES;
-invariant  a6: forall (c: Coordinator, r: tRound) :: r in c.commited ==> (forall (p2: Participant) :: preference(p2, r) == YES);
-
-// make sure that votes have been initialized
-invariant a7a: forall (c: Coordinator, e: eVoteReq)  :: sent e ==> e.round in c.yesVotes;
-invariant a7b: forall (c: Coordinator, e: eVoteResp) :: sent e ==> e.round in c.yesVotes;
+invariant  a2: forall (e: eVoteResp) :: sent e ==> e.vote == preference(e.source, e.triple);
+invariant a3a: forall (c: Coordinator, e: eCommit) :: sent e ==> e.triple in c.commited;
+invariant a3b: forall (c: Coordinator, e: eAbort)  :: sent e ==> e.triple in c.aborted;
+invariant  a4: forall (c: Coordinator, t: krvTriple, p1: Participant) :: t in p1.commited ==> t in c.commited;
+invariant  a5: forall (p: Participant, c: Coordinator, t: krvTriple) :: (t in c.yesVotes && p in c.yesVotes[t]) ==> preference(p, t) == YES;
+invariant  a6: forall (c: Coordinator, t: krvTriple) :: t in c.commited ==> (forall (p2: Participant) :: preference(p2, t) == YES);
+invariant a7a: forall (c: Coordinator, e: eVoteReq)  :: sent e ==> e.triple in c.yesVotes;
+invariant a7b: forall (c: Coordinator, e: eVoteResp) :: sent e ==> e.triple in c.yesVotes;
 
 

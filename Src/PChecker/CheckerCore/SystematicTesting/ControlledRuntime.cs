@@ -500,7 +500,7 @@ namespace PChecker.SystematicTesting
             if (sender is StateMachine senderStateMachine)
             {
                 originInfo = new EventOriginInfo(sender.Id, senderStateMachine.GetType().FullName,
-                    NameResolver.GetStateNameForLogging(senderStateMachine.CurrentState));
+                    NameResolver.GetStateNameForLogging(senderStateMachine.CurrentState.GetType()));
                 stateName = senderStateMachine.CurrentStateName;
             }
             else if (sender is Actor senderActor)

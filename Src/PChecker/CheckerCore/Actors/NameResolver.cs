@@ -36,11 +36,6 @@ namespace PChecker.Actors
                 var nextState = state;
                 while (nextState.DeclaringType != null)
                 {
-                    if (!nextState.DeclaringType.IsSubclassOf(typeof(StateMachine.StateGroup)))
-                    {
-                        break;
-                    }
-
                     name = string.Format(CultureInfo.InvariantCulture, "{0}.{1}", nextState.DeclaringType.Name, name);
                     nextState = nextState.DeclaringType;
                 }

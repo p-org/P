@@ -157,7 +157,7 @@ namespace PChecker.Actors.EventQueues.Mocks
             // TODO: check op-id of default event.
             // A default event handler exists.
             var stateName = Actor is StateMachine stateMachine ?
-                NameResolver.GetStateNameForLogging(stateMachine.CurrentState) : string.Empty;
+                NameResolver.GetStateNameForLogging(stateMachine.CurrentState.GetType()) : string.Empty;
             var eventOrigin = new EventOriginInfo(Actor.Id, Actor.GetType().FullName, stateName);
             return (DequeueStatus.Default, DefaultEvent.Instance, Guid.Empty, new EventInfo(DefaultEvent.Instance, eventOrigin));
         }
@@ -210,7 +210,7 @@ namespace PChecker.Actors.EventQueues.Mocks
         public void RaiseEvent(Event e, Guid opGroupId)
         {
             var stateName = Actor is StateMachine stateMachine ?
-                NameResolver.GetStateNameForLogging(stateMachine.CurrentState) : string.Empty;
+                NameResolver.GetStateNameForLogging(stateMachine.CurrentState.GetType()) : string.Empty;
             var eventOrigin = new EventOriginInfo(Actor.Id, Actor.GetType().FullName, stateName);
             var info = new EventInfo(e, eventOrigin);
             RaisedEvent = (e, opGroupId, info);

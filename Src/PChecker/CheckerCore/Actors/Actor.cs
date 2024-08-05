@@ -120,12 +120,6 @@ namespace PChecker.Actors
         protected JsonWriter JsonLogger => Runtime.JsonLogger;
 
         /// <summary>
-        /// User-defined hashed state of the actor. Override to improve the
-        /// accuracy of stateful techniques during testing.
-        /// </summary>
-        protected virtual int HashedState => 0;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="Actor"/> class.
         /// </summary>
         protected Actor()
@@ -646,12 +640,6 @@ namespace PChecker.Actors
                 hash = (hash * 31) + Manager.GetCachedState();
                 hash = (hash * 31) + Inbox.GetCachedState();
 
-                if (this.HashedState != 0)
-                {
-                    // Adds the user-defined hashed state.
-                    hash = (hash * 31) + HashedState;
-                }
-
                 return hash;
             }
         }
@@ -808,7 +796,7 @@ namespace PChecker.Actors
         }
 
         /// <summary>
-        /// Returns the formatted strint to be used with a fair nondeterministic boolean choice.
+        /// Returns the formatted string to be used with a fair nondeterministic boolean choice.
         /// </summary>
         private protected virtual string FormatFairRandom(string callerMemberName, string callerFilePath, int callerLineNumber) =>
             string.Format(CultureInfo.InvariantCulture, "{0}_{1}_{2}_{3}",

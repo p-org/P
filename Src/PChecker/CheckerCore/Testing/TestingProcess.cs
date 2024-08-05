@@ -161,7 +161,7 @@ namespace PChecker.Testing
             }
 
             Console.WriteLine(testReport.GetText(_checkerConfiguration, "..."));
-            Console.WriteLine($"... Elapsed {Profiler.Results()} sec.");
+            Console.WriteLine($"... Elapsed {Profiler.GetElapsedTime()} sec.");
 
             if (testReport.InternalErrors.Count > 0)
             {

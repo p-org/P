@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
@@ -603,7 +605,7 @@ namespace Plang.Compiler.TypeChecker
             string filePath = config.LocationResolver.GetLocation(tree).File.FullName;
             foreach (var dependencyPath in config.ProjectDependencies)
             {
-                if (filePath.StartsWith(dependencyPath))
+                if (filePath.StartsWith($"{dependencyPath}{Path.DirectorySeparatorChar}"))
                 {
                     return null;
                 }

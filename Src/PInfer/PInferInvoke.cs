@@ -47,6 +47,7 @@ namespace Plang.PInfer
             Console.WriteLine($"\t#Predicates in Guard:\t\t\t{config.NumGuardPredicates}");
             Console.WriteLine($"\t#Predicates in Filter:\t\t\t{config.NumFilterPredicates}");
             Console.WriteLine($"\tArity of target specifications:\t\t{config.InvArity}");
+            Console.WriteLine($"\tPruning Level:\t\t\t\t-O{config.PruningLevel}");
             if (config.MustIncludeGuard.Count() > 0)
             {
                 Console.WriteLine($"\tMust include guards:\t\t{string.Join(", ", config.MustIncludeGuard)}");
@@ -96,7 +97,7 @@ namespace Plang.PInfer
             }
             args.Add("-nt");
             args.Add($"{configuration.InvArity}");
-            args.Add("-o");
+            args.Add("-O");
             args.Add($"{configuration.PruningLevel}");
             if (configuration.Verbose)
             {

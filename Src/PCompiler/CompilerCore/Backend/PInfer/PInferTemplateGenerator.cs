@@ -141,10 +141,10 @@ namespace Plang.Compiler.Backend.PInfer
         private void WriteDefAndConstructor(string templateName, IEnumerable<TypeManager.JType> fieldTypeDecls, bool hasExists, bool existsN = false)
         {
             WriteLine($"public static class {templateName} {{");
-            foreach (var (ty, i) in fieldTypeDecls.Select((val, index) => (val.TypeName, index)))
-            {
-                WriteLine($"private {ty} f{i};");
-            }
+            // foreach (var (ty, i) in fieldTypeDecls.Select((val, index) => (val.TypeName, index)))
+            // {
+            //     WriteLine($"private {ty} f{i};");
+            // }
             List<NamedTupleEntry> configConstants = [];
             if (existsN) {
                 PLanguageType configType = ConfigEvent.PayloadType.Canonicalize();
@@ -153,7 +153,7 @@ namespace Plang.Compiler.Backend.PInfer
                     foreach (var entry in tuple.Fields)
                     {
                         var jType = Types.JavaTypeFor(entry.Type);
-                        WriteLine($"private {jType.TypeName} {entry.Name};");
+                        // WriteLine($"private {jType.TypeName} {entry.Name};");
                         configConstants.Add(entry);
                     }
                 }
@@ -162,20 +162,21 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new Exception($"Config event {ConfigEvent.Name} should have a named-tuple type, got {configType}");
                 }
             }
-            if (hasExists)
-            {
-                WriteLine("private int _num_e_exists_;");
-            }
+            // if (hasExists)
+            // {
+            //     WriteLine("private int _num_e_exists_;");
+            // }
             List<string> existsCount = hasExists ? ["_num_e_exists_"] : [];
-            WriteLine($"public {templateName} ({string.Join(", ", existsCount.Select(x => $"int {x}").Concat(configConstants.Select(entry => $"{Types.JavaTypeFor(entry.Type).TypeName} {entry.Name}").Concat(fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}"))))}) {{");
-            for (int i = 0; i < fieldTypeDecls.Count(); ++i)
-            {
-                WriteLine($"this.f{i} = f{i};");
-            }
-            foreach(var entry in configConstants.Select(x => x.Name).Concat(existsCount))
-            {
-                WriteLine($"this.{entry} = {entry};");
-            }
+            WriteLine($"public static void mine_{templateName} ({string.Join(", ", existsCount.Select(x => $"int {x}").Concat(configConstants.Select(entry => $"{Types.JavaTypeFor(entry.Type).TypeName} {entry.Name}").Concat(fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}"))))}) {{");
+            // for (int i = 0; i < fieldTypeDecls.Count(); ++i)
+            // {
+            //     WriteLine($"this.f{i} = f{i};");
+            // }
+            // foreach(var entry in configConstants.Select(x => x.Name).Concat(existsCount))
+            // {
+            //     WriteLine($"this.{entry} = {entry};");
+            // }
+            WriteLine("return;");
             WriteLine("}");
         }
 
@@ -293,7 +294,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             List<string> existsComb = numExists > 0 ? ["numExistsComb"] : [];
             var forallTermsInsts = forallTypeDecls.Select((x, i) => GenerateCoersion(x.TypeName, $"{Job.ProjectName}.termOf(forallTerms.get({i}), guardsArgs)")).ToList();
-            WriteLine($"new {templateName}({string.Join(", ", existsComb.Concat(configEventAccess.Concat(forallTermsInsts).Concat(Enumerable.Range(0, existsTermTypes.Count).Select(i => $"et{i}Arr"))))});");
+            WriteLine($"mine_{templateName}({string.Join(", ", existsComb.Concat(configEventAccess.Concat(forallTermsInsts).Concat(Enumerable.Range(0, existsTermTypes.Count).Select(i => $"et{i}Arr"))))});");
             WriteLine("} catch (Exception e) { if (e instanceof RuntimeException) throw (RuntimeException) e; }");
             for (int i = 0; i < numForall; ++i)
             {

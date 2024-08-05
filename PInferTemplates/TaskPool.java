@@ -172,11 +172,11 @@ public class TaskPool {
             }
             var stderr = daikonStdErr.toString().trim();
             if (verbose && stderr.contains("Exception")) {
-                System.out.println("Exception raised: " + stderr);
+                System.err.println("Exception raised: " + stderr);
                 return properties;
             }
             if (verbose && stderr.contains("Unknown template")) {
-                System.out.println("Skipping unknown template: " + stderr);
+                System.err.println("Skipping unknown template: " + stderr);
                 return properties;
             }
             if (!hasResult && daikonStdErr.toString().contains("No program point declarations were found.")) {

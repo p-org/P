@@ -609,7 +609,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                                 var f = eventDoAction.Target;
                                 var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
                                 var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
-                                EmitLine($"call {name}({SpecPrefix}Payload);");
+                                var payload = f.Signature.Parameters.Count > 0 ? $"{SpecPrefix}Payload" : "";
+                                EmitLine($"call {name}({payload});");
                                 break;
                             default:
                                 throw new NotSupportedException($"Not supported handler ({handler}) at {GetLocation(handler)}");

@@ -784,24 +784,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"assume(forall (r: {MachineRefT}) :: {BuiltinPrefix}InStart({state}));");
         EmitLine("// Every machine begins with their entry flag set");
         EmitLine($"assume(forall (r: {MachineRefT}) :: {BuiltinPrefix}InEntry({state}));");
-        EmitLine("// Every machine begins with fields in default");
-        foreach (var m in machines)
-        {
-            foreach (var f in m.Fields)
-            {
-                EmitLine(
-                    $"assume(forall (r: {MachineRefT}) :: {MachineStateAdtSelectField(state, m, f)} == {DefaultValue(f.Type)});");
-            }
-        }
-        EmitLine("// Every spec begins with fields in default");
-        foreach (var m in specs)
-        {
-            foreach (var f in m.Fields)
-            {
-                EmitLine($"{SpecPrefix}{m.Name}_{f.Name} = {DefaultValue(f.Type)};");
-            }
-        }
-
         EmitLine("// The buffer starts completely empty");
         EmitLine($"{StateAdtSelectSent(StateVar)} = const(false, [{LabelAdt}]boolean);");
         EmitLine($"{StateAdtSelectReceived(StateVar)} = const(false, [{LabelAdt}]boolean);");
@@ -1526,7 +1508,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private string TypeToString(PLanguageType t)
     {
-        switch (t)
+        switch (t.Canonicalize())
         {
             case NamedTupleType ntt:
                 var fields = string.Join(", ",
@@ -1557,7 +1539,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             case SetType st:
                 return $"[{TypeToString(st.ElementType)}]boolean";
             case MapType mt:
-                _optionsToDeclare.Add(mt.ValueType);
+                _optionsToDeclare.Add(mt.ValueType.Canonicalize());
                 return $"[{TypeToString(mt.KeyType)}]{GetOptionName(mt.ValueType)}";
         }
 

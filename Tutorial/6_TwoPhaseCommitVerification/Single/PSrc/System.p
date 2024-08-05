@@ -88,6 +88,9 @@ init forall (m: machine) :: m in participants() == m is Participant;
 invariant one_coordinator: forall (m: machine) :: m == coordinator() == m is Coordinator;
 invariant participant_set: forall (m: machine) :: m in participants() == m is Participant;
 
+// set all the fields to their default values
+init forall (c: Coordinator) :: c.yesVotes == default(set[machine]);
+
 // make sure we never get a message that we're not expecting
 invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && e targets coordinator() ==> !inflight e;
 invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && e targets coordinator() ==> !inflight e;

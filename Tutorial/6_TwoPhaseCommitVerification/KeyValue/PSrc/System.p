@@ -187,6 +187,15 @@ invariant c_is_coordinator: coordinator() is Coordinator;
 invariant one_coordinator:  forall (c1: machine, c2: machine) :: (c1 is Coordinator && c2 is Coordinator) ==> c1 == c2;
 invariant participant_set:  forall (m: machine) :: m in participants() == m is Participant;
 
+// set all the fields to their default values
+init forall (c: Coordinator) :: c.yesVotes == default(map[krvTriple, set[machine]]);
+init forall (c: Coordinator) :: c.commited == default(set[krvTriple]);
+init forall (c: Coordinator) :: c.aborted == default(set[krvTriple]);
+init forall (p: Participant) :: p.commited == default(set[krvTriple]);
+init forall (p: Participant) :: p.aborted == default(set[krvTriple]);
+init forall (p: Participant) :: p.kv == default(map[tKey, set[rvPair]]);
+init Consistency.kv == default(map[tKey, set[rvPair]]);
+
 // make sure we never get a message that we're not expecting
 invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && e targets coordinator() ==> !inflight e;
 invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && e targets coordinator() ==> !inflight e;

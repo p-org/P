@@ -97,6 +97,12 @@ pure head(): machine;
 pure tail(): machine;
 pure next_(m: machine): machine;
 
+// set all the fields to their default values
+init forall (p: Head) :: p.kv == default(map[int, int]);
+init forall (p: Body) :: p.kv == default(map[int, int]);
+init forall (p: Tail) :: p.kv == default(map[int, int]);
+init StrongConsistency.kv == default(map[int, int]);
+
 // assume the pure functions match the state at the start
 init forall (m: machine) :: m == head() == m is Head;
 init forall (m: machine) :: m == tail() == m is Tail;

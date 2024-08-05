@@ -59,15 +59,15 @@ public class TaskPool {
     }
 
     private void showProgress() {
-        StringBuilder sb = new StringBuilder("\r");
+        StringBuilder sb = new StringBuilder();
         sb.append("[").append(numFinished).append(" / ").append(tasks.size()).append("][");
         int total = 50;
         double percentage = (double) numFinished / tasks.size();
         int numEq = (int)(total * percentage);
         numEq = Math.max(numEq, 1);
         sb.append(String.join("", Collections.nCopies(numEq, "="))).append(">");
-        sb.append(String.join("", Collections.nCopies(total - numEq, " "))).append("]");
-        System.out.println(sb);
+        sb.append(String.join("", Collections.nCopies(total - numEq, " "))).append("]").append("\r");
+        System.out.print(sb);
     }
 
     private void showResults(String guards, String filters) throws InterruptedException, IOException {
@@ -120,6 +120,7 @@ public class TaskPool {
             System.out.println();
             System.out.println("Time used (seconds): " + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
             System.out.println("#Properties mined: " + numMined);
+            pinferOutputStream.close();
         }
     }
 

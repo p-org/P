@@ -111,13 +111,15 @@ public class ExplicitSearchScheduler extends Scheduler {
         // PExplicitThreadLogger.logRunTest();  // TODO : Add log Info feature
 
 
-        PExplicitGlobal.setResult("incomplete"); // TODO: Set Result object
+        PExplicitGlobal.setResult("incomplete"); 
 
 
-        if (PExplicitGlobal.getConfig().getVerbosity() == 0) {  // TODO : Add log Info feature
+        if (PExplicitGlobal.getConfig().getVerbosity() == 0) {  
             printProgressHeader(true);
         }
         PExplicitGlobal.addTotIDtolocaltID(Thread.currentThread().getId(), localtID);
+        PExplicitGlobal.putSchedulers(localtID, this);
+
 
         PExplicitThreadLogger.Initialize( PExplicitGlobal.getVerbosity());
 
@@ -129,11 +131,11 @@ public class ExplicitSearchScheduler extends Scheduler {
                 // all tasks completed or schedule limit reached
                 break;
             }
-            PExplicitThreadLogger.logStartTask(searchStrategy.getCurrTask());   // TODO : Add log Info feature
+            PExplicitThreadLogger.logStartTask(searchStrategy.getCurrTask());   
             isDoneIterating = false;
             while (!isDoneIterating) {
                 searchStrategy.incrementIteration();
-                PExplicitThreadLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); // TODO : Add log Info feature
+                PExplicitThreadLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber); 
                 if (stepNumber == 0) {
                     start();
                 }
@@ -143,7 +145,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
-            PExplicitThreadLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask()); // TODO : Add log Info feature
+            PExplicitThreadLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask()); 
 
 
         }
@@ -325,7 +327,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (choiceNumber < backtrackChoiceNumber) {
             // pick the current schedule choice
             PMachineId pid = schedule.getCurrentScheduleChoice(choiceNumber);
-            result = PExplicitGlobal.getGlobalMachine(pid);
+            result = PExplicitGlobal.getScheduler().getGlobalMachine(pid);
             PExplicitThreadLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 
             // increment choice number
@@ -354,7 +356,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
 
         // pick the first choice
-        result = PExplicitGlobal.getGlobalMachine(choices.get(0));
+        result = PExplicitGlobal.getScheduler().getGlobalMachine(choices.get(0));
         PExplicitThreadLogger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
 
         // remove the first choice from unexplored choices
@@ -562,7 +564,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 stepNumber = newStepNumber;
                 choiceNumber = scheduleChoice.getChoiceNumber();
                 stepState.setTo(scheduleChoice.getChoiceState());
-                assert (!PExplicitGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
+                assert (!PExplicitGlobal.getScheduler().getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
             }
             schedule.removeChoicesAfter(backtrackChoiceNumber);
             PExplicitThreadLogger.logBacktrack(newStepNumber, cIdx, unit);

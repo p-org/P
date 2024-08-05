@@ -15,8 +15,8 @@ import pexplicit.utils.monitor.TimedCall;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.concurrent.*;
+import java.util.*;
 
 /**
  * Represents the runtime executor that executes the analysis engine
@@ -25,27 +25,25 @@ public class RuntimeExecutor {
     private static ThreadPoolExecutor executor;
     private static ArrayList<Future<Integer>> futures = new ArrayList<>();
     private static ArrayList<ExplicitSearchScheduler> schedulers = new ArrayList<>();
+    private static List<Thread> threads = new ArrayList<>();
 
     private static void runWithTimeout(long timeLimit)
             throws TimeoutException,
             InterruptedException,
             RuntimeException {
-        try { // PIN: If thread gets exception, need to kill the other threads.
+        try { 
             if (timeLimit > 0) {
-                
                 for (Future<Integer> future : futures) {
-                    // Future<Integer> future = futures.get(i);
                     future.get(timeLimit, TimeUnit.SECONDS);
                 }
-
             } else {
-
-                for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
-                    Future<Integer> future = futures.get(i);
+                for (Future<Integer> future : futures) {
                     future.get();
                 }
             }
-        } catch (TimeoutException | BugFoundException e) {
+        } catch (TimeoutException e) {
+            throw e;
+        } catch (BugFoundException e) { // Dont merge with TimeoutException catch block, easier for seeing race conditions
             throw e;
         } catch (OutOfMemoryError e) {
             throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
@@ -84,9 +82,16 @@ public class RuntimeExecutor {
         PExplicitLogger.logInfo(String.format("... Checker is using '%s' strategy (seed:%s)",
                 PExplicitGlobal.getConfig().getSearchStrategyMode(), PExplicitGlobal.getConfig().getRandomSeed()));
 
-        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(PExplicitGlobal.getMaxThreads());
+        ThreadFactory threadFactory = new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                threads.add(thread);
+                return thread;
+            }
+        };
 
-        // PExplicitGlobal.setResult("error"); // TODO: Set Results, need to take care of.
+        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(PExplicitGlobal.getMaxThreads(), threadFactory);
 
         double preSearchTime =
                 TimeMonitor.findInterval(TimeMonitor.getStart());
@@ -98,14 +103,17 @@ public class RuntimeExecutor {
     }
 
     private static void process(boolean resume) throws Exception {
+        
+        ArrayList<TimedCall> timedCalls = new ArrayList<>();
         try {
             // create and add first task through scheduler 0
             schedulers.get(0).getSearchStrategy().createFirstTask();
 
-            ArrayList<TimedCall> timedCalls = new ArrayList<>();
+            
             for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
                 timedCalls.add(new TimedCall(schedulers.get(i), resume, i));
             }
+
 
             for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
                 Future<Integer> future = executor.submit(timedCalls.get(i));
@@ -122,75 +130,141 @@ public class RuntimeExecutor {
 
             runWithTimeout((long) PExplicitGlobal.getConfig().getTimeLimit());
 
-        } catch (TimeoutException e) {
-            PExplicitGlobal.setStatus(STATUS.TIMEOUT);
-            throw new Exception("TIMEOUT", e);
-        } catch (MemoutException | OutOfMemoryError e) {
-            PExplicitGlobal.setStatus(STATUS.MEMOUT);
-            throw new Exception("MEMOUT", e);
-        } catch (BugFoundException e) {
-            PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
+        } 
+        catch (MemoutException | OutOfMemoryError e) {
+            for (Thread thread : threads) {
+                if (thread != Thread.currentThread()) {
+                    thread.interrupt();
+                }
+            }
+        }
+        // catch (TimeoutException e) {
+        //     PExplicitGlobal.setStatus(STATUS.TIMEOUT);
+        //     throw new Exception("TIMEOUT", e);
+        // } 
+        // catch (MemoutException | OutOfMemoryError e) {
+        //     PExplicitGlobal.setStatus(STATUS.MEMOUT);
+        //     throw new Exception("MEMOUT", e);
+        // } 
+        catch (BugFoundException e) {
+
+
+            for (Thread thread : threads) {
+                if (thread != Thread.currentThread()) {
+                    thread.interrupt();
+                }
+            }
+
+            // (schedulers.get( PExplicitGlobal.getTID_to_localtID().get( Thread.currentThread().getId() ))).updateResult(); // Update result field before setting status
+
+            // PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
+            // PExplicitGlobal.setResult("cex"); 
 
 
             PExplicitLogger.logStackTrace(e);
 
-            ArrayList<ReplayScheduler> replayers = new ArrayList<>();
-            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-                replayers.add(new ReplayScheduler((schedulers.get(i)).schedule));
 
-            ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
-            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-                localSchedulers.set(i, replayers.get(i));
+            ReplayScheduler replayer = new ReplayScheduler( e.getBuggySchedule() );
+            
+            PExplicitGlobal.setRepScheduler(replayer); 
+            PExplicitGlobal.addTotIDtolocaltID(Thread.currentThread().getId(), e.getBuggyLocalTID());
 
             try {
-                for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-                    (replayers.get(i)).run();
+                    replayer.run();
             } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
                 PExplicitLogger.logStackTrace((Exception) replayException);
                 throw new BugFoundException(replayException.getMessage(), replayException);
             } catch (BugFoundException replayException) {
-                PExplicitLogger.logStackTrace(replayException);
+                PExplicitLogger.logStackTrace(replayException); // This should be throw exception again!
                 throw replayException;
             } catch (Exception replayException) {
                 PExplicitLogger.logStackTrace(replayException);
                 throw new Exception("Error when replaying the bug", replayException);
             }
             throw new Exception("Failed to replay bug", e);
-        } catch (InterruptedException e) {
-            PExplicitGlobal.setStatus(STATUS.INTERRUPTED);
-            throw new Exception("INTERRUPTED", e);
-        } catch (RuntimeException e) {
-            PExplicitGlobal.setStatus(STATUS.ERROR);
-            throw new Exception("ERROR", e);
-        } finally {
-            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
-                Future<Integer> future = futures.get(i);
-                future.cancel(true);
+        } 
+        // catch (InterruptedException e) {
+        //     PExplicitGlobal.setStatus(STATUS.INTERRUPTED);
+        //     throw new Exception("INTERRUPTED", e);
+        // } 
+        // catch (RuntimeException e) {
+        //     PExplicitGlobal.setStatus(STATUS.ERROR);
+        //     throw new Exception("ERROR", e);
+        // } 
+        finally {        
+            executor.shutdownNow(); // forcibly shutdown EVERY thread
+            
+            Boolean isMemOutException = false;
+            Boolean NoException = true;
+            Boolean isBugFoundException = false;
+            Boolean AllTimeOutException = true;
+            int buggyScheduleIndex = -1;
+            int memOutScheduleIndex = -1;
+
+            for (int i = 0; i < timedCalls.size() ; i++) {
+                Throwable ePerThread = (timedCalls.get(i)).getExceptionThrown();
+                if (ePerThread != null && !(ePerThread instanceof InterruptedException)) 
+                    /*  Interrupted exception is thrown because 'sleep' of other threads is interrupted somewhere - possibly by timeout feature 
+                    or blocking on no current jobs available, so dont want this to go into `etc error case' */
+                    NoException = false;
+                if (!(ePerThread instanceof TimeoutException))
+                    AllTimeOutException = false;
+                if (ePerThread instanceof MemoutException || ePerThread instanceof OutOfMemoryError) {
+                    isMemOutException = true;
+                    memOutScheduleIndex = i;
+                }
+                else if ( ePerThread instanceof BugFoundException) {
+                    isBugFoundException = true;
+                    buggyScheduleIndex = i;
+                }
             }
-            executor.shutdownNow();
-            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-                (schedulers.get(i)).updateResult();
-            printStats();
-            for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++)
-                PExplicitLogger.logEndOfRun(schedulers.get(i), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+            
+            if (NoException) { // Correct Case (all threads report correct)
+                PExplicitGlobal.setStatus(STATUS.VERIFIED_UPTO_MAX_STEPS);
+                PExplicitGlobal.setResult("Correct");
+                printStats();
+                PExplicitLogger.logEndOfRun(schedulers.get(0), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds()); // PIN:
+            }
+            else if (isMemOutException) {  // Memory Error (atleast one thread throws MemOut Exception)
+                PExplicitGlobal.setStatus(STATUS.MEMOUT);
+                PExplicitGlobal.setResult("MemOut");
+                printStats();
+                PExplicitLogger.logEndOfRun(schedulers.get(memOutScheduleIndex), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+                throw new Exception("MEMOUT"); 
+            }
+            else if (isBugFoundException) {  // Bug Found Exception (atleast one thread throws BugFound Exception AND no thread throws MemOut Exception) 
+                PExplicitGlobal.setStatus(STATUS.BUG_FOUND);
+                PExplicitGlobal.setResult("cex");
+                printStats();
+                PExplicitLogger.logEndOfRun(schedulers.get(buggyScheduleIndex), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+                throw new BugFoundException();
+            }
+            else if (AllTimeOutException) {  // All threads timeout
+                PExplicitGlobal.setStatus(STATUS.TIMEOUT);
+                PExplicitGlobal.setResult("TimeOut");
+                printStats();
+                PExplicitLogger.logEndOfRun(schedulers.get(0), Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+                throw new Exception("TIMEOUT"); 
+            }
+            else {  // Some other case
+                PExplicitGlobal.setStatus(STATUS.ERROR);
+                PExplicitGlobal.setResult("error");
+                printStats();
+                throw new Exception("ERROR"); 
+            }
+
         }
     }
 
     public static void run() throws Exception {
-        ArrayList<Scheduler> localSchedulers = PExplicitGlobal.getSchedulers();
         for (int i = 0; i < PExplicitGlobal.getMaxThreads(); i++) {
             ExplicitSearchScheduler localCopy = new ExplicitSearchScheduler();
             schedulers.add(localCopy);
-            localSchedulers.add(localCopy);
         }
-
 
         preprocess();
 
-
         process(false);
 
-
     }
-
 }

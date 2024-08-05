@@ -13,15 +13,81 @@ import pexplicit.utils.exceptions.NotImplementedException;
 import pexplicit.utils.misc.Assert;
 import pexplicit.values.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-
+import java.util.*;
 /**
  * Represents the base class that all schedulers extend.
  */
 public abstract class Scheduler implements SchedulerInterface {
+    
+    /**
+     * Mapping from machine type to list of all machine instances
+     */
+    @Getter
+    @Setter
+    private Map<Class<? extends PMachine>,List<PMachine>> machineListByType = new ConcurrentHashMap<>(); 
+    /**
+     * Set of machines
+     */
+    @Getter
+    @Setter
+    private SortedSet<PMachine> machineSet = Collections.synchronizedSortedSet( new TreeSet<>()); 
+
+
+    public void putMachineListByType(Map<Class<? extends PMachine>, List<PMachine>> machinelistbytype) {
+        machineListByType = machinelistbytype;
+    }
+
+    public void putMachineSet( SortedSet<PMachine> machineset) {
+        machineSet = machineset;
+    }
+
+    /**
+     * Get a machine of a given type and index if exists, else return null.
+     *
+     * @param pid Machine pid
+     * @return Machine
+     */
+    public PMachine getGlobalMachine(PMachineId pid) {
+        Map<Class<? extends PMachine>, List<PMachine>> machineListByType = getMachineListByType();
+        List<PMachine> machinesOfType = machineListByType.get(pid.getType());
+        if (machinesOfType == null) {
+            return null;
+        }
+        if (pid.getTypeId() >= machinesOfType.size()) {
+            return null;
+        }
+        PMachine result = machineListByType.get(pid.getType()).get(pid.getTypeId());
+        assert (getMachineSet().contains(result));
+        return result;
+    }
+
+
+    /**
+     * Add a machine.
+     *
+     * @param machine      Machine to add
+     * @param machineCount Machine type count
+     */
+    public void addGlobalMachine(PMachine machine, int machineCount) {
+        Map<Class<? extends PMachine>, List<PMachine>> machineListByType = getMachineListByType();
+        if (!machineListByType.containsKey(machine.getClass())) {
+            machineListByType.put(machine.getClass(), new ArrayList<>());
+            putMachineListByType(machineListByType); 
+        }
+        assert (machineCount == machineListByType.get(machine.getClass()).size());
+        machineListByType.get(machine.getClass()).add(machine);
+        getMachineSet().add(machine);
+        assert (machineListByType.get(machine.getClass()).get(machineCount) == machine);
+    }    
+    
+    
+    
+    
+    
+    
     /**
      * Current schedule
      */
@@ -229,9 +295,9 @@ public abstract class Scheduler implements SchedulerInterface {
      * Runs the constructor of this machine.
      */
     public void startMachine(PMachine machine) {
-        if (!(PExplicitGlobal.getMachineSet()).contains(machine)) {
+        if (!(getMachineSet()).contains(machine)) {
             // add machine to global context
-            PExplicitGlobal.addGlobalMachine(machine, 0);
+            addGlobalMachine(machine, 0);
         }
 
         // add machine to schedule
@@ -282,11 +348,11 @@ public abstract class Scheduler implements SchedulerInterface {
         // get machine count for given type from schedule
         int machineCount = stepState.getMachineCount(machineType);
         PMachineId pid = new PMachineId(machineType, machineCount);
-        PMachine machine = PExplicitGlobal.getGlobalMachine(pid);
+        PMachine machine = getGlobalMachine(pid);
         if (machine == null) {
             // create a new machine
             machine = constructor.apply(machineCount);
-            PExplicitGlobal.addGlobalMachine(machine, machineCount);
+            addGlobalMachine(machine, machineCount);
         }
 
         // add machine to schedule

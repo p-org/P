@@ -19,6 +19,11 @@ public class TimedCall implements Callable<Integer> {
     @Setter
     private int threadId;
 
+    @Getter
+    @Setter
+    private Throwable exceptionThrown;
+
+
     public TimedCall(Scheduler scheduler, boolean resume, int localtID) {
         this.scheduler = scheduler;
         this.threadId = localtID;
@@ -29,13 +34,21 @@ public class TimedCall implements Callable<Integer> {
             throws MemoutException, BugFoundException, TimeoutException, InterruptedException {
         try {
             this.scheduler.runParallel(threadId);
-        } catch (OutOfMemoryError e) {
+        } catch ( NullPointerException | StackOverflowError | ClassCastException  | TimeoutException | InterruptedException e ) {
+            exceptionThrown = e;
+        }
+        catch (OutOfMemoryError e) {
+            exceptionThrown = e;
             throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
-        } catch (NullPointerException | StackOverflowError | ClassCastException e) {
-            throw new BugFoundException(e.getMessage(), e);
-        } catch (MemoutException | BugFoundException | TimeoutException | InterruptedException e) {
+        } catch (MemoutException | BugFoundException e) {
+            exceptionThrown = e;
             throw e;
         }
+        // catch (NullPointerException | StackOverflowError | ClassCastException e) {
+        //     throw new BugFoundException(e.getMessage(), e);
+        // } catch (MemoutException | BugFoundException | TimeoutException | InterruptedException e) {
+        //     throw e;
+        // }
         return 0;
     }
 }

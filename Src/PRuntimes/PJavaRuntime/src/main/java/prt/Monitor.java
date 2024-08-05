@@ -1,15 +1,23 @@
 package prt;
 
-import java.util.*;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
-import prt.events.PEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.apache.logging.log4j.message.StringMapMessage;
-import prt.exceptions.*;
+
+import prt.events.PEvent;
+import prt.exceptions.NonTotalStateMapException;
+import prt.exceptions.PAssertionFailureException;
+import prt.exceptions.RaiseEventException;
+import prt.exceptions.TransitionException;
+import prt.exceptions.UnhandledEventException;
 
 /**
  * A prt.Monitor encapsulates a state machine.

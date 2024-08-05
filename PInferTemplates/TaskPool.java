@@ -1,3 +1,6 @@
+import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
+
 public class TaskPool {
     int ptr = 0;
     int chunkSize;
@@ -9,8 +12,10 @@ public class TaskPool {
     Map<String, Map<String, List<Task>>> taskIndex;
     final FromDaikon converter;
     final boolean verbose;
+    final BufferedOutputStream pinferOutputStream;
+    final long startTime;
 
-    public TaskPool(int chunkSize, FromDaikon converter, boolean verbose) {
+    public TaskPool(int chunkSize, FromDaikon converter, boolean verbose) throws IOException {
         this.chunkSize = chunkSize;
         this.running = 0;
         this.tasks = new ArrayList<>();
@@ -21,6 +26,17 @@ public class TaskPool {
         this.numMined = 0;
         this.converter = converter;
         this.verbose = verbose;
+        File d = new File("PInferOutputs");
+        if (!d.exists()) {
+            d.mkdir();
+        }
+        File pinferOutputFile = new File(String.valueOf(Paths.get("PInferOutputs", "invariants.txt")));
+        if (pinferOutputFile.exists()) {
+            pinferOutputFile.delete();
+        }
+        pinferOutputFile.createNewFile();
+        this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile));
+        this.startTime = System.currentTimeMillis();
     }
 
     public void addTask(Task task) throws IOException {
@@ -39,12 +55,25 @@ public class TaskPool {
         this.taskIndex.get(guardsStr).get(filtersStr).add(task);
         tasks.add(task);
         _startTasks();
+        showProgress();
     }
 
-    private void showResults(String guards, String filters)  throws InterruptedException {
+    private void showProgress() {
+        StringBuilder sb = new StringBuilder("\r");
+        sb.append("[").append(numFinished).append(" / ").append(tasks.size()).append("][");
+        int total = 50;
+        double percentage = (double) numFinished / tasks.size();
+        int numEq = (int)(total * percentage);
+        numEq = Math.max(numEq, 1);
+        sb.append(String.join("", Collections.nCopies(numEq, "="))).append(">");
+        sb.append(String.join("", Collections.nCopies(total - numEq, " "))).append("]");
+        System.out.println(sb);
+    }
+
+    private void showResults(String guards, String filters) throws InterruptedException, IOException {
         synchronized(this) {
-            System.out.println("========================" + numFinished + "/" + tasks.size() + "==================================");
-            System.out.println(converter.getFormulaHeader(guards, filters));
+            showProgress();
+            String header = converter.getFormulaHeader(guards, filters);
             Set<String> invariants = new HashSet<>();
             for (var task : taskIndex.get(guards).get(filters)) {
                 var result = task.getDaikonOutput(converter, verbose);
@@ -53,10 +82,9 @@ public class TaskPool {
                 }
             }
             if (!invariants.isEmpty()) {
-                System.out.println(String.join("\n", invariants));
+                String body = String.join("\n", invariants);
+                pinferOutputStream.write((header + "\n" + body).getBytes());
                 this.numMined += invariants.size();
-            } else {
-                System.out.println("Infeasible guards / filters");
             }
         }
     }
@@ -89,6 +117,9 @@ public class TaskPool {
                     wait(0);
                 }
             }
+            System.out.println();
+            System.out.println("Time used (seconds): " + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
+            System.out.println("#Properties mined: " + numMined);
         }
     }
 

@@ -1367,6 +1367,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 }
                 
                 return;
+            case ReturnStmt rstmt:
+                EmitLine($"{BuiltinPrefix}Return = {ExprToString(rstmt.ReturnValue)};");
+                return;
             case null:
                 return;
         }

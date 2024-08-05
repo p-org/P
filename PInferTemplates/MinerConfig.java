@@ -15,6 +15,7 @@ public class MinerConfig {
     public final Set<Integer> mustIncludeFilters;
     public final String templateCategory;
     public final boolean verbose;
+    public final int pruningLevel;
 
     public MinerConfig(CommandLine cmdOptions) {
         numForallQuantifiers = Integer.parseInt(cmdOptions.getOptionValue("num-forall", "%QUANTIFIED_EVENTS%"));
@@ -34,6 +35,10 @@ public class MinerConfig {
         termsPath = cmdOptions.getOptionValue("terms", "%PROJECT_NAME%.terms.json");
         checkTrivialCombinations = cmdOptions.hasOption("skip-trivial");
         verbose = cmdOptions.hasOption("verbose");
+        pruningLevel = cmdOptions.hasOption("output-pruning-level") ? Integer.parseInt(cmdOptions.getOptionValue("output-pruning-level")) : 1;
+        if (pruningLevel < 0 || pruningLevel > 3) {
+            throw new RuntimeException("Invalid pruning level: " + pruningLevel + ". -O takes a value from [0-2]");
+        }
         traces = List.of(cmdOptions.getOptionValues("logs"));
         StringBuilder templateMetadata = new StringBuilder();
         StringBuilder templateNamePrefixBuilder = new StringBuilder();
@@ -131,6 +136,13 @@ public class MinerConfig {
         Option verbose = new Option("v", "verbose", false, "Print all debugging outputs (e.g. Daikon StdErr) from Daikon");
         verbose.setRequired(false);
         options.addOption(verbose);
+
+        Option pruningLv = new Option("O", "output-pruning-level", false,
+                                "Level of pruning outputs (0-3, default: 1). 0: no pruning. 1: standard pruning (exclude nullptr comparison, type name comparison)" +
+                                "2: In addition to 1, exclude properties whose set of bouonded events is equal to some selected guards/filters" +
+                                "3: In addition to 2, exclude all properties of [>, >=, < and <] comparisons of a term with a constant");
+        pruningLv.setRequired(false);
+        options.addOption(pruningLv);
 
         return options;
     }

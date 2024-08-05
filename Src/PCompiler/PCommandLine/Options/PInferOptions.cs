@@ -26,6 +26,7 @@ namespace Plang.Options
             var mustIncludeFiltersOpt = minerConfigGroup.AddArgument("hint-filters", "hf", "Hint filters to include in the specification (default: none)");
             var verboseMode = minerConfigGroup.AddArgument("verbose", "verbose", "Verbose mode, print stderr of Daikon (default: false)");
             var tracesOpt = minerConfigGroup.AddArgument("traces", "t", "Path to the trace files");
+            var pruningLevel = minerConfigGroup.AddArgument("pruning-level", "pl", "Pruning level (default: 1)", typeof(int));
             stOpt.IsRequired = false;
             ngOpt.IsRequired = false;
             nfOpt.IsRequired = false;
@@ -38,6 +39,7 @@ namespace Plang.Options
             mustIncludeGuardsOpt.IsRequired = false;
             tracesOpt.IsRequired = true;
             tracesOpt.IsMultiValue = true;
+            pruningLevel.IsRequired = false;
             
             var minerActionsGroup = Parser.GetOrCreateGroup("miner-actions", "Commands to list predicates and terms");
             minerActionsGroup.AddArgument("list-predicates", "lp", "List all atomic predicates that can be included in the mined specification");
@@ -125,6 +127,9 @@ namespace Plang.Options
                     break;
                 case "verbose":
                     config.Verbose = true;
+                    break;
+                case "pruning-level":
+                    config.PruningLevel = (int) arg.Value;
                     break;
             }
         }

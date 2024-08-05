@@ -41,9 +41,22 @@ public class Main {
         }
     }
 
-    public record RawTerm(String repr, String type, Set<Integer> events) {
+    public record RawTerm(int order, String repr, String type, Set<Integer> events) {
         public String shortRepr() {
             return repr.split("=>")[0].strip().replace(".getPayload()", "");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            RawTerm rawTerm = (RawTerm) o;
+            return order == rawTerm.order;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(order);
         }
     }
 
@@ -107,7 +120,7 @@ public class Main {
         Map<String, Set<TaskPool.Task>> properties = new HashMap<>();
         List<String> propertyKeys = new ArrayList<>();
         int numTasks = 0;
-        FromDaikon converter = new FromDaikon(termsToPredicates, terms, isForall ? "Forall" : "Exists", 0);
+        FromDaikon converter = new FromDaikon(termsToPredicates, terms, isForall ? "Forall" : "Exists", 0, minerConfig.pruningLevel);
         TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter, minerConfig.verbose);
         while (enumerator.hasNext()) {
             List<RawPredicate> predicateComb = enumerator.next();
@@ -169,7 +182,7 @@ public class Main {
         TermEnumerator termEnumerator = new TermEnumerator(termsToPredicates, terms.size(), minerConfig.numTermsToChoose);
         Map<String, Map<String, List<TaskPool.Task>>> tasks = new HashMap<>();
         int numTasks = 0;
-        FromDaikon converter = new FromDaikon(termsToPredicates, terms, "ForallExists", minerConfig.numExistsQuantifiers);
+        FromDaikon converter = new FromDaikon(termsToPredicates, terms, "ForallExists", minerConfig.numExistsQuantifiers, minerConfig.pruningLevel);
         TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter, minerConfig.verbose);
         Map<String, List<String>> keysSequences = new HashMap<>();
         List<String> guardKeySequence = new ArrayList<>();

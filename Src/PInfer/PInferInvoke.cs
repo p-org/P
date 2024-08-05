@@ -96,6 +96,8 @@ namespace Plang.PInfer
             }
             args.Add("-nt");
             args.Add($"{configuration.InvArity}");
+            args.Add("-o");
+            args.Add($"{configuration.PruningLevel}");
             if (configuration.Verbose)
             {
                 args.Add("-v");

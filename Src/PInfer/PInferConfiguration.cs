@@ -15,6 +15,7 @@ namespace Plang.PInfer
         public string OutputDirectory;
         public string ProjectName;
         public bool Verbose;
+        public int PruningLevel;
 
         public PInferConfiguration()
         {
@@ -31,6 +32,7 @@ namespace Plang.PInfer
             OutputDirectory = "PGenerated";
             ProjectName = "generatedOutput";
             Verbose = false;
+            PruningLevel = 1;
         }
     }
 }

@@ -5,18 +5,21 @@ public class FromDaikon {
     private List<Main.RawTerm> terms;
     private String templateHeaderCar;
     private String templateHeaderCdr;
+    private int pruningLevel;
     private int numExists;
     private static final String[] QUANTIFIERS = { %QUANTIFIERS% };
     private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()" };
+    private static final String[] COMP_OPS = { "!=", "<", "<=", ">", ">=" };
     private static final Map<String, String> substs = new HashMap<>();
 
     public FromDaikon(Map<Set<Integer>, List<Main.RawPredicate>> termsToPredicates,
-                      List<Main.RawTerm> terms, String templateFamily, int numExtQuantfiers) {
+                      List<Main.RawTerm> terms, String templateFamily, int numExtQuantfiers, int pruningLevel) {
         this.termsToPredicates = termsToPredicates;
         this.terms = terms;
         this.templateHeaderCar = "";
         this.templateHeaderCdr = "";
         this.numExists = numExtQuantfiers;
+        this.pruningLevel = pruningLevel;
         StringBuilder sb = new StringBuilder();
         switch (templateFamily) {
             case "Forall":
@@ -36,13 +39,13 @@ public class FromDaikon {
             case "ForallExists":
                 for (int i = 0; i < QUANTIFIERS.length - numExtQuantfiers; ++i) {
                     sb.append("∀e").append(i)
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - numExtQuantfiers - 1 ? "." : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - numExtQuantfiers - 1 ? " :: " : ", ");
                 }
                 templateHeaderCar = sb.toString();
                 sb = new StringBuilder();
                 for (int i = QUANTIFIERS.length - numExtQuantfiers; i < QUANTIFIERS.length; ++i) {
                     sb.append("∃e").append(i)
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? "." : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : ", ");
                 }
                 templateHeaderCdr = sb.toString();
                 break;
@@ -59,8 +62,9 @@ public class FromDaikon {
         return this.templateHeaderCar + runSubst(guards) + " -> " + this.templateHeaderCdr + runSubst(filters);
     }
 
-    public String convertOutput(String line, List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
-        if (!checkValidity(line, terms)) {
+    public String convertOutput(String line, List<Main.RawPredicate> guards, List<Main.RawPredicate> filters,
+                                List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
+        if (!checkValidity(line, guards, filters, forallTerms, existsTerms)) {
             return null;
         }
         boolean didSth = false;
@@ -112,11 +116,59 @@ public class FromDaikon {
         return line;
     }
 
-    private boolean checkValidity(String line, List<Main.RawTerm> terms) {
-        for (var stub : FILTERED_INVS) {
-            if (line.contains(stub)) return false;
+    private boolean isNumber(String x) {
+        if (x == null || x.isEmpty()) return false;
+        try {
+            Double.parseDouble(x);
+        } catch (NumberFormatException e) {
+            return false;
         }
-        
+        return true;
+    }
+
+    private boolean checkValidity(String line, List<Main.RawPredicate> guards,
+                                    List<Main.RawPredicate> filters,
+                                    List<Main.RawTerm> forallTerms,
+                                    List<Main.RawTerm> existsTerms) {
+        if (pruningLevel == 0) {
+            return true;
+        }
+        if (pruningLevel >= 1) {
+            // prune nullptr comparisons
+            // and type name comparisons
+            for (var stub : FILTERED_INVS) {
+                if (line.contains(stub)) return false;
+            }
+        }
+        if (pruningLevel >= 2) {
+            // prune if the set of terms of the mined property
+            // equals to some selected atomic predicates
+            Set<Integer> minedPropertyBoundedTerms = new HashSet<>();
+            for (int i = 0; i < forallTerms.size(); ++i) {
+                if (line.contains("f" + i)) {
+                    minedPropertyBoundedTerms.add(forallTerms.get(i).order());
+                }
+            }
+            for (int i = 0; i < existsTerms.size(); ++i) {
+                if (line.contains("f" + (i + forallTerms.size()))) {
+                    minedPropertyBoundedTerms.add(existsTerms.get(i).order());
+                }
+            }
+            if (termsToPredicates.containsKey(minedPropertyBoundedTerms)) {
+                return false;
+            }
+        }
+        if (pruningLevel >= 3) {
+            // exclude comparisons with constants
+            for (String op: COMP_OPS) {
+                if (line.contains(op)) {
+                    String rhs = line.split(op)[1].trim();
+                    if (isNumber(rhs) || (rhs.startsWith("\"") && rhs.endsWith("\""))) {
+                        return false;
+                    }
+                }
+            }
+        }
         return true;
     }
 }

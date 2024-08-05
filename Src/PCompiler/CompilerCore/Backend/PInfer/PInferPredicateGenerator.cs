@@ -207,6 +207,7 @@ namespace Plang.Compiler.Backend.PInfer
             foreach ((var term, var index) in VisitedSet.Select((x, i) => (x, i)))
             {
                 ctx.WriteLine(stream, "{");
+                ctx.WriteLine(stream, $"\"order\": {TermOrder[term]}, ");
                 ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(term)}\",");
                 ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"{x.Order}"))}],");
                 ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(term)}\"");

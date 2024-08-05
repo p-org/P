@@ -160,7 +160,7 @@ public class TaskPool {
             boolean start = false;
             boolean hasResult = false;
             for (String line : lines) {
-                if (line.contains(":::ENTER") && line.contains(templateName + "." + templateName)) {
+                if (line.contains(":::ENTER") && line.contains("mine_" + templateName)) {
                     start = true;
                     hasResult = true;
                     continue;

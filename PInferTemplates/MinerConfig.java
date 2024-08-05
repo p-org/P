@@ -137,7 +137,7 @@ public class MinerConfig {
         verbose.setRequired(false);
         options.addOption(verbose);
 
-        Option pruningLv = new Option("O", "output-pruning-level", false,
+        Option pruningLv = new Option("O", "output-pruning-level", true,
                                 "Level of pruning outputs (0-3, default: 1). 0: no pruning. 1: standard pruning (exclude nullptr comparison, type name comparison)" +
                                 "2: In addition to 1, exclude properties whose set of bouonded events is equal to some selected guards/filters" +
                                 "3: In addition to 2, exclude all properties of [>, >=, < and <] comparisons of a term with a constant");

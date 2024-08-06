@@ -225,7 +225,7 @@ namespace PChecker.Actors.Logging
         /// <inheritdoc/>
         public virtual void OnPopStateUnhandledEvent(ActorId id, string stateName, Event e)
         {
-            var eventName = e.GetType().FullName;
+            var eventName = e.GetType().Name;
             var text = $"<PopLog> {id} popped state {stateName} due to unhandled event '{eventName}'.";
             Logger.WriteLine(text);
         }

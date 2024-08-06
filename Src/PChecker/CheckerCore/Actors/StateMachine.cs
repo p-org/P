@@ -260,6 +260,9 @@ namespace PChecker.Actors
                         if (CurrentStatus is Status.Active)
                         {
                             Runtime.LogWriter.LogPopStateUnhandledEvent(Id, CurrentStateName, e);
+                            EventHandlerMap = EmptyEventHandlerMap;
+                            CurrentState = null;
+                            CurrentStateName = string.Empty;
                             continue;
                         }
                     }

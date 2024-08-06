@@ -43,6 +43,11 @@ namespace PChecker.PRuntime
             base.OnStateTransition(id, GetShortName(stateName), isEntry);
         }
 
+        public override void OnPopStateUnhandledEvent(ActorId id, string stateName, Event e)
+        {
+            base.OnPopStateUnhandledEvent(id, GetShortName(stateName), e);
+        }
+
         public override void OnDefaultEventHandler(ActorId id, string stateName)
         {
             base.OnDefaultEventHandler(id, GetShortName(stateName));

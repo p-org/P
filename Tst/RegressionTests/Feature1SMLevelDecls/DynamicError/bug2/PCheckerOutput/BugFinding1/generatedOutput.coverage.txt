@@ -1,0 +1,25 @@
+Total event coverage: 100.0%
+============================
+StateMachine: _GodMachine
+=========================
+Event coverage: 100.0%
+
+	State: Init
+		State has no expected events, so coverage is 100%
+
+StateMachine: Main
+==================
+Event coverage: 100.0%
+
+	State: __InitState__
+		State event coverage: 100.0%
+		Events received: Main+ConstructorEvent
+		Events sent: Main+ConstructorEvent
+		Next states: S
+
+	State: S
+		State event coverage: 100.0%
+		Events received: x
+		Events sent: a, x
+		Previous states: __InitState__
+

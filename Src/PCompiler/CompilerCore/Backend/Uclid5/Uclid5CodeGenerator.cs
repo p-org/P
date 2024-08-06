@@ -859,8 +859,17 @@ public class Uclid5CodeGenerator : ICodeGenerator
         // TODO: these should be side-effect free and we should enforce that
         foreach (var f in functions)
         {
-            var ps = f.Signature.Parameters.Select(p => $"{p.Name}: {TypeToString(p.Type)}");
-            EmitLine($"procedure [noinline] {f.Name}({string.Join(", ", ps)})");
+            var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}");
+
+            if (f.Body is null)
+            {
+                EmitLine($"procedure [noinline] {f.Name}({string.Join(", ", ps)})");
+            }
+            else
+            {
+                EmitLine($"procedure [inline] {f.Name}({string.Join(", ", ps)})");
+            }
+            
             if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
                 EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");

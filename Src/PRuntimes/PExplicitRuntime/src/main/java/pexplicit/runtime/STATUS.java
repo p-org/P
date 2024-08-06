@@ -5,8 +5,8 @@ public enum STATUS {
     SCHEDULEOUT("scheduleout"),                         // schedule limit reached
     TIMEOUT("timeout"),                                 // timeout reached
     MEMOUT("memout"),                                   // memout reached
-    VERIFIED("proved"),                                 // full state space explored and no bug found
-    VERIFIED_UPTO_MAX_STEPS("proved"),   // full state space explored and no bug found upto max steps
+    VERIFIED("verified"),                               // full state space explored and no bug found
+    VERIFIED_UPTO_MAX_STEPS("verified"),                // full state space explored and no bug found upto max steps
     BUG_FOUND("cex"),                                   // found a bug
     INTERRUPTED("interrupted"),                         // interrupted by user
     ERROR("error");                                     // unexpected error encountered

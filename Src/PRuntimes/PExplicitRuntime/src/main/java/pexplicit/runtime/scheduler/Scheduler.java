@@ -357,12 +357,10 @@ public abstract class Scheduler implements SchedulerInterface {
      * Check for liveness at the end of a completed schedule
      */
     public void checkLiveness(boolean terminated) {
-        for (PMachine monitor : PExplicitGlobal.getModel().getMonitors()) {
-            if (monitor.getCurrentState().isHotState()) {
-                if (terminated) {
-                    Assert.liveness(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
-                } else {
-                    Assert.liveness(String.format("Monitor %s detected potential liveness bug in hot state %s", monitor, monitor.getCurrentState()));
+        if (terminated) {
+            for (PMachine monitor : PExplicitGlobal.getModel().getMonitors()) {
+                if (monitor.getCurrentState().isHotState()) {
+                        Assert.liveness(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
                 }
             }
         }

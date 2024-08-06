@@ -599,7 +599,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         printProgress(true);
 
         // print basic statistics
-        StatWriter.log("#-executions", String.format("%d", SearchStatistics.iteration));
+        StatWriter.log("#-schedules", String.format("%d", SearchStatistics.iteration));
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             StatWriter.log("#-states", String.format("%d", SearchStatistics.totalStates));
             StatWriter.log("#-distinct-states", String.format("%d", SearchStatistics.totalDistinctStates));

@@ -88,7 +88,7 @@ public class RuntimeExecutor {
         PExplicitGlobal.setResult("error");
 
         StatWriter.log("project-name", String.format("%s", PExplicitGlobal.getConfig().getProjectName()));
-        StatWriter.log("strategy", String.format("%s", PExplicitGlobal.getConfig().getSearchStrategyMode()));
+        StatWriter.log("mode", String.format("%s", PExplicitGlobal.getConfig().getSearchStrategyMode()));
         StatWriter.log("time-limit-seconds", String.format("%.1f", PExplicitGlobal.getConfig().getTimeLimit()));
         StatWriter.log("memory-limit-MB", String.format("%.1f", PExplicitGlobal.getConfig().getMemLimit()));
     }

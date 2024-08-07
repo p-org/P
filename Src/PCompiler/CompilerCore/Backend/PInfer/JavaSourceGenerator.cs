@@ -28,9 +28,9 @@ namespace Plang.Compiler.Backend.PInfer
             return Types.SimplifiedJavaType(expr.Type);
         }
 
-        public string GenerateRawExpr(IPExpr expr)
+        public string GenerateRawExpr(IPExpr expr, bool simplified = false)
         {
-            var result = GenerateCodeExpr(expr).Replace("\"", "");
+            var result = GenerateCodeExpr(expr, simplified).Replace("\"", "");
             if (FreeEvents.ContainsKey(expr)) {
                 var events = FreeEvents[expr].Select(x => {
                         var e = (PEventVariable) x;
@@ -68,7 +68,7 @@ namespace Plang.Compiler.Backend.PInfer
                 var rawExpr = GenerateRawExpr(predicate);
                 var fname = $"predicate_{i++}";
                 var parameters = WritePredicateDefn(predicate, fname);
-                repr2Metadata[rawExpr] = (fname, parameters);
+                repr2Metadata[GenerateRawExpr(predicate, true)] = (fname, parameters);
             }
             WritePredicateInterface(repr2Metadata);
             repr2Metadata = [];
@@ -76,7 +76,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 var rawExpr = GenerateRawExpr(term);
                 var fname = $"term_{i++}";
-                repr2Metadata[rawExpr] = (fname, WriteTermDefn(term, fname));
+                repr2Metadata[GenerateRawExpr(term, true)] = (fname, WriteTermDefn(term, fname));
             }
             WriteTermInterface(repr2Metadata);
             WriteLine("}");
@@ -164,19 +164,19 @@ namespace Plang.Compiler.Backend.PInfer
             return parameters;
         }
 
-        internal string GenerateCodeExpr(IPExpr expr)
+        internal string GenerateCodeExpr(IPExpr expr, bool simplified = false)
         {
             if (expr is VariableAccessExpr v)
             {
-                return GenerateCodeVariable(v.Variable);
+                return GenerateCodeVariable(v.Variable, simplified);
             }
             else if (expr is PredicateCallExpr p)
             {
-                return GenerateCodePredicateCall(p);
+                return GenerateCodePredicateCall(p, simplified);
             }
             else if (expr is FunCallExpr f)
             {
-                return GenerateFuncCall(f);
+                return GenerateFuncCall(f, simplified);
             }
             else if (expr is TupleAccessExpr t)
             {
@@ -235,13 +235,13 @@ namespace Plang.Compiler.Backend.PInfer
             // return GenerateJSONObjectGet(GenerateCodeExpr(n.SubExpr), n.FieldName, n.Type.Canonicalize());
         }
 
-        private string GenerateCodePredicateCall(PredicateCallExpr p)
+        private string GenerateCodePredicateCall(PredicateCallExpr p, bool simplified = false)
         {
             if (p.Predicate is BuiltinPredicate)
             {
                 if (p.Predicate is MacroPredicate macro)
                 {
-                    string[] macroArgs = p.Arguments.Select(GenerateCodeExpr).ToArray();
+                    string[] macroArgs = p.Arguments.Select(x => GenerateCodeExpr(x, simplified)).ToArray();
                     return macro.GenerateUnfoldedCall(macroArgs, Types, Names);
                 }
                 else 
@@ -251,19 +251,27 @@ namespace Plang.Compiler.Backend.PInfer
                         case Notation.Infix:
                             if (p.Predicate.Name == "==")
                             {
+                                if (simplified)
+                                {
+                                    return $"({GenerateCodeExpr(p.Arguments[0], simplified)} == {GenerateCodeExpr(p.Arguments[1], simplified)})";
+                                }
                                 if (p.Arguments[0].Type is SequenceType || p.Arguments[0].Type is SetType)
                                 {
-                                    return $"Arrays.equals({GenerateCodeExpr(p.Arguments[0])}, {GenerateCodeExpr(p.Arguments[1])})";
+                                    return $"Arrays.equals({GenerateCodeExpr(p.Arguments[0], simplified)}, {GenerateCodeExpr(p.Arguments[1], simplified)})";
                                 }
-                                return $"Objects.equals({GenerateCodeExpr(p.Arguments[0])}, {GenerateCodeExpr(p.Arguments[1])})";
+                                return $"Objects.equals({GenerateCodeExpr(p.Arguments[0], simplified)}, {GenerateCodeExpr(p.Arguments[1], simplified)})";
                             }
-                            return $"{GenerateCodeExpr(p.Arguments[0])} {p.Predicate.Name} {GenerateCodeExpr(p.Arguments[1])}";
+                            return $"{GenerateCodeExpr(p.Arguments[0], simplified)} {p.Predicate.Name} {GenerateCodeExpr(p.Arguments[1], simplified)}";
                     }
                 }
             }
             else if (p.Predicate is DefinedPredicate)
             {
                 var coercedArgs = p.Arguments.Select(x => {
+                    if (simplified)
+                    {
+                        return GenerateCodeExpr(x, simplified);
+                    }
                     switch (x.Type)
                     {
                         case SequenceType s: return $"(new ArrayList<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>(Arrays.asList({GenerateCodeExpr(x)})))";
@@ -273,11 +281,11 @@ namespace Plang.Compiler.Backend.PInfer
                 }).ToArray();
                 return GenerateCodeCall(p.Predicate.Name, coercedArgs);
             }
-            var args = (from e in p.Arguments select GenerateCodeExpr(e)).ToArray();
+            var args = (from e in p.Arguments select GenerateCodeExpr(e, simplified)).ToArray();
             return GenerateCodeCall(p.Predicate.Name, args);
         }
 
-        private string GenerateFuncCall(FunCallExpr funCallExpr)
+        private string GenerateFuncCall(FunCallExpr funCallExpr, bool simplified = false)
         {
             if (funCallExpr.Function is BuiltinFunction builtinFun)
             {
@@ -286,6 +294,10 @@ namespace Plang.Compiler.Backend.PInfer
                     case Notation.Infix:
                         if (builtinFun.Name == "==")
                         {
+                            if (simplified)
+                            {
+                                return $"({GenerateCodeExpr(funCallExpr.Arguments[0])} == {GenerateCodeExpr(funCallExpr.Arguments[1])})";
+                            }
                             return $"Objects.equals({GenerateCodeExpr(funCallExpr.Arguments[0])}, {GenerateCodeExpr(funCallExpr.Arguments[1])})";
                         }
                         return $"({GenerateCodeExpr(funCallExpr.Arguments[0])} {builtinFun.Name} {GenerateCodeExpr(funCallExpr.Arguments[1])})";
@@ -312,10 +324,14 @@ namespace Plang.Compiler.Backend.PInfer
             return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e)).ToArray()) + ")";
         }
 
-        private static string GenerateCodeVariable(Variable v)
+        private static string GenerateCodeVariable(Variable v, bool simplified = false)
         {
             if (v is PEventVariable eVar)
             {
+                if (simplified)
+                {
+                    return $"{eVar.Name}.payload";
+                }
                 return $"{eVar.Name}.getPayload()";
             }
             return v.Name;

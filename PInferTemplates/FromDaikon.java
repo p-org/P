@@ -134,6 +134,16 @@ public class FromDaikon {
         return false;
     }
 
+    private Main.RawTerm getTermByTemplateField(String f, List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
+        for (int i = 0; i < forallTerms.size(); ++i) {
+            if (f.contains("f" + i)) return forallTerms.get(i);
+        }
+        for (int i = 0; i < existsTerms.size(); ++i) {
+            if (f.contains("f" + (i + forallTerms.size()))) return existsTerms.get(i);
+        }
+        return null;
+    }
+
     private Map.Entry<List<Main.RawTerm>, List<Main.RawTerm>> 
         getTermSubsts(String line, List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
         List<Main.RawTerm> forallSubsts = new ArrayList<>();
@@ -191,6 +201,14 @@ public class FromDaikon {
                     if (args.length < 2) continue;
                     String lhs = args[0].trim();
                     String rhs = args[1].trim();
+                    if (op.equals("!=")) {
+                        var lhsTerm = getTermByTemplateField(lhs, forallTerms, existsTerms);
+                        var rhsTerm = getTermByTemplateField(rhs, forallTerms, existsTerms);
+                        if (lhsTerm != null && rhsTerm != null) {
+                            if (lhsTerm.shortRepr().endsWith(".index()")
+                                    && rhsTerm.shortRepr().endsWith(".index()")) return false;
+                        }
+                    }
                     boolean rhsIsConst = isNumber(rhs) || (rhs.startsWith("\"") && rhs.endsWith("\""));
                     if (!containsTerm(lhs, forallTerms.size(), existsTerms.size())) {
                         if (!rhsIsConst && !rhs.startsWith("size")) {

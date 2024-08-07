@@ -250,7 +250,8 @@ namespace Plang
             if (configuration.Interactive)
             {
                 // Interactive mode
-                Console.WriteLine("===PInfer Interactive Miner Setup===");
+                Console.WriteLine("============PInfer Interactive Miner Setup============");
+                PInferOptions.WritePredicates(configuration);
                 int step = 1;
                 configuration.NumForallQuantifiers = (int) GetInputOrDefault(step++, "Number of preceding forall quantifiers (default: # of quantified events)", typeof(int), -1);
                 configuration.NumGuardPredicates = (int) GetInputOrDefault(step++, "Number of atomic predicates in the guard (default: 0)", typeof(int), 0);
@@ -261,7 +262,7 @@ namespace Plang
                 }
                 configuration.NumFilterPredicates = nFilters;
                 // configuration.TracePaths = ((List<string>) GetInputOrDefault(step++, "Paths to trace files, separated by space (must provide at least 1 trace)", typeof(string[]), "", false)).ToArray();
-                int pruningLevel = (int) GetInputOrDefault(step++, "Level of pruning [0-3] (default: 1, see `p infer -h` for more details)", typeof(int), 1);
+                int pruningLevel = (int) GetInputOrDefault(step++, "Level of pruning [0-3] (default: 3, see `p infer -h` for more details)", typeof(int), 3);
                 pruningLevel = Math.Max(0, pruningLevel);
                 pruningLevel = Math.Min(3, pruningLevel);
                 configuration.PruningLevel = pruningLevel;
@@ -272,7 +273,7 @@ namespace Plang
                 List<int> defaultList = [];
                 if (hintGuards) 
                 {
-                    PInferOptions.WritePredicates(configuration);
+                    // PInferOptions.WritePredicates(configuration);
                     mustIncludeGuards = ((List<int>) GetInputOrDefault(step, "Enter predicate IDs, separated by spaces", typeof(int[]), defaultList)).ToArray();
                 }
                 configuration.MustIncludeGuard = mustIncludeGuards;
@@ -280,7 +281,7 @@ namespace Plang
                 bool hintFilters = (bool) GetInputOrDefault(step, "Include manual hints for filters? y/[n]", typeof(bool), false);
                 if (hintFilters)
                 {
-                    PInferOptions.WritePredicates(configuration);
+                    // PInferOptions.WritePredicates(configuration);
                     mustIncludeFilters = ((List<int>) GetInputOrDefault(step, "Enter predicate IDs, separated by spaces", typeof(int[]), defaultList)).ToArray();
                 }
                 configuration.MustIncludeFilter = mustIncludeFilters;

@@ -26,7 +26,7 @@ namespace Plang.Options
             var mustIncludeFiltersOpt = minerConfigGroup.AddArgument("hint-filters", "hf", "Hint filters to include in the specification (default: none)");
             var verboseMode = minerConfigGroup.AddArgument("verbose", "verbose", "Verbose mode, print stderr of Daikon (default: false)", typeof(bool));
             var tracesOpt = minerConfigGroup.AddArgument("traces", "t", "Path to the trace files");
-            var pruningLevel = minerConfigGroup.AddArgument("pruning-level", "pl", "Pruning level (default: 1)", typeof(int));
+            var pruningLevel = minerConfigGroup.AddArgument("pruning-level", "pl", "Pruning level (default: 3)", typeof(int));
             stOpt.IsRequired = false;
             ngOpt.IsRequired = false;
             nfOpt.IsRequired = false;
@@ -157,7 +157,7 @@ namespace Plang.Options
                     eventLength = Math.Max(eventLength, pi.Item3.Length);
                 }
                 var formatStr = $"| {{0, -5}} | {{1, -{reprLength + 1}}} | {{2, -{eventLength + 1}}} |";
-                Console.WriteLine("Available Atomic Predicates:");
+                CommandLineOutput.WriteInfo("Available Atomic Predicates:");
                 Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Bounded Events"));
                 foreach (var (order, repr, events) in extractInfo)
                 {

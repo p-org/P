@@ -181,7 +181,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 ctx.WriteLine(stream, "{");
                 ctx.WriteLine(stream, $"\"order\": {PredicateOrder[pred]},");
-                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(pred)}\", ");
+                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(pred, true)}\", ");
                 ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[pred])}], ");
                 var comparer = new ASTComparer();
                 if (Contradictions.TryGetValue(pred, out var contradictions))
@@ -208,7 +208,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 ctx.WriteLine(stream, "{");
                 ctx.WriteLine(stream, $"\"order\": {TermOrder[term]}, ");
-                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(term)}\",");
+                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(term, true)}\",");
                 ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"{x.Order}"))}],");
                 ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(term)}\"");
                 ctx.WriteLine(stream, "}");

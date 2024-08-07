@@ -130,7 +130,7 @@ public class TaskPool {
 
     public synchronized void _startTasks() throws IOException {
         while (running < chunkSize && ptr < tasks.size()) {
-            tasks.get(ptr++).start();
+            tasks.get(ptr++).start(ptr);
             running += 1;
         }
     }
@@ -234,6 +234,7 @@ public class TaskPool {
             builder.append("filters: ").append(filters.stream().map(Main.RawPredicate::repr).collect(Collectors.joining(" "))).append("\n");
             builder.append("Terms (forall): ").append(forallQuantifiedTerms.stream().map(Main.RawTerm::shortRepr).collect(Collectors.joining(" "))).append("\n");
             builder.append("Terms (exists): ").append(existsQuantifiedTerms.stream().map(Main.RawTerm::shortRepr).collect(Collectors.joining(" "))).append("\n");
+            builder.append("Current Time: ").append(System.currentTimeMillis());
             return builder.toString();
         }
 
@@ -271,7 +272,7 @@ public class TaskPool {
             outputThread.start();
         }
 
-        public void start() throws IOException {
+        public void start(int uid) throws IOException {
             StringBuilder templateNameBuilder = new StringBuilder();
             StringBuilder forallTypes = new StringBuilder();
             for (var t: forallQuantifiedTerms) {
@@ -290,7 +291,7 @@ public class TaskPool {
                     "daikon.Chicory",
                     "--ppt-select-pattern=" + "Templates",
                     "--ppt-omit-pattern=execute",
-                    "--dtrace-file=" + Integer.toHexString(showTask().hashCode()) + ".dtrace.gz",
+                    "--dtrace-file=" + Integer.toHexString(uid) + ".dtrace.gz",
                     "--daikon",
                     "%PROJECT_NAME%.pinfer.PInferDriver",
                     String.join("*", tracePaths),

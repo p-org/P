@@ -1372,7 +1372,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 IncrementActionCount();
                 foreach (var procedureName in _specListenMap.GetValueOrDefault(ev, []))
                 {
-                    EmitLine($"call {procedureName}({ExprToString(sstmt.Arguments[0])});");
+                    var argument = sstmt.Arguments.Count > 0 ? $"{ExprToString(sstmt.Arguments[0])}" : PNull;
+                    EmitLine($"call {procedureName}({argument});");
                 }
                 
                 return;

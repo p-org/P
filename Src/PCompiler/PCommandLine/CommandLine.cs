@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using PChecker;
 using PChecker.IO.Debugging;
 using PChecker.Scheduling;
@@ -148,9 +149,145 @@ namespace Plang
             compiler.Compile(configuration);
         }
 
+        #nullable enable
+        private static object? ParseString(Type type, string v)
+        {
+            object? result = null;
+            if (type == typeof(string))
+            {
+               result = v; 
+            }
+            else if (type == typeof(int))
+            {
+                if (int.TryParse(v, out var x))
+                {
+                    result = x;
+                }
+            }
+            else if (type == typeof(int[]))
+            {
+                List<int>? x = [];
+                foreach (var s in v.Split(" "))
+                {
+                    object? r = ParseString(typeof(int), s);
+                    if (r != null)
+                    {
+                        x.Add((int) r);
+                    }
+                    else
+                    {
+                        x = null;
+                        break;
+                    }
+                }
+                result = x;
+            }
+            else if (type == typeof(string[]))
+            {
+                List<string>? x = [];
+                foreach (var s in v.Split(" "))
+                {
+                    object? r = ParseString(typeof(string), s);
+                    if (r != null)
+                    {
+                        x.Add((string) r);
+                    }
+                    else
+                    {
+                        x = null;
+                        break;
+                    }
+                }
+                result = x;
+            }
+            else if (type == typeof(bool))
+            {
+                if (v.ToLower() == "y")
+                {
+                    result = true;
+                }
+                else if (v.ToLower() == "n")
+                {
+                    result = false;
+                }
+                else
+                {
+                    result = null;
+                }
+            }
+            return result;
+        }
+        #nullable disable
+
+        private static object GetInputOrDefault(int step, string prompt, Type type, object defaultValue, bool allowDefault = true)
+        {
+            object r = null;
+            do {
+                Console.Write($"[Step {step}] " + prompt + ": ");
+                var line = Console.ReadLine();
+                if (String.IsNullOrEmpty(line))
+                {
+                    if (allowDefault)
+                    {
+                        return defaultValue;
+                    }
+                }
+                else
+                {
+                    r = ParseString(type, line);
+                }
+                if (r == null)
+                {
+                   CommandLineOutput.WriteWarning($"`{line}` is not a valid input. Please try again."); 
+                }
+            } while (r == null);
+            return r;
+        }
+
         public static void RunPInfer(string[] args)
         {
             var configuration = new PInferOptions().Parse(args);
+            if (configuration.Interactive)
+            {
+                // Interactive mode
+                Console.WriteLine("===PInfer Interactive Miner Setup===");
+                int step = 1;
+                configuration.NumForallQuantifiers = (int) GetInputOrDefault(step++, "Number of preceding forall quantifiers (default: # of quantified events)", typeof(int), -1);
+                configuration.NumGuardPredicates = (int) GetInputOrDefault(step++, "Number of atomic predicates in the guard (default: 0)", typeof(int), 0);
+                int nFilters = 0;
+                if (configuration.NumForallQuantifiers >= 0)
+                {
+                    nFilters = (int) GetInputOrDefault(step++, "Number of atomic predicates in the filter (default: 0)", typeof(int), 0);
+                }
+                configuration.NumFilterPredicates = nFilters;
+                // configuration.TracePaths = ((List<string>) GetInputOrDefault(step++, "Paths to trace files, separated by space (must provide at least 1 trace)", typeof(string[]), "", false)).ToArray();
+                int pruningLevel = (int) GetInputOrDefault(step++, "Level of pruning [0-3] (default: 1, see `p infer -h` for more details)", typeof(int), 1);
+                pruningLevel = Math.Max(0, pruningLevel);
+                pruningLevel = Math.Min(3, pruningLevel);
+                configuration.PruningLevel = pruningLevel;
+                configuration.InvArity = (int) GetInputOrDefault(step++, "Arity of candidate properties (default: 2)", typeof(int), 2);
+                bool hintGuards = (bool) GetInputOrDefault(step, "Include manual hints for guards? y/[n]", typeof(bool), false);
+                int[] mustIncludeGuards = [];
+                int[] mustIncludeFilters = [];
+                List<int> defaultList = [];
+                if (hintGuards) 
+                {
+                    PInferOptions.WritePredicates(configuration);
+                    mustIncludeGuards = ((List<int>) GetInputOrDefault(step, "Enter predicate IDs, separated by spaces", typeof(int[]), defaultList)).ToArray();
+                }
+                configuration.MustIncludeGuard = mustIncludeGuards;
+                step += 1;
+                bool hintFilters = (bool) GetInputOrDefault(step, "Include manual hints for filters? y/[n]", typeof(bool), false);
+                if (hintFilters)
+                {
+                    PInferOptions.WritePredicates(configuration);
+                    mustIncludeFilters = ((List<int>) GetInputOrDefault(step, "Enter predicate IDs, separated by spaces", typeof(int[]), defaultList)).ToArray();
+                }
+                configuration.MustIncludeFilter = mustIncludeFilters;
+                step += 1;
+                configuration.SkipTrivialCombinations = (bool) GetInputOrDefault(step++, "Skip trivial guard-filter-terms combinations? [y]/n", typeof(bool), true);
+                bool verbose = configuration.Verbose;
+            }
             PInferInvoke.invokeMain(configuration);
         }
     }

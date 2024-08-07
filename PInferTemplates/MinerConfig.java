@@ -73,6 +73,16 @@ public class MinerConfig {
                 Integer.parseInt(cmdOptions.getOptionValue("filter-depth", "0")) - mustIncludeFilters.size());
     }
 
+    public String getOutputFilename() {
+        StringBuilder sb = new StringBuilder("invariants");
+        sb.append("_forall").append(this.numForallQuantifiers);
+        sb.append("_exists").append(this.numExistsQuantifiers);
+        sb.append("_g").append(this.numGuardConjunctions);
+        sb.append("_f").append(this.numFilterConjunctions);
+        sb.append(".txt");
+        return sb.toString();
+    }
+
     public static MinerConfig fromCommandLineArgs(String[] args) {
         Options opts = argParserSetup();
         CommandLine cmd = parseArgs(args, opts);

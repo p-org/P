@@ -17,14 +17,14 @@ namespace Plang.Options
         {
             Parser = new("p infer", "The P Specification Miner");
             var minerConfigGroup = Parser.GetOrCreateGroup("miner-config", "SpecMiner Configuration");
-            var stOpt = minerConfigGroup.AddArgument("skip-trivial", "st", "Skip trivial guard-filter-term combinations.", typeof(bool));
+            var stOpt = minerConfigGroup.AddArgument("keep-trivial", "kt", "Keep trivial guard-filter-term combinations. (default: false)", typeof(bool));
             var ngOpt = minerConfigGroup.AddArgument("num-guard-predicates", "ng", "Number of atomic predicates to conjoin in the guard (default: 0)", typeof(int));
             var nfOpt = minerConfigGroup.AddArgument("num-filter-predicates", "nf", "Number of atomic predicates to conjoin in the filter (default: 0)", typeof(int));
             var arityOpt = minerConfigGroup.AddArgument("inv-arity", "ia", "Arity (# terms involved) of invariants to mine (default: 2)", typeof(int));
             var quantifiersOpt = minerConfigGroup.AddArgument("forall-quantifiers", "nforall", "Number of preceding `forall` quantifiers. Default: # of events quantified (i.e. all events are forall-quantified)", typeof(int));
             var mustIncludeGuardsOpt = minerConfigGroup.AddArgument("hint-guards", "hg", "Hint guards to include in the specification (default: none)");
             var mustIncludeFiltersOpt = minerConfigGroup.AddArgument("hint-filters", "hf", "Hint filters to include in the specification (default: none)");
-            var verboseMode = minerConfigGroup.AddArgument("verbose", "verbose", "Verbose mode, print stderr of Daikon (default: false)");
+            var verboseMode = minerConfigGroup.AddArgument("verbose", "verbose", "Verbose mode, print stderr of Daikon (default: false)", typeof(bool));
             var tracesOpt = minerConfigGroup.AddArgument("traces", "t", "Path to the trace files");
             var pruningLevel = minerConfigGroup.AddArgument("pruning-level", "pl", "Pruning level (default: 1)", typeof(int));
             stOpt.IsRequired = false;
@@ -44,6 +44,9 @@ namespace Plang.Options
             var minerActionsGroup = Parser.GetOrCreateGroup("miner-actions", "Commands to list predicates and terms");
             minerActionsGroup.AddArgument("list-predicates", "lp", "List all atomic predicates that can be included in the mined specification");
             minerActionsGroup.AddArgument("list-terms", "lt", "List all terms that can be included in the mined specification");
+
+            var minerInteractiveMode = Parser.GetOrCreateGroup("miner-interactive", "Interactive mode: set up configurations step-by-step.");
+            minerInteractiveMode.AddArgument("interactive", "i", "Enable interactive mode", typeof(bool));
         }
         
         internal PInferConfiguration Parse(string[] args)
@@ -101,8 +104,8 @@ namespace Plang.Options
         {
             switch (arg.LongName)
             {
-                case "skip-trivial":
-                    config.SkipTrivialCombinations = (bool) arg.Value;
+                case "keep-trivial":
+                    config.SkipTrivialCombinations = false;
                     break;
                 case "num-guard-predicates":
                     config.NumGuardPredicates = (int) arg.Value;
@@ -131,10 +134,13 @@ namespace Plang.Options
                 case "pruning-level":
                     config.PruningLevel = (int) arg.Value;
                     break;
+                case "interactive":
+                    config.Interactive = true;
+                    break;
             }
         }
 
-        private static void WritePredicates(PInferConfiguration config)
+        internal static void WritePredicates(PInferConfiguration config)
         {
             var filePath = Path.Combine(config.OutputDirectory, "PInfer", config.ProjectName + ".predicates.json");
             try
@@ -164,7 +170,7 @@ namespace Plang.Options
             }
         }
 
-        private static void WriteTerms(PInferConfiguration config)
+        internal static void WriteTerms(PInferConfiguration config)
         {
             var filePath = Path.Combine(config.OutputDirectory, "PInfer", config.ProjectName + ".terms.json");
             try{

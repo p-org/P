@@ -8,8 +8,8 @@ public class FromDaikon {
     private int pruningLevel;
     private int numExists;
     private static final String[] QUANTIFIERS = { %QUANTIFIERS% };
-    private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()" };
-    private static final String[] COMP_OPS = { "!=", "<", "<=", ">", ">=" };
+    private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()", "[] ==" };
+    private static final String[] COMP_OPS = { "!=", "<=", "<", ">=", ">" };
     private static final Map<String, String> substs = new HashMap<>();
 
     public FromDaikon(Map<Set<Integer>, List<Main.RawPredicate>> termsToPredicates,
@@ -67,39 +67,40 @@ public class FromDaikon {
         if (!checkValidity(line, guards, filters, forallTerms, existsTerms)) {
             return null;
         }
-        boolean didSth = false;
+        List<Main.RawTerm> substTerms = new ArrayList<>();
         for (int i = 0; i < forallTerms.size(); ++i) {
-            if (!didSth && line.contains("f" + i)) {
-              didSth = true;
+            if (line.contains("f" + i)) {
+                substTerms.add(forallTerms.get(i));
+                line = line.replace("f" + i, forallTerms.get(i).shortRepr());
             }
-            line = line.replace("f" + i, forallTerms.get(i).shortRepr());
         }
         for (int i = 0; i < existsTerms.size(); ++i) {
             String fieldPHName = "f" + (i + forallTerms.size());
-            if (!didSth && line.contains(fieldPHName)) {
-              didSth = true;
+            if (line.contains(fieldPHName)) {
+                // do not check sorted by for aggregated array
+                if (line.contains("sorted by")) return null;
+                substTerms.add(existsTerms.get(i));
+                line = line.replace(fieldPHName, existsTerms.get(i).shortRepr());
             }
-            line = line.replace(fieldPHName, existsTerms.get(i).shortRepr());
         }
+        boolean didSth = !substTerms.isEmpty();
         if (!didSth && !line.contains("_num_e_exists_")) return null;
         if (line.contains("_num_e_exists_")) {
+            // _num_e_exists_ should be on lhs
+            if (!line.startsWith("_num_e_exists_")) return null;
             // check # exists is related not only existentially quantified events
-            boolean containsForallEv = false;
-            for (int i = 0; i < QUANTIFIERS.length - numExists; ++i) {
-                if (line.contains("e" + i)) {
-                  containsForallEv = true;
-                  break;
-                }
-            }
-            if (!containsForallEv) {
-                boolean ok = true;
-                for (int i = QUANTIFIERS.length - numExists; i < QUANTIFIERS.length; ++i) {
-                    if (line.contains("e" + i)) {
-                        ok = false;
+            if (didSth) {
+                Set<Integer> boundedEvents = substTerms.stream()
+                        .flatMap(x -> x.events().stream())
+                        .collect(Collectors.toSet());
+                boolean containsForallEvent = false;
+                for (int i = 0; i < QUANTIFIERS.length - numExists; ++i) {
+                    if (boundedEvents.contains(i)) {
+                        containsForallEvent = true;
                         break;
                     }
                 }
-                if (!ok) return null;
+                if (!containsForallEvent) return null;
             }
         }
         return runSubst(line);
@@ -124,6 +125,27 @@ public class FromDaikon {
             return false;
         }
         return true;
+    }
+
+    private boolean containsTerm(String line, int forallTermCount, int existsTermCount) {
+        for (int i = 0; i < forallTermCount + existsTermCount; ++i) {
+            if (line.contains("f" + i)) return true;
+        }
+        return false;
+    }
+
+    private Map.Entry<List<Main.RawTerm>, List<Main.RawTerm>> 
+        getTermSubsts(String line, List<Main.RawTerm> forallTerms, List<Main.RawTerm> existsTerms) {
+        List<Main.RawTerm> forallSubsts = new ArrayList<>();
+        List<Main.RawTerm> existsSubsts = new ArrayList<>();
+        for (int i = 0; i < forallTerms.size(); ++i) {
+            if (line.contains("f" + i)) forallSubsts.add(forallTerms.get(i));
+        }
+        for (int i = 0; i < existsTerms.size(); ++i) {
+            int j = i + forallTerms.size();
+            if (line.contains("f" + j)) existsSubsts.add(existsTerms.get(i));
+        }
+        return new AbstractMap.SimpleEntry<>(forallSubsts, existsSubsts);
     }
 
     private boolean checkValidity(String line, List<Main.RawPredicate> guards,
@@ -154,18 +176,36 @@ public class FromDaikon {
                     minedPropertyBoundedTerms.add(existsTerms.get(i).order());
                 }
             }
-            if (termsToPredicates.containsKey(minedPropertyBoundedTerms)) {
-                return false;
+            for (Main.RawPredicate p: guards) {
+                if (p.terms().equals(minedPropertyBoundedTerms)) return false;
+            }
+            for (Main.RawPredicate p: filters) {
+                if (p.terms().equals(minedPropertyBoundedTerms)) return false;
             }
         }
         if (pruningLevel >= 3) {
             // exclude comparisons with constants
             for (String op: COMP_OPS) {
                 if (line.contains(op)) {
-                    String rhs = line.split(op)[1].trim();
-                    if (isNumber(rhs) || (rhs.startsWith("\"") && rhs.endsWith("\""))) {
+                    String[] args = line.split(op);
+                    if (args.length < 2) continue;
+                    String lhs = args[0].trim();
+                    String rhs = args[1].trim();
+                    boolean rhsIsConst = isNumber(rhs) || (rhs.startsWith("\"") && rhs.endsWith("\""));
+                    if (!containsTerm(lhs, forallTerms.size(), existsTerms.size())) {
+                        if (!rhsIsConst && !rhs.startsWith("size")) {
+                            // if a comparison does not involve a term on lhs,
+                            // it should not involve a term on rhs either (avoid `_num_e_exists_ > [some term]`)
+                            // however, we do want to see size([some term]) on rhs.
+                            // System.out.println("Filtered: " + line + " rhs: " + rhs);
+                            return false;
+                        }
+                        break;
+                    }
+                    if (rhsIsConst) {
                         return false;
                     }
+                    break;
                 }
             }
         }

@@ -43,14 +43,14 @@ namespace Plang.PInfer
         private static void ShowConfig(PInferConfiguration config)
         {
             Console.WriteLine("Mining specifications captured by the following search space:");
-            Console.WriteLine($"\t#Forall preceding quantifiers:\t\t{config.NumForallQuantifiers}");
+            Console.WriteLine($"\t#Forall preceding quantifiers:\t\t{(config.NumForallQuantifiers == -1 ? "#Quantified Events" : config.NumForallQuantifiers)}");
             Console.WriteLine($"\t#Predicates in Guard:\t\t\t{config.NumGuardPredicates}");
             Console.WriteLine($"\t#Predicates in Filter:\t\t\t{config.NumFilterPredicates}");
             Console.WriteLine($"\tArity of target specifications:\t\t{config.InvArity}");
             Console.WriteLine($"\tPruning Level:\t\t\t\t-O{config.PruningLevel}");
             if (config.MustIncludeGuard.Count() > 0)
             {
-                Console.WriteLine($"\tMust include guards:\t\t{string.Join(", ", config.MustIncludeGuard)}");
+                Console.WriteLine($"\tMust include guards:\t\t\t{string.Join(", ", config.MustIncludeGuard)}");
             }
             if (config.MustIncludeFilter.Count() > 0)
             {
@@ -87,7 +87,7 @@ namespace Plang.PInfer
                     args.Add($"{g}");
                 }
             }
-            if (configuration.MustIncludeGuard.Count() > 0)
+            if (configuration.MustIncludeFilter.Count() > 0)
             {
                 args.Add("-f");
                 foreach (var f in configuration.MustIncludeFilter)

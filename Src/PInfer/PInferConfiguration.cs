@@ -16,6 +16,7 @@ namespace Plang.PInfer
         public string ProjectName;
         public bool Verbose;
         public int PruningLevel;
+        public bool Interactive;
 
         public PInferConfiguration()
         {
@@ -33,6 +34,7 @@ namespace Plang.PInfer
             ProjectName = "generatedOutput";
             Verbose = false;
             PruningLevel = 1;
+            Interactive = false;
         }
     }
 }

@@ -121,7 +121,7 @@ public class Main {
         List<String> propertyKeys = new ArrayList<>();
         int numTasks = 0;
         FromDaikon converter = new FromDaikon(termsToPredicates, terms, isForall ? "Forall" : "Exists", 0, minerConfig.pruningLevel);
-        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter, minerConfig.verbose);
+        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter, minerConfig.getOutputFilename(), minerConfig.verbose);
         while (enumerator.hasNext()) {
             List<RawPredicate> predicateComb = enumerator.next();
             String key = predicateComb.stream().map(RawPredicate::shortRepr).collect(Collectors.joining(" && "));
@@ -182,7 +182,7 @@ public class Main {
         Map<String, Map<String, List<TaskPool.Task>>> tasks = new HashMap<>();
         int numTasks = 0;
         FromDaikon converter = new FromDaikon(termsToPredicates, terms, "ForallExists", minerConfig.numExistsQuantifiers, minerConfig.pruningLevel);
-        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter, minerConfig.verbose);
+        TaskPool taskPool = new TaskPool(Runtime.getRuntime().availableProcessors(), converter, minerConfig.getOutputFilename(), minerConfig.verbose);
         Map<String, List<String>> keysSequences = new HashMap<>();
         List<String> guardKeySequence = new ArrayList<>();
         while (guardEnumerator.hasNext()) {
@@ -264,6 +264,13 @@ public class Main {
                             termsToPredicates,
                             minerConfig);
             }
+            //System.out.println("Cleaning up...");
+            // for (File f: Objects.requireNonNull(new File(".").listFiles())) {
+            //    if (f.isFile() && 
+            //            (f.getName().endsWith(".inv.gz") || f.getName().endsWith(".dtrace.gz"))) {
+            //        f.delete();
+            //    }
+            // }
         } catch (InterruptedException e) {
             System.exit(1);
         } catch (IOException e) {

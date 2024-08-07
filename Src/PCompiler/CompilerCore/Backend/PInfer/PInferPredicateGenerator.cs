@@ -93,7 +93,7 @@ namespace Plang.Compiler.Backend.PInfer
             foreach ((var eventInst, var order) in quantifiedEvents.Select((x, i) => (x, i))) {
                 var eventAtom = new PEventVariable($"e{i}")
                 {
-                    Type = ExplicateTypeDef(eventInst.PayloadType),
+                    Type = eventInst.PayloadType,
                     EventDecl = eventInst,
                     Order = order
                 };

@@ -14,8 +14,9 @@ public class TaskPool {
     final boolean verbose;
     final BufferedOutputStream pinferOutputStream;
     final long startTime;
+    final File outputFile;
 
-    public TaskPool(int chunkSize, FromDaikon converter, boolean verbose) throws IOException {
+    public TaskPool(int chunkSize, FromDaikon converter, String filename, boolean verbose) throws IOException {
         this.chunkSize = chunkSize;
         this.running = 0;
         this.tasks = new ArrayList<>();
@@ -30,11 +31,12 @@ public class TaskPool {
         if (!d.exists()) {
             d.mkdir();
         }
-        File pinferOutputFile = new File(String.valueOf(Paths.get("PInferOutputs", "invariants.txt")));
+        File pinferOutputFile = new File(String.valueOf(Paths.get("PInferOutputs", filename)));
         if (pinferOutputFile.exists()) {
             pinferOutputFile.delete();
         }
         pinferOutputFile.createNewFile();
+        this.outputFile = pinferOutputFile;
         this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile));
         this.startTime = System.currentTimeMillis();
     }
@@ -55,7 +57,6 @@ public class TaskPool {
         this.taskIndex.get(guardsStr).get(filtersStr).add(task);
         tasks.add(task);
         _startTasks();
-        showProgress();
     }
 
     private void showProgress() {
@@ -83,7 +84,7 @@ public class TaskPool {
             }
             if (!invariants.isEmpty()) {
                 String body = String.join("\n", invariants);
-                pinferOutputStream.write((header + "\n" + body).getBytes());
+                pinferOutputStream.write((header + "\n" + body + "\n\n").getBytes());
                 this.numMined += invariants.size();
             }
         }
@@ -110,16 +111,19 @@ public class TaskPool {
         }
     }
 
-    public void waitForAll() throws InterruptedException {
+    public void waitForAll() throws InterruptedException, IOException {
         synchronized (this) {
+            showProgress();
             if (numFinished < tasks.size()) {
                 while (numFinished < tasks.size()) {
                     wait(0);
                 }
             }
             System.out.println();
-            System.out.println("Time used (seconds): " + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
+            System.out.println("Time used (seconds): " + (double)(System.currentTimeMillis() - startTime) / 1000.0);
             System.out.println("#Properties mined: " + numMined);
+            System.out.println("Output to " + outputFile.getPath());
+            pinferOutputStream.flush();
             pinferOutputStream.close();
         }
     }

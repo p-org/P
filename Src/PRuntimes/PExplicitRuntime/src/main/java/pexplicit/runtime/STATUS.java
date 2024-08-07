@@ -11,7 +11,7 @@ public enum STATUS {
     INTERRUPTED("interrupted"),                         // interrupted by user
     ERROR("error");                                     // unexpected error encountered
 
-    private String name;
+    private final String name;
 
     /**
      * Constructor

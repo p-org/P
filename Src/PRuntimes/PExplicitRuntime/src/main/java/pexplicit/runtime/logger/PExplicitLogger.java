@@ -94,7 +94,8 @@ public class PExplicitLogger {
         if (scheduler != null) {
             log.info("... Scheduling statistics:");
             if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-                log.info(String.format("..... Explored %d distinct states", SearchStatistics.totalDistinctStates));
+                log.info(String.format("..... Explored %d distinct states over %d timelines",
+                        SearchStatistics.totalDistinctStates, scheduler.getTimelines().size()));
             }
             log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
             log.info(String.format("..... Finished %d search tasks (%d pending)",

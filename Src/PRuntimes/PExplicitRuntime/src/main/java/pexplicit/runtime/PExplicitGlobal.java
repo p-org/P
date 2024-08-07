@@ -6,6 +6,9 @@ import pexplicit.commandline.PExplicitConfig;
 import pexplicit.runtime.machine.PMachine;
 import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Scheduler;
+import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelector;
+import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelectorQL;
+import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelectorRandom;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 import java.util.*;
@@ -57,6 +60,11 @@ public class PExplicitGlobal {
     @Getter
     @Setter
     private static String result = "error";
+    /**
+     * Choice orchestrator
+     */
+    @Getter
+    private static ChoiceSelector choiceSelector = null;
 
     /**
      * Get a machine of a given type and index if exists, else return null.
@@ -91,5 +99,21 @@ public class PExplicitGlobal {
         machineListByType.get(machine.getClass()).add(machine);
         machineSet.add(machine);
         assert (machineListByType.get(machine.getClass()).get(machineCount) == machine);
+    }
+
+    /**
+     * Set choice orchestrator
+     */
+    public static void setChoiceSelector() {
+        switch (config.getChoiceSelectorMode()) {
+            case Random:
+                choiceSelector = new ChoiceSelectorRandom();
+                break;
+            case QL:
+                choiceSelector = new ChoiceSelectorQL();
+                break;
+            default:
+                throw new RuntimeException("Unrecognized choice orchestrator: " + config.getChoiceSelectorMode());
+        }
     }
 }

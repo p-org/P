@@ -32,6 +32,7 @@ public class PExplicit {
 
         // parse the commandline arguments to create the configuration
         PExplicitGlobal.setConfig(PExplicitOptions.ParseCommandlineArgs(args));
+        PExplicitGlobal.setChoiceSelector();
         PExplicitLogger.Initialize(PExplicitGlobal.getConfig().getVerbosity());
         ComputeHash.Initialize();
 

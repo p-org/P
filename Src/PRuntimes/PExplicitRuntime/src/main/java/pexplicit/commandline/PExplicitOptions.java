@@ -3,6 +3,7 @@ package pexplicit.commandline;
 import org.apache.commons.cli.*;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
 import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
+import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelectorMode;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 import java.io.PrintWriter;
@@ -214,6 +215,17 @@ public class PExplicitOptions {
                         .build();
         addHiddenOption(maxChildrenPerTask);
 
+        // choice selection mode
+        Option choiceSelect =
+                Option.builder("cs")
+                        .longOpt("choice-selection")
+                        .desc("Choice selection mode: random, ql (default: random)")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("Mode (string)")
+                        .build();
+        addOption(choiceSelect);
+
         /*
          * Help menu options
          */
@@ -418,6 +430,21 @@ public class PExplicitOptions {
                     } catch (NumberFormatException ex) {
                         optionError(
                                 option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                case "cs":
+                case "choice-selection":
+                    switch (option.getValue()) {
+                        case "random":
+                            config.setChoiceSelectorMode(ChoiceSelectorMode.Random);
+                            break;
+                        case "ql":
+                            config.setChoiceSelectorMode(ChoiceSelectorMode.QL);
+                            break;
+                        default:
+                            optionError(
+                                    option,
+                                    String.format("Unrecognized choice selection mode, got %s", option.getValue()));
                     }
                     break;
                 case "h":

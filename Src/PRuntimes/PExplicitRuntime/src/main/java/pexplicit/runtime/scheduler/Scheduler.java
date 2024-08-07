@@ -360,7 +360,7 @@ public abstract class Scheduler implements SchedulerInterface {
         if (terminated) {
             for (PMachine monitor : PExplicitGlobal.getModel().getMonitors()) {
                 if (monitor.getCurrentState().isHotState()) {
-                        Assert.liveness(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
+                    Assert.liveness(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
                 }
             }
         }

@@ -14,6 +14,8 @@ import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.choice.SearchUnit;
+import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelectorMode;
+import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelectorQL;
 import pexplicit.runtime.scheduler.explicit.strategy.*;
 import pexplicit.utils.exceptions.PExplicitRuntimeException;
 import pexplicit.utils.misc.Assert;
@@ -35,6 +37,11 @@ public class ExplicitSearchScheduler extends Scheduler {
      * Map from state hash to iteration when first visited
      */
     private final transient Map<Object, Integer> stateCache = new HashMap<>();
+    /**
+     * Set of timelines
+     */
+    @Getter
+    private final transient Set<Integer> timelines = new HashSet<>();
     /**
      * Search strategy orchestrator
      */
@@ -191,6 +198,16 @@ public class ExplicitSearchScheduler extends Scheduler {
             return;
         }
 
+        // update timeline
+        Integer timelineHash = stepState.getTimelineHash();
+        if (!timelines.contains(timelineHash)) {
+//            stepState.printTimeline(timelineHash, timelines.size());
+            timelines.add(timelineHash);
+        }
+        if (PExplicitGlobal.getConfig().getChoiceSelectorMode() == ChoiceSelectorMode.QL) {
+            PExplicitGlobal.getChoiceSelector().startStep(this);
+        }
+
         if (PExplicitGlobal.getConfig().getStatefulBacktrackingMode() != StatefulBacktrackingMode.None
                 && stepNumber != 0) {
             schedule.setStepBeginState(stepState.copyState());
@@ -330,12 +347,13 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
         }
 
-        // pick the first choice
-        result = PExplicitGlobal.getGlobalMachine(choices.get(0));
+        // pick a choice
+        int selected = PExplicitGlobal.getChoiceSelector().selectChoice(choices);
+        result = PExplicitGlobal.getGlobalMachine(choices.get(selected));
         PExplicitLogger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
 
-        // remove the first choice from unexplored choices
-        choices.remove(0);
+        // remove the selected choice from unexplored choices
+        choices.remove(selected);
 
         // add choice to schedule
         schedule.setScheduleChoice(stepNumber, choiceNumber, result.getPid());
@@ -393,12 +411,13 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
         }
 
-        // pick the first choice
-        result = choices.get(0);
+        // pick a choice
+        int selected = PExplicitGlobal.getChoiceSelector().selectChoice(choices);
+        result = choices.get(selected);
         PExplicitLogger.logCurrentDataChoice(result, stepNumber, choiceNumber);
 
-        // remove the first choice from unexplored choices
-        choices.remove(0);
+        // remove the selected choice from unexplored choices
+        choices.remove(selected);
 
         // add choice to schedule
         schedule.setDataChoice(stepNumber, choiceNumber, result);
@@ -600,6 +619,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         // print basic statistics
         StatWriter.log("#-schedules", String.format("%d", SearchStatistics.iteration));
+        StatWriter.log("#-timelines", String.format("%d", timelines.size()));
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             StatWriter.log("#-states", String.format("%d", SearchStatistics.totalStates));
             StatWriter.log("#-distinct-states", String.format("%d", SearchStatistics.totalDistinctStates));
@@ -610,6 +630,8 @@ public class ExplicitSearchScheduler extends Scheduler {
         StatWriter.log("%-choices-unexplored-data", String.format("%.1f", getUnexploredDataChoicesPercent()));
         StatWriter.log("#-tasks-finished", String.format("%d", searchStrategy.getFinishedTasks().size()));
         StatWriter.log("#-tasks-pending", String.format("%d", searchStrategy.getPendingTasks().size()));
+        StatWriter.log("ql-#-states", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumStates()));
+        StatWriter.log("ql-#-actions", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumActions()));
     }
 
     private void printCurrentStatus(double newRuntime) {
@@ -621,6 +643,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         s.append(String.format("\n      Unexplored:       %d", getNumUnexploredChoices()));
         s.append(String.format("\n      FinishedTasks:    %d", searchStrategy.getFinishedTasks().size()));
         s.append(String.format("\n      PendingTasks:     %d", searchStrategy.getPendingTasks().size()));
+        s.append(String.format("\n      Timelines:        %d", timelines.size()));
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             s.append(String.format("\n      States:           %d", SearchStatistics.totalStates));
             s.append(String.format("\n      DistinctStates:   %d", SearchStatistics.totalDistinctStates));
@@ -635,6 +658,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         s.append(StringUtils.center("Step", 7));
 
         s.append(StringUtils.center("Schedule", 12));
+        s.append(StringUtils.center("Timelines", 12));
         s.append(StringUtils.center("Unexplored", 24));
 
         if (PExplicitGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
@@ -677,6 +701,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 s.append(StringUtils.center(String.format("%d", stepNumber), 7));
 
                 s.append(StringUtils.center(String.format("%d", SearchStatistics.iteration), 12));
+                s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
                 s.append(
                         StringUtils.center(
                                 String.format(

@@ -1,6 +1,7 @@
 package pexplicit.runtime.machine;
 
 import lombok.Getter;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.buffer.DeferQueue;
@@ -51,6 +52,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     private boolean started = false;
     @Getter
     private boolean halted = false;
+    private Set<PEvent> observedEvents;
+    @Getter
+    private Set<ImmutablePair<PEvent, PEvent>> happensBeforePairs;
     private PContinuation blockedBy = null;
     @Getter
     private State blockedStateExit;
@@ -95,6 +99,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         // initialize send buffer
         this.sendBuffer = new SenderQueue(this);
         this.deferQueue = new DeferQueue(this);
+        // initialize happens-before
+        this.observedEvents = new HashSet<>();
+        this.happensBeforePairs = new HashSet<>();
     }
 
     public void start(PValue<?> payload) {
@@ -127,6 +134,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         this.started = false;
         this.halted = false;
+
+        this.observedEvents.clear();
+        this.happensBeforePairs.clear();
 
         this.blockedBy = null;
         this.blockedStateExit = null;
@@ -168,6 +178,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add("_started");
         result.add("_halted");
 
+        result.add("_observedEvents");
+        result.add("_happensBefore");
+
         result.add("_blockedBy");
         result.add("_blockedStateExit");
         result.add("_blockedNewStateEntry");
@@ -204,6 +217,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         result.add(started);
         result.add(halted);
+
+        result.add(observedEvents);
+        result.add(happensBeforePairs);
 
         result.add(blockedBy);
         result.add(blockedStateExit);
@@ -246,6 +262,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add(started);
         result.add(halted);
 
+        result.add(new HashSet<>(observedEvents));
+        result.add(new HashSet<>(happensBeforePairs));
+
         result.add(blockedBy);
         result.add(blockedStateExit);
         result.add(blockedNewStateEntry);
@@ -287,6 +306,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         started = (boolean) values.get(idx++);
         halted = (boolean) values.get(idx++);
+
+        observedEvents = (Set<PEvent>) values.get(idx++);
+        happensBeforePairs = (Set<ImmutablePair<PEvent, PEvent>>) values.get(idx++);
 
         blockedBy = (PContinuation) values.get(idx++);
         blockedStateExit = (State) values.get(idx++);
@@ -502,9 +524,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param message Message to process
      */
     void runEvent(PMessage message) {
+        PEvent event = message.getEvent();
         if (isBlocked()) {
             PContinuation currBlockedBy = this.blockedBy;
-            PEvent event = message.getEvent();
             clearBlocked();
 
             // make sure event is handled (or is halt event)
@@ -521,6 +543,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
                                 event, this, this.currentState));
             }
         } else {
+            addObservedEvent(event);
             currentState.handleEvent(message, this);
         }
     }
@@ -622,6 +645,13 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         // change current state to new state
         newState.entry(this, payload);
+    }
+
+    private void addObservedEvent(PEvent newEvent) {
+        for (PEvent happenedBeforeEvent : observedEvents) {
+            happensBeforePairs.add(new ImmutablePair<>(happenedBeforeEvent, newEvent));
+        }
+        observedEvents.add(newEvent);
     }
 
     @Override

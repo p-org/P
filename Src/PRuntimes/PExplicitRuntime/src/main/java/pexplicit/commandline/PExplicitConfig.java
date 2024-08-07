@@ -5,6 +5,7 @@ import lombok.Setter;
 import pexplicit.runtime.machine.buffer.BufferSemantics;
 import pexplicit.runtime.scheduler.explicit.StateCachingMode;
 import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
+import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelectorMode;
 import pexplicit.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 
 /**
@@ -62,6 +63,9 @@ public class PExplicitConfig {
     // search strategy mode
     @Setter
     SearchStrategyMode searchStrategyMode = SearchStrategyMode.Random;
+    // choice selector mode
+    @Setter
+    ChoiceSelectorMode choiceSelectorMode = ChoiceSelectorMode.Random;
     // max number of schedules per search task
     @Setter
     int maxSchedulesPerTask = 500;

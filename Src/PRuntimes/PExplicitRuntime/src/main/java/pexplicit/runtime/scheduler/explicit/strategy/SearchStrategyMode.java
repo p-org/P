@@ -6,7 +6,7 @@ public enum SearchStrategyMode {
     Astar("astar"),
     Replay("replay");
 
-    private String name;
+    private final String name;
 
     /**
      * Constructor

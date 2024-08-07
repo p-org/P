@@ -15,7 +15,7 @@ namespace PChecker.Actors.Logging
     {
         /// <summary>
         /// Nested class for handling FIFO send receive requests.
-        /// NOTE: In the case of sending to a the same machine with the same event and same payload.
+        /// NOTE: In the case of sending to the same machine with the same event and same payload.
         /// </summary>
         private class FifoSendReceiveMapping
         {

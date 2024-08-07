@@ -18,7 +18,7 @@ namespace PChecker.SystematicTesting.Operations
         /// <summary>
         /// The actor that executes this operation.
         /// </summary>
-        internal readonly Actor Actor;
+        internal readonly StateMachine Actor;
 
         /// <summary>
         /// Unique id of the operation.
@@ -46,7 +46,7 @@ namespace PChecker.SystematicTesting.Operations
         /// <summary>
         /// Initializes a new instance of the <see cref="ActorOperation"/> class.
         /// </summary>
-        internal ActorOperation(Actor actor)
+        internal ActorOperation(StateMachine actor)
             : base()
         {
             Actor = actor;

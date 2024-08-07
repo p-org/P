@@ -5,24 +5,53 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using PChecker.Actors.EventQueues;
 using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Handlers;
+using PChecker.Actors.Logging;
+using PChecker.Actors.Managers;
 using PChecker.Actors.StateTransitions;
 using PChecker.Exceptions;
+using PChecker.IO.Debugging;
+using EventInfo = PChecker.Actors.Events.EventInfo;
+
 
 namespace PChecker.Actors
 {
     /// <summary>
-    /// Type that implements a state machine actor. Inherit from this class to declare
-    /// a custom actor with states, state transitions and event handlers.
+    /// Type that implements a state machine with states, state transitions and event handlers.
     /// </summary>
-    public abstract class StateMachine : Actor
+    public abstract class StateMachine
     {
+
+        /// <summary>
+        /// The runtime that executes this state machine.
+        /// </summary>
+        internal ActorRuntime Runtime { get; private set; }
+
+        /// <summary>
+        /// Unique id that identifies this state machine.
+        /// </summary>
+        protected internal ActorId Id { get; private set; }
+
+        /// <summary>
+        /// Manages the state machine.
+        /// </summary>
+        internal IStateMachineManager Manager { get; private set; }
+
+        /// <summary>
+        /// The inbox of the state machine. Incoming events are enqueued here.
+        /// Events are dequeued to be processed.
+        /// </summary>
+        private protected IEventQueue Inbox;
+        
         /// <summary>
         /// Cache of state machine types to a map of action names to action declarations.
         /// </summary>
@@ -35,7 +64,7 @@ namespace PChecker.Actors
         /// </summary>
         private static readonly ConcurrentDictionary<Type, object> ActionCacheLocks =
             new ConcurrentDictionary<Type, object>();
-
+        
         /// <summary>
         /// Cache of state machine types to a set of all possible states types.
         /// </summary>
@@ -47,7 +76,6 @@ namespace PChecker.Actors
         /// </summary>
         private static readonly ConcurrentDictionary<Type, HashSet<State>> StateInstanceCache =
             new ConcurrentDictionary<Type, HashSet<State>>();
-        
 
         /// <summary>
         /// A map from event type to EventHandlerDeclaration for those EventHandlerDeclarations that
@@ -64,6 +92,32 @@ namespace PChecker.Actors
         /// Map from action names to cached action delegates for all states in this state machine.
         /// </summary>
         private readonly Dictionary<string, CachedDelegate> StateMachineActionMap;
+        
+        /// <summary>
+        /// A cached array that contains a single event type.
+        /// </summary>
+        private static readonly Type[] SingleEventTypeArray = new Type[] { typeof(Event) };
+        
+        /// <summary>
+        /// The current status of the state machine. It is marked volatile as
+        /// the runtime can read it concurrently.
+        /// </summary>
+        private protected volatile Status CurrentStatus;
+        
+        /// <summary>
+        /// Gets the name of the current state, if there is one.
+        /// </summary>
+        internal string CurrentStateName { get; private protected set; }
+        
+        /// <summary>
+        /// Checks if the state machine is halted.
+        /// </summary>
+        internal bool IsHalted => CurrentStatus is Status.Halted;
+        
+        /// <summary>
+        /// Checks if a default handler is available.
+        /// </summary>
+        internal bool IsDefaultHandlerAvailable { get; private set; }
 
         /// <summary>
         /// Newly created Transition that hasn't been returned from InvokeActionAsync yet.
@@ -74,6 +128,16 @@ namespace PChecker.Actors
         /// Gets the <see cref="Type"/> of the current state.
         /// </summary>
         protected internal State CurrentState { get; private set; }
+        
+        /// <summary>
+        /// The installed runtime logger.
+        /// </summary>
+        protected TextWriter Logger => Runtime.Logger;
+
+        /// <summary>
+        /// The installed runtime json logger.
+        /// </summary>
+        protected JsonWriter JsonLogger => Runtime.JsonLogger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StateMachine"/> class.
@@ -81,15 +145,172 @@ namespace PChecker.Actors
         protected StateMachine()
             : base()
         {
+            CurrentStatus = Status.Active;
+            CurrentStateName = default;
+            IsDefaultHandlerAvailable = false;
             EventHandlerMap = EmptyEventHandlerMap;
             StateMachineActionMap = new Dictionary<string, CachedDelegate>();
         }
+        
+        /// <summary>
+        /// Configures the state machine.
+        /// </summary>
+        internal void Configure(ActorRuntime runtime, ActorId id, IStateMachineManager manager, IEventQueue inbox)
+        {
+            Runtime = runtime;
+            Id = id;
+            Manager = manager;
+            Inbox = inbox;
+        }
+        
+        /// <summary>
+        /// Returns a nondeterministic boolean choice, that can be
+        /// controlled during analysis or testing.
+        /// </summary>
+        /// <returns>The controlled nondeterministic choice.</returns>
+        protected bool RandomBoolean() => Runtime.GetNondeterministicBooleanChoice(2, Id.Name, Id.Type);
 
         /// <summary>
-        /// Initializes the actor with the specified optional event.
+        /// Returns a nondeterministic boolean choice, that can be
+        /// controlled during analysis or testing. The value is used
+        /// to generate a number in the range [0..maxValue), where 0
+        /// triggers true.
+        /// </summary>
+        /// <param name="maxValue">The max value.</param>
+        /// <returns>The controlled nondeterministic choice.</returns>
+        protected bool RandomBoolean(int maxValue) =>
+            Runtime.GetNondeterministicBooleanChoice(maxValue, Id.Name, Id.Type);
+
+        /// <summary>
+        /// Returns a nondeterministic integer, that can be controlled during
+        /// analysis or testing. The value is used to generate an integer in
+        /// the range [0..maxValue).
+        /// </summary>
+        /// <param name="maxValue">The max value.</param>
+        /// <returns>The controlled nondeterministic integer.</returns>
+        protected int RandomInteger(int maxValue) =>
+            Runtime.GetNondeterministicIntegerChoice(maxValue, Id.Name, Id.Type);
+
+        /// <summary>
+        /// Invokes the specified monitor with the specified <see cref="Event"/>.
+        /// </summary>
+        /// <typeparam name="T">Type of the monitor.</typeparam>
+        /// <param name="e">Event to send to the monitor.</param>
+        protected void Monitor<T>(Event e) => Monitor(typeof(T), e);
+
+        /// <summary>
+        /// Invokes the specified monitor with the specified event.
+        /// </summary>
+        /// <param name="type">Type of the monitor.</param>
+        /// <param name="e">The event to send.</param>
+        protected void Monitor(Type type, Event e)
+        {
+            Assert(e != null, "{0} is sending a null event.", Id);
+            Runtime.Monitor(type, e, Id.Name, Id.Type, CurrentStateName);
+        }
+        
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
+        protected void Assert(bool predicate) => Runtime.Assert(predicate);
+
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
+        protected void Assert(bool predicate, string s, object arg0) =>
+            Runtime.Assert(predicate, s, arg0);
+
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
+        protected void Assert(bool predicate, string s, object arg0, object arg1) =>
+            Runtime.Assert(predicate, s, arg0, arg1);
+
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
+        protected void Assert(bool predicate, string s, object arg0, object arg1, object arg2) =>
+            Runtime.Assert(predicate, s, arg0, arg1, arg2);
+
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
+        protected void Assert(bool predicate, string s, params object[] args) =>
+            Runtime.Assert(predicate, s, args);
+        
+        /// <summary>
+        /// Asynchronous callback that is invoked when the state machine is initialized with an optional event.
         /// </summary>
         /// <param name="initialEvent">Optional event used for initialization.</param>
-        internal override async Task InitializeAsync(Event initialEvent)
+        /// <returns>Task that represents the asynchronous operation.</returns>
+        protected virtual Task OnInitializeAsync(Event initialEvent) => Task.CompletedTask;
+
+        /// <summary>
+        /// Asynchronous callback that is invoked when the state machine successfully dequeues
+        /// an event from its inbox. This method is not called when the dequeue happens
+        /// via a receive statement.
+        /// </summary>
+        /// <param name="e">The event that was dequeued.</param>
+        protected virtual Task OnEventDequeuedAsync(Event e) => Task.CompletedTask;
+        
+        /// <summary>
+        /// Asynchronous callback that is invoked when the state machine finishes handling a dequeued
+        /// event, unless the handler of the dequeued event caused the state machine to halt (either
+        /// normally or due to an exception). The state machine will either become idle or dequeue
+        /// the next event from its inbox.
+        /// </summary>
+        /// <param name="e">The event that was handled.</param>
+        protected virtual Task OnEventHandledAsync(Event e) => Task.CompletedTask;
+
+        /// <summary>
+        /// Asynchronous callback that is invoked when the state machine receives an event that
+        /// it is not prepared to handle. The callback is invoked first, after which the
+        /// state machine will necessarily throw an <see cref="UnhandledEventException"/>
+        /// </summary>
+        /// <param name="e">The event that was unhandled.</param>
+        /// <param name="state">The state when the event was dequeued.</param>
+        protected Task OnEventUnhandledAsync(Event e, string state) => Task.CompletedTask;
+
+        /// <summary>
+        /// Asynchronous callback that is invoked when the state machine handles an exception.
+        /// </summary>
+        /// <param name="ex">The exception thrown by the state machine.</param>
+        /// <param name="e">The event being handled when the exception was thrown.</param>
+        /// <returns>The action that the runtime should take.</returns>
+        protected Task OnExceptionHandledAsync(Exception ex, Event e) => Task.CompletedTask;
+        
+        /// <summary>
+        /// Asynchronous callback that is invoked when the state machine halts.
+        /// </summary>
+        /// <param name="e">The event being handled when the state machine halted.</param>
+        /// <returns>Task that represents the asynchronous operation.</returns>
+        protected Task OnHaltAsync(Event e) => Task.CompletedTask;
+        
+        /// <summary>
+        /// Halts the state machine.
+        /// </summary>
+        /// <param name="e">The event being handled when the state machine halts.</param>
+        private protected Task HaltAsync(Event e)
+        {
+            CurrentStatus = Status.Halted;
+
+            // Close the inbox, which will stop any subsequent enqueues.
+            Inbox.Close();
+
+            Runtime.LogWriter.LogHalt(Id, Inbox.Size);
+
+            // Dispose any held resources.
+            Inbox.Dispose();
+
+            // Invoke user callback.
+            return OnHaltAsync(e);
+        }
+        
+        /// <summary>
+        /// Initializes the state machine with the specified optional event.
+        /// </summary>
+        /// <param name="initialEvent">Optional event used for initialization.</param>
+        internal async Task InitializeAsync(Event initialEvent)
         {
             // Invoke the custom initializer, if there is one.
             await InvokeUserCallbackAsync(UserCallbackType.OnInitialize, initialEvent);
@@ -100,6 +321,484 @@ namespace PChecker.Actors
             {
                 await HaltAsync(initialEvent);
             }
+        }
+        
+        /// <summary>
+        /// An exception filter that calls,
+        /// which can choose to fast-fail the app to get a full dump.
+        /// </summary>
+        /// <param name="action">The action being executed when the failure occurred.</param>
+        /// <param name="ex">The exception being tested.</param>
+        private protected bool InvokeOnFailureExceptionFilter(CachedDelegate action, Exception ex)
+        {
+            // This is called within the exception filter so the stack has not yet been unwound.
+            // If the call does not fail-fast, return false to process the exception normally.
+            Runtime.RaiseOnFailureEvent(new ActionExceptionFilterException(action.MethodInfo.Name, ex));
+            return false;
+        }
+        
+        /// <summary>
+        /// Tries to handle an exception thrown during an action invocation.
+        /// </summary>
+        private protected Task TryHandleActionInvocationExceptionAsync(Exception ex, string actionName)
+        {
+            var innerException = ex;
+            while (innerException is TargetInvocationException)
+            {
+                innerException = innerException.InnerException;
+            }
+
+            if (innerException is AggregateException)
+            {
+                innerException = innerException.InnerException;
+            }
+
+            if (innerException is ExecutionCanceledException || innerException is TaskSchedulerException)
+            {
+                CurrentStatus = Status.Halted;
+                Debug.WriteLine($"<Exception> {innerException.GetType().Name} was thrown from {Id}.");
+            }
+            else
+            {
+                // Reports the unhandled exception.
+                ReportUnhandledException(innerException, actionName);
+            }
+
+            return Task.CompletedTask;
+        }
+        
+        /// <summary>
+        /// ID used to identify subsequent operations performed by this state machine. This value
+        /// is initially either <see cref="Guid.Empty"/> or the <see cref="Guid"/> specified
+        /// upon creation. This value is automatically set to the operation group id of the
+        /// last dequeue or receive operation, if it is not <see cref="Guid.Empty"/>. This
+        /// value can also be manually set using the property.
+        /// </summary>
+        protected internal Guid OperationGroupId
+        {
+            get => Manager.OperationGroupId;
+
+            set
+            {
+                Manager.OperationGroupId = value;
+            }
+        }
+        
+
+        /// <summary>
+        /// Creates a new state machine of the specified type and name, and with the specified
+        /// optional <see cref="Event"/>. This <see cref="Event"/> can only be used to
+        /// access its payload, and cannot be handled.
+        /// </summary>
+        /// <param name="type">Type of the state machine.</param>
+        /// <param name="name">Optional name used for logging.</param>
+        /// <param name="initialEvent">Optional initialization event.</param>
+        /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
+        /// <returns>The unique state machine id.</returns>
+        protected ActorId CreateActor(Type type, string name, Event initialEvent = null, Guid opGroupId = default) =>
+            Runtime.CreateActor(null, type, name, initialEvent, this, opGroupId);
+        
+        
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a target.
+        /// </summary>
+        /// <param name="id">The id of the target.</param>
+        /// <param name="e">The event to send.</param>
+        /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
+        protected void SendEvent(ActorId id, Event e, Guid opGroupId = default) =>
+            Runtime.SendEvent(id, e, this, opGroupId);
+        
+        /// <summary>
+        /// Waits to receive an <see cref="Event"/> of the specified type
+        /// that satisfies an optional predicate.
+        /// </summary>
+        /// <param name="eventType">The event type.</param>
+        /// <param name="predicate">The optional predicate.</param>
+        /// <returns>The received event.</returns>
+        protected internal Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
+        {
+            Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            Runtime.NotifyReceiveCalled(this);
+            return Inbox.ReceiveEventAsync(eventType, predicate);
+        }
+        
+        /// <summary>
+        /// Waits to receive an <see cref="Event"/> of the specified types.
+        /// </summary>
+        /// <param name="eventTypes">The event types to wait for.</param>
+        /// <returns>The received event.</returns>
+        protected internal Task<Event> ReceiveEventAsync(params Type[] eventTypes)
+        {
+            Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            Runtime.NotifyReceiveCalled(this);
+            return Inbox.ReceiveEventAsync(eventTypes);
+        }
+        
+        /// <summary>
+        /// Waits to receive an <see cref="Event"/> of the specified types
+        /// that satisfy the specified predicates.
+        /// </summary>
+        /// <param name="events">Event types and predicates.</param>
+        /// <returns>The received event.</returns>
+        protected internal Task<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
+        {
+            Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
+            Runtime.NotifyReceiveCalled(this);
+            return Inbox.ReceiveEventAsync(events);
+        }
+        
+        /// <summary>
+        /// Runs the event handler. The handler terminates if there is no next
+        /// event to process or if the state machine has halted.
+        /// </summary>
+        internal async Task RunEventHandlerAsync()
+        {
+            Event lastDequeuedEvent = null;
+            while (CurrentStatus != Status.Halted && Runtime.IsRunning)
+            {
+                (var status, var e, var opGroupId, var info) = Inbox.Dequeue();
+                if (opGroupId != Guid.Empty)
+                {
+                    // Inherit the operation group id of the dequeued operation, if it is non-empty.
+                    Manager.OperationGroupId = opGroupId;
+                }
+
+                if (status is DequeueStatus.Success)
+                {
+                    // Notify the runtime for a new event to handle. This is only used
+                    // during bug-finding and operation bounding, because the runtime
+                    // has to schedule an state machine when a new operation is dequeued.
+                    Runtime.NotifyDequeuedEvent(this, e, info);
+                    await InvokeUserCallbackAsync(UserCallbackType.OnEventDequeued, e);
+                    lastDequeuedEvent = e;
+                }
+                else if (status is DequeueStatus.Raised)
+                {
+                    // Only supported by types (e.g. StateMachine) that allow
+                    // the user to explicitly raise events.
+                    Runtime.NotifyHandleRaisedEvent(this, e);
+                }
+                else if (status is DequeueStatus.Default)
+                {
+                    Runtime.LogWriter.LogDefaultEventHandler(Id, CurrentStateName);
+
+                    // If the default event was dequeued, then notify the runtime.
+                    // This is only used during bug-finding, because the runtime must
+                    // instrument a scheduling point between default event handlers.
+                    Runtime.NotifyDefaultEventDequeued(this);
+                }
+                else if (status is DequeueStatus.NotAvailable)
+                {
+                    // Terminate the handler as there is no event available.
+                    break;
+                }
+
+                if (CurrentStatus is Status.Active)
+                {
+                    // Handles the next event, if the state machine is not halted.
+                    await HandleEventAsync(e);
+                }
+
+                if (!Inbox.IsEventRaised && lastDequeuedEvent != null && CurrentStatus != Status.Halted)
+                {
+                    // Inform the user that the state machine handled the dequeued event.
+                    await InvokeUserCallbackAsync(UserCallbackType.OnEventHandled, lastDequeuedEvent);
+                    lastDequeuedEvent = null;
+                }
+
+                if (CurrentStatus is Status.Halting)
+                {
+                    // If the current status is halting, then halt the state machine.
+                    await HaltAsync(e);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Invokes the specified event handler user callback.
+        /// </summary>
+        private protected async Task InvokeUserCallbackAsync(string callbackType, Event e, string currentState = default)
+        {
+            try
+            {
+                Task task = null;
+                if (callbackType is UserCallbackType.OnInitialize)
+                {
+                    task = OnInitializeAsync(e);
+                }
+                else if (callbackType is UserCallbackType.OnEventDequeued)
+                {
+                    task = OnEventDequeuedAsync(e);
+                }
+                else if (callbackType is UserCallbackType.OnEventHandled)
+                {
+                    task = OnEventHandledAsync(e);
+                }
+                else if (callbackType is UserCallbackType.OnEventUnhandled)
+                {
+                    task = OnEventUnhandledAsync(e, currentState);
+                }
+
+                Runtime.NotifyWaitTask(this, task);
+                await task;
+            }
+            catch (Exception ex) when (OnExceptionHandler(ex, callbackType, e))
+            {
+                // User handled the exception.
+                await OnExceptionHandledAsync(ex, e);
+            }
+            catch (Exception ex)
+            {
+                // Reports the unhandled exception.
+                await TryHandleActionInvocationExceptionAsync(ex, callbackType);
+            }
+        }
+        
+        /// <summary>
+        /// Invokes the specified action delegate.
+        /// </summary>
+        private protected async Task InvokeActionAsync(CachedDelegate cachedAction, Event e)
+        {
+            try
+            {
+                if (cachedAction.IsAsync)
+                {
+                    Task task = null;
+                    if (cachedAction.Handler is Func<Event, Task> taskFuncWithEvent)
+                    {
+                        task = taskFuncWithEvent(e);
+                    }
+                    else if (cachedAction.Handler is Func<Task> taskFunc)
+                    {
+                        task = taskFunc();
+                    }
+
+                    Runtime.NotifyWaitTask(this, task);
+
+                    // We have no reliable stack for awaited operations.
+                    await task;
+                }
+                else if (cachedAction.Handler is Action<Event> actionWithEvent)
+                {
+                    actionWithEvent(e);
+                }
+                else if (cachedAction.Handler is Action action)
+                {
+                    action();
+                }
+            }
+            catch (Exception ex) when (OnExceptionHandler(ex, cachedAction.MethodInfo.Name, e))
+            {
+                // User handled the exception.
+                await OnExceptionHandledAsync(ex, e);
+            }
+            catch (Exception ex) when (!cachedAction.IsAsync && InvokeOnFailureExceptionFilter(cachedAction, ex))
+            {
+                // Use an exception filter to call OnFailure before the stack
+                // has been unwound. If the exception filter does not fail-fast,
+                // it returns false to process the exception normally.
+            }
+            catch (Exception ex)
+            {
+                await TryHandleActionInvocationExceptionAsync(ex, cachedAction.MethodInfo.Name);
+            }
+        }
+        
+        /// <summary>
+        /// Returns the action with the specified name.
+        /// </summary>
+        private protected MethodInfo GetActionWithName(string actionName)
+        {
+            MethodInfo action;
+            var actorType = GetType();
+
+            do
+            {
+                var bindingFlags = BindingFlags.Public | BindingFlags.NonPublic |
+                                   BindingFlags.Instance | BindingFlags.FlattenHierarchy;
+                action = actorType.GetMethod(actionName, bindingFlags, Type.DefaultBinder, SingleEventTypeArray, null);
+                if (action is null)
+                {
+                    action = actorType.GetMethod(actionName, bindingFlags, Type.DefaultBinder, Array.Empty<Type>(), null);
+                }
+
+                actorType = actorType.BaseType;
+            }
+            while (action is null && actorType != typeof(StateMachine));
+
+            Assert(action != null, "Cannot detect action declaration '{0}' in '{1}'.", actionName, GetType().FullName);
+            AssertActionValidity(action);
+            return action;
+        }
+        
+        /// <summary>
+        /// Checks the validity of the specified action.
+        /// </summary>
+        private void AssertActionValidity(MethodInfo action)
+        {
+            var actionType = action.DeclaringType;
+            var parameters = action.GetParameters();
+            Assert(parameters.Length is 0 ||
+                   (parameters.Length is 1 && parameters[0].ParameterType == typeof(Event)),
+                "Action '{0}' in '{1}' must either accept no parameters or a single parameter of type 'Event'.",
+                action.Name, actionType.Name);
+
+            // Check if the action is an 'async' method.
+            if (action.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) != null)
+            {
+                Assert(action.ReturnType == typeof(Task),
+                    "Async action '{0}' in '{1}' must have 'Task' return type.",
+                    action.Name, actionType.Name);
+            }
+            else
+            {
+                Assert(action.ReturnType == typeof(void),
+                    "Action '{0}' in '{1}' must have 'void' return type.",
+                    action.Name, actionType.Name);
+            }
+        }
+        
+        /// <summary>
+        /// Invokes user callback when the state machine throws an exception.
+        /// </summary>
+        /// <param name="ex">The exception thrown by the state machine.</param>
+        /// <param name="methodName">The handler (outermost) that threw the exception.</param>
+        /// <param name="e">The event being handled when the exception was thrown.</param>
+        /// <returns>True if the exception was handled, else false if it should continue to get thrown.</returns>
+        private bool OnExceptionHandler(Exception ex, string methodName, Event e)
+        {
+            if (ex is ExecutionCanceledException)
+            {
+                // Internal exception used during testing.
+                return false;
+            }
+
+            Runtime.LogWriter.LogExceptionThrown(Id, CurrentStateName, methodName, ex);
+
+            var outcome = OnException(ex, methodName, e);
+            if (outcome is OnExceptionOutcome.ThrowException)
+            {
+                return false;
+            }
+            else if (outcome is OnExceptionOutcome.Halt)
+            {
+                CurrentStatus = Status.Halting;
+            }
+
+            Runtime.LogWriter.LogExceptionHandled(Id, CurrentStateName, methodName, ex);
+            return true;
+        }
+        
+        /// <summary>
+        /// Invokes user callback when the state machine receives an event that it cannot handle.
+        /// </summary>
+        /// <param name="ex">The exception thrown by the state machine.</param>
+        /// <param name="e">The unhandled event.</param>
+        /// <returns>True if the state machine should gracefully halt, else false if the exception
+        /// should continue to get thrown.</returns>
+        private bool OnUnhandledEventExceptionHandler(UnhandledEventException ex, Event e)
+        {
+            Runtime.LogWriter.LogExceptionThrown(Id, ex.CurrentStateName, string.Empty, ex);
+
+            var outcome = OnException(ex, string.Empty, e);
+            if (outcome is OnExceptionOutcome.ThrowException)
+            {
+                return false;
+            }
+
+            CurrentStatus = Status.Halting;
+            Runtime.LogWriter.LogExceptionHandled(Id, ex.CurrentStateName, string.Empty, ex);
+            return true;
+        }
+        
+        /// <summary>
+        /// User callback when the state machine throws an exception. By default,
+        /// the state machine throws the exception causing the runtime to fail.
+        /// </summary>
+        /// <param name="ex">The exception thrown by the state machine.</param>
+        /// <param name="methodName">The handler (outermost) that threw the exception.</param>
+        /// <param name="e">The event being handled when the exception was thrown.</param>
+        /// <returns>The action that the runtime should take.</returns>
+        protected virtual OnExceptionOutcome OnException(Exception ex, string methodName, Event e)
+        {
+            return OnExceptionOutcome.ThrowException;
+        }
+        
+        /// <summary>
+        /// Determines whether the specified object is equal to the current object.
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            if (obj is StateMachine m &&
+                GetType() == m.GetType())
+            {
+                return Id.Value == m.Id.Value;
+            }
+
+            return false;
+        }
+        
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        public override int GetHashCode()
+        {
+            return Id.Value.GetHashCode();
+        }
+        
+        /// <summary>
+        /// Enqueues the specified event and its metadata.
+        /// </summary>
+        internal EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
+        {
+            if (CurrentStatus is Status.Halted)
+            {
+                return EnqueueStatus.Dropped;
+            }
+
+            return Inbox.Enqueue(e, opGroupId, info);
+        }
+        
+        /// <summary>
+        /// Returns a string that represents the current state machine.
+        /// </summary>
+        public override string ToString()
+        {
+            return Id.Name;
+        }
+
+        /// <summary>
+        /// The status of the state machine.
+        /// </summary>
+        private protected enum Status
+        {
+            /// <summary>
+            /// The state machine is active.
+            /// </summary>
+            Active = 0,
+
+            /// <summary>
+            /// The state machine is halting.
+            /// </summary>
+            Halting,
+
+            /// <summary>
+            /// The state machine is halted.
+            /// </summary>
+            Halted
+        }
+        
+        /// <summary>
+        /// The type of user callback.
+        /// </summary>
+        private protected static class UserCallbackType
+        {
+            internal const string OnInitialize = nameof(OnInitializeAsync);
+            internal const string OnEventDequeued = nameof(OnEventDequeuedAsync);
+            internal const string OnEventHandled = nameof(OnEventHandledAsync);
+            internal const string OnEventUnhandled = nameof(OnEventUnhandledAsync);
+            internal const string OnExceptionHandled = nameof(OnExceptionHandledAsync);
+            internal const string OnHalt = nameof(OnHaltAsync);
         }
 
         /// <summary>
@@ -173,7 +872,7 @@ namespace PChecker.Actors
         }
 
         /// <summary>
-        /// Raises a <see cref='HaltEvent'/> to halt the actor at the end of the current action.
+        /// Raises a <see cref='HaltEvent'/> to halt the state machine at the end of the current action.
         /// </summary>
         /// <remarks>
         /// This event is not handled until the action that calls this method returns control back
@@ -183,26 +882,19 @@ namespace PChecker.Actors
         /// <see cref="RaiseEvent"/>, <see cref="RaiseGotoStateEvent{T}"/> and <see cref="RaiseHaltEvent"/>.
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
-        protected override void RaiseHaltEvent()
+        protected void RaiseHaltEvent()
         {
-            base.RaiseHaltEvent();
+            Assert(CurrentStatus is Status.Active, "{0} invoked Halt while halting.", Id);
+            CurrentStatus = Status.Halting;
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.Halt, null, default);
         }
-
-        /// <summary>
-        /// Asynchronous callback that is invoked when the actor finishes handling a dequeued
-        /// event, unless the handler of the dequeued event raised an event or caused the actor
-        /// to halt (either normally or due to an exception). Unless this callback raises an
-        /// event, the actor will either become idle or dequeue the next event from its inbox.
-        /// </summary>
-        /// <param name="e">The event that was handled.</param>
-        protected override Task OnEventHandledAsync(Event e) => Task.CompletedTask;
+        
 
         /// <summary>
         /// Handles the specified <see cref="Event"/>.
         /// </summary>
-        private protected override async Task HandleEventAsync(Event e)
+        private protected async Task HandleEventAsync(Event e)
         {
             var currentState = CurrentState;
 
@@ -213,7 +905,7 @@ namespace PChecker.Actors
                     // If the stack of states is empty then halt or fail the state machine.
                     if (e is HaltEvent)
                     {
-                        // If it is the halt event, then change the actor status to halting.
+                        // If it is the halt event, then change the state machine status to halting.
                         CurrentStatus = Status.Halting;
                         break;
                     }
@@ -247,9 +939,9 @@ namespace PChecker.Actors
                         // Then specific event is more recent than any wild card events.
                         await HandleEventAsync(e, currentState, ehandler);
                     }
-                    else if (ActionMap.TryGetValue(e.GetType(), out var handler))
+                    else if (StateMachineActionMap.TryGetValue(e.GetType().Name, out var handler))
                     {
-                        // Allow StateMachine to have class level OnEventDoActions the same way Actor allows.
+                        // Allow StateMachine to have class level OnEventDoActions.
                         Runtime.NotifyInvokedAction(this, handler.MethodInfo, CurrentStateName, CurrentStateName, e);
                         await InvokeActionAsync(handler, e);
                     }
@@ -260,6 +952,9 @@ namespace PChecker.Actors
                         if (CurrentStatus is Status.Active)
                         {
                             Runtime.LogWriter.LogPopStateUnhandledEvent(Id, CurrentStateName, e);
+                            EventHandlerMap = EmptyEventHandlerMap;
+                            CurrentState = null;
+                            CurrentStateName = string.Empty;
                             continue;
                         }
                     }
@@ -393,7 +1088,7 @@ namespace PChecker.Actors
             }
             else if (transition.TypeValue is Transition.Type.Halt)
             {
-                // If it is the halt transition, then change the actor status to halting.
+                // If it is the halt transition, then change the state machine status to halting.
                 PendingTransition = default;
                 CurrentStatus = Status.Halting;
             }
@@ -523,7 +1218,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Returns the hashed state of this state machine.
         /// </summary>
-        internal override int GetHashedState()
+        internal int GetHashedState()
         {
             unchecked
             {
@@ -543,9 +1238,8 @@ namespace PChecker.Actors
         /// <summary>
         /// Extracts user declarations and setups the event handlers and state transitions.
         /// </summary>
-        internal override void SetupEventHandlers()
+        internal void SetupEventHandlers()
         {
-            base.SetupEventHandlers();
             var stateMachineType = GetType();
 
             // If this type has not already been setup in the ActionCache, then we need to try and grab the ActionCacheLock
@@ -553,7 +1247,7 @@ namespace PChecker.Actors
             var syncObject = ActionCacheLocks.GetOrAdd(stateMachineType, _ => new object());
 
             // Locking this syncObject ensures only one thread enters the initialization code to update
-            // the ActionCache for this specific Actor type.
+            // the ActionCache for this specific state machine type.
             lock (syncObject)
             {
                 if (ActionCache.ContainsKey(stateMachineType))
@@ -701,6 +1395,12 @@ namespace PChecker.Actors
                 {
                     StateTypeCache[GetType()].Add(nextType);
                 }
+                
+                /* TODO: figure whether this part is needed */
+                if (nextType.BaseType != null)
+                {
+                    stack.Push(nextType.BaseType);
+                }
             }
         }
 
@@ -762,17 +1462,10 @@ namespace PChecker.Actors
         }
 
         /// <summary>
-        /// Returns the formatted strint to be used with a fair nondeterministic boolean choice.
-        /// </summary>
-        private protected override string FormatFairRandom(string callerMemberName, string callerFilePath, int callerLineNumber) =>
-            string.Format(CultureInfo.InvariantCulture, "{0}_{1}_{2}_{3}_{4}",
-                Id.Name, CurrentStateName, callerMemberName, callerFilePath, callerLineNumber.ToString());
-
-        /// <summary>
         /// Wraps the unhandled exception inside an <see cref="AssertionFailureException"/>
         /// exception, and throws it to the user.
         /// </summary>
-        private protected override void ReportUnhandledException(Exception ex, string actionName)
+        private protected void ReportUnhandledException(Exception ex, string actionName)
         {
             var state = CurrentState is null ? "<unknown>" : CurrentStateName;
             Runtime.WrapAndThrowException(ex, "{0} (state '{1}', action '{2}')", Id, state, actionName);

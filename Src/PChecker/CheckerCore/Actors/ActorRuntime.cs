@@ -13,7 +13,6 @@ using PChecker.Actors.EventQueues;
 using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
 using PChecker.Actors.Logging;
-using PChecker.Actors.Managers;
 using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.Specifications.Monitors;
@@ -29,7 +28,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Map from unique actor ids to actors.
         /// </summary>
-        private readonly ConcurrentDictionary<ActorId, Actor> ActorMap;
+        private readonly ConcurrentDictionary<ActorId, StateMachine> ActorMap;
 
         /// <summary>
         /// Responsible for writing to all registered <see cref="IActorRuntimeLog"/> objects.
@@ -58,7 +57,7 @@ namespace PChecker.Actors
         internal ActorRuntime(CheckerConfiguration checkerConfiguration, IRandomValueGenerator valueGenerator)
             : base(checkerConfiguration, valueGenerator)
         {
-            ActorMap = new ConcurrentDictionary<ActorId, Actor>();
+            ActorMap = new ConcurrentDictionary<ActorId, StateMachine>();
             LogWriter = new LogWriter(checkerConfiguration);
         }
 
@@ -68,7 +67,7 @@ namespace PChecker.Actors
         public ActorId CreateActorId(Type type, string name = null) => new ActorId(type, name, this);
 
         /// <summary>
-        /// Creates a actor id that is uniquely tied to the specified unique name. The
+        /// Creates an actor id that is uniquely tied to the specified unique name. The
         /// returned actor id can either be a fresh id (not yet bound to any actor), or
         /// it can be bound to a previously created actor. In the second case, this actor
         /// id can be directly used to communicate with the corresponding actor.
@@ -150,56 +149,40 @@ namespace PChecker.Actors
         /// </summary>
         public virtual Guid GetCurrentOperationGroupId(ActorId currentActorId)
         {
-            var actor = GetActorWithId<Actor>(currentActorId);
+            var actor = GetActorWithId<StateMachine>(currentActorId);
             return actor is null ? Guid.Empty : actor.OperationGroupId;
         }
 
         /// <summary>
-        /// Creates a new <see cref="Actor"/> of the specified <see cref="Type"/>.
+        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/>.
         /// </summary>
         internal virtual ActorId CreateActor(ActorId id, Type type, string name, Event initialEvent,
-            Actor creator, Guid opGroupId)
+            StateMachine creator, Guid opGroupId)
         {
             var actor = CreateActor(id, type, name, creator, opGroupId);
-            if (actor is StateMachine)
-            {
-                LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
-            }
-            else
-            {
-                LogWriter.LogCreateActor(actor.Id, creator?.Id.Name, creator?.Id.Type);
-            }
-
+            LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
             RunActorEventHandler(actor, initialEvent, true);
             return actor.Id;
         }
 
         /// <summary>
-        /// Creates a new <see cref="Actor"/> of the specified <see cref="Type"/>. The method
+        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/>. The method
         /// returns only when the actor is initialized and the <see cref="Event"/> (if any)
         /// is handled.
         /// </summary>
         internal virtual async Task<ActorId> CreateActorAndExecuteAsync(ActorId id, Type type, string name,
-            Event initialEvent, Actor creator, Guid opGroupId)
+            Event initialEvent, StateMachine creator, Guid opGroupId)
         {
             var actor = CreateActor(id, type, name, creator, opGroupId);
-            if (actor is StateMachine)
-            {
-                LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
-            }
-            else
-            {
-                LogWriter.LogCreateActor(actor.Id, creator?.Id.Name, creator?.Id.Type);
-            }
-
+            LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
             await RunActorEventHandlerAsync(actor, initialEvent, true);
             return actor.Id;
         }
 
         /// <summary>
-        /// Creates a new <see cref="Actor"/> of the specified <see cref="Type"/>.
+        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/>.
         /// </summary>
-        private Actor CreateActor(ActorId id, Type type, string name, Actor creator, Guid opGroupId)
+        private StateMachine CreateActor(ActorId id, Type type, string name, StateMachine creator, Guid opGroupId)
         {
             throw new NotImplementedException();
         }
@@ -207,7 +190,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to an actor.
         /// </summary>
-        internal virtual void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId)
+        internal virtual void SendEvent(ActorId targetId, Event e, StateMachine sender, Guid opGroupId)
         {
             var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
@@ -220,7 +203,7 @@ namespace PChecker.Actors
         /// Sends an asynchronous <see cref="Event"/> to an actor. Returns immediately if the target was
         /// already running. Otherwise blocks until the target handles the event and reaches quiescense.
         /// </summary>
-        internal virtual async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender,
+        internal virtual async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, StateMachine sender,
             Guid opGroupId)
         {
             var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
@@ -236,7 +219,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Enqueues an event to the actor with the specified id.
         /// </summary>
-        private EnqueueStatus EnqueueEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId, out Actor target)
+        private EnqueueStatus EnqueueEvent(ActorId targetId, Event e, StateMachine sender, Guid opGroupId, out StateMachine target)
         {
             if (e is null)
             {
@@ -263,17 +246,17 @@ namespace PChecker.Actors
                 opGroupId = sender.OperationGroupId;
             }
 
-            target = GetActorWithId<Actor>(targetId);
+            target = GetActorWithId<StateMachine>(targetId);
             if (target is null || target.IsHalted)
             {
                 LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
-                    (sender as StateMachine)?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: true);
+                    sender?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: true);
                 TryHandleDroppedEvent(e, targetId);
                 return EnqueueStatus.Dropped;
             }
 
             LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
-                (sender as StateMachine)?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: false);
+                sender?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: false);
 
             var enqueueStatus = target.Enqueue(e, opGroupId, null);
             if (enqueueStatus == EnqueueStatus.Dropped)
@@ -288,7 +271,7 @@ namespace PChecker.Actors
         /// Runs a new asynchronous actor event handler.
         /// This is a fire and forget invocation.
         /// </summary>
-        private void RunActorEventHandler(Actor actor, Event initialEvent, bool isFresh)
+        private void RunActorEventHandler(StateMachine actor, Event initialEvent, bool isFresh)
         {
             Task.Run(async () =>
             {
@@ -319,7 +302,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Runs a new asynchronous actor event handler.
         /// </summary>
-        private async Task RunActorEventHandlerAsync(Actor actor, Event initialEvent, bool isFresh)
+        private async Task RunActorEventHandlerAsync(StateMachine actor, Event initialEvent, bool isFresh)
         {
             try
             {
@@ -369,11 +352,7 @@ namespace PChecker.Actors
         /// <inheritdoc/>
         internal override bool GetNondeterministicBooleanChoice(int maxValue, string callerName, string callerType)
         {
-            var result = false;
-            if (ValueGenerator.Next(maxValue) == 0)
-            {
-                result = true;
-            }
+            var result = (ValueGenerator.Next(maxValue) == 0);
 
             LogWriter.LogRandom(result, callerName, callerType);
             return result;
@@ -392,14 +371,14 @@ namespace PChecker.Actors
         /// or null if no such actor exists.
         /// </summary>
         private TActor GetActorWithId<TActor>(ActorId id)
-            where TActor : Actor =>
+            where TActor : StateMachine =>
             id != null && ActorMap.TryGetValue(id, out var value) &&
             value is TActor actor ? actor : null;
 
         /// <summary>
         /// Notifies that an actor invoked an action.
         /// </summary>
-        internal virtual void NotifyInvokedAction(Actor actor, MethodInfo action, string handlingStateName,
+        internal virtual void NotifyInvokedAction(StateMachine actor, MethodInfo action, string handlingStateName,
             string currentStateName, Event receivedEvent)
         {
             if (CheckerConfiguration.IsVerbose)
@@ -411,11 +390,11 @@ namespace PChecker.Actors
         /// <summary>
         /// Notifies that an actor dequeued an <see cref="Event"/>.
         /// </summary>
-        internal virtual void NotifyDequeuedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal virtual void NotifyDequeuedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             if (CheckerConfiguration.IsVerbose)
             {
-                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                var stateName = actor.CurrentStateName;
                 LogWriter.LogDequeueEvent(actor.Id, stateName, e);
             }
         }
@@ -424,7 +403,7 @@ namespace PChecker.Actors
         /// Notifies that an actor dequeued the default <see cref="Event"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual void NotifyDefaultEventDequeued(Actor actor)
+        internal virtual void NotifyDefaultEventDequeued(StateMachine actor)
         {
         }
 
@@ -433,18 +412,18 @@ namespace PChecker.Actors
         /// checked to see if the default event handler should fire.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual void NotifyDefaultEventHandlerCheck(Actor actor)
+        internal virtual void NotifyDefaultEventHandlerCheck(StateMachine actor)
         {
         }
 
         /// <summary>
         /// Notifies that an actor raised an <see cref="Event"/>.
         /// </summary>
-        internal virtual void NotifyRaisedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal virtual void NotifyRaisedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             if (CheckerConfiguration.IsVerbose)
             {
-                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                var stateName = actor.CurrentStateName;
                 LogWriter.LogRaiseEvent(actor.Id, stateName, e);
             }
         }
@@ -453,27 +432,27 @@ namespace PChecker.Actors
         /// Notifies that an actor is handling a raised <see cref="Event"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual void NotifyHandleRaisedEvent(Actor actor, Event e)
+        internal virtual void NotifyHandleRaisedEvent(StateMachine actor, Event e)
         {
         }
 
         /// <summary>
-        /// Notifies that an actor called <see cref="Actor.ReceiveEventAsync(Type[])"/>
+        /// Notifies that an actor called <see cref="StateMachine.ReceiveEventAsync(Type[])"/>
         /// or one of its overloaded methods.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual void NotifyReceiveCalled(Actor actor)
+        internal virtual void NotifyReceiveCalled(StateMachine actor)
         {
         }
 
         /// <summary>
         /// Notifies that an actor enqueued an event that it was waiting to receive.
         /// </summary>
-        internal virtual void NotifyReceivedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal virtual void NotifyReceivedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             if (CheckerConfiguration.IsVerbose)
             {
-                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                var stateName = actor.CurrentStateName;
                 LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: true);
             }
         }
@@ -482,11 +461,11 @@ namespace PChecker.Actors
         /// Notifies that an actor received an event without waiting because the event
         /// was already in the inbox when the actor invoked the receive statement.
         /// </summary>
-        internal virtual void NotifyReceivedEventWithoutWaiting(Actor actor, Event e, EventInfo eventInfo)
+        internal virtual void NotifyReceivedEventWithoutWaiting(StateMachine actor, Event e, EventInfo eventInfo)
         {
             if (CheckerConfiguration.IsVerbose)
             {
-                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                var stateName = actor.CurrentStateName;
                 LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
             }
         }
@@ -495,18 +474,18 @@ namespace PChecker.Actors
         /// Notifies that an actor is waiting for the specified task to complete.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual void NotifyWaitTask(Actor actor, Task task)
+        internal virtual void NotifyWaitTask(StateMachine actor, Task task)
         {
         }
 
         /// <summary>
         /// Notifies that an actor is waiting to receive an event of one of the specified types.
         /// </summary>
-        internal virtual void NotifyWaitEvent(Actor actor, IEnumerable<Type> eventTypes)
+        internal virtual void NotifyWaitEvent(StateMachine actor, IEnumerable<Type> eventTypes)
         {
             if (CheckerConfiguration.IsVerbose)
             {
-                var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : string.Empty;
+                var stateName = actor.CurrentStateName;
                 var eventWaitTypesArray = eventTypes.ToArray();
                 if (eventWaitTypesArray.Length == 1)
                 {

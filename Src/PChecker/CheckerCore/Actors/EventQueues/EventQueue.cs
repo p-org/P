@@ -23,7 +23,7 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <summary>
         /// The actor that owns this queue.
         /// </summary>
-        private readonly Actor Actor;
+        private readonly StateMachine Actor;
 
         /// <summary>
         /// The internal queue that contains events with their metadata.
@@ -66,7 +66,7 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <summary>
         /// Initializes a new instance of the <see cref="EventQueue"/> class.
         /// </summary>
-        internal EventQueue(IActorManager actorManager, Actor actor)
+        internal EventQueue(IActorManager actorManager, StateMachine actor)
         {
             ActorManager = actorManager;
             Actor = actor;

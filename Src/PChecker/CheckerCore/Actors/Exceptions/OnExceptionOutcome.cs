@@ -4,7 +4,7 @@
 namespace PChecker.Actors.Exceptions
 {
     /// <summary>
-    /// The outcome when an <see cref="Actor"/> throws an exception.
+    /// The outcome when an <see cref="StateMachine"/> throws an exception.
     /// </summary>
     public enum OnExceptionOutcome
     {

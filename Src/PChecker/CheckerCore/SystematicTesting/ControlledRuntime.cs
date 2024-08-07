@@ -289,7 +289,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override ActorId CreateActor(ActorId id, Type type, string name, Event initialEvent, Actor creator,
+        internal override ActorId CreateActor(ActorId id, Type type, string name, Event initialEvent, StateMachine creator,
             Guid opGroupId)
         {
             AssertExpectedCallerActor(creator, "CreateActor");
@@ -314,7 +314,7 @@ namespace PChecker.SystematicTesting
 
         /// <inheritdoc/>
         internal override async Task<ActorId> CreateActorAndExecuteAsync(ActorId id, Type type, string name,
-            Event initialEvent, Actor creator, Guid opGroupId)
+            Event initialEvent, StateMachine creator, Guid opGroupId)
         {
             AssertExpectedCallerActor(creator, "CreateActorAndExecuteAsync");
             Assert(creator != null, "Only an actor can call 'CreateActorAndExecuteAsync': avoid calling " +
@@ -331,9 +331,9 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new actor of the specified <see cref="Type"/>.
         /// </summary>
-        private Actor CreateActor(ActorId id, Type type, string name, Actor creator, Guid opGroupId)
+        private StateMachine CreateActor(ActorId id, Type type, string name, StateMachine creator, Guid opGroupId)
         {
-            Assert(type.IsSubclassOf(typeof(Actor)), "Type '{0}' is not an actor.", type.FullName);
+            Assert(type.IsSubclassOf(typeof(StateMachine)), "Type '{0}' is not an actor.", type.FullName);
 
             // Using ulong.MaxValue because a Create operation cannot specify
             // the id of its target, because the id does not exist yet.
@@ -396,7 +396,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void SendEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId)
+        internal override void SendEvent(ActorId targetId, Event e, StateMachine sender, Guid opGroupId)
         {
             if (e is null)
             {
@@ -425,7 +425,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Actor sender,
+        internal override async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, StateMachine sender,
             Guid opGroupId)
         {
             Assert(sender is StateMachine, "Only an actor can call 'SendEventAndExecuteAsync': avoid " +
@@ -453,7 +453,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Enqueues an event to the actor with the specified id.
         /// </summary>
-        private EnqueueStatus EnqueueEvent(ActorId targetId, Event e, Actor sender, Guid opGroupId, out Actor target)
+        private EnqueueStatus EnqueueEvent(ActorId targetId, Event e, StateMachine sender, Guid opGroupId, out StateMachine target)
         {
             target = Scheduler.GetOperationWithId<ActorOperation>(targetId.Value)?.Actor;
             Assert(target != null,
@@ -492,7 +492,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Enqueues an event to the actor with the specified id.
         /// </summary>
-        private EnqueueStatus EnqueueEvent(Actor actor, Event e, Actor sender, Guid opGroupId)
+        private EnqueueStatus EnqueueEvent(StateMachine actor, Event e, StateMachine sender, Guid opGroupId)
         {
             EventOriginInfo originInfo;
 
@@ -503,7 +503,7 @@ namespace PChecker.SystematicTesting
                     NameResolver.GetStateNameForLogging(senderStateMachine.CurrentState.GetType()));
                 stateName = senderStateMachine.CurrentStateName;
             }
-            else if (sender is Actor senderActor)
+            else if (sender is StateMachine senderActor)
             {
                 originInfo = new EventOriginInfo(sender.Id, senderActor.GetType().FullName, string.Empty);
             }
@@ -528,7 +528,7 @@ namespace PChecker.SystematicTesting
         /// <param name="initialEvent">Optional event for initializing the actor.</param>
         /// <param name="isFresh">If true, then this is a new actor.</param>
         /// <param name="syncCaller">Caller actor that is blocked for quiscence.</param>
-        private void RunActorEventHandler(Actor actor, Event initialEvent, bool isFresh, Actor syncCaller)
+        private void RunActorEventHandler(StateMachine actor, Event initialEvent, bool isFresh, StateMachine syncCaller)
         {
             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
             op.OnEnabled();
@@ -725,7 +725,7 @@ namespace PChecker.SystematicTesting
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        private void AssertExpectedCallerActor(Actor caller, string calledAPI)
+        private void AssertExpectedCallerActor(StateMachine caller, string calledAPI)
         {
             if (caller is null)
             {
@@ -777,7 +777,7 @@ namespace PChecker.SystematicTesting
             {
                 (callerStateMachine.Manager as StateMachineManager).ProgramCounter++;
             }
-            else if (caller is Actor callerActor)
+            else if (caller is StateMachine callerActor)
             {
                 (callerActor.Manager as ActorManager).ProgramCounter++;
             }
@@ -795,7 +795,7 @@ namespace PChecker.SystematicTesting
             {
                 (callerStateMachine.Manager as StateMachineManager).ProgramCounter++;
             }
-            else if (caller is Actor callerActor)
+            else if (caller is StateMachine callerActor)
             {
                 (callerActor.Manager as ActorManager).ProgramCounter++;
             }
@@ -838,14 +838,14 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyInvokedAction(Actor actor, MethodInfo action, string handlingStateName,
+        internal override void NotifyInvokedAction(StateMachine actor, MethodInfo action, string handlingStateName,
             string currentStateName, Event receivedEvent)
         {
             LogWriter.LogExecuteAction(actor.Id, handlingStateName, currentStateName, action.Name);
         }
 
         /// <inheritdoc/>
-        internal override void NotifyDequeuedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal override void NotifyDequeuedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
 
@@ -866,40 +866,40 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyDefaultEventDequeued(Actor actor)
+        internal override void NotifyDefaultEventDequeued(StateMachine actor)
         {
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
             ResetProgramCounter(actor);
         }
 
         /// <inheritdoc/>
-        internal override void NotifyDefaultEventHandlerCheck(Actor actor)
+        internal override void NotifyDefaultEventHandlerCheck(StateMachine actor)
         {
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Default);
         }
 
         /// <inheritdoc/>
-        internal override void NotifyRaisedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal override void NotifyRaisedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             LogWriter.LogRaiseEvent(actor.Id, stateName, e);
         }
 
         /// <inheritdoc/>
-        internal override void NotifyHandleRaisedEvent(Actor actor, Event e)
+        internal override void NotifyHandleRaisedEvent(StateMachine actor, Event e)
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             LogWriter.LogHandleRaisedEvent(actor.Id, stateName, e);
         }
 
         /// <inheritdoc/>
-        internal override void NotifyReceiveCalled(Actor actor)
+        internal override void NotifyReceiveCalled(StateMachine actor)
         {
             AssertExpectedCallerActor(actor, "ReceiveEventAsync");
         }
 
         /// <inheritdoc/>
-        internal override void NotifyReceivedEvent(Actor actor, Event e, EventInfo eventInfo)
+        internal override void NotifyReceivedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: true);
@@ -908,7 +908,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyReceivedEventWithoutWaiting(Actor actor, Event e, EventInfo eventInfo)
+        internal override void NotifyReceivedEventWithoutWaiting(StateMachine actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
@@ -917,7 +917,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyWaitTask(Actor actor, Task task)
+        internal override void NotifyWaitTask(StateMachine actor, Task task)
         {
             Assert(task != null, "{0} is waiting for a null task to complete.", actor.Id);
 
@@ -934,7 +934,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <inheritdoc/>
-        internal override void NotifyWaitEvent(Actor actor, IEnumerable<Type> eventTypes)
+        internal override void NotifyWaitEvent(StateMachine actor, IEnumerable<Type> eventTypes)
         {
             var stateName = actor is StateMachine stateMachine ? stateMachine.CurrentStateName : null;
             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
@@ -1037,7 +1037,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Reports actors that are to be covered in coverage report.
         /// </summary>
-        private void ReportActivityCoverageOfActor(Actor actor)
+        private void ReportActivityCoverageOfActor(StateMachine actor)
         {
             var name = actor.GetType().FullName;
             if (CoverageInfo.IsMachineDeclared(name))
@@ -1104,7 +1104,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Resets the program counter of the specified actor.
         /// </summary>
-        private static void ResetProgramCounter(Actor actor)
+        private static void ResetProgramCounter(StateMachine actor)
         {
             if (actor is StateMachine stateMachine)
             {

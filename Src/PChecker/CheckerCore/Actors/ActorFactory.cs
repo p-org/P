@@ -15,17 +15,17 @@ namespace PChecker.Actors
         /// <summary>
         /// Cache storing actors constructors.
         /// </summary>
-        private static readonly Dictionary<Type, Func<Actor>> ActorConstructorCache =
-            new Dictionary<Type, Func<Actor>>();
+        private static readonly Dictionary<Type, Func<StateMachine>> ActorConstructorCache =
+            new Dictionary<Type, Func<StateMachine>>();
 
         /// <summary>
-        /// Creates a new <see cref="Actor"/> instance of the specified type.
+        /// Creates a new <see cref="StateMachine"/> instance of the specified type.
         /// </summary>
         /// <param name="type">The type of the actors.</param>
         /// <returns>The created actor instance.</returns>
-        public static Actor Create(Type type)
+        public static StateMachine Create(Type type)
         {
-            Func<Actor> constructor = null;
+            Func<StateMachine> constructor = null;
             lock (ActorConstructorCache)
             {
                 if (!ActorConstructorCache.TryGetValue(type, out constructor))
@@ -36,7 +36,7 @@ namespace PChecker.Actors
                         throw new Exception("Could not find empty constructor for type " + type.FullName);
                     }
 
-                    constructor = Expression.Lambda<Func<Actor>>(
+                    constructor = Expression.Lambda<Func<StateMachine>>(
                         Expression.New(constructorInfo)).Compile();
                     ActorConstructorCache.Add(type, constructor);
                 }

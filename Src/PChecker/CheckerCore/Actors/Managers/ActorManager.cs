@@ -22,7 +22,7 @@ namespace PChecker.Actors.Managers.Mocks
         /// <summary>
         /// The actor being managed.
         /// </summary>
-        private readonly Actor Instance;
+        private readonly StateMachine Instance;
 
         /// <inheritdoc/>
         public bool IsEventHandlerRunning { get; set; }
@@ -49,7 +49,7 @@ namespace PChecker.Actors.Managers.Mocks
         /// <summary>
         /// Initializes a new instance of the <see cref="ActorManager"/> class.
         /// </summary>
-        internal ActorManager(ControlledRuntime runtime, Actor instance, Guid operationGroupId)
+        internal ActorManager(ControlledRuntime runtime, StateMachine instance, Guid operationGroupId)
         {
             Runtime = runtime;
             Instance = instance;

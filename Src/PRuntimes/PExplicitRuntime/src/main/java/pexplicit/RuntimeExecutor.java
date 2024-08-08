@@ -112,9 +112,9 @@ public class RuntimeExecutor {
 
             String schFile = PExplicitGlobal.getConfig().getOutputFolder() + "/" + PExplicitGlobal.getConfig().getProjectName() + "_0_0.schedule";
             PExplicitLogger.logInfo(String.format("Writing buggy trace in %s", schFile));
-            scheduler.schedule.writeToFile(schFile);
+            scheduler.getSchedule().writeToFile(schFile);
 
-            ReplayScheduler replayer = new ReplayScheduler(scheduler.schedule);
+            ReplayScheduler replayer = new ReplayScheduler(scheduler.getSchedule());
             PExplicitGlobal.setScheduler(replayer);
             try {
                 replayer.run();
@@ -188,9 +188,6 @@ public class RuntimeExecutor {
     }
 
     public static void run() throws Exception {
-        // initialize stats writer
-        StatWriter.Initialize();
-
         if (PExplicitGlobal.getConfig().getSearchStrategyMode() == SearchStrategyMode.Replay) {
             replay();
         } else {

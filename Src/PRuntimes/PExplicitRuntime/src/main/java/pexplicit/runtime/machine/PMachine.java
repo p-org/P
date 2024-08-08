@@ -178,9 +178,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add("_started");
         result.add("_halted");
 
-        result.add("_observedEvents");
-        result.add("_happensBefore");
-
         result.add("_blockedBy");
         result.add("_blockedStateExit");
         result.add("_blockedNewStateEntry");
@@ -217,9 +214,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         result.add(started);
         result.add(halted);
-
-        result.add(observedEvents);
-        result.add(happensBeforePairs);
 
         result.add(blockedBy);
         result.add(blockedStateExit);
@@ -261,9 +255,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         result.add(started);
         result.add(halted);
-
-        result.add(new HashSet<>(observedEvents));
-        result.add(new HashSet<>(happensBeforePairs));
 
         result.add(blockedBy);
         result.add(blockedStateExit);
@@ -307,9 +298,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         started = (boolean) values.get(idx++);
         halted = (boolean) values.get(idx++);
 
-        observedEvents = (Set<PEvent>) values.get(idx++);
-        happensBeforePairs = (Set<ImmutablePair<PEvent, PEvent>>) values.get(idx++);
-
         blockedBy = (PContinuation) values.get(idx++);
         blockedStateExit = (State) values.get(idx++);
         blockedNewStateEntry = (State) values.get(idx++);
@@ -336,11 +324,13 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     public MachineLocalState copyMachineState() {
-        return new MachineLocalState(copyLocalVarValues());
+        return new MachineLocalState(copyLocalVarValues(), observedEvents, happensBeforePairs);
     }
 
     public void setMachineState(MachineLocalState input) {
         setLocalVarValues(input.getLocals());
+        observedEvents = input.getObservedEvents();
+        happensBeforePairs = input.getHappensBeforePairs();
     }
 
     /**

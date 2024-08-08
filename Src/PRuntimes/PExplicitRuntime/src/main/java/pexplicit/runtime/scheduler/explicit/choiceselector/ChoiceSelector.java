@@ -6,8 +6,13 @@ import java.io.Serializable;
 import java.util.List;
 
 public abstract class ChoiceSelector implements Serializable {
-    public abstract int selectChoice(List<?> choices);
+    protected abstract int select(ExplicitSearchScheduler sch, List<?> choices);
 
-    public void startStep(ExplicitSearchScheduler sch) {
+    public int selectChoice(ExplicitSearchScheduler sch, List<?> choices) {
+        if (choices.size() == 1) {
+            return 0;
+        } else {
+            return select(sch, choices);
+        }
     }
 }

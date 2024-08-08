@@ -14,7 +14,6 @@ import pexplicit.runtime.machine.PMachineId;
 import pexplicit.runtime.scheduler.Scheduler;
 import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.choice.SearchUnit;
-import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelectorMode;
 import pexplicit.runtime.scheduler.explicit.choiceselector.ChoiceSelectorQL;
 import pexplicit.runtime.scheduler.explicit.strategy.*;
 import pexplicit.utils.exceptions.PExplicitRuntimeException;
@@ -160,6 +159,19 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (scheduleTerminated) {
             // schedule terminated, check for deadlock
             checkDeadlock();
+            // update timeline
+            Integer timelineHash = stepState.getTimelineHash();
+            if (!timelines.contains(timelineHash)) {
+                // add new timeline
+                timelines.add(timelineHash);
+                // print new timeline
+//                stepState.printTimeline(timelineHash, choiceNumber, String.format("%d. New timeline %d @%d::%d",
+//                        SearchStatistics.iteration, timelines.size(), stepNumber, choiceNumber));
+                if (PExplicitGlobal.getChoiceSelector() instanceof ChoiceSelectorQL choiceSelectorQL) {
+                    // reward new timeline
+                    choiceSelectorQL.rewardNewTimeline(this);
+                }
+            }
         }
         if (!skipLiveness) {
             // check for liveness
@@ -196,16 +208,6 @@ public class ExplicitSearchScheduler extends Scheduler {
             isDoneStepping = true;
             PExplicitLogger.logFinishedIteration(stepNumber);
             return;
-        }
-
-        // update timeline
-        Integer timelineHash = stepState.getTimelineHash();
-        if (!timelines.contains(timelineHash)) {
-//            stepState.printTimeline(timelineHash, timelines.size());
-            timelines.add(timelineHash);
-        }
-        if (PExplicitGlobal.getConfig().getChoiceSelectorMode() == ChoiceSelectorMode.QL) {
-            PExplicitGlobal.getChoiceSelector().startStep(this);
         }
 
         if (PExplicitGlobal.getConfig().getStatefulBacktrackingMode() != StatefulBacktrackingMode.None
@@ -348,7 +350,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
 
         // pick a choice
-        int selected = PExplicitGlobal.getChoiceSelector().selectChoice(choices);
+        int selected = PExplicitGlobal.getChoiceSelector().selectChoice(this, choices);
         result = PExplicitGlobal.getGlobalMachine(choices.get(selected));
         PExplicitLogger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
 
@@ -412,7 +414,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
 
         // pick a choice
-        int selected = PExplicitGlobal.getChoiceSelector().selectChoice(choices);
+        int selected = PExplicitGlobal.getChoiceSelector().selectChoice(this, choices);
         result = choices.get(selected);
         PExplicitLogger.logCurrentDataChoice(result, stepNumber, choiceNumber);
 
@@ -495,6 +497,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         newTask.writeToFile();
         parentTask.addChild(newTask);
+        searchStrategy.getPendingTasks().add(newTask.getId());
         searchStrategy.addNewTask(newTask);
     }
 

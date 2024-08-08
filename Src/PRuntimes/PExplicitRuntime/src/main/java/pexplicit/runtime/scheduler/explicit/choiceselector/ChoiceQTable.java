@@ -1,6 +1,7 @@
 package pexplicit.runtime.scheduler.explicit.choiceselector;
 
 import lombok.Getter;
+import pexplicit.runtime.machine.PMachine;
 
 import java.io.Serializable;
 import java.util.*;
@@ -8,7 +9,7 @@ import java.util.*;
 public class ChoiceQTable<S, A> implements Serializable {
     private final Map<S, ChoiceQStateEntry<A>> table = new HashMap<>();
 
-    public int get(S state, Class cls, A action) {
+    public double get(S state, Class cls, A action) {
         if (!table.containsKey(state)) {
             table.put(state, new ChoiceQStateEntry());
         }
@@ -111,7 +112,7 @@ public class ChoiceQTable<S, A> implements Serializable {
     public static class ChoiceQStateEntry<A> implements Serializable {
         private final Map<Class, ChoiceQTable.ChoiceQClassEntry> table = new HashMap<>();
 
-        public int get(Class cls, A action) {
+        public double get(Class cls, A action) {
             if (!table.containsKey(cls)) {
                 table.put(cls, new ChoiceQClassEntry());
             }
@@ -145,21 +146,27 @@ public class ChoiceQTable<S, A> implements Serializable {
     }
 
     public static class ChoiceQClassEntry<A> implements Serializable {
-        private final Map<A, Integer> table = new HashMap<>();
+        private final Map<A, Double> table = new HashMap<>();
 
-        public int get(A action) {
+        public double get(A action) {
+            if (action instanceof PMachine machine) {
+                action = (A) machine.getPid();
+            }
             if (!table.containsKey(action)) {
                 table.put(action, ChoiceQL.getDefaultQValue());
             }
             return table.get(action);
         }
 
-        public void update(A action, int val) {
+        public void update(A action, double val) {
+            if (action instanceof PMachine machine) {
+                action = (A) machine.getPid();
+            }
             assert (table.containsKey(action));
             table.put(action, val);
         }
 
-        public int getMaxQ() {
+        public double getMaxQ() {
             if (table.isEmpty()) {
                 return ChoiceQL.getDefaultQValue();
             } else {
@@ -169,7 +176,7 @@ public class ChoiceQTable<S, A> implements Serializable {
 
         public A getBestAction() {
             if (!table.isEmpty()) {
-                int maxQ = getMaxQ();
+                double maxQ = getMaxQ();
                 for (A action : table.keySet()) {
                     if (get(action) == maxQ) {
                         return action;
@@ -187,10 +194,10 @@ public class ChoiceQTable<S, A> implements Serializable {
         public String toString() {
             StringBuilder out = new StringBuilder();
             out.append("{ ");
-            for (Map.Entry<A, Integer> entry : table.entrySet()) {
+            for (Map.Entry<A, Double> entry : table.entrySet()) {
                 out.append(entry.getKey().toString());
                 out.append(" -> ");
-                out.append(String.format("%d", entry.getValue()));
+                out.append(String.format("%.2f", entry.getValue()));
                 out.append(", ");
             }
             out.append(" }");

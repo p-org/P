@@ -1,88 +1,84 @@
 package pexplicit.runtime.scheduler.explicit.choiceselector;
 
 import lombok.Getter;
+import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
-import pexplicit.runtime.machine.PMachine;
+import pexplicit.runtime.scheduler.Schedule;
+import pexplicit.runtime.scheduler.choice.Choice;
+import pexplicit.runtime.scheduler.choice.ScheduleChoice;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
+import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
+import pexplicit.utils.random.RandomNumberGenerator;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ChoiceQL implements Serializable {
     @Getter
-    private static final int defaultQValue = 0;
-    private static final double ALPHA = 0.5;
-    private static final double GAMMA = 0.05;
+    private static final double defaultQValue = 1.0;
+    private static final double ALPHA = 0.3;
+    private static final double GAMMA = 0.2;
+    private static final double STEP_PENALTY_REWARD = -1.0;
+    private static final double NEW_TIMELINE_REWARD = 1.0;
     private final ChoiceQTable<Integer, Object> qValues;
-    private final List<Object> currActions = new ArrayList<>();
-    /**
-     * Details about the current step
-     */
-    private Integer currState = 0;
-    private int currNumTimelines = 0;
 
     public ChoiceQL() {
         qValues = new ChoiceQTable();
     }
 
-    private void rewardAction(Object action, int reward) {
-        ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(currState);
+    private void rewardAction(int state, Object action, double reward) {
+        ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(state);
         ChoiceQTable.ChoiceQClassEntry classEntry = stateEntry.get(action.getClass());
-        int maxQ = classEntry.getMaxQ();
-        int oldVal = classEntry.get(action);
-        int newVal = (int) ((1 - ALPHA) * oldVal + ALPHA * (reward + GAMMA * maxQ));
+        double maxQ = classEntry.getMaxQ();
+        double oldVal = classEntry.get(action);
+        double newVal = ((1 - ALPHA) * oldVal + ALPHA * (reward + GAMMA * maxQ));
         classEntry.update(action, newVal);
     }
 
-    private void setStateTimelineAbstraction(ExplicitSearchScheduler sch) {
-        List<Integer> features = new ArrayList<>();
-        for (PMachine m : sch.getStepState().getMachineSet()) {
-            features.add(m.hashCode());
-            features.add(m.getHappensBeforePairs().hashCode());
-        }
-        currState = features.hashCode();
-    }
-
-    public void startStep(ExplicitSearchScheduler sch) {
-//        printQTable();
-
-        // set reward amount
-        int reward = -100;
-        if (sch.getTimelines().size() > currNumTimelines) {
-            reward = 100;
-        }
-        // reward last actions
-        for (Object action : currActions) {
-            rewardAction(action, reward);
-        }
-
-        // set number of timelines at start of step
-        currNumTimelines = sch.getTimelines().size();
-
-        // set state at start of step
-        setStateTimelineAbstraction(sch);
-
-        // reset current actions at start of step
-        currActions.clear();
-    }
-
-    public int selectChoice(List<?> choices) {
-        int maxVal = Integer.MIN_VALUE;
-        int selected = 0;
+    public int select(int state, List<?> choices) {
+        // Compute the total and minimum weight
+        double totalWeight = 0.0;
+        double minWeight = Double.MAX_VALUE;
         for (int i = 0; i < choices.size(); i++) {
             Object choice = choices.get(i);
-            int val = qValues.get(currState, choice.getClass(), choice);
-            if (val > maxVal) {
-                maxVal = val;
-                selected = i;
+            double weight = qValues.get(state, choice.getClass(), choice);
+            totalWeight += weight;
+            if (weight < minWeight) {
+                minWeight = weight;
             }
         }
-        return selected;
+
+        // Now choose a weighted random item
+        int idx = 0;
+        for (double r = RandomNumberGenerator.getInstance().getRandomDouble() * totalWeight; idx < choices.size() - 1; idx++) {
+            Object choice = choices.get(idx);
+            double weight = qValues.get(state, choice.getClass(), choice);
+            r -= weight;
+            if (r <= 0.0) {
+                break;
+            }
+        }
+        return idx;
     }
 
-    public void addChoice(Object choice) {
-        currActions.add(choice);
+    public void penalizeSelected(int state, Object action) {
+        // give a negative reward to the selected choice
+        rewardAction(state, action, STEP_PENALTY_REWARD);
+    }
+
+    public void rewardScheduleChoices(ExplicitSearchScheduler sch) {
+        Schedule schedule = sch.getSchedule();
+        for (int cIdx : sch.getSearchStrategy().getCurrTask().getSearchUnits().keySet()) {
+            int state = 0;
+            Choice choice = schedule.getChoice(cIdx);
+            if (PExplicitGlobal.getConfig().getStatefulBacktrackingMode() != StatefulBacktrackingMode.None) {
+                ScheduleChoice scheduleChoice = schedule.getScheduleChoiceAt(cIdx);
+                if (scheduleChoice != null && scheduleChoice.getChoiceState() != null) {
+                    state = scheduleChoice.getChoiceState().getTimelineHash();
+                }
+            }
+            rewardAction(state, choice.getCurrent(), NEW_TIMELINE_REWARD);
+        }
     }
 
     public int getNumStates() {
@@ -121,10 +117,10 @@ public class ChoiceQL implements Serializable {
                 }
                 Object bestAction = classEntry.getBestAction();
                 if (bestAction != null) {
-                    int maxQ = classEntry.get(bestAction);
+                    double maxQ = classEntry.get(bestAction);
                     PExplicitLogger.logVerbose(
                             String.format(
-                                    "  %s [%s] -> %s -> %d\t%s",
+                                    "  %s [%s] -> %s -> %.2f\t%s",
                                     stateStr, cls.getSimpleName(), bestAction, maxQ, classEntry));
                 }
             }

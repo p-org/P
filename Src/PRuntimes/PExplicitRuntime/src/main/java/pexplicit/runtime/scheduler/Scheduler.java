@@ -25,7 +25,8 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * Current schedule
      */
-    public final Schedule schedule;
+    @Getter
+    protected final Schedule schedule;
     /**
      * Step number
      */

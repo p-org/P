@@ -5,7 +5,6 @@ public class SearchStrategyDfs extends SearchStrategy {
     }
 
     public void addNewTask(SearchTask task) {
-        assert (pendingTasks.isEmpty());
     }
 
     public SearchTask popNextTask() {

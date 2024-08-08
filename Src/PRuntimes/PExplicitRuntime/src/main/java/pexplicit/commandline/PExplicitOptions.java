@@ -224,7 +224,7 @@ public class PExplicitOptions {
                         .hasArg()
                         .argName("Mode (string)")
                         .build();
-        addOption(choiceSelect);
+        addHiddenOption(choiceSelect);
 
         /*
          * Help menu options

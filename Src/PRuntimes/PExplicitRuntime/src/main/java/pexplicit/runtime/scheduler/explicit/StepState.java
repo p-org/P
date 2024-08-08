@@ -91,8 +91,8 @@ public class StepState implements Serializable {
         return result;
     }
 
-    public void printTimeline(int hash, int idx) {
-        PExplicitLogger.logVerbose(String.format("---- Timeline %d @%d ------", idx, hash));
+    public void printTimeline(int hash, int idx, String comment) {
+        PExplicitLogger.logVerbose(String.format("----\n%s\tTimeline %d @%d\n-----", comment, idx, hash));
         for (PMachine m : machineSet) {
             PExplicitLogger.logVerbose(String.format("  %s -> %s", m, m.getHappensBeforePairs()));
         }
@@ -102,7 +102,10 @@ public class StepState implements Serializable {
         List<Integer> features = new ArrayList<>();
         for (PMachine m : machineSet) {
             features.add(m.hashCode());
-            features.add(m.getHappensBeforePairs().hashCode());
+            MachineLocalState ms = machineLocalStates.get(m);
+            if (ms != null) {
+                features.add(ms.getTimelineHash());
+            }
         }
         return features.hashCode();
     }

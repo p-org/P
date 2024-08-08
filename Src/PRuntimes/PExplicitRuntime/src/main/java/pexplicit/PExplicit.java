@@ -98,6 +98,8 @@ public class PExplicit {
         RandomNumberGenerator.setup(PExplicitGlobal.getConfig().getRandomSeed());
         MemoryMonitor.setup(PExplicitGlobal.getConfig().getMemLimit());
         TimeMonitor.setup(PExplicitGlobal.getConfig().getTimeLimit());
+        // initialize stats writer
+        StatWriter.Initialize();
     }
 
     /**

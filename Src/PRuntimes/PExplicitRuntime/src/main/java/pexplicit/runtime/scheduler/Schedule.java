@@ -30,6 +30,7 @@ public class Schedule implements Serializable {
      * Step state at the start of a scheduler step.
      * Used in stateful backtracking
      */
+    @Getter
     @Setter
     private transient StepState stepBeginState = null;
 

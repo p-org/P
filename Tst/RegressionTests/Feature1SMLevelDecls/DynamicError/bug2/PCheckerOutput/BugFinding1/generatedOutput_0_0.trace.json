@@ -1,0 +1,101 @@
+[
+  {
+    "type": "StateTransition",
+    "details": {
+      "log": "Main(2) enters state \u0027S\u0027.",
+      "id": "Main(2)",
+      "state": "S",
+      "payload": "null",
+      "isEntry": true,
+      "clock": {
+        "Main(2)": 1
+      }
+    }
+  },
+  {
+    "type": "RaiseEvent",
+    "details": {
+      "log": "\u0027Main(2)\u0027 raised event \u0027x with payload (\u003Ca,3,\u003E)\u0027 in state \u0027S\u0027.",
+      "id": "Main(2)",
+      "event": "x",
+      "state": "S",
+      "payload": {
+        "0": {},
+        "1": {}
+      },
+      "clock": {
+        "Main(2)": 2
+      }
+    }
+  },
+  {
+    "type": "RaiseEvent",
+    "details": {
+      "log": "\u0027Main(2)\u0027 raised event \u0027a with payload (3)\u0027 in state \u0027S\u0027.",
+      "id": "Main(2)",
+      "event": "a",
+      "state": "S",
+      "payload": 3,
+      "clock": {
+        "Main(2)": 3
+      }
+    }
+  },
+  {
+    "type": "StateTransition",
+    "details": {
+      "log": "Main(2) exits state \u0027S\u0027.",
+      "id": "Main(2)",
+      "state": "S",
+      "payload": "null",
+      "isEntry": false,
+      "clock": {
+        "Main(2)": 4
+      }
+    }
+  },
+  {
+    "type": "PopStateUnhandledEvent",
+    "details": {
+      "log": "Main(2) popped state S due to unhandled event \u0027a\u0027.",
+      "id": "Main(2)",
+      "event": "a",
+      "state": "S",
+      "payload": "null",
+      "clock": {
+        "Main(2)": 5
+      }
+    }
+  },
+  {
+    "type": "ExceptionThrown",
+    "details": {
+      "log": "Main(2) running action \u0027\u0027 in state \u0027S\u0027 threw exception \u0027UnhandledEventException\u0027.",
+      "id": "Main(2)",
+      "state": "S",
+      "payload": "null",
+      "action": "",
+      "exception": "UnhandledEventException",
+      "clock": {
+        "Main(2)": 6
+      }
+    }
+  },
+  {
+    "type": "AssertionFailure",
+    "details": {
+      "log": "Main(2) received event \u0027PImplementation.a\u0027 that cannot be handled.",
+      "error": "Main(2) received event \u0027PImplementation.a\u0027 that cannot be handled.",
+      "payload": "null"
+    }
+  },
+  {
+    "type": "StrategyDescription",
+    "details": {
+      "log": "Found bug using \u0027random\u0027 strategy.",
+      "payload": "null",
+      "strategy": "random",
+      "strategyDescription": "random[seed \u0027769371342\u0027]"
+    }
+  }
+]

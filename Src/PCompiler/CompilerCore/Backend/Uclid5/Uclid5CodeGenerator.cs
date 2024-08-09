@@ -1405,8 +1405,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
             MapAccessExpr maex =>
                 OptionSelectValue(((MapType)maex.MapExpr.Type).ValueType,
                     $"{ExprToString(maex.MapExpr)}[{ExprToString(maex.IndexExpr)}]"),
-            ContainsExpr cexp when cexp.Collection.Type is MapType => OptionIsSome(((MapType) cexp.Collection.Type).ValueType, $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
-            ContainsExpr cexp when cexp.Collection.Type is SetType => $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
+            ContainsExpr cexp when cexp.Collection.Type.Canonicalize() is MapType => OptionIsSome(((MapType) cexp.Collection.Type).ValueType, $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
+            ContainsExpr cexp when cexp.Collection.Type.Canonicalize() is SetType => $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
             DefaultExpr dexp => DefaultValue(dexp.Type),
             QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, true)}({ExprToString(qexpr.Body)}))",
             QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, false)}({ExprToString(qexpr.Body)}))",

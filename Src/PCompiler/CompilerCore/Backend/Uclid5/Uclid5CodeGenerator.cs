@@ -252,8 +252,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private static string MachineStateAdtInS(string state, Machine m, State s)
     {
-        return MachineStateAdtIsM(state, m) +
-               $" && {MachineStateAdtSelectState(state, m)} == {MachinePrefix}{m.Name}_{s.Name}";
+        return $"({MachineStateAdtIsM(state, m)} && {MachineStateAdtSelectState(state, m)} == {MachinePrefix}{m.Name}_{s.Name})";
     }
 
 

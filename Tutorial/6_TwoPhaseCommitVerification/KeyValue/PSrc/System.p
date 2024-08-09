@@ -41,6 +41,7 @@ machine Client {
             var v: int; 
             
             k = RandomInt();
+            v = RandomInt();
             
             if ($) {
                 v = RandomInt();

@@ -20,7 +20,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private CompiledFile _src;
     private HashSet<PLanguageType> _optionsToDeclare;
     private HashSet<PLanguageType> _chooseToDeclare;
-    private HashSet<SetType> _setCheckersToDeclare;
+    private HashSet<PLanguageType> _setCheckersToDeclare;
     private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
     private Scope _globalScope;
     
@@ -1153,6 +1153,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         return $"is_{GetOptionName(t)}_Some({instance})";
     }
+    
+    private string OptionIsNone(PLanguageType t, string instance)
+    {
+        return $"is_{GetOptionName(t)}_None({instance})";
+    }
 
     private string OptionSelectValue(PLanguageType t, string instance)
     {
@@ -1293,6 +1298,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"{imap} = {imap}[{idx} -> {value}];");
                 return;
             case ForeachStmt fstmt:
+
+                switch (fstmt.IterCollection)
+                {
+                    case KeysExpr keysExpr:
+                        fstmt = new ForeachStmt(fstmt.SourceLocation, fstmt.Item, keysExpr.Expr, fstmt.Body, fstmt.Invariants);
+                        break;
+                }
+                
                 var item = GetLocalName(fstmt.Item);
                 var checker = GetCheckerName(fstmt.IterCollection.Type);
                 var collection = ExprToString(fstmt.IterCollection);
@@ -1334,6 +1347,46 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         GenerateStmt(fstmt.Body, specMachine);
                         // update the checker
                         EmitLine($"{checker} = {checker}[{item} -> true];");
+                        EmitLine("}");
+                        // havoc the item
+                        EmitLine($"havoc {item};");
+                        EmitLine("}");
+                        return;
+                    case MapType mapType:
+                        // set the checker to default
+                        EmitLine($"{checker} = {DefaultValue(mapType)};");
+                        // remember to declare it later
+                        _setCheckersToDeclare.Add(mapType);
+                        // havoc the item, in this case it is a key
+                        EmitLine($"havoc {item};");
+                        EmitLine($"while ({checker} != {collection})");
+                        foreach (var inv in  _globalScope.AllDecls.OfType<Invariant>())
+                        {
+                            EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
+                        }
+                        EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
+                        EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
+                        EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent();");
+                        // ensure uniqueness for the new ones too
+                        EmitLine($"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+                        EmitLine($"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+                        
+                        // ensure we only ever add sends
+                        EmitLine($"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
+
+                        // user given invariants
+                        foreach (var inv in fstmt.Invariants)
+                        {
+                            EmitLine($"\tinvariant {ExprToString(inv)}; // Failed to verify loop invariant at {GetLocation(inv)}");
+                        }
+                        
+                        EmitLine("{");
+                        // assume that the item is in the set but hasn't been visited
+                        EmitLine($"if ({OptionIsSome(mapType.ValueType, $"{collection}[{item}]")} && {OptionIsNone(mapType.ValueType, $"{checker}[{item}]")}) {{");
+                        // the body of the loop
+                        GenerateStmt(fstmt.Body, specMachine);
+                        // update the checker
+                        EmitLine($"{checker} = {checker}[{item} -> {collection}[{item}]];");
                         EmitLine("}");
                         // havoc the item
                         EmitLine($"havoc {item};");

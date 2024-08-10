@@ -47,6 +47,8 @@ namespace Plang.Options
             Parser.AddArgument("debug", "d", "Enable debug logs", typeof(bool)).IsHidden = true;
             
             Parser.AddArgument("timeout", "t", "Set SMT solver timeout in seconds", typeof(int)).IsHidden = true;
+            
+            Parser.AddArgument("handles-all", "ha", "Check that all events are handled", typeof(bool)).IsHidden = true;
         }
 
         /// <summary>
@@ -165,6 +167,9 @@ namespace Plang.Options
                     break;
                 case "timeout":
                     compilerConfiguration.Timeout = (int)option.Value;
+                    break;
+                case "handles-all":
+                    compilerConfiguration.HandlesAll = (bool)option.Value;
                     break;
                 case "mode":
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();

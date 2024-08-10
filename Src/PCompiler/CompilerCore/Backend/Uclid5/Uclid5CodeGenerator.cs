@@ -821,7 +821,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     {
                         EmitLine($"call {m.Name}_{s.Name}_{e.Name}({currentLabel});");
                     }
-                    else
+                    else if (_ctx.Job.HandlesAll)
                     {
                         EmitLine($"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
                     }

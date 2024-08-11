@@ -22,5 +22,6 @@ namespace Plang.Compiler
         bool Debug { get; }
         int Timeout { get; }
         bool HandlesAll { get; }
+        string CheckOnly { get; }
     }
 }

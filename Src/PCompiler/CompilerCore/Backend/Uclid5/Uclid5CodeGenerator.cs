@@ -821,7 +821,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     {
                         EmitLine($"call {m.Name}_{s.Name}_{e.Name}({currentLabel});");
                     }
-                    else if (_ctx.Job.HandlesAll)
+                    else
                     {
                         EmitLine($"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
                     }
@@ -1060,17 +1060,27 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         EmitLine("control {");
         EmitLine($"set_solver_option(\":Timeout\", {_ctx.Job.Timeout});"); // timeout per query in seconds
-        EmitLine("induction(1);");
+
+        if (_ctx.Job.HandlesAll && _ctx.Job.CheckOnly is null)
+        {
+            EmitLine("induction(1);");
+        }
 
         foreach (var m in machines)
         {
             foreach (var s in m.States)
             {
-                EmitLine($"verify({m.Name}_{s.Name});");
+                if (_ctx.Job.CheckOnly is not null && (_ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name))
+                {
+                    EmitLine($"verify({m.Name}_{s.Name});");
+                }
 
                 foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
                 {
-                    EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
+                    if (_ctx.Job.CheckOnly is not null && (_ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name))
+                    {
+                        EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
+                    }
                 }
             }
         }

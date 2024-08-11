@@ -48,7 +48,8 @@ namespace Plang.Options
             
             Parser.AddArgument("timeout", "t", "Set SMT solver timeout in seconds", typeof(int)).IsHidden = true;
             
-            Parser.AddArgument("handles-all", "ha", "Check that all events are handled", typeof(bool)).IsHidden = true;
+            Parser.AddArgument("no-event-handler-checks", "nch", "Do not check that all events are handled", typeof(bool)).IsHidden = true;
+            Parser.AddArgument("check-only", "co", "Check only the specified machine", typeof(string)).IsHidden = true;
         }
 
         /// <summary>
@@ -168,8 +169,11 @@ namespace Plang.Options
                 case "timeout":
                     compilerConfiguration.Timeout = (int)option.Value;
                     break;
-                case "handles-all":
-                    compilerConfiguration.HandlesAll = (bool)option.Value;
+                case "no-event-handler-checks":
+                    compilerConfiguration.HandlesAll = false;
+                    break;
+                case "check-only":
+                    compilerConfiguration.CheckOnly = (string)option.Value;
                     break;
                 case "mode":
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();

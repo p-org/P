@@ -810,10 +810,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             foreach (var s in m.States)
             {
-                EmitLine($"({GotoGuard(m, s)}) : {{");
-                EmitLine($"call {m.Name}_{s.Name}({currentLabel});");
-                EmitLine("}");
-
                 foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent))
                 {
                     if (!s.HasHandler(e))
@@ -1075,7 +1071,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
                 foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
                 {
-                    if (_ctx.Job.CheckOnly is null && _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
+                    if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
                     {
                         EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
                     }

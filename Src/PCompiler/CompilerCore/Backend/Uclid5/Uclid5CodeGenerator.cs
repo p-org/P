@@ -143,7 +143,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private static string InFlight(string state, string action)
     {
-        return $"{StateAdtSelectSent(state)}[{action}] && !{StateAdtSelectReceived(state)}[{action}]";
+        return $"({StateAdtSelectSent(state)}[{action}] && !{StateAdtSelectReceived(state)}[{action}])";
     }
 
     private static string StateVar => $"{BuiltinPrefix}State";
@@ -426,7 +426,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var isEvent = EventOrGotoAdtIsEvent(instance);
         var selectEvent = EventOrGotoAdtSelectEvent(instance);
         var correctEvent = EventAdtIsE(selectEvent, e);
-        return $"{isEvent} && {correctEvent}";
+        return $"({isEvent} && {correctEvent})";
     }
 
     private static string LabelAdtIsE(string instance, PEvent e)
@@ -497,7 +497,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var isGoto = EventOrGotoAdtIsGoto(instance);
         var selectGoto = EventOrGotoAdtSelectGoto(instance);
         var correctGoto = GotoAdtIsS(selectGoto, s);
-        return $"{isGoto} && {correctGoto}";
+        return $"({isGoto} && {correctGoto})";
     }
 
     private static string LabelAdtIsS(string instance, State s)

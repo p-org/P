@@ -816,17 +816,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
                 foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent))
                 {
-                    EmitLine($"({EventGuard(m, s, e)}) : {{");
-                    if (s.HasHandler(e))
+                    if (!s.HasHandler(e))
                     {
-                        EmitLine($"call {m.Name}_{s.Name}_{e.Name}({currentLabel});");
+                        if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
+                        {
+                            EmitLine($"({EventGuard(m, s, e)}) : {{");
+                            EmitLine($"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
+                            EmitLine("}");
+                        }
                     }
-                    else
-                    {
-                        EmitLine($"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
-                    }
-
-                    EmitLine("}");
                 }
             }
         }
@@ -1061,7 +1059,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("control {");
         EmitLine($"set_solver_option(\":Timeout\", {_ctx.Job.Timeout});"); // timeout per query in seconds
 
-        if (_ctx.Job.HandlesAll && _ctx.Job.CheckOnly is null)
+        if (_ctx.Job.HandlesAll)
         {
             EmitLine("induction(1);");
         }
@@ -1070,14 +1068,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             foreach (var s in m.States)
             {
-                if (_ctx.Job.CheckOnly is not null && (_ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name))
+                if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name)
                 {
                     EmitLine($"verify({m.Name}_{s.Name});");
                 }
 
                 foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
                 {
-                    if (_ctx.Job.CheckOnly is not null && (_ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name))
+                    if (_ctx.Job.CheckOnly is null && _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
                     {
                         EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
                     }

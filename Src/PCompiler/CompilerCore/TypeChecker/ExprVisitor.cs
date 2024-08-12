@@ -287,6 +287,16 @@ namespace Plang.Compiler.TypeChecker
                     var paramType = pure.Signature.Parameters[i].Type;
                     if (!paramType.IsAssignableFrom(argument.Type))
                     {
+                        switch (paramType)
+                        {
+                            case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Event):
+                                switch (argument.Type)
+                                {
+                                    case PermissionType {Origin: NamedEventSet} per when ((NamedEventSet)(per.Origin)).Events.Count() == 1:
+                                        continue;
+                                }
+                                break;
+                        }
                         throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
                     }
 

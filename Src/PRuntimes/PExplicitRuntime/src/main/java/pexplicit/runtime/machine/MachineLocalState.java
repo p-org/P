@@ -1,8 +1,6 @@
 package pexplicit.runtime.machine;
 
 import lombok.Getter;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import pexplicit.values.PEvent;
 
 import java.io.Serializable;
 import java.util.List;
@@ -17,14 +15,12 @@ public class MachineLocalState implements Serializable {
      * List of values of all local variables (including internal variables like currentState, FIFO queue, etc.)
      */
     private final List<Object> locals;
-    private final Set<PEvent> observedEvents;
-    private final Set<ImmutablePair<PEvent, PEvent>> happensBeforePairs;
-    private final int timelineHash;
+    private final Set<String> observedEvents;
+    private final Set<String> happensBeforePairs;
 
-    public MachineLocalState(List<Object> locals, Set<PEvent> observedEvents, Set<ImmutablePair<PEvent, PEvent>> happensBeforePairs) {
+    public MachineLocalState(List<Object> locals, Set<String> observedEvents, Set<String> happensBeforePairs) {
         this.locals = locals;
         this.observedEvents = observedEvents;
         this.happensBeforePairs = happensBeforePairs;
-        this.timelineHash = happensBeforePairs.hashCode();
     }
 }

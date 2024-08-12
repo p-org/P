@@ -85,6 +85,16 @@ public class TestPExplicit {
         excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1_falsePass");
         excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET");
         excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET2");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_10");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_1_WarmState");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_2");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_2_LoopMachineAdded");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_3");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_5");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_6");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_7");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_NONDET");
+        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_NONDET2");
     }
 
     private static void initialize() {

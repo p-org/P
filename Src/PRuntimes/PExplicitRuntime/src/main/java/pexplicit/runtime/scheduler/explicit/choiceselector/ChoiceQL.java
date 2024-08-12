@@ -1,32 +1,26 @@
 package pexplicit.runtime.scheduler.explicit.choiceselector;
 
 import lombok.Getter;
-import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
-import pexplicit.runtime.scheduler.Schedule;
-import pexplicit.runtime.scheduler.choice.Choice;
-import pexplicit.runtime.scheduler.choice.ScheduleChoice;
-import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
-import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
 import pexplicit.utils.random.RandomNumberGenerator;
 
 import java.io.Serializable;
 import java.util.List;
 
-public class ChoiceQL implements Serializable {
+public class ChoiceQL<S> implements Serializable {
     @Getter
     private static final double defaultQValue = 1.0;
     private static final double ALPHA = 0.3;
     private static final double GAMMA = 0.2;
     private static final double STEP_PENALTY_REWARD = -1.0;
     private static final double NEW_TIMELINE_REWARD = 1.0;
-    private final ChoiceQTable<Integer, Object> qValues;
+    private final ChoiceQTable<S, Object> qValues;
 
     public ChoiceQL() {
         qValues = new ChoiceQTable();
     }
 
-    private void rewardAction(int state, Object action, double reward) {
+    private void rewardAction(S state, Object action, double reward) {
         ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(state);
         ChoiceQTable.ChoiceQClassEntry classEntry = stateEntry.get(action.getClass());
         double maxQ = classEntry.getMaxQ();
@@ -35,7 +29,7 @@ public class ChoiceQL implements Serializable {
         classEntry.update(action, newVal);
     }
 
-    public int select(int state, List<?> choices) {
+    public int select(S state, List<?> choices) {
         // Compute the total and minimum weight
         double totalWeight = 0.0;
         double minWeight = Double.MAX_VALUE;
@@ -61,24 +55,13 @@ public class ChoiceQL implements Serializable {
         return idx;
     }
 
-    public void penalizeSelected(int state, Object action) {
+    public void penalizeSelected(S state, Object action) {
         // give a negative reward to the selected choice
         rewardAction(state, action, STEP_PENALTY_REWARD);
     }
 
-    public void rewardScheduleChoices(ExplicitSearchScheduler sch) {
-        Schedule schedule = sch.getSchedule();
-        for (int cIdx : sch.getSearchStrategy().getCurrTask().getSearchUnits().keySet()) {
-            int state = 0;
-            Choice choice = schedule.getChoice(cIdx);
-            if (PExplicitGlobal.getConfig().getStatefulBacktrackingMode() != StatefulBacktrackingMode.None) {
-                ScheduleChoice scheduleChoice = schedule.getScheduleChoiceAt(cIdx);
-                if (scheduleChoice != null && scheduleChoice.getChoiceState() != null) {
-                    state = scheduleChoice.getChoiceState().getTimelineHash();
-                }
-            }
-            rewardAction(state, choice.getCurrent(), NEW_TIMELINE_REWARD);
-        }
+    public void rewardNewTimeline(S state, Object action) {
+        rewardAction(state, action, NEW_TIMELINE_REWARD);
     }
 
     public int getNumStates() {
@@ -87,7 +70,7 @@ public class ChoiceQL implements Serializable {
 
     public int getNumActions() {
         int result = 0;
-        for (Integer state : qValues.getStates()) {
+        for (S state : qValues.getStates()) {
             ChoiceQTable.ChoiceQStateEntry clsMap = qValues.get(state);
             for (Object cls : clsMap.getClasses()) {
                 result += clsMap.get((Class) cls).size();
@@ -102,7 +85,7 @@ public class ChoiceQL implements Serializable {
         PExplicitLogger.logVerbose("Q Table");
         PExplicitLogger.logVerbose("--------------------");
         PExplicitLogger.logVerbose(String.format("  #QStates = %d", qValues.size()));
-        for (Integer state : qValues.getStates()) {
+        for (S state : qValues.getStates()) {
             ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(state);
             String stateStr = String.valueOf(state);
             if (stateStr.length() > 10) {

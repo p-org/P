@@ -2,7 +2,6 @@ package pexplicit.runtime.scheduler.explicit;
 
 import lombok.Getter;
 import pexplicit.runtime.PExplicitGlobal;
-import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.MachineLocalState;
 import pexplicit.runtime.machine.PMachine;
 
@@ -91,23 +90,20 @@ public class StepState implements Serializable {
         return result;
     }
 
-    public void printTimeline(int hash, int idx, String comment) {
-        PExplicitLogger.logVerbose(String.format("----\n%s\tTimeline %d @%d\n-----", comment, idx, hash));
-        for (PMachine m : machineSet) {
-            PExplicitLogger.logVerbose(String.format("  %s -> %s", m, m.getHappensBeforePairs()));
-        }
+    public Object getTimeline() {
+//        return getTimelineString();
+        return getTimelineString().hashCode();
     }
 
-    public Integer getTimelineHash() {
-        List<Integer> features = new ArrayList<>();
+    public String getTimelineString() {
+        StringBuilder s = new StringBuilder();
         for (PMachine m : machineSet) {
-            features.add(m.hashCode());
             MachineLocalState ms = machineLocalStates.get(m);
             if (ms != null) {
-                features.add(ms.getTimelineHash());
+                s.append(String.format("%s -> %s, ", m, ms.getHappensBeforePairs()));
             }
         }
-        return features.hashCode();
+        return s.toString();
     }
 
     @Override

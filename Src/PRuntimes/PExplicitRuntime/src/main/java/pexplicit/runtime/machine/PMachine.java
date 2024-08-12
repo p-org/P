@@ -1,7 +1,6 @@
 package pexplicit.runtime.machine;
 
 import lombok.Getter;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.logger.PExplicitLogger;
 import pexplicit.runtime.machine.buffer.DeferQueue;
@@ -52,9 +51,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     private boolean started = false;
     @Getter
     private boolean halted = false;
-    private Set<PEvent> observedEvents;
+    private Set<String> observedEvents;
     @Getter
-    private Set<ImmutablePair<PEvent, PEvent>> happensBeforePairs;
+    private Set<String> happensBeforePairs;
     private PContinuation blockedBy = null;
     @Getter
     private State blockedStateExit;
@@ -101,7 +100,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         this.deferQueue = new DeferQueue(this);
         // initialize happens-before
         this.observedEvents = new HashSet<>();
-        this.happensBeforePairs = new HashSet<>();
+        this.happensBeforePairs = new LinkedHashSet<>();
     }
 
     public void start(PValue<?> payload) {
@@ -324,7 +323,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     public MachineLocalState copyMachineState() {
-        return new MachineLocalState(copyLocalVarValues(), observedEvents, happensBeforePairs);
+        return new MachineLocalState(copyLocalVarValues(), new HashSet<>(observedEvents), new LinkedHashSet<>(happensBeforePairs));
     }
 
     public void setMachineState(MachineLocalState input) {
@@ -638,10 +637,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     private void addObservedEvent(PEvent newEvent) {
-        for (PEvent happenedBeforeEvent : observedEvents) {
-            happensBeforePairs.add(new ImmutablePair<>(happenedBeforeEvent, newEvent));
+        for (String happenedBeforeEvent : observedEvents) {
+            happensBeforePairs.add(String.format("(%s,%s)", happenedBeforeEvent, newEvent));
         }
-        observedEvents.add(newEvent);
+        observedEvents.add(newEvent.toString());
     }
 
     @Override

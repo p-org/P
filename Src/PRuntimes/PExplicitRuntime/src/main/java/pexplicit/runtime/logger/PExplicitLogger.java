@@ -284,6 +284,20 @@ public class PExplicitLogger {
         }
     }
 
+    /**
+     * Log a new timeline
+     *
+     * @param sch Scheduler
+     */
+    public static void logNewTimeline(ExplicitSearchScheduler sch) {
+        if (verbosity > 2) {
+            log.info(String.format("  new timeline %d", sch.getTimelines().size()));
+            if (verbosity > 4) {
+                log.info(String.format("      %s", sch.getStepState().getTimelineString()));
+            }
+        }
+    }
+
     private static boolean isReplaying() {
         return (PExplicitGlobal.getScheduler() instanceof ReplayScheduler);
     }

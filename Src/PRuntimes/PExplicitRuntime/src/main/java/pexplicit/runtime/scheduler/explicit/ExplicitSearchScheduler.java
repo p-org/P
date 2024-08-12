@@ -40,7 +40,7 @@ public class ExplicitSearchScheduler extends Scheduler {
      * Set of timelines
      */
     @Getter
-    private final transient Set<Integer> timelines = new HashSet<>();
+    private final transient Set<Object> timelines = new HashSet<>();
     /**
      * Search strategy orchestrator
      */
@@ -159,19 +159,6 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (scheduleTerminated) {
             // schedule terminated, check for deadlock
             checkDeadlock();
-            // update timeline
-            Integer timelineHash = stepState.getTimelineHash();
-            if (!timelines.contains(timelineHash)) {
-                // add new timeline
-                timelines.add(timelineHash);
-                // print new timeline
-//                stepState.printTimeline(timelineHash, choiceNumber, String.format("%d. New timeline %d @%d::%d",
-//                        SearchStatistics.iteration, timelines.size(), stepNumber, choiceNumber));
-                if (PExplicitGlobal.getChoiceSelector() instanceof ChoiceSelectorQL choiceSelectorQL) {
-                    // reward new timeline
-                    choiceSelectorQL.rewardNewTimeline(this);
-                }
-            }
         }
         if (!skipLiveness) {
             // check for liveness
@@ -213,6 +200,14 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (PExplicitGlobal.getConfig().getStatefulBacktrackingMode() != StatefulBacktrackingMode.None
                 && stepNumber != 0) {
             schedule.setStepBeginState(stepState.copyState());
+        }
+
+        // update timeline
+        Object timeline = stepState.getTimeline();
+        if (!timelines.contains(timeline)) {
+            // add new timeline
+            PExplicitLogger.logNewTimeline(this);
+            timelines.add(timeline);
         }
 
         // get a scheduling choice as sender machine

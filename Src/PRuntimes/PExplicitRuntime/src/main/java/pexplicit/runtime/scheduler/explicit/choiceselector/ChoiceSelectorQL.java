@@ -2,15 +2,12 @@ package pexplicit.runtime.scheduler.explicit.choiceselector;
 
 import lombok.Getter;
 import lombok.Setter;
-import pexplicit.runtime.PExplicitGlobal;
 import pexplicit.runtime.scheduler.explicit.ExplicitSearchScheduler;
-import pexplicit.runtime.scheduler.explicit.StatefulBacktrackingMode;
-import pexplicit.runtime.scheduler.explicit.StepState;
 import pexplicit.utils.random.RandomNumberGenerator;
 
 import java.util.List;
 
-public class ChoiceSelectorQL extends ChoiceSelector {
+public class ChoiceSelectorQL<S> extends ChoiceSelector {
     private static final double EPSILON_MAX = 1.0;
     private static final double EPSILON_MIN = 0.2;
     @Getter
@@ -25,30 +22,28 @@ public class ChoiceSelectorQL extends ChoiceSelector {
     }
 
     protected int select(ExplicitSearchScheduler sch, List<?> choices) {
-        int state = 0;
-        if (PExplicitGlobal.getConfig().getStatefulBacktrackingMode() != StatefulBacktrackingMode.None) {
-            StepState stepState = sch.getSchedule().getStepBeginState();
-            if (stepState != null) {
-                state = stepState.getTimelineHash();
-            }
-        }
+        S state = (S) (Integer) sch.getChoiceNumber();
 
         decayEpsilon();
         double randNum = RandomNumberGenerator.getInstance().getRandomDouble();
         int selected = -1;
-        if (randNum <= epsilon) {
+        if (false) {
             // explore
             selected = choiceSelectorExplore.select(sch, choices);
         } else {
             // exploit
             selected = choiceQL.select(state, choices);
         }
-        choiceQL.penalizeSelected(state, choices.get(selected));
-        return selected;
-    }
 
-    public void rewardNewTimeline(ExplicitSearchScheduler sch) {
-        choiceQL.rewardScheduleChoices(sch);
+        Object timeline = sch.getStepState().getTimeline();
+        if (!sch.getTimelines().contains(timeline)) {
+            // reward new timeline
+            choiceQL.rewardNewTimeline(state, choices.get(selected));
+        } else {
+            choiceQL.penalizeSelected(state, choices.get(selected));
+        }
+
+        return selected;
     }
 
     private void decayEpsilon() {

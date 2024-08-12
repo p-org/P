@@ -681,8 +681,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("");
 
         // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
-        GenerateNextBlock(machines, events);
-        EmitLine("");
+        if (_ctx.Job.HandlesAll)
+        {
+            GenerateNextBlock(machines, events);
+            EmitLine("");
+        }
         
         // global functions
         GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>());
@@ -1055,10 +1058,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("control {");
         EmitLine($"set_solver_option(\":Timeout\", {_ctx.Job.Timeout});"); // timeout per query in seconds
 
-        if (_ctx.Job.HandlesAll)
-        {
-            EmitLine("induction(1);");
-        }
+        EmitLine("induction(1);");
 
         foreach (var m in machines)
         {

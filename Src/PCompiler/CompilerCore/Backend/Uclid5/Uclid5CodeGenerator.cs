@@ -553,9 +553,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
                 }
                 
-                // declare local variables for the method and set them to their default value
+                // declare local variables for the method
                 foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
-                foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
+                // foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
                 
                 // Set the local variables corresponding to the global spec variables to the correct starting value
                 foreach (var v in spec.Fields)
@@ -841,13 +841,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
             var correctEvent = LabelAdtIsE(currentLabel, e);
             return string.Join(" && ", [correctMachine, correctState, correctEvent]);
         }
-
-        string GotoGuard(Machine m, State s)
-        {
-            var correctMachine = MachineStateAdtInS(Deref(LabelAdtSelectTarget(currentLabel)), m, s);
-            var correctGoto = LabelAdtIsS(currentLabel, s);
-            return $"{correctMachine} && {correctGoto}";
-        }
     }
 
     private void GenerateGlobalProcedures(IEnumerable<Function> functions)
@@ -910,7 +903,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"{LocalPrefix}sent = {StateAdtSelectSent(StateVar)};");
                 foreach (var v in m.Fields)
                     EmitLine($"{GetLocalName(v)} = {MachineStateAdtSelectField(currState, m, v)};");
-                foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
+                // foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
 
                 GenerateStmt(f.Body, null);
 

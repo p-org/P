@@ -1,3 +1,0 @@
-Manifest-Version: 0.0.1
-Main-Class: pexplicit.PExplicit
-Multi-Release: true

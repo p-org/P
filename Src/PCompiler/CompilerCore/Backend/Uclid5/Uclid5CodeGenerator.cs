@@ -865,6 +865,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
             }
 
             EmitLine("{");
+            // declare local variables for the method
+            foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
             GenerateStmt(f.Body, null);
             EmitLine("}\n");
         }

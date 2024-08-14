@@ -30,9 +30,8 @@ namespace Plang.Options
             var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                                                        " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
-            var modes = basicOptions.AddArgument("mode", "md", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "pex" };
-            modes.IsHidden = true;
+            var modes = basicOptions.AddArgument("mode", "md", "Checker mode to use. Can be bugfinding or pex. If this option is not passed, bugfinding mode is used as default");
+            modes.AllowedValues = new List<string>() { "bugfinding", "pex", "pobserve", "verification", "coverage" };
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
             // basicOptions.AddArgument("smoke-testing", "tsmoke",
             //     "Smoke test the program by running the checker on all the test cases", typeof(bool));
@@ -64,7 +63,6 @@ namespace Plang.Options
             schCoverage.IsHidden = true;
             var schPEx = schedulingGroup.AddArgument("sch-pex", null, "Choose the scheduling strategy for PEx mode (options: random, dfs, astar). (default: random)");
             schPEx.AllowedValues = new List<string>() { "random", "dfs", "astar" };
-            schPEx.IsHidden = true;
 
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
@@ -76,9 +74,9 @@ namespace Plang.Options
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test schedules whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of JVM arguments to pass, each starting with a colon").IsHidden = true;
+            advancedGroup.AddArgument("pex-args", null, "Specify a concatenated list of additional PEx arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("checker-args", null, "Specify a concatenated list of additional checker arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
-
         }
 
         /// <summary>
@@ -319,6 +317,7 @@ namespace Plang.Options
                     checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
                     break;
                 case "checker-args":
+                case "pex-args":
                 case "psym-args":
                     checkerConfiguration.CheckerArgs = ((string)option.Value).Replace(':', ' ');
                     break;

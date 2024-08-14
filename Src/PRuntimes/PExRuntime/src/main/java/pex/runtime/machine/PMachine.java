@@ -18,7 +18,6 @@ import pex.values.PValue;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * Represents the base class for all P machines.
@@ -337,14 +336,13 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      *
      * @param machineType Machine type
      * @param payload     payload associated with machine's constructor
-     * @param constructor Machine constructor
      * @return New machine as a PMachineValue
      */
     public PMachineValue create(
             Class<? extends PMachine> machineType,
-            PValue<?> payload,
-            Function<Integer, ? extends PMachine> constructor) {
-        PMachine machine = PExGlobal.getScheduler().allocateMachine(machineType, constructor);
+            PValue<?> payload) {
+        Class<? extends PMachine> trueMachineType = PExGlobal.getModel().getTestDriver().interfaceMap.getOrDefault(machineType, machineType);
+        PMachine machine = PExGlobal.getScheduler().allocateMachine(trueMachineType);
         PMessage msg = new PMessage(PEvent.createMachine, machine, payload);
         sendBuffer.add(msg);
         return new PMachineValue(machine);
@@ -358,9 +356,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @return New machine as a PMachineValue
      */
     public PMachineValue create(
-            Class<? extends PMachine> machineType,
-            Function<Integer, ? extends PMachine> constructor) {
-        return create(machineType, null, constructor);
+            Class<? extends PMachine> machineType) {
+        return create(machineType, null);
     }
 
     /**

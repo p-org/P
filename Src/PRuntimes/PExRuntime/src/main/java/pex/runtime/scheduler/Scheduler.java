@@ -13,10 +13,10 @@ import pex.utils.exceptions.NotImplementedException;
 import pex.utils.misc.Assert;
 import pex.values.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 
 /**
  * Represents the base class that all schedulers extend.
@@ -265,19 +265,21 @@ public abstract class Scheduler implements SchedulerInterface {
      * Allocate a machine
      *
      * @param machineType
-     * @param constructor
      * @return
      */
-    public PMachine allocateMachine(
-            Class<? extends PMachine> machineType,
-            Function<Integer, ? extends PMachine> constructor) {
+    public PMachine allocateMachine(Class<? extends PMachine> machineType) {
         // get machine count for given type from schedule
         int machineCount = stepState.getMachineCount(machineType);
         PMachineId pid = new PMachineId(machineType, machineCount);
         PMachine machine = PExGlobal.getGlobalMachine(pid);
         if (machine == null) {
             // create a new machine
-            machine = constructor.apply(machineCount);
+            try {
+                machine = machineType.getDeclaredConstructor(int.class).newInstance(machineCount);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
             PExGlobal.addGlobalMachine(machine, machineCount);
         }
 

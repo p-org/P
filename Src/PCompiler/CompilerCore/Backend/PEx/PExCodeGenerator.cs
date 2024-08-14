@@ -142,23 +142,31 @@ internal class PExCodeGenerator : ICodeGenerator
     }
 
     private void WriteDriver(CompilationContext context, StringWriter output, string startMachine,
-        IEnumerable<IPDecl> decls)
+        IEnumerable<IPDecl> decls, IDictionary<Interface, Machine> interfaceDef = null)
     {
-        WriteDriverConfigure(context, output, startMachine, decls);
+        WriteDriverConfigure(context, output, startMachine, decls, interfaceDef);
         context.WriteLine(output);
     }
 
     private void WriteDriverConfigure(CompilationContext context, StringWriter output, string startMachine,
-        IEnumerable<IPDecl> decls)
+        IEnumerable<IPDecl> decls, IDictionary<Interface, Machine> interfaceDef)
     {
         context.WriteLine(output);
         context.WriteLine(output, "@Generated");
         context.WriteLine(output, "public void configure() {");
 
         context.WriteLine(output, $"    mainMachine = new {startMachine}(0);");
+
+        context.WriteLine(output);
+        context.WriteLine(output, "    interfaceMap.clear();");
+        if (interfaceDef != null)
+            foreach (var map in interfaceDef)
+                context.WriteLine(output,
+                    $"    interfaceMap.put({context.GetNameForDecl(map.Key)}.class, {context.GetNameForDecl(map.Value)}.class);");
+
+        context.WriteLine(output);
         context.WriteLine(output, "    monitorList.clear();");
         context.WriteLine(output, "    observerMap.clear();");
-
         foreach (var decl in decls)
             switch (decl)
             {
@@ -248,7 +256,8 @@ internal class PExCodeGenerator : ICodeGenerator
     {
         context.WriteLine(output, "@Generated");
         context.WriteLine(output, $"public static class {context.GetNameForDecl(safety)} extends PTestDriver {{");
-        WriteDriver(context, output, safety.Main, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
+        WriteDriver(context, output, safety.Main, safety.ModExpr.ModuleInfo.MonitorMap.Keys,
+            safety.ModExpr.ModuleInfo.InterfaceDef);
         context.WriteLine(output, "}");
         context.WriteLine(output);
     }
@@ -1736,29 +1745,27 @@ internal class PExCodeGenerator : ICodeGenerator
         context.Write(
             output,
             $"{CompilationContext.CurrentMachine}.create(" +
-            $"{context.GetNameForDecl(ctorInterface)}.class, ");
+            $"{context.GetNameForDecl(ctorInterface)}.class");
 
         if (ctorArguments.Count == 1)
         {
             Debug.Assert(ctorArguments.Count == 1);
-            WriteExpr(context, output, ctorArguments[0]);
             context.Write(output, ", ");
+            WriteExpr(context, output, ctorArguments[0]);
         }
         else if (ctorArguments.Count > 1)
         {
-            context.Write(output, "new PTuple (");
+            context.Write(output, ", new PTuple (");
             for (var i = 0; i < ctorArguments.Count; i++)
             {
                 WriteExpr(context, output, ctorArguments[i]);
                 if (i != ctorArguments.Count - 1) context.Write(output, ", ");
             }
 
-            context.Write(output, "), ");
+            context.Write(output, ")");
         }
 
-        context.Write(
-            output,
-            $"(i) -> new {context.GetNameForDecl(ctorInterface)}(i))");
+        context.Write(output, ")");
     }
 
     private string BinOpToStr(BinOpType binOpType)

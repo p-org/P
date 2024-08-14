@@ -12,6 +12,7 @@ import java.util.Map;
  * Represents the base class for a P test driver.
  */
 public abstract class PTestDriver implements Serializable {
+    public final Map<Class<? extends PMachine>, Class<? extends PMachine>> interfaceMap;
     public final List<PMonitor> monitorList;
     public final Map<PEvent, List<PMonitor>> observerMap;
     public PMachine mainMachine;
@@ -23,6 +24,7 @@ public abstract class PTestDriver implements Serializable {
         this.mainMachine = null;
         this.monitorList = new ArrayList<>();
         this.observerMap = new HashMap<>();
+        this.interfaceMap = new HashMap<>();
         configure();
     }
 

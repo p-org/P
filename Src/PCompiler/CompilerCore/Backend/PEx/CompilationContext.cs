@@ -10,9 +10,9 @@ namespace Plang.Compiler.Backend.PEx;
 internal class CompilationContext : CompilationContextBase
 {
     internal static readonly string ReturnValue = "retval";
+    private readonly IDictionary<Continuation, int> continuationNames;
 
     internal Dictionary<Function, int> anonFuncIds;
-    private readonly IDictionary<Continuation, int> continuationNames;
     private int nextTempVarId;
 
     internal CompilationContext(ICompilerConfiguration job)

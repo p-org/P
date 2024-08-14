@@ -78,7 +78,7 @@ namespace PChecker.ExhaustiveSearch
                         arguments.Append("--strategy symbolic ");
                         break;
                     case CheckerMode.Coverage:
-                    case CheckerMode.Explicit:
+                    case CheckerMode.PEx:
                         arguments.Append($"--strategy {_checkerConfiguration.SchedulingStrategy} ");
                         break;
                     default:

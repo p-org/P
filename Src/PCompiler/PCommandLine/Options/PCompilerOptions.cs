@@ -38,8 +38,8 @@ namespace Plang.Options
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
-            var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately", "explicit" };
+            var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, pex, pobserve, stately). (default: bugfinding)");
+            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "pex", "coverage", "pobserve", "stately" };
             modes.IsHidden = true;
 
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
@@ -176,9 +176,8 @@ namespace Plang.Options
                         case "pcover":
                             compilerConfiguration.OutputLanguages.Add(CompilerOutput.Symbolic);
                             break;
-                        case "explicit":
-                        case "pexplicit":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PExplicit);
+                        case "pex":
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PEx);
                             break;
                         case "pobserve":
                         case "java":

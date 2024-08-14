@@ -31,7 +31,7 @@ namespace Plang.Options
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                                                        " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
             var modes = basicOptions.AddArgument("mode", "md", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "explicit" };
+            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "pex" };
             modes.IsHidden = true;
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
             // basicOptions.AddArgument("smoke-testing", "tsmoke",
@@ -62,9 +62,9 @@ namespace Plang.Options
             var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
             schCoverage.AllowedValues = new List<string>() { "learn", "random", "dfs", "stateless" };
             schCoverage.IsHidden = true;
-            var schExplicit = schedulingGroup.AddArgument("sch-explicit", null, "Choose the scheduling strategy for explicit mode (options: random, dfs, astar). (default: random)");
-            schExplicit.AllowedValues = new List<string>() { "random", "dfs", "astar" };
-            schExplicit.IsHidden = true;
+            var schPEx = schedulingGroup.AddArgument("sch-pex", null, "Choose the scheduling strategy for PEx mode (options: random, dfs, astar). (default: random)");
+            schPEx.AllowedValues = new List<string>() { "random", "dfs", "astar" };
+            schPEx.IsHidden = true;
 
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
@@ -216,8 +216,8 @@ namespace Plang.Options
                         case "coverage":
                             checkerConfiguration.Mode = CheckerMode.Coverage;
                             break;
-                        case "explicit":
-                            checkerConfiguration.Mode = CheckerMode.Explicit;
+                        case "pex":
+                            checkerConfiguration.Mode = CheckerMode.PEx;
                             break;
                         default:
                             Error.CheckerReportAndExit($"Invalid checker mode '{option.Value}'.");
@@ -249,7 +249,7 @@ namespace Plang.Options
                 case "sch-coverage":
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
                     break;
-                case "sch-explicit":
+                case "sch-pex":
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
                     break;
                 case "replay":
@@ -383,7 +383,7 @@ namespace Plang.Options
                     CheckerMode.BugFinding => "*.dll",
                     CheckerMode.Verification => "*-jar-with-dependencies.jar",
                     CheckerMode.Coverage => "*-jar-with-dependencies.jar",
-                    CheckerMode.Explicit => "*-jar-with-dependencies.jar",
+                    CheckerMode.PEx => "*-jar-with-dependencies.jar",
                     _ => "*.dll"
                 };
 
@@ -415,9 +415,9 @@ namespace Plang.Options
                         if (!fileName.Contains($"Symbolic{pathSep}"))
                             continue;
                     }
-                    else if (checkerConfiguration.Mode == CheckerMode.Explicit)
+                    else if (checkerConfiguration.Mode == CheckerMode.PEx)
                     {
-                        if (!fileName.Contains($"PExplicit{pathSep}"))
+                        if (!fileName.Contains($"PEx{pathSep}"))
                             continue;
                     }
                     else

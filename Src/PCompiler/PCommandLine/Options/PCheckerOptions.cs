@@ -61,7 +61,7 @@ namespace Plang.Options
             var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
             schCoverage.AllowedValues = new List<string>() { "learn", "random", "dfs", "stateless" };
             schCoverage.IsHidden = true;
-            var schPEx = schedulingGroup.AddArgument("sch-pex", null, "Choose the scheduling strategy for PEx mode (options: random, dfs, astar). (default: random)");
+            var schPEx = schedulingGroup.AddArgument("sch-pex", null, "Choose the scheduling strategy for PEx mode (options: random, dfs). (default: random)");
             schPEx.AllowedValues = new List<string>() { "random", "dfs", "astar" };
 
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
@@ -74,7 +74,6 @@ namespace Plang.Options
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test schedules whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of JVM arguments to pass, each starting with a colon").IsHidden = true;
-            advancedGroup.AddArgument("pex-args", null, "Specify a concatenated list of additional PEx arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("checker-args", null, "Specify a concatenated list of additional checker arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
         }
@@ -317,7 +316,6 @@ namespace Plang.Options
                     checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
                     break;
                 case "checker-args":
-                case "pex-args":
                 case "psym-args":
                     checkerConfiguration.CheckerArgs = ((string)option.Value).Replace(':', ' ');
                     break;

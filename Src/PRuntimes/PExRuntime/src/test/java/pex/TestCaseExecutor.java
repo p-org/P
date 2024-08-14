@@ -55,8 +55,8 @@ public class TestCaseExecutor {
         try {
             String pCompileCommand =
                     String.format(
-                            "dotnet %s compile --mode explicit --projname %s --outdir %s --pfiles %s",
-                            compilerDirectory, testName, outputDirectory, testCasePathsString);
+                            "dotnet %s compile --mode pex --projname %s --outdir %s --pfiles %s",
+                            compilerDirectory, testName, outputDirectory + "/PGenerated", testCasePathsString);
             PExTestLogger.log("      compiling");
             process = buildCompileProcess(pCompileCommand, outputDirectory);
 
@@ -73,7 +73,7 @@ public class TestCaseExecutor {
         }
 
         String pathToJar =
-                outputDirectory + "/PEx/target/" + testName + "-jar-with-dependencies.jar";
+                outputDirectory + "/PGenerated/PEx/target/" + testName + "-jar-with-dependencies.jar";
 
         File jarFile = new File(pathToJar);
         if (!jarFile.exists() || jarFile.isDirectory()) {
@@ -96,8 +96,8 @@ public class TestCaseExecutor {
             int seed = Math.abs((new Random()).nextInt());
             String runJarCommand =
                     String.format(
-                            "dotnet %s check %s --mode explicit --outdir %s --seed %d %s",
-                            compilerDirectory, pathToJar, outputDirectory, seed, runArgs);
+                            "dotnet %s check %s --mode pex --outdir %s --seed %d %s",
+                            compilerDirectory, pathToJar, outputDirectory + "/PCheckerOutput", seed, runArgs);
             PExTestLogger.log(String.format("      running with seed %d", seed));
             process = buildRunProcess(runJarCommand, outputDirectory);
 

@@ -18,12 +18,12 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <summary>
         /// Manages the actor that owns this queue.
         /// </summary>
-        private readonly IActorManager ActorManager;
+        private readonly IStateMachineManager StateMachineManager;
 
         /// <summary>
         /// The actor that owns this queue.
         /// </summary>
-        private readonly Actor Actor;
+        private readonly StateMachine Actor;
 
         /// <summary>
         /// The internal queue that contains events with their metadata.
@@ -66,9 +66,9 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <summary>
         /// Initializes a new instance of the <see cref="EventQueue"/> class.
         /// </summary>
-        internal EventQueue(IActorManager actorManager, Actor actor)
+        internal EventQueue(IStateMachineManager stateMachineManager, StateMachine actor)
         {
-            ActorManager = actorManager;
+            StateMachineManager = stateMachineManager;
             Actor = actor;
             Queue = new LinkedList<(Event, Guid, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
@@ -87,15 +87,15 @@ namespace PChecker.Actors.EventQueues.Mocks
                 (predicate is null || predicate(e)))
             {
                 EventWaitTypes.Clear();
-                ActorManager.OnReceiveEvent(e, opGroupId, info);
+                StateMachineManager.OnReceiveEvent(e, opGroupId, info);
                 ReceiveCompletionSource.SetResult(e);
                 return EnqueueStatus.EventHandlerRunning;
             }
 
-            ActorManager.OnEnqueueEvent(e, opGroupId, info);
+            StateMachineManager.OnEnqueueEvent(e, opGroupId, info);
             Queue.AddLast((e, opGroupId, info));
 
-            if (!ActorManager.IsEventHandlerRunning)
+            if (!StateMachineManager.IsEventHandlerRunning)
             {
                 if (TryDequeueEvent(true).e is null)
                 {
@@ -103,7 +103,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                 }
                 else
                 {
-                    ActorManager.IsEventHandlerRunning = true;
+                    StateMachineManager.IsEventHandlerRunning = true;
                     return EnqueueStatus.EventHandlerNotRunning;
                 }
             }
@@ -118,7 +118,7 @@ namespace PChecker.Actors.EventQueues.Mocks
             // have priority over the events in the inbox.
             if (RaisedEvent != default)
             {
-                if (ActorManager.IsEventIgnored(RaisedEvent.e, RaisedEvent.opGroupId, RaisedEvent.info))
+                if (StateMachineManager.IsEventIgnored(RaisedEvent.e, RaisedEvent.opGroupId, RaisedEvent.info))
                 {
                     // TODO: should the user be able to raise an ignored event?
                     // The raised event is ignored in the current state.
@@ -132,7 +132,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                 }
             }
 
-            var hasDefaultHandler = ActorManager.IsDefaultHandlerAvailable();
+            var hasDefaultHandler = StateMachineManager.IsDefaultHandlerAvailable();
             if (hasDefaultHandler)
             {
                 Actor.Runtime.NotifyDefaultEventHandlerCheck(Actor);
@@ -150,14 +150,13 @@ namespace PChecker.Actors.EventQueues.Mocks
             if (!hasDefaultHandler)
             {
                 // There is no default event handler installed, so do not return an event.
-                ActorManager.IsEventHandlerRunning = false;
+                StateMachineManager.IsEventHandlerRunning = false;
                 return (DequeueStatus.NotAvailable, null, Guid.Empty, null);
             }
 
             // TODO: check op-id of default event.
             // A default event handler exists.
-            var stateName = Actor is StateMachine stateMachine ?
-                NameResolver.GetStateNameForLogging(stateMachine.CurrentState.GetType()) : string.Empty;
+            var stateName = NameResolver.GetStateNameForLogging(Actor.CurrentState.GetType());
             var eventOrigin = new EventOriginInfo(Actor.Id, Actor.GetType().FullName, stateName);
             return (DequeueStatus.Default, DefaultEvent.Instance, Guid.Empty, new EventInfo(DefaultEvent.Instance, eventOrigin));
         }
@@ -176,7 +175,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                 var nextNode = node.Next;
                 var currentEvent = node.Value;
 
-                if (ActorManager.IsEventIgnored(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                if (StateMachineManager.IsEventIgnored(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                 {
                     if (!checkOnly)
                     {
@@ -189,7 +188,7 @@ namespace PChecker.Actors.EventQueues.Mocks
                 }
 
                 // Skips a deferred event.
-                if (!ActorManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                if (!StateMachineManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
                 {
                     nextAvailableEvent = currentEvent;
                     if (!checkOnly)
@@ -209,12 +208,11 @@ namespace PChecker.Actors.EventQueues.Mocks
         /// <inheritdoc/>
         public void RaiseEvent(Event e, Guid opGroupId)
         {
-            var stateName = Actor is StateMachine stateMachine ?
-                NameResolver.GetStateNameForLogging(stateMachine.CurrentState.GetType()) : string.Empty;
+            var stateName = NameResolver.GetStateNameForLogging(Actor.CurrentState.GetType());
             var eventOrigin = new EventOriginInfo(Actor.Id, Actor.GetType().FullName, stateName);
             var info = new EventInfo(e, eventOrigin);
             RaisedEvent = (e, opGroupId, info);
-            ActorManager.OnRaiseEvent(e, opGroupId, info);
+            StateMachineManager.OnRaiseEvent(e, opGroupId, info);
         }
 
         /// <inheritdoc/>
@@ -279,11 +277,11 @@ namespace PChecker.Actors.EventQueues.Mocks
             {
                 ReceiveCompletionSource = new TaskCompletionSource<Event>();
                 EventWaitTypes = eventWaitTypes;
-                ActorManager.OnWaitEvent(EventWaitTypes.Keys);
+                StateMachineManager.OnWaitEvent(EventWaitTypes.Keys);
                 return ReceiveCompletionSource.Task;
             }
 
-            ActorManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
+            StateMachineManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
             return Task.FromResult(receivedEvent.e);
         }
 
@@ -320,7 +318,7 @@ namespace PChecker.Actors.EventQueues.Mocks
 
             foreach (var (e, opGroupId, info) in Queue)
             {
-                ActorManager.OnDropEvent(e, opGroupId, info);
+                StateMachineManager.OnDropEvent(e, opGroupId, info);
             }
 
             Queue.Clear();

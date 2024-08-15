@@ -7,7 +7,7 @@ using PChecker.Exceptions;
 namespace PChecker.Actors.Exceptions
 {
     /// <summary>
-    /// Exception that is thrown by the runtime upon an <see cref="Actor"/> action failure.
+    /// Exception that is thrown by the runtime upon an <see cref="StateMachine"/> action failure.
     /// </summary>
     internal sealed class ActionExceptionFilterException : RuntimeException
     {

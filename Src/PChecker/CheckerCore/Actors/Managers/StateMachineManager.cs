@@ -12,7 +12,7 @@ namespace PChecker.Actors.Managers.Mocks
     /// <summary>
     /// Implements a state machine manager that is used during testing.
     /// </summary>
-    internal sealed class StateMachineManager : IActorManager
+    internal sealed class StateMachineManager : IStateMachineManager
     {
         /// <summary>
         /// The runtime that executes the state machine being managed.
@@ -94,7 +94,7 @@ namespace PChecker.Actors.Managers.Mocks
         {
             if (opGroupId != Guid.Empty)
             {
-                // Inherit the operation group id of the receive operation, if it is non-empty.
+                // Inherit the operation group id of the receiving operation, if it is non-empty.
                 OperationGroupId = opGroupId;
             }
 
@@ -107,7 +107,7 @@ namespace PChecker.Actors.Managers.Mocks
         {
             if (opGroupId != Guid.Empty)
             {
-                // Inherit the operation group id of the receive operation, if it is non-empty.
+                // Inherit the operation group id of the receiving operation, if it is non-empty.
                 OperationGroupId = opGroupId;
             }
 

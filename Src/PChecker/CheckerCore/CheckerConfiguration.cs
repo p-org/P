@@ -213,7 +213,7 @@ namespace PChecker
 
         /// <summary>
         /// If specified, requests a DGML graph of the schedule that contains a bug, if a bug is found.
-        /// This is different from a coverage activity graph, as it will also show actor instances.
+        /// This is different from a coverage activity graph, as it will also show state machine instances.
         /// </summary>
         [DataMember]
         public bool IsDgmlGraphEnabled { get; set; }

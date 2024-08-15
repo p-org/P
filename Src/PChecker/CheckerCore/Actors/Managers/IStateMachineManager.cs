@@ -8,22 +8,22 @@ using PChecker.Actors.Events;
 namespace PChecker.Actors.Managers
 {
     /// <summary>
-    /// Interface for managing an actor.
+    /// Interface for managing a state machine.
     /// </summary>
-    internal interface IActorManager
+    internal interface IStateMachineManager
     {
         /// <summary>
-        /// True if the event handler of the actor is running, else false.
+        /// True if the event handler of the state machine is running, else false.
         /// </summary>
         bool IsEventHandlerRunning { get; set; }
 
         /// <summary>
-        /// Id used to identify subsequent operations performed by the actor.
+        /// Id used to identify subsequent operations performed by the state machine.
         /// </summary>
         Guid OperationGroupId { get; set; }
 
         /// <summary>
-        /// Returns the cached state of the actor.
+        /// Returns the cached state of the state machine.
         /// </summary>
         int GetCachedState();
 
@@ -43,33 +43,33 @@ namespace PChecker.Actors.Managers
         bool IsDefaultHandlerAvailable();
 
         /// <summary>
-        /// Notifies the actor that an event has been enqueued.
+        /// Notifies the state machine that an event has been enqueued.
         /// </summary>
         void OnEnqueueEvent(Event e, Guid opGroupId, EventInfo eventInfo);
 
         /// <summary>
-        /// Notifies the actor that an event has been raised.
+        /// Notifies the state machine that an event has been raised.
         /// </summary>
         void OnRaiseEvent(Event e, Guid opGroupId, EventInfo eventInfo);
 
         /// <summary>
-        /// Notifies the actor that it is waiting to receive an event of one of the specified types.
+        /// Notifies the state machine that it is waiting to receive an event of one of the specified types.
         /// </summary>
         void OnWaitEvent(IEnumerable<Type> eventTypes);
 
         /// <summary>
-        /// Notifies the actor that an event it was waiting to receive has been enqueued.
+        /// Notifies the state machine that an event it was waiting to receive has been enqueued.
         /// </summary>
         void OnReceiveEvent(Event e, Guid opGroupId, EventInfo eventInfo);
 
         /// <summary>
-        /// Notifies the actor that an event it was waiting to receive was already in the
-        /// event queue when the actor invoked the receive statement.
+        /// Notifies the state machine that an event it was waiting to receive was already in the
+        /// event queue when the state machine invoked the receiving statement.
         /// </summary>
         void OnReceiveEventWithoutWaiting(Event e, Guid opGroupId, EventInfo eventInfo);
 
         /// <summary>
-        /// Notifies the actor that an event has been dropped.
+        /// Notifies the state machine that an event has been dropped.
         /// </summary>
         void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo);
 

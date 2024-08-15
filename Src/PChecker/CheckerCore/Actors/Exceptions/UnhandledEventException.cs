@@ -7,7 +7,7 @@ using PChecker.Exceptions;
 namespace PChecker.Actors.Exceptions
 {
     /// <summary>
-    /// Signals that an <see cref="Actor"/> received an unhandled event.
+    /// Signals that an <see cref="StateMachine"/> received an unhandled event.
     /// </summary>
     public sealed class UnhandledEventException : RuntimeException
     {

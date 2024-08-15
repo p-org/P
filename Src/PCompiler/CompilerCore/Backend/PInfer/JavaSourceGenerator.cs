@@ -184,7 +184,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             else if (expr is NamedTupleAccessExpr n)
             {
-                return GenerateCodeNamedTupleAccess(n);
+                return GenerateCodeNamedTupleAccess(n, simplified);
             }
             else if (expr is IPredicate)
             {
@@ -193,8 +193,8 @@ namespace Plang.Compiler.Backend.PInfer
             }
             else if (expr is BinOpExpr binOpExpr)
             {
-                var lhs = GenerateCodeExpr(binOpExpr.Lhs);
-                var rhs = GenerateCodeExpr(binOpExpr.Rhs);
+                var lhs = GenerateCodeExpr(binOpExpr.Lhs, simplified);
+                var rhs = GenerateCodeExpr(binOpExpr.Rhs, simplified);
                 return binOpExpr.Operation switch
                 {
                     BinOpType.Add => $"(({lhs}) + ({rhs}))",
@@ -226,11 +226,11 @@ namespace Plang.Compiler.Backend.PInfer
             return $"{GenerateCodeExpr(t.SubExpr)}[{t.FieldNo}]";
         }
 
-        private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n)
+        private string GenerateCodeNamedTupleAccess(NamedTupleAccessExpr n, bool simplified = false)
         {
             // if (n.SubExpr is VariableAccessExpr v && v.Variable is PEventVariable)
             // {
-            return $"{GenerateCodeExpr(n.SubExpr)}.{n.FieldName}";
+            return $"{GenerateCodeExpr(n.SubExpr, simplified)}.{n.FieldName}";
             // }
             // return GenerateJSONObjectGet(GenerateCodeExpr(n.SubExpr), n.FieldName, n.Type.Canonicalize());
         }

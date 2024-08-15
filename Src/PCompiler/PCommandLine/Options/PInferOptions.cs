@@ -158,7 +158,7 @@ namespace Plang.Options
                 }
                 var formatStr = $"| {{0, -5}} | {{1, -{reprLength + 1}}} | {{2, -{eventLength + 1}}} |";
                 CommandLineOutput.WriteInfo("Available Atomic Predicates:");
-                Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Bounded Events"));
+                Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Events"));
                 foreach (var (order, repr, events) in extractInfo)
                 {
                     Console.WriteLine(string.Format(formatStr, order, repr, events));
@@ -189,7 +189,7 @@ namespace Plang.Options
                 }
                 Console.WriteLine("Available Terms:");
                 var formatStr = $"| {{0, -5}} | {{1, -{reprLength + 3}}} | {{2, -{typeLength + 3}}} | {{3, -{eventLength + 3}}} |";
-                Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Type", "Bounded Events"));
+                Console.WriteLine(string.Format(formatStr, "Id", "Repr", "Type", "Events"));
                 foreach (var ((repr, ty, eventTypes), id) in extractInfo.Select((x, i) => (x, i)))
                 {
                     Console.WriteLine(string.Format(formatStr, id, repr, ty, eventTypes));

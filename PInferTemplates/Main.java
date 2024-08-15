@@ -111,7 +111,7 @@ public class Main {
         return boundedEvents.size() == QUANTIFIED_EVENTS;
     }
 
-    private static void specMiningForallOrExists(PredicateEnumerator enumerator,
+    private static int specMiningForallOrExists(PredicateEnumerator enumerator,
                                                  List<RawTerm> terms,
                                                  Map<Set<Integer>, List<RawPredicate>> termsToPredicates,
                                                  MinerConfig minerConfig) throws IOException, InterruptedException {
@@ -157,9 +157,10 @@ public class Main {
         }
         System.out.println("Forall/Exists-only Number of tasks: " + numTasks);
         taskPool.waitForAll();
+        return numTasks;
     }
 
-    private static void specMiningForallExists(List<RawPredicate> predicateList,
+    private static int specMiningForallExists(List<RawPredicate> predicateList,
                                                List<RawTerm> terms,
                                                Map<Set<Integer>, List<RawPredicate>> termsToPredicates,
                                                MinerConfig minerConfig) throws IOException, InterruptedException {
@@ -234,6 +235,7 @@ public class Main {
         }
         System.out.println("Forall-Exists Number of tasks: " + numTasks);
         taskPool.waitForAll();
+        return numTasks;
     }
 
     public static void main(String[] args) throws Exception {
@@ -242,7 +244,7 @@ public class Main {
         try {
             Map<Set<Integer>, List<RawPredicate>> termsToPredicates = getTermsToPredicates(new FileInputStream(minerConfig.atomicPredicatesPath), predicateList);
             List<RawTerm> terms = getTerms(new FileInputStream(minerConfig.termsPath));
-            switch (minerConfig.templateCategory) {
+            int numTasks = switch (minerConfig.templateCategory) {
                 case "Forall" ->
                         specMiningForallOrExists(new PredicateEnumerator(minerConfig.numGuardConjunctions,
                                     predicateList,
@@ -264,17 +266,15 @@ public class Main {
                             termsToPredicates,
                             minerConfig);
             }
-            //System.out.println("Cleaning up...");
-            // for (File f: Objects.requireNonNull(new File(".").listFiles())) {
-            //    if (f.isFile() && 
-            //            (f.getName().endsWith(".inv.gz") || f.getName().endsWith(".dtrace.gz"))) {
-            //        f.delete();
-            //    }
-            // }
+            if (numTasks == 0) {
+                System.exit(1);
+            }
+            System.exit(0);
         } catch (InterruptedException e) {
             System.exit(1);
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
+            System.exit(1);
         }
     }
 }

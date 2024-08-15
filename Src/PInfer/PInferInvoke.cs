@@ -8,7 +8,7 @@ namespace Plang.PInfer
 {
     public class PInferInvoke
     {
-        public static void invokeMain(PInferConfiguration configuration)
+        public static int invokeMain(PInferConfiguration configuration)
         {
             ProcessStartInfo startInfo;
             Process process;
@@ -35,9 +35,10 @@ namespace Plang.PInfer
             {
                 if (file.Name.EndsWith(".inv.gz") || file.Name.EndsWith(".dtrace.gz"))
                 {
-                    file.Delete();
+                   file.Delete();
                 }
             }
+            return process.ExitCode;
         }
 
         private static void ShowConfig(PInferConfiguration config)

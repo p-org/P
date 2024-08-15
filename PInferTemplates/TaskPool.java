@@ -87,6 +87,7 @@ public class TaskPool {
                 pinferOutputStream.write((header + "\n" + body + "\n\n").getBytes());
                 this.numMined += invariants.size();
             }
+            notify();
         }
     }
 
@@ -100,7 +101,6 @@ public class TaskPool {
             running -= 1;
             numFinished += 1;
             _startTasks();
-            notify();
         }
         String guardsStr = t.guardsStr();
         String filtersStr = t.filtersStr();

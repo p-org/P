@@ -20,6 +20,7 @@ using PChecker.Actors.Managers;
 using PChecker.Actors.StateTransitions;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
+using PChecker.SystematicTesting;
 using EventInfo = PChecker.Actors.Events.EventInfo;
 
 
@@ -34,7 +35,7 @@ namespace PChecker.Actors
         /// <summary>
         /// The runtime that executes this state machine.
         /// </summary>
-        internal ActorRuntime Runtime { get; private set; }
+        internal ControlledRuntime Runtime { get; private set; }
 
         /// <summary>
         /// Unique id that identifies this state machine.
@@ -155,7 +156,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Configures the state machine.
         /// </summary>
-        internal void Configure(ActorRuntime runtime, ActorId id, IStateMachineManager manager, IEventQueue inbox)
+        internal void Configure(ControlledRuntime runtime, ActorId id, IStateMachineManager manager, IEventQueue inbox)
         {
             Runtime = runtime;
             Id = id;

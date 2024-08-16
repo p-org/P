@@ -16,6 +16,7 @@ using PChecker.Actors.Handlers;
 using PChecker.Actors.Logging;
 using PChecker.Actors.StateTransitions;
 using PChecker.Exceptions;
+using PChecker.SystematicTesting;
 
 namespace PChecker.Specifications.Monitors
 {
@@ -61,7 +62,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// The runtime that executes this monitor.
         /// </summary>
-        private ActorRuntime Runtime;
+        private ControlledRuntime Runtime;
 
         /// <summary>
         /// The active monitor state.
@@ -172,7 +173,7 @@ namespace PChecker.Specifications.Monitors
         /// Initializes this monitor.
         /// </summary>
         /// <param name="runtime">The runtime that executes this monitor.</param>
-        internal void Initialize(ActorRuntime runtime)
+        internal void Initialize(ControlledRuntime runtime)
         {
             Runtime = runtime;
         }

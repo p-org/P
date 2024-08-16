@@ -4,6 +4,7 @@
 using System;
 using System.Globalization;
 using System.Runtime.Serialization;
+using PChecker.SystematicTesting;
 
 namespace PChecker.Actors
 {
@@ -62,7 +63,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Initializes a new instance of the <see cref="ActorId"/> class.
         /// </summary>
-        internal ActorId(Type type, string name, ActorRuntime runtime, bool useNameForHashing = false)
+        internal ActorId(Type type, string name, ControlledRuntime runtime, bool useNameForHashing = false)
         {
             Runtime = runtime;
             Endpoint = string.Empty;
@@ -97,7 +98,7 @@ namespace PChecker.Actors
         /// <summary>
         /// Bind the actor id.
         /// </summary>
-        internal void Bind(ActorRuntime runtime)
+        internal void Bind(ControlledRuntime runtime)
         {
             Runtime = runtime;
         }

@@ -14,7 +14,7 @@ namespace PChecker.PRuntime
     /// <summary>
     /// This class implements IActorRuntimeLog and generates log output in an XML format.
     /// </summary>
-    public class PJsonFormatter : ActorRuntimeLogJsonFormatter
+    public class PJsonFormatter : PCheckerLogJsonFormatter
     {
 
         /// <summary>

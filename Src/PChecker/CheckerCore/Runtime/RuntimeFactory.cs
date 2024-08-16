@@ -3,6 +3,8 @@
 
 using PChecker.Actors;
 using PChecker.Random;
+using PChecker.SystematicTesting;
+using PChecker.SystematicTesting.Strategies.Probabilistic;
 
 namespace PChecker.Runtime
 {
@@ -66,7 +68,7 @@ namespace PChecker.Runtime
             }
 
             var valueGenerator = new RandomValueGenerator(checkerConfiguration);
-            return new ActorRuntime(checkerConfiguration, valueGenerator);
+            return new ControlledRuntime(checkerConfiguration, valueGenerator);
         }
     }
 }

@@ -6,7 +6,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using PChecker.Actors;
@@ -14,6 +16,7 @@ using PChecker.Actors.EventQueues;
 using PChecker.Actors.EventQueues.Mocks;
 using PChecker.Actors.Events;
 using PChecker.Actors.Exceptions;
+using PChecker.Actors.Logging;
 using PChecker.Actors.Managers;
 using PChecker.Actors.Managers.Mocks;
 using PChecker.Coverage;
@@ -33,8 +36,9 @@ namespace PChecker.SystematicTesting
     /// <summary>
     /// Runtime for controlling asynchronous operations.
     /// </summary>
-    internal sealed class ControlledRuntime : ActorRuntime
+    internal sealed class ControlledRuntime : CoyoteRuntime, IActorRuntime
     {
+        
         /// <summary>
         /// The currently executing runtime.
         /// </summary>
@@ -64,6 +68,38 @@ namespace PChecker.SystematicTesting
         /// The root task id.
         /// </summary>
         internal readonly int? RootTaskId;
+        
+        /// <summary>
+        /// Cache storing state machine constructors.
+        /// </summary>
+        private static readonly Dictionary<Type, Func<StateMachine>> StateMachineConstructorCache =
+            new Dictionary<Type, Func<StateMachine>>();
+        
+        /// <summary>
+        /// Map from unique actor ids to state machines.
+        /// </summary>
+        private readonly ConcurrentDictionary<ActorId, StateMachine> StateMachineMap;
+        
+        /// <summary>
+        /// Callback that is fired when a Coyote event is dropped.
+        /// </summary>
+        public event OnEventDroppedHandler OnEventDropped;
+        
+        /// <summary>
+        /// Responsible for writing to all registered <see cref="IActorRuntimeLog"/> objects.
+        /// </summary>
+        protected internal LogWriter LogWriter { get; private set; }
+
+        /// <summary>
+        /// Used to log text messages. Use <see cref="ICoyoteRuntime.SetLogger"/>
+        /// to replace the logger with a custom one.
+        /// </summary>
+        public override TextWriter Logger => LogWriter.Logger;
+
+        /// <summary>
+        /// Used to log json trace outputs.
+        /// </summary>
+        public JsonWriter JsonLogger => LogWriter.JsonLogger;
 
 
         /// <summary>
@@ -129,6 +165,9 @@ namespace PChecker.SystematicTesting
             IRandomValueGenerator valueGenerator)
             : base(checkerConfiguration, valueGenerator)
         {
+            StateMachineMap = new ConcurrentDictionary<ActorId, StateMachine>();
+            LogWriter = new LogWriter(checkerConfiguration);
+            
             IsExecutionControlled = true;
 
             RootTaskId = Task.CurrentId;
@@ -149,9 +188,41 @@ namespace PChecker.SystematicTesting
             // allowing future retrieval in the same asynchronous call stack.
             AssignAsyncControlFlowRuntime(this);
         }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ControlledRuntime"/> class.
+        /// </summary>
+        internal ControlledRuntime(CheckerConfiguration checkerConfiguration,
+            IRandomValueGenerator valueGenerator)
+            : base(checkerConfiguration, valueGenerator)
+        {
+            StateMachineMap = new ConcurrentDictionary<ActorId, StateMachine>();
+            LogWriter = new LogWriter(checkerConfiguration);
+            
+            IsExecutionControlled = true;
 
-        /// <inheritdoc/>
-        public override ActorId CreateActorIdFromName(Type type, string name)
+            RootTaskId = Task.CurrentId;
+            NameValueToActorId = new ConcurrentDictionary<string, ActorId>();
+
+            CoverageInfo = new CoverageInfo();
+            
+            // Update the current asynchronous control flow with this runtime instance,
+            // allowing future retrieval in the same asynchronous call stack.
+            AssignAsyncControlFlowRuntime(this);
+        }
+        
+        /// <summary>
+        /// Creates a fresh state machine id that has not yet been bound to any state machine.
+        /// </summary>
+        public ActorId CreateActorId(Type type, string name = null) => new ActorId(type, name, this);
+
+        /// <summary>
+        /// Creates an actor id that is uniquely tied to the specified unique name. The
+        /// returned actor id can either be a fresh id (not yet bound to any state machine), or
+        /// it can be bound to a previously created state machine. In the second case, this actor
+        /// id can be directly used to communicate with the corresponding actor.
+        /// </summary>
+        public ActorId CreateActorIdFromName(Type type, string name)
         {
             // It is important that all actor ids use the monotonically incrementing
             // value as the id during testing, and not the unique name.
@@ -159,52 +230,89 @@ namespace PChecker.SystematicTesting
             return NameValueToActorId.GetOrAdd(name, id);
         }
 
-        /// <inheritdoc/>
-        public override ActorId CreateActor(Type type, Event initialEvent = null, Guid opGroupId = default) =>
+        /// <summary>
+        /// Creates a new state machine of the specified <see cref="Type"/> and with the specified
+        /// optional <see cref="Event"/>. This event can only be used to access its payload,
+        /// and cannot be handled.
+        /// </summary>
+        public ActorId CreateActor(Type type, Event initialEvent = null, Guid opGroupId = default) =>
             CreateActor(null, type, null, initialEvent, opGroupId);
 
-        /// <inheritdoc/>
-        public override ActorId CreateActor(Type type, string name, Event initialEvent = null, Guid opGroupId = default) =>
+        /// <summary>
+        /// Creates a new state machine of the specified <see cref="Type"/> and name, and with the
+        /// specified optional <see cref="Event"/>. This event can only be used to access
+        /// its payload, and cannot be handled.
+        /// </summary>
+        public ActorId CreateActor(Type type, string name, Event initialEvent = null, Guid opGroupId = default) =>
             CreateActor(null, type, name, initialEvent, opGroupId);
 
-        /// <inheritdoc/>
-        public override ActorId CreateActor(ActorId id, Type type, Event initialEvent = null, Guid opGroupId = default)
+        /// <summary>
+        /// Creates a new state machine of the specified type, using the specified <see cref="ActorId"/>.
+        /// This method optionally passes an <see cref="Event"/> to the new state machine, which can only
+        /// be used to access its payload, and cannot be handled.
+        /// </summary>
+        public ActorId CreateActor(ActorId id, Type type, Event initialEvent = null, Guid opGroupId = default)
         {
             Assert(id != null, "Cannot create an actor using a null actor id.");
             return CreateActor(id, type, null, initialEvent, opGroupId);
         }
 
-        /// <inheritdoc/>
-        public override Task<ActorId> CreateActorAndExecuteAsync(Type type, Event e = null, Guid opGroupId = default) =>
+        /// <summary>
+        /// Creates a new state machine of the specified <see cref="Type"/> and with the specified
+        /// optional <see cref="Event"/>. This event can only be used to access its payload,
+        /// and cannot be handled. The method returns only when the state machine is initialized and
+        /// the <see cref="Event"/> (if any) is handled.
+        /// </summary>
+        public Task<ActorId> CreateActorAndExecuteAsync(Type type, Event e = null, Guid opGroupId = default) =>
             CreateActorAndExecuteAsync(null, type, null, e, opGroupId);
 
-        /// <inheritdoc/>
-        public override Task<ActorId> CreateActorAndExecuteAsync(Type type, string name, Event e = null, Guid opGroupId = default) =>
+        /// <summary>
+        /// Creates a new state machine of the specified <see cref="Type"/> and name, and with the
+        /// specified optional <see cref="Event"/>. This event can only be used to access
+        /// its payload, and cannot be handled. The method returns only when the state machine is
+        /// initialized and the <see cref="Event"/> (if any) is handled.
+        /// </summary>
+        public Task<ActorId> CreateActorAndExecuteAsync(Type type, string name, Event e = null, Guid opGroupId = default) =>
             CreateActorAndExecuteAsync(null, type, name, e, opGroupId);
 
-        /// <inheritdoc/>
-        public override Task<ActorId> CreateActorAndExecuteAsync(ActorId id, Type type, Event e = null, Guid opGroupId = default)
+        /// <summary>
+        /// Creates a new state machine of the specified <see cref="Type"/>, using the specified unbound
+        /// state machine id, and passes the specified optional <see cref="Event"/>. This event can only
+        /// be used to access its payload, and cannot be handled. The method returns only when
+        /// the state machine is initialized and the <see cref="Event"/> (if any)
+        /// is handled.
+        /// </summary>
+        public Task<ActorId> CreateActorAndExecuteAsync(ActorId id, Type type, Event e = null, Guid opGroupId = default)
         {
             Assert(id != null, "Cannot create an actor using a null actor id.");
             return CreateActorAndExecuteAsync(id, type, null, e, opGroupId);
         }
 
-        /// <inheritdoc/>
-        public override void SendEvent(ActorId targetId, Event e, Guid opGroupId = default)
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a state machine.
+        /// </summary>
+        public void SendEvent(ActorId targetId, Event e, Guid opGroupId = default)
         {
             var senderOp = Scheduler.GetExecutingOperation<ActorOperation>();
             SendEvent(targetId, e, senderOp?.Actor, opGroupId);
         }
 
-        /// <inheritdoc/>
-        public override Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Guid opGroupId = default)
+        /// <summary>
+        /// Sends an <see cref="Event"/> to a state machine. Returns immediately if the target was already
+        /// running. Otherwise, blocks until the target handles the event and reaches quiescence.
+        /// </summary>
+        public Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, Guid opGroupId = default)
         {
             var senderOp = Scheduler.GetExecutingOperation<ActorOperation>();
             return SendEventAndExecuteAsync(targetId, e, senderOp?.Actor, opGroupId);
         }
 
-        /// <inheritdoc/>
-        public override Guid GetCurrentOperationGroupId(ActorId currentActorId)
+        /// <summary>
+        /// Returns the operation group id of the state machine with the specified id. Returns <see cref="Guid.Empty"/>
+        /// if the id is not set, or if the <see cref="ActorId"/> is not associated with this runtime. During
+        /// testing, the runtime asserts that the specified state machine is currently executing.
+        /// </summary>
+        public Guid GetCurrentOperationGroupId(ActorId currentActorId)
         {
             var callerOp = Scheduler.GetExecutingOperation<ActorOperation>();
             Assert(callerOp != null && currentActorId == callerOp.Actor.Id,
@@ -288,13 +396,16 @@ namespace PChecker.SystematicTesting
             return CreateActor(id, type, name, initialEvent, creatorOp?.Actor, opGroupId);
         }
 
-        /// <inheritdoc/>
-        internal override ActorId CreateActor(ActorId id, Type type, string name, Event initialEvent, StateMachine creator,
+        /// <summary>
+        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/>.
+        /// </summary>
+        internal ActorId CreateActor(ActorId id, Type type, string name, Event initialEvent, StateMachine creator,
             Guid opGroupId)
         {
             AssertExpectedCallerActor(creator, "CreateActor");
 
             var actor = CreateActor(id, type, name, creator, opGroupId);
+            LogWriter.LogCreateStateMachine(actor.Id, creator?.Id.Name, creator?.Id.Type);
             RunActorEventHandler(actor, initialEvent, true, null);
             return actor.Id;
         }
@@ -312,8 +423,12 @@ namespace PChecker.SystematicTesting
             return CreateActorAndExecuteAsync(id, type, name, initialEvent, creatorOp?.Actor, opGroupId);
         }
 
-        /// <inheritdoc/>
-        internal override async Task<ActorId> CreateActorAndExecuteAsync(ActorId id, Type type, string name,
+        /// <summary>
+        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/>. The method
+        /// returns only when the state machine is initialized and the <see cref="Event"/> (if any)
+        /// is handled.
+        /// </summary>
+        internal async Task<ActorId> CreateActorAndExecuteAsync(ActorId id, Type type, string name,
             Event initialEvent, StateMachine creator, Guid opGroupId)
         {
             AssertExpectedCallerActor(creator, "CreateActorAndExecuteAsync");
@@ -329,7 +444,7 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Creates a new actor of the specified <see cref="Type"/>.
+        /// Creates a new state machine of the specified <see cref="Type"/>.
         /// </summary>
         private StateMachine CreateActor(ActorId id, Type type, string name, StateMachine creator, Guid opGroupId)
         {
@@ -361,7 +476,7 @@ namespace PChecker.SystematicTesting
                 opGroupId = creator.OperationGroupId;
             }
 
-            var actor = StateMachineFactory.Create(type);
+            var actor = Create(type);
             IStateMachineManager stateMachineManager = new StateMachineManager(this, actor, opGroupId);
 
             IEventQueue eventQueue = new EventQueue(stateMachineManager, actor);
@@ -379,9 +494,38 @@ namespace PChecker.SystematicTesting
 
             return actor;
         }
+        
+        /// <summary>
+        /// Creates a new <see cref="StateMachine"/> instance of the specified type.
+        /// </summary>
+        /// <param name="type">The type of the state machines.</param>
+        /// <returns>The created state machine instance.</returns>
+        public static StateMachine Create(Type type)
+        {
+            Func<StateMachine> constructor = null;
+            lock (StateMachineConstructorCache)
+            {
+                if (!StateMachineConstructorCache.TryGetValue(type, out constructor))
+                {
+                    var constructorInfo = type.GetConstructor(Type.EmptyTypes);
+                    if (constructorInfo == null)
+                    {
+                        throw new Exception("Could not find empty constructor for type " + type.FullName);
+                    }
 
-        /// <inheritdoc/>
-        internal override void SendEvent(ActorId targetId, Event e, StateMachine sender, Guid opGroupId)
+                    constructor = Expression.Lambda<Func<StateMachine>>(
+                        Expression.New(constructorInfo)).Compile();
+                    StateMachineConstructorCache.Add(type, constructor);
+                }
+            }
+
+            return constructor();
+        }
+
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a state machine.
+        /// </summary>
+        internal void SendEvent(ActorId targetId, Event e, StateMachine sender, Guid opGroupId)
         {
             if (e is null)
             {
@@ -409,8 +553,11 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
-        internal override async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, StateMachine sender,
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a state machine. Returns immediately if the target was
+        /// already running. Otherwise, blocks until the target handles the event and reaches quiescence.
+        /// </summary>
+        internal async Task<bool> SendEventAndExecuteAsync(ActorId targetId, Event e, StateMachine sender,
             Guid opGroupId)
         {
             Assert(e != null, "{0} is sending a null event.", sender.Id);
@@ -765,6 +912,15 @@ namespace PChecker.SystematicTesting
             LogWriter.LogRandom(choice, callerName ?? caller?.Id.Name, callerType ?? caller?.Id.Type);
             return choice;
         }
+        
+        /// <summary>
+        /// Gets the actor of type <typeparamref name="TActor"/> with the specified id,
+        /// or null if no such actor exists.
+        /// </summary>
+        private TActor GetActorWithId<TActor>(ActorId id)
+            where TActor : StateMachine =>
+            id != null && StateMachineMap.TryGetValue(id, out var value) &&
+            value is TActor actor ? actor : null;
 
         /// <summary>
         /// Gets the <see cref="IAsyncOperation"/> that is executing on the current
@@ -798,15 +954,19 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyInvokedAction(StateMachine actor, MethodInfo action, string handlingStateName,
+        /// <summary>
+        /// Notifies that a state machine invoked an action.
+        /// </summary>
+        internal void NotifyInvokedAction(StateMachine actor, MethodInfo action, string handlingStateName,
             string currentStateName, Event receivedEvent)
         {
             LogWriter.LogExecuteAction(actor.Id, handlingStateName, currentStateName, action.Name);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyDequeuedEvent(StateMachine actor, Event e, EventInfo eventInfo)
+        /// <summary>
+        /// Notifies that a state machine dequeued an <see cref="Event"/>.
+        /// </summary>
+        internal void NotifyDequeuedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
 
@@ -826,41 +986,55 @@ namespace PChecker.SystematicTesting
             LogWriter.LogDequeueEvent(actor.Id, stateName, e);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyDefaultEventDequeued(StateMachine actor)
+        /// <summary>
+        /// Notifies that a state machine dequeued the default <see cref="Event"/>.
+        /// </summary>
+        internal void NotifyDefaultEventDequeued(StateMachine actor)
         {
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
             ResetProgramCounter(actor);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyDefaultEventHandlerCheck(StateMachine actor)
+        /// <summary>
+        /// Notifies that the inbox of the specified state machine is about to be
+        /// checked to see if the default event handler should fire.
+        /// </summary>
+        internal void NotifyDefaultEventHandlerCheck(StateMachine actor)
         {
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Default);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyRaisedEvent(StateMachine actor, Event e, EventInfo eventInfo)
+        /// <summary>
+        /// Notifies that a state machine raised an <see cref="Event"/>.
+        /// </summary>
+        internal void NotifyRaisedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor.CurrentStateName;
             LogWriter.LogRaiseEvent(actor.Id, stateName, e);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyHandleRaisedEvent(StateMachine actor, Event e)
+        /// <summary>
+        /// Notifies that a state machine is handling a raised <see cref="Event"/>.
+        /// </summary>
+        internal void NotifyHandleRaisedEvent(StateMachine actor, Event e)
         {
             var stateName = actor.CurrentStateName;
             LogWriter.LogHandleRaisedEvent(actor.Id, stateName, e);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyReceiveCalled(StateMachine actor)
+        /// <summary>
+        /// Notifies that a state machine called <see cref="StateMachine.ReceiveEventAsync(Type[])"/>
+        /// or one of its overloaded methods.
+        /// </summary>
+        internal void NotifyReceiveCalled(StateMachine actor)
         {
             AssertExpectedCallerActor(actor, "ReceiveEventAsync");
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyReceivedEvent(StateMachine actor, Event e, EventInfo eventInfo)
+        /// <summary>
+        /// Notifies that a state machine enqueued an event that it was waiting to receive.
+        /// </summary>
+        internal void NotifyReceivedEvent(StateMachine actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor.CurrentStateName;
             LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: true);
@@ -868,8 +1042,11 @@ namespace PChecker.SystematicTesting
             op.OnReceivedEvent();
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyReceivedEventWithoutWaiting(StateMachine actor, Event e, EventInfo eventInfo)
+        /// <summary>
+        /// Notifies that a state machine received an event without waiting because the event
+        /// was already in the inbox when the state machine invoked the receiving statement.
+        /// </summary>
+        internal void NotifyReceivedEventWithoutWaiting(StateMachine actor, Event e, EventInfo eventInfo)
         {
             var stateName = actor.CurrentStateName;
             LogWriter.LogReceiveEvent(actor.Id, stateName, e, wasBlocked: false);
@@ -877,8 +1054,10 @@ namespace PChecker.SystematicTesting
             ResetProgramCounter(actor);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyWaitTask(StateMachine actor, Task task)
+        /// <summary>
+        /// Notifies that a state machine is waiting for the specified task to complete.
+        /// </summary>
+        internal void NotifyWaitTask(StateMachine actor, Task task)
         {
             Assert(task != null, "{0} is waiting for a null task to complete.", actor.Id);
 
@@ -894,8 +1073,10 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyWaitEvent(StateMachine actor, IEnumerable<Type> eventTypes)
+        /// <summary>
+        /// Notifies that a state machine is waiting to receive an event of one of the specified types.
+        /// </summary>
+        internal void NotifyWaitEvent(StateMachine actor, IEnumerable<Type> eventTypes)
         {
             var stateName = actor.CurrentStateName;
             var op = Scheduler.GetOperationWithId<ActorOperation>(actor.Id.Value);
@@ -915,59 +1096,111 @@ namespace PChecker.SystematicTesting
             ResetProgramCounter(actor);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyEnteredState(StateMachine stateMachine)
+        /// <summary>
+        /// Notifies that a state machine entered a state.
+        /// </summary>
+        internal void NotifyEnteredState(StateMachine stateMachine)
         {
             var stateName = stateMachine.CurrentStateName;
             LogWriter.LogStateTransition(stateMachine.Id, stateName, isEntry: true);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyExitedState(StateMachine stateMachine)
+        /// <summary>
+        /// Notifies that a state machine exited a state.
+        /// </summary>
+        internal void NotifyExitedState(StateMachine stateMachine)
         {
             LogWriter.LogStateTransition(stateMachine.Id, stateMachine.CurrentStateName, isEntry: false);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyInvokedOnEntryAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
+        /// <summary>
+        /// Notifies that a state machine invoked an action.
+        /// </summary>
+        internal void NotifyInvokedOnEntryAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
         {
             var stateName = stateMachine.CurrentStateName;
             LogWriter.LogExecuteAction(stateMachine.Id, stateName, stateName, action.Name);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyInvokedOnExitAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
+        /// <summary>
+        /// Notifies that a state machine invoked an action.
+        /// </summary>
+        internal void NotifyInvokedOnExitAction(StateMachine stateMachine, MethodInfo action, Event receivedEvent)
         {
             var stateName = stateMachine.CurrentStateName;
             LogWriter.LogExecuteAction(stateMachine.Id, stateName, stateName, action.Name);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyEnteredState(Monitor monitor)
+        /// <summary>
+        /// Notifies that a monitor entered a state.
+        /// </summary>
+        internal void NotifyEnteredState(Monitor monitor)
         {
             var monitorState = monitor.CurrentStateName;
             LogWriter.LogMonitorStateTransition(monitor.GetType().FullName, monitorState, true, monitor.GetHotState());
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyExitedState(Monitor monitor)
+        /// <summary>
+        /// Notifies that a monitor exited a state.
+        /// </summary>
+        internal void NotifyExitedState(Monitor monitor)
         {
             LogWriter.LogMonitorStateTransition(monitor.GetType().FullName,
                 monitor.CurrentStateName, false, monitor.GetHotState());
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyInvokedAction(Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
+        /// <summary>
+        /// Notifies that a monitor invoked an action.
+        /// </summary>
+        internal void NotifyInvokedAction(Monitor monitor, MethodInfo action, string stateName, Event receivedEvent)
         {
             LogWriter.LogMonitorExecuteAction(monitor.GetType().FullName, stateName, action.Name);
         }
 
-        /// <inheritdoc/>
-        internal override void NotifyRaisedEvent(Monitor monitor, Event e)
+        /// <summary>
+        /// Notifies that a monitor raised an <see cref="Event"/>.
+        /// </summary>
+        internal void NotifyRaisedEvent(Monitor monitor, Event e)
         {
             var monitorState = monitor.CurrentStateName;
             LogWriter.LogMonitorRaiseEvent(monitor.GetType().FullName, monitorState, e);
         }
+        
+        /// <summary>
+        /// Notifies that a monitor found an error.
+        /// </summary>
+        internal void NotifyMonitorError(Monitor monitor)
+        {
+            if (CheckerConfiguration.IsVerbose)
+            {
+                var monitorState = monitor.CurrentStateNameWithTemperature;
+                LogWriter.LogMonitorError(monitor.GetType().FullName, monitorState, monitor.GetHotState());
+            }
+        }
+        
+        /// <summary>
+        /// Tries to handle the specified dropped <see cref="Event"/>.
+        /// </summary>
+        internal void TryHandleDroppedEvent(Event e, ActorId id) => OnEventDropped?.Invoke(e, id);
+        
+        /// <inheritdoc/>
+        public override TextWriter SetLogger(TextWriter logger) => LogWriter.SetLogger(logger);
+
+        /// <summary>
+        /// Sets the JsonLogger in LogWriter.cs
+        /// </summary>
+        /// <param name="jsonLogger">jsonLogger instance</param>
+        public void SetJsonLogger(JsonWriter jsonLogger) => LogWriter.SetJsonLogger(jsonLogger);
+        
+        /// <summary>
+        /// Use this method to register an <see cref="IActorRuntimeLog"/>.
+        /// </summary>
+        public void RegisterLog(IActorRuntimeLog log) => LogWriter.RegisterLog(log);
+
+        /// <summary>
+        /// Use this method to unregister a previously registered <see cref="IActorRuntimeLog"/>.
+        /// </summary>
+        public void RemoveLog(IActorRuntimeLog log) => LogWriter.RemoveLog(log);
 
         /// <summary>
         /// Get the coverage graph information (if any). This information is only available
@@ -1132,6 +1365,7 @@ namespace PChecker.SystematicTesting
             if (disposing)
             {
                 Monitors.Clear();
+                StateMachineMap.Clear();
             }
 
             base.Dispose(disposing);

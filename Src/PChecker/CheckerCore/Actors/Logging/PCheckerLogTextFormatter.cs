@@ -12,7 +12,7 @@ namespace PChecker.Actors.Logging
     /// <summary>
     /// This class implements IActorRuntimeLog and generates output in a a human readable text format.
     /// </summary>
-    public class ActorRuntimeLogTextFormatter : IActorRuntimeLog
+    public class PCheckerLogTextFormatter : IActorRuntimeLog
     {
         /// <summary>
         /// Get or set the TextWriter to write to.
@@ -20,9 +20,9 @@ namespace PChecker.Actors.Logging
         public TextWriter Logger { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActorRuntimeLogTextFormatter"/> class.
+        /// Initializes a new instance of the <see cref="PCheckerLogTextFormatter"/> class.
         /// </summary>
-        public ActorRuntimeLogTextFormatter()
+        public PCheckerLogTextFormatter()
         {
             Logger = new ConsoleLogger();
         }

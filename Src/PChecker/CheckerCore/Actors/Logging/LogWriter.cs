@@ -549,7 +549,7 @@ namespace PChecker.Actors.Logging
             {
                 Logger = TextWriter.Null;
 
-                var textLog = GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
+                var textLog = GetLogsOfType<PCheckerLogTextFormatter>().FirstOrDefault();
                 if (textLog != null)
                 {
                     textLog.Logger = Logger;
@@ -573,9 +573,9 @@ namespace PChecker.Actors.Logging
         /// <param name="jsonLogger">The jsonLogger instance created from runtime before running tests.</param>
         internal void SetJsonLogger(JsonWriter jsonLogger) => JsonLogger = jsonLogger;
 
-        private ActorRuntimeLogTextFormatter GetOrCreateTextLog()
+        private PCheckerLogTextFormatter GetOrCreateTextLog()
         {
-            var textLog = GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
+            var textLog = GetLogsOfType<PCheckerLogTextFormatter>().FirstOrDefault();
             if (textLog == null)
             {
                 if (Logger == null)
@@ -583,7 +583,7 @@ namespace PChecker.Actors.Logging
                     Logger = new ConsoleLogger();
                 }
 
-                textLog = new ActorRuntimeLogTextFormatter
+                textLog = new PCheckerLogTextFormatter
                 {
                     Logger = Logger
                 };
@@ -605,9 +605,9 @@ namespace PChecker.Actors.Logging
             }
 
             // Make sure we only have one text logger
-            if (log is ActorRuntimeLogTextFormatter a)
+            if (log is PCheckerLogTextFormatter a)
             {
-                var textLog = GetLogsOfType<ActorRuntimeLogTextFormatter>().FirstOrDefault();
+                var textLog = GetLogsOfType<PCheckerLogTextFormatter>().FirstOrDefault();
                 if (textLog != null)
                 {
                     Logs.Remove(textLog);
@@ -619,9 +619,9 @@ namespace PChecker.Actors.Logging
                 }
             }
 
-            // If log is or of subclass ActorRuntimeLogJsonFormatter (i.e. when log is PJsonFormatter),
+            // If log is or of subclass PCheckerLogJsonFormatter (i.e. when log is PJsonFormatter),
             // update the Writer reference to the JsonLogger instance defined within LogWriter.cs
-            if (log is ActorRuntimeLogJsonFormatter tempJsonFormatter)
+            if (log is PCheckerLogJsonFormatter tempJsonFormatter)
             {
                 tempJsonFormatter.Writer = JsonLogger;
             }

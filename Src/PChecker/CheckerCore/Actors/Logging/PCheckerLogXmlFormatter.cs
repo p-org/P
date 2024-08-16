@@ -12,12 +12,12 @@ namespace PChecker.Actors.Logging
     /// <summary>
     /// This class implements IActorRuntimeLog and generates log output in an XML format.
     /// </summary>
-    internal class ActorRuntimeLogXmlFormatter : IActorRuntimeLog
+    internal class PCheckerLogXmlFormatter : IActorRuntimeLog
     {
         private readonly XmlWriter Writer;
         private bool Closed;
 
-        public ActorRuntimeLogXmlFormatter(XmlWriter writer)
+        public PCheckerLogXmlFormatter(XmlWriter writer)
         {
             Writer = writer;
             Writer.WriteStartElement("Log");

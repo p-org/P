@@ -9,7 +9,7 @@ namespace PChecker.Actors.Logging
     /// <summary>
     /// This class implements IActorRuntimeLog and generates log output in an XML format.
     /// </summary>
-    public class ActorRuntimeLogJsonFormatter : IActorRuntimeLog
+    public class PCheckerLogJsonFormatter : IActorRuntimeLog
     {
         /// <summary>
         /// Get or set the JsonWriter to write to.
@@ -17,9 +17,9 @@ namespace PChecker.Actors.Logging
         public JsonWriter Writer { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActorRuntimeLogJsonFormatter"/> class.
+        /// Initializes a new instance of the <see cref="PCheckerLogJsonFormatter"/> class.
         /// </summary>
-        protected ActorRuntimeLogJsonFormatter()
+        protected PCheckerLogJsonFormatter()
         {
             Writer = new JsonWriter();
         }

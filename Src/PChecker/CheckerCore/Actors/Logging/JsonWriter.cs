@@ -557,7 +557,7 @@ namespace PChecker.Actors.Logging
 
         /// <summary>
         /// Enum representing the different log types the JSON error trace logs.
-        /// Referenced from PLogFormatter.cs and ActorRuntimeLogTextFormatter.cs
+        /// Referenced from PLogFormatter.cs and PCheckerLogTextFormatter.cs
         /// to see what those formatter logs. Check IActorRuntimeLog.cs to see
         /// each log types' description and when they are invoked.
         /// </summary>

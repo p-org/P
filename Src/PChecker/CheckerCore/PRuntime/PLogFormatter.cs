@@ -10,7 +10,7 @@ namespace PChecker.PRuntime
     /// <summary>
     ///     Formatter for the runtime log.
     /// </summary>
-    public class PLogFormatter : ActorRuntimeLogTextFormatter
+    public class PLogFormatter : PCheckerLogTextFormatter
     {
         public PLogFormatter() : base()
         {

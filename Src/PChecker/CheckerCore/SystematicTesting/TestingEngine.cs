@@ -805,7 +805,7 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.IsXmlLogEnabled)
             {
                 XmlLog = new StringBuilder();
-                runtime.RegisterLog(new ActorRuntimeLogXmlFormatter(XmlWriter.Create(XmlLog,
+                runtime.RegisterLog(new PCheckerLogXmlFormatter(XmlWriter.Create(XmlLog,
                     new XmlWriterSettings() { Indent = true, IndentChars = "  ", OmitXmlDeclaration = true })));
             }
         }

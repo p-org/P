@@ -36,6 +36,32 @@ namespace Plang.Compiler.Backend.PInfer
             hint = h;
         }
 
+        public int GetPredicateId(IPExpr expr, ICompilerConfiguration job)
+        {
+            if (PredicateOrder.ContainsKey(expr))
+            {
+                return PredicateOrder[expr];
+            }
+            JavaCodegen codegen = new(job, "", Predicates, VisitedSet, FreeEvents);
+            // foreach (var k in PredicateOrder.Keys)
+            // {
+            //     Console.WriteLine(codegen.GenerateCodeExpr(k, true));
+            //     var o = PredicateOrder[k];
+            //     Console.WriteLine(o);
+            // }
+            throw new Exception($"{codegen.GenerateCodeExpr(expr, true)} not in enumerated predicates!");
+        }
+
+        public int MaxArity()
+        {
+            int result = 1;
+            foreach (var p in Predicates)
+            {
+                result = Math.Max(result, FreeEvents[p].Count);
+            }
+            return result;
+        }
+
         public void Compile(ICompilerConfiguration job)
         {
             string stdout;
@@ -45,10 +71,10 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 throw new Exception($"Failed to compile Java code: {stdout} {stderr}");
             }
-            job.Output.WriteInfo($"{stdout}");
+            // job.Output.WriteInfo($"{stdout}");
         }
 
-        public void reset()
+        public void Reset()
         {
             Terms.Clear();
             VisitedSet.Clear();
@@ -59,6 +85,8 @@ namespace Plang.Compiler.Backend.PInfer
             PredicateBoundedTerm.Clear();
             PredicateOrder.Clear();
             Contradictions.Clear();
+            PredicateStore.Reset();
+            FunctionStore.Reset();
         }
 
         public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -85,7 +113,7 @@ namespace Plang.Compiler.Backend.PInfer
             FunctionStore.Initialize();
             CompilationContext ctx = new(job);
             Java.CompilationContext javaCtx = new(job);
-            var eventDefSource = new EventDefGenerator(job, Java.Constants.EventDefnFileName, quantifiedEvents, configEvent).GenerateCode(javaCtx, globalScope);
+            var eventDefSource = new EventDefGenerator(job, Constants.EventDefnFileName, quantifiedEvents, configEvent).GenerateCode(javaCtx, globalScope);
             AggregateFunctions(hint);
             AggregateDefinedPredicates(hint);
             PopulateEnumCmpPredicates(globalScope);
@@ -93,15 +121,15 @@ namespace Plang.Compiler.Backend.PInfer
             var termDepth = hint.TermDepth.Value;
             var indexType = PInferBuiltinTypes.Index;
             var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
-            foreach ((var eventInst, var order) in quantifiedEvents.Select((x, i) => (x, i))) {
-                var eventAtom = new PEventVariable($"e{i}")
-                {
-                    Type = eventInst.PayloadType,
-                    EventDecl = eventInst,
-                    Order = order
-                };
+            foreach (var eventAtom in hint.Quantified) {
+                // var eventAtom = new PEventVariable($"e{i}")
+                // {
+                //     Type = eventInst.PayloadType,
+                //     EventDecl = eventInst,
+                //     Order = order
+                // };
                 var expr = new VariableAccessExpr(null, eventAtom);
-                AddTerm(0, expr,  [eventAtom]);
+                AddTerm(0, expr, [eventAtom]);
                 foreach (var (e, w) in TryMkTupleAccess(expr).Concat(TryMakeNamedTupleAccess(expr)))
                 {
                     AddTerm(0, e, w);
@@ -155,18 +183,18 @@ namespace Plang.Compiler.Backend.PInfer
                 List<MacroPredicate> predicateGroup = [];
                 foreach (var elem in enumDecl.Values)
                 {
-                    MacroPredicate enumCmpPred = new($"enumCmp_{enumDecl.Name}_{elem.Name}", Notation.Prefix, (args, types, names) => {
-                        return $"({args[0]} == {Constants.TypesNamespaceName}.{enumDecl.Name}.{elem.Name})";
+                    MacroPredicate enumCmpPred = new($"enumCmp_{enumDecl.Name}_{elem.Name}", Notation.Prefix, (args) => {
+                        return new BinOpExpr(null, BinOpType.Eq, args[0], new EnumElemRefExpr(null, elem));
                     }, ty);
                     PredicateStore.AddBuiltinPredicate(enumCmpPred, predicateGroup);
                     predicateGroup.Add(enumCmpPred);
                 }
             }
-            MacroPredicate isTrueCmp = new("IsTrue", Notation.Prefix, (args, types, names) => {
-                return $"({args[0]})";
+            MacroPredicate isTrueCmp = new("IsTrue", Notation.Prefix, (args) => {
+                return args[0];
             }, PrimitiveType.Bool);
-            MacroPredicate isFalseCmp = new("IsFalse", Notation.Prefix, (args, types, names) => {
-                return $"(!{args[0]})";
+            MacroPredicate isFalseCmp = new("IsFalse", Notation.Prefix, (args) => {
+                return args[0];
             }, PrimitiveType.Bool);
             PredicateStore.AddBuiltinPredicate(isTrueCmp, [isFalseCmp]);
             PredicateStore.AddBuiltinPredicate(isFalseCmp, [isTrueCmp]);
@@ -269,7 +297,7 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     var events = GetUnboundedEventsMultiple(parameters.ToArray());
                     var param = parameters.ToList();
-                    if (PredicateCallExpr.MkPredicateCall(pred, param, out PredicateCallExpr expr)){
+                    if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
                         FreeEvents[expr] = events;
                         PredicateOrder[expr] = Predicates.Count;
                         Contradictions[expr] = new HashSet<IPExpr>(new ASTComparer());
@@ -588,6 +616,7 @@ namespace Plang.Compiler.Backend.PInfer
                 SequenceType sequenceType => $"Seq<{ShowType(sequenceType.ElementType)}>",
                 SetType setType => $"Set<{ShowType(setType.ElementType)}>",
                 MapType mapType => $"Map<{ShowType(mapType.KeyType)}, {ShowType(mapType.ValueType)}>",
+                EnumType enumType => $"Enum<{enumType.EnumDecl.Name}>",
                 _ => $"{type}",
             };
         }

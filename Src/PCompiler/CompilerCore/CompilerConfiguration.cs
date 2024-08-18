@@ -29,6 +29,11 @@ namespace Plang.Compiler
             MaxFilters = 2;
             PInferAction = PInferAction.Compile;
             HintName = null;
+            Verbose = false;
+            ConfigEvent = null;
+            TraceFolder = null;
+            // Max level by default
+            PInferPruningLevel = 3;
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null, bool debug = false)
@@ -85,6 +90,10 @@ namespace Plang.Compiler
         public int MaxFilters { get; set; }
         public PInferAction PInferAction { get; set; }
         public string HintName { get; set; }
+        public string ConfigEvent { get; set; }
+        public string TraceFolder { get; set; }
+        public bool Verbose { get; set; }
+        public int PInferPruningLevel { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)
         {

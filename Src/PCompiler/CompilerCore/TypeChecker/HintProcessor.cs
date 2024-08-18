@@ -156,8 +156,8 @@ namespace Plang.Compiler.TypeChecker
                 {
                     switch (bodyItemCtx.field.GetText())
                     {
-                        case "forall":
-                            hint.ForallQuantifiers = GetIntLiteral(bodyItemCtx);
+                        case "exists":
+                            hint.ExistentialQuantifiers = GetIntLiteral(bodyItemCtx);
                             break;
                         case "arity":
                             hint.Arity = GetIntLiteral(bodyItemCtx);

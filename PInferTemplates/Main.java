@@ -265,7 +265,8 @@ public class Main {
                             terms,
                             termsToPredicates,
                             minerConfig);
-            }
+                default -> 0;
+            };
             if (numTasks == 0) {
                 System.exit(1);
             }

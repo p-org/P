@@ -32,12 +32,12 @@ public class TaskPool {
             d.mkdir();
         }
         File pinferOutputFile = new File(String.valueOf(Paths.get("PInferOutputs", filename)));
-        if (pinferOutputFile.exists()) {
-            pinferOutputFile.delete();
-        }
+        // if (pinferOutputFile.exists()) {
+        //     pinferOutputFile.delete();
+        // }
         pinferOutputFile.createNewFile();
         this.outputFile = pinferOutputFile;
-        this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile));
+        this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile, true));
         this.startTime = System.currentTimeMillis();
     }
 

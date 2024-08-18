@@ -8,7 +8,7 @@ namespace Plang.Compiler
 {
     public enum PInferAction
     {
-        Compile, RunHint, Auto
+        Compile, RunHint, Auto, Interactive
     }
 
     public interface ICompilerConfiguration
@@ -31,5 +31,9 @@ namespace Plang.Compiler
         public int MaxFilters { get; set; }
         string HintName { get; }
         PInferAction PInferAction { get; }
+        public int PInferPruningLevel { get; }
+        public string ConfigEvent { get; }
+        public string TraceFolder { get; }
+        bool Verbose { get; }
     }
 }

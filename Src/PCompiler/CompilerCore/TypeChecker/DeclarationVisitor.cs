@@ -616,7 +616,7 @@ namespace Plang.Compiler.TypeChecker
             PParser.HintParamContext[] eventList = context.hintParamList().hintParam();
             if (eventList != null)
             {
-                foreach (PParser.HintParamContext ctx in eventList)
+                foreach (var (ctx, i) in eventList.Select((x, i) => (x, i)))
                 {
                     if (!CurrentScope.Lookup(ctx.eventName.GetText(), out PEvent e))
                     {
@@ -627,7 +627,7 @@ namespace Plang.Compiler.TypeChecker
                     {
                         v.Type = e.PayloadType;
                     }
-                    hint.Quantified.Add(new Backend.PInfer.PEventVariable(ctx.name.GetText()) { EventDecl = e });
+                    hint.Quantified.Add(new Backend.PInfer.PEventVariable(ctx.name.GetText()) { EventDecl = e, Order = i, Type = e.PayloadType });
                 }
                 return hint;
             }

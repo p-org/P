@@ -40,12 +40,16 @@ namespace Plang.Options
 
             if (pinferCompiler) {
                 var pInferGroup = Parser.GetOrCreateGroup("pinfer", "Options for PInfer");
-                // pInferGroup.AddArgument("quantified-events", "qe", "Events to be quantified over in generated predicates").IsMultiValue = true;
                 pInferGroup.AddArgument("max-term-depth", "td", "Max depth of terms in the predicates");
                 pInferGroup.AddArgument("max-guards-predicates", "max-guards", "Max. number of atomic predicates in guards");
                 pInferGroup.AddArgument("max-filters-predicates", "max-filters", "Max. number of atomic predicates in filters");
-                var hintName = pInferGroup.AddArgument("hint", "hint", "Name of the hint to compile/run");
-                hintName.IsRequired = true;
+                pInferGroup.AddArgument("hint", "hint", "Name of the hint to compile/run");
+                pInferGroup.AddArgument("verbose", "v", "Print Stderr of SpecMiner", typeof(bool)).IsRequired = false;
+                pInferGroup.AddArgument("pruning-level", "pl", "Pruning level for SpecMiner post-processing (default: 3)", typeof(int)).IsRequired = false;
+                pInferGroup.AddArgument("config-event", "ce", "Name of the event that announce the system setup. This will replace all hints that do not have config event specified");
+                pInferGroup.AddArgument("traces", "t", "Folder that contains aggregated trace files and metadata.json");
+                // book-keeping, not used
+                pInferGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto)").IsHidden = true;
             }
 
             var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately, pinfer). (default: bugfinding)");
@@ -218,6 +222,15 @@ namespace Plang.Options
                 case "hint":
                     compilerConfiguration.HintName = (string)option.Value;
                     break;
+                case "verbose":
+                    compilerConfiguration.Verbose = true;
+                    break;
+                case "config-event":
+                    compilerConfiguration.ConfigEvent = (string)option.Value;
+                    break;
+                case "traces":
+                    compilerConfiguration.TraceFolder = (string) option.Value;
+                    break;
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;
                     break;
@@ -236,6 +249,9 @@ namespace Plang.Options
                         }
                     }
                 }
+                    break;
+                case "action":
+                    // handled earlier in PInferOptions
                     break;
                 case "pproj":
                 {

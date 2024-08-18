@@ -27,8 +27,8 @@ namespace Plang.Options
             var verboseMode = minerConfigGroup.AddArgument("verbose", "verbose", "Verbose mode, print stderr of Daikon (default: false)", typeof(bool));
             var tracesOpt = minerConfigGroup.AddArgument("traces", "t", "Path to the trace files");
             var pruningLevel = minerConfigGroup.AddArgument("pruning-level", "pl", "Pruning level (default: 3)", typeof(int));
-            minerConfigGroup.AddArgument("compile", "compile", "Compile for a specific event combination", typeof(bool));
-            minerConfigGroup.AddArgument("auto", "auto", "Automatic mining mode", typeof(bool));
+            var actionSet = minerConfigGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto)");
+            actionSet.AllowedValues = ["compile", "run", "auto"];
 
             stOpt.IsRequired = false;
             ngOpt.IsRequired = false;
@@ -57,6 +57,7 @@ namespace Plang.Options
             pInferGroup.AddArgument("max-guards-predicates", "max-guards", "Max. number of atomic predicates in guards").IsHidden = true;
             pInferGroup.AddArgument("max-filters-predicates", "max-filters", "Max. number of atomic predicates in filters").IsHidden = true;
             pInferGroup.AddArgument("hint", "hint", "Name of the hint to compile/run").IsHidden = true;
+            pInferGroup.AddArgument("config-event", "ce", "Name of the event that announce the system setup. This will replace all hints that do not have config event specified").IsHidden = true;
         }
         
         internal PInferConfiguration Parse(string[] args)
@@ -144,14 +145,17 @@ namespace Plang.Options
                 case "pruning-level":
                     config.PruningLevel = (int) arg.Value;
                     break;
-                case "interactive":
-                    config.Mode = PInferMode.Interactive;
-                    break;
-                case "compile":
-                    config.Mode = PInferMode.Compile;
-                    break;
-                case "auto":
-                    config.Mode = PInferMode.Auto;
+                case "action":
+                    if (config.Mode == PInferMode.Interactive)
+                    {
+                        CommandLineOutput.WriteWarning($"[WARN] Overriding interactive mode with {(string)arg.Value}");
+                    }
+                    switch ((string)arg.Value)
+                    {
+                        case "compile": config.Mode = PInferMode.Compile; break;
+                        case "run":     config.Mode = PInferMode.RunHint; break;
+                        case "auto":    config.Mode = PInferMode.Auto;    break;
+                    }
                     break;
             }
         }

@@ -203,6 +203,8 @@ namespace Plang.Compiler.Backend.PInfer
             }
             forallTermTypes.Sort(TypeNameCmp);
             existsTermTypes.Sort(TypeNameCmp);
+            if (numForall == 0 && forallTermTypes.Count > 0) return;
+            if (numExists == 0 && existsTermTypes.Count > 0) return;
             string templateName = GenerateTemplateName(numForall, numExists, forallTermTypes, existsTermTypes);
             if (TemplateNames.Contains(templateName))
             {

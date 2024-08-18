@@ -2,7 +2,7 @@ namespace Plang.PInfer
 {
     public enum PInferMode
     {
-        Compile, Interactive, Auto
+        Compile, Interactive, Auto, RunHint
     }
 
     public class PInferConfiguration

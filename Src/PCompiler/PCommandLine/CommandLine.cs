@@ -245,12 +245,41 @@ namespace Plang
             return r;
         }
 
-        public static void RunPInfer(string[] args)
+        public static bool DoPInferAction(PInferMode mode, string[] args)
         {
-            var configuration = new PInferOptions().Parse(args);
+            if (!(mode == PInferMode.Compile || mode == PInferMode.Auto || mode == PInferMode.RunHint))
+            {
+                return false;
+            }
             HashSet<string> pinferModeOptions = [
                 "--interactive", "-i", "--compile", "--auto"
             ];
+            CompilerConfiguration compileConfig = new PCompilerOptions(true).Parse(args.Where(x => {
+                return !pinferModeOptions.Contains(x);
+            }).ToArray());
+            ICompiler compiler = new Compiler.Compiler();
+            compileConfig.OutputLanguages = [CompilerOutput.PInfer];
+            switch (mode)
+            {
+                case PInferMode.Compile: compileConfig.PInferAction = PInferAction.Compile; break;
+                case PInferMode.RunHint: compileConfig.PInferAction = PInferAction.RunHint; break;
+                case PInferMode.Auto:    compileConfig.PInferAction = PInferAction.Auto; break;
+            }
+            if ((mode == PInferMode.Compile || mode == PInferMode.RunHint) && compileConfig.HintName == null)
+            {
+                Error.ReportAndExit("[Error] `compile` and `run` requires a hint name");
+            }
+            if ((mode == PInferMode.Auto || mode == PInferMode.RunHint) && compileConfig.TraceFolder == null)
+            {
+                Error.ReportAndExit("[Error] `auto` and `run` requires an aggregated trace folder");
+            }
+            compiler.Compile(compileConfig);
+            return true;
+        }
+
+        public static void RunPInfer(string[] args)
+        {
+            var configuration = new PInferOptions().Parse(args);
             if (configuration.Mode == PInferMode.Interactive)
             {
                 // Interactive mode
@@ -290,22 +319,11 @@ namespace Plang
                 step += 1;
                 configuration.SkipTrivialCombinations = (bool) GetInputOrDefault(step++, "Skip trivial guard-filter-terms combinations? [y]/n", typeof(bool), true, x => true);
             }
-            if (configuration.Mode == PInferMode.Compile)
-            {
-                CompilerConfiguration compileConfig = new PCompilerOptions(true).Parse(args.Where(x => {
-                    return !pinferModeOptions.Contains(x);
-                }).ToArray());
-                ICompiler compiler = new Compiler.Compiler();
-                compileConfig.OutputLanguages = [CompilerOutput.PInfer];
-                compiler.Compile(compileConfig);
-                return;
-            }
-            if (configuration.Mode == PInferMode.Auto)
-            {
-                return;
-            }
             // fall-through
-            PInferInvoke.invokeMain(configuration);
+            if (!DoPInferAction(configuration.Mode, args))
+            {
+                PInfer.PInferInvoke.invokeMain(configuration);
+            }
         }
     }
 }

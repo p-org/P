@@ -210,6 +210,17 @@ namespace Plang.Compiler.Backend.PInfer
                     _ => throw new Exception($"Unsupported BinOp Operatoion: {binOpExpr.Operation}"),
                 };
             }
+            else if(expr is EnumElemRefExpr refExpr)
+            {
+                if (simplified)
+                {
+                    return $"{refExpr.Value.Name}";
+                }
+                else
+                {
+                    return $"{Types.JavaTypeFor(refExpr.Type).TypeName}.{refExpr.Value.Name}";
+                }
+            }
             else
             {
                 throw new Exception($"Unsupported expression type {expr.GetType()}");
@@ -241,8 +252,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 if (p.Predicate is MacroPredicate macro)
                 {
-                    string[] macroArgs = p.Arguments.Select(x => GenerateCodeExpr(x, simplified)).ToArray();
-                    return macro.GenerateUnfoldedCall(macroArgs, Types, Names);
+                    throw new Exception($"Unexpected MacroPredicate {macro.Name}: should be unfolded already!");
                 }
                 else 
                 {
@@ -334,7 +344,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 return $"{eVar.Name}.getPayload()";
             }
-            return v.Name;
+            return $"{v.Name}.payload";
         }
     }
 }

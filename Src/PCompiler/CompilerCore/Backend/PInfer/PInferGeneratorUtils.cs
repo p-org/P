@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Misc;
 using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -24,7 +25,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return false;
             }
-            if (!x.Type.Equals(y.Type))
+            if (!x.Type.IsAssignableFrom(y.Type) || !y.Type.IsAssignableFrom(x.Type))
             {
                 return false;
             }
@@ -32,6 +33,8 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 case (VariableAccessExpr ex, VariableAccessExpr ey):
                     return ex.Variable.Name.Equals(ey.Variable.Name);
+                case (EnumElemRefExpr ex, EnumElemRefExpr ey):
+                    return ex.Value.Name.Equals(ey.Value.Name);
                 case (IntLiteralExpr ex, IntLiteralExpr ey):
                     return ex.Value == ey.Value;
                 case (BoolLiteralExpr ex, BoolLiteralExpr ey):
@@ -67,9 +70,11 @@ namespace Plang.Compiler.Backend.PInfer
             switch (obj)
             {
                 case VariableAccessExpr ex:
-                    return (ex.Variable.Name, PInferPredicateGenerator.ShowType(ex.Type)).GetHashCode();
+                    return ex.Variable.Name.GetHashCode();
                 case IntLiteralExpr ex:
                     return ex.Value.GetHashCode();
+                case EnumElemRefExpr e:
+                    return e.Value.GetHashCode();
                 case BoolLiteralExpr ex:
                     return ex.Value.GetHashCode();
                 case FloatLiteralExpr ex:
@@ -155,17 +160,16 @@ namespace Plang.Compiler.Backend.PInfer
             Predicate = predicate;
         }
 
-        public static bool MkEqualityComparison(IPExpr lhs, IPExpr rhs, out PredicateCallExpr predicateCallExpr)
+        public static bool MkEqualityComparison(IPExpr lhs, IPExpr rhs, out IPExpr predicateCallExpr)
         {
             if (lhs.Type is Index && rhs.Type is Index) {
                 predicateCallExpr = null;
                 return false;
             }
-            predicateCallExpr = new PredicateCallExpr(PredicateStore.EqPredicate, [lhs, rhs]);
-            return true;
+            return MkPredicateCall(PredicateStore.EqPredicate, [lhs, rhs], out predicateCallExpr);
         }
 
-        public static bool MkPredicateCall(string predicateName, IReadOnlyList<IPExpr> arguments, out PredicateCallExpr predicateCall)
+        public static bool MkPredicateCall(string predicateName, IReadOnlyList<IPExpr> arguments, out IPExpr predicateCall)
         {
             // Console.WriteLine($"Mk predicate call with {predicateName} and {string.Join(", ", arguments.Select(x => x.Type).ToList())}");
             if (predicateName.Equals("==") && MkEqualityComparison(arguments[0], arguments[1], out predicateCall))
@@ -180,7 +184,7 @@ namespace Plang.Compiler.Backend.PInfer
             return false;
         }
 
-        public static bool MkPredicateCall(IPredicate predicate, IReadOnlyList<IPExpr> arguments, out PredicateCallExpr predicateCall)
+        public static bool MkPredicateCall(IPredicate predicate, IReadOnlyList<IPExpr> arguments, out IPExpr predicateCall)
         {
             predicateCall = null;
             if (predicate.Function.Signature.Parameters.Count != arguments.Count)
@@ -193,6 +197,11 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     return false;
                 }
+            }
+            if (predicate is MacroPredicate macro)
+            {
+                predicateCall = macro.Unfold([.. arguments]);
+                return true;
             }
             predicateCall = new PredicateCallExpr(predicate, arguments);
             return true;
@@ -224,15 +233,15 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class MacroPredicate : BuiltinPredicate
     {
-        private Func<string[], TypeManager, NameManager, string> UnfoldMacro;
-        internal MacroPredicate(string name, Notation notation, Func<string[], TypeManager, NameManager, string> unfold, params PLanguageType[] signature) : base(name, notation, signature)
+        private Func<IPExpr[], IPExpr> UnfoldMacro;
+        internal MacroPredicate(string name, Notation notation, Func<IPExpr[], IPExpr> unfold, params PLanguageType[] signature) : base(name, notation, signature)
         {
             UnfoldMacro = unfold;
         }
 
-        internal string GenerateUnfoldedCall(string[] args, TypeManager types, NameManager names)
+        internal IPExpr Unfold(IPExpr[] parameters)
         {
-            return UnfoldMacro(args, types, names);
+            return UnfoldMacro(parameters);
         }
     }
 
@@ -362,26 +371,34 @@ namespace Plang.Compiler.Backend.PInfer
     public static class PredicateStore
     {
         private static readonly Dictionary<List<PLanguageType>, Dictionary<string, IPredicate>> _Store = new Dictionary<List<PLanguageType>, Dictionary<string, IPredicate>>(new SignatureComparer());
-        public static readonly IPredicate EqPredicate = new BuiltinPredicate("==", Notation.Infix, PrimitiveType.Any, PrimitiveType.Any);
-        private static readonly Dictionary<IPredicate, HashSet<IPredicate>> ContraditionsMap = new Dictionary<IPredicate, HashSet<IPredicate>>(new ASTComparer());
+        public static readonly IPredicate EqPredicate = new MacroPredicate("==", Notation.Infix, args => {
+            return new BinOpExpr(null, BinOpType.Eq, args[0], args[1]);
+        }, [PrimitiveType.Any, PrimitiveType.Any]);
+        private static readonly Dictionary<IPredicate, HashSet<IPredicate>> ContradictionsMap = new Dictionary<IPredicate, HashSet<IPredicate>>(new ASTComparer());
 
         private static void MarkContradition(IPredicate p1, IPredicate p2)
         {
-            if (!ContraditionsMap.ContainsKey(p1))
+            if (!ContradictionsMap.ContainsKey(p1))
             {
-                ContraditionsMap.Add(p1, new HashSet<IPredicate>());
+                ContradictionsMap.Add(p1, new HashSet<IPredicate>());
             }
-            if (!ContraditionsMap.ContainsKey(p2))
+            if (!ContradictionsMap.ContainsKey(p2))
             {
-                ContraditionsMap.Add(p2, new HashSet<IPredicate>());
+                ContradictionsMap.Add(p2, new HashSet<IPredicate>());
             }
-            ContraditionsMap[p1].Add(p2);
-            ContraditionsMap[p2].Add(p1);
+            ContradictionsMap[p1].Add(p2);
+            ContradictionsMap[p2].Add(p1);
+        }
+
+        public static void Reset()
+        {
+            _Store.Clear();
+            ContradictionsMap.Clear();
         }
         
         public static IEnumerable<IPredicate> GetContradictions(IPredicate predicate)
         {
-            if (ContraditionsMap.TryGetValue(predicate, out var contradictions))
+            if (ContradictionsMap.TryGetValue(predicate, out var contradictions))
             {
                 return contradictions;
             }
@@ -402,14 +419,14 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        public static BuiltinPredicate AddBuiltinPredicate(string name, Notation notation, IEnumerable<IPredicate> contraditions, params PLanguageType[] argTypes)
+        public static MacroPredicate AddBuiltinPredicate(string name, Notation notation, Func<IPExpr[], IPExpr> unfold, IEnumerable<IPredicate> contraditions, params PLanguageType[] argTypes)
         {
             var parameterTypes = argTypes.ToList();
             if (!_Store.ContainsKey(parameterTypes))
             {
                 _Store.Add(parameterTypes, []);
             }
-            var pred = new BuiltinPredicate(name, notation, argTypes);
+            var pred = new MacroPredicate(name, notation, unfold, argTypes);
             _Store[parameterTypes].Add(name, pred);
             foreach (var c in contraditions)
             {
@@ -439,8 +456,8 @@ namespace Plang.Compiler.Backend.PInfer
                                                 new MapType(PrimitiveType.Any, PrimitiveType.Any)];
             foreach (var numType in numericTypes)
             {
-                var ltPred = AddBuiltinPredicate("<", Notation.Infix, [EqPredicate], numType, numType);
-                AddBuiltinPredicate(">", Notation.Infix, [ltPred, EqPredicate], numType, numType);
+                var ltPred = AddBuiltinPredicate("<", Notation.Infix, args => new BinOpExpr(null, BinOpType.Lt, args[0], args[1]), [EqPredicate], numType, numType);
+                AddBuiltinPredicate(">", Notation.Infix, args => new BinOpExpr(null, BinOpType.Gt, args[0], args[1]) ,[ltPred, EqPredicate], numType, numType);
                 // AddBuiltinPredicate("==", Notation.Infix, numType, numType);
             }
         }
@@ -474,6 +491,11 @@ namespace Plang.Compiler.Backend.PInfer
                 _Store.Add(parameterTypes, []);
             }
             _Store[parameterTypes].Add(func.Name, func);
+        }
+
+        public static void Reset()
+        {
+            _Store.Clear();
         }
 
         public static void Initialize() {

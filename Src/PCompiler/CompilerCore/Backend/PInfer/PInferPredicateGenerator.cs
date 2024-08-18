@@ -15,6 +15,7 @@ namespace Plang.Compiler.Backend.PInfer
     {
 
         public bool HasCompilationStage => true;
+        public Hint hint = null;
 
         public PInferPredicateGenerator()
         {
@@ -30,6 +31,11 @@ namespace Plang.Compiler.Backend.PInfer
             Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(comparer);
         }
 
+        public void WithHint(Hint h)
+        {
+            hint = h;
+        }
+
         public void Compile(ICompilerConfiguration job)
         {
             string stdout;
@@ -42,52 +48,49 @@ namespace Plang.Compiler.Backend.PInfer
             job.Output.WriteInfo($"{stdout}");
         }
 
+        public void reset()
+        {
+            Terms.Clear();
+            VisitedSet.Clear();
+            Predicates.Clear();
+            FreeEvents.Clear();
+            TermOrder.Clear();
+            OrderToTerm.Clear();
+            PredicateBoundedTerm.Clear();
+            PredicateOrder.Clear();
+            Contradictions.Clear();
+        }
+
         public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
-            if (!job.TermDepth.HasValue)
+            if (hint == null)
             {
-                throw new Exception("Term depth not specified for predicate enumeration");
-            }
-            if (job.QuantifiedEvents == null)
-            {
-                throw new Exception("Quantified events not specified for predicate enumeration");
+                throw new Exception("No search space configuration provided");
             }
 
             var quantifiedEvents = new List<PEvent>();
-            foreach (var ename in job.QuantifiedEvents)
+            foreach (var qe in hint.Quantified)
             {
-                if (globalScope.Get(ename, out PEvent e))
-                {
-                    quantifiedEvents.Add(e);
-                }
-                else
-                {
-                    throw new Exception($"Event {ename} not defined in global scope");
-                }
+                quantifiedEvents.Add(qe.EventDecl);
             }
-            PEvent configEvent = null;
-            if (job.ConfigEvent != null)
+
+            if (quantifiedEvents.Count == 0)
             {
-                if (globalScope.Get(job.ConfigEvent, out PEvent e))
-                {
-                    configEvent = e;
-                }
-                else
-                {
-                    throw new Exception($"Event {job.ConfigEvent} not defined in global scope");
-                }
+                throw new Exception($"No event being quantified in hint space: {hint.Name}");
             }
+
+            PEvent configEvent = hint.ConfigEvent;
             Constants.PInferModeOn();
             PredicateStore.Initialize();
             FunctionStore.Initialize();
             CompilationContext ctx = new(job);
             Java.CompilationContext javaCtx = new(job);
             var eventDefSource = new EventDefGenerator(job, Java.Constants.EventDefnFileName, quantifiedEvents, configEvent).GenerateCode(javaCtx, globalScope);
-            AggregateFunctions(job.CustomFunctions, globalScope);
-            AggregateDefinedPredicates(job.CustomPredicates, globalScope);
+            AggregateFunctions(hint);
+            AggregateDefinedPredicates(hint);
             PopulateEnumCmpPredicates(globalScope);
             var i = 0;
-            var termDepth = job.TermDepth.Value;
+            var termDepth = hint.TermDepth.Value;
             var indexType = PInferBuiltinTypes.Index;
             var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
             foreach ((var eventInst, var order) in quantifiedEvents.Select((x, i) => (x, i))) {
@@ -509,65 +512,24 @@ namespace Plang.Compiler.Backend.PInfer
             return false;
         }
 
-        private void AggregateDefinedPredicates(List<string> predicates, Scope globalScope) {
-            Dictionary<string, HashSet<IPredicate>> contradictionSet = []; 
-            contradictionSet["Eq"] = [PredicateStore.EqPredicate];
-            foreach (var name in predicates)
+        private static void AggregateDefinedPredicates(Hint h) {
+            foreach (var f in h.CustomPredicates)
             {
-                var funcName = name;
-                List<string> contradictions = [];
-                if (name.Contains(':'))
-                {
-                    var split = name.Split(":");
-                    funcName = split[0];
-                    contradictions = [.. split[1].Split(",")];
-                }
-                if (GetFunction(funcName, globalScope, out Function pred))
-                {
-                    if (pred.Signature.ReturnType.Equals(PrimitiveType.Bool))
-                    {
-                        // PredicateStore.Store.Add(new DefinedPredicate(pred));
-                        List<IPredicate> contraPredicates = contradictions.SelectMany(x => {
-                            if (contradictionSet.TryGetValue(x, out var s)) {
-                                return s;
-                            }
-                            return [];
-                        }).ToList();
-                        var definedPred = new DefinedPredicate(pred);
-                        PredicateStore.AddPredicate(definedPred, contraPredicates);
-                        foreach (var c in contradictions)
-                        {
-                            if (!contradictionSet.TryGetValue(c, out HashSet<IPredicate> value))
-                            {
-                                value = [];
-                                contradictionSet.Add(c, value);
-                            }
-                            value.Add(definedPred);
-                        }
-                    }
-                    else
-                    {
-                        throw new Exception($"Predicate {funcName} should have return type `bool` ({pred.Signature.ReturnType} is returned)");
-                    }
-                }
-                else
-                {
-                    throw new Exception($"Predicate {funcName} is not defined");
-                }
+                // TODO handle the following either here or at PredicateStore
+                // + Tautologies:
+                //      - Reflexivity
+                //      - Transitivity
+                //      - Symmetry
+                // + Subsumption
+                // + Contradiction
+                PredicateStore.AddPredicate(new DefinedPredicate(f), []);
             }
         }
 
-        private static void AggregateFunctions(List<string> functions, Scope globalScope) {
-            foreach (var name in functions)
+        private static void AggregateFunctions(Hint h) {
+            foreach (var f in h.CustomFunctions)
             {
-                if (globalScope.Get(name, out Function function))
-                {
-                    FunctionStore.AddFunction(function);
-                }
-                else
-                {
-                    throw new Exception($"Function {name} not found");
-                }
+                FunctionStore.AddFunction(f);
             }
         }
 

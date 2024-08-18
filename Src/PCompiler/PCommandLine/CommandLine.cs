@@ -8,6 +8,7 @@ using PChecker.Scheduling;
 using Plang.Compiler;
 using Plang.Options;
 using Plang.PInfer;
+using Plang.Compiler.Backend;
 
 namespace Plang
 {
@@ -247,7 +248,10 @@ namespace Plang
         public static void RunPInfer(string[] args)
         {
             var configuration = new PInferOptions().Parse(args);
-            if (configuration.Interactive)
+            HashSet<string> pinferModeOptions = [
+                "--interactive", "-i", "--compile", "--auto"
+            ];
+            if (configuration.Mode == PInferMode.Interactive)
             {
                 // Interactive mode
                 Console.WriteLine("============PInfer Interactive Miner Setup============");
@@ -286,6 +290,21 @@ namespace Plang
                 step += 1;
                 configuration.SkipTrivialCombinations = (bool) GetInputOrDefault(step++, "Skip trivial guard-filter-terms combinations? [y]/n", typeof(bool), true, x => true);
             }
+            if (configuration.Mode == PInferMode.Compile)
+            {
+                CompilerConfiguration compileConfig = new PCompilerOptions(true).Parse(args.Where(x => {
+                    return !pinferModeOptions.Contains(x);
+                }).ToArray());
+                ICompiler compiler = new Compiler.Compiler();
+                compileConfig.OutputLanguages = [CompilerOutput.PInfer];
+                compiler.Compile(compileConfig);
+                return;
+            }
+            if (configuration.Mode == PInferMode.Auto)
+            {
+                return;
+            }
+            // fall-through
             PInferInvoke.invokeMain(configuration);
         }
     }

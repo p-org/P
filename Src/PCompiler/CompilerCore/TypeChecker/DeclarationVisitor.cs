@@ -605,6 +605,55 @@ namespace Plang.Compiler.TypeChecker
 
         #endregion
 
+        #region Hints
+        
+        public override object VisitHintDecl(PParser.HintDeclContext context)
+        {
+            
+            var hint = (Hint) nodesToDeclarations.Get(context);
+            hint.Scope = CurrentScope.MakeChildScope();
+
+            PParser.HintParamContext[] eventList = context.hintParamList().hintParam();
+            if (eventList != null)
+            {
+                foreach (PParser.HintParamContext ctx in eventList)
+                {
+                    if (!CurrentScope.Lookup(ctx.eventName.GetText(), out PEvent e))
+                    {
+                        throw Handler.MissingDeclaration(ctx, "event", ctx.eventName.GetText());
+                    }
+                    hint.Scope.Put(ctx.name.GetText(), ctx.name, VariableRole.Param);
+                    if (hint.Scope.Lookup(ctx.name.GetText(), out Variable v))
+                    {
+                        v.Type = e.PayloadType;
+                    }
+                    hint.Quantified.Add(new Backend.PInfer.PEventVariable(ctx.name.GetText()) { EventDecl = e });
+                }
+                return hint;
+            }
+            PParser.HintBodyContext[] hintBodyDecls = context.hintBody();
+            // process function defs first; other defs will be processed later
+            foreach (var ctx in hintBodyDecls)
+            {
+                if (ctx.funDecl() != null)
+                {
+                    Function fun = (Function) Visit(ctx.funDecl());
+                    hint.Scope.Put(fun.Name, ctx.funDecl());
+                    if (fun.Signature.ReturnType.IsAssignableFrom(PrimitiveType.Bool))
+                    {
+                        hint.CustomPredicates.Add(fun);
+                    }
+                    else
+                    {
+                        hint.CustomFunctions.Add(fun);
+                    }
+                }
+            }
+            throw new Exception($"Hint {hint.Name} does not have any hinted events");
+        }
+
+        #endregion
+
         #region Functions
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)

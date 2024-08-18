@@ -6,6 +6,7 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
 using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler
 {
@@ -59,6 +60,11 @@ namespace Plang.Compiler
                 job.OutputDirectory = Directory.CreateDirectory(Path.Combine(parentDirectory.FullName, entry.ToString()));
                 job.Output = new DefaultCompilerOutput(job.OutputDirectory);
                 job.Backend = TargetLanguage.GetCodeGenerator(entry);
+                if (entry == CompilerOutput.PInfer)
+                {
+                    PInferProcedures(job, scope);
+                    continue;
+                }
 
                 job.Output.WriteInfo($"----------------------------------------");
                 job.Output.WriteInfo($"Code generation for {entry}...");
@@ -99,6 +105,41 @@ namespace Plang.Compiler
 
             Environment.ExitCode = 0;
             return Environment.ExitCode;
+        }
+
+        public static void CompilePInferHint(ICompilerConfiguration job, Scope globalScope, Hint hint)
+        {
+            
+        }
+
+        public static void PInferProcedures(ICompilerConfiguration job, Scope globalScope)
+        {
+            Hint givenHint = null;
+            if (job.PInferAction == PInferAction.Compile || job.PInferAction == PInferAction.RunHint)
+            {
+                string availableHints = "";
+                foreach (var hint in globalScope.Hints)
+                {
+                    availableHints += "- " + hint.Name + "\n";
+                }
+                if (job.HintName == null)
+                {
+                    job.Output.WriteError($"[Error] No hint provided. Available hints:\n{availableHints}");
+                    Environment.Exit(1);
+                }
+                if (!globalScope.Get(job.HintName, out givenHint))
+                {
+                    job.Output.WriteWarning($"Hint \"{job.HintName}\" not found. Available hints:\n{availableHints}");
+                    Environment.Exit(1);
+                }
+            }
+            switch (job.PInferAction)
+            {
+                case PInferAction.Compile:
+                    CompilePInferHint(job, globalScope, givenHint);
+                    break;
+                // case 
+            }
         }
 
         private static PParser.ProgramContext Parse(ICompilerConfiguration job, FileInfo inputFile)

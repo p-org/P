@@ -18,9 +18,9 @@ namespace Plang.Options
         /// <summary>
         /// Initializes a new instance of the <see cref="PCompilerOptions"/> class.
         /// </summary>
-        internal PCompilerOptions()
+        internal PCompilerOptions(bool pinferCompiler = false)
         {
-            Parser = new CommandLineArgumentParser("p compile",
+            Parser = new CommandLineArgumentParser(pinferCompiler ? "p infer --compile" : "p compile",
                 "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker."
                 // + "\n\nCompiler modes :: (default: bugfinding)\n" +
                 // "  --mode bugfinding   : for bug finding through stratified random search\n" +
@@ -38,17 +38,15 @@ namespace Plang.Options
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
-            var pInferGroup = Parser.GetOrCreateGroup("pinfer", "Options for PInfer predicate enumeration");
-            pInferGroup.AddArgument("quantified-events", "qe", "Events to be quantified over in generated predicates").IsMultiValue = true;
-            pInferGroup.AddArgument("term-depth", "td", "Max depth of terms in the predicates");
-            var customPreds= pInferGroup.AddArgument("custom-predicates", "cp", "User-defined predicates in the P Model. Must have a return type of `bool`");
-            var customFuncs = pInferGroup.AddArgument("custom-functions", "cf", "User-defined functions");
-            var configEvent = pInferGroup.AddArgument("config-event", "ce", "An event that carries with system configuration (optional)");
-            configEvent.IsRequired = false;
-            customPreds.IsMultiValue = true;
-            customPreds.IsRequired = false;
-            customFuncs.IsMultiValue = true;
-            customFuncs.IsRequired = false;
+            if (pinferCompiler) {
+                var pInferGroup = Parser.GetOrCreateGroup("pinfer", "Options for PInfer");
+                // pInferGroup.AddArgument("quantified-events", "qe", "Events to be quantified over in generated predicates").IsMultiValue = true;
+                pInferGroup.AddArgument("max-term-depth", "td", "Max depth of terms in the predicates");
+                pInferGroup.AddArgument("max-guards-predicates", "max-guards", "Max. number of atomic predicates in guards");
+                pInferGroup.AddArgument("max-filters-predicates", "max-filters", "Max. number of atomic predicates in filters");
+                var hintName = pInferGroup.AddArgument("hint", "hint", "Name of the hint to compile/run");
+                hintName.IsRequired = true;
+            }
 
             var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately, pinfer). (default: bugfinding)");
             modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately", "pinfer" };
@@ -105,7 +103,7 @@ namespace Plang.Options
             return compilerConfiguration;
         }
 
-        public static void FindLocalPProject(List<CommandLineArgument> result)
+        public static void FindLocalPProject(List<CommandLineArgument> result, bool verbose = true)
         {
             foreach (var arg in result)
             {
@@ -113,7 +111,10 @@ namespace Plang.Options
                     return;
             }
 
-            CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
+            if (verbose)
+            {
+                CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
+            }
             var filtered =
                 from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj")
                 let info = new FileInfo(file)
@@ -131,7 +132,10 @@ namespace Plang.Options
                 commandlineArg.Value = files.First();
                 commandlineArg.LongName = "pproj";
                 commandlineArg.ShortName = "pp";
-                CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
+                if (verbose)
+                {
+                    CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
+                }
                 result.Add(commandlineArg);
             }
         }
@@ -196,30 +200,23 @@ namespace Plang.Options
                             compilerConfiguration.OutputLanguages.Add(CompilerOutput.Stately);
                             break;
                         case "pinfer":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PInfer);
-                            break;
+                            // compilerConfiguration.OutputLanguages.Add(CompilerOutput.PInfer);
+                            throw new Exception ($"Deprecated. Use `p infer --compile <args>` instead");
                         default:
                             throw new Exception($"Unexpected mode: '{option.Value}'");
                     }
                     break;
-                case "quantified-events":
-                    var events = (string[])option.Value;
-                    // Console.WriteLine($"quantified-events: {events.Length}");
-                    compilerConfiguration.QuantifiedEvents = [.. events];
-                    break;
-                case "custom-predicates":
-                    var preds = (string[])option.Value;
-                    compilerConfiguration.CustomPredicates = [.. preds];
-                    break;
-                case "custom-functions":
-                    var funcs = (string[])option.Value;
-                    compilerConfiguration.CustomFunctions = [.. funcs];
-                    break;
-                case "term-depth":
+                case "max-term-depth":
                     compilerConfiguration.TermDepth = int.Parse((string)option.Value);
                     break;
-                case "config-event":
-                    compilerConfiguration.ConfigEvent = (string)option.Value;
+                case "max-guards-predicates":
+                    compilerConfiguration.MaxGuards = int.Parse((string)option.Value);
+                    break;
+                case "max-filters-predicates":
+                    compilerConfiguration.MaxFilters = int.Parse((string)option.Value);
+                    break;
+                case "hint":
+                    compilerConfiguration.HintName = (string)option.Value;
                     break;
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;
@@ -287,9 +284,9 @@ namespace Plang.Options
 
             if (compilerConfiguration.OutputLanguages.Contains(CompilerOutput.PInfer))
             {
-                if (compilerConfiguration.TermDepth == null)
+                if (compilerConfiguration.HintName == null)
                 {
-                    Error.CompilerReportAndExit("Predicate inference requires a term depth to be specified.");
+                    Error.CompilerReportAndExit("PInfer compilation/execution requires a hint to be specified via `--hint`.");
                 }
             }
         }

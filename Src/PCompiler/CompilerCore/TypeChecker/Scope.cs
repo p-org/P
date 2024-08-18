@@ -31,6 +31,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
+        private readonly IDictionary<string, Hint> hints = new Dictionary<string, Hint>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -79,6 +80,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
+        public IEnumerable<Hint> Hints => hints.Values;
 
         public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
@@ -133,6 +135,11 @@ namespace Plang.Compiler.TypeChecker
         #endregion Add Tuple Declaration
 
         #region Overloaded getters
+
+        public bool Get(string name, out Hint hint)
+        {
+            return hints.TryGetValue(name, out hint);
+        }
 
         public bool Get(string name, out EnumElem tree)
         {
@@ -449,6 +456,14 @@ namespace Plang.Compiler.TypeChecker
         #endregion Overloaded lookup methods
 
         #region Conflict-checking putters
+
+        public Hint Put(string name, PParser.HintDeclContext tree)
+        {
+            var hint = new Hint(name, tree);
+            CheckConflicts(hint, Namespace(hints));
+            hints.Add(name, hint);
+            return hint;
+        }
 
         public TypeDef Put(string name, PParser.PTypeDefContext tree)
         {

@@ -16,6 +16,7 @@ SET       : 'set' ;
 STRING    : 'string' ;
 SEQ       : 'seq' ;
 DATA      : 'data' ;
+HINT      : 'hint';
 
 // Keywords
 

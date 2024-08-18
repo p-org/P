@@ -27,6 +27,9 @@ namespace Plang.Options
             var verboseMode = minerConfigGroup.AddArgument("verbose", "verbose", "Verbose mode, print stderr of Daikon (default: false)", typeof(bool));
             var tracesOpt = minerConfigGroup.AddArgument("traces", "t", "Path to the trace files");
             var pruningLevel = minerConfigGroup.AddArgument("pruning-level", "pl", "Pruning level (default: 3)", typeof(int));
+            minerConfigGroup.AddArgument("compile", "compile", "Compile for a specific event combination", typeof(bool));
+            minerConfigGroup.AddArgument("auto", "auto", "Automatic mining mode", typeof(bool));
+
             stOpt.IsRequired = false;
             ngOpt.IsRequired = false;
             nfOpt.IsRequired = false;
@@ -37,7 +40,7 @@ namespace Plang.Options
             mustIncludeFiltersOpt.IsMultiValue = true;
             mustIncludeFiltersOpt.IsRequired = false;
             mustIncludeGuardsOpt.IsRequired = false;
-            tracesOpt.IsRequired = true;
+            tracesOpt.IsRequired = false;
             tracesOpt.IsMultiValue = true;
             pruningLevel.IsRequired = false;
             
@@ -47,13 +50,20 @@ namespace Plang.Options
 
             var minerInteractiveMode = Parser.GetOrCreateGroup("miner-interactive", "Interactive mode: set up configurations step-by-step.");
             minerInteractiveMode.AddArgument("interactive", "i", "Enable interactive mode", typeof(bool));
+            // book keeping
+            var pInferGroup = Parser.GetOrCreateGroup("pinfer", "Options for PInfer");
+            pInferGroup.IsHidden = true;
+            pInferGroup.AddArgument("max-term-depth", "td", "Max depth of terms in the predicates").IsHidden = true;
+            pInferGroup.AddArgument("max-guards-predicates", "max-guards", "Max. number of atomic predicates in guards").IsHidden = true;
+            pInferGroup.AddArgument("max-filters-predicates", "max-filters", "Max. number of atomic predicates in filters").IsHidden = true;
+            pInferGroup.AddArgument("hint", "hint", "Name of the hint to compile/run").IsHidden = true;
         }
         
         internal PInferConfiguration Parse(string[] args)
         {
             PInferConfiguration pinferConfig = new();
             List<CommandLineArgument> fetch = [];
-            PCompilerOptions.FindLocalPProject(fetch);
+            PCompilerOptions.FindLocalPProject(fetch, verbose: false);
             if (fetch.Count() == 0)
             {
                 Error.ReportAndExit("No .pproj found");
@@ -135,7 +145,13 @@ namespace Plang.Options
                     config.PruningLevel = (int) arg.Value;
                     break;
                 case "interactive":
-                    config.Interactive = true;
+                    config.Mode = PInferMode.Interactive;
+                    break;
+                case "compile":
+                    config.Mode = PInferMode.Compile;
+                    break;
+                case "auto":
+                    config.Mode = PInferMode.Auto;
                     break;
             }
         }

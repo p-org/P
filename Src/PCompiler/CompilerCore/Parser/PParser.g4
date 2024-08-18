@@ -60,6 +60,7 @@ topDecl : typeDefDecl
         | namedModuleDecl
         | testDecl
         | implementationDecl
+        | hintDecl
         ;
 
 
@@ -100,6 +101,12 @@ machineEntry : varDecl
              | funDecl
              | stateDecl
              ;
+
+hintDecl : HINT name=iden LPAREN hintParamList RPAREN LBRACE hintBody* RBRACE ;
+hintParamList : hintParam (COMMA hintParam)* ;
+hintParam : name=iden COLON eventName=iden ;
+hintBody: hintItem | funDecl ;
+hintItem: field=iden ASSIGN value=rvalueList SEMI ;
 
 varDecl : VAR idenList COLON type SEMI ;
 

@@ -24,11 +24,11 @@ namespace Plang.Compiler
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;
-            TermDepth = null;
-            QuantifiedEvents = null;
-            ConfigEvent = null;
-            CustomPredicates = [];
-            CustomFunctions = [];
+            TermDepth = 2;
+            MaxGuards = 4;
+            MaxFilters = 2;
+            PInferAction = PInferAction.Compile;
+            HintName = null;
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null, bool debug = false)
@@ -62,6 +62,7 @@ namespace Plang.Compiler
             Backend = null;
             ProjectDependencies = projectDependencies ?? new List<string>();
             Debug = debug;
+            TermDepth = 2;
         }
 
         public ICompilerOutput Output { get; set; }
@@ -79,11 +80,11 @@ namespace Plang.Compiler
         public IList<string> ProjectDependencies { get; set;  }
         public bool Debug { get; set; }
 
-        public int? TermDepth { get; set; }
-        public List<string> QuantifiedEvents { get; set; }
-        public List<string> CustomPredicates { get; set; }
-        public List<string> CustomFunctions { get; set; }
-        public string ConfigEvent { get; set; }
+        public int TermDepth { get; set; }
+        public int MaxGuards { get; set; }
+        public int MaxFilters { get; set; }
+        public PInferAction PInferAction { get; set; }
+        public string HintName { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)
         {

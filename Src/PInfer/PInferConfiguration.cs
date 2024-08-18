@@ -1,5 +1,10 @@
 namespace Plang.PInfer
 {
+    public enum PInferMode
+    {
+        Compile, Interactive, Auto
+    }
+
     public class PInferConfiguration
     {
         public int NumGuardPredicates;
@@ -16,7 +21,7 @@ namespace Plang.PInfer
         public string ProjectName;
         public bool Verbose;
         public int PruningLevel;
-        public bool Interactive;
+        public PInferMode Mode;
 
         public PInferConfiguration()
         {
@@ -34,7 +39,7 @@ namespace Plang.PInfer
             ProjectName = "generatedOutput";
             Verbose = false;
             PruningLevel = 3;
-            Interactive = false;
+            Mode = PInferMode.Compile;
         }
     }
 }

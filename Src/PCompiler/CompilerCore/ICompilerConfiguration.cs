@@ -6,6 +6,11 @@ using Plang.Compiler.TypeChecker;
 
 namespace Plang.Compiler
 {
+    public enum PInferAction
+    {
+        Compile, RunHint, Auto
+    }
+
     public interface ICompilerConfiguration
     {
         string ProjectName { get; }
@@ -21,10 +26,10 @@ namespace Plang.Compiler
         ILocationResolver LocationResolver { get; }
         ITranslationErrorHandler Handler { get; }
         bool Debug { get; }
-        int? TermDepth { get; }
-        string ConfigEvent { get; }
-        List<string> QuantifiedEvents { get; }
-        List<string> CustomPredicates { get; }
-        List<string> CustomFunctions { get; }
+        public int TermDepth { get; set; }
+        public int MaxGuards { get; set; }
+        public int MaxFilters { get; set; }
+        string HintName { get; }
+        PInferAction PInferAction { get; }
     }
 }

@@ -606,14 +606,10 @@ namespace Plang.Compiler.TypeChecker
         #endregion
 
         #region Hints
-        
-        public override object VisitHintDecl(PParser.HintDeclContext context)
-        {
-            
-            var hint = (Hint) nodesToDeclarations.Get(context);
-            hint.Scope = CurrentScope.MakeChildScope();
 
-            PParser.HintParamContext[] eventList = context.hintParamList().hintParam();
+        public Hint processHint(Hint hint, PParser.HintParamContext[] eventList, PParser.HintBodyContext[] hintBodyDecls)
+        {
+            hint.Scope = CurrentScope.MakeChildScope();
             if (eventList != null)
             {
                 foreach (var (ctx, i) in eventList.Select((x, i) => (x, i)))
@@ -629,7 +625,6 @@ namespace Plang.Compiler.TypeChecker
                     }
                     hint.Quantified.Add(new Backend.PInfer.PEventVariable(ctx.name.GetText()) { EventDecl = e, Order = i, Type = e.PayloadType });
                 }
-                PParser.HintBodyContext[] hintBodyDecls = context.hintBody();
                 // process function defs first; other defs will be processed later
                 foreach (var ctx in hintBodyDecls)
                 {
@@ -650,6 +645,18 @@ namespace Plang.Compiler.TypeChecker
                 return hint;
             }
             throw new Exception($"Hint {hint.Name} does not have any hinted events");
+        }
+
+        public override object VisitFuzzHintDecl(PParser.FuzzHintDeclContext context)
+        {
+            var hint = (Hint) nodesToDeclarations.Get(context);
+            return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
+        }
+
+        public override object VisitExactHintDecl(PParser.ExactHintDeclContext context)
+        {
+            var hint = (Hint) nodesToDeclarations.Get(context);
+            return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
         }
 
         #endregion

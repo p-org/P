@@ -457,9 +457,17 @@ namespace Plang.Compiler.TypeChecker
 
         #region Conflict-checking putters
 
-        public Hint Put(string name, PParser.HintDeclContext tree)
+        public Hint Put(string name, PParser.FuzzHintDeclContext tree)
         {
-            var hint = new Hint(name, tree);
+            var hint = new Hint(name, false, tree);
+            CheckConflicts(hint, Namespace(hints));
+            hints.Add(name, hint);
+            return hint;
+        }
+
+        public Hint Put(string name, PParser.ExactHintDeclContext tree)
+        {
+            var hint = new Hint(name, true, tree);
             CheckConflicts(hint, Namespace(hints));
             hints.Add(name, hint);
             return hint;

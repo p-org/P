@@ -16,7 +16,6 @@ SET       : 'set' ;
 STRING    : 'string' ;
 SEQ       : 'seq' ;
 DATA      : 'data' ;
-HINT      : 'hint';
 
 // Keywords
 
@@ -63,6 +62,8 @@ VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+HINT      : 'hint';
+EXACT     : 'exact';
 
 // module-system-specific keywords
 

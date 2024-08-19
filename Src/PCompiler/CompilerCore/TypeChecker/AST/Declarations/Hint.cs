@@ -10,7 +10,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     public class Hint : IPDecl, IHasScope
     {
 
-        public Hint(string name, ParserRuleContext sourceNode)
+        public Hint(string name, bool exact, ParserRuleContext sourceNode)
         {
             Debug.Assert(sourceNode is PParser.HintDeclContext);
             // set by Hint defs in P code
@@ -20,6 +20,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             FilterPredicates = [];
             CustomFunctions = [];
             CustomPredicates = [];
+            Exact = exact;
             SourceLocation = sourceNode;
             ConfigEvent = null;
             // can be set by parameter search
@@ -112,7 +113,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public Hint Copy()
         {
-            Hint h = new(Name, SourceLocation)
+            Hint h = new(Name, Exact, SourceLocation)
             {
                 Quantified = Quantified,
                 PruningLevel = PruningLevel,
@@ -146,6 +147,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public List<Function> CustomPredicates;
         public Scope Scope { get; set; }
         public string Name { get; set; }
+        public bool Exact { get; set; }
         public ParserRuleContext SourceLocation { get; set; }
     }
 }

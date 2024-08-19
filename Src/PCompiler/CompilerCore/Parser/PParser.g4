@@ -102,7 +102,9 @@ machineEntry : varDecl
              | stateDecl
              ;
 
-hintDecl : HINT name=iden LPAREN hintParamList RPAREN LBRACE hintBody* RBRACE ;
+hintDecl : HINT name=iden LPAREN hintParamList RPAREN LBRACE hintBody* RBRACE           # FuzzHintDecl
+         | HINT EXACT name=iden LPAREN hintParamList RPAREN LBRACE hintBody* RBRACE     # ExactHintDecl
+         ;
 hintParamList : hintParam (COMMA hintParam)* ;
 hintParam : name=iden COLON eventName=iden ;
 hintBody: hintItem | funDecl ;

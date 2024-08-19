@@ -35,13 +35,24 @@ namespace Plang.Compiler
 
         public static void RunSpecMiner(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint)
         {
+            PInferPredicateGenerator backend = (PInferPredicateGenerator) job.Backend;
+            if (backend.hint == null || !backend.hint.Equals(hint))
+            {
+                job.Output.WriteWarning($"Have not compiled with {hint.Name}. Re-compling...");
+                CompilePInferHint(job, globalScope, hint);
+            }
             Console.WriteLine("Running the following hint:");
             hint.ShowHint();
-            PInferInvoke.InvokeMain(job, metadata, globalScope, hint, (PInferPredicateGenerator) job.Backend);
+            PInferInvoke.InvokeMain(job, metadata, globalScope, hint, backend);
         }
 
         public static void ParameterSearch(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint)
         {
+            if (hint.Exact)
+            {
+                RunSpecMiner(job, metadata, globalScope, hint);
+                return;
+            }
             // Given event combination
             // Enumerate term depth
             List<Hint> worklist = [];

@@ -146,10 +146,27 @@ namespace Plang.Compiler.TypeChecker
                     new Exception($"Unsupported expression in {loc}: {expr}"));
         }
 
-        public override object VisitHintDecl(PParser.HintDeclContext ctx)
+        public override object VisitFuzzHintDecl(PParser.FuzzHintDeclContext context)
+        {
+            if (hint.Exact)
+            {
+                throw config.Handler.InternalError(context, new Exception($"Hint `{hint.Name}` is an exact hint, but currently processing a fuzzy hint"));
+            }
+            return populateHintFields(context.hintBody());
+        }
+
+        public override object VisitExactHintDecl(PParser.ExactHintDeclContext context)
+        {
+            if (!hint.Exact)
+            {
+                throw config.Handler.InternalError(context, new Exception($"Hint `{hint.Name}` is a fuzzy hint, but currently processing an exact hint"));
+            }
+            return populateHintFields(context.hintBody());
+        }
+
+        public Hint populateHintFields(PParser.HintBodyContext[] hintBody)
         {
             
-            var hintBody = ctx.hintBody();
             foreach (var bodyCtx in hintBody)
             {
                 var bodyItemCtx = bodyCtx.hintItem();
@@ -201,7 +218,8 @@ namespace Plang.Compiler.TypeChecker
                             break;
                         default:
                             throw config.Handler.InternalError(bodyItemCtx, new Exception(
-                                $"Unknown Hint field: ${bodyItemCtx.field.GetText()}"
+                                @$"Unknown Hint field: ${bodyItemCtx.field.GetText()},
+                                expecting one of exists, arity, term_depth, config_event, guards, filters, functions, predicates"
                             ));
                     }
                 }

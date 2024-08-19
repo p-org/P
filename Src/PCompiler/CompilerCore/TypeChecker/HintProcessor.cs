@@ -170,9 +170,11 @@ namespace Plang.Compiler.TypeChecker
                             break;
                         case "guards":
                             hint.GuardPredicates = Explicate(bodyItemCtx, "guards", GetBoolExpr(bodyItemCtx));
+                            hint.NumGuardPredicates = Math.Max(hint.GuardPredicates.Count, hint.NumFilterPredicates);
                             break;
                         case "filters":
                             hint.FilterPredicates = Explicate(bodyItemCtx, "filters", GetBoolExpr(bodyItemCtx));
+                            hint.NumFilterPredicates = Math.Max(hint.NumFilterPredicates, hint.NumFilterPredicates);
                             break;
                         case "functions":
                             hint.CustomFunctions = GetFunctions(bodyItemCtx);

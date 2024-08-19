@@ -48,34 +48,35 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             Console.WriteLine($"#Arity: {Arity}");
         }
 
-        public bool NextNG(ICompilerConfiguration job)
+        public bool NextQuantifier()
         {
-            NumGuardPredicates += 1;
-            if (NumGuardPredicates > job.MaxGuards)
+            ExistentialQuantifiers += 1;
+            if (ExistentialQuantifiers > 1)
             {
                 return false;
             }
             return true;
         }
 
+        public bool NextNG(ICompilerConfiguration job)
+        {
+            NumGuardPredicates += 1;
+            if (NumGuardPredicates > job.MaxGuards)
+            {
+                NumGuardPredicates = 0;
+                return NextQuantifier();
+            }
+            return true;
+        }
+
         public bool NextNF(ICompilerConfiguration job)
         {
+            if (ExistentialQuantifiers == 0) return NextNG(job);
             NumFilterPredicates += 1;
             if (NumFilterPredicates > job.MaxFilters)
             {
                 NumFilterPredicates = 0;
                 return NextNG(job);
-            }
-            return true;
-        }
-
-        public bool NextQuantifier(ICompilerConfiguration job, int maxArity)
-        {
-            ExistentialQuantifiers += 1;
-            if (ExistentialQuantifiers > 1)
-            {
-                ExistentialQuantifiers = 0;
-                return NextArity(job, maxArity);
             }
             return true;
         }

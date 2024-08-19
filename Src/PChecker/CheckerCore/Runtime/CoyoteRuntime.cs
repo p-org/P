@@ -7,7 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using PChecker.Actors.Events;
+using PChecker.StateMachines.Events;
 using PChecker.Exceptions;
 using PChecker.Random;
 using Monitor = PChecker.Specifications.Monitors.Monitor;
@@ -35,7 +35,7 @@ namespace PChecker.Runtime
                                                  (IsExecutionControlled ? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture,
                                                          "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
                                                          "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
-                                                         "actor handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
+                                                         "state machine handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
                                                          "you will need to mock them during testing.",
                                                          Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>")) :
                                                      RuntimeFactory.InstalledRuntime);
@@ -273,7 +273,7 @@ namespace PChecker.Runtime
         }
 
         /// <summary>
-        /// Terminates the runtime and notifies each active actor to halt execution.
+        /// Terminates the runtime and notifies each active state machine to halt execution.
         /// </summary>
         public void Stop() => IsRunning = false;
 

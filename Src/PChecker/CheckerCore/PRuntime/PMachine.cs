@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using PChecker.Actors;
-using PChecker.Actors.Events;
-using PChecker.Actors.Exceptions;
-using PChecker.Actors.Logging;
+using PChecker.StateMachines;
+using PChecker.StateMachines.Events;
+using PChecker.StateMachines.Exceptions;
+using PChecker.StateMachines.Logging;
 using PChecker.PRuntime.Exceptions;
 using PChecker.PRuntime.Values;
 
@@ -70,7 +70,7 @@ namespace PChecker.PRuntime
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = CreateActor(createMachine, createdInterface.Substring(2),
+            var machineId = CreateStateMachine(createMachine, createdInterface.Substring(2),
                 new InitializeParametersEvent(new InitializeParameters(createdInterface, payload)));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }

@@ -179,7 +179,7 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JMachine : JType
             {
-                // Source/CheckerCore/Actors/ActorId.cs stores ActorID values as ulongs
+                // Source/CheckerCore/StateMachines/StateMachineId.cs stores StateMachineID values as ulongs
 
                 internal JMachine()
                 {

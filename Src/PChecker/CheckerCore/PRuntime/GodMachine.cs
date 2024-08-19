@@ -1,6 +1,6 @@
 ﻿using System;
-using PChecker.Actors;
-using PChecker.Actors.Events;
+using PChecker.StateMachines;
+using PChecker.StateMachines.Events;
 
 namespace PChecker.PRuntime
 {
@@ -9,7 +9,7 @@ namespace PChecker.PRuntime
         private void InitOnEntry(Event e)
         {
             var mainMachine = (e as Config).MainMachine;
-            CreateActor(mainMachine, mainMachine.Name,
+            CreateStateMachine(mainMachine, mainMachine.Name,
                 new PMachine.InitializeParametersEvent(
                     new PMachine.InitializeParameters("I_" + mainMachine.Name, null)));
         }

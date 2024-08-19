@@ -3,7 +3,7 @@
 
 using System;
 using System.Reflection;
-using PChecker.Actors.Events;
+using PChecker.StateMachines.Events;
 
 namespace PChecker.Specifications.Monitors
 {

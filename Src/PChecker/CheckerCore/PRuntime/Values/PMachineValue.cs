@@ -1,19 +1,19 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using PChecker.Actors;
+using PChecker.StateMachines;
 
 namespace PChecker.PRuntime.Values
 {
     public class I_Main : PMachineValue
     {
-        public I_Main(ActorId machine, List<string> permissions) : base(machine, permissions)
+        public I_Main(StateMachineId machine, List<string> permissions) : base(machine, permissions)
         {
         }
     }
 
     public class PMachineValue : IPrtValue
     {
-        public PMachineValue(ActorId machine, List<string> permissions)
+        public PMachineValue(StateMachineId machine, List<string> permissions)
         {
             Id = machine;
             Permissions = permissions.ToList();
@@ -25,7 +25,7 @@ namespace PChecker.PRuntime.Values
             Permissions = mValue.Permissions.ToList();
         }
 
-        public ActorId Id { get; }
+        public StateMachineId Id { get; }
         public List<string> Permissions { get; }
 
         public bool Equals(IPrtValue other)

@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PChecker.Actors;
+using PChecker.StateMachines;
 using PChecker.Random;
 using PChecker.SystematicTesting;
 using PChecker.SystematicTesting.Strategies.Probabilistic;

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using PChecker.Actors;
-using PChecker.Actors.Events;
-using PChecker.Actors.Logging;
+using PChecker.StateMachines;
+using PChecker.StateMachines.Events;
+using PChecker.StateMachines.Logging;
 using PChecker.PRuntime.Exceptions;
 
 namespace PChecker.PRuntime
@@ -33,7 +33,7 @@ namespace PChecker.PRuntime
             return $"{GetShortName(e.GetType().Name)}{msg}";
         }
 
-        public override void OnStateTransition(ActorId id, string stateName, bool isEntry)
+        public override void OnStateTransition(StateMachineId id, string stateName, bool isEntry)
         {
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
@@ -43,22 +43,22 @@ namespace PChecker.PRuntime
             base.OnStateTransition(id, GetShortName(stateName), isEntry);
         }
 
-        public override void OnPopStateUnhandledEvent(ActorId id, string stateName, Event e)
+        public override void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
         {
             base.OnPopStateUnhandledEvent(id, GetShortName(stateName), e);
         }
 
-        public override void OnDefaultEventHandler(ActorId id, string stateName)
+        public override void OnDefaultEventHandler(StateMachineId id, string stateName)
         {
             base.OnDefaultEventHandler(id, GetShortName(stateName));
         }
 
-        public override void OnWaitEvent(ActorId id, string stateName, params Type[] eventTypes)
+        public override void OnWaitEvent(StateMachineId id, string stateName, params Type[] eventTypes)
         {
             base.OnWaitEvent(id, GetShortName(stateName), eventTypes);
         }
 
-        public override void OnWaitEvent(ActorId id, string stateName, Type eventType)
+        public override void OnWaitEvent(StateMachineId id, string stateName, Type eventType)
         {
             base.OnWaitEvent(id, GetShortName(stateName), eventType);
         }
@@ -72,17 +72,7 @@ namespace PChecker.PRuntime
 
             base.OnMonitorStateTransition(monitorType: GetShortName(monitorType), stateName: GetShortName(stateName), isEntry: isEntry, isInHotState: isInHotState);
         }
-
-        public override void OnCreateActor(ActorId id, string creatorName, string creatorType)
-        {
-            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
-            {
-                return;
-            }
-
-            base.OnCreateActor(id, GetShortName(creatorName), creatorType);
-        }
-
+        
         public override void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType,
             string senderStateName, Event e)
         {
@@ -90,7 +80,7 @@ namespace PChecker.PRuntime
             Logger.WriteLine(text);
         }
 
-        public override void OnDequeueEvent(ActorId id, string stateName, Event e)
+        public override void OnDequeueEvent(StateMachineId id, string stateName, Event e)
         {
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
@@ -112,7 +102,7 @@ namespace PChecker.PRuntime
             Logger.WriteLine(text);
         }
 
-        public override void OnRaiseEvent(ActorId id, string stateName, Event e)
+        public override void OnRaiseEvent(StateMachineId id, string stateName, Event e)
         {
             stateName = GetShortName(stateName);
             var eventName = GetEventNameWithPayload(e);
@@ -134,9 +124,9 @@ namespace PChecker.PRuntime
             Logger.WriteLine(text);
         }
 
-        public override void OnEnqueueEvent(ActorId id, Event e) {   }
+        public override void OnEnqueueEvent(StateMachineId id, Event e) {   }
 
-        public override void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
+        public override void OnReceiveEvent(StateMachineId id, string stateName, Event e, bool wasBlocked)
         {
             stateName = GetShortName(stateName);
             var eventName = GetEventNameWithPayload(e);
@@ -162,18 +152,18 @@ namespace PChecker.PRuntime
             Logger.WriteLine(text);
         }
 
-        public override void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
+        public override void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
         {
             senderStateName = GetShortName(senderStateName);
             var eventName = GetEventNameWithPayload(e);
             var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
             var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
             var sender = !string.IsNullOrEmpty(senderName) ? $"'{senderName}' in state '{senderStateName}'" : $"The runtime";
-            var text = $"<SendLog> {sender} sent event '{eventName}' to '{targetActorId}'{isHalted}{opGroupIdMsg}.";
+            var text = $"<SendLog> {sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}{opGroupIdMsg}.";
             Logger.WriteLine(text);
         }
 
-        public override void OnGotoState(ActorId id, string currStateName, string newStateName)
+        public override void OnGotoState(StateMachineId id, string currStateName, string newStateName)
         {
             if (currStateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
@@ -183,7 +173,7 @@ namespace PChecker.PRuntime
             base.OnGotoState(id, GetShortName(currStateName), GetShortName(newStateName));
         }
 
-        public override void OnExecuteAction(ActorId id, string handlingStateName, string currentStateName, string actionName)
+        public override void OnExecuteAction(StateMachineId id, string handlingStateName, string currentStateName, string actionName)
         {
         }
 
@@ -191,7 +181,7 @@ namespace PChecker.PRuntime
         {
         }
 
-        public override void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
+        public override void OnExceptionHandled(StateMachineId id, string stateName, string actionName, Exception ex)
         {
             if (ex is PNonStandardReturnException)
             {
@@ -200,7 +190,7 @@ namespace PChecker.PRuntime
             base.OnExceptionHandled(id: id, stateName: GetShortName(stateName), actionName: actionName, ex: ex);
         }
 
-        public override void OnExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
+        public override void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
         {
             if (ex is PNonStandardReturnException)
             {
@@ -214,7 +204,7 @@ namespace PChecker.PRuntime
             base.OnCreateMonitor(GetShortName(monitorType));
         }
 
-        public override void OnHandleRaisedEvent(ActorId id, string stateName, Event e)
+        public override void OnHandleRaisedEvent(StateMachineId id, string stateName, Event e)
         {
         }
 

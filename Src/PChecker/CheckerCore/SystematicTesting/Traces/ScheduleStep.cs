@@ -49,14 +49,14 @@ namespace PChecker.SystematicTesting.Traces
         /// <summary>
         /// Creates a schedule step.
         /// </summary>
-        internal static ScheduleStep CreateSchedulingChoice(int index, ulong scheduledActorId)
+        internal static ScheduleStep CreateSchedulingChoice(int index, ulong scheduledStateMachineId)
         {
             var scheduleStep = new ScheduleStep();
 
             scheduleStep.Index = index;
             scheduleStep.Type = ScheduleStepType.SchedulingChoice;
 
-            scheduleStep.ScheduledOperationId = scheduledActorId;
+            scheduleStep.ScheduledOperationId = scheduledStateMachineId;
 
             scheduleStep.BooleanChoice = null;
             scheduleStep.IntegerChoice = null;

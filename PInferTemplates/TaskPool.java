@@ -1,4 +1,5 @@
 import java.nio.file.Paths;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 public class TaskPool {
@@ -27,15 +28,17 @@ public class TaskPool {
         this.numMined = 0;
         this.converter = converter;
         this.verbose = verbose;
-        File d = new File("PInferOutputs");
-        if (!d.exists()) {
-            d.mkdir();
+        File outputsParent = new File("PInferOutputs");
+        File pinferOutputFileDir = new File(String.valueOf(Paths.get(outputsParent.toString(), "SpecMining")));
+        if (pinferOutputFileDir.isDirectory()) {
+            var dirContents = outputsParent.list();
+            int numDirs = dirContents == null ? 0 : dirContents.length;
+            var targetPath = Paths.get(outputsParent.toString(), "SpecMining" + numDirs);
+            Files.move(Paths.get(pinferOutputFileDir.getPath()), targetPath);
         }
-        File pinferOutputFile = new File(String.valueOf(Paths.get("PInferOutputs", filename)));
-        // if (pinferOutputFile.exists()) {
-        //     pinferOutputFile.delete();
-        // }
-        pinferOutputFile.createNewFile();
+        pinferOutputFileDir.mkdirs();
+        File pinferOutputFile = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), filename)));
+        assert pinferOutputFile.createNewFile() : "Failed to create invariant output file " + pinferOutputFile;
         this.outputFile = pinferOutputFile;
         this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile, true));
         this.startTime = System.currentTimeMillis();

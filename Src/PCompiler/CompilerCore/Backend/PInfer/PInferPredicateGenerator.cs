@@ -118,7 +118,7 @@ namespace Plang.Compiler.Backend.PInfer
             AggregateDefinedPredicates(hint);
             PopulateEnumCmpPredicates(globalScope);
             var i = 0;
-            var termDepth = hint.TermDepth.Value;
+            var termDepth = hint.TermDepth == null ? job.TermDepth : hint.TermDepth.Value;
             var indexType = PInferBuiltinTypes.Index;
             var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
             foreach (var eventAtom in hint.Quantified) {

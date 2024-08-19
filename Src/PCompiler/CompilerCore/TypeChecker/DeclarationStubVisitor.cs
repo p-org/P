@@ -35,6 +35,13 @@ namespace Plang.Compiler.TypeChecker
             var name = context.name.GetText();
             var hint = CurrentScope.Put(name, context);
             nodesToDeclarations.Put(context, hint);
+            foreach (var body in context.hintBody())
+            {
+                if (body.funDecl() != null)
+                {
+                    Visit(body.funDecl());
+                }
+            }
             return hint;
         }
 

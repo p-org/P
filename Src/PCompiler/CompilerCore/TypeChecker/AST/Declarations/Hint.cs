@@ -46,6 +46,14 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             Console.WriteLine($"#GuardAPs: {NumGuardPredicates}");
             Console.WriteLine($"#FilterAPs: {NumFilterPredicates}");
             Console.WriteLine($"#Arity: {Arity}");
+            if (CustomPredicates.Count > 0)
+            {
+                Console.WriteLine($"Custom predicates: {string.Join(", ", CustomPredicates.Select(x => x.Name))}");
+            }
+            if (CustomFunctions.Count > 0)
+            {
+                Console.WriteLine($"Custom functions: {string.Join(", ", CustomFunctions.Select(x => x.Name))}");
+            }
         }
 
         public bool NextQuantifier()

@@ -629,25 +629,25 @@ namespace Plang.Compiler.TypeChecker
                     }
                     hint.Quantified.Add(new Backend.PInfer.PEventVariable(ctx.name.GetText()) { EventDecl = e, Order = i, Type = e.PayloadType });
                 }
-                return hint;
-            }
-            PParser.HintBodyContext[] hintBodyDecls = context.hintBody();
-            // process function defs first; other defs will be processed later
-            foreach (var ctx in hintBodyDecls)
-            {
-                if (ctx.funDecl() != null)
+                PParser.HintBodyContext[] hintBodyDecls = context.hintBody();
+                // process function defs first; other defs will be processed later
+                foreach (var ctx in hintBodyDecls)
                 {
-                    Function fun = (Function) Visit(ctx.funDecl());
-                    hint.Scope.Put(fun.Name, ctx.funDecl());
-                    if (fun.Signature.ReturnType.IsAssignableFrom(PrimitiveType.Bool))
+                    if (ctx.funDecl() != null)
                     {
-                        hint.CustomPredicates.Add(fun);
-                    }
-                    else
-                    {
-                        hint.CustomFunctions.Add(fun);
+                        Function fun = (Function) Visit(ctx.funDecl());
+                        hint.Scope.Put(fun.Name, ctx.funDecl());
+                        if (fun.Signature.ReturnType.IsAssignableFrom(PrimitiveType.Bool))
+                        {
+                            hint.CustomPredicates.Add(fun);
+                        }
+                        else
+                        {
+                            hint.CustomFunctions.Add(fun);
+                        }
                     }
                 }
+                return hint;
             }
             throw new Exception($"Hint {hint.Name} does not have any hinted events");
         }

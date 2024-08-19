@@ -63,7 +63,6 @@ namespace Plang.Compiler
             foreach (var h in worklist)
             {
                 CompilePInferHint(job, globalScope, h);
-                Console.WriteLine(h.HasNext(job, codegen.MaxArity()));
                 while (h.HasNext(job, codegen.MaxArity()))
                 {
                     RunSpecMiner(job, metadata, globalScope, h);
@@ -109,13 +108,13 @@ namespace Plang.Compiler
             {
                 case PInferAction.Compile:
                     Console.WriteLine("Compile Mode");
-                    givenHint.ConfigEvent = configEvent;
+                    givenHint.ConfigEvent ??= configEvent;
                     CompilePInferHint(job, globalScope, givenHint);
                     break;
                 case PInferAction.RunHint:
                     Console.WriteLine("RunHint Modde");
                     TraceMetadata metadata = new TraceMetadata(job);
-                    givenHint.ConfigEvent = configEvent;
+                    givenHint.ConfigEvent ??= configEvent;
                     ParameterSearch(job, metadata, globalScope, givenHint);
                     break;
             }
@@ -135,13 +134,19 @@ namespace Plang.Compiler
                     $"{job.ProjectName}.pinfer.Main"];
             
             ShowConfig(hint);
-            startInfo = new ProcessStartInfo("java", args.Concat(GetMinerConfigArgs(job, metadata, hint, codegen)))
+            List<string> configArgs = GetMinerConfigArgs(job, metadata, hint, codegen);
+            if (configArgs == null)
+            {
+                job.Output.WriteWarning("Skipped due to config argument error ...");
+                return -1;
+            }
+            startInfo = new ProcessStartInfo("java", args.Concat(configArgs))
             {
                 UseShellExecute = true
             };
             if (job.Verbose)
             {
-                Console.WriteLine($"Run with {string.Join(" ", args.Concat(GetMinerConfigArgs(job, metadata, hint, codegen)))}");
+                Console.WriteLine($"Run with {string.Join(" ", args.Concat(configArgs))}");
             }
             process = Process.Start(startInfo);
             process.WaitForExit();
@@ -216,6 +221,7 @@ namespace Plang.Compiler
             else
             {
                 configuration.Output.WriteError($"No trace indexed for the following event combination:\n{string.Join(", ", hint.Quantified.Select(x => x.EventName))}");
+                return null;
             }
             return args;
         }

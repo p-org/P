@@ -186,11 +186,33 @@ namespace Plang.Compiler.TypeChecker
                         case "config_event":
                             hint.ConfigEvent = GetSingleEvent(bodyItemCtx);
                             break;
-                        case "guards":
+                        case "num_guards":
+                            var ng = GetIntLiteral(bodyItemCtx);
+                            if (ng < hint.NumGuardPredicates)
+                            {
+                                config.Output.WriteWarning($"`num_guards` of {hint.Name} <= inferred, ignoring ...");
+                            }
+                            else
+                            {
+                                hint.NumGuardPredicates = ng;
+                            }
+                            break;
+                        case "num_filters":
+                            var nf = GetIntLiteral(bodyItemCtx);
+                            if (nf < hint.NumFilterPredicates)
+                            {
+                                config.Output.WriteWarning($"`num_filters` of {hint.Name} <= inferred, ignoring ...");
+                            }
+                            else
+                            {
+                                hint.NumGuardPredicates = nf;
+                            }
+                            break;
+                        case "include_guards":
                             hint.GuardPredicates = Explicate(bodyItemCtx, "guards", GetBoolExpr(bodyItemCtx));
                             hint.NumGuardPredicates = Math.Max(hint.GuardPredicates.Count, hint.NumFilterPredicates);
                             break;
-                        case "filters":
+                        case "include_filters":
                             hint.FilterPredicates = Explicate(bodyItemCtx, "filters", GetBoolExpr(bodyItemCtx));
                             hint.NumFilterPredicates = Math.Max(hint.NumFilterPredicates, hint.NumFilterPredicates);
                             break;
@@ -219,7 +241,7 @@ namespace Plang.Compiler.TypeChecker
                         default:
                             throw config.Handler.InternalError(bodyItemCtx, new Exception(
                                 @$"Unknown Hint field: ${bodyItemCtx.field.GetText()},
-                                expecting one of exists, arity, term_depth, config_event, guards, filters, functions, predicates"
+                                expecting one of exists, arity, term_depth, config_event, include_guards, include_filters, functions, predicates"
                             ));
                     }
                 }

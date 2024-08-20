@@ -371,6 +371,7 @@ namespace Plang.Compiler.TypeChecker
             if (evtExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
+                method.AddSends(eventRef.Value);
             }
 
             method.CanSend = true;
@@ -408,6 +409,7 @@ namespace Plang.Compiler.TypeChecker
             if (evtExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
+                method.AddSends(eventRef.Value);
             }
 
             return new AnnounceStmt(context, evtExpr, args.Count == 0 ? null : args[0]);

@@ -26,6 +26,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         private readonly HashSet<Function> callers = new HashSet<Function>();
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
+        private readonly HashSet<PEvent> sendsSet = [];
 
         public Function(string name, ParserRuleContext sourceNode)
         {
@@ -66,6 +67,17 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             localVariables.Remove(local);
         }
 
+        public void AddSends(PEvent e)
+        {
+            sendsSet.Add(e);
+            // Propagates to callers
+            foreach (var caller in Callers)
+            {
+                if (caller.CanSend != true) caller.CanSend = true;
+                caller.AddSends(e);
+            }
+        }
+
         public void AddCreatesInterface(Interface i)
         {
             createsInterfaces.Add(i);
@@ -100,6 +112,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public bool? CanReceive { get; set; }
 
         public bool? CanSend { get; set; }
+        public IEnumerable<PEvent> SendSet => sendsSet;
 
         public bool? CanCreate { get; set; }
         public bool? IsNondeterministic { get; set; }

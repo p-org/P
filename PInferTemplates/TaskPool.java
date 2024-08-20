@@ -16,6 +16,7 @@ public class TaskPool {
     final BufferedOutputStream pinferOutputStream;
     final long startTime;
     final File outputFile;
+    static final File DaikonTracesDir = new File("tmp_daikon_traces");
 
     public TaskPool(int chunkSize, FromDaikon converter, String filename, boolean verbose) throws IOException {
         this.chunkSize = chunkSize;
@@ -41,6 +42,9 @@ public class TaskPool {
         assert pinferOutputFile.createNewFile() : "Failed to create invariant output file " + pinferOutputFile;
         this.outputFile = pinferOutputFile;
         this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile, true));
+        if (!DaikonTracesDir.exists()) {
+            DaikonTracesDir.mkdirs();
+        }
         this.startTime = System.currentTimeMillis();
     }
 
@@ -294,7 +298,7 @@ public class TaskPool {
                     "daikon.Chicory",
                     "--ppt-select-pattern=" + "Templates",
                     "--ppt-omit-pattern=execute",
-                    "--dtrace-file=" + Integer.toHexString(uid) + ".dtrace.gz",
+                    "--dtrace-file=" + Paths.get("tmp_daikon_traces", Integer.toHexString(uid) + ".dtrace.gz").toString(),
                     "--daikon",
                     "%PROJECT_NAME%.pinfer.PInferDriver",
                     String.join("*", tracePaths),

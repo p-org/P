@@ -7,52 +7,80 @@ using System.Text.Json;
 using Plang.Compiler.Backend.PInfer;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler
 {
-    class PInferDriver
+    class PInferDriver(ICompilerConfiguration job, Scope globalScope)
     {
-        public static void CompilePInferHint(ICompilerConfiguration job, Scope globalScope, Hint hint)
+        private readonly ICompilerConfiguration Job = job;
+        private readonly Scope GlobalScope = globalScope;
+        private readonly PInferPredicateGenerator Codegen = (PInferPredicateGenerator)job.Backend;
+        private readonly TraceMetadata TraceIndex = new(job);
+        private readonly HashSet<Hint> ExploredHints = new(new Hint.EqualityComparer());
+
+        public void CompilePInferHint(Hint hint)
         {
-            PInferPredicateGenerator codegen = (PInferPredicateGenerator) job.Backend;
-            codegen.Reset();
-            codegen.WithHint(hint);
-            foreach (var file in codegen.GenerateCode(job, globalScope))
+            Codegen.Reset();
+            Codegen.WithHint(hint);
+            foreach (var file in Codegen.GenerateCode(Job, GlobalScope))
             {
-                job.Output.WriteFile(file);
+                Job.Output.WriteFile(file);
             }
-            job.Output.WriteInfo($"Compiling generated code...");
+            Job.Output.WriteInfo($"Compiling generated code...");
             try
             {
-                codegen.Compile(job);
+                Codegen.Compile(Job);
             }
             catch (TranslationException e)
             {
-                job.Output.WriteError($"[Compiling Generated Code:]\n" + e.Message);
-                job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
+                Job.Output.WriteError($"[Compiling Generated Code:]\n" + e.Message);
+                Job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
             }
         }
 
-        public static void RunSpecMiner(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint)
+        public void RunSpecMiner(Hint hint)
         {
-            PInferPredicateGenerator backend = (PInferPredicateGenerator) job.Backend;
-            if (backend.hint == null || !backend.hint.Equals(hint))
+            if (Codegen.hint == null || !Codegen.hint.Equals(hint))
             {
-                job.Output.WriteWarning($"Have not compiled with {hint.Name}. Re-compling...");
-                CompilePInferHint(job, globalScope, hint);
+                // Job.Output.WriteWarning($"Have not compiled with {hint.Name}. Re-compling...");
+                if (hint.TermDepth == null)
+                {
+                    Job.Output.WriteWarning($"Hint `{hint.Name}` has not set a term depth. Using {Job.TermDepth} from command-line (default) ...");
+                    hint.TermDepth = Job.TermDepth;
+                }
+                CompilePInferHint(hint);
             }
-            Console.WriteLine("Running the following hint:");
-            hint.ShowHint();
-            PInferInvoke.InvokeMain(job, metadata, globalScope, hint, backend);
+            if (ExploredHints.Contains(hint))
+            {
+                Job.Output.WriteInfo($"Search space already explored: {hint.Name}, skipping ...");
+                return;
+            }
+            ExploredHints.Add(hint.Copy());
+            if (Job.Verbose)
+            {
+                Console.WriteLine("===============================");
+                Console.WriteLine("Running the following hint:");
+                hint.ShowHint();
+                Console.WriteLine("===============================");
+            }
+            PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen);
         }
 
-        public static void ParameterSearch(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint)
+        public void ParameterSearch(Hint hint)
         {
             if (hint.Exact)
             {
-                RunSpecMiner(job, metadata, globalScope, hint);
+                RunSpecMiner(hint);
                 return;
             }
+            if (ExploredHints.Contains(hint))
+            {
+                Job.Output.WriteInfo($"Search space already explored: {hint.Name}, skipping ...");
+                return;
+            }
+            ExploredHints.Add(hint);
             // Given event combination
             // Enumerate term depth
             List<Hint> worklist = [];
@@ -62,23 +90,106 @@ namespace Plang.Compiler
             }
             else
             {
-                for (int i = 0; i <= job.TermDepth; ++i)
+                for (int i = 0; i <= Job.TermDepth; ++i)
                 {
                     Hint h = hint.Copy();
                     h.TermDepth = i;
                     worklist.Add(h);
                 }
             }
-            PInferPredicateGenerator codegen = (PInferPredicateGenerator) job.Backend;
-            job.Output.WriteInfo($"Number of Hints: {worklist.Count}");
+            // Job.Output.WriteInfo($"Number of Hints: {worklist.Count}");
             foreach (var h in worklist)
             {
-                CompilePInferHint(job, globalScope, h);
-                while (h.HasNext(job, codegen.MaxArity()))
+                CompilePInferHint(h);
+                while (h.HasNext(Job, Codegen.MaxArity()))
                 {
-                    RunSpecMiner(job, metadata, globalScope, h);
-                    h.Next(job, codegen.MaxArity());
+                    RunSpecMiner(h);
+                    h.Next(Job, Codegen.MaxArity());
                 }
+            }
+        }
+
+        public PEventVariable MkEventVar(PEvent e, int i)
+        {
+            return new PEventVariable($"e{i}") {
+                EventDecl = e, Type = e.PayloadType, Order = i
+            };
+        }
+
+        public void ExploreEventComb(string name, params PEvent[] events)
+        {
+            // Enusre all events have some payload
+            if (events.Select(e => e.PayloadType == PrimitiveType.Null).Any(x => x))
+            {
+                Job.Output.WriteWarning($"skipping ae_{name} due to empty payload(s)");
+                return;
+            }
+            Hint h = new($"ae_{name}", false, null) {
+                Quantified = events.Select(MkEventVar).ToList()
+            };
+            ParameterSearch(h);
+        }
+
+        public void ExploreHandlers(List<State> allStates)
+        {
+            foreach (var s in allStates)
+            {
+                // Looking at one state
+                foreach (var (@event, handler) in s.AllEventHandlers)
+                {
+                    ExploreEventComb($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}", @event);
+                    if (handler is EventDoAction action && action.Target.CanSend == true)
+                    {
+                        // Quantifying:
+                        // - forall*exists* e_send, e_recv
+                        // - forall*exists* e_send, e_send
+                        // - no need to look at `e_recv, e_recv` as this might be sent somewhere
+                        foreach (var send in action.Target.SendSet)
+                        {
+                            ExploreEventComb($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}_send_{send.Name}", send, @event);
+                            ExploreEventComb($"{s.OwningMachine.Name}_{s.Name}_send_{send.Name}_send_{send.Name}", send, send);
+                        }
+                    }
+                }
+
+                // Looking at two states
+                for (int i = 0; i < allStates.Count; ++i)
+                {
+                    for (int j = 0; j < allStates.Count; ++j)
+                    {
+                        if (i == j) continue;
+                        var s1 = allStates[i];
+                        var s2 = allStates[j];
+                        var m1 = s1.OwningMachine;
+                        var m2 = s2.OwningMachine;
+                        // Looking for s1.send is in s2.recv
+                        foreach (var (recv_1, h1) in s1.AllEventHandlers)
+                        {
+                            if (h1 is not EventDoAction a1 || a1.Target.CanSend != true) continue; 
+                            foreach (var (recv_2, h2) in s2.AllEventHandlers)
+                            {
+                                if (h2 is not EventDoAction a2 || a2.Target.CanSend != true) continue;
+                                if (a1.Target.SendSet.Contains(recv_2)) {
+                                    // explore s2.send, s1.recv
+                                    foreach (PEvent s2send in a2.Target.SendSet)
+                                    {
+                                        ExploreEventComb($"{m2.Name}_{s2.Name}_send_{s2send.Name}_{m1.Name}_{s1.Name}_recv_{recv_1.Name}", s2send, recv_1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void AutoExplore()
+        {
+            List<Machine> machines = GlobalScope.Machines.Where(x => !x.IsSpec).ToList();
+            // explore single-machine state
+            foreach (var m in machines)
+            {
+                ExploreHandlers(m.AllStates().ToList());
             }
         }
 
@@ -118,15 +229,18 @@ namespace Plang.Compiler
             switch (job.PInferAction)
             {
                 case PInferAction.Compile:
-                    Console.WriteLine("Compile Mode");
+                    job.Output.WriteInfo($"PInfer - Compile `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
-                    CompilePInferHint(job, globalScope, givenHint);
+                    new PInferDriver(job, globalScope).CompilePInferHint(givenHint);
                     break;
                 case PInferAction.RunHint:
-                    Console.WriteLine("RunHint Modde");
-                    TraceMetadata metadata = new TraceMetadata(job);
+                    job.Output.WriteInfo($"PInfer - Run `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
-                    ParameterSearch(job, metadata, globalScope, givenHint);
+                    new PInferDriver(job, globalScope).ParameterSearch(givenHint);
+                    break;
+                case PInferAction.Auto:
+                    job.Output.WriteInfo("PInfer - Auto Exploration");
+                    new PInferDriver(job, globalScope).AutoExplore();
                     break;
             }
         }
@@ -144,11 +258,9 @@ namespace Plang.Compiler
                     string.Join(":", [depsOpt, classpath]),
                     $"{job.ProjectName}.pinfer.Main"];
             
-            ShowConfig(hint);
             List<string> configArgs = GetMinerConfigArgs(job, metadata, hint, codegen);
             if (configArgs == null)
             {
-                job.Output.WriteWarning("Skipped due to config argument error ...");
                 return -1;
             }
             startInfo = new ProcessStartInfo("java", args.Concat(configArgs))
@@ -163,19 +275,14 @@ namespace Plang.Compiler
             process.WaitForExit();
             Console.WriteLine("Cleaning up ...");
             var dirInfo = new DirectoryInfo("./");
-            foreach (var file in dirInfo.GetFiles())
+            foreach (var dir in dirInfo.GetDirectories())
             {
-                if (file.Name.EndsWith(".inv.gz") || file.Name.EndsWith(".dtrace.gz"))
+                if (dir.Name.Equals("tmp_daikon_traces"))
                 {
-                   file.Delete();
+                    dir.Delete(true);
                 }
             }
             return process.ExitCode;
-        }
-
-        private static void ShowConfig(Hint hint)
-        {
-            
         }
 
         private static List<string> GetMinerConfigArgs(ICompilerConfiguration configuration, TraceMetadata metadata, Hint hint, PInferPredicateGenerator codegen)
@@ -231,7 +338,7 @@ namespace Plang.Compiler
             }
             else
             {
-                configuration.Output.WriteError($"No trace indexed for the following event combination:\n{string.Join(", ", hint.Quantified.Select(x => x.EventName))}");
+                configuration.Output.WriteWarning($"No trace indexed for this event combination: {string.Join(", ", hint.Quantified.Select(x => x.EventName))}. Skipped ...");
                 return null;
             }
             return args;
@@ -279,7 +386,7 @@ namespace Plang.Compiler
             }
             foreach (var key in traceIndex.Keys)
             {
-                if (key.SetEquals(k))
+                if (k.IsSubsetOf(key))
                 {
                     folder = traceIndex[key];
                     return true;

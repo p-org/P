@@ -65,7 +65,7 @@ namespace Plang.Compiler
                 hint.ShowHint();
                 Console.WriteLine("===============================");
             }
-            PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen);
+            // PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen);
         }
 
         public void ParameterSearch(Hint hint)
@@ -80,7 +80,6 @@ namespace Plang.Compiler
                 Job.Output.WriteInfo($"Search space already explored: {hint.Name}, skipping ...");
                 return;
             }
-            ExploredHints.Add(hint);
             // Given event combination
             // Enumerate term depth
             List<Hint> worklist = [];
@@ -107,6 +106,7 @@ namespace Plang.Compiler
                     h.Next(Job, Codegen.MaxArity());
                 }
             }
+            ExploredHints.Add(hint);
         }
 
         public PEventVariable MkEventVar(PEvent e, int i)
@@ -205,12 +205,20 @@ namespace Plang.Compiler
                 }
                 if (job.HintName == null)
                 {
-                    job.Output.WriteError($"[Error] No hint provided. Available hints:\n{availableHints}");
+                    job.Output.WriteWarning($"No hint provided. Available hints:\n{availableHints}");
                     Environment.Exit(1);
                 }
                 if (!globalScope.Get(job.HintName, out givenHint))
                 {
                     job.Output.WriteWarning($"Hint \"{job.HintName}\" not found. Available hints:\n{availableHints}");
+                    Environment.Exit(1);
+                }
+            }
+            if (job.PInferAction == PInferAction.RunHint || job.PInferAction == PInferAction.Auto)
+            {
+                if (job.TraceFolder == null)
+                {
+                    job.Output.WriteError("An indexed trace folder has to be provided for `auto` and `run`.");
                     Environment.Exit(1);
                 }
             }

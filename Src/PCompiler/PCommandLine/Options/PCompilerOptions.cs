@@ -298,13 +298,13 @@ namespace Plang.Options
                 compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
             }
 
-            if (compilerConfiguration.OutputLanguages.Contains(CompilerOutput.PInfer))
-            {
-                if (compilerConfiguration.HintName == null)
-                {
-                    Error.CompilerReportAndExit("PInfer compilation/execution requires a hint to be specified via `--hint`.");
-                }
-            }
+            // if (compilerConfiguration.OutputLanguages.Contains(CompilerOutput.PInfer))
+            // {
+            //     if (compilerConfiguration.HintName == null)
+            //     {
+            //         Error.CompilerReportAndExit("PInfer compilation/execution requires a hint to be specified via `--hint`.");
+            //     }
+            // }
         }
 
 

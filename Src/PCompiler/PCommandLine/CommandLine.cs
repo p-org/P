@@ -265,10 +265,10 @@ namespace Plang
                 case PInferMode.RunHint: compileConfig.PInferAction = PInferAction.RunHint; break;
                 case PInferMode.Auto:    compileConfig.PInferAction = PInferAction.Auto; break;
             }
-            if ((mode == PInferMode.Compile || mode == PInferMode.RunHint) && compileConfig.HintName == null)
-            {
-                Error.ReportAndExit("[Error] `compile` and `run` requires a hint name");
-            }
+            // if ((mode == PInferMode.Compile || mode == PInferMode.RunHint) && compileConfig.HintName == null)
+            // {
+            //     Error.ReportAndExit("[Error] `compile` and `run` requires a hint name");
+            // }
             if ((mode == PInferMode.Auto || mode == PInferMode.RunHint) && compileConfig.TraceFolder == null)
             {
                 Error.ReportAndExit("[Error] `auto` and `run` requires an aggregated trace folder");

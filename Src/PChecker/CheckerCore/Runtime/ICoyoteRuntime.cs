@@ -3,7 +3,7 @@
 
 using System;
 using System.IO;
-using PChecker.Actors.Events;
+using PChecker.StateMachines.Events;
 using PChecker.Exceptions;
 using PChecker.Specifications.Monitors;
 
@@ -129,7 +129,7 @@ namespace PChecker.Runtime
         TextWriter SetLogger(TextWriter logger);
 
         /// <summary>
-        /// Terminates the runtime and notifies each active actor to halt execution.
+        /// Terminates the runtime and notifies each active state machine to halt execution.
         /// </summary>
         void Stop();
     }

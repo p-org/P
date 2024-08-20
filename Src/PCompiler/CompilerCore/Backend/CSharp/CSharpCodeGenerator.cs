@@ -119,7 +119,7 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 context.WriteLine(output, $"public class {context.Names.GetNameForDecl(iface)} : PMachineValue {{");
                 context.WriteLine(output,
-                    $"public {context.Names.GetNameForDecl(iface)} (ActorId machine, List<string> permissions) : base(machine, permissions) {{ }}");
+                    $"public {context.Names.GetNameForDecl(iface)} (StateMachineId machine, List<string> permissions) : base(machine, permissions) {{ }}");
                 context.WriteLine(output, "}");
                 context.WriteLine(output);
             }
@@ -150,8 +150,8 @@ namespace Plang.Compiler.Backend.CSharp
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
             context.WriteLine(output, "using PChecker;");
-            context.WriteLine(output, "using PChecker.Actors;");
-            context.WriteLine(output, "using PChecker.Actors.Events;");
+            context.WriteLine(output, "using PChecker.StateMachines;");
+            context.WriteLine(output, "using PChecker.StateMachines.Events;");
             context.WriteLine(output, "using PChecker.Runtime;");
             context.WriteLine(output, "using PChecker.Specifications;");
             context.WriteLine(output, "using System;");
@@ -385,7 +385,7 @@ namespace Plang.Compiler.Backend.CSharp
         {
             context.WriteLine(output);
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
-            context.WriteLine(output, "public static void Execute(IActorRuntime runtime) {");
+            context.WriteLine(output, "public static void Execute(IStateMachineRuntime runtime) {");
             context.WriteLine(output, "runtime.RegisterLog(new PLogFormatter());");
             context.WriteLine(output, "runtime.RegisterLog(new PJsonFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
@@ -396,7 +396,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "InitializeMonitorMap(runtime);");
             context.WriteLine(output, "InitializeMonitorObserves();");
             context.WriteLine(output,
-                $"runtime.CreateActor(typeof(_GodMachine), new _GodMachine.Config(typeof({main})));");
+                $"runtime.CreateStateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof({main})));");
             context.WriteLine(output, "}");
         }
 
@@ -418,7 +418,7 @@ namespace Plang.Compiler.Backend.CSharp
                 }
             }
 
-            context.WriteLine(output, "public static void InitializeMonitorMap(IActorRuntime runtime) {");
+            context.WriteLine(output, "public static void InitializeMonitorMap(IStateMachineRuntime runtime) {");
             context.WriteLine(output, "PModule.monitorMap.Clear();");
             foreach (var machine in machineMap)
             {

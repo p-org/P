@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using PChecker.Actors.Events;
-using PChecker.Actors.Logging;
+using PChecker.StateMachines.Events;
+using PChecker.StateMachines.Logging;
 using PChecker.Specifications.Monitors;
 
 namespace PChecker.PRuntime

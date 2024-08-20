@@ -14,8 +14,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using PChecker.Actors;
-using PChecker.Actors.Logging;
+using PChecker.StateMachines;
+using PChecker.StateMachines.Logging;
 using PChecker.Coverage;
 using PChecker.IO;
 using PChecker.IO.Debugging;
@@ -133,7 +133,7 @@ namespace PChecker.SystematicTesting
         public TestReport TestReport { get; set; }
 
         /// <summary>
-        /// A graph of the actors, state machines and events of a single test schedule.
+        /// A graph of the state machines, state machines and events of a single test schedule.
         /// </summary>
         private Graph Graph;
 
@@ -223,7 +223,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<IActorRuntime> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<IStateMachineRuntime> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<IActorRuntime, Task> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<IStateMachineRuntime, Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -381,7 +381,7 @@ namespace PChecker.SystematicTesting
                     }
 
 
-                    Error.ReportAndExit("Exception thrown during testing outside the context of an actor, " +
+                    Error.ReportAndExit("Exception thrown during testing outside the context of an state machine, " +
                                         "possibly in a test method. Please use /debug /v:2 to print more information.");
                 }
             }
@@ -778,9 +778,9 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private void InitializeCustomLogging(ControlledRuntime runtime)
         {
-            if (!string.IsNullOrEmpty(_checkerConfiguration.CustomActorRuntimeLogType))
+            if (!string.IsNullOrEmpty(_checkerConfiguration.CustomStateMachineRuntimeLogType))
             {
-                var log = Activate<IActorRuntimeLog>(_checkerConfiguration.CustomActorRuntimeLogType);
+                var log = Activate<IStateMachineRuntimeLog>(_checkerConfiguration.CustomStateMachineRuntimeLogType);
                 if (log != null)
                 {
                     runtime.RegisterLog(log);
@@ -790,7 +790,7 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.IsDgmlGraphEnabled || _checkerConfiguration.ReportActivityCoverage)
             {
                 // Registers an activity coverage graph builder.
-                runtime.RegisterLog(new ActorRuntimeLogGraphBuilder(false)
+                runtime.RegisterLog(new StateMachineRuntimeLogGraphBuilder(false)
                 {
                     CollapseMachineInstances = _checkerConfiguration.ReportActivityCoverage
                 });
@@ -799,13 +799,13 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.ReportActivityCoverage)
             {
                 // Need this additional logger to get the event coverage report correct
-                runtime.RegisterLog(new ActorRuntimeLogEventCoverage());
+                runtime.RegisterLog(new StateMachineRuntimeLogEventCoverage());
             }
 
             if (_checkerConfiguration.IsXmlLogEnabled)
             {
                 XmlLog = new StringBuilder();
-                runtime.RegisterLog(new ActorRuntimeLogXmlFormatter(XmlWriter.Create(XmlLog,
+                runtime.RegisterLog(new PCheckerLogXmlFormatter(XmlWriter.Create(XmlLog,
                     new XmlWriterSettings() { Indent = true, IndentChars = "  ", OmitXmlDeclaration = true })));
             }
         }

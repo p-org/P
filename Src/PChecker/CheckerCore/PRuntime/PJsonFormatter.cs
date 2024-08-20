@@ -4,17 +4,17 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using PChecker.Actors;
-using PChecker.Actors.Events;
-using PChecker.Actors.Logging;
+using PChecker.StateMachines;
+using PChecker.StateMachines.Events;
+using PChecker.StateMachines.Logging;
 using PChecker.PRuntime.Exceptions;
 
 namespace PChecker.PRuntime
 {
     /// <summary>
-    /// This class implements IActorRuntimeLog and generates log output in an XML format.
+    /// This class implements IStateMachineRuntimeLog and generates log output in an XML format.
     /// </summary>
-    public class PJsonFormatter : ActorRuntimeLogJsonFormatter
+    public class PJsonFormatter : PCheckerLogJsonFormatter
     {
 
         /// <summary>
@@ -98,27 +98,9 @@ namespace PChecker.PRuntime
             Writer.AddLog(error);
             Writer.AddToLogs();
         }
-
-        public override void OnCreateActor(ActorId id, string creatorName, string creatorType)
-        {
-            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
-            {
-                return;
-            }
-
-            var source = creatorName ?? $"task '{Task.CurrentId}'";
-            var log = $"{id} was created by {source}.";
-
-            Writer.AddLogType(JsonWriter.LogType.CreateActor);
-            Writer.LogDetails.Id = id.ToString();
-            Writer.LogDetails.CreatorName = source;
-            Writer.LogDetails.CreatorType = creatorType;
-            Writer.AddLog(log);
-            Writer.AddToLogs(updateVcMap: true);
-        }
-
+        
         /// <inheritdoc/>
-        public override void OnCreateStateMachine(ActorId id, string creatorName, string creatorType)
+        public override void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType)
         {
             if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
             {
@@ -136,7 +118,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnDefaultEventHandler(ActorId id, string stateName)
+        public override void OnDefaultEventHandler(StateMachineId id, string stateName)
         {
             stateName = GetShortName(stateName);
 
@@ -151,7 +133,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnDequeueEvent(ActorId id, string stateName, Event e)
+        public override void OnDequeueEvent(StateMachineId id, string stateName, Event e)
         {
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
@@ -172,11 +154,11 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnEnqueueEvent(ActorId id, Event e)
+        public override void OnEnqueueEvent(StateMachineId id, Event e)
         {
         }
 
-        public override void OnExceptionHandled(ActorId id, string stateName, string actionName, Exception ex)
+        public override void OnExceptionHandled(StateMachineId id, string stateName, string actionName, Exception ex)
         {
             if (ex is PNonStandardReturnException)
             {
@@ -196,7 +178,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnExceptionThrown(ActorId id, string stateName, string actionName, Exception ex)
+        public override void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
         {
             if (ex is PNonStandardReturnException)
             {
@@ -216,11 +198,11 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnExecuteAction(ActorId id, string handlingStateName, string currentStateName, string actionName)
+        public override void OnExecuteAction(StateMachineId id, string handlingStateName, string currentStateName, string actionName)
         {
         }
 
-        public override void OnGotoState(ActorId id, string currentStateName, string newStateName)
+        public override void OnGotoState(StateMachineId id, string currentStateName, string newStateName)
         {
             if (currentStateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
@@ -241,7 +223,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnHalt(ActorId id, int inboxSize)
+        public override void OnHalt(StateMachineId id, int inboxSize)
         {
             var log = $"{id} halted with {inboxSize} events in its inbox.";
 
@@ -252,11 +234,11 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnHandleRaisedEvent(ActorId id, string stateName, Event e)
+        public override void OnHandleRaisedEvent(StateMachineId id, string stateName, Event e)
         {
         }
 
-        public override void OnPopState(ActorId id, string currentStateName, string restoredStateName)
+        public override void OnPopState(StateMachineId id, string currentStateName, string restoredStateName)
         {
             currentStateName = string.IsNullOrEmpty(currentStateName) ? "[not recorded]" : currentStateName;
             var reenteredStateName = restoredStateName ?? string.Empty;
@@ -270,7 +252,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnPopStateUnhandledEvent(ActorId id, string stateName, Event e)
+        public override void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
         {
             var log = $"{id} popped state {stateName} due to unhandled event '{e.GetType().Name}'.";
 
@@ -282,7 +264,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnPushState(ActorId id, string currentStateName, string newStateName)
+        public override void OnPushState(StateMachineId id, string currentStateName, string newStateName)
         {
             var log = $"{id} pushed from state '{currentStateName}' to state '{newStateName}'.";
 
@@ -294,7 +276,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnRaiseEvent(ActorId id, string stateName, Event e)
+        public override void OnRaiseEvent(StateMachineId id, string stateName, Event e)
         {
             stateName = GetShortName(stateName);
             string eventName = GetEventNameWithPayload(e);
@@ -318,7 +300,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnReceiveEvent(ActorId id, string stateName, Event e, bool wasBlocked)
+        public override void OnReceiveEvent(StateMachineId id, string stateName, Event e, bool wasBlocked)
         {
             stateName = GetShortName(stateName);
             string eventName = GetEventNameWithPayload(e);
@@ -337,7 +319,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnSendEvent(ActorId targetActorId, string senderName, string senderType, string senderStateName,
+        public override void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName,
             Event e, Guid opGroupId, bool isTargetHalted)
         {
             senderStateName = GetShortName(senderStateName);
@@ -347,13 +329,13 @@ namespace PChecker.PRuntime
             var sender = !string.IsNullOrEmpty(senderName)
                 ? $"'{senderName}' in state '{senderStateName}'"
                 : $"The runtime";
-            var log = $"{sender} sent event '{eventName}' to '{targetActorId}'{isHalted}{opGroupIdMsg}.";
+            var log = $"{sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}{opGroupIdMsg}.";
 
             Writer.AddLogType(JsonWriter.LogType.SendEvent);
             Writer.LogDetails.Sender = !string.IsNullOrEmpty(senderName) ? senderName : "Runtime";
             Writer.LogDetails.State = senderStateName;
             Writer.LogDetails.Event = GetShortName(e.GetType().Name);
-            Writer.LogDetails.Target = targetActorId.ToString();
+            Writer.LogDetails.Target = targetStateMachineId.ToString();
             Writer.LogDetails.OpGroupId = opGroupId.ToString();
             Writer.LogDetails.IsTargetHalted = isTargetHalted;
             Writer.LogDetails.Payload = GetEventPayloadInJson(e);
@@ -361,7 +343,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnStateTransition(ActorId id, string stateName, bool isEntry)
+        public override void OnStateTransition(StateMachineId id, string stateName, bool isEntry)
         {
             if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
             {
@@ -380,7 +362,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnWaitEvent(ActorId id, string stateName, Type eventType)
+        public override void OnWaitEvent(StateMachineId id, string stateName, Type eventType)
         {
             stateName = GetShortName(stateName);
 
@@ -396,7 +378,7 @@ namespace PChecker.PRuntime
             Writer.AddToLogs(updateVcMap: true);
         }
 
-        public override void OnWaitEvent(ActorId id, string stateName, params Type[] eventTypes)
+        public override void OnWaitEvent(StateMachineId id, string stateName, params Type[] eventTypes)
         {
             stateName = GetShortName(stateName);
             string eventNames;

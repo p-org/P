@@ -236,7 +236,7 @@ namespace PChecker
         /// This is the AssemblyQualifiedName of the type to load.
         /// </summary>
         [DataMember]
-        public string CustomActorRuntimeLogType;
+        public string CustomStateMachineRuntimeLogType;
 
         /// <summary>
         /// Enables debugging.

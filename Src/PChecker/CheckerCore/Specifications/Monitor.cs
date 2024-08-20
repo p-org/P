@@ -10,12 +10,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using PChecker.Actors;
-using PChecker.Actors.Events;
-using PChecker.Actors.Handlers;
-using PChecker.Actors.Logging;
-using PChecker.Actors.StateTransitions;
+using PChecker.StateMachines;
+using PChecker.StateMachines.Events;
+using PChecker.StateMachines.Handlers;
+using PChecker.StateMachines.Logging;
+using PChecker.StateMachines.StateTransitions;
 using PChecker.Exceptions;
+using PChecker.SystematicTesting;
 
 namespace PChecker.Specifications.Monitors
 {
@@ -48,7 +49,7 @@ namespace PChecker.Specifications.Monitors
 
         /// <summary>
         /// A set of lockable objects used to protect static initialization of the ActionCache while
-        /// also enabling multithreaded initialization of different Actor types.
+        /// also enabling multithreaded initialization of different StateMachine types.
         /// </summary>
         private static readonly ConcurrentDictionary<Type, object> ActionCacheLocks =
             new ConcurrentDictionary<Type, object>();
@@ -61,7 +62,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// The runtime that executes this monitor.
         /// </summary>
-        private ActorRuntime Runtime;
+        private ControlledRuntime Runtime;
 
         /// <summary>
         /// The active monitor state.
@@ -172,7 +173,7 @@ namespace PChecker.Specifications.Monitors
         /// Initializes this monitor.
         /// </summary>
         /// <param name="runtime">The runtime that executes this monitor.</param>
-        internal void Initialize(ActorRuntime runtime)
+        internal void Initialize(ControlledRuntime runtime)
         {
             Runtime = runtime;
         }
@@ -702,7 +703,7 @@ namespace PChecker.Specifications.Monitors
             var syncObject = ActionCacheLocks.GetOrAdd(monitorType, _ => new object());
 
             // Locking this syncObject ensures only one thread enters the initialization code to update
-            // the ActionCache for this specific Actor type.
+            // the ActionCache for this specific StateMachine type.
             lock (syncObject)
             {
                 if (MonitorActionMap.ContainsKey(monitorType))

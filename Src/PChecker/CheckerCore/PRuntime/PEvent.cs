@@ -1,5 +1,5 @@
 ﻿using System;
-using PChecker.Actors.Events;
+using PChecker.StateMachines.Events;
 using PChecker.PRuntime.Values;
 
 namespace PChecker.PRuntime

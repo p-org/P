@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
@@ -634,7 +636,7 @@ namespace Plang.Compiler.TypeChecker
         public Function Put(string name, PParser.FunDeclContext tree)
         {
             var function = new Function(name, tree);
-            CheckConflicts(function, Namespace(functions));
+            CheckConflicts(function, Namespace(functions), Namespace(states));
             functions.Add(name, function);
             return function;
         }
@@ -729,7 +731,7 @@ namespace Plang.Compiler.TypeChecker
             string filePath = config.LocationResolver.GetLocation(tree).File.FullName;
             foreach (var dependencyPath in config.ProjectDependencies)
             {
-                if (filePath.StartsWith(dependencyPath))
+                if (filePath.StartsWith($"{dependencyPath}{Path.DirectorySeparatorChar}"))
                 {
                     return null;
                 }

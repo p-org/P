@@ -159,9 +159,9 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using System.Collections.Generic;");
             context.WriteLine(output, "using System.Linq;");
             context.WriteLine(output, "using System.IO;");
-            context.WriteLine(output, "using Plang.CSharpRuntime;");
-            context.WriteLine(output, "using Plang.CSharpRuntime.Values;");
-            context.WriteLine(output, "using Plang.CSharpRuntime.Exceptions;");
+            context.WriteLine(output, "using PChecker.PRuntime.Values;");
+            context.WriteLine(output, "using PChecker.PRuntime;");
+            context.WriteLine(output, "using PChecker.PRuntime.Exceptions;");
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);
@@ -657,7 +657,7 @@ namespace Plang.Compiler.Backend.CSharp
             if (function.Role == FunctionRole.Method || function.Role == FunctionRole.Foreign)
                 return;
 
-            var isAsync = function.CanReceive == true;
+            var isAsync = function.CanReceive;
             var signature = function.Signature;
 
             var functionName = context.Names.GetNameForDecl(function);
@@ -701,7 +701,7 @@ namespace Plang.Compiler.Backend.CSharp
                 WriteNamedFunctionWrapper(context, output, function);
             }
 
-            var isAsync = function.CanReceive == true;
+            var isAsync = function.CanReceive;
             var signature = function.Signature;
 
             var staticKeyword = isStatic ? "static " : "";
@@ -737,7 +737,7 @@ namespace Plang.Compiler.Backend.CSharp
                 WriteFunctionBody(context, output, function);
 
                 // for monitor
-                if (!(function.CanCreate == true || function.CanSend == true || function.IsNondeterministic == true || function.CanReceive == true))
+                if (!(function.CanCreate || function.CanSend || function.IsNondeterministic || function.CanReceive))
                 {
                     var functionParameters_monitor = functionParameters + string.Concat(seperator, "PMonitor currentMachine");
                     context.WriteLine(output,
@@ -889,7 +889,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case FunCallStmt funCallStmt:
                     var isStatic = funCallStmt.Function.Owner == null;
-                    var awaitMethod = funCallStmt.Function.CanReceive == true ? "await " : "";
+                    var awaitMethod = funCallStmt.Function.CanReceive ? "await " : "";
                     var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
                     context.Write(output,
                         $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
@@ -1413,7 +1413,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case FunCallExpr funCallExpr:
                     var isStatic = funCallExpr.Function.Owner == null;
-                    var awaitMethod = funCallExpr.Function.CanReceive == true ? "await " : "";
+                    var awaitMethod = funCallExpr.Function.CanReceive ? "await " : "";
                     var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
                     context.Write(output,
                         $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");

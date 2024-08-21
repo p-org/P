@@ -364,6 +364,22 @@ namespace Plang.Compiler.Backend
                         }).ToList()));
                     return assertDeps.Concat(new List<IPStmt>{ifStmtForAssert})
                         .ToList();
+                
+                case AssumeStmt assumeStmt:
+                    (var assumeExpr, var assumeDeps) = SimplifyExpression(assumeStmt.Assumption);
+                    (var amessageExpr, var amessageDeps) = SimplifyExpression(assumeStmt.Message);
+                    if (assumeExpr is BoolLiteralExpr)
+                    {
+                        return assumeDeps.Concat(amessageDeps).Concat(new []{new AssumeStmt(location, assumeExpr, amessageExpr)}).ToList();
+                    }
+
+                    var aifStmtForAssert = new IfStmt(location, assumeExpr, new NoStmt(location), new CompoundStmt(
+                        location, amessageDeps.Concat(new[]
+                        {
+                            new AssumeStmt(location, assumeExpr, amessageExpr)
+                        }).ToList()));
+                    return assumeDeps.Concat(new List<IPStmt>{aifStmtForAssert})
+                        .ToList();
 
                 case AssignStmt assignStmt:
                     (var assignLV, var assignLVDeps) = SimplifyLvalue(assignStmt.Location);
@@ -434,7 +450,6 @@ namespace Plang.Compiler.Backend
                                 new CompoundStmt(ifStmt.ElseBranch.SourceLocation, elseBranch))
                         })
                         .ToList();
-
                 case AddStmt addStmt:
                     var (addVar, addVarDeps) = SimplifyLvalue(addStmt.Variable);
                     var (addVal, addValDeps) = SimplifyArgPack(new[] { addStmt.Value });

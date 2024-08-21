@@ -20,5 +20,8 @@ namespace Plang.Compiler
         ILocationResolver LocationResolver { get; }
         ITranslationErrorHandler Handler { get; }
         bool Debug { get; }
+        int Timeout { get; }
+        bool HandlesAll { get; }
+        string CheckOnly { get; }
     }
 }

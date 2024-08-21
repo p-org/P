@@ -8,28 +8,28 @@ namespace Plang.Compiler.TypeChecker.Types
 {
     public class PermissionType : PLanguageType
     {
-        private readonly IPDecl origin;
-
         public PermissionType(Machine machine) : base(TypeKind.Base)
         {
-            origin = machine;
+            Origin = machine;
             AllowedPermissions = new Lazy<IReadOnlyList<Event>>(() => machine.Receives.Events.ToList());
         }
 
         public PermissionType(Interface pInterface) : base(TypeKind.Base)
         {
-            origin = pInterface;
+            Origin = pInterface;
             AllowedPermissions = new Lazy<IReadOnlyList<Event>>(() => pInterface.ReceivableEvents.Events.ToList());
         }
 
         public PermissionType(NamedEventSet eventSet) : base(TypeKind.Base)
         {
-            origin = eventSet;
+            Origin = eventSet;
             AllowedPermissions = new Lazy<IReadOnlyList<Event>>(() => eventSet.Events.ToList());
         }
+        
+        public IPDecl Origin { get; }
 
-        public override string OriginalRepresentation => origin.Name;
-        public override string CanonicalRepresentation => origin.Name;
+        public override string OriginalRepresentation => Origin.Name;
+        public override string CanonicalRepresentation => Origin.Name;
 
         public override Lazy<IReadOnlyList<Event>> AllowedPermissions { get; }
 

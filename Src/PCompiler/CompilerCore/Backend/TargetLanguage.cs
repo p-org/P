@@ -3,6 +3,7 @@ using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.Backend.Java;
 using Plang.Compiler.Backend.Stately;
 using Plang.Compiler.Backend.Symbolic;
+using Plang.Compiler.Backend.Uclid5;
 
 namespace Plang.Compiler.Backend
 {
@@ -17,6 +18,7 @@ namespace Plang.Compiler.Backend
             RegisterCodeGenerator(CompilerOutput.Java, new JavaCompiler());
             RegisterCodeGenerator(CompilerOutput.Symbolic, new SymbolicCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Stately, new StatelyCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.Uclid5, new Uclid5CodeGenerator());
         }
 
         private static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)

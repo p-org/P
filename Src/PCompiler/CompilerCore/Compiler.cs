@@ -47,12 +47,23 @@ namespace Plang.Compiler
                 return Environment.ExitCode;
             }
 
-            // Convert functions to lowered SSA form with explicit cloning
-            foreach (var fun in scope.GetAllMethods())
+            if (job.OutputLanguages.Contains(CompilerOutput.Uclid5))
             {
-                IRTransformer.SimplifyMethod(fun);
+                // If outputing UCLID5, don't output anything else
+                if (job.OutputLanguages.Count > 1)
+                {
+                    throw new NotSupportedException("UCLID5 backend must be used on its own!");
+                }
             }
-
+            else
+            {
+                // Convert functions to lowered SSA form with explicit cloning
+                foreach (var fun in scope.GetAllMethods())
+                {
+                    IRTransformer.SimplifyMethod(fun);
+                }
+            }
+            
             DirectoryInfo parentDirectory = job.OutputDirectory;
             foreach (var entry in job.OutputLanguages.Distinct())
             {

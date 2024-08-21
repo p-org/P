@@ -210,7 +210,7 @@ namespace Plang.Compiler.TypeChecker
                             break;
                         case "include_guards":
                             hint.GuardPredicates = Explicate(bodyItemCtx, "guards", GetBoolExpr(bodyItemCtx));
-                            hint.NumGuardPredicates = Math.Max(hint.GuardPredicates.Count, hint.NumFilterPredicates);
+                            hint.NumGuardPredicates = Math.Max(hint.GuardPredicates.Count, hint.NumGuardPredicates);
                             break;
                         case "include_filters":
                             hint.FilterPredicates = Explicate(bodyItemCtx, "filters", GetBoolExpr(bodyItemCtx));

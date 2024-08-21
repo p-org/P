@@ -51,7 +51,7 @@ namespace Plang.Compiler.Backend.PInfer
                     return ex.FieldName.Equals(ey.FieldName) && Equals(ex.SubExpr, ey.SubExpr);
                 case (FunCallExpr ex, FunCallExpr ey):
                     return ex.Function.Name.Equals(ey.Function.Name) && ex.Arguments.Count == ey.Arguments.Count
-                            && ex.Arguments.Select(x => x.Type).Zip(ey.Arguments.Select(x => x.Type), Equals).All(b => b) && ex.Function.Signature.ReturnType.Equals(ey.Function.Signature.ReturnType);
+                            && ex.Arguments.Select(x => x.Type.Canonicalize()).Zip(ey.Arguments.Select(x => x.Type.Canonicalize()), Equals).All(b => b) && ex.Function.Signature.ReturnType.Equals(ey.Function.Signature.ReturnType);
                 case (DefinedPredicate ex, DefinedPredicate ey):
                     return ex.Name.Equals(ey.Name) && ex.Function.Signature.ParameterTypes.Zip(ey.Function.Signature.ParameterTypes, Equals).All(x => x);
                 case (BuiltinPredicate ex, BuiltinPredicate ey):
@@ -86,12 +86,11 @@ namespace Plang.Compiler.Backend.PInfer
                 case UnaryOpExpr ex:
                     return (ex.Operation, GetHashCode(ex.SubExpr)).GetHashCode();
                 case NamedTupleAccessExpr ex:
-                    return (ex.FieldName, GetHashCode(ex.SubExpr)).GetHashCode();
+                    string nta_s = $"{GetHashCode(ex.SubExpr)}.{ex.FieldName.GetHashCode()}";
+                    return nta_s.GetHashCode();
                 case FunCallExpr ex:
-                    return (ex.Function.Name,
-                            string.Join(" ", ex.Arguments.Select(x => PInferPredicateGenerator.ShowType(x.Type))) 
-                                      + " " + PInferPredicateGenerator.ShowType(ex.Function.Signature.ReturnType),
-                            string.Join(" ", ex.Arguments.Select(GetHashCode))).GetHashCode();
+                    string funCall_s = $"{ex.Function.Name}({string.Join(",", ex.Arguments.Select(GetHashCode))})";
+                    return funCall_s.GetHashCode();
                 case DefinedPredicate p:
                     return (p.Name, p.Function.Signature).GetHashCode();
                 case BuiltinPredicate p:

@@ -43,12 +43,14 @@ namespace Plang.Compiler.Backend.PInfer
                 return PredicateOrder[expr];
             }
             JavaCodegen codegen = new(job, "", Predicates, VisitedSet, FreeEvents);
-            // foreach (var k in PredicateOrder.Keys)
-            // {
-            //     Console.WriteLine(codegen.GenerateCodeExpr(k, true));
-            //     var o = PredicateOrder[k];
-            //     Console.WriteLine(o);
-            // }
+            // Console.WriteLine()
+            foreach (var k in PredicateOrder.Keys)
+            {
+                Console.WriteLine(codegen.GenerateCodeExpr(k, true));
+                var o = PredicateOrder[k];
+                Console.WriteLine(o);
+            }
+            var x = PredicateOrder[expr];
             throw new Exception($"{codegen.GenerateCodeExpr(expr, true)} not in enumerated predicates!");
         }
 

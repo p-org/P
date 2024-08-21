@@ -36,6 +36,7 @@ EXIT      : 'exit' ;
 FOREACH   : 'foreach';
 FORMAT	  : 'format' ;
 FUN       : 'fun' ;
+PURE      : 'pure' ;
 GOTO      : 'goto' ;
 HALT      : 'halt' ;
 HOT       : 'hot' ;
@@ -62,6 +63,13 @@ VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+
+INVARIANT  : 'invariant';
+AXIOM      : 'axiom';
+IS         : 'is';
+FLYING     : 'inflight';
+TARGETS    : 'targets';
+SENT       : 'sent';
 
 // module-system-specific keywords
 
@@ -109,6 +117,7 @@ NONDET     : '$'  ;
 LNOT   : '!' ;
 LAND   : '&&' ;
 LOR    : '||' ;
+LTHEN  : '==>';
 
 EQ     : '==' ;
 NE     : '!=' ;
@@ -138,6 +147,10 @@ SEMI   : ';' ;
 COMMA  : ',' ;
 DOT    : '.' ;
 COLON  : ':' ;
+
+FORALL  : 'forall' ;
+EXISTS  : 'exists' ;
+INIT    : 'init';
 
 // Identifiers
 

@@ -22,6 +22,10 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
         private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
+        private readonly IDictionary<string, Pure> pures = new Dictionary<string, Pure>();
+        private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
+        private readonly IDictionary<string, Axiom> axioms = new Dictionary<string, Axiom>();
+        private readonly IDictionary<string, AssumeOnStart> assumeOnStarts = new Dictionary<string, AssumeOnStart>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
@@ -56,6 +60,10 @@ namespace Plang.Compiler.TypeChecker
                 .Concat(Events)
                 .Concat(EventSets)
                 .Concat(Functions)
+                .Concat(Invariants)
+                .Concat(Axioms)
+                .Concat(AssumeOnStarts)
+                .Concat(Pures)
                 .Concat(Interfaces)
                 .Concat(Machines)
                 .Concat(States)
@@ -71,6 +79,10 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<PEvent> Events => events.Values;
         public IEnumerable<NamedEventSet> EventSets => eventSets.Values;
         public IEnumerable<Function> Functions => functions.Values;
+        public IEnumerable<Invariant> Invariants => invariants.Values;
+        public IEnumerable<Axiom> Axioms => axioms.Values;
+        public IEnumerable<AssumeOnStart> AssumeOnStarts => assumeOnStarts.Values;
+        public IEnumerable<Pure> Pures => pures.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
         public IEnumerable<Machine> Machines => machines.Values;
         public IEnumerable<State> States => states.Values;
@@ -159,6 +171,26 @@ namespace Plang.Compiler.TypeChecker
         public bool Get(string name, out Function tree)
         {
             return functions.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out Invariant tree)
+        {
+            return invariants.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out Axiom tree)
+        {
+            return axioms.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out AssumeOnStart tree)
+        {
+            return assumeOnStarts.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out Pure tree)
+        {
+            return pures.TryGetValue(name, out tree);
         }
 
         public bool Get(string name, out Interface tree)
@@ -294,7 +326,58 @@ namespace Plang.Compiler.TypeChecker
             tree = null;
             return false;
         }
+        
+        public bool Lookup(string name, out Invariant tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
 
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
+        public bool Lookup(string name, out Axiom tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
+        public bool Lookup(string name, out Pure tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
         public bool Lookup(string name, out Interface tree)
         {
             var current = this;
@@ -337,6 +420,16 @@ namespace Plang.Compiler.TypeChecker
                 if (current.Get(name, out tree))
                 {
                     return true;
+                }
+
+                // look inside machines to find the state.
+                // TODO: bug if multiple machines have the same state name
+                foreach (var m in current.Machines)
+                {
+                    if (m.Scope.Get(name, out tree))
+                    {
+                        return true;
+                    }
                 }
 
                 current = current.Parent;
@@ -548,6 +641,39 @@ namespace Plang.Compiler.TypeChecker
             return function;
         }
 
+
+        public Pure Put(string name, PParser.PureDeclContext tree)
+        {
+            var pure = new Pure(name, tree);
+            CheckConflicts(pure, Namespace(pures));
+            pures.Add(name, pure);
+            return pure;
+        }
+        
+        public Invariant Put(string name, PParser.InvariantDeclContext tree)
+        {
+            var invariant = new Invariant(name, null, tree); // need to add expr later
+            CheckConflicts(invariant, Namespace(invariants));
+            invariants.Add(name, invariant);
+            return invariant;
+        }
+        
+        public Axiom Put(string name, PParser.AxiomDeclContext tree)
+        {
+            var axiom = new Axiom(name, null, tree); // need to add expr later
+            CheckConflicts(axiom, Namespace(axioms));
+            axioms.Add(name, axiom);
+            return axiom;
+        }
+        
+        public AssumeOnStart Put(string name, PParser.AssumeOnStartDeclContext tree)
+        {
+            var assumeOnStart = new AssumeOnStart(name, null, tree); // need to add expr later
+            CheckConflicts(assumeOnStart, Namespace(assumeOnStarts));
+            assumeOnStarts.Add(name, assumeOnStart);
+            return assumeOnStart;
+        }
+        
         public EnumElem Put(string name, PParser.EnumElemContext tree)
         {
             var enumElem = new EnumElem(name, tree);

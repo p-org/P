@@ -16,8 +16,8 @@ namespace Plang.Compiler.TypeChecker
 
             // Step 1: Build the global scope of declarations
             var globalScope = BuildGlobalScope(config, programUnits);
-
-            // Step 2: Validate machine specifications
+            
+            // Step 2a: Validate machine specifications
             foreach (var machine in globalScope.Machines)
             {
                 MachineChecker.Validate(handler, machine, config);
@@ -31,7 +31,7 @@ namespace Plang.Compiler.TypeChecker
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
 
-            // Step 2: Validate no static handlers
+            // Step 2b: Validate no static handlers
             foreach (var machine in globalScope.Machines)
             {
                 MachineChecker.ValidateNoStaticHandlers(handler, machine);

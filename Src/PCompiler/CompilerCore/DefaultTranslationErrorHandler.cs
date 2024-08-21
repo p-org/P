@@ -117,6 +117,17 @@ namespace Plang.Compiler
                 $"named tuple type {namedTuple.OriginalRepresentation} has no '{location.GetText()}' field");
         }
 
+        public Exception MissingMachineField(PParser.IdenContext location, Machine machine)
+        {
+            return IssueError(location,
+                $"machine {machine.Name} has no '{location.GetText()}' field");
+        }
+        public Exception MissingEventField(PParser.IdenContext location, PEvent pevent)
+        {
+            return IssueError(location,
+                $"machine {pevent.Name} payload has no '{location.GetText()}' field");
+        }
+
         public Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple)
         {
             return IssueError(

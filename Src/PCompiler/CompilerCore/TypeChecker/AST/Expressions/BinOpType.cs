@@ -16,7 +16,8 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
         Gt,
         Ge,
         And,
-        Or
+        Or,
+        Then
     }
 
     public enum BinOpKind

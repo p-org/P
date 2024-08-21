@@ -93,6 +93,13 @@ namespace Plang.Compiler.TypeChecker
                 {
                     return new PermissionType(machine);
                 }
+                
+                if (scope.Lookup(typeName, out PEvent pevent))
+                {
+                    var eset = new NamedEventSet(pevent.Name, pevent.SourceLocation);
+                    eset.AddEvent(pevent);
+                    return new PermissionType(eset);
+                }
 
                 throw handler.MissingDeclaration(context.name, "enum, typedef, event set, machine, or interface",
                     typeName);

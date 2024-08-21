@@ -358,7 +358,7 @@ namespace PChecker.StateMachines.Logging
     public class LogDetails
     {
         /// <summary>
-        /// The text log from PLogFormatter. Removes the log tags.
+        /// The text log from PCheckerLogTextFormatter. Removes the log tags.
         /// I.e., no &lt;SomeLog&gt; in the beginning.
         /// Available for all log types.
         /// </summary>
@@ -557,7 +557,7 @@ namespace PChecker.StateMachines.Logging
 
         /// <summary>
         /// Enum representing the different log types the JSON error trace logs.
-        /// Referenced from PLogFormatter.cs and PCheckerLogTextFormatter.cs
+        /// Referenced from PCheckerLogTextFormatter.cs and PCheckerLogTextFormatter.cs
         /// to see what those formatter logs. Check IStateMachineRuntimeLog.cs to see
         /// each log types' description and when they are invoked.
         /// </summary>

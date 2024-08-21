@@ -161,6 +161,13 @@ namespace PChecker.Testing
             }
 
             Console.WriteLine(testReport.GetText(_checkerConfiguration, "..."));
+            
+            var file = Path.GetFileNameWithoutExtension(testReport.CheckerConfiguration.AssemblyToBeAnalyzed);
+            var directory = testReport.CheckerConfiguration.OutputDirectory;
+            var pintPath = directory + file + "_pchecker_summary.txt";
+            Console.WriteLine($"..... Writing {pintPath}");
+            File.WriteAllText(pintPath, testReport.GetSummaryText(Profiler));
+            
             Console.WriteLine($"... Elapsed {Profiler.GetElapsedTime()} sec.");
 
             if (testReport.InternalErrors.Count > 0)

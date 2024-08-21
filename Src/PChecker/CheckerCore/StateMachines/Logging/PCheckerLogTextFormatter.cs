@@ -3,14 +3,18 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
-using PChecker.StateMachines.Events;
 using PChecker.IO.Logging;
+using PChecker.StateMachines;
+using PChecker.StateMachines.Events;
+using PChecker.StateMachines.Logging;
+using PChecker.PRuntime.Exceptions;
 
-namespace PChecker.StateMachines.Logging
+namespace PChecker.PRuntime
 {
     /// <summary>
-    /// This class implements IStateMachineRuntimeLog and generates output in a a human readable text format.
+    ///     Formatter for the runtime log.
     /// </summary>
     public class PCheckerLogTextFormatter : IStateMachineRuntimeLog
     {
@@ -27,8 +31,25 @@ namespace PChecker.StateMachines.Logging
             Logger = new ConsoleLogger();
         }
 
+        private string GetShortName(string name)
+        {
+            return name.Split('.').Last();
+        }
+
+        private string GetEventNameWithPayload(Event e)
+        {
+            if (e.GetType().Name.Contains("GotoStateEvent"))
+            {
+                return e.GetType().Name;
+            }
+            var pe = (PEvent)(e);
+            var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString();
+            var msg = pe.Payload == null ? "" : $" with payload ({payload})";
+            return $"{GetShortName(e.GetType().Name)}{msg}";
+        }
+        
         /// <inheritdoc/>
-        public virtual void OnAssertionFailure(string error)
+        public void OnAssertionFailure(string error)
         {
             Logger.WriteLine(error);
         }
@@ -44,16 +65,30 @@ namespace PChecker.StateMachines.Logging
             var text = $"<CreateLog> {id} was created by {source}.";
             Logger.WriteLine(text);
         }
-
+        
         /// <inheritdoc/>
-        public virtual void OnCreateMonitor(string monitorType)
+        public void OnStateTransition(StateMachineId id, string stateName, bool isEntry)
         {
-            var text = $"<CreateLog> {monitorType} was created.";
+            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
+            {
+                return;
+            }
+
+            var direction = isEntry ? "enters" : "exits";
+            var text = $"<StateLog> {id} {direction} state '{stateName}'.";
             Logger.WriteLine(text);
         }
 
         /// <inheritdoc/>
-        public virtual void OnDefaultEventHandler(StateMachineId id, string stateName)
+        public void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
+        {
+            var eventName = e.GetType().Name;
+            var text = $"<PopLog> {id} popped state {stateName} due to unhandled event '{eventName}'.";
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnDefaultEventHandler(StateMachineId id, string stateName)
         {
             string text;
             if (stateName is null)
@@ -69,243 +104,7 @@ namespace PChecker.StateMachines.Logging
         }
 
         /// <inheritdoc/>
-        public virtual void OnDequeueEvent(StateMachineId id, string stateName, Event e)
-        {
-            var eventName = e.GetType().FullName;
-            string text;
-            if (stateName is null)
-            {
-                text = $"<DequeueLog> {id} dequeued event '{eventName}'.";
-            }
-            else
-            {
-                text = $"<DequeueLog> {id} dequeued event '{eventName}' in state '{stateName}'.";
-            }
-
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnEnqueueEvent(StateMachineId id, Event e)
-        {
-            var eventName = e.GetType().FullName;
-            var text = $"<EnqueueLog> {id} enqueued event '{eventName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnExceptionHandled(StateMachineId id, string stateName, string actionName, Exception ex)
-        {
-            string text;
-            if (stateName is null)
-            {
-                text = $"<ExceptionLog> {id} running action '{actionName}' chose to handle exception '{ex.GetType().Name}'.";
-            }
-            else
-            {
-                text = $"<ExceptionLog> {id} running action '{actionName}' in state '{stateName}' chose to handle exception '{ex.GetType().Name}'.";
-            }
-
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
-        {
-            string text;
-            if (stateName is null)
-            {
-                text = $"<ExceptionLog> {id} running action '{actionName}' threw exception '{ex.GetType().Name}'.";
-            }
-            else
-            {
-                text = $"<ExceptionLog> {id} running action '{actionName}' in state '{stateName}' threw exception '{ex.GetType().Name}'.";
-            }
-
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnExecuteAction(StateMachineId id, string handlingStateName, string currentStateName, string actionName)
-        {
-            string text;
-            if (currentStateName is null)
-            {
-                text = $"<ActionLog> {id} invoked action '{actionName}'.";
-            }
-            else if (handlingStateName != currentStateName)
-            {
-                text = $"<ActionLog> {id} invoked action '{actionName}' in state '{currentStateName}' where action was declared by state '{handlingStateName}'.";
-            }
-            else
-            {
-                text = $"<ActionLog> {id} invoked action '{actionName}' in state '{currentStateName}'.";
-            }
-
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnGotoState(StateMachineId id, string currentStateName, string newStateName)
-        {
-            var text = $"<GotoLog> {id} is transitioning from state '{currentStateName}' to state '{newStateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnHalt(StateMachineId id, int inboxSize)
-        {
-            var text = $"<HaltLog> {id} halted with {inboxSize} events in its inbox.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnHandleRaisedEvent(StateMachineId id, string stateName, Event e)
-        {
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnMonitorExecuteAction(string monitorType, string stateName, string actionName)
-        {
-            var text = $"<MonitorLog> {monitorType} executed action '{actionName}' in state '{stateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnMonitorProcessEvent(string monitorType, string stateName, string senderName,
-            string senderType, string senderStateName, Event e)
-        {
-            var text = $"<MonitorLog> {monitorType} is processing event '{e.GetType().Name}' in state '{stateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
-        {
-            var eventName = e.GetType().FullName;
-            var text = $"<MonitorLog> {monitorType} raised event '{eventName}' in state '{stateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
-        {
-            var liveness = isInHotState.HasValue ? (isInHotState.Value ? "hot " : "cold ") : string.Empty;
-            var direction = isEntry ? "enters" : "exits";
-            var text = $"<MonitorLog> {monitorType} {direction} {liveness}state '{stateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnMonitorError(string monitorType, string stateName, bool? isInHotState)
-        {
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnPopState(StateMachineId id, string currentStateName, string restoredStateName)
-        {
-            currentStateName = string.IsNullOrEmpty(currentStateName) ? "[not recorded]" : currentStateName;
-            var reenteredStateName = restoredStateName ?? string.Empty;
-            var text = $"<PopLog> {id} popped state '{currentStateName}' and reentered state '{reenteredStateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
-        {
-            var eventName = e.GetType().Name;
-            var text = $"<PopLog> {id} popped state {stateName} due to unhandled event '{eventName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnPushState(StateMachineId id, string currentStateName, string newStateName)
-        {
-            var text = $"<PushLog> {id} pushed from state '{currentStateName}' to state '{newStateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnRaiseEvent(StateMachineId id, string stateName, Event e)
-        {
-            var eventName = e.GetType().FullName;
-            string text;
-            if (stateName is null)
-            {
-                text = $"<RaiseLog> {id} raised event '{eventName}'.";
-            }
-            else
-            {
-                text = $"<RaiseLog> {id} raised event '{eventName}' in state '{stateName}'.";
-            }
-
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnReceiveEvent(StateMachineId id, string stateName, Event e, bool wasBlocked)
-        {
-            var eventName = e.GetType().FullName;
-            string text;
-            var unblocked = wasBlocked ? " and unblocked" : string.Empty;
-            if (stateName is null)
-            {
-                text = $"<ReceiveLog> {id} dequeued event '{eventName}'{unblocked}.";
-            }
-            else
-            {
-                text = $"<ReceiveLog> {id} dequeued event '{eventName}'{unblocked} in state '{stateName}'.";
-            }
-
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName,
-            Event e, Guid opGroupId, bool isTargetHalted)
-        {
-            var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
-            var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
-            var sender = senderName != null ? $"{senderName} in state '{senderStateName}'" : $"task '{Task.CurrentId}'";
-            var eventName = e.GetType().FullName;
-            var text = $"<SendLog> {sender} sent event '{eventName}' to {targetStateMachineId}{isHalted}{opGroupIdMsg}.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnStateTransition(StateMachineId id, string stateName, bool isEntry)
-        {
-            var direction = isEntry ? "enters" : "exits";
-            var text = $"<StateLog> {id} {direction} state '{stateName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnStrategyDescription(string strategyName, string description)
-        {
-            var desc = string.IsNullOrEmpty(description) ? $" Description: {description}" : string.Empty;
-            var text = $"<StrategyLog> Found bug using '{strategyName}' strategy.{desc}";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnWaitEvent(StateMachineId id, string stateName, Type eventType)
-        {
-            string text;
-            if (stateName is null)
-            {
-                text = $"<ReceiveLog> {id} is waiting to dequeue an event of type '{eventType.FullName}'.";
-            }
-            else
-            {
-                text = $"<ReceiveLog> {id} is waiting to dequeue an event of type '{eventType.FullName}' in state '{stateName}'.";
-            }
-
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
-        public virtual void OnWaitEvent(StateMachineId id, string stateName, params Type[] eventTypes)
+        public void OnWaitEvent(StateMachineId id, string stateName, params Type[] eventTypes)
         {
             string text;
             string eventNames;
@@ -349,16 +148,237 @@ namespace PChecker.StateMachines.Logging
         }
 
         /// <inheritdoc/>
-        public virtual void OnRandom(object result, string callerName, string callerType)
+        public void OnWaitEvent(StateMachineId id, string stateName, Type eventType)
+        {
+            string text;
+            if (stateName is null)
+            {
+                text = $"<ReceiveLog> {id} is waiting to dequeue an event of type '{eventType.FullName}'.";
+            }
+            else
+            {
+                text = $"<ReceiveLog> {id} is waiting to dequeue an event of type '{eventType.FullName}' in state '{stateName}'.";
+            }
+        
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
+        {
+            if (stateName.Contains("__InitState__"))
+            {
+                return;
+            }
+
+            var liveness = isInHotState.HasValue ? (isInHotState.Value ? "hot " : "cold ") : string.Empty;
+            var direction = isEntry ? "enters" : "exits";
+            var text = $"<MonitorLog> {monitorType} {direction} {liveness}state '{stateName}'.";
+            Logger.WriteLine(text);
+        }
+        
+        /// <inheritdoc/>
+        public void OnMonitorProcessEvent(string monitorType, string stateName, string senderName, string senderType,
+            string senderStateName, Event e)
+        {
+            var text = $"<MonitorLog> {GetShortName(monitorType)} is processing event '{GetEventNameWithPayload(e)}' in state '{stateName}'.";
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
+        {
+            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
+            {
+                return;
+            }
+
+            stateName = GetShortName(stateName);
+            var eventName = GetEventNameWithPayload(e);
+            string text = null;
+            if (stateName is null)
+            {
+                text = $"<DequeueLog> '{id}' dequeued event '{eventName}'.";
+            }
+            else
+            {
+                text = $"<DequeueLog> '{id}' dequeued event '{eventName}' in state '{stateName}'.";
+            }
+
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnRaiseEvent(StateMachineId id, string stateName, Event e)
+        {
+            stateName = GetShortName(stateName);
+            var eventName = GetEventNameWithPayload(e);
+            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine") || eventName.Contains("GotoStateEvent"))
+            {
+                return;
+            }
+
+            string text = null;
+            if (stateName is null)
+            {
+                text = $"<RaiseLog> '{id}' raised event '{eventName}'.";
+            }
+            else
+            {
+                text = $"<RaiseLog> '{id}' raised event '{eventName}' in state '{stateName}'.";
+            }
+
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnEnqueueEvent(StateMachineId id, Event e) {   }
+
+        /// <inheritdoc/>
+        public void OnReceiveEvent(StateMachineId id, string stateName, Event e, bool wasBlocked)
+        {
+            stateName = GetShortName(stateName);
+            var eventName = GetEventNameWithPayload(e);
+            string text = null;
+            var unblocked = wasBlocked ? " and unblocked" : string.Empty;
+            if (stateName is null)
+            {
+                text = $"<ReceiveLog> '{id}' dequeued event '{eventName}'{unblocked}.";
+            }
+            else
+            {
+                text = $"<ReceiveLog> '{id}' dequeued event '{eventName}'{unblocked} in state '{stateName}'.";
+            }
+
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnMonitorRaiseEvent(string monitorType, string stateName, Event e)
+        {
+            stateName = GetShortName(stateName);
+            var eventName = GetEventNameWithPayload(e);
+            var text = $"<MonitorLog> Monitor '{GetShortName(monitorType)}' raised event '{eventName}' in state '{stateName}'.";
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
+        {
+            senderStateName = GetShortName(senderStateName);
+            var eventName = GetEventNameWithPayload(e);
+            var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
+            var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
+            var sender = !string.IsNullOrEmpty(senderName) ? $"'{senderName}' in state '{senderStateName}'" : $"The runtime";
+            var text = $"<SendLog> {sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}{opGroupIdMsg}.";
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnGotoState(StateMachineId id, string currStateName, string newStateName)
+        {
+            if (currStateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
+            {
+                return;
+            }
+
+            var text = $"<GotoLog> {id} is transitioning from state '{currStateName}' to state '{newStateName}'.";
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnExecuteAction(StateMachineId id, string handlingStateName, string currentStateName, string actionName)
+        {
+        }
+
+        /// <inheritdoc/>
+        public void OnMonitorExecuteAction(string monitorType, string stateName, string actionName)
+        {
+        }
+
+        /// <inheritdoc/>
+        public void OnExceptionHandled(StateMachineId id, string stateName, string actionName, Exception ex)
+        {
+            if (ex is PNonStandardReturnException)
+            {
+                return;
+            }
+            string text;
+            if (stateName is null)
+            {
+                text = $"<ExceptionLog> {id} running action '{actionName}' chose to handle exception '{ex.GetType().Name}'.";
+            }
+            else
+            {
+                text = $"<ExceptionLog> {id} running action '{actionName}' in state '{stateName}' chose to handle exception '{ex.GetType().Name}'.";
+            }
+
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
+        {
+            if (ex is PNonStandardReturnException)
+            {
+                return;
+            }
+            string text;
+            if (stateName is null)
+            {
+                text = $"<ExceptionLog> {id} running action '{actionName}' threw exception '{ex.GetType().Name}'.";
+            }
+            else
+            {
+                text = $"<ExceptionLog> {id} running action '{actionName}' in state '{stateName}' threw exception '{ex.GetType().Name}'.";
+            }
+
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnCreateMonitor(string monitorType)
+        {
+            var text = $"<CreateLog> {monitorType} was created.";
+            Logger.WriteLine(text);
+        }
+
+        /// <inheritdoc/>
+        public void OnHandleRaisedEvent(StateMachineId id, string stateName, Event e)
+        {
+        }
+
+        /// <inheritdoc/>
+        public void OnRandom(object result, string callerName, string callerType)
         {
             var source = callerName ?? $"Task '{Task.CurrentId}'";
             var text = $"<RandomLog> {source} nondeterministically chose '{result}'.";
             Logger.WriteLine(text);
         }
+        
+        /// <inheritdoc/>
+        public void OnHalt(StateMachineId id, int inboxSize)
+        {
+            var text = $"<HaltLog> {id} halted with {inboxSize} events in its inbox.";
+            Logger.WriteLine(text);
+        }
+        
+        /// <inheritdoc/>
+        public void OnMonitorError(string monitorType, string stateName, bool? isInHotState)
+        {
+        }
 
         /// <inheritdoc/>
-        public virtual void OnCompleted()
+        public void OnCompleted()
         {
+        }
+        
+        /// <inheritdoc/>
+        public void OnStrategyDescription(string strategyName, string description)
+        {
+            var desc = string.IsNullOrEmpty(description) ? $" Description: {description}" : string.Empty;
+            var text = $"<StrategyLog> Found bug using '{strategyName}' strategy.{desc}";
+            Logger.WriteLine(text);
         }
     }
 }

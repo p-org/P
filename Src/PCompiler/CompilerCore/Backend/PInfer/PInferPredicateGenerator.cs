@@ -50,7 +50,7 @@ namespace Plang.Compiler.Backend.PInfer
                 var o = PredicateOrder[k];
                 Console.WriteLine(o);
             }
-            var x = PredicateOrder[expr];
+            // var x = PredicateOrder[expr];
             throw new Exception($"{codegen.GenerateCodeExpr(expr, true)} not in enumerated predicates!");
         }
 
@@ -121,8 +121,6 @@ namespace Plang.Compiler.Backend.PInfer
             PopulateEnumCmpPredicates(globalScope);
             var i = 0;
             var termDepth = hint.TermDepth == null ? job.TermDepth : hint.TermDepth.Value;
-            var indexType = PInferBuiltinTypes.Index;
-            var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
             foreach (var eventAtom in hint.Quantified) {
                 var expr = new VariableAccessExpr(null, eventAtom);
                 AddTerm(0, expr, [eventAtom]);
@@ -130,7 +128,7 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     AddTerm(0, e, w);
                 }
-                var indexExpr = new FunCallExpr(null, indexFunc, [expr]);
+                var indexExpr = new FunCallExpr(null, BuiltinFunction.IndexOf, [expr]);
                 HashSet<IPExpr> es = [];
                 es.Add(indexExpr);
                 AddTerm(0, indexExpr, [eventAtom]);

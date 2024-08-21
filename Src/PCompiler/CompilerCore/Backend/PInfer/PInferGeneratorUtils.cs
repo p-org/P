@@ -246,7 +246,7 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class PInferBuiltinTypes
     {
-        public static readonly PLanguageType Index = new Index();
+        public static readonly PLanguageType Index = new TypeDefType(new TypeDef("Index", null) { Type = PrimitiveType.Int });
         public static readonly PLanguageType CollectionSize = new CollectionSize();
     }
 
@@ -271,6 +271,7 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class BuiltinFunction : Function
     {
+        public static Function IndexOf = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Any, PInferBuiltinTypes.Index);
         public BuiltinFunction(string name, Notation notation, params PLanguageType[] types) : base(name, null)
         {
             Notation = notation;

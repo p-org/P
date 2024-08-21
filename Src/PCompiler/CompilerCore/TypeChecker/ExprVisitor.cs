@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime.Misc;
+using Plang.Compiler.Backend.PInfer;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -148,6 +149,15 @@ namespace Plang.Compiler.TypeChecker
                 {
                     var type = TypeResolver.ResolveType(context.type(), table, handler);
                     return new DefaultExpr(context, type.Canonicalize());
+                }
+                case "indexof":
+                {
+                    var name = context.iden().GetText();
+                    if (table.Lookup(name, out Variable v))
+                    {
+                        return new FunCallExpr(context, BuiltinFunction.IndexOf, [new VariableAccessExpr(context.iden(), v)]);
+                    }
+                    throw handler.MissingDeclaration(context.iden(), "event variable", name);
                 }
                 default:
                 {

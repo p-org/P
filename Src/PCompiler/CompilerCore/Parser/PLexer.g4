@@ -62,6 +62,7 @@ VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+INDEX     : 'indexof';
 HINT      : 'hint';
 EXACT     : 'exact';
 

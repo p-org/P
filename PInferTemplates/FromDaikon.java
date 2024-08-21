@@ -8,6 +8,7 @@ public class FromDaikon {
     private int pruningLevel;
     private int numExists;
     private static final String[] QUANTIFIERS = { %QUANTIFIERS% };
+    private static final String[] VARNAME = { %QUANTIFIED_VARS% };
     private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()", "[] ==" };
     private static final String[] COMP_OPS = { "!=", "<=", "<", ">=", ">" };
     private static final Map<String, String> substs = new HashMap<>();
@@ -24,27 +25,27 @@ public class FromDaikon {
         switch (templateFamily) {
             case "Forall":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
-                    sb.append("∀e").append(i)
+                    sb.append("∀").append(VARNAME[i])
                             .append(": ").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
                 }
                 templateHeaderCar = sb.toString();
                 break;
             case "Exists":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
-                    sb.append("∃e").append(i)
+                    sb.append("∃").append(VARNAME[i])
                             .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
                 }
                 templateHeaderCar = sb.toString();
                 break;
             case "ForallExists":
                 for (int i = 0; i < QUANTIFIERS.length - numExtQuantfiers; ++i) {
-                    sb.append("∀e").append(i)
+                    sb.append("∀").append(VARNAME[i])
                             .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - numExtQuantfiers - 1 ? " :: " : ", ");
                 }
                 templateHeaderCar = sb.toString();
                 sb = new StringBuilder();
                 for (int i = QUANTIFIERS.length - numExtQuantfiers; i < QUANTIFIERS.length; ++i) {
-                    sb.append("∃e").append(i)
+                    sb.append("∃").append(VARNAME[i])
                             .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : ", ");
                 }
                 templateHeaderCdr = sb.toString();
@@ -59,7 +60,9 @@ public class FromDaikon {
     }
 
     public String getFormulaHeader(String guards, String filters) {
-        return this.templateHeaderCar + runSubst(guards) + " -> " + this.templateHeaderCdr + runSubst(filters);
+        String guardsStr = runSubst(guards);
+        String arrow = guardsStr.length() == 0 ? " " : " -> ";
+        return this.templateHeaderCar + guardsStr + arrow + this.templateHeaderCdr + runSubst(filters);
     }
 
     public String convertOutput(String line, List<Main.RawPredicate> guards, List<Main.RawPredicate> filters,
@@ -211,11 +214,10 @@ public class FromDaikon {
                     }
                     boolean rhsIsConst = isNumber(rhs) || (rhs.startsWith("\"") && rhs.endsWith("\""));
                     if (!containsTerm(lhs, forallTerms.size(), existsTerms.size())) {
-                        if (!rhsIsConst && !rhs.startsWith("size")) {
+                        if (!rhsIsConst && !rhs.startsWith("size") && containsTerm(rhs, forallTerms.size(), existsTerms.size())) {
                             // if a comparison does not involve a term on lhs,
                             // it should not involve a term on rhs either (avoid `_num_e_exists_ > [some term]`)
-                            // however, we do want to see size([some term]) on rhs.
-                            // System.out.println("Filtered: " + line + " rhs: " + rhs);
+                            // however, we do want to see size([some term]) / config constants on rhs.
                             return false;
                         }
                         break;

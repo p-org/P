@@ -205,7 +205,7 @@ namespace Plang.Compiler.TypeChecker
                             }
                             else
                             {
-                                hint.NumGuardPredicates = nf;
+                                hint.NumFilterPredicates = nf;
                             }
                             break;
                         case "include_guards":
@@ -240,7 +240,7 @@ namespace Plang.Compiler.TypeChecker
                             break;
                         default:
                             throw config.Handler.InternalError(bodyItemCtx, new Exception(
-                                @$"Unknown Hint field: ${bodyItemCtx.field.GetText()},
+                                @$"Unknown Hint field: `{bodyItemCtx.field.GetText()}`,
                                 expecting one of exists, arity, term_depth, config_event, include_guards, include_filters, functions, predicates"
                             ));
                     }

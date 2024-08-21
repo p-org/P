@@ -14,6 +14,9 @@
     <PackageReference Include="Microsoft.NETCore.Targets" Version="3.1.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\PInfer\PInfer.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Antlr4 Include="Parser/PParser.g4">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>Plang.Compiler</CustomToolNamespace>

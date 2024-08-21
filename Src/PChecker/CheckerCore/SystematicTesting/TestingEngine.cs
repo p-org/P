@@ -28,6 +28,7 @@ using PChecker.SystematicTesting.Strategies.Probabilistic;
 using PChecker.SystematicTesting.Strategies.Special;
 using PChecker.SystematicTesting.Traces;
 using PChecker.Utilities;
+using Plang.PInfer;
 using Task = PChecker.Tasks.Task;
 
 namespace PChecker.SystematicTesting
@@ -292,6 +293,10 @@ namespace PChecker.SystematicTesting
             if (checkerConfiguration.PInferMode)
             {
                 PInferLogs = [];
+                if (checkerConfiguration.AllowedEvents.Count == 0)
+                {
+                    Error.CheckerReportAndExit($"PInfer mode enabled but no event filter provided. Use `-ef` to pass event names for filtering");
+                }
             }
 
             if (checkerConfiguration.SchedulingStrategy is "replay")
@@ -511,15 +516,29 @@ namespace PChecker.SystematicTesting
 
                 if (_checkerConfiguration.PInferMode)
                 {
-                    var directory = _checkerConfiguration.OutputDirectory;
-                    var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
-                    file += "_" + _checkerConfiguration.TestingProcessId;
-                    var jsonPath = directory + file  + "_pinfer_trace.json";
-                    
-                    Logger.WriteLine("... Emitting trace for PInfer:");
-                    Logger.WriteLine($"..... Writing {jsonPath}");
-                    using var jsonStreamFile = File.Create(jsonPath);
-                    JsonSerializer.Serialize(jsonStreamFile, PInferLogs, jsonSerializerConfig);
+                    if (TestReport.NumOfFoundBugs > 0)
+                    {
+                        Logger.WriteLine("Skipped for PInfer trace aggregation due to bugs");
+                    }
+                    else
+                    {
+                        var traceIndex = new TraceIndex(_checkerConfiguration.TraceFolder, create: true);
+                        Logger.Write("Allowed Events: " + string.Join("", _checkerConfiguration.AllowedEvents));
+                        var saveTo = traceIndex.AddIndex(_checkerConfiguration.AllowedEvents, string.Join("", _checkerConfiguration.AllowedEvents));
+                        var directory = Path.Combine(_checkerConfiguration.TraceFolder, saveTo);
+                        if (!Directory.Exists(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                        }
+                        var numFiles = Directory.GetFiles(directory).Length;
+                        var filename = $"{_checkerConfiguration.TestCaseName}_{_checkerConfiguration.TestingIterations}_{numFiles}.json";
+                        var filePath = Path.Combine(directory, filename);
+                        using var jsonStreamFile = File.Create(filePath);
+                        Logger.WriteLine($"... Emitting PInfer trace to {filePath}");
+                        JsonSerializer.Serialize(jsonStreamFile, PInferLogs, jsonSerializerConfig);
+                        // save the index
+                        traceIndex.Commit();
+                    }
                 }
 
             }, CancellationTokenSource.Token);

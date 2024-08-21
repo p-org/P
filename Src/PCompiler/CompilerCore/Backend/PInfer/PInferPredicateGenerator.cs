@@ -122,12 +122,6 @@ namespace Plang.Compiler.Backend.PInfer
             var indexType = PInferBuiltinTypes.Index;
             var indexFunc = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Event, indexType);
             foreach (var eventAtom in hint.Quantified) {
-                // var eventAtom = new PEventVariable($"e{i}")
-                // {
-                //     Type = eventInst.PayloadType,
-                //     EventDecl = eventInst,
-                //     Order = order
-                // };
                 var expr = new VariableAccessExpr(null, eventAtom);
                 AddTerm(0, expr, [eventAtom]);
                 foreach (var (e, w) in TryMkTupleAccess(expr).Concat(TryMakeNamedTupleAccess(expr)))
@@ -167,7 +161,7 @@ namespace Plang.Compiler.Backend.PInfer
                                 .Concat(eventDefSource)
                                 .Concat(new MinerConfigGenerator(job, quantifiedEvents.Count, VisitedSet.Count).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TaskPookGenerator(job).GenerateCode(javaCtx, globalScope))
-                                .Concat(new FromDaikonGenerator(job, quantifiedEvents).GenerateCode(javaCtx, globalScope))
+                                .Concat(new FromDaikonGenerator(job, hint.Quantified).GenerateCode(javaCtx, globalScope))
                                 .Concat(new PredicateEnumeratorGenerator(job).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TermEnumeratorGenerator(job).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TemplateInstantiatorGenerator(job, quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))

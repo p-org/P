@@ -28,7 +28,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             PruningLevel = 3;
             ExistentialQuantifiers = 0;
             TermDepth = null;
-            Arity = 1;
+            Arity = 2;
             NumGuardPredicates = 0;
             NumFilterPredicates = 0;
         }

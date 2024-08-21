@@ -31,7 +31,7 @@ namespace Plang.Compiler
             HintName = null;
             Verbose = false;
             ConfigEvent = null;
-            TraceFolder = null;
+            TraceFolder = "traces";
             // Max level by default
             PInferPruningLevel = 3;
         }

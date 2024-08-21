@@ -41,6 +41,15 @@ namespace Plang.Compiler.Backend.PInfer
             return result;
         }
 
+        private void WriteFunctionRec(Function f)
+        {
+            foreach (var callee in f.Callees)
+            {
+                WriteFunctionRec(callee);
+            }
+            WriteFunction(f);
+        }
+
         protected override void GenerateCodeImpl()
         {
             WriteLine("public class " + Job.ProjectName + " implements Serializable {");
@@ -48,17 +57,11 @@ namespace Plang.Compiler.Backend.PInfer
             Constants.PInferMode = false;
             foreach (var pred in PredicateStore.Store)
             {
-                var t = pred.Function.Owner;
-                pred.Function.Owner = null;
-                WriteFunction(pred.Function);
-                pred.Function.Owner = t;
+                WriteFunctionRec(pred.Function);
             }
             foreach (var func in FunctionStore.Store)
             {
-                var t = func.Owner;
-                func.Owner = null;
-                WriteFunction(func);
-                func.Owner = t;
+                WriteFunctionRec(func);
             }
             Constants.PInferModeOn();
             Dictionary<string, (string, List<PEventVariable>)> repr2Metadata = [];
@@ -202,9 +205,9 @@ namespace Plang.Compiler.Backend.PInfer
                     BinOpType.Mul => $"(({lhs}) * ({rhs}))",
                     BinOpType.Div => $"(({lhs}) / ({rhs}))",
                     BinOpType.Mod => $"(({lhs}) % ({rhs}))",
-                    BinOpType.Eq => $"Objects.equals({lhs}, {rhs})",
+                    BinOpType.Eq => simplified ? $"({lhs} == {rhs})" : $"Objects.equals({lhs}, {rhs})",
                     BinOpType.Lt => $"(({lhs}) < ({rhs}))",
-                    BinOpType.Gt => $"(({lhs}) < ({rhs}))",
+                    BinOpType.Gt => $"(({lhs}) > ({rhs}))",
                     BinOpType.And => $"(({lhs}) && ({rhs}))",
                     BinOpType.Or => $"(({lhs}) || ({rhs}))",
                     _ => throw new Exception($"Unsupported BinOp Operatoion: {binOpExpr.Operation}"),

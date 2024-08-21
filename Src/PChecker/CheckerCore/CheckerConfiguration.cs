@@ -199,6 +199,9 @@ namespace PChecker
         [DataMember]
         public HashSet<string> AllowedEvents {get; set; }
 
+        [DataMember]
+        public string TraceFolder { get; set; }
+
         /// <summary>
         /// Enables code coverage reporting of a Coyote program.
         /// </summary>
@@ -340,6 +343,7 @@ namespace PChecker
 
             IsVerbose = false;
             PInferMode = false;
+            TraceFolder = "traces";
             AllowedEvents = null;
             EnableDebugging = false;
 

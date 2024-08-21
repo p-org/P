@@ -219,6 +219,9 @@ namespace Plang.Options
                 case "max-filters-predicates":
                     compilerConfiguration.MaxFilters = int.Parse((string)option.Value);
                     break;
+                case "pruning-level":
+                    compilerConfiguration.PInferPruningLevel = (int)option.Value;
+                    break;
                 case "hint":
                     compilerConfiguration.HintName = (string)option.Value;
                     break;

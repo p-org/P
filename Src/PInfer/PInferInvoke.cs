@@ -1,11 +1,170 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Threading;
 
 namespace Plang.PInfer
 {
+    public class Metadata
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("folder")]
+        public string Folder { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("events")]
+        public IEnumerable<string> Events { get; set; }
+    }
+
+    public class TraceIndex
+    {
+        Dictionary<HashSet<string>, string> traceIndex;
+        private readonly string parentFolder;
+        private readonly bool canSave;
+        private readonly static string METADATA = "metadata.json";
+
+        public TraceIndex([DisallowNull] string traceFolder, bool create = false)
+        {
+            var filePath = Path.Combine(traceFolder, METADATA);
+            canSave = create;
+            if (create)
+            {
+                if (!Directory.Exists(traceFolder))
+                {
+                    Directory.CreateDirectory(traceFolder);
+                }
+                if (!File.Exists(filePath))
+                {
+                    try
+                    {
+                        using FileStream fs = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+                        fs.Close();
+                    } catch (IOException)
+                    {}
+                }
+            }
+            parentFolder = traceFolder;
+            traceIndex = [];
+            try{
+                var json = TryRead(filePath);
+                if (json != "")
+                {
+                    var metadata = JsonSerializer.Deserialize<List<Metadata>>(json);
+                    foreach (Metadata meta in metadata)
+                    {
+                        HashSet<string> k = meta.Events.ToHashSet();
+                        traceIndex[k] = meta.Folder;
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                WriteError($"Cannot find `metadata.json` under {traceFolder}");
+                Environment.Exit(1);
+            }
+            catch (JsonException)
+            {
+                WriteError($"Mal-formed `metadata.json`");
+                Environment.Exit(1);
+            }
+        }
+
+        public bool TryGet(IEnumerable<string> events, out string path)
+        {
+            // first exact key check
+            HashSet<string> k = events.ToHashSet();
+            foreach (var key in traceIndex.Keys)
+            {
+                if (key.SetEquals(k))
+                {
+                    path = Path.Combine(parentFolder, traceIndex[key]);
+                    return true;
+                }
+            }
+            // next, subset check
+            foreach (var key in traceIndex.Keys)
+            {
+                if (k.IsSubsetOf(key))
+                {
+                    path = Path.Combine(parentFolder, traceIndex[key]);
+                    return true;
+                }
+            }
+            path = null;
+            return false;
+        }
+
+        public string AddIndex(IEnumerable<string> events, string path)
+        {
+            HashSet<string> k = events.ToHashSet();
+            // first look for exact match
+            foreach (var key in traceIndex.Keys)
+            {
+                if (key.SetEquals(k))
+                {
+                    var record = traceIndex[key];
+                    if (record != path)
+                    {
+                        // caller is responsible for merging the two directories
+                        return record;
+                    }
+                    return path;
+                }
+            }
+            traceIndex[k] = path;
+            return path;
+        }
+
+        public void Commit()
+        {
+            var metadataPath = Path.Combine(parentFolder, METADATA);
+            using var jsonFile = File.Open(metadataPath, FileMode.OpenOrCreate, FileAccess.Write);
+            JsonSerializer.Serialize(jsonFile, Serialize());
+            jsonFile.Close();
+        }
+
+        private string TryRead(string file)
+        {
+            string result = null;
+            while (result == null)
+            {
+                try
+                {
+                    using FileStream fs = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    using StreamReader r = new(fs);
+                    result = r.ReadToEnd();
+                    r.Close();
+                    fs.Close();
+                } catch (IOException)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
+            return result;
+        }
+
+        private List<Metadata> Serialize()
+        {
+            List<Metadata> result = [];
+            foreach (var (k, v) in traceIndex)
+            {
+                result.Add(new Metadata() {
+                    Events = k, Folder = v
+                });
+            }
+            return result;
+        }
+
+        private void WriteError(string msg)
+        {
+            var defaultColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("[TraceIndex]: " + msg);
+            Console.ForegroundColor = defaultColor;
+        }
+    }
+
     public class PInferInvoke
     {
         public static int invokeMain(PInferConfiguration configuration)

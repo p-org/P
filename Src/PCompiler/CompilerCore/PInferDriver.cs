@@ -9,6 +9,7 @@ using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
+using Plang.PInfer;
 
 namespace Plang.Compiler
 {
@@ -44,11 +45,9 @@ namespace Plang.Compiler
         {
             if (Codegen.hint == null || !Codegen.hint.Equals(hint))
             {
-                // Job.Output.WriteWarning($"Have not compiled with {hint.Name}. Re-compling...");
                 if (hint.TermDepth == null)
                 {
-                    Job.Output.WriteWarning($"Hint `{hint.Name}` has not set a term depth. Using {Job.TermDepth} from command-line (default) ...");
-                    hint.TermDepth = Job.TermDepth;
+                    hint.TermDepth = 0;
                 }
                 CompilePInferHint(hint);
             }
@@ -65,7 +64,7 @@ namespace Plang.Compiler
                 hint.ShowHint();
                 Console.WriteLine("===============================");
             }
-            // PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen);
+            PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen);
         }
 
         public void ParameterSearch(Hint hint)
@@ -244,6 +243,7 @@ namespace Plang.Compiler
                 case PInferAction.RunHint:
                     job.Output.WriteInfo($"PInfer - Run `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
+                    givenHint.PruningLevel = job.PInferPruningLevel;
                     new PInferDriver(job, globalScope).ParameterSearch(givenHint);
                     break;
                 case PInferAction.Auto:
@@ -288,6 +288,13 @@ namespace Plang.Compiler
                 if (dir.Name.Equals("tmp_daikon_traces"))
                 {
                     dir.Delete(true);
+                }
+            }
+            foreach (var f in dirInfo.GetFiles())
+            {
+                if (f.Name.EndsWith(".inv.gz"))
+                {
+                    f.Delete();
                 }
             }
             return process.ExitCode;
@@ -338,8 +345,7 @@ namespace Plang.Compiler
             args.Add("-l");
             if (metadata.GetTraceFolder(hint, out var folder))
             {
-                // args.Add();
-                foreach (var file in Directory.GetFiles(Path.Combine(configuration.TraceFolder, folder)))
+                foreach (var file in Directory.GetFiles(folder))
                 {
                     args.Add(file);
                 }
@@ -360,30 +366,9 @@ namespace Plang.Compiler
         }
     }
 
-    internal sealed class TraceMetadata
+    internal sealed class TraceMetadata (ICompilerConfiguration job)
     {
-        Dictionary<HashSet<string>, string> traceIndex;
-
-        public TraceMetadata(ICompilerConfiguration job)
-        {
-            var filePath = Path.Combine(job.TraceFolder, "metadata.json");
-            traceIndex = [];
-            try{
-                using StreamReader r = new(filePath);
-                string json = r.ReadToEnd();
-                var metadata = JsonSerializer.Deserialize<List<Metadata>>(json);
-                foreach (Metadata meta in metadata)
-                {
-                    HashSet<string> k = meta.Events.ToHashSet();
-                    traceIndex[k] = meta.Folder;
-                }
-            }
-            catch (Exception e)
-            {
-                job.Output.WriteError(e.Message + " trace folder not found");
-                Environment.Exit(1);
-            }
-        }
+        private readonly TraceIndex traceIndex = new(job.TraceFolder);
 
         public bool GetTraceFolder(Hint h, out string folder)
         {
@@ -392,24 +377,7 @@ namespace Plang.Compiler
             {
                 k.Add(h.ConfigEvent.Name);
             }
-            foreach (var key in traceIndex.Keys)
-            {
-                if (k.IsSubsetOf(key))
-                {
-                    folder = traceIndex[key];
-                    return true;
-                }
-            }
-            folder = null;
-            return false;
+            return traceIndex.TryGet(k, out folder);
         }
-    }
-
-    internal sealed class Metadata
-    {
-        [System.Text.Json.Serialization.JsonPropertyName("folder")]
-        public string Folder { get; set; }
-        [System.Text.Json.Serialization.JsonPropertyName("events")]
-        public IEnumerable<string> Events { get; set; }
     }
 }

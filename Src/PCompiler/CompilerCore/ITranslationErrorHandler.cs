@@ -126,5 +126,6 @@ namespace Plang.Compiler
         Exception IllegalFunctionUsedInSpecMachine(Function function, Machine callerOwner);
 
         String SpecObservesSetIncompleteWarning(ParserRuleContext loc, PEvent ev, Machine machine);
+        Exception DuplicateBindings(ParserRuleContext loc, Interface @interface);
     }
 }

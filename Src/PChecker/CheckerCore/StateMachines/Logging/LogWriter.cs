@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using PChecker.StateMachines.Events;
 using PChecker.IO.Logging;
+using PChecker.PRuntime;
 
 namespace PChecker.StateMachines.Logging
 {
@@ -602,7 +603,7 @@ namespace PChecker.StateMachines.Logging
                 }
             }
 
-            // If log is or of subclass PCheckerLogJsonFormatter (i.e. when log is PJsonFormatter),
+            // If log is or of subclass PCheckerLogJsonFormatter (i.e. when log is PCheckerLogJsonFormatter),
             // update the Writer reference to the JsonLogger instance defined within LogWriter.cs
             if (log is PCheckerLogJsonFormatter tempJsonFormatter)
             {

@@ -102,7 +102,7 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JAny : JType
             {
-                /// A JAny can either be a PEvent, a PValue, or a collection type like ArrayList, HashSet, etc.
+                /// A JAny can either be a Event, a PValue, or a collection type like ArrayList, HashSet, etc.
                 /// For a complete list, see the implementation of `deepEquals()` and `deepClone` in the P java runtime:
                 internal JAny()
                 {
@@ -304,7 +304,7 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal JEvent()
                 {
-                    _unboxedType = $"{Constants.PEventsClass}<?>";
+                    _unboxedType = $"{Constants.EventsClass}<?>";
                 }
                 internal override bool IsPrimitive => false;
             }

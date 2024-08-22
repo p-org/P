@@ -471,7 +471,7 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine);
             }
 
-            var cases = new Dictionary<PEvent, Function>();
+            var cases = new Dictionary<Event, Function>();
             foreach (var caseContext in context.recvCase())
             {
 
@@ -497,7 +497,7 @@ namespace Plang.Compiler.TypeChecker
 
                     FunctionBodyVisitor.PopulateMethod(config, recvHandler);
 
-                    if (!table.Lookup(eventIdContext.GetText(), out PEvent pEvent))
+                    if (!table.Lookup(eventIdContext.GetText(), out Event pEvent))
                     {
                         throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                     }

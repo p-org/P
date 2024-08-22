@@ -5,7 +5,7 @@ namespace Plang.Compiler.TypeChecker.AST.States
 {
     public class EventGotoState : IStateAction
     {
-        public EventGotoState(ParserRuleContext sourceLocation, PEvent trigger, State target,
+        public EventGotoState(ParserRuleContext sourceLocation, Event trigger, State target,
             Function transitionFunction)
         {
             SourceLocation = sourceLocation;
@@ -18,6 +18,6 @@ namespace Plang.Compiler.TypeChecker.AST.States
         public Function TransitionFunction { get; }
 
         public ParserRuleContext SourceLocation { get; }
-        public PEvent Trigger { get; }
+        public Event Trigger { get; }
     }
 }

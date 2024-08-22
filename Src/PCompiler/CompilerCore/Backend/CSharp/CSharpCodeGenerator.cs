@@ -206,7 +206,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                     break;
 
-                case PEvent pEvent:
+                case Event pEvent:
                     if (!pEvent.IsBuiltIn)
                     {
                         WriteEvent(context, output, pEvent);
@@ -472,7 +472,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output);
         }
 
-        private void WriteEvent(CompilationContext context, StringWriter output, PEvent pEvent)
+        private void WriteEvent(CompilationContext context, StringWriter output, Event pEvent)
         {
             WriteNameSpacePrologue(context, output);
 
@@ -480,7 +480,7 @@ namespace Plang.Compiler.Backend.CSharp
 
             // initialize the payload type
             var payloadType = GetCSharpType(pEvent.PayloadType, true);
-            context.WriteLine(output, $"internal partial class {declName} : PEvent");
+            context.WriteLine(output, $"internal partial class {declName} : Event");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
             context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
@@ -506,7 +506,7 @@ namespace Plang.Compiler.Backend.CSharp
 
             //create the constructor event
             var cTorType = GetCSharpType(machine.PayloadType, true);
-            context.Write(output, "public class ConstructorEvent : PEvent");
+            context.Write(output, "public class ConstructorEvent : Event");
             context.Write(output, "{");
             context.Write(output, $"public ConstructorEvent({cTorType} val) : base(val) {{ }}");
             context.WriteLine(output, "}");
@@ -680,7 +680,7 @@ namespace Plang.Compiler.Backend.CSharp
                 context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
             }
 
-            var parameter = function.Signature.Parameters.Any() ? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((PEvent)currentMachine_dequeuedEvent).Payload" : "";
+            var parameter = function.Signature.Parameters.Any() ? $"({GetCSharpType(function.Signature.ParameterTypes.First())})((Event)currentMachine_dequeuedEvent).Payload" : "";
             context.WriteLine(output, $"{awaitMethod}{functionName}({parameter});");
             context.WriteLine(output, "}");
         }
@@ -769,7 +769,7 @@ namespace Plang.Compiler.Backend.CSharp
                 {
                     var param = function.Signature.Parameters.First();
                     context.WriteLine(output,
-                        $"{GetCSharpType(param.Type)} {context.Names.GetNameForDecl(param)} = ({GetCSharpType(param.Type)})(gotoPayload ?? ((PEvent)currentMachine_dequeuedEvent).Payload);");
+                        $"{GetCSharpType(param.Type)} {context.Names.GetNameForDecl(param)} = ({GetCSharpType(param.Type)})(gotoPayload ?? ((Event)currentMachine_dequeuedEvent).Payload);");
                     context.WriteLine(output, "this.gotoPayload = null;");
                 }
             }
@@ -795,7 +795,7 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 case AnnounceStmt announceStmt:
                     context.Write(output, "currentMachine.Announce((Event)");
-                    WriteExpr(context, output, announceStmt.PEvent);
+                    WriteExpr(context, output, announceStmt.Event);
                     if (announceStmt.Payload != null)
                     {
                         context.Write(output, ", ");
@@ -989,7 +989,7 @@ namespace Plang.Compiler.Backend.CSharp
                 case RaiseStmt raiseStmt:
                     //last statement
                     context.Write(output, "currentMachine.TryRaiseEvent((Event)");
-                    WriteExpr(context, output, raiseStmt.PEvent);
+                    WriteExpr(context, output, raiseStmt.Event);
                     if (raiseStmt.Payload.Any())
                     {
                         context.Write(output, ", ");
@@ -1579,7 +1579,7 @@ namespace Plang.Compiler.Backend.CSharp
                     return "PrtString";
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    return "PEvent";
+                    return "Event";
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                     return "PMachineValue";

@@ -4,9 +4,9 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
-    public class PEvent : IPDecl
+    public class Event : IPDecl
     {
-        public PEvent(string name, ParserRuleContext sourceNode)
+        public Event(string name, ParserRuleContext sourceNode)
         {
             Debug.Assert("halt".Equals(name) && sourceNode == null ||
                          "null".Equals(name) && sourceNode == null ||

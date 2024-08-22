@@ -442,6 +442,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 _Store.Add(parameterTypes, []);
             }
+            // Console.WriteLine($"Add pred: {predicate.Name}, types: {string.Join(" -> ", parameterTypes)}");
             _Store[parameterTypes].Add(predicate.Name, predicate);
             foreach (var c in contraditions)
             {
@@ -458,7 +459,9 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 var ltPred = AddBuiltinPredicate("<", Notation.Infix, args => new BinOpExpr(null, BinOpType.Lt, args[0], args[1]), [EqPredicate], numType, numType);
                 ltPred.Function.Property |= FunctionProperty.Transitive;
-                AddBuiltinPredicate(">", Notation.Infix, args => new BinOpExpr(null, BinOpType.Gt, args[0], args[1]) ,[ltPred, EqPredicate], numType, numType).Function.Property |= FunctionProperty.Transitive;
+                ltPred.Function.Property |= FunctionProperty.AntiSymmetric;
+                ltPred.Function.Property |= FunctionProperty.AntiReflexive;
+                // AddBuiltinPredicate(">", Notation.Infix, args => new BinOpExpr(null, BinOpType.Gt, args[0], args[1]) ,[ltPred, EqPredicate], numType, numType).Function.Property |= FunctionProperty.Transitive;
             }
         }
 
@@ -497,21 +500,40 @@ namespace Plang.Compiler.Backend.PInfer
             };
         }
 
-        public static List<IPExpr> MakeEquivalences(Function f, Func<Function, IPExpr[], FunCallExpr> make, params IPExpr[] parameters)
+        public static List<IPExpr> MakeContradictions(Function f, Func<Function, IPExpr[], IPExpr> make, params IPExpr[] parameters)
         {
             List<IPExpr> result = [];
+            Dictionary<Variable, IPExpr> delta = [];
+            if (f.Property.HasFlag(FunctionProperty.AntiSymmetric))
+            {
+                result.Add(make(f, [parameters[1], parameters[0]]));
+            }
+            foreach (var (x, y) in f.Signature.Parameters.Zip(parameters))
+            {
+                delta[x] = y;
+            }
+            foreach (IPExpr con in f.Contradictions)
+            {
+                result.Add(Subst(con, delta));
+            }
+            return result;
+        }
+
+        public static List<IPExpr> MakeEquivalences(Function f, Func<Function, IPExpr[], IPExpr> make, params IPExpr[] parameters)
+        {
+            List<IPExpr> result = [];
+            Dictionary<Variable, IPExpr> delta = [];
             if (f.Property.HasFlag(FunctionProperty.Symmetric))
             {
                 result.Add(make(f, [parameters[1], parameters[0]]));
             }
+            foreach (var (x, y) in f.Signature.Parameters.Zip(parameters))
+            {
+                delta[x] = y;
+            }
             foreach (IPExpr eq in f.Equivalences)
             {
                 // need to subst parameters
-                Dictionary<Variable, IPExpr> delta = [];
-                foreach (var (x, y) in f.Signature.Parameters.Zip(parameters))
-                {
-                    delta[x] = y;
-                }
                 result.Add(Subst(eq, delta));
             }
             return result;
@@ -524,6 +546,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 _Store.Add(parameterTypes, []);
             }
+            // Console.WriteLine($"Add func: {func.Name}, types: {string.Join(" -> ", parameterTypes)}");
             _Store[parameterTypes].Add(func.Name, func);
         }
 
@@ -539,7 +562,9 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 foreach (var func in funcs)
                 {
-                    AddFunction(new BuiltinFunction(func, Notation.Infix, numTypes, numTypes, numTypes));
+                    var f = new BuiltinFunction(func, Notation.Infix, numTypes, numTypes, numTypes);
+                    if (func == "+" || func == "*") f.Property |= FunctionProperty.Symmetric;
+                    AddFunction(f);
                 }
             }
             List<PLanguageType> containerTypes = [new SequenceType(PrimitiveType.Any),
@@ -692,15 +717,17 @@ namespace Plang.Compiler.Backend.PInfer
             return Result.NO;
         }
 
+        public bool HasExpr(IPExpr e)
+        {
+            return Canonicalize(e) != null;
+        }
+
         public IPExpr Canonicalize(IPExpr e)
         {
             if (index.TryGetValue(e, out var node))
             {
-                if (!node.canonical)
-                {
-                    throw new Exception($"THIS SHOULD NOT HAPPEN! {node.repr} is not canonical");
-                }
-                return node.repr;
+                Node par = node.Find();
+                return par.repr;
             }
             return null;
         }

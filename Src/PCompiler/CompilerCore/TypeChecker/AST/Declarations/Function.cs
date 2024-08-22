@@ -28,6 +28,8 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         Transitive = 1 << 3,
         AntiSymmetric = 1 << 4,
         Idempotent = 1 << 5,
+        AntiReflexive = 1 << 6,
+        Asymmetric = 1 << 7
     }
 
     public class Function : IPDecl, IHasScope
@@ -64,9 +66,9 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public IEnumerable<Interface> CreatesInterfaces => createsInterfaces;
         public FunctionRole Role { get; set; }
         public FunctionProperty Property { get; set; }
-        public IEnumerable<IPExpr> Equivalences { get; set; }
-        public IEnumerable<IPExpr> Contradictions { get; set; }
-        public IEnumerable<IPExpr> ImpliedBy { get; set; }
+        public IEnumerable<IPExpr> Equivalences => equivalences;
+        public IEnumerable<IPExpr> Contradictions => contradictions;
+        public IEnumerable<IPExpr> ImpliedBy => impliedBy;
 
         public CompoundStmt Body { get; set; }
         public Scope Scope { get; set; }

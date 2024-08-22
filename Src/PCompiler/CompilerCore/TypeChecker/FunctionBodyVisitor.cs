@@ -52,12 +52,14 @@ namespace Plang.Compiler.TypeChecker
                         case "sym": method.Property |= FunctionProperty.Symmetric; return;
                         case "antisym": method.Property |= FunctionProperty.AntiSymmetric; return;
                         case "idempotent": method.Property |= FunctionProperty.Idempotent; return;
+                        case "asym": method.Property |= FunctionProperty.Asymmetric; return;
+                        case "irrefl": method.Property |= FunctionProperty.AntiReflexive; return;
                         default: break;
                     }
                 }
             }
             throw config.Handler.InternalError(ctx,
-                        new System.Exception("Expecting one of `refl`, `trans`, `sym`, `antisym`, `idempotent`"));
+                        new System.Exception("Expecting one of `refl`, `irrefl`, `trans`, `sym`, `antisym`, `asym`, `idempotent`"));
         }
 
         public void populateProps(PParser.FunPropContext[] ctxs)
@@ -71,6 +73,14 @@ namespace Plang.Compiler.TypeChecker
                     foreach (var prop in propVals.rvalue())
                     {
                         populateFunctionProperty(prop);
+                    }
+                    if (method.Property.HasFlag(FunctionProperty.Reflexive) && method.Property.HasFlag(FunctionProperty.AntiReflexive))
+                    {
+                        throw config.Handler.InternalError(method.SourceLocation, new Exception($"Function `{method.Name}` is marked as both reflexive and irreflexive"));
+                    }
+                    if (method.Property.HasFlag(FunctionProperty.Asymmetric) && method.Property.HasFlag(FunctionProperty.Symmetric))
+                    {
+                        throw config.Handler.InternalError(method.SourceLocation, new Exception($"Function `{method.Name}` is marked as both symmetric and asymmetric"));
                     }
                 }
                 else

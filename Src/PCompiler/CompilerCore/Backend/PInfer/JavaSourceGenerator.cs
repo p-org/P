@@ -41,11 +41,16 @@ namespace Plang.Compiler.Backend.PInfer
             return result;
         }
 
-        private void WriteFunctionRec(Function f)
+        private void WriteFunctionRec(Function f, HashSet<Function> written)
         {
+            if (written.Contains(f)) return;
+            written.Add(f);
             foreach (var callee in f.Callees)
             {
-                WriteFunctionRec(callee);
+                if (callee != f)
+                {
+                    WriteFunctionRec(callee, written);
+                }
             }
             WriteFunction(f);
         }
@@ -55,13 +60,14 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("public class " + Job.ProjectName + " implements Serializable {");
             WriteLine("public record PredicateWrapper (String repr, boolean negate) {}");
             Constants.PInferMode = false;
+            HashSet<Function> written = [];
             foreach (var pred in PredicateStore.Store)
             {
-                WriteFunctionRec(pred.Function);
+                WriteFunctionRec(pred.Function, written);
             }
             foreach (var func in FunctionStore.Store)
             {
-                WriteFunctionRec(func);
+                WriteFunctionRec(func, written);
             }
             Constants.PInferModeOn();
             Dictionary<string, (string, List<PEventVariable>)> repr2Metadata = [];

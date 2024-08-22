@@ -21,17 +21,17 @@ namespace Plang.Compiler.Backend.PInfer
         public PInferPredicateGenerator()
         {
             Terms = [];
-            var comparer = new ASTComparer();
-            VisitedSet = new HashSet<IPExpr>(comparer);
-            Predicates = new HashSet<IPExpr>(comparer);
-            FreeEvents = new Dictionary<IPExpr, HashSet<PEventVariable>>(comparer);
-            TermOrder = new Dictionary<IPExpr, int>(comparer);
+            Comparer = new ASTComparer();
+            VisitedSet = new HashSet<IPExpr>(Comparer);
+            Predicates = new HashSet<IPExpr>(Comparer);
+            FreeEvents = new Dictionary<IPExpr, HashSet<PEventVariable>>(Comparer);
+            TermOrder = new Dictionary<IPExpr, int>(Comparer);
             OrderToTerm = new Dictionary<int, IPExpr>();
             ReprToTerms = new Dictionary<string, IPExpr>();
             ReprToPredicates = new Dictionary<string, IPExpr>();
-            PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(comparer);
-            PredicateOrder = new Dictionary<IPExpr, int>(comparer);
-            Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(comparer);
+            PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(Comparer);
+            PredicateOrder = new Dictionary<IPExpr, int>(Comparer);
+            Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(Comparer);
             CC = new();
         }
 
@@ -121,9 +121,10 @@ namespace Plang.Compiler.Backend.PInfer
             FunctionStore.Initialize();
             CompilationContext ctx = new(job);
             Java.CompilationContext javaCtx = new(job);
+            DebugCodegen = new(job, "", Predicates, VisitedSet, FreeEvents);
             var eventDefSource = new EventDefGenerator(job, Constants.EventDefnFileName, quantifiedEvents, configEvent).GenerateCode(javaCtx, globalScope);
             AggregateFunctions(hint);
-            AggregateDefinedPredicates(hint);
+            AggregateDefinedPredicates(hint, globalScope);
             PopulateEnumCmpPredicates(globalScope);
             var i = 0;
             var termDepth = hint.TermDepth == null ? job.TermDepth : hint.TermDepth.Value;
@@ -217,7 +218,14 @@ namespace Plang.Compiler.Backend.PInfer
                 ReprToPredicates[codegen.GenerateRawExpr(pred, true).Split("=>")[0].Trim()] = pred;
                 if (Contradictions.TryGetValue(pred, out var contradictions))
                 {
-                    ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contradictions.Where(PredicateOrder.ContainsKey).Select(x => PredicateOrder[x]))}]");
+                    ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contradictions
+                            .Select(x => {
+                                var r = CC.Canonicalize(x);
+                                if (r == null) return x;
+                                else return r;
+                            })
+                            .Where(PredicateOrder.ContainsKey)
+                            .Select(x => PredicateOrder[x]).ToHashSet())}]");
                 }
                 else
                 {
@@ -298,37 +306,46 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     var events = GetUnboundedEventsMultiple(parameters.ToArray());
                     var param = parameters.ToList();
-                    if (pred.Function.Property.HasFlag(FunctionProperty.Reflexive) && param[0] == param[1])
+                    if ((pred.Function.Property.HasFlag(FunctionProperty.Reflexive) || pred.Function.Property.HasFlag(FunctionProperty.AntiReflexive))
+                            && param[0] == param[1])
                     {
-                        // skip reflexive
+                        // skip reflexive/irreflexive: tautology and contradiction
                         continue;
                     }
                     if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
+                        if (CC.Canonicalize(expr) != null) continue;
                         FreeEvents[expr] = events;
                         PredicateOrder[expr] = Predicates.Count;
-                        Contradictions[expr] = new HashSet<IPExpr>(new ASTComparer());
                         foreach (var c in PredicateStore.GetContradictions(pred))
                         {
                             if (PredicateCallExpr.MkPredicateCall(c, param, out var contra))
                             {
-                                Contradictions[expr].Add(contra);
-                                if (!Contradictions.ContainsKey(contra))
-                                {
-                                    Contradictions[contra] = new HashSet<IPExpr>(new ASTComparer());
-                                }
-                                Contradictions[contra].Add(expr);
+                                AddContradictingPredicates(expr, contra);
                             }
                         }
                         Predicates.Add(expr);
                         CC.AddExpr(expr);
                         PredicateBoundedTerm[expr] = parameters.Select(x => TermOrder[x]).ToHashSet();
                         // Add equivalences based on annotations
+                        foreach (IPExpr equiv in FunctionStore.MakeEquivalences(pred.Function,
+                                                (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var eq) ? eq : null, [.. parameters]))
+                        {
+                            if (equiv == null) continue;
+                            CC.AddExpr(equiv, false);
+                            CC.MarkEquivalence(expr, equiv);
+                        }
+                        foreach (IPExpr con in FunctionStore.MakeContradictions(pred.Function,
+                                                (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var con) ? con : null, [.. parameters]))
+                        {
+                            if (con == null) continue;
+                            AddContradictingPredicates(expr, con);
+                        }
                     }
                 }
             }
         }
 
-        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<string, HashSet<IPExpr>> varMaps, int termOrder = 0)
+        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<string, HashSet<IPExpr>> varMaps)
         {
             if (types.Count == 0 || varMaps.Count == 0)
             {
@@ -340,7 +357,7 @@ namespace Plang.Compiler.Backend.PInfer
             // ids of terms
             if (types.Count == 1)
             {
-                foreach (var e in varMaps[ShowType(types[0])].Where(x => TermOrder[x] >= termOrder))
+                foreach (var e in varMaps[ShowType(types[0])])
                 {
                     yield return [e];
                 }
@@ -349,7 +366,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 foreach (var e in varMaps[ShowType(types[0])])
                 {
-                    foreach (var rest in CartesianProduct(types.Skip(1).ToList(), varMaps, TermOrder[e]))
+                    foreach (var rest in CartesianProduct(types.Skip(1).ToList(), varMaps))
                     {
                         yield return rest.Prepend(e);
                     }
@@ -403,7 +420,21 @@ namespace Plang.Compiler.Backend.PInfer
                     var parameters = GetParameterCombinations(sig.Parameters.Count, VisitedSet, sig.Parameters.Select(x => x.Type).ToList(), []);
                     foreach (var parameter in parameters)
                     {
+                        if (func.Property.HasFlag(FunctionProperty.Reflexive) && parameter[0].Equals(parameter[1]))
+                        {
+                            continue;
+                        }
                         var expr = new FunCallExpr(null, func, parameter);
+                        if (CC.Canonicalize(expr) != null)
+                        {
+                            continue;
+                        }
+                        CC.AddExpr(expr, true);
+                        foreach (var eq in FunctionStore.MakeEquivalences(func, (f, xs) => new FunCallExpr(null, f, xs), [.. parameter]))
+                        {
+                            CC.AddExpr(eq, false);
+                            CC.MarkEquivalence(expr, eq);
+                        }
                         worklist.Add((expr, GetUnboundedEventsMultiple([.. parameter])));
                     }
                 }
@@ -420,7 +451,22 @@ namespace Plang.Compiler.Backend.PInfer
             // a compound data type
             // Note: an event can carry only a primitive type (e.g. transaction id)
             return expr is VariableAccessExpr v && v.Variable is PEventVariable pv && pv.Type.Canonicalize() is not PrimitiveType;
-        } 
+        }
+
+        private void AddContradictingPredicates(IPExpr e1, IPExpr e2)
+        {
+            if (!Contradictions.ContainsKey(e1))
+            {
+                Contradictions[e1] = new(Comparer);
+            }
+            if (!Contradictions.ContainsKey(e2))
+            {
+                Contradictions[e2] = new(Comparer);
+            }
+            Console.WriteLine($"Contradiction Added: {DebugCodegen.GenerateCodeExpr(e1, true)} and {DebugCodegen.GenerateCodeExpr(e2, true)}");
+            Contradictions[e1].Add(e2);
+            Contradictions[e2].Add(e1);
+        }
 
         private void MkEqComparison()
         {
@@ -439,18 +485,9 @@ namespace Plang.Compiler.Backend.PInfer
                         // var expr = new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
                         if (PredicateCallExpr.MkEqualityComparison(lhs, rhs, out var expr))
                         {
-                            if (!Contradictions.ContainsKey(expr))
-                            {
-                                Contradictions[expr] = new HashSet<IPExpr>(new ASTComparer());
-                            }
                             if (PredicateCallExpr.MkPredicateCall("<", [lhs, rhs], out var c))
                             {
-                                Contradictions[expr].Add(c);
-                                if (!Contradictions.ContainsKey(c))
-                                {
-                                    Contradictions[c] = new HashSet<IPExpr>(new ASTComparer());
-                                }
-                                Contradictions[c].Add(expr);
+                                AddContradictingPredicates(expr, c);
                             }
                             PredicateOrder[expr] = Predicates.Count;
                             Predicates.Add(expr);
@@ -513,57 +550,32 @@ namespace Plang.Compiler.Backend.PInfer
                 List<IPExpr> newParameters = [];
                 newParameters.AddRange(parameters);
                 IEnumerable<List<IPExpr>> result = [];
-                foreach (var expr in candidateTerms.Where(x => (maxTermOrder < 0 || TermOrder[x] >= maxTermOrder) && IsAssignableFrom(declParam, x.Type)))
+                foreach (var expr in candidateTerms.Where(x => IsAssignableFrom(declParam, x.Type)))
                 {
                     // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(declParam, expr.Type)}, {candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)).Count()}");
                     newParameters.Add(expr);
-                    result = result.Concat(GetParameterCombinations(index - 1, candidateTerms, declParams[1..], newParameters, maxTermOrder < 0 ? maxTermOrder : TermOrder[expr] + 1));
+                    result = result.Concat(GetParameterCombinations(index - 1, candidateTerms, declParams[1..], newParameters));
                     newParameters.RemoveAt(newParameters.Count - 1);
                 }
                 return result;
             }
         }
 
-        private static bool GetFunction(string locator, Scope globalScope, out Function function)
-        {
-            if (globalScope.Get(locator, out function))
+        private static void AggregateDefinedPredicates(Hint h, Scope globalScope) {
+            if (h.CustomPredicates.Count > 0)
             {
-                return true;
-            }
-            else if (locator.Contains('.'))
-            {
-                var split = locator.Split(".");
-                if (globalScope.Get(split[0], out Machine m))
+                foreach (var f in h.CustomPredicates)
                 {
-                    foreach (var func in m.Methods)
-                    {
-                        if (func.Name == split[1])
-                        {
-                            function = func;
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-                else
-                {
-                    return false;
+                    PredicateStore.AddPredicate(new DefinedPredicate(f), []);
                 }
             }
-            return false;
-        }
-
-        private static void AggregateDefinedPredicates(Hint h) {
-            foreach (var f in h.CustomPredicates)
+            // use all bool return type functions as defined predicates
+            foreach (var f in globalScope.Functions)
             {
-                // TODO handle the following either here or at PredicateStore
-                // + Tautologies:
-                //      - Reflexivity
-                //      - Transitivity
-                //      - Symmetry
-                // + Subsumption
-                // + Contradiction
-                PredicateStore.AddPredicate(new DefinedPredicate(f), []);
+                if (f.Signature.ReturnType.Canonicalize().IsAssignableFrom(PrimitiveType.Bool))
+                {
+                    PredicateStore.AddPredicate(new DefinedPredicate(f), []);
+                }
             }
         }
 
@@ -660,9 +672,11 @@ namespace Plang.Compiler.Backend.PInfer
         private Dictionary<string, IPExpr> ReprToPredicates { get; }
         private Dictionary<IPExpr, HashSet<IPExpr>> Contradictions { get; }
         private Dictionary<IPExpr, HashSet<int>> PredicateBoundedTerm { get; }
+        private JavaCodegen DebugCodegen { get; set; }
         private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {
                                                                 true => Terms[depth].Values.SelectMany(x => x),
                                                                 false => []};
+        private IEqualityComparer<IPExpr> Comparer { get; }
         private IEnumerable<IPExpr> AllTerms => Terms.SelectMany(x => x.Values).SelectMany(x => x);
         private IEnumerable<IPExpr> TermsAtDepthWithType(int depth, PLanguageType type) => (from ty in Terms[depth].Keys
                                                                                                 where IsAssignableFrom(ty, type)

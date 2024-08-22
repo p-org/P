@@ -32,7 +32,115 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
         {
             var statements = context.statement().Select(Visit).ToList();
+            if (statements.Count() == 1)
+            {
+                TryInferIff(statements[0]);
+                // infer properties & contradictions
+                if (statements[0] is ReturnStmt returnStmt &&
+                    TryInferProps(returnStmt.ReturnValue, out var contradictions, out var properties))
+                {
+                    foreach (var c in contradictions)
+                    {
+                        method.AddContradiction(c);
+                    }
+                    foreach (var prop in properties)
+                    {
+                        method.Property |= prop;
+                    }
+                }
+            }
             return new CompoundStmt(context, statements);
+        }
+
+        public HashSet<Variable> FreeVar(IPExpr e)
+        {
+            return e switch {
+                VariableAccessExpr ve => [ve.Variable],
+                BinOpExpr binOp => FreeVar(binOp.Lhs).Union(FreeVar(binOp.Rhs)).ToHashSet(),
+                UnaryOpExpr unOp => FreeVar(unOp.SubExpr),
+                NamedTupleAccessExpr nta => FreeVar(nta.SubExpr),
+                FunCallExpr call => call.Arguments.SelectMany(FreeVar).ToHashSet(),
+                _ => null,
+            };
+        }
+
+        public bool TryInferProps(IPExpr expr, out IPExpr[] contra, out FunctionProperty[] properties)
+        {
+            var freeVars = FreeVar(expr);
+            if (freeVars != null && freeVars.Count == method.Signature.Parameters.Count)
+            {
+                switch (expr)
+                {
+                    case BinOpExpr binOpExpr: {
+                        var lhs = binOpExpr.Lhs;
+                        var rhs = binOpExpr.Rhs;
+                        IPExpr make(BinOpType op) => new BinOpExpr(expr.SourceLocation, op, lhs, rhs);
+                        switch (binOpExpr.Operation)
+                        {
+                            case BinOpType.Lt:
+                                // < contradicts with == and > and >=
+                                contra = [make(BinOpType.Eq), make(BinOpType.Gt), make(BinOpType.Ge)];
+                                properties = [FunctionProperty.Transitive, FunctionProperty.Asymmetric];
+                                return true;
+                            case BinOpType.Gt:
+                                // > contradicts with ==, < and <=
+                                contra = [make(BinOpType.Eq), make(BinOpType.Lt), make(BinOpType.Le)];
+                                properties = [FunctionProperty.Transitive, FunctionProperty.Asymmetric];
+                                return true;
+                            case BinOpType.Eq:
+                                // == contradicts with <, > and !=
+                                contra = [make(BinOpType.Neq), make(BinOpType.Lt), make(BinOpType.Gt)];
+                                properties = [FunctionProperty.Transitive, FunctionProperty.Reflexive,
+                                              FunctionProperty.Symmetric,  FunctionProperty.AntiSymmetric];
+                                return true;
+                            case BinOpType.Le:
+                                // <= contradicts with >
+                                contra = [make(BinOpType.Gt)];
+                                properties = [FunctionProperty.Transitive,
+                                              FunctionProperty.Reflexive,
+                                              FunctionProperty.AntiSymmetric];
+                                return true;
+                            case BinOpType.Ge:
+                                // >= contradicts with <
+                                contra = [make(BinOpType.Lt)];
+                                properties = [FunctionProperty.Transitive,
+                                              FunctionProperty.Reflexive,
+                                              FunctionProperty.AntiSymmetric];
+                                return true;
+                            case BinOpType.Neq:
+                                // != contradicts with ==
+                                contra = [make(BinOpType.Eq)];
+                                properties = [FunctionProperty.Symmetric];
+                                return true;
+                            case BinOpType.Add:
+                                contra = [];
+                                properties = [FunctionProperty.Symmetric];
+                                return true;
+                            case BinOpType.Mul:
+                                contra = [];
+                                properties = [FunctionProperty.Symmetric];
+                                return true;
+                        }
+                        break;
+                    }
+                    case UnaryOpExpr unaryOpExpr: {
+                        switch (unaryOpExpr.Operation)
+                        {
+                            case UnaryOpType.Not:
+                            {
+                                // !F contradicts with F
+                                contra = [unaryOpExpr.SubExpr];
+                                properties = [];
+                                return true;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            contra = null;
+            properties = null;
+            return false;
         }
 
         public void TryInferIff(IPStmt body)
@@ -46,11 +154,6 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
             var statements = context.statement().Select(Visit).ToList();
-            if (statements.Count() == 1 
-                && method.Signature.ReturnType.Canonicalize().IsAssignableFrom(PrimitiveType.Bool))
-            {
-                TryInferIff(statements[0]);
-            }
             return new CompoundStmt(context, statements);
         }
 

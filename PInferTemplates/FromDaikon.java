@@ -222,9 +222,9 @@ public class FromDaikon {
                         }
                         break;
                     }
-                    if (rhsIsConst) {
-                        return false;
-                    }
+                    // if (rhsIsConst) {
+                    //     return false;
+                    // }
                     break;
                 }
             }

@@ -113,8 +113,9 @@ hintItem: field=iden ASSIGN value=rvalueList SEMI ;
 varDecl : VAR idenList COLON type SEMI ;
 
 funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
-        | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
+        | funProp* FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
+funProp : AT decorator=iden LPAREN rvalueList RPAREN ;
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=iden LBRACE stateBodyItem* RBRACE ;
 

@@ -36,6 +36,7 @@ EXIT      : 'exit' ;
 FOREACH   : 'foreach';
 FORMAT	  : 'format' ;
 FUN       : 'fun' ;
+AT        : '@';
 GOTO      : 'goto' ;
 HALT      : 'halt' ;
 HOT       : 'hot' ;

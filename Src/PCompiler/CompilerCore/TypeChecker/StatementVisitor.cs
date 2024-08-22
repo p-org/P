@@ -35,9 +35,22 @@ namespace Plang.Compiler.TypeChecker
             return new CompoundStmt(context, statements);
         }
 
+        public void TryInferIff(IPStmt body)
+        {
+            if (body is ReturnStmt stmt)
+            {
+                method.AddEquiv(stmt.ReturnValue);
+            }
+        }
+
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
             var statements = context.statement().Select(Visit).ToList();
+            if (statements.Count() == 1 
+                && method.Signature.ReturnType.Canonicalize().IsAssignableFrom(PrimitiveType.Bool))
+            {
+                TryInferIff(statements[0]);
+            }
             return new CompoundStmt(context, statements);
         }
 

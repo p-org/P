@@ -14,6 +14,7 @@ public class TaskPool {
     final FromDaikon converter;
     final boolean verbose;
     final BufferedOutputStream pinferOutputStream;
+    final BufferedOutputStream pinferParsableStream;
     final long startTime;
     final File outputFile;
     static final File DaikonTracesDir = new File("tmp_daikon_traces");
@@ -39,9 +40,12 @@ public class TaskPool {
         }
         pinferOutputFileDir.mkdirs();
         File pinferOutputFile = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), filename)));
+        File pinferParsable = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "%PARSEFILE%")));
         assert pinferOutputFile.createNewFile() : "Failed to create invariant output file " + pinferOutputFile;
+        assert pinferParsable.createNewFile() : "Failed to create pinfer parsable file " + "%PARSEFILE%";
         this.outputFile = pinferOutputFile;
         this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile, true));
+        this.pinferParsableStream = new BufferedOutputStream(new FileOutputStream(pinferParsable, true));
         if (!DaikonTracesDir.exists()) {
             DaikonTracesDir.mkdirs();
         }
@@ -92,7 +96,15 @@ public class TaskPool {
             if (!invariants.isEmpty()) {
                 String body = String.join("\n", invariants);
                 pinferOutputStream.write((header + "\n" + body + "\n\n").getBytes());
-                this.numMined += invariants.size();
+                // parsable output in the following format
+                // guards*
+                // filters*
+                // properties*
+                // separated by \wedge
+                pinferParsableStream.write((guards + "\n").getBytes());
+                pinferParsableStream.write((filters + "\n").getBytes());
+                pinferParsableStream.write((String.join(" ∧ ", invariants) + "\n").getBytes());
+                this.numMined += 1;
             }
             notify();
         }
@@ -131,7 +143,9 @@ public class TaskPool {
             System.out.println("#Properties mined: " + numMined);
             System.out.println("Output to " + outputFile.getPath());
             pinferOutputStream.flush();
+            pinferParsableStream.flush();
             pinferOutputStream.close();
+            pinferParsableStream.close();
         }
     }
 

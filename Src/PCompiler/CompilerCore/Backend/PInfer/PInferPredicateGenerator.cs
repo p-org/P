@@ -16,6 +16,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         public bool HasCompilationStage => true;
         public Hint hint = null;
+        private CongruenceClosure CC;
 
         public PInferPredicateGenerator()
         {
@@ -26,9 +27,12 @@ namespace Plang.Compiler.Backend.PInfer
             FreeEvents = new Dictionary<IPExpr, HashSet<PEventVariable>>(comparer);
             TermOrder = new Dictionary<IPExpr, int>(comparer);
             OrderToTerm = new Dictionary<int, IPExpr>();
+            ReprToTerms = new Dictionary<string, IPExpr>();
+            ReprToPredicates = new Dictionary<string, IPExpr>();
             PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(comparer);
             PredicateOrder = new Dictionary<IPExpr, int>(comparer);
             Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(comparer);
+            CC = new();
         }
 
         public void WithHint(Hint h)
@@ -87,6 +91,8 @@ namespace Plang.Compiler.Backend.PInfer
             PredicateBoundedTerm.Clear();
             PredicateOrder.Clear();
             Contradictions.Clear();
+            ReprToTerms.Clear();
+            ReprToPredicates.Clear();
             PredicateStore.Reset();
             FunctionStore.Reset();
         }
@@ -208,7 +214,7 @@ namespace Plang.Compiler.Backend.PInfer
                 ctx.WriteLine(stream, $"\"order\": {PredicateOrder[pred]},");
                 ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(pred, true)}\", ");
                 ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[pred])}], ");
-                var comparer = new ASTComparer();
+                ReprToPredicates[codegen.GenerateRawExpr(pred, true).Split("=>")[0].Trim()] = pred;
                 if (Contradictions.TryGetValue(pred, out var contradictions))
                 {
                     ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contradictions.Where(PredicateOrder.ContainsKey).Select(x => PredicateOrder[x]))}]");
@@ -237,6 +243,7 @@ namespace Plang.Compiler.Backend.PInfer
                 ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"{x.Order}"))}],");
                 ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(term)}\"");
                 ctx.WriteLine(stream, "}");
+                ReprToTerms[codegen.GenerateRawExpr(term, true).Split("=>")[0].Trim()] = term;
                 if (index < VisitedSet.Count - 1)
                 {
                     ctx.WriteLine(stream, ", ");
@@ -291,6 +298,11 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     var events = GetUnboundedEventsMultiple(parameters.ToArray());
                     var param = parameters.ToList();
+                    if (pred.Function.Property.HasFlag(FunctionProperty.Reflexive) && param[0] == param[1])
+                    {
+                        // skip reflexive
+                        continue;
+                    }
                     if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
                         FreeEvents[expr] = events;
                         PredicateOrder[expr] = Predicates.Count;
@@ -308,7 +320,9 @@ namespace Plang.Compiler.Backend.PInfer
                             }
                         }
                         Predicates.Add(expr);
+                        CC.AddExpr(expr);
                         PredicateBoundedTerm[expr] = parameters.Select(x => TermOrder[x]).ToHashSet();
+                        // Add equivalences based on annotations
                     }
                 }
             }
@@ -390,7 +404,6 @@ namespace Plang.Compiler.Backend.PInfer
                     foreach (var parameter in parameters)
                     {
                         var expr = new FunCallExpr(null, func, parameter);
-                        // AddTerm(currentDepth, expr, GetUnboundedEventsMultiple([.. parameter]));
                         worklist.Add((expr, GetUnboundedEventsMultiple([.. parameter])));
                     }
                 }
@@ -441,6 +454,12 @@ namespace Plang.Compiler.Backend.PInfer
                             }
                             PredicateOrder[expr] = Predicates.Count;
                             Predicates.Add(expr);
+                            CC.AddExpr(expr, true);
+                            if (PredicateCallExpr.MkEqualityComparison(rhs, lhs, out var equiv))
+                            {
+                                CC.AddExpr(equiv);
+                                CC.MarkEquivalence(expr, equiv);
+                            }
                             PredicateBoundedTerm[expr] = [TermOrder[lhs], TermOrder[rhs]];
                             FreeEvents[expr] = GetUnboundedEventsMultiple(lhs, rhs);
                         }
@@ -578,6 +597,7 @@ namespace Plang.Compiler.Backend.PInfer
             TermOrder[expr] = VisitedSet.Count;
             OrderToTerm[VisitedSet.Count] = expr;
             VisitedSet.Add(expr);
+            CC.AddExpr(expr, true);
         }
 
         private static bool IsAssignableFrom(PLanguageType type, PLanguageType otherType)
@@ -636,6 +656,8 @@ namespace Plang.Compiler.Backend.PInfer
         private Dictionary<IPExpr, int> TermOrder { get; }
         private Dictionary<int, IPExpr> OrderToTerm { get; }
         private Dictionary<IPExpr, int> PredicateOrder { get; }
+        private Dictionary<string, IPExpr> ReprToTerms { get; }
+        private Dictionary<string, IPExpr> ReprToPredicates { get; }
         private Dictionary<IPExpr, HashSet<IPExpr>> Contradictions { get; }
         private Dictionary<IPExpr, HashSet<int>> PredicateBoundedTerm { get; }
         private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {

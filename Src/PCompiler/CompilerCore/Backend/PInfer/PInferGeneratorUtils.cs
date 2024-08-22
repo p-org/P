@@ -457,8 +457,8 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (var numType in numericTypes)
             {
                 var ltPred = AddBuiltinPredicate("<", Notation.Infix, args => new BinOpExpr(null, BinOpType.Lt, args[0], args[1]), [EqPredicate], numType, numType);
-                AddBuiltinPredicate(">", Notation.Infix, args => new BinOpExpr(null, BinOpType.Gt, args[0], args[1]) ,[ltPred, EqPredicate], numType, numType);
-                // AddBuiltinPredicate("==", Notation.Infix, numType, numType);
+                ltPred.Function.Property |= FunctionProperty.Transitive;
+                AddBuiltinPredicate(">", Notation.Infix, args => new BinOpExpr(null, BinOpType.Gt, args[0], args[1]) ,[ltPred, EqPredicate], numType, numType).Function.Property |= FunctionProperty.Transitive;
             }
         }
 
@@ -482,6 +482,40 @@ namespace Plang.Compiler.Backend.PInfer
     public static class FunctionStore
     {
         public static Dictionary<List<PLanguageType>, Dictionary<string, Function>> _Store = [];
+
+        public static IPExpr Subst(IPExpr e, IDictionary<Variable, IPExpr> gamma)
+        {
+            IPExpr subst(IPExpr x) => Subst(x, gamma);
+            return e switch {
+                VariableAccessExpr variableAccessExpr when gamma.ContainsKey(variableAccessExpr.Variable) => gamma[variableAccessExpr.Variable],
+                FunCallExpr funCall => new FunCallExpr(funCall.SourceLocation, funCall.Function, funCall.Arguments.Select(subst).ToList()),
+                BinOpExpr binOpExpr => new BinOpExpr(binOpExpr.SourceLocation, binOpExpr.Operation, subst(binOpExpr.Lhs), subst(binOpExpr.Rhs)),
+                NamedTupleAccessExpr ntAccess => new NamedTupleAccessExpr(ntAccess.SourceLocation, subst(ntAccess.SubExpr), ntAccess.Entry),
+                TupleAccessExpr tupleAccess => new TupleAccessExpr(tupleAccess.SourceLocation, subst(tupleAccess.SubExpr), tupleAccess.FieldNo, tupleAccess.Type),
+                UnaryOpExpr unaryOpExpr => new UnaryOpExpr(unaryOpExpr.SourceLocation, unaryOpExpr.Operation, subst(unaryOpExpr.SubExpr)),
+                _ => e
+            };
+        }
+
+        public static List<IPExpr> MakeEquivalences(Function f, Func<Function, IPExpr[], FunCallExpr> make, params IPExpr[] parameters)
+        {
+            List<IPExpr> result = [];
+            if (f.Property.HasFlag(FunctionProperty.Symmetric))
+            {
+                result.Add(make(f, [parameters[1], parameters[0]]));
+            }
+            foreach (IPExpr eq in f.Equivalences)
+            {
+                // need to subst parameters
+                Dictionary<Variable, IPExpr> delta = [];
+                foreach (var (x, y) in f.Signature.Parameters.Zip(parameters))
+                {
+                    delta[x] = y;
+                }
+                result.Add(Subst(eq, delta));
+            }
+            return result;
+        }
 
         public static void AddFunction(Function func)
         {
@@ -518,5 +552,181 @@ namespace Plang.Compiler.Backend.PInfer
         }
 
         public static IEnumerable<Function> Store => _Store.Values.SelectMany(x => x.Values);
+    }
+
+    public class CongruenceClosure
+    {
+        public enum Result
+        {
+            YES, NO, UNK
+        }
+        internal class Node(object n, int id, bool canonical = false)
+        {
+            internal object symbol = n;
+            internal List<Node> children = [];
+            internal HashSet<Node> cc_parent = [];
+            internal Node parent = null;
+            internal int id = id;
+            internal bool canonical = canonical;
+            internal IPExpr repr;
+
+            internal bool SameNode(Node other)
+            {
+                return other.id == id;
+            }
+
+            internal Node Find()
+            {
+                if (parent == null)
+                {
+                    return this;
+                }
+                return parent.Find();
+            }
+        }
+        private readonly Dictionary<IPExpr, Node> index;
+
+
+        private Node PutExpr(IPExpr e)
+        {
+            if (index.TryGetValue(e, out Node value))
+            {
+                return value;
+            }
+            switch (e)
+            {
+                case VariableAccessExpr:
+                case EnumElemRefExpr:
+                case NamedTupleAccessExpr:
+                case TupleAccessExpr:
+                    Node ground = new(e, index.Count) { repr = e };
+                    index[e] = ground;
+                    return ground;
+                case BinOpExpr expr:
+                    List<Node> exprChildren = [PutExpr(expr.Lhs), PutExpr(expr.Rhs)];
+                    Node binOpNode = new(expr.Operation, index.Count) { children = exprChildren, repr = e };
+                    foreach (var ch in exprChildren)
+                    {
+                        ch.cc_parent.Add(binOpNode);
+                    }
+                    return binOpNode;
+                case FunCallExpr funCallExpr:
+                    Function f = funCallExpr.Function;
+                    List<Node> funCallArgsNode = funCallExpr.Arguments.Select(PutExpr).ToList();
+                    Node funCallNode = new(f, index.Count)
+                    {
+                        children = funCallArgsNode,
+                        repr = e
+                    };
+                    foreach (var ch in funCallArgsNode)
+                    {
+                        ch.cc_parent.Add(funCallNode);
+                    }
+                    index[funCallExpr] = funCallNode;
+                    return funCallNode;
+            }
+                throw new Exception($"CC not supported for {e}");
+        }
+
+        private void PropagateCongruence(Node n1, Node n2)
+        {
+            if (n1.symbol.Equals(n2.symbol) && n1.children.Count == n2.children.Count)
+            {
+                if (n1.children.Zip(n2.children, SameClosure).All(x => x))
+                {
+                    // all corresponding children are in the same closure
+                    Union(n1, n2);
+                }
+            }
+        }
+
+        private bool SameClosure(Node n1, Node n2)
+        {
+            return n1.Find().SameNode(n2.Find());
+        }
+
+        private void Union(Node n1, Node n2)
+        {
+            n1 = n1.Find();
+            n2 = n2.Find();
+            if (n1.canonical)
+            {
+                // keep the root canonical
+                (n1, n2) = (n2, n1);
+            }
+            if (!n1.SameNode(n2))
+            {
+                // Mark same UF
+                n1.parent = n2;
+                // propagate congruence
+                foreach (var p1 in n1.cc_parent)
+                {
+                    foreach (var p2 in n2.cc_parent)
+                    {
+                        PropagateCongruence(p1, p2);
+                    }
+                }
+                // propagate common congruence parents
+                foreach (var cpar in n1.cc_parent)
+                {
+                    n2.cc_parent.Add(cpar);
+                }
+                n1.cc_parent.Clear();
+            }
+        }
+
+        public void MarkEquivalence(IPExpr e1, IPExpr e2)
+        {
+            Node n1 = PutExpr(e1).Find();
+            Node n2 = PutExpr(e2).Find();
+            Union(n1, n2);
+        }
+
+        public Result Equivalent(IPExpr e1, IPExpr e2)
+        {
+            if (!index.TryGetValue(e1, out Node n1) || !index.TryGetValue(e2, out Node n2))
+            {
+                return Result.UNK;
+            }
+            if (SameClosure(n1, n2)) return Result.YES;
+            return Result.NO;
+        }
+
+        public IPExpr Canonicalize(IPExpr e)
+        {
+            if (index.TryGetValue(e, out var node))
+            {
+                if (!node.canonical)
+                {
+                    throw new Exception($"THIS SHOULD NOT HAPPEN! {node.repr} is not canonical");
+                }
+                return node.repr;
+            }
+            return null;
+        }
+
+        public bool DefinitelyEquivalent(IPExpr e1, IPExpr e2)
+        {
+            return Equivalent(e1, e2) == Result.YES;
+        }
+
+        public CongruenceClosure() {
+            index = new(new ASTComparer());
+        }
+
+        public void AddExpr(IPExpr e, bool canonical = false)
+        {
+            if (!canonical)
+            {
+                if (Canonicalize(e) != null)
+                {
+                    PutExpr(e).canonical = false;
+                }
+            }
+            else
+            {
+                PutExpr(e).canonical = true;
+            }
+        }
     }
 }

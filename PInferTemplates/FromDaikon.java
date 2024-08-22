@@ -1,12 +1,12 @@
 import java.util.stream.Collectors;
 
 public class FromDaikon {
+    public int numExists;
     private Map<Set<Integer>, List<Main.RawPredicate>> termsToPredicates;
     private List<Main.RawTerm> terms;
     private String templateHeaderCar;
     private String templateHeaderCdr;
     private int pruningLevel;
-    private int numExists;
     private static final String[] QUANTIFIERS = { %QUANTIFIERS% };
     private static final String[] VARNAME = { %QUANTIFIED_VARS% };
     private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()", "[] ==" };

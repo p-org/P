@@ -42,7 +42,7 @@ namespace PChecker.PRuntime
             {
                 return e.GetType().Name;
             }
-            var pe = (PEvent)(e);
+            var pe = (Event)(e);
             var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString();
             var msg = pe.Payload == null ? "" : $" with payload ({payload})";
             return $"{GetShortName(e.GetType().Name)}{msg}";

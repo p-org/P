@@ -15,7 +15,7 @@ namespace Plang.Compiler.TypeChecker.Types
             CanonicalRepresentation = $"({string.Join(",", Types.Select(type => type.CanonicalRepresentation))})";
             AllowedPermissions = Types.Any(t => t.AllowedPermissions == null)
                 ? null
-                : new Lazy<IReadOnlyList<PEvent>>(() => Types.SelectMany(t => t.AllowedPermissions.Value).ToList());
+                : new Lazy<IReadOnlyList<Event>>(() => Types.SelectMany(t => t.AllowedPermissions.Value).ToList());
         }
 
         // Lifts a TupleType into an equivalent NamedTupleType, where the names of each field are numbers
@@ -40,7 +40,7 @@ namespace Plang.Compiler.TypeChecker.Types
 
         public override string CanonicalRepresentation { get; }
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

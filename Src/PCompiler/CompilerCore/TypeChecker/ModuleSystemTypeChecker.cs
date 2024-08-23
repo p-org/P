@@ -18,7 +18,7 @@ namespace Plang.Compiler.TypeChecker
             this.globalScope = globalScope;
         }
 
-        private IEnumerable<PEvent> GetPermissions(IEnumerable<PEvent> allowed)
+        private IEnumerable<Event> GetPermissions(IEnumerable<Event> allowed)
         {
             if (allowed == null)
             {

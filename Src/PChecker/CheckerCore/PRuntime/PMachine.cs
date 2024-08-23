@@ -251,7 +251,7 @@ namespace PChecker.PRuntime
             }
         }
 
-        public class InitializeParametersEvent : PEvent
+        public class InitializeParametersEvent : Event
         {
             public InitializeParametersEvent(InitializeParameters payload) : base(payload)
             {

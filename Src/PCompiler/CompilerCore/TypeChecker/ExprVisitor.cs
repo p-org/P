@@ -136,6 +136,7 @@ namespace Plang.Compiler.TypeChecker
 
                     return new ValuesExpr(context, expr, new SequenceType(mapType.ValueType));
                 }
+                case "size":
                 case "sizeof":
                 {
                     var expr = Visit(context.expr());

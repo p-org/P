@@ -254,7 +254,7 @@ namespace Plang.Compiler.Backend.PInfer
     public class PInferBuiltinTypes
     {
         public static readonly PLanguageType Index = new TypeDefType(new TypeDef("Index", null) { Type = PrimitiveType.Int });
-        public static readonly PLanguageType CollectionSize = new CollectionSize();
+        public static readonly PLanguageType CollectionSize = new TypeDefType(new TypeDef("CollectionSize", null) { Type = PrimitiveType.Int });
     }
 
     public class DefinedPredicate : IPredicate

@@ -233,6 +233,7 @@ namespace Plang.Compiler
                     job.Output.WriteError($"Config event passed through command line not defined: {job.ConfigEvent}");
                 }
             }
+            PInferInvoke.NewInvFiles();
             switch (job.PInferAction)
             {
                 case PInferAction.Compile:
@@ -256,6 +257,91 @@ namespace Plang.Compiler
 
     internal class PInferInvoke
     {
+
+        internal static readonly string DistilledInvFile = Path.Combine("PInferOutputs", "distilled_invs.txt");
+        internal static readonly string StepbackInvFile = Path.Combine("PInferOutputs", "stepback_invs.txt");
+        internal static HashSet<string> Learned = [];
+
+        public static void NewInvFiles()
+        {
+            DirectoryInfo dir = new("PInferOutputs");
+            if (!dir.Exists) return;
+            if (File.Exists(DistilledInvFile))
+            {
+                int cnt = dir.GetFiles().Where(x => x.Name.StartsWith("distilled_invs")).Count();
+                File.Move(DistilledInvFile, Path.Combine("PInferOutputs", $"distilled_invs_{cnt - 1}.txt"));
+            }
+            if (File.Exists(StepbackInvFile))
+            {
+                int cnt = dir.GetFiles().Where(x => x.Name.StartsWith("stepback_invs")).Count();
+                File.Move(StepbackInvFile, Path.Combine("PInferOutputs", $"stepback_invs_{cnt - 1}.txt"));
+            }
+        }
+
+        public static void WriteInvs(PInferPredicateGenerator codegen, string guards, string filters, List<string> keep, List<string> stepback)
+        {
+            if (!File.Exists(DistilledInvFile))
+            {
+                File.Create(DistilledInvFile).Close();
+            }
+            if (!File.Exists(StepbackInvFile))
+            {
+                File.Create(StepbackInvFile).Close();
+            }
+            var header = codegen.hint.GetInvariantReprHeader(guards, filters);
+            if (keep.Count > 0 || filters.Length > 0)
+            {
+                using StreamWriter invw = File.AppendText(DistilledInvFile);
+                var kept = string.Join(" ∧ ", keep);
+                var inv = header + kept;
+                if (!Learned.Contains(inv))
+                {
+                    invw.WriteLine(inv);
+                    Learned.Add(inv);
+                }
+                invw.Close();
+            }
+            if (stepback.Count > 0 || filters.Length > 0)
+            {
+                using StreamWriter invw = File.AppendText(StepbackInvFile);
+                var stepbacked = string.Join(" ∧ ", stepback);
+                var inv = header + stepbacked;
+                if (!Learned.Contains(inv))
+                {
+                    invw.WriteLine(inv);
+                    Learned.Add(inv);
+                }
+                invw.Close();
+            }
+        }
+    
+        public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen)
+        {
+            var parseFilePath = Path.Combine("PInferOutputs", "SpecMining", PreambleConstants.ParseFileName);
+            var contents = File.ReadAllLines(parseFilePath);
+            int result = 0;
+            for (int i = 0; i < contents.Length; i += 3)
+            {
+                var guards = contents[i];
+                var filters = contents[i + 1];
+                var properties = contents[i + 2].Split("∧").Select(x => x.Trim());
+                List<string> keep = [];
+                List<string> stepback = [];
+                foreach (var prop in properties)
+                {
+                    switch (codegen.CheckForPruning(job, globalScope, prop, out var repr))
+                    {
+                        case PInferPredicateGenerator.PruningStatus.KEEP: keep.Add(repr); break;
+                        case PInferPredicateGenerator.PruningStatus.STEPBACK: stepback.Add(repr); break;
+                        default: break;
+                    }
+                }
+                WriteInvs(codegen, guards, filters, keep, stepback);
+                result += keep.Count + stepback.Count;
+            }
+            return result;
+        }
+
         public static int InvokeMain(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint, PInferPredicateGenerator codegen)
         {
             ProcessStartInfo startInfo;
@@ -281,6 +367,8 @@ namespace Plang.Compiler
             }
             process = Process.Start(startInfo);
             process.WaitForExit();
+            // aggregate results
+            var numMined = PruneAndAggregate(job, globalScope, codegen);
             Console.WriteLine("Cleaning up ...");
             var dirInfo = new DirectoryInfo("./");
             foreach (var dir in dirInfo.GetDirectories())
@@ -297,7 +385,7 @@ namespace Plang.Compiler
                     f.Delete();
                 }
             }
-            return process.ExitCode;
+            return numMined;
         }
 
         private static List<string> GetMinerConfigArgs(ICompilerConfiguration configuration, TraceMetadata metadata, Hint hint, PInferPredicateGenerator codegen)

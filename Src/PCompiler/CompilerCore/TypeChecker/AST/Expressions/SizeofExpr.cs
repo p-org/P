@@ -15,6 +15,6 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
 
         public ParserRuleContext SourceLocation { get; }
 
-        public PLanguageType Type { get; } = PrimitiveType.Int;
+        public PLanguageType Type { get; set; } = PrimitiveType.Int;
     }
 }

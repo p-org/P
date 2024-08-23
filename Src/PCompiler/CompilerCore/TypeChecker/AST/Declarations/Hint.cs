@@ -33,6 +33,27 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             NumFilterPredicates = 0;
         }
 
+        public string GetInvariantReprHeader(string guards, string filters)
+        {
+            string result = "";
+            result += string.Join(" ", Quantified.SkipLast(ExistentialQuantifiers).Select(v => $"∀{v.Name}: {v.EventName}"));
+            if (guards.Length > 0)
+            {
+                result += $" :: {guards} ->";
+            }
+            if (result.Length > 0)
+            {
+                result += " ";
+            }
+            result += string.Join(" ", Quantified.TakeLast(ExistentialQuantifiers).Select(v => $"∃{v.Name}: {v.EventName}"));
+            result += " :: ";
+            if (filters.Length > 0)
+            {
+                result += filters + " ∧ ";
+            }
+            return result;
+        }
+
         public void ShowHint()
         {
             Console.WriteLine($"Name: {Name}");

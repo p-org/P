@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -227,6 +229,7 @@ namespace Plang.Compiler.Backend.PInfer
             foreach ((var pred, var index) in Predicates.Select((x, i) => (x, i)))
             {
                 // Console.WriteLine($"Pred: {DebugCodegen.GenerateCodeExpr(pred, true)}");
+                ReprToPredicates[codegen.GenerateRawExpr(pred, true).Split("=>")[0].Trim()] = pred;
                 var canonical = CC.Canonicalize(pred);
                 // Console.WriteLine($"==> {DebugCodegen.GenerateCodeExpr(canonical, true)}");
                 if (written.Contains(canonical))
@@ -238,7 +241,6 @@ namespace Plang.Compiler.Backend.PInfer
                 ctx.WriteLine(stream, $"\"order\": {PredicateOrder[canonical]},");
                 ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(canonical, true)}\", ");
                 ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[canonical])}], ");
-                ReprToPredicates[codegen.GenerateRawExpr(canonical, true).Split("=>")[0].Trim()] = canonical;
                 if (Contradictions.TryGetValue(canonical, out var contradictions))
                 {
                     ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contradictions
@@ -270,6 +272,7 @@ namespace Plang.Compiler.Backend.PInfer
             ctx.WriteLine(stream, "[");
             foreach ((var term, var index) in VisitedSet.Select((x, i) => (x, i)))
             {
+                ReprToTerms[codegen.GenerateRawExpr(term, true).Split("=>")[0].Trim()] = term;
                 var canonical = CC.Canonicalize(term);
                 if (written.Contains(canonical))
                 {
@@ -282,7 +285,6 @@ namespace Plang.Compiler.Backend.PInfer
                 ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[canonical].Select(x => $"{x.Order}"))}],");
                 ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(canonical)}\"");
                 ctx.WriteLine(stream, "}");
-                ReprToTerms[codegen.GenerateRawExpr(canonical, true).Split("=>")[0].Trim()] = canonical;
                 if (index < VisitedSet.Count - 1)
                 {
                     ctx.WriteLine(stream, ", ");
@@ -595,11 +597,14 @@ namespace Plang.Compiler.Backend.PInfer
                 }
             }
             // use all bool return type functions as defined predicates
-            foreach (var f in globalScope.Functions)
+            if (!h.Exact)
             {
-                if (f.Signature.ReturnType.Canonicalize().IsAssignableFrom(PrimitiveType.Bool))
+                foreach (var f in globalScope.Functions)
                 {
-                    PredicateStore.AddPredicate(new DefinedPredicate(f), []);
+                    if (f.Signature.ReturnType.Canonicalize().IsAssignableFrom(PrimitiveType.Bool))
+                    {
+                        PredicateStore.AddPredicate(new DefinedPredicate(f), []);
+                    }
                 }
             }
         }
@@ -684,6 +689,152 @@ namespace Plang.Compiler.Backend.PInfer
                 throw new Exception($"Expression {expr} has not been proceesed");
             }
             return unboundedEvents;
+        }
+
+        public enum PruningStatus
+        {
+            KEEP,
+            DROP,
+            STEPBACK,            
+        }
+
+        private bool TryParseBinOpExpr(string inv, out (string, string, string) result)
+        {
+            string[] supportedOps = ["∈", "==", "<=", ">=", "!=", "<", ">"];
+            foreach (var op in supportedOps)
+            {
+                if (inv.Contains(op))
+                {
+                    var decomp = inv.Split(op);
+                    result = (decomp[0].Trim(), op, decomp[1].Trim());
+                    return true;
+                }
+            }
+            result = ("", "", "");
+            return false;
+        }
+
+        public bool TryParseExpr(string repr, out PParser.ExprContext ctx)
+        {
+            var fileStream = new AntlrInputStream(repr);
+            var lexer = new PLexer(fileStream);
+            var tokens = new CommonTokenStream(lexer);
+            var parser = new PParser(tokens);
+            parser.RemoveErrorListeners();
+            try
+            {
+                // Stage 1: use fast SLL parsing strategy
+                parser.Interpreter.PredictionMode = PredictionMode.Sll;
+                parser.ErrorHandler = new BailErrorStrategy();
+                ctx = parser.expr();
+                return true;
+            }
+            catch (Exception)
+            {
+                ctx = null;
+                return false;
+            }
+        }
+
+        public bool TryGetFromConfigEvent(string field, out NamedTupleEntry entry)
+        {
+            if (hint.ConfigEvent != null)
+            {
+                NamedTupleType ty = (NamedTupleType) hint.ConfigEvent.PayloadType;
+                foreach (var f in ty.Fields)
+                {
+                    if (field == f.Name) {
+                        entry = f;
+                        return true;
+                    }
+                }
+            }
+            entry = null;
+            return false;
+        }
+
+        public string UnfoldContainsEnum(string lhs, string rhs, EnumType enumType)
+        {
+            HashSet<int> values = rhs.Replace("{", "").Replace("}", "").Split(",").Select(x => int.Parse(x.Trim())).ToHashSet();
+            List<string> refElem = [];
+            foreach (var v in enumType.EnumDecl.Values)
+            {
+                if (values.Contains(v.Value))
+                {
+                    refElem.Add(v.Name);
+                }
+            }
+            return "(" + string.Join(" || ", refElem.Select(x => $"{lhs} == {x}")) + ")";
+        }
+
+        public PruningStatus ProcessBinOpExpr(ICompilerConfiguration config, Scope globalScope,
+                                                string orig, string lhs, string op, string rhs, out string processed)
+        {
+            // check for things that may not parse
+            if (op == "∈")
+            {
+                // prune out for Enums that have <= 3 possible values
+                if (ReprToTerms.TryGetValue(lhs, out var term))
+                {
+                    if (term.Type is EnumType t)
+                    {
+                        int rhsCnt = rhs.Count(c => c == ',') + 1;
+                        if (rhsCnt == t.EnumDecl.Values.Count())
+                        {
+                            processed = "";
+                            return PruningStatus.DROP;
+                        }
+                        processed = UnfoldContainsEnum(lhs, rhs, t);
+                        return PruningStatus.KEEP;
+                    }
+                }
+                processed = $"{lhs} {op} {rhs}";
+                return PruningStatus.KEEP;
+            }
+            // try parse and check
+            if (TryParseExpr(orig, out var ctx))
+            {
+                InvExprVisitor visitor = new(config, globalScope, CC, hint.ConfigEvent, ReprToTerms);
+                try
+                {
+                    visitor.Visit(ctx);
+                    processed = orig;
+                    return PruningStatus.KEEP;
+                }
+                catch (DropException drop)
+                {
+                    config.Output.WriteWarning(drop.Message);
+                    processed = "";
+                    return PruningStatus.DROP;
+                }
+                catch (StepbackException sb)
+                {
+                    config.Output.WriteWarning(sb.Message);
+                    processed = orig;
+                    return PruningStatus.STEPBACK;
+                }
+            }
+            processed = "";
+            return PruningStatus.DROP;
+        }
+
+        public PruningStatus CheckForPruning(ICompilerConfiguration config, Scope globalScope, string inv, out string repr)
+        {
+            if (ReprToPredicates.ContainsKey(inv))
+            {
+                repr = inv;
+                return PruningStatus.KEEP;
+            }
+            if (TryParseBinOpExpr(inv, out var exprComp))
+            {
+                var lhs = exprComp.Item1;
+                var op = exprComp.Item2;
+                var rhs = exprComp.Item3;
+                return ProcessBinOpExpr(config, globalScope, inv, lhs, op, rhs, out repr);
+            }
+            // drop unknown operators
+            repr = "";
+            return PruningStatus.DROP;
         }
 
         private List<Dictionary<PLanguageType, HashSet<IPExpr>>> Terms { get; }

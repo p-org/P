@@ -15,6 +15,7 @@ namespace Plang.Compiler.Backend.PInfer
         private readonly HashSet<IPExpr> Predicates;
         private readonly IEnumerable<IPExpr> Terms;
         private readonly IDictionary<IPExpr, HashSet<PEventVariable>> FreeEvents;
+        private readonly HashSet<Function> CompiledFunctions;
 
         public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms, IDictionary<IPExpr, HashSet<PEventVariable>> freeEvents) : base(job, filename)
         {
@@ -22,6 +23,7 @@ namespace Plang.Compiler.Backend.PInfer
             Terms = terms;
             FreeEvents = freeEvents;
             Job = job;
+            CompiledFunctions = [];
         }
 
         public string GenerateTypeName(IPExpr expr) {
@@ -41,15 +43,15 @@ namespace Plang.Compiler.Backend.PInfer
             return result;
         }
 
-        private void WriteFunctionRec(Function f, HashSet<Function> written)
+        private void WriteFunctionRec(Function f)
         {
-            if (written.Contains(f)) return;
-            written.Add(f);
+            if (CompiledFunctions.Contains(f)) return;
+            CompiledFunctions.Add(f);
             foreach (var callee in f.Callees)
             {
                 if (callee != f)
                 {
-                    WriteFunctionRec(callee, written);
+                    WriteFunctionRec(callee);
                 }
             }
             WriteFunction(f);
@@ -60,14 +62,13 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("public class " + Job.ProjectName + " implements Serializable {");
             WriteLine("public record PredicateWrapper (String repr, boolean negate) {}");
             Constants.PInferMode = false;
-            HashSet<Function> written = [];
             foreach (var pred in PredicateStore.Store)
             {
-                WriteFunctionRec(pred.Function, written);
+                WriteFunctionRec(pred.Function);
             }
             foreach (var func in FunctionStore.Store)
             {
-                WriteFunctionRec(func, written);
+                WriteFunctionRec(func);
             }
             Constants.PInferModeOn();
             Dictionary<string, (string, List<PEventVariable>)> repr2Metadata = [];
@@ -330,7 +331,7 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     if (funCallExpr.Arguments[0] is VariableAccessExpr v && v.Variable is PEventVariable pv)
                     {
-                        return $"{pv.Name}.index()";
+                        return simplified ? $"indexof({pv.Name})" : $"{pv.Name}.index()";
                     }
                     throw new NotImplementedException("Index is not implemented for expressions other than a variable access");
                 }
@@ -346,6 +347,10 @@ namespace Plang.Compiler.Backend.PInfer
                     }
                     return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.size()";
                 }
+            }
+            if(funCallExpr.Function.SourceLocation != null && !CompiledFunctions.Contains(funCallExpr.Function))
+            {
+                WriteFunctionRec(funCallExpr.Function);
             }
             return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e)).ToArray()) + ")";
         }

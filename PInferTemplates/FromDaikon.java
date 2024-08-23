@@ -26,27 +26,27 @@ public class FromDaikon {
             case "Forall":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
                     sb.append("∀").append(VARNAME[i])
-                            .append(": ").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
+                            .append(": ").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : " ");
                 }
                 templateHeaderCar = sb.toString();
                 break;
             case "Exists":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
                     sb.append("∃").append(VARNAME[i])
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : " ");
                 }
                 templateHeaderCar = sb.toString();
                 break;
             case "ForallExists":
                 for (int i = 0; i < QUANTIFIERS.length - numExtQuantfiers; ++i) {
                     sb.append("∀").append(VARNAME[i])
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - numExtQuantfiers - 1 ? " :: " : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - numExtQuantfiers - 1 ? " :: " : " ");
                 }
                 templateHeaderCar = sb.toString();
                 sb = new StringBuilder();
                 for (int i = QUANTIFIERS.length - numExtQuantfiers; i < QUANTIFIERS.length; ++i) {
                     sb.append("∃").append(VARNAME[i])
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : " ");
                 }
                 templateHeaderCdr = sb.toString();
                 break;
@@ -115,8 +115,8 @@ public class FromDaikon {
         }
         if (line.contains(" in ")) {
             line = line.replace(" in ", " == ");
-            line = line.replace("[]", "");
         }
+        line = line.replace("[]", "");
         return line;
     }
 

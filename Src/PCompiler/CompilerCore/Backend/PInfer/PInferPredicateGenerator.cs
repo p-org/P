@@ -117,8 +117,8 @@ namespace Plang.Compiler.Backend.PInfer
 
             PEvent configEvent = hint.ConfigEvent;
             Constants.PInferModeOn();
-            PredicateStore.Initialize();
-            FunctionStore.Initialize();
+            PredicateStore.Initialize(globalScope);
+            FunctionStore.Initialize(globalScope);
             CompilationContext ctx = new(job);
             Java.CompilationContext javaCtx = new(job);
             DebugCodegen = new(job, "", Predicates, VisitedSet, FreeEvents);
@@ -149,18 +149,18 @@ namespace Plang.Compiler.Backend.PInfer
             }
             Console.WriteLine($"Generating predicates ...");
             PopulatePredicate();
-            MkEqComparison();
+            // MkEqComparison();
             CompiledFile terms = new($"{job.ProjectName}.terms.json");
             CompiledFile predicates = new($"{job.ProjectName}.predicates.json");
             JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, VisitedSet, FreeEvents);
             IEnumerable<CompiledFile> compiledJavaSrc = codegen.GenerateCode(javaCtx, globalScope);
-            WriteTerms(ctx, terms.Stream, codegen);
-            WritePredicates(ctx, predicates.Stream, codegen);
+            int numTerms = WriteTerms(ctx, terms.Stream, codegen);
+            int numPredicates = WritePredicates(ctx, predicates.Stream, codegen);
             var javaCompiler = new JavaCompiler();
             javaCompiler.GenerateBuildScript(job);
             var templateCodegen = new PInferTemplateGenerator(job, quantifiedEvents, Predicates, VisitedSet, FreeEvents,
                                                                 PredicateBoundedTerm, OrderToTerm, configEvent);
-            Console.WriteLine($"Generated {VisitedSet.Count} terms and {Predicates.Count} predicates");
+            Console.WriteLine($"Generated {numTerms} terms and {numPredicates} predicates");
             return compiledJavaSrc.Concat(new TraceReaderGenerator(job, quantifiedEvents.Concat([configEvent])).GenerateCode(javaCtx, globalScope))
                                 .Concat(templateCodegen.GenerateCode(javaCtx, globalScope))
                                 .Concat(new DriverGenerator(job, templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
@@ -187,18 +187,32 @@ namespace Plang.Compiler.Backend.PInfer
                     MacroPredicate enumCmpPred = new($"enumCmp_{enumDecl.Name}_{elem.Name}", Notation.Prefix, (args) => {
                         return new BinOpExpr(null, BinOpType.Eq, args[0], new EnumElemRefExpr(null, elem));
                     }, ty);
-                    PredicateStore.AddBuiltinPredicate(enumCmpPred, predicateGroup);
-                    predicateGroup.Add(enumCmpPred);
+                    enumCmpPred.Function.AddEquiv(
+                        enumCmpPred.ShiftCall(xs => new BinOpExpr(null, BinOpType.Eq, xs[0], new IntLiteralExpr(null, elem.Value)))
+                    );
+                    foreach (var other in enumDecl.Values)
+                    {
+                        if (elem == other) continue;
+                        enumCmpPred.Function.AddContradiction(
+                            enumCmpPred.ShiftCall(xs => new BinOpExpr(null, BinOpType.Eq, xs[0], new EnumElemRefExpr(null, other)))
+                        );
+                    }
+                    PredicateStore.AddPredicate(enumCmpPred, []);
                 }
             }
             MacroPredicate isTrueCmp = new("IsTrue", Notation.Prefix, (args) => {
                 return args[0];
             }, PrimitiveType.Bool);
+            isTrueCmp.Function.AddContradiction(isTrueCmp.ShiftCall(
+                xs => new UnaryOpExpr(null, UnaryOpType.Not, xs[0])
+            ));
             MacroPredicate isFalseCmp = new("IsFalse", Notation.Prefix, (args) => {
-                return args[0];
+                return new UnaryOpExpr(null, UnaryOpType.Not, args[0]);
             }, PrimitiveType.Bool);
-            PredicateStore.AddBuiltinPredicate(isTrueCmp, [isFalseCmp]);
-            PredicateStore.AddBuiltinPredicate(isFalseCmp, [isTrueCmp]);
+            isFalseCmp.Function.AddContradiction(isFalseCmp.ShiftCall(xs => xs[0]));
+            
+            PredicateStore.AddBuiltinPredicate(isTrueCmp, []);
+            PredicateStore.AddBuiltinPredicate(isFalseCmp, []);
         }
 
         private string GetEventVariableRepr(PEventVariable x)
@@ -206,17 +220,26 @@ namespace Plang.Compiler.Backend.PInfer
             return $"({x.Name}:{x.EventName})";
         }
 
-        private void WritePredicates(CompilationContext ctx, StringWriter stream, JavaCodegen codegen)
+        private int WritePredicates(CompilationContext ctx, StringWriter stream, JavaCodegen codegen)
         {
+            HashSet<IPExpr> written = new(Comparer);
             ctx.WriteLine(stream, "[");
             foreach ((var pred, var index) in Predicates.Select((x, i) => (x, i)))
             {
+                // Console.WriteLine($"Pred: {DebugCodegen.GenerateCodeExpr(pred, true)}");
+                var canonical = CC.Canonicalize(pred);
+                // Console.WriteLine($"==> {DebugCodegen.GenerateCodeExpr(canonical, true)}");
+                if (written.Contains(canonical))
+                {
+                    continue;
+                }
+                written.Add(canonical);
                 ctx.WriteLine(stream, "{");
-                ctx.WriteLine(stream, $"\"order\": {PredicateOrder[pred]},");
-                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(pred, true)}\", ");
-                ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[pred])}], ");
-                ReprToPredicates[codegen.GenerateRawExpr(pred, true).Split("=>")[0].Trim()] = pred;
-                if (Contradictions.TryGetValue(pred, out var contradictions))
+                ctx.WriteLine(stream, $"\"order\": {PredicateOrder[canonical]},");
+                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(canonical, true)}\", ");
+                ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[canonical])}], ");
+                ReprToPredicates[codegen.GenerateRawExpr(canonical, true).Split("=>")[0].Trim()] = canonical;
+                if (Contradictions.TryGetValue(canonical, out var contradictions))
                 {
                     ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contradictions
                             .Select(x => {
@@ -238,26 +261,35 @@ namespace Plang.Compiler.Backend.PInfer
                 }
             }
             ctx.WriteLine(stream, "]");
+            return written.Count;
         }
 
-        private void WriteTerms(CompilationContext ctx, StringWriter stream, JavaCodegen codegen)
+        private int WriteTerms(CompilationContext ctx, StringWriter stream, JavaCodegen codegen)
         {
+            HashSet<IPExpr> written = new(Comparer);
             ctx.WriteLine(stream, "[");
             foreach ((var term, var index) in VisitedSet.Select((x, i) => (x, i)))
             {
+                var canonical = CC.Canonicalize(term);
+                if (written.Contains(canonical))
+                {
+                    continue;
+                }
+                written.Add(canonical);
                 ctx.WriteLine(stream, "{");
-                ctx.WriteLine(stream, $"\"order\": {TermOrder[term]}, ");
-                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(term, true)}\",");
-                ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[term].Select(x => $"{x.Order}"))}],");
-                ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(term)}\"");
+                ctx.WriteLine(stream, $"\"order\": {TermOrder[canonical]}, ");
+                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(canonical, true)}\",");
+                ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[canonical].Select(x => $"{x.Order}"))}],");
+                ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(canonical)}\"");
                 ctx.WriteLine(stream, "}");
-                ReprToTerms[codegen.GenerateRawExpr(term, true).Split("=>")[0].Trim()] = term;
+                ReprToTerms[codegen.GenerateRawExpr(canonical, true).Split("=>")[0].Trim()] = canonical;
                 if (index < VisitedSet.Count - 1)
                 {
                     ctx.WriteLine(stream, ", ");
                 }
             }
             ctx.WriteLine(stream, "]");
+            return written.Count;
         }
 
         private PLanguageType ExplicateTypeDef(PLanguageType type)
@@ -316,17 +348,11 @@ namespace Plang.Compiler.Backend.PInfer
                         if (CC.Canonicalize(expr) != null) continue;
                         FreeEvents[expr] = events;
                         PredicateOrder[expr] = Predicates.Count;
-                        foreach (var c in PredicateStore.GetContradictions(pred))
-                        {
-                            if (PredicateCallExpr.MkPredicateCall(c, param, out var contra))
-                            {
-                                AddContradictingPredicates(expr, contra);
-                            }
-                        }
                         Predicates.Add(expr);
-                        CC.AddExpr(expr);
+                        CC.AddExpr(expr, true);
                         PredicateBoundedTerm[expr] = parameters.Select(x => TermOrder[x]).ToHashSet();
                         // Add equivalences based on annotations
+                        // Console.WriteLine($"Now: {DebugCodegen.GenerateCodeExpr(expr, true)}");
                         foreach (IPExpr equiv in FunctionStore.MakeEquivalences(pred.Function,
                                                 (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var eq) ? eq : null, [.. parameters]))
                         {
@@ -463,7 +489,6 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 Contradictions[e2] = new(Comparer);
             }
-            Console.WriteLine($"Contradiction Added: {DebugCodegen.GenerateCodeExpr(e1, true)} and {DebugCodegen.GenerateCodeExpr(e2, true)}");
             Contradictions[e1].Add(e2);
             Contradictions[e2].Add(e1);
         }
@@ -612,7 +637,7 @@ namespace Plang.Compiler.Backend.PInfer
             CC.AddExpr(expr, true);
         }
 
-        private static bool IsAssignableFrom(PLanguageType type, PLanguageType otherType)
+        public static bool IsAssignableFrom(PLanguageType type, PLanguageType otherType)
         {
             // A slightly stricter version of type equality checking
             // when checking type aliases, we only regard aliases with the same name and 

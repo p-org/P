@@ -37,7 +37,7 @@ namespace Plang.Compiler.TypeChecker
                 TryInferIff(statements[0]);
                 // infer properties & contradictions
                 if (statements[0] is ReturnStmt returnStmt &&
-                    TryInferProps(returnStmt.ReturnValue, out var contradictions, out var properties))
+                    TryInferProps(returnStmt.ReturnValue, out var contradictions, out var equivs, out var properties))
                 {
                     foreach (var c in contradictions)
                     {
@@ -46,6 +46,10 @@ namespace Plang.Compiler.TypeChecker
                     foreach (var prop in properties)
                     {
                         method.Property |= prop;
+                    }
+                    foreach (var eq in equivs)
+                    {
+                        method.AddEquiv(eq);
                     }
                 }
             }
@@ -60,86 +64,41 @@ namespace Plang.Compiler.TypeChecker
                 UnaryOpExpr unOp => FreeVar(unOp.SubExpr),
                 NamedTupleAccessExpr nta => FreeVar(nta.SubExpr),
                 FunCallExpr call => call.Arguments.SelectMany(FreeVar).ToHashSet(),
-                _ => null,
+                _ => [],
             };
         }
 
-        public bool TryInferProps(IPExpr expr, out IPExpr[] contra, out FunctionProperty[] properties)
+        public bool TryInferProps(IPExpr expr, out IPExpr[] contra, out IPExpr[] equiv, out FunctionProperty[] properties)
         {
             var freeVars = FreeVar(expr);
-            if (freeVars != null && freeVars.Count == method.Signature.Parameters.Count)
+            if (freeVars.Count == method.Signature.Parameters.Count)
             {
                 switch (expr)
                 {
                     case BinOpExpr binOpExpr: {
-                        var lhs = binOpExpr.Lhs;
-                        var rhs = binOpExpr.Rhs;
-                        IPExpr make(BinOpType op) => new BinOpExpr(expr.SourceLocation, op, lhs, rhs);
-                        switch (binOpExpr.Operation)
+                        contra = binOpExpr.GetContradictions().ToArray();
+                        equiv = binOpExpr.GetEquivalences().ToArray();
+                        if (method.Signature.Parameters.Count == 2)
                         {
-                            case BinOpType.Lt:
-                                // < contradicts with == and > and >=
-                                contra = [make(BinOpType.Eq), make(BinOpType.Gt), make(BinOpType.Ge)];
-                                properties = [FunctionProperty.Transitive, FunctionProperty.Asymmetric];
-                                return true;
-                            case BinOpType.Gt:
-                                // > contradicts with ==, < and <=
-                                contra = [make(BinOpType.Eq), make(BinOpType.Lt), make(BinOpType.Le)];
-                                properties = [FunctionProperty.Transitive, FunctionProperty.Asymmetric];
-                                return true;
-                            case BinOpType.Eq:
-                                // == contradicts with <, > and !=
-                                contra = [make(BinOpType.Neq), make(BinOpType.Lt), make(BinOpType.Gt)];
-                                properties = [FunctionProperty.Transitive, FunctionProperty.Reflexive,
-                                              FunctionProperty.Symmetric,  FunctionProperty.AntiSymmetric];
-                                return true;
-                            case BinOpType.Le:
-                                // <= contradicts with >
-                                contra = [make(BinOpType.Gt)];
-                                properties = [FunctionProperty.Transitive,
-                                              FunctionProperty.Reflexive,
-                                              FunctionProperty.AntiSymmetric];
-                                return true;
-                            case BinOpType.Ge:
-                                // >= contradicts with <
-                                contra = [make(BinOpType.Lt)];
-                                properties = [FunctionProperty.Transitive,
-                                              FunctionProperty.Reflexive,
-                                              FunctionProperty.AntiSymmetric];
-                                return true;
-                            case BinOpType.Neq:
-                                // != contradicts with ==
-                                contra = [make(BinOpType.Eq)];
-                                properties = [FunctionProperty.Symmetric];
-                                return true;
-                            case BinOpType.Add:
-                                contra = [];
-                                properties = [FunctionProperty.Symmetric];
-                                return true;
-                            case BinOpType.Mul:
-                                contra = [];
-                                properties = [FunctionProperty.Symmetric];
-                                return true;
+                            properties = binOpExpr.Operation.GetProperties().ToArray();
                         }
-                        break;
+                        else
+                        {
+                            properties = [];
+                        }
+                        return true;
                     }
                     case UnaryOpExpr unaryOpExpr: {
-                        switch (unaryOpExpr.Operation)
-                        {
-                            case UnaryOpType.Not:
-                            {
-                                // !F contradicts with F
-                                contra = [unaryOpExpr.SubExpr];
-                                properties = [];
-                                return true;
-                            }
-                        }
-                        break;
+                        contra = unaryOpExpr.GetContradictions().ToArray();
+                        equiv = [];
+                        properties = [];
+                        return true;
                     }
                 }
             }
             contra = null;
             properties = null;
+            equiv = null;
             return false;
         }
 

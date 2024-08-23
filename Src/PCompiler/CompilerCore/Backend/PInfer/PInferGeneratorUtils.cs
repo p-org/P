@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Antlr4.Runtime;
-using Antlr4.Runtime.Misc;
-using Plang.Compiler.Backend.Java;
+using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -211,16 +210,24 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class BuiltinPredicate : IPredicate
     {
+        private List<VariableAccessExpr> funcParams;
         public BuiltinPredicate(string name, Notation notation, params PLanguageType[] signature)
         {
             Notation = notation;
             int i = 0;
             Function = new Function(name, null);
+            funcParams = [];
             foreach (var type in signature)
             {
-                Function.Signature.Parameters.Add(new Variable($"x{i++}", null, VariableRole.Param) { Type = type });
+                var paramVar = new Variable($"x{i++}", null, VariableRole.Param) { Type = type };
+                Function.Signature.Parameters.Add(paramVar);
+                funcParams.Add(new VariableAccessExpr(null, paramVar));
             }
             Function.Signature.ReturnType = PrimitiveType.Bool;
+        }
+        public IPExpr ShiftCall(Func<List<VariableAccessExpr>, IPExpr> make)
+        {
+            return make(funcParams);
         }
         public string Name => Function.Name;
         public Notation Notation { get; }
@@ -354,7 +361,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             for (int i = 0; i < x.Count; i++)
             {
-                if (!x[i].Equals(y[i]))
+                if (!PInferPredicateGenerator.IsAssignableFrom(x[i], y[i]) || !PInferPredicateGenerator.IsAssignableFrom(y[i], x[i]))
                 {
                     return false;
                 }
@@ -450,18 +457,52 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        public static void Initialize() {
-            List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index, PInferBuiltinTypes.CollectionSize];
-            List<PLanguageType> containerTypes = [new SequenceType(PrimitiveType.Any),
-                                                new SetType(PrimitiveType.Any),
-                                                new MapType(PrimitiveType.Any, PrimitiveType.Any)];
+        public static void AddBinaryBuiltinPredicate(BinOpType op, PLanguageType lhs, PLanguageType rhs)
+        {
+            var opNameMap = new Dictionary<BinOpType, string> {
+                {BinOpType.Lt, "<"},
+                {BinOpType.Le, "<="},
+                {BinOpType.Gt, ">"},
+                {BinOpType.Ge, ">="},
+                {BinOpType.Eq, "=="},
+                {BinOpType.Neq, "!="},
+            };
+            var pred = AddBuiltinPredicate(opNameMap[op],
+                                        Notation.Infix,
+                                        args => new BinOpExpr(null, op, args[0], args[1]), [], lhs, rhs);
+            var funLhs = new VariableAccessExpr(null, pred.Function.Signature.Parameters[0]);
+            var funRhs = new VariableAccessExpr(null, pred.Function.Signature.Parameters[1]);
+            foreach (var con in op.GetContradictions(funLhs, funRhs))
+            {
+                pred.Function.AddContradiction(con);
+            }
+            foreach (var equiv in op.GetEquivalences(funLhs, funRhs))
+            {
+                pred.Function.AddEquiv(equiv);
+            }
+            foreach (var prop in op.GetProperties())
+            {
+                pred.Function.Property |= prop;
+            }
+        }
+
+        public static void Initialize(Scope globalScope) {
+            List<PLanguageType> numericTypes = [PInferBuiltinTypes.Index, PInferBuiltinTypes.CollectionSize];
+            
             foreach (var numType in numericTypes)
             {
-                var ltPred = AddBuiltinPredicate("<", Notation.Infix, args => new BinOpExpr(null, BinOpType.Lt, args[0], args[1]), [EqPredicate], numType, numType);
-                ltPred.Function.Property |= FunctionProperty.Transitive;
-                ltPred.Function.Property |= FunctionProperty.AntiSymmetric;
-                ltPred.Function.Property |= FunctionProperty.AntiReflexive;
-                // AddBuiltinPredicate(">", Notation.Infix, args => new BinOpExpr(null, BinOpType.Gt, args[0], args[1]) ,[ltPred, EqPredicate], numType, numType).Function.Property |= FunctionProperty.Transitive;
+                AddBinaryBuiltinPredicate(BinOpType.Lt, numType, numType);
+            }
+
+            foreach (var (op, types) in globalScope.AllowedBinOps)
+            {
+                if (op.GetKind() == BinOpKind.Equality || op.GetKind() == BinOpKind.Comparison)
+                {
+                    foreach (var sig in types)
+                    {
+                        AddBinaryBuiltinPredicate(op, sig.Item1, sig.Item2);
+                    }
+                }
             }
         }
 
@@ -555,16 +596,25 @@ namespace Plang.Compiler.Backend.PInfer
             _Store.Clear();
         }
 
-        public static void Initialize() {
+        public static void Initialize(Scope globalScope) {
             List<string> funcs = ["+", "-", "*", "/", "%"];
-            List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float];
-            foreach (var numTypes in numericTypes)
+            var opMap = new Dictionary<string, BinOpType> {
+                {"+", BinOpType.Add},
+                {"-", BinOpType.Sub},
+                {"*", BinOpType.Mul},
+                {"/", BinOpType.Div},
+                {"%", BinOpType.Mod},
+            };
+            var allowedBinOps = globalScope.AllowedBinOps;
+            foreach (var func in funcs)
             {
-                foreach (var func in funcs)
+                if (allowedBinOps.TryGetValue(opMap[func], out var allowSet))
                 {
-                    var f = new BuiltinFunction(func, Notation.Infix, numTypes, numTypes, numTypes);
-                    if (func == "+" || func == "*") f.Property |= FunctionProperty.Symmetric;
-                    AddFunction(f);
+                    foreach (var (lhs, rhs, ret) in allowSet)
+                    {
+                        var f = new BuiltinFunction(func, Notation.Infix, lhs, rhs, ret);
+                        if (func == "+" || func == "*") f.Property |= FunctionProperty.Symmetric;
+                    }
                 }
             }
             List<PLanguageType> containerTypes = [new SequenceType(PrimitiveType.Any),
@@ -618,6 +668,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return value;
             }
+            // Console.WriteLine($"Put {e}");
             switch (e)
             {
                 case VariableAccessExpr:
@@ -630,14 +681,22 @@ namespace Plang.Compiler.Backend.PInfer
                 case BinOpExpr expr:
                     List<Node> exprChildren = [PutExpr(expr.Lhs), PutExpr(expr.Rhs)];
                     Node binOpNode = new(expr.Operation, index.Count) { children = exprChildren, repr = e };
+                    index[expr] = binOpNode;
                     foreach (var ch in exprChildren)
                     {
                         ch.cc_parent.Add(binOpNode);
                     }
                     return binOpNode;
+                case UnaryOpExpr unaryOpExpr:
+                    List<Node> unOpSubExpr = [PutExpr(unaryOpExpr.SubExpr)];
+                    Node unOpNode = new(unaryOpExpr.Operation, index.Count) { children = unOpSubExpr, repr = e};
+                    index[unaryOpExpr] = unOpNode;
+                    unOpSubExpr[0].cc_parent.Add(unOpNode);
+                    return unOpNode;
                 case FunCallExpr funCallExpr:
                     Function f = funCallExpr.Function;
                     List<Node> funCallArgsNode = funCallExpr.Arguments.Select(PutExpr).ToList();
+                    // Console.WriteLine("Called " + funCallExpr.Function.Name);
                     Node funCallNode = new(f, index.Count)
                     {
                         children = funCallArgsNode,
@@ -649,6 +708,9 @@ namespace Plang.Compiler.Backend.PInfer
                     }
                     index[funCallExpr] = funCallNode;
                     return funCallNode;
+                case IntLiteralExpr intLiteral:
+                    Node intLitNode = new(intLiteral.Value, index.Count) { repr = intLiteral };
+                    return intLitNode;
             }
                 throw new Exception($"CC not supported for {e}");
         }
@@ -700,10 +762,21 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
+        public IEnumerable<IPExpr> AddedExprs()
+        {
+            return index.Keys;
+        }
+
         public void MarkEquivalence(IPExpr e1, IPExpr e2)
         {
-            Node n1 = PutExpr(e1).Find();
-            Node n2 = PutExpr(e2).Find();
+            if (!index.TryGetValue(e1, out Node n1))
+            {
+                throw new Exception($"Lhs expr: {e1} has not added");
+            }
+            if (!index.TryGetValue(e2, out Node n2))
+            {
+                throw new Exception($"Rhs expr: {e2} has not added");
+            }
             Union(n1, n2);
         }
 
@@ -745,7 +818,7 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (!canonical)
             {
-                if (Canonicalize(e) != null)
+                if (!HasExpr(e))
                 {
                     PutExpr(e).canonical = false;
                 }

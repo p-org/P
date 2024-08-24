@@ -18,6 +18,8 @@ namespace Plang.Compiler.Backend.PInfer
 
         public bool HasCompilationStage => true;
         public Hint hint = null;
+        public int NumTerms = -1;
+        public int NumPredicates = -1;
         private CongruenceClosure CC;
 
         public PInferPredicateGenerator()
@@ -95,6 +97,9 @@ namespace Plang.Compiler.Backend.PInfer
             Contradictions.Clear();
             ReprToTerms.Clear();
             ReprToPredicates.Clear();
+            CC.Reset();
+            NumTerms = -1;
+            NumPredicates = -1;
             PredicateStore.Reset();
             FunctionStore.Reset();
         }
@@ -163,6 +168,8 @@ namespace Plang.Compiler.Backend.PInfer
             var templateCodegen = new PInferTemplateGenerator(job, quantifiedEvents, Predicates, VisitedSet, FreeEvents,
                                                                 PredicateBoundedTerm, OrderToTerm, configEvent);
             Console.WriteLine($"Generated {numTerms} terms and {numPredicates} predicates");
+            NumTerms = numTerms;
+            NumPredicates = numPredicates;
             return compiledJavaSrc.Concat(new TraceReaderGenerator(job, quantifiedEvents.Concat([configEvent])).GenerateCode(javaCtx, globalScope))
                                 .Concat(templateCodegen.GenerateCode(javaCtx, globalScope))
                                 .Concat(new DriverGenerator(job, templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
@@ -597,16 +604,16 @@ namespace Plang.Compiler.Backend.PInfer
                 }
             }
             // use all bool return type functions as defined predicates
-            if (!h.Exact)
-            {
-                foreach (var f in globalScope.Functions)
-                {
-                    if (f.Signature.ReturnType.Canonicalize().IsAssignableFrom(PrimitiveType.Bool))
-                    {
-                        PredicateStore.AddPredicate(new DefinedPredicate(f), []);
-                    }
-                }
-            }
+            // if (!h.Exact)
+            // {
+            //     foreach (var f in globalScope.Functions)
+            //     {
+            //         if (f.Signature.ReturnType.Canonicalize().IsAssignableFrom(PrimitiveType.Bool))
+            //         {
+            //             PredicateStore.AddPredicate(new DefinedPredicate(f), []);
+            //         }
+            //     }
+            // }
         }
 
         private static void AggregateFunctions(Hint h) {
@@ -782,6 +789,7 @@ namespace Plang.Compiler.Backend.PInfer
                         if (rhsCnt == t.EnumDecl.Values.Count())
                         {
                             processed = "";
+                            config.Output.WriteWarning($"[Drop] all enum value are covered in `{lhs} in {rhs}`");
                             return PruningStatus.DROP;
                         }
                         processed = UnfoldContainsEnum(lhs, rhs, t);
@@ -815,6 +823,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
             }
             processed = "";
+            config.Output.WriteWarning($"[Drop] Cannot parse {orig}");
             return PruningStatus.DROP;
         }
 
@@ -834,6 +843,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             // drop unknown operators
             repr = "";
+            config.Output.WriteWarning($"[Drop] Unknown operator in {inv}");
             return PruningStatus.DROP;
         }
 

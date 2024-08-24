@@ -293,7 +293,7 @@ namespace Plang.Compiler.TypeChecker
                         PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
                         PrimitiveType.Float.IsAssignableFrom(rhs.Type))
                     {
-                        var addExpr = arithCtors[op](lhs, rhs);;
+                        var addExpr = arithCtors[op](lhs, rhs);
                         table.AddAllowedBinOp(addExpr.Operation, lhs.Type, rhs.Type, addExpr.Type);
                         return addExpr;
                     }

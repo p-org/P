@@ -780,6 +780,11 @@ namespace Plang.Compiler.Backend.PInfer
             Union(n1, n2);
         }
 
+        public void Reset()
+        {
+            index.Clear();
+        }
+
         public Result Equivalent(IPExpr e1, IPExpr e2)
         {
             if (!index.TryGetValue(e1, out Node n1) || !index.TryGetValue(e2, out Node n2))

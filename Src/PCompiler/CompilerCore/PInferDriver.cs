@@ -20,24 +20,37 @@ namespace Plang.Compiler
         private readonly PInferPredicateGenerator Codegen = (PInferPredicateGenerator)job.Backend;
         private readonly TraceMetadata TraceIndex = new(job);
         private readonly HashSet<Hint> ExploredHints = new(new Hint.EqualityComparer());
+        private int numDistilledInvs = 0;
+        private int numTotalInvs = 0;
 
-        public void CompilePInferHint(Hint hint)
+        public bool CompilePInferHint(Hint hint)
         {
+            int origNumTerms = Codegen.NumTerms;
+            int origNumPreds = Codegen.NumPredicates;
             Codegen.Reset();
             Codegen.WithHint(hint);
             foreach (var file in Codegen.GenerateCode(Job, GlobalScope))
             {
                 Job.Output.WriteFile(file);
             }
+            if (Codegen.NumTerms == origNumTerms && Codegen.NumPredicates == origNumPreds)
+            {
+                // increasing the term depth does not add new term/prediates
+                Job.Output.WriteWarning($"Term depth limit reached ... Done for {hint.Name}");
+                Codegen.Reset();
+                return false;
+            }
             Job.Output.WriteInfo($"Compiling generated code...");
             try
             {
                 Codegen.Compile(Job);
+                return true;
             }
             catch (TranslationException e)
             {
                 Job.Output.WriteError($"[Compiling Generated Code:]\n" + e.Message);
                 Job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
+                return false;
             }
         }
 
@@ -57,14 +70,12 @@ namespace Plang.Compiler
                 return;
             }
             ExploredHints.Add(hint.Copy());
-            if (Job.Verbose)
-            {
-                Console.WriteLine("===============================");
-                Console.WriteLine("Running the following hint:");
-                hint.ShowHint();
-                Console.WriteLine("===============================");
-            }
-            PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen);
+            Console.WriteLine("===============================");
+            Console.WriteLine("Running the following hint:");
+            hint.ShowHint();
+            Console.WriteLine("===============================");
+            numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, out int total);
+            numTotalInvs += total;
         }
 
         public void ParameterSearch(Hint hint)
@@ -98,11 +109,13 @@ namespace Plang.Compiler
             // Job.Output.WriteInfo($"Number of Hints: {worklist.Count}");
             foreach (var h in worklist)
             {
-                CompilePInferHint(h);
-                while (h.HasNext(Job, Codegen.MaxArity()))
+                if (CompilePInferHint(h))
                 {
-                    RunSpecMiner(h);
-                    h.Next(Job, Codegen.MaxArity());
+                    while (h.HasNext(Job, Codegen.MaxArity()))
+                    {
+                        RunSpecMiner(h);
+                        h.Next(Job, Codegen.MaxArity());
+                    }
                 }
             }
             ExploredHints.Add(hint);
@@ -115,28 +128,27 @@ namespace Plang.Compiler
             };
         }
 
-        public void ExploreEventComb(string name, params PEvent[] events)
+        public void AddHint(string name, HashSet<Hint> tasks, params PEvent[] events)
         {
             // Enusre all events have some payload
             if (events.Select(e => e.PayloadType == PrimitiveType.Null).Any(x => x))
             {
                 Job.Output.WriteWarning($"skipping ae_{name} due to empty payload(s)");
-                return;
             }
-            Hint h = new($"ae_{name}", false, null) {
+            tasks.Add(new($"ae_{name}", false, null) {
                 Quantified = events.Select(MkEventVar).ToList()
-            };
-            ParameterSearch(h);
+            });
         }
 
-        public void ExploreHandlers(List<State> allStates)
+        public HashSet<Hint> ExploreHandlers(List<State> allStates)
         {
+            HashSet<Hint> tasks = new(new Hint.EqualityComparer());
             foreach (var s in allStates)
             {
                 // Looking at one state
                 foreach (var (@event, handler) in s.AllEventHandlers)
                 {
-                    ExploreEventComb($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}", @event);
+                    AddHint($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}", tasks, @event);
                     if (handler is EventDoAction action && action.Target.CanSend == true)
                     {
                         // Quantifying:
@@ -145,8 +157,8 @@ namespace Plang.Compiler
                         // - no need to look at `e_recv, e_recv` as this might be sent somewhere
                         foreach (var send in action.Target.SendSet)
                         {
-                            ExploreEventComb($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}_send_{send.Name}", send, @event);
-                            ExploreEventComb($"{s.OwningMachine.Name}_{s.Name}_send_{send.Name}_send_{send.Name}", send, send);
+                            AddHint($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}_send_{send.Name}", tasks, send, @event);
+                            AddHint($"{s.OwningMachine.Name}_{s.Name}_send_{send.Name}_send_{send.Name}", tasks, send, send);
                         }
                     }
                 }
@@ -172,7 +184,7 @@ namespace Plang.Compiler
                                     // explore s2.send, s1.recv
                                     foreach (PEvent s2send in a2.Target.SendSet)
                                     {
-                                        ExploreEventComb($"{m2.Name}_{s2.Name}_send_{s2send.Name}_{m1.Name}_{s1.Name}_recv_{recv_1.Name}", s2send, recv_1);
+                                        AddHint($"{m2.Name}_{s2.Name}_send_{s2send.Name}_{m1.Name}_{s1.Name}_recv_{recv_1.Name}", tasks, s2send, recv_1);
                                     }
                                 }
                             }
@@ -180,15 +192,25 @@ namespace Plang.Compiler
                     }
                 }
             }
+            return tasks;
         }
 
         public void AutoExplore()
         {
             List<Machine> machines = GlobalScope.Machines.Where(x => !x.IsSpec).ToList();
             // explore single-machine state
+            HashSet<Hint> tasks = new(new Hint.EqualityComparer());
             foreach (var m in machines)
             {
-                ExploreHandlers(m.AllStates().ToList());
+                tasks.UnionWith(ExploreHandlers(m.AllStates().ToList()));
+            }
+            for (int i = 0; i <= Job.TermDepth; ++i)
+            {
+                foreach (var task in tasks)
+                {
+                    task.TermDepth = i;
+                    ParameterSearch(task);
+                }
             }
         }
 
@@ -234,6 +256,10 @@ namespace Plang.Compiler
                 }
             }
             PInferInvoke.NewInvFiles();
+            var stopwatch = new Stopwatch();
+            int numInvsDistilled = 0;
+            int numInvsMined = 0;
+            stopwatch.Start();
             switch (job.PInferAction)
             {
                 case PInferAction.Compile:
@@ -242,15 +268,34 @@ namespace Plang.Compiler
                     new PInferDriver(job, globalScope).CompilePInferHint(givenHint);
                     break;
                 case PInferAction.RunHint:
+                {
                     job.Output.WriteInfo($"PInfer - Run `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
                     givenHint.PruningLevel = job.PInferPruningLevel;
-                    new PInferDriver(job, globalScope).ParameterSearch(givenHint);
+                    var driver = new PInferDriver(job, globalScope);
+                    driver.ParameterSearch(givenHint);
+                    numInvsDistilled = driver.numDistilledInvs;
+                    numInvsMined = driver.numTotalInvs;
                     break;
+                }
                 case PInferAction.Auto:
+                {
                     job.Output.WriteInfo("PInfer - Auto Exploration");
-                    new PInferDriver(job, globalScope).AutoExplore();
+                    var driver = new PInferDriver(job, globalScope);
+                    driver.AutoExplore();
+                    numInvsDistilled = driver.numDistilledInvs;
+                    numInvsMined = driver.numTotalInvs;
                     break;
+                }
+            }
+            stopwatch.Stop();
+            if (job.PInferAction == PInferAction.RunHint || job.PInferAction == PInferAction.Auto)
+            {
+                var elapsed = stopwatch.ElapsedMilliseconds / 1000.0;
+                job.Output.WriteInfo($"PInfer statistics");
+                job.Output.WriteInfo($"\t# invariants discovered: {numInvsMined}");
+                job.Output.WriteInfo($"\t# invariants distilled: {numInvsDistilled}");
+                job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
             }
         }
     }
@@ -293,6 +338,7 @@ namespace Plang.Compiler
             {
                 using StreamWriter invw = File.AppendText(DistilledInvFile);
                 var kept = string.Join(" ∧ ", keep);
+                if (filters.Length > 0) header += " ∧ ";
                 var inv = header + kept;
                 if (!Learned.Contains(inv))
                 {
@@ -305,6 +351,7 @@ namespace Plang.Compiler
             {
                 using StreamWriter invw = File.AppendText(StepbackInvFile);
                 var stepbacked = string.Join(" ∧ ", stepback);
+                if (filters.Length > 0) header += " ∧ ";
                 var inv = header + stepbacked;
                 if (!Learned.Contains(inv))
                 {
@@ -315,16 +362,18 @@ namespace Plang.Compiler
             }
         }
     
-        public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen)
+        public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen, out int total)
         {
             var parseFilePath = Path.Combine("PInferOutputs", "SpecMining", PreambleConstants.ParseFileName);
             var contents = File.ReadAllLines(parseFilePath);
             int result = 0;
+            total = 0;
             for (int i = 0; i < contents.Length; i += 3)
             {
                 var guards = contents[i];
                 var filters = contents[i + 1];
                 var properties = contents[i + 2].Split("∧").Select(x => x.Trim());
+                total += 1;
                 List<string> keep = [];
                 List<string> stepback = [];
                 foreach (var prop in properties)
@@ -336,13 +385,16 @@ namespace Plang.Compiler
                         default: break;
                     }
                 }
+                if (keep.Count > 0)
+                {
+                    result += 1;
+                }
                 WriteInvs(codegen, guards, filters, keep, stepback);
-                result += keep.Count + stepback.Count;
             }
             return result;
         }
 
-        public static int InvokeMain(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint, PInferPredicateGenerator codegen)
+        public static int InvokeMain(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, out int totalInvs)
         {
             ProcessStartInfo startInfo;
             Process process;
@@ -355,6 +407,7 @@ namespace Plang.Compiler
             List<string> configArgs = GetMinerConfigArgs(job, metadata, hint, codegen);
             if (configArgs == null)
             {
+                totalInvs = 0;
                 return -1;
             }
             startInfo = new ProcessStartInfo("java", args.Concat(configArgs))
@@ -368,7 +421,7 @@ namespace Plang.Compiler
             process = Process.Start(startInfo);
             process.WaitForExit();
             // aggregate results
-            var numMined = PruneAndAggregate(job, globalScope, codegen);
+            var numMined = PruneAndAggregate(job, globalScope, codegen, out totalInvs);
             Console.WriteLine("Cleaning up ...");
             var dirInfo = new DirectoryInfo("./");
             foreach (var dir in dirInfo.GetDirectories())

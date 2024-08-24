@@ -47,7 +47,7 @@ namespace Plang.Compiler.TypeChecker.Types
                 {
                     Name = f.Name,
                     FieldNo = f.FieldNo,
-                    Type = f.Type.Canonicalize()
+                    Type = f.Type
                 })
                 .ToArray());
         }

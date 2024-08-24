@@ -28,7 +28,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             PruningLevel = 3;
             ExistentialQuantifiers = 0;
             TermDepth = null;
-            Arity = 2;
+            Arity = 1;
             NumGuardPredicates = 0;
             NumFilterPredicates = 0;
         }
@@ -41,15 +41,18 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             {
                 result += $" :: {guards} ->";
             }
-            if (result.Length > 0)
+            else if (result.Length > 0)
             {
-                result += " ";
+                result += " :: ";
             }
             result += string.Join(" ", Quantified.TakeLast(ExistentialQuantifiers).Select(v => $"∃{v.Name}: {v.EventName}"));
-            result += " :: ";
+            if (ExistentialQuantifiers > 0)
+            {
+                result += " :: ";
+            }
             if (filters.Length > 0)
             {
-                result += filters + " ∧ ";
+                result += filters;
             }
             return result;
         }
@@ -91,6 +94,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool NextNG(ICompilerConfiguration job)
         {
+            if (ExistentialQuantifiers != 0) return NextQuantifier();
             NumGuardPredicates += 1;
             if (NumGuardPredicates > job.MaxGuards)
             {

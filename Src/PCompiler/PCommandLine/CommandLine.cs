@@ -140,6 +140,14 @@ namespace Plang
         /// </summary>
         private static void Shutdown()
         {
+            // DirectoryInfo dir = new(".");
+            // foreach (var f in dir.GetFiles())
+            // {
+            //     if (f.Name.EndsWith(".inv.gz"))
+            //     {
+            //         f.Delete();
+            //     }
+            // }
             CommandLineOutput.WriteInfo("~~ [PTool]: Thanks for using P! ~~");
         }
 

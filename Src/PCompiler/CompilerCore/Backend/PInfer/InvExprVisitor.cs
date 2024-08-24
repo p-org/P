@@ -95,6 +95,10 @@ namespace Plang.Compiler.Backend.PInfer
             var lhs = Visit(ctx.lhs);
             var rhs = Visit(ctx.rhs);
             var op = ctx.op.Text;
+            if (lhs == null || rhs == null)
+            {
+                throw new DropException($"failed to parse lhs/rhs: {ctx.GetText()}");
+            }
             var binOps = new Dictionary<string, BinOpType>
             {
                 {"*", BinOpType.Mul},
@@ -122,25 +126,65 @@ namespace Plang.Compiler.Backend.PInfer
             }
             // Next, check for comparison with special constants
             CheckNumExistsConstants(ctx, lhs, binOp, rhs);
-            if (TryGetSpecialConstant(lhs, out var lhsExpr) || TryGetSpecialConstant(rhs, out var rhsExpr))
+            VariableAccessExpr lhsExpr = null;
+            VariableAccessExpr rhsExpr = null;
+            if (TryGetSpecialConstant(lhs, out lhsExpr) || TryGetSpecialConstant(rhs, out rhsExpr))
             {
                 if (binOp.GetKind() == BinOpKind.Numeric)
                 {
                     throw new StepbackException($"Special constants used for arithmetics: {ctx.GetText()}");
                 }
-                if (lhsExpr != null && TryGetSpecialConstant(rhs, out var rhsExpr1))
+                if (lhsExpr != null && rhsExpr != null)
                 {
-                    if (lhsExpr.Variable.Name == "_num_e_exists_" || rhsExpr1.Variable.Name == "_num_e_exists_")
+                    if (lhsExpr.Variable.Name == "_num_e_exists_" || rhsExpr.Variable.Name == "_num_e_exists_")
                     {
                         return expr;
                     }
                     throw new DropException($"Special constants are all from config events: {ctx.GetText()}");
                 }
+                if (lhs == null)
+                {
+                    (lhs, rhs) = (rhs, lhs);
+                }
+                if (lhsExpr.Variable.Name == "_num_e_exists_")
+                {
+                    if (rhs.Type == PInferBuiltinTypes.CollectionSize)
+                    {
+                        return expr;
+                    }
+                    throw new DropException($"_num_e_exists_ compared with non-size type: {ctx.GetText()}");
+                }
+                return expr;
+            }
+            // let constants go
+            if ((rhs is IntLiteralExpr || rhs is FloatLiteralExpr) && binOp.GetKind() == BinOpKind.Comparison)
+            {
+                if (lhs.Type == PInferBuiltinTypes.Index)
+                {
+                    throw new StepbackException($"Comparing an index with a constant");
+                }
+                return expr;
             }
             // Next, check whether such comparison is allowed
+            if (op == "==" && PInferPredicateGenerator.IsAssignableFrom(lhs.Type, rhs.Type)
+                           && PInferPredicateGenerator.IsAssignableFrom(rhs.Type, lhs.Type))
+            {
+                return expr;
+            }
             if (GlobalScope.AllowedBinOps.TryGetValue(binOp, out var allowedOps))
             {
                 foreach (var types in allowedOps)
+                {
+                    if (types.Item1 == lhs.Type && types.Item2 == rhs.Type)
+                    {
+                        return expr;
+                    }
+                }
+            }
+            // if it's a comp op, then check whether there are other comp op defined
+            if (GlobalScope.AllowedBinOpsByKind.TryGetValue(binOp.GetKind(), out var allowedOpsByKind))
+            {
+                foreach (var types in allowedOpsByKind)
                 {
                     if (types.Item1 == lhs.Type && types.Item2 == rhs.Type)
                     {

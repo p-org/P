@@ -37,6 +37,8 @@ namespace Plang.Compiler.Backend.PInfer
             PredicateOrder = new Dictionary<IPExpr, int>(Comparer);
             Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(Comparer);
             CC = new();
+            // should not cleared by reset, holds globally
+            ReprToContradictions = [];
         }
 
         public void WithHint(Hint h)
@@ -236,7 +238,8 @@ namespace Plang.Compiler.Backend.PInfer
             foreach ((var pred, var index) in Predicates.Select((x, i) => (x, i)))
             {
                 // Console.WriteLine($"Pred: {DebugCodegen.GenerateCodeExpr(pred, true)}");
-                ReprToPredicates[codegen.GenerateRawExpr(pred, true).Split("=>")[0].Trim()] = pred;
+                var repr = codegen.GenerateRawExpr(pred, true).Split("=>")[0].Trim();
+                ReprToPredicates[repr] = pred;
                 var canonical = CC.Canonicalize(pred);
                 // Console.WriteLine($"==> {DebugCodegen.GenerateCodeExpr(canonical, true)}");
                 if (written.Contains(canonical))
@@ -248,16 +251,26 @@ namespace Plang.Compiler.Backend.PInfer
                 ctx.WriteLine(stream, $"\"order\": {PredicateOrder[canonical]},");
                 ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(canonical, true)}\", ");
                 ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[canonical])}], ");
+                if (!ReprToContradictions.TryGetValue(repr, out var conReprs))
+                {
+                    conReprs = [];
+                    ReprToContradictions[repr] = conReprs;
+                }
                 if (Contradictions.TryGetValue(canonical, out var contradictions))
                 {
-                    ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", contradictions
+                    var cons = contradictions
                             .Select(x => {
                                 var r = CC.Canonicalize(x);
                                 if (r == null) return x;
                                 else return r;
-                            })
-                            .Where(PredicateOrder.ContainsKey)
-                            .Select(x => PredicateOrder[x]).ToHashSet())}]");
+                            }).ToList();
+                    foreach (var c in cons)
+                    {
+                        conReprs.Add(codegen.GenerateRawExpr(c, true).Split("=>")[0].Trim());
+                    }
+                    ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", cons
+                                            .Where(PredicateOrder.ContainsKey)
+                                            .Select(x => PredicateOrder[x]).ToHashSet())}]");
                 }
                 else
                 {
@@ -853,6 +866,11 @@ namespace Plang.Compiler.Backend.PInfer
             return PruningStatus.DROP;
         }
 
+        public bool Contradicting(string p, string q)
+        {
+            return ReprToContradictions[p].Contains(q) || ReprToContradictions[q].Contains(p);
+        }
+
         private List<Dictionary<PLanguageType, HashSet<IPExpr>>> Terms { get; }
         private HashSet<IPExpr> Predicates { get; }
         private HashSet<IPExpr> VisitedSet { get; }
@@ -862,6 +880,7 @@ namespace Plang.Compiler.Backend.PInfer
         private Dictionary<IPExpr, int> PredicateOrder { get; }
         private Dictionary<string, IPExpr> ReprToTerms { get; }
         private Dictionary<string, IPExpr> ReprToPredicates { get; }
+        private Dictionary<string, HashSet<string>> ReprToContradictions { get; }
         private Dictionary<IPExpr, HashSet<IPExpr>> Contradictions { get; }
         private Dictionary<IPExpr, HashSet<int>> PredicateBoundedTerm { get; }
         private JavaCodegen DebugCodegen { get; set; }

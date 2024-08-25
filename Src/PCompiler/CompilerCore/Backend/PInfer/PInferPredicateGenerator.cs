@@ -54,12 +54,12 @@ namespace Plang.Compiler.Backend.PInfer
             }
             JavaCodegen codegen = new(job, "", Predicates, VisitedSet, FreeEvents);
             // Console.WriteLine()
-            foreach (var k in PredicateOrder.Keys)
-            {
-                Console.WriteLine(codegen.GenerateCodeExpr(k, true));
-                var o = PredicateOrder[k];
-                Console.WriteLine(o);
-            }
+            // foreach (var k in PredicateOrder.Keys)
+            // {
+            //     Console.WriteLine(codegen.GenerateCodeExpr(k, true));
+            //     var o = PredicateOrder[k];
+            //     Console.WriteLine(o);
+            // }
             // var x = PredicateOrder[expr];
             throw new Exception($"{codegen.GenerateCodeExpr(expr, true)} not in enumerated predicates!");
         }
@@ -237,11 +237,9 @@ namespace Plang.Compiler.Backend.PInfer
             ctx.WriteLine(stream, "[");
             foreach ((var pred, var index) in Predicates.Select((x, i) => (x, i)))
             {
-                // Console.WriteLine($"Pred: {DebugCodegen.GenerateCodeExpr(pred, true)}");
                 var repr = codegen.GenerateRawExpr(pred, true).Split("=>")[0].Trim();
                 ReprToPredicates[repr] = pred;
                 var canonical = CC.Canonicalize(pred);
-                // Console.WriteLine($"==> {DebugCodegen.GenerateCodeExpr(canonical, true)}");
                 if (written.Contains(canonical))
                 {
                     continue;
@@ -374,7 +372,6 @@ namespace Plang.Compiler.Backend.PInfer
                         CC.AddExpr(expr, true);
                         PredicateBoundedTerm[expr] = parameters.Select(x => TermOrder[x]).ToHashSet();
                         // Add equivalences based on annotations
-                        // Console.WriteLine($"Now: {DebugCodegen.GenerateCodeExpr(expr, true)}");
                         foreach (IPExpr equiv in FunctionStore.MakeEquivalences(pred.Function,
                                                 (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var eq) ? eq : null, [.. parameters]))
                         {

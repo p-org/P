@@ -348,7 +348,7 @@ namespace Plang.Compiler.Backend.PInfer
                     return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.size()";
                 }
             }
-            if(funCallExpr.Function.SourceLocation != null && !CompiledFunctions.Contains(funCallExpr.Function))
+            if(funCallExpr.Function.SourceLocation != null && !CompiledFunctions.Contains(funCallExpr.Function) && !simplified)
             {
                 WriteFunctionRec(funCallExpr.Function);
             }

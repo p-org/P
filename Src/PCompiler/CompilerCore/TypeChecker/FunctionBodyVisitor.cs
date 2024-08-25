@@ -49,7 +49,7 @@ namespace Plang.Compiler.TypeChecker
                     {
                         case "refl": method.Property |= FunctionProperty.Reflexive; return;
                         case "trans": method.Property |= FunctionProperty.Transitive; return;
-                        case "sym": method.Property |= FunctionProperty.Symmetric; return;
+                        case "sym": return;
                         case "antisym": method.Property |= FunctionProperty.AntiSymmetric; return;
                         case "idempotent": method.Property |= FunctionProperty.Idempotent; return;
                         case "asym": method.Property |= FunctionProperty.Asymmetric; return;

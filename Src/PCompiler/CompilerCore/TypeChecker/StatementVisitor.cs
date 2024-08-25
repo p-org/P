@@ -75,7 +75,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 switch (expr)
                 {
-                    case BinOpExpr binOpExpr: {
+                    case BinOpExpr binOpExpr when FreeVar(binOpExpr.Lhs).Count == 1 && FreeVar(binOpExpr.Rhs).Count == 1: {
                         contra = binOpExpr.GetContradictions().ToArray();
                         equiv = binOpExpr.GetEquivalences().ToArray();
                         if (method.Signature.Parameters.Count == 2)

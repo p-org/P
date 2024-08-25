@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -34,7 +35,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
         private readonly IDictionary<string, Hint> hints = new Dictionary<string, Hint>();
         private readonly IDictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>> allowedBinOps = new Dictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>>();
-        private readonly IDictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType, PLanguageType)>> allowedBinOpsByKind = new Dictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType, PLanguageType)>>();
+        private readonly IDictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>> allowedBinOpsByKind = new Dictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -672,7 +673,7 @@ namespace Plang.Compiler.TypeChecker
                     kindTable = [];
                     allowedBinOpsByKind[op.GetKind()] = kindTable;
                 }
-                kindTable.Add((lhs, rhs, ret));
+                kindTable.Add((lhs, rhs));
             }
             else
             {
@@ -681,7 +682,7 @@ namespace Plang.Compiler.TypeChecker
         }
 
         public IDictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>> AllowedBinOps => Parent == null ? allowedBinOps : Parent.AllowedBinOps;
-        public IDictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType, PLanguageType)>> AllowedBinOpsByKind => Parent == null ? allowedBinOpsByKind : Parent.AllowedBinOpsByKind;
+        public IDictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>> AllowedBinOpsByKind => Parent == null ? allowedBinOpsByKind : Parent.AllowedBinOpsByKind;
 
         #region Conflict API
 

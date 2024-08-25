@@ -494,9 +494,11 @@ namespace Plang.Compiler.Backend.PInfer
                 AddBinaryBuiltinPredicate(BinOpType.Lt, numType, numType);
             }
 
+            AddBinaryBuiltinPredicate(BinOpType.Eq, PrimitiveType.Machine, PrimitiveType.Machine);
+
             foreach (var (op, types) in globalScope.AllowedBinOps)
             {
-                if (op.GetKind() == BinOpKind.Equality || op.GetKind() == BinOpKind.Comparison)
+                if (op.GetKind() == BinOpKind.Equality)
                 {
                     foreach (var sig in types)
                     {

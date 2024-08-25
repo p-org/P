@@ -184,9 +184,11 @@ namespace Plang.Compiler.Backend.PInfer
             // if it's a comp op, then check whether there are other comp op defined
             if (GlobalScope.AllowedBinOpsByKind.TryGetValue(binOp.GetKind(), out var allowedOpsByKind))
             {
+                // Console.WriteLine($"Look for {lhs.Type} {rhs.Type}");
                 foreach (var types in allowedOpsByKind)
                 {
-                    if (types.Item1 == lhs.Type && types.Item2 == rhs.Type)
+                    // Console.WriteLine($"{types.Item1} {types.Item2}");
+                    if (PInferPredicateGenerator.SameType(types.Item1, lhs.Type) && PInferPredicateGenerator.SameType(types.Item2, rhs.Type))
                     {
                         return expr;
                     }

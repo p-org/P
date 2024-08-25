@@ -20,20 +20,29 @@ namespace Plang.Compiler
         private readonly PInferPredicateGenerator Codegen = (PInferPredicateGenerator)job.Backend;
         private readonly TraceMetadata TraceIndex = new(job);
         private readonly HashSet<Hint> ExploredHints = new(new Hint.EqualityComparer());
+        private readonly Dictionary<string, (int, int)> TermPredicateCount = [];
         private int numDistilledInvs = 0;
         private int numTotalInvs = 0;
 
         public bool CompilePInferHint(Hint hint)
         {
-            int origNumTerms = Codegen.NumTerms;
-            int origNumPreds = Codegen.NumPredicates;
+            if (!TraceIndex.GetTraceFolder(hint, out var _))
+            {
+                Job.Output.WriteWarning($"No trace indexed for this event combination: {string.Join(", ", hint.Quantified.Select(x => x.EventName))}. Skipped ...");
+                return false;
+            }
             Codegen.Reset();
             Codegen.WithHint(hint);
             foreach (var file in Codegen.GenerateCode(Job, GlobalScope))
             {
                 Job.Output.WriteFile(file);
             }
-            if (Codegen.NumTerms == origNumTerms && Codegen.NumPredicates == origNumPreds)
+            if (!TermPredicateCount.TryGetValue(hint.Name, out var terms_predicates_cnt))
+            {
+                terms_predicates_cnt = (-1, -1);
+                TermPredicateCount.Add(hint.Name, terms_predicates_cnt);
+            }
+            if (Codegen.NumTerms == terms_predicates_cnt.Item1 && Codegen.NumPredicates == terms_predicates_cnt.Item2)
             {
                 // increasing the term depth does not add new term/prediates
                 Job.Output.WriteWarning($"Term depth limit reached ... Done for {hint.Name}");
@@ -134,10 +143,41 @@ namespace Plang.Compiler
             if (events.Select(e => e.PayloadType == PrimitiveType.Null).Any(x => x))
             {
                 Job.Output.WriteWarning($"skipping ae_{name} due to empty payload(s)");
+                return;
             }
             tasks.Add(new($"ae_{name}", false, null) {
                 Quantified = events.Select(MkEventVar).ToList()
             });
+        }
+
+        public void ExploreFunction(HashSet<Hint> tasks, State s, Function f, PEvent trigger = null)
+        {
+            if (f == null) return;
+            // looking at next state
+            // if the current handler sent an event and can move to some other states
+            // then there might be some relationships between the send event and
+            // listened events in the next states
+            foreach (var nextState in f.NextStates)
+            {
+                foreach (var (recv, h2) in nextState.AllEventHandlers)
+                {
+                    if (h2 is EventDoAction || h2 is EventGotoState)
+                    {
+                        foreach (var send in f.SendSet)
+                        {
+                            AddHint($"{s.OwningMachine.Name}_{s.Name}_send_{send.Name}_then_monitor_{recv.Name}", tasks, send, recv);
+                        }
+                    }
+                }
+                // check relationships between send at next state entry and recv in curr function
+                if (trigger != null && nextState.Entry != null)
+                {
+                    foreach (var sendNext in nextState.Entry.SendSet)
+                    {
+                        AddHint($"{s.OwningMachine.Name}_{nextState.Name}_recved_{trigger.Name}_send_{sendNext.Name}", tasks, sendNext, trigger);
+                    }
+                }
+            }
         }
 
         public HashSet<Hint> ExploreHandlers(List<State> allStates)
@@ -146,10 +186,12 @@ namespace Plang.Compiler
             foreach (var s in allStates)
             {
                 // Looking at one state
+                // Console.WriteLine($"{s.OwningMachine.Name} @ {s.Name} entry");
+                ExploreFunction(tasks, s, s.Entry);
                 foreach (var (@event, handler) in s.AllEventHandlers)
                 {
-                    AddHint($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}", tasks, @event);
-                    if (handler is EventDoAction action && action.Target.CanSend == true)
+                    // Console.WriteLine($"Trigger: {@event.Name} {handler is EventDoAction}");
+                    if (handler is EventDoAction action)
                     {
                         // Quantifying:
                         // - forall*exists* e_send, e_recv
@@ -157,38 +199,11 @@ namespace Plang.Compiler
                         // - no need to look at `e_recv, e_recv` as this might be sent somewhere
                         foreach (var send in action.Target.SendSet)
                         {
+                            // Console.WriteLine($"Send: {send.Name}");
                             AddHint($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}_send_{send.Name}", tasks, send, @event);
                             AddHint($"{s.OwningMachine.Name}_{s.Name}_send_{send.Name}_send_{send.Name}", tasks, send, send);
                         }
-                    }
-                }
-
-                // Looking at two states
-                for (int i = 0; i < allStates.Count; ++i)
-                {
-                    for (int j = 0; j < allStates.Count; ++j)
-                    {
-                        if (i == j) continue;
-                        var s1 = allStates[i];
-                        var s2 = allStates[j];
-                        var m1 = s1.OwningMachine;
-                        var m2 = s2.OwningMachine;
-                        // Looking for s1.send is in s2.recv
-                        foreach (var (recv_1, h1) in s1.AllEventHandlers)
-                        {
-                            if (h1 is not EventDoAction a1 || a1.Target.CanSend != true) continue; 
-                            foreach (var (recv_2, h2) in s2.AllEventHandlers)
-                            {
-                                if (h2 is not EventDoAction a2 || a2.Target.CanSend != true) continue;
-                                if (a1.Target.SendSet.Contains(recv_2)) {
-                                    // explore s2.send, s1.recv
-                                    foreach (PEvent s2send in a2.Target.SendSet)
-                                    {
-                                        AddHint($"{m2.Name}_{s2.Name}_send_{s2send.Name}_{m1.Name}_{s1.Name}_recv_{recv_1.Name}", tasks, s2send, recv_1);
-                                    }
-                                }
-                            }
-                        }
+                        ExploreFunction(tasks, s, action.Target, trigger: @event);
                     }
                 }
             }
@@ -204,6 +219,10 @@ namespace Plang.Compiler
             {
                 tasks.UnionWith(ExploreHandlers(m.AllStates().ToList()));
             }
+            // foreach (var hint in tasks)
+            // {
+            //     Console.WriteLine(hint.Name);
+            // }
             for (int i = 0; i <= Job.TermDepth; ++i)
             {
                 foreach (var task in tasks)
@@ -305,6 +324,11 @@ namespace Plang.Compiler
 
         internal static readonly string DistilledInvFile = Path.Combine("PInferOutputs", "distilled_invs.txt");
         internal static readonly string StepbackInvFile = Path.Combine("PInferOutputs", "stepback_invs.txt");
+        // map from quantifier headers to guards
+        internal static readonly Dictionary<string, List<HashSet<string>>> P = [];
+        // map from quantifier headers to filters
+        internal static readonly Dictionary<string, List<HashSet<string>>> Q = [];
+        internal static readonly Dictionary<string, List<Hint>> Executed = [];
         internal static HashSet<string> Learned = [];
 
         public static void NewInvFiles()
@@ -338,7 +362,7 @@ namespace Plang.Compiler
             {
                 using StreamWriter invw = File.AppendText(DistilledInvFile);
                 var kept = string.Join(" ∧ ", keep);
-                if (filters.Length > 0) header += " ∧ ";
+                if (filters.Length > 0 && kept.Length > 0) header += " ∧ ";
                 var inv = header + kept;
                 if (!Learned.Contains(inv))
                 {
@@ -351,7 +375,7 @@ namespace Plang.Compiler
             {
                 using StreamWriter invw = File.AppendText(StepbackInvFile);
                 var stepbacked = string.Join(" ∧ ", stepback);
-                if (filters.Length > 0) header += " ∧ ";
+                if (filters.Length > 0 && stepbacked.Length > 0) header += " ∧ ";
                 var inv = header + stepbacked;
                 if (!Learned.Contains(inv))
                 {
@@ -361,8 +385,84 @@ namespace Plang.Compiler
                 invw.Close();
             }
         }
+
+
+        // return the Ps and Qs that should be included to the log
+        public static (HashSet<string>, HashSet<string>) UpdateMinedSpecs(Hint hint, HashSet<string> p_prime, HashSet<string> q_prime)
+        {
+            var quantifiers = hint.GetQuantifierHeader();
+            if (P.TryGetValue(quantifiers, out var prevP) && Q.TryGetValue(quantifiers, out var prevQ))
+            {
+                for (int i = 0; i < prevP.Count; ++i)
+                {
+                    var p = prevP[i];
+                    var q = prevQ[i];
+                    // stronger guards
+                    // then only keep filters that
+                    // cannot be discovered with weaker guards
+                    if (p.IsSubsetOf(p_prime))
+                    {
+                        q_prime.ExceptWith(q);
+                    }
+                }
+                // can all be captured by some previous invariant
+                if (q_prime.Count == 0)
+                {
+                    return ([], []);
+                }
+                // check implication
+                for (int i = 0; i < prevP.Count; ++i)
+                {
+                    var p = prevP[i];
+                    var q = prevQ[i];
+                    // an invariant is implied by some previous ones if
+                    // p_prime -> p && q -> q_prime
+                    if (p.IsSubsetOf(p_prime) && q_prime.IsSubsetOf(q))
+                    {
+                        // the new one is subsumed by some previous invariant, so skip adding it to log
+                        return ([], []);
+                    }
+                    // same guard, then merge filters
+                    if (p.SetEquals(p_prime))
+                    {
+                        // same guard, then merge q and q_prime; skip the current one
+                        foreach (var qs in q_prime)
+                        {
+                            q.Add(qs);
+                        }
+                        return ([], []);
+                    }
+                    // same filter, keep weaker guard if comparable
+                    if (q.SetEquals(q_prime))
+                    {
+                        // same filters, then keep the weaker guard
+                        if (p.IsSubsetOf(p_prime))
+                        {
+                            // existing is weaker, so skip current one
+                            return ([], []);
+                        }
+                        else if (p_prime.IsSubsetOf(p))
+                        {
+                            // replace existing one
+                            prevP[i] = p_prime;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                P[quantifiers] = [];
+                Q[quantifiers] = [];
+                Executed[quantifiers] = [];
+            }
+            // add the current combination
+            P[quantifiers].Add(p_prime);
+            Q[quantifiers].Add(q_prime);
+            Executed[quantifiers].Add(hint);
+            return (p_prime, q_prime);
+        }
     
-        public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen, out int total)
+        public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, out int total)
         {
             var parseFilePath = Path.Combine("PInferOutputs", "SpecMining", PreambleConstants.ParseFileName);
             var contents = File.ReadAllLines(parseFilePath);
@@ -373,6 +473,9 @@ namespace Plang.Compiler
                 var guards = contents[i];
                 var filters = contents[i + 1];
                 var properties = contents[i + 2].Split("∧").Select(x => x.Trim());
+
+                var p = contents[i].Split("∧").Select(x => x.Trim()).ToHashSet();
+                var q = contents[i + 1].Split("∧").Select(x => x.Trim()).ToHashSet();
                 total += 1;
                 List<string> keep = [];
                 List<string> stepback = [];
@@ -380,11 +483,15 @@ namespace Plang.Compiler
                 {
                     switch (codegen.CheckForPruning(job, globalScope, prop, out var repr))
                     {
-                        case PInferPredicateGenerator.PruningStatus.KEEP: keep.Add(repr); break;
+                        case PInferPredicateGenerator.PruningStatus.KEEP: keep.Add(repr); q.Add(repr); break;
                         case PInferPredicateGenerator.PruningStatus.STEPBACK: stepback.Add(repr); break;
                         default: break;
                     }
                 }
+                // if (ImpliedByPrevInvariants(hint, p, q))
+                // {
+                //     continue;
+                // }
                 if (keep.Count > 0)
                 {
                     result += 1;
@@ -421,7 +528,7 @@ namespace Plang.Compiler
             process = Process.Start(startInfo);
             process.WaitForExit();
             // aggregate results
-            var numMined = PruneAndAggregate(job, globalScope, codegen, out totalInvs);
+            var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalInvs);
             Console.WriteLine("Cleaning up ...");
             var dirInfo = new DirectoryInfo("./");
             foreach (var dir in dirInfo.GetDirectories())

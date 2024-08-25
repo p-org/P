@@ -28,9 +28,17 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             PruningLevel = 3;
             ExistentialQuantifiers = 0;
             TermDepth = null;
-            Arity = 1;
+            Arity = 2;
             NumGuardPredicates = 0;
             NumFilterPredicates = 0;
+        }
+
+        public string GetQuantifierHeader()
+        {
+            string result = "";
+            result += string.Join(" ", Quantified.SkipLast(ExistentialQuantifiers).Select(v => $"∀{v.Name}: {v.EventName}"));
+            result += string.Join(" ", Quantified.TakeLast(ExistentialQuantifiers).Select(v => $"∃{v.Name}: {v.EventName}"));
+            return result;
         }
 
         public string GetInvariantReprHeader(string guards, string filters)
@@ -39,7 +47,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             result += string.Join(" ", Quantified.SkipLast(ExistentialQuantifiers).Select(v => $"∀{v.Name}: {v.EventName}"));
             if (guards.Length > 0)
             {
-                result += $" :: {guards} ->";
+                result += $" :: {guards} -> ";
             }
             else if (result.Length > 0)
             {
@@ -67,11 +75,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             {
                 Console.WriteLine($"Config Event: {ConfigEvent.Name}");
             }
-            Console.WriteLine($"Term Depth: {TermDepth}");
-            Console.WriteLine($"#Existential: {ExistentialQuantifiers}");
-            Console.WriteLine($"#GuardAPs: {NumGuardPredicates}");
-            Console.WriteLine($"#FilterAPs: {NumFilterPredicates}");
-            Console.WriteLine($"#Arity: {Arity}");
             if (CustomPredicates.Count > 0)
             {
                 Console.WriteLine($"Custom predicates: {string.Join(", ", CustomPredicates.Select(x => x.Name))}");
@@ -80,6 +83,10 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             {
                 Console.WriteLine($"Custom functions: {string.Join(", ", CustomFunctions.Select(x => x.Name))}");
             }
+            Console.WriteLine($"Term Depth: {TermDepth}");
+            string formatStr = $"| {{0, -5}} | {{1, -8}} | {{2, -8}} | {{3, -8}} |";
+            Console.WriteLine(string.Format(formatStr, "Arity", "#Filters", "#Guards", "#Ext"));
+            Console.WriteLine(string.Format(formatStr, Arity, NumFilterPredicates, NumGuardPredicates, ExistentialQuantifiers));
         }
 
         public bool NextQuantifier()
@@ -94,7 +101,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool NextNG(ICompilerConfiguration job)
         {
-            if (ExistentialQuantifiers != 0) return NextQuantifier();
+            // if (ExistentialQuantifiers != 0) return NextQuantifier();
             NumGuardPredicates += 1;
             if (NumGuardPredicates > job.MaxGuards)
             {
@@ -134,6 +141,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool HasNext(ICompilerConfiguration job, int maxArity)
         {
+            if (Quantified.Select(x => x.EventName).ToHashSet().Count == 1 && ExistentialQuantifiers > 0)
+            {
+                // for now: do not do forall-exists on a same type of events
+                return false;
+            }
             return Arity <= maxArity && ExistentialQuantifiers <= 1 && NumFilterPredicates <= job.MaxFilters && NumGuardPredicates <= job.MaxGuards;
         }
 

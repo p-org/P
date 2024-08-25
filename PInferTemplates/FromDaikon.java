@@ -57,6 +57,7 @@ public class FromDaikon {
         substs.put("one of", "∈");
         substs.put(".getPayload()", "");
         substs.put("[] elements", "");
+        substs.put("(elementwise)", "");
     }
 
     public String getFormulaHeader(String guards, String filters) {

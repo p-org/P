@@ -538,6 +538,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             method.CanChangeState = true;
+            method.AddGoto(state);
             return new GotoStmt(context, state, payload);
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Statements;
+using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -39,6 +40,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
         private readonly HashSet<PEvent> sendsSet = [];
+        private readonly HashSet<State> gotoStates = [];
         private readonly List<IPExpr> equivalences = [];
         private readonly List<IPExpr> contradictions = [];
         private readonly List<IPExpr> impliedBy = [];
@@ -110,6 +112,19 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 if (caller.CanSend != true) caller.CanSend = true;
                 caller.AddSends(e);
             }
+            if (ParentFunction != null)
+            {
+                ParentFunction.AddSends(e);
+            }
+        }
+
+        public void AddGoto(State s)
+        {
+            gotoStates.Add(s);
+            foreach (var caller in Callers)
+            {
+                caller.AddGoto(s);
+            }
         }
 
         public void AddCreatesInterface(Interface i)
@@ -147,6 +162,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool? CanSend { get; set; }
         public IEnumerable<PEvent> SendSet => sendsSet;
+        public IEnumerable<State> NextStates => gotoStates;
 
         public bool? CanCreate { get; set; }
         public bool? IsNondeterministic { get; set; }

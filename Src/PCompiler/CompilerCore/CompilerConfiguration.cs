@@ -26,7 +26,7 @@ namespace Plang.Compiler
             Debug = false;
             TermDepth = 1;
             MaxGuards = 2;
-            MaxFilters = 1;
+            MaxFilters = 2;
             PInferAction = PInferAction.Auto;
             HintName = null;
             Verbose = false;

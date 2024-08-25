@@ -649,6 +649,11 @@ namespace Plang.Compiler.Backend.PInfer
             CC.AddExpr(expr, true);
         }
 
+        public static bool SameType(PLanguageType t1, PLanguageType t2)
+        {
+            return IsAssignableFrom(t1, t2) && IsAssignableFrom(t2, t1);
+        }
+
         public static bool IsAssignableFrom(PLanguageType type, PLanguageType otherType)
         {
             // A slightly stricter version of type equality checking
@@ -796,8 +801,9 @@ namespace Plang.Compiler.Backend.PInfer
                         return PruningStatus.KEEP;
                     }
                 }
+                config.Output.WriteWarning($"[StepBack] lhs={lhs} in rhs={rhs} where rhs is a set of constants");
                 processed = $"{lhs} {op} {rhs}";
-                return PruningStatus.KEEP;
+                return PruningStatus.STEPBACK;
             }
             // try parse and check
             if (TryParseExpr(orig, out var ctx))

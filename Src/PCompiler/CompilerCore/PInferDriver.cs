@@ -590,6 +590,47 @@ namespace Plang.Compiler
                         }
                     }
                 }
+                for (int i = 0; i < Q[k].Count; ++i)
+                {
+                    var qi = Q[k][i];
+                    HashSet<int> removal = [];
+                    List<HashSet<string>> extract = [];
+                    // remove subset and extract duplicates
+                    for (int j = 0; j < qi.Count; ++j)
+                    {
+                        if (removal.Contains(j)) continue;
+                        var qij = qi[j];
+                        for (int l = j + 1; l < qi.Count; ++l)
+                        {
+                            var qil = qi[l];
+                            if (qij.IsSubsetOf(qil))
+                            {
+                                removal.Add(j);
+                            }
+                            else if (qil.IsSubsetOf(qij))
+                            {
+                                removal.Add(l);
+                            }
+                            else if (qil.Intersect(qij).Any())
+                            {
+                                var intersection = qil.Intersect(qij).ToHashSet();
+                                extract.Add(intersection);
+                                qil.ExceptWith(intersection);
+                                qij.ExceptWith(intersection);
+                            }
+                        }
+                    }
+                    didSth |= removal.Count > 0;
+                    didSth |= extract.Count > 0;
+                    foreach (var pos in removal.OrderByDescending(x => x))
+                    {
+                        Q[k][i].RemoveAt(pos);
+                    }
+                    foreach (var ex in extract)
+                    {
+                        Q[k][i].Add(ex);
+                    }
+                }
             }
             return didSth;
         }

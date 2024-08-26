@@ -49,11 +49,14 @@ namespace Plang.PInfer
             try{
                 if (TryRead(filePath, out var json))
                 {
-                    var metadata = JsonSerializer.Deserialize<List<Metadata>>(json);
-                    foreach (Metadata meta in metadata)
+                    if (json.Length > 0)
                     {
-                        HashSet<string> k = meta.Events.ToHashSet();
-                        traceIndex[k] = meta.Folder;
+                        var metadata = JsonSerializer.Deserialize<List<Metadata>>(json);
+                        foreach (Metadata meta in metadata)
+                        {
+                            HashSet<string> k = meta.Events.ToHashSet();
+                            traceIndex[k] = meta.Folder;
+                        }
                     }
                 }
                 else

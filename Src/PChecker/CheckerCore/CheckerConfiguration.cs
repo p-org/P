@@ -343,6 +343,7 @@ namespace PChecker
 
             IsVerbose = false;
             PInferMode = false;
+            AllowedEvents = [];
             TraceFolder = "traces";
             AllowedEvents = null;
             EnableDebugging = false;

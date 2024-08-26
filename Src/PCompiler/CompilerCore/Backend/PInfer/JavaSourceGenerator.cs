@@ -369,7 +369,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 return $"{eVar.Name}.getPayload()";
             }
-            return $"{v.Name}.payload";
+            return $"{v.Name}";
         }
     }
 }

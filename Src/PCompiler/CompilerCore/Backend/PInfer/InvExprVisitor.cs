@@ -37,7 +37,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 foreach (var p in ((NamedTupleType) configEvent.PayloadType).Fields)
                 {
-                    SpeicalConstants.Add(p.Name, new(null, new Variable(p.Name, null, VariableRole.Field)));
+                    SpeicalConstants.Add(p.Name, new(null, new Variable(p.Name, null, VariableRole.Field) { Type = PInferBuiltinTypes.CollectionSize }));
                 }
             }
         }
@@ -142,9 +142,9 @@ namespace Plang.Compiler.Backend.PInfer
                     }
                     throw new DropException($"Special constants are all from config events: {ctx.GetText()}");
                 }
-                if (lhs == null)
+                if (lhsExpr == null)
                 {
-                    (lhs, rhs) = (rhs, lhs);
+                    (lhsExpr, rhsExpr) = (rhsExpr, lhsExpr);
                 }
                 if (lhsExpr.Variable.Name == "_num_e_exists_")
                 {

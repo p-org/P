@@ -433,6 +433,10 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 _Store.Add(parameterTypes, []);
             }
+            if (_Store[parameterTypes].ContainsKey(name))
+            {
+                return (MacroPredicate) _Store[parameterTypes][name];
+            }
             var pred = new MacroPredicate(name, notation, unfold, argTypes);
             _Store[parameterTypes].Add(name, pred);
             foreach (var c in contraditions)

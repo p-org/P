@@ -201,6 +201,10 @@ namespace Plang.Compiler.Backend.PInfer
                 var predicate = (IPredicate) expr;
                 return $"{predicate.Name} :: {string.Join(" -> ", predicate.Signature.ParameterTypes.Select(PInferPredicateGenerator.ShowType)) + " -> bool"}";
             }
+            else if (expr is IntLiteralExpr intLit)
+            {
+                return $"{intLit.Value}";
+            }
             else if (expr is BinOpExpr binOpExpr)
             {
                 var lhs = GenerateCodeExpr(binOpExpr.Lhs, simplified);
@@ -214,10 +218,10 @@ namespace Plang.Compiler.Backend.PInfer
                     BinOpType.Mod => $"(({lhs}) % ({rhs}))",
                     BinOpType.Eq => simplified ? $"({lhs} == {rhs})" : $"Objects.equals({lhs}, {rhs})",
                     BinOpType.Neq => simplified ? $"({lhs} != {rhs})" : $"(!Objects.equals({lhs}, {rhs}))",
-                    BinOpType.Le => $"(({lhs}) <= ({rhs}))",
-                    BinOpType.Lt => $"(({lhs}) < ({rhs}))",
-                    BinOpType.Ge => $"(({lhs}) >= ({rhs}))",
-                    BinOpType.Gt => $"(({lhs}) > ({rhs}))",
+                    BinOpType.Le => $"({lhs} <= {rhs})",
+                    BinOpType.Lt => $"({lhs} < {rhs})",
+                    BinOpType.Ge => $"({lhs} >= {rhs})",
+                    BinOpType.Gt => $"({lhs} > {rhs})",
                     BinOpType.And => $"(({lhs}) && ({rhs}))",
                     BinOpType.Or => $"(({lhs}) || ({rhs}))",
                     _ => throw new Exception($"Unsupported BinOp Operatoion: {binOpExpr.Operation}"),

@@ -21,6 +21,7 @@ namespace Plang.Compiler.Backend.PInfer
         public int NumTerms = -1;
         public int NumPredicates = -1;
         private CongruenceClosure CC;
+        private JavaCodegen Codegen;
 
         public PInferPredicateGenerator()
         {
@@ -162,6 +163,7 @@ namespace Plang.Compiler.Backend.PInfer
             CompiledFile terms = new($"{job.ProjectName}.terms.json");
             CompiledFile predicates = new($"{job.ProjectName}.predicates.json");
             JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, VisitedSet, FreeEvents);
+            Codegen = codegen;
             IEnumerable<CompiledFile> compiledJavaSrc = codegen.GenerateCode(javaCtx, globalScope);
             int numTerms = WriteTerms(ctx, terms.Stream, codegen);
             int numPredicates = WritePredicates(ctx, predicates.Stream, codegen);
@@ -231,13 +233,18 @@ namespace Plang.Compiler.Backend.PInfer
             return $"({x.Name}:{x.EventName})";
         }
 
+        public static string SimplifiedRepr(JavaCodegen codegen, IPExpr expr)
+        {
+            return codegen.GenerateRawExpr(expr, true).Split("=>")[0].Trim();
+        }
+
         private int WritePredicates(CompilationContext ctx, StringWriter stream, JavaCodegen codegen)
         {
             HashSet<IPExpr> written = new(Comparer);
             ctx.WriteLine(stream, "[");
             foreach ((var pred, var index) in Predicates.Select((x, i) => (x, i)))
             {
-                var repr = codegen.GenerateRawExpr(pred, true).Split("=>")[0].Trim();
+                var repr = SimplifiedRepr(codegen, pred);
                 ReprToPredicates[repr] = pred;
                 var canonical = CC.Canonicalize(pred);
                 if (written.Contains(canonical))
@@ -264,7 +271,7 @@ namespace Plang.Compiler.Backend.PInfer
                             }).ToList();
                     foreach (var c in cons)
                     {
-                        conReprs.Add(codegen.GenerateRawExpr(c, true).Split("=>")[0].Trim());
+                        conReprs.Add(SimplifiedRepr(codegen, c));
                     }
                     ctx.WriteLine(stream, $"\"contradictions\": [{string.Join(", ", cons
                                             .Where(PredicateOrder.ContainsKey)
@@ -290,7 +297,7 @@ namespace Plang.Compiler.Backend.PInfer
             ctx.WriteLine(stream, "[");
             foreach ((var term, var index) in VisitedSet.Select((x, i) => (x, i)))
             {
-                ReprToTerms[codegen.GenerateRawExpr(term, true).Split("=>")[0].Trim()] = term;
+                ReprToTerms[SimplifiedRepr(codegen, term)] = term;
                 var canonical = CC.Canonicalize(term);
                 if (written.Contains(canonical))
                 {
@@ -789,6 +796,41 @@ namespace Plang.Compiler.Backend.PInfer
             return "(" + string.Join(" || ", refElem.Select(x => $"{lhs} == {x}")) + ")";
         }
 
+        public HashSet<string> GetContradictionsByRepr(string repr)
+        {
+            if (!ReprToContradictions.TryGetValue(repr, out var cons))
+            {
+                cons = [];
+                ReprToContradictions[repr] = cons;
+            }
+            return cons;
+        }
+
+        public void MarkReprContradictions(string r1, string r2)
+        {
+            var r1cons = GetContradictionsByRepr(r1);
+            var r2cons = GetContradictionsByRepr(r2);
+            r1cons.Add(r2);
+            r2cons.Add(r1);
+        }
+
+        public void UpdateMetadata(IPExpr expr)
+        {
+            switch (expr)
+            {
+                case BinOpExpr binOpExpr:
+                {
+                    var repr = SimplifiedRepr(Codegen, expr);
+                    foreach (var cons in binOpExpr.GetContradictions())
+                    {
+                        MarkReprContradictions(repr, SimplifiedRepr(Codegen, cons));
+                    }
+                    break;
+                }
+                default: return;
+            }
+        }
+
         public PruningStatus ProcessBinOpExpr(ICompilerConfiguration config, Scope globalScope,
                                                 string orig, string lhs, string op, string rhs, out string processed)
         {
@@ -821,8 +863,15 @@ namespace Plang.Compiler.Backend.PInfer
                 InvExprVisitor visitor = new(config, globalScope, CC, hint.ConfigEvent, ReprToTerms);
                 try
                 {
-                    visitor.Visit(ctx);
-                    processed = orig;
+                    IPExpr expr = visitor.Visit(ctx);
+                    if (!PrimitiveType.Bool.IsAssignableFrom(expr.Type))
+                    {
+                        config.Output.WriteWarning($"[Drop] {orig} does not have a boolean type");
+                        processed = "";
+                        return PruningStatus.DROP;
+                    }
+                    UpdateMetadata(expr);
+                    processed = SimplifiedRepr(Codegen, expr);
                     return PruningStatus.KEEP;
                 }
                 catch (DropException drop)
@@ -865,7 +914,12 @@ namespace Plang.Compiler.Backend.PInfer
 
         public bool Contradicting(string p, string q)
         {
-            return ReprToContradictions[p].Contains(q) || ReprToContradictions[q].Contains(p);
+            if (!ReprToContradictions.TryGetValue(p, out HashSet<string> c1) || !ReprToContradictions.TryGetValue(q, out HashSet<string> c2))
+            {
+                // over-approximate this by only checking known predicates
+                return false;
+            }
+            return c1.Contains(q) || c2.Contains(p);
         }
 
         private List<Dictionary<PLanguageType, HashSet<IPExpr>>> Terms { get; }

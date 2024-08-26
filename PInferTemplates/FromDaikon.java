@@ -1,12 +1,12 @@
 import java.util.stream.Collectors;
 
 public class FromDaikon {
+    public int numExists;
     private Map<Set<Integer>, List<Main.RawPredicate>> termsToPredicates;
     private List<Main.RawTerm> terms;
     private String templateHeaderCar;
     private String templateHeaderCdr;
     private int pruningLevel;
-    private int numExists;
     private static final String[] QUANTIFIERS = { %QUANTIFIERS% };
     private static final String[] VARNAME = { %QUANTIFIED_VARS% };
     private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()", "[] ==" };
@@ -26,27 +26,27 @@ public class FromDaikon {
             case "Forall":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
                     sb.append("∀").append(VARNAME[i])
-                            .append(": ").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
+                            .append(": ").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : " ");
                 }
                 templateHeaderCar = sb.toString();
                 break;
             case "Exists":
                 for (int i = 0; i < QUANTIFIERS.length; ++i) {
                     sb.append("∃").append(VARNAME[i])
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? ". " : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : " ");
                 }
                 templateHeaderCar = sb.toString();
                 break;
             case "ForallExists":
                 for (int i = 0; i < QUANTIFIERS.length - numExtQuantfiers; ++i) {
                     sb.append("∀").append(VARNAME[i])
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - numExtQuantfiers - 1 ? " :: " : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - numExtQuantfiers - 1 ? " :: " : " ");
                 }
                 templateHeaderCar = sb.toString();
                 sb = new StringBuilder();
                 for (int i = QUANTIFIERS.length - numExtQuantfiers; i < QUANTIFIERS.length; ++i) {
                     sb.append("∃").append(VARNAME[i])
-                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : ", ");
+                            .append(":").append(QUANTIFIERS[i]).append(i == QUANTIFIERS.length - 1 ? " :: " : " ");
                 }
                 templateHeaderCdr = sb.toString();
                 break;
@@ -57,6 +57,7 @@ public class FromDaikon {
         substs.put("one of", "∈");
         substs.put(".getPayload()", "");
         substs.put("[] elements", "");
+        substs.put("(elementwise)", "");
     }
 
     public String getFormulaHeader(String guards, String filters) {
@@ -115,8 +116,8 @@ public class FromDaikon {
         }
         if (line.contains(" in ")) {
             line = line.replace(" in ", " == ");
-            line = line.replace("[]", "");
         }
+        line = line.replace("[]", "");
         return line;
     }
 
@@ -222,9 +223,9 @@ public class FromDaikon {
                         }
                         break;
                     }
-                    if (rhsIsConst) {
-                        return false;
-                    }
+                    // if (rhsIsConst) {
+                    //     return false;
+                    // }
                     break;
                 }
             }

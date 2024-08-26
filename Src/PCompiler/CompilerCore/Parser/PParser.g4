@@ -113,8 +113,9 @@ hintItem: field=iden ASSIGN value=rvalueList SEMI ;
 varDecl : VAR idenList COLON type SEMI ;
 
 funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
-        | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
+        | funProp* FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
+funProp : AT decorator=iden LPAREN rvalueList RPAREN ;
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=iden LBRACE stateBodyItem* RBRACE ;
 
@@ -186,7 +187,9 @@ expr : primitive                                      # PrimitiveExpr
      | fun=KEYS LPAREN expr RPAREN                    # KeywordExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
      | fun=SIZEOF LPAREN expr RPAREN                  # KeywordExpr
+     | fun=SIZE LPAREN expr RPAREN                    # KeywordExpr
      | fun=DEFAULT LPAREN type RPAREN                 # KeywordExpr
+     | fun=INDEX LPAREN iden RPAREN                   # KeywordExpr
      | NEW interfaceName=iden
                             LPAREN rvalueList? RPAREN # CtorExpr
      | fun=iden LPAREN rvalueList? RPAREN             # FunCallExpr

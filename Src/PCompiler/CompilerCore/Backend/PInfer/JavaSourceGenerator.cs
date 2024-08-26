@@ -15,6 +15,7 @@ namespace Plang.Compiler.Backend.PInfer
         private readonly HashSet<IPExpr> Predicates;
         private readonly IEnumerable<IPExpr> Terms;
         private readonly IDictionary<IPExpr, HashSet<PEventVariable>> FreeEvents;
+        private readonly HashSet<Function> CompiledFunctions;
 
         public JavaCodegen(ICompilerConfiguration job, string filename, HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms, IDictionary<IPExpr, HashSet<PEventVariable>> freeEvents) : base(job, filename)
         {
@@ -22,6 +23,7 @@ namespace Plang.Compiler.Backend.PInfer
             Terms = terms;
             FreeEvents = freeEvents;
             Job = job;
+            CompiledFunctions = [];
         }
 
         public string GenerateTypeName(IPExpr expr) {
@@ -43,9 +45,14 @@ namespace Plang.Compiler.Backend.PInfer
 
         private void WriteFunctionRec(Function f)
         {
+            if (CompiledFunctions.Contains(f)) return;
+            CompiledFunctions.Add(f);
             foreach (var callee in f.Callees)
             {
-                WriteFunctionRec(callee);
+                if (callee != f)
+                {
+                    WriteFunctionRec(callee);
+                }
             }
             WriteFunction(f);
         }
@@ -194,6 +201,10 @@ namespace Plang.Compiler.Backend.PInfer
                 var predicate = (IPredicate) expr;
                 return $"{predicate.Name} :: {string.Join(" -> ", predicate.Signature.ParameterTypes.Select(PInferPredicateGenerator.ShowType)) + " -> bool"}";
             }
+            else if (expr is IntLiteralExpr intLit)
+            {
+                return $"{intLit.Value}";
+            }
             else if (expr is BinOpExpr binOpExpr)
             {
                 var lhs = GenerateCodeExpr(binOpExpr.Lhs, simplified);
@@ -206,8 +217,11 @@ namespace Plang.Compiler.Backend.PInfer
                     BinOpType.Div => $"(({lhs}) / ({rhs}))",
                     BinOpType.Mod => $"(({lhs}) % ({rhs}))",
                     BinOpType.Eq => simplified ? $"({lhs} == {rhs})" : $"Objects.equals({lhs}, {rhs})",
-                    BinOpType.Lt => $"(({lhs}) < ({rhs}))",
-                    BinOpType.Gt => $"(({lhs}) > ({rhs}))",
+                    BinOpType.Neq => simplified ? $"({lhs} != {rhs})" : $"(!Objects.equals({lhs}, {rhs}))",
+                    BinOpType.Le => $"({lhs} <= {rhs})",
+                    BinOpType.Lt => $"({lhs} < {rhs})",
+                    BinOpType.Ge => $"({lhs} >= {rhs})",
+                    BinOpType.Gt => $"({lhs} > {rhs})",
                     BinOpType.And => $"(({lhs}) && ({rhs}))",
                     BinOpType.Or => $"(({lhs}) || ({rhs}))",
                     _ => throw new Exception($"Unsupported BinOp Operatoion: {binOpExpr.Operation}"),
@@ -321,18 +335,26 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     if (funCallExpr.Arguments[0] is VariableAccessExpr v && v.Variable is PEventVariable pv)
                     {
-                        return $"{pv.Name}.index()";
+                        return simplified ? $"indexof({pv.Name})" : $"{pv.Name}.index()";
                     }
                     throw new NotImplementedException("Index is not implemented for expressions other than a variable access");
                 }
                 if (funCallExpr.Function.Name == "size")
                 {
+                    if (simplified)
+                    {
+                        return $"size({GenerateCodeExpr(funCallExpr.Arguments[0])})";
+                    }
                     if (funCallExpr.Arguments[0].Type is SequenceType || funCallExpr.Arguments[0].Type is SetType)
                     {
                         return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.length";
                     }
                     return $"{GenerateCodeExpr(funCallExpr.Arguments[0])}.size()";
                 }
+            }
+            if(funCallExpr.Function.SourceLocation != null && !CompiledFunctions.Contains(funCallExpr.Function) && !simplified)
+            {
+                WriteFunctionRec(funCallExpr.Function);
             }
             return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e)).ToArray()) + ")";
         }
@@ -347,7 +369,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 return $"{eVar.Name}.getPayload()";
             }
-            return $"{v.Name}.payload";
+            return $"{v.Name}";
         }
     }
 }

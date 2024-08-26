@@ -32,7 +32,82 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
         {
             var statements = context.statement().Select(Visit).ToList();
+            if (statements.Count() == 1)
+            {
+                TryInferIff(statements[0]);
+                // infer properties & contradictions
+                if (statements[0] is ReturnStmt returnStmt &&
+                    TryInferProps(returnStmt.ReturnValue, out var contradictions, out var equivs, out var properties))
+                {
+                    foreach (var c in contradictions)
+                    {
+                        method.AddContradiction(c);
+                    }
+                    foreach (var prop in properties)
+                    {
+                        method.Property |= prop;
+                    }
+                    foreach (var eq in equivs)
+                    {
+                        method.AddEquiv(eq);
+                    }
+                }
+            }
             return new CompoundStmt(context, statements);
+        }
+
+        public HashSet<Variable> FreeVar(IPExpr e)
+        {
+            return e switch {
+                VariableAccessExpr ve => [ve.Variable],
+                BinOpExpr binOp => FreeVar(binOp.Lhs).Union(FreeVar(binOp.Rhs)).ToHashSet(),
+                UnaryOpExpr unOp => FreeVar(unOp.SubExpr),
+                NamedTupleAccessExpr nta => FreeVar(nta.SubExpr),
+                FunCallExpr call => call.Arguments.SelectMany(FreeVar).ToHashSet(),
+                _ => [],
+            };
+        }
+
+        public bool TryInferProps(IPExpr expr, out IPExpr[] contra, out IPExpr[] equiv, out FunctionProperty[] properties)
+        {
+            var freeVars = FreeVar(expr);
+            if (freeVars.Count == method.Signature.Parameters.Count)
+            {
+                switch (expr)
+                {
+                    case BinOpExpr binOpExpr when FreeVar(binOpExpr.Lhs).Count == 1 && FreeVar(binOpExpr.Rhs).Count == 1: {
+                        contra = binOpExpr.GetContradictions().ToArray();
+                        equiv = binOpExpr.GetEquivalences().ToArray();
+                        if (method.Signature.Parameters.Count == 2)
+                        {
+                            properties = binOpExpr.Operation.GetProperties().ToArray();
+                        }
+                        else
+                        {
+                            properties = [];
+                        }
+                        return true;
+                    }
+                    case UnaryOpExpr unaryOpExpr: {
+                        contra = unaryOpExpr.GetContradictions().ToArray();
+                        equiv = [];
+                        properties = [];
+                        return true;
+                    }
+                }
+            }
+            contra = null;
+            properties = null;
+            equiv = null;
+            return false;
+        }
+
+        public void TryInferIff(IPStmt body)
+        {
+            if (body is ReturnStmt stmt)
+            {
+                method.AddEquiv(stmt.ReturnValue);
+            }
         }
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
@@ -463,6 +538,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             method.CanChangeState = true;
+            method.AddGoto(state);
             return new GotoStmt(context, state, payload);
         }
 

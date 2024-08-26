@@ -39,7 +39,7 @@ namespace Plang.PInfer
             ProjectName = "generatedOutput";
             Verbose = false;
             PruningLevel = 3;
-            Mode = PInferMode.Compile;
+            Mode = PInferMode.Auto;
         }
     }
 }

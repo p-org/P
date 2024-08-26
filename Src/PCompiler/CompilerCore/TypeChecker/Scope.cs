@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 
@@ -32,6 +34,8 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
         private readonly IDictionary<string, Hint> hints = new Dictionary<string, Hint>();
+        private readonly IDictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>> allowedBinOps = new Dictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>>();
+        private readonly IDictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>> allowedBinOpsByKind = new Dictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -653,6 +657,32 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion Conflict-checking putters
+
+        public void AddAllowedBinOp(BinOpType op, PLanguageType lhs, PLanguageType rhs, PLanguageType ret)
+        {
+            if (Parent == null)
+            {
+                if (!allowedBinOps.TryGetValue(op, out var table))
+                {
+                    table = [];
+                    allowedBinOps[op] = table;
+                }
+                table.Add((lhs, rhs, ret));
+                if (!allowedBinOpsByKind.TryGetValue(op.GetKind(), out var kindTable))
+                {
+                    kindTable = [];
+                    allowedBinOpsByKind[op.GetKind()] = kindTable;
+                }
+                kindTable.Add((lhs, rhs));
+            }
+            else
+            {
+                Parent.AddAllowedBinOp(op, lhs, rhs, ret);
+            }
+        }
+
+        public IDictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>> AllowedBinOps => Parent == null ? allowedBinOps : Parent.AllowedBinOps;
+        public IDictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>> AllowedBinOpsByKind => Parent == null ? allowedBinOpsByKind : Parent.AllowedBinOpsByKind;
 
         #region Conflict API
 

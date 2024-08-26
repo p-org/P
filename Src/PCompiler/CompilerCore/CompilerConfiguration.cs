@@ -24,10 +24,10 @@ namespace Plang.Compiler
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;
-            TermDepth = 2;
-            MaxGuards = 4;
+            TermDepth = 1;
+            MaxGuards = 2;
             MaxFilters = 2;
-            PInferAction = PInferAction.Compile;
+            PInferAction = PInferAction.Auto;
             HintName = null;
             Verbose = false;
             ConfigEvent = null;

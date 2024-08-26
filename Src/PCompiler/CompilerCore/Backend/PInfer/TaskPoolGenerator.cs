@@ -10,7 +10,8 @@ namespace Plang.Compiler.Backend.PInfer
         protected override void GenerateCodeImpl()
         {
             Write(PreambleConstants.TaskPoolProg
-                    .Replace("%PROJECT_NAME%", Job.ProjectName));
+                    .Replace("%PROJECT_NAME%", Job.ProjectName)
+                    .Replace("%PARSEFILE%", PreambleConstants.ParseFileName));
         }
     }
 }

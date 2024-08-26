@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Statements;
+using Plang.Compiler.TypeChecker.AST.States;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
@@ -20,6 +21,18 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         Function = 1 << 9
     }
 
+    public enum FunctionProperty
+    {
+        None = 0,
+        Reflexive = 1 << 1,
+        Symmetric = 1 << 2,
+        Transitive = 1 << 3,
+        AntiSymmetric = 1 << 4,
+        Idempotent = 1 << 5,
+        AntiReflexive = 1 << 6,
+        Asymmetric = 1 << 7
+    }
+
     public class Function : IPDecl, IHasScope
     {
         private readonly HashSet<Function> callees = new HashSet<Function>();
@@ -27,6 +40,10 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
         private readonly HashSet<PEvent> sendsSet = [];
+        private readonly HashSet<State> gotoStates = [];
+        private readonly List<IPExpr> equivalences = [];
+        private readonly List<IPExpr> contradictions = [];
+        private readonly List<IPExpr> impliedBy = [];
 
         public Function(string name, ParserRuleContext sourceNode)
         {
@@ -50,12 +67,31 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public IEnumerable<Variable> LocalVariables => localVariables;
         public IEnumerable<Interface> CreatesInterfaces => createsInterfaces;
         public FunctionRole Role { get; set; }
+        public FunctionProperty Property { get; set; }
+        public IEnumerable<IPExpr> Equivalences => equivalences;
+        public IEnumerable<IPExpr> Contradictions => contradictions;
+        public IEnumerable<IPExpr> ImpliedBy => impliedBy;
 
         public CompoundStmt Body { get; set; }
         public Scope Scope { get; set; }
 
         public string Name { get; set; }
         public ParserRuleContext SourceLocation { get; }
+
+        public void AddEquiv(IPExpr e)
+        {
+            equivalences.Add(e);
+        }
+
+        public void AddContradiction(IPExpr e)
+        {
+            contradictions.Add(e);
+        }
+
+        public void AddImpliedBy(IPExpr e)
+        {
+            impliedBy.Add(e);
+        }
 
         public void AddLocalVariable(Variable local)
         {
@@ -75,6 +111,19 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             {
                 if (caller.CanSend != true) caller.CanSend = true;
                 caller.AddSends(e);
+            }
+            if (ParentFunction != null)
+            {
+                ParentFunction.AddSends(e);
+            }
+        }
+
+        public void AddGoto(State s)
+        {
+            gotoStates.Add(s);
+            foreach (var caller in Callers)
+            {
+                caller.AddGoto(s);
             }
         }
 
@@ -113,6 +162,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool? CanSend { get; set; }
         public IEnumerable<PEvent> SendSet => sendsSet;
+        public IEnumerable<State> NextStates => gotoStates;
 
         public bool? CanCreate { get; set; }
         public bool? IsNondeterministic { get; set; }

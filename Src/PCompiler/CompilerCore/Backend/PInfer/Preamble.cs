@@ -98,6 +98,7 @@ public class PInferDriver {
 }
 ";
 
+        internal static string ParseFileName = "pinfer_parse.pinv";
         internal static string MainProg = ReadTemplate(MainFileName);
         internal static string FromDaikonProg = ReadTemplate(FromDaikonFileName);
         internal static string MinerConfigProg = ReadTemplate(MinerConfigFileName);

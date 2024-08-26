@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Antlr4.Runtime;
-using Antlr4.Runtime.Misc;
-using Plang.Compiler.Backend.Java;
+using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -211,16 +210,24 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class BuiltinPredicate : IPredicate
     {
+        private List<VariableAccessExpr> funcParams;
         public BuiltinPredicate(string name, Notation notation, params PLanguageType[] signature)
         {
             Notation = notation;
             int i = 0;
             Function = new Function(name, null);
+            funcParams = [];
             foreach (var type in signature)
             {
-                Function.Signature.Parameters.Add(new Variable($"x{i++}", null, VariableRole.Param) { Type = type });
+                var paramVar = new Variable($"x{i++}", null, VariableRole.Param) { Type = type };
+                Function.Signature.Parameters.Add(paramVar);
+                funcParams.Add(new VariableAccessExpr(null, paramVar));
             }
             Function.Signature.ReturnType = PrimitiveType.Bool;
+        }
+        public IPExpr ShiftCall(Func<List<VariableAccessExpr>, IPExpr> make)
+        {
+            return make(funcParams);
         }
         public string Name => Function.Name;
         public Notation Notation { get; }
@@ -246,8 +253,8 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class PInferBuiltinTypes
     {
-        public static readonly PLanguageType Index = new Index();
-        public static readonly PLanguageType CollectionSize = new CollectionSize();
+        public static readonly PLanguageType Index = new TypeDefType(new TypeDef("Index", null) { Type = PrimitiveType.Int });
+        public static readonly PLanguageType CollectionSize = new TypeDefType(new TypeDef("CollectionSize", null) { Type = PrimitiveType.Int });
     }
 
     public class DefinedPredicate : IPredicate
@@ -271,6 +278,7 @@ namespace Plang.Compiler.Backend.PInfer
 
     public class BuiltinFunction : Function
     {
+        public static Function IndexOf = new BuiltinFunction("index", Notation.Prefix, PrimitiveType.Any, PInferBuiltinTypes.Index);
         public BuiltinFunction(string name, Notation notation, params PLanguageType[] types) : base(name, null)
         {
             Notation = notation;
@@ -353,7 +361,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             for (int i = 0; i < x.Count; i++)
             {
-                if (!x[i].Equals(y[i]))
+                if (!PInferPredicateGenerator.IsAssignableFrom(x[i], y[i]) || !PInferPredicateGenerator.IsAssignableFrom(y[i], x[i]))
                 {
                     return false;
                 }
@@ -425,6 +433,10 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 _Store.Add(parameterTypes, []);
             }
+            if (_Store[parameterTypes].ContainsKey(name))
+            {
+                return (MacroPredicate) _Store[parameterTypes][name];
+            }
             var pred = new MacroPredicate(name, notation, unfold, argTypes);
             _Store[parameterTypes].Add(name, pred);
             foreach (var c in contraditions)
@@ -441,6 +453,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 _Store.Add(parameterTypes, []);
             }
+            // Console.WriteLine($"Add pred: {predicate.Name}, types: {string.Join(" -> ", parameterTypes)}");
             _Store[parameterTypes].Add(predicate.Name, predicate);
             foreach (var c in contraditions)
             {
@@ -448,16 +461,54 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        public static void Initialize() {
-            List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float, PInferBuiltinTypes.Index, PInferBuiltinTypes.CollectionSize];
-            List<PLanguageType> containerTypes = [new SequenceType(PrimitiveType.Any),
-                                                new SetType(PrimitiveType.Any),
-                                                new MapType(PrimitiveType.Any, PrimitiveType.Any)];
+        public static void AddBinaryBuiltinPredicate(BinOpType op, PLanguageType lhs, PLanguageType rhs)
+        {
+            var opNameMap = new Dictionary<BinOpType, string> {
+                {BinOpType.Lt, "<"},
+                {BinOpType.Le, "<="},
+                {BinOpType.Gt, ">"},
+                {BinOpType.Ge, ">="},
+                {BinOpType.Eq, "=="},
+                {BinOpType.Neq, "!="},
+            };
+            var pred = AddBuiltinPredicate(opNameMap[op],
+                                        Notation.Infix,
+                                        args => new BinOpExpr(null, op, args[0], args[1]), [], lhs, rhs);
+            var funLhs = new VariableAccessExpr(null, pred.Function.Signature.Parameters[0]);
+            var funRhs = new VariableAccessExpr(null, pred.Function.Signature.Parameters[1]);
+            foreach (var con in op.GetContradictions(funLhs, funRhs))
+            {
+                pred.Function.AddContradiction(con);
+            }
+            foreach (var equiv in op.GetEquivalences(funLhs, funRhs))
+            {
+                pred.Function.AddEquiv(equiv);
+            }
+            foreach (var prop in op.GetProperties())
+            {
+                pred.Function.Property |= prop;
+            }
+        }
+
+        public static void Initialize(Scope globalScope) {
+            List<PLanguageType> numericTypes = [PInferBuiltinTypes.Index, PInferBuiltinTypes.CollectionSize];
+            
             foreach (var numType in numericTypes)
             {
-                var ltPred = AddBuiltinPredicate("<", Notation.Infix, args => new BinOpExpr(null, BinOpType.Lt, args[0], args[1]), [EqPredicate], numType, numType);
-                AddBuiltinPredicate(">", Notation.Infix, args => new BinOpExpr(null, BinOpType.Gt, args[0], args[1]) ,[ltPred, EqPredicate], numType, numType);
-                // AddBuiltinPredicate("==", Notation.Infix, numType, numType);
+                AddBinaryBuiltinPredicate(BinOpType.Lt, numType, numType);
+            }
+
+            AddBinaryBuiltinPredicate(BinOpType.Eq, PrimitiveType.Machine, PrimitiveType.Machine);
+
+            foreach (var (op, types) in globalScope.AllowedBinOps)
+            {
+                if (op.GetKind() == BinOpKind.Equality)
+                {
+                    foreach (var sig in types)
+                    {
+                        AddBinaryBuiltinPredicate(op, sig.Item1, sig.Item2);
+                    }
+                }
             }
         }
 
@@ -482,6 +533,59 @@ namespace Plang.Compiler.Backend.PInfer
     {
         public static Dictionary<List<PLanguageType>, Dictionary<string, Function>> _Store = [];
 
+        public static IPExpr Subst(IPExpr e, IDictionary<Variable, IPExpr> gamma)
+        {
+            IPExpr subst(IPExpr x) => Subst(x, gamma);
+            return e switch {
+                VariableAccessExpr variableAccessExpr when gamma.ContainsKey(variableAccessExpr.Variable) => gamma[variableAccessExpr.Variable],
+                FunCallExpr funCall => new FunCallExpr(funCall.SourceLocation, funCall.Function, funCall.Arguments.Select(subst).ToList()),
+                BinOpExpr binOpExpr => new BinOpExpr(binOpExpr.SourceLocation, binOpExpr.Operation, subst(binOpExpr.Lhs), subst(binOpExpr.Rhs)),
+                NamedTupleAccessExpr ntAccess => new NamedTupleAccessExpr(ntAccess.SourceLocation, subst(ntAccess.SubExpr), ntAccess.Entry),
+                TupleAccessExpr tupleAccess => new TupleAccessExpr(tupleAccess.SourceLocation, subst(tupleAccess.SubExpr), tupleAccess.FieldNo, tupleAccess.Type),
+                UnaryOpExpr unaryOpExpr => new UnaryOpExpr(unaryOpExpr.SourceLocation, unaryOpExpr.Operation, subst(unaryOpExpr.SubExpr)),
+                _ => e
+            };
+        }
+
+        public static List<IPExpr> MakeContradictions(Function f, Func<Function, IPExpr[], IPExpr> make, params IPExpr[] parameters)
+        {
+            List<IPExpr> result = [];
+            Dictionary<Variable, IPExpr> delta = [];
+            if (f.Property.HasFlag(FunctionProperty.AntiSymmetric))
+            {
+                result.Add(make(f, [parameters[1], parameters[0]]));
+            }
+            foreach (var (x, y) in f.Signature.Parameters.Zip(parameters))
+            {
+                delta[x] = y;
+            }
+            foreach (IPExpr con in f.Contradictions)
+            {
+                result.Add(Subst(con, delta));
+            }
+            return result;
+        }
+
+        public static List<IPExpr> MakeEquivalences(Function f, Func<Function, IPExpr[], IPExpr> make, params IPExpr[] parameters)
+        {
+            List<IPExpr> result = [];
+            Dictionary<Variable, IPExpr> delta = [];
+            if (f.Property.HasFlag(FunctionProperty.Symmetric))
+            {
+                result.Add(make(f, [parameters[1], parameters[0]]));
+            }
+            foreach (var (x, y) in f.Signature.Parameters.Zip(parameters))
+            {
+                delta[x] = y;
+            }
+            foreach (IPExpr eq in f.Equivalences)
+            {
+                // need to subst parameters
+                result.Add(Subst(eq, delta));
+            }
+            return result;
+        }
+
         public static void AddFunction(Function func)
         {
             var parameterTypes = func.Signature.ParameterTypes.ToList();
@@ -489,6 +593,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 _Store.Add(parameterTypes, []);
             }
+            // Console.WriteLine($"Add func: {func.Name}, types: {string.Join(" -> ", parameterTypes)}");
             _Store[parameterTypes].Add(func.Name, func);
         }
 
@@ -497,14 +602,25 @@ namespace Plang.Compiler.Backend.PInfer
             _Store.Clear();
         }
 
-        public static void Initialize() {
+        public static void Initialize(Scope globalScope) {
             List<string> funcs = ["+", "-", "*", "/", "%"];
-            List<PLanguageType> numericTypes = [PrimitiveType.Int, PrimitiveType.Float];
-            foreach (var numTypes in numericTypes)
+            var opMap = new Dictionary<string, BinOpType> {
+                {"+", BinOpType.Add},
+                {"-", BinOpType.Sub},
+                {"*", BinOpType.Mul},
+                {"/", BinOpType.Div},
+                {"%", BinOpType.Mod},
+            };
+            var allowedBinOps = globalScope.AllowedBinOps;
+            foreach (var func in funcs)
             {
-                foreach (var func in funcs)
+                if (allowedBinOps.TryGetValue(opMap[func], out var allowSet))
                 {
-                    AddFunction(new BuiltinFunction(func, Notation.Infix, numTypes, numTypes, numTypes));
+                    foreach (var (lhs, rhs, ret) in allowSet)
+                    {
+                        var f = new BuiltinFunction(func, Notation.Infix, lhs, rhs, ret);
+                        if (func == "+" || func == "*") f.Property |= FunctionProperty.Symmetric;
+                    }
                 }
             }
             List<PLanguageType> containerTypes = [new SequenceType(PrimitiveType.Any),
@@ -517,5 +633,211 @@ namespace Plang.Compiler.Backend.PInfer
         }
 
         public static IEnumerable<Function> Store => _Store.Values.SelectMany(x => x.Values);
+    }
+
+    public class CongruenceClosure
+    {
+        public enum Result
+        {
+            YES, NO, UNK
+        }
+        internal class Node(object n, int id, bool canonical = false)
+        {
+            internal object symbol = n;
+            internal List<Node> children = [];
+            internal HashSet<Node> cc_parent = [];
+            internal Node parent = null;
+            internal int id = id;
+            internal bool canonical = canonical;
+            internal IPExpr repr;
+
+            internal bool SameNode(Node other)
+            {
+                return other.id == id;
+            }
+
+            internal Node Find()
+            {
+                if (parent == null)
+                {
+                    return this;
+                }
+                return parent.Find();
+            }
+        }
+        private readonly Dictionary<IPExpr, Node> index;
+
+
+        private Node PutExpr(IPExpr e)
+        {
+            if (index.TryGetValue(e, out Node value))
+            {
+                return value;
+            }
+            // Console.WriteLine($"Put {e}");
+            switch (e)
+            {
+                case VariableAccessExpr:
+                case EnumElemRefExpr:
+                case NamedTupleAccessExpr:
+                case TupleAccessExpr:
+                    Node ground = new(e, index.Count) { repr = e };
+                    index[e] = ground;
+                    return ground;
+                case BinOpExpr expr:
+                    List<Node> exprChildren = [PutExpr(expr.Lhs), PutExpr(expr.Rhs)];
+                    Node binOpNode = new(expr.Operation, index.Count) { children = exprChildren, repr = e };
+                    index[expr] = binOpNode;
+                    foreach (var ch in exprChildren)
+                    {
+                        ch.cc_parent.Add(binOpNode);
+                    }
+                    return binOpNode;
+                case UnaryOpExpr unaryOpExpr:
+                    List<Node> unOpSubExpr = [PutExpr(unaryOpExpr.SubExpr)];
+                    Node unOpNode = new(unaryOpExpr.Operation, index.Count) { children = unOpSubExpr, repr = e};
+                    index[unaryOpExpr] = unOpNode;
+                    unOpSubExpr[0].cc_parent.Add(unOpNode);
+                    return unOpNode;
+                case FunCallExpr funCallExpr:
+                    Function f = funCallExpr.Function;
+                    List<Node> funCallArgsNode = funCallExpr.Arguments.Select(PutExpr).ToList();
+                    // Console.WriteLine("Called " + funCallExpr.Function.Name);
+                    Node funCallNode = new(f, index.Count)
+                    {
+                        children = funCallArgsNode,
+                        repr = e
+                    };
+                    foreach (var ch in funCallArgsNode)
+                    {
+                        ch.cc_parent.Add(funCallNode);
+                    }
+                    index[funCallExpr] = funCallNode;
+                    return funCallNode;
+                case IntLiteralExpr intLiteral:
+                    Node intLitNode = new(intLiteral.Value, index.Count) { repr = intLiteral };
+                    return intLitNode;
+            }
+                throw new Exception($"CC not supported for {e}");
+        }
+
+        private void PropagateCongruence(Node n1, Node n2)
+        {
+            if (n1.symbol.Equals(n2.symbol) && n1.children.Count == n2.children.Count)
+            {
+                if (n1.children.Zip(n2.children, SameClosure).All(x => x))
+                {
+                    // all corresponding children are in the same closure
+                    Union(n1, n2);
+                }
+            }
+        }
+
+        private bool SameClosure(Node n1, Node n2)
+        {
+            return n1.Find().SameNode(n2.Find());
+        }
+
+        private void Union(Node n1, Node n2)
+        {
+            n1 = n1.Find();
+            n2 = n2.Find();
+            if (n1.canonical)
+            {
+                // keep the root canonical
+                (n1, n2) = (n2, n1);
+            }
+            if (!n1.SameNode(n2))
+            {
+                // Mark same UF
+                n1.parent = n2;
+                // propagate congruence
+                foreach (var p1 in n1.cc_parent)
+                {
+                    foreach (var p2 in n2.cc_parent)
+                    {
+                        PropagateCongruence(p1, p2);
+                    }
+                }
+                // propagate common congruence parents
+                foreach (var cpar in n1.cc_parent)
+                {
+                    n2.cc_parent.Add(cpar);
+                }
+                n1.cc_parent.Clear();
+            }
+        }
+
+        public IEnumerable<IPExpr> AddedExprs()
+        {
+            return index.Keys;
+        }
+
+        public void MarkEquivalence(IPExpr e1, IPExpr e2)
+        {
+            if (!index.TryGetValue(e1, out Node n1))
+            {
+                throw new Exception($"Lhs expr: {e1} has not added");
+            }
+            if (!index.TryGetValue(e2, out Node n2))
+            {
+                throw new Exception($"Rhs expr: {e2} has not added");
+            }
+            Union(n1, n2);
+        }
+
+        public void Reset()
+        {
+            index.Clear();
+        }
+
+        public Result Equivalent(IPExpr e1, IPExpr e2)
+        {
+            if (!index.TryGetValue(e1, out Node n1) || !index.TryGetValue(e2, out Node n2))
+            {
+                return Result.UNK;
+            }
+            if (SameClosure(n1, n2)) return Result.YES;
+            return Result.NO;
+        }
+
+        public bool HasExpr(IPExpr e)
+        {
+            return Canonicalize(e) != null;
+        }
+
+        public IPExpr Canonicalize(IPExpr e)
+        {
+            if (index.TryGetValue(e, out var node))
+            {
+                Node par = node.Find();
+                return par.repr;
+            }
+            return null;
+        }
+
+        public bool DefinitelyEquivalent(IPExpr e1, IPExpr e2)
+        {
+            return Equivalent(e1, e2) == Result.YES;
+        }
+
+        public CongruenceClosure() {
+            index = new(new ASTComparer());
+        }
+
+        public void AddExpr(IPExpr e, bool canonical = false)
+        {
+            if (!canonical)
+            {
+                if (!HasExpr(e))
+                {
+                    PutExpr(e).canonical = false;
+                }
+            }
+            else
+            {
+                PutExpr(e).canonical = true;
+            }
+        }
     }
 }

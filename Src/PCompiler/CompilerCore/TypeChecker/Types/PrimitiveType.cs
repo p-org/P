@@ -70,5 +70,10 @@ namespace Plang.Compiler.TypeChecker.Types
         {
             return this;
         }
+
+        public override string ToString()
+        {
+            return CanonicalRepresentation;
+        }
     }
 }

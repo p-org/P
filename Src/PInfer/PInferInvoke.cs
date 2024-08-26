@@ -47,8 +47,7 @@ namespace Plang.PInfer
             parentFolder = traceFolder;
             traceIndex = [];
             try{
-                var json = TryRead(filePath);
-                if (json != "")
+                if (TryRead(filePath, out var json))
                 {
                     var metadata = JsonSerializer.Deserialize<List<Metadata>>(json);
                     foreach (Metadata meta in metadata)
@@ -56,6 +55,10 @@ namespace Plang.PInfer
                         HashSet<string> k = meta.Events.ToHashSet();
                         traceIndex[k] = meta.Folder;
                     }
+                }
+                else
+                {
+                    throw new IOException();
                 }
             }
             catch (IOException)
@@ -124,9 +127,13 @@ namespace Plang.PInfer
             jsonFile.Close();
         }
 
-        private string TryRead(string file)
+        private bool TryRead(string file, out string result)
         {
-            string result = null;
+            result = null;
+            if (!File.Exists(file))
+            {
+                return false;
+            }
             while (result == null)
             {
                 try
@@ -141,7 +148,7 @@ namespace Plang.PInfer
                     Thread.Sleep(1000);
                 }
             }
-            return result;
+            return true;
         }
 
         private List<Metadata> Serialize()

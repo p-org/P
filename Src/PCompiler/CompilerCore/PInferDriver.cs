@@ -186,7 +186,6 @@ namespace Plang.Compiler
             foreach (var s in allStates)
             {
                 // Looking at one state
-                // Console.WriteLine($"{s.OwningMachine.Name} @ {s.Name} entry");
                 ExploreFunction(tasks, s, s.Entry);
                 foreach (var (@event, handler) in s.AllEventHandlers)
                 {
@@ -221,10 +220,10 @@ namespace Plang.Compiler
             {
                 tasks.UnionWith(ExploreHandlers(m.AllStates().ToList()));
             }
-            // foreach (var hint in tasks)
-            // {
-            //     Console.WriteLine(hint.Name);
-            // }
+            foreach (var hint in tasks)
+            {
+                Console.WriteLine(hint.Name);
+            }
             for (int i = 0; i <= Job.TermDepth; ++i)
             {
                 foreach (var task in tasks)

@@ -453,11 +453,20 @@ namespace Plang.Compiler
 
         public static bool ImpliedByAny(HashSet<string> p, List<HashSet<string>> q)
         {
-            return q.Any(p.IsSubsetOf);
+            foreach (var qi in q)
+            {
+                if (p.IsSubsetOf(qi)) return true;
+            }
+            return false;
         }
 
         public static bool SubsetOf(List<HashSet<string>> p, List<HashSet<string>> q)
         {
+            // Console.WriteLine($"Subset of");
+            // Console.WriteLine(string.Join(" | ", p.Select(x => string.Join(" ", x))));
+            // Console.WriteLine($"=============");
+            // Console.WriteLine(string.Join(" | ", q.Select(x => string.Join(" ", x))));
+            // Console.WriteLine(p.All(pi => ImpliedByAny(pi, q)));
             return p.All(pi => ImpliedByAny(pi, q));
         }
 
@@ -466,19 +475,37 @@ namespace Plang.Compiler
             return SubsetOf(p, q) && SubsetOf(q, p);
         }
 
-        public static void ExceptWith(List<HashSet<string>> p, List<HashSet<string>> q)
+        public static bool ExceptWith(List<HashSet<string>> p, List<HashSet<string>> q, bool existental)
         {
-            List<int> removal = [];
-            for (int i = 0; i < p.Count; ++i)
+            if (existental)
             {
-                if (ImpliedByAny(p[i], q))
+                List<int> removal = [];
+                for (int i = 0; i < p.Count; ++i)
                 {
-                    removal.Add(i);
+                    if (ImpliedByAny(p[i], q))
+                    {
+                        removal.Add(i);
+                    }
                 }
+                foreach (var i in removal.OrderByDescending(x => x))
+                {
+                    p.RemoveAt(i);
+                }
+                return removal.Count > 0;
             }
-            foreach (var i in removal.OrderByDescending(x => x))
+            else
             {
-                p.RemoveAt(i);
+                if (p.Count > 1 || q.Count > 1)
+                {
+                    throw new Exception($"No existential quantifier but got disjunctions in ExceptWith");
+                }
+                bool didSth = false;
+                if (p[0].Intersect(q[0]).Any())
+                {
+                    didSth = true;
+                }
+                p[0].ExceptWith(q[0]);
+                return didSth;
             }
         }
 
@@ -553,7 +580,7 @@ namespace Plang.Compiler
                                     {
                                         if (qi.Intersect(q_prime).Any())
                                         {
-                                            Console.WriteLine($"remove {string.Join(" ", qi)} using {string.Join(" ", q_prime)}");
+                                            // Console.WriteLine($"remove {string.Join(" ", qi)} using {string.Join(" ", q_prime)}");
                                             didSth = true;
                                         }
                                         qi.ExceptWith(q_prime);
@@ -599,25 +626,59 @@ namespace Plang.Compiler
                         {
                             var pj = P[k][j];
                             var qj = Q[k][j];
+                            if (pi.SetEquals(pj))
+                            {
+                                MergeFilters(codegen, qi, qj, Executed[k][i].ExistentialQuantifiers > 0);
+                                removes.Add(j);
+                            }
                             // Console.WriteLine($"Check {ShowRecordAt(k, i)} <===> {ShowRecordAt(k, j)}");
+                            // Forall-only rules
                             // Case 1: i ==> j; i.e. pi ==> pj && qj ==> qi
                             // keep j remove i
-                            if (pj.IsSubsetOf(pi) && SubsetOf(qi, qj))
+                            else if (k == 0 && pj.IsSubsetOf(pi) && SubsetOf(qi, qj))
                             {
                                 // Console.WriteLine($"Remove {i}");
                                 removes.Add(i);
                             }
                             // Case 2: j ==> i; keep i remove j
-                            else if (pi.IsSubsetOf(pj) && SubsetOf(qj, qi))
+                            else if (k == 0 && pi.IsSubsetOf(pj) && SubsetOf(qj, qi))
                             {
                                 // Console.WriteLine($"Remove {j}");
                                 removes.Add(j);
                             }
-                            // Case 3: pi <==> pj; merge qi and qj
-                            else if (pi.SetEquals(pj))
+                            // Case 3: if i ==> j, then any thing holds under i also holds under j
+                            // we may remove those from pi
+                            // e.g. forall* P -> Q, moreover P -> R
+                            // if it is the case that forall* R -> Q, we remove Q for the stronger guards P
+                            else if (k == 0 && pj.IsSubsetOf(pi))
                             {
-                                MergeFilters(codegen, qi, qj, Executed[k][i].ExistentialQuantifiers > 0);
+                                didSth |= ExceptWith(qi, qj, false);
+                            }
+                            else if (k == 0 && pi.IsSubsetOf(pj))
+                            {
+                                didSth |= ExceptWith(qj, qi, false);
+                            }
+                            // similar rules for forall-exists rules: prefer stronger guards
+                            else if (k > 0 && pi.IsSubsetOf(pj) && SubsetOf(qi, qj))
+                            {
+                                removes.Add(i);
+                            }
+                            else if (k > 0 && pj.IsSubsetOf(pi) && SubsetOf(qj, qi))
+                            {
                                 removes.Add(j);
+                            }
+                            // if with existentials, j ==> i
+                            // then anything holds under j also holds under i
+                            // e.g. if forall* P -> exists Q, moreover P -> R then
+                            //      forall* R -> exists Q
+                            // we only keep filters Q for the stronger guards P
+                            else if (k > 0 && pi.IsSubsetOf(pj))
+                            {
+                                didSth |= ExceptWith(qi, qj, true);
+                            }
+                            else if (k > 0 && pj.IsSubsetOf(pi))
+                            {
+                                didSth |= ExceptWith(qj, qi, true);
                             }
                         }
                     }
@@ -671,12 +732,17 @@ namespace Plang.Compiler
                 {
                     var p = prevP[i];
                     var q = prevQ[i];
-                    // stronger guards
-                    // then only keep filters that
-                    // cannot be discovered with weaker guards
-                    if (p.IsSubsetOf(p_prime))
+                    if (p.IsSubsetOf(p_prime) && quantifiers == 0)
                     {
-                        ExceptWith(q_prime, q);
+                        // stronger guards when forall-only
+                        // then only keep filters that
+                        // cannot be discovered with weaker guards
+                        ExceptWith(q_prime, q, false);
+                    }
+                    else if (p_prime.IsSubsetOf(p) && quantifiers > 0)
+                    {
+                        // prefer stronger guards when there are existentals
+                        ExceptWith(q, q_prime, true);
                     }
                 }
                 // can all be captured by some previous invariant
@@ -690,14 +756,21 @@ namespace Plang.Compiler
                 {
                     var p = prevP[i];
                     var q = prevQ[i];
-                    // an invariant is implied by some previous ones if
+                    // a forall-only invariant is implied by some previous ones if
                     // p_prime -> p && q -> q_prime
                     // might have been captured by previous checks
-                    if (p.IsSubsetOf(p_prime) && SubsetOf(q_prime, q))
+                    if (quantifiers == 0 && p.IsSubsetOf(p_prime) && SubsetOf(q_prime, q))
                     {
                         // the new one is subsumed by some previous invariant, so skip adding it to log
                         job.Output.WriteWarning($"[Drop][Subsumed] {curr_inv}");
                         return ([], []);
+                    }
+                    if (quantifiers > 0 && p.IsSubsetOf(p_prime) && SubsetOf(q, q_prime))
+                    {
+                        job.Output.WriteWarning($"[Replaced] {curr_inv} subsumes {ShowRecordAt(quantifiers, i)}");
+                        prevP[i] = p_prime;
+                        prevQ[i] = q_prime;
+                        continue;
                     }
                     // same guard, then merge filters
                     if (p.SetEquals(p_prime))
@@ -712,19 +785,36 @@ namespace Plang.Compiler
                     // same filter, keep weaker guard if comparable
                     if (SetEquals(q, q_prime))
                     {
-                        // same filters, then keep the weaker guard
-                        if (p.IsSubsetOf(p_prime))
+                        if (quantifiers == 0)
                         {
-                            // existing is weaker, so skip current one
-                            job.Output.WriteWarning($"[Drop][StrongerGuards] {curr_inv}");
-                            return ([], []);
+                            // same filters, then keep the weaker guard
+                            if (p.IsSubsetOf(p_prime))
+                            {
+                                // existing is weaker, so skip current one
+                                job.Output.WriteWarning($"[Drop][Forall-StrongerGuards] {curr_inv}");
+                                return ([], []);
+                            }
+                            else if (p_prime.IsSubsetOf(p))
+                            {
+                                // replace existing one
+                                job.Output.WriteWarning($"[Replaced][Forall-WeakerGuards] {curr_inv}");
+                                prevP[i] = p_prime;
+                                return ([], []);
+                            }
                         }
-                        else if (p_prime.IsSubsetOf(p))
+                        else
                         {
-                            // replace existing one
-                            job.Output.WriteWarning($"[Replaced][WeakerGuards] {curr_inv}");
-                            prevP[i] = p_prime;
-                            return ([], []);
+                            if (p.IsSubsetOf(p_prime))
+                            {
+                                job.Output.WriteWarning($"[Replaced][Exists-StrongerGuards] {curr_inv}");
+                                prevP[i] = p_prime;
+                                return ([], []);
+                            }
+                            else if (p_prime.IsSubsetOf(p))
+                            {
+                                job.Output.WriteWarning($"[Drop][Exists-WeakerGuards] {curr_inv}");
+                                return ([], []);
+                            }
                         }
                     }
                 }
@@ -807,6 +897,7 @@ namespace Plang.Compiler
             process.WaitForExit();
             // aggregate results
             var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalInvs);
+            DoChores(codegen);
             job.Output.WriteWarning($"Currently mined: {Learned.Count} invariant(s)");
             job.Output.WriteWarning($"Currently recorded: {WriteRecordTo("inv_running.txt")} invariant(s)");
             Console.WriteLine("Cleaning up ...");

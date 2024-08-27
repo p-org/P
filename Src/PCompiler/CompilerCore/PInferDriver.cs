@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text.Json;
 using Plang.Compiler.Backend.PInfer;
 using Plang.Compiler.TypeChecker;
@@ -228,6 +229,11 @@ namespace Plang.Compiler
             List<Machine> machines = GlobalScope.Machines.Where(x => !x.IsSpec).ToList();
             // explore single-machine state
             HashSet<Hint> tasks = new(new Hint.EqualityComparer());
+            foreach (var hint in GlobalScope.Hints)
+            {
+                Job.Output.WriteWarning($"Running user-defined hint: {hint.Name}");
+                ParameterSearch(hint);
+            }
             foreach (var m in machines)
             {
                 tasks.UnionWith(ExploreHandlers(m.AllStates().ToList()));

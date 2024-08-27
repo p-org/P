@@ -191,6 +191,14 @@ namespace Plang.Compiler
             {
                 // Looking at one state
                 ExploreFunction(tasks, s, s.Entry);
+                if (s.Entry != null)
+                {
+                    foreach (var e in s.Entry.SendSet)
+                    {
+                        AddHint($"{s.OwningMachine.Name}_{s.Name}_entry_sends_{e.Name}", tasks, e);
+                        AddHint($"{s.OwningMachine.Name}_{s.Name}_entry_sends_{e.Name}_binary", tasks, e, e);
+                    }
+                }
                 foreach (var (@event, handler) in s.AllEventHandlers)
                 {
                     // Console.WriteLine($"Trigger: {@event.Name} {handler is EventDoAction}");
@@ -204,9 +212,9 @@ namespace Plang.Compiler
                         foreach (var send in action.Target.SendSet)
                         {
                             // Console.WriteLine($"Send: {send.Name}");
-                            AddHint($"{s.OwningMachine.Name}_{s.Name}_send_{send.Name}", tasks, send);
-                            AddHint($"{s.OwningMachine.Name}_{s.Name}_recv_{@event.Name}_send_{send.Name}", tasks, send, @event);
-                            AddHint($"{s.OwningMachine.Name}_{s.Name}_send_{send.Name}_send_{send.Name}", tasks, send, send);
+                            AddHint($"{s.OwningMachine.Name}_{s.Name}_sends_{send.Name}", tasks, send);
+                            AddHint($"{s.OwningMachine.Name}_{s.Name}_recvs_{@event.Name}_sends_{send.Name}", tasks, send, @event);
+                            AddHint($"{s.OwningMachine.Name}_{s.Name}_sends_{send.Name}_binary", tasks, send, send);
                         }
                         ExploreFunction(tasks, s, action.Target, trigger: @event);
                     }
@@ -338,6 +346,7 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, List<Hint>> Executed = [];
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static HashSet<string> Learned = [];
+        internal static int NumInvsMined = 0;
 
         public static void NewInvFiles()
         {
@@ -483,11 +492,6 @@ namespace Plang.Compiler
 
         public static bool SubsetOf(List<HashSet<string>> p, List<HashSet<string>> q)
         {
-            // Console.WriteLine($"Subset of");
-            // Console.WriteLine(string.Join(" | ", p.Select(x => string.Join(" ", x))));
-            // Console.WriteLine($"=============");
-            // Console.WriteLine(string.Join(" | ", q.Select(x => string.Join(" ", x))));
-            // Console.WriteLine(p.All(pi => ImpliedByAny(pi, q)));
             return p.All(pi => ImpliedByAny(pi, q));
         }
 
@@ -645,8 +649,6 @@ namespace Plang.Compiler
             // iterate through the record and merge/discard any duplicates
             // process till fixpoint
             bool didSth = true;
-            // Console.WriteLine("============Before chore==============");
-            // ShowAll();
             while (didSth)
             {
                 didSth = false;
@@ -756,9 +758,6 @@ namespace Plang.Compiler
                 }
                 didSth |= ClearUpExistentials();
             }
-            // Console.WriteLine("============After chore==============");
-            // ShowAll();
-            // Console.WriteLine("=====================================");
         }
 
 
@@ -902,6 +901,7 @@ namespace Plang.Compiler
                 var p = guards.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0).ToHashSet();
                 var q = filters.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0).ToHashSet();
                 total += 1;
+                NumInvsMined += 1;
                 List<string> keep = [];
                 List<string> stepback = [];
                 foreach (var prop in properties)
@@ -952,7 +952,7 @@ namespace Plang.Compiler
             // aggregate results
             var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalInvs);
             DoChores(codegen);
-            job.Output.WriteWarning($"Currently mined: {Learned.Count} invariant(s)");
+            job.Output.WriteWarning($"Currently mined: {NumInvsMined} invariant(s)");
             job.Output.WriteWarning($"Currently recorded: {WriteRecordTo("inv_running.txt")} invariant(s)");
             Console.WriteLine("Cleaning up ...");
             var dirInfo = new DirectoryInfo("./");

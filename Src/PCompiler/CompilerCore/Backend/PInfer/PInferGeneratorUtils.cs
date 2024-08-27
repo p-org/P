@@ -55,6 +55,10 @@ namespace Plang.Compiler.Backend.PInfer
                     return ex.Name.Equals(ey.Name) && ex.Function.Signature.ParameterTypes.Zip(ey.Function.Signature.ParameterTypes, Equals).All(x => x);
                 case (BuiltinPredicate ex, BuiltinPredicate ey):
                     return ex.Name.Equals(ey.Name) && ex.Function.Signature.ParameterTypes.Zip(ey.Function.Signature.ParameterTypes, Equals).All(x => x);
+                case (SizeofExpr e1, SizeofExpr e2):
+                {
+                    return Equals(e1.Expr, e2.Expr);
+                }
                 default:
                     if (x.Type.Equals(y.Type))
                     {
@@ -94,6 +98,9 @@ namespace Plang.Compiler.Backend.PInfer
                     return (p.Name, p.Function.Signature).GetHashCode();
                 case BuiltinPredicate p:
                     return (p.Name, p.Function.Signature).GetHashCode();
+                case SizeofExpr expr:
+                    var subHash = GetHashCode(expr.Expr);
+                    return $"sizeof({subHash})".GetHashCode();
                 default:
                     throw new NotImplementedException($"Not implemented for {obj}");
             }

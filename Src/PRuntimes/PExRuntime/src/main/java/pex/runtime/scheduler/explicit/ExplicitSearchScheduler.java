@@ -76,10 +76,6 @@ public class ExplicitSearchScheduler extends Scheduler {
         // log run test
         logger.logRunTest();
 
-        PExGlobal.setResult("incomplete");
-        if (PExGlobal.getConfig().getVerbosity() == 0) {
-            PExGlobal.printProgressHeader(true);
-        }
         searchStrategy.createFirstTask();
 
         while (true) {
@@ -121,10 +117,8 @@ public class ExplicitSearchScheduler extends Scheduler {
         scheduleTerminated = false;
         skipLiveness = false;
         while (!isDoneStepping) {
-//            PExGlobal.printProgress(false);
             runStep();
         }
-        PExGlobal.printProgress(false);
 
         SearchStatistics.totalSteps += stepNumber;
         if (SearchStatistics.minSteps == -1 || stepNumber < SearchStatistics.minSteps) {

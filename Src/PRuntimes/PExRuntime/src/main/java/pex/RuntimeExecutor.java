@@ -96,9 +96,14 @@ public class RuntimeExecutor {
     private static void process(boolean resume) throws Exception {
         executor = Executors.newSingleThreadExecutor();
         try {
+            PExGlobal.setResult("incomplete");
+            if (PExGlobal.getConfig().getVerbosity() == 0) {
+                PExGlobal.printProgressHeader(true);
+            }
             TimedCall timedCall = new TimedCall(scheduler, resume);
             future = executor.submit(timedCall);
             runWithTimeout((long) PExGlobal.getConfig().getTimeLimit());
+            // TODO: pex parallel - report progress every 10 sec via printProgress
         } catch (TimeoutException e) {
             PExGlobal.setStatus(STATUS.TIMEOUT);
             throw new Exception("TIMEOUT", e);
@@ -149,6 +154,7 @@ public class RuntimeExecutor {
         SearchTask.Initialize();
         ScratchLogger.Initialize();
 
+        // TODO: pex parallel - create scheduler based on thread id
         scheduler = new ExplicitSearchScheduler(1);
         PExGlobal.addSearchScheduler(scheduler);
 

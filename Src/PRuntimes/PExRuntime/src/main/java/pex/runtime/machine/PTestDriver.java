@@ -12,6 +12,7 @@ import java.util.Map;
  * Represents the base class for a P test driver.
  */
 public abstract class PTestDriver implements Serializable {
+    // TODO: pex parallel - make fields thread safe
     public final Map<Class<? extends PMachine>, Class<? extends PMachine>> interfaceMap;
     public final List<PMonitor> monitorList;
     public final Map<PEvent, List<PMonitor>> observerMap;

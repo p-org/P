@@ -87,9 +87,6 @@ public class PExGlobal {
      */
     @Setter
     private static ReplayScheduler replayScheduler = null;
-    @Getter
-    @Setter
-    private static SearchStrategyMode searchStrategyMode;
     /**
      * Status of the run
      **/
@@ -110,8 +107,6 @@ public class PExGlobal {
     /**
      * Time of last status report
      */
-    @Getter
-    @Setter
     private static Instant lastReportTime = Instant.now();
 
     public static void addSearchScheduler(ExplicitSearchScheduler sch) {
@@ -120,7 +115,7 @@ public class PExGlobal {
 
     public static Scheduler getScheduler() {
         if (replayScheduler == null) {
-            // TODO
+            // TODO: pex parallel - use thread id to get search scheduler
             return searchSchedulers.get(1);
         } else {
             return replayScheduler;
@@ -183,7 +178,7 @@ public class PExGlobal {
      *
      * @return Number of unexplored choices
      */
-    public static int getNumPendingChoices() {
+    static int getNumPendingChoices() {
         int numUnexplored = 0;
         for (SearchTask task : pendingTasks) {
             numUnexplored += task.getTotalUnexploredChoices();
@@ -196,7 +191,7 @@ public class PExGlobal {
      *
      * @return Number of unexplored data choices
      */
-    public static int getNumPendingDataChoices() {
+    static int getNumPendingDataChoices() {
         int numUnexplored = 0;
         for (SearchTask task : pendingTasks) {
             numUnexplored += task.getTotalUnexploredDataChoices();
@@ -204,7 +199,7 @@ public class PExGlobal {
         return numUnexplored;
     }
 
-    public static int getNumUnexploredChoices() {
+    static int getNumUnexploredChoices() {
         int result = getNumPendingChoices();
         for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
             result += sch.getSearchStrategy().getCurrTask().getCurrentNumUnexploredChoices();
@@ -212,7 +207,7 @@ public class PExGlobal {
         return result;
     }
 
-    public static int getNumUnexploredDataChoices() {
+    static int getNumUnexploredDataChoices() {
         int result = getNumPendingDataChoices();
         for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
             result += sch.getSearchStrategy().getCurrTask().getCurrentNumUnexploredDataChoices();
@@ -225,7 +220,7 @@ public class PExGlobal {
      *
      * @return Percentage of unexplored choices that are data choices
      */
-    public static double getUnexploredDataChoicesPercent() {
+    static double getUnexploredDataChoicesPercent() {
         int totalUnexplored = getNumUnexploredChoices();
         if (totalUnexplored == 0) {
             return 0;
@@ -236,27 +231,27 @@ public class PExGlobal {
     }
 
     public static void updateResult() {
-        if (PExGlobal.getStatus() == STATUS.BUG_FOUND) {
+        if (status == STATUS.BUG_FOUND) {
             return;
         }
 
-        String result = "";
-        int maxStepBound = PExGlobal.getConfig().getMaxStepBound();
+        String resultString = "";
+        int maxStepBound = config.getMaxStepBound();
         int numUnexplored = getNumUnexploredChoices();
         if (SearchStatistics.maxSteps < maxStepBound) {
             if (numUnexplored == 0) {
-                result += "correct for any depth";
+                resultString += "correct for any depth";
             } else {
-                result += String.format("partially correct with %d choices remaining", numUnexplored);
+                resultString += String.format("partially correct with %d choices remaining", numUnexplored);
             }
         } else {
             if (numUnexplored == 0) {
-                result += String.format("correct up to step %d", SearchStatistics.maxSteps);
+                resultString += String.format("correct up to step %d", SearchStatistics.maxSteps);
             } else {
-                result += String.format("partially correct up to step %d with %d choices remaining", SearchStatistics.maxSteps, numUnexplored);
+                resultString += String.format("partially correct up to step %d with %d choices remaining", SearchStatistics.maxSteps, numUnexplored);
             }
         }
-        PExGlobal.setResult(result);
+        result = resultString;
     }
 
     public static void recordStats() {
@@ -264,8 +259,8 @@ public class PExGlobal {
 
         // print basic statistics
         StatWriter.log("#-schedules", String.format("%d", SearchStatistics.iteration));
-        StatWriter.log("#-timelines", String.format("%d", PExGlobal.getTimelines().size()));
-        if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
+        StatWriter.log("#-timelines", String.format("%d", timelines.size()));
+        if (config.getStateCachingMode() != StateCachingMode.None) {
             StatWriter.log("#-states", String.format("%d", SearchStatistics.totalStates));
             StatWriter.log("#-distinct-states", String.format("%d", SearchStatistics.totalDistinctStates));
         }
@@ -273,22 +268,22 @@ public class PExGlobal {
         StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps / SearchStatistics.iteration));
         StatWriter.log("#-choices-unexplored", String.format("%d", getNumUnexploredChoices()));
         StatWriter.log("%-choices-unexplored-data", String.format("%.1f", getUnexploredDataChoicesPercent()));
-        StatWriter.log("#-tasks-finished", String.format("%d", PExGlobal.getFinishedTasks().size()));
-        StatWriter.log("#-tasks-pending", String.format("%d", PExGlobal.getFinishedTasks().size()));
+        StatWriter.log("#-tasks-finished", String.format("%d", finishedTasks.size()));
+        StatWriter.log("#-tasks-pending", String.format("%d", pendingTasks.size()));
         StatWriter.log("ql-#-states", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumStates()));
         StatWriter.log("ql-#-actions", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumActions()));
     }
 
-    public static void printCurrentStatus(double newRuntime) {
+    static void printCurrentStatus(double newRuntime) {
         StringBuilder s = new StringBuilder("--------------------");
         s.append(String.format("\n    Status after %.2f seconds:", newRuntime));
         s.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
         s.append(String.format("\n      Schedules:        %d", SearchStatistics.iteration));
         s.append(String.format("\n      Unexplored:       %d", getNumUnexploredChoices()));
-        s.append(String.format("\n      FinishedTasks:    %d", PExGlobal.getFinishedTasks().size()));
-        s.append(String.format("\n      PendingTasks:     %d", PExGlobal.getPendingTasks().size()));
-        s.append(String.format("\n      Timelines:        %d", PExGlobal.getTimelines().size()));
-        if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
+        s.append(String.format("\n      FinishedTasks:    %d", finishedTasks.size()));
+        s.append(String.format("\n      PendingTasks:     %d", pendingTasks.size()));
+        s.append(String.format("\n      Timelines:        %d", timelines.size()));
+        if (config.getStateCachingMode() != StateCachingMode.None) {
             s.append(String.format("\n      States:           %d", SearchStatistics.totalStates));
             s.append(String.format("\n      DistinctStates:   %d", SearchStatistics.totalDistinctStates));
         }
@@ -304,7 +299,7 @@ public class PExGlobal {
         s.append(StringUtils.center("Timelines", 12));
         s.append(StringUtils.center("Unexplored", 24));
 
-        if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
+        if (config.getStateCachingMode() != StateCachingMode.None) {
             s.append(StringUtils.center("States", 12));
         }
 
@@ -318,11 +313,11 @@ public class PExGlobal {
     }
 
     public static void printProgress(boolean forcePrint) {
-        if (forcePrint || (TimeMonitor.findInterval(getLastReportTime()) > 10)) {
-            setLastReportTime(Instant.now());
+        if (forcePrint || (TimeMonitor.findInterval(lastReportTime) > 10)) {
+            lastReportTime = Instant.now();
             double newRuntime = TimeMonitor.getRuntime();
             printCurrentStatus(newRuntime);
-            boolean consolePrint = (PExGlobal.getConfig().getVerbosity() == 0);
+            boolean consolePrint = (config.getVerbosity() == 0);
             if (consolePrint || forcePrint) {
                 long runtime = (long) (newRuntime * 1000);
                 String runtimeHms =
@@ -343,14 +338,14 @@ public class PExGlobal {
                         StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
 
                 s.append(StringUtils.center(String.format("%d", SearchStatistics.iteration), 12));
-                s.append(StringUtils.center(String.format("%d", PExGlobal.getTimelines().size()), 12));
+                s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
                 s.append(
                         StringUtils.center(
                                 String.format(
                                         "%d (%.0f %% data)", getNumUnexploredChoices(), getUnexploredDataChoicesPercent()),
                                 24));
 
-                if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
+                if (config.getStateCachingMode() != StateCachingMode.None) {
                     s.append(StringUtils.center(String.format("%d", SearchStatistics.totalDistinctStates), 12));
                 }
 

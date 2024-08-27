@@ -103,6 +103,7 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (PrimitiveType.Int.IsAssignableFrom(t) || PrimitiveType.Float.IsAssignableFrom(t))
             {
+                PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Eq, t, t);
                 if (globalScope.AllowedBinOpsByKind.ContainsKey(BinOpKind.Comparison))
                 {
                     foreach (var types in globalScope.AllowedBinOpsByKind[BinOpKind.Comparison])
@@ -110,6 +111,7 @@ namespace Plang.Compiler.Backend.PInfer
                         if (IsAssignableFrom(types.Item1, t) && IsAssignableFrom(types.Item2, t))
                         {
                             PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, t, t);
+                            break;
                         }
                     }
                 }

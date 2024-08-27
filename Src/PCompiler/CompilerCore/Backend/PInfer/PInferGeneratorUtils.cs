@@ -570,6 +570,7 @@ namespace Plang.Compiler.Backend.PInfer
                 NamedTupleAccessExpr ntAccess => new NamedTupleAccessExpr(ntAccess.SourceLocation, subst(ntAccess.SubExpr), ntAccess.Entry),
                 TupleAccessExpr tupleAccess => new TupleAccessExpr(tupleAccess.SourceLocation, subst(tupleAccess.SubExpr), tupleAccess.FieldNo, tupleAccess.Type),
                 UnaryOpExpr unaryOpExpr => new UnaryOpExpr(unaryOpExpr.SourceLocation, unaryOpExpr.Operation, subst(unaryOpExpr.SubExpr)),
+                SizeofExpr sizeofExpr => new SizeofExpr(sizeofExpr.SourceLocation, subst(sizeofExpr.Expr)),
                 _ => e
             };
         }

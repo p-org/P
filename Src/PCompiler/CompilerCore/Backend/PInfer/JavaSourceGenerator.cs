@@ -248,6 +248,18 @@ namespace Plang.Compiler.Backend.PInfer
                     return $"{Types.JavaTypeFor(refExpr.Type).TypeName}.{refExpr.Value.Name}";
                 }
             }
+            else if (expr is SizeofExpr sizeofExpr)
+            {
+                if (simplified)
+                    {
+                        return $"size({GenerateCodeExpr(sizeofExpr.Expr)})";
+                    }
+                    if (sizeofExpr.Expr.Type is SequenceType || sizeofExpr.Expr.Type is SetType)
+                    {
+                        return $"{GenerateCodeExpr(sizeofExpr.Expr)}.length";
+                    }
+                    return $"{GenerateCodeExpr(sizeofExpr.Expr)}.size()";
+            }
             else
             {
                 throw new Exception($"Unsupported expression type {expr.GetType()}");

@@ -91,7 +91,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool NextQuantifier()
         {
-            if (QuantifiedSame) return false;
             ExistentialQuantifiers += 1;
             if (ExistentialQuantifiers > 1)
             {
@@ -142,10 +141,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool HasNext(ICompilerConfiguration job, int maxArity)
         {
-            if (QuantifiedSame)
+            if (QuantifiedSame && ExistentialQuantifiers > 0)
             {
                 // for now: do not do forall-exists on a same type of events
-                return Arity <= maxArity && NumFilterPredicates <= job.MaxFilters && NumGuardPredicates <= job.MaxGuards;
+                job.Output.WriteWarning($"{Name} quantifies over 1 type of events. Skipping forall-exists");
+                return false;
             }
             return Arity <= maxArity && ExistentialQuantifiers <= 1 && NumFilterPredicates <= job.MaxFilters && NumGuardPredicates <= job.MaxGuards;
         }

@@ -9,7 +9,6 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 import pex.runtime.PExGlobal;
 import pex.runtime.STATUS;
 import pex.runtime.scheduler.explicit.ExplicitSearchScheduler;
-import pex.runtime.scheduler.explicit.SearchStatistics;
 import pex.runtime.scheduler.explicit.StateCachingMode;
 import pex.utils.monitor.MemoryMonitor;
 
@@ -80,13 +79,13 @@ public class PExLogger {
             log.info("... Scheduling statistics:");
             if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
                 log.info(String.format("..... Explored %d distinct states over %d timelines",
-                        SearchStatistics.totalDistinctStates, PExGlobal.getTimelines().size()));
+                        PExGlobal.getStateCache().size(), PExGlobal.getTimelines().size()));
             }
-            log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
+            log.info(String.format("..... Explored %d distinct schedules", PExGlobal.getTotalSchedules()));
             log.info(String.format("..... Finished %d search tasks (%d pending)",
                     PExGlobal.getFinishedTasks().size(), PExGlobal.getPendingTasks().size()));
             log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
-                    SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
+                    PExGlobal.getMinSteps(), (PExGlobal.getTotalSteps() / PExGlobal.getTotalSchedules()), PExGlobal.getMaxSteps()));
         }
         log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         log.info(String.format(".. Result: " + PExGlobal.getResult()));

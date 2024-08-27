@@ -2,7 +2,7 @@ package pex.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
 import pex.runtime.PExGlobal;
-import pex.runtime.scheduler.explicit.SearchStatistics;
+import pex.runtime.scheduler.explicit.SchedulerStatistics;
 
 import java.io.Serializable;
 
@@ -13,9 +13,9 @@ public abstract class SearchStrategy implements Serializable {
      */
     int currTaskId = 0;
     /**
-     * Starting iteration number for the current task
+     * Number of schedules for the current task
      */
-    int currTaskStartIteration = 0;
+    int currTaskNumSchedules = 0;
 
     public SearchTask createTask(SearchTask parentTask) {
         SearchTask newTask = new SearchTask(PExGlobal.getAllTasks().size(), parentTask);
@@ -38,11 +38,11 @@ public abstract class SearchStrategy implements Serializable {
         assert (PExGlobal.getPendingTasks().contains(task));
         PExGlobal.getPendingTasks().remove(task);
         currTaskId = task.getId();
-        currTaskStartIteration = SearchStatistics.iteration;
+        currTaskNumSchedules = 0;
     }
 
-    public int getNumSchedulesInCurrTask() {
-        return SearchStatistics.iteration - currTaskStartIteration;
+    public void incrementCurrTaskNumSchedules() {
+        currTaskNumSchedules++;
     }
 
 

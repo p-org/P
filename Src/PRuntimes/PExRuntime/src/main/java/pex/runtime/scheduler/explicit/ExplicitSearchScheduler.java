@@ -44,6 +44,8 @@ public class ExplicitSearchScheduler extends Scheduler {
      * Whether to skip liveness check (because of early schedule termination due to state caching)
      */
     private transient boolean skipLiveness = false;
+    @Getter
+    private final SchedulerStatistics stats = new SchedulerStatistics();
 
 
     /**
@@ -82,15 +84,16 @@ public class ExplicitSearchScheduler extends Scheduler {
             logger.logStartTask(searchStrategy.getCurrTask());
             isDoneIterating = false;
             while (!isDoneIterating) {
-                SearchStatistics.iteration++;
-                logger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber);
+                stats.numSchedules++;
+                searchStrategy.incrementCurrTaskNumSchedules();
+                logger.logStartIteration(searchStrategy.getCurrTask(), schedulerId, stats.numSchedules, stepNumber);
                 if (stepNumber == 0) {
                     start();
                 }
                 runIteration();
                 postProcessIteration();
             }
-            logger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask());
+            logger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getCurrTaskNumSchedules());
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
 
@@ -120,12 +123,12 @@ public class ExplicitSearchScheduler extends Scheduler {
             runStep();
         }
 
-        SearchStatistics.totalSteps += stepNumber;
-        if (SearchStatistics.minSteps == -1 || stepNumber < SearchStatistics.minSteps) {
-            SearchStatistics.minSteps = stepNumber;
+        stats.totalSteps += stepNumber;
+        if (stats.minSteps == -1 || stepNumber < stats.minSteps) {
+            stats.minSteps = stepNumber;
         }
-        if (SearchStatistics.maxSteps == -1 || stepNumber > SearchStatistics.maxSteps) {
-            SearchStatistics.maxSteps = stepNumber;
+        if (stats.maxSteps == -1 || stepNumber > stats.maxSteps) {
+            stats.maxSteps = stepNumber;
         }
 
         if (scheduleTerminated) {
@@ -142,7 +145,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 "Step bound of " + PExGlobal.getConfig().getMaxStepBound() + " reached.");
 
         if (PExGlobal.getConfig().getMaxSchedules() > 0) {
-            if (SearchStatistics.iteration >= PExGlobal.getConfig().getMaxSchedules()) {
+            if (PExGlobal.getTotalSchedules() >= PExGlobal.getConfig().getMaxSchedules()) {
                 isDoneIterating = true;
                 PExGlobal.setStatus(STATUS.SCHEDULEOUT);
             }
@@ -214,26 +217,25 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
 
         // increment state count
-        SearchStatistics.totalStates++;
+        stats.totalStates++;
 
         // get state key
         Object stateKey = getCurrentStateKey();
 
         // check if state key is present in state cache
-        Integer visitedAtIteration = PExGlobal.getStateCache().get(stateKey);
+        String visitedAt = PExGlobal.getStateCache().get(stateKey);
+        String stateVal = String.format("%d-%d", schedulerId, stats.numSchedules);
 
-        if (visitedAtIteration == null) {
+        if (visitedAt == null) {
             // not present, add to state cache
-            PExGlobal.getStateCache().put(stateKey, SearchStatistics.iteration);
-            // increment distinct state count
-            SearchStatistics.totalDistinctStates++;
+            PExGlobal.getStateCache().put(stateKey, stateVal);
             // log new state
             logger.logNewState(stepNumber, choiceNumber, stateKey, stepState.getMachines());
         } else {
             // present in state cache
 
             // check if possible cycle
-            if (visitedAtIteration == SearchStatistics.iteration) {
+            if (visitedAt == stateVal) {
                 if (PExGlobal.getConfig().isFailOnMaxStepBound()) {
                     // cycle detected since revisited same state at a different step in the same schedule
                     Assert.cycle("Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule");
@@ -405,7 +407,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     private void postProcessIteration() {
         int maxSchedulesPerTask = PExGlobal.getConfig().getMaxSchedulesPerTask();
-        if (maxSchedulesPerTask > 0 && searchStrategy.getNumSchedulesInCurrTask() >= maxSchedulesPerTask) {
+        if (maxSchedulesPerTask > 0 && searchStrategy.getCurrTaskNumSchedules() >= maxSchedulesPerTask) {
             isDoneIterating = true;
         }
 

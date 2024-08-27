@@ -7,7 +7,7 @@ import pex.runtime.logger.ScratchLogger;
 import pex.runtime.logger.StatWriter;
 import pex.runtime.scheduler.Schedule;
 import pex.runtime.scheduler.explicit.ExplicitSearchScheduler;
-import pex.runtime.scheduler.explicit.SearchStatistics;
+import pex.runtime.scheduler.explicit.SchedulerStatistics;
 import pex.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 import pex.runtime.scheduler.explicit.strategy.SearchTask;
 import pex.runtime.scheduler.replay.ReplayScheduler;
@@ -67,7 +67,7 @@ public class RuntimeExecutor {
         StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
 
         if (PExGlobal.getConfig().getSearchStrategyMode() != SearchStrategyMode.Replay) {
-            StatWriter.log("max-depth-explored", String.format("%d", SearchStatistics.maxSteps));
+            StatWriter.log("max-depth-explored", String.format("%d", PExGlobal.getMaxSteps()));
             PExGlobal.recordStats();
             if (PExGlobal.getResult().equals("correct for any depth")) {
                 PExGlobal.setStatus(STATUS.VERIFIED);

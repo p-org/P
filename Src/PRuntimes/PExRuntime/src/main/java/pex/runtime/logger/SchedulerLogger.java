@@ -151,13 +151,15 @@ public class SchedulerLogger {
     /**
      * Log at the start of an iteration
      *
-     * @param iter Iteration number
+     * @param task Search task
+     * @param schId Scheduler id
+     * @param iter Schedule number
      * @param step Starting step number
      */
-    public void logStartIteration(SearchTask task, int iter, int step) {
+    public void logStartIteration(SearchTask task, int schId, int iter, int step) {
         if (verbosity > 0) {
             log.info("--------------------");
-            log.info(String.format("[%s] Starting schedule %s from step %s", task, iter, step));
+            log.info(String.format("[%d::%s] Starting schedule %s from step %s", schId, task, iter, step));
         }
     }
 

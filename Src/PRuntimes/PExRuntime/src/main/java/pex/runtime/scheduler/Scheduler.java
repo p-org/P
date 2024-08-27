@@ -8,6 +8,7 @@ import pex.runtime.logger.SchedulerLogger;
 import pex.runtime.machine.PMachine;
 import pex.runtime.machine.PMachineId;
 import pex.runtime.machine.PMonitor;
+import pex.runtime.scheduler.explicit.SchedulerStatistics;
 import pex.runtime.scheduler.explicit.StepState;
 import pex.utils.exceptions.BugFoundException;
 import pex.utils.exceptions.NotImplementedException;

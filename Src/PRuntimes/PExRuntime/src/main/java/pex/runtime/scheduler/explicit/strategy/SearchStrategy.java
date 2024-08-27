@@ -5,10 +5,6 @@ import pex.runtime.PExGlobal;
 import pex.runtime.scheduler.explicit.SearchStatistics;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Getter
 public abstract class SearchStrategy implements Serializable {
@@ -69,32 +65,6 @@ public abstract class SearchStrategy implements Serializable {
         setCurrTask(nextTask);
 
         return nextTask;
-    }
-
-    /**
-     * Get the number of unexplored choices in the pending tasks
-     *
-     * @return Number of unexplored choices
-     */
-    public int getNumPendingChoices() {
-        int numUnexplored = 0;
-        for (SearchTask task : PExGlobal.getPendingTasks()) {
-            numUnexplored += task.getTotalUnexploredChoices();
-        }
-        return numUnexplored;
-    }
-
-    /**
-     * Get the number of unexplored data choices in the pending tasks
-     *
-     * @return Number of unexplored data choices
-     */
-    public int getNumPendingDataChoices() {
-        int numUnexplored = 0;
-        for (SearchTask task : PExGlobal.getPendingTasks()) {
-            numUnexplored += task.getTotalUnexploredDataChoices();
-        }
-        return numUnexplored;
     }
 
     abstract SearchTask popNextTask();

@@ -2,7 +2,6 @@ package pex.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
 import pex.runtime.PExGlobal;
-import pex.runtime.logger.PExLogger;
 import pex.runtime.machine.PMachineId;
 import pex.runtime.scheduler.choice.Choice;
 import pex.runtime.scheduler.choice.DataSearchUnit;
@@ -250,7 +249,7 @@ public class SearchTask implements Serializable {
             oos.writeObject(this.prefixChoices);
             oos.writeObject(this.searchUnits);
             long szBytes = Files.size(Paths.get(serializeFile));
-            PExLogger.logSerializeTask(this, szBytes);
+            PExGlobal.getScheduler().getLogger().logSerializeTask(this, szBytes);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write task in file " + serializeFile, e);
         }
@@ -265,7 +264,7 @@ public class SearchTask implements Serializable {
         assert (searchUnits == null);
 
         try {
-            PExLogger.logDeserializeTask(this);
+            PExGlobal.getScheduler().getLogger().logDeserializeTask(this);
             FileInputStream fis;
             fis = new FileInputStream(serializeFile);
             ObjectInputStream ois = new ObjectInputStream(fis);

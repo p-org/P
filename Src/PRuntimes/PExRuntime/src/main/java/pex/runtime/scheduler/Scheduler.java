@@ -3,7 +3,7 @@ package pex.runtime.scheduler;
 import lombok.Getter;
 import lombok.Setter;
 import pex.runtime.PExGlobal;
-import pex.runtime.logger.PExLogger;
+import pex.runtime.logger.SchedulerLogger;
 import pex.runtime.machine.PMachine;
 import pex.runtime.machine.PMachineId;
 import pex.runtime.machine.PMonitor;
@@ -27,6 +27,10 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     @Getter
     protected final Schedule schedule;
+    @Getter
+    protected final int schedulerId;
+    @Getter
+    protected final SchedulerLogger logger;
     /**
      * Step number
      */
@@ -48,12 +52,10 @@ public abstract class Scheduler implements SchedulerInterface {
      * Whether done with current iteration
      */
     protected transient boolean isDoneStepping = false;
-
     /**
      * Whether schedule terminated
      */
     protected transient boolean scheduleTerminated = false;
-
     @Getter
     @Setter
     protected transient int stepNumLogs = 0;
@@ -65,15 +67,17 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * Constructor
      */
-    protected Scheduler(Schedule sch) {
+    protected Scheduler(int schedulerId, Schedule sch) {
+        this.schedulerId = schedulerId;
         this.schedule = sch;
+        this.logger = new SchedulerLogger(schedulerId);
     }
 
     /**
      * Constructor
      */
-    protected Scheduler() {
-        this(new Schedule());
+    protected Scheduler(int schedulerId) {
+        this(schedulerId, new Schedule());
     }
 
     /**
@@ -252,7 +256,7 @@ public abstract class Scheduler implements SchedulerInterface {
         stepNumLogs = 0;
 
         // log start step
-        PExLogger.logStartStep(stepNumber, sender, msg);
+        logger.logStartStep(stepNumber, sender, msg);
 
         // process message
         processDequeueEvent(sender, msg);
@@ -298,7 +302,7 @@ public abstract class Scheduler implements SchedulerInterface {
         if (listenersForEvent != null) {
             for (PMonitor m : listenersForEvent) {
                 // log monitor process event
-                PExLogger.logMonitorProcessEvent(m, message);
+                logger.logMonitorProcessEvent(m, message);
 
                 m.processEventToCompletion(message.setTarget(m));
             }
@@ -322,10 +326,10 @@ public abstract class Scheduler implements SchedulerInterface {
     public void processDequeueEvent(PMachine sender, PMessage message) {
         if (message.getEvent().isCreateMachineEvent()) {
             // log create machine
-            PExLogger.logCreateMachine(message.getTarget(), sender);
+            logger.logCreateMachine(message.getTarget(), sender);
         } else {
             // log monitor process event
-            PExLogger.logDequeueEvent(message.getTarget(), message);
+            logger.logDequeueEvent(message.getTarget(), message);
         }
 
         message.getTarget().processEventToCompletion(message);

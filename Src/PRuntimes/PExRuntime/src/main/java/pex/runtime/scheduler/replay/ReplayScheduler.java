@@ -1,7 +1,6 @@
 package pex.runtime.scheduler.replay;
 
 import pex.runtime.PExGlobal;
-import pex.runtime.logger.PExLogger;
 import pex.runtime.logger.ScheduleWriter;
 import pex.runtime.logger.TextWriter;
 import pex.runtime.machine.PMachine;
@@ -16,12 +15,12 @@ import java.util.concurrent.TimeoutException;
 
 public class ReplayScheduler extends Scheduler {
     public ReplayScheduler(Schedule sch) {
-        super(sch);
+        super(0, sch);
     }
 
     @Override
     public void run() throws TimeoutException, InterruptedException {
-        PExLogger.logStartReplay();
+        logger.logStartReplay();
 
         ScheduleWriter.Initialize();
         TextWriter.Initialize();
@@ -29,7 +28,7 @@ public class ReplayScheduler extends Scheduler {
         ScheduleWriter.logHeader();
 
         // log run test
-        PExLogger.logRunTest();
+        logger.logRunTest();
 
         stepState.resetToZero();
         start();
@@ -73,7 +72,7 @@ public class ReplayScheduler extends Scheduler {
             // done with this schedule
             scheduleTerminated = true;
             isDoneStepping = true;
-            PExLogger.logFinishedIteration(stepNumber);
+            logger.logFinishedIteration(stepNumber);
             return;
         }
 
@@ -100,7 +99,7 @@ public class ReplayScheduler extends Scheduler {
 
         PMachine result = PExGlobal.getGlobalMachine(pid);
         ScheduleWriter.logScheduleChoice(result);
-        PExLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
+        logger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 
         choiceNumber++;
         return result;
@@ -116,7 +115,7 @@ public class ReplayScheduler extends Scheduler {
         PValue<?> result = schedule.getCurrentDataChoice(choiceNumber);
         assert (input_choices.contains(result));
         ScheduleWriter.logDataChoice(result);
-        PExLogger.logRepeatDataChoice(result, stepNumber, choiceNumber);
+        logger.logRepeatDataChoice(result, stepNumber, choiceNumber);
 
         choiceNumber++;
         return result;

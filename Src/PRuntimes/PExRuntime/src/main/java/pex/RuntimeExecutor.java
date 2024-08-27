@@ -68,7 +68,7 @@ public class RuntimeExecutor {
 
         if (PExGlobal.getConfig().getSearchStrategyMode() != SearchStrategyMode.Replay) {
             StatWriter.log("max-depth-explored", String.format("%d", SearchStatistics.maxSteps));
-            scheduler.recordStats();
+            PExGlobal.recordStats();
             if (PExGlobal.getResult().equals("correct for any depth")) {
                 PExGlobal.setStatus(STATUS.VERIFIED);
             } else if (PExGlobal.getResult().startsWith("correct up to step")) {
@@ -115,7 +115,7 @@ public class RuntimeExecutor {
             scheduler.getSchedule().writeToFile(schFile);
 
             ReplayScheduler replayer = new ReplayScheduler(scheduler.getSchedule());
-            PExGlobal.setScheduler(replayer);
+            PExGlobal.setReplayScheduler(replayer);
             try {
                 replayer.run();
             } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
@@ -138,7 +138,7 @@ public class RuntimeExecutor {
         } finally {
             future.cancel(true);
             executor.shutdownNow();
-            scheduler.updateResult();
+            PExGlobal.updateResult();
             printStats();
             PExLogger.logEndOfRun(scheduler, Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
             SearchTask.Cleanup();
@@ -149,8 +149,8 @@ public class RuntimeExecutor {
         SearchTask.Initialize();
         ScratchLogger.Initialize();
 
-        scheduler = new ExplicitSearchScheduler();
-        PExGlobal.setScheduler(scheduler);
+        scheduler = new ExplicitSearchScheduler(1);
+        PExGlobal.addSearchScheduler(scheduler);
 
         preprocess();
         process(false);
@@ -160,7 +160,7 @@ public class RuntimeExecutor {
         PExLogger.logInfo(String.format("... Reading buggy trace from %s", fileName));
 
         ReplayScheduler replayer = new ReplayScheduler(Schedule.readFromFile(fileName));
-        PExGlobal.setScheduler(replayer);
+        PExGlobal.setReplayScheduler(replayer);
         try {
             replayer.run();
         } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {

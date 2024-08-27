@@ -1,7 +1,7 @@
 package pex.runtime.scheduler.explicit.choiceselector;
 
 import lombok.Getter;
-import pex.runtime.logger.PExLogger;
+import pex.runtime.PExGlobal;
 import pex.utils.random.RandomNumberGenerator;
 
 import java.io.Serializable;
@@ -81,10 +81,10 @@ public class ChoiceQL<S> implements Serializable {
 
 
     public void printQTable() {
-        PExLogger.logVerbose("--------------------");
-        PExLogger.logVerbose("Q Table");
-        PExLogger.logVerbose("--------------------");
-        PExLogger.logVerbose(String.format("  #QStates = %d", qValues.size()));
+        PExGlobal.getScheduler().getLogger().logVerbose("--------------------");
+        PExGlobal.getScheduler().getLogger().logVerbose("Q Table");
+        PExGlobal.getScheduler().getLogger().logVerbose("--------------------");
+        PExGlobal.getScheduler().getLogger().logVerbose(String.format("  #QStates = %d", qValues.size()));
         for (S state : qValues.getStates()) {
             ChoiceQTable.ChoiceQStateEntry stateEntry = qValues.get(state);
             String stateStr = String.valueOf(state);
@@ -101,7 +101,7 @@ public class ChoiceQL<S> implements Serializable {
                 Object bestAction = classEntry.getBestAction();
                 if (bestAction != null) {
                     double maxQ = classEntry.get(bestAction);
-                    PExLogger.logVerbose(
+                    PExGlobal.getScheduler().getLogger().logVerbose(
                             String.format(
                                     "  %s [%s] -> %s -> %.2f\t%s",
                                     stateStr, cls.getSimpleName(), bestAction, maxQ, classEntry));

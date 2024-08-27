@@ -1,15 +1,15 @@
 package pex.utils.exceptions;
 
-import pex.runtime.logger.PExLogger;
+import pex.runtime.PExGlobal;
 
 public class BugFoundException extends RuntimeException {
     public BugFoundException(String message) {
         super(message);
-        PExLogger.logBugFound(message);
+        PExGlobal.getScheduler().getLogger().logBugFound(message);
     }
 
     public BugFoundException(String message, Throwable cause) {
         super(message, cause);
-        PExLogger.logBugFound(message);
+        PExGlobal.getScheduler().getLogger().logBugFound(message);
     }
 }

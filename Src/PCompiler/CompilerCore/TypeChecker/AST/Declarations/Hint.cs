@@ -11,7 +11,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     public class Hint : IPDecl, IHasScope
     {
-        private bool quantifedSame;
         public Hint(string name, bool exact, ParserRuleContext sourceNode)
         {
             Debug.Assert(sourceNode is PParser.HintDeclContext);
@@ -32,8 +31,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             Arity = 1;
             NumGuardPredicates = 0;
             NumFilterPredicates = 0;
-
-            quantifedSame = Quantified.Select(x => x.EventName).ToHashSet().Count == 1;
         }
 
         public string GetQuantifierHeader()
@@ -94,7 +91,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool NextQuantifier()
         {
-            if (quantifedSame) return false;
+            if (QuantifiedSame) return false;
             ExistentialQuantifiers += 1;
             if (ExistentialQuantifiers > 1)
             {
@@ -145,7 +142,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool HasNext(ICompilerConfiguration job, int maxArity)
         {
-            if (quantifedSame)
+            if (QuantifiedSame)
             {
                 // for now: do not do forall-exists on a same type of events
                 return Arity <= maxArity && NumFilterPredicates <= job.MaxFilters && NumGuardPredicates <= job.MaxGuards;
@@ -182,6 +179,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public int ExistentialQuantifiers { get; set; }
         public int Arity { get; set; }
         public int? TermDepth { get; set; }
+        public bool QuantifiedSame => Quantified.Select(x => x.EventName).ToHashSet().Count == 1;
         public PEvent ConfigEvent { get; set; }
         public List<IPExpr> GuardPredicates;
         public List<IPExpr> FilterPredicates;

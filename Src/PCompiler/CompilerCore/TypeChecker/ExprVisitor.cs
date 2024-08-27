@@ -329,12 +329,14 @@ namespace Plang.Compiler.TypeChecker
                     throw handler.IncomparableTypes(context, lhs.Type, rhs.Type);
                 case "in":
                     var rhsType = rhs.Type.Canonicalize();
+                    var contentType = lhs.Type;
                     if (rhsType is MapType rhsMap)
                     {
                         if (!rhsMap.KeyType.IsAssignableFrom(lhs.Type))
                         {
                             throw handler.TypeMismatch(context.lhs, lhs.Type, rhsMap.KeyType);
                         }
+                        contentType = rhsMap.KeyType;
                     }
                     else if (rhsType is SequenceType rhsSeq)
                     {
@@ -342,6 +344,7 @@ namespace Plang.Compiler.TypeChecker
                         {
                             throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSeq.ElementType);
                         }
+                        contentType = rhsSeq.ElementType;
                     }
                     else if (rhsType is SetType rhsSet)
                     {
@@ -349,11 +352,13 @@ namespace Plang.Compiler.TypeChecker
                         {
                             throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSet.ElementType);
                         }
+                        contentType = rhsSet.ElementType;
                     }
                     else
                     {
                         throw handler.TypeMismatch(rhs, TypeKind.Map, TypeKind.Sequence);
                     }
+                    table.AddAllowedBinOp(BinOpType.Eq, lhs.Type, contentType, PrimitiveType.Bool);
                     return new ContainsExpr(context, lhs, rhs);
 
                 case "==":

@@ -127,15 +127,6 @@ internal class PExCodeGenerator : ICodeGenerator
         context.WriteLine(source.Stream, "public void setTestDriver(PTestDriver input) { testDriver = input; }");
         context.WriteLine(source.Stream);
 
-        context.WriteLine(source.Stream, "@Generated");
-        context.WriteLine(source.Stream, "public PMachine getStart() { return testDriver.getStart(); }");
-        context.WriteLine(source.Stream, "@Generated");
-        context.WriteLine(source.Stream, "public List<PMonitor> getMonitors() { return testDriver.getMonitors(); }");
-        context.WriteLine(source.Stream, "@Generated");
-        context.WriteLine(source.Stream,
-            "public Map<PEvent, List<PMonitor>> getListeners() { return testDriver.getListeners(); }");
-        context.WriteLine(source.Stream);
-
         WriteSourceEpilogue(context, source.Stream);
 
         return source;
@@ -155,7 +146,7 @@ internal class PExCodeGenerator : ICodeGenerator
         context.WriteLine(output, "@Generated");
         context.WriteLine(output, "public void configure() {");
 
-        context.WriteLine(output, $"    mainMachine = new {startMachine}(0);");
+        context.WriteLine(output, $"    mainMachine = {startMachine}.class;");
 
         context.WriteLine(output);
         context.WriteLine(output, "    interfaceMap.clear();");
@@ -175,13 +166,13 @@ internal class PExCodeGenerator : ICodeGenerator
                     {
                         context.WriteLine(output);
                         var declName = context.GetNameForDecl(machine);
-                        context.WriteLine(output, $"    PMonitor instance_{declName} = new {declName}(0);");
-                        context.WriteLine(output, $"    monitorList.add(instance_{declName});");
+                        context.WriteLine(output, $"    Class<? extends PMachine> cls_{declName} = {declName}.class;");
+                        context.WriteLine(output, $"    monitorList.add(cls_{declName});");
                         foreach (var pEvent in machine.Observes.Events)
                         {
                             context.WriteLine(output, $"    if(!observerMap.containsKey({pEvent.Name}))");
                             context.WriteLine(output, $"        observerMap.put({pEvent.Name}, new ArrayList<>());");
-                            context.WriteLine(output, $"    observerMap.get({pEvent.Name}).add(instance_{declName});");
+                            context.WriteLine(output, $"    observerMap.get({pEvent.Name}).add(cls_{declName});");
                         }
                     }
 

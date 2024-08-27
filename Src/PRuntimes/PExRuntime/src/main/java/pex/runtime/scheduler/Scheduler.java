@@ -3,6 +3,7 @@ package pex.runtime.scheduler;
 import lombok.Getter;
 import lombok.Setter;
 import pex.runtime.PExGlobal;
+import pex.runtime.PModel;
 import pex.runtime.logger.SchedulerLogger;
 import pex.runtime.machine.PMachine;
 import pex.runtime.machine.PMachineId;
@@ -220,26 +221,20 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     protected void start() {
         // start monitors first
-        for (PMonitor monitor : PExGlobal.getModel().getMonitors()) {
-            startMachine(monitor);
+        for (Class<? extends PMachine> monitorType : PExGlobal.getModel().getTestDriver().getMonitors()) {
+            startMachine(monitorType);
         }
 
         // start main machine
-        startMachine(PExGlobal.getModel().getStart());
+        startMachine(PExGlobal.getModel().getTestDriver().getStart());
     }
 
     /**
      * Start a machine.
      * Runs the constructor of this machine.
      */
-    public void startMachine(PMachine machine) {
-        if (!machineSet.contains(machine)) {
-            // add machine to global context
-            addMachine(machine, 0);
-        }
-
-        // add machine to schedule
-        stepState.makeMachine(machine);
+    public void startMachine(Class<? extends PMachine> machineType) {
+        PMachine machine = allocateMachine(machineType);
 
         // run create machine event
         processCreateEvent(new PMessage(PEvent.createMachine, machine, null));
@@ -341,9 +336,11 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param message Message
      */
     public void runMonitors(PMessage message) {
-        List<PMonitor> listenersForEvent = PExGlobal.getModel().getListeners().get(message.getEvent());
+        List<Class<? extends PMachine>> listenersForEvent = PExGlobal.getModel().getTestDriver().getListeners().get(message.getEvent());
         if (listenersForEvent != null) {
-            for (PMonitor m : listenersForEvent) {
+            for (Class<? extends PMachine> machineType : listenersForEvent) {
+                PMonitor m = (PMonitor) getMachine(new PMachineId(machineType, 0));
+
                 // log monitor process event
                 logger.logMonitorProcessEvent(m, message);
 
@@ -408,7 +405,9 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     public void checkLiveness(boolean terminated) {
         if (terminated) {
-            for (PMachine monitor : PExGlobal.getModel().getMonitors()) {
+            for (Class<? extends PMachine> machineType : PExGlobal.getModel().getTestDriver().getMonitors()) {
+                PMonitor monitor = (PMonitor) getMachine(new PMachineId(machineType, 0));
+
                 if (monitor.getCurrentState().isHotState()) {
                     Assert.liveness(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
                 }

@@ -14,9 +14,9 @@ import java.util.Map;
 public abstract class PTestDriver implements Serializable {
     // TODO: pex parallel - make fields thread safe
     public final Map<Class<? extends PMachine>, Class<? extends PMachine>> interfaceMap;
-    public final List<PMonitor> monitorList;
-    public final Map<PEvent, List<PMonitor>> observerMap;
-    public PMachine mainMachine;
+    public final List<Class<? extends PMachine>> monitorList;
+    public final Map<PEvent, List<Class<? extends PMachine>>> observerMap;
+    public Class<? extends PMachine> mainMachine;
 
     /**
      * Test driver constructor
@@ -34,7 +34,7 @@ public abstract class PTestDriver implements Serializable {
      *
      * @return the start/main machine of this test driver.
      */
-    public PMachine getStart() {
+    public Class<? extends PMachine> getStart() {
         return mainMachine;
     }
 
@@ -43,7 +43,7 @@ public abstract class PTestDriver implements Serializable {
      *
      * @return List of monitors
      */
-    public List<PMonitor> getMonitors() {
+    public List<Class<? extends PMachine>> getMonitors() {
         return monitorList;
     }
 
@@ -52,7 +52,7 @@ public abstract class PTestDriver implements Serializable {
      *
      * @return Map from event to list of monitors listening/observing that event
      */
-    public Map<PEvent, List<PMonitor>> getListeners() {
+    public Map<PEvent, List<Class<? extends PMachine>>> getListeners() {
         return observerMap;
     }
 

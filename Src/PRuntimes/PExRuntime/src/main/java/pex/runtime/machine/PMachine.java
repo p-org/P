@@ -351,7 +351,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * Create a new machine instance
      *
      * @param machineType Machine type
-     * @param constructor Machine constructor
      * @return New machine as a PMachineValue
      */
     public PMachineValue create(

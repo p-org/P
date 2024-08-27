@@ -109,13 +109,13 @@ namespace Plang.Compiler.Backend.PInfer
                     {
                         if (IsAssignableFrom(types.Item1, t) && IsAssignableFrom(types.Item2, t))
                         {
-                            PredicateStore.AddBinaryBuiltinPredicate(BinOpType.Lt, t, t);
+                            PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, t, t);
                         }
                     }
                 }
                 else
                 {
-                    PredicateStore.AddBinaryBuiltinPredicate(BinOpType.Lt, t, t);
+                    PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, t, t);
                 }
             }
             if (t is NamedTupleType tupleType)
@@ -185,6 +185,7 @@ namespace Plang.Compiler.Backend.PInfer
             Console.WriteLine($"Generating predicates ...");
             PopulatePredicate();
             // MkEqComparison();
+
             CompiledFile terms = new($"{job.ProjectName}.terms.json");
             CompiledFile predicates = new($"{job.ProjectName}.predicates.json");
             JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, VisitedSet, FreeEvents);
@@ -211,6 +212,152 @@ namespace Plang.Compiler.Backend.PInfer
                                 .Concat(new TermEnumeratorGenerator(job).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TemplateInstantiatorGenerator(job, quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))
                                 .Concat([terms, predicates]);
+        }
+
+        private HashSet<PEventVariable> AddCustomTerm(ICompilerConfiguration job, IPExpr expr)
+        {
+            var cano = CC.Canonicalize(expr);
+            if (cano != null)
+            {
+                if (!TermOrder.ContainsKey(cano))
+                {
+                    job.Output.WriteError($"{SimplifiedRepr(DebugCodegen, expr)} in CC but not added as a term");
+                    Environment.Exit(1);
+                }
+                return FreeEvents[cano];
+            }
+            // term not present
+            HashSet<PEventVariable> gather(IPExpr e) => AddCustomTerm(job, e);
+            switch (expr)
+            {
+                case IntLiteralExpr:
+                case BoolLiteralExpr:
+                case EnumElemRefExpr:
+                case FloatLiteralExpr:
+                    return [];
+                case BinOpExpr e:
+                {
+                    var fvl = gather(e.Lhs);
+                    var fvr = gather(e.Rhs);
+                    var n = fvl.Union(fvr).ToHashSet();
+                    // depth does not matter now
+                    AddTerm(-1, e, n);
+                    return n;
+                }
+                case UnaryOpExpr e:
+                {
+                    AddTerm(-1, e, gather(e.SubExpr));
+                    break;
+                }
+                case FunCallExpr funCallExpr:
+                {
+                    HashSet<PEventVariable> n = [];
+                    foreach (var a in funCallExpr.Arguments)
+                    {
+                        n.UnionWith(gather(a));
+                    }
+                    AddTerm(-1, expr, n);
+                    return n;
+                }
+                case NamedTupleAccessExpr namedTupleAccessExpr:
+                {
+                    var n = gather(namedTupleAccessExpr.SubExpr);
+                    AddTerm(-1, expr, n);
+                    return n;
+                }
+                case SizeofExpr sizeofExpr:
+                {
+                    var n = gather(sizeofExpr.Expr);
+                    AddTerm(-1, expr, n);
+                    return n;
+                }
+                case TupleAccessExpr tupleAccessExpr:
+                {
+                    var n = gather(tupleAccessExpr.SubExpr);
+                    AddTerm(-1, expr, n);
+                    return n;
+                }
+                default: break;
+            }
+            job.Output.WriteError($"Unsupported custom term: {SimplifiedRepr(DebugCodegen, expr)}");
+            Environment.Exit(1);
+            return null;
+        }
+
+        private void AddCustomPredicate(ICompilerConfiguration job, Scope globalScope, IPExpr expr)
+        {
+            if (CC.Canonicalize(expr) != null) return;
+            switch (expr)
+            {
+                case BinOpExpr e:
+                {
+                    var freeEvents = AddCustomTerm(job, e.Lhs).Union(AddCustomTerm(job, e.Rhs)).ToHashSet();
+                    var (lhs, rhs) = (CC.Canonicalize(e.Lhs), CC.Canonicalize(e.Rhs));
+                    if (lhs == null || rhs == null)
+                    {
+                        throw new Exception($"Terms are not properly added: {SimplifiedRepr(DebugCodegen, e)}");
+                    }
+                    if (!PredicateStore.TryGetPredicate([lhs.Type, rhs.Type], PredicateStore.OpToName[e.Operation], out var pred))
+                    {
+                        pred = PredicateStore.AddBinaryBuiltinPredicate(globalScope, e.Operation, lhs.Type, rhs.Type, true);
+                    }
+                    AddPredicateCall(pred, [lhs, rhs]);
+                    break;
+                }
+                case UnaryOpExpr e:
+                {
+                    var fv = AddCustomTerm(job, e.SubExpr);
+                    var subexpr = CC.Canonicalize(e.SubExpr) ?? throw new Exception($"Terms are not properly added: {SimplifiedRepr(DebugCodegen, e)}");
+                    switch (e.Operation)
+                    {
+                        case UnaryOpType.Not:
+                        {
+                            IPExpr pred = new UnaryOpExpr(e.SourceLocation, e.Operation, subexpr);
+                            Predicates.Add(pred);
+                            PredicateOrder[pred] = Predicates.Count;
+                            PredicateBoundedTerm[pred] = [TermOrder[subexpr]];
+                            FreeEvents[pred] = fv;
+                            CC.AddExpr(pred, true);
+                            break;
+                        }
+                        default: break;
+                    }
+                    break;
+                }
+                case FunCallExpr funCallExpr:
+                {
+                    Function callee = funCallExpr.Function;
+                    if (!PredicateStore.TryGetPredicate(callee.Signature.ParameterTypes.ToList(), callee.Name, out var pred))
+                    {
+                        pred = new DefinedPredicate(funCallExpr.Function);
+                        PredicateStore.AddPredicate(pred, []);
+                    }
+                    foreach (var arg in funCallExpr.Arguments)
+                    {
+                        AddCustomTerm(job, arg);
+                    }
+                    List<IPExpr> arguments = funCallExpr.Arguments.Select(CC.Canonicalize).ToList();
+                    if (arguments.Any(x => x == null))
+                    {
+                        throw new Exception($"Terms are not properly added: {SimplifiedRepr(DebugCodegen, funCallExpr)}");
+                    }
+                    AddPredicateCall(pred, arguments);
+                    break;
+                }
+                default: {
+                    job.Output.WriteError($"Unsupported predicate hint: {SimplifiedRepr(DebugCodegen, expr)}");
+                    Environment.Exit(1);
+                    break;
+                }
+            }
+        }
+
+        private void AddHintPredicates(ICompilerConfiguration job, Scope globalScope, Hint h)
+        {
+            foreach (IPExpr pred in h.GuardPredicates.Concat(h.FilterPredicates))
+            {
+                AddCustomPredicate(job, globalScope, pred);
+            }
         }
 
         private void PopulateEnumCmpPredicates(Scope globalScope)
@@ -388,36 +535,41 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 foreach (var parameters in CartesianProduct(sigList, varMap))
                 {
-                    var events = GetUnboundedEventsMultiple(parameters.ToArray());
-                    var param = parameters.ToList();
-                    if ((pred.Function.Property.HasFlag(FunctionProperty.Reflexive) || pred.Function.Property.HasFlag(FunctionProperty.AntiReflexive))
-                            && param[0] == param[1])
-                    {
-                        // skip reflexive/irreflexive: tautology and contradiction
-                        continue;
-                    }
-                    if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
-                        if (CC.Canonicalize(expr) != null) continue;
-                        FreeEvents[expr] = events;
-                        PredicateOrder[expr] = Predicates.Count;
-                        Predicates.Add(expr);
-                        CC.AddExpr(expr, true);
-                        PredicateBoundedTerm[expr] = parameters.Select(x => TermOrder[x]).ToHashSet();
-                        // Add equivalences based on annotations
-                        foreach (IPExpr equiv in FunctionStore.MakeEquivalences(pred.Function,
-                                                (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var eq) ? eq : null, [.. parameters]))
-                        {
-                            if (equiv == null) continue;
-                            CC.AddExpr(equiv, false);
-                            CC.MarkEquivalence(expr, equiv);
-                        }
-                        foreach (IPExpr con in FunctionStore.MakeContradictions(pred.Function,
-                                                (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var con) ? con : null, [.. parameters]))
-                        {
-                            if (con == null) continue;
-                            AddContradictingPredicates(expr, con);
-                        }
-                    }
+                    AddPredicateCall(pred, parameters);
+                }
+            }
+        }
+
+        public void AddPredicateCall(IPredicate pred, IEnumerable<IPExpr> parameters)
+        {
+            var events = GetUnboundedEventsMultiple(parameters.ToArray());
+            var param = parameters.ToList();
+            if ((pred.Function.Property.HasFlag(FunctionProperty.Reflexive) || pred.Function.Property.HasFlag(FunctionProperty.AntiReflexive))
+                    && param[0] == param[1])
+            {
+                // skip reflexive/irreflexive: tautology and contradiction
+                return;
+            }
+            if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
+                if (CC.Canonicalize(expr) != null) return;
+                FreeEvents[expr] = events;
+                PredicateOrder[expr] = Predicates.Count;
+                Predicates.Add(expr);
+                CC.AddExpr(expr, true);
+                PredicateBoundedTerm[expr] = parameters.Select(x => TermOrder[x]).ToHashSet();
+                // Add equivalences based on annotations
+                foreach (IPExpr equiv in FunctionStore.MakeEquivalences(pred.Function,
+                                        (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var eq) ? eq : null, [.. parameters]))
+                {
+                    if (equiv == null) continue;
+                    CC.AddExpr(equiv, false);
+                    CC.MarkEquivalence(expr, equiv);
+                }
+                foreach (IPExpr con in FunctionStore.MakeContradictions(pred.Function,
+                                        (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var con) ? con : null, [.. parameters]))
+                {
+                    if (con == null) continue;
+                    AddContradictingPredicates(expr, con);
                 }
             }
         }
@@ -544,43 +696,6 @@ namespace Plang.Compiler.Backend.PInfer
             Contradictions[e2].Add(e1);
         }
 
-        private void MkEqComparison()
-        {
-            var allTerms = VisitedSet.ToList();
-            for (var i = 0; i < allTerms.Count; ++i)
-            {
-                for (var j = i + 1; j < allTerms.Count; ++j)
-                {
-                    // Console.WriteLine($"Comparing {JavaCodegen.GenerateCodeExpr(allTerms[i])}: {ShowType(allTerms[i].Type)} and {JavaCodegen.GenerateCodeExpr(allTerms[j])}: {ShowType(allTerms[j].Type)}: {IsAssignableFrom(allTerms[i].Type, allTerms[j].Type)}");
-                    if (IsAssignableFrom(allTerms[i].Type, allTerms[j].Type)
-                            && !IsEventVariableAccess(allTerms[i])
-                            && !IsEventVariableAccess(allTerms[j]))
-                    {
-                        var lhs = allTerms[i];
-                        var rhs = allTerms[j];
-                        // var expr = new BinOpExpr(null, BinOpType.Eq, lhs, rhs);
-                        if (PredicateCallExpr.MkEqualityComparison(lhs, rhs, out var expr))
-                        {
-                            if (PredicateCallExpr.MkPredicateCall("<", [lhs, rhs], out var c))
-                            {
-                                AddContradictingPredicates(expr, c);
-                            }
-                            PredicateOrder[expr] = Predicates.Count;
-                            Predicates.Add(expr);
-                            CC.AddExpr(expr, true);
-                            if (PredicateCallExpr.MkEqualityComparison(rhs, lhs, out var equiv))
-                            {
-                                CC.AddExpr(equiv);
-                                CC.MarkEquivalence(expr, equiv);
-                            }
-                            PredicateBoundedTerm[expr] = [TermOrder[lhs], TermOrder[rhs]];
-                            FreeEvents[expr] = GetUnboundedEventsMultiple(lhs, rhs);
-                        }
-                    }
-                }
-            }
-        }
-
         private IEnumerable<(IPExpr, HashSet<PEventVariable>)> TryMkTupleAccess(IPExpr tuple)
         {
             if (ExplicateTypeDef(tuple.Type) is TupleType tupleType)
@@ -637,7 +752,9 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private static void AggregateDefinedPredicates(Hint h, Scope globalScope) {
+
+
+        private void AggregateDefinedPredicates(Hint h, Scope globalScope) {
             if (h.CustomPredicates.Count > 0)
             {
                 foreach (var f in h.CustomPredicates)
@@ -729,6 +846,10 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (!FreeEvents.TryGetValue(expr, out HashSet<PEventVariable> unboundedEvents))
             {
+                if (expr is IntLiteralExpr || expr is FloatLiteralExpr || expr is EnumElemRefExpr || expr is BoolLiteralExpr)
+                {
+                    return [];
+                }
                 throw new Exception($"Expression {expr} has not been proceesed");
             }
             return unboundedEvents;

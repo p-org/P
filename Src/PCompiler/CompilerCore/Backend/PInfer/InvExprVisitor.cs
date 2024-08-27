@@ -266,6 +266,16 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return expr;
             }
+            // otherwise might be a size(...)
+            if (ctx.iden().GetText() == "size")
+            {
+                var args = TypeCheckingUtils.VisitRvalueList(ctx.rvalueList(), this).ToArray();
+                if (args.Count() != 1)
+                {
+                    throw new DropException($"size expr receives {args.Count()} arguments: {ctx.GetText()}");
+                }
+                return new SizeofExpr(ctx, args[0]);
+            }
             throw new DropException($"Unknown fun call: {ctx.GetText()}");
         }
 

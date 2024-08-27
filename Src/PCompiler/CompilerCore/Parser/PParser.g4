@@ -187,7 +187,6 @@ expr : primitive                                      # PrimitiveExpr
      | fun=KEYS LPAREN expr RPAREN                    # KeywordExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
      | fun=SIZEOF LPAREN expr RPAREN                  # KeywordExpr
-     | fun=SIZE LPAREN expr RPAREN                    # KeywordExpr
      | fun=DEFAULT LPAREN type RPAREN                 # KeywordExpr
      | fun=INDEX LPAREN iden RPAREN                   # KeywordExpr
      | NEW interfaceName=iden

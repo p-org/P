@@ -389,6 +389,15 @@ namespace Plang.Compiler.Backend.PInfer
             return new BinOpExpr(null, BinOpType.Eq, args[0], args[1]);
         }, [PrimitiveType.Any, PrimitiveType.Any]);
         private static readonly Dictionary<IPredicate, HashSet<IPredicate>> ContradictionsMap = new Dictionary<IPredicate, HashSet<IPredicate>>(new ASTComparer());
+        public static readonly Dictionary<BinOpType, string> OpToName = new()
+        {
+                {BinOpType.Lt, "<"},
+                {BinOpType.Le, "<="},
+                {BinOpType.Gt, ">"},
+                {BinOpType.Ge, ">="},
+                {BinOpType.Eq, "=="},
+                {BinOpType.Neq, "!="},
+        };
 
         private static void MarkContradition(IPredicate p1, IPredicate p2)
         {
@@ -468,17 +477,9 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        public static void AddBinaryBuiltinPredicate(BinOpType op, PLanguageType lhs, PLanguageType rhs)
+        public static IPredicate AddBinaryBuiltinPredicate(Scope globalScope, BinOpType op, PLanguageType lhs, PLanguageType rhs, bool updateScope = false)
         {
-            var opNameMap = new Dictionary<BinOpType, string> {
-                {BinOpType.Lt, "<"},
-                {BinOpType.Le, "<="},
-                {BinOpType.Gt, ">"},
-                {BinOpType.Ge, ">="},
-                {BinOpType.Eq, "=="},
-                {BinOpType.Neq, "!="},
-            };
-            var pred = AddBuiltinPredicate(opNameMap[op],
+            var pred = AddBuiltinPredicate(OpToName[op],
                                         Notation.Infix,
                                         args => new BinOpExpr(null, op, args[0], args[1]), [], lhs, rhs);
             var funLhs = new VariableAccessExpr(null, pred.Function.Signature.Parameters[0]);
@@ -495,6 +496,11 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 pred.Function.Property |= prop;
             }
+            if (updateScope)
+            {
+                globalScope.AddAllowedBinOp(op, lhs, rhs, PrimitiveType.Bool);
+            }
+            return pred;
         }
 
         public static void Initialize(Scope globalScope) {
@@ -502,10 +508,10 @@ namespace Plang.Compiler.Backend.PInfer
             
             foreach (var numType in numericTypes)
             {
-                AddBinaryBuiltinPredicate(BinOpType.Lt, numType, numType);
+                AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, numType, numType);
             }
 
-            AddBinaryBuiltinPredicate(BinOpType.Eq, PrimitiveType.Machine, PrimitiveType.Machine);
+            AddBinaryBuiltinPredicate(globalScope, BinOpType.Eq, PrimitiveType.Machine, PrimitiveType.Machine);
 
             foreach (var (op, types) in globalScope.AllowedBinOps)
             {
@@ -513,7 +519,7 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     foreach (var sig in types)
                     {
-                        AddBinaryBuiltinPredicate(op, sig.Item1, sig.Item2);
+                        AddBinaryBuiltinPredicate(globalScope, op, sig.Item1, sig.Item2);
                     }
                 }
             }
@@ -707,6 +713,9 @@ namespace Plang.Compiler.Backend.PInfer
                 case VariableAccessExpr:
                 case EnumElemRefExpr:
                 case NamedTupleAccessExpr:
+                case FloatLiteralExpr:
+                case IntLiteralExpr:
+                case BoolLiteralExpr:
                 case TupleAccessExpr:
                     Node ground = new(e, index.Count) { repr = e };
                     index[e] = ground;
@@ -740,9 +749,12 @@ namespace Plang.Compiler.Backend.PInfer
                     }
                     index[funCallExpr] = funCallNode;
                     return funCallNode;
-                case IntLiteralExpr intLiteral:
-                    Node intLitNode = new(intLiteral.Value, index.Count) { repr = intLiteral };
-                    return intLitNode;
+                case SizeofExpr sizeofExpr:
+                    List<Node> sizeOfSubexpr = [PutExpr(sizeofExpr.Expr)];
+                    Node sizeofExprNode = new("size", index.Count) { children = sizeOfSubexpr, repr = e };
+                    index[sizeofExpr] = sizeofExprNode;
+                    sizeOfSubexpr[0].cc_parent.Add(sizeofExprNode);
+                    return sizeofExprNode;
             }
                 throw new Exception($"CC not supported for {e}");
         }
@@ -838,6 +850,14 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 Node par = node.Find();
                 return par.repr;
+            }
+            else
+            {
+                // constants may not present
+                if (e is IntLiteralExpr || e is BoolLiteralExpr || e is EnumElemRefExpr || e is FloatLiteralExpr)
+                {
+                    return e;
+                }
             }
             return null;
         }

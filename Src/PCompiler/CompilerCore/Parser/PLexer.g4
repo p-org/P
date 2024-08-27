@@ -53,7 +53,6 @@ RECEIVE   : 'receive' ;
 RETURN    : 'return' ;
 SEND      : 'send' ;
 SIZEOF    : 'sizeof' ;
-SIZE      : 'size';
 SPEC      : 'spec' ;
 START     : 'start' ;
 STATE     : 'state' ;

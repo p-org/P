@@ -144,6 +144,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             if (Quantified.Select(x => x.EventName).ToHashSet().Count == 1 && ExistentialQuantifiers > 0)
             {
                 // for now: do not do forall-exists on a same type of events
+                job.Output.WriteWarning($"Skipping {Name}: forall-exists on same types of events");
                 return false;
             }
             return Arity <= maxArity && ExistentialQuantifiers <= 1 && NumFilterPredicates <= job.MaxFilters && NumGuardPredicates <= job.MaxGuards;

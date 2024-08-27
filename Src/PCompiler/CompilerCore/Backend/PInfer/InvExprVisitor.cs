@@ -175,7 +175,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 foreach (var types in allowedOps)
                 {
-                    if (types.Item1 == lhs.Type && types.Item2 == rhs.Type)
+                    if (PInferPredicateGenerator.SameType(types.Item1, lhs.Type) && PInferPredicateGenerator.SameType(types.Item2, rhs.Type))
                     {
                         return expr;
                     }

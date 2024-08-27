@@ -54,14 +54,6 @@ namespace Plang.Compiler.Backend.PInfer
                 return PredicateOrder[expr];
             }
             JavaCodegen codegen = new(job, "", Predicates, VisitedSet, FreeEvents);
-            // Console.WriteLine()
-            // foreach (var k in PredicateOrder.Keys)
-            // {
-            //     Console.WriteLine(codegen.GenerateCodeExpr(k, true));
-            //     var o = PredicateOrder[k];
-            //     Console.WriteLine(o);
-            // }
-            // var x = PredicateOrder[expr];
             throw new Exception($"{codegen.GenerateCodeExpr(expr, true)} not in enumerated predicates!");
         }
 
@@ -107,6 +99,38 @@ namespace Plang.Compiler.Backend.PInfer
             FunctionStore.Reset();
         }
 
+        private void DecideAndAddCompPreidcatesFor(Scope globalScope, PLanguageType t)
+        {
+            if (PrimitiveType.Int.IsAssignableFrom(t) || PrimitiveType.Float.IsAssignableFrom(t))
+            {
+                if (globalScope.AllowedBinOpsByKind.ContainsKey(BinOpKind.Comparison))
+                {
+                    foreach (var types in globalScope.AllowedBinOpsByKind[BinOpKind.Comparison])
+                    {
+                        if (IsAssignableFrom(types.Item1, t) && IsAssignableFrom(types.Item2, t))
+                        {
+                            PredicateStore.AddBinaryBuiltinPredicate(BinOpType.Lt, t, t);
+                        }
+                    }
+                }
+                else
+                {
+                    PredicateStore.AddBinaryBuiltinPredicate(BinOpType.Lt, t, t);
+                }
+            }
+            if (t is NamedTupleType tupleType)
+            {
+                foreach (var entry in tupleType.Fields)
+                {
+                    DecideAndAddCompPreidcatesFor(globalScope, entry.Type);
+                }
+            }
+            if (t is TypeDefType defType && !PredicateStore.HasDefinedPredicatesOver([t, t]))
+            {
+                DecideAndAddCompPreidcatesFor(globalScope, defType.TypeDefDecl.Type);
+            }
+        }
+
         public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
         {
             if (hint == null)
@@ -149,6 +173,7 @@ namespace Plang.Compiler.Backend.PInfer
                 HashSet<IPExpr> es = [];
                 es.Add(indexExpr);
                 AddTerm(0, indexExpr, [eventAtom]);
+                DecideAndAddCompPreidcatesFor(globalScope, eventAtom.EventDecl.PayloadType);
                 i += 1;
             }
             Console.WriteLine($"Generating terms with max depth {termDepth} ...");
@@ -620,17 +645,6 @@ namespace Plang.Compiler.Backend.PInfer
                     PredicateStore.AddPredicate(new DefinedPredicate(f), []);
                 }
             }
-            // use all bool return type functions as defined predicates
-            // if (!h.Exact)
-            // {
-            //     foreach (var f in globalScope.Functions)
-            //     {
-            //         if (f.Signature.ReturnType.Canonicalize().IsAssignableFrom(PrimitiveType.Bool))
-            //         {
-            //             PredicateStore.AddPredicate(new DefinedPredicate(f), []);
-            //         }
-            //     }
-            // }
         }
 
         private static void AggregateFunctions(Hint h) {
@@ -684,7 +698,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return (otherType is TypeDefType otherTypeDef) && (type is TypeDefType typedef)
                         && typedef.TypeDefDecl.Name == otherTypeDef.TypeDefDecl.Name
-                        && typedef.TypeDefDecl.Type.Equals(otherTypeDef.TypeDefDecl.Type);
+                        && IsAssignableFrom(typedef.TypeDefDecl.Type, otherTypeDef.TypeDefDecl.Type);
             }
             return type.IsAssignableFrom(otherType);
         }

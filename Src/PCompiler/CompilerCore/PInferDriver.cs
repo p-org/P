@@ -126,6 +126,10 @@ namespace Plang.Compiler
                         h.Next(Job, Codegen.MaxArity());
                     }
                 }
+                else
+                {
+                    Job.Output.WriteInfo($"Finishing {h.Name} ...");
+                }
             }
             ExploredHints.Add(hint);
         }
@@ -311,11 +315,11 @@ namespace Plang.Compiler
             stopwatch.Stop();
             if (job.PInferAction == PInferAction.RunHint || job.PInferAction == PInferAction.Auto)
             {
+                job.Output.WriteInfo($"... Writing pruned invariants to ./invariants.txt");
                 var elapsed = stopwatch.ElapsedMilliseconds / 1000.0;
                 job.Output.WriteInfo($"PInfer statistics");
                 job.Output.WriteInfo($"\t# invariants discovered: {numInvsMined}");
                 // job.Output.WriteInfo($"\t# invariants distilled: {numInvsDistilled}");
-                job.Output.WriteInfo($"... Writing pruned invariants to ./invariants.txt");
                 job.Output.WriteInfo($"\t#Invariants after pruning: {PInferInvoke.WriteRecordTo("invariants.txt")}");
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
             }

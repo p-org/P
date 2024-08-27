@@ -512,6 +512,26 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
+        public static bool HasPredicatesOver(List<PLanguageType> types)
+        {
+            return _Store.ContainsKey(types);
+        }
+
+        public static bool HasDefinedPredicatesOver(List<PLanguageType> types)
+        {
+            if (_Store.TryGetValue(types, out var predicates))
+            {
+                foreach (var (k, v) in predicates)
+                {
+                    if (v is DefinedPredicate)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         public static bool TryGetPredicate(List<PLanguageType> types, string predName, out IPredicate pred)
         {
             if (_Store.TryGetValue(types, out var predicates))
@@ -674,7 +694,6 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return value;
             }
-            // Console.WriteLine($"Put {e}");
             switch (e)
             {
                 case VariableAccessExpr:
@@ -702,7 +721,6 @@ namespace Plang.Compiler.Backend.PInfer
                 case FunCallExpr funCallExpr:
                     Function f = funCallExpr.Function;
                     List<Node> funCallArgsNode = funCallExpr.Arguments.Select(PutExpr).ToList();
-                    // Console.WriteLine("Called " + funCallExpr.Function.Name);
                     Node funCallNode = new(f, index.Count)
                     {
                         children = funCallArgsNode,

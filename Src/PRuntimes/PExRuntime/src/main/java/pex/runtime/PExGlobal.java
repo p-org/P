@@ -10,8 +10,10 @@ import pex.runtime.scheduler.explicit.choiceselector.ChoiceSelector;
 import pex.runtime.scheduler.explicit.choiceselector.ChoiceSelectorQL;
 import pex.runtime.scheduler.explicit.choiceselector.ChoiceSelectorRandom;
 import pex.runtime.scheduler.explicit.strategy.SearchStrategyMode;
+import pex.runtime.scheduler.explicit.strategy.SearchTask;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents global data structures represented with a singleton class
@@ -65,6 +67,31 @@ public class PExGlobal {
      */
     @Getter
     private static ChoiceSelector choiceSelector = null;
+    /**
+     * Map from state hash to iteration when first visited
+     */
+    @Getter
+    private static final Map<Object, Integer> stateCache = new ConcurrentHashMap<>();
+    /**
+     * Set of timelines
+     */
+    @Getter
+    private static final Set<Object> timelines = ConcurrentHashMap.newKeySet();
+    /**
+     * List of all search tasks
+     */
+    @Getter
+    private static final Map<Integer, SearchTask> allTasks = new ConcurrentHashMap<>();
+    /**
+     * Set of all search tasks that are pending
+     */
+    @Getter
+    private static final Set<SearchTask> pendingTasks = ConcurrentHashMap.newKeySet();
+    /**
+     * List of all search tasks that finished
+     */
+    @Getter
+    private static final Set<SearchTask> finishedTasks = ConcurrentHashMap.newKeySet();
 
     /**
      * Get a machine of a given type and index if exists, else return null.

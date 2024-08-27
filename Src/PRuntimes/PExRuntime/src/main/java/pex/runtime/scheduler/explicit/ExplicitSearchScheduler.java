@@ -33,15 +33,6 @@ import java.util.concurrent.TimeoutException;
  */
 public class ExplicitSearchScheduler extends Scheduler {
     /**
-     * Map from state hash to iteration when first visited
-     */
-    private final transient Map<Object, Integer> stateCache = new HashMap<>();
-    /**
-     * Set of timelines
-     */
-    @Getter
-    private final transient Set<Object> timelines = new HashSet<>();
-    /**
      * Search strategy orchestrator
      */
     @Getter
@@ -120,7 +111,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
 
-            if (searchStrategy.getPendingTasks().isEmpty() || PExGlobal.getStatus() == STATUS.SCHEDULEOUT) {
+            if (PExGlobal.getPendingTasks().isEmpty() || PExGlobal.getStatus() == STATUS.SCHEDULEOUT) {
                 // all tasks completed or schedule limit reached
                 break;
             }
@@ -204,10 +195,10 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         // update timeline
         Object timeline = stepState.getTimeline();
-        if (!timelines.contains(timeline)) {
+        if (!PExGlobal.getTimelines().contains(timeline)) {
             // add new timeline
             PExLogger.logNewTimeline(this);
-            timelines.add(timeline);
+            PExGlobal.getTimelines().add(timeline);
         }
 
         // get a scheduling choice as sender machine
@@ -248,11 +239,11 @@ public class ExplicitSearchScheduler extends Scheduler {
         Object stateKey = getCurrentStateKey();
 
         // check if state key is present in state cache
-        Integer visitedAtIteration = stateCache.get(stateKey);
+        Integer visitedAtIteration = PExGlobal.getStateCache().get(stateKey);
 
         if (visitedAtIteration == null) {
             // not present, add to state cache
-            stateCache.put(stateKey, SearchStatistics.iteration);
+            PExGlobal.getStateCache().put(stateKey, SearchStatistics.iteration);
             // increment distinct state count
             SearchStatistics.totalDistinctStates++;
             // log new state
@@ -465,7 +456,7 @@ public class ExplicitSearchScheduler extends Scheduler {
     private void endCurrTask() {
         SearchTask currTask = searchStrategy.getCurrTask();
         currTask.cleanup();
-        searchStrategy.getFinishedTasks().add(currTask.getId());
+        PExGlobal.getFinishedTasks().add(currTask);
     }
 
     private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) {
@@ -492,7 +483,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         newTask.writeToFile();
         parentTask.addChild(newTask);
-        searchStrategy.getPendingTasks().add(newTask.getId());
+        PExGlobal.getPendingTasks().add(newTask);
         searchStrategy.addNewTask(newTask);
     }
 
@@ -617,7 +608,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         // print basic statistics
         StatWriter.log("#-schedules", String.format("%d", SearchStatistics.iteration));
-        StatWriter.log("#-timelines", String.format("%d", timelines.size()));
+        StatWriter.log("#-timelines", String.format("%d", PExGlobal.getTimelines().size()));
         if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             StatWriter.log("#-states", String.format("%d", SearchStatistics.totalStates));
             StatWriter.log("#-distinct-states", String.format("%d", SearchStatistics.totalDistinctStates));
@@ -626,8 +617,8 @@ public class ExplicitSearchScheduler extends Scheduler {
         StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps / SearchStatistics.iteration));
         StatWriter.log("#-choices-unexplored", String.format("%d", getNumUnexploredChoices()));
         StatWriter.log("%-choices-unexplored-data", String.format("%.1f", getUnexploredDataChoicesPercent()));
-        StatWriter.log("#-tasks-finished", String.format("%d", searchStrategy.getFinishedTasks().size()));
-        StatWriter.log("#-tasks-pending", String.format("%d", searchStrategy.getPendingTasks().size()));
+        StatWriter.log("#-tasks-finished", String.format("%d", PExGlobal.getFinishedTasks().size()));
+        StatWriter.log("#-tasks-pending", String.format("%d", PExGlobal.getFinishedTasks().size()));
         StatWriter.log("ql-#-states", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumStates()));
         StatWriter.log("ql-#-actions", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumActions()));
     }
@@ -639,9 +630,9 @@ public class ExplicitSearchScheduler extends Scheduler {
         s.append(String.format("\n      Step:             %d", stepNumber));
         s.append(String.format("\n      Schedules:        %d", SearchStatistics.iteration));
         s.append(String.format("\n      Unexplored:       %d", getNumUnexploredChoices()));
-        s.append(String.format("\n      FinishedTasks:    %d", searchStrategy.getFinishedTasks().size()));
-        s.append(String.format("\n      PendingTasks:     %d", searchStrategy.getPendingTasks().size()));
-        s.append(String.format("\n      Timelines:        %d", timelines.size()));
+        s.append(String.format("\n      FinishedTasks:    %d", PExGlobal.getFinishedTasks().size()));
+        s.append(String.format("\n      PendingTasks:     %d", PExGlobal.getPendingTasks().size()));
+        s.append(String.format("\n      Timelines:        %d", PExGlobal.getTimelines().size()));
         if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
             s.append(String.format("\n      States:           %d", SearchStatistics.totalStates));
             s.append(String.format("\n      DistinctStates:   %d", SearchStatistics.totalDistinctStates));
@@ -699,7 +690,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 s.append(StringUtils.center(String.format("%d", stepNumber), 7));
 
                 s.append(StringUtils.center(String.format("%d", SearchStatistics.iteration), 12));
-                s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
+                s.append(StringUtils.center(String.format("%d", PExGlobal.getTimelines().size()), 12));
                 s.append(
                         StringUtils.center(
                                 String.format(

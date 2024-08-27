@@ -1,5 +1,7 @@
 package pex.runtime.scheduler.explicit.strategy;
 
+import pex.runtime.PExGlobal;
+
 public class SearchStrategyDfs extends SearchStrategy {
     public SearchStrategyDfs() {
     }
@@ -8,7 +10,7 @@ public class SearchStrategyDfs extends SearchStrategy {
     }
 
     public SearchTask popNextTask() {
-        assert (pendingTasks.size() == 1);
-        return getTask(pendingTasks.iterator().next());
+        assert (PExGlobal.getPendingTasks().size() == 1);
+        return PExGlobal.getPendingTasks().iterator().next();
     }
 }

@@ -60,6 +60,17 @@ public class PExOptions {
                         .build();
         addOption(outputDir);
 
+        // number of threads
+        Option numThreads =
+                Option.builder("n")
+                        .longOpt("nproc")
+                        .desc("Number of threads (default: 1)")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("No. of Threads (integer)")
+                        .build();
+        addOption(numThreads);
+
         // time limit
         Option timeLimit =
                 Option.builder("t")
@@ -287,6 +298,19 @@ public class PExOptions {
                 case "o":
                 case "outdir":
                     config.setOutputFolder(option.getValue());
+                    break;
+                case "n":
+                case "nproc":
+                    try {
+                        config.setNumThreads(Integer.parseInt(option.getValue()));
+                        if (config.getNumThreads() < 1) {
+                            optionError(
+                                    option, String.format("Expected a positive integer value, got %s", option.getValue()));
+                        }
+                    } catch (NumberFormatException ex) {
+                        optionError(
+                                option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
                     break;
                 case "t":
                 case "timeout":

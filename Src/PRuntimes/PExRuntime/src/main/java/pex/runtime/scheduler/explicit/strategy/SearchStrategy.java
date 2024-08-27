@@ -1,6 +1,7 @@
 package pex.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
+import pex.runtime.PExGlobal;
 import pex.runtime.scheduler.explicit.SearchStatistics;
 
 import java.io.Serializable;
@@ -12,18 +13,6 @@ import java.util.Set;
 @Getter
 public abstract class SearchStrategy implements Serializable {
     /**
-     * List of all search tasks
-     */
-    final List<SearchTask> allTasks = new ArrayList<>();
-    /**
-     * Set of all search tasks that are pending
-     */
-    final Set<Integer> pendingTasks = new HashSet<>();
-    /**
-     * List of all search tasks that finished
-     */
-    final List<Integer> finishedTasks = new ArrayList<>();
-    /**
      * Task id of the latest search task
      */
     int currTaskId = 0;
@@ -33,15 +22,15 @@ public abstract class SearchStrategy implements Serializable {
     int currTaskStartIteration = 0;
 
     public SearchTask createTask(SearchTask parentTask) {
-        SearchTask newTask = new SearchTask(allTasks.size(), parentTask);
-        allTasks.add(newTask);
+        SearchTask newTask = new SearchTask(PExGlobal.getAllTasks().size(), parentTask);
+        PExGlobal.getAllTasks().put(newTask.getId(), newTask);
         return newTask;
     }
 
     public void createFirstTask() {
-        assert (allTasks.size() == 0);
+        assert (PExGlobal.getAllTasks().size() == 0);
         SearchTask firstTask = createTask(null);
-        pendingTasks.add(firstTask.getId());
+        PExGlobal.getPendingTasks().add(firstTask);
         setCurrTask(firstTask);
     }
 
@@ -50,8 +39,8 @@ public abstract class SearchStrategy implements Serializable {
     }
 
     private void setCurrTask(SearchTask task) {
-        assert (pendingTasks.contains(task.getId()));
-        pendingTasks.remove(task.getId());
+        assert (PExGlobal.getPendingTasks().contains(task));
+        PExGlobal.getPendingTasks().remove(task);
         currTaskId = task.getId();
         currTaskStartIteration = SearchStatistics.iteration;
     }
@@ -62,16 +51,16 @@ public abstract class SearchStrategy implements Serializable {
 
 
     private boolean isValidTaskId(int id) {
-        return (id < allTasks.size());
+        return (id < PExGlobal.getAllTasks().size()) && (PExGlobal.getAllTasks().containsKey(id));
     }
 
     protected SearchTask getTask(int id) {
         assert (isValidTaskId(id));
-        return allTasks.get(id);
+        return PExGlobal.getAllTasks().get(id);
     }
 
     public SearchTask setNextTask() {
-        if (pendingTasks.isEmpty()) {
+        if (PExGlobal.getPendingTasks().isEmpty()) {
             return null;
         }
 
@@ -89,8 +78,7 @@ public abstract class SearchStrategy implements Serializable {
      */
     public int getNumPendingChoices() {
         int numUnexplored = 0;
-        for (Integer tid : pendingTasks) {
-            SearchTask task = getTask(tid);
+        for (SearchTask task : PExGlobal.getPendingTasks()) {
             numUnexplored += task.getTotalUnexploredChoices();
         }
         return numUnexplored;
@@ -103,8 +91,7 @@ public abstract class SearchStrategy implements Serializable {
      */
     public int getNumPendingDataChoices() {
         int numUnexplored = 0;
-        for (Integer tid : pendingTasks) {
-            SearchTask task = getTask(tid);
+        for (SearchTask task : PExGlobal.getPendingTasks()) {
             numUnexplored += task.getTotalUnexploredDataChoices();
         }
         return numUnexplored;

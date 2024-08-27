@@ -24,6 +24,9 @@ public class PExConfig {
     // name of the output folder
     @Setter
     String outputFolder = "output";
+    // number of threads
+    @Setter
+    int numThreads = 1;
     // time limit in seconds (0 means infinite)
     @Setter
     double timeLimit = 0;

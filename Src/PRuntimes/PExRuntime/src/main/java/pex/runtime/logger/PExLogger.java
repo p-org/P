@@ -95,11 +95,11 @@ public class PExLogger {
             log.info("... Scheduling statistics:");
             if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
                 log.info(String.format("..... Explored %d distinct states over %d timelines",
-                        SearchStatistics.totalDistinctStates, scheduler.getTimelines().size()));
+                        SearchStatistics.totalDistinctStates, PExGlobal.getTimelines().size()));
             }
             log.info(String.format("..... Explored %d distinct schedules", SearchStatistics.iteration));
             log.info(String.format("..... Finished %d search tasks (%d pending)",
-                    scheduler.getSearchStrategy().getFinishedTasks().size(), scheduler.getSearchStrategy().getPendingTasks().size()));
+                    PExGlobal.getFinishedTasks().size(), PExGlobal.getPendingTasks().size()));
             log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
                     SearchStatistics.minSteps, (SearchStatistics.totalSteps / SearchStatistics.iteration), SearchStatistics.maxSteps));
         }
@@ -291,7 +291,7 @@ public class PExLogger {
      */
     public static void logNewTimeline(ExplicitSearchScheduler sch) {
         if (verbosity > 2) {
-            log.info(String.format("  new timeline %d", sch.getTimelines().size()));
+            log.info(String.format("  new timeline %d", PExGlobal.getTimelines().size()));
             if (verbosity > 4) {
                 log.info(String.format("      %s", sch.getStepState().getTimelineString()));
             }

@@ -732,7 +732,7 @@ internal class PExCodeGenerator : ICodeGenerator
                 break;
 
             case PrintStmt printStmt:
-                context.Write(output, "PExLogger.logModel(");
+                context.Write(output, $"{CompilationContext.SchedulerVar}.getLogger().logModel(");
                 WriteExpr(context, output, printStmt.Message);
                 context.WriteLine(output, ".toString());");
                 break;

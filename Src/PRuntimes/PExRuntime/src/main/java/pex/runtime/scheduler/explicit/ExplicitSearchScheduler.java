@@ -228,7 +228,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             // increment distinct state count
             SearchStatistics.totalDistinctStates++;
             // log new state
-            logger.logNewState(stepNumber, choiceNumber, stateKey, stepState.getMachineSet());
+            logger.logNewState(stepNumber, choiceNumber, stateKey, stepState.getMachines());
         } else {
             // present in state cache
 
@@ -256,12 +256,12 @@ public class ExplicitSearchScheduler extends Scheduler {
     Object getCurrentStateKey() {
         Object stateKey;
         switch (PExGlobal.getConfig().getStateCachingMode()) {
-            case HashCode -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet());
-            case SipHash24 -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.sipHash24());
+            case HashCode -> stateKey = ComputeHash.getHashCode(stepState.getMachines());
+            case SipHash24 -> stateKey = ComputeHash.getHashCode(stepState.getMachines(), Hashing.sipHash24());
             case Murmur3_128 ->
-                    stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.murmur3_128((int) PExGlobal.getConfig().getRandomSeed()));
-            case Sha256 -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.sha256());
-            case Exact -> stateKey = ComputeHash.getExactString(stepState.getMachineSet());
+                    stateKey = ComputeHash.getHashCode(stepState.getMachines(), Hashing.murmur3_128((int) PExGlobal.getConfig().getRandomSeed()));
+            case Sha256 -> stateKey = ComputeHash.getHashCode(stepState.getMachines(), Hashing.sha256());
+            case Exact -> stateKey = ComputeHash.getExactString(stepState.getMachines());
             default ->
                     throw new PExRuntimeException(String.format("Unexpected state caching mode: %s", PExGlobal.getConfig().getStateCachingMode()));
         }
@@ -288,7 +288,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (choiceNumber < backtrackChoiceNumber) {
             // pick the current schedule choice
             PMachineId pid = schedule.getCurrentScheduleChoice(choiceNumber);
-            result = PExGlobal.getGlobalMachine(pid);
+            result = getMachine(pid);
             logger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 
             // increment choice number
@@ -318,7 +318,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         // pick a choice
         int selected = PExGlobal.getChoiceSelector().selectChoice(this, choices);
-        result = PExGlobal.getGlobalMachine(choices.get(selected));
+        result = getMachine(choices.get(selected));
         logger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
 
         // remove the selected choice from unexplored choices
@@ -501,12 +501,12 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
             if (newStepNumber == 0) {
                 reset();
-                stepState.resetToZero();
+                stepState.resetToZero(getMachineSet());
             } else {
                 stepNumber = newStepNumber;
                 choiceNumber = scheduleChoice.getChoiceNumber();
-                stepState.setTo(scheduleChoice.getChoiceState());
-                assert (!PExGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
+                stepState.setTo(getMachineSet(), scheduleChoice.getChoiceState());
+                assert (!getMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
             }
             schedule.removeChoicesAfter(backtrackChoiceNumber);
             logger.logBacktrack(newStepNumber, cIdx, unit);
@@ -518,7 +518,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     private List<PMachineId> getNewScheduleChoices() {
         // prioritize create machine events
-        for (PMachine machine : stepState.getMachineSet()) {
+        for (PMachine machine : stepState.getMachines()) {
             if (machine.getSendBuffer().nextIsCreateMachineMsg()) {
                 return new ArrayList<>(Collections.singletonList(machine.getPid()));
             }
@@ -527,7 +527,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         // now there are no create machine events remaining
         List<PMachineId> choices = new ArrayList<>();
 
-        for (PMachine machine : stepState.getMachineSet()) {
+        for (PMachine machine : stepState.getMachines()) {
             if (machine.getSendBuffer().nextHasTargetRunning()) {
                 choices.add(machine.getPid());
             }

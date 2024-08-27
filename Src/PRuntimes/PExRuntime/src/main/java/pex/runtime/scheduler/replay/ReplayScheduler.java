@@ -30,7 +30,6 @@ public class ReplayScheduler extends Scheduler {
         // log run test
         logger.logRunTest();
 
-        stepState.resetToZero();
         start();
         runIteration();
     }
@@ -97,7 +96,7 @@ public class ReplayScheduler extends Scheduler {
             return null;
         }
 
-        PMachine result = PExGlobal.getGlobalMachine(pid);
+        PMachine result = getMachine(pid);
         ScheduleWriter.logScheduleChoice(result);
         logger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 

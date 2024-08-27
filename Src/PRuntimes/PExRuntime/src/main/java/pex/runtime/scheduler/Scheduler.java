@@ -14,8 +14,7 @@ import pex.utils.misc.Assert;
 import pex.values.*;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -31,6 +30,15 @@ public abstract class Scheduler implements SchedulerInterface {
     protected final int schedulerId;
     @Getter
     protected final SchedulerLogger logger;
+    /**
+     * Mapping from machine type to list of all machine instances
+     */
+    private final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
+    /**
+     * Set of machines
+     */
+    @Getter
+    private final SortedSet<PMachine> machineSet = new TreeSet<>();
     /**
      * Step number
      */
@@ -225,9 +233,9 @@ public abstract class Scheduler implements SchedulerInterface {
      * Runs the constructor of this machine.
      */
     public void startMachine(PMachine machine) {
-        if (!PExGlobal.getMachineSet().contains(machine)) {
+        if (!machineSet.contains(machine)) {
             // add machine to global context
-            PExGlobal.addGlobalMachine(machine, 0);
+            addMachine(machine, 0);
         }
 
         // add machine to schedule
@@ -266,6 +274,41 @@ public abstract class Scheduler implements SchedulerInterface {
     }
 
     /**
+     * Get a machine of a given type and index if exists, else return null.
+     *
+     * @param pid Machine pid
+     * @return Machine
+     */
+    public PMachine getMachine(PMachineId pid) {
+        List<PMachine> machinesOfType = machineListByType.get(pid.getType());
+        if (machinesOfType == null) {
+            return null;
+        }
+        if (pid.getTypeId() >= machinesOfType.size()) {
+            return null;
+        }
+        PMachine result = machineListByType.get(pid.getType()).get(pid.getTypeId());
+        assert (machineSet.contains(result));
+        return result;
+    }
+
+    /**
+     * Add a machine.
+     *
+     * @param machine      Machine to add
+     * @param machineCount Machine type count
+     */
+    public void addMachine(PMachine machine, int machineCount) {
+        if (!machineListByType.containsKey(machine.getClass())) {
+            machineListByType.put(machine.getClass(), new ArrayList<>());
+        }
+        assert (machineCount == machineListByType.get(machine.getClass()).size());
+        machineListByType.get(machine.getClass()).add(machine);
+        machineSet.add(machine);
+        assert (machineListByType.get(machine.getClass()).get(machineCount) == machine);
+    }
+
+    /**
      * Allocate a machine
      *
      * @param machineType
@@ -275,7 +318,7 @@ public abstract class Scheduler implements SchedulerInterface {
         // get machine count for given type from schedule
         int machineCount = stepState.getMachineCount(machineType);
         PMachineId pid = new PMachineId(machineType, machineCount);
-        PMachine machine = PExGlobal.getGlobalMachine(pid);
+        PMachine machine = getMachine(pid);
         if (machine == null) {
             // create a new machine
             try {
@@ -284,7 +327,7 @@ public abstract class Scheduler implements SchedulerInterface {
                      NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
-            PExGlobal.addGlobalMachine(machine, machineCount);
+            addMachine(machine, machineCount);
         }
 
         // add machine to schedule
@@ -353,7 +396,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Check for deadlock at the end of a completed schedule
      */
     public void checkDeadlock() {
-        for (PMachine machine : stepState.getMachineSet()) {
+        for (PMachine machine : stepState.getMachines()) {
             if (machine.canRun() && machine.isBlocked()) {
                 Assert.deadlock(String.format("Deadlock detected. %s is waiting to receive an event, but no other controlled tasks are enabled.", machine));
             }

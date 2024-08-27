@@ -32,16 +32,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class PExGlobal {
     /**
-     * Mapping from machine type to list of all machine instances
-     */
-    @Getter
-    private static final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
-    /**
-     * Set of machines
-     */
-    @Getter
-    private static final SortedSet<PMachine> machineSet = new TreeSet<>();
-    /**
      * Map from state hash to iteration when first visited
      */
     @Getter
@@ -120,41 +110,6 @@ public class PExGlobal {
         } else {
             return replayScheduler;
         }
-    }
-
-    /**
-     * Get a machine of a given type and index if exists, else return null.
-     *
-     * @param pid Machine pid
-     * @return Machine
-     */
-    public static PMachine getGlobalMachine(PMachineId pid) {
-        List<PMachine> machinesOfType = machineListByType.get(pid.getType());
-        if (machinesOfType == null) {
-            return null;
-        }
-        if (pid.getTypeId() >= machinesOfType.size()) {
-            return null;
-        }
-        PMachine result = machineListByType.get(pid.getType()).get(pid.getTypeId());
-        assert (machineSet.contains(result));
-        return result;
-    }
-
-    /**
-     * Add a machine.
-     *
-     * @param machine      Machine to add
-     * @param machineCount Machine type count
-     */
-    public static void addGlobalMachine(PMachine machine, int machineCount) {
-        if (!machineListByType.containsKey(machine.getClass())) {
-            machineListByType.put(machine.getClass(), new ArrayList<>());
-        }
-        assert (machineCount == machineListByType.get(machine.getClass()).size());
-        machineListByType.get(machine.getClass()).add(machine);
-        machineSet.add(machine);
-        assert (machineListByType.get(machine.getClass()).get(machineCount) == machine);
     }
 
     /**

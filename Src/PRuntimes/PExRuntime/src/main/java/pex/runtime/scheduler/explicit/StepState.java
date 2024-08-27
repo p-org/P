@@ -1,7 +1,6 @@
 package pex.runtime.scheduler.explicit;
 
 import lombok.Getter;
-import pex.runtime.PExGlobal;
 import pex.runtime.machine.MachineLocalState;
 import pex.runtime.machine.PMachine;
 
@@ -16,7 +15,7 @@ public class StepState implements Serializable {
      * Set of machines
      */
     @Getter
-    private SortedSet<PMachine> machineSet = new TreeSet<>();
+    private SortedSet<PMachine> machines = new TreeSet<>();
 
     /**
      * Local state of each machine (if present in machineSet)
@@ -26,36 +25,36 @@ public class StepState implements Serializable {
     public StepState copyState() {
         StepState stepState = new StepState();
 
-        stepState.machineSet = new TreeSet<>(this.machineSet);
+        stepState.machines = new TreeSet<>(this.machines);
 
         stepState.machineLocalStates = new HashMap<>();
-        for (PMachine machine : this.machineSet) {
+        for (PMachine machine : this.machines) {
             stepState.machineLocalStates.put(machine, machine.copyMachineState());
         }
 
-        assert (stepState.machineSet.size() == stepState.machineLocalStates.size());
+        assert (stepState.machines.size() == stepState.machineLocalStates.size());
         return stepState;
     }
 
     public void clear() {
-        machineSet.clear();
+        machines.clear();
         machineLocalStates.clear();
     }
 
 
-    public void resetToZero() {
-        for (PMachine machine : PExGlobal.getMachineSet()) {
+    public void resetToZero(SortedSet<PMachine> allMachines) {
+        for (PMachine machine : allMachines) {
             machine.reset();
         }
-        machineSet.clear();
+        machines.clear();
     }
 
-    public void setTo(StepState input) {
-        machineSet = new TreeSet<>(input.machineSet);
+    public void setTo(SortedSet<PMachine> allMachines, StepState input) {
+        machines = new TreeSet<>(input.machines);
         machineLocalStates = new HashMap<>(input.machineLocalStates);
-        assert (machineSet.size() == machineLocalStates.size());
+        assert (machines.size() == machineLocalStates.size());
 
-        for (PMachine machine : PExGlobal.getMachineSet()) {
+        for (PMachine machine : allMachines) {
             MachineLocalState ms = machineLocalStates.get(machine);
             if (ms == null) {
                 machine.reset();
@@ -71,7 +70,7 @@ public class StepState implements Serializable {
      * @param machine Machine to add
      */
     public void makeMachine(PMachine machine) {
-        machineSet.add(machine);
+        machines.add(machine);
     }
 
     /**
@@ -82,7 +81,7 @@ public class StepState implements Serializable {
      */
     public int getMachineCount(Class<? extends PMachine> type) {
         int result = 0;
-        for (PMachine m : machineSet) {
+        for (PMachine m : machines) {
             if (type.isInstance(m)) {
                 result++;
             }
@@ -97,7 +96,7 @@ public class StepState implements Serializable {
 
     public String getTimelineString() {
         StringBuilder s = new StringBuilder();
-        for (PMachine m : machineSet) {
+        for (PMachine m : machines) {
             MachineLocalState ms = machineLocalStates.get(m);
             if (ms != null) {
                 s.append(String.format("%s -> %s, ", m, ms.getHappensBeforePairs()));
@@ -113,7 +112,7 @@ public class StepState implements Serializable {
         }
 
         StringBuilder s = new StringBuilder();
-        for (PMachine machine : machineSet) {
+        for (PMachine machine : machines) {
             s.append(String.format("%s:\n", machine));
             List<String> fields = machine.getLocalVarNames();
             List<Object> values = machineLocalStates.get(machine).getLocals();

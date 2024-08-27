@@ -224,7 +224,17 @@ namespace Plang.Compiler.Backend.PInfer
                     BinOpType.Gt => $"({lhs} > {rhs})",
                     BinOpType.And => $"(({lhs}) && ({rhs}))",
                     BinOpType.Or => $"(({lhs}) || ({rhs}))",
-                    _ => throw new Exception($"Unsupported BinOp Operatoion: {binOpExpr.Operation}"),
+                    _ => throw new Exception($"Unsupported BinOp Operation: {binOpExpr.Operation}"),
+                };
+            }
+            else if (expr is UnaryOpExpr unaryOpExpr)
+            {
+                var subexpr = GenerateCodeExpr(unaryOpExpr.SubExpr, simplified);
+                return unaryOpExpr.Operation switch
+                {
+                    UnaryOpType.Negate => $"(-({subexpr}))",
+                    UnaryOpType.Not => $"!({subexpr})",
+                    _ => throw new Exception($"Unknown UnOp: {unaryOpExpr.Operation}")
                 };
             }
             else if(expr is EnumElemRefExpr refExpr)

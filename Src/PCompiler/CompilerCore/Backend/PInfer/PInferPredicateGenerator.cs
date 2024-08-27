@@ -62,7 +62,7 @@ namespace Plang.Compiler.Backend.PInfer
             int result = 1;
             foreach (var p in Predicates)
             {
-                result = Math.Max(result, FreeEvents[p].Count);
+                result = Math.Max(result, PredicateBoundedTerm[p].Count);
             }
             return result;
         }

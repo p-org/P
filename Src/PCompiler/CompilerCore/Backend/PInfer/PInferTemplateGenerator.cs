@@ -148,8 +148,6 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     foreach (var entry in tuple.Fields)
                     {
-                        var jType = Types.JavaTypeFor(entry.Type, false);
-                        // WriteLine($"private {jType.TypeName} {entry.Name};");
                         configConstants.Add(entry);
                     }
                 }
@@ -158,20 +156,8 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new Exception($"Config event {ConfigEvent.Name} should have a named-tuple type, got {configType}");
                 }
             }
-            // if (hasExists)
-            // {
-            //     WriteLine("private int _num_e_exists_;");
-            // }
             List<string> existsCount = hasExists ? ["_num_e_exists_"] : [];
             WriteLine($"public static void mine_{templateName} ({string.Join(", ", existsCount.Select(x => $"int {x}").Concat(configConstants.Select(entry => $"{Types.JavaTypeFor(entry.Type, false).TypeName} {entry.Name}").Concat(fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}"))))}) {{");
-            // for (int i = 0; i < fieldTypeDecls.Count(); ++i)
-            // {
-            //     WriteLine($"this.f{i} = f{i};");
-            // }
-            // foreach(var entry in configConstants.Select(x => x.Name).Concat(existsCount))
-            // {
-            //     WriteLine($"this.{entry} = {entry};");
-            // }
             WriteLine("return;");
             WriteLine("}");
         }
@@ -186,6 +172,11 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 throw new Exception($"Config event {ConfigEvent.Name} should have a named-tuple type");
             }
+        }
+
+        private void WritePrecheckIndexed(string eventType)
+        {
+            WriteLine($"if (!indices.indexed(trace, {eventType})) return;");
         }
 
         private void GenerateTemplate(int numForall, int numExists,
@@ -213,18 +204,25 @@ namespace Plang.Compiler.Backend.PInfer
             var fullDecls = forallTypeDecls.Concat(existsTypeDecls.Select(x => new TypeManager.JType.JList(x, false))).ToList();
             // exists-n (e.g. quorum)
             bool generateExistsN = ConfigEvent != null && numExists != 0;
+            static string getEventTypeName(string e) => $"{Constants.EventNamespaceName}.{e}.class";
+            void declVar(string name, string idx) => WriteLine($"{Constants.PEventsClass}<?> {name} = trace.get({idx});");
             WriteDefAndConstructor(templateName, fullDecls, numExists != 0, generateExistsN);
-            WriteLine($"public static void execute(List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> guards, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> forallTerms, List<String> existsTerms) {{");
+            WriteLine($"public static void execute(TraceIndex indices, List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> guards, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> forallTerms, List<String> existsTerms) {{");
             if (generateExistsN)
             {
-                WriteLine($"for ({Constants.PEventsClass}<?> eConfig: trace) {{");
-                WriteLine($"if (!(eConfig instanceof {Constants.EventNamespaceName}.{ConfigEvent.Name})) continue;");
+                WritePrecheckIndexed(getEventTypeName(ConfigEvent.Name));
+                WriteLine($"for (int cfgIdx: indices.getIndices(trace, {getEventTypeName(ConfigEvent.Name)})) {{");
+                declVar("eConfig", "cfgIdx");
+            }
+            foreach (var name in QuantifiedEvents)
+            {
+                WritePrecheckIndexed(getEventTypeName(name));
             }
             for (int i = 0; i < numForall; ++i)
             {
                 // forall-quantifications
-                WriteLine($"for ({Constants.PEventsClass}<?> e{i}: trace) {{");
-                WriteLine($"if (!(e{i} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i]})) continue;");
+                WriteLine($"for (int e{i}Idx: indices.getIndices(trace, {getEventTypeName(QuantifiedEvents[i])})) {{");
+                declVar($"e{i}", $"e{i}Idx");
             }
             WriteLine("try {");
             if (numForall > 0)
@@ -243,8 +241,8 @@ namespace Plang.Compiler.Backend.PInfer
             }
             for (int i = 0; i < numExists; ++i)
             {
-                WriteLine($"for ({Constants.PEventsClass}<?> e{i + numForall}: trace) {{");
-                WriteLine($"if (!(e{i + numForall} instanceof {Constants.EventNamespaceName}.{QuantifiedEvents[i + numForall]})) continue;");
+                WriteLine($"for (int e{i + numForall}Idx: indices.getIndices(trace, {getEventTypeName(QuantifiedEvents[i + numForall])})) {{");
+                declVar($"e{i + numForall}", $"e{i + numForall}Idx");
             }
             if (numExists > 0)
             {

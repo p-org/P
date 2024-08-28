@@ -21,7 +21,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 insert += @$"case ""{name}"":
                 for (List<{Constants.PEventsClass}<?>> ts: eventsTrace) {{
-                    Templates.{name}.execute(ts, guards, filters, forallTerms, existsTerms);
+                    Templates.{name}.execute(indices, ts, guards, filters, forallTerms, existsTerms);
                 }}
                 break;
                 ";

@@ -16,6 +16,7 @@ namespace Plang.Compiler.Backend.PInfer
         internal static string TaskPoolFileName = "TaskPool.java";
         internal static string PredicateEnumeratorFileName = "PredicateEnumerator.java";
         internal static string TermEnumeratorFileName = "TermEnumerator.java";
+        internal static string TraceIndexFileName = "TraceIndex.java";
         internal static string TraceReaderTemplate = @$"
 import com.alibaba.fastjson2.*;
 
@@ -74,6 +75,7 @@ public class PInferDriver {
                                List<String> existsTerms,
                                String[] schedules) {
         TraceParser parser = new TraceParser();
+        TraceIndex indices = new TraceIndex();
         for (String sch: schedules) {
             List<List<%EVENT_BASE%>> eventsTrace = parser.loadTrace(sch);
             switch (templateName) {
@@ -105,6 +107,7 @@ public class PInferDriver {
         internal static string TaskPoolProg = ReadTemplate(TaskPoolFileName);
         internal static string PredicateEnumeratorProg = ReadTemplate(PredicateEnumeratorFileName);
         internal static string TermEnumeratorProg = ReadTemplate(TermEnumeratorFileName);
+        internal static string TraceIndexProg = ReadTemplate(TraceIndexFileName);
 
         internal static string ReadTemplate(string filename)
         {

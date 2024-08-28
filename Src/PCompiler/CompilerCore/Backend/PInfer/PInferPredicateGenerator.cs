@@ -216,6 +216,7 @@ namespace Plang.Compiler.Backend.PInfer
                                 .Concat(new PredicateEnumeratorGenerator(job).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TermEnumeratorGenerator(job).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TemplateInstantiatorGenerator(job, quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))
+                                .Concat(new TraceIndexGenerator(job).GenerateCode(javaCtx, globalScope))
                                 .Concat([terms, predicates]);
         }
 

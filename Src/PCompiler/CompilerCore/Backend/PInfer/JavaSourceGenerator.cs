@@ -205,6 +205,10 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return $"{intLit.Value}";
             }
+            else if (expr is BoolLiteralExpr boolLit)
+            {
+                return $"{boolLit.Value}";
+            }
             else if (expr is BinOpExpr binOpExpr)
             {
                 var lhs = GenerateCodeExpr(binOpExpr.Lhs, simplified);

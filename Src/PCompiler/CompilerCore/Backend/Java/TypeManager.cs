@@ -297,12 +297,19 @@ namespace Plang.Compiler.Backend.Java
             internal class JList : JType
             {
                 internal JType _contentType;
-                internal JList(JType t)
+                internal JList(JType t, bool use_ref = true)
                 {
                     _contentType = t;
                     if (Constants.PInferMode)
                     {
-                        _unboxedType = $"{t.TypeName}[]";
+                        if (use_ref)
+                        {
+                            _unboxedType = $"{t.ReferenceTypeName}[]";
+                        }
+                        else
+                        {
+                            _unboxedType = $"{t.TypeName}[]";
+                        }
                     }
                     else
                     {
@@ -317,17 +324,13 @@ namespace Plang.Compiler.Backend.Java
                 internal override string MutatorMethodName => "set";
                 internal override string InsertMethodName => "add";
                 internal override string RemoveMethodName => "remove";
-                // internal override string GenerateFromJSON(string jsonVariable, string fieldName)
-                // {
-                //     var getArray = $"({jsonVariable}.getJSONArray(\"fieldName\"))";
-                //     return $"new ArrayList<{_contentType.ReferenceTypeName}>({getArray}.stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toList())";
-                // }
 
                 internal override string GenerateCastFromObject(string objectName)
                 {
                     if (Constants.PInferMode)
                     {
-                        return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({ReferenceTypeName}::new))";
+                        var lamv = $"x{GetHashCode()}";
+                        return $"(((JSONArray){objectName}).stream().map({lamv} -> {_contentType.GenerateCastFromObject(lamv)}).toArray({ReferenceTypeName}::new))";
                     }
                     else
                     {
@@ -575,7 +578,7 @@ namespace Plang.Compiler.Backend.Java
         /// <param name="type">The P type.</param>
         /// <returns>The Java type.</returns>
         /// TODO: Make this private and stick a weak ref cache in front of it.
-        internal JType JavaTypeFor(PLanguageType type)
+        internal JType JavaTypeFor(PLanguageType type, bool use_ref = true)
         {
             switch (type.Canonicalize())
             {
@@ -626,7 +629,7 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JVoid();
 
                 case SequenceType s:
-                    return new JType.JList(JavaTypeFor(s.ElementType));
+                    return new JType.JList(JavaTypeFor(s.ElementType, use_ref), use_ref);
 
                 case SetType s:
                     return new JType.JSet(JavaTypeFor(s.ElementType));

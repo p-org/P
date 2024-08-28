@@ -141,10 +141,6 @@ namespace Plang.Compiler.Backend.PInfer
         private void WriteDefAndConstructor(string templateName, IEnumerable<TypeManager.JType> fieldTypeDecls, bool hasExists, bool existsN = false)
         {
             WriteLine($"public static class {templateName} {{");
-            // foreach (var (ty, i) in fieldTypeDecls.Select((val, index) => (val.TypeName, index)))
-            // {
-            //     WriteLine($"private {ty} f{i};");
-            // }
             List<NamedTupleEntry> configConstants = [];
             if (existsN) {
                 PLanguageType configType = ConfigEvent.PayloadType.Canonicalize();
@@ -152,7 +148,7 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     foreach (var entry in tuple.Fields)
                     {
-                        var jType = Types.JavaTypeFor(entry.Type);
+                        var jType = Types.JavaTypeFor(entry.Type, false);
                         // WriteLine($"private {jType.TypeName} {entry.Name};");
                         configConstants.Add(entry);
                     }
@@ -167,7 +163,7 @@ namespace Plang.Compiler.Backend.PInfer
             //     WriteLine("private int _num_e_exists_;");
             // }
             List<string> existsCount = hasExists ? ["_num_e_exists_"] : [];
-            WriteLine($"public static void mine_{templateName} ({string.Join(", ", existsCount.Select(x => $"int {x}").Concat(configConstants.Select(entry => $"{Types.JavaTypeFor(entry.Type).TypeName} {entry.Name}").Concat(fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}"))))}) {{");
+            WriteLine($"public static void mine_{templateName} ({string.Join(", ", existsCount.Select(x => $"int {x}").Concat(configConstants.Select(entry => $"{Types.JavaTypeFor(entry.Type, false).TypeName} {entry.Name}").Concat(fieldTypeDecls.Select((val, index) => $"{val.TypeName} f{index}"))))}) {{");
             // for (int i = 0; i < fieldTypeDecls.Count(); ++i)
             // {
             //     WriteLine($"this.f{i} = f{i};");
@@ -212,9 +208,9 @@ namespace Plang.Compiler.Backend.PInfer
             }
             TemplateNames.Add(templateName);
             // convert to Java types
-            var forallTypeDecls = forallTermTypes.Select(Types.JavaTypeFor).ToList();
-            var existsTypeDecls = existsTermTypes.Select(Types.JavaTypeFor).ToList();
-            var fullDecls = forallTypeDecls.Concat(existsTypeDecls.Select(x => new TypeManager.JType.JList(x))).ToList();
+            var forallTypeDecls = forallTermTypes.Select(x => Types.JavaTypeFor(x, false)).ToList();
+            var existsTypeDecls = existsTermTypes.Select(x => Types.JavaTypeFor(x, false)).ToList();
+            var fullDecls = forallTypeDecls.Concat(existsTypeDecls.Select(x => new TypeManager.JType.JList(x, false))).ToList();
             // exists-n (e.g. quorum)
             bool generateExistsN = ConfigEvent != null && numExists != 0;
             WriteDefAndConstructor(templateName, fullDecls, numExists != 0, generateExistsN);

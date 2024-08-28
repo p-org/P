@@ -67,7 +67,7 @@ namespace Plang.Compiler.Backend.PInfer
                         {
                             throw new DropException($"_num_e_exists_ compared with unknown variable: {ctx.GetText()}");
                         }
-                        if (rhs is not VariableAccessExpr && rhs.Type != PInferBuiltinTypes.CollectionSize)
+                        if (rhs is not VariableAccessExpr && rhs is not SizeofExpr && rhs.Type != PInferBuiltinTypes.CollectionSize)
                         {
                             throw new DropException($"_num_e_exists_ compared with non-size type: {ctx.GetText()}");
                         }
@@ -148,7 +148,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 if (lhsExpr.Variable.Name == "_num_e_exists_")
                 {
-                    if (rhs.Type == PInferBuiltinTypes.CollectionSize)
+                    if (rhs.Type == PInferBuiltinTypes.CollectionSize || rhs is SizeofExpr)
                     {
                         return expr;
                     }

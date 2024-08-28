@@ -49,6 +49,8 @@ namespace Plang.Compiler.Backend.PInfer
 
         public int GetPredicateId(IPExpr expr, ICompilerConfiguration job)
         {
+            var cano = CC.Canonicalize(expr);
+            if (cano != null) expr = cano;
             if (PredicateOrder.ContainsKey(expr))
             {
                 return PredicateOrder[expr];
@@ -187,6 +189,7 @@ namespace Plang.Compiler.Backend.PInfer
             Console.WriteLine($"Generating predicates ...");
             PopulatePredicate();
             // MkEqComparison();
+            AddHintPredicates(job, globalScope, hint);
 
             CompiledFile terms = new($"{job.ProjectName}.terms.json");
             CompiledFile predicates = new($"{job.ProjectName}.predicates.json");
@@ -221,6 +224,10 @@ namespace Plang.Compiler.Backend.PInfer
             var cano = CC.Canonicalize(expr);
             if (cano != null)
             {
+                if (cano is IntLiteralExpr || cano is BoolLiteralExpr || cano is EnumElemRefExpr || cano is FloatLiteralExpr)
+                {
+                    return [];
+                }
                 if (!TermOrder.ContainsKey(cano))
                 {
                     job.Output.WriteError($"{SimplifiedRepr(DebugCodegen, expr)} in CC but not added as a term");
@@ -248,8 +255,9 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case UnaryOpExpr e:
                 {
-                    AddTerm(-1, e, gather(e.SubExpr));
-                    break;
+                    var n = gather(e.SubExpr);
+                    AddTerm(-1, e, n);
+                    return n;
                 }
                 case FunCallExpr funCallExpr:
                 {
@@ -281,7 +289,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 default: break;
             }
-            job.Output.WriteError($"Unsupported custom term: {SimplifiedRepr(DebugCodegen, expr)}");
+            job.Output.WriteError($"Unsupported custom term type: {expr.GetType()}");
             Environment.Exit(1);
             return null;
         }
@@ -779,19 +787,22 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return;
             }
-            if (depth > Terms.Count)
+            if (depth >= 0)
             {
-                throw new Exception($"Depth {depth} reached before reaching Depth {depth - 1}");
+                if (depth > Terms.Count)
+                {
+                    throw new Exception($"Depth {depth} reached before reaching Depth {depth - 1}");
+                }
+                if (depth == Terms.Count)
+                {
+                    Terms.Add([]);
+                }
+                if (!Terms[depth].ContainsKey(expr.Type))
+                {
+                    Terms[depth].Add(expr.Type, []);
+                }
+                Terms[depth][expr.Type].Add(expr);
             }
-            if (depth == Terms.Count)
-            {
-                Terms.Add([]);
-            }
-            if (!Terms[depth].ContainsKey(expr.Type))
-            {
-                Terms[depth].Add(expr.Type, []);
-            }
-            Terms[depth][expr.Type].Add(expr);
             FreeEvents[expr] = unboundedEvents;
             TermOrder[expr] = VisitedSet.Count;
             OrderToTerm[VisitedSet.Count] = expr;
@@ -919,9 +930,26 @@ namespace Plang.Compiler.Backend.PInfer
             return false;
         }
 
+        public IEnumerable<int> ExplicateEnumValues(string x)
+        {
+            x = x.Trim();
+            try
+            {
+                return [int.Parse(x)];
+            }
+            catch
+            {
+                return string.Join("", x.Where(x => ('0' <= x && x <= '9') || x == ',')).Split(",").SelectMany(ExplicateEnumValues);
+            }
+        }
+
         public string UnfoldContainsEnum(string lhs, string rhs, EnumType enumType)
         {
-            HashSet<int> values = rhs.Replace("{", "").Replace("}", "").Split(",").Select(x => int.Parse(x.Trim())).ToHashSet();
+            HashSet<int> values = rhs
+                .Replace("{", "")
+                .Replace("}", "")
+                .Split(",")
+                .SelectMany(ExplicateEnumValues).ToHashSet();
             List<string> refElem = [];
             foreach (var v in enumType.EnumDecl.Values)
             {

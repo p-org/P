@@ -251,14 +251,14 @@ namespace Plang.Compiler.Backend.PInfer
             else if (expr is SizeofExpr sizeofExpr)
             {
                 if (simplified)
-                    {
-                        return $"size({GenerateCodeExpr(sizeofExpr.Expr)})";
-                    }
-                    if (sizeofExpr.Expr.Type is SequenceType || sizeofExpr.Expr.Type is SetType)
-                    {
-                        return $"{GenerateCodeExpr(sizeofExpr.Expr)}.length";
-                    }
-                    return $"{GenerateCodeExpr(sizeofExpr.Expr)}.size()";
+                {
+                    return $"size({GenerateCodeExpr(sizeofExpr.Expr, simplified)})";
+                }
+                if (sizeofExpr.Expr.Type is SequenceType || sizeofExpr.Expr.Type is SetType)
+                {
+                    return $"{GenerateCodeExpr(sizeofExpr.Expr, simplified)}.length";
+                }
+                return $"{GenerateCodeExpr(sizeofExpr.Expr, simplified)}.size()";
             }
             else
             {
@@ -355,9 +355,9 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 if (funCallExpr.Function.Name == "index")
                 {
-                    if (funCallExpr.Arguments[0] is VariableAccessExpr v && v.Variable is PEventVariable pv)
+                    if (funCallExpr.Arguments[0] is VariableAccessExpr v)
                     {
-                        return simplified ? $"indexof({pv.Name})" : $"{pv.Name}.index()";
+                        return simplified ? $"indexof({v.Variable.Name})" : $"{v.Variable.Name}.index()";
                     }
                     throw new NotImplementedException("Index is not implemented for expressions other than a variable access");
                 }
@@ -365,7 +365,7 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     if (simplified)
                     {
-                        return $"size({GenerateCodeExpr(funCallExpr.Arguments[0])})";
+                        return $"size({GenerateCodeExpr(funCallExpr.Arguments[0], simplified)})";
                     }
                     if (funCallExpr.Arguments[0].Type is SequenceType || funCallExpr.Arguments[0].Type is SetType)
                     {
@@ -378,7 +378,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 WriteFunctionRec(funCallExpr.Function);
             }
-            return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e)).ToArray()) + ")";
+            return $"{funCallExpr.Function.Name}(" + string.Join(", ", (from e in funCallExpr.Arguments select GenerateCodeExpr(e, simplified)).ToArray()) + ")";
         }
 
         private static string GenerateCodeVariable(Variable v, bool simplified = false)

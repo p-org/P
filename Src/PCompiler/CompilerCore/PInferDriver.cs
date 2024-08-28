@@ -132,7 +132,7 @@ namespace Plang.Compiler
                     Job.Output.WriteInfo($"Finishing {h.Name} ...");
                 }
             }
-            ExploredHints.Add(hint);
+            ExploredHints.Add(hint.Copy());
         }
 
         public PEventVariable MkEventVar(PEvent e, int i)

@@ -27,7 +27,7 @@ namespace PChecker.Specifications.Monitors
     /// See <see href="/coyote/learn/core/specifications">Specifications Overview</see>
     /// for more information.
     /// </remarks>
-    public abstract class Monitor
+    public class Monitor
     {
         /// <summary>
         /// Map from monitor types to a set of all possible states types.
@@ -91,6 +91,16 @@ namespace PChecker.Specifications.Monitors
         /// liveness bug has been found.
         /// </summary>
         private int LivenessTemperature;
+        
+        /// <summary>
+        /// List containing all the event types that are observed by this monitor.
+        /// </summary>
+        public static List<string> observes = new List<string>();
+
+        /// <summary>
+        /// Temporarily holds data that might be needed during a state transition.
+        /// </summary>
+        public object gotoPayload;
 
         /// <summary>
         /// Gets the name of this monitor.
@@ -189,11 +199,32 @@ namespace PChecker.Specifications.Monitors
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <param name="e">The event to raise.</param>
-        protected void RaiseEvent(Event e)
+        public void RaiseEvent(Event e)
         {
             Assert(e != null, "{0} is raising a null event.", GetType().FullName);
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.Raise, default, e);
+        }
+
+        /// <summary>
+        /// Writes PrintLog messages to logger.
+        /// </summary>
+        public void LogLine(string message)
+        {
+            Logger.WriteLine($"<PrintLog> {message}");
+
+            // Log message to JSON output
+            JsonLogger.AddLogType(JsonWriter.LogType.Print);
+            JsonLogger.AddLog(message);
+            JsonLogger.AddToLogs(updateVcMap: false);
+        }
+
+        /// <summary>
+        /// Writes message to logger.
+        /// </summary>
+        public void Log(string message)
+        {
+            Logger.Write($"{message}");
         }
 
         /// <summary>
@@ -215,9 +246,11 @@ namespace PChecker.Specifications.Monitors
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <typeparam name="S">Type of the state.</typeparam>
-        protected void RaiseGotoStateEvent<S>()
-            where S : State =>
+        public void RaiseGotoStateEvent<S>(object payload = null) where S : State
+        {
+            gotoPayload = payload;
             RaiseGotoStateEvent(typeof(S));
+        }
 
         /// <summary>
         /// Raise a special event that performs a goto state operation at the end of the current action.
@@ -238,7 +271,7 @@ namespace PChecker.Specifications.Monitors
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <param name="state">Type of the state.</param>
-        protected void RaiseGotoStateEvent(Type state)
+        public void RaiseGotoStateEvent(Type state)
         {
             // If the state is not a state of the monitor, then report an error and exit.
             Assert(StateTypeMap[GetType()].Any(val => val.DeclaringType.Equals(state.DeclaringType) && val.Name.Equals(state.Name)),
@@ -250,7 +283,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
-        protected void Assert(bool predicate)
+        public void Assert(bool predicate)
         {
             if (!predicate)
             {
@@ -262,7 +295,7 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
-        protected void Assert(bool predicate, string s, params object[] args)
+        public void Assert(bool predicate, string s, params object[] args)
         {
             if (!predicate)
             {

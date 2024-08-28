@@ -154,6 +154,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using PChecker.StateMachines.Events;");
             context.WriteLine(output, "using PChecker.Runtime;");
             context.WriteLine(output, "using PChecker.Specifications;");
+            context.WriteLine(output, "using Monitor = PChecker.Specifications.Monitors.Monitor;");
             context.WriteLine(output, "using System;");
             context.WriteLine(output, "using System.Runtime;");
             context.WriteLine(output, "using System.Collections.Generic;");
@@ -263,7 +264,7 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpacePrologue(context, output);
 
             var declName = context.Names.GetNameForDecl(machine);
-            context.WriteLine(output, $"internal partial class {declName} : PMonitor");
+            context.WriteLine(output, $"internal partial class {declName} : Monitor");
             context.WriteLine(output, "{");
 
             foreach (var field in machine.Fields)
@@ -737,7 +738,7 @@ namespace Plang.Compiler.Backend.CSharp
                 // for monitor
                 if (!(function.CanCreate == true || function.CanSend == true || function.IsNondeterministic == true || function.CanReceive == true))
                 {
-                    var functionParameters_monitor = functionParameters + string.Concat(seperator, "PMonitor currentMachine");
+                    var functionParameters_monitor = functionParameters + string.Concat(seperator, "Monitor currentMachine");
                     context.WriteLine(output,
                         $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_monitor})");
                     WriteFunctionBody(context, output, function);
@@ -806,7 +807,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case AssertStmt assertStmt:
-                    context.Write(output, "currentMachine.TryAssert(");
+                    context.Write(output, "currentMachine.Assert(");
                     WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ",");
                     context.Write(output, $"\"Assertion Failed: \" + ");
@@ -988,15 +989,9 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case RaiseStmt raiseStmt:
                     //last statement
-                    context.Write(output, "currentMachine.TryRaiseEvent((Event)");
+                    context.Write(output, "currentMachine.RaiseEvent(");
                     WriteExpr(context, output, raiseStmt.Event);
-                    if (raiseStmt.Payload.Any())
-                    {
-                        context.Write(output, ", ");
-                        WriteExpr(context, output, raiseStmt.Payload.First());
-                    }
-
-                    context.WriteLine(output, ");");
+                    context.Write(output, ");");
                     context.WriteLine(output, "return;");
                     break;
 
@@ -1011,7 +1006,7 @@ namespace Plang.Compiler.Backend.CSharp
                     // add halt as a special case if doesnt exist
                     if (receiveStmt.Cases.All(kv => kv.Key.Name != "PHalt"))
                     {
-                        context.WriteLine(output,"case PHalt _hv: { currentMachine.TryRaiseEvent(_hv); break;} ");
+                        context.WriteLine(output,"case PHalt _hv: { currentMachine.RaiseEvent(_hv); break;} ");
 
                     }
 

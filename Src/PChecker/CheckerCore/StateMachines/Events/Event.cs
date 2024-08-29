@@ -22,7 +22,7 @@ namespace PChecker.StateMachines.Events
             Payload = payload;
         }
         
-        public IPrtValue Payload { get; }
+        public IPrtValue Payload { get; set; }
         
         public bool Equals(IPrtValue other)
         {

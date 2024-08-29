@@ -989,6 +989,13 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case RaiseStmt raiseStmt:
                     //last statement
+                    if (raiseStmt.Payload.Any())
+                    {
+                        WriteExpr(context, output, raiseStmt.Event);
+                        context.Write(output, $".Payload = ");
+                        WriteExpr(context, output, raiseStmt.Payload.First());
+                        context.Write(output, ";");
+                    }
                     context.Write(output, "currentMachine.RaiseEvent(");
                     WriteExpr(context, output, raiseStmt.Event);
                     context.Write(output, ");");

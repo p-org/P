@@ -39,7 +39,7 @@ Default parameters (upper bounds):
 `arity` is determined by the maximum arity of prediates generated. 
 
 These can be configured using command line argumets:
-> p infer -td <max term depth> -max-guards <max conj in guards> -max-filters <max conj. in filters> -ce <event name>
+> p infer -td <`max term depth`> -max-guards <`max conj in guards`> -max-filters <`max conj. in filters`> -ce <`event name`>
 
 ### Hints
 Hints is a construct in P program that provides manual hints for PInfer. 
@@ -68,12 +68,12 @@ If any of the field is not provided, the default values are:
 - `include_filters` = true
 
 #### Generating SpecMiner for a hint
-> p infer --action compile --hint <name of the hint>
+> p infer --action compile --hint <`name of the hint`>
 
 PInfer will generate the SpecMiner specifically for the provided hint.
 
 #### Searching the space defined by a hint
-> p infer --action run --hint <name of hint> \[--traces <folder>\]
+> p infer --action run --hint <`name of hint`> \[--traces <`folder`>\]
 
 PInfer will search the formula in the form of `forall* G -> exists* F /\ R` that holds for all traces. PInfer starts with the provided parameters in the hint and search till the upperbound. 
 By default PInfer looks for traces under `traces` folder. Notice that the traces must be indexed, i.e. having a `metadata.json` mapping sets of events to folders containing corresponding traces.

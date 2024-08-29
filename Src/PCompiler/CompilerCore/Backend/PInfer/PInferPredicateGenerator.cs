@@ -400,7 +400,7 @@ namespace Plang.Compiler.Backend.PInfer
                 return args[0];
             }, PrimitiveType.Bool);
             isTrueCmp.Function.AddContradiction(isTrueCmp.ShiftCall(
-                xs => new UnaryOpExpr(null, UnaryOpType.Not, xs[0])
+                xs => xs[0]
             ));
             MacroPredicate isFalseCmp = new("IsFalse", Notation.Prefix, (args) => {
                 return new UnaryOpExpr(null, UnaryOpType.Not, args[0]);

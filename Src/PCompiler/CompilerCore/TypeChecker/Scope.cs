@@ -660,6 +660,11 @@ namespace Plang.Compiler.TypeChecker
 
         public void AddAllowedBinOp(BinOpType op, PLanguageType lhs, PLanguageType rhs, PLanguageType ret)
         {
+            if (lhs == PrimitiveType.Any || rhs == PrimitiveType.Any)
+            {
+                // dont go too general
+                return;
+            }
             if (Parent == null)
             {
                 if (!allowedBinOps.TryGetValue(op, out var table))

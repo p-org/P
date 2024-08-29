@@ -30,7 +30,7 @@ Notice that there will be a `metadata.json` under `traces` that bookkeeps the fo
 Simply run `p infer`, it will infer combinations of events that might yield interesting properties and then perform the search over the lattice. 
 
 Default parameters (upper bounds): 
-- `term_depth`: 1
+- `term_depth`: 2
 - `num_guards`: 2
 - `num_filters`: 2
 - `exists`: 1

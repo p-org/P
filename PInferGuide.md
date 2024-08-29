@@ -13,7 +13,7 @@
 ## Step 1: Getting traces
 PInfer extends PChecker with a trace filtering mode. This mode automatically index logs aggregated into `traces` folder (you may specify another directory if wanted, see below). Usage:
 ```
-p check -tc <testcase> -s <num schedules> --pinfer -ef <e1> <e2> ... <en>
+p check -tc <testcase> -s <num schedules> --pinfer -ef <e1> <e2> ... <en> --traces <folder to store traces>
 ```
 where `ei` is the name of events to be filtered. If no `-ef` provided, then all `SendEvent` and `AnnounceEvent` will be recorded and indexed. 
 

@@ -8,6 +8,7 @@
     + For amazon linux, [follow the guide here](https://docs.aws.amazon.com/corretto/latest/corretto-22-ug/generic-linux-install.html#rpm-linux-install-instruct)
     + Maven version: Apache Maven 3.5.2. Can be installed via `sudo yum install maven`
 - Install PJavaRuntime: go to [Src/Runtimes/PJavaRuntimes](./Src/PRuntimes/PJavaRuntime/) and run `mvn install`
+- Compile P: run `dotnet build -c Release` under the root of this repo. 
 
 ## Step 1: Getting traces
 PInfer extends PChecker with a trace filtering mode. This mode automatically index logs aggregated into `traces` folder (you may specify another directory if wanted, see below). Usage:

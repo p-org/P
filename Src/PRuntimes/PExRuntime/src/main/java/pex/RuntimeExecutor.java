@@ -100,7 +100,7 @@ public class RuntimeExecutor {
                 break;
             }
 
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.MILLISECONDS.sleep(100);
             PExGlobal.printProgress(false);
         }
         PExGlobal.printProgress(true);

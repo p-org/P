@@ -99,7 +99,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
 
             // no next task but there are running tasks, sleep and retry
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.MILLISECONDS.sleep(100);
         }
 
         return nextTask;
@@ -447,7 +447,10 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     private void postProcessIteration() {
         int maxSchedulesPerTask = PExGlobal.getConfig().getMaxSchedulesPerTask();
-        if (maxSchedulesPerTask > 0 && searchStrategy.getCurrTaskNumSchedules() >= maxSchedulesPerTask) {
+        if (PExGlobal.getConfig().getNumThreads() > 1 && searchStrategy.getCurrTaskId() == 0) {
+            // multi-threaded run, and this is the very first task
+            isDoneIterating = true;
+        } else if (maxSchedulesPerTask > 0 && searchStrategy.getCurrTaskNumSchedules() >= maxSchedulesPerTask) {
             isDoneIterating = true;
         }
 

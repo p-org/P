@@ -14,7 +14,6 @@ namespace PChecker.PRuntime
     public class PMachine : StateMachine
     {
         public List<string> creates = new List<string>();
-        protected IPrtValue gotoPayload;
         private string interfaceName;
         public List<string> receives = new List<string>();
         public PMachineValue self;
@@ -102,13 +101,6 @@ namespace PChecker.PRuntime
         public Task<Event> TryReceiveEvent(params Type[] events)
         {
             return ReceiveEventAsync(events);
-        }
-
-        public void TryGotoState<T>(IPrtValue payload = null) where T : State
-        {
-            gotoPayload = payload;
-            RaiseGotoStateEvent<T>();
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         public int TryRandomInt(int maxValue)

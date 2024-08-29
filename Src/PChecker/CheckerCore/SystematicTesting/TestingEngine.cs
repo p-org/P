@@ -625,13 +625,12 @@ namespace PChecker.SystematicTesting
 
                 if (_checkerConfiguration.PInferMode)
                 {
-                    bool check(LogEntry x) => (x.Type == JsonWriter.LogType.Announce.ToString() 
-                                            || x.Type == JsonWriter.LogType.SendEvent.ToString())
-                                            && (_checkerConfiguration.AllowedEvents.Count == 0 // no filter provided then aggregate them all
-                                                || _checkerConfiguration.AllowedEvents.Contains(x.Details.Event));
                     PInferLogs.Add(JsonLogger.Logs.Where(
                         x => {
-                            if (check(x))
+                            if ((x.Type == JsonWriter.LogType.Announce.ToString() 
+                                            || x.Type == JsonWriter.LogType.SendEvent.ToString())
+                                            && (_checkerConfiguration.AllowedEvents.Count == 0 // no filter provided then aggregate them all
+                                                || _checkerConfiguration.AllowedEvents.Contains(x.Details.Event)))
                             {
                                 PInferEventObtained.Add(x.Details.Event);
                                 return true;

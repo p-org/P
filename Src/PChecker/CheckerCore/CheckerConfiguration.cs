@@ -345,7 +345,6 @@ namespace PChecker
             PInferMode = false;
             AllowedEvents = [];
             TraceFolder = "traces";
-            AllowedEvents = null;
             EnableDebugging = false;
 
             EnableColoredConsoleOutput = false;

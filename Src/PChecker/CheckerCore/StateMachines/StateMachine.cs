@@ -20,6 +20,8 @@ using PChecker.StateMachines.Managers;
 using PChecker.StateMachines.StateTransitions;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
+using PChecker.PRuntime.Exceptions;
+using PChecker.PRuntime.Values;
 using PChecker.SystematicTesting;
 using EventInfo = PChecker.StateMachines.Events.EventInfo;
 
@@ -139,6 +141,9 @@ namespace PChecker.StateMachines
         /// The installed runtime json logger.
         /// </summary>
         protected JsonWriter JsonLogger => Runtime.JsonLogger;
+        
+        protected IPrtValue gotoPayload;
+        
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StateMachine"/> class.
@@ -841,9 +846,12 @@ namespace PChecker.StateMachines
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <typeparam name="S">Type of the state.</typeparam>
-        protected void RaiseGotoStateEvent<S>()
-            where S : State =>
+        public void RaiseGotoStateEvent<S>(IPrtValue payload = null) where S : State
+        {
+            gotoPayload = payload;
             RaiseGotoStateEvent(typeof(S));
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
+        }
 
         /// <summary>
         /// Raise a special event that performs a goto state operation at the end of the current action.

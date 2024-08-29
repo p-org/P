@@ -911,7 +911,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case GotoStmt gotoStmt:
                     //last statement
-                    context.Write(output, $"currentMachine.TryGotoState<{context.Names.GetNameForDecl(gotoStmt.State)}>(");
+                    context.Write(output, $"currentMachine.RaiseGotoStateEvent<{context.Names.GetNameForDecl(gotoStmt.State)}>(");
                     if (gotoStmt.Payload != null)
                     {
                         WriteExpr(context, output, gotoStmt.Payload);
@@ -994,11 +994,11 @@ namespace Plang.Compiler.Backend.CSharp
                         WriteExpr(context, output, raiseStmt.Event);
                         context.Write(output, $".Payload = ");
                         WriteExpr(context, output, raiseStmt.Payload.First());
-                        context.Write(output, ";");
+                        context.WriteLine(output, ";");
                     }
                     context.Write(output, "currentMachine.RaiseEvent(");
                     WriteExpr(context, output, raiseStmt.Event);
-                    context.Write(output, ");");
+                    context.WriteLine(output, ");");
                     context.WriteLine(output, "return;");
                     break;
 

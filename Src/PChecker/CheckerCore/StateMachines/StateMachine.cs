@@ -213,30 +213,30 @@ namespace PChecker.StateMachines
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
-        protected void Assert(bool predicate) => Runtime.Assert(predicate);
+        public void Assert(bool predicate) => Runtime.Assert(predicate);
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
-        protected void Assert(bool predicate, string s, object arg0) =>
+        public void Assert(bool predicate, string s, object arg0) =>
             Runtime.Assert(predicate, s, arg0);
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
-        protected void Assert(bool predicate, string s, object arg0, object arg1) =>
+        public void Assert(bool predicate, string s, object arg0, object arg1) =>
             Runtime.Assert(predicate, s, arg0, arg1);
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
-        protected void Assert(bool predicate, string s, object arg0, object arg1, object arg2) =>
+        public void Assert(bool predicate, string s, object arg0, object arg1, object arg2) =>
             Runtime.Assert(predicate, s, arg0, arg1, arg2);
 
         /// <summary>
         /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
         /// </summary>
-        protected void Assert(bool predicate, string s, params object[] args) =>
+        public void Assert(bool predicate, string s, params object[] args) =>
             Runtime.Assert(predicate, s, args);
         
         /// <summary>
@@ -814,7 +814,7 @@ namespace PChecker.StateMachines
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <param name="e">The event to raise.</param>
-        protected void RaiseEvent(Event e)
+        public void RaiseEvent(Event e)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked RaiseEvent while halting.", Id);
             Assert(e != null, "{0} is raising a null event.", Id);

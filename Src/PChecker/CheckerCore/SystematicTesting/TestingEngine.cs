@@ -97,6 +97,7 @@ namespace PChecker.SystematicTesting
         /// a simplified representation of logs for PInfer
         /// </summary>
         private readonly List<List<PInferLog>> PInferLogs;
+        private readonly HashSet<string> PInferEventObtained;
 
         /// <summary>
         /// Field declaration with default JSON serializer options
@@ -293,10 +294,7 @@ namespace PChecker.SystematicTesting
             if (checkerConfiguration.PInferMode)
             {
                 PInferLogs = [];
-                if (checkerConfiguration.AllowedEvents.Count == 0)
-                {
-                    Error.CheckerReportAndExit($"PInfer mode enabled but no event filter provided. Use `-ef` to pass event names for filtering");
-                }
+                PInferEventObtained = [];
             }
 
             if (checkerConfiguration.SchedulingStrategy is "replay")
@@ -523,8 +521,8 @@ namespace PChecker.SystematicTesting
                     else
                     {
                         var traceIndex = new TraceIndex(_checkerConfiguration.TraceFolder, create: true);
-                        Logger.Write("Allowed Events: " + string.Join("", _checkerConfiguration.AllowedEvents));
-                        var saveTo = traceIndex.AddIndex(_checkerConfiguration.AllowedEvents, string.Join("", _checkerConfiguration.AllowedEvents));
+                        Logger.Write("Events Aggregated: " + string.Join("", PInferEventObtained));
+                        var saveTo = traceIndex.AddIndex(PInferEventObtained, string.Join("", PInferEventObtained));
                         var directory = Path.Combine(_checkerConfiguration.TraceFolder, saveTo);
                         if (!Directory.Exists(directory))
                         {
@@ -627,10 +625,22 @@ namespace PChecker.SystematicTesting
 
                 if (_checkerConfiguration.PInferMode)
                 {
+                    bool check(LogEntry x) => (x.Type == JsonWriter.LogType.Announce.ToString() 
+                                            || x.Type == JsonWriter.LogType.SendEvent.ToString())
+                                            && (_checkerConfiguration.AllowedEvents.Count == 0 // no filter provided then aggregate them all
+                                                || _checkerConfiguration.AllowedEvents.Contains(x.Details.Event));
                     PInferLogs.Add(JsonLogger.Logs.Where(
-                        x => (x.Type == JsonWriter.LogType.Announce.ToString() 
-                            || x.Type == JsonWriter.LogType.SendEvent.ToString()) 
-                            && (_checkerConfiguration.AllowedEvents == null || _checkerConfiguration.AllowedEvents.Contains(x.Details.Event))
+                        x => {
+                            if (check(x))
+                            {
+                                PInferEventObtained.Add(x.Details.Event);
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
                     ).Select(x => JsonWriter.ToPInferLog(x.Details)).ToList());
                 }
 

@@ -23,9 +23,7 @@ import pex.values.PEvent;
 import pex.values.PMessage;
 import pex.values.PValue;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 import java.util.SortedSet;
 
@@ -151,10 +149,10 @@ public class SchedulerLogger {
     /**
      * Log at the start of an iteration
      *
-     * @param task Search task
+     * @param task  Search task
      * @param schId Scheduler id
-     * @param iter Schedule number
-     * @param step Starting step number
+     * @param iter  Schedule number
+     * @param step  Starting step number
      */
     public void logStartIteration(SearchTask task, int schId, int iter, int step) {
         if (verbosity > 0) {
@@ -396,5 +394,18 @@ public class SchedulerLogger {
             log.info("--------------------");
             log.info("Replaying schedule");
         }
+    }
+
+    /**
+     * Print error trace
+     *
+     * @param e Exception object
+     */
+    public void logStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        log.info("--------------------");
+        log.info(sw.toString());
     }
 }

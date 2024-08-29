@@ -6,11 +6,14 @@ public class SearchStrategyDfs extends SearchStrategy {
     public SearchStrategyDfs() {
     }
 
-    public void addNewTask(SearchTask task) {
+    public void addTask(SearchTask task) {
+        PExGlobal.getPendingTasks().add(task);
     }
 
-    public SearchTask popNextTask() {
+    public SearchTask popTask() {
         assert (PExGlobal.getPendingTasks().size() == 1);
-        return PExGlobal.getPendingTasks().iterator().next();
+        SearchTask task = PExGlobal.getPendingTasks().iterator().next();
+        PExGlobal.getPendingTasks().remove(task);
+        return task;
     }
 }

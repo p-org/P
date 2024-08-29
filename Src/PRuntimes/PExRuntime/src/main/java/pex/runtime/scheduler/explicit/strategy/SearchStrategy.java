@@ -2,12 +2,14 @@ package pex.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
 import pex.runtime.PExGlobal;
-import pex.runtime.scheduler.explicit.SchedulerStatistics;
 
 import java.io.Serializable;
+import java.util.concurrent.Semaphore;
 
 @Getter
 public abstract class SearchStrategy implements Serializable {
+    private static final Semaphore sem = new Semaphore(1);
+
     /**
      * Task id of the latest search task
      */
@@ -17,26 +19,11 @@ public abstract class SearchStrategy implements Serializable {
      */
     int currTaskNumSchedules = 0;
 
-    public SearchTask createTask(SearchTask parentTask) {
-        SearchTask newTask = new SearchTask(PExGlobal.getAllTasks().size(), parentTask);
-        PExGlobal.getAllTasks().put(newTask.getId(), newTask);
-        return newTask;
-    }
-
-    public void createFirstTask() {
-        assert (PExGlobal.getAllTasks().size() == 0);
-        SearchTask firstTask = createTask(null);
-        PExGlobal.getPendingTasks().add(firstTask);
-        setCurrTask(firstTask);
-    }
-
     public SearchTask getCurrTask() {
         return getTask(currTaskId);
     }
 
-    private void setCurrTask(SearchTask task) {
-        assert (PExGlobal.getPendingTasks().contains(task));
-        PExGlobal.getPendingTasks().remove(task);
+    public void setCurrTask(SearchTask task) {
         currTaskId = task.getId();
         currTaskNumSchedules = 0;
     }
@@ -45,6 +32,30 @@ public abstract class SearchStrategy implements Serializable {
         currTaskNumSchedules++;
     }
 
+    public SearchTask setNextTask() throws InterruptedException {
+        SearchTask nextTask = popNextTask();
+        if (nextTask != null) {
+            if (nextTask.getId() != 0) {
+                // not the very first task, read from file
+                nextTask.readFromFile();
+            }
+        }
+        return nextTask;
+    }
+
+    public SearchTask createTask(SearchTask parentTask) throws InterruptedException {
+        sem.acquire();
+        SearchTask newTask = new SearchTask(PExGlobal.getAllTasks().size(), parentTask);
+        PExGlobal.getAllTasks().put(newTask.getId(), newTask);
+        sem.release();
+        return newTask;
+    }
+
+    public void createFirstTask() throws InterruptedException {
+        assert (PExGlobal.getAllTasks().size() == 0);
+        SearchTask firstTask = createTask(null);
+        addNewTask(firstTask);
+    }
 
     private boolean isValidTaskId(int id) {
         return (id < PExGlobal.getAllTasks().size()) && (PExGlobal.getAllTasks().containsKey(id));
@@ -55,19 +66,25 @@ public abstract class SearchStrategy implements Serializable {
         return PExGlobal.getAllTasks().get(id);
     }
 
-    public SearchTask setNextTask() {
-        if (PExGlobal.getPendingTasks().isEmpty()) {
-            return null;
-        }
-
-        SearchTask nextTask = popNextTask();
-        nextTask.readFromFile();
-        setCurrTask(nextTask);
-
-        return nextTask;
+    public void addNewTask(SearchTask task) throws InterruptedException {
+        sem.acquire();
+        addTask(task);
+        sem.release();
     }
 
-    abstract SearchTask popNextTask();
+    SearchTask popNextTask() throws InterruptedException {
+        sem.acquire();
+        SearchTask task;
+        if (PExGlobal.getPendingTasks().isEmpty()) {
+            task = null;
+        } else {
+            task = popTask();
+        }
+        sem.release();
+        return task;
+    }
 
-    public abstract void addNewTask(SearchTask task);
+    abstract SearchTask popTask();
+
+    abstract void addTask(SearchTask task);
 }

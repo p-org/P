@@ -1,31 +1,31 @@
 package pex.runtime.scheduler.explicit.strategy;
 
+import pex.runtime.PExGlobal;
 import pex.utils.random.RandomNumberGenerator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 public class SearchStrategyRandom extends SearchStrategy {
-    private final List<SearchTask> elementList;
-    private final Set<SearchTask> elementSet;
+    private static final List<SearchTask> elementList = new ArrayList<>();
 
     public SearchStrategyRandom() {
-        elementList = new ArrayList<>();
-        elementSet = new HashSet<>();
     }
 
-    public void addNewTask(SearchTask task) {
-        assert (!elementSet.contains(task));
+    public void addTask(SearchTask task) {
+        PExGlobal.getPendingTasks().add(task);
         elementList.add(task);
-        elementSet.add(task);
     }
 
-    public SearchTask popNextTask() {
+    public SearchTask popTask() {
         assert (!elementList.isEmpty());
         Collections.shuffle(
                 elementList, new Random(RandomNumberGenerator.getInstance().getRandomLong()));
         SearchTask result = elementList.get(0);
         elementList.remove(0);
-        elementSet.remove(result);
+        PExGlobal.getPendingTasks().remove(result);
         return result;
     }
 }

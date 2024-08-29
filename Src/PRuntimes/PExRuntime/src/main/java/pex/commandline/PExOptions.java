@@ -497,10 +497,12 @@ public class PExOptions {
 
         if (config.getSearchStrategyMode() == SearchStrategyMode.DepthFirst) {
             config.setMaxSchedulesPerTask(0);
+            config.setNumThreads(1);
         }
 
         if (config.getReplayFile() != "") {
             config.setSearchStrategyMode(SearchStrategyMode.Replay);
+            config.setNumThreads(1);
             if (config.getVerbosity() == 0) {
                 config.setVerbosity(1);
             }

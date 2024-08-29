@@ -20,7 +20,7 @@ public class PMonitor extends PMachine {
      */
     public PMonitor(String name, int id, State startState, State... states) {
         super(name, id, startState, states);
-        globalMachineId--;
+        decGlobalMachineId();
         this.instanceId = --globalMonitorId;
     }
 

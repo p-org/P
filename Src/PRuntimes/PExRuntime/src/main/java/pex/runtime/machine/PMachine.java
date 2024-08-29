@@ -6,6 +6,8 @@ import pex.runtime.machine.buffer.DeferQueue;
 import pex.runtime.machine.buffer.SenderQueue;
 import pex.runtime.machine.eventhandlers.EventHandler;
 import pex.runtime.machine.events.PContinuation;
+import pex.runtime.scheduler.Schedule;
+import pex.runtime.scheduler.Scheduler;
 import pex.utils.exceptions.BugFoundException;
 import pex.utils.misc.Assert;
 import pex.utils.serialize.SerializableBiFunction;
@@ -24,7 +26,7 @@ import java.util.*;
 public abstract class PMachine implements Serializable, Comparable<PMachine> {
     @Getter
     private static final Map<String, PMachine> nameToMachine = new HashMap<>();
-    protected static int globalMachineId = 1;
+    protected static final Map<Scheduler, Integer> globalMachineId = new HashMap<>();
     @Getter
     protected final PMachineId pid;
     @Getter
@@ -72,7 +74,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     public PMachine(String name, int id, State startState, State... states) {
         // initialize name, ids
         this.name = name;
-        this.instanceId = ++globalMachineId;
+        incGlobalMachineId();
+        this.instanceId = getGlobalMachineId();
         this.pid = new PMachineId(this.getClass(), id);
         this.pid.setName(this.toString());
         nameToMachine.put(toString(), this);
@@ -99,6 +102,23 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         // initialize happens-before
         this.observedEvents = new HashSet<>();
         this.happensBeforePairs = new LinkedHashSet<>();
+    }
+
+    protected int getGlobalMachineId() {
+        Scheduler sch = PExGlobal.getScheduler();
+        return globalMachineId.get(sch);
+    }
+
+    protected void incGlobalMachineId() {
+        Scheduler sch = PExGlobal.getScheduler();
+        int id = globalMachineId.getOrDefault(sch, 1);
+        globalMachineId.put(sch, id+1);
+    }
+
+    protected void decGlobalMachineId() {
+        Scheduler sch = PExGlobal.getScheduler();
+        int id = globalMachineId.get(sch);
+        globalMachineId.put(sch, id-1);
     }
 
     public void start(PValue<?> payload) {

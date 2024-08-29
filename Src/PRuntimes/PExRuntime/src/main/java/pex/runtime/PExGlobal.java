@@ -4,12 +4,10 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import pex.commandline.PExConfig;
-import pex.runtime.logger.PExLogger;
 import pex.runtime.logger.ScratchLogger;
 import pex.runtime.logger.StatWriter;
 import pex.runtime.scheduler.Scheduler;
 import pex.runtime.scheduler.explicit.ExplicitSearchScheduler;
-import pex.runtime.scheduler.explicit.SchedulerStatistics;
 import pex.runtime.scheduler.explicit.StateCachingMode;
 import pex.runtime.scheduler.explicit.choiceselector.ChoiceSelector;
 import pex.runtime.scheduler.explicit.choiceselector.ChoiceSelectorQL;
@@ -20,7 +18,8 @@ import pex.utils.monitor.MemoryMonitor;
 import pex.utils.monitor.TimeMonitor;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -54,6 +53,11 @@ public class PExGlobal {
     @Getter
     private static final Set<SearchTask> finishedTasks = ConcurrentHashMap.newKeySet();
     /**
+     * Set of all search tasks that are currently running
+     */
+    @Getter
+    private static final Set<SearchTask> runningTasks = ConcurrentHashMap.newKeySet();
+    /**
      * PModel
      **/
     @Getter
@@ -66,14 +70,17 @@ public class PExGlobal {
     @Setter
     private static PExConfig config = null;
     /**
-     * Explicit search schedulers
-     **/
-    private static Map<Integer, ExplicitSearchScheduler> searchSchedulers = new ConcurrentHashMap<>();
-    /**
      * Replay scheduler
      */
     @Setter
     private static ReplayScheduler replayScheduler = null;
+    /**
+     * Explicit search schedulers
+     **/
+    @Getter
+    private static Map<Integer, ExplicitSearchScheduler> searchSchedulers = new ConcurrentHashMap<>();
+    @Getter
+    private static Map<Long, Integer> threadToSchedulerId = new ConcurrentHashMap<>();
     /**
      * Status of the run
      **/
@@ -100,10 +107,20 @@ public class PExGlobal {
         searchSchedulers.put(sch.getSchedulerId(), sch);
     }
 
+    public static void registerSearchScheduler(int schId) {
+        assert (searchSchedulers.containsKey(schId));
+
+        long threadId = Thread.currentThread().getId();
+        assert (!threadToSchedulerId.containsKey(threadId));
+        threadToSchedulerId.put(threadId, schId);
+    }
+
     public static Scheduler getScheduler() {
         if (replayScheduler == null) {
-            // TODO: pex parallel - use thread id to get search scheduler
-            return searchSchedulers.get(1);
+            long threadId = Thread.currentThread().getId();
+            Integer schId = threadToSchedulerId.get(threadId);
+            assert (schId != null);
+            return searchSchedulers.get(schId);
         } else {
             return replayScheduler;
         }
@@ -231,7 +248,8 @@ public class PExGlobal {
         s.append(String.format("\n    Status after %.2f seconds:", newRuntime));
         s.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
         s.append(String.format("\n      Schedules:        %d", getTotalSchedules()));
-        s.append(String.format("\n      Unexplored:       %d", getNumUnexploredChoices()));
+//        s.append(String.format("\n      Unexplored:       %d", getNumUnexploredChoices()));
+        s.append(String.format("\n      RunningTasks:     %d", runningTasks.size()));
         s.append(String.format("\n      FinishedTasks:    %d", finishedTasks.size()));
         s.append(String.format("\n      PendingTasks:     %d", pendingTasks.size()));
         s.append(String.format("\n      Timelines:        %d", timelines.size()));
@@ -242,26 +260,22 @@ public class PExGlobal {
         ScratchLogger.log(s.toString());
     }
 
-    public static void printProgressHeader(boolean consolePrint) {
+    public static void printProgressHeader() {
         StringBuilder s = new StringBuilder(100);
         s.append(StringUtils.center("Time", 11));
         s.append(StringUtils.center("Memory", 9));
 
         s.append(StringUtils.center("Schedules", 12));
         s.append(StringUtils.center("Timelines", 12));
-        s.append(StringUtils.center("Unexplored", 24));
+        s.append(StringUtils.center("Tasks (run/fin/pen)", 24));
+//        s.append(StringUtils.center("Unexplored", 24));
 
         if (config.getStateCachingMode() != StateCachingMode.None) {
             s.append(StringUtils.center("States", 12));
         }
 
-        if (consolePrint) {
-            System.out.println("--------------------");
-            System.out.println(s);
-        } else {
-            PExLogger.logVerbose("--------------------");
-            PExLogger.logVerbose(s.toString());
-        }
+        System.out.println("--------------------");
+        System.out.println(s);
     }
 
     public static void printProgress(boolean forcePrint) {
@@ -269,50 +283,46 @@ public class PExGlobal {
             lastReportTime = Instant.now();
             double newRuntime = TimeMonitor.getRuntime();
             printCurrentStatus(newRuntime);
-            boolean consolePrint = (config.getVerbosity() == 0);
-            if (consolePrint || forcePrint) {
-                long runtime = (long) (newRuntime * 1000);
-                String runtimeHms =
-                        String.format(
-                                "%02d:%02d:%02d",
-                                TimeUnit.MILLISECONDS.toHours(runtime),
-                                TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
-                                TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
+            long runtime = (long) (newRuntime * 1000);
+            String runtimeHms =
+                    String.format(
+                            "%02d:%02d:%02d",
+                            TimeUnit.MILLISECONDS.toHours(runtime),
+                            TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
+                            TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
 
-                StringBuilder s = new StringBuilder(100);
-                if (consolePrint) {
-                    s.append('\r');
-                } else {
-                    printProgressHeader(false);
-                }
-                s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
-                s.append(
-                        StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
+            StringBuilder s = new StringBuilder(100);
+            s.append('\r');
+            s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
+            s.append(
+                    StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
 
-                s.append(StringUtils.center(String.format("%d", getTotalSchedules()), 12));
-                s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
-                s.append(
-                        StringUtils.center(
-                                String.format(
-                                        "%d (%.0f %% data)", getNumUnexploredChoices(), getUnexploredDataChoicesPercent()),
-                                24));
+            s.append(StringUtils.center(String.format("%d", getTotalSchedules()), 12));
+            s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
+            s.append(StringUtils.center(String.format("%d / %d / %d",
+                            runningTasks.size(), finishedTasks.size(), pendingTasks.size()),
+                    24));
+//                s.append(
+//                        StringUtils.center(
+//                                String.format(
+//                                        "%d (%.0f %% data)", getNumUnexploredChoices(), getUnexploredDataChoicesPercent()),
+//                                24));
 
-                if (config.getStateCachingMode() != StateCachingMode.None) {
-                    s.append(StringUtils.center(String.format("%d", stateCache.size()), 12));
-                }
+            if (config.getStateCachingMode() != StateCachingMode.None) {
+                s.append(StringUtils.center(String.format("%d", stateCache.size()), 12));
+            }
 
-                if (consolePrint) {
-                    System.out.print(s);
-                } else {
-                    PExLogger.logVerbose(s.toString());
-                }
+            if (forcePrint) {
+                System.out.println(s);
+            } else {
+                System.out.print(s);
             }
         }
     }
 
     public static int getTotalSchedules() {
         int result = 0;
-        for (ExplicitSearchScheduler sch: searchSchedulers.values()) {
+        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
             result += sch.getStats().numSchedules;
         }
         return result;
@@ -320,7 +330,7 @@ public class PExGlobal {
 
     public static int getMinSteps() {
         int result = -1;
-        for (ExplicitSearchScheduler sch: searchSchedulers.values()) {
+        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
             if (result == -1 || result > sch.getStats().minSteps) {
                 result = sch.getStats().minSteps;
             }
@@ -330,7 +340,7 @@ public class PExGlobal {
 
     public static int getMaxSteps() {
         int result = -1;
-        for (ExplicitSearchScheduler sch: searchSchedulers.values()) {
+        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
             if (result == -1 || result < sch.getStats().maxSteps) {
                 result = sch.getStats().maxSteps;
             }
@@ -340,7 +350,7 @@ public class PExGlobal {
 
     public static int getTotalSteps() {
         int result = 0;
-        for (ExplicitSearchScheduler sch: searchSchedulers.values()) {
+        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
             result += sch.getStats().totalSteps;
         }
         return result;
@@ -348,7 +358,7 @@ public class PExGlobal {
 
     public static int getTotalStates() {
         int result = 0;
-        for (ExplicitSearchScheduler sch: searchSchedulers.values()) {
+        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
             result += sch.getStats().totalStates;
         }
         return result;

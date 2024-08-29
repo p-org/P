@@ -20,6 +20,7 @@ import pex.values.PValue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -31,6 +32,8 @@ public class ExplicitSearchScheduler extends Scheduler {
      */
     @Getter
     private final transient SearchStrategy searchStrategy;
+    @Getter
+    private final SchedulerStatistics stats = new SchedulerStatistics();
     /**
      * Backtrack choice number
      */
@@ -44,8 +47,6 @@ public class ExplicitSearchScheduler extends Scheduler {
      * Whether to skip liveness check (because of early schedule termination due to state caching)
      */
     private transient boolean skipLiveness = false;
-    @Getter
-    private final SchedulerStatistics stats = new SchedulerStatistics();
 
 
     /**
@@ -69,18 +70,67 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     /**
+     * Set next backtrack task with given orchestration mode
+     */
+    public SearchTask waitForNextTask() throws InterruptedException {
+        SearchTask nextTask = null;
+
+        while (true) {
+            if (PExGlobal.getRunningTasks().isEmpty() && PExGlobal.getPendingTasks().isEmpty()) {
+                // nothing running and no pending tasks, done
+                break;
+            }
+
+            // try getting a next task
+            nextTask = searchStrategy.setNextTask();
+            if (nextTask != null) {
+                // got a new next task
+                searchStrategy.setCurrTask(nextTask);
+
+                // add next task to running task
+                assert (!PExGlobal.getRunningTasks().contains(nextTask));
+                PExGlobal.getRunningTasks().add(nextTask);
+
+                // setup for next task
+                logger.logNextTask(nextTask);
+                schedule.setChoices(nextTask.getPrefixChoices());
+                postIterationCleanup();
+                break;
+            }
+
+            // no next task but there are running tasks, sleep and retry
+            TimeUnit.SECONDS.sleep(1);
+        }
+
+        return nextTask;
+    }
+
+    /**
      * Run the scheduler to perform explicit-state search.
      *
      * @throws TimeoutException Throws timeout exception if timeout is reached
      */
     @Override
-    public void run() throws TimeoutException {
+    public void run() throws TimeoutException, InterruptedException {
+        PExGlobal.registerSearchScheduler(schedulerId);
+
         // log run test
         logger.logRunTest();
 
-        searchStrategy.createFirstTask();
-
         while (true) {
+            if (PExGlobal.getStatus() == STATUS.SCHEDULEOUT) {
+                // schedule limit reached, done
+                break;
+            }
+
+            // wait for the next task
+            SearchTask nextTask = waitForNextTask();
+            if (nextTask == null) {
+                // nothing running and no pending tasks, done
+                break;
+            }
+
+            // run the task
             logger.logStartTask(searchStrategy.getCurrTask());
             isDoneIterating = false;
             while (!isDoneIterating) {
@@ -96,16 +146,6 @@ public class ExplicitSearchScheduler extends Scheduler {
             logger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getCurrTaskNumSchedules());
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
-
-            if (PExGlobal.getPendingTasks().isEmpty() || PExGlobal.getStatus() == STATUS.SCHEDULEOUT) {
-                // all tasks completed or schedule limit reached
-                break;
-            }
-
-            // schedule limit not reached and there are pending tasks
-            // set the next task
-            SearchTask nextTask = setNextTask();
-            assert (nextTask != null);
         }
     }
 
@@ -416,7 +456,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
     }
 
-    private void addRemainingChoicesAsChildrenTasks() {
+    private void addRemainingChoicesAsChildrenTasks() throws InterruptedException {
         SearchTask parentTask = searchStrategy.getCurrTask();
         int numChildrenAdded = 0;
         for (int i : parentTask.getSearchUnitKeys(false)) {
@@ -440,9 +480,10 @@ public class ExplicitSearchScheduler extends Scheduler {
         SearchTask currTask = searchStrategy.getCurrTask();
         currTask.cleanup();
         PExGlobal.getFinishedTasks().add(currTask);
+        PExGlobal.getRunningTasks().remove(currTask);
     }
 
-    private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) {
+    private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) throws InterruptedException {
         SearchTask newTask = searchStrategy.createTask(parentTask);
 
         int maxChoiceNum = choiceNum;
@@ -466,21 +507,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         newTask.writeToFile();
         parentTask.addChild(newTask);
-        PExGlobal.getPendingTasks().add(newTask);
         searchStrategy.addNewTask(newTask);
-    }
-
-    /**
-     * Set next backtrack task with given orchestration mode
-     */
-    public SearchTask setNextTask() {
-        SearchTask nextTask = searchStrategy.setNextTask();
-        if (nextTask != null) {
-            logger.logNextTask(nextTask);
-            schedule.setChoices(nextTask.getPrefixChoices());
-            postIterationCleanup();
-        }
-        return nextTask;
     }
 
     private void postIterationCleanup() {

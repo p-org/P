@@ -8,8 +8,8 @@ import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pex.runtime.PExGlobal;
 import pex.runtime.STATUS;
-import pex.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pex.runtime.scheduler.explicit.StateCachingMode;
+import pex.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 import pex.utils.monitor.MemoryMonitor;
 
 import java.io.PrintWriter;
@@ -64,7 +64,7 @@ public class PExLogger {
      * @param scheduler Explicit state search scheduler
      * @param timeSpent Time spent in seconds
      */
-    public static void logEndOfRun(ExplicitSearchScheduler scheduler, long timeSpent) {
+    public static void logEndOfRun(long timeSpent) {
         if (verbosity == 0) {
             log.info("");
         }
@@ -75,8 +75,8 @@ public class PExLogger {
         } else {
             log.info("..... Found 0 bugs.");
         }
-        if (scheduler != null) {
-            log.info("... Scheduling statistics:");
+        if (PExGlobal.getConfig().getSearchStrategyMode() != SearchStrategyMode.Replay) {
+            log.info("... Search statistics:");
             if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
                 log.info(String.format("..... Explored %d distinct states over %d timelines",
                         PExGlobal.getStateCache().size(), PExGlobal.getTimelines().size()));

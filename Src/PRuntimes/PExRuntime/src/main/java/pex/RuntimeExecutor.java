@@ -103,6 +103,8 @@ public class RuntimeExecutor {
             TimeUnit.SECONDS.sleep(1);
             PExGlobal.printProgress(false);
         }
+        PExGlobal.printProgress(true);
+        PExGlobal.printProgressFooter();
 
         if (resultException != null) {
             throw resultException;

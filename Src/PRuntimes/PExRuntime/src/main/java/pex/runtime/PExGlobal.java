@@ -224,8 +224,6 @@ public class PExGlobal {
     }
 
     public static void recordStats() {
-        printProgress(true);
-
         // print basic statistics
         StatWriter.log("#-schedules", String.format("%d", getTotalSchedules()));
         StatWriter.log("#-timelines", String.format("%d", timelines.size()));
@@ -278,6 +276,10 @@ public class PExGlobal {
         System.out.println(s);
     }
 
+    public static void printProgressFooter() {
+        System.out.println();
+    }
+
     public static void printProgress(boolean forcePrint) {
         if (forcePrint || (TimeMonitor.findInterval(lastReportTime) > 10)) {
             lastReportTime = Instant.now();
@@ -312,11 +314,7 @@ public class PExGlobal {
                 s.append(StringUtils.center(String.format("%d", stateCache.size()), 12));
             }
 
-            if (forcePrint) {
-                System.out.println(s);
-            } else {
-                System.out.print(s);
-            }
+            System.out.print(s);
         }
     }
 

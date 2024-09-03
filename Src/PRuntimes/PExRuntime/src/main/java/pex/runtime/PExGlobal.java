@@ -82,6 +82,14 @@ public class PExGlobal {
     @Getter
     private static Map<Long, Integer> threadToSchedulerId = new ConcurrentHashMap<>();
     /**
+     * Map from scheduler to global machine id
+     */
+    private static Map<Scheduler, Integer> globalMachineId = new ConcurrentHashMap<>();
+    /**
+     * Map from scheduler to global monitor id
+     */
+    private static Map<Scheduler, Integer> globalMonitorId = new ConcurrentHashMap<>();
+    /**
      * Status of the run
      **/
     @Getter
@@ -124,6 +132,32 @@ public class PExGlobal {
         } else {
             return replayScheduler;
         }
+    }
+
+    public static int getGlobalMachineId() {
+        Scheduler sch = getScheduler();
+        if (!globalMachineId.containsKey(sch)) {
+            globalMachineId.put(sch, 1);
+        }
+        return globalMachineId.get(sch);
+    }
+
+    public static void setGlobalMachineId(int id) {
+        Scheduler sch = getScheduler();
+        globalMachineId.put(sch, id);
+    }
+
+    public static int getGlobalMonitorId() {
+        Scheduler sch = getScheduler();
+        if (!globalMonitorId.containsKey(sch)) {
+            globalMonitorId.put(sch, -1);
+        }
+        return globalMonitorId.get(sch);
+    }
+
+    public static void setGlobalMonitorId(int id) {
+        Scheduler sch = getScheduler();
+        globalMonitorId.put(sch, id);
     }
 
     /**

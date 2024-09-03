@@ -16,12 +16,14 @@ import java.util.Set;
 
 @Getter
 public class PContinuation implements Serializable {
+    private final String name;
     private final Set<String> caseEvents;
     private final SerializableBiFunction<PMachine, PMessage> handleFun;
     @Getter
     private final Map<String, PValue<?>> vars;
 
-    public PContinuation(SerializableBiFunction<PMachine, PMessage> handleFun, String... ev) {
+    public PContinuation(String name, SerializableBiFunction<PMachine, PMessage> handleFun, String... ev) {
+        this.name = name;
         this.handleFun = handleFun;
         this.caseEvents = new HashSet<>(Set.of(ev));
         this.vars = new HashMap<>();
@@ -112,6 +114,28 @@ public class PContinuation implements Serializable {
         } else {
             // blocked on a different continuation encountered when processing pending new state entry function, do nothing
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return this.name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        else if (!(obj instanceof PContinuation)) {
+            return false;
+        }
+        if (this.name == null) {
+            return (((PContinuation) obj).name == null);
+        }
+        return this.name.equals(((PContinuation) obj).name);
+    }
+
+    @Override
+    public String toString() {
+        return this.name;
     }
 
 }

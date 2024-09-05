@@ -997,6 +997,22 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
+        public bool TryParseToExpr(ICompilerConfiguration config, Scope globalScope, string repr, out IPExpr result)
+        {
+            if (TryParseExpr(repr, out var ctx))
+            {
+                InvExprVisitor visitor = new(config, globalScope, CC, hint.ConfigEvent, ReprToTerms);
+                try
+                {
+                    result = visitor.Visit(ctx);
+                    return true;
+                } catch (Exception)
+                {}
+            }
+            result = null;
+            return false;
+        }
+
         public PruningStatus ProcessBinOpExpr(ICompilerConfiguration config, Scope globalScope,
                                                 string orig, string lhs, string op, string rhs, out string processed)
         {

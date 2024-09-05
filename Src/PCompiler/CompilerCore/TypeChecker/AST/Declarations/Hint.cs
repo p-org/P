@@ -150,6 +150,16 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             return Arity <= maxArity && ExistentialQuantifiers <= 1 && NumFilterPredicates <= job.MaxFilters && NumGuardPredicates <= job.MaxGuards;
         }
 
+        public List<PEvent> ForallQuantified()
+        {
+            return Quantified.SkipLast(ExistentialQuantifiers).Select(v => v.EventDecl).ToList();
+        }
+
+        public List<PEvent> ExistentialQuantified()
+        {
+            return Quantified.TakeLast(ExistentialQuantifiers).Select(v => v.EventDecl).ToList();
+        }
+
         public Hint Copy()
         {
             Hint h = new(Name, Exact, SourceLocation)

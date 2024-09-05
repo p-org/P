@@ -521,8 +521,8 @@ namespace PChecker.SystematicTesting
                     else
                     {
                         var traceIndex = new TraceIndex(_checkerConfiguration.TraceFolder, create: true);
-                        Logger.Write("Events Aggregated: " + string.Join("", PInferEventObtained));
-                        var saveTo = traceIndex.AddIndex(PInferEventObtained, string.Join("", PInferEventObtained));
+                        Logger.Write("Events Aggregated: " + string.Join(" ", PInferEventObtained));
+                        var saveTo = traceIndex.AddIndex(PInferEventObtained, string.Join("", PInferEventObtained).GetHashCode().ToString("X"));
                         var directory = Path.Combine(_checkerConfiguration.TraceFolder, saveTo);
                         if (!Directory.Exists(directory))
                         {

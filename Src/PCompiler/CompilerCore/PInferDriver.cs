@@ -5,8 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Text.Json;
+using Plang.Compiler.Backend;
 using Plang.Compiler.Backend.PInfer;
 using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
@@ -374,6 +376,83 @@ namespace Plang.Compiler
                 {
                     if (P[k][i].Count == 0 && Q[k][i].Count == 0) continue;
                     yield return (NumExists[k], i, Executed[k][i], P[k][i], Q[k][i]);
+                }
+            }
+        }
+
+        private static bool populateExprs(PInferPredicateGenerator codegen, ICompilerConfiguration job, Scope globalScope, HashSet<string> reprs, List<IPExpr> list)
+        {
+            return reprs.Select(repr => {
+                if (codegen.TryParseToExpr(job, globalScope, repr, out var expr))
+                {
+                    list.Add(expr);
+                    return true;
+                }
+                job.Output.WriteError($"Failed to parse: {repr}");
+                return false;
+            }).All(x => x);
+        }
+
+        public static void WriteInv(Hint h, List<IPExpr> p, List<IPExpr> q)
+        {
+
+        }
+
+        public static void WriteSpecMonitor(PInferPredicateGenerator codegen, CompilationContext ctx, ICompilerConfiguration job, Scope globalScope, Hint h, HashSet<string> p, HashSet<string> q, string inv, CompiledFile monitorFile)
+        {
+            List<IPExpr> guards = [];
+            List<IPExpr> filters = [];
+            void WriteLine(string line) => ctx.WriteLine(monitorFile.Stream, line);
+            string MCBuff(string eventName) => $"Hist_{eventName}";
+            string PendingBuff(string eventName) => $"Pending_{eventName}";
+            if (populateExprs(codegen, job, globalScope, p, guards) && populateExprs(codegen, job, globalScope, q, filters))
+            {
+                WriteLine($"// Monitor for spec: {inv}");
+                WriteLine($"spec {h.Name} observes {string.Join(", ", h.Quantified.Select(x => x.EventName))} {{");
+                foreach (var forall_e in h.ForallQuantified())
+                {
+                    WriteLine($"var {MCBuff(forall_e.Name)}: {forall_e.PayloadType.OriginalRepresentation};");
+                    WriteLine($"var {PendingBuff(forall_e.Name)}: {forall_e.PayloadType.OriginalRepresentation};");
+                }
+                foreach (var exists_e in h.ExistentialQuantified())
+                {
+                    WriteLine($"var {MCBuff(exists_e.Name)}: {exists_e.PayloadType.OriginalRepresentation};");
+                }
+                WriteLine("start state Init {"); // Init
+                WriteLine("entry {");
+                foreach (var forall_e in h.ForallQuantified())
+                {
+                    WriteLine($"{MCBuff(forall_e.Name)} = default({forall_e.PayloadType.OriginalRepresentation});");
+                    WriteLine($"{PendingBuff(forall_e.Name)} = {forall_e.PayloadType.OriginalRepresentation};");
+                }
+                WriteLine("goto Serving_Cold");
+                WriteLine("}"); // End entry
+                WriteLine("}"); // End Init
+
+                WriteLine($"}} // {h.Name}");
+
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        public static void WriteMonitors(PInferPredicateGenerator codegen, ICompilerConfiguration job, Scope globalScope)
+        {
+            CompilationContext ctx = new(job);
+            // using StreamWriter invwrite = new("monitors.txt");
+            int n = 0;
+            foreach (var (_, _, h, p, q) in AllExecuedAndMined())
+            {
+                if (q.Count == 0) continue;
+                var ps = string.Join(" ∧ ", p);
+                foreach (var f in q)
+                {
+                    if (f.Count == 0) continue;
+                    var prop = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", f));
+                    CompiledFile monitorFile = new($"minotor_{n++}.p", "PInferSpecs");
+                    // invwrite.WriteLine(h.GetInvariantReprHeader(ps, string.Join(" ∧ ", f)));
                 }
             }
         }
@@ -839,36 +918,19 @@ namespace Plang.Compiler
                     // same filter, keep weaker guard if comparable
                     if (SetEquals(q, q_prime))
                     {
-                        if (numExists == 0)
+                        // same filters, then keep the weaker guard
+                        if (p.IsSubsetOf(p_prime))
                         {
-                            // same filters, then keep the weaker guard
-                            if (p.IsSubsetOf(p_prime))
-                            {
-                                // existing is weaker, so skip current one
-                                job.Output.WriteWarning($"[Drop][Forall-StrongerGuards] {curr_inv}");
-                                return ([], []);
-                            }
-                            else if (p_prime.IsSubsetOf(p))
-                            {
-                                // replace existing one
-                                job.Output.WriteWarning($"[Replaced][Forall-WeakerGuards] {curr_inv}");
-                                prevP[i] = p_prime;
-                                return ([], []);
-                            }
+                            // existing is weaker, so skip current one
+                            job.Output.WriteWarning($"[Drop][StrongerGuards] {curr_inv}");
+                            return ([], []);
                         }
-                        else
+                        else if (p_prime.IsSubsetOf(p))
                         {
-                            if (p.IsSubsetOf(p_prime))
-                            {
-                                job.Output.WriteWarning($"[Replaced][Exists-StrongerGuards] {curr_inv}");
-                                prevP[i] = p_prime;
-                                return ([], []);
-                            }
-                            else if (p_prime.IsSubsetOf(p))
-                            {
-                                job.Output.WriteWarning($"[Drop][Exists-WeakerGuards] {curr_inv}");
-                                return ([], []);
-                            }
+                            // replace existing one
+                            job.Output.WriteWarning($"[Replaced][WeakerGuards] {curr_inv}");
+                            prevP[i] = p_prime;
+                            return ([], []);
                         }
                     }
                 }

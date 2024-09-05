@@ -8,6 +8,7 @@ import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import pex.runtime.PExGlobal;
 import pex.runtime.STATUS;
+import pex.runtime.scheduler.Scheduler;
 import pex.runtime.scheduler.explicit.StateCachingMode;
 import pex.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 import pex.utils.monitor.MemoryMonitor;
@@ -102,5 +103,15 @@ public class PExLogger {
         e.printStackTrace(pw);
         log.info("--------------------");
         log.info(sw.toString());
+    }
+
+    /**
+     * Prints bug found info
+     *
+     * @param sch Scheduler that found the bug
+     */
+    public static void logBugFoundInfo(Scheduler sch) {
+        log.info("--------------------");
+        log.info(String.format("Thread %d found a bug. Details in %s", sch.getSchedulerId(), sch.getLogger().getFileName()));
     }
 }

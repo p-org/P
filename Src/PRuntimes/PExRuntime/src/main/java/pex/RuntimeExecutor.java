@@ -162,6 +162,7 @@ public class RuntimeExecutor {
                 PExGlobal.setResult(PExGlobal.getResult() + " (too many choices)");
             }
             e.getScheduler().getLogger().logStackTrace(e);
+            PExLogger.logBugFoundInfo(e.getScheduler());
 
             String schFile = PExGlobal.getConfig().getOutputFolder() + "/" + PExGlobal.getConfig().getProjectName() + "_0_0.schedule";
             PExLogger.logInfo(String.format("Writing buggy trace in %s", schFile));

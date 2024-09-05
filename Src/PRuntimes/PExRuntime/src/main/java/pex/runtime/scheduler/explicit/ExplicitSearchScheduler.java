@@ -275,7 +275,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             // present in state cache
 
             // check if possible cycle
-            if (visitedAt == stateVal) {
+            if (visitedAt.equals(stateVal)) {
                 if (PExGlobal.getConfig().isFailOnMaxStepBound()) {
                     // cycle detected since revisited same state at a different step in the same schedule
                     Assert.cycle("Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule");

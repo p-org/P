@@ -58,6 +58,21 @@ public class PExGlobal {
     @Getter
     private static final Set<SearchTask> runningTasks = ConcurrentHashMap.newKeySet();
     /**
+     * Explicit search schedulers
+     **/
+    @Getter
+    private static final Map<Integer, ExplicitSearchScheduler> searchSchedulers = new ConcurrentHashMap<>();
+    @Getter
+    private static final Map<Long, Integer> threadToSchedulerId = new ConcurrentHashMap<>();
+    /**
+     * Map from scheduler to global machine id
+     */
+    private static final Map<Scheduler, Integer> globalMachineId = new ConcurrentHashMap<>();
+    /**
+     * Map from scheduler to global monitor id
+     */
+    private static final Map<Scheduler, Integer> globalMonitorId = new ConcurrentHashMap<>();
+    /**
      * PModel
      **/
     @Getter
@@ -74,21 +89,6 @@ public class PExGlobal {
      */
     @Setter
     private static ReplayScheduler replayScheduler = null;
-    /**
-     * Explicit search schedulers
-     **/
-    @Getter
-    private static Map<Integer, ExplicitSearchScheduler> searchSchedulers = new ConcurrentHashMap<>();
-    @Getter
-    private static Map<Long, Integer> threadToSchedulerId = new ConcurrentHashMap<>();
-    /**
-     * Map from scheduler to global machine id
-     */
-    private static Map<Scheduler, Integer> globalMachineId = new ConcurrentHashMap<>();
-    /**
-     * Map from scheduler to global monitor id
-     */
-    private static Map<Scheduler, Integer> globalMonitorId = new ConcurrentHashMap<>();
     /**
      * Status of the run
      **/

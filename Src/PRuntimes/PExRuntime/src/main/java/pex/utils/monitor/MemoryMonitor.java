@@ -4,7 +4,6 @@ import com.sun.management.GarbageCollectionNotificationInfo;
 import lombok.Getter;
 import pex.utils.exceptions.MemoutException;
 
-import javax.management.Notification;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationListener;
 import java.lang.management.GarbageCollectorMXBean;
@@ -25,16 +24,13 @@ public class MemoryMonitor {
         memLimit = ml;
 
         notificationListener =
-                new NotificationListener() {
-                    @Override
-                    public void handleNotification(Notification notification, Object handback) {
-                        if (notification
-                                .getType()
-                                .equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
-                            Runtime runtime = Runtime.getRuntime();
-                            memSpent = (runtime.totalMemory() - runtime.freeMemory()) / 1000000.0;
-                            if (maxMemSpent < memSpent) maxMemSpent = memSpent;
-                        }
+                (notification, handback) -> {
+                    if (notification
+                            .getType()
+                            .equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
+                        Runtime runtime = Runtime.getRuntime();
+                        memSpent = (runtime.totalMemory() - runtime.freeMemory()) / 1000000.0;
+                        if (maxMemSpent < memSpent) maxMemSpent = memSpent;
                     }
                 };
 

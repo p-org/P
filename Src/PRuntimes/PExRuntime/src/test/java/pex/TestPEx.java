@@ -165,7 +165,7 @@ public class TestPEx {
                                             f.endsWith("Correct")
                                                     || f.endsWith("DynamicError")
                                                     || f.endsWith("StaticError"))
-                            .collect(Collectors.toList());
+                            .toList();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -173,7 +173,7 @@ public class TestPEx {
         for (String testDir : testDirs) {
             Map<String, List<String>> paths = getFiles(testDir);
             List<String> pathKeys = new ArrayList<>(paths.keySet());
-            Collections.sort(pathKeys, String.CASE_INSENSITIVE_ORDER);
+            pathKeys.sort(String.CASE_INSENSITIVE_ORDER);
 
             if (testDir.contains("Correct")) {
                 for (String key : pathKeys) {

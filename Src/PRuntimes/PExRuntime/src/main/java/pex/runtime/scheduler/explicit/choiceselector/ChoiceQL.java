@@ -33,8 +33,7 @@ public class ChoiceQL<S> implements Serializable {
         // Compute the total and minimum weight
         double totalWeight = 0.0;
         double minWeight = Double.MAX_VALUE;
-        for (int i = 0; i < choices.size(); i++) {
-            Object choice = choices.get(i);
+        for (Object choice : choices) {
             double weight = qValues.get(state, choice.getClass(), choice);
             totalWeight += weight;
             if (weight < minWeight) {

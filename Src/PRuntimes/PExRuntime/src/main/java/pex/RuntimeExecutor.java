@@ -29,12 +29,11 @@ import java.util.concurrent.*;
  * Represents the runtime executor that executes the analysis engine
  */
 public class RuntimeExecutor {
+    private static final List<Future<Integer>> futures = new ArrayList<>();
     private static ExecutorService executor;
-    private static List<Future<Integer>> futures = new ArrayList<>();
 
     private static void cancelAllThreads() {
-        for (int i = 0; i < futures.size(); i++) {
-            Future<Integer> f = futures.get(i);
+        for (Future<Integer> f : futures) {
             if (!f.isDone() && !f.isCancelled()) {
                 f.cancel(true);
             }
@@ -147,7 +146,7 @@ public class RuntimeExecutor {
         StatWriter.log("memory-limit-MB", String.format("%.1f", PExGlobal.getConfig().getMemLimit()));
     }
 
-    private static void process(boolean resume) throws Exception {
+    private static void process() throws Exception {
         try {
             runWithTimeout();
         } catch (TimeoutException e) {
@@ -212,7 +211,7 @@ public class RuntimeExecutor {
             PExGlobal.addSearchScheduler(scheduler);
         }
 
-        process(false);
+        process();
     }
 
     private static void replaySchedule(String fileName) throws Exception {

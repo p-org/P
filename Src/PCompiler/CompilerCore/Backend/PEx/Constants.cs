@@ -62,7 +62,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <dependency>
             <groupId>io.github.p-org</groupId>
             <artifactId>pex</artifactId>
-            <version>[0.0.1,)</version>
+            <version>[0.2.0,)</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->

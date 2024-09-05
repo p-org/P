@@ -21,6 +21,8 @@ using PChecker.StateMachines.Managers;
 using PChecker.StateMachines.Managers.Mocks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
+using PChecker.PRuntime;
+using PChecker.PRuntime.Values;
 using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.Specifications.Monitors;
@@ -30,6 +32,7 @@ using PChecker.SystematicTesting.Strategies.Liveness;
 using PChecker.SystematicTesting.Traces;
 using Debug = PChecker.IO.Debugging.Debug;
 using EventInfo = PChecker.StateMachines.Events.EventInfo;
+using PMachineValue = PChecker.PRuntime.Values.PMachineValue;
 
 namespace PChecker.SystematicTesting
 {
@@ -482,6 +485,8 @@ namespace PChecker.SystematicTesting
             IEventQueue eventQueue = new EventQueue(stateMachineManager, stateMachine);
             stateMachine.Configure(this, id, stateMachineManager, eventQueue);
             stateMachine.SetupEventHandlers();
+            stateMachine.self = new PMachineValue(id, stateMachine.receives.ToList());
+            stateMachine.interfaceName = "I_" + name;
 
             if (CheckerConfiguration.ReportActivityCoverage)
             {

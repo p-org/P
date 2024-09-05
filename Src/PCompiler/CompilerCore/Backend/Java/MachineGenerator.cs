@@ -69,7 +69,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteMachineDecl()
         {
-            WriteLine($"// PMachine {_currentMachine.Name} elided ");
+            WriteLine($"// StateMachine {_currentMachine.Name} elided ");
         }
 
         private void WriteMonitorDecl()

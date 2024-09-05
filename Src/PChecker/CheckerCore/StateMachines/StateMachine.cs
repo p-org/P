@@ -20,6 +20,7 @@ using PChecker.StateMachines.Managers;
 using PChecker.StateMachines.StateTransitions;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
+using PChecker.PRuntime;
 using PChecker.PRuntime.Exceptions;
 using PChecker.PRuntime.Values;
 using PChecker.SystematicTesting;
@@ -144,7 +145,123 @@ namespace PChecker.StateMachines
         
         protected IPrtValue gotoPayload;
         
+        public List<string> creates = new List<string>();
+        public string interfaceName;
+        public List<string> receives = new List<string>();
+        public PMachineValue self;
+        public List<string> sends = new List<string>();
+        
+        protected virtual Event GetConstructorEvent(IPrtValue value)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public PMachineValue CreateInterface<T>(StateMachine creator, IPrtValue payload = null)
+            where T : PMachineValue
+        {
+            var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
+            Assert(creates.Contains(createdInterface),
+                $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
+            var createMachine = PModule.interfaceDefinitionMap[createdInterface];
+            var machineId = CreateStateMachine(createMachine, createdInterface.Substring(2),
+                GetConstructorEvent(payload));
+            return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
+        }
+        
 
+        public IPrtValue TryRandom(IPrtValue param)
+        {
+            switch (param)
+            {
+                case PrtInt maxValue:
+                {
+                    Assert(maxValue <= 10000, $"choose expects a parameter with at most 10000 choices, got {maxValue} choices instead.");
+                    return (PrtInt)RandomInteger(maxValue);
+                }
+
+                case PrtSeq seq:
+                {
+                    Assert(seq.Any(), "Trying to choose from an empty sequence!");
+                    Assert(seq.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {seq.Count} choices instead.");
+                    return seq[RandomInteger(seq.Count)];
+                }
+                case PrtSet set:
+                {
+                    Assert(set.Any(), "Trying to choose from an empty set!");
+                    Assert(set.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {set.Count} choices instead.");
+                    return set.ElementAt(RandomInteger(set.Count));
+                }
+                case PrtMap map:
+                {
+                    Assert(map.Any(), "Trying to choose from an empty map!");
+                    Assert(map.Keys.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {map.Keys.Count} choices instead.");
+                    return map.Keys.ElementAt(RandomInteger(map.Keys.Count));
+                }
+                default:
+                    throw new PInternalException("This is an unexpected (internal) P exception. Please report to the P Developers");
+            }
+        }
+
+        public void LogLine(string message)
+        {
+            Logger.WriteLine($"<PrintLog> {message}");
+
+            // Log message to JSON output
+            JsonLogger.AddLogType(JsonWriter.LogType.Print);
+            JsonLogger.AddLog(message);
+            JsonLogger.AddToLogs(updateVcMap: false);
+        }
+
+        public void Log(string message)
+        {
+            Logger.Write($"{message}");
+        }
+
+        public void Announce(Event ev, object payload = null)
+        {
+            Assert(ev != null, "Machine cannot announce a null event");
+            if (ev is PHalt)
+            {
+                ev = HaltEvent.Instance;
+            }
+
+            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
+            var pText = payload == null ? "" : $" with payload {((IPrtValue)payload).ToEscapedString()}";
+
+            Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
+
+            // Log message to JSON output
+            JsonLogger.AddLogType(JsonWriter.LogType.Announce);
+            JsonLogger.LogDetails.Id = $"{Id}";
+            JsonLogger.LogDetails.Event = ev.GetType().Name;
+            if (payload != null)
+            {
+                JsonLogger.LogDetails.Payload = ((IPrtValue)payload).ToDict();
+            }
+            JsonLogger.AddLog($"{Id} announced event {ev.GetType().Name}{pText}.");
+            JsonLogger.AddToLogs(updateVcMap: true);
+
+            AnnounceInternal(@event);
+        }
+
+        private void AnnounceInternal(Event ev)
+        {
+            Assert(ev != null, "cannot send a null event");
+            if (!PModule.monitorMap.ContainsKey(interfaceName))
+            {
+                return;
+            }
+
+            foreach (var monitor in PModule.monitorMap[interfaceName])
+            {
+                if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))
+                {
+                    Monitor(monitor, ev);
+                }
+            }
+        }
+         
         /// <summary>
         /// Initializes a new instance of the <see cref="StateMachine"/> class.
         /// </summary>
@@ -174,7 +291,7 @@ namespace PChecker.StateMachines
         /// controlled during analysis or testing.
         /// </summary>
         /// <returns>The controlled nondeterministic choice.</returns>
-        protected bool RandomBoolean() => Runtime.GetNondeterministicBooleanChoice(2, Id.Name, Id.Type);
+        public bool RandomBoolean() => Runtime.GetNondeterministicBooleanChoice(2, Id.Name, Id.Type);
 
         /// <summary>
         /// Returns a nondeterministic boolean choice, that can be
@@ -184,7 +301,7 @@ namespace PChecker.StateMachines
         /// </summary>
         /// <param name="maxValue">The max value.</param>
         /// <returns>The controlled nondeterministic choice.</returns>
-        protected bool RandomBoolean(int maxValue) =>
+        public bool RandomBoolean(int maxValue) =>
             Runtime.GetNondeterministicBooleanChoice(maxValue, Id.Name, Id.Type);
 
         /// <summary>
@@ -194,8 +311,13 @@ namespace PChecker.StateMachines
         /// </summary>
         /// <param name="maxValue">The max value.</param>
         /// <returns>The controlled nondeterministic integer.</returns>
-        protected int RandomInteger(int maxValue) =>
+        public int RandomInteger(int maxValue) =>
             Runtime.GetNondeterministicIntegerChoice(maxValue, Id.Name, Id.Type);
+        
+        public int RandomInteger(int minValue, int maxValue)
+        {
+            return minValue + RandomInteger(maxValue - minValue);
+        }
 
         /// <summary>
         /// Invokes the specified monitor with the specified <see cref="Event"/>.
@@ -408,11 +530,20 @@ namespace PChecker.StateMachines
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to a target.
         /// </summary>
-        /// <param name="id">The id of the target.</param>
+        /// <param name="target">The target.</param>
         /// <param name="e">The event to send.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
-        protected void SendEvent(StateMachineId id, Event e, Guid opGroupId = default) =>
-            Runtime.SendEvent(id, e, this, opGroupId);
+        public void SendEvent(PMachineValue target, Event ev, Guid opGroupId = default)
+        {
+            Assert(ev != null, "Machine cannot send a null event");
+            Assert(target != null, "Machine in send cannot be null");
+            Assert(sends.Contains(ev.GetType().Name),
+                $"Event {ev.GetType().Name} is not in the sends set of the Machine {GetType().Name}");
+            Assert(target.Permissions.Contains(ev.GetType().Name),
+                $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
+            AnnounceInternal(ev);
+            Runtime.SendEvent(target.Id, ev, this, opGroupId);
+        }
         
         /// <summary>
         /// Waits to receive an <see cref="Event"/> of the specified type
@@ -421,7 +552,7 @@ namespace PChecker.StateMachines
         /// <param name="eventType">The event type.</param>
         /// <param name="predicate">The optional predicate.</param>
         /// <returns>The received event.</returns>
-        protected internal Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
+        public Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
             Runtime.NotifyReceiveCalled(this);
@@ -433,7 +564,7 @@ namespace PChecker.StateMachines
         /// </summary>
         /// <param name="eventTypes">The event types to wait for.</param>
         /// <returns>The received event.</returns>
-        protected internal Task<Event> ReceiveEventAsync(params Type[] eventTypes)
+        public Task<Event> ReceiveEventAsync(params Type[] eventTypes)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
             Runtime.NotifyReceiveCalled(this);
@@ -446,7 +577,7 @@ namespace PChecker.StateMachines
         /// </summary>
         /// <param name="events">Event types and predicates.</param>
         /// <returns>The received event.</returns>
-        protected internal Task<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
+        public Task<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
             Runtime.NotifyReceiveCalled(this);
@@ -725,9 +856,19 @@ namespace PChecker.StateMachines
         /// <param name="methodName">The handler (outermost) that threw the exception.</param>
         /// <param name="e">The event being handled when the exception was thrown.</param>
         /// <returns>The action that the runtime should take.</returns>
-        protected virtual OnExceptionOutcome OnException(Exception ex, string methodName, Event e)
+        protected OnExceptionOutcome OnException(Exception ex, string methodName, Event e)
         {
-            return OnExceptionOutcome.ThrowException;
+            var v = ex is UnhandledEventException;
+            if (!v)
+            {
+                return ex is PNonStandardReturnException
+                    ? OnExceptionOutcome.HandledException
+                    : OnExceptionOutcome.ThrowException;
+            }
+
+            return (ex as UnhandledEventException).UnhandledEvent is PHalt
+                ? OnExceptionOutcome.Halt
+                : OnExceptionOutcome.ThrowException;
         }
         
         /// <summary>

@@ -9,6 +9,7 @@ import pex.runtime.logger.PExLogger;
 import pex.runtime.logger.StatWriter;
 import pex.runtime.machine.PTestDriver;
 import pex.utils.exceptions.BugFoundException;
+import pex.utils.exceptions.TooManyChoicesException;
 import pex.utils.monitor.MemoryMonitor;
 import pex.utils.monitor.TimeMonitor;
 import pex.utils.random.RandomNumberGenerator;
@@ -67,19 +68,21 @@ public class PEx {
 
             // run the analysis
             RuntimeExecutor.run();
+        } catch (TooManyChoicesException e) {
+            exit_code = 3;
         } catch (BugFoundException e) {
             exit_code = 2;
         } catch (InvocationTargetException ex) {
             ex.printStackTrace();
-            exit_code = 5;
+            exit_code = 6;
         } catch (Exception ex) {
             if (ex.getMessage().equals("TIMEOUT")) {
-                exit_code = 3;
-            } else if (ex.getMessage().equals("MEMOUT")) {
                 exit_code = 4;
+            } else if (ex.getMessage().equals("MEMOUT")) {
+                exit_code = 5;
             } else {
                 ex.printStackTrace();
-                exit_code = 5;
+                exit_code = 6;
             }
         } finally {
             // log end-of-run metrics

@@ -114,9 +114,11 @@ public class TestCaseExecutor {
             } else if (resultCode == 2) {
                 PExTestLogger.log("      bug");
             } else if (resultCode == 3) {
+                PExTestLogger.log("      too_many_choices");
+            } else if (resultCode == 4) {
                 PExTestLogger.log("      timeout");
                 resultCode = 0;
-            } else if (resultCode == 4) {
+            } else if (resultCode == 5) {
                 PExTestLogger.log("      memout");
             } else {
                 PExTestLogger.log("      error");

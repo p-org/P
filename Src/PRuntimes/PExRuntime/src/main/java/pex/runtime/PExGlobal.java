@@ -296,10 +296,10 @@ public class PExGlobal {
         StringBuilder s = new StringBuilder(100);
         s.append(StringUtils.center("Time", 11));
         s.append(StringUtils.center("Memory", 9));
+        s.append(StringUtils.center("Tasks (run/fin/pen)", 24));
 
         s.append(StringUtils.center("Schedules", 12));
         s.append(StringUtils.center("Timelines", 12));
-        s.append(StringUtils.center("Tasks (run/fin/pen)", 24));
 //        s.append(StringUtils.center("Unexplored", 24));
 
         if (config.getStateCachingMode() != StateCachingMode.None) {
@@ -332,12 +332,12 @@ public class PExGlobal {
             s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
             s.append(
                     StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
-
-            s.append(StringUtils.center(String.format("%d", getTotalSchedules()), 12));
-            s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
             s.append(StringUtils.center(String.format("%d / %d / %d",
                             runningTasks.size(), finishedTasks.size(), pendingTasks.size()),
                     24));
+
+            s.append(StringUtils.center(String.format("%d", getTotalSchedules()), 12));
+            s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
 //                s.append(
 //                        StringUtils.center(
 //                                String.format(

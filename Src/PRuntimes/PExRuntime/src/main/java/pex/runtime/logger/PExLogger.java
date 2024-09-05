@@ -88,7 +88,7 @@ public class PExLogger {
                     PExGlobal.getMinSteps(), (PExGlobal.getTotalSteps() / PExGlobal.getTotalSchedules()), PExGlobal.getMaxSteps()));
         }
         log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
-        log.info(String.format(".. Result: " + PExGlobal.getResult()));
+        log.info(String.format(".. \033[0;30;47m Result: %s \033[m", PExGlobal.getResult()));
         log.info(". Done");
     }
 

@@ -69,20 +69,20 @@ public class PEx {
             // run the analysis
             RuntimeExecutor.run();
         } catch (TooManyChoicesException e) {
-            exit_code = 3;
+            exit_code = 2;
         } catch (BugFoundException e) {
             exit_code = 2;
         } catch (InvocationTargetException ex) {
             ex.printStackTrace();
-            exit_code = 6;
+            exit_code = 5;
         } catch (Exception ex) {
             if (ex.getMessage().equals("TIMEOUT")) {
-                exit_code = 4;
+                exit_code = 3;
             } else if (ex.getMessage().equals("MEMOUT")) {
-                exit_code = 5;
+                exit_code = 4;
             } else {
                 ex.printStackTrace();
-                exit_code = 6;
+                exit_code = 5;
             }
         } finally {
             // log end-of-run metrics

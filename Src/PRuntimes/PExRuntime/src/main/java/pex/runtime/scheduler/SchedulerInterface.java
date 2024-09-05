@@ -18,40 +18,45 @@ public interface SchedulerInterface extends Serializable {
     /**
      * Return a random PBool based on the search and strategy.
      *
+     * @param loc location in P model
      * @return a boolean choice.
      */
-    PBool getRandomBool();
+    PBool getRandomBool(String loc);
 
     /**
      * Return a random PInt (within a bound) based on the search and strategy.
      *
+     * @param loc   location in P model
      * @param bound upper bound (exclusive) on the integer.
      * @return a integer
      */
-    PInt getRandomInt(PInt bound);
+    PInt getRandomInt(String loc, PInt bound);
 
     /**
      * Return a random element of a PSeq based on the search and strategy.
      *
+     * @param loc      location in P model
      * @param elements list to choose from
      * @return a integer
      */
-    PValue<?> getRandomEntry(PSeq elements);
+    PValue<?> getRandomEntry(String loc, PSeq elements);
 
     /**
      * Return a random element of a PSet based on the search and strategy.
      *
+     * @param loc      location in P model
      * @param elements set to choose from
      * @return a integer
      */
-    PValue<?> getRandomEntry(PSet elements);
+    PValue<?> getRandomEntry(String loc, PSet elements);
 
     /**
      * Return a random key of a PMap based on the search and strategy.
      *
+     * @param loc      location in P model
      * @param elements map to choose from
      * @return a integer
      */
-    PValue<?> getRandomEntry(PMap elements);
+    PValue<?> getRandomEntry(String loc, PMap elements);
 
 }

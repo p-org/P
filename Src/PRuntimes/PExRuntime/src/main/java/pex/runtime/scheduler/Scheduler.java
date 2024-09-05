@@ -8,7 +8,6 @@ import pex.runtime.machine.PMachine;
 import pex.runtime.machine.PMachineId;
 import pex.runtime.machine.PMonitor;
 import pex.runtime.scheduler.explicit.StepState;
-import pex.utils.exceptions.BugFoundException;
 import pex.utils.exceptions.NotImplementedException;
 import pex.utils.misc.Assert;
 import pex.values.*;
@@ -145,8 +144,10 @@ public abstract class Scheduler implements SchedulerInterface {
      *
      * @return boolean data choice
      */
-    public PBool getRandomBool() {
+    public PBool getRandomBool(String loc) {
         List<PValue<?>> choices = new ArrayList<>();
+        stepState.updateChoiceStats(loc, 2);
+
         choices.add(PBool.PTRUE);
         choices.add(PBool.PFALSE);
         return (PBool) getNextDataChoice(choices);
@@ -158,15 +159,14 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param bound upper bound (exclusive) on the integer.
      * @return integer data choice
      */
-    public PInt getRandomInt(PInt bound) {
+    public PInt getRandomInt(String loc, PInt bound) {
         List<PValue<?>> choices = new ArrayList<>();
         int boundInt = bound.getValue();
-        if (boundInt > 10000) {
-            throw new BugFoundException(String.format("choose expects a parameter with at most 10,000 choices, got %d choices instead.", boundInt));
-        }
         if (boundInt == 0) {
             boundInt = 1;
         }
+        stepState.updateChoiceStats(loc, boundInt);
+
         for (int i = 0; i < boundInt; i++) {
             choices.add(new PInt(i));
         }
@@ -179,8 +179,8 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param choices List of data choices
      * @return data choice
      */
-    protected PValue<?> getRandomEntry(List<PValue<?>> choices) {
-        PInt randomEntryIdx = getRandomInt(new PInt(choices.size()));
+    protected PValue<?> getRandomEntry(String loc, List<PValue<?>> choices) {
+        PInt randomEntryIdx = getRandomInt(loc, new PInt(choices.size()));
         return choices.get(randomEntryIdx.getValue());
     }
 
@@ -190,8 +190,8 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param seq PSeq object
      * @return data choice
      */
-    public PValue<?> getRandomEntry(PSeq seq) {
-        return getRandomEntry(seq.toList());
+    public PValue<?> getRandomEntry(String loc, PSeq seq) {
+        return getRandomEntry(loc, seq.toList());
     }
 
     /**
@@ -200,8 +200,8 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param set PSet object
      * @return data choice
      */
-    public PValue<?> getRandomEntry(PSet set) {
-        return getRandomEntry(set.toList());
+    public PValue<?> getRandomEntry(String loc, PSet set) {
+        return getRandomEntry(loc, set.toList());
     }
 
     /**
@@ -210,8 +210,8 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param map PMap object
      * @return data choice
      */
-    public PValue<?> getRandomEntry(PMap map) {
-        return getRandomEntry(map.toList());
+    public PValue<?> getRandomEntry(String loc, PMap map) {
+        return getRandomEntry(loc, map.toList());
     }
 
     /**

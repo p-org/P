@@ -1,8 +1,10 @@
 package pex.runtime.scheduler.explicit;
 
 import lombok.Getter;
+import pex.runtime.PExGlobal;
 import pex.runtime.machine.MachineLocalState;
 import pex.runtime.machine.PMachine;
+import pex.utils.exceptions.TooManyChoicesException;
 
 import java.io.Serializable;
 import java.util.*;
@@ -22,6 +24,16 @@ public class StepState implements Serializable {
      */
     private Map<PMachine, MachineLocalState> machineLocalStates = new HashMap<>();
 
+    /**
+     * Map from choose(.) location to total number of calls
+     */
+    private Map<String, Integer> choicesNumCalls = new HashMap<>();
+
+    /**
+     * Map from choose(.) location to total number of choices
+     */
+    private Map<String, Integer> choicesNumChoices = new HashMap<>();
+
     public StepState copyState() {
         StepState stepState = new StepState();
 
@@ -33,12 +45,11 @@ public class StepState implements Serializable {
         }
 
         assert (stepState.machines.size() == stepState.machineLocalStates.size());
-        return stepState;
-    }
 
-    public void clear() {
-        machines.clear();
-        machineLocalStates.clear();
+        stepState.choicesNumCalls = new HashMap<>(this.choicesNumCalls);
+        stepState.choicesNumChoices = new HashMap<>(this.choicesNumChoices);
+
+        return stepState;
     }
 
 
@@ -47,6 +58,8 @@ public class StepState implements Serializable {
             machine.reset();
         }
         machines.clear();
+        choicesNumCalls.clear();
+        choicesNumChoices.clear();
     }
 
     public void setTo(SortedSet<PMachine> allMachines, StepState input) {
@@ -62,6 +75,9 @@ public class StepState implements Serializable {
                 machine.setMachineState(ms);
             }
         }
+
+        choicesNumCalls = new HashMap<>(input.choicesNumCalls);
+        choicesNumChoices = new HashMap<>(input.choicesNumChoices);
     }
 
     /**
@@ -103,6 +119,22 @@ public class StepState implements Serializable {
             }
         }
         return s.toString();
+    }
+
+    public void updateChoiceStats(String loc, int num) {
+        if (!choicesNumCalls.containsKey(loc)) {
+            choicesNumCalls.put(loc, 1);
+            choicesNumChoices.put(loc, num);
+        } else {
+            choicesNumCalls.put(loc, choicesNumCalls.get(loc) + 1);
+            choicesNumChoices.put(loc, choicesNumChoices.get(loc) + num);
+        }
+        if (PExGlobal.getConfig().getMaxChoiceBoundPerCall() > 0 && num > PExGlobal.getConfig().getMaxChoiceBoundPerCall()) {
+            throw new TooManyChoicesException(loc, num);
+        }
+        if (PExGlobal.getConfig().getMaxChoiceBoundTotal() > 0 && choicesNumChoices.get(loc) > PExGlobal.getConfig().getMaxChoiceBoundTotal()) {
+            throw new TooManyChoicesException(loc, choicesNumChoices.get(loc), choicesNumCalls.get(loc));
+        }
     }
 
     @Override

@@ -1664,37 +1664,45 @@ internal class PExCodeGenerator : ICodeGenerator
                 break;
             case NondetExpr _:
             case FairNondetExpr _:
-                context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomBool()");
+            {
+                var loc = $"\"{context.LocationResolver.GetLocation(expr.SourceLocation).ToString()
+                    .Replace(@"\", @"\\")}\"";
+                context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomBool({loc})");
                 break;
+            }
             case ChooseExpr chooseExpr:
+            {
+                var loc = $"\"{context.LocationResolver.GetLocation(chooseExpr.SourceLocation).ToString()
+                    .Replace(@"\", @"\\")}\"";
+
                 if (chooseExpr.SubExpr == null)
                 {
-                    context.Write(output, $"({CompilationContext.SchedulerVar}.getRandomBool())");
+                    context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomBool({loc})");
                     return;
                 }
 
                 switch (chooseExpr.SubExpr.Type.Canonicalize())
                 {
                     case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                        context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomInt(");
+                        context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomInt({loc}, ");
                         WriteExpr(context, output, chooseExpr.SubExpr);
                         context.Write(output, ")");
                         break;
                     case SequenceType sequenceType:
                         context.Write(output,
-                            $"({GetPExType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry(");
+                            $"({GetPExType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
                         WriteExpr(context, output, chooseExpr.SubExpr);
                         context.Write(output, ")");
                         break;
                     case SetType setType:
                         context.Write(output,
-                            $"({GetPExType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry(");
+                            $"({GetPExType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
                         WriteExpr(context, output, chooseExpr.SubExpr);
                         context.Write(output, ")");
                         break;
                     case MapType mapType:
                         context.Write(output,
-                            $"({GetPExType(mapType.KeyType)}) {CompilationContext.SchedulerVar}.getRandomEntry(");
+                            $"({GetPExType(mapType.KeyType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
                         WriteExpr(context, output, chooseExpr.SubExpr);
                         context.Write(output, ")");
                         break;
@@ -1704,6 +1712,7 @@ internal class PExCodeGenerator : ICodeGenerator
                 }
 
                 break;
+            }
             case SizeofExpr sizeOfExpr:
                 WriteExpr(context, output, sizeOfExpr.Expr);
                 context.Write(output, ".size()");

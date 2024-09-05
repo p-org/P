@@ -1,5 +1,6 @@
 package pex.runtime.logger;
 
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,6 +36,8 @@ public class SchedulerLogger {
     LoggerContext context = null;
     @Setter
     int verbosity;
+    @Getter
+    String fileName = null;
 
     /**
      * Initializes the logger with the given verbosity level.
@@ -48,7 +51,7 @@ public class SchedulerLogger {
 
         try {
             // get new file name
-            String fileName = PExGlobal.getConfig().getOutputFolder() + "/threads/" + schId + ".log";
+            fileName = PExGlobal.getConfig().getOutputFolder() + "/threads/" + schId + ".log";
             File file = new File(fileName);
             file.getParentFile().mkdirs();
             file.createNewFile();

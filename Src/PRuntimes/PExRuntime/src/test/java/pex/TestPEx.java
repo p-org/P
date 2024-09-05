@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 public class TestPEx {
     private static final String outputDirectory = "output/testCases";
     private static final List<String> excluded = new ArrayList<>();
-    private static String timeout = "30";
+    private static String timeout = "15";
     private static String schedules = "100";
     private static String maxSteps = "10000";
     private static String runArgs = "--checker-args :--schedules-per-task:10:--nproc:3";

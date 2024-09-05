@@ -237,7 +237,7 @@ public class PExOptions {
                         .build();
         addHiddenOption(choiceSelect);
 
-        // max number of choices per choose(.) call
+        // max number of choices per choose(.) per call
         Option maxChoicesPerCall =
                 Option.builder()
                         .longOpt("max-choices-per-call")
@@ -248,10 +248,10 @@ public class PExOptions {
                         .build();
         addHiddenOption(maxChoicesPerCall);
 
-        // max number of choices in total
+        // max number of choices per choose(.) per schedule
         Option maxChoicesTotal =
                 Option.builder()
-                        .longOpt("max-choices-total")
+                        .longOpt("max-choices-per-schedule")
                         .desc("Max number of choices allowed per choose statement in total (default: no bound)")
                         .numberOfArgs(1)
                         .hasArg()
@@ -494,15 +494,15 @@ public class PExOptions {
                     }
                 case "max-choices-per-call":
                     try {
-                        config.setMaxChoiceBoundPerCall(Integer.parseInt(option.getValue()));
+                        config.setMaxChoicesPerStmtPerCall(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
                         optionError(
                                 option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
-                case "max-choices-total":
+                case "max-choices-per-schedule":
                     try {
-                        config.setMaxChoiceBoundTotal(Integer.parseInt(option.getValue()));
+                        config.setMaxChoicesPerStmtPerSchedule(Integer.parseInt(option.getValue()));
                     } catch (NumberFormatException ex) {
                         optionError(
                                 option, String.format("Expected an integer value, got %s", option.getValue()));

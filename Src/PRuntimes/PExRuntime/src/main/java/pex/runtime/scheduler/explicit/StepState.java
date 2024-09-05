@@ -129,10 +129,10 @@ public class StepState implements Serializable {
             choicesNumCalls.put(loc, choicesNumCalls.get(loc) + 1);
             choicesNumChoices.put(loc, choicesNumChoices.get(loc) + num);
         }
-        if (PExGlobal.getConfig().getMaxChoiceBoundPerCall() > 0 && num > PExGlobal.getConfig().getMaxChoiceBoundPerCall()) {
+        if (PExGlobal.getConfig().getMaxChoicesPerStmtPerCall() > 0 && num > PExGlobal.getConfig().getMaxChoicesPerStmtPerCall()) {
             throw new TooManyChoicesException(loc, num);
         }
-        if (PExGlobal.getConfig().getMaxChoiceBoundTotal() > 0 && choicesNumChoices.get(loc) > PExGlobal.getConfig().getMaxChoiceBoundTotal()) {
+        if (PExGlobal.getConfig().getMaxChoicesPerStmtPerSchedule() > 0 && choicesNumChoices.get(loc) > PExGlobal.getConfig().getMaxChoicesPerStmtPerSchedule()) {
             throw new TooManyChoicesException(loc, choicesNumChoices.get(loc), choicesNumCalls.get(loc));
         }
     }

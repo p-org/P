@@ -3,7 +3,7 @@ package pex.runtime.scheduler;
 import lombok.Getter;
 import lombok.Setter;
 import pex.runtime.PExGlobal;
-import pex.runtime.logger.PExLogger;
+import pex.runtime.logger.SchedulerLogger;
 import pex.runtime.machine.PMachine;
 import pex.runtime.machine.PMachineId;
 import pex.runtime.machine.PMonitor;
@@ -14,8 +14,7 @@ import pex.utils.misc.Assert;
 import pex.values.*;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -27,6 +26,19 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     @Getter
     protected final Schedule schedule;
+    @Getter
+    protected final int schedulerId;
+    @Getter
+    protected final SchedulerLogger logger;
+    /**
+     * Mapping from machine type to list of all machine instances
+     */
+    private final Map<Class<? extends PMachine>, List<PMachine>> machineListByType = new HashMap<>();
+    /**
+     * Set of machines
+     */
+    @Getter
+    private final SortedSet<PMachine> machineSet = new TreeSet<>();
     /**
      * Step number
      */
@@ -48,12 +60,10 @@ public abstract class Scheduler implements SchedulerInterface {
      * Whether done with current iteration
      */
     protected transient boolean isDoneStepping = false;
-
     /**
      * Whether schedule terminated
      */
     protected transient boolean scheduleTerminated = false;
-
     @Getter
     @Setter
     protected transient int stepNumLogs = 0;
@@ -65,15 +75,17 @@ public abstract class Scheduler implements SchedulerInterface {
     /**
      * Constructor
      */
-    protected Scheduler(Schedule sch) {
+    protected Scheduler(int schedulerId, Schedule sch) {
+        this.schedulerId = schedulerId;
         this.schedule = sch;
+        this.logger = new SchedulerLogger(schedulerId);
     }
 
     /**
      * Constructor
      */
-    protected Scheduler() {
-        this(new Schedule());
+    protected Scheduler(int schedulerId) {
+        this(schedulerId, new Schedule());
     }
 
     /**
@@ -208,26 +220,20 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     protected void start() {
         // start monitors first
-        for (PMonitor monitor : PExGlobal.getModel().getMonitors()) {
-            startMachine(monitor);
+        for (Class<? extends PMachine> monitorType : PExGlobal.getModel().getTestDriver().getMonitors()) {
+            startMachine(monitorType);
         }
 
         // start main machine
-        startMachine(PExGlobal.getModel().getStart());
+        startMachine(PExGlobal.getModel().getTestDriver().getStart());
     }
 
     /**
      * Start a machine.
      * Runs the constructor of this machine.
      */
-    public void startMachine(PMachine machine) {
-        if (!PExGlobal.getMachineSet().contains(machine)) {
-            // add machine to global context
-            PExGlobal.addGlobalMachine(machine, 0);
-        }
-
-        // add machine to schedule
-        stepState.makeMachine(machine);
+    public void startMachine(Class<? extends PMachine> machineType) {
+        PMachine machine = allocateMachine(machineType);
 
         // run create machine event
         processCreateEvent(new PMessage(PEvent.createMachine, machine, null));
@@ -252,13 +258,48 @@ public abstract class Scheduler implements SchedulerInterface {
         stepNumLogs = 0;
 
         // log start step
-        PExLogger.logStartStep(stepNumber, sender, msg);
+        logger.logStartStep(stepNumber, sender, msg);
 
         // process message
         processDequeueEvent(sender, msg);
 
         // update done stepping flag
         isDoneStepping = (stepNumber >= PExGlobal.getConfig().getMaxStepBound());
+    }
+
+    /**
+     * Get a machine of a given type and index if exists, else return null.
+     *
+     * @param pid Machine pid
+     * @return Machine
+     */
+    public PMachine getMachine(PMachineId pid) {
+        List<PMachine> machinesOfType = machineListByType.get(pid.getType());
+        if (machinesOfType == null) {
+            return null;
+        }
+        if (pid.getTypeId() >= machinesOfType.size()) {
+            return null;
+        }
+        PMachine result = machineListByType.get(pid.getType()).get(pid.getTypeId());
+        assert (machineSet.contains(result));
+        return result;
+    }
+
+    /**
+     * Add a machine.
+     *
+     * @param machine      Machine to add
+     * @param machineCount Machine type count
+     */
+    public void addMachine(PMachine machine, int machineCount) {
+        if (!machineListByType.containsKey(machine.getClass())) {
+            machineListByType.put(machine.getClass(), new ArrayList<>());
+        }
+        assert (machineCount == machineListByType.get(machine.getClass()).size());
+        machineListByType.get(machine.getClass()).add(machine);
+        machineSet.add(machine);
+        assert (machineListByType.get(machine.getClass()).get(machineCount) == machine);
     }
 
     /**
@@ -271,7 +312,7 @@ public abstract class Scheduler implements SchedulerInterface {
         // get machine count for given type from schedule
         int machineCount = stepState.getMachineCount(machineType);
         PMachineId pid = new PMachineId(machineType, machineCount);
-        PMachine machine = PExGlobal.getGlobalMachine(pid);
+        PMachine machine = getMachine(pid);
         if (machine == null) {
             // create a new machine
             try {
@@ -280,7 +321,7 @@ public abstract class Scheduler implements SchedulerInterface {
                      NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
-            PExGlobal.addGlobalMachine(machine, machineCount);
+            addMachine(machine, machineCount);
         }
 
         // add machine to schedule
@@ -294,11 +335,13 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param message Message
      */
     public void runMonitors(PMessage message) {
-        List<PMonitor> listenersForEvent = PExGlobal.getModel().getListeners().get(message.getEvent());
+        List<Class<? extends PMachine>> listenersForEvent = PExGlobal.getModel().getTestDriver().getListeners().get(message.getEvent());
         if (listenersForEvent != null) {
-            for (PMonitor m : listenersForEvent) {
+            for (Class<? extends PMachine> machineType : listenersForEvent) {
+                PMonitor m = (PMonitor) getMachine(new PMachineId(machineType, 0));
+
                 // log monitor process event
-                PExLogger.logMonitorProcessEvent(m, message);
+                logger.logMonitorProcessEvent(m, message);
 
                 m.processEventToCompletion(message.setTarget(m));
             }
@@ -322,10 +365,10 @@ public abstract class Scheduler implements SchedulerInterface {
     public void processDequeueEvent(PMachine sender, PMessage message) {
         if (message.getEvent().isCreateMachineEvent()) {
             // log create machine
-            PExLogger.logCreateMachine(message.getTarget(), sender);
+            logger.logCreateMachine(message.getTarget(), sender);
         } else {
             // log monitor process event
-            PExLogger.logDequeueEvent(message.getTarget(), message);
+            logger.logDequeueEvent(message.getTarget(), message);
         }
 
         message.getTarget().processEventToCompletion(message);
@@ -349,7 +392,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * Check for deadlock at the end of a completed schedule
      */
     public void checkDeadlock() {
-        for (PMachine machine : stepState.getMachineSet()) {
+        for (PMachine machine : stepState.getMachines()) {
             if (machine.canRun() && machine.isBlocked()) {
                 Assert.deadlock(String.format("Deadlock detected. %s is waiting to receive an event, but no other controlled tasks are enabled.", machine));
             }
@@ -361,7 +404,9 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     public void checkLiveness(boolean terminated) {
         if (terminated) {
-            for (PMachine monitor : PExGlobal.getModel().getMonitors()) {
+            for (Class<? extends PMachine> machineType : PExGlobal.getModel().getTestDriver().getMonitors()) {
+                PMonitor monitor = (PMonitor) getMachine(new PMachineId(machineType, 0));
+
                 if (monitor.getCurrentState().isHotState()) {
                     Assert.liveness(String.format("Monitor %s detected liveness bug in hot state %s at the end of program execution", monitor, monitor.getCurrentState()));
                 }

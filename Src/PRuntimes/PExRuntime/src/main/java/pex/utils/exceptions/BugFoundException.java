@@ -1,15 +1,22 @@
 package pex.utils.exceptions;
 
-import pex.runtime.logger.PExLogger;
+import lombok.Getter;
+import pex.runtime.PExGlobal;
+import pex.runtime.scheduler.Scheduler;
 
 public class BugFoundException extends RuntimeException {
+    @Getter
+    Scheduler scheduler;
+
     public BugFoundException(String message) {
         super(message);
-        PExLogger.logBugFound(message);
+        this.scheduler = PExGlobal.getScheduler();
+        this.scheduler.getLogger().logBugFound(message);
     }
 
     public BugFoundException(String message, Throwable cause) {
         super(message, cause);
-        PExLogger.logBugFound(message);
+        this.scheduler = PExGlobal.getScheduler();
+        this.scheduler.getLogger().logBugFound(message);
     }
 }

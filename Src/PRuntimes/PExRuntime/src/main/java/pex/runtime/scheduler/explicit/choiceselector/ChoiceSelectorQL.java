@@ -2,6 +2,7 @@ package pex.runtime.scheduler.explicit.choiceselector;
 
 import lombok.Getter;
 import lombok.Setter;
+import pex.runtime.PExGlobal;
 import pex.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pex.utils.random.RandomNumberGenerator;
 
@@ -36,7 +37,7 @@ public class ChoiceSelectorQL<S> extends ChoiceSelector {
         }
 
         Object timeline = sch.getStepState().getTimeline();
-        if (!sch.getTimelines().contains(timeline)) {
+        if (!PExGlobal.getTimelines().contains(timeline)) {
             // reward new timeline
             choiceQL.rewardNewTimeline(state, choices.get(selected));
         } else {

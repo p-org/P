@@ -274,7 +274,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <revision>0.0.1</revision>
+        <revision>0.1.0</revision>
     </properties>
 
 </project>

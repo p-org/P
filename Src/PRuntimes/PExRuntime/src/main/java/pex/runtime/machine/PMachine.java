@@ -2,7 +2,6 @@ package pex.runtime.machine;
 
 import lombok.Getter;
 import pex.runtime.PExGlobal;
-import pex.runtime.logger.PExLogger;
 import pex.runtime.machine.buffer.DeferQueue;
 import pex.runtime.machine.buffer.SenderQueue;
 import pex.runtime.machine.eventhandlers.EventHandler;
@@ -23,9 +22,6 @@ import java.util.*;
  * Represents the base class for all P machines.
  */
 public abstract class PMachine implements Serializable, Comparable<PMachine> {
-    @Getter
-    private static final Map<String, PMachine> nameToMachine = new HashMap<>();
-    protected static int globalMachineId = 1;
     @Getter
     protected final PMachineId pid;
     @Getter
@@ -73,10 +69,12 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     public PMachine(String name, int id, State startState, State... states) {
         // initialize name, ids
         this.name = name;
-        this.instanceId = ++globalMachineId;
+        if (!(this instanceof PMonitor)) {
+            PExGlobal.setGlobalMachineId(PExGlobal.getGlobalMachineId() + 1);
+        }
+        this.instanceId = PExGlobal.getGlobalMachineId();
         this.pid = new PMachineId(this.getClass(), id);
         this.pid.setName(this.toString());
-        nameToMachine.put(toString(), this);
 
         // initialize states
         this.states = new HashSet<>();
@@ -352,7 +350,6 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * Create a new machine instance
      *
      * @param machineType Machine type
-     * @param constructor Machine constructor
      * @return New machine as a PMachineValue
      */
     public PMachineValue create(
@@ -375,7 +372,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         PMessage msg = new PMessage(event, target.getValue(), payload);
 
         // log send event
-        PExLogger.logSendEvent(this, msg);
+        PExGlobal.getScheduler().getLogger().logSendEvent(this, msg);
 
         sendBuffer.add(msg);
         PExGlobal.getScheduler().runMonitors(msg);
@@ -402,7 +399,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             String name,
             SerializableBiFunction<PMachine, PMessage> handleFun,
             String... caseEvents) {
-        PContinuation continuation = new PContinuation(handleFun, caseEvents);
+        PContinuation continuation = new PContinuation(name, handleFun, caseEvents);
         continuationMap.put(name, continuation);
         return continuation;
     }
@@ -427,7 +424,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         blockedBy = continuationMap.get(continuationName);
 
         // log receive
-        PExLogger.logReceive(this, blockedBy);
+        PExGlobal.getScheduler().getLogger().logReceive(this, blockedBy);
     }
 
     public boolean isBlocked() {
@@ -554,7 +551,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         PMessage msg = new PMessage(event, this, payload);
 
         // log raise event
-        PExLogger.logRaiseEvent(this, event);
+        PExGlobal.getScheduler().getLogger().logRaiseEvent(this, event);
 
         // run the event (even if deferred)
         runEvent(msg);
@@ -586,7 +583,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         }
 
         // log state transition
-        PExLogger.logStateTransition(this, newState);
+        PExGlobal.getScheduler().getLogger().logStateTransition(this, newState);
 
         if (currentState != null) {
             // execute exit function of current state
@@ -611,7 +608,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         blockedStateExit = null;
 
-        PExLogger.logStateExit(this);
+        PExGlobal.getScheduler().getLogger().logStateExit(this);
         currentState.exit(this);
     }
 
@@ -627,7 +624,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         // change current state to new state
         currentState = newState;
 
-        PExLogger.logStateEntry(this);
+        PExGlobal.getScheduler().getLogger().logStateEntry(this);
 
         // change current state to new state
         newState.entry(this, payload);

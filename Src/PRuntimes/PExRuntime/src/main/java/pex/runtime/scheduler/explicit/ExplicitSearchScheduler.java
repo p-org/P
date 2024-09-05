@@ -2,19 +2,13 @@ package pex.runtime.scheduler.explicit;
 
 import com.google.common.hash.Hashing;
 import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.lang3.StringUtils;
 import pex.runtime.PExGlobal;
 import pex.runtime.STATUS;
-import pex.runtime.logger.PExLogger;
-import pex.runtime.logger.ScratchLogger;
-import pex.runtime.logger.StatWriter;
 import pex.runtime.machine.PMachine;
 import pex.runtime.machine.PMachineId;
 import pex.runtime.scheduler.Scheduler;
 import pex.runtime.scheduler.choice.ScheduleChoice;
 import pex.runtime.scheduler.choice.SearchUnit;
-import pex.runtime.scheduler.explicit.choiceselector.ChoiceSelectorQL;
 import pex.runtime.scheduler.explicit.strategy.*;
 import pex.utils.exceptions.PExRuntimeException;
 import pex.utils.misc.Assert;
@@ -23,8 +17,9 @@ import pex.utils.monitor.TimeMonitor;
 import pex.values.ComputeHash;
 import pex.values.PValue;
 
-import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -33,20 +28,12 @@ import java.util.concurrent.TimeoutException;
  */
 public class ExplicitSearchScheduler extends Scheduler {
     /**
-     * Map from state hash to iteration when first visited
-     */
-    private final transient Map<Object, Integer> stateCache = new HashMap<>();
-    /**
-     * Set of timelines
-     */
-    @Getter
-    private final transient Set<Object> timelines = new HashSet<>();
-    /**
      * Search strategy orchestrator
      */
     @Getter
-    @Setter
     private final transient SearchStrategy searchStrategy;
+    @Getter
+    private final SchedulerStatistics stats = new SchedulerStatistics();
     /**
      * Backtrack choice number
      */
@@ -60,19 +47,13 @@ public class ExplicitSearchScheduler extends Scheduler {
      * Whether to skip liveness check (because of early schedule termination due to state caching)
      */
     private transient boolean skipLiveness = false;
-    /**
-     * Time of last status report
-     */
-    @Getter
-    @Setter
-    private transient Instant lastReportTime = Instant.now();
 
 
     /**
      * Constructor.
      */
-    public ExplicitSearchScheduler() {
-        super();
+    public ExplicitSearchScheduler(int schedulerId) {
+        super(schedulerId);
         switch (PExGlobal.getConfig().getSearchStrategyMode()) {
             case DepthFirst:
                 searchStrategy = new SearchStrategyDfs();
@@ -89,46 +70,82 @@ public class ExplicitSearchScheduler extends Scheduler {
     }
 
     /**
+     * Set next backtrack task with given orchestration mode
+     */
+    public SearchTask waitForNextTask() throws InterruptedException {
+        SearchTask nextTask = null;
+
+        while (true) {
+            if (PExGlobal.getRunningTasks().isEmpty() && PExGlobal.getPendingTasks().isEmpty()) {
+                // nothing running and no pending tasks, done
+                break;
+            }
+
+            // try getting a next task
+            nextTask = searchStrategy.setNextTask();
+            if (nextTask != null) {
+                // got a new next task
+                searchStrategy.setCurrTask(nextTask);
+
+                // add next task to running task
+                assert (!PExGlobal.getRunningTasks().contains(nextTask));
+                PExGlobal.getRunningTasks().add(nextTask);
+
+                // setup for next task
+                logger.logNextTask(nextTask);
+                schedule.setChoices(nextTask.getPrefixChoices());
+                postIterationCleanup();
+                break;
+            }
+
+            // no next task but there are running tasks, sleep and retry
+            TimeUnit.MILLISECONDS.sleep(100);
+        }
+
+        return nextTask;
+    }
+
+    /**
      * Run the scheduler to perform explicit-state search.
      *
      * @throws TimeoutException Throws timeout exception if timeout is reached
      */
     @Override
-    public void run() throws TimeoutException {
-        // log run test
-        PExLogger.logRunTest();
+    public void run() throws TimeoutException, InterruptedException {
+        PExGlobal.registerSearchScheduler(schedulerId);
 
-        PExGlobal.setResult("incomplete");
-        if (PExGlobal.getConfig().getVerbosity() == 0) {
-            printProgressHeader(true);
-        }
-        searchStrategy.createFirstTask();
+        // log run test
+        logger.logRunTest();
 
         while (true) {
-            PExLogger.logStartTask(searchStrategy.getCurrTask());
+            if (PExGlobal.getStatus() == STATUS.SCHEDULEOUT) {
+                // schedule limit reached, done
+                break;
+            }
+
+            // wait for the next task
+            SearchTask nextTask = waitForNextTask();
+            if (nextTask == null) {
+                // nothing running and no pending tasks, done
+                break;
+            }
+
+            // run the task
+            logger.logStartTask(searchStrategy.getCurrTask());
             isDoneIterating = false;
             while (!isDoneIterating) {
-                SearchStatistics.iteration++;
-                PExLogger.logStartIteration(searchStrategy.getCurrTask(), SearchStatistics.iteration, stepNumber);
+                stats.numSchedules++;
+                searchStrategy.incrementCurrTaskNumSchedules();
+                logger.logStartIteration(searchStrategy.getCurrTask(), schedulerId, stats.numSchedules, stepNumber);
                 if (stepNumber == 0) {
                     start();
                 }
                 runIteration();
                 postProcessIteration();
             }
-            PExLogger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getNumSchedulesInCurrTask());
+            logger.logEndTask(searchStrategy.getCurrTask(), searchStrategy.getCurrTaskNumSchedules());
             addRemainingChoicesAsChildrenTasks();
             endCurrTask();
-
-            if (searchStrategy.getPendingTasks().isEmpty() || PExGlobal.getStatus() == STATUS.SCHEDULEOUT) {
-                // all tasks completed or schedule limit reached
-                break;
-            }
-
-            // schedule limit not reached and there are pending tasks
-            // set the next task
-            SearchTask nextTask = setNextTask();
-            assert (nextTask != null);
         }
     }
 
@@ -143,17 +160,15 @@ public class ExplicitSearchScheduler extends Scheduler {
         scheduleTerminated = false;
         skipLiveness = false;
         while (!isDoneStepping) {
-            printProgress(false);
             runStep();
         }
-        printProgress(false);
 
-        SearchStatistics.totalSteps += stepNumber;
-        if (SearchStatistics.minSteps == -1 || stepNumber < SearchStatistics.minSteps) {
-            SearchStatistics.minSteps = stepNumber;
+        stats.totalSteps += stepNumber;
+        if (stats.minSteps == -1 || stepNumber < stats.minSteps) {
+            stats.minSteps = stepNumber;
         }
-        if (SearchStatistics.maxSteps == -1 || stepNumber > SearchStatistics.maxSteps) {
-            SearchStatistics.maxSteps = stepNumber;
+        if (stats.maxSteps == -1 || stepNumber > stats.maxSteps) {
+            stats.maxSteps = stepNumber;
         }
 
         if (scheduleTerminated) {
@@ -170,7 +185,7 @@ public class ExplicitSearchScheduler extends Scheduler {
                 "Step bound of " + PExGlobal.getConfig().getMaxStepBound() + " reached.");
 
         if (PExGlobal.getConfig().getMaxSchedules() > 0) {
-            if (SearchStatistics.iteration >= PExGlobal.getConfig().getMaxSchedules()) {
+            if (PExGlobal.getTotalSchedules() >= PExGlobal.getConfig().getMaxSchedules()) {
                 isDoneIterating = true;
                 PExGlobal.setStatus(STATUS.SCHEDULEOUT);
             }
@@ -193,7 +208,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             scheduleTerminated = false;
             skipLiveness = true;
             isDoneStepping = true;
-            PExLogger.logFinishedIteration(stepNumber);
+            logger.logFinishedIteration(stepNumber);
             return;
         }
 
@@ -204,10 +219,10 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         // update timeline
         Object timeline = stepState.getTimeline();
-        if (!timelines.contains(timeline)) {
+        if (!PExGlobal.getTimelines().contains(timeline)) {
             // add new timeline
-            PExLogger.logNewTimeline(this);
-            timelines.add(timeline);
+            logger.logNewTimeline(this);
+            PExGlobal.getTimelines().add(timeline);
         }
 
         // get a scheduling choice as sender machine
@@ -218,7 +233,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             scheduleTerminated = true;
             skipLiveness = false;
             isDoneStepping = true;
-            PExLogger.logFinishedIteration(stepNumber);
+            logger.logFinishedIteration(stepNumber);
             return;
         }
 
@@ -242,26 +257,25 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
 
         // increment state count
-        SearchStatistics.totalStates++;
+        stats.totalStates++;
 
         // get state key
         Object stateKey = getCurrentStateKey();
 
         // check if state key is present in state cache
-        Integer visitedAtIteration = stateCache.get(stateKey);
+        String visitedAt = PExGlobal.getStateCache().get(stateKey);
+        String stateVal = String.format("%d-%d", schedulerId, stats.numSchedules);
 
-        if (visitedAtIteration == null) {
+        if (visitedAt == null) {
             // not present, add to state cache
-            stateCache.put(stateKey, SearchStatistics.iteration);
-            // increment distinct state count
-            SearchStatistics.totalDistinctStates++;
+            PExGlobal.getStateCache().put(stateKey, stateVal);
             // log new state
-            PExLogger.logNewState(stepNumber, choiceNumber, stateKey, stepState.getMachineSet());
+            logger.logNewState(stepNumber, choiceNumber, stateKey, stepState.getMachines());
         } else {
             // present in state cache
 
             // check if possible cycle
-            if (visitedAtIteration == SearchStatistics.iteration) {
+            if (visitedAt == stateVal) {
                 if (PExGlobal.getConfig().isFailOnMaxStepBound()) {
                     // cycle detected since revisited same state at a different step in the same schedule
                     Assert.cycle("Cycle detected: Infinite loop found due to revisiting a state multiple times in the same schedule");
@@ -284,12 +298,12 @@ public class ExplicitSearchScheduler extends Scheduler {
     Object getCurrentStateKey() {
         Object stateKey;
         switch (PExGlobal.getConfig().getStateCachingMode()) {
-            case HashCode -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet());
-            case SipHash24 -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.sipHash24());
+            case HashCode -> stateKey = ComputeHash.getHashCode(stepState.getMachines());
+            case SipHash24 -> stateKey = ComputeHash.getHashCode(stepState.getMachines(), Hashing.sipHash24());
             case Murmur3_128 ->
-                    stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.murmur3_128((int) PExGlobal.getConfig().getRandomSeed()));
-            case Sha256 -> stateKey = ComputeHash.getHashCode(stepState.getMachineSet(), Hashing.sha256());
-            case Exact -> stateKey = ComputeHash.getExactString(stepState.getMachineSet());
+                    stateKey = ComputeHash.getHashCode(stepState.getMachines(), Hashing.murmur3_128((int) PExGlobal.getConfig().getRandomSeed()));
+            case Sha256 -> stateKey = ComputeHash.getHashCode(stepState.getMachines(), Hashing.sha256());
+            case Exact -> stateKey = ComputeHash.getExactString(stepState.getMachines());
             default ->
                     throw new PExRuntimeException(String.format("Unexpected state caching mode: %s", PExGlobal.getConfig().getStateCachingMode()));
         }
@@ -316,8 +330,8 @@ public class ExplicitSearchScheduler extends Scheduler {
         if (choiceNumber < backtrackChoiceNumber) {
             // pick the current schedule choice
             PMachineId pid = schedule.getCurrentScheduleChoice(choiceNumber);
-            result = PExGlobal.getGlobalMachine(pid);
-            PExLogger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
+            result = getMachine(pid);
+            logger.logRepeatScheduleChoice(result, stepNumber, choiceNumber);
 
             // increment choice number
             choiceNumber++;
@@ -332,7 +346,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             choices = getNewScheduleChoices();
             if (choices.size() > 1) {
                 // log new choice
-                PExLogger.logNewScheduleChoice(choices, stepNumber, choiceNumber);
+                logger.logNewScheduleChoice(choices, stepNumber, choiceNumber);
             }
 
             if (choices.isEmpty()) {
@@ -346,8 +360,8 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         // pick a choice
         int selected = PExGlobal.getChoiceSelector().selectChoice(this, choices);
-        result = PExGlobal.getGlobalMachine(choices.get(selected));
-        PExLogger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
+        result = getMachine(choices.get(selected));
+        logger.logCurrentScheduleChoice(result, stepNumber, choiceNumber);
 
         // remove the selected choice from unexplored choices
         choices.remove(selected);
@@ -380,7 +394,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             // pick the current data choice
             result = schedule.getCurrentDataChoice(choiceNumber);
             assert (input_choices.contains(result));
-            PExLogger.logRepeatDataChoice(result, stepNumber, choiceNumber);
+            logger.logRepeatDataChoice(result, stepNumber, choiceNumber);
 
             // increment choice number
             choiceNumber++;
@@ -396,7 +410,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             choices = input_choices;
             if (choices.size() > 1) {
                 // log new choice
-                PExLogger.logNewDataChoice(choices, stepNumber, choiceNumber);
+                logger.logNewDataChoice(choices, stepNumber, choiceNumber);
             }
 
             if (choices.isEmpty()) {
@@ -411,7 +425,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         // pick a choice
         int selected = PExGlobal.getChoiceSelector().selectChoice(this, choices);
         result = choices.get(selected);
-        PExLogger.logCurrentDataChoice(result, stepNumber, choiceNumber);
+        logger.logCurrentDataChoice(result, stepNumber, choiceNumber);
 
         // remove the selected choice from unexplored choices
         choices.remove(selected);
@@ -433,7 +447,10 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     private void postProcessIteration() {
         int maxSchedulesPerTask = PExGlobal.getConfig().getMaxSchedulesPerTask();
-        if (maxSchedulesPerTask > 0 && searchStrategy.getNumSchedulesInCurrTask() >= maxSchedulesPerTask) {
+        if (PExGlobal.getConfig().getNumThreads() > 1 && searchStrategy.getCurrTaskId() == 0) {
+            // multi-threaded run, and this is the very first task
+            isDoneIterating = true;
+        } else if (maxSchedulesPerTask > 0 && searchStrategy.getCurrTaskNumSchedules() >= maxSchedulesPerTask) {
             isDoneIterating = true;
         }
 
@@ -442,7 +459,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         }
     }
 
-    private void addRemainingChoicesAsChildrenTasks() {
+    private void addRemainingChoicesAsChildrenTasks() throws InterruptedException {
         SearchTask parentTask = searchStrategy.getCurrTask();
         int numChildrenAdded = 0;
         for (int i : parentTask.getSearchUnitKeys(false)) {
@@ -459,16 +476,17 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
         }
 
-        PExLogger.logNewTasks(parentTask.getChildren());
+        logger.logNewTasks(parentTask.getChildren());
     }
 
     private void endCurrTask() {
         SearchTask currTask = searchStrategy.getCurrTask();
         currTask.cleanup();
-        searchStrategy.getFinishedTasks().add(currTask.getId());
+        PExGlobal.getFinishedTasks().add(currTask);
+        PExGlobal.getRunningTasks().remove(currTask);
     }
 
-    private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) {
+    private void setChildTask(SearchUnit unit, int choiceNum, SearchTask parentTask, boolean isExact) throws InterruptedException {
         SearchTask newTask = searchStrategy.createTask(parentTask);
 
         int maxChoiceNum = choiceNum;
@@ -492,44 +510,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
         newTask.writeToFile();
         parentTask.addChild(newTask);
-        searchStrategy.getPendingTasks().add(newTask.getId());
         searchStrategy.addNewTask(newTask);
-    }
-
-    /**
-     * Set next backtrack task with given orchestration mode
-     */
-    public SearchTask setNextTask() {
-        SearchTask nextTask = searchStrategy.setNextTask();
-        if (nextTask != null) {
-            PExLogger.logNextTask(nextTask);
-            schedule.setChoices(nextTask.getPrefixChoices());
-            postIterationCleanup();
-        }
-        return nextTask;
-    }
-
-    public int getNumUnexploredChoices() {
-        return searchStrategy.getCurrTask().getCurrentNumUnexploredChoices() + searchStrategy.getNumPendingChoices();
-    }
-
-    public int getNumUnexploredDataChoices() {
-        return searchStrategy.getCurrTask().getCurrentNumUnexploredDataChoices() + searchStrategy.getNumPendingDataChoices();
-    }
-
-    /**
-     * Get the percentage of unexplored choices that are data choices
-     *
-     * @return Percentage of unexplored choices that are data choices
-     */
-    public double getUnexploredDataChoicesPercent() {
-        int totalUnexplored = getNumUnexploredChoices();
-        if (totalUnexplored == 0) {
-            return 0;
-        }
-
-        int numUnexploredData = getNumUnexploredDataChoices();
-        return (numUnexploredData * 100.0) / totalUnexplored;
     }
 
     private void postIterationCleanup() {
@@ -552,15 +533,15 @@ public class ExplicitSearchScheduler extends Scheduler {
             }
             if (newStepNumber == 0) {
                 reset();
-                stepState.resetToZero();
+                stepState.resetToZero(getMachineSet());
             } else {
                 stepNumber = newStepNumber;
                 choiceNumber = scheduleChoice.getChoiceNumber();
-                stepState.setTo(scheduleChoice.getChoiceState());
-                assert (!PExGlobal.getGlobalMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
+                stepState.setTo(getMachineSet(), scheduleChoice.getChoiceState());
+                assert (!getMachine(scheduleChoice.getCurrent()).getSendBuffer().isEmpty());
             }
             schedule.removeChoicesAfter(backtrackChoiceNumber);
-            PExLogger.logBacktrack(newStepNumber, cIdx, unit);
+            logger.logBacktrack(newStepNumber, cIdx, unit);
             return;
         }
         schedule.clear();
@@ -569,7 +550,7 @@ public class ExplicitSearchScheduler extends Scheduler {
 
     private List<PMachineId> getNewScheduleChoices() {
         // prioritize create machine events
-        for (PMachine machine : stepState.getMachineSet()) {
+        for (PMachine machine : stepState.getMachines()) {
             if (machine.getSendBuffer().nextIsCreateMachineMsg()) {
                 return new ArrayList<>(Collections.singletonList(machine.getPid()));
             }
@@ -578,144 +559,12 @@ public class ExplicitSearchScheduler extends Scheduler {
         // now there are no create machine events remaining
         List<PMachineId> choices = new ArrayList<>();
 
-        for (PMachine machine : stepState.getMachineSet()) {
+        for (PMachine machine : stepState.getMachines()) {
             if (machine.getSendBuffer().nextHasTargetRunning()) {
                 choices.add(machine.getPid());
             }
         }
 
         return choices;
-    }
-
-    public void updateResult() {
-        if (PExGlobal.getStatus() == STATUS.BUG_FOUND) {
-            return;
-        }
-
-        String result = "";
-        int maxStepBound = PExGlobal.getConfig().getMaxStepBound();
-        int numUnexplored = getNumUnexploredChoices();
-        if (SearchStatistics.maxSteps < maxStepBound) {
-            if (numUnexplored == 0) {
-                result += "correct for any depth";
-            } else {
-                result += String.format("partially correct with %d choices remaining", numUnexplored);
-            }
-        } else {
-            if (numUnexplored == 0) {
-                result += String.format("correct up to step %d", SearchStatistics.maxSteps);
-            } else {
-                result += String.format("partially correct up to step %d with %d choices remaining", SearchStatistics.maxSteps, numUnexplored);
-            }
-
-        }
-        PExGlobal.setResult(result);
-    }
-
-    public void recordStats() {
-        printProgress(true);
-
-        // print basic statistics
-        StatWriter.log("#-schedules", String.format("%d", SearchStatistics.iteration));
-        StatWriter.log("#-timelines", String.format("%d", timelines.size()));
-        if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-            StatWriter.log("#-states", String.format("%d", SearchStatistics.totalStates));
-            StatWriter.log("#-distinct-states", String.format("%d", SearchStatistics.totalDistinctStates));
-        }
-        StatWriter.log("steps-min", String.format("%d", SearchStatistics.minSteps));
-        StatWriter.log("steps-avg", String.format("%d", SearchStatistics.totalSteps / SearchStatistics.iteration));
-        StatWriter.log("#-choices-unexplored", String.format("%d", getNumUnexploredChoices()));
-        StatWriter.log("%-choices-unexplored-data", String.format("%.1f", getUnexploredDataChoicesPercent()));
-        StatWriter.log("#-tasks-finished", String.format("%d", searchStrategy.getFinishedTasks().size()));
-        StatWriter.log("#-tasks-pending", String.format("%d", searchStrategy.getPendingTasks().size()));
-        StatWriter.log("ql-#-states", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumStates()));
-        StatWriter.log("ql-#-actions", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumActions()));
-    }
-
-    private void printCurrentStatus(double newRuntime) {
-        StringBuilder s = new StringBuilder("--------------------");
-        s.append(String.format("\n    Status after %.2f seconds:", newRuntime));
-        s.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
-        s.append(String.format("\n      Step:             %d", stepNumber));
-        s.append(String.format("\n      Schedules:        %d", SearchStatistics.iteration));
-        s.append(String.format("\n      Unexplored:       %d", getNumUnexploredChoices()));
-        s.append(String.format("\n      FinishedTasks:    %d", searchStrategy.getFinishedTasks().size()));
-        s.append(String.format("\n      PendingTasks:     %d", searchStrategy.getPendingTasks().size()));
-        s.append(String.format("\n      Timelines:        %d", timelines.size()));
-        if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-            s.append(String.format("\n      States:           %d", SearchStatistics.totalStates));
-            s.append(String.format("\n      DistinctStates:   %d", SearchStatistics.totalDistinctStates));
-        }
-        ScratchLogger.log(s.toString());
-    }
-
-    private void printProgressHeader(boolean consolePrint) {
-        StringBuilder s = new StringBuilder(100);
-        s.append(StringUtils.center("Time", 11));
-        s.append(StringUtils.center("Memory", 9));
-        s.append(StringUtils.center("Step", 7));
-
-        s.append(StringUtils.center("Schedule", 12));
-        s.append(StringUtils.center("Timelines", 12));
-        s.append(StringUtils.center("Unexplored", 24));
-
-        if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-            s.append(StringUtils.center("States", 12));
-        }
-
-        if (consolePrint) {
-            System.out.println("--------------------");
-            System.out.println(s);
-        } else {
-            PExLogger.logVerbose("--------------------");
-            PExLogger.logVerbose(s.toString());
-        }
-    }
-
-    protected void printProgress(boolean forcePrint) {
-        if (forcePrint || (TimeMonitor.findInterval(getLastReportTime()) > 10)) {
-            setLastReportTime(Instant.now());
-            double newRuntime = TimeMonitor.getRuntime();
-            printCurrentStatus(newRuntime);
-            boolean consolePrint = (PExGlobal.getConfig().getVerbosity() == 0);
-            if (consolePrint || forcePrint) {
-                long runtime = (long) (newRuntime * 1000);
-                String runtimeHms =
-                        String.format(
-                                "%02d:%02d:%02d",
-                                TimeUnit.MILLISECONDS.toHours(runtime),
-                                TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
-                                TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
-
-                StringBuilder s = new StringBuilder(100);
-                if (consolePrint) {
-                    s.append('\r');
-                } else {
-                    printProgressHeader(false);
-                }
-                s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
-                s.append(
-                        StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
-                s.append(StringUtils.center(String.format("%d", stepNumber), 7));
-
-                s.append(StringUtils.center(String.format("%d", SearchStatistics.iteration), 12));
-                s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
-                s.append(
-                        StringUtils.center(
-                                String.format(
-                                        "%d (%.0f %% data)", getNumUnexploredChoices(), getUnexploredDataChoicesPercent()),
-                                24));
-
-                if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-                    s.append(StringUtils.center(String.format("%d", SearchStatistics.totalDistinctStates), 12));
-                }
-
-                if (consolePrint) {
-                    System.out.print(s);
-                } else {
-                    PExLogger.logVerbose(s.toString());
-                }
-            }
-        }
     }
 }

@@ -7,7 +7,6 @@ import pex.runtime.logger.ScratchLogger;
 import pex.runtime.logger.StatWriter;
 import pex.runtime.scheduler.Schedule;
 import pex.runtime.scheduler.explicit.ExplicitSearchScheduler;
-import pex.runtime.scheduler.explicit.SearchStatistics;
 import pex.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 import pex.runtime.scheduler.explicit.strategy.SearchTask;
 import pex.runtime.scheduler.replay.ReplayScheduler;
@@ -19,6 +18,10 @@ import pex.utils.monitor.TimedCall;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 
 /**
@@ -26,35 +29,85 @@ import java.util.concurrent.*;
  */
 public class RuntimeExecutor {
     private static ExecutorService executor;
-    private static Future<Integer> future;
-    private static ExplicitSearchScheduler scheduler;
+    private static List<Future<Integer>> futures = new ArrayList<>();
 
-    private static void runWithTimeout(long timeLimit)
-            throws TimeoutException,
-            InterruptedException,
-            RuntimeException {
-        try {
+    private static void cancelAllThreads() {
+        for (int i = 0; i < futures.size(); i++) {
+            Future<Integer> f = futures.get(i);
+            if (!f.isDone() && !f.isCancelled()) {
+                f.cancel(true);
+            }
+        }
+    }
+
+    private static void runWithTimeout() throws Exception {
+        PExGlobal.setResult("incomplete");
+        PExGlobal.printProgressHeader();
+
+        double timeLimit = PExGlobal.getConfig().getTimeLimit();
+        Set<Integer> done = new HashSet<>();
+        Exception resultException = null;
+
+        PExGlobal.getSearchSchedulers().get(1).getSearchStrategy().createFirstTask();
+
+        for (int i = 0; i < PExGlobal.getConfig().getNumThreads(); i++) {
+            TimedCall timedCall = new TimedCall(PExGlobal.getSearchSchedulers().get(i + 1));
+            Future<Integer> f = executor.submit(timedCall);
+            futures.add(f);
+        }
+
+        while (true) {
             if (timeLimit > 0) {
-                future.get(timeLimit, TimeUnit.SECONDS);
-            } else {
-                future.get();
+                double elapsedTime = TimeMonitor.getRuntime();
+                if (elapsedTime > timeLimit) {
+                    cancelAllThreads();
+                    resultException = new TimeoutException(String.format("Max time limit reached. Runtime: %.1f seconds", elapsedTime));
+                }
             }
-        } catch (TimeoutException | BugFoundException e) {
-            throw e;
-        } catch (OutOfMemoryError e) {
-            throw new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof MemoutException) {
-                throw (MemoutException) e.getCause();
-            } else if (e.getCause() instanceof BugFoundException) {
-                throw (BugFoundException) e.getCause();
-            } else if (e.getCause() instanceof TimeoutException) {
-                throw (TimeoutException) e.getCause();
-            } else {
-                throw new RuntimeException("RuntimeException", e);
+
+            for (int i = 0; i < futures.size(); i++) {
+                if (!done.contains(i)) {
+                    Future<Integer> f = futures.get(i);
+                    if (f.isDone() || f.isCancelled()) {
+                        done.add(i);
+                        try {
+                            f.get();
+                        } catch (InterruptedException | CancellationException e) {
+                            cancelAllThreads();
+                        } catch (OutOfMemoryError e) {
+                            cancelAllThreads();
+                            resultException = new MemoutException(e.getMessage(), MemoryMonitor.getMemSpent(), e);
+                        } catch (ExecutionException e) {
+                            if (e.getCause() instanceof MemoutException) {
+                                cancelAllThreads();
+                                resultException = (MemoutException) e.getCause();
+                            } else if (e.getCause() instanceof BugFoundException) {
+                                cancelAllThreads();
+                                resultException = (BugFoundException) e.getCause();
+                            } else if (e.getCause() instanceof TimeoutException) {
+                                cancelAllThreads();
+                                resultException = (TimeoutException) e.getCause();
+                            } else {
+                                cancelAllThreads();
+                                resultException = new RuntimeException("RuntimeException", e);
+                            }
+                        }
+                    }
+                }
             }
-        } catch (InterruptedException e) {
-            throw e;
+
+            if (done.size() == PExGlobal.getConfig().getNumThreads()) {
+                break;
+            }
+
+            TimeUnit.MILLISECONDS.sleep(100);
+            PExGlobal.printProgress(false);
+        }
+        PExGlobal.printProgress(true);
+        PExGlobal.printProgressFooter();
+
+        if (resultException != null) {
+            throw resultException;
         }
     }
 
@@ -67,8 +120,8 @@ public class RuntimeExecutor {
         StatWriter.log("memory-current-MB", String.format("%.1f", memoryUsed));
 
         if (PExGlobal.getConfig().getSearchStrategyMode() != SearchStrategyMode.Replay) {
-            StatWriter.log("max-depth-explored", String.format("%d", SearchStatistics.maxSteps));
-            scheduler.recordStats();
+            StatWriter.log("max-depth-explored", String.format("%d", PExGlobal.getMaxSteps()));
+            PExGlobal.recordStats();
             if (PExGlobal.getResult().equals("correct for any depth")) {
                 PExGlobal.setStatus(STATUS.VERIFIED);
             } else if (PExGlobal.getResult().startsWith("correct up to step")) {
@@ -82,8 +135,8 @@ public class RuntimeExecutor {
 
     private static void preprocess() {
         PExLogger.logInfo(String.format(".. Test case :: " + PExGlobal.getConfig().getTestDriver()));
-        PExLogger.logInfo(String.format("... Checker is using '%s' strategy (seed:%s)",
-                PExGlobal.getConfig().getSearchStrategyMode(), PExGlobal.getConfig().getRandomSeed()));
+        PExLogger.logInfo(String.format("... Checker is using '%s' strategy with %d threads (seed:%s)",
+                PExGlobal.getConfig().getSearchStrategyMode(), PExGlobal.getConfig().getNumThreads(), PExGlobal.getConfig().getRandomSeed()));
 
         PExGlobal.setResult("error");
 
@@ -94,11 +147,8 @@ public class RuntimeExecutor {
     }
 
     private static void process(boolean resume) throws Exception {
-        executor = Executors.newSingleThreadExecutor();
         try {
-            TimedCall timedCall = new TimedCall(scheduler, resume);
-            future = executor.submit(timedCall);
-            runWithTimeout((long) PExGlobal.getConfig().getTimeLimit());
+            runWithTimeout();
         } catch (TimeoutException e) {
             PExGlobal.setStatus(STATUS.TIMEOUT);
             throw new Exception("TIMEOUT", e);
@@ -107,15 +157,15 @@ public class RuntimeExecutor {
             throw new Exception("MEMOUT", e);
         } catch (BugFoundException e) {
             PExGlobal.setStatus(STATUS.BUG_FOUND);
-            PExGlobal.setResult(String.format("found cex of length %d", scheduler.getStepNumber()));
-            PExLogger.logStackTrace(e);
+            PExGlobal.setResult(String.format("found cex of length %d", e.getScheduler().getStepNumber()));
+            e.getScheduler().getLogger().logStackTrace(e);
 
             String schFile = PExGlobal.getConfig().getOutputFolder() + "/" + PExGlobal.getConfig().getProjectName() + "_0_0.schedule";
             PExLogger.logInfo(String.format("Writing buggy trace in %s", schFile));
-            scheduler.getSchedule().writeToFile(schFile);
+            e.getScheduler().getSchedule().writeToFile(schFile);
 
-            ReplayScheduler replayer = new ReplayScheduler(scheduler.getSchedule());
-            PExGlobal.setScheduler(replayer);
+            ReplayScheduler replayer = new ReplayScheduler(e.getScheduler().getSchedule());
+            PExGlobal.setReplayScheduler(replayer);
             try {
                 replayer.run();
             } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
@@ -136,11 +186,11 @@ public class RuntimeExecutor {
             PExGlobal.setStatus(STATUS.ERROR);
             throw new Exception("ERROR", e);
         } finally {
-            future.cancel(true);
+            cancelAllThreads();
             executor.shutdownNow();
-            scheduler.updateResult();
+            PExGlobal.updateResult();
             printStats();
-            PExLogger.logEndOfRun(scheduler, Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+            PExLogger.logEndOfRun(Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
             SearchTask.Cleanup();
         }
     }
@@ -149,10 +199,15 @@ public class RuntimeExecutor {
         SearchTask.Initialize();
         ScratchLogger.Initialize();
 
-        scheduler = new ExplicitSearchScheduler();
-        PExGlobal.setScheduler(scheduler);
-
         preprocess();
+
+        executor = Executors.newFixedThreadPool(PExGlobal.getConfig().getNumThreads());
+
+        for (int i = 0; i < PExGlobal.getConfig().getNumThreads(); i++) {
+            ExplicitSearchScheduler scheduler = new ExplicitSearchScheduler(i + 1);
+            PExGlobal.addSearchScheduler(scheduler);
+        }
+
         process(false);
     }
 
@@ -160,7 +215,7 @@ public class RuntimeExecutor {
         PExLogger.logInfo(String.format("... Reading buggy trace from %s", fileName));
 
         ReplayScheduler replayer = new ReplayScheduler(Schedule.readFromFile(fileName));
-        PExGlobal.setScheduler(replayer);
+        PExGlobal.setReplayScheduler(replayer);
         try {
             replayer.run();
         } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
@@ -178,7 +233,7 @@ public class RuntimeExecutor {
             throw new Exception("Error when replaying the bug", replayException);
         } finally {
             printStats();
-            PExLogger.logEndOfRun(null, Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
+            PExLogger.logEndOfRun(Duration.between(TimeMonitor.getStart(), Instant.now()).getSeconds());
         }
     }
 

@@ -10,7 +10,7 @@ import java.util.concurrent.TimeoutException;
 public class TimedCall implements Callable<Integer> {
     private final Scheduler scheduler;
 
-    public TimedCall(Scheduler scheduler, boolean resume) {
+    public TimedCall(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
 

@@ -1,116 +1,90 @@
 package pex.runtime.scheduler.explicit.strategy;
 
 import lombok.Getter;
-import pex.runtime.scheduler.explicit.SearchStatistics;
+import pex.runtime.PExGlobal;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.concurrent.Semaphore;
 
 @Getter
 public abstract class SearchStrategy implements Serializable {
-    /**
-     * List of all search tasks
-     */
-    final List<SearchTask> allTasks = new ArrayList<>();
-    /**
-     * Set of all search tasks that are pending
-     */
-    final Set<Integer> pendingTasks = new HashSet<>();
-    /**
-     * List of all search tasks that finished
-     */
-    final List<Integer> finishedTasks = new ArrayList<>();
+    private static final Semaphore sem = new Semaphore(1);
+
     /**
      * Task id of the latest search task
      */
     int currTaskId = 0;
     /**
-     * Starting iteration number for the current task
+     * Number of schedules for the current task
      */
-    int currTaskStartIteration = 0;
-
-    public SearchTask createTask(SearchTask parentTask) {
-        SearchTask newTask = new SearchTask(allTasks.size(), parentTask);
-        allTasks.add(newTask);
-        return newTask;
-    }
-
-    public void createFirstTask() {
-        assert (allTasks.size() == 0);
-        SearchTask firstTask = createTask(null);
-        pendingTasks.add(firstTask.getId());
-        setCurrTask(firstTask);
-    }
+    int currTaskNumSchedules = 0;
 
     public SearchTask getCurrTask() {
         return getTask(currTaskId);
     }
 
-    private void setCurrTask(SearchTask task) {
-        assert (pendingTasks.contains(task.getId()));
-        pendingTasks.remove(task.getId());
+    public void setCurrTask(SearchTask task) {
         currTaskId = task.getId();
-        currTaskStartIteration = SearchStatistics.iteration;
+        currTaskNumSchedules = 0;
     }
 
-    public int getNumSchedulesInCurrTask() {
-        return SearchStatistics.iteration - currTaskStartIteration;
+    public void incrementCurrTaskNumSchedules() {
+        currTaskNumSchedules++;
     }
 
+    public SearchTask setNextTask() throws InterruptedException {
+        SearchTask nextTask = popNextTask();
+        if (nextTask != null) {
+            if (nextTask.getId() != 0) {
+                // not the very first task, read from file
+                nextTask.readFromFile();
+            }
+        }
+        return nextTask;
+    }
+
+    public SearchTask createTask(SearchTask parentTask) throws InterruptedException {
+        sem.acquire();
+        SearchTask newTask = new SearchTask(PExGlobal.getAllTasks().size(), parentTask);
+        PExGlobal.getAllTasks().put(newTask.getId(), newTask);
+        sem.release();
+        return newTask;
+    }
+
+    public void createFirstTask() throws InterruptedException {
+        assert (PExGlobal.getAllTasks().size() == 0);
+        SearchTask firstTask = createTask(null);
+        addNewTask(firstTask);
+    }
 
     private boolean isValidTaskId(int id) {
-        return (id < allTasks.size());
+        return (id < PExGlobal.getAllTasks().size()) && (PExGlobal.getAllTasks().containsKey(id));
     }
 
     protected SearchTask getTask(int id) {
         assert (isValidTaskId(id));
-        return allTasks.get(id);
+        return PExGlobal.getAllTasks().get(id);
     }
 
-    public SearchTask setNextTask() {
-        if (pendingTasks.isEmpty()) {
-            return null;
+    public void addNewTask(SearchTask task) throws InterruptedException {
+        sem.acquire();
+        addTask(task);
+        sem.release();
+    }
+
+    SearchTask popNextTask() throws InterruptedException {
+        sem.acquire();
+        SearchTask task;
+        if (PExGlobal.getPendingTasks().isEmpty()) {
+            task = null;
+        } else {
+            task = popTask();
         }
-
-        SearchTask nextTask = popNextTask();
-        nextTask.readFromFile();
-        setCurrTask(nextTask);
-
-        return nextTask;
+        sem.release();
+        return task;
     }
 
-    /**
-     * Get the number of unexplored choices in the pending tasks
-     *
-     * @return Number of unexplored choices
-     */
-    public int getNumPendingChoices() {
-        int numUnexplored = 0;
-        for (Integer tid : pendingTasks) {
-            SearchTask task = getTask(tid);
-            numUnexplored += task.getTotalUnexploredChoices();
-        }
-        return numUnexplored;
-    }
+    abstract SearchTask popTask();
 
-    /**
-     * Get the number of unexplored data choices in the pending tasks
-     *
-     * @return Number of unexplored data choices
-     */
-    public int getNumPendingDataChoices() {
-        int numUnexplored = 0;
-        for (Integer tid : pendingTasks) {
-            SearchTask task = getTask(tid);
-            numUnexplored += task.getTotalUnexploredDataChoices();
-        }
-        return numUnexplored;
-    }
-
-    abstract SearchTask popNextTask();
-
-    public abstract void addNewTask(SearchTask task);
+    abstract void addTask(SearchTask task);
 }

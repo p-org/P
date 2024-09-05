@@ -75,4 +75,10 @@ public class PExConfig {
     //max number of children search tasks
     @Setter
     int maxChildrenPerTask = 2;
+    //max number of choices per choose(.) operation per call
+    @Setter
+    int maxChoiceBoundPerCall = 10000;
+    //max number of choices per choose(.) operation in total
+    @Setter
+    int maxChoiceBoundTotal = 0;
 }

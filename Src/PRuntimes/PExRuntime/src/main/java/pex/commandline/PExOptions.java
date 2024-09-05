@@ -237,6 +237,28 @@ public class PExOptions {
                         .build();
         addHiddenOption(choiceSelect);
 
+        // max number of choices per choose(.) call
+        Option maxChoicesPerCall =
+                Option.builder()
+                        .longOpt("max-choices-per-call")
+                        .desc("Max number of choices allowed per choose statement per call (default: 10000)")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("(integer)")
+                        .build();
+        addHiddenOption(maxChoicesPerCall);
+
+        // max number of choices in total
+        Option maxChoicesTotal =
+                Option.builder()
+                        .longOpt("max-choices-total")
+                        .desc("Max number of choices allowed per choose statement in total (default: no bound)")
+                        .numberOfArgs(1)
+                        .hasArg()
+                        .argName("(integer)")
+                        .build();
+        addHiddenOption(maxChoicesTotal);
+
         /*
          * Help menu options
          */
@@ -469,6 +491,21 @@ public class PExOptions {
                             optionError(
                                     option,
                                     String.format("Unrecognized choice selection mode, got %s", option.getValue()));
+                    }
+                case "max-choices-per-call":
+                    try {
+                        config.setMaxChoiceBoundPerCall(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(
+                                option, String.format("Expected an integer value, got %s", option.getValue()));
+                    }
+                    break;
+                case "max-choices-total":
+                    try {
+                        config.setMaxChoiceBoundTotal(Integer.parseInt(option.getValue()));
+                    } catch (NumberFormatException ex) {
+                        optionError(
+                                option, String.format("Expected an integer value, got %s", option.getValue()));
                     }
                     break;
                 case "h":

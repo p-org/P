@@ -12,6 +12,7 @@ import pex.runtime.scheduler.explicit.strategy.SearchTask;
 import pex.runtime.scheduler.replay.ReplayScheduler;
 import pex.utils.exceptions.BugFoundException;
 import pex.utils.exceptions.MemoutException;
+import pex.utils.exceptions.TooManyChoicesException;
 import pex.utils.monitor.MemoryMonitor;
 import pex.utils.monitor.TimeMonitor;
 import pex.utils.monitor.TimedCall;
@@ -158,6 +159,9 @@ public class RuntimeExecutor {
         } catch (BugFoundException e) {
             PExGlobal.setStatus(STATUS.BUG_FOUND);
             PExGlobal.setResult(String.format("found cex of length %d", e.getScheduler().getStepNumber()));
+            if (e instanceof TooManyChoicesException) {
+                PExGlobal.setResult(PExGlobal.getResult() + " (too many choices)");
+            }
             e.getScheduler().getLogger().logStackTrace(e);
 
             String schFile = PExGlobal.getConfig().getOutputFolder() + "/" + PExGlobal.getConfig().getProjectName() + "_0_0.schedule";
@@ -226,6 +230,9 @@ public class RuntimeExecutor {
         } catch (BugFoundException replayException) {
             PExGlobal.setStatus(STATUS.BUG_FOUND);
             PExGlobal.setResult(String.format("found cex of length %d", replayer.getStepNumber()));
+            if (replayException instanceof TooManyChoicesException) {
+                PExGlobal.setResult(PExGlobal.getResult() + " (too many choices)");
+            }
             PExLogger.logStackTrace(replayException);
             throw replayException;
         } catch (Exception replayException) {

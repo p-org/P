@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Random;
 
 public class PExForeignCode {
-    /* Not recommended to use data non-determinism in PEx foreign code
+/* Not allowed to use data non-determinism in PEx foreign code. So we cannot do the following:
     public static PNamedTuple ChooseRandomTransaction(PInt uniqueId) {
         Map<String, PValue<?>> values = new HashMap<>();
         Random rand = new Random();
@@ -18,5 +18,5 @@ public class PExForeignCode {
 
         return new PNamedTuple(values);
     }
-    */
+*/
 }

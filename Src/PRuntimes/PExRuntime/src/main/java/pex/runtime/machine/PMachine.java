@@ -324,9 +324,9 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     }
 
     public void setMachineState(MachineLocalState input) {
-        setLocalVarValues(input.getLocals());
-        observedEvents = input.getObservedEvents();
-        happensBeforePairs = input.getHappensBeforePairs();
+        setLocalVarValues(input.locals());
+        observedEvents = input.observedEvents();
+        happensBeforePairs = input.happensBeforePairs();
     }
 
     /**

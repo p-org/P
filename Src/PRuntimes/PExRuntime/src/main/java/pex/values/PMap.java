@@ -56,11 +56,11 @@ public class PMap extends PValue<PMap> implements PCollection {
     }
 
     /**
-     * Get the mapped value corresponding to a key or a given default value if key doesn't exists
+     * Get the mapped value corresponding to a key or a given default value if key doesn't exist
      *
      * @param key input key
      * @param def input default value
-     * @return value corresponding to the key or default value if key does not exists
+     * @return value corresponding to the key or default value if key does not exist
      */
     public PValue<?> getOrDefault(PValue<?> key, PValue<?> def) {
         try {

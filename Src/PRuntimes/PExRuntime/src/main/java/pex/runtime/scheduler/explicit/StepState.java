@@ -115,7 +115,7 @@ public class StepState implements Serializable {
         for (PMachine m : machines) {
             MachineLocalState ms = machineLocalStates.get(m);
             if (ms != null) {
-                s.append(String.format("%s -> %s, ", m, ms.getHappensBeforePairs()));
+                s.append(String.format("%s -> %s, ", m, ms.happensBeforePairs()));
             }
         }
         return s.toString();
@@ -147,7 +147,7 @@ public class StepState implements Serializable {
         for (PMachine machine : machines) {
             s.append(String.format("%s:\n", machine));
             List<String> fields = machine.getLocalVarNames();
-            List<Object> values = machineLocalStates.get(machine).getLocals();
+            List<Object> values = machineLocalStates.get(machine).locals();
             int j = 0;
             for (String field : fields) {
                 Object val = values.get(j++);

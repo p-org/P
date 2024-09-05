@@ -61,7 +61,6 @@ public class PExLogger {
     /**
      * Logs message at the end of a run.
      *
-     * @param scheduler Explicit state search scheduler
      * @param timeSpent Time spent in seconds
      */
     public static void logEndOfRun(long timeSpent) {

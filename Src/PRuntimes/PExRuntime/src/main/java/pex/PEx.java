@@ -92,7 +92,7 @@ public class PEx {
 
     /**
      * Sets up the runtime before the run.
-     * Initializes loggers, random number generator, time.memory monitors.
+     * Initializes loggers, random number generator, time/memory monitors.
      */
     private static void setup() {
         RandomNumberGenerator.setup(PExGlobal.getConfig().getRandomSeed());

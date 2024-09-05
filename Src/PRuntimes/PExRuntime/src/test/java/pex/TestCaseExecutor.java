@@ -37,7 +37,7 @@ public class TestCaseExecutor {
             List<String> testCaseRelPaths =
                     testCasePaths.stream()
                             .map(p -> p.substring(p.indexOf(testCasePathPrefix) + testCasePathPrefix.length()))
-                            .collect(Collectors.toList());
+                            .toList();
             testName = Paths.get(testCaseRelPaths.get(0)).getFileName().toString();
         }
         testName = testName.replaceAll("_", "");
@@ -192,14 +192,7 @@ public class TestCaseExecutor {
         }
     }
 
-    private static class StreamGobbler implements Runnable {
-        private final InputStream inputStream;
-        private final Consumer<String> consumer;
-
-        StreamGobbler(InputStream inputStream, Consumer<String> consumer) {
-            this.inputStream = inputStream;
-            this.consumer = consumer;
-        }
+    private record StreamGobbler(InputStream inputStream, Consumer<String> consumer) implements Runnable {
 
         @Override
         public void run() {

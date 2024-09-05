@@ -2,18 +2,13 @@ package pex.runtime.scheduler.explicit.strategy;
 
 import pex.runtime.PExGlobal;
 
-import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class SearchStrategyAStar extends SearchStrategy {
     private static final PriorityBlockingQueue<SearchTask> elements =
-            new PriorityBlockingQueue<SearchTask>(
+            new PriorityBlockingQueue<>(
                     100,
-                    new Comparator<SearchTask>() {
-                        public int compare(SearchTask a, SearchTask b) {
-                            return Integer.compare(a.getCurrChoiceNumber(), b.getCurrChoiceNumber());
-                        }
-                    });
+                    (a, b) -> Integer.compare(a.getCurrChoiceNumber(), b.getCurrChoiceNumber()));
 
     public SearchStrategyAStar() {
     }

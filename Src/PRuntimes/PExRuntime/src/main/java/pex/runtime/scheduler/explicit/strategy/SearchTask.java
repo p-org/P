@@ -123,7 +123,7 @@ public class SearchTask implements Serializable {
     public List<Integer> getSearchUnitKeys(boolean reversed) {
         List<Integer> keys = new ArrayList<>(searchUnits.keySet());
         if (reversed)
-            Collections.sort(keys, Collections.reverseOrder());
+            keys.sort(Collections.reverseOrder());
         else
             Collections.sort(keys);
         return keys;

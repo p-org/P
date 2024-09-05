@@ -537,7 +537,7 @@ public class PExOptions {
             config.setNumThreads(1);
         }
 
-        if (config.getReplayFile() != "") {
+        if (!config.getReplayFile().equals("")) {
             config.setSearchStrategyMode(SearchStrategyMode.Replay);
             config.setNumThreads(1);
             if (config.getVerbosity() == 0) {

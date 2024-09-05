@@ -52,7 +52,7 @@ public abstract class SearchStrategy implements Serializable {
     }
 
     public void createFirstTask() throws InterruptedException {
-        assert (PExGlobal.getAllTasks().size() == 0);
+        assert (PExGlobal.getAllTasks().isEmpty());
         SearchTask firstTask = createTask(null);
         addNewTask(firstTask);
     }

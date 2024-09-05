@@ -496,7 +496,7 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpacePrologue(context, output);
 
             var declName = context.Names.GetNameForDecl(machine);
-            context.WriteLine(output, $"internal partial class {declName} : PMachine");
+            context.WriteLine(output, $"internal partial class {declName} : StateMachine");
             context.WriteLine(output, "{");
 
             foreach (var field in machine.Fields)
@@ -509,12 +509,12 @@ namespace Plang.Compiler.Backend.CSharp
             var cTorType = GetCSharpType(machine.PayloadType, true);
             context.Write(output, "public class ConstructorEvent : Event");
             context.Write(output, "{");
-            context.Write(output, $"public ConstructorEvent({cTorType} val) : base(val) {{ }}");
+            context.Write(output, $"public ConstructorEvent(IPrtValue val) : base(val) {{ }}");
             context.WriteLine(output, "}");
             context.WriteLine(output);
 
             context.WriteLine(output,
-                $"protected override Event GetConstructorEvent(IPrtValue value) {{ return new ConstructorEvent(({cTorType})value); }}");
+                $"protected override Event GetConstructorEvent(IPrtValue value) {{ return new ConstructorEvent((IPrtValue)value); }}");
 
             // create the constructor to initialize the sends, creates and receives list
             WriteMachineConstructor(context, output, machine);
@@ -559,17 +559,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         private void WriteState(CompilationContext context, StringWriter output, State state)
         {
-            if (state.IsStart && !state.OwningMachine.IsSpec)
-            {
-                context.WriteLine(output, "[Start]");
-                context.WriteLine(output, "[OnEntry(nameof(InitializeParametersFunction))]");
-                context.WriteLine(output,
-                    $"[OnEventGotoState(typeof(ConstructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
-                context.WriteLine(output, "class __InitState__ : State { }");
-                context.WriteLine(output);
-            }
-
-            if (state.IsStart && state.OwningMachine.IsSpec)
+            if (state.IsStart)
             {
                 context.WriteLine(output, "[Start]");
             }
@@ -730,7 +720,7 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 // for machine
                 var seperator = functionParameters == "" ? "" : ", ";
-                var functionParameters_machine = functionParameters + string.Concat(seperator, "PMachine currentMachine");
+                var functionParameters_machine = functionParameters + string.Concat(seperator, "StateMachine currentMachine");
                 context.WriteLine(output,
                     $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_machine})");
                 WriteFunctionBody(context, output, function);
@@ -1008,7 +998,7 @@ namespace Plang.Compiler.Backend.CSharp
                         .ToHashSet();
                     eventTypeNames.Add("PHalt"); // halt as a special case for receive
                     var recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
-                    context.WriteLine(output, $"var {eventName} = await currentMachine.TryReceiveEvent({recvArgs});");
+                    context.WriteLine(output, $"var {eventName} = await currentMachine.ReceiveEventAsync({recvArgs});");
                     context.WriteLine(output, $"switch ({eventName}) {{");
                     // add halt as a special case if doesnt exist
                     if (receiveStmt.Cases.All(kv => kv.Key.Name != "PHalt"))
@@ -1101,36 +1091,17 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case SendStmt sendStmt:
-                    context.Write(output, "currentMachine.TrySendEvent(");
+                    if (sendStmt.Arguments.Any())
+                    {
+                        WriteExpr(context, output, sendStmt.Evt);
+                        context.Write(output, ".Payload = ");
+                        WriteExpr(context, output, sendStmt.Arguments.First());
+                        context.WriteLine(output, ";");
+                    }
+                    context.Write(output, "currentMachine.SendEvent(");
                     WriteExpr(context, output, sendStmt.MachineExpr);
                     context.Write(output, ", (Event)");
                     WriteExpr(context, output, sendStmt.Evt);
-
-                    if (sendStmt.Arguments.Any())
-                    {
-                        context.Write(output, ", ");
-                        if (sendStmt.Arguments.Count > 1)
-                        {
-                            //create tuple from rvaluelist
-                            var argTypes = string.Join(",",
-                                sendStmt.Arguments.Select(a => GetCSharpType(a.Type)));
-                            var tupleType = $"PrtTuple";
-                            context.Write(output, $"new {tupleType}(");
-                            var septor = "";
-                            foreach (var ctorExprArgument in sendStmt.Arguments)
-                            {
-                                context.Write(output, septor);
-                                WriteExpr(context, output, ctorExprArgument);
-                                septor = ",";
-                            }
-
-                            context.Write(output, ")");
-                        }
-                        else
-                        {
-                            WriteExpr(context, output, sendStmt.Arguments.First());
-                        }
-                    }
 
                     context.WriteLine(output, ");");
                     break;
@@ -1312,7 +1283,7 @@ namespace Plang.Compiler.Backend.CSharp
                 case ChooseExpr chooseExpr:
                     if (chooseExpr.SubExpr == null)
                     {
-                        context.Write(output, "((PrtBool)currentMachine.TryRandomBool())");
+                        context.Write(output, "((PrtBool)currentMachine.RandomBoolean())");
                     }
                     else
                     {
@@ -1404,7 +1375,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case FairNondetExpr _:
-                    context.Write(output, "((PrtBool)currentMachine.TryRandomBool())");
+                    context.Write(output, "((PrtBool)currentMachine.RandomBoolean())");
                     break;
 
                 case FloatLiteralExpr floatLiteralExpr:
@@ -1463,7 +1434,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case NondetExpr _:
-                    context.Write(output, "((PrtBool)currentMachine.TryRandomBool())");
+                    context.Write(output, "((PrtBool)currentMachine.RandomBoolean())");
                     break;
 
                 case NullLiteralExpr _:

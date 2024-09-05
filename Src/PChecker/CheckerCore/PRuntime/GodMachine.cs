@@ -9,9 +9,7 @@ namespace PChecker.PRuntime
         private void InitOnEntry(Event e)
         {
             var mainMachine = (e as Config).MainMachine;
-            CreateStateMachine(mainMachine, mainMachine.Name,
-                new PMachine.InitializeParametersEvent(
-                    new PMachine.InitializeParameters("I_" + mainMachine.Name, null)));
+            CreateStateMachine(mainMachine, mainMachine.Name);
         }
 
         public class Config : Event

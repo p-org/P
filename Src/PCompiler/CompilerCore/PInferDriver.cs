@@ -528,12 +528,12 @@ namespace Plang.Compiler
                 {
                     if (codegen.Contradicting(s1, s2))
                     {
-                        if (p.Except([s1]).ToHashSet().SetEquals(q.Except([s2])))
-                        {
-                            removal.Add(s1);
-                            removal.Add(s2);
-                            didSth = true;
-                        }
+                        // if (p.Except([s1]).ToHashSet().SetEquals(q.Except([s2])))
+                        // {
+                        removal.Add(s1);
+                        removal.Add(s2);
+                        didSth = true;
+                        // }
                     }
                 }
             }
@@ -767,50 +767,29 @@ namespace Plang.Compiler
                             // Forall-only rules
                             // Case 1: i ==> j; i.e. pi ==> pj && qj ==> qi
                             // keep j remove i
-                            else if (numExists == 0 && pj.IsSubsetOf(pi) && SubsetOf(qi, qj))
+                            else if (pj.IsSubsetOf(pi) && SubsetOf(qi, qj))
                             {
                                 // Console.WriteLine($"Remove {i}");
                                 removes.Add(i);
                             }
                             // Case 2: j ==> i; keep i remove j
-                            else if (numExists == 0 && pi.IsSubsetOf(pj) && SubsetOf(qj, qi))
+                            else if (pi.IsSubsetOf(pj) && SubsetOf(qj, qi))
                             {
                                 // Console.WriteLine($"Remove {j}");
                                 removes.Add(j);
                             }
-                            // Case 3: if i ==> j, then any thing holds under i also holds under j
+                            // Case 3: if i ==> j, then any thing holds under j also holds under i
                             // we may remove those from pi
                             // e.g. forall* P -> Q, moreover P -> R
                             // if it is the case that forall* R -> Q, we remove Q for the stronger guards P
-                            else if (numExists == 0 && pj.IsSubsetOf(pi))
+                            // i.e. keeping the weakest guard for Q
+                            else if (pj.IsSubsetOf(pi))
                             {
-                                didSth |= ExceptWith(qi, qj, false);
+                                didSth |= ExceptWith(qi, qj, numExists > 0);
                             }
-                            else if (numExists == 0 && pi.IsSubsetOf(pj))
+                            else if (pi.IsSubsetOf(pj))
                             {
-                                didSth |= ExceptWith(qj, qi, false);
-                            }
-                            // similar rules for forall-exists rules: prefer stronger guards
-                            else if (numExists > 0 && pi.IsSubsetOf(pj) && SubsetOf(qi, qj))
-                            {
-                                removes.Add(i);
-                            }
-                            else if (numExists > 0 && pj.IsSubsetOf(pi) && SubsetOf(qj, qi))
-                            {
-                                removes.Add(j);
-                            }
-                            // if with existentials, j ==> i
-                            // then anything holds under j also holds under i
-                            // e.g. if forall* P -> exists Q, moreover P -> R then
-                            //      forall* R -> exists Q
-                            // we only keep filters Q for the stronger guards P
-                            else if (numExists > 0 && pi.IsSubsetOf(pj))
-                            {
-                                didSth |= ExceptWith(qi, qj, true);
-                            }
-                            else if (numExists > 0 && pj.IsSubsetOf(pi))
-                            {
-                                didSth |= ExceptWith(qj, qi, true);
+                                didSth |= ExceptWith(qj, qi, numExists > 0);
                             }
                         }
                     }
@@ -841,7 +820,6 @@ namespace Plang.Compiler
             }
         }
 
-
         // return the Ps and Qs that should be included to the log
         public static (HashSet<string>, List<HashSet<string>>) UpdateMinedSpecs(ICompilerConfiguration job, PInferPredicateGenerator codegen, Hint hint, HashSet<string> p_prime, List<HashSet<string>> q_prime)
         {
@@ -865,17 +843,17 @@ namespace Plang.Compiler
                 {
                     var p = prevP[i];
                     var q = prevQ[i];
-                    if (p.IsSubsetOf(p_prime) && numExists == 0)
+                    if (p.IsSubsetOf(p_prime))
                     {
                         // stronger guards when forall-only
                         // then only keep filters that
                         // cannot be discovered with weaker guards
-                        ExceptWith(q_prime, q, false);
+                        ExceptWith(q_prime, q, numExists > 0);
                     }
-                    else if (p_prime.IsSubsetOf(p) && numExists > 0)
+                    else if (p_prime.IsSubsetOf(p))
                     {
                         // prefer stronger guards when there are existentals
-                        ExceptWith(q, q_prime, true);
+                        ExceptWith(q, q_prime, numExists > 0);
                     }
                 }
                 // can all be captured by some previous invariant
@@ -892,18 +870,11 @@ namespace Plang.Compiler
                     // a forall-only invariant is implied by some previous ones if
                     // p_prime -> p && q -> q_prime
                     // might have been captured by previous checks
-                    if (numExists == 0 && p.IsSubsetOf(p_prime) && SubsetOf(q_prime, q))
+                    if (p.IsSubsetOf(p_prime) && SubsetOf(q_prime, q))
                     {
                         // the new one is subsumed by some previous invariant, so skip adding it to log
                         job.Output.WriteWarning($"[Drop][Subsumed] {curr_inv}");
                         return ([], []);
-                    }
-                    if (numExists > 0 && p.IsSubsetOf(p_prime) && SubsetOf(q, q_prime))
-                    {
-                        job.Output.WriteWarning($"[Replaced] {curr_inv} subsumes {ShowRecordAt(quantifiers, i)}");
-                        prevP[i] = p_prime;
-                        prevQ[i] = q_prime;
-                        continue;
                     }
                     // same guard, then merge filters
                     if (p.SetEquals(p_prime))

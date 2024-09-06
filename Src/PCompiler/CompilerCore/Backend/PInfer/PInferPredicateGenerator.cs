@@ -121,6 +121,7 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, t, t);
                 }
+                return;
             }
             if (t is NamedTupleType tupleType)
             {

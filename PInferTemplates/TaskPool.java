@@ -20,7 +20,8 @@ public class TaskPool {
     static final File DaikonTracesDir = new File("tmp_daikon_traces");
 
     public TaskPool(int chunkSize, FromDaikon converter, String filename, boolean verbose) throws IOException {
-        this.chunkSize = chunkSize;
+        System.out.println("Running with " + chunkSize + " cores");
+	this.chunkSize = chunkSize;
         this.running = 0;
         this.tasks = new ArrayList<>();
         this.headerToNumTasks = new HashMap<>();

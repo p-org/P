@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.TypeChecker;
@@ -11,6 +12,10 @@ namespace Plang.Compiler.Backend.PInfer
     {
         public string toP(IPExpr expr)
         {
+            if (expr == null)
+            {
+                throw new ArgumentNullException(nameof(expr));
+            }
             switch (expr)
             {
                 case VariableAccessExpr varAccess: return $"{varAccess.Variable.Name}";
@@ -31,7 +36,7 @@ namespace Plang.Compiler.Backend.PInfer
                 case BoolLiteralExpr boolLit: return $"{boolLit.Value}";
                 case FloatLiteralExpr floatLit: return $"{floatLit.Value}";
                 case FunCallExpr funCall: {
-                    if (funCall.Function.Name == "indexof")
+                    if (funCall.Function.Name == "index")
                     {
                         // specifically for monitor functions
                         return $"{toP(funCall.Arguments[0])}_idx";
@@ -71,7 +76,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case SizeofExpr sizeofExpr: return $"sizeof({toP(sizeofExpr.Expr)})";
             }
-            return null;
+            throw new Exception($"Unsupported expr: {expr}");
         }
 
         private bool PopulateExprs(PInferPredicateGenerator codegen, ICompilerConfiguration job, Scope globalScope, HashSet<string> reprs, List<IPExpr> list)
@@ -188,23 +193,23 @@ namespace Plang.Compiler.Backend.PInfer
 
                 // Guards
                 WriteLine($"fun checkGuardsImpl({GetFunctionParameters(forallVars)}): bool {{");
-                WriteLine($"return {string.Join(" && ", guards.Select(toP))}");
+                WriteLine($"return {(guards.Count > 0 ? string.Join(" && ", guards.Select(toP)) : "true")};");
                 WriteLine($"}}");
 
                 // Filters
                 WriteLine($"fun checkFiltersImpl({GetFunctionParameters(h.Quantified)}): bool {{");
-                WriteLine($"return {string.Join(" && ", filters.Select(toP))}");
+                WriteLine($"return {(filters.Count > 0 ? string.Join(" && ", filters.Select(toP)) : "true")};");
                 WriteLine($"}}");
 
                 // Helper function
                 WriteLine($"fun checkGuards({string.Join(", ", forallVars.Select(x => $"{x.Name}_idx: int"))}): bool {{");
                 WriteLine($"return checkGuardsImpl({string.Join(", ",
-                                                        forallVars.Select(x => $"{MCBuff(x.EventName)}[{x.Name}_idx")
+                                                        forallVars.Select(x => $"{MCBuff(x.EventName)}[{x.Name}_idx]")
                                                                   .Concat(forallVars.Select(x => $"{x.Name}_idx")))})");
                 WriteLine("}");
 
                 WriteLine($"fun checkFilters({string.Join(", ", h.Quantified.Select(x => $"{x.Name}_idx: int"))}): bool {{");
-                WriteLine($"return checkFiltersImpl({string.Join(", ", h.Quantified.Select(x => $"{MCBuff(x.EventName)}[{x.Name}_idx")
+                WriteLine($"return checkFiltersImpl({string.Join(", ", h.Quantified.Select(x => $"{MCBuff(x.EventName)}[{x.Name}_idx]")
                                                                                      .Concat(h.Quantified.Select(x => $"{x.Name}_idx")))})");
                 WriteLine("}");
 
@@ -240,12 +245,15 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 WriteLine("}"); // End Serving_Cold
 
-                WriteLine("hot state Serving_Hot {"); // Serving_Hot
-                foreach (var ev in h.Quantified)
+                if (h.ExistentialQuantifiers > 0)
                 {
-                    WriteHandlerFor(ctx, monitorFile, ev.EventDecl, h, true);
+                    WriteLine("hot state Serving_Hot {"); // Serving_Hot
+                    foreach (var ev in h.Quantified)
+                    {
+                        WriteHandlerFor(ctx, monitorFile, ev.EventDecl, h, true);
+                    }
+                    WriteLine("}"); // End Serving_Hot
                 }
-                WriteLine("}"); // End Serving_Hot
                 WriteLine($"}} // {h.Name}");
             }
             else

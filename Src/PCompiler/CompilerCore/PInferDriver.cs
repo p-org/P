@@ -394,8 +394,17 @@ namespace Plang.Compiler
                 {
                     if (f.Count == 0) continue;
                     var prop = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", f));
-                    CompiledFile monitorFile = new($"minotor_{n++}.p", "PInferSpecs");
-                    transform.WriteSpecMonitor(codegen, ctx, job, globalScope, h, p, f, prop, monitorFile);
+                    CompiledFile monitorFile = new($"minotor_{n++}.p", Path.Combine(job.OutputDirectory.ToString(), "PInferSpecs"));
+                    try
+                    {
+                        transform.WriteSpecMonitor(codegen, ctx, job, globalScope, h, p, f, prop, monitorFile);
+                        job.Output.WriteFile(monitorFile);
+                    }
+                    catch (Exception e)
+                    {
+                        job.Output.WriteError($"Error writing monitor for {h.Name}:\nInvariant: {prop}\n{e.Message}");
+                        continue;
+                    }
                 }
             }
         }

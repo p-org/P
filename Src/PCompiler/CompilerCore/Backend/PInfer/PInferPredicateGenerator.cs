@@ -1005,10 +1005,21 @@ namespace Plang.Compiler.Backend.PInfer
                 InvExprVisitor visitor = new(config, globalScope, CC, hint.ConfigEvent, ReprToTerms);
                 try
                 {
-                    result = visitor.Visit(ctx);
-                    return true;
-                } catch (Exception)
-                {}
+                    IPExpr expr = visitor.Visit(ctx);
+                    if (expr != null)
+                    {
+                        result = expr;
+                        return true;
+                    }
+                    else
+                    {
+                        throw new Exception($"Might not be handled: {ctx.GetType()}");
+                    }
+                }
+                catch (Exception e)
+                {
+                    config.Output.WriteWarning($"Failed to parse {repr}: {e.Message}");
+                }
             }
             result = null;
             return false;

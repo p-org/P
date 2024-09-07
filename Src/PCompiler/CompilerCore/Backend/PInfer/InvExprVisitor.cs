@@ -284,6 +284,11 @@ namespace Plang.Compiler.Backend.PInfer
             return Visit(context.expr());
         }
 
+        public override IPExpr VisitParenExpr(PParser.ParenExprContext ctx)
+        {
+            return Visit(ctx.expr());
+        }
+
         public override IPExpr VisitKeywordExpr(PParser.KeywordExprContext ctx)
         {
             switch (ctx.fun.Text)

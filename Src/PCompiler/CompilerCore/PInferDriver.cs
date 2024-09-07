@@ -295,6 +295,7 @@ namespace Plang.Compiler
             var stopwatch = new Stopwatch();
             int numInvsDistilled = 0;
             int numInvsMined = 0;
+            var driver = new PInferDriver(job, globalScope);
             stopwatch.Start();
             switch (job.PInferAction)
             {
@@ -308,7 +309,6 @@ namespace Plang.Compiler
                     job.Output.WriteInfo($"PInfer - Run `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
                     givenHint.PruningLevel = job.PInferPruningLevel;
-                    var driver = new PInferDriver(job, globalScope);
                     driver.ParameterSearch(givenHint);
                     numInvsDistilled = driver.numDistilledInvs;
                     numInvsMined = driver.numTotalInvs;
@@ -317,7 +317,6 @@ namespace Plang.Compiler
                 case PInferAction.Auto:
                 {
                     job.Output.WriteInfo("PInfer - Auto Exploration");
-                    var driver = new PInferDriver(job, globalScope);
                     driver.AutoExplore();
                     numInvsDistilled = driver.numDistilledInvs;
                     numInvsMined = driver.numTotalInvs;
@@ -333,6 +332,8 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"\t# invariants discovered: {numInvsMined}");
                 // job.Output.WriteInfo($"\t# invariants distilled: {numInvsDistilled}");
                 job.Output.WriteInfo($"\t#Invariants after pruning: {PInferInvoke.WriteRecordTo("invariants.txt")}");
+                job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
+                PInferInvoke.WriteMonitors(driver.Codegen, job, globalScope);
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
             }
         }
@@ -351,6 +352,7 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static HashSet<string> Learned = [];
         internal static int NumInvsMined = 0;
+        internal static Transform transform = new();
 
         public static void NewInvFiles()
         {
@@ -380,68 +382,9 @@ namespace Plang.Compiler
             }
         }
 
-        private static bool populateExprs(PInferPredicateGenerator codegen, ICompilerConfiguration job, Scope globalScope, HashSet<string> reprs, List<IPExpr> list)
-        {
-            return reprs.Select(repr => {
-                if (codegen.TryParseToExpr(job, globalScope, repr, out var expr))
-                {
-                    list.Add(expr);
-                    return true;
-                }
-                job.Output.WriteError($"Failed to parse: {repr}");
-                return false;
-            }).All(x => x);
-        }
-
-        public static void WriteInv(Hint h, List<IPExpr> p, List<IPExpr> q)
-        {
-
-        }
-
-        public static void WriteSpecMonitor(PInferPredicateGenerator codegen, CompilationContext ctx, ICompilerConfiguration job, Scope globalScope, Hint h, HashSet<string> p, HashSet<string> q, string inv, CompiledFile monitorFile)
-        {
-            List<IPExpr> guards = [];
-            List<IPExpr> filters = [];
-            void WriteLine(string line) => ctx.WriteLine(monitorFile.Stream, line);
-            string MCBuff(string eventName) => $"Hist_{eventName}";
-            string PendingBuff(string eventName) => $"Pending_{eventName}";
-            if (populateExprs(codegen, job, globalScope, p, guards) && populateExprs(codegen, job, globalScope, q, filters))
-            {
-                WriteLine($"// Monitor for spec: {inv}");
-                WriteLine($"spec {h.Name} observes {string.Join(", ", h.Quantified.Select(x => x.EventName))} {{");
-                foreach (var forall_e in h.ForallQuantified())
-                {
-                    WriteLine($"var {MCBuff(forall_e.Name)}: {forall_e.PayloadType.OriginalRepresentation};");
-                    WriteLine($"var {PendingBuff(forall_e.Name)}: {forall_e.PayloadType.OriginalRepresentation};");
-                }
-                foreach (var exists_e in h.ExistentialQuantified())
-                {
-                    WriteLine($"var {MCBuff(exists_e.Name)}: {exists_e.PayloadType.OriginalRepresentation};");
-                }
-                WriteLine("start state Init {"); // Init
-                WriteLine("entry {");
-                foreach (var forall_e in h.ForallQuantified())
-                {
-                    WriteLine($"{MCBuff(forall_e.Name)} = default({forall_e.PayloadType.OriginalRepresentation});");
-                    WriteLine($"{PendingBuff(forall_e.Name)} = {forall_e.PayloadType.OriginalRepresentation};");
-                }
-                WriteLine("goto Serving_Cold");
-                WriteLine("}"); // End entry
-                WriteLine("}"); // End Init
-
-                WriteLine($"}} // {h.Name}");
-
-            }
-            else
-            {
-                return;
-            }
-        }
-
         public static void WriteMonitors(PInferPredicateGenerator codegen, ICompilerConfiguration job, Scope globalScope)
         {
             CompilationContext ctx = new(job);
-            // using StreamWriter invwrite = new("monitors.txt");
             int n = 0;
             foreach (var (_, _, h, p, q) in AllExecuedAndMined())
             {
@@ -452,7 +395,7 @@ namespace Plang.Compiler
                     if (f.Count == 0) continue;
                     var prop = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", f));
                     CompiledFile monitorFile = new($"minotor_{n++}.p", "PInferSpecs");
-                    // invwrite.WriteLine(h.GetInvariantReprHeader(ps, string.Join(" ∧ ", f)));
+                    transform.WriteSpecMonitor(codegen, ctx, job, globalScope, h, p, f, prop, monitorFile);
                 }
             }
         }

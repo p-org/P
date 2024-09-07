@@ -152,12 +152,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public List<PEvent> ForallQuantified()
         {
-            return Quantified.SkipLast(ExistentialQuantifiers).Select(v => v.EventDecl).ToList();
+            return Quantified.SkipLast(ExistentialQuantifiers).Select(v => v.EventDecl).DistinctBy(x => x.Name).ToList();
         }
 
         public List<PEvent> ExistentialQuantified()
         {
-            return Quantified.TakeLast(ExistentialQuantifiers).Select(v => v.EventDecl).ToList();
+            return Quantified.TakeLast(ExistentialQuantifiers).Select(v => v.EventDecl).DistinctBy(x => x.Name).ToList();
         }
 
         public Hint Copy()

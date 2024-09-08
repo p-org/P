@@ -395,7 +395,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "InitializeMonitorMap(runtime);");
             context.WriteLine(output, "InitializeMonitorObserves();");
             context.WriteLine(output,
-                $"runtime.CreateStateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof({main})));");
+                $"runtime.CreateStateMachine(typeof({main}), \"{main}\");");
             context.WriteLine(output, "}");
         }
 

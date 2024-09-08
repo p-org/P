@@ -18,6 +18,7 @@
   start state Init {
     on E1 do {
       raise E2, 1000;
+      assert false;
     }
     on E2 do (payload: int) { 
       assert (payload == 1000), format ("Expected payload to be 1000, actual payload is {0}", payload);

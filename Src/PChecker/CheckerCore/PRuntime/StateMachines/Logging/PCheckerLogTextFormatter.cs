@@ -57,10 +57,6 @@ namespace PChecker.PRuntime
         /// <inheritdoc/>
         public void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType)
         {
-            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
-            {
-                return;
-            }
             var source = creatorName ?? $"task '{Task.CurrentId}'";
             var text = $"<CreateLog> {id} was created by {source}.";
             Logger.WriteLine(text);
@@ -69,11 +65,6 @@ namespace PChecker.PRuntime
         /// <inheritdoc/>
         public void OnStateTransition(StateMachineId id, string stateName, bool isEntry)
         {
-            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
-            {
-                return;
-            }
-
             var direction = isEntry ? "enters" : "exits";
             var text = $"<StateLog> {id} {direction} state '{stateName}'.";
             Logger.WriteLine(text);
@@ -188,11 +179,6 @@ namespace PChecker.PRuntime
         /// <inheritdoc/>
         public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
         {
-            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
-            {
-                return;
-            }
-
             stateName = GetShortName(stateName);
             var eventName = GetEventNameWithPayload(e);
             string text = null;
@@ -213,7 +199,7 @@ namespace PChecker.PRuntime
         {
             stateName = GetShortName(stateName);
             var eventName = GetEventNameWithPayload(e);
-            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine") || eventName.Contains("GotoStateEvent"))
+            if (eventName.Contains("GotoStateEvent"))
             {
                 return;
             }
@@ -277,11 +263,6 @@ namespace PChecker.PRuntime
         /// <inheritdoc/>
         public void OnGotoState(StateMachineId id, string currStateName, string newStateName)
         {
-            if (currStateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
-            {
-                return;
-            }
-
             var text = $"<GotoLog> {id} is transitioning from state '{currStateName}' to state '{newStateName}'.";
             Logger.WriteLine(text);
         }

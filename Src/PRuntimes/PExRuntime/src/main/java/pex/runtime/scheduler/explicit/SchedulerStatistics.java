@@ -19,7 +19,7 @@ public class SchedulerStatistics {
     /**
      * Total steps
      */
-    public int totalSteps = 0;
+    public long totalSteps = 0;
 
     /**
      * Total number of states visited

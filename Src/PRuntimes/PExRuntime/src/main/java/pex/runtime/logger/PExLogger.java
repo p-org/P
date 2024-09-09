@@ -13,9 +13,6 @@ import pex.runtime.scheduler.explicit.StateCachingMode;
 import pex.runtime.scheduler.explicit.strategy.SearchStrategyMode;
 import pex.utils.monitor.MemoryMonitor;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 /**
  * Represents the main PEx logger
  */
@@ -78,16 +75,16 @@ public class PExLogger {
         if (PExGlobal.getConfig().getSearchStrategyMode() != SearchStrategyMode.Replay) {
             log.info("... Search statistics:");
             if (PExGlobal.getConfig().getStateCachingMode() != StateCachingMode.None) {
-                log.info(String.format("..... Explored %d distinct states over %d timelines",
+                log.info(String.format("..... Explored %,d distinct states over %,d timelines",
                         PExGlobal.getStateCache().size(), PExGlobal.getTimelines().size()));
             }
-            log.info(String.format("..... Explored %d distinct schedules", PExGlobal.getTotalSchedules()));
-            log.info(String.format("..... Finished %d search tasks (%d pending)",
+            log.info(String.format("..... Explored %,d distinct schedules", PExGlobal.getTotalSchedules()));
+            log.info(String.format("..... Finished %,d search tasks (%,d pending)",
                     PExGlobal.getFinishedTasks().size(), PExGlobal.getPendingTasks().size()));
-            log.info(String.format("..... Number of steps explored: %d (min), %d (avg), %d (max).",
+            log.info(String.format("..... Number of steps explored: %,d (min), %,d (avg), %,d (max).",
                     PExGlobal.getMinSteps(), (PExGlobal.getTotalSteps() / PExGlobal.getTotalSchedules()), PExGlobal.getMaxSteps()));
         }
-        log.info(String.format("... Elapsed %d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
+        log.info(String.format("... Elapsed %,d seconds and used %.1f GB", timeSpent, MemoryMonitor.getMaxMemSpent() / 1000.0));
         log.info(String.format(".. \033[0;30;47m Result: %s \033[m", PExGlobal.getResult()));
         log.info(". Done");
     }

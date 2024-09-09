@@ -6,6 +6,7 @@ import pex.runtime.PExGlobal;
 public class TooManyChoicesException extends BugFoundException {
     @Getter
     String loc = "";
+
     /**
      * Constructs a new TooManyChoicesException for choose(.) with too choices in a single call.
      *

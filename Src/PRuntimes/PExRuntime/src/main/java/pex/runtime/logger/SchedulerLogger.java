@@ -104,7 +104,7 @@ public class SchedulerLogger {
      */
     public void logEndTask(SearchTask task, int numSchedules) {
         if (verbosity > 0) {
-            log.info(String.format("  Finished %s after exploring %d schedules", task, numSchedules));
+            log.info(String.format("  Finished %s after exploring %,d schedules", task, numSchedules));
         }
     }
 
@@ -121,7 +121,7 @@ public class SchedulerLogger {
 
     public void logNewTasks(List<SearchTask> tasks) {
         if (verbosity > 0) {
-            log.info(String.format("    Added %d new tasks", tasks.size()));
+            log.info(String.format("    Added %,d new tasks", tasks.size()));
         }
         if (verbosity > 1) {
             for (SearchTask task : tasks) {
@@ -419,9 +419,9 @@ public class SchedulerLogger {
     /**
      * Print choice loc
      *
-     * @param step Step number
-     * @param idx Choice number
-     * @param loc choose(.) location
+     * @param step    Step number
+     * @param idx     Choice number
+     * @param loc     choose(.) location
      * @param choices Data choices
      */
     public void logDataChoiceLoc(int step, int idx, String loc, List<PValue<?>> choices) {

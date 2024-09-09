@@ -245,13 +245,13 @@ public class PExGlobal {
             if (numUnexplored == 0) {
                 resultString += "correct for any depth";
             } else {
-                resultString += String.format("partially correct with %d choices remaining", numUnexplored);
+                resultString += String.format("partially correct with %,d choices remaining", numUnexplored);
             }
         } else {
             if (numUnexplored == 0) {
-                resultString += String.format("correct up to step %d", getMaxSteps());
+                resultString += String.format("correct up to step %,d", getMaxSteps());
             } else {
-                resultString += String.format("partially correct up to step %d with %d choices remaining", getMaxSteps(), numUnexplored);
+                resultString += String.format("partially correct up to step %,d with %,d choices remaining", getMaxSteps(), numUnexplored);
             }
         }
         result = resultString;
@@ -332,12 +332,12 @@ public class PExGlobal {
             s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
             s.append(
                     StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
-            s.append(StringUtils.center(String.format("%d / %d / %d",
+            s.append(StringUtils.center(String.format("%,d / %,d / %,d",
                             runningTasks.size(), finishedTasks.size(), pendingTasks.size()),
                     24));
 
-            s.append(StringUtils.center(String.format("%d", getTotalSchedules()), 12));
-            s.append(StringUtils.center(String.format("%d", timelines.size()), 12));
+            s.append(StringUtils.center(String.format("%,d", getTotalSchedules()), 12));
+            s.append(StringUtils.center(String.format("%,d", timelines.size()), 12));
 //                s.append(
 //                        StringUtils.center(
 //                                String.format(
@@ -345,7 +345,7 @@ public class PExGlobal {
 //                                24));
 
             if (config.getStateCachingMode() != StateCachingMode.None) {
-                s.append(StringUtils.center(String.format("%d", stateCache.size()), 12));
+                s.append(StringUtils.center(String.format("%,d", stateCache.size()), 12));
             }
 
             System.out.print(s);
@@ -380,8 +380,8 @@ public class PExGlobal {
         return result;
     }
 
-    public static int getTotalSteps() {
-        int result = 0;
+    public static long getTotalSteps() {
+        long result = 0;
         for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
             result += sch.getStats().totalSteps;
         }

@@ -19,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 public class ReplayScheduler extends Scheduler {
     @Getter
     BugFoundException bugFoundException = null;
+
     public ReplayScheduler(Schedule sch, BugFoundException e) {
         super(0, sch);
         bugFoundException = e;

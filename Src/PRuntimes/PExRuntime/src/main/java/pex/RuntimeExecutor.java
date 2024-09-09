@@ -157,7 +157,7 @@ public class RuntimeExecutor {
             throw new Exception("MEMOUT", e);
         } catch (BugFoundException e) {
             PExGlobal.setStatus(STATUS.BUG_FOUND);
-            PExGlobal.setResult(String.format("found cex of length %d", e.getScheduler().getStepNumber()));
+            PExGlobal.setResult(String.format("found cex of length %,d", e.getScheduler().getStepNumber()));
             if (e instanceof TooManyChoicesException) {
                 PExGlobal.setResult(PExGlobal.getResult() + " (too many choices)");
             }
@@ -229,13 +229,13 @@ public class RuntimeExecutor {
             replayer.run();
         } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
             PExGlobal.setStatus(STATUS.BUG_FOUND);
-            PExGlobal.setResult(String.format("found cex of length %d", replayer.getStepNumber()));
+            PExGlobal.setResult(String.format("found cex of length %,d", replayer.getStepNumber()));
             replayer.getLogger().logStackTrace((Exception) replayException);
             PExLogger.logTrace((Exception) replayException);
             throw new BugFoundException(replayException.getMessage(), replayException);
         } catch (BugFoundException replayException) {
             PExGlobal.setStatus(STATUS.BUG_FOUND);
-            PExGlobal.setResult(String.format("found cex of length %d", replayer.getStepNumber()));
+            PExGlobal.setResult(String.format("found cex of length %,d", replayer.getStepNumber()));
             if (replayException instanceof TooManyChoicesException) {
                 PExGlobal.setResult(PExGlobal.getResult() + " (too many choices)");
             }

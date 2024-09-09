@@ -6,7 +6,7 @@ using System;
 namespace PChecker.Runtime
 {
     /// <summary>
-    /// Handles the <see cref="ICoyoteRuntime.OnFailure"/> event.
+    /// Handles the <see cref="CoyoteRuntime.OnFailure"/> event.
     /// </summary>
     public delegate void OnFailureHandler(Exception ex);
 }

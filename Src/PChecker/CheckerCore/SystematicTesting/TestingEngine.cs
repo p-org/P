@@ -213,17 +213,11 @@ namespace PChecker.SystematicTesting
         /// </summary>
         public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action test) =>
             new TestingEngine(checkerConfiguration, test);
-
+        
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<ICoyoteRuntime> test) =>
-            new TestingEngine(checkerConfiguration, test);
-
-        /// <summary>
-        /// Creates a new systematic testing engine.
-        /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<IStateMachineRuntime> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<ControlledRuntime> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -235,13 +229,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ICoyoteRuntime, Task> test) =>
-            new TestingEngine(checkerConfiguration, test);
-
-        /// <summary>
-        /// Creates a new systematic testing engine.
-        /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<IStateMachineRuntime, Task> test) =>
+        internal static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ControlledRuntime, Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>

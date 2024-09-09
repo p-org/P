@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using PChecker.StateMachines;
 using PChecker.StateMachines.EventQueues;
@@ -25,13 +26,13 @@ using PChecker.PRuntime;
 using PChecker.PRuntime.Values;
 using PChecker.Random;
 using PChecker.Runtime;
-using PChecker.Specifications.Monitors;
 using PChecker.SystematicTesting.Operations;
 using PChecker.SystematicTesting.Strategies;
 using PChecker.SystematicTesting.Strategies.Liveness;
 using PChecker.SystematicTesting.Traces;
 using Debug = PChecker.IO.Debugging.Debug;
 using EventInfo = PChecker.StateMachines.Events.EventInfo;
+using Monitor = PChecker.Specifications.Monitors.Monitor;
 using PMachineValue = PChecker.PRuntime.Values.PMachineValue;
 
 namespace PChecker.SystematicTesting
@@ -39,14 +40,65 @@ namespace PChecker.SystematicTesting
     /// <summary>
     /// Runtime for controlling asynchronous operations.
     /// </summary>
-    internal sealed class ControlledRuntime : CoyoteRuntime, IStateMachineRuntime
+    public sealed class ControlledRuntime : IDisposable
     {
+        /// <summary>
+        /// Provides access to the runtime associated with each asynchronous control flow.
+        /// </summary>
+        /// <remarks>
+        /// In testing mode, each testing schedule uses a unique runtime instance. To safely
+        /// retrieve it from static methods, we store it in each asynchronous control flow.
+        /// </remarks>
+        private static readonly AsyncLocal<ControlledRuntime> AsyncLocalInstance = new AsyncLocal<ControlledRuntime>();
         
         /// <summary>
         /// The currently executing runtime.
         /// </summary>
-        internal static new ControlledRuntime Current => CoyoteRuntime.Current as ControlledRuntime;
+        internal static new ControlledRuntime Current => AsyncLocalInstance.Value ??
+                                                                (IsExecutionControlled ? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture,
+                                                                        "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
+                                                                        "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
+                                                                        "state machine handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
+                                                                        "you will need to mock them during testing.",
+                                                                        Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>")) :
+                                                                    RuntimeFactory.InstalledRuntime);
 
+        /// <summary>
+        /// If true, the program execution is controlled by the runtime to
+        /// explore interleavings and sources of nondeterminism, else false.
+        /// </summary>
+        internal static bool IsExecutionControlled { get; private protected set; } = false;
+        
+        /// <summary>
+        /// The checkerConfiguration used by the runtime.
+        /// </summary>
+        protected internal readonly CheckerConfiguration CheckerConfiguration;
+
+        /// <summary>
+        /// List of monitors in the program.
+        /// </summary>
+        protected readonly List<Monitor> Monitors;
+        
+        /// <summary>
+        /// Responsible for generating random values.
+        /// </summary>
+        protected readonly IRandomValueGenerator ValueGenerator;
+
+        /// <summary>
+        /// Monotonically increasing operation id counter.
+        /// </summary>
+        private long OperationIdCounter;
+
+        /// <summary>
+        /// Records if the runtime is running.
+        /// </summary>
+        protected internal volatile bool IsRunning;
+
+        /// <summary>
+        /// Callback that is fired when the Coyote program throws an exception which includes failed assertions.
+        /// </summary>
+        public event OnFailureHandler OnFailure;
+        
         /// <summary>
         /// The asynchronous operation scheduler.
         /// </summary>
@@ -94,10 +146,10 @@ namespace PChecker.SystematicTesting
         protected internal LogWriter LogWriter { get; private set; }
 
         /// <summary>
-        /// Used to log text messages. Use <see cref="ICoyoteRuntime.SetLogger"/>
+        /// Used to log text messages. Use <see cref="CoyoteRuntime.SetLogger"/>
         /// to replace the logger with a custom one.
         /// </summary>
-        public override TextWriter Logger => LogWriter.Logger;
+        public TextWriter Logger => LogWriter.Logger;
 
         /// <summary>
         /// Used to log json trace outputs.
@@ -166,8 +218,13 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal ControlledRuntime(CheckerConfiguration checkerConfiguration, ISchedulingStrategy strategy,
             IRandomValueGenerator valueGenerator)
-            : base(checkerConfiguration, valueGenerator)
         {
+            CheckerConfiguration = checkerConfiguration;
+            Monitors = new List<Monitor>();
+            ValueGenerator = valueGenerator;
+            OperationIdCounter = 0;
+            IsRunning = true;
+            
             StateMachineMap = new ConcurrentDictionary<StateMachineId, StateMachine>();
             LogWriter = new LogWriter(checkerConfiguration);
             
@@ -197,7 +254,6 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal ControlledRuntime(CheckerConfiguration checkerConfiguration,
             IRandomValueGenerator valueGenerator)
-            : base(checkerConfiguration, valueGenerator)
         {
             StateMachineMap = new ConcurrentDictionary<StateMachineId, StateMachine>();
             LogWriter = new LogWriter(checkerConfiguration);
@@ -213,6 +269,11 @@ namespace PChecker.SystematicTesting
             // allowing future retrieval in the same asynchronous call stack.
             AssignAsyncControlFlowRuntime(this);
         }
+        
+        /// <summary>
+        /// Assigns the specified runtime as the default for the current asynchronous control flow.
+        /// </summary>
+        internal static void AssignAsyncControlFlowRuntime(ControlledRuntime runtime) => AsyncLocalInstance.Value = runtime;
         
         /// <summary>
         /// Creates a fresh state machine id that has not yet been bound to any state machine.
@@ -349,7 +410,7 @@ namespace PChecker.SystematicTesting
 
                     OperationScheduler.StartOperation(op);
 
-                    if (testMethod is Action<IStateMachineRuntime> actionWithRuntime)
+                    if (testMethod is Action<ControlledRuntime> actionWithRuntime)
                     {
                         actionWithRuntime(this);
                     }
@@ -357,7 +418,7 @@ namespace PChecker.SystematicTesting
                     {
                         action();
                     }
-                    else if (testMethod is Func<IStateMachineRuntime, Tasks.Task> functionWithRuntime)
+                    else if (testMethod is Func<ControlledRuntime, Tasks.Task> functionWithRuntime)
                     {
                         await functionWithRuntime(this);
                     }
@@ -386,6 +447,14 @@ namespace PChecker.SystematicTesting
             task.Start();
             Scheduler.WaitOperationStart(op);
         }
+        
+        /// <summary>
+        /// Returns the next available unique operation id.
+        /// </summary>
+        /// <returns>Value representing the next available unique operation id.</returns>
+        internal ulong GetNextOperationId() =>
+            // Atomically increments and safely wraps the value into an unsigned long.
+            (ulong)Interlocked.Increment(ref OperationIdCounter) - 1;
 
         /// <summary>
         /// Creates a new state machine of the specified <see cref="Type"/> and name, using the specified
@@ -734,9 +803,29 @@ namespace PChecker.SystematicTesting
                 Scheduler.NotifyAssertionFailure(message, killTasks: true, cancelExecution: false);
             }
         }
+        
+        /// <summary>
+        /// Registers a new specification monitor of the specified <see cref="Type"/>.
+        /// </summary>
+        public void RegisterMonitor<T>()
+            where T : Monitor =>
+            TryCreateMonitor(typeof(T));
 
-        /// <inheritdoc/>
-        internal override void TryCreateMonitor(Type type)
+        /// <summary>
+        /// Invokes the specified monitor with the specified <see cref="Event"/>.
+        /// </summary>
+        public void Monitor<T>(Event e)
+            where T : Monitor
+        {
+            // If the event is null then report an error and exit.
+            Assert(e != null, "Cannot monitor a null event.");
+            Monitor(typeof(T), e, null, null, null);
+        }
+
+        /// <summary>
+        /// Tries to create a new <see cref="Specifications.Monitors.Monitor"/> of the specified <see cref="Type"/>.
+        /// </summary>
+        internal void TryCreateMonitor(Type type)
         {
             if (Monitors.Any(m => m.GetType() == type))
             {
@@ -762,8 +851,10 @@ namespace PChecker.SystematicTesting
             monitor.GotoStartState();
         }
 
-        /// <inheritdoc/>
-        internal override void Monitor(Type type, Event e, string senderName, string senderType, string senderStateName)
+        /// <summary>
+        /// Invokes the specified <see cref="Specifications.Monitors.Monitor"/> with the specified <see cref="Event"/>.
+        /// </summary>
+        internal void Monitor(Type type, Event e, string senderName, string senderType, string senderStateName)
         {
             foreach (var monitor in Monitors)
             {
@@ -775,11 +866,13 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        public override void Assert(bool predicate)
+        public void Assert(bool predicate)
         {
             if (!predicate)
             {
@@ -787,11 +880,13 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        public override void Assert(bool predicate, string s, object arg0)
+        public void Assert(bool predicate, string s, object arg0)
         {
             if (!predicate)
             {
@@ -800,11 +895,13 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        public override void Assert(bool predicate, string s, object arg0, object arg1)
+        public void Assert(bool predicate, string s, object arg0, object arg1)
         {
             if (!predicate)
             {
@@ -813,11 +910,13 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        public override void Assert(bool predicate, string s, object arg0, object arg1, object arg2)
+        public void Assert(bool predicate, string s, object arg0, object arg1, object arg2)
         {
             if (!predicate)
             {
@@ -826,11 +925,13 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Checks if the assertion holds, and if not, throws an <see cref="AssertionFailureException"/> exception.
+        /// </summary>
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        public override void Assert(bool predicate, string s, params object[] args)
+        public void Assert(bool predicate, string s, params object[] args)
         {
             if (!predicate)
             {
@@ -889,9 +990,19 @@ namespace PChecker.SystematicTesting
                 }
             }
         }
+        
+        /// <summary>
+        /// Returns a nondeterministic boolean choice, that can be controlled
+        /// during analysis or testing.
+        /// </summary>
+        public bool RandomBoolean() => GetNondeterministicBooleanChoice(2, null, null);
 
-        /// <inheritdoc/>
-        internal override bool GetNondeterministicBooleanChoice(int maxValue, string callerName, string callerType)
+        /// <summary>
+        /// Returns a nondeterministic boolean choice, that can be controlled
+        /// during analysis or testing. The value is used to generate a number
+        /// in the range [0..maxValue), where 0 triggers true.
+        /// </summary>
+        internal bool GetNondeterministicBooleanChoice(int maxValue, string callerName, string callerType)
         {
             var caller = Scheduler.GetExecutingOperation<StateMachineOperation>()?.StateMachine;
             if (caller != null)
@@ -904,8 +1015,12 @@ namespace PChecker.SystematicTesting
             return choice;
         }
 
-        /// <inheritdoc/>
-        internal override int GetNondeterministicIntegerChoice(int maxValue, string callerName, string callerType)
+        /// <summary>
+        /// Returns a nondeterministic integer, that can be controlled during
+        /// analysis or testing. The value is used to generate an integer in
+        /// the range [0..maxValue).
+        /// </summary>
+        internal int GetNondeterministicIntegerChoice(int maxValue, string callerName, string callerType)
         {
             var caller = Scheduler.GetExecutingOperation<StateMachineOperation>()?.StateMachine;
             if (caller != null)
@@ -1189,7 +1304,7 @@ namespace PChecker.SystematicTesting
         internal void TryHandleDroppedEvent(Event e, StateMachineId id) => OnEventDropped?.Invoke(e, id);
         
         /// <inheritdoc/>
-        public override TextWriter SetLogger(TextWriter logger) => LogWriter.SetLogger(logger);
+        public TextWriter SetLogger(TextWriter logger) => LogWriter.SetLogger(logger);
 
         /// <summary>
         /// Sets the JsonLogger in LogWriter.cs
@@ -1326,9 +1441,12 @@ namespace PChecker.SystematicTesting
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Throws an <see cref="AssertionFailureException"/> exception
+        /// containing the specified exception.
+        /// </summary>
         [DebuggerStepThrough]
-        internal override void WrapAndThrowException(Exception exception, string s, params object[] args)
+        internal void WrapAndThrowException(Exception exception, string s, params object[] args)
         {
             var msg = string.Format(CultureInfo.InvariantCulture, s, args);
             var message = string.Format(CultureInfo.InvariantCulture,
@@ -1349,9 +1467,16 @@ namespace PChecker.SystematicTesting
             await Scheduler.WaitAsync();
             IsRunning = false;
         }
+        
+        /// <summary>
+        /// Terminates the runtime and notifies each active state machine to halt execution.
+        /// </summary>
+        public void Stop() => IsRunning = false;
 
-        /// <inheritdoc/>
-        protected internal override void RaiseOnFailureEvent(Exception exception)
+        /// <summary>
+        /// Raises the <see cref="OnFailure"/> event with the specified <see cref="Exception"/>.
+        /// </summary>
+        protected internal void RaiseOnFailureEvent(Exception exception)
         {
             if (exception is ExecutionCanceledException ||
                 (exception is ActionExceptionFilterException ae && ae.InnerException is ExecutionCanceledException))
@@ -1360,12 +1485,14 @@ namespace PChecker.SystematicTesting
                 return;
             }
 
-            base.RaiseOnFailureEvent(exception);
+            OnFailure?.Invoke(exception);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Disposes runtime resources.
+        /// </summary>
         [DebuggerStepThrough]
-        protected override void Dispose(bool disposing)
+        protected void Dispose(bool disposing)
         {
             if (disposing)
             {
@@ -1373,7 +1500,20 @@ namespace PChecker.SystematicTesting
                 StateMachineMap.Clear();
             }
 
-            base.Dispose(disposing);
+            if (disposing)
+            {
+                OperationIdCounter = 0;
+            }
+        }
+        
+        /// <summary>
+        /// Disposes runtime resources.
+        /// </summary>
+        [DebuggerStepThrough]
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

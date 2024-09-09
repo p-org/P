@@ -85,7 +85,7 @@ namespace PChecker.Tasks
         [DebuggerHidden]
         public static AsyncTaskMethodBuilder Create()
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return new AsyncTaskMethodBuilder(ControlledRuntime.Current.TaskController);
             }
@@ -245,7 +245,7 @@ namespace PChecker.Tasks
         [DebuggerHidden]
         public static AsyncTaskMethodBuilder<TResult> Create()
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return new AsyncTaskMethodBuilder<TResult>(ControlledRuntime.Current.TaskController);
             }

@@ -18,7 +18,7 @@ namespace PChecker.StateMachines
         /// <summary>
         /// The runtime that executes the state machine with this id.
         /// </summary>
-        public IStateMachineRuntime Runtime { get; private set; }
+        internal ControlledRuntime Runtime { get; private set; }
 
         /// <summary>
         /// Unique id, when <see cref="NameValue"/> is empty.

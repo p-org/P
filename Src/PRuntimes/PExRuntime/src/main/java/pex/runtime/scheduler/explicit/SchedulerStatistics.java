@@ -9,12 +9,12 @@ public class SchedulerStatistics {
     /**
      * Min steps
      */
-    public int minSteps = 0;
+    public int minSteps = -1;
 
     /**
      * Max steps
      */
-    public int maxSteps = 0;
+    public int maxSteps = -1;
 
     /**
      * Total steps

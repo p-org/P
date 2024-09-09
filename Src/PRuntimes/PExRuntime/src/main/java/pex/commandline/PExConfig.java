@@ -77,8 +77,8 @@ public class PExConfig {
     int maxChildrenPerTask = 2;
     //max number of choices per choose(.) operation per call
     @Setter
-    int maxChoicesPerStmtPerCall = 10;
+    int maxChoicesPerStmtPerCall = 20;
     //max number of choices per choose(.) operation in total
     @Setter
-    int maxChoicesPerStmtPerSchedule = 100;
+    int maxChoicesPerStmtPerSchedule = 250;
 }

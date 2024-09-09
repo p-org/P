@@ -130,7 +130,7 @@ public abstract class Scheduler implements SchedulerInterface {
      *
      * @return PValue as data choice
      */
-    protected abstract PValue<?> getNextDataChoice(List<PValue<?>> input_choices);
+    protected abstract PValue<?> getNextDataChoice(String loc, List<PValue<?>> input_choices);
 
     public void updateLogNumber() {
         stepNumLogs += 1;
@@ -146,11 +146,11 @@ public abstract class Scheduler implements SchedulerInterface {
      */
     public PBool getRandomBool(String loc) {
         List<PValue<?>> choices = new ArrayList<>();
-        stepState.updateChoiceStats(loc, 2);
+        stepState.updateChoiceStats(this, loc, 2);
 
         choices.add(PBool.PTRUE);
         choices.add(PBool.PFALSE);
-        return (PBool) getNextDataChoice(choices);
+        return (PBool) getNextDataChoice(loc, choices);
     }
 
     /**
@@ -165,12 +165,12 @@ public abstract class Scheduler implements SchedulerInterface {
         if (boundInt == 0) {
             boundInt = 1;
         }
-        stepState.updateChoiceStats(loc, boundInt);
+        stepState.updateChoiceStats(this, loc, boundInt);
 
         for (int i = 0; i < boundInt; i++) {
             choices.add(new PInt(i));
         }
-        return (PInt) getNextDataChoice(choices);
+        return (PInt) getNextDataChoice(loc, choices);
     }
 
     /**

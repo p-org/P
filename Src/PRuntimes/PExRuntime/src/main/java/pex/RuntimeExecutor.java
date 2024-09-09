@@ -165,21 +165,25 @@ public class RuntimeExecutor {
             PExLogger.logBugFoundInfo(e.getScheduler());
 
             String schFile = PExGlobal.getConfig().getOutputFolder() + "/" + PExGlobal.getConfig().getProjectName() + "_0_0.schedule";
-            PExLogger.logInfo(String.format("Writing buggy trace in %s", schFile));
+            PExLogger.logInfo(String.format("... Writing buggy trace in %s", schFile));
             e.getScheduler().getSchedule().writeToFile(schFile);
 
-            ReplayScheduler replayer = new ReplayScheduler(e.getScheduler().getSchedule());
+            ReplayScheduler replayer = new ReplayScheduler(e.getScheduler().getSchedule(), e);
             PExGlobal.setReplayScheduler(replayer);
+            PExLogger.logReplayerInfo(replayer);
             try {
                 replayer.run();
             } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
-                PExLogger.logStackTrace((Exception) replayException);
+                replayer.getLogger().logStackTrace((Exception) replayException);
+                PExLogger.logTrace((Exception) replayException);
                 throw new BugFoundException(replayException.getMessage(), replayException);
             } catch (BugFoundException replayException) {
-                PExLogger.logStackTrace(replayException);
+                replayer.getLogger().logStackTrace(replayException);
+                PExLogger.logTrace(replayException);
                 throw replayException;
             } catch (Exception replayException) {
-                PExLogger.logStackTrace(replayException);
+                replayer.getLogger().logStackTrace(replayException);
+                PExLogger.logTrace(replayException);
                 throw new Exception("Error when replaying the bug", replayException);
             }
             throw new Exception("Failed to replay bug", e);
@@ -218,14 +222,16 @@ public class RuntimeExecutor {
     private static void replaySchedule(String fileName) throws Exception {
         PExLogger.logInfo(String.format("... Reading buggy trace from %s", fileName));
 
-        ReplayScheduler replayer = new ReplayScheduler(Schedule.readFromFile(fileName));
+        ReplayScheduler replayer = new ReplayScheduler(Schedule.readFromFile(fileName), null);
         PExGlobal.setReplayScheduler(replayer);
+        PExLogger.logReplayerInfo(replayer);
         try {
             replayer.run();
         } catch (NullPointerException | StackOverflowError | ClassCastException replayException) {
             PExGlobal.setStatus(STATUS.BUG_FOUND);
             PExGlobal.setResult(String.format("found cex of length %d", replayer.getStepNumber()));
-            PExLogger.logStackTrace((Exception) replayException);
+            replayer.getLogger().logStackTrace((Exception) replayException);
+            PExLogger.logTrace((Exception) replayException);
             throw new BugFoundException(replayException.getMessage(), replayException);
         } catch (BugFoundException replayException) {
             PExGlobal.setStatus(STATUS.BUG_FOUND);
@@ -233,10 +239,12 @@ public class RuntimeExecutor {
             if (replayException instanceof TooManyChoicesException) {
                 PExGlobal.setResult(PExGlobal.getResult() + " (too many choices)");
             }
-            PExLogger.logStackTrace(replayException);
+            replayer.getLogger().logStackTrace(replayException);
+            PExLogger.logTrace(replayException);
             throw replayException;
         } catch (Exception replayException) {
-            PExLogger.logStackTrace(replayException);
+            replayer.getLogger().logStackTrace(replayException);
+            PExLogger.logTrace(replayException);
             throw new Exception("Error when replaying the bug", replayException);
         } finally {
             printStats();

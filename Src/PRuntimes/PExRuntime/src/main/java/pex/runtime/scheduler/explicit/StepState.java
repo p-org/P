@@ -4,6 +4,8 @@ import lombok.Getter;
 import pex.runtime.PExGlobal;
 import pex.runtime.machine.MachineLocalState;
 import pex.runtime.machine.PMachine;
+import pex.runtime.scheduler.Scheduler;
+import pex.runtime.scheduler.replay.ReplayScheduler;
 import pex.utils.exceptions.TooManyChoicesException;
 
 import java.io.Serializable;
@@ -121,7 +123,7 @@ public class StepState implements Serializable {
         return s.toString();
     }
 
-    public void updateChoiceStats(String loc, int num) {
+    public void updateChoiceStats(Scheduler sch, String loc, int num) {
         if (!choicesNumCalls.containsKey(loc)) {
             choicesNumCalls.put(loc, 1);
             choicesNumChoices.put(loc, num);

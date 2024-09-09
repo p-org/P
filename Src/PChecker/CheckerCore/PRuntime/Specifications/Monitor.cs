@@ -16,6 +16,7 @@ using PChecker.StateMachines.Handlers;
 using PChecker.StateMachines.Logging;
 using PChecker.StateMachines.StateTransitions;
 using PChecker.Exceptions;
+using PChecker.PRuntime.Exceptions;
 using PChecker.SystematicTesting;
 
 namespace PChecker.Specifications.Monitors
@@ -204,6 +205,7 @@ namespace PChecker.Specifications.Monitors
             Assert(e != null, "{0} is raising a null event.", GetType().FullName);
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.Raise, default, e);
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
 
         /// <summary>
@@ -250,6 +252,7 @@ namespace PChecker.Specifications.Monitors
         {
             gotoPayload = payload;
             RaiseGotoStateEvent(typeof(S));
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         /// <summary>
@@ -493,6 +496,11 @@ namespace PChecker.Specifications.Monitors
                     innerException = innerException.InnerException;
                 }
 
+                if (innerException is PNonStandardReturnException)
+                {
+                    return;
+                }
+                
                 if (innerException is AggregateException)
                 {
                     innerException = innerException.InnerException;

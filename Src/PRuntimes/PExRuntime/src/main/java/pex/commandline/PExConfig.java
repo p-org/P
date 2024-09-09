@@ -71,7 +71,7 @@ public class PExConfig {
     ChoiceSelectorMode choiceSelectorMode = ChoiceSelectorMode.Random;
     // max number of schedules per search task
     @Setter
-    int maxSchedulesPerTask = 500;
+    int maxSchedulesPerTask = 2000;
     //max number of children search tasks
     @Setter
     int maxChildrenPerTask = 2;

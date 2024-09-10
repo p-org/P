@@ -102,12 +102,12 @@ namespace PChecker.Coverage
         }
     }
 
-    internal class StateMachineRuntimeLogEventCoverage : IStateMachineRuntimeLog
+    internal class ControlledRuntimeLogEventCoverage : IControlledRuntimeLog
     {
         private readonly EventCoverage InternalEventCoverage = new EventCoverage();
         private Event Dequeued;
 
-        public StateMachineRuntimeLogEventCoverage()
+        public ControlledRuntimeLogEventCoverage()
         {
         }
 
@@ -233,7 +233,7 @@ namespace PChecker.Coverage
         }
 
         public void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName,
-            Event e, Guid opGroupId, bool isTargetHalted)
+            Event e, bool isTargetHalted)
         {
             var eventName = e.GetType().FullName;
             EventCoverage.AddEventSent(GetStateId(senderType, senderStateName), eventName);

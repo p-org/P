@@ -7,20 +7,20 @@ using PChecker.PRuntime.Exceptions;
 
 namespace PChecker.PRuntime.Values
 {
-    public sealed class PrtSet : IPrtMutableValue, IReadOnlyList<IPrtValue>, ICollection<IPrtValue>
+    public sealed class PSet : IPMutableValue, IReadOnlyList<IPValue>, ICollection<IPValue>
     {
-        private readonly ISet<IPrtValue> set = new HashSet<IPrtValue>();
+        private readonly ISet<IPValue> set = new HashSet<IPValue>();
 
         private int hashCode;
         private bool isDirty;
         private bool isFrozen;
 
-        public PrtSet()
+        public PSet()
         {
             hashCode = ComputeHashCode();
         }
 
-        public PrtSet(ISet<IPrtValue> set)
+        public PSet(ISet<IPValue> set)
         {
             this.set = set;
             hashCode = ComputeHashCode();
@@ -50,7 +50,7 @@ namespace PChecker.PRuntime.Values
             return hashCode;
         }
 
-        public IEnumerator<IPrtValue> GetEnumerator()
+        public IEnumerator<IPValue> GetEnumerator()
         {
             return set.GetEnumerator();
         }
@@ -60,7 +60,7 @@ namespace PChecker.PRuntime.Values
             return GetEnumerator();
         }
 
-        public bool Add(IPrtValue item)
+        public bool Add(IPValue item)
         {
             MutabilityHelper.EnsureFrozen(item);
             IsDirty = true;
@@ -73,12 +73,12 @@ namespace PChecker.PRuntime.Values
             IsDirty = true;
         }
 
-        public bool Contains(IPrtValue item)
+        public bool Contains(IPValue item)
         {
             return set.Contains(item);
         }
 
-        public bool Remove(IPrtValue item)
+        public bool Remove(IPValue item)
         {
             var removed = set.Remove(item);
             IsDirty = true;
@@ -88,15 +88,15 @@ namespace PChecker.PRuntime.Values
         public int Count => set.Count;
         public bool IsReadOnly => false;
 
-        public bool Equals(IPrtValue other)
+        public bool Equals(IPValue other)
         {
-            return other is PrtSet otherSet
+            return other is PSet otherSet
                    && set.SetEquals(otherSet.set);
         }
 
-        public IPrtValue Clone()
+        public IPValue Clone()
         {
-            var clone = new PrtSet(new HashSet<IPrtValue>());
+            var clone = new PSet(new HashSet<IPValue>());
             foreach (var item in set) clone.Add(item.Clone());
             return clone;
         }
@@ -154,67 +154,67 @@ namespace PChecker.PRuntime.Values
             return set.Select(value => value == null ? null : value.ToDict()).ToList();
         }
 
-        public IPrtValue this[int index]
+        public IPValue this[int index]
         {
             get => set.ElementAt(index);
             set => throw new Exception("Setting set elements using indexing is not allowed!");
         }
-        public void UnionWith(IEnumerable<IPrtValue> other)
+        public void UnionWith(IEnumerable<IPValue> other)
         {
             set.UnionWith(other.Select(i => i.Clone()));
         }
 
-        public void IntersectWith(IEnumerable<IPrtValue> other)
+        public void IntersectWith(IEnumerable<IPValue> other)
         {
             set.IntersectWith(other);
         }
 
-        public void ExceptWith(IEnumerable<IPrtValue> other)
+        public void ExceptWith(IEnumerable<IPValue> other)
         {
             set.ExceptWith(other);
         }
 
-        public void SymmetricExceptWith(IEnumerable<IPrtValue> other)
+        public void SymmetricExceptWith(IEnumerable<IPValue> other)
         {
             set.SymmetricExceptWith(other);
         }
 
-        public bool IsSubsetOf(IEnumerable<IPrtValue> other)
+        public bool IsSubsetOf(IEnumerable<IPValue> other)
         {
             return set.IsSubsetOf(other);
         }
 
-        public bool IsSupersetOf(IEnumerable<IPrtValue> other)
+        public bool IsSupersetOf(IEnumerable<IPValue> other)
         {
             return set.IsSupersetOf(other);
         }
 
-        public bool IsProperSupersetOf(IEnumerable<IPrtValue> other)
+        public bool IsProperSupersetOf(IEnumerable<IPValue> other)
         {
             return set.IsProperSupersetOf(other);
         }
 
-        public bool IsProperSubsetOf(IEnumerable<IPrtValue> other)
+        public bool IsProperSubsetOf(IEnumerable<IPValue> other)
         {
             return set.IsProperSubsetOf(other);
         }
 
-        public bool Overlaps(IEnumerable<IPrtValue> other)
+        public bool Overlaps(IEnumerable<IPValue> other)
         {
             return set.Overlaps(other);
         }
 
-        public bool SetEquals(IEnumerable<IPrtValue> other)
+        public bool SetEquals(IEnumerable<IPValue> other)
         {
             return set.SetEquals(other);
         }
 
-        void ICollection<IPrtValue>.Add(IPrtValue item)
+        void ICollection<IPValue>.Add(IPValue item)
         {
             set.Add(item);
         }
 
-        public void CopyTo(IPrtValue[] array, int arrayIndex)
+        public void CopyTo(IPValue[] array, int arrayIndex)
         {
             set.CopyTo(array, arrayIndex);
         }

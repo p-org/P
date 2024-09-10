@@ -1,6 +1,6 @@
 ﻿namespace PChecker.PRuntime.Values
 {
-    public interface IPrtMutableValue : IPrtValue
+    public interface IPMutableValue : IPValue
     {
         void Freeze();
     }

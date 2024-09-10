@@ -95,7 +95,7 @@ namespace PChecker.SystematicTesting
         protected internal volatile bool IsRunning;
 
         /// <summary>
-        /// Callback that is fired when the Coyote program throws an exception which includes failed assertions.
+        /// Callback that is fired when the program throws an exception which includes failed assertions.
         /// </summary>
         public event OnFailureHandler OnFailure;
         
@@ -136,17 +136,17 @@ namespace PChecker.SystematicTesting
         private readonly ConcurrentDictionary<StateMachineId, StateMachine> StateMachineMap;
         
         /// <summary>
-        /// Callback that is fired when a Coyote event is dropped.
+        /// Callback that is fired when an event is dropped.
         /// </summary>
         public event OnEventDroppedHandler OnEventDropped;
         
         /// <summary>
-        /// Responsible for writing to all registered <see cref="IStateMachineRuntimeLog"/> objects.
+        /// Responsible for writing to all registered <see cref="IControlledRuntimeLog"/> objects.
         /// </summary>
         protected internal LogWriter LogWriter { get; private set; }
 
         /// <summary>
-        /// Used to log text messages. Use <see cref="CoyoteRuntime.SetLogger"/>
+        /// Used to log text messages. Use <see cref="ControlledRuntime.SetLogger"/>
         /// to replace the logger with a custom one.
         /// </summary>
         public TextWriter Logger => LogWriter.Logger;
@@ -299,26 +299,26 @@ namespace PChecker.SystematicTesting
         /// optional <see cref="Event"/>. This event can only be used to access its payload,
         /// and cannot be handled.
         /// </summary>
-        public StateMachineId CreateStateMachine(Type type, Event initialEvent = null, Guid opGroupId = default) =>
-            CreateStateMachine(null, type, null, initialEvent, opGroupId);
+        public StateMachineId CreateStateMachine(Type type, Event initialEvent = null) =>
+            CreateStateMachine(null, type, null, initialEvent);
 
         /// <summary>
         /// Creates a new state machine of the specified <see cref="Type"/> and name, and with the
         /// specified optional <see cref="Event"/>. This event can only be used to access
         /// its payload, and cannot be handled.
         /// </summary>
-        public StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null, Guid opGroupId = default) =>
-            CreateStateMachine(null, type, name, initialEvent, opGroupId);
+        public StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null) =>
+            CreateStateMachine(null, type, name, initialEvent);
 
         /// <summary>
         /// Creates a new state machine of the specified type, using the specified <see cref="StateMachineId"/>.
         /// This method optionally passes an <see cref="Event"/> to the new state machine, which can only
         /// be used to access its payload, and cannot be handled.
         /// </summary>
-        public StateMachineId CreateStateMachine(StateMachineId id, Type type, Event initialEvent = null, Guid opGroupId = default)
+        public StateMachineId CreateStateMachine(StateMachineId id, Type type, Event initialEvent = null)
         {
             Assert(id != null, "Cannot create an state machine using a null state machine id.");
-            return CreateStateMachine(id, type, null, initialEvent, opGroupId);
+            return CreateStateMachine(id, type, null, initialEvent);
         }
 
         /// <summary>
@@ -327,8 +327,8 @@ namespace PChecker.SystematicTesting
         /// and cannot be handled. The method returns only when the state machine is initialized and
         /// the <see cref="Event"/> (if any) is handled.
         /// </summary>
-        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(Type type, Event e = null, Guid opGroupId = default) =>
-            CreateStateMachineAndExecuteAsync(null, type, null, e, opGroupId);
+        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(Type type, Event e = null) =>
+            CreateStateMachineAndExecuteAsync(null, type, null, e);
 
         /// <summary>
         /// Creates a new state machine of the specified <see cref="Type"/> and name, and with the
@@ -336,8 +336,8 @@ namespace PChecker.SystematicTesting
         /// its payload, and cannot be handled. The method returns only when the state machine is
         /// initialized and the <see cref="Event"/> (if any) is handled.
         /// </summary>
-        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(Type type, string name, Event e = null, Guid opGroupId = default) =>
-            CreateStateMachineAndExecuteAsync(null, type, name, e, opGroupId);
+        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(Type type, string name, Event e = null) =>
+            CreateStateMachineAndExecuteAsync(null, type, name, e);
 
         /// <summary>
         /// Creates a new state machine of the specified <see cref="Type"/>, using the specified unbound
@@ -346,45 +346,31 @@ namespace PChecker.SystematicTesting
         /// the state machine is initialized and the <see cref="Event"/> (if any)
         /// is handled.
         /// </summary>
-        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(StateMachineId id, Type type, Event e = null, Guid opGroupId = default)
+        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(StateMachineId id, Type type, Event e = null)
         {
             Assert(id != null, "Cannot create an state machine using a null state machine id.");
-            return CreateStateMachineAndExecuteAsync(id, type, null, e, opGroupId);
+            return CreateStateMachineAndExecuteAsync(id, type, null, e);
         }
 
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to a state machine.
         /// </summary>
-        public void SendEvent(StateMachineId targetId, Event e, Guid opGroupId = default)
+        public void SendEvent(StateMachineId targetId, Event e)
         {
             var senderOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            SendEvent(targetId, e, senderOp?.StateMachine, opGroupId);
+            SendEvent(targetId, e, senderOp?.StateMachine);
         }
 
         /// <summary>
         /// Sends an <see cref="Event"/> to a state machine. Returns immediately if the target was already
         /// running. Otherwise, blocks until the target handles the event and reaches quiescence.
         /// </summary>
-        public Task<bool> SendEventAndExecuteAsync(StateMachineId targetId, Event e, Guid opGroupId = default)
+        public Task<bool> SendEventAndExecuteAsync(StateMachineId targetId, Event e)
         {
             var senderOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            return SendEventAndExecuteAsync(targetId, e, senderOp?.StateMachine, opGroupId);
+            return SendEventAndExecuteAsync(targetId, e, senderOp?.StateMachine);
         }
-
-        /// <summary>
-        /// Returns the operation group id of the state machine with the specified id. Returns <see cref="Guid.Empty"/>
-        /// if the id is not set, or if the <see cref="StateMachineId"/> is not associated with this runtime. During
-        /// testing, the runtime asserts that the specified state machine is currently executing.
-        /// </summary>
-        public Guid GetCurrentOperationGroupId(StateMachineId currentStateMachineId)
-        {
-            var callerOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            Assert(callerOp != null && currentStateMachineId == callerOp.StateMachine.Id,
-                "Trying to access the operation group id of {0}, which is not the currently executing state machine.",
-                currentStateMachineId);
-            return callerOp.StateMachine.OperationGroupId;
-        }
-
+        
         /// <summary>
         /// Runs the specified test method.
         /// </summary>
@@ -461,22 +447,20 @@ namespace PChecker.SystematicTesting
         /// unbound state machine id, and passes the specified optional <see cref="Event"/>. This event
         /// can only be used to access its payload, and cannot be handled.
         /// </summary>
-        internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent = null,
-            Guid opGroupId = default)
+        internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent = null)
         {
             var creatorOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            return CreateStateMachine(id, type, name, initialEvent, creatorOp?.StateMachine, opGroupId);
+            return CreateStateMachine(id, type, name, initialEvent, creatorOp?.StateMachine);
         }
 
         /// <summary>
         /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/>.
         /// </summary>
-        internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent, StateMachine creator,
-            Guid opGroupId)
+        internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent, StateMachine creator)
         {
             AssertExpectedCallerStateMachine(creator, "CreateStateMachine");
 
-            var stateMachine = CreateStateMachine(id, type, name, creator, opGroupId);
+            var stateMachine = CreateStateMachine(id, type, name, creator);
             LogWriter.LogCreateStateMachine(stateMachine.Id, creator?.Id.Name, creator?.Id.Type);
             RunStateMachineEventHandler(stateMachine, initialEvent, true, null);
             return stateMachine.Id;
@@ -488,11 +472,10 @@ namespace PChecker.SystematicTesting
         /// can only be used to access its payload, and cannot be handled. The method returns only
         /// when the state machine is initialized and the <see cref="Event"/> (if any) is handled.
         /// </summary>
-        internal Task<StateMachineId> CreateStateMachineAndExecuteAsync(StateMachineId id, Type type, string name, Event initialEvent = null,
-            Guid opGroupId = default)
+        internal Task<StateMachineId> CreateStateMachineAndExecuteAsync(StateMachineId id, Type type, string name, Event initialEvent = null)
         {
             var creatorOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            return CreateStateMachineAndExecuteAsync(id, type, name, initialEvent, creatorOp?.StateMachine, opGroupId);
+            return CreateStateMachineAndExecuteAsync(id, type, name, initialEvent, creatorOp?.StateMachine);
         }
 
         /// <summary>
@@ -501,13 +484,13 @@ namespace PChecker.SystematicTesting
         /// is handled.
         /// </summary>
         internal async Task<StateMachineId> CreateStateMachineAndExecuteAsync(StateMachineId id, Type type, string name,
-            Event initialEvent, StateMachine creator, Guid opGroupId)
+            Event initialEvent, StateMachine creator)
         {
             AssertExpectedCallerStateMachine(creator, "CreateStateMachineAndExecuteAsync");
             Assert(creator != null, "Only a state machine can call 'CreateStateMachineAndExecuteAsync': avoid calling " +
                                     "it directly from the test method; instead call it through a test driver state machine.");
 
-            var stateMachine = CreateStateMachine(id, type, name, creator, opGroupId);
+            var stateMachine = CreateStateMachine(id, type, name, creator);
             RunStateMachineEventHandler(stateMachine, initialEvent, true, creator);
 
             // Wait until the state machine reaches quiescence.
@@ -518,7 +501,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new state machine of the specified <see cref="Type"/>.
         /// </summary>
-        private StateMachine CreateStateMachine(StateMachineId id, Type type, string name, StateMachine creator, Guid opGroupId)
+        private StateMachine CreateStateMachine(StateMachineId id, Type type, string name, StateMachine creator)
         {
             Assert(type.IsSubclassOf(typeof(StateMachine)), "Type '{0}' is not a state machine.", type.FullName);
 
@@ -538,18 +521,9 @@ namespace PChecker.SystematicTesting
                     id.Value, id.Type, type.FullName);
                 id.Bind(this);
             }
-
-            // The operation group id of the state machine is set using the following precedence:
-            // (1) To the specified state machine creation operation group id, if it is non-empty.
-            // (2) To the operation group id of the creator state machine, if it exists and is non-empty.
-            // (3) To the empty operation group id.
-            if (opGroupId == Guid.Empty && creator != null)
-            {
-                opGroupId = creator.OperationGroupId;
-            }
-
+            
             var stateMachine = Create(type);
-            IStateMachineManager stateMachineManager = new StateMachineManager(this, stateMachine, opGroupId);
+            IStateMachineManager stateMachineManager = new StateMachineManager(this, stateMachine);
 
             IEventQueue eventQueue = new EventQueue(stateMachineManager, stateMachine);
             stateMachine.Configure(this, id, stateMachineManager, eventQueue);
@@ -599,7 +573,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to a state machine.
         /// </summary>
-        internal void SendEvent(StateMachineId targetId, Event e, StateMachine sender, Guid opGroupId)
+        internal void SendEvent(StateMachineId targetId, Event e, StateMachine sender)
         {
             if (e is null)
             {
@@ -620,7 +594,7 @@ namespace PChecker.SystematicTesting
 
             AssertExpectedCallerStateMachine(sender, "SendEvent");
 
-            var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
+            var enqueueStatus = EnqueueEvent(targetId, e, sender, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
                 RunStateMachineEventHandler(target, null, false, null);
@@ -631,14 +605,13 @@ namespace PChecker.SystematicTesting
         /// Sends an asynchronous <see cref="Event"/> to a state machine. Returns immediately if the target was
         /// already running. Otherwise, blocks until the target handles the event and reaches quiescence.
         /// </summary>
-        internal async Task<bool> SendEventAndExecuteAsync(StateMachineId targetId, Event e, StateMachine sender,
-            Guid opGroupId)
+        internal async Task<bool> SendEventAndExecuteAsync(StateMachineId targetId, Event e, StateMachine sender)
         {
             Assert(e != null, "{0} is sending a null event.", sender.Id);
             Assert(targetId != null, "{0} is sending event {1} to a null state machine.", sender.Id, e);
             AssertExpectedCallerStateMachine(sender, "SendEventAndExecuteAsync");
 
-            var enqueueStatus = EnqueueEvent(targetId, e, sender, opGroupId, out var target);
+            var enqueueStatus = EnqueueEvent(targetId, e, sender, out var target);
             if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
                 RunStateMachineEventHandler(target, null, false, sender);
@@ -657,7 +630,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Enqueues an event to the state machine with the specified id.
         /// </summary>
-        private EnqueueStatus EnqueueEvent(StateMachineId targetId, Event e, StateMachine sender, Guid opGroupId, out StateMachine target)
+        private EnqueueStatus EnqueueEvent(StateMachineId targetId, Event e, StateMachine sender, out StateMachine target)
         {
             target = Scheduler.GetOperationWithId<StateMachineOperation>(targetId.Value)?.StateMachine;
             Assert(target != null,
@@ -667,24 +640,15 @@ namespace PChecker.SystematicTesting
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender);
 
-            // The operation group id of this operation is set using the following precedence:
-            // (1) To the specified send operation group id, if it is non-empty.
-            // (2) To the operation group id of the sender state machine, if it exists and is non-empty.
-            // (3) To the empty operation group id.
-            if (opGroupId == Guid.Empty && sender != null)
-            {
-                opGroupId = sender.OperationGroupId;
-            }
-
             if (target.IsHalted)
             {
                 LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
-                    (sender)?.CurrentStateName ?? string.Empty, e, opGroupId, isTargetHalted: true);
+                    (sender)?.CurrentStateName ?? string.Empty, e, isTargetHalted: true);
                 TryHandleDroppedEvent(e, targetId);
                 return EnqueueStatus.Dropped;
             }
 
-            var enqueueStatus = EnqueueEvent(target, e, sender, opGroupId);
+            var enqueueStatus = EnqueueEvent(target, e, sender);
             if (enqueueStatus == EnqueueStatus.Dropped)
             {
                 TryHandleDroppedEvent(e, targetId);
@@ -696,7 +660,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Enqueues an event to the state machine with the specified id.
         /// </summary>
-        private EnqueueStatus EnqueueEvent(StateMachine stateMachine, Event e, StateMachine sender, Guid opGroupId)
+        private EnqueueStatus EnqueueEvent(StateMachine stateMachine, Event e, StateMachine sender)
         {
             // Directly use sender as a StateMachine
             var originInfo = new EventOriginInfo(sender.Id, sender.GetType().FullName,
@@ -705,9 +669,9 @@ namespace PChecker.SystematicTesting
             var eventInfo = new EventInfo(e, originInfo);
 
             LogWriter.LogSendEvent(stateMachine.Id, sender.Id.Name, sender.Id.Type, sender.CurrentStateName,
-                e, opGroupId, isTargetHalted: false);
+                e, isTargetHalted: false);
     
-            return stateMachine.Enqueue(e, opGroupId, eventInfo);
+            return stateMachine.Enqueue(e, eventInfo);
         }
 
         /// <summary>
@@ -741,7 +705,7 @@ namespace PChecker.SystematicTesting
                     await stateMachine.RunEventHandlerAsync();
                     if (syncCaller != null)
                     {
-                        EnqueueEvent(syncCaller, new QuiescentEvent(stateMachine.Id), stateMachine, stateMachine.OperationGroupId);
+                        EnqueueEvent(syncCaller, new QuiescentEvent(stateMachine.Id), stateMachine);
                     }
 
                     if (!stateMachine.IsHalted)
@@ -1313,14 +1277,14 @@ namespace PChecker.SystematicTesting
         public void SetJsonLogger(JsonWriter jsonLogger) => LogWriter.SetJsonLogger(jsonLogger);
         
         /// <summary>
-        /// Use this method to register an <see cref="IStateMachineRuntimeLog"/>.
+        /// Use this method to register an <see cref="IControlledRuntimeLog"/>.
         /// </summary>
-        public void RegisterLog(IStateMachineRuntimeLog log) => LogWriter.RegisterLog(log);
+        public void RegisterLog(IControlledRuntimeLog log) => LogWriter.RegisterLog(log);
 
         /// <summary>
-        /// Use this method to unregister a previously registered <see cref="IStateMachineRuntimeLog"/>.
+        /// Use this method to unregister a previously registered <see cref="IControlledRuntimeLog"/>.
         /// </summary>
-        public void RemoveLog(IStateMachineRuntimeLog log) => LogWriter.RemoveLog(log);
+        public void RemoveLog(IControlledRuntimeLog log) => LogWriter.RemoveLog(log);
 
         /// <summary>
         /// Get the coverage graph information (if any). This information is only available
@@ -1332,13 +1296,13 @@ namespace PChecker.SystematicTesting
             var result = CoverageInfo;
             if (result != null)
             {
-                var builder = LogWriter.GetLogsOfType<StateMachineRuntimeLogGraphBuilder>().FirstOrDefault();
+                var builder = LogWriter.GetLogsOfType<ControlledRuntimeLogGraphBuilder>().FirstOrDefault();
                 if (builder != null)
                 {
                     result.CoverageGraph = builder.SnapshotGraph(CheckerConfiguration.IsDgmlBugGraph);
                 }
 
-                var eventCoverage = LogWriter.GetLogsOfType<StateMachineRuntimeLogEventCoverage>().FirstOrDefault();
+                var eventCoverage = LogWriter.GetLogsOfType<ControlledRuntimeLogEventCoverage>().FirstOrDefault();
                 if (eventCoverage != null)
                 {
                     result.EventInfo = eventCoverage.EventCoverage;

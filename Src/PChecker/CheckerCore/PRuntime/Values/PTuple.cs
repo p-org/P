@@ -6,18 +6,18 @@ using PChecker.PRuntime.Exceptions;
 namespace PChecker.PRuntime.Values
 {
     [Serializable]
-    public class PrtTuple : IPrtValue
+    public class PTuple : IPValue
     {
-        public readonly List<IPrtValue> fieldValues;
+        public readonly List<IPValue> fieldValues;
 
-        public PrtTuple()
+        public PTuple()
         {
-            fieldValues = new List<IPrtValue>();
+            fieldValues = new List<IPValue>();
         }
 
-        public PrtTuple(params IPrtValue[] elems)
+        public PTuple(params IPValue[] elems)
         {
-            fieldValues = new List<IPrtValue>();
+            fieldValues = new List<IPValue>();
             if (elems == null || elems.Length == 1)
             {
                 fieldValues.Add(elems?.First());
@@ -31,15 +31,15 @@ namespace PChecker.PRuntime.Values
             }
         }
 
-        public IPrtValue this[int key]
+        public IPValue this[int key]
         {
             get => fieldValues[key];
             set => fieldValues[key] = value;
         }
 
-        public IPrtValue Clone()
+        public IPValue Clone()
         {
-            var clone = new PrtTuple();
+            var clone = new PTuple();
             foreach (var val in fieldValues)
             {
                 clone.fieldValues.Add(val?.Clone());
@@ -48,14 +48,14 @@ namespace PChecker.PRuntime.Values
             return clone;
         }
 
-        public bool Equals(IPrtValue val)
+        public bool Equals(IPValue val)
         {
-            if (val is PrtNamedTuple)
+            if (val is PNamedTuple)
             {
                 return false;
             }
 
-            var tupValue = val as PrtTuple;
+            var tupValue = val as PTuple;
             if (tupValue == null)
             {
                 return false;
@@ -68,7 +68,7 @@ namespace PChecker.PRuntime.Values
 
             for (var i = 0; i < fieldValues.Count; i++)
             {
-                if (!PrtValues.SafeEquals(fieldValues[i], tupValue.fieldValues[i]))
+                if (!PValues.SafeEquals(fieldValues[i], tupValue.fieldValues[i]))
                 {
                     return false;
                 }
@@ -77,7 +77,7 @@ namespace PChecker.PRuntime.Values
             return true;
         }
 
-        public void Update(int index, IPrtValue val)
+        public void Update(int index, IPValue val)
         {
             fieldValues[index] = val;
         }
@@ -115,23 +115,23 @@ namespace PChecker.PRuntime.Values
     }
 
     [Serializable]
-    public class PrtNamedTuple : IPrtValue
+    public class PNamedTuple : IPValue
     {
-        public readonly List<IPrtValue> fieldValues;
+        public readonly List<IPValue> fieldValues;
         public List<string> fieldNames;
 
-        public PrtNamedTuple()
+        public PNamedTuple()
         {
             fieldNames = new List<string>();
-            fieldValues = new List<IPrtValue>();
+            fieldValues = new List<IPValue>();
         }
 
-        public PrtNamedTuple(string[] _fieldNames, params IPrtValue[] _fieldValues)
+        public PNamedTuple(string[] _fieldNames, params IPValue[] _fieldValues)
         {
             fieldNames = _fieldNames.ToList();
             if (_fieldValues == null || _fieldValues.Length == 1)
             {
-                fieldValues = new List<IPrtValue>();
+                fieldValues = new List<IPValue>();
                 fieldValues.Add(_fieldValues?.First());
 
             }
@@ -141,7 +141,7 @@ namespace PChecker.PRuntime.Values
             }
         }
 
-        public IPrtValue this[string name]
+        public IPValue this[string name]
         {
             get
             {
@@ -163,9 +163,9 @@ namespace PChecker.PRuntime.Values
             }
         }
 
-        public IPrtValue Clone()
+        public IPValue Clone()
         {
-            var clone = new PrtNamedTuple();
+            var clone = new PNamedTuple();
             foreach (var name in fieldNames)
             {
                 clone.fieldNames.Add(name);
@@ -179,9 +179,9 @@ namespace PChecker.PRuntime.Values
             return clone;
         }
 
-        public bool Equals(IPrtValue val)
+        public bool Equals(IPValue val)
         {
-            if (!(val is PrtNamedTuple tup))
+            if (!(val is PNamedTuple tup))
             {
                 return false;
             }
@@ -198,7 +198,7 @@ namespace PChecker.PRuntime.Values
                     return false;
                 }
 
-                if (!PrtValues.SafeEquals(fieldValues[i], tup.fieldValues[i]))
+                if (!PValues.SafeEquals(fieldValues[i], tup.fieldValues[i]))
                 {
                     return false;
                 }

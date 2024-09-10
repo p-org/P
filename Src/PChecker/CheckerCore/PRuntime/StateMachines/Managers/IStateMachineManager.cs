@@ -16,12 +16,7 @@ namespace PChecker.StateMachines.Managers
         /// True if the event handler of the state machine is running, else false.
         /// </summary>
         bool IsEventHandlerRunning { get; set; }
-
-        /// <summary>
-        /// Id used to identify subsequent operations performed by the state machine.
-        /// </summary>
-        Guid OperationGroupId { get; set; }
-
+        
         /// <summary>
         /// Returns the cached state of the state machine.
         /// </summary>
@@ -30,12 +25,12 @@ namespace PChecker.StateMachines.Managers
         /// <summary>
         /// Checks if the specified event is currently ignored.
         /// </summary>
-        bool IsEventIgnored(Event e, Guid opGroupId, EventInfo eventInfo);
+        bool IsEventIgnored(Event e, EventInfo eventInfo);
 
         /// <summary>
         /// Checks if the specified event is currently deferred.
         /// </summary>
-        bool IsEventDeferred(Event e, Guid opGroupId, EventInfo eventInfo);
+        bool IsEventDeferred(Event e, EventInfo eventInfo);
 
         /// <summary>
         /// Checks if a default handler is currently available.
@@ -45,12 +40,12 @@ namespace PChecker.StateMachines.Managers
         /// <summary>
         /// Notifies the state machine that an event has been enqueued.
         /// </summary>
-        void OnEnqueueEvent(Event e, Guid opGroupId, EventInfo eventInfo);
+        void OnEnqueueEvent(Event e, EventInfo eventInfo);
 
         /// <summary>
         /// Notifies the state machine that an event has been raised.
         /// </summary>
-        void OnRaiseEvent(Event e, Guid opGroupId, EventInfo eventInfo);
+        void OnRaiseEvent(Event e, EventInfo eventInfo);
 
         /// <summary>
         /// Notifies the state machine that it is waiting to receive an event of one of the specified types.
@@ -60,18 +55,18 @@ namespace PChecker.StateMachines.Managers
         /// <summary>
         /// Notifies the state machine that an event it was waiting to receive has been enqueued.
         /// </summary>
-        void OnReceiveEvent(Event e, Guid opGroupId, EventInfo eventInfo);
+        void OnReceiveEvent(Event e, EventInfo eventInfo);
 
         /// <summary>
         /// Notifies the state machine that an event it was waiting to receive was already in the
         /// event queue when the state machine invoked the receiving statement.
         /// </summary>
-        void OnReceiveEventWithoutWaiting(Event e, Guid opGroupId, EventInfo eventInfo);
+        void OnReceiveEventWithoutWaiting(Event e, EventInfo eventInfo);
 
         /// <summary>
         /// Notifies the state machine that an event has been dropped.
         /// </summary>
-        void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo);
+        void OnDropEvent(Event e, EventInfo eventInfo);
 
         /// <summary>
         /// Asserts if the specified condition holds.

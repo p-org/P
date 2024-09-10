@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace PChecker.PRuntime
 {
-    public abstract class PrtType
+    public abstract class PType
     {
         public override string ToString()
         {
@@ -13,7 +13,7 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtNullType : PrtType
+    public class PNullType : PType
     {
         public override string ToString()
         {
@@ -21,7 +21,7 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtAnyType : PrtType
+    public class PAnyType : PType
     {
         public override string ToString()
         {
@@ -29,7 +29,7 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtMachineType : PrtType
+    public class PMachineType : PType
     {
         public override string ToString()
         {
@@ -37,7 +37,7 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtIntType : PrtType
+    public class PIntType : PType
     {
         public override string ToString()
         {
@@ -45,7 +45,7 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtFloatType : PrtType
+    public class PFloatType : PType
     {
         public override string ToString()
         {
@@ -53,12 +53,12 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtEnumType : PrtType
+    public class PEnumType : PType
     {
         public Dictionary<long, string> enumConstants;
         public string name;
 
-        public PrtEnumType(string typeName, params object[] args)
+        public PEnumType(string typeName, params object[] args)
         {
             name = typeName;
             enumConstants = new Dictionary<long, string>();
@@ -81,12 +81,12 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtPermissionType : PrtType
+    public class PPermissionType : PType
     {
         public string name;
         public List<string> permissions;
 
-        public PrtPermissionType(string name, IEnumerable<string> perm)
+        public PPermissionType(string name, IEnumerable<string> perm)
         {
             this.name = name;
             permissions = perm.ToList();
@@ -98,7 +98,7 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtBoolType : PrtType
+    public class PBoolType : PType
     {
         public override string ToString()
         {
@@ -106,7 +106,7 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtStringType : PrtType
+    public class PStringType : PType
     {
         public override string ToString()
         {
@@ -114,7 +114,7 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtEventType : PrtType
+    public class PEventType : PType
     {
         public override string ToString()
         {
@@ -122,12 +122,12 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtMapType : PrtType
+    public class PMapType : PType
     {
-        public PrtType keyType;
-        public PrtType valType;
+        public PType keyType;
+        public PType valType;
 
-        public PrtMapType(PrtType k, PrtType v)
+        public PMapType(PType k, PType v)
         {
             keyType = k;
             valType = v;
@@ -139,11 +139,11 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtSeqType : PrtType
+    public class PSeqType : PType
     {
-        public PrtType elemType;
+        public PType elemType;
 
-        public PrtSeqType(PrtType s)
+        public PSeqType(PType s)
         {
             elemType = s;
         }
@@ -154,11 +154,11 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtSetType : PrtType
+    public class PSetType : PType
     {
-        public PrtType elemType;
+        public PType elemType;
 
-        public PrtSetType(PrtType s)
+        public PSetType(PType s)
         {
             elemType = s;
         }
@@ -169,22 +169,22 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtTupleType : PrtType
+    public class PTupleType : PType
     {
-        public List<PrtType> fieldTypes;
+        public List<PType> fieldTypes;
 
-        public PrtTupleType()
+        public PTupleType()
         {
             /*
                This constructor is added only to prevent the other constructor from being called
-               when an instance of PrtNamedTupleType is created.
+               when an instance of PNamedTupleType is created.
              */
         }
 
-        public PrtTupleType(params PrtType[] fields)
+        public PTupleType(params PType[] fields)
         {
             Debug.Assert(fields.Any());
-            fieldTypes = new List<PrtType>();
+            fieldTypes = new List<PType>();
             foreach (var f in fields)
             {
                 fieldTypes.Add(f);
@@ -204,22 +204,22 @@ namespace PChecker.PRuntime
         }
     }
 
-    public class PrtNamedTupleType : PrtTupleType
+    public class PNamedTupleType : PTupleType
     {
         public List<string> fieldNames;
 
-        public PrtNamedTupleType(params object[] args)
+        public PNamedTupleType(params object[] args)
         {
             Debug.Assert(args.Length > 0);
             fieldNames = new List<string>();
-            fieldTypes = new List<PrtType>();
+            fieldTypes = new List<PType>();
 
             var index = 0;
             while (index < args.Length)
             {
                 fieldNames.Add((string)args[index]);
                 index++;
-                fieldTypes.Add((PrtType)args[index]);
+                fieldTypes.Add((PType)args[index]);
                 index++;
             }
         }

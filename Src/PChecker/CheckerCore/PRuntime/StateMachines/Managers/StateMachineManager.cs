@@ -27,9 +27,6 @@ namespace PChecker.StateMachines.Managers.Mocks
         /// <inheritdoc/>
         public bool IsEventHandlerRunning { get; set; }
 
-        /// <inheritdoc/>
-        public Guid OperationGroupId { get; set; }
-
         /// <summary>
         /// Program counter used for state-caching. Distinguishes
         /// scheduling from non-deterministic choices.
@@ -39,12 +36,11 @@ namespace PChecker.StateMachines.Managers.Mocks
         /// <summary>
         /// Initializes a new instance of the <see cref="StateMachineManager"/> class.
         /// </summary>
-        internal StateMachineManager(ControlledRuntime runtime, StateMachine instance, Guid operationGroupId)
+        internal StateMachineManager(ControlledRuntime runtime, StateMachine instance)
         {
             Runtime = runtime;
             Instance = instance;
             IsEventHandlerRunning = true;
-            OperationGroupId = operationGroupId;
             ProgramCounter = 0;
         }
 
@@ -62,12 +58,12 @@ namespace PChecker.StateMachines.Managers.Mocks
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsEventIgnored(Event e, Guid opGroupId, EventInfo eventInfo) =>
+        public bool IsEventIgnored(Event e, EventInfo eventInfo) =>
             Instance.IsEventIgnoredInCurrentState(e);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsEventDeferred(Event e, Guid opGroupId, EventInfo eventInfo) =>
+        public bool IsEventDeferred(Event e, EventInfo eventInfo) =>
             Instance.IsEventDeferredInCurrentState(e);
 
         /// <inheritdoc/>
@@ -76,12 +72,12 @@ namespace PChecker.StateMachines.Managers.Mocks
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnEnqueueEvent(Event e, Guid opGroupId, EventInfo eventInfo) =>
+        public void OnEnqueueEvent(Event e, EventInfo eventInfo) =>
             Runtime.LogWriter.LogEnqueueEvent(Instance.Id, e);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnRaiseEvent(Event e, Guid opGroupId, EventInfo eventInfo) =>
+        public void OnRaiseEvent(Event e, EventInfo eventInfo) =>
             Runtime.NotifyRaisedEvent(Instance, e, eventInfo);
 
         /// <inheritdoc/>
@@ -90,33 +86,21 @@ namespace PChecker.StateMachines.Managers.Mocks
             Runtime.NotifyWaitEvent(Instance, eventTypes);
 
         /// <inheritdoc/>
-        public void OnReceiveEvent(Event e, Guid opGroupId, EventInfo eventInfo)
+        public void OnReceiveEvent(Event e, EventInfo eventInfo)
         {
-            if (opGroupId != Guid.Empty)
-            {
-                // Inherit the operation group id of the receiving operation, if it is non-empty.
-                OperationGroupId = opGroupId;
-            }
-
             Runtime.NotifyReceivedEvent(Instance, e, eventInfo);
         }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnReceiveEventWithoutWaiting(Event e, Guid opGroupId, EventInfo eventInfo)
+        public void OnReceiveEventWithoutWaiting(Event e, EventInfo eventInfo)
         {
-            if (opGroupId != Guid.Empty)
-            {
-                // Inherit the operation group id of the receiving operation, if it is non-empty.
-                OperationGroupId = opGroupId;
-            }
-
             Runtime.NotifyReceivedEventWithoutWaiting(Instance, e, eventInfo);
         }
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnDropEvent(Event e, Guid opGroupId, EventInfo eventInfo)
+        public void OnDropEvent(Event e, EventInfo eventInfo)
         {
             Runtime.TryHandleDroppedEvent(e, Instance.Id);
         }

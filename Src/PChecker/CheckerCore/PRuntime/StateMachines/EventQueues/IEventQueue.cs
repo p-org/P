@@ -25,17 +25,17 @@ namespace PChecker.StateMachines.EventQueues
         /// <summary>
         /// Enqueues the specified event and its optional metadata.
         /// </summary>
-        EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info);
+        EnqueueStatus Enqueue(Event e, EventInfo info);
 
         /// <summary>
         /// Dequeues the next event, if there is one available.
         /// </summary>
-        (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue();
+        (DequeueStatus status, Event e, EventInfo info) Dequeue();
 
         /// <summary>
         /// Enqueues the specified raised event.
         /// </summary>
-        void RaiseEvent(Event e, Guid opGroupId);
+        void RaiseEvent(Event e);
 
         /// <summary>
         /// Waits to receive an event of the specified type that satisfies an optional predicate.

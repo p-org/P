@@ -28,12 +28,12 @@ namespace PChecker.StateMachines.EventQueues.Mocks
         /// <summary>
         /// The internal queue that contains events with their metadata.
         /// </summary>
-        private readonly LinkedList<(Event e, Guid opGroupId, EventInfo info)> Queue;
+        private readonly LinkedList<(Event e, EventInfo info)> Queue;
 
         /// <summary>
         /// The raised event and its metadata, or null if no event has been raised.
         /// </summary>
-        private (Event e, Guid opGroupId, EventInfo info) RaisedEvent;
+        private (Event e, EventInfo info) RaisedEvent;
 
         /// <summary>
         /// Map from the types of events that the owner of the queue is waiting to receive
@@ -70,13 +70,13 @@ namespace PChecker.StateMachines.EventQueues.Mocks
         {
             StateMachineManager = stateMachineManager;
             StateMachine = stateMachine;
-            Queue = new LinkedList<(Event, Guid, EventInfo)>();
+            Queue = new LinkedList<(Event, EventInfo)>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
         }
 
         /// <inheritdoc/>
-        public EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
+        public EnqueueStatus Enqueue(Event e, EventInfo info)
         {
             if (IsClosed)
             {
@@ -87,13 +87,13 @@ namespace PChecker.StateMachines.EventQueues.Mocks
                 (predicate is null || predicate(e)))
             {
                 EventWaitTypes.Clear();
-                StateMachineManager.OnReceiveEvent(e, opGroupId, info);
+                StateMachineManager.OnReceiveEvent(e, info);
                 ReceiveCompletionSource.SetResult(e);
                 return EnqueueStatus.EventHandlerRunning;
             }
 
-            StateMachineManager.OnEnqueueEvent(e, opGroupId, info);
-            Queue.AddLast((e, opGroupId, info));
+            StateMachineManager.OnEnqueueEvent(e, info);
+            Queue.AddLast((e, info));
 
             if (!StateMachineManager.IsEventHandlerRunning)
             {
@@ -112,13 +112,13 @@ namespace PChecker.StateMachines.EventQueues.Mocks
         }
 
         /// <inheritdoc/>
-        public (DequeueStatus status, Event e, Guid opGroupId, EventInfo info) Dequeue()
+        public (DequeueStatus status, Event e, EventInfo info) Dequeue()
         {
             // Try to get the raised event, if there is one. Raised events
             // have priority over the events in the inbox.
             if (RaisedEvent != default)
             {
-                if (StateMachineManager.IsEventIgnored(RaisedEvent.e, RaisedEvent.opGroupId, RaisedEvent.info))
+                if (StateMachineManager.IsEventIgnored(RaisedEvent.e, RaisedEvent.info))
                 {
                     // TODO: should the user be able to raise an ignored event?
                     // The raised event is ignored in the current state.
@@ -128,7 +128,7 @@ namespace PChecker.StateMachines.EventQueues.Mocks
                 {
                     var raisedEvent = RaisedEvent;
                     RaisedEvent = default;
-                    return (DequeueStatus.Raised, raisedEvent.e, raisedEvent.opGroupId, raisedEvent.info);
+                    return (DequeueStatus.Raised, raisedEvent.e, raisedEvent.info);
                 }
             }
 
@@ -139,11 +139,11 @@ namespace PChecker.StateMachines.EventQueues.Mocks
             }
 
             // Try to dequeue the next event, if there is one.
-            var (e, opGroupId, info) = TryDequeueEvent();
+            var (e, info) = TryDequeueEvent();
             if (e != null)
             {
                 // Found next event that can be dequeued.
-                return (DequeueStatus.Success, e, opGroupId, info);
+                return (DequeueStatus.Success, e, info);
             }
 
             // No event can be dequeued, so check if there is a default event handler.
@@ -151,22 +151,22 @@ namespace PChecker.StateMachines.EventQueues.Mocks
             {
                 // There is no default event handler installed, so do not return an event.
                 StateMachineManager.IsEventHandlerRunning = false;
-                return (DequeueStatus.NotAvailable, null, Guid.Empty, null);
+                return (DequeueStatus.NotAvailable, null, null);
             }
 
             // TODO: check op-id of default event.
             // A default event handler exists.
             var stateName = NameResolver.GetStateNameForLogging(StateMachine.CurrentState.GetType());
             var eventOrigin = new EventOriginInfo(StateMachine.Id, StateMachine.GetType().FullName, stateName);
-            return (DequeueStatus.Default, DefaultEvent.Instance, Guid.Empty, new EventInfo(DefaultEvent.Instance, eventOrigin));
+            return (DequeueStatus.Default, DefaultEvent.Instance, new EventInfo(DefaultEvent.Instance, eventOrigin));
         }
 
         /// <summary>
         /// Dequeues the next event and its metadata, if there is one available, else returns null.
         /// </summary>
-        private (Event e, Guid opGroupId, EventInfo info) TryDequeueEvent(bool checkOnly = false)
+        private (Event e, EventInfo info) TryDequeueEvent(bool checkOnly = false)
         {
-            (Event, Guid, EventInfo) nextAvailableEvent = default;
+            (Event, EventInfo) nextAvailableEvent = default;
 
             // Iterates through the events and metadata in the inbox.
             var node = Queue.First;
@@ -175,7 +175,7 @@ namespace PChecker.StateMachines.EventQueues.Mocks
                 var nextNode = node.Next;
                 var currentEvent = node.Value;
 
-                if (StateMachineManager.IsEventIgnored(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                if (StateMachineManager.IsEventIgnored(currentEvent.e, currentEvent.info))
                 {
                     if (!checkOnly)
                     {
@@ -188,7 +188,7 @@ namespace PChecker.StateMachines.EventQueues.Mocks
                 }
 
                 // Skips a deferred event.
-                if (!StateMachineManager.IsEventDeferred(currentEvent.e, currentEvent.opGroupId, currentEvent.info))
+                if (!StateMachineManager.IsEventDeferred(currentEvent.e, currentEvent.info))
                 {
                     nextAvailableEvent = currentEvent;
                     if (!checkOnly)
@@ -206,13 +206,13 @@ namespace PChecker.StateMachines.EventQueues.Mocks
         }
 
         /// <inheritdoc/>
-        public void RaiseEvent(Event e, Guid opGroupId)
+        public void RaiseEvent(Event e)
         {
             var stateName = NameResolver.GetStateNameForLogging(StateMachine.CurrentState.GetType());
             var eventOrigin = new EventOriginInfo(StateMachine.Id, StateMachine.GetType().FullName, stateName);
             var info = new EventInfo(e, eventOrigin);
-            RaisedEvent = (e, opGroupId, info);
-            StateMachineManager.OnRaiseEvent(e, opGroupId, info);
+            RaisedEvent = (e, info);
+            StateMachineManager.OnRaiseEvent(e, info);
         }
 
         /// <inheritdoc/>
@@ -257,7 +257,7 @@ namespace PChecker.StateMachines.EventQueues.Mocks
         {
             StateMachine.Runtime.NotifyReceiveCalled(StateMachine);
 
-            (Event e, Guid opGroupId, EventInfo info) receivedEvent = default;
+            (Event e, EventInfo info) receivedEvent = default;
             var node = Queue.First;
             while (node != null)
             {
@@ -281,7 +281,7 @@ namespace PChecker.StateMachines.EventQueues.Mocks
                 return ReceiveCompletionSource.Task;
             }
 
-            StateMachineManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.opGroupId, receivedEvent.info);
+            StateMachineManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.info);
             return Task.FromResult(receivedEvent.e);
         }
 
@@ -291,7 +291,7 @@ namespace PChecker.StateMachines.EventQueues.Mocks
             unchecked
             {
                 var hash = 19;
-                foreach (var (_, _, info) in Queue)
+                foreach (var (_, info) in Queue)
                 {
                     hash = (hash * 31) + info.EventName.GetHashCode();
                 }
@@ -316,9 +316,9 @@ namespace PChecker.StateMachines.EventQueues.Mocks
                 return;
             }
 
-            foreach (var (e, opGroupId, info) in Queue)
+            foreach (var (e, info) in Queue)
             {
-                StateMachineManager.OnDropEvent(e, opGroupId, info);
+                StateMachineManager.OnDropEvent(e, info);
             }
 
             Queue.Clear();

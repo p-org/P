@@ -10,9 +10,9 @@ using PChecker.StateMachines.Events;
 namespace PChecker.StateMachines.Logging
 {
     /// <summary>
-    /// This class implements IStateMachineRuntimeLog and generates log output in an XML format.
+    /// This class implements IControlledRuntimeLog and generates log output in an XML format.
     /// </summary>
-    internal class PCheckerLogXmlFormatter : IStateMachineRuntimeLog
+    internal class PCheckerLogXmlFormatter : IControlledRuntimeLog
     {
         private readonly XmlWriter Writer;
         private bool Closed;
@@ -292,7 +292,7 @@ namespace PChecker.StateMachines.Logging
         }
 
         public void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName,
-            Event e, Guid opGroupId, bool isTargetHalted)
+            Event e, bool isTargetHalted)
         {
             if (Closed)
             {
@@ -312,10 +312,6 @@ namespace PChecker.StateMachines.Logging
             Writer.WriteAttributeString("senderState", senderStateName);
 
             Writer.WriteAttributeString("event", e.GetType().FullName);
-            if (opGroupId != Guid.Empty)
-            {
-                Writer.WriteAttributeString("event", opGroupId.ToString());
-            }
 
             Writer.WriteAttributeString("isTargetHalted", isTargetHalted.ToString());
             Writer.WriteEndElement();

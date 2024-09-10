@@ -12,10 +12,6 @@ namespace PChecker.Random
     /// During systematic testing, the generation of random values is controlled, which
     /// allows the runtime to explore combinations of choices to find bugs.
     /// </summary>
-    /// <remarks>
-    /// See <see href="/coyote/learn/core/non-determinism" >Program non-determinism</see>
-    /// for more information.
-    /// </remarks>
     public class Generator
     {
         /// <summary>

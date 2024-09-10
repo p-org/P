@@ -143,7 +143,7 @@ namespace PChecker.StateMachines
         /// </summary>
         protected JsonWriter JsonLogger => Runtime.JsonLogger;
         
-        protected IPrtValue gotoPayload;
+        protected IPValue gotoPayload;
         
         public List<string> creates = new List<string>();
         public string interfaceName;
@@ -151,12 +151,12 @@ namespace PChecker.StateMachines
         public PMachineValue self;
         public List<string> sends = new List<string>();
         
-        protected virtual Event GetConstructorEvent(IPrtValue value)
+        protected virtual Event GetConstructorEvent(IPValue value)
         {
             throw new NotImplementedException();
         }
         
-        public PMachineValue CreateInterface<T>(StateMachine creator, IPrtValue payload = null)
+        public PMachineValue CreateInterface<T>(StateMachine creator, IPValue payload = null)
             where T : PMachineValue
         {
             var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
@@ -169,29 +169,29 @@ namespace PChecker.StateMachines
         }
         
 
-        public IPrtValue TryRandom(IPrtValue param)
+        public IPValue TryRandom(IPValue param)
         {
             switch (param)
             {
-                case PrtInt maxValue:
+                case PInt maxValue:
                 {
                     Assert(maxValue <= 10000, $"choose expects a parameter with at most 10000 choices, got {maxValue} choices instead.");
-                    return (PrtInt)RandomInteger(maxValue);
+                    return (PInt)RandomInteger(maxValue);
                 }
 
-                case PrtSeq seq:
+                case PSeq seq:
                 {
                     Assert(seq.Any(), "Trying to choose from an empty sequence!");
                     Assert(seq.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {seq.Count} choices instead.");
                     return seq[RandomInteger(seq.Count)];
                 }
-                case PrtSet set:
+                case PSet set:
                 {
                     Assert(set.Any(), "Trying to choose from an empty set!");
                     Assert(set.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {set.Count} choices instead.");
                     return set.ElementAt(RandomInteger(set.Count));
                 }
-                case PrtMap map:
+                case PMap map:
                 {
                     Assert(map.Any(), "Trying to choose from an empty map!");
                     Assert(map.Keys.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {map.Keys.Count} choices instead.");
@@ -227,7 +227,7 @@ namespace PChecker.StateMachines
 
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
-            var pText = payload == null ? "" : $" with payload {((IPrtValue)payload).ToEscapedString()}";
+            var pText = payload == null ? "" : $" with payload {((IPValue)payload).ToEscapedString()}";
 
             Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
 
@@ -237,7 +237,7 @@ namespace PChecker.StateMachines
             JsonLogger.LogDetails.Event = ev.GetType().Name;
             if (payload != null)
             {
-                JsonLogger.LogDetails.Payload = ((IPrtValue)payload).ToDict();
+                JsonLogger.LogDetails.Payload = ((IPValue)payload).ToDict();
             }
             JsonLogger.AddLog($"{Id} announced event {ev.GetType().Name}{pText}.");
             JsonLogger.AddToLogs(updateVcMap: true);
@@ -494,24 +494,6 @@ namespace PChecker.StateMachines
 
             return Task.CompletedTask;
         }
-        
-        /// <summary>
-        /// ID used to identify subsequent operations performed by this state machine. This value
-        /// is initially either <see cref="Guid.Empty"/> or the <see cref="Guid"/> specified
-        /// upon creation. This value is automatically set to the operation group id of the
-        /// last dequeue or receive operation, if it is not <see cref="Guid.Empty"/>. This
-        /// value can also be manually set using the property.
-        /// </summary>
-        protected internal Guid OperationGroupId
-        {
-            get => Manager.OperationGroupId;
-
-            set
-            {
-                Manager.OperationGroupId = value;
-            }
-        }
-        
 
         /// <summary>
         /// Creates a new state machine of the specified type and name, and with the specified
@@ -523,8 +505,8 @@ namespace PChecker.StateMachines
         /// <param name="initialEvent">Optional initialization event.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
         /// <returns>The unique state machine id.</returns>
-        protected StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null, Guid opGroupId = default) =>
-            Runtime.CreateStateMachine(null, type, name, initialEvent, this, opGroupId);
+        protected StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null) =>
+            Runtime.CreateStateMachine(null, type, name, initialEvent, this);
         
         
         /// <summary>
@@ -533,7 +515,7 @@ namespace PChecker.StateMachines
         /// <param name="target">The target.</param>
         /// <param name="e">The event to send.</param>
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
-        public void SendEvent(PMachineValue target, Event ev, Guid opGroupId = default)
+        public void SendEvent(PMachineValue target, Event ev)
         {
             Assert(ev != null, "Machine cannot send a null event");
             Assert(target != null, "Machine in send cannot be null");
@@ -542,7 +524,7 @@ namespace PChecker.StateMachines
             Assert(target.Permissions.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
             AnnounceInternal(ev);
-            Runtime.SendEvent(target.Id, ev, this, opGroupId);
+            Runtime.SendEvent(target.Id, ev, this);
         }
         
         /// <summary>
@@ -593,13 +575,8 @@ namespace PChecker.StateMachines
             Event lastDequeuedEvent = null;
             while (CurrentStatus != Status.Halted && Runtime.IsRunning)
             {
-                (var status, var e, var opGroupId, var info) = Inbox.Dequeue();
-                if (opGroupId != Guid.Empty)
-                {
-                    // Inherit the operation group id of the dequeued operation, if it is non-empty.
-                    Manager.OperationGroupId = opGroupId;
-                }
-
+                (var status, var e, var info) = Inbox.Dequeue();
+                
                 if (status is DequeueStatus.Success)
                 {
                     // Notify the runtime for a new event to handle. This is only used
@@ -896,14 +873,14 @@ namespace PChecker.StateMachines
         /// <summary>
         /// Enqueues the specified event and its metadata.
         /// </summary>
-        internal EnqueueStatus Enqueue(Event e, Guid opGroupId, EventInfo info)
+        internal EnqueueStatus Enqueue(Event e, EventInfo info)
         {
             if (CurrentStatus is Status.Halted)
             {
                 return EnqueueStatus.Dropped;
             }
 
-            return Inbox.Enqueue(e, opGroupId, info);
+            return Inbox.Enqueue(e, info);
         }
         
         /// <summary>
@@ -988,7 +965,7 @@ namespace PChecker.StateMachines
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
         /// </remarks>
         /// <typeparam name="S">Type of the state.</typeparam>
-        public void RaiseGotoStateEvent<S>(IPrtValue payload = null) where S : State
+        public void RaiseGotoStateEvent<S>(IPValue payload = null) where S : State
         {
             gotoPayload = payload;
             RaiseGotoStateEvent(typeof(S));
@@ -1230,12 +1207,12 @@ namespace PChecker.StateMachines
             else if (transition.TypeValue is Transition.Type.RaiseEvent)
             {
                 PendingTransition = default;
-                Inbox.RaiseEvent(transition.Event, OperationGroupId);
+                Inbox.RaiseEvent(transition.Event);
             }
             else if (transition.TypeValue is Transition.Type.GotoState)
             {
                 PendingTransition = default;
-                Inbox.RaiseEvent(new GotoStateEvent(transition.State), OperationGroupId);
+                Inbox.RaiseEvent(new GotoStateEvent(transition.State));
             }
             else if (transition.TypeValue is Transition.Type.Halt)
             {
@@ -1626,15 +1603,12 @@ namespace PChecker.StateMachines
         /// Defines the <see cref="StateMachine"/> transition that is the
         /// result of executing an event handler.  Transitions are created by using
         /// <see cref="RaiseGotoStateEvent{T}"/>, <see cref="RaiseEvent"/> and <see cref="RaiseHaltEvent"/>.
-        /// The Transition is processed by the Coyote runtime when
+        /// The Transition is processed by the ControlledRuntime when
         /// an event handling method of a StateMachine returns a Transition object.
         /// This means such a method can only do one such Transition per method call.
         /// If the method wants to do a conditional transition it can return
         /// Transition.None to indicate no transition is to be performed.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/programming-models/actors/state-machines">State machines</see> for more information.
-        /// </remarks>
         internal readonly struct Transition
         {
             /// <summary>
@@ -1704,9 +1678,6 @@ namespace PChecker.StateMachines
         /// <summary>
         /// Abstract class representing a state.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/programming-models/actors/state-machines">State machines</see> for more information.
-        /// </remarks>
         public abstract class State
         {
             /// <summary>

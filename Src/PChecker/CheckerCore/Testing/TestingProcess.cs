@@ -42,7 +42,7 @@ namespace PChecker.Testing
         private readonly Profiler Profiler;
         
         /// <summary>
-        /// Creates a Coyote testing process.
+        /// Creates a testing process.
         /// </summary>
         public static TestingProcess Create(CheckerConfiguration checkerConfiguration)
         {
@@ -61,7 +61,7 @@ namespace PChecker.Testing
         private readonly TextWriter StdOut = Console.Out;
 
         /// <summary>
-        /// Runs the Coyote testing process.
+        /// Runs the testing process.
         /// </summary>
         public void Run()
         {

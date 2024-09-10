@@ -11,25 +11,25 @@ namespace PChecker.StateMachines.Events
     /// Class representing an event.
     /// </summary>
     [DataContract]
-    public class Event: IPrtValue
+    public class Event: IPValue
     {
         public Event()
         {
         }
 
-        public Event(IPrtValue payload)
+        public Event(IPValue payload)
         {
             Payload = payload;
         }
         
-        public IPrtValue Payload { get; set; }
+        public IPValue Payload { get; set; }
         
-        public bool Equals(IPrtValue other)
+        public bool Equals(IPValue other)
         {
             return other != null && GetType().FullName.Equals(other.GetType().FullName);
         }
 
-        public virtual IPrtValue Clone()
+        public virtual IPValue Clone()
         {
             throw new NotImplementedException();
         }
@@ -57,7 +57,7 @@ namespace PChecker.StateMachines.Events
     
     public class PHalt : Event
     {
-        public PHalt(IPrtValue payload) : base(payload)
+        public PHalt(IPValue payload) : base(payload)
         {
         }
     }

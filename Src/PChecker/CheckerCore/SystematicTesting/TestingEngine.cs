@@ -72,9 +72,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// The installed logger.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
-        /// </remarks>
         private TextWriter Logger;
 
         /// <summary>
@@ -730,13 +727,6 @@ namespace PChecker.SystematicTesting
                 JsonSerializer.Serialize(jsonStreamFile, JsonLogger.Logs, jsonSerializerConfig);
             }
 
-            if (Graph != null)
-            {
-                var graphPath = directory + file + "_" + index + ".dgml";
-                Graph.SaveDgml(graphPath, true);
-                Logger.WriteLine($"..... Writing {graphPath}");
-            }
-
             if (!_checkerConfiguration.PerformFullExploration)
             {
                 // Emits the reproducable trace, if it exists.
@@ -768,7 +758,7 @@ namespace PChecker.SystematicTesting
         {
             if (!string.IsNullOrEmpty(_checkerConfiguration.CustomStateMachineRuntimeLogType))
             {
-                var log = Activate<IStateMachineRuntimeLog>(_checkerConfiguration.CustomStateMachineRuntimeLogType);
+                var log = Activate<IControlledRuntimeLog>(_checkerConfiguration.CustomStateMachineRuntimeLogType);
                 if (log != null)
                 {
                     runtime.RegisterLog(log);
@@ -778,7 +768,7 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.IsDgmlGraphEnabled || _checkerConfiguration.ReportActivityCoverage)
             {
                 // Registers an activity coverage graph builder.
-                runtime.RegisterLog(new StateMachineRuntimeLogGraphBuilder(false)
+                runtime.RegisterLog(new ControlledRuntimeLogGraphBuilder(false)
                 {
                     CollapseMachineInstances = _checkerConfiguration.ReportActivityCoverage
                 });
@@ -787,7 +777,7 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.ReportActivityCoverage)
             {
                 // Need this additional logger to get the event coverage report correct
-                runtime.RegisterLog(new StateMachineRuntimeLogEventCoverage());
+                runtime.RegisterLog(new ControlledRuntimeLogEventCoverage());
             }
 
             if (_checkerConfiguration.IsXmlLogEnabled)

@@ -3,9 +3,9 @@
     public static class MutabilityHelper
     {
         public static void EnsureFrozen<T>(T value)
-            where T : IPrtValue
+            where T : IPValue
         {
-            if (value is IPrtMutableValue mutable)
+            if (value is IPMutableValue mutable)
             {
                 mutable.Freeze();
             }

@@ -3,11 +3,11 @@ using System.Linq;
 
 namespace PChecker.PRuntime.Values
 {
-    public class PrtEnum
+    public class PEnum
     {
-        private static readonly Dictionary<string, PrtInt> enumElements = new Dictionary<string, PrtInt>();
+        private static readonly Dictionary<string, PInt> enumElements = new Dictionary<string, PInt>();
 
-        public static PrtInt Get(string name)
+        public static PInt Get(string name)
         {
             return enumElements[name];
         }

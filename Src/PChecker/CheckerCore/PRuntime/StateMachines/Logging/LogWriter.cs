@@ -13,14 +13,14 @@ namespace PChecker.StateMachines.Logging
 {
     /// <summary>
     /// Manages the installed <see cref="TextWriter"/> and all registered
-    /// <see cref="IStateMachineRuntimeLog"/> objects.
+    /// <see cref="IControlledRuntimeLog"/> objects.
     /// </summary>
     public sealed class LogWriter
     {
         /// <summary>
         /// The set of registered log writers.
         /// </summary>
-        private readonly HashSet<IStateMachineRuntimeLog> Logs;
+        private readonly HashSet<IControlledRuntimeLog> Logs;
 
         /// <summary>
         /// Used to log messages.
@@ -37,7 +37,7 @@ namespace PChecker.StateMachines.Logging
         /// </summary>
         internal LogWriter(CheckerConfiguration checkerConfiguration)
         {
-            Logs = new HashSet<IStateMachineRuntimeLog>();
+            Logs = new HashSet<IControlledRuntimeLog>();
 
             if (checkerConfiguration.IsVerbose)
             {
@@ -95,13 +95,13 @@ namespace PChecker.StateMachines.Logging
         /// <param name="opGroupId">The id used to identify the send operation.</param>
         /// <param name="isTargetHalted">Is the target state machine halted.</param>
         public void LogSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderState,
-            Event e, Guid opGroupId, bool isTargetHalted)
+            Event e, bool isTargetHalted)
         {
             if (Logs.Count > 0)
             {
                 foreach (var log in Logs)
                 {
-                    log.OnSendEvent(targetStateMachineId, senderName, senderType, senderState, e, opGroupId, isTargetHalted);
+                    log.OnSendEvent(targetStateMachineId, senderName, senderType, senderState, e, isTargetHalted);
                 }
             }
         }
@@ -520,7 +520,7 @@ namespace PChecker.StateMachines.Logging
         /// if there are any.
         /// </summary>
         public IEnumerable<TStateMachineRuntimeLog> GetLogsOfType<TStateMachineRuntimeLog>()
-            where TStateMachineRuntimeLog : IStateMachineRuntimeLog =>
+            where TStateMachineRuntimeLog : IControlledRuntimeLog =>
             Logs.OfType<TStateMachineRuntimeLog>();
 
         /// <summary>
@@ -579,9 +579,9 @@ namespace PChecker.StateMachines.Logging
         }
 
         /// <summary>
-        /// Use this method to register an <see cref="IStateMachineRuntimeLog"/>.
+        /// Use this method to register an <see cref="IControlledRuntimeLog"/>.
         /// </summary>
-        internal void RegisterLog(IStateMachineRuntimeLog log)
+        internal void RegisterLog(IControlledRuntimeLog log)
         {
             if (log == null)
             {
@@ -614,9 +614,9 @@ namespace PChecker.StateMachines.Logging
         }
 
         /// <summary>
-        /// Use this method to unregister a previously registered <see cref="IStateMachineRuntimeLog"/>.
+        /// Use this method to unregister a previously registered <see cref="IControlledRuntimeLog"/>.
         /// </summary>
-        internal void RemoveLog(IStateMachineRuntimeLog log)
+        internal void RemoveLog(IControlledRuntimeLog log)
         {
             if (log != null)
             {

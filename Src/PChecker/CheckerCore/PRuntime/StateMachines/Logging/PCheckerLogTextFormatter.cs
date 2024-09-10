@@ -16,7 +16,7 @@ namespace PChecker.PRuntime
     /// <summary>
     ///     Formatter for the runtime log.
     /// </summary>
-    public class PCheckerLogTextFormatter : IStateMachineRuntimeLog
+    public class PCheckerLogTextFormatter : IControlledRuntimeLog
     {
         /// <summary>
         /// Get or set the TextWriter to write to.
@@ -249,14 +249,13 @@ namespace PChecker.PRuntime
         }
 
         /// <inheritdoc/>
-        public void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName, Event e, Guid opGroupId, bool isTargetHalted)
+        public void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName, Event e, bool isTargetHalted)
         {
             senderStateName = GetShortName(senderStateName);
             var eventName = GetEventNameWithPayload(e);
-            var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
             var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
             var sender = !string.IsNullOrEmpty(senderName) ? $"'{senderName}' in state '{senderStateName}'" : $"The runtime";
-            var text = $"<SendLog> {sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}{opGroupIdMsg}.";
+            var text = $"<SendLog> {sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}.";
             Logger.WriteLine(text);
         }
 

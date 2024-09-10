@@ -24,10 +24,6 @@ namespace PChecker.Specifications.Monitors
     /// <summary>
     /// Abstract class representing a specification monitor.
     /// </summary>
-    /// <remarks>
-    /// See <see href="/coyote/learn/core/specifications">Specifications Overview</see>
-    /// for more information.
-    /// </remarks>
     public class Monitor
     {
         /// <summary>
@@ -111,9 +107,6 @@ namespace PChecker.Specifications.Monitors
         /// <summary>
         /// The logger installed to the runtime.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
-        /// </remarks>
         protected TextWriter Logger => Runtime.Logger;
 
         /// <summary>
@@ -194,7 +187,7 @@ namespace PChecker.Specifications.Monitors
         /// </summary>
         /// <remarks>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the ControlledRuntime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
         /// <see cref="Monitor.RaiseEvent"/>, <see cref="Monitor.RaiseGotoStateEvent{T}"/>.
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
@@ -242,7 +235,7 @@ namespace PChecker.Specifications.Monitors
         /// this.RaiseEvent(new E());
         /// </code>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the ControlledRuntime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
         /// <see cref="Monitor.RaiseEvent"/>, <see cref="Monitor.RaiseGotoStateEvent{T}"/>.
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
@@ -268,7 +261,7 @@ namespace PChecker.Specifications.Monitors
         /// this.RaiseEvent(new E());
         /// </code>
         /// This event is not handled until the action that calls this method returns control back
-        /// to the Coyote runtime.  It is handled before any other events are dequeued from the inbox.
+        /// to the ControlledRuntime.  It is handled before any other events are dequeued from the inbox.
         /// Only one of the following can be called per action:
         /// <see cref="Monitor.RaiseEvent"/>, <see cref="Monitor.RaiseGotoStateEvent{T}"/>.
         /// An Assert is raised if you accidentally try and do two of these operations in a single action.
@@ -1021,7 +1014,7 @@ namespace PChecker.Specifications.Monitors
         /// Defines the <see cref="Monitor"/> transition that is the
         /// result of executing an event handler.  Transitions are created by using
         /// <see cref="Monitor.RaiseGotoStateEvent{T}"/>, or <see cref="Monitor.RaiseEvent"/>.
-        /// The Transition is processed by the Coyote runtime when
+        /// The Transition is processed by the ControlledRuntime when
         /// an event handling method returns a Transition object.
         /// This means such a method can only do one such Transition per method call.
         /// If the method wants to do a conditional transition it can return

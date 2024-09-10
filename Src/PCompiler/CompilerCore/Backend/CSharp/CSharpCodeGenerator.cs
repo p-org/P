@@ -156,6 +156,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using PChecker.Specifications;");
             context.WriteLine(output, "using Monitor = PChecker.Specifications.Monitors.Monitor;");
             context.WriteLine(output, "using System;");
+            context.WriteLine(output, "using PChecker.SystematicTesting;");
             context.WriteLine(output, "using System.Runtime;");
             context.WriteLine(output, "using System.Collections.Generic;");
             context.WriteLine(output, "using System.Linq;");
@@ -386,7 +387,7 @@ namespace Plang.Compiler.Backend.CSharp
         {
             context.WriteLine(output);
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
-            context.WriteLine(output, "public static void Execute(IStateMachineRuntime runtime) {");
+            context.WriteLine(output, "public static void Execute(ControlledRuntime runtime) {");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");
@@ -395,7 +396,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "InitializeMonitorMap(runtime);");
             context.WriteLine(output, "InitializeMonitorObserves();");
             context.WriteLine(output,
-                $"runtime.CreateStateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof({main})));");
+                $"runtime.CreateStateMachine(typeof({main}), \"{main}\");");
             context.WriteLine(output, "}");
         }
 
@@ -417,7 +418,7 @@ namespace Plang.Compiler.Backend.CSharp
                 }
             }
 
-            context.WriteLine(output, "public static void InitializeMonitorMap(IStateMachineRuntime runtime) {");
+            context.WriteLine(output, "public static void InitializeMonitorMap(ControlledRuntime runtime) {");
             context.WriteLine(output, "PModule.monitorMap.Clear();");
             foreach (var machine in machineMap)
             {

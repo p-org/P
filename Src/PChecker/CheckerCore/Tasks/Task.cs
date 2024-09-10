@@ -165,7 +165,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Run(Action action, CancellationToken cancellationToken)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.ScheduleAction(action, null, cancellationToken);
             }
@@ -193,7 +193,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Run(Func<Task> function, CancellationToken cancellationToken)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.ScheduleFunction(function, null, cancellationToken);
             }
@@ -223,7 +223,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task<TResult> Run<TResult>(Func<Task<TResult>> function, CancellationToken cancellationToken)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.ScheduleFunction(function, null, cancellationToken);
             }
@@ -252,7 +252,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task<TResult> Run<TResult>(Func<TResult> function, CancellationToken cancellationToken)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.ScheduleDelegate<TResult>(function, null, cancellationToken);
             }
@@ -281,7 +281,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Delay(int millisecondsDelay, CancellationToken cancellationToken)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.ScheduleDelay(TimeSpan.FromMilliseconds(millisecondsDelay), cancellationToken);
             }
@@ -312,7 +312,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task Delay(TimeSpan delay, CancellationToken cancellationToken)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.ScheduleDelay(delay, cancellationToken);
             }
@@ -347,7 +347,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Task WhenAllTasksCompleteAsync(IEnumerable<Task> tasks)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.WhenAllTasksCompleteAsync(tasks);
             }
@@ -385,7 +385,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Task<TResult[]> WhenAllTasksCompleteAsync<TResult>(IEnumerable<Task<TResult>> tasks)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.WhenAllTasksCompleteAsync(tasks);
             }
@@ -417,7 +417,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Task<Task> WhenAnyTaskCompletesAsync(IEnumerable<Task> tasks)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.WhenAnyTaskCompletesAsync(tasks);
             }
@@ -462,7 +462,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Task<Task<TResult>> WhenAnyTaskCompletesAsync<TResult>(IEnumerable<Task<TResult>> tasks)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.WhenAnyTaskCompletesAsync(tasks);
             }
@@ -542,7 +542,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool WaitAll(Task[] tasks, int millisecondsTimeout, CancellationToken cancellationToken)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.WaitAllTasksComplete(tasks);
             }
@@ -612,7 +612,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WaitAny(Task[] tasks, int millisecondsTimeout, CancellationToken cancellationToken)
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return ControlledRuntime.Current.TaskController.WaitAnyTaskCompletes(tasks);
             }
@@ -626,7 +626,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YieldAwaitable Yield()
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 return new YieldAwaitable(ControlledRuntime.Current.TaskController);
             }
@@ -719,7 +719,7 @@ namespace PChecker.Tasks
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ExploreContextSwitch()
         {
-            if (CoyoteRuntime.IsExecutionControlled)
+            if (ControlledRuntime.IsExecutionControlled)
             {
                 ControlledRuntime.Current.ScheduleNextOperation(AsyncOperationType.Default);
             }

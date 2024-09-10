@@ -15,7 +15,7 @@ namespace PChecker.StateMachines.Logging
     /// Manages the installed <see cref="TextWriter"/> and all registered
     /// <see cref="IStateMachineRuntimeLog"/> objects.
     /// </summary>
-    internal sealed class LogWriter
+    public sealed class LogWriter
     {
         /// <summary>
         /// The set of registered log writers.

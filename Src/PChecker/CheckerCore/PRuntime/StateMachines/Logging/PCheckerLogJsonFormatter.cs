@@ -114,11 +114,6 @@ namespace PChecker.PRuntime
         /// <inheritdoc/>
         public void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType)
         {
-            if (id.Name.Contains("GodMachine") || creatorName.Contains("GodMachine"))
-            {
-                return;
-            }
-
             var source = creatorName ?? $"task '{Task.CurrentId}'";
             var log = $"{id} was created by {source}.";
 
@@ -147,11 +142,6 @@ namespace PChecker.PRuntime
 
         public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
         {
-            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
-            {
-                return;
-            }
-
             var eventName = GetEventNameWithPayload(e);
             var log = stateName is null
                 ? $"'{id}' dequeued event '{eventName}'."
@@ -221,11 +211,6 @@ namespace PChecker.PRuntime
         /// <inheritdoc />
         public void OnGotoState(StateMachineId id, string currentStateName, string newStateName)
         {
-            if (currentStateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
-            {
-                return;
-            }
-
             currentStateName = GetShortName(currentStateName);
             newStateName = GetShortName(newStateName);
 
@@ -304,8 +289,7 @@ namespace PChecker.PRuntime
             stateName = GetShortName(stateName);
             string eventName = GetEventNameWithPayload(e);
 
-            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine") ||
-                eventName.Contains("GotoStateEvent"))
+            if (eventName.Contains("GotoStateEvent"))
             {
                 return;
             }
@@ -371,11 +355,6 @@ namespace PChecker.PRuntime
         /// <inheritdoc />
         public void OnStateTransition(StateMachineId id, string stateName, bool isEntry)
         {
-            if (stateName.Contains("__InitState__") || id.Name.Contains("GodMachine"))
-            {
-                return;
-            }
-
             stateName = GetShortName(stateName);
             var direction = isEntry ? "enters" : "exits";
             var log = $"{id} {direction} state '{stateName}'.";

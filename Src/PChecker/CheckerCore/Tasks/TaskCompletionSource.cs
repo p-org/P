@@ -22,7 +22,7 @@ namespace PChecker.Tasks
         /// </summary>
         /// <typeparam name="TResult">The type of the result value assocatied with this task completion source.</typeparam>
         /// <returns>The task completion source.</returns>
-        public static TaskCompletionSource<TResult> Create<TResult>() => CoyoteRuntime.IsExecutionControlled ?
+        public static TaskCompletionSource<TResult> Create<TResult>() => ControlledRuntime.IsExecutionControlled ?
             new Mock<TResult>() : new TaskCompletionSource<TResult>(new System.Threading.Tasks.TaskCompletionSource<TResult>());
 
         /// <summary>

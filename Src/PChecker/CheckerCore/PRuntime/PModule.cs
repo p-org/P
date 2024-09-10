@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using PChecker.StateMachines;
+using PChecker.SystematicTesting;
 
 namespace PChecker.PRuntime
 {
@@ -13,6 +13,6 @@ namespace PChecker.PRuntime
         public static IDictionary<string, Dictionary<string, string>> linkMap =
             new Dictionary<string, Dictionary<string, string>>();
 
-        public static IStateMachineRuntime runtime;
+        public static ControlledRuntime runtime;
     }
 }

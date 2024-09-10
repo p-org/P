@@ -966,6 +966,7 @@ namespace PChecker.StateMachines
             Assert(e != null, "{0} is raising a null event.", Id);
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.RaiseEvent, default, e);
+            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
 
         /// <summary>

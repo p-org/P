@@ -8,7 +8,7 @@ namespace PChecker.StateMachines.Logging
 {
     /// <summary>
     /// Interface that allows an external module to track what
-    /// is happening in the <see cref="IStateMachineRuntime"/>.
+    /// is happening in the <see cref="ControlledRuntime"/>.
     /// </summary>
     public interface IStateMachineRuntimeLog
     {

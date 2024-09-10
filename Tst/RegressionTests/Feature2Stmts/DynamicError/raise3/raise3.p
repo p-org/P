@@ -17,12 +17,15 @@
  spec M observes E1, E2 {
   start state Init {
     on E1 do {
-      raise E2, 1000;
+      testFunc();
       assert false;
     }
     on E2 do (payload: int) { 
-      assert (payload == 1000), format ("Expected payload to be 1000, actual payload is {0}", payload);
+      assert (payload != 1000), format ("Expected payload to be 1000, actual payload is {0}", payload);
     }
+  }
+  fun testFunc() {
+    raise E2, 1000;
   }
 }
 

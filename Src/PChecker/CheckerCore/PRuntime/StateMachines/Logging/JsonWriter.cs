@@ -349,7 +349,7 @@ namespace PChecker.StateMachines.Logging
     /// Enum representing the possible attributes in the details dictionary,
     /// which represents the data associated with a specific log type. All of
     /// the following are available or expanded parameters associated with an
-    /// IStateMachineRuntime method. Naming for them is mostly the same except some
+    /// ControlledRuntime method. Naming for them is mostly the same except some
     /// are changed for simplicity.
     /// I.e., for OnRaiseEvent(StateMachineId id, string, stateName, Event e), it
     /// will have attributes id, state (simplified from stateName, event

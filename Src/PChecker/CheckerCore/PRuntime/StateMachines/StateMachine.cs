@@ -1038,7 +1038,7 @@ namespace PChecker.StateMachines
                         break;
                     }
 
-                    var currentStateName = NameResolver.GetQualifiedStateName(currentState.GetType());
+                    var currentStateName = currentState.GetType().Name;
                     await InvokeUserCallbackAsync(UserCallbackType.OnEventUnhandled, e, currentStateName);
                     if (CurrentStatus is Status.Active)
                     {
@@ -1112,7 +1112,7 @@ namespace PChecker.StateMachines
 
         private async Task HandleEventAsync(Event e, State declaringState, EventHandlerDeclaration eventHandler)
         {
-            var handlingStateName = NameResolver.GetQualifiedStateName(declaringState.GetType());
+            var handlingStateName = declaringState.GetType().Name;
             if (eventHandler is ActionEventHandlerDeclaration actionEventHandler)
             {
                 var cachedAction = StateMachineActionMap[actionEventHandler.Name];
@@ -1265,7 +1265,7 @@ namespace PChecker.StateMachines
         private async Task GotoStateAsync(Type s, string onExitActionName, Event e)
         {
             Runtime.LogWriter.LogGotoState(Id, CurrentStateName,
-                $"{s.DeclaringType}.{NameResolver.GetStateNameForLogging(s)}");
+                $"{s.DeclaringType}.{s.Name}");
 
             // The state machine performs the on exit action of the current state.
             await ExecuteCurrentStateOnExitAsync(onExitActionName, e);
@@ -1300,7 +1300,7 @@ namespace PChecker.StateMachines
         {
             EventHandlerMap = state.EventHandlers;  // non-inheritable handlers.
             CurrentState = state;
-            CurrentStateName = NameResolver.GetQualifiedStateName(CurrentState.GetType());
+            CurrentStateName = CurrentState.GetType().Name;
         }
 
         
@@ -1542,7 +1542,7 @@ namespace PChecker.StateMachines
             var allStates = new HashSet<string>();
             foreach (var state in StateInstanceCache[GetType()])
             {
-                allStates.Add(NameResolver.GetQualifiedStateName(state.GetType()));
+                allStates.Add(state.GetType().Name);
             }
 
             return allStates;
@@ -1573,7 +1573,7 @@ namespace PChecker.StateMachines
                          where IncludeInCoverage(b.Value)
                          select b)
                 {
-                    pairs.Add(Tuple.Create(NameResolver.GetQualifiedStateName(state.GetType()), binding.Key.FullName));
+                    pairs.Add(Tuple.Create(state.GetType().Name, binding.Key.FullName));
                 }
             }
 

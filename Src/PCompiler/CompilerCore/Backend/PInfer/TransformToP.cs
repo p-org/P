@@ -282,7 +282,7 @@ namespace Plang.Compiler.Backend.PInfer
                 && PopulateExprs(codegen, job, globalScope, q.Where(x => x.Contains("_num_e_exists_")).ToHashSet(), metaFilters))
             {
                 WriteLine($"// Monitor for spec: {inv}");
-                string config_event = h.ConfigEvent.Name + "," ?? "";
+                string config_event = h.ConfigEvent == null ? "" : h.ConfigEvent.Name + ",";
                 WriteLine($"spec {h.Name}_{counter} observes {config_event} {string.Join(", ", h.Quantified.Select(x => x.EventName).Distinct())} {{");
 
                 var forallVars = h.ForallQuantifiedVars();
@@ -369,7 +369,7 @@ namespace Plang.Compiler.Backend.PInfer
                 if (h.ConfigEvent == null)
                 {
                     // directly goto monitoring state
-                    WriteLine("goto Serving_Cold");
+                    WriteLine("goto Serving_Cold;");
                 }
                 WriteLine("}"); // End entry
                 if (h.ConfigEvent != null)

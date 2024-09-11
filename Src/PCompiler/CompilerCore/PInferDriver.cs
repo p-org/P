@@ -403,7 +403,7 @@ namespace Plang.Compiler
                     }
                     catch (Exception e)
                     {
-                        transform.context.Job.Output.WriteError($"Error writing monitor for {h.Name}:\nInvariant: {prop}\n{e.Message}");
+                        transform.context.Job.Output.WriteError($"Error writing monitor for {h.Name}:\nInvariant: {prop}\n{e.Message}\n{e.StackTrace}");
                         continue;
                     }
                 }

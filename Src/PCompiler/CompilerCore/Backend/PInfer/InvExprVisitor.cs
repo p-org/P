@@ -115,7 +115,8 @@ namespace Plang.Compiler.Backend.PInfer
                 {">", BinOpType.Gt},
                 {">=", BinOpType.Ge},
                 {"==", BinOpType.Eq},
-                {"!=", BinOpType.Neq}
+                {"!=", BinOpType.Neq},
+                {"||", BinOpType.Or},
             };
             if (!binOps.TryGetValue(op, out var binOp)) {
                 throw new DropException($"Op {op} not supported: `{ctx.GetText()}`");
@@ -123,6 +124,10 @@ namespace Plang.Compiler.Backend.PInfer
             // first, check whether is in CC
             // Daikon guarantees ths expr is well-typed (over-approximation)
             BinOpExpr expr = new(ctx, binOp, lhs, rhs);
+            if (binOp.GetKind() == BinOpKind.Boolean)
+            {
+                return expr;
+            }
             IPExpr cano = CC.Canonicalize(expr);
             if (cano != null)
             {

@@ -8,10 +8,10 @@ namespace UnitTests
     public class CSharpValuesTest
     {
         [Test]
-        public void TestPrtBoolOverloading()
+        public void TestPBoolOverloading()
         {
-            PrtBool boolT = true;
-            PrtBool boolF = false;
+            PBool boolT = true;
+            PBool boolF = false;
             Assert.AreEqual(boolT, boolF || boolT);
             Assert.AreEqual(boolT, boolT || boolF);
             Assert.AreEqual(boolT, !boolF);
@@ -20,33 +20,33 @@ namespace UnitTests
         }
 
         [Test]
-        public void TestPrtFloatComparisions()
+        public void TestPFloatComparisions()
         {
-            PrtBool boolT = true;
-            PrtBool boolF = false;
-            Assert.AreEqual(boolT, PrtValues.Box(1.0) < PrtValues.Box(2.0));
-            Assert.AreEqual(boolF, PrtValues.Box(1.0) < PrtValues.Box(1.0));
-            Assert.AreEqual(boolT, PrtValues.Box(1.0) <= PrtValues.Box(1.0));
-            Assert.AreEqual(boolT, PrtValues.Box(1.0) <= PrtValues.Box(2.0));
-            Assert.AreEqual(boolT, PrtValues.Box(1.0) == PrtValues.Box(1.0));
-            Assert.AreEqual(boolT, PrtValues.Box(1.0) != PrtValues.Box(2.0));
-            Assert.AreEqual(boolT, PrtValues.Box(1.0) >= PrtValues.Box(1.0));
-            Assert.AreEqual(boolT, PrtValues.Box(1.0) >= PrtValues.Box(0.0));
-            Assert.AreEqual(boolT, PrtValues.Box(1.0) > PrtValues.Box(0.0));
+            PBool boolT = true;
+            PBool boolF = false;
+            Assert.AreEqual(boolT, PValues.Box(1.0) < PValues.Box(2.0));
+            Assert.AreEqual(boolF, PValues.Box(1.0) < PValues.Box(1.0));
+            Assert.AreEqual(boolT, PValues.Box(1.0) <= PValues.Box(1.0));
+            Assert.AreEqual(boolT, PValues.Box(1.0) <= PValues.Box(2.0));
+            Assert.AreEqual(boolT, PValues.Box(1.0) == PValues.Box(1.0));
+            Assert.AreEqual(boolT, PValues.Box(1.0) != PValues.Box(2.0));
+            Assert.AreEqual(boolT, PValues.Box(1.0) >= PValues.Box(1.0));
+            Assert.AreEqual(boolT, PValues.Box(1.0) >= PValues.Box(0.0));
+            Assert.AreEqual(boolT, PValues.Box(1.0) > PValues.Box(0.0));
         }
 
         [Test]
-        public void TestPrtFloatOverloading()
+        public void TestPFloatOverloading()
         {
-            PrtFloat float1 = 1.0;
-            PrtFloat float2 = 2.0;
-            PrtFloat float3 = 3.0;
+            PFloat float1 = 1.0;
+            PFloat float2 = 2.0;
+            PFloat float3 = 3.0;
             Assert.AreEqual(float3, float1 + float2);
             Assert.AreEqual(float1, float3 - float2);
             Assert.AreEqual(float2, float1 * float2);
-            Assert.AreEqual(PrtValues.Box(1.5), float3 / float2);
-            Assert.AreEqual(PrtValues.Box(6.0), float1 + float2 + float3);
-            Assert.AreEqual(PrtValues.Box(6.0), float1 * float2 * float3);
+            Assert.AreEqual(PValues.Box(1.5), float3 / float2);
+            Assert.AreEqual(PValues.Box(6.0), float1 + float2 + float3);
+            Assert.AreEqual(PValues.Box(6.0), float1 * float2 * float3);
             Assert.AreEqual(float1, float3 / (float1 + float2));
             Assert.AreEqual(-float1, float2 - float3);
             Assert.AreEqual(+float1, float1);
@@ -54,33 +54,33 @@ namespace UnitTests
         }
 
         [Test]
-        public void TestPrtIntComparisions()
+        public void TestPIntComparisions()
         {
-            PrtBool boolT = true;
-            PrtBool boolF = false;
-            Assert.AreEqual(boolT, PrtValues.Box(1) < PrtValues.Box(2));
-            Assert.AreEqual(boolF, PrtValues.Box(1) < PrtValues.Box(1));
-            Assert.AreEqual(boolT, PrtValues.Box(1) <= PrtValues.Box(1));
-            Assert.AreEqual(boolT, PrtValues.Box(1) <= PrtValues.Box(2));
-            Assert.AreEqual(boolT, PrtValues.Box(1) == PrtValues.Box(1));
-            Assert.AreEqual(boolT, PrtValues.Box(1) != PrtValues.Box(2));
-            Assert.AreEqual(boolT, PrtValues.Box(1) >= PrtValues.Box(1));
-            Assert.AreEqual(boolT, PrtValues.Box(1) >= PrtValues.Box(0));
-            Assert.AreEqual(boolT, PrtValues.Box(1) > PrtValues.Box(0));
+            PBool boolT = true;
+            PBool boolF = false;
+            Assert.AreEqual(boolT, PValues.Box(1) < PValues.Box(2));
+            Assert.AreEqual(boolF, PValues.Box(1) < PValues.Box(1));
+            Assert.AreEqual(boolT, PValues.Box(1) <= PValues.Box(1));
+            Assert.AreEqual(boolT, PValues.Box(1) <= PValues.Box(2));
+            Assert.AreEqual(boolT, PValues.Box(1) == PValues.Box(1));
+            Assert.AreEqual(boolT, PValues.Box(1) != PValues.Box(2));
+            Assert.AreEqual(boolT, PValues.Box(1) >= PValues.Box(1));
+            Assert.AreEqual(boolT, PValues.Box(1) >= PValues.Box(0));
+            Assert.AreEqual(boolT, PValues.Box(1) > PValues.Box(0));
         }
 
         [Test]
-        public void TestPrtIntOverloading()
+        public void TestPIntOverloading()
         {
-            PrtInt int1 = 1;
-            PrtInt int2 = 2;
-            PrtInt int3 = 3;
+            PInt int1 = 1;
+            PInt int2 = 2;
+            PInt int3 = 3;
             Assert.AreEqual(int3, int1 + int2);
             Assert.AreEqual(int1, int3 - int2);
             Assert.AreEqual(int2, int1 * int2);
             Assert.AreEqual(int1, int3 / int2);
-            Assert.AreEqual(PrtValues.Box(6), int1 + int2 + int3);
-            Assert.AreEqual(PrtValues.Box(6), int1 * int2 * int3);
+            Assert.AreEqual(PValues.Box(6), int1 + int2 + int3);
+            Assert.AreEqual(PValues.Box(6), int1 * int2 * int3);
             Assert.AreEqual(int1, int3 / (int1 + int2));
             Assert.AreEqual(-int1, int2 - int3);
             Assert.AreEqual(+int1, int1);

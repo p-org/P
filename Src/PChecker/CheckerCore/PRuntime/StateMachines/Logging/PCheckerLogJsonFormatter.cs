@@ -12,9 +12,9 @@ using PChecker.PRuntime.Exceptions;
 namespace PChecker.PRuntime
 {
     /// <summary>
-    /// This class implements IStateMachineRuntimeLog and generates log output in an XML format.
+    /// This class implements IControlledRuntimeLog and generates log output in an XML format.
     /// </summary>
-    public class PCheckerLogJsonFormatter : IStateMachineRuntimeLog
+    public class PCheckerLogJsonFormatter : IControlledRuntimeLog
     {
         /// <summary>
         /// Get or set the JsonWriter to write to.
@@ -329,23 +329,21 @@ namespace PChecker.PRuntime
 
         /// <inheritdoc />
         public void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName,
-            Event e, Guid opGroupId, bool isTargetHalted)
+            Event e, bool isTargetHalted)
         {
             senderStateName = GetShortName(senderStateName);
             string eventName = GetEventNameWithPayload(e);
-            var opGroupIdMsg = opGroupId != Guid.Empty ? $" (operation group '{opGroupId}')" : string.Empty;
             var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
             var sender = !string.IsNullOrEmpty(senderName)
                 ? $"'{senderName}' in state '{senderStateName}'"
                 : $"The runtime";
-            var log = $"{sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}{opGroupIdMsg}.";
+            var log = $"{sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}.";
 
             Writer.AddLogType(JsonWriter.LogType.SendEvent);
             Writer.LogDetails.Sender = !string.IsNullOrEmpty(senderName) ? senderName : "Runtime";
             Writer.LogDetails.State = senderStateName;
             Writer.LogDetails.Event = GetShortName(e.GetType().Name);
             Writer.LogDetails.Target = targetStateMachineId.ToString();
-            Writer.LogDetails.OpGroupId = opGroupId.ToString();
             Writer.LogDetails.IsTargetHalted = isTargetHalted;
             Writer.LogDetails.Payload = GetEventPayloadInJson(e);
             Writer.AddLog(log);

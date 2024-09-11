@@ -6,20 +6,20 @@ using PChecker.PRuntime.Exceptions;
 
 namespace PChecker.PRuntime.Values
 {
-    public sealed class PrtSeq : IPrtMutableValue, IReadOnlyList<IPrtValue>
+    public sealed class PSeq : IPMutableValue, IReadOnlyList<IPValue>
     {
-        private readonly List<IPrtValue> values = new List<IPrtValue>();
+        private readonly List<IPValue> values = new List<IPValue>();
 
         private int hashCode;
         private bool isDirty;
         private bool isFrozen;
 
-        public PrtSeq()
+        public PSeq()
         {
             hashCode = ComputeHashCode();
         }
 
-        public PrtSeq(IEnumerable<IPrtValue> values)
+        public PSeq(IEnumerable<IPValue> values)
         {
             this.values = values.ToList();
             hashCode = ComputeHashCode();
@@ -49,17 +49,17 @@ namespace PChecker.PRuntime.Values
             isFrozen = true;
         }
 
-        public IPrtValue Clone()
+        public IPValue Clone()
         {
-            return new PrtSeq(values.Select(item => item?.Clone()));
+            return new PSeq(values.Select(item => item?.Clone()));
         }
 
-        public bool Equals(IPrtValue other)
+        public bool Equals(IPValue other)
         {
-            return other is PrtSeq otherValue && Equals(otherValue);
+            return other is PSeq otherValue && Equals(otherValue);
         }
 
-        public IEnumerator<IPrtValue> GetEnumerator()
+        public IEnumerator<IPValue> GetEnumerator()
         {
             return values.GetEnumerator();
         }
@@ -71,7 +71,7 @@ namespace PChecker.PRuntime.Values
 
         public int Count => values.Count;
 
-        public IPrtValue this[int index]
+        public IPValue this[int index]
         {
             get => values[index];
             set
@@ -90,13 +90,13 @@ namespace PChecker.PRuntime.Values
             return HashHelper.ComputeHash(values);
         }
 
-        public void Add(IPrtValue item)
+        public void Add(IPValue item)
         {
             IsDirty = true;
             values.Add(item?.Clone());
         }
 
-        public void Insert(int index, IPrtValue item)
+        public void Insert(int index, IPValue item)
         {
             IsDirty = true;
             values.Insert(index, item?.Clone());
@@ -108,12 +108,12 @@ namespace PChecker.PRuntime.Values
             values.RemoveAt(index);
         }
 
-        public bool Contains(IPrtValue item)
+        public bool Contains(IPValue item)
         {
             return values.Contains(item);
         }
 
-        private bool Equals(PrtSeq other)
+        private bool Equals(PSeq other)
         {
             return other != null && values.SequenceEqual(other.values);
         }

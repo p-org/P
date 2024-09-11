@@ -9,7 +9,7 @@ using PChecker.SystematicTesting;
 namespace PChecker.Utilities
 {
     /// <summary>
-    /// The Coyote testing reporter.
+    /// The testing reporter.
     /// </summary>
     internal static class Reporter
     {
@@ -73,10 +73,6 @@ namespace PChecker.Utilities
         {
             var codeCoverageReporter = new ActivityCoverageReporter(report.CoverageInfo);
             var filePath = $"{directory}{file}";
-
-            var graphFilePath = $"{filePath}.dgml";
-            Console.WriteLine($"..... Writing {graphFilePath}");
-            codeCoverageReporter.EmitVisualizationGraph(graphFilePath);
 
             var coverageFilePath = $"{filePath}.coverage.txt";
             Console.WriteLine($"..... Writing {coverageFilePath}");

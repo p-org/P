@@ -14,10 +14,10 @@ using PChecker.StateMachines.Logging;
 namespace PChecker.Coverage
 {
     /// <summary>
-    /// Implements the <see cref="IStateMachineRuntimeLog"/> and builds a directed graph
+    /// Implements the <see cref="IControlledRuntimeLog"/> and builds a directed graph
     /// from the recorded events and state transitions.
     /// </summary>
-    public class StateMachineRuntimeLogGraphBuilder : IStateMachineRuntimeLog
+    public class ControlledRuntimeLogGraphBuilder : IControlledRuntimeLog
     {
         private Graph CurrentGraph;
         private readonly Dictionary<StateMachineId, EventInfo> Dequeued = new Dictionary<StateMachineId, EventInfo>(); // current dequeued event.
@@ -50,7 +50,7 @@ namespace PChecker.Coverage
         {
         }
 
-        static StateMachineRuntimeLogGraphBuilder()
+        static ControlledRuntimeLogGraphBuilder()
         {
             EventAliases[typeof(GotoStateEvent).FullName] = "goto";
             EventAliases[typeof(HaltEvent).FullName] = "halt";
@@ -62,9 +62,9 @@ namespace PChecker.Coverage
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="StateMachineRuntimeLogGraphBuilder"/> class.
+        /// Initializes a new instance of the <see cref="ControlledRuntimeLogGraphBuilder"/> class.
         /// </summary>
-        public StateMachineRuntimeLogGraphBuilder(bool mergeEventLinks)
+        public ControlledRuntimeLogGraphBuilder(bool mergeEventLinks)
         {
             MergeEventLinks = mergeEventLinks;
             CurrentGraph = new Graph();
@@ -79,9 +79,6 @@ namespace PChecker.Coverage
         /// <summary>
         /// Get or set the underlying logging object.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
-        /// </remarks>
         public TextWriter Logger { get; set; }
 
         /// <summary>
@@ -113,7 +110,7 @@ namespace PChecker.Coverage
 
         /// <inheritdoc/>
         public void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName,
-            Event e, Guid opGroupId, bool isTargetHalted)
+            Event e, bool isTargetHalted)
         {
             var eventName = e.GetType().FullName;
             AddEvent(targetStateMachineId.Name, targetStateMachineId.Type, senderName, senderType, senderStateName, eventName);
@@ -662,11 +659,8 @@ namespace PChecker.Coverage
     [DataContract]
     public class Graph
     {
-        internal const string DgmlNamespace = "http://schemas.microsoft.com/vs/2009/dgml";
-
         // These [DataMember] fields are here so we can serialize the Graph across parallel or distributed
-        // test processes without losing any information.  There is more information here than in the serialized
-        // DGML which is we we can't just use Save/LoadDgml to do the same.
+        // test processes without losing any information.
 
         [DataMember]
         private readonly Dictionary<string, GraphNode> InternalNodes = new Dictionary<string, GraphNode>();
@@ -797,175 +791,7 @@ namespace PChecker.Coverage
 
             return index;
         }
-
-        /// <summary>
-        /// Serialize the graph to a DGML string.
-        /// </summary>
-        public override string ToString()
-        {
-            using (var writer = new StringWriter())
-            {
-                WriteDgml(writer, false);
-                return writer.ToString();
-            }
-        }
-
-        internal void SaveDgml(string graphFilePath, bool includeDefaultStyles)
-        {
-            using (var writer = new StreamWriter(graphFilePath, false, Encoding.UTF8))
-            {
-                WriteDgml(writer, includeDefaultStyles);
-            }
-        }
-
-        /// <summary>
-        /// Serialize the graph to DGML.
-        /// </summary>
-        public void WriteDgml(TextWriter writer, bool includeDefaultStyles)
-        {
-            writer.WriteLine("<DirectedGraph xmlns='{0}'>", DgmlNamespace);
-            writer.WriteLine("  <Nodes>");
-
-            if (InternalNodes != null)
-            {
-                var nodes = new List<string>(InternalNodes.Keys);
-                nodes.Sort();
-                foreach (var id in nodes)
-                {
-                    var node = InternalNodes[id];
-                    writer.Write("    <Node Id='{0}'", node.Id);
-
-                    if (!string.IsNullOrEmpty(node.Label))
-                    {
-                        writer.Write(" Label='{0}'", node.Label);
-                    }
-
-                    if (!string.IsNullOrEmpty(node.Category))
-                    {
-                        writer.Write(" Category='{0}'", node.Category);
-                    }
-
-                    node.WriteAttributes(writer);
-                    writer.WriteLine("/>");
-                }
-            }
-
-            writer.WriteLine("  </Nodes>");
-            writer.WriteLine("  <Links>");
-
-            if (InternalLinks != null)
-            {
-                var links = new List<string>(InternalLinks.Keys);
-                links.Sort();
-                foreach (var id in links)
-                {
-                    var link = InternalLinks[id];
-                    writer.Write("    <Link Source='{0}' Target='{1}'", link.Source.Id, link.Target.Id);
-                    if (!string.IsNullOrEmpty(link.Label))
-                    {
-                        writer.Write(" Label='{0}'", link.Label);
-                    }
-
-                    if (!string.IsNullOrEmpty(link.Category))
-                    {
-                        writer.Write(" Category='{0}'", link.Category);
-                    }
-
-                    if (link.Index.HasValue)
-                    {
-                        writer.Write(" Index='{0}'", link.Index.Value);
-                    }
-
-                    link.WriteAttributes(writer);
-                    writer.WriteLine("/>");
-                }
-            }
-
-            writer.WriteLine("  </Links>");
-            if (includeDefaultStyles)
-            {
-                writer.WriteLine(
-                    @"  <Styles>
-    <Style TargetType=""Node"" GroupLabel=""Error"" ValueLabel=""True"">
-      <Condition Expression=""HasCategory('Error')"" />
-      <Setter Property=""Background"" Value=""#FFC15656"" />
-    </Style>
-    <Style TargetType=""Node"" GroupLabel=""StateMachine"" ValueLabel=""True"">
-      <Condition Expression=""HasCategory('StateMachine')"" />
-      <Setter Property=""Background"" Value=""#FF57AC56"" />
-    </Style>
-    <Style TargetType=""Node"" GroupLabel=""Monitor"" ValueLabel=""True"">
-      <Condition Expression=""HasCategory('Monitor')"" />
-      <Setter Property=""Background"" Value=""#FF558FDA"" />
-    </Style>
-    <Style TargetType=""Link"" GroupLabel=""halt"" ValueLabel=""True"">
-      <Condition Expression=""HasCategory('halt')"" />
-      <Setter Property=""Stroke"" Value=""#FFFF6C6C"" />
-      <Setter Property=""StrokeDashArray"" Value=""4 2"" />
-    </Style>
-    <Style TargetType=""Link"" GroupLabel=""push"" ValueLabel=""True"">
-      <Condition Expression=""HasCategory('push')"" />
-      <Setter Property=""Stroke"" Value=""#FF7380F5"" />
-      <Setter Property=""StrokeDashArray"" Value=""4 2"" />
-    </Style>
-    <Style TargetType=""Link"" GroupLabel=""pop"" ValueLabel=""True"">
-      <Condition Expression=""HasCategory('pop')"" />
-      <Setter Property=""Stroke"" Value=""#FF7380F5"" />
-      <Setter Property=""StrokeDashArray"" Value=""4 2"" />
-    </Style>
-  </Styles>");
-            }
-
-            writer.WriteLine("</DirectedGraph>");
-        }
-
-        /// <summary>
-        /// Load a DGML file into a new Graph object.
-        /// </summary>
-        /// <param name="graphFilePath">Full path to the DGML file.</param>
-        /// <returns>The loaded Graph object.</returns>
-        public static Graph LoadDgml(string graphFilePath)
-        {
-            var doc = XDocument.Load(graphFilePath);
-            var result = new Graph();
-            var ns = doc.Root.Name.Namespace;
-            if (ns != DgmlNamespace)
-            {
-                throw new Exception(string.Format("File '{0}' does not contain the DGML namespace", graphFilePath));
-            }
-
-            foreach (var e in doc.Root.Element(ns + "Nodes").Elements(ns + "Node"))
-            {
-                var id = (string)e.Attribute("Id");
-                var label = (string)e.Attribute("Label");
-                var category = (string)e.Attribute("Category");
-
-                var node = new GraphNode(id, label, category);
-                node.AddDgmlProperties(e);
-                result.GetOrCreateNode(node);
-            }
-
-            foreach (var e in doc.Root.Element(ns + "Links").Elements(ns + "Link"))
-            {
-                var srcId = (string)e.Attribute("Source");
-                var targetId = (string)e.Attribute("Target");
-                var label = (string)e.Attribute("Label");
-                var category = (string)e.Attribute("Category");
-                var srcNode = result.GetOrCreateNode(srcId);
-                var targetNode = result.GetOrCreateNode(targetId);
-                var indexAttr = e.Attribute("index");
-                int? index = null;
-                if (indexAttr != null)
-                {
-                    index = (int)indexAttr;
-                }
-
-                var link = result.GetOrCreateLink(srcNode, targetNode, index, label, category);
-                link.AddDgmlProperties(e);
-            }
-
-            return result;
-        }
+        
 
         /// <summary>
         /// Merge the given graph so that this graph becomes a superset of both graphs.
@@ -1132,27 +958,6 @@ namespace PChecker.Coverage
             Label = label;
             Category = category;
         }
-
-        /// <summary>
-        /// Add additional properties from XML element.
-        /// </summary>
-        /// <param name="e">An XML element representing the graph node in DGML format.</param>
-        public void AddDgmlProperties(XElement e)
-        {
-            foreach (var a in e.Attributes())
-            {
-                switch (a.Name.LocalName)
-                {
-                    case "Id":
-                    case "Label":
-                    case "Category":
-                        break;
-                    default:
-                        AddAttribute(a.Name.LocalName, a.Value);
-                        break;
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -1201,28 +1006,6 @@ namespace PChecker.Coverage
             Target = target;
             Label = label;
             Category = category;
-        }
-
-        /// <summary>
-        /// Add additional properties from XML element.
-        /// </summary>
-        /// <param name="e">An XML element representing the graph node in DGML format.</param>
-        public void AddDgmlProperties(XElement e)
-        {
-            foreach (var a in e.Attributes())
-            {
-                switch (a.Name.LocalName)
-                {
-                    case "Source":
-                    case "Target":
-                    case "Label":
-                    case "Category":
-                        break;
-                    default:
-                        AddAttribute(a.Name.LocalName, a.Value);
-                        break;
-                }
-            }
         }
     }
 }

@@ -558,7 +558,7 @@ namespace PChecker.StateMachines.Logging
         /// <summary>
         /// Enum representing the different log types the JSON error trace logs.
         /// Referenced from PCheckerLogTextFormatter.cs and PCheckerLogTextFormatter.cs
-        /// to see what those formatter logs. Check IStateMachineRuntimeLog.cs to see
+        /// to see what those formatter logs. Check IControlledRuntimeLog.cs to see
         /// each log types' description and when they are invoked.
         /// </summary>
         public enum LogType

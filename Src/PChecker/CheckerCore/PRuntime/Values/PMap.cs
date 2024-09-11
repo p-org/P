@@ -6,20 +6,20 @@ using PChecker.PRuntime.Exceptions;
 
 namespace PChecker.PRuntime.Values
 {
-    public sealed class PrtMap : IPrtMutableValue, IDictionary<IPrtValue, IPrtValue>
+    public sealed class PMap : IPMutableValue, IDictionary<IPValue, IPValue>
     {
-        private readonly IDictionary<IPrtValue, IPrtValue> map = new Dictionary<IPrtValue, IPrtValue>();
+        private readonly IDictionary<IPValue, IPValue> map = new Dictionary<IPValue, IPValue>();
 
         private int hashCode;
         private bool isDirty;
         private bool isFrozen;
 
-        public PrtMap()
+        public PMap()
         {
             hashCode = ComputeHashCode();
         }
 
-        public PrtMap(IDictionary<IPrtValue, IPrtValue> map)
+        public PMap(IDictionary<IPValue, IPValue> map)
         {
             this.map = map;
             hashCode = ComputeHashCode();
@@ -39,7 +39,7 @@ namespace PChecker.PRuntime.Values
             }
         }
 
-        public IEnumerator<KeyValuePair<IPrtValue, IPrtValue>> GetEnumerator()
+        public IEnumerator<KeyValuePair<IPValue, IPValue>> GetEnumerator()
         {
             return map.GetEnumerator();
         }
@@ -49,7 +49,7 @@ namespace PChecker.PRuntime.Values
             return GetEnumerator();
         }
 
-        public void Add(KeyValuePair<IPrtValue, IPrtValue> item)
+        public void Add(KeyValuePair<IPValue, IPValue> item)
         {
             MutabilityHelper.EnsureFrozen(item.Key);
             map.Add(item.Key?.Clone(), item.Value?.Clone());
@@ -62,12 +62,12 @@ namespace PChecker.PRuntime.Values
             IsDirty = true;
         }
 
-        public bool Contains(KeyValuePair<IPrtValue, IPrtValue> item)
+        public bool Contains(KeyValuePair<IPValue, IPValue> item)
         {
             return map.Contains(item);
         }
 
-        public void CopyTo(KeyValuePair<IPrtValue, IPrtValue>[] array, int arrayIndex)
+        public void CopyTo(KeyValuePair<IPValue, IPValue>[] array, int arrayIndex)
         {
             foreach (var kv in map)
             {
@@ -75,7 +75,7 @@ namespace PChecker.PRuntime.Values
             }
         }
 
-        public bool Remove(KeyValuePair<IPrtValue, IPrtValue> item)
+        public bool Remove(KeyValuePair<IPValue, IPValue> item)
         {
             var removed = map.Remove(item.Key);
             IsDirty = true;
@@ -85,31 +85,31 @@ namespace PChecker.PRuntime.Values
         public int Count => map.Count;
         public bool IsReadOnly => false;
 
-        public void Add(IPrtValue key, IPrtValue value)
+        public void Add(IPValue key, IPValue value)
         {
             MutabilityHelper.EnsureFrozen(key);
             map.Add(key?.Clone(), value?.Clone());
             IsDirty = true;
         }
 
-        public bool ContainsKey(IPrtValue key)
+        public bool ContainsKey(IPValue key)
         {
             return map.ContainsKey(key);
         }
 
-        public bool Remove(IPrtValue key)
+        public bool Remove(IPValue key)
         {
             var removed = map.Remove(key);
             IsDirty = true;
             return removed;
         }
 
-        public bool TryGetValue(IPrtValue key, out IPrtValue value)
+        public bool TryGetValue(IPValue key, out IPValue value)
         {
             return map.TryGetValue(key, out value);
         }
 
-        public IPrtValue this[IPrtValue key]
+        public IPValue this[IPValue key]
         {
             get => map[key];
             set
@@ -120,20 +120,20 @@ namespace PChecker.PRuntime.Values
             }
         }
 
-        public ICollection<IPrtValue> Keys => map.Keys;
-        public ICollection<IPrtValue> Values => map.Values;
+        public ICollection<IPValue> Keys => map.Keys;
+        public ICollection<IPValue> Values => map.Values;
 
-        public bool Equals(IPrtValue other)
+        public bool Equals(IPValue other)
         {
-            return other is PrtMap otherMap
+            return other is PMap otherMap
                    && !map.Keys.Except(otherMap.map.Keys).Any()
                    && !otherMap.map.Keys.Except(map.Keys).Any()
-                   && map.All(kv => PrtValues.SafeEquals(otherMap.map[kv.Key], kv.Value));
+                   && map.All(kv => PValues.SafeEquals(otherMap.map[kv.Key], kv.Value));
         }
 
-        public IPrtValue Clone()
+        public IPValue Clone()
         {
-            return new PrtMap(map.ToDictionary(
+            return new PMap(map.ToDictionary(
                 kv => kv.Key?.Clone(),
                 kv => kv.Value?.Clone()));
         }
@@ -148,14 +148,14 @@ namespace PChecker.PRuntime.Values
             isFrozen = true;
         }
 
-        public PrtSeq CloneKeys()
+        public PSeq CloneKeys()
         {
-            return new PrtSeq(map.Keys.Select(v => v.Clone()));
+            return new PSeq(map.Keys.Select(v => v.Clone()));
         }
 
-        public PrtSeq CloneValues()
+        public PSeq CloneValues()
         {
-            return new PrtSeq(map.Values.Select(v => v.Clone()));
+            return new PSeq(map.Values.Select(v => v.Clone()));
         }
 
         public override int GetHashCode()

@@ -11,7 +11,7 @@ namespace PChecker.PRuntime.Values
         }
     }
 
-    public class PMachineValue : IPrtValue
+    public class PMachineValue : IPValue
     {
         public PMachineValue(StateMachineId machine, List<string> permissions)
         {
@@ -28,7 +28,7 @@ namespace PChecker.PRuntime.Values
         public StateMachineId Id { get; }
         public List<string> Permissions { get; }
 
-        public bool Equals(IPrtValue other)
+        public bool Equals(IPValue other)
         {
             return other is PMachineValue machine && Equals(Id, machine.Id);
         }
@@ -38,7 +38,7 @@ namespace PChecker.PRuntime.Values
             return Id.GetHashCode();
         }
 
-        public IPrtValue Clone()
+        public IPValue Clone()
         {
             return new PMachineValue(Id, new List<string>(Permissions));
         }

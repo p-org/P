@@ -10,7 +10,7 @@ namespace PChecker.StateMachines.Logging
     /// Interface that allows an external module to track what
     /// is happening in the <see cref="ControlledRuntime"/>.
     /// </summary>
-    public interface IStateMachineRuntimeLog
+    public interface IControlledRuntimeLog
     {
         /// <summary>
         /// Invoked when the specified state machine has been created.
@@ -40,7 +40,7 @@ namespace PChecker.StateMachines.Logging
         /// <param name="opGroupId">The id used to identify the send operation.</param>
         /// <param name="isTargetHalted">Is the target state machine halted.</param>
         void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName,
-            Event e, Guid opGroupId, bool isTargetHalted);
+            Event e, bool isTargetHalted);
 
         /// <summary>
         /// Invoked when the specified state machine raises an event.

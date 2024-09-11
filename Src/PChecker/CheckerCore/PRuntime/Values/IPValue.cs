@@ -2,9 +2,9 @@
 
 namespace PChecker.PRuntime.Values
 {
-    public interface IPrtValue : IEquatable<IPrtValue>
+    public interface IPValue : IEquatable<IPValue>
     {
-        IPrtValue Clone();
+        IPValue Clone();
 
         /// <summary>
         /// Returns a string representation of this Value, such that strings are

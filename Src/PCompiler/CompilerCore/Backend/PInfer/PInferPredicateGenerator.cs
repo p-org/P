@@ -401,7 +401,7 @@ namespace Plang.Compiler.Backend.PInfer
                 return args[0];
             }, PrimitiveType.Bool);
             isTrueCmp.Function.AddContradiction(isTrueCmp.ShiftCall(
-                xs => xs[0]
+                xs => new UnaryOpExpr(null, UnaryOpType.Not, xs[0])
             ));
             MacroPredicate isFalseCmp = new("IsFalse", Notation.Prefix, (args) => {
                 return new UnaryOpExpr(null, UnaryOpType.Not, args[0]);
@@ -563,7 +563,8 @@ namespace Plang.Compiler.Backend.PInfer
                 return;
             }
             if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
-                if (CC.Canonicalize(expr) != null) return;
+                var cano = CC.Canonicalize(expr);
+                if (cano != null && Predicates.Contains(cano)) return;
                 FreeEvents[expr] = events;
                 PredicateOrder[expr] = Predicates.Count;
                 Predicates.Add(expr);

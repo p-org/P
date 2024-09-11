@@ -160,6 +160,16 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             return Quantified.TakeLast(ExistentialQuantifiers).Select(v => v.EventDecl).DistinctBy(x => x.Name).ToList();
         }
 
+        public List<PEventVariable> ForallQuantifiedVars()
+        {
+            return Quantified.SkipLast(ExistentialQuantifiers).ToList();
+        }
+
+        public List<PEventVariable> ExistentialQuantifiedVars()
+        {
+            return Quantified.TakeLast(ExistentialQuantifiers).ToList();
+        }
+
         public Hint Copy()
         {
             Hint h = new(Name, Exact, SourceLocation)

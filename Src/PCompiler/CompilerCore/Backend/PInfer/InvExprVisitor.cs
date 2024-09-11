@@ -92,6 +92,10 @@ namespace Plang.Compiler.Backend.PInfer
 
         public override IPExpr VisitBinExpr(PParser.BinExprContext ctx)
         {
+            if (ReprToTerm.TryGetValue(ctx.GetText(), out var memoed))
+            {
+                return memoed;
+            }
             var lhs = Visit(ctx.lhs);
             var rhs = Visit(ctx.rhs);
             var op = ctx.op.Text;
@@ -239,6 +243,13 @@ namespace Plang.Compiler.Backend.PInfer
                 if (SpeicalConstants.TryGetValue(ctx.iden().GetText(), out var c))
                 {
                     return c;
+                }
+                foreach (var enumElm in GlobalScope.EnumElems)
+                {
+                    if (enumElm.Name == ctx.iden().GetText())
+                    {
+                        return new EnumElemRefExpr(ctx, enumElm);
+                    }
                 }
                 throw new DropException($"Undefined variable: `{ctx.iden().GetText()}`");
             }

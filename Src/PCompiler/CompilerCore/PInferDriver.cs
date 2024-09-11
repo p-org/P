@@ -333,7 +333,7 @@ namespace Plang.Compiler
                 // job.Output.WriteInfo($"\t# invariants distilled: {numInvsDistilled}");
                 job.Output.WriteInfo($"\t#Invariants after pruning: {PInferInvoke.WriteRecordTo("invariants.txt")}");
                 job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
-                PInferInvoke.WriteMonitors(driver.Codegen, job, globalScope);
+                PInferInvoke.WriteMonitors(driver.Codegen, new(new(job)), globalScope);
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
             }
         }
@@ -352,7 +352,6 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static HashSet<string> Learned = [];
         internal static int NumInvsMined = 0;
-        internal static Transform transform = new();
 
         public static void NewInvFiles()
         {
@@ -382,27 +381,29 @@ namespace Plang.Compiler
             }
         }
 
-        public static void WriteMonitors(PInferPredicateGenerator codegen, ICompilerConfiguration job, Scope globalScope)
+        public static void WriteMonitors(PInferPredicateGenerator codegen, Transform transform, Scope globalScope)
         {
-            CompilationContext ctx = new(job);
-            int n = 0;
+            Dictionary<string, int> monitorCount = [];
+            int c = 1;
             foreach (var (_, _, h, p, q) in AllExecuedAndMined())
             {
                 if (q.Count == 0) continue;
                 var ps = string.Join(" ∧ ", p);
+                monitorCount[h.Name] = monitorCount.TryGetValue(h.Name, out var cnt) ? cnt + 1 : 1;
                 foreach (var f in q)
                 {
                     if (f.Count == 0) continue;
                     var prop = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", f));
-                    CompiledFile monitorFile = new($"minotor_{n++}.p", Path.Combine(job.OutputDirectory.ToString(), "PInferSpecs"));
+                    CompiledFile monitorFile = new($"{h.Name}_{monitorCount[h.Name]}.p", Path.Combine(transform.context.Job.OutputDirectory.ToString(), "PInferSpecs"));
                     try
                     {
-                        transform.WriteSpecMonitor(codegen, ctx, job, globalScope, h, p, f, prop, monitorFile);
-                        job.Output.WriteFile(monitorFile);
+                        transform.WithFile(monitorFile);
+                        transform.WriteSpecMonitor(c++, codegen, transform.context, transform.context.Job, globalScope, h, p, f, prop, monitorFile);
+                        transform.context.Job.Output.WriteFile(monitorFile);
                     }
                     catch (Exception e)
                     {
-                        job.Output.WriteError($"Error writing monitor for {h.Name}:\nInvariant: {prop}\n{e.Message}");
+                        transform.context.Job.Output.WriteError($"Error writing monitor for {h.Name}:\nInvariant: {prop}\n{e.Message}");
                         continue;
                     }
                 }

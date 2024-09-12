@@ -16,11 +16,6 @@ namespace PChecker.StateMachines
     public sealed class StateMachineId : IEquatable<StateMachineId>, IComparable<StateMachineId>
     {
         /// <summary>
-        /// The runtime that executes the state machine with this id.
-        /// </summary>
-        internal ControlledRuntime Runtime { get; private set; }
-
-        /// <summary>
         /// Unique id, when <see cref="NameValue"/> is empty.
         /// </summary>
         [DataMember]
@@ -45,18 +40,6 @@ namespace PChecker.StateMachines
         public readonly string Name;
 
         /// <summary>
-        /// Generation of the runtime that created this state machine id.
-        /// </summary>
-        [DataMember]
-        public readonly ulong Generation;
-
-        /// <summary>
-        /// Endpoint.
-        /// </summary>
-        [DataMember]
-        public readonly string Endpoint;
-
-        /// <summary>
         /// True if <see cref="NameValue"/> is used as the unique id, else false.
         /// </summary>
         public bool IsNameUsedForHashing => NameValue.Length > 0;
@@ -66,22 +49,16 @@ namespace PChecker.StateMachines
         /// </summary>
         internal StateMachineId(Type type, string name, ControlledRuntime runtime, bool useNameForHashing = false)
         {
-            Runtime = runtime;
-            Endpoint = string.Empty;
 
             if (useNameForHashing)
             {
                 Value = 0;
                 NameValue = name;
-                Runtime.Assert(!string.IsNullOrEmpty(NameValue), "The state machine name cannot be null when used as id.");
             }
             else
             {
                 Value = runtime.GetNextOperationId();
                 NameValue = string.Empty;
-
-                // Checks for overflow.
-                Runtime.Assert(Value != ulong.MaxValue, "Detected state machine id overflow.");
             }
 
             Type = type.FullName;
@@ -94,14 +71,6 @@ namespace PChecker.StateMachines
                 Name = string.Format(CultureInfo.InvariantCulture, "{0}({1})",
                     string.IsNullOrEmpty(name) ? Type : name, Value.ToString());
             }
-        }
-
-        /// <summary>
-        /// Bind the state machine id.
-        /// </summary>
-        internal void Bind(ControlledRuntime runtime)
-        {
-            Runtime = runtime;
         }
 
         /// <summary>
@@ -118,8 +87,8 @@ namespace PChecker.StateMachines
                 }
 
                 return IsNameUsedForHashing ?
-                    NameValue.Equals(id.NameValue) && Generation == id.Generation :
-                    Value == id.Value && Generation == id.Generation;
+                    NameValue.Equals(id.NameValue) :
+                    Value == id.Value;
             }
 
             return false;
@@ -132,7 +101,6 @@ namespace PChecker.StateMachines
         {
             var hash = 17;
             hash = (hash * 23) + (IsNameUsedForHashing ? NameValue.GetHashCode() : Value.GetHashCode());
-            hash = (hash * 23) + Generation.GetHashCode();
             return hash;
         }
 

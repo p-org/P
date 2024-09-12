@@ -135,7 +135,7 @@ namespace PChecker.Specifications.Monitors
         /// </summary>
         internal string CurrentStateName
         {
-            get => NameResolver.GetQualifiedStateName(CurrentState);
+            get => CurrentState.Name;
         }
 
         /// <summary>
@@ -985,7 +985,7 @@ namespace PChecker.Specifications.Monitors
             var allStates = new HashSet<string>();
             foreach (var state in StateMap[GetType()])
             {
-                allStates.Add(NameResolver.GetQualifiedStateName(state.GetType()));
+                allStates.Add(state.GetType().Name);
             }
 
             return allStates;
@@ -1003,7 +1003,7 @@ namespace PChecker.Specifications.Monitors
             {
                 foreach (var binding in state.EventHandlers)
                 {
-                    pairs.Add(Tuple.Create(NameResolver.GetQualifiedStateName(state.GetType()), binding.Key.FullName));
+                    pairs.Add(Tuple.Create(state.GetType().Name, binding.Key.FullName));
                 }
             }
 

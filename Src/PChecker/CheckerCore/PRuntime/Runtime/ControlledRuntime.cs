@@ -51,6 +51,19 @@ namespace PChecker.SystematicTesting
         /// </remarks>
         private static readonly AsyncLocal<ControlledRuntime> AsyncLocalInstance = new AsyncLocal<ControlledRuntime>();
         
+        internal static ControlledRuntime InstalledRuntime { get; private set; } = CreateWithConfiguration(default);
+
+        private static ControlledRuntime CreateWithConfiguration(CheckerConfiguration checkerConfiguration)
+        {
+            if (checkerConfiguration is null)
+            {
+                checkerConfiguration = CheckerConfiguration.Create();
+            }
+
+            var valueGenerator = new RandomValueGenerator(checkerConfiguration);
+            return new ControlledRuntime(checkerConfiguration, valueGenerator);
+        }
+        
         /// <summary>
         /// The currently executing runtime.
         /// </summary>
@@ -61,7 +74,7 @@ namespace PChecker.SystematicTesting
                                                                         "state machine handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
                                                                         "you will need to mock them during testing.",
                                                                         Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>")) :
-                                                                    RuntimeFactory.InstalledRuntime);
+                                                                    InstalledRuntime);
 
         /// <summary>
         /// If true, the program execution is controlled by the runtime to
@@ -514,13 +527,6 @@ namespace PChecker.SystematicTesting
             {
                 id = new StateMachineId(type, name, this);
             }
-            else
-            {
-                Assert(id.Runtime is null || id.Runtime == this, "Unbound state machine id '{0}' was created by another runtime.", id.Value);
-                Assert(id.Type == type.FullName, "Cannot bind state machine id '{0}' of type '{1}' to an state machine of type '{2}'.",
-                    id.Value, id.Type, type.FullName);
-                id.Bind(this);
-            }
             
             var stateMachine = Create(type);
             IStateMachineManager stateMachineManager = new StateMachineManager(this, stateMachine);
@@ -664,7 +670,7 @@ namespace PChecker.SystematicTesting
         {
             // Directly use sender as a StateMachine
             var originInfo = new EventOriginInfo(sender.Id, sender.GetType().FullName,
-                NameResolver.GetStateNameForLogging(sender.CurrentState.GetType()));
+                sender.CurrentState.GetType().Name);
 
             var eventInfo = new EventInfo(e, originInfo);
 

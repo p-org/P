@@ -37,7 +37,7 @@ namespace Plang.Compiler.TypeChecker
                 TryInferIff(statements[0]);
                 // infer properties & contradictions
                 if (statements[0] is ReturnStmt returnStmt &&
-                    TryInferProps(returnStmt.ReturnValue, out var contradictions, out var equivs, out var properties))
+                    TryInferProps(returnStmt.ReturnValue, out var contradictions, out var equivs, out var negation, out var properties))
                 {
                     foreach (var c in contradictions)
                     {
@@ -46,6 +46,10 @@ namespace Plang.Compiler.TypeChecker
                     foreach (var prop in properties)
                     {
                         method.Property |= prop;
+                    }
+                    foreach (var neg in negation)
+                    {
+                        method.AddNegation(neg);
                     }
                     foreach (var eq in equivs)
                     {
@@ -68,7 +72,7 @@ namespace Plang.Compiler.TypeChecker
             };
         }
 
-        public bool TryInferProps(IPExpr expr, out IPExpr[] contra, out IPExpr[] equiv, out FunctionProperty[] properties)
+        public bool TryInferProps(IPExpr expr, out IPExpr[] contra, out IPExpr[] equiv, out IPExpr[] negation, out FunctionProperty[] properties)
         {
             var freeVars = FreeVar(expr);
             if (freeVars.Count == method.Signature.Parameters.Count)
@@ -78,6 +82,7 @@ namespace Plang.Compiler.TypeChecker
                     case BinOpExpr binOpExpr when FreeVar(binOpExpr.Lhs).Count == 1 && FreeVar(binOpExpr.Rhs).Count == 1: {
                         contra = binOpExpr.GetContradictions().ToArray();
                         equiv = binOpExpr.GetEquivalences().ToArray();
+                        negation = binOpExpr.GetNegation().ToArray();
                         if (method.Signature.Parameters.Count == 2)
                         {
                             properties = binOpExpr.Operation.GetProperties().ToArray();
@@ -90,6 +95,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                     case UnaryOpExpr unaryOpExpr: {
                         contra = unaryOpExpr.GetContradictions().ToArray();
+                        negation = unaryOpExpr.GetNegation().ToArray();
                         equiv = [];
                         properties = [];
                         return true;
@@ -99,6 +105,7 @@ namespace Plang.Compiler.TypeChecker
             contra = null;
             properties = null;
             equiv = null;
+            negation = null;
             return false;
         }
 

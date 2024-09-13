@@ -479,7 +479,7 @@ namespace Plang.Compiler
             {
                 foreach (var s2 in q)
                 {
-                    if (codegen.Contradicting(s1, s2))
+                    if (codegen.Negating(s1, s2))
                     {
                         // if (p.Except([s1]).ToHashSet().SetEquals(q.Except([s2])))
                         // {
@@ -500,8 +500,7 @@ namespace Plang.Compiler
             var h = Executed[k][i];
             var p = P[k][i];
             var q = Q[k][i];
-            // var filters = string.Join(" ∨ ", q.Select(s => string.Join(" ∧ ", s)));
-            return string.Join("\n", q.Select(qi => h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", qi))));
+            return string.Join(" && ", q.Select(qi => h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", qi))));
         }
 
         private static void ShowAll()
@@ -593,7 +592,7 @@ namespace Plang.Compiler
             {
                 if (p.Count > 1 || q.Count > 1)
                 {
-                    throw new Exception($"No existential quantifier but got disjunctions");
+                    throw new Exception($"No existential quantifier but got multiple filters");
                 }
                 // merge two filters
                 foreach (var pi in p)
@@ -678,7 +677,7 @@ namespace Plang.Compiler
             return didSth;
         }
 
-        public static void DoChores(PInferPredicateGenerator codegen)
+        public static void DoChores(ICompilerConfiguration job, PInferPredicateGenerator codegen)
         {
             // iterate through the record and merge/discard any duplicates
             // process till fixpoint
@@ -702,6 +701,8 @@ namespace Plang.Compiler
                         }
                         if (Q[k][i].Count == 0)
                         {
+                            var rec = ShowRecordAt(k, i);
+                            job.Output.WriteWarning($"[Chores][Remove] {rec} due to empty filters");
                             removes.Add(i);
                             continue;
                         }
@@ -713,22 +714,25 @@ namespace Plang.Compiler
                             var qj = Q[k][j];
                             if (pi.SetEquals(pj))
                             {
+                                var rec = ShowRecordAt(k, j);
+                                job.Output.WriteWarning($"[Chores][Merge-Remove] {rec}; merged with {ShowRecordAt(k, i)}");
                                 MergeFilters(codegen, qi, qj, Executed[k][i].ExistentialQuantifiers > 0);
                                 removes.Add(j);
                             }
-                            // Console.WriteLine($"Check {ShowRecordAt(k, i)} <===> {ShowRecordAt(k, j)}");
                             // Forall-only rules
                             // Case 1: i ==> j; i.e. pi ==> pj && qj ==> qi
                             // keep j remove i
                             else if (pj.IsSubsetOf(pi) && SubsetOf(qi, qj))
                             {
                                 // Console.WriteLine($"Remove {i}");
+                                job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, i)} implied by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
                             }
                             // Case 2: j ==> i; keep i remove j
                             else if (pi.IsSubsetOf(pj) && SubsetOf(qj, qi))
                             {
                                 // Console.WriteLine($"Remove {j}");
+                                job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, j)} implied by {ShowRecordAt(k, i)}");
                                 removes.Add(j);
                             }
                             // Case 3: if i ==> j, then any thing holds under j also holds under i
@@ -738,10 +742,12 @@ namespace Plang.Compiler
                             // i.e. keeping the weakest guard for Q
                             else if (pj.IsSubsetOf(pi))
                             {
+                                job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, i)} that is also in {ShowRecordAt(k, j)}");
                                 didSth |= ExceptWith(qi, qj, numExists > 0);
                             }
                             else if (pi.IsSubsetOf(pj))
                             {
+                                job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, j)} that is also in {ShowRecordAt(k, i)}");
                                 didSth |= ExceptWith(qj, qi, numExists > 0);
                             }
                         }
@@ -779,7 +785,7 @@ namespace Plang.Compiler
             var quantifiers = hint.GetQuantifierHeader();
             var curr_inv = hint.GetInvariantReprHeader(string.Join(" ∧ ", p_prime), string.Join(" ∨ ", q_prime.Select(x => string.Join(" ∧ ", x))));
             // Console.WriteLine($"Curr: {curr_inv}");
-            DoChores(codegen);
+            DoChores(job, codegen);
             int numExists = hint.ExistentialQuantifiers;
             if (P.TryGetValue(quantifiers, out var prevP) && Q.TryGetValue(quantifiers, out var prevQ))
             {
@@ -867,7 +873,7 @@ namespace Plang.Compiler
             Q[quantifiers].Add(q_prime);
             Executed[quantifiers].Add(hint.Copy());
             NumExists[quantifiers] = numExists;
-            DoChores(codegen);
+            DoChores(job, codegen);
             return (p_prime, q_prime);
         }
     
@@ -939,7 +945,7 @@ namespace Plang.Compiler
             process.WaitForExit();
             // aggregate results
             var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalInvs);
-            DoChores(codegen);
+            DoChores(job, codegen);
             job.Output.WriteWarning($"Currently mined: {NumInvsMined} invariant(s)");
             job.Output.WriteWarning($"Currently recorded: {WriteRecordTo("inv_running.txt")} invariant(s)");
             Console.WriteLine("Cleaning up ...");

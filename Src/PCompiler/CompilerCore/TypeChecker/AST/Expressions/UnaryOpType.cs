@@ -20,5 +20,10 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
                 default: return [];
             }
         }
+
+        public static IEnumerable<IPExpr> GetNegation(this UnaryOpExpr expr)
+        {
+            return GetContradictions(expr);
+        }
     }
 }

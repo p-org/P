@@ -69,6 +69,28 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
                     return [];
             }
         }
+
+        public static IEnumerable<BinOpExpr> GetNegation(this BinOpExpr expr)
+        {
+            BinOpExpr make(BinOpType op) => new(expr.SourceLocation, op, expr.Lhs, expr.Rhs);
+            switch (expr.Operation)
+            {
+                case BinOpType.Lt:
+                    return [make(BinOpType.Ge)];
+                case BinOpType.Gt:
+                    return [make(BinOpType.Le)];
+                case BinOpType.Eq:
+                    return [make(BinOpType.Neq)];
+                case BinOpType.Le:
+                    return [make(BinOpType.Gt)];
+                case BinOpType.Ge:
+                    return [make(BinOpType.Lt)];
+                case BinOpType.Neq:
+                    return [make(BinOpType.Eq)];
+                default:
+                    return [];
+            }
+        }
     }
 
     public static class BinOpExtensions
@@ -106,6 +128,11 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
                 default:
                     throw new NotImplementedException(op.ToString());
             }
+        }
+
+        public static IEnumerable<IPExpr> GetNegation(this BinOpType op, IPExpr lhs, IPExpr rhs)
+        {
+            return new BinOpExpr(null, op, lhs, rhs).GetNegation();
         }
 
         public static IEnumerable<IPExpr> GetContradictions(this BinOpType op, IPExpr lhs, IPExpr rhs)

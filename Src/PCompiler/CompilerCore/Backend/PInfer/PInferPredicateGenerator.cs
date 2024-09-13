@@ -37,9 +37,11 @@ namespace Plang.Compiler.Backend.PInfer
             PredicateBoundedTerm = new Dictionary<IPExpr, HashSet<int>>(Comparer);
             PredicateOrder = new Dictionary<IPExpr, int>(Comparer);
             Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(Comparer);
+            Negations = new Dictionary<IPExpr, HashSet<IPExpr>>(Comparer);
             CC = new();
             // should not cleared by reset, holds globally
             ReprToContradictions = [];
+            ReprToNegations = [];
         }
 
         public void WithHint(Hint h)
@@ -92,6 +94,7 @@ namespace Plang.Compiler.Backend.PInfer
             PredicateBoundedTerm.Clear();
             PredicateOrder.Clear();
             Contradictions.Clear();
+            Negations.Clear();
             ReprToTerms.Clear();
             ReprToPredicates.Clear();
             CC.Reset();
@@ -445,6 +448,24 @@ namespace Plang.Compiler.Backend.PInfer
                     conReprs = [];
                     ReprToContradictions[repr] = conReprs;
                 }
+                if (!ReprToNegations.TryGetValue(repr, out var negReprs))
+                {
+                    negReprs = [];
+                    ReprToNegations[repr] = negReprs;
+                }
+                if (Negations.TryGetValue(canonical, out var negations))
+                {
+                    var negs = negations
+                            .Select(x => {
+                                var r = CC.Canonicalize(x);
+                                if (r == null) return x;
+                                else return r;
+                            }).ToList();
+                    foreach (var n in negs)
+                    {
+                        negReprs.Add(SimplifiedRepr(codegen, n));
+                    }
+                }
                 if (Contradictions.TryGetValue(canonical, out var contradictions))
                 {
                     var cons = contradictions
@@ -584,6 +605,11 @@ namespace Plang.Compiler.Backend.PInfer
                     if (con == null) continue;
                     AddContradictingPredicates(expr, con);
                 }
+                foreach (IPExpr neg in FunctionStore.MakeNegations(pred.Function, (_, xs) => PredicateCallExpr.MkPredicateCall(pred, xs, out var neg) ? neg : null, [.. parameters]))
+                {
+                    if (neg == null) continue;
+                    AddNegationPredicates(expr, neg);
+                }
             }
         }
 
@@ -693,6 +719,20 @@ namespace Plang.Compiler.Backend.PInfer
             // a compound data type
             // Note: an event can carry only a primitive type (e.g. transaction id)
             return expr is VariableAccessExpr v && v.Variable is PEventVariable pv && pv.Type.Canonicalize() is not PrimitiveType;
+        }
+
+        private void AddNegationPredicates(IPExpr e1, IPExpr e2)
+        {
+            if (!Negations.ContainsKey(e1))
+            {
+                Negations[e1] = new(Comparer);
+            }
+            if (!Negations.ContainsKey(e2))
+            {
+                Negations[e2] = new(Comparer);
+            }
+            Negations[e1].Add(e2);
+            Negations[e2].Add(e1);
         }
 
         private void AddContradictingPredicates(IPExpr e1, IPExpr e2)
@@ -974,10 +1014,28 @@ namespace Plang.Compiler.Backend.PInfer
             return cons;
         }
 
+        public HashSet<string> GetNegationByRepr(string repr)
+        {
+            if (!ReprToNegations.TryGetValue(repr, out var cons))
+            {
+                cons = [];
+                ReprToNegations[repr] = cons;
+            }
+            return cons;
+        }
+
         public void MarkReprContradictions(string r1, string r2)
         {
             var r1cons = GetContradictionsByRepr(r1);
             var r2cons = GetContradictionsByRepr(r2);
+            r1cons.Add(r2);
+            r2cons.Add(r1);
+        }
+
+        public void MarkReprNegations(string r1, string r2)
+        {
+            var r1cons = GetNegationByRepr(r1);
+            var r2cons = GetNegationByRepr(r2);
             r1cons.Add(r2);
             r2cons.Add(r1);
         }
@@ -992,6 +1050,10 @@ namespace Plang.Compiler.Backend.PInfer
                     foreach (var cons in binOpExpr.GetContradictions())
                     {
                         MarkReprContradictions(repr, SimplifiedRepr(Codegen, cons));
+                    }
+                    foreach (var neg in binOpExpr.GetNegation())
+                    {
+                        MarkReprNegations(repr, SimplifiedRepr(Codegen, neg));
                     }
                     break;
                 }
@@ -1117,6 +1179,15 @@ namespace Plang.Compiler.Backend.PInfer
             return c1.Contains(q) || c2.Contains(p);
         }
 
+        public bool Negating(string p, string q)
+        {
+            if (!ReprToNegations.TryGetValue(p, out HashSet<string> c1) || !ReprToNegations.TryGetValue(q, out HashSet<string> c2))
+            {
+                return false;
+            }
+            return c1.Contains(q) || c2.Contains(p);
+        }
+
         private List<Dictionary<PLanguageType, HashSet<IPExpr>>> Terms { get; }
         private HashSet<IPExpr> Predicates { get; }
         private HashSet<IPExpr> VisitedSet { get; }
@@ -1127,7 +1198,9 @@ namespace Plang.Compiler.Backend.PInfer
         private Dictionary<string, IPExpr> ReprToTerms { get; }
         private Dictionary<string, IPExpr> ReprToPredicates { get; }
         private Dictionary<string, HashSet<string>> ReprToContradictions { get; }
+        private Dictionary<string, HashSet<string>> ReprToNegations { get; }
         private Dictionary<IPExpr, HashSet<IPExpr>> Contradictions { get; }
+        private Dictionary<IPExpr, HashSet<IPExpr>> Negations { get; }
         private Dictionary<IPExpr, HashSet<int>> PredicateBoundedTerm { get; }
         private JavaCodegen DebugCodegen { get; set; }
         private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {

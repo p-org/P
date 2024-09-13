@@ -492,6 +492,10 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 pred.Function.AddEquiv(equiv);
             }
+            foreach (var neg in op.GetNegation(funLhs, funRhs))
+            {
+                pred.Function.AddNegation(neg);
+            }
             foreach (var prop in op.GetProperties())
             {
                 pred.Function.Property |= prop;
@@ -596,6 +600,21 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (IPExpr con in f.Contradictions)
             {
                 result.Add(Subst(con, delta));
+            }
+            return result;
+        }
+
+        public static List<IPExpr> MakeNegations(Function f, Func<Function, IPExpr[], IPExpr> make, params IPExpr[] parameters)
+        {
+            List<IPExpr> result = [];
+            Dictionary<Variable, IPExpr> delta = [];
+            foreach (var (x, y) in f.Signature.Parameters.Zip(parameters))
+            {
+                delta[x] = y;
+            }
+            foreach (IPExpr neg in f.Negation)
+            {
+                result.Add(Subst(neg, delta));
             }
             return result;
         }

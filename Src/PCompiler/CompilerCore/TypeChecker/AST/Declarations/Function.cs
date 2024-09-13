@@ -43,6 +43,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         private readonly HashSet<State> gotoStates = [];
         private readonly List<IPExpr> equivalences = [];
         private readonly List<IPExpr> contradictions = [];
+        private readonly List<IPExpr> negation = [];
         private readonly List<IPExpr> impliedBy = [];
 
         public Function(string name, ParserRuleContext sourceNode)
@@ -70,6 +71,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public FunctionProperty Property { get; set; }
         public IEnumerable<IPExpr> Equivalences => equivalences;
         public IEnumerable<IPExpr> Contradictions => contradictions;
+        public IEnumerable<IPExpr> Negation => negation;
         public IEnumerable<IPExpr> ImpliedBy => impliedBy;
 
         public CompoundStmt Body { get; set; }
@@ -86,6 +88,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public void AddContradiction(IPExpr e)
         {
             contradictions.Add(e);
+        }
+
+        public void AddNegation(IPExpr e)
+        {
+            negation.Add(e);
         }
 
         public void AddImpliedBy(IPExpr e)

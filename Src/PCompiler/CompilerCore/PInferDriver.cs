@@ -708,6 +708,13 @@ namespace Plang.Compiler
                         }
                         var pi = P[k][i];
                         var qi = Q[k][i];
+                        if (SubsetOf(qi, [pi]))
+                        {
+                            var rec = ShowRecordAt(k, i);
+                            job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
+                            removes.Add(i);
+                            continue;
+                        }
                         for (int j = i + 1; j < P[k].Count; ++j)
                         {
                             var pj = P[k][j];
@@ -742,13 +749,19 @@ namespace Plang.Compiler
                             // i.e. keeping the weakest guard for Q
                             else if (pj.IsSubsetOf(pi))
                             {
-                                job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, i)} that is also in {ShowRecordAt(k, j)}");
-                                didSth |= ExceptWith(qi, qj, numExists > 0);
+                                if (ExceptWith(qi, qj, numExists > 0))
+                                {
+                                    job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, i)} that is also in {ShowRecordAt(k, j)}");
+                                    didSth = true;
+                                }
                             }
                             else if (pi.IsSubsetOf(pj))
                             {
-                                job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, j)} that is also in {ShowRecordAt(k, i)}");
-                                didSth |= ExceptWith(qj, qi, numExists > 0);
+                                if (ExceptWith(qj, qi, numExists > 0))
+                                {
+                                    job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, j)} that is also in {ShowRecordAt(k, i)}");
+                                    didSth = true;
+                                }
                             }
                         }
                     }

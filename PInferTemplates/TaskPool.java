@@ -33,13 +33,9 @@ public class TaskPool {
         this.verbose = verbose;
         File outputsParent = new File("PInferOutputs");
         File pinferOutputFileDir = new File(String.valueOf(Paths.get(outputsParent.toString(), "SpecMining")));
-        if (pinferOutputFileDir.isDirectory()) {
-            var dirContents = outputsParent.list();
-            int numDirs = dirContents == null ? 0 : dirContents.length;
-            var targetPath = Paths.get(outputsParent.toString(), "SpecMining" + numDirs);
-            Files.move(Paths.get(pinferOutputFileDir.getPath()), targetPath);
+        if (!pinferOutputFileDir.isDirectory()) {
+            pinferOutputFileDir.mkdirs();
         }
-        pinferOutputFileDir.mkdirs();
         File pinferOutputFile = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), filename)));
         File pinferParsable = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "%PARSEFILE%")));
         assert pinferOutputFile.createNewFile() : "Failed to create invariant output file " + pinferOutputFile;

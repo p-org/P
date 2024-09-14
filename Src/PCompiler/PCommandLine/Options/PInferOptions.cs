@@ -53,6 +53,7 @@ namespace Plang.Options
             // book keeping
             var pInferGroup = Parser.GetOrCreateGroup("pinfer", "Options for PInfer");
             pInferGroup.IsHidden = true;
+            pInferGroup.AddArgument("hints-only", "hints-only", "Only run existing hints", typeof(bool)).IsHidden = true;
             pInferGroup.AddArgument("max-term-depth", "td", "Max depth of terms in the predicates").IsHidden = true;
             pInferGroup.AddArgument("max-guards-predicates", "max-guards", "Max. number of atomic predicates in guards").IsHidden = true;
             pInferGroup.AddArgument("max-filters-predicates", "max-filters", "Max. number of atomic predicates in filters").IsHidden = true;

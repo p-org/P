@@ -41,8 +41,8 @@ public class TaskPool {
         assert pinferOutputFile.createNewFile() : "Failed to create invariant output file " + pinferOutputFile;
         assert pinferParsable.createNewFile() : "Failed to create pinfer parsable file " + "%PARSEFILE%";
         this.outputFile = pinferOutputFile;
-        this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile, true));
-        this.pinferParsableStream = new BufferedOutputStream(new FileOutputStream(pinferParsable, true));
+        this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile));
+        this.pinferParsableStream = new BufferedOutputStream(new FileOutputStream(pinferParsable));
         if (!DaikonTracesDir.exists()) {
             DaikonTracesDir.mkdirs();
         }

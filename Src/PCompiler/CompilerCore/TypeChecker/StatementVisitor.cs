@@ -626,6 +626,7 @@ namespace Plang.Compiler.TypeChecker
                     }
 
                     cases.Add(pEvent, recvHandler);
+                    recvHandler.AddRecv(pEvent);
                 }
             }
 

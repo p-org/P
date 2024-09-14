@@ -90,6 +90,7 @@ namespace Plang.Compiler
         public int MaxFilters { get; set; }
         public PInferAction PInferAction { get; set; }
         public string HintName { get; set; }
+        public bool HintsOnly { get; set; }
         public string ConfigEvent { get; set; }
         public string TraceFolder { get; set; }
         public bool Verbose { get; set; }
@@ -110,6 +111,7 @@ namespace Plang.Compiler
             OutputLanguages = parsedConfig.OutputLanguages;
             ProjectRootPath = parsedConfig.ProjectRootPath;
             Debug = parsedConfig.Debug;
+            HintsOnly = false;
         }
     }
 }

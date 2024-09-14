@@ -30,6 +30,7 @@ namespace Plang.Compiler
         public int MaxGuards { get; set; }
         public int MaxFilters { get; set; }
         string HintName { get; }
+        bool HintsOnly { get; set; }
         PInferAction PInferAction { get; }
         public int PInferPruningLevel { get; }
         public string ConfigEvent { get; }

@@ -55,6 +55,7 @@ namespace Plang.Compiler
             Job.Output.WriteInfo($"Compiling generated code...");
             try
             {
+                // hint.ShowHint();
                 Codegen.Compile(Job);
                 return true;
             }
@@ -160,6 +161,21 @@ namespace Plang.Compiler
         public void ExploreFunction(HashSet<Hint> tasks, State s, Function f, PEvent trigger = null)
         {
             if (f == null) return;
+            // Look at recv inside function
+            foreach (var e1 in f.SendSet)
+            {
+                foreach (var recv in f.RecvSet)
+                {
+                    AddHint($"{s.OwningMachine}_{s.Name}_sent_{e1.Name}_block_on_recv_{recv.Name}", tasks, e1, recv);
+                }
+            }
+            if (trigger != null)
+            {
+                foreach (var recv in f.RecvSet)
+                {
+                    AddHint($"{s.OwningMachine}_{s.Name}_blocked_on_{recv.Name}_triggered_by_{trigger.Name}", tasks, recv, trigger);
+                }
+            }
             // looking at next state
             // if the current handler sent an event and can move to some other states
             // then there might be some relationships between the send event and
@@ -181,7 +197,11 @@ namespace Plang.Compiler
                 {
                     foreach (var sendNext in nextState.Entry.SendSet)
                     {
-                        AddHint($"{s.OwningMachine.Name}_{nextState.Name}_recved_{trigger.Name}_send_{sendNext.Name}", tasks, sendNext, trigger);
+                        AddHint($"{s.OwningMachine.Name}_{s.Name}_on_{trigger.Name}_goto_{nextState.Name}_send_{sendNext.Name}_on_entry", tasks, sendNext, trigger);
+                    }
+                    foreach (var recvNext in nextState.Entry.RecvSet)
+                    {
+                        AddHint($"{s.OwningMachine.Name}_{s.Name}_on_{trigger.Name}_goto_{nextState.Name}_recv_{recvNext.Name}_on_entry", tasks, recvNext, trigger);
                     }
                 }
             }
@@ -221,12 +241,36 @@ namespace Plang.Compiler
                         }
                         ExploreFunction(tasks, s, action.Target, trigger: @event);
                     }
+                    else if (handler is EventGotoState gotoAction)
+                    {
+                        var nextState = gotoAction.Target;
+                        var trigger = gotoAction.Trigger;
+                        // look at entry of next state
+                        if (nextState.Entry != null)
+                        {
+                            // if there is recv, only look at recv
+                            if (nextState.Entry.RecvSet.Any())
+                            {
+                                foreach (var recv in nextState.Entry.RecvSet)
+                                {
+                                    AddHint($"{s.OwningMachine.Name}_{s.Name}_on_{trigger.Name}_goto_{nextState.Name}_recv_{recv.Name}_on_entry", tasks, recv, trigger);
+                                }
+                            }
+                            else
+                            {
+                                foreach (var send in nextState.Entry.SendSet)
+                                {
+                                    AddHint($"{s.OwningMachine.Name}_{s.Name}_on_{trigger.Name}_goto_{nextState.Name}_send_{send.Name}_on_entry", tasks, send, trigger);
+                                }
+                            }
+                        }
+                    }
                 }
             }
             return tasks;
         }
 
-        public void AutoExplore()
+        public void AutoExplore(bool hintsOnly)
         {
             List<Machine> machines = GlobalScope.Machines.Where(x => !x.IsSpec).ToList();
             // explore single-machine state
@@ -235,6 +279,10 @@ namespace Plang.Compiler
             {
                 Job.Output.WriteWarning($"Running user-defined hint: {hint.Name}");
                 ParameterSearch(hint);
+            }
+            if (hintsOnly)
+            {
+                return;
             }
             foreach (var m in machines)
             {
@@ -317,7 +365,7 @@ namespace Plang.Compiler
                 case PInferAction.Auto:
                 {
                     job.Output.WriteInfo("PInfer - Auto Exploration");
-                    driver.AutoExplore();
+                    driver.AutoExplore(job.HintsOnly);
                     numInvsDistilled = driver.numDistilledInvs;
                     numInvsMined = driver.numTotalInvs;
                     break;
@@ -350,6 +398,7 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, List<List<HashSet<string>>>> Q = [];
         internal static readonly Dictionary<string, List<Hint>> Executed = [];
         internal static readonly Dictionary<string, int> NumExists = [];
+        internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
         internal static HashSet<string> Learned = [];
         internal static int NumInvsMined = 0;
 
@@ -481,12 +530,12 @@ namespace Plang.Compiler
                 {
                     if (codegen.Negating(s1, s2))
                     {
-                        // if (p.Except([s1]).ToHashSet().SetEquals(q.Except([s2])))
-                        // {
-                        removal.Add(s1);
-                        removal.Add(s2);
-                        didSth = true;
-                        // }
+                        if (p.Except([s1]).ToHashSet().SetEquals(q.Except([s2])))
+                        {
+                            removal.Add(s1);
+                            removal.Add(s2);
+                            didSth = true;
+                        }
                     }
                 }
             }
@@ -576,12 +625,6 @@ namespace Plang.Compiler
                 var qs = q.Where(qi => !ImpliedByAny(qi, p));
                 foreach (var qi in qs)
                 {
-                    // Check intersection and resolution
-                    for (int i = 0; i < p.Count; ++i)
-                    {
-                        var pi = p[i];
-                        Resolution(codegen, pi, qi);
-                    }
                     if (qi.Count > 0 && !ImpliedByAny(qi, p))
                     {
                         p.Add(qi);
@@ -614,6 +657,7 @@ namespace Plang.Compiler
             foreach (var k in Q.Keys)
             {
                 int kExists = NumExists[k];
+                var quantifiedEvents = Quantified[k];
                 for (int i = 0; i < Q[k].Count; ++i)
                 {
                     var qs = Q[k][i];
@@ -623,6 +667,7 @@ namespace Plang.Compiler
                     // we remove P from forall*exists* in this case
                     foreach (var k1 in P.Keys)
                     {
+                        if (!quantifiedEvents.SequenceEqual(Quantified[k1])) continue;
                         int k1Exists = NumExists[k1];
                         if (k1Exists < kExists)
                         {
@@ -800,6 +845,7 @@ namespace Plang.Compiler
             // Console.WriteLine($"Curr: {curr_inv}");
             DoChores(job, codegen);
             int numExists = hint.ExistentialQuantifiers;
+            List<PEvent> quantifiedEvents = hint.Quantified.Select(x => x.EventDecl).ToList();
             if (P.TryGetValue(quantifiers, out var prevP) && Q.TryGetValue(quantifiers, out var prevQ))
             {
                 // first, resolution
@@ -886,6 +932,7 @@ namespace Plang.Compiler
             Q[quantifiers].Add(q_prime);
             Executed[quantifiers].Add(hint.Copy());
             NumExists[quantifiers] = numExists;
+            Quantified[quantifiers] = quantifiedEvents;
             DoChores(job, codegen);
             return (p_prime, q_prime);
         }
@@ -959,6 +1006,7 @@ namespace Plang.Compiler
             // aggregate results
             var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalInvs);
             DoChores(job, codegen);
+            ShowAll();
             job.Output.WriteWarning($"Currently mined: {NumInvsMined} invariant(s)");
             job.Output.WriteWarning($"Currently recorded: {WriteRecordTo("inv_running.txt")} invariant(s)");
             Console.WriteLine("Cleaning up ...");

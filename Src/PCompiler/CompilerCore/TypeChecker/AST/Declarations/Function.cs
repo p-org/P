@@ -40,6 +40,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
         private readonly HashSet<PEvent> sendsSet = [];
+        private readonly HashSet<PEvent> recvSet = [];
         private readonly HashSet<State> gotoStates = [];
         private readonly List<IPExpr> equivalences = [];
         private readonly List<IPExpr> contradictions = [];
@@ -119,10 +120,17 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 if (caller.CanSend != true) caller.CanSend = true;
                 caller.AddSends(e);
             }
-            if (ParentFunction != null)
+            ParentFunction?.AddSends(e);
+        }
+
+        public void AddRecv(PEvent e)
+        {
+            recvSet.Add(e);
+            foreach (var caller in Callers)
             {
-                ParentFunction.AddSends(e);
+                caller.AddRecv(e);
             }
+            ParentFunction?.AddRecv(e);
         }
 
         public void AddGoto(State s)
@@ -169,6 +177,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool? CanSend { get; set; }
         public IEnumerable<PEvent> SendSet => sendsSet;
+        public IEnumerable<PEvent> RecvSet => recvSet;
         public IEnumerable<State> NextStates => gotoStates;
 
         public bool? CanCreate { get; set; }

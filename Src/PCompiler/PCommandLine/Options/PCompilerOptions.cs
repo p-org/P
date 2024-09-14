@@ -48,6 +48,7 @@ namespace Plang.Options
                 pInferGroup.AddArgument("pruning-level", "pl", "Pruning level for SpecMiner post-processing (default: 3)", typeof(int)).IsRequired = false;
                 pInferGroup.AddArgument("config-event", "ce", "Name of the event that announce the system setup. This will replace all hints that do not have config event specified");
                 pInferGroup.AddArgument("traces", "t", "Folder that contains aggregated trace files and metadata.json");
+                pInferGroup.AddArgument("hints-only", "hints-only", "Only run existing hints", typeof(bool));
                 // book-keeping, not used
                 pInferGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto)").IsHidden = true;
             }
@@ -224,6 +225,9 @@ namespace Plang.Options
                     break;
                 case "hint":
                     compilerConfiguration.HintName = (string)option.Value;
+                    break;
+                case "hints-only":
+                    compilerConfiguration.HintsOnly = true;
                     break;
                 case "verbose":
                     compilerConfiguration.Verbose = true;

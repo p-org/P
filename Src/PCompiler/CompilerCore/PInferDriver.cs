@@ -86,7 +86,7 @@ namespace Plang.Compiler
             Console.WriteLine("===============Running================");
             hint.ShowHint();
             numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, out int total);
-            numTotalInvs += total;
+            numTotalInvs = PInferInvoke.Recorded.Count;
             Console.WriteLine("=================Done=================");
         }
 
@@ -400,6 +400,7 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
         internal static HashSet<string> Learned = [];
+        internal static HashSet<string> Recorded = [];
         internal static int NumInvsMined = 0;
 
         public static void NewInvFiles()
@@ -490,13 +491,14 @@ namespace Plang.Compiler
                 File.Create(StepbackInvFile).Close();
             }
             var header = codegen.hint.GetInvariantReprHeader(guards, filters);
-            Learned.Clear();
+            // Learned.Clear();
             if (keep.Count > 0 || filters.Length > 0)
             {
                 using StreamWriter invw = File.AppendText(DistilledInvFile);
                 var kept = string.Join(" ∧ ", keep);
                 if (filters.Length > 0 && kept.Length > 0) header += " ∧ ";
                 var inv = header + kept;
+                Recorded.Add(inv);
                 if (!Learned.Contains(inv))
                 {
                     invw.WriteLine(inv);
@@ -510,6 +512,7 @@ namespace Plang.Compiler
                 var stepbacked = string.Join(" ∧ ", stepback);
                 if (filters.Length > 0 && stepbacked.Length > 0) header += " ∧ ";
                 var inv = header + stepbacked;
+                Recorded.Add(inv);
                 if (!Learned.Contains(inv))
                 {
                     invw.WriteLine(inv);
@@ -625,7 +628,7 @@ namespace Plang.Compiler
                 var qs = q.Where(qi => !ImpliedByAny(qi, p));
                 foreach (var qi in qs)
                 {
-                    if (qi.Count > 0 && !ImpliedByAny(qi, p))
+                    if (qi.Count > 0)
                     {
                         p.Add(qi);
                     }
@@ -665,6 +668,7 @@ namespace Plang.Compiler
                     // e.g. if forall* P holds
                     // then forall*exists* P is trivially true
                     // we remove P from forall*exists* in this case
+                    HashSet<int> removal = [];
                     foreach (var k1 in P.Keys)
                     {
                         if (!quantifiedEvents.SequenceEqual(Quantified[k1])) continue;
@@ -675,48 +679,22 @@ namespace Plang.Compiler
                             {
                                 foreach (var q_prime in Q[k1][j])
                                 {
-                                    foreach (var qi in qs)
+                                    foreach (var (qi, idx) in qs.Select((x, i) => (x, i)))
                                     {
-                                        if (qi.Intersect(q_prime).Any())
+                                        if (qi.SetEquals(q_prime))
                                         {
-                                            // Console.WriteLine($"remove {string.Join(" ", qi)} using {string.Join(" ", q_prime)}");
-                                            didSth = true;
-                                        }
-                                        qi.ExceptWith(q_prime);
+                                            removal.Add(idx);
+                                        }   
                                     }
                                 }
                             }
                         }
                     }
-                }
-                for (int i = 0; i < Q[k].Count; ++i)
-                {
-                    var qi = Q[k][i];
-                    HashSet<int> removal = [];
-                    List<HashSet<string>> extract = [];
-                    // remove subset and extract duplicates
-                    for (int j = 0; j < qi.Count; ++j)
+                    foreach (var j in removal.OrderByDescending(x => x))
                     {
-                        if (removal.Contains(j)) continue;
-                        var qij = qi[j];
-                        for (int l = j + 1; l < qi.Count; ++l)
-                        {
-                            var qil = qi[l];
-                            if (qij.IsSubsetOf(qil))
-                            {
-                                removal.Add(j);
-                            }
-                            else if (qil.IsSubsetOf(qij))
-                            {
-                                removal.Add(l);
-                            }
-                        }
+                        qs.RemoveAt(j);
                     }
                     didSth |= removal.Count > 0;
-                    foreach (var pos in removal.OrderByDescending(x => x))
-                    {
-                        Q[k][i].RemoveAt(pos);
-                    }
                 }
             }
             return didSth;
@@ -1006,8 +984,8 @@ namespace Plang.Compiler
             // aggregate results
             var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalInvs);
             DoChores(job, codegen);
-            ShowAll();
-            job.Output.WriteWarning($"Currently mined: {NumInvsMined} invariant(s)");
+            // ShowAll();
+            job.Output.WriteWarning($"Currently mined: {Recorded.Count} invariant(s)");
             job.Output.WriteWarning($"Currently recorded: {WriteRecordTo("inv_running.txt")} invariant(s)");
             Console.WriteLine("Cleaning up ...");
             var dirInfo = new DirectoryInfo("./");

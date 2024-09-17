@@ -163,7 +163,7 @@ namespace Plang.Compiler.Backend.PInfer
                     }
                     throw new DropException($"_num_e_exists_ compared with non-size type: {ctx.GetText()}");
                 }
-                return expr;
+                // return expr;
             }
             // let constants go
             if ((rhs is IntLiteralExpr || rhs is FloatLiteralExpr) && binOp.GetKind() == BinOpKind.Comparison)
@@ -289,6 +289,11 @@ namespace Plang.Compiler.Backend.PInfer
                 if (args.Count() != 1)
                 {
                     throw new DropException($"size expr receives {args.Count()} arguments: {ctx.GetText()}");
+                }
+                var canonicalRep = args[0].Type.Canonicalize();
+                if (canonicalRep is not SequenceType && canonicalRep is not MapType && canonicalRep is not SetType)
+                {
+                    throw new DropException($"argument of size expr, {ctx.rvalueList().GetText()} is not a collection type");
                 }
                 return new SizeofExpr(ctx, args[0]);
             }

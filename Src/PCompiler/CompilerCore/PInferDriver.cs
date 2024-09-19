@@ -395,7 +395,9 @@ namespace Plang.Compiler
         // map from quantifier headers to guards
         internal static readonly Dictionary<string, List<HashSet<string>>> P = [];
         // map from quantifier headers to filters
-        internal static readonly Dictionary<string, List<List<HashSet<string>>>> Q = [];
+        internal static readonly Dictionary<string, List<HashSet<string>>> Q = [];
+        internal static readonly Dictionary<string, Dictionary<string, IPExpr>> ParsedP = [];
+        internal static readonly Dictionary<string, Dictionary<string, IPExpr>> ParsedQ = [];
         internal static readonly Dictionary<string, List<Hint>> Executed = [];
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
@@ -419,7 +421,7 @@ namespace Plang.Compiler
             }
         }
 
-        public static IEnumerable<(int, int, Hint, HashSet<string>, List<HashSet<string>>)> AllExecuedAndMined()
+        public static IEnumerable<(int, int, Hint, HashSet<string>, HashSet<string>)> AllExecuedAndMined()
         {
             foreach (var k in P.Keys)
             {
@@ -440,22 +442,18 @@ namespace Plang.Compiler
                 if (q.Count == 0) continue;
                 var ps = string.Join(" ∧ ", p);
                 monitorCount[h.Name] = monitorCount.TryGetValue(h.Name, out var cnt) ? cnt + 1 : 1;
-                foreach (var f in q)
+                var prop = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", q));
+                CompiledFile monitorFile = new($"{h.Name}_{monitorCount[h.Name]}.p", Path.Combine(transform.context.Job.OutputDirectory.ToString(), "PInferSpecs"));
+                try
                 {
-                    if (f.Count == 0) continue;
-                    var prop = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", f));
-                    CompiledFile monitorFile = new($"{h.Name}_{monitorCount[h.Name]}.p", Path.Combine(transform.context.Job.OutputDirectory.ToString(), "PInferSpecs"));
-                    try
-                    {
-                        transform.WithFile(monitorFile);
-                        transform.WriteSpecMonitor(c++, codegen, transform.context, transform.context.Job, globalScope, h, p, f, prop, monitorFile);
-                        transform.context.Job.Output.WriteFile(monitorFile);
-                    }
-                    catch (Exception e)
-                    {
-                        transform.context.Job.Output.WriteError($"Error writing monitor for {h.Name}:\nInvariant: {prop}\n{e.Message}\n{e.StackTrace}");
-                        continue;
-                    }
+                    transform.WithFile(monitorFile);
+                    transform.WriteSpecMonitor(c++, codegen, transform.context, transform.context.Job, globalScope, h, p, q, prop, monitorFile);
+                    transform.context.Job.Output.WriteFile(monitorFile);
+                }
+                catch (Exception e)
+                {
+                    transform.context.Job.Output.WriteError($"Error writing monitor for {h.Name}:\nInvariant: {prop}\n{e.Message}\n{e.StackTrace}");
+                    continue;
                 }
             }
         }
@@ -468,14 +466,10 @@ namespace Plang.Compiler
             {
                 if (q.Count == 0) continue;
                 var ps = string.Join(" ∧ ", p);
-                foreach (var f in q)
-                {
-                    if (f.Count == 0) continue;
-                    var rec = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", f));
-                    if (written.Contains(rec)) continue;
-                    written.Add(rec);
-                    invwrite.WriteLine(rec);
-                }
+                var rec = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", q));
+                if (written.Contains(rec)) continue;
+                written.Add(rec);
+                invwrite.WriteLine(rec);
             }
             return written.Count;
         }
@@ -555,6 +549,13 @@ namespace Plang.Compiler
             return string.Join(" && ", q.Select(qi => h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", qi))));
         }
 
+        private static void RemoveRecordAt(string k, int i)
+        {
+            Executed[k].RemoveAt(i);
+            P[k].RemoveAt(i);
+            Q[k].RemoveAt(i);
+        }
+
         private static void ShowAll()
         {
             foreach (var k in P.Keys)
@@ -562,94 +563,6 @@ namespace Plang.Compiler
                 for (int i = 0; i < P[k].Count; ++i)
                 {
                     Console.WriteLine(ShowRecordAt(k, i));
-                }
-            }
-        }
-
-        public static bool ImpliedByAny(HashSet<string> p, List<HashSet<string>> q)
-        {
-            foreach (var qi in q)
-            {
-                if (p.IsSubsetOf(qi)) return true;
-            }
-            return false;
-        }
-
-        public static bool SubsetOf(List<HashSet<string>> p, List<HashSet<string>> q)
-        {
-            return p.All(pi => ImpliedByAny(pi, q));
-        }
-
-        public static bool SetEquals(List<HashSet<string>> p, List<HashSet<string>> q)
-        {
-            return SubsetOf(p, q) && SubsetOf(q, p);
-        }
-
-        public static bool ExceptWith(List<HashSet<string>> p, List<HashSet<string>> q, bool existental)
-        {
-            if (existental)
-            {
-                List<int> removal = [];
-                for (int i = 0; i < p.Count; ++i)
-                {
-                    if (ImpliedByAny(p[i], q))
-                    {
-                        removal.Add(i);
-                    }
-                }
-                foreach (var i in removal.OrderByDescending(x => x))
-                {
-                    p.RemoveAt(i);
-                }
-                return removal.Count > 0;
-            }
-            else
-            {
-                if (p.Count > 1 || q.Count > 1)
-                {
-                    throw new Exception($"No existential quantifier but got disjunctions in ExceptWith");
-                }
-                bool didSth = false;
-                if (p[0].Intersect(q[0]).Any())
-                {
-                    didSth = true;
-                }
-                p[0].ExceptWith(q[0]);
-                return didSth;
-            }
-        }
-
-        // merge q to p
-        public static void MergeFilters(PInferPredicateGenerator codegen, List<HashSet<string>> p, List<HashSet<string>> q, bool extQuantifier)
-        {
-            if (extQuantifier)
-            {
-                // first, filter out things already in p
-                var qs = q.Where(qi => !ImpliedByAny(qi, p));
-                foreach (var qi in qs)
-                {
-                    if (qi.Count > 0)
-                    {
-                        p.Add(qi);
-                    }
-                }
-            }
-            else
-            {
-                if (p.Count > 1 || q.Count > 1)
-                {
-                    throw new Exception($"No existential quantifier but got multiple filters");
-                }
-                // merge two filters
-                foreach (var pi in p)
-                {
-                    foreach (var qi in q)
-                    {
-                        foreach (var r in qi)
-                        {
-                            pi.Add(r);
-                        }
-                    }
                 }
             }
         }
@@ -677,22 +590,16 @@ namespace Plang.Compiler
                         {
                             for (int j = 0; j < Q[k1].Count; ++j)
                             {
-                                foreach (var q_prime in Q[k1][j])
+                                if (qs.SetEquals(Q[k1][j]))
                                 {
-                                    foreach (var (qi, idx) in qs.Select((x, i) => (x, i)))
-                                    {
-                                        if (qi.SetEquals(q_prime))
-                                        {
-                                            removal.Add(idx);
-                                        }   
-                                    }
-                                }
+                                    removal.Add(i);
+                                }   
                             }
                         }
                     }
                     foreach (var j in removal.OrderByDescending(x => x))
                     {
-                        qs.RemoveAt(j);
+                        RemoveRecordAt(k, j);
                     }
                     didSth |= removal.Count > 0;
                 }
@@ -714,24 +621,14 @@ namespace Plang.Compiler
                     HashSet<int> removes = [];
                     for (int i = 0; i < P[k].Count; ++i)
                     {
-                        // remove empty sets
-                        for (int j = Q[k][i].Count - 1; j >= 0; --j)
+                        var pi = P[k][i];
+                        var qi = Q[k][i];
+                        if (qi.Count == 0)
                         {
-                            if (Q[k][i][j].Count == 0)
-                            {
-                                Q[k][i].RemoveAt(j);
-                            }
-                        }
-                        if (Q[k][i].Count == 0)
-                        {
-                            var rec = ShowRecordAt(k, i);
-                            job.Output.WriteWarning($"[Chores][Remove] {rec} due to empty filters");
                             removes.Add(i);
                             continue;
                         }
-                        var pi = P[k][i];
-                        var qi = Q[k][i];
-                        if (SubsetOf(qi, [pi]))
+                        if (qi.IsSubsetOf(pi))
                         {
                             var rec = ShowRecordAt(k, i);
                             job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
@@ -742,24 +639,26 @@ namespace Plang.Compiler
                         {
                             var pj = P[k][j];
                             var qj = Q[k][j];
-                            if (pi.SetEquals(pj))
+                            if (pi.SetEquals(pj) && numExists == 0)
                             {
+                                // can only merge when there is
+                                // no existential quantifications
                                 var rec = ShowRecordAt(k, j);
                                 job.Output.WriteWarning($"[Chores][Merge-Remove] {rec}; merged with {ShowRecordAt(k, i)}");
-                                MergeFilters(codegen, qi, qj, Executed[k][i].ExistentialQuantifiers > 0);
+                                qi.UnionWith(qj);
                                 removes.Add(j);
                             }
                             // Forall-only rules
                             // Case 1: i ==> j; i.e. pi ==> pj && qj ==> qi
                             // keep j remove i
-                            else if (pj.IsSubsetOf(pi) && SubsetOf(qi, qj))
+                            else if (pj.IsSubsetOf(pi) && qi.IsSubsetOf(qj))
                             {
                                 // Console.WriteLine($"Remove {i}");
                                 job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, i)} implied by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
                             }
                             // Case 2: j ==> i; keep i remove j
-                            else if (pi.IsSubsetOf(pj) && SubsetOf(qj, qi))
+                            else if (pi.IsSubsetOf(pj) && qj.IsSubsetOf(qi))
                             {
                                 // Console.WriteLine($"Remove {j}");
                                 job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, j)} implied by {ShowRecordAt(k, i)}");
@@ -772,17 +671,19 @@ namespace Plang.Compiler
                             // i.e. keeping the weakest guard for Q
                             else if (pj.IsSubsetOf(pi))
                             {
-                                if (ExceptWith(qi, qj, numExists > 0))
+                                if (qi.Intersect(qj).Any() && numExists == 0)
                                 {
                                     job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, i)} that is also in {ShowRecordAt(k, j)}");
+                                    qi.ExceptWith(qj);
                                     didSth = true;
                                 }
                             }
                             else if (pi.IsSubsetOf(pj))
                             {
-                                if (ExceptWith(qj, qi, numExists > 0))
+                                if (qj.Intersect(qi).Any() && numExists == 0)
                                 {
                                     job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, j)} that is also in {ShowRecordAt(k, i)}");
+                                    qj.ExceptWith(qi);
                                     didSth = true;
                                 }
                             }
@@ -790,10 +691,7 @@ namespace Plang.Compiler
                     }
                     foreach (var idx in removes.OrderByDescending(x => x))
                     {
-                        // Console.WriteLine($"RemoveIdx {idx}");
-                        P[k].RemoveAt(idx);
-                        Q[k].RemoveAt(idx);
-                        Executed[k].RemoveAt(idx);
+                        RemoveRecordAt(k, idx);
                     }
                     didSth |= removes.Count != 0;
                 }
@@ -804,7 +702,7 @@ namespace Plang.Compiler
                     {
                         for (int j = i + 1; j < P[k].Count; ++j)
                         {
-                            if (SetEquals(Q[k][i], Q[k][j]))
+                            if (Q[k][i].SetEquals(Q[k][j]))
                             {
                                 didSth |= Resolution(codegen, P[k][i], P[k][j]);
                             }
@@ -816,101 +714,31 @@ namespace Plang.Compiler
         }
 
         // return the Ps and Qs that should be included to the log
-        public static (HashSet<string>, List<HashSet<string>>) UpdateMinedSpecs(ICompilerConfiguration job, PInferPredicateGenerator codegen, Hint hint, HashSet<string> p_prime, List<HashSet<string>> q_prime)
+        public static (HashSet<string>, HashSet<string>) UpdateMinedSpecs(ICompilerConfiguration job, PInferPredicateGenerator codegen, Hint hint, HashSet<string> p_prime, HashSet<string> q_prime, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
         {
             var quantifiers = hint.GetQuantifierHeader();
             var curr_inv = hint.GetInvariantReprHeader(string.Join(" ∧ ", p_prime), string.Join(" ∨ ", q_prime.Select(x => string.Join(" ∧ ", x))));
-            // Console.WriteLine($"Curr: {curr_inv}");
-            DoChores(job, codegen);
             int numExists = hint.ExistentialQuantifiers;
             List<PEvent> quantifiedEvents = hint.Quantified.Select(x => x.EventDecl).ToList();
-            if (P.TryGetValue(quantifiers, out var prevP) && Q.TryGetValue(quantifiers, out var prevQ))
-            {
-                // first, resolution
-                for (int i = 0; i < prevP.Count; ++i)
-                {
-                    // remove contradicting predicates in both sets if the filters are the same
-                    if (SetEquals(prevQ[i], q_prime))
-                    {
-                        Resolution(codegen, prevP[i], p_prime);
-                    }
-                }
-                for (int i = 0; i < prevP.Count; ++i)
-                {
-                    var p = prevP[i];
-                    var q = prevQ[i];
-                    if (p.IsSubsetOf(p_prime))
-                    {
-                        // stronger guards when forall-only
-                        // then only keep filters that
-                        // cannot be discovered with weaker guards
-                        ExceptWith(q_prime, q, numExists > 0);
-                    }
-                    else if (p_prime.IsSubsetOf(p))
-                    {
-                        // prefer stronger guards when there are existentals
-                        ExceptWith(q, q_prime, numExists > 0);
-                    }
-                }
-                // can all be captured by some previous invariant
-                if (q_prime.Count == 0)
-                {
-                    job.Output.WriteWarning($"[Subsumed] {curr_inv}");
-                    return ([], []);
-                }
-                // check implication
-                for (int i = 0; i < prevP.Count; ++i)
-                {
-                    var p = prevP[i];
-                    var q = prevQ[i];
-                    // a forall-only invariant is implied by some previous ones if
-                    // p_prime -> p && q -> q_prime
-                    // might have been captured by previous checks
-                    if (p.IsSubsetOf(p_prime) && SubsetOf(q_prime, q))
-                    {
-                        // the new one is subsumed by some previous invariant, so skip adding it to log
-                        job.Output.WriteWarning($"[Drop][Subsumed] {curr_inv}");
-                        return ([], []);
-                    }
-                    // same guard, then merge filters
-                    if (p.SetEquals(p_prime))
-                    {
-                        // same guard, then merge q and q_prime; skip the current one
-                        var prev = ShowRecordAt(quantifiers, i);
-                        // Console.WriteLine($"Try merge {prev} and {curr_inv}");
-                        MergeFilters(codegen, q, q_prime, hint.ExistentialQuantifiers > 0);
-                        job.Output.WriteWarning($"[Drop][Merged] {curr_inv}");
-                        return ([], []);
-                    }
-                    // same filter, keep weaker guard if comparable
-                    if (SetEquals(q, q_prime))
-                    {
-                        // same filters, then keep the weaker guard
-                        if (p.IsSubsetOf(p_prime))
-                        {
-                            // existing is weaker, so skip current one
-                            job.Output.WriteWarning($"[Drop][StrongerGuards] {curr_inv}");
-                            return ([], []);
-                        }
-                        else if (p_prime.IsSubsetOf(p))
-                        {
-                            // replace existing one
-                            job.Output.WriteWarning($"[Replaced][WeakerGuards] {curr_inv}");
-                            prevP[i] = p_prime;
-                            return ([], []);
-                        }
-                    }
-                }
-            }
             if (!P.ContainsKey(quantifiers)) P[quantifiers] = [];
             if (!Q.ContainsKey(quantifiers)) Q[quantifiers] = [];
             if (!Executed.ContainsKey(quantifiers)) Executed[quantifiers] = [];
+            if (!ParsedP.ContainsKey(quantifiers)) ParsedP[quantifiers] = [];
+            if (!ParsedQ.ContainsKey(quantifiers)) ParsedQ[quantifiers] = [];
             // add the current combination
             P[quantifiers].Add(p_prime);
             Q[quantifiers].Add(q_prime);
             Executed[quantifiers].Add(hint.Copy());
             NumExists[quantifiers] = numExists;
             Quantified[quantifiers] = quantifiedEvents;
+            foreach (var (k, v) in parsedP)
+            {
+                ParsedP[quantifiers][k] = v;
+            }
+            foreach (var (k, v) in parsedQ)
+            {
+                ParsedQ[quantifiers][k] = v;
+            }
             DoChores(job, codegen);
             return (p_prime, q_prime);
         }
@@ -936,16 +764,43 @@ namespace Plang.Compiler
                 NumInvsMined += 1;
                 List<string> keep = [];
                 List<string> stepback = [];
+                Dictionary<string, IPExpr> parsedP = [];
+                Dictionary<string, IPExpr> parsedQ = [];
                 foreach (var prop in properties)
                 {
-                    switch (codegen.CheckForPruning(job, globalScope, prop, out var repr))
+                    switch (codegen.CheckForPruning(job, globalScope, prop, out var repr, out var parsed))
                     {
-                        case PInferPredicateGenerator.PruningStatus.KEEP: keep.Add(repr); q.Add(repr); break;
+                        case PInferPredicateGenerator.PruningStatus.KEEP: keep.Add(repr); q.Add(repr); parsedQ[repr] = parsed; break;
                         case PInferPredicateGenerator.PruningStatus.STEPBACK: stepback.Add(repr); break;
                         default: break;
                     }
                 }
-                var (ps, qs) = UpdateMinedSpecs(job, codegen, hint, p, [q]);
+                if (q.Count > 0)
+                {
+                    foreach (var g in p)
+                    {
+                        if (codegen.TryParseToExpr(job, globalScope, g, out var parsed))
+                        {
+                            parsedP[g] = parsed;
+                        }
+                        else
+                        {
+                            throw new Exception($"[ERROR] Guard {g} cannot be parsed");
+                        }
+                    }
+                    foreach (var f in keep)
+                    {
+                        if (codegen.TryParseToExpr(job, globalScope, f, out var parsed))
+                        {
+                            parsedQ[f] = parsed;
+                        }
+                        else
+                        {
+                            throw new Exception($"[ERROR] Filter {f} cannot be parsed");
+                        }
+                    }
+                    UpdateMinedSpecs(job, codegen, hint, p, q, parsedP, parsedQ);
+                }
                 if (keep.Count > 0)
                 {
                     result += 1;

@@ -1088,8 +1088,50 @@ namespace Plang.Compiler.Backend.PInfer
             return false;
         }
 
+        public void ParseAndCheck(ICompilerConfiguration config, Scope globalScope, string orig, out PruningStatus status, out string processed, out IPExpr expr)
+        {
+            InvExprVisitor visitor = new(config, globalScope, CC, hint.ConfigEvent, ReprToTerms);
+            if (TryParseExpr(orig, out var ctx))
+            {
+                try
+                {
+                    expr = visitor.Visit(ctx);
+                    if (!PrimitiveType.Bool.IsAssignableFrom(expr.Type))
+                    {
+                        config.Output.WriteWarning($"[Drop] {orig} does not have a boolean type");
+                        processed = "";
+                        status = PruningStatus.DROP;
+                    }
+                    UpdateMetadata(expr);
+                    processed = SimplifiedRepr(Codegen, expr);
+                    status = PruningStatus.KEEP;
+                }
+                catch (DropException drop)
+                {
+                    config.Output.WriteWarning(drop.Message);
+                    processed = "";
+                    expr = null;
+                    status = PruningStatus.DROP;
+                }
+                catch (StepbackException sb)
+                {
+                    config.Output.WriteWarning(sb.Message);
+                    processed = orig;
+                    expr = null;
+                    status = PruningStatus.STEPBACK;
+                }
+            }
+            else
+            {
+                processed = "";
+                expr = null;
+                status = PruningStatus.DROP;
+                config.Output.WriteWarning($"[Drop] Cannot parse {orig}");
+            }
+        }
+
         public PruningStatus ProcessBinOpExpr(ICompilerConfiguration config, Scope globalScope,
-                                                string orig, string lhs, string op, string rhs, out string processed)
+                                                string orig, string lhs, string op, string rhs, out string processed, out IPExpr parsed)
         {
             // check for things that may not parse
             if (op == "∈")
@@ -1103,57 +1145,31 @@ namespace Plang.Compiler.Backend.PInfer
                         if (rhsCnt == t.EnumDecl.Values.Count())
                         {
                             processed = "";
+                            parsed = null;
                             config.Output.WriteWarning($"[Drop] all enum value are covered in `{lhs} in {rhs}`");
                             return PruningStatus.DROP;
                         }
                         processed = UnfoldContainsEnum(lhs, rhs, t);
+                        TryParseToExpr(config, globalScope, processed, out parsed);
                         return PruningStatus.KEEP;
                     }
                 }
                 config.Output.WriteWarning($"[StepBack] lhs={lhs} in rhs={rhs} where rhs is a set of constants");
                 processed = $"{lhs} {op} {rhs}";
+                parsed = null;
                 return PruningStatus.STEPBACK;
             }
             // try parse and check
-            if (TryParseExpr(orig, out var ctx))
-            {
-                InvExprVisitor visitor = new(config, globalScope, CC, hint.ConfigEvent, ReprToTerms);
-                try
-                {
-                    IPExpr expr = visitor.Visit(ctx);
-                    if (!PrimitiveType.Bool.IsAssignableFrom(expr.Type))
-                    {
-                        config.Output.WriteWarning($"[Drop] {orig} does not have a boolean type");
-                        processed = "";
-                        return PruningStatus.DROP;
-                    }
-                    UpdateMetadata(expr);
-                    processed = SimplifiedRepr(Codegen, expr);
-                    return PruningStatus.KEEP;
-                }
-                catch (DropException drop)
-                {
-                    config.Output.WriteWarning(drop.Message);
-                    processed = "";
-                    return PruningStatus.DROP;
-                }
-                catch (StepbackException sb)
-                {
-                    config.Output.WriteWarning(sb.Message);
-                    processed = orig;
-                    return PruningStatus.STEPBACK;
-                }
-            }
-            processed = "";
-            config.Output.WriteWarning($"[Drop] Cannot parse {orig}");
-            return PruningStatus.DROP;
+            ParseAndCheck(config, globalScope, orig, out var status, out processed, out parsed);
+            return status;
         }
 
-        public PruningStatus CheckForPruning(ICompilerConfiguration config, Scope globalScope, string inv, out string repr)
+        public PruningStatus CheckForPruning(ICompilerConfiguration config, Scope globalScope, string inv, out string repr, out IPExpr expr)
         {
             if (ReprToPredicates.ContainsKey(inv))
             {
                 repr = inv;
+                expr = ReprToPredicates[inv];
                 return PruningStatus.KEEP;
             }
             if (TryParseBinOpExpr(inv, out var exprComp))
@@ -1161,10 +1177,11 @@ namespace Plang.Compiler.Backend.PInfer
                 var lhs = exprComp.Item1;
                 var op = exprComp.Item2;
                 var rhs = exprComp.Item3;
-                return ProcessBinOpExpr(config, globalScope, inv, lhs, op, rhs, out repr);
+                return ProcessBinOpExpr(config, globalScope, inv, lhs, op, rhs, out repr, out expr);
             }
             // drop unknown operators
             repr = "";
+            expr = null;
             config.Output.WriteWarning($"[Drop] Unknown operator in {inv}");
             return PruningStatus.DROP;
         }
@@ -1206,7 +1223,7 @@ namespace Plang.Compiler.Backend.PInfer
         private IEnumerable<IPExpr> TermsAtDepth(int depth) => (depth < Terms.Count && depth >= 0) switch {
                                                                 true => Terms[depth].Values.SelectMany(x => x),
                                                                 false => []};
-        private IEqualityComparer<IPExpr> Comparer { get; }
+        public IEqualityComparer<IPExpr> Comparer { get; }
         private IEnumerable<IPExpr> AllTerms => Terms.SelectMany(x => x.Values).SelectMany(x => x);
         private IEnumerable<IPExpr> TermsAtDepthWithType(int depth, PLanguageType type) => (from ty in Terms[depth].Keys
                                                                                                 where IsAssignableFrom(ty, type)

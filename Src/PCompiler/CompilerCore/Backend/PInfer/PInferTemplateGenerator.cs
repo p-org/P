@@ -208,11 +208,23 @@ namespace Plang.Compiler.Backend.PInfer
             void declVar(string name, string idx) => WriteLine($"{Constants.PEventsClass}<?> {name} = trace.get({idx});");
             WriteDefAndConstructor(templateName, fullDecls, numExists != 0, generateExistsN);
             WriteLine($"public static void execute(TraceIndex indices, List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> guards, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> forallTerms, List<String> existsTerms) {{");
+            if (numExists > 0)
+            {
+                for (int i = 0; i < existsTypeDecls.Count; ++i)
+                {
+                    WriteLine($"List<List<{existsTypeDecls[i].ReferenceTypeName}>> etLst{i} = new ArrayList<>();");
+                }
+                WriteLine($"List<{Constants.PEventsClass}[]> guardsArgsLst = new ArrayList<>();");
+                WriteLine($"List<Integer> numExistsLst = new ArrayList<>();");
+            }
             if (generateExistsN)
             {
-                WritePrecheckIndexed(getEventTypeName(ConfigEvent.Name));
-                WriteLine($"for (int cfgIdx: indices.getIndices(trace, {getEventTypeName(ConfigEvent.Name)})) {{");
+                var eventTypeName = getEventTypeName(ConfigEvent.Name);
+                WriteLine($"{Constants.EventNamespaceName}.{ConfigEvent.Name} configEvent = null;");
+                WritePrecheckIndexed(eventTypeName);
+                WriteLine($"for (int cfgIdx: indices.getIndices(trace, {eventTypeName})) {{");
                 declVar("eConfig", "cfgIdx");
+                WriteLine($"configEvent = ({Constants.EventNamespaceName}.{ConfigEvent.Name}) eConfig;");
             }
             foreach (var name in QuantifiedEvents)
             {
@@ -263,34 +275,31 @@ namespace Plang.Compiler.Backend.PInfer
             // first, check whether any list is empty
             if (numForall > 0 && numExists > 0)
             {
-                WriteLine("if (numExistsComb == 0) continue;");
+                WriteLine("if (numExistsComb == 0) throw new RuntimeException();");
             }
             for (int i = 0; i < existsTermTypes.Count; ++i)
             {
-                if (numForall > 0)
-                {
-                    WriteLine($"if (et{i}.isEmpty()) continue;");
-                }
-                else
-                {
-                    WriteLine($"if (et{i}.isEmpty()) return;");
-                }
-            }
-            for (int i = 0; i < existsTermTypes.Count; ++i)
-            {
-                WriteLine($"{existsTypeDecls[i].TypeName}[] et{i}Arr = new {existsTypeDecls[i].TypeName}[et{i}.size()];");
-                WriteLine($"for (int i = 0; i < et{i}.size(); ++i) {{");
-                WriteLine($"et{i}Arr[i] = et{i}.get(i);");
-                WriteLine("}"); // copy loop
+                WriteLine($"etLst{i}.add(et{i});");
             }
             string[] configEventAccess = [];
             if (generateExistsN)
             {
-                configEventAccess = GenerateConfigEventFieldAccess("eConfig");
+                configEventAccess = GenerateConfigEventFieldAccess("configEvent");
             }
-            List<string> existsComb = numExists > 0 ? ["numExistsComb"] : [];
+            // List<string> existsComb = numExists > 0 ? ["numExistsComb"] : [];
             var forallTermsInsts = forallTypeDecls.Select((x, i) => GenerateCoersion(x.TypeName, $"{Job.ProjectName}.termOf(forallTerms.get({i}), guardsArgs)")).ToList();
-            WriteLine($"mine_{templateName}({string.Join(", ", existsComb.Concat(configEventAccess.Concat(forallTermsInsts).Concat(Enumerable.Range(0, existsTermTypes.Count).Select(i => $"et{i}Arr"))))});");
+            if (numExists == 0)
+            {
+                WriteLine($"mine_{templateName}({string.Join(", ", configEventAccess.Concat(forallTermsInsts))});");
+            }
+            else
+            {
+                if (numForall > 0)
+                {
+                    WriteLine($"guardsArgsLst.add(guardsArgs);");
+                }
+                WriteLine($"numExistsLst.add(numExistsComb);");
+            }
             WriteLine("} catch (Exception e) { if (e instanceof RuntimeException) throw (RuntimeException) e; }");
             for (int i = 0; i < numForall; ++i)
             {
@@ -299,6 +308,21 @@ namespace Plang.Compiler.Backend.PInfer
             if (generateExistsN)
             {
                 WriteLine("}"); // config event
+            }
+            if (numExists > 0)
+            {
+                WriteLine("for (int i = 0; i < numExistsLst.size(); ++i) {");
+                for (int i = 0; i < existsTermTypes.Count; ++i)
+                {
+                    WriteLine($"{existsTypeDecls[i].TypeName}[] et{i}Arr = new {existsTypeDecls[i].TypeName}[etLst{i}.get(i).size()];");
+                    WriteLine($"for (int j = 0; j < etLst{i}.get(i).size(); ++j) {{");
+                    WriteLine($"et{i}Arr[j] = etLst{i}.get(i).get(j);");
+                    WriteLine("}"); // copy loop
+                }
+                forallTermsInsts = forallTypeDecls.Select((x, i) => GenerateCoersion(x.TypeName, $"{Job.ProjectName}.termOf(forallTerms.get({i}), guardsArgsLst.get(i))")).ToList();
+                string[] existsComb = ["numExistsLst.get(i)"];
+                WriteLine($"mine_{templateName}({string.Join(", ", existsComb.Concat(configEventAccess.Concat(forallTermsInsts).Concat(Enumerable.Range(0, existsTermTypes.Count).Select(i => $"et{i}Arr"))))});");
+                WriteLine("}"); // forall args loop
             }
             WriteLine("}"); // execute
             WriteLine("}"); // class def

@@ -16,6 +16,21 @@ using Plang.PInfer;
 
 namespace Plang.Compiler
 {
+    class CompilationOutputs
+    {
+        private readonly Dictionary<HashSet<PEvent>, HashSet<string>> results = [];
+        public CompilationOutputs()
+        {
+        }
+
+        public void Add(PInferPredicateGenerator codegen)
+        {
+            if (codegen.hint == null) return;
+            HashSet<PEvent> events = codegen.hint.Quantified.Select(x => x.EventDecl).ToHashSet();
+            
+        }
+    }
+
     class PInferDriver(ICompilerConfiguration job, Scope globalScope)
     {
         private readonly ICompilerConfiguration Job = job;
@@ -546,7 +561,7 @@ namespace Plang.Compiler
             var h = Executed[k][i];
             var p = P[k][i];
             var q = Q[k][i];
-            return string.Join(" && ", q.Select(qi => h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", qi))));
+            return h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", q));
         }
 
         private static void RemoveRecordAt(string k, int i)

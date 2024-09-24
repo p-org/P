@@ -36,8 +36,8 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public string GetQuantifierHeader()
         {
             string result = "";
-            result += string.Join(" ", Quantified.SkipLast(ExistentialQuantifiers).Select(v => $"∀{v.Name}: {v.EventName}"));
-            result += string.Join(" ", Quantified.TakeLast(ExistentialQuantifiers).Select(v => $"∃{v.Name}: {v.EventName}"));
+            result += string.Join(" ", Quantified.SkipLast(ExistentialQuantifiers).Select(v => $"∀{v.EventName}"));
+            result += string.Join(" ", Quantified.TakeLast(ExistentialQuantifiers).Select(v => $"∃{v.EventName}"));
             return result;
         }
 
@@ -148,6 +148,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 return false;
             }
             return Arity <= maxArity && ExistentialQuantifiers <= 1 && NumFilterPredicates <= job.MaxFilters && NumGuardPredicates <= job.MaxGuards;
+        }
+
+        public List<PEvent> RelatedEvents()
+        {
+            return Quantified.Select(v => v.EventDecl).Concat(ConfigEvent == null ? [] : [ConfigEvent]).ToList();
         }
 
         public List<PEvent> ForallQuantified()

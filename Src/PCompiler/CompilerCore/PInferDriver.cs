@@ -38,9 +38,23 @@ namespace Plang.Compiler
         private readonly PInferPredicateGenerator Codegen = (PInferPredicateGenerator)job.Backend;
         private readonly TraceMetadata TraceIndex = new(job);
         private readonly HashSet<Hint> ExploredHints = new(new Hint.EqualityComparer());
-        private readonly Dictionary<string, (int, int)> TermPredicateCount = [];
+        private readonly Dictionary<Hint, HashSet<string>> GeneratedPredicates = new(new Hint.EqualityComparer());
+        private readonly Dictionary<Hint, HashSet<string>> GeneratedTerms = new(new Hint.EqualityComparer());
+        private readonly List<List<PEvent>> AddedCombinations = [];
+
         private int numDistilledInvs = 0;
         private int numTotalInvs = 0;
+
+        public bool Converged(Hint h, HashSet<string> predicates, HashSet<string> terms)
+        {
+            Hint h_prime = h.Copy();
+            h_prime.TermDepth -= 1;
+            if (GeneratedPredicates.TryGetValue(h_prime, out var preds) && GeneratedTerms.TryGetValue(h_prime, out var tms))
+            {
+                return preds.SetEquals(predicates) && tms.SetEquals(terms);
+            }
+            return false;
+        }
 
         public bool CompilePInferHint(Hint hint)
         {
@@ -54,18 +68,6 @@ namespace Plang.Compiler
             foreach (var file in Codegen.GenerateCode(Job, GlobalScope))
             {
                 Job.Output.WriteFile(file);
-            }
-            if (!TermPredicateCount.TryGetValue(hint.Name, out var terms_predicates_cnt))
-            {
-                terms_predicates_cnt = (-1, -1);
-                TermPredicateCount.Add(hint.Name, terms_predicates_cnt);
-            }
-            if (Codegen.NumTerms == terms_predicates_cnt.Item1 && Codegen.NumPredicates == terms_predicates_cnt.Item2)
-            {
-                // increasing the term depth does not add new term/prediates
-                Job.Output.WriteWarning($"Term depth limit reached ... Done for {hint.Name}");
-                Codegen.Reset();
-                return false;
             }
             Job.Output.WriteInfo($"Compiling generated code...");
             try
@@ -82,8 +84,13 @@ namespace Plang.Compiler
             }
         }
 
-        public void RunSpecMiner(Hint hint)
+        public bool RunSpecMiner(Hint hint)
         {
+            if (ExploredHints.Contains(hint))
+            {
+                Job.Output.WriteWarning($"Search space already explored: {hint.Name}, skipping ...");
+                return false;
+            }
             if (Codegen.hint == null || !Codegen.hint.Equals(hint))
             {
                 if (hint.TermDepth == null)
@@ -92,17 +99,21 @@ namespace Plang.Compiler
                 }
                 CompilePInferHint(hint);
             }
-            if (ExploredHints.Contains(hint))
+            if (Converged(hint, Codegen.GeneratedPredicates, Codegen.GeneratedTerms))
             {
-                Job.Output.WriteWarning($"Search space already explored: {hint.Name}, skipping ...");
-                return;
+                Job.Output.WriteWarning($"Converged: {hint.Name} @ term depth {hint.TermDepth - 1}, skipping ...");
+                return false;
             }
-            ExploredHints.Add(hint.Copy());
+            var cp = hint.Copy();
+            GeneratedPredicates[cp] = Codegen.GeneratedPredicates;
+            GeneratedTerms[cp] = Codegen.GeneratedTerms;
+            ExploredHints.Add(cp);
             Console.WriteLine("===============Running================");
             hint.ShowHint();
             numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, out int total);
             numTotalInvs = PInferInvoke.Recorded.Count;
             Console.WriteLine("=================Done=================");
+            return true;
         }
 
         public void ParameterSearch(Hint hint)
@@ -141,7 +152,7 @@ namespace Plang.Compiler
                 {
                     while (h.HasNext(Job, Codegen.MaxArity()))
                     {
-                        RunSpecMiner(h);
+                        if (!RunSpecMiner(h)) break;
                         h.Next(Job, Codegen.MaxArity());
                     }
                 }
@@ -168,6 +179,13 @@ namespace Plang.Compiler
                 Job.Output.WriteWarning($"skipping ae_{name} due to empty payload(s)");
                 return;
             }
+            var eventSet = events.ToList();
+            if (AddedCombinations.Any(x => x.SequenceEqual(eventSet)))
+            {
+                Job.Output.WriteWarning($"skipping ae_{name} as its combination has been added");
+                return;
+            }
+            AddedCombinations.Add(eventSet);
             tasks.Add(new($"ae_{name}", false, null) {
                 Quantified = events.Select(MkEventVar).ToList()
             });
@@ -302,6 +320,11 @@ namespace Plang.Compiler
             foreach (var m in machines)
             {
                 tasks.UnionWith(ExploreHandlers(m.AllStates().ToList()));
+            }
+            Job.Output.WriteInfo("Event combinations:");
+            foreach (var task in tasks)
+            {
+                Console.WriteLine(string.Join(", ", task.RelatedEvents().Select(x => x.Name)));
             }
             for (int i = 0; i <= Job.TermDepth; ++i)
             {

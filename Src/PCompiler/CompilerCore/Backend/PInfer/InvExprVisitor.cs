@@ -256,6 +256,14 @@ namespace Plang.Compiler.Backend.PInfer
                         return new EnumElemRefExpr(ctx, enumElm);
                     }
                 }
+                if (ctx.iden().GetText() == "True")
+                {
+                    return new BoolLiteralExpr(ctx, true);
+                }
+                if (ctx.iden().GetText() == "False")
+                {
+                    return new BoolLiteralExpr(ctx, false);
+                }
                 throw new DropException($"Undefined variable: `{ctx.iden().GetText()}`");
             }
             if (ctx.floatLiteral() != null)

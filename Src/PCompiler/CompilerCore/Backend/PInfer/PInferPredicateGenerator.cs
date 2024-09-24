@@ -38,6 +38,8 @@ namespace Plang.Compiler.Backend.PInfer
             PredicateOrder = new Dictionary<IPExpr, int>(Comparer);
             Contradictions = new Dictionary<IPExpr, HashSet<IPExpr>>(Comparer);
             Negations = new Dictionary<IPExpr, HashSet<IPExpr>>(Comparer);
+            GeneratedPredicates = [];
+            GeneratedTerms = [];
             CC = new();
             // should not cleared by reset, holds globally
             ReprToContradictions = [];
@@ -98,6 +100,8 @@ namespace Plang.Compiler.Backend.PInfer
             ReprToTerms.Clear();
             ReprToPredicates.Clear();
             CC.Reset();
+            GeneratedPredicates.Clear();
+            GeneratedTerms.Clear();
             NumTerms = -1;
             NumPredicates = -1;
             PredicateStore.Reset();
@@ -439,10 +443,12 @@ namespace Plang.Compiler.Backend.PInfer
                     continue;
                 }
                 written.Add(canonical);
+                var predRepr = codegen.GenerateRawExpr(canonical, true);
                 ctx.WriteLine(stream, "{");
                 ctx.WriteLine(stream, $"\"order\": {PredicateOrder[canonical]},");
-                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(canonical, true)}\", ");
+                ctx.WriteLine(stream, $"\"repr\": \"{predRepr}\", ");
                 ctx.WriteLine(stream, $"\"terms\": [{string.Join(", ", PredicateBoundedTerm[canonical])}], ");
+                GeneratedPredicates.Add(predRepr);
                 if (!ReprToContradictions.TryGetValue(repr, out var conReprs))
                 {
                     conReprs = [];
@@ -509,12 +515,14 @@ namespace Plang.Compiler.Backend.PInfer
                     continue;
                 }
                 written.Add(canonical);
+                var termRepr = codegen.GenerateRawExpr(canonical, true);
                 ctx.WriteLine(stream, "{");
                 ctx.WriteLine(stream, $"\"order\": {TermOrder[canonical]}, ");
-                ctx.WriteLine(stream, $"\"repr\": \"{codegen.GenerateRawExpr(canonical, true)}\",");
+                ctx.WriteLine(stream, $"\"repr\": \"{termRepr}\",");
                 ctx.WriteLine(stream, $"\"events\": [{string.Join(", ", FreeEvents[canonical].Select(x => $"{x.Order}"))}],");
                 ctx.WriteLine(stream, $"\"type\": \"{codegen.GenerateTypeName(canonical)}\"");
                 ctx.WriteLine(stream, "}");
+                GeneratedTerms.Add(termRepr);
                 if (index < VisitedSet.Count - 1)
                 {
                     ctx.WriteLine(stream, ", ");
@@ -1205,6 +1213,8 @@ namespace Plang.Compiler.Backend.PInfer
             return c1.Contains(q) || c2.Contains(p);
         }
 
+        public HashSet<string> GeneratedPredicates { get; }
+        public HashSet<string> GeneratedTerms { get; }
         private List<Dictionary<PLanguageType, HashSet<IPExpr>>> Terms { get; }
         private HashSet<IPExpr> Predicates { get; }
         private HashSet<IPExpr> VisitedSet { get; }

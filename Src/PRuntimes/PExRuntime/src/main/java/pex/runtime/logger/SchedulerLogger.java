@@ -44,6 +44,10 @@ public class SchedulerLogger {
      */
     public SchedulerLogger(int schId) {
         verbosity = PExGlobal.getConfig().getVerbosity();
+        if (schId == 0 && verbosity == 0) {
+            // set minimum verbosity to 1 for replay scheduler
+            verbosity = 1;
+        }
         log = Log4JConfig.getContext().getLogger(SchedulerLogger.class.getName() + schId);
         org.apache.logging.log4j.core.Logger coreLogger =
                 (org.apache.logging.log4j.core.Logger) LogManager.getLogger(SchedulerLogger.class.getName() + schId);
@@ -100,7 +104,7 @@ public class SchedulerLogger {
      */
     public void logEndTask(SearchTask task, int numSchedules) {
         if (verbosity > 0) {
-            log.info(String.format("  Finished %s after exploring %d schedules", task, numSchedules));
+            log.info(String.format("  Finished %s after exploring %,d schedules", task, numSchedules));
         }
     }
 
@@ -117,7 +121,7 @@ public class SchedulerLogger {
 
     public void logNewTasks(List<SearchTask> tasks) {
         if (verbosity > 0) {
-            log.info(String.format("    Added %d new tasks", tasks.size()));
+            log.info(String.format("    Added %,d new tasks", tasks.size()));
         }
         if (verbosity > 1) {
             for (SearchTask task : tasks) {
@@ -207,9 +211,9 @@ public class SchedulerLogger {
         }
     }
 
-    public void logNewDataChoice(List<PValue<?>> choices, int step, int idx) {
+    public void logNewDataChoice(String loc, List<PValue<?>> choices, int step, int idx) {
         if (verbosity > 1) {
-            log.info(String.format("    @%d::%d new data choice: %s", step, idx, choices));
+            log.info(String.format("    @%d::%d %d new data choices from %s - %s", step, idx, choices.size(), loc, choices));
         }
     }
 
@@ -225,15 +229,15 @@ public class SchedulerLogger {
         }
     }
 
-    public void logRepeatDataChoice(PValue<?> choice, int step, int idx) {
+    public void logRepeatDataChoice(String loc, PValue<?> choice, int step, int idx) {
         if (verbosity > 2) {
-            log.info(String.format("    @%d::%d %s (repeat)", step, idx, choice));
+            log.info(String.format("    @%d::%d %s (repeat) from %s", step, idx, choice, loc));
         }
     }
 
-    public void logCurrentDataChoice(PValue<?> choice, int step, int idx) {
+    public void logCurrentDataChoice(String loc, PValue<?> choice, int step, int idx) {
         if (verbosity > 2) {
-            log.info(String.format("    @%d::%d %s", step, idx, choice));
+            log.info(String.format("    @%d::%d %s from %s", step, idx, choice, loc));
         }
     }
 
@@ -410,5 +414,19 @@ public class SchedulerLogger {
         e.printStackTrace(pw);
         log.info("--------------------");
         log.info(sw.toString());
+    }
+
+    /**
+     * Print choice loc
+     *
+     * @param step    Step number
+     * @param idx     Choice number
+     * @param loc     choose(.) location
+     * @param choices Data choices
+     */
+    public void logDataChoiceLoc(int step, int idx, String loc, List<PValue<?>> choices) {
+        if (verbosity > 0) {
+            log.info(String.format("    @%d::%d %d new data choices from %s - %s", step, idx, choices.size(), loc, choices));
+        }
     }
 }

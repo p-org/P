@@ -1,5 +1,6 @@
 package pex.runtime.scheduler.replay;
 
+import lombok.Getter;
 import pex.runtime.PExGlobal;
 import pex.runtime.logger.ScheduleWriter;
 import pex.runtime.logger.TextWriter;
@@ -7,6 +8,8 @@ import pex.runtime.machine.PMachine;
 import pex.runtime.machine.PMachineId;
 import pex.runtime.scheduler.Schedule;
 import pex.runtime.scheduler.Scheduler;
+import pex.utils.exceptions.BugFoundException;
+import pex.utils.exceptions.TooManyChoicesException;
 import pex.utils.misc.Assert;
 import pex.values.PValue;
 
@@ -14,8 +17,12 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 public class ReplayScheduler extends Scheduler {
-    public ReplayScheduler(Schedule sch) {
+    @Getter
+    BugFoundException bugFoundException = null;
+
+    public ReplayScheduler(Schedule sch, BugFoundException e) {
         super(0, sch);
+        bugFoundException = e;
     }
 
     @Override
@@ -105,7 +112,7 @@ public class ReplayScheduler extends Scheduler {
     }
 
     @Override
-    protected PValue<?> getNextDataChoice(List<PValue<?>> input_choices) {
+    protected PValue<?> getNextDataChoice(String loc, List<PValue<?>> input_choices) {
         if (choiceNumber >= schedule.size()) {
             return null;
         }
@@ -113,8 +120,16 @@ public class ReplayScheduler extends Scheduler {
         // pick the current data choice
         PValue<?> result = schedule.getCurrentDataChoice(choiceNumber);
         assert (input_choices.contains(result));
+
         ScheduleWriter.logDataChoice(result);
-        logger.logRepeatDataChoice(result, stepNumber, choiceNumber);
+        logger.logRepeatDataChoice(loc, result, stepNumber, choiceNumber);
+        if (bugFoundException != null) {
+            if (bugFoundException instanceof TooManyChoicesException e) {
+                if (e.getLoc().equals(loc)) {
+                    logger.logDataChoiceLoc(stepNumber, choiceNumber, loc, input_choices);
+                }
+            }
+        }
 
         choiceNumber++;
         return result;

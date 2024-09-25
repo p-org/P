@@ -387,14 +387,14 @@ public class ExplicitSearchScheduler extends Scheduler {
      * @return PValue as data choice
      */
     @Override
-    public PValue<?> getNextDataChoice(List<PValue<?>> input_choices) {
+    public PValue<?> getNextDataChoice(String loc, List<PValue<?>> input_choices) {
         PValue<?> result;
 
         if (choiceNumber < backtrackChoiceNumber) {
             // pick the current data choice
             result = schedule.getCurrentDataChoice(choiceNumber);
             assert (input_choices.contains(result));
-            logger.logRepeatDataChoice(result, stepNumber, choiceNumber);
+            logger.logRepeatDataChoice(loc, result, stepNumber, choiceNumber);
 
             // increment choice number
             choiceNumber++;
@@ -410,7 +410,7 @@ public class ExplicitSearchScheduler extends Scheduler {
             choices = input_choices;
             if (choices.size() > 1) {
                 // log new choice
-                logger.logNewDataChoice(choices, stepNumber, choiceNumber);
+                logger.logNewDataChoice(loc, choices, stepNumber, choiceNumber);
             }
 
             if (choices.isEmpty()) {
@@ -425,7 +425,7 @@ public class ExplicitSearchScheduler extends Scheduler {
         // pick a choice
         int selected = PExGlobal.getChoiceSelector().selectChoice(this, choices);
         result = choices.get(selected);
-        logger.logCurrentDataChoice(result, stepNumber, choiceNumber);
+        logger.logCurrentDataChoice(loc, result, stepNumber, choiceNumber);
 
         // remove the selected choice from unexplored choices
         choices.remove(selected);

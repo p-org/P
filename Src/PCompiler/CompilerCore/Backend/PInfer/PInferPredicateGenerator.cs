@@ -594,6 +594,21 @@ namespace Plang.Compiler.Backend.PInfer
             if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
                 var cano = CC.Canonicalize(expr);
                 if (cano != null && Predicates.Contains(cano)) return;
+                if (events.Count > 1 && hint.RelatedEvents().ToHashSet().Count == 1)
+                {
+                    // forall-quantified over a single type of event
+                    // then check for asymmetric predicates as they
+                    // can introduce symmetry when there is only one type of event being quantified
+                    if (pred.Function.Property.HasFlag(FunctionProperty.Asymmetric))
+                    {
+                        Console.WriteLine("Skipping asymmetric predicate");
+                        // check if swapping the arguments results in a predicate that is already present
+                        if (PredicateCallExpr.MkPredicateCall(pred, param.Select(x => x).Reverse().ToList(), out var swapped))
+                        {
+                            if (Predicates.Contains(swapped)) return;
+                        }
+                    }
+                }
                 FreeEvents[expr] = events;
                 PredicateOrder[expr] = Predicates.Count;
                 Predicates.Add(expr);

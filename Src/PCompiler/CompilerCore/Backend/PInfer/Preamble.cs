@@ -76,6 +76,7 @@ public class PInferDriver {
                                String[] schedules) {
         TraceParser parser = new TraceParser();
         TraceIndex indices = new TraceIndex();
+        System.err.println(""Template: "" + templateName);
         for (String sch: schedules) {
             List<List<%EVENT_BASE%>> eventsTrace = parser.loadTrace(sch);
             switch (templateName) {

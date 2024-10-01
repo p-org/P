@@ -519,7 +519,7 @@ namespace Plang.Compiler.Backend.PInfer
 
             foreach (var (op, types) in globalScope.AllowedBinOps)
             {
-                if (op.GetKind() == BinOpKind.Equality)
+                if (op.Equals(BinOpType.Eq))
                 {
                     foreach (var sig in types)
                     {

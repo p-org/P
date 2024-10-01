@@ -15,16 +15,19 @@ namespace Plang.PInfer
         public string Folder { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("events")]
         public IEnumerable<string> Events { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("num_traces")]
+        public int NumTraces { get; set; }
     }
 
     public class TraceIndex
     {
         Dictionary<HashSet<string>, string> traceIndex;
+        Dictionary<HashSet<string>, int> traceCount;
         private readonly string parentFolder;
         private readonly bool canSave;
         private readonly static string METADATA = "metadata.json";
 
-        public TraceIndex([DisallowNull] string traceFolder, bool create = false)
+        public TraceIndex([DisallowNull] string traceFolder, bool create = false, bool checkTrace = false)
         {
             var filePath = Path.Combine(traceFolder, METADATA);
             canSave = create;
@@ -46,6 +49,7 @@ namespace Plang.PInfer
             }
             parentFolder = traceFolder;
             traceIndex = [];
+            traceCount = [];
             try{
                 if (TryRead(filePath, out var json))
                 {
@@ -56,6 +60,7 @@ namespace Plang.PInfer
                         {
                             HashSet<string> k = meta.Events.ToHashSet();
                             traceIndex[k] = meta.Folder;
+                            traceCount[k] = meta.NumTraces;
                         }
                     }
                 }
@@ -66,14 +71,26 @@ namespace Plang.PInfer
             }
             catch (IOException)
             {
-                WriteError($"Cannot find `metadata.json` under {traceFolder}");
-                Environment.Exit(1);
+                if (checkTrace)
+                {
+                    WriteError($"Cannot find `metadata.json` under `{traceFolder}`");
+                    Environment.Exit(1);
+                }
             }
             catch (JsonException)
             {
                 WriteError($"Mal-formed `metadata.json`");
                 Environment.Exit(1);
             }
+        }
+
+        public int GetCount()
+        {
+            if (traceCount.Keys.Count != 0)
+            {
+                return traceCount.Values.Max();
+            }
+            return 0;
         }
 
         public bool TryGet(IEnumerable<string> events, out string path)
@@ -101,7 +118,7 @@ namespace Plang.PInfer
             return false;
         }
 
-        public string AddIndex(IEnumerable<string> events, string path)
+        public string AddIndex(IEnumerable<string> events, string path, int numTraces)
         {
             HashSet<string> k = events.ToHashSet();
             // first look for exact match
@@ -110,6 +127,7 @@ namespace Plang.PInfer
                 if (key.SetEquals(k))
                 {
                     var record = traceIndex[key];
+                    traceCount[key] += numTraces;
                     if (record != path)
                     {
                         // caller is responsible for merging the two directories
@@ -119,6 +137,7 @@ namespace Plang.PInfer
                 }
             }
             traceIndex[k] = path;
+            traceCount[k] = numTraces;
             return path;
         }
 
@@ -160,7 +179,7 @@ namespace Plang.PInfer
             foreach (var (k, v) in traceIndex)
             {
                 result.Add(new Metadata() {
-                    Events = k, Folder = v
+                    Events = k, Folder = v, NumTraces = traceCount[k]
                 });
             }
             return result;

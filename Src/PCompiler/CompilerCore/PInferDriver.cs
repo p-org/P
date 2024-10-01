@@ -31,12 +31,12 @@ namespace Plang.Compiler
         }
     }
 
-    class PInferDriver(ICompilerConfiguration job, Scope globalScope)
+    class PInferDriver(ICompilerConfiguration job, Scope globalScope, bool checkTrace = true)
     {
         private readonly ICompilerConfiguration Job = job;
         private readonly Scope GlobalScope = globalScope;
         private readonly PInferPredicateGenerator Codegen = (PInferPredicateGenerator)job.Backend;
-        private readonly TraceMetadata TraceIndex = new(job);
+        private readonly TraceMetadata TraceIndex = new(job, checkTrace);
         private readonly HashSet<Hint> ExploredHints = new(new Hint.EqualityComparer());
         private readonly Dictionary<Hint, HashSet<string>> GeneratedPredicates = new(new Hint.EqualityComparer());
         private readonly Dictionary<Hint, HashSet<string>> GeneratedTerms = new(new Hint.EqualityComparer());
@@ -58,7 +58,7 @@ namespace Plang.Compiler
 
         public bool CompilePInferHint(Hint hint)
         {
-            if (!TraceIndex.GetTraceFolder(hint, out var _))
+            if (!TraceIndex.GetTraceFolder(hint, out var _) && checkTrace)
             {
                 Job.Output.WriteWarning($"No trace indexed for this event combination: {string.Join(", ", hint.Quantified.Select(x => x.EventName))}. Skipped ...");
                 return false;
@@ -108,6 +108,14 @@ namespace Plang.Compiler
             GeneratedPredicates[cp] = Codegen.GeneratedPredicates;
             GeneratedTerms[cp] = Codegen.GeneratedTerms;
             ExploredHints.Add(cp);
+            if (cp.ConfigEvent != null)
+            {
+                cp = cp.Copy();
+                cp.ConfigEvent = null;
+                // if config event is not null, searching the hint without config event
+                // is also covered in this iteration.
+                ExploredHints.Add(cp);
+            }
             Console.WriteLine("===============Running================");
             hint.ShowHint();
             numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, out int total);
@@ -381,20 +389,21 @@ namespace Plang.Compiler
             var stopwatch = new Stopwatch();
             int numInvsDistilled = 0;
             int numInvsMined = 0;
-            var driver = new PInferDriver(job, globalScope);
+            PInferDriver driver = null;
             stopwatch.Start();
             switch (job.PInferAction)
             {
                 case PInferAction.Compile:
                     job.Output.WriteInfo($"PInfer - Compile `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
-                    new PInferDriver(job, globalScope).CompilePInferHint(givenHint);
+                    new PInferDriver(job, globalScope, checkTrace: false).CompilePInferHint(givenHint);
                     break;
                 case PInferAction.RunHint:
                 {
                     job.Output.WriteInfo($"PInfer - Run `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
                     givenHint.PruningLevel = job.PInferPruningLevel;
+                    driver = new PInferDriver(job, globalScope);
                     driver.ParameterSearch(givenHint);
                     numInvsDistilled = driver.numDistilledInvs;
                     numInvsMined = driver.numTotalInvs;
@@ -403,6 +412,7 @@ namespace Plang.Compiler
                 case PInferAction.Auto:
                 {
                     job.Output.WriteInfo("PInfer - Auto Exploration");
+                    driver = new PInferDriver(job, globalScope);
                     driver.AutoExplore(job.HintsOnly);
                     numInvsDistilled = driver.numDistilledInvs;
                     numInvsMined = driver.numTotalInvs;
@@ -412,17 +422,32 @@ namespace Plang.Compiler
             stopwatch.Stop();
             if (job.PInferAction == PInferAction.RunHint || job.PInferAction == PInferAction.Auto)
             {
-                job.Output.WriteInfo($"... Writing pruned invariants to ./invariants.txt");
+                job.Output.WriteInfo($"... Writing pruned invariants to ./invariants_{driver.TraceIndex.GetTraceCount()}.txt");
                 var elapsed = stopwatch.ElapsedMilliseconds / 1000.0;
                 job.Output.WriteInfo($"PInfer statistics");
-                job.Output.WriteInfo($"\t# invariants discovered: {numInvsMined}");
+                job.Output.WriteInfo($"\t# invariants discovered: {PInferInvoke.NumInvsMined}");
                 // job.Output.WriteInfo($"\t# invariants distilled: {numInvsDistilled}");
-                job.Output.WriteInfo($"\t#Invariants after pruning: {PInferInvoke.WriteRecordTo("invariants.txt")}");
-                job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
-                PInferInvoke.WriteMonitors(driver.Codegen, new(new(job)), globalScope);
+                var numInvAfterPruning = PInferInvoke.WriteRecordTo($"invariants_{driver.TraceIndex.GetTraceCount()}.txt");
+                job.Output.WriteInfo($"\t#Invariants after pruning: {numInvAfterPruning}");
+                // job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
+                // PInferInvoke.WriteMonitors(driver.Codegen, new(new(job)), globalScope);
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
+                PInferStats stats = new() {
+                    NumInvsTotal = PInferInvoke.NumInvsMined,
+                    NumInvsPrunedBySubsumption = PInferInvoke.NumInvsMined - PInferInvoke.NumInvsPrunedByGrammar - numInvAfterPruning,
+                    NumInvsPrunedByGrammar = PInferInvoke.NumInvsPrunedByGrammar,
+                    TimeElapsed = elapsed
+                };
+                File.WriteAllText($"pinfer_stats_{driver.TraceIndex.GetTraceCount()}.json", JsonSerializer.Serialize(stats));
             }
         }
+    }
+
+    internal class PInferStats {
+        public int NumInvsTotal { get; set; }
+        public int NumInvsPrunedBySubsumption { get; set; }
+        public int NumInvsPrunedByGrammar { get; set; }
+        public double TimeElapsed { get; set; }
     }
 
     internal class PInferInvoke
@@ -442,6 +467,7 @@ namespace Plang.Compiler
         internal static HashSet<string> Learned = [];
         internal static HashSet<string> Recorded = [];
         internal static int NumInvsMined = 0;
+        internal static int NumInvsPrunedByGrammar = 0;
 
         public static void NewInvFiles()
         {
@@ -839,6 +865,10 @@ namespace Plang.Compiler
                     }
                     UpdateMinedSpecs(job, codegen, hint, p, q, parsedP, parsedQ);
                 }
+                else
+                {
+                    NumInvsPrunedByGrammar += 1;
+                }
                 if (keep.Count > 0)
                 {
                     result += 1;
@@ -879,7 +909,7 @@ namespace Plang.Compiler
             DoChores(job, codegen);
             // ShowAll();
             job.Output.WriteWarning($"Currently mined: {Recorded.Count} invariant(s)");
-            job.Output.WriteWarning($"Currently recorded: {WriteRecordTo("inv_running.txt")} invariant(s)");
+            job.Output.WriteWarning($"Currently recorded: {WriteRecordTo($"inv_running_{metadata.GetTraceCount()}.txt")} invariant(s)");
             Console.WriteLine("Cleaning up ...");
             var dirInfo = new DirectoryInfo("./");
             foreach (var dir in dirInfo.GetDirectories())
@@ -965,9 +995,14 @@ namespace Plang.Compiler
         }
     }
 
-    internal sealed class TraceMetadata (ICompilerConfiguration job)
+    internal sealed class TraceMetadata (ICompilerConfiguration job, bool checkTrace = true)
     {
-        private readonly TraceIndex traceIndex = new(job.TraceFolder);
+        private readonly TraceIndex traceIndex = new(job.TraceFolder, checkTrace: checkTrace);
+
+        public int GetTraceCount()
+        {
+            return traceIndex.GetCount();
+        }
 
         public bool GetTraceFolder(Hint h, out string folder)
         {

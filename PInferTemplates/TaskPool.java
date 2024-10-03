@@ -8,6 +8,7 @@ public class TaskPool {
     int running;
     int numFinished;
     int numMined;
+    int numTasks;
     List<Task> tasks;
     Map<String, Map<String, Integer>> headerToNumTasks;
     Map<String, Map<String, List<Task>>> taskIndex;
@@ -31,6 +32,7 @@ public class TaskPool {
         this.numMined = 0;
         this.converter = converter;
         this.verbose = verbose;
+        this.numTasks = 0;
         File outputsParent = new File("PInferOutputs");
         File pinferOutputFileDir = new File(String.valueOf(Paths.get(outputsParent.toString(), "SpecMining")));
         if (!pinferOutputFileDir.isDirectory()) {
@@ -64,6 +66,7 @@ public class TaskPool {
         headerToNumTasks.get(guardsStr).put(filtersStr, numTasks + 1);
         this.taskIndex.get(guardsStr).get(filtersStr).add(task);
         tasks.add(task);
+        numTasks += 1;
         _startTasks();
     }
 
@@ -139,6 +142,7 @@ public class TaskPool {
             System.out.println("Time used (seconds): " + (double)(System.currentTimeMillis() - startTime) / 1000.0);
             System.out.println("#Properties mined: " + numMined);
             System.out.println("Output to " + outputFile.getPath());
+            pinferParsableStream.write((numFinished + "").getBytes());
             pinferOutputStream.flush();
             pinferParsableStream.flush();
             pinferOutputStream.close();

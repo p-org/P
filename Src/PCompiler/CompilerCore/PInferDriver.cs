@@ -44,6 +44,7 @@ namespace Plang.Compiler
 
         private int numDistilledInvs = 0;
         private int numTotalInvs = 0;
+        private int numTotalTasks = 0;
 
         public bool Converged(Hint h, HashSet<string> predicates, HashSet<string> terms)
         {
@@ -118,8 +119,9 @@ namespace Plang.Compiler
             }
             Console.WriteLine("===============Running================");
             hint.ShowHint();
-            numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, out int total);
+            numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, out int totalTasks);
             numTotalInvs = PInferInvoke.Recorded.Count;
+            numTotalTasks = totalTasks;
             Console.WriteLine("=================Done=================");
             return true;
         }
@@ -387,8 +389,7 @@ namespace Plang.Compiler
             }
             PInferInvoke.NewInvFiles();
             var stopwatch = new Stopwatch();
-            int numInvsDistilled = 0;
-            int numInvsMined = 0;
+            int numTotalTasks = 0;
             PInferDriver driver = null;
             stopwatch.Start();
             switch (job.PInferAction)
@@ -405,8 +406,7 @@ namespace Plang.Compiler
                     givenHint.PruningLevel = job.PInferPruningLevel;
                     driver = new PInferDriver(job, globalScope);
                     driver.ParameterSearch(givenHint);
-                    numInvsDistilled = driver.numDistilledInvs;
-                    numInvsMined = driver.numTotalInvs;
+                    numTotalTasks = driver.numTotalTasks;
                     break;
                 }
                 case PInferAction.Auto:
@@ -414,8 +414,7 @@ namespace Plang.Compiler
                     job.Output.WriteInfo("PInfer - Auto Exploration");
                     driver = new PInferDriver(job, globalScope);
                     driver.AutoExplore(job.HintsOnly);
-                    numInvsDistilled = driver.numDistilledInvs;
-                    numInvsMined = driver.numTotalInvs;
+                    numTotalTasks = driver.numTotalTasks;
                     break;
                 }
             }
@@ -429,8 +428,7 @@ namespace Plang.Compiler
                 // job.Output.WriteInfo($"\t# invariants distilled: {numInvsDistilled}");
                 var numInvAfterPruning = PInferInvoke.WriteRecordTo($"invariants_{driver.TraceIndex.GetTraceCount()}.txt");
                 job.Output.WriteInfo($"\t#Invariants after pruning: {numInvAfterPruning}");
-                // job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
-                // PInferInvoke.WriteMonitors(driver.Codegen, new(new(job)), globalScope);
+                job.Output.WriteInfo($"#Times executed by Daikon: {numTotalTasks}");
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
                 PInferStats stats = new() {
                     NumInvsTotal = PInferInvoke.NumInvsMined,
@@ -439,6 +437,8 @@ namespace Plang.Compiler
                     TimeElapsed = elapsed
                 };
                 File.WriteAllText($"pinfer_stats_{driver.TraceIndex.GetTraceCount()}.json", JsonSerializer.Serialize(stats));
+                job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
+                PInferInvoke.WriteMonitors(driver.Codegen, new(new(job)), globalScope);
             }
         }
     }
@@ -485,14 +485,14 @@ namespace Plang.Compiler
             }
         }
 
-        public static IEnumerable<(int, int, Hint, HashSet<string>, HashSet<string>)> AllExecuedAndMined()
+        public static IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> AllExecuedAndMined()
         {
             foreach (var k in P.Keys)
             {
                 for (int i = 0; i < P[k].Count; ++ i)
                 {
                     if (P[k][i].Count == 0 && Q[k][i].Count == 0) continue;
-                    yield return (NumExists[k], i, Executed[k][i], P[k][i], Q[k][i]);
+                    yield return (k, NumExists[k], i, Executed[k][i], P[k][i], Q[k][i]);
                 }
             }
         }
@@ -501,7 +501,7 @@ namespace Plang.Compiler
         {
             Dictionary<string, int> monitorCount = [];
             int c = 1;
-            foreach (var (_, _, h, p, q) in AllExecuedAndMined())
+            foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
             {
                 if (q.Count == 0) continue;
                 var ps = string.Join(" ∧ ", p);
@@ -511,7 +511,7 @@ namespace Plang.Compiler
                 try
                 {
                     transform.WithFile(monitorFile);
-                    transform.WriteSpecMonitor(c++, codegen, transform.context, transform.context.Job, globalScope, h, p, q, prop, monitorFile);
+                    transform.WriteSpecMonitor(c++, codegen, transform.context, transform.context.Job, globalScope, h, p, q, ParsedP[key], ParsedQ[key], prop);
                     transform.context.Job.Output.WriteFile(monitorFile);
                 }
                 catch (Exception e)
@@ -526,7 +526,7 @@ namespace Plang.Compiler
         {
             using StreamWriter invwrite = new(filename);
             HashSet<string> written = [];
-            foreach (var (_, _, h, p, q) in PInferInvoke.AllExecuedAndMined())
+            foreach (var (_, _, _, h, p, q) in PInferInvoke.AllExecuedAndMined())
             {
                 if (q.Count == 0) continue;
                 var ps = string.Join(" ∧ ", p);
@@ -812,8 +812,8 @@ namespace Plang.Compiler
             var parseFilePath = Path.Combine("PInferOutputs", "SpecMining", PreambleConstants.ParseFileName);
             var contents = File.ReadAllLines(parseFilePath);
             int result = 0;
-            total = 0;
-            for (int i = 0; i < contents.Length; i += 3)
+            total = int.Parse(contents[^1]);
+            for (int i = 0; i < contents.Length - 1; i += 3)
             {
                 var guards = contents[i];
                 var filters = contents[i + 1];
@@ -824,7 +824,6 @@ namespace Plang.Compiler
 
                 var p = guards.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0).ToHashSet();
                 var q = filters.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0).ToHashSet();
-                total += 1;
                 NumInvsMined += 1;
                 List<string> keep = [];
                 List<string> stepback = [];
@@ -878,7 +877,7 @@ namespace Plang.Compiler
             return result;
         }
 
-        public static int InvokeMain(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, out int totalInvs)
+        public static int InvokeMain(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, out int totalTasks)
         {
             ProcessStartInfo startInfo;
             Process process;
@@ -891,7 +890,7 @@ namespace Plang.Compiler
             List<string> configArgs = GetMinerConfigArgs(job, metadata, hint, codegen);
             if (configArgs == null)
             {
-                totalInvs = 0;
+                totalTasks = 0;
                 return -1;
             }
             startInfo = new ProcessStartInfo("java", args.Concat(configArgs))
@@ -905,7 +904,7 @@ namespace Plang.Compiler
             process = Process.Start(startInfo);
             process.WaitForExit();
             // aggregate results
-            var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalInvs);
+            var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalTasks);
             DoChores(job, codegen);
             // ShowAll();
             job.Output.WriteWarning($"Currently mined: {Recorded.Count} invariant(s)");

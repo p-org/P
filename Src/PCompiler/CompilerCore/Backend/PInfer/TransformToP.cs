@@ -95,15 +95,15 @@ namespace Plang.Compiler.Backend.PInfer
             throw new Exception($"Unsupported expr: {expr}");
         }
 
-        private bool PopulateExprs(PInferPredicateGenerator codegen, ICompilerConfiguration job, Scope globalScope, HashSet<string> reprs, List<IPExpr> list)
+        private bool PopulateExprs(ICompilerConfiguration job, HashSet<string> reprs, Dictionary<string, IPExpr> lut, List<IPExpr> list)
         {
             return reprs.Select(repr => {
-                if (codegen.TryParseToExpr(job, globalScope, repr, out var expr))
+                if (lut.TryGetValue(repr, out var expr))
                 {
                     list.Add(expr);
                     return true;
                 }
-                job.Output.WriteError($"Failed to parse: {repr}");
+                job.Output.WriteError($"{repr} not parsed before.");
                 return false;
             }).All(x => x);
         }
@@ -270,16 +270,16 @@ namespace Plang.Compiler.Backend.PInfer
                        .Concat(evs.Select((x, i) => $"{x.Name}_idx: int")));
         }
 
-        public void WriteSpecMonitor(int counter, PInferPredicateGenerator codegen, CompilationContext ctx, ICompilerConfiguration job, Scope globalScope, Hint h, HashSet<string> p, HashSet<string> q, string inv, CompiledFile monitorFile)
+        public void WriteSpecMonitor(int counter, PInferPredicateGenerator codegen, CompilationContext ctx, ICompilerConfiguration job, Scope globalScope, Hint h, HashSet<string> p, HashSet<string> q, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ, string inv)
         {
             List<IPExpr> guards = [];
             List<IPExpr> filters = [];
             // filters about number of events under existantial quantifications
             // that pass the filters.
             List<IPExpr> metaFilters = [];
-            if (PopulateExprs(codegen, job, globalScope, p, guards)
-                && PopulateExprs(codegen, job, globalScope, q.Where(x => !x.Contains("_num_e_exists_")).ToHashSet(), filters)
-                && PopulateExprs(codegen, job, globalScope, q.Where(x => x.Contains("_num_e_exists_")).ToHashSet(), metaFilters))
+            if (PopulateExprs(job, p, parsedP, guards)
+                && PopulateExprs(job, q.Where(x => !x.Contains("_num_e_exists_")).ToHashSet(), parsedQ, filters)
+                && PopulateExprs(job, q.Where(x => x.Contains("_num_e_exists_")).ToHashSet(), parsedQ, metaFilters))
             {
                 WriteLine($"// Monitor for spec: {inv}");
                 string config_event = h.ConfigEvent == null ? "" : h.ConfigEvent.Name + ",";

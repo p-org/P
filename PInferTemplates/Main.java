@@ -191,7 +191,7 @@ public class Main {
         Map<String, Map<String, List<TaskPool.Task>>> tasks = new HashMap<>();
         int numTasks = 0;
         FromDaikon converter = new FromDaikon(termsToPredicates, terms, "ForallExists", minerConfig.numExistsQuantifiers, minerConfig.pruningLevel);
-        TaskPool taskPool = new TaskPool(getChunkSize(), converter, minerConfig.getOutputFilename(), minerConfig.outputDIr, minerConfig.verbose);
+        TaskPool taskPool = new TaskPool(getChunkSize(), converter, minerConfig.getOutputFilename(), minerConfig.outputDir, minerConfig.verbose);
         Map<String, List<String>> keysSequences = new HashMap<>();
         List<String> guardKeySequence = new ArrayList<>();
         while (guardEnumerator.hasNext()) {

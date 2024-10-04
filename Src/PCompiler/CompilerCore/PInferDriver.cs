@@ -347,6 +347,78 @@ namespace Plang.Compiler
             }
         }
 
+        private PEvent GetPEvent(string name)
+        {
+            if (GlobalScope.Lookup(name, out PEvent e))
+            {
+                return e;
+            }
+            Job.Output.WriteError($"Event not found when parsing headers: {name}");
+            Environment.Exit(1);
+            return null;
+        }
+
+        private List<(List<PEventVariable>, PEvent, int)> ParseHeaders()
+        {
+            var dir = Job.InvParseFileDir;
+            var headerFile = Path.Combine(dir, "parsable_headers.txt");
+            if (!File.Exists(headerFile))
+            {
+                Job.Output.WriteError($"Inv headers not found: {headerFile}");
+                Environment.Exit(1);
+            }
+            var lines = File.ReadAllLines(headerFile);
+            List<(List<PEventVariable>, PEvent, int)> headers = [];
+            for (int i = 0; i < lines.Length; i += 3)
+            {
+                if (lines[i] == "") continue;
+                var quantifiedEventsVars = lines[i].Split(" ").ToList();
+                var quantified = quantifiedEventsVars.Select(x => {
+                    var parts = x.Split(":");
+                    var eventDecl = GetPEvent(parts[1]);
+                    return new PEventVariable(parts[0]) {
+                        EventDecl = eventDecl, Type = eventDecl.PayloadType
+                    };
+                }).ToList();
+                var configEvent = lines[i + 1] == "" ? null : GetPEvent(lines[i + 1]);
+                var termDepth = int.Parse(lines[i + 2]);
+                headers.Add((quantified, configEvent, termDepth));
+            }
+            return headers;
+        }
+
+        public void RunPruningSteps()
+        {
+            var headers = ParseHeaders();
+            var invParsableAll = Path.Combine(Job.InvParseFileDir, $"all_{PreambleConstants.ParseFileName}");
+            if (!File.Exists(invParsableAll))
+            {
+                Job.Output.WriteError($"Inv parsable file not found: {invParsableAll}");
+                Environment.Exit(1);
+            }
+            var invParsable = File.ReadAllLines(invParsableAll);
+            int ptr = 0;
+            foreach (var (quantified, configEvent, termDepth) in headers)
+            {
+                Hint h = new("pruning", false, null) {
+                    Quantified = quantified,
+                    ConfigEvent = configEvent,
+                    TermDepth = termDepth
+                };
+                Codegen.Reset();
+                Codegen.WithHint(h);
+                Codegen.GenerateCode(Job, GlobalScope);
+                List<string> currentInvs = [];
+                while (ptr < invParsable.Length - 1 && !invParsable[ptr].StartsWith("EOT"))
+                {
+                    currentInvs.Add(invParsable[ptr++]);
+                }
+                PInferInvoke.PruneAndAggregate(Job, GlobalScope, h, Codegen, [.. currentInvs], out var t);
+                if (ptr < invParsable.Length - 1) ptr++;
+                else break;
+            }
+        }
+
         public static void PerformInferAction(ICompilerConfiguration job, Scope globalScope)
         {
             Hint givenHint = null;
@@ -407,6 +479,14 @@ namespace Plang.Compiler
                     break;
                 case PInferAction.Pruning:
                 {
+                    job.Output.WriteInfo("PInfer - Pruning Steps Only");
+                    if (job.InvParseFileDir == null)
+                    {
+                        job.Output.WriteError("Inv parse file directory not provided");
+                        Environment.Exit(1);
+                    }
+                    driver = new PInferDriver(job, globalScope, invOutDir, checkTrace: false);
+                    driver.RunPruningSteps();
                     break;
                 }
                 case PInferAction.RunHint:
@@ -429,7 +509,7 @@ namespace Plang.Compiler
                 }
             }
             stopwatch.Stop();
-            if (job.PInferAction == PInferAction.RunHint || job.PInferAction == PInferAction.Auto)
+            if (job.PInferAction == PInferAction.RunHint || job.PInferAction == PInferAction.Auto || job.PInferAction == PInferAction.Pruning)
             {
                 job.Output.WriteInfo($"... Writing pruned invariants to ./invariants_{driver.TraceIndex.GetTraceCount()}.txt");
                 var elapsed = stopwatch.ElapsedMilliseconds / 1000.0;
@@ -818,14 +898,13 @@ namespace Plang.Compiler
             return (p_prime, q_prime);
         }
     
-        public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, out int total)
+        public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, string[] contents, out int total)
         {
-            var parseFilePath = Path.Combine("PInferOutputs", "SpecMining", PreambleConstants.ParseFileName);
-            var contents = File.ReadAllLines(parseFilePath);
             int result = 0;
             total = int.Parse(contents[^1]);
-            for (int i = 0; i < contents.Length - 1; i += 3)
+            for (int i = 0; i < contents.Length; i += 3)
             {
+                if (i + 1 >= contents.Length) break;
                 var guards = contents[i];
                 var filters = contents[i + 1];
                 var properties = contents[i + 2]
@@ -915,15 +994,17 @@ namespace Plang.Compiler
             process = Process.Start(startInfo);
             process.WaitForExit();
             // aggregate results
-            var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalTasks);
+            var parseFilePath = Path.Combine("PInferOutputs", invOutDir, PreambleConstants.ParseFileName);
+            var contents = File.ReadAllLines(parseFilePath);
+            var numMined = PruneAndAggregate(job, globalScope, hint, codegen, contents, out totalTasks);
             var parsefileHeaders = Path.Combine("PInferOutputs", invOutDir, "parsable_headers.txt");
             if (!File.Exists(parsefileHeaders))
             {
                 File.Create(parsefileHeaders).Close();
             }
             using StreamWriter writer = File.AppendText(parsefileHeaders);
-            writer.WriteLine(string.Join(" ", hint.Quantified.Select(x => x.EventName)));
-            writer.WriteLine(hint.ConfigEvent.Name ?? "");
+            writer.WriteLine(string.Join(" ", hint.Quantified.Select(x => $"{x.Name}:{x.EventName}")));
+            writer.WriteLine(hint.ConfigEvent == null ? "" : hint.ConfigEvent.Name);
             writer.WriteLine(hint.TermDepth);
             writer.Close();
             DoChores(job, codegen);

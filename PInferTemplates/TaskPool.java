@@ -16,7 +16,7 @@ public class TaskPool {
     final boolean verbose;
     final BufferedOutputStream pinferOutputStream;
     final BufferedOutputStream pinferParsableStream;
-    final BuffereedOutputStream pinferParsableAllStream;
+    final BufferedOutputStream pinferParsableAllStream;
     final long startTime;
     final File outputFile;
     static final File DaikonTracesDir = new File("tmp_daikon_traces");
@@ -150,7 +150,8 @@ public class TaskPool {
             System.out.println("Time used (seconds): " + (double)(System.currentTimeMillis() - startTime) / 1000.0);
             System.out.println("#Properties mined: " + numMined);
             System.out.println("Output to " + outputFile.getPath());
-            pinferParsableAll.write(("EOT\n").getBytes());
+            pinferParsableAllStream.write((numFinished + "\n").getBytes());
+            pinferParsableAllStream.write(("EOT\n").getBytes());
             pinferParsableStream.write((numFinished + "").getBytes());
             pinferOutputStream.flush();
             pinferParsableStream.flush();

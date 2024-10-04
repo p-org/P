@@ -255,7 +255,7 @@ namespace Plang
 
         public static bool DoPInferAction(PInferMode mode, string[] args)
         {
-            if (!(mode == PInferMode.Compile || mode == PInferMode.Auto || mode == PInferMode.RunHint))
+            if (!(mode == PInferMode.Compile || mode == PInferMode.Auto || mode == PInferMode.RunHint || mode == PInferMode.Pruning))
             {
                 return false;
             }
@@ -272,6 +272,7 @@ namespace Plang
                 case PInferMode.Compile: compileConfig.PInferAction = PInferAction.Compile; break;
                 case PInferMode.RunHint: compileConfig.PInferAction = PInferAction.RunHint; break;
                 case PInferMode.Auto:    compileConfig.PInferAction = PInferAction.Auto; break;
+                case PInferMode.Pruning: compileConfig.PInferAction = PInferAction.Pruning; break;
             }
             // if ((mode == PInferMode.Compile || mode == PInferMode.RunHint) && compileConfig.HintName == null)
             // {

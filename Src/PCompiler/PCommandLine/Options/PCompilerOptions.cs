@@ -49,6 +49,7 @@ namespace Plang.Options
                 pInferGroup.AddArgument("config-event", "ce", "Name of the event that announce the system setup. This will replace all hints that do not have config event specified");
                 pInferGroup.AddArgument("traces", "t", "Folder that contains aggregated trace files and metadata.json");
                 pInferGroup.AddArgument("hints-only", "hints-only", "Only run existing hints", typeof(bool));
+                pInferGroup.AddArgument("parse-inv", "pi", "Path to the directory containing PInfer parsible file and its header").IsRequired = false;
                 // book-keeping, not used
                 pInferGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto)").IsHidden = true;
             }
@@ -237,6 +238,9 @@ namespace Plang.Options
                     break;
                 case "traces":
                     compilerConfiguration.TraceFolder = (string) option.Value;
+                    break;
+                case "parse-inv":
+                    compilerConfiguration.InvParseFileDir = (string) option.Value;
                     break;
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;

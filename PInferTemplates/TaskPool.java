@@ -16,11 +16,12 @@ public class TaskPool {
     final boolean verbose;
     final BufferedOutputStream pinferOutputStream;
     final BufferedOutputStream pinferParsableStream;
+    final BuffereedOutputStream pinferParsableAllStream;
     final long startTime;
     final File outputFile;
     static final File DaikonTracesDir = new File("tmp_daikon_traces");
 
-    public TaskPool(int chunkSize, FromDaikon converter, String filename, boolean verbose) throws IOException {
+    public TaskPool(int chunkSize, FromDaikon converter, String filename, String outputDir, boolean verbose) throws IOException {
         System.out.println("Running with " + chunkSize + " cores");
 	this.chunkSize = chunkSize;
         this.running = 0;
@@ -34,17 +35,20 @@ public class TaskPool {
         this.verbose = verbose;
         this.numTasks = 0;
         File outputsParent = new File("PInferOutputs");
-        File pinferOutputFileDir = new File(String.valueOf(Paths.get(outputsParent.toString(), "SpecMining")));
+        File pinferOutputFileDir = new File(String.valueOf(Paths.get(outputsParent.toString(), outputDir)));
         if (!pinferOutputFileDir.isDirectory()) {
             pinferOutputFileDir.mkdirs();
         }
         File pinferOutputFile = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), filename)));
         File pinferParsable = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "%PARSEFILE%")));
+        File pinferParsableAll = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "all_%PARSEFILE%")));
         assert pinferOutputFile.createNewFile() : "Failed to create invariant output file " + pinferOutputFile;
         assert pinferParsable.createNewFile() : "Failed to create pinfer parsable file " + "%PARSEFILE%";
+        assert pinferParsableAll.createNewFile() : "Failed to create pinfer parsable file " + "all_%PARSEFILE%";
         this.outputFile = pinferOutputFile;
         this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile));
         this.pinferParsableStream = new BufferedOutputStream(new FileOutputStream(pinferParsable));
+        this.pinferParsableAllStream = new BufferedOutputStream(new FileOutputStream(pinferParsableAll, true));
         if (!DaikonTracesDir.exists()) {
             DaikonTracesDir.mkdirs();
         }
@@ -104,6 +108,10 @@ public class TaskPool {
                 pinferParsableStream.write((guards + "\n").getBytes());
                 pinferParsableStream.write((filters + "\n").getBytes());
                 pinferParsableStream.write((String.join(" ∧ ", invariants) + "\n").getBytes());
+                // store all results in a single file
+                pinferParsableAllStream.write((guards + "\n").getBytes());
+                pinferParsableAllStream.write((filters + "\n").getBytes());
+                pinferParsableAllStream.write((String.join(" ∧ ", invariants) + "\n").getBytes());
                 this.numMined += 1;
             }
             notify();
@@ -142,11 +150,14 @@ public class TaskPool {
             System.out.println("Time used (seconds): " + (double)(System.currentTimeMillis() - startTime) / 1000.0);
             System.out.println("#Properties mined: " + numMined);
             System.out.println("Output to " + outputFile.getPath());
+            pinferParsableAll.write(("EOT\n").getBytes());
             pinferParsableStream.write((numFinished + "").getBytes());
             pinferOutputStream.flush();
             pinferParsableStream.flush();
+            pinferParsableAllStream.flush();
             pinferOutputStream.close();
             pinferParsableStream.close();
+            pinferParsableAllStream.close();
         }
     }
 

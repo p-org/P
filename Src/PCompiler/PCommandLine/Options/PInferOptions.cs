@@ -27,8 +27,8 @@ namespace Plang.Options
             var verboseMode = minerConfigGroup.AddArgument("verbose", "verbose", "Verbose mode, print stderr of Daikon (default: false)", typeof(bool));
             var tracesOpt = minerConfigGroup.AddArgument("traces", "t", "Path to the trace files");
             var pruningLevel = minerConfigGroup.AddArgument("pruning-level", "pl", "Pruning level (default: 3)", typeof(int));
-            var actionSet = minerConfigGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto)");
-            actionSet.AllowedValues = ["compile", "run", "auto"];
+            var actionSet = minerConfigGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto | pruning)");
+            actionSet.AllowedValues = ["compile", "run", "auto", "pruning"];
 
             stOpt.IsRequired = false;
             ngOpt.IsRequired = false;
@@ -59,6 +59,7 @@ namespace Plang.Options
             pInferGroup.AddArgument("max-filters-predicates", "max-filters", "Max. number of atomic predicates in filters").IsHidden = true;
             pInferGroup.AddArgument("hint", "hint", "Name of the hint to compile/run").IsHidden = true;
             pInferGroup.AddArgument("config-event", "ce", "Name of the event that announce the system setup. This will replace all hints that do not have config event specified").IsHidden = true;
+            pInferGroup.AddArgument("parse-inv", "pi", "Path to the directory containing PInfer parsible file and its header").IsRequired = false;
         }
         
         internal PInferConfiguration Parse(string[] args)
@@ -156,6 +157,7 @@ namespace Plang.Options
                         case "compile": config.Mode = PInferMode.Compile; break;
                         case "run":     config.Mode = PInferMode.RunHint; break;
                         case "auto":    config.Mode = PInferMode.Auto;    break;
+                        case "pruning": config.Mode = PInferMode.Pruning; break;
                     }
                     break;
             }

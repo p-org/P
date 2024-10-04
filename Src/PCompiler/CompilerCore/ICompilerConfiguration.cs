@@ -8,7 +8,7 @@ namespace Plang.Compiler
 {
     public enum PInferAction
     {
-        Compile, RunHint, Auto, Interactive
+        Compile, RunHint, Auto, Interactive, Pruning
     }
 
     public interface ICompilerConfiguration
@@ -35,6 +35,7 @@ namespace Plang.Compiler
         public int PInferPruningLevel { get; }
         public string ConfigEvent { get; }
         public string TraceFolder { get; }
+        public string InvParseFileDir { get; }
         bool Verbose { get; }
     }
 }

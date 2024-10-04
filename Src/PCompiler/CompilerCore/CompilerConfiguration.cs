@@ -65,6 +65,7 @@ namespace Plang.Compiler
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
             OutputLanguages = outputLanguages;
             Backend = null;
+            InvParseFileDir = "SpecMining";
             ProjectDependencies = projectDependencies ?? new List<string>();
             Debug = debug;
             TermDepth = 2;
@@ -93,6 +94,7 @@ namespace Plang.Compiler
         public bool HintsOnly { get; set; }
         public string ConfigEvent { get; set; }
         public string TraceFolder { get; set; }
+        public string InvParseFileDir { get; set; }
         public bool Verbose { get; set; }
         public int PInferPruningLevel { get; set; }
 

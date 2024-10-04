@@ -31,7 +31,7 @@ namespace Plang.Compiler
         }
     }
 
-    class PInferDriver(ICompilerConfiguration job, Scope globalScope, bool checkTrace = true)
+    class PInferDriver(ICompilerConfiguration job, Scope globalScope, string invOutDir, bool checkTrace = true)
     {
         private readonly ICompilerConfiguration Job = job;
         private readonly Scope GlobalScope = globalScope;
@@ -45,6 +45,7 @@ namespace Plang.Compiler
         private int numDistilledInvs = 0;
         private int numTotalInvs = 0;
         private int numTotalTasks = 0;
+        private readonly string InvOutputDir = invOutDir;
 
         public bool Converged(Hint h, HashSet<string> predicates, HashSet<string> terms)
         {
@@ -119,7 +120,7 @@ namespace Plang.Compiler
             }
             Console.WriteLine("===============Running================");
             hint.ShowHint();
-            numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, out int totalTasks);
+            numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, InvOutputDir, out int totalTasks);
             numTotalInvs = PInferInvoke.Recorded.Count;
             numTotalTasks = totalTasks;
             Console.WriteLine("=================Done=================");
@@ -388,6 +389,11 @@ namespace Plang.Compiler
                 }
             }
             PInferInvoke.NewInvFiles();
+            var invOutDir = "SpecMining";
+            if (Directory.Exists("PInferOutputs"))
+            {
+                invOutDir = $"SpecMining_{Directory.GetDirectories("PInferOutputs").Length}";
+            }
             var stopwatch = new Stopwatch();
             int numTotalTasks = 0;
             PInferDriver driver = null;
@@ -397,14 +403,18 @@ namespace Plang.Compiler
                 case PInferAction.Compile:
                     job.Output.WriteInfo($"PInfer - Compile `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
-                    new PInferDriver(job, globalScope, checkTrace: false).CompilePInferHint(givenHint);
+                    new PInferDriver(job, globalScope, invOutDir, checkTrace: false).CompilePInferHint(givenHint);
                     break;
+                case PInferAction.Pruning:
+                {
+                    break;
+                }
                 case PInferAction.RunHint:
                 {
                     job.Output.WriteInfo($"PInfer - Run `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
                     givenHint.PruningLevel = job.PInferPruningLevel;
-                    driver = new PInferDriver(job, globalScope);
+                    driver = new PInferDriver(job, globalScope, invOutDir);
                     driver.ParameterSearch(givenHint);
                     numTotalTasks = driver.numTotalTasks;
                     break;
@@ -412,7 +422,7 @@ namespace Plang.Compiler
                 case PInferAction.Auto:
                 {
                     job.Output.WriteInfo("PInfer - Auto Exploration");
-                    driver = new PInferDriver(job, globalScope);
+                    driver = new PInferDriver(job, globalScope, invOutDir);
                     driver.AutoExplore(job.HintsOnly);
                     numTotalTasks = driver.numTotalTasks;
                     break;
@@ -468,6 +478,7 @@ namespace Plang.Compiler
         internal static HashSet<string> Recorded = [];
         internal static int NumInvsMined = 0;
         internal static int NumInvsPrunedByGrammar = 0;
+        internal static bool UseZ3 = false;
 
         public static void NewInvFiles()
         {
@@ -877,7 +888,7 @@ namespace Plang.Compiler
             return result;
         }
 
-        public static int InvokeMain(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, out int totalTasks)
+        public static int InvokeMain(ICompilerConfiguration job, TraceMetadata metadata, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, string invOutDir, out int totalTasks)
         {
             ProcessStartInfo startInfo;
             Process process;
@@ -887,7 +898,7 @@ namespace Plang.Compiler
                     string.Join(":", [depsOpt, classpath]),
                     $"{job.ProjectName}.pinfer.Main"];
             
-            List<string> configArgs = GetMinerConfigArgs(job, metadata, hint, codegen);
+            List<string> configArgs = GetMinerConfigArgs(job, metadata, hint, codegen, invOutDir);
             if (configArgs == null)
             {
                 totalTasks = 0;
@@ -905,6 +916,16 @@ namespace Plang.Compiler
             process.WaitForExit();
             // aggregate results
             var numMined = PruneAndAggregate(job, globalScope, hint, codegen, out totalTasks);
+            var parsefileHeaders = Path.Combine("PInferOutputs", invOutDir, "parsable_headers.txt");
+            if (!File.Exists(parsefileHeaders))
+            {
+                File.Create(parsefileHeaders).Close();
+            }
+            using StreamWriter writer = File.AppendText(parsefileHeaders);
+            writer.WriteLine(string.Join(" ", hint.Quantified.Select(x => x.EventName)));
+            writer.WriteLine(hint.ConfigEvent.Name ?? "");
+            writer.WriteLine(hint.TermDepth);
+            writer.Close();
             DoChores(job, codegen);
             // ShowAll();
             job.Output.WriteWarning($"Currently mined: {Recorded.Count} invariant(s)");
@@ -928,7 +949,7 @@ namespace Plang.Compiler
             return numMined;
         }
 
-        private static List<string> GetMinerConfigArgs(ICompilerConfiguration configuration, TraceMetadata metadata, Hint hint, PInferPredicateGenerator codegen)
+        private static List<string> GetMinerConfigArgs(ICompilerConfiguration configuration, TraceMetadata metadata, Hint hint, PInferPredicateGenerator codegen, string invOutDir)
         {
             var args = new List<string>();
             if (hint.ExistentialQuantifiers > 0)
@@ -966,6 +987,8 @@ namespace Plang.Compiler
             args.Add($"{hint.Arity}");
             args.Add("-O");
             args.Add($"{hint.PruningLevel}");
+            args.Add("-od");
+            args.Add(invOutDir);
             if (configuration.Verbose)
             {
                 args.Add("-v");

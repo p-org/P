@@ -16,6 +16,7 @@ public class MinerConfig {
     public final String templateCategory;
     public final boolean verbose;
     public final int pruningLevel;
+    public final String outputDir;
 
     public MinerConfig(CommandLine cmdOptions) {
         numForallQuantifiers = Integer.parseInt(cmdOptions.getOptionValue("num-forall", "%QUANTIFIED_EVENTS%"));
@@ -31,6 +32,7 @@ public class MinerConfig {
         if (numExtTerms > numTermsToChoose) {
             throw new RuntimeException("Number of terms involves existential quantification exceeds total number of terms in a combination");
         }
+        outputDir = cmdOptions.getOptionValue("output-dir", "SpecMining");
         atomicPredicatesPath = cmdOptions.getOptionValue("predicates", "%PROJECT_NAME%.predicates.json");
         termsPath = cmdOptions.getOptionValue("terms", "%PROJECT_NAME%.terms.json");
         checkTrivialCombinations = cmdOptions.hasOption("skip-trivial");
@@ -130,6 +132,11 @@ public class MinerConfig {
         traceFilesOpt.setRequired(true);
         traceFilesOpt.setArgs(Option.UNLIMITED_VALUES);
         options.addOption(traceFilesOpt);
+
+        Option outputDirOpt = new Option("od", "output-dir", true,
+                "Output directory for the mined invariants under `PInferOutputs` (Default: SpecMining)");
+        outputDirOpt.setRequired(false);
+        options.addOption(outputDirOpt);
 
         Option mustIncludeOpt = new Option("g", "include-guards", true,
                 "A list of predicates ids that must be included in the guards");

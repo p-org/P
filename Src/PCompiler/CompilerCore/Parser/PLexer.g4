@@ -70,6 +70,9 @@ IS         : 'is';
 FLYING     : 'inflight';
 TARGETS    : 'targets';
 SENT       : 'sent';
+PROOF      : 'proof';
+PROVE      : 'prove';
+USING      : 'using';
 
 // module-system-specific keywords
 

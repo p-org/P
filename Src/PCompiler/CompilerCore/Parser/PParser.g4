@@ -66,6 +66,11 @@ topDecl : typeDefDecl
         | assumeOnStartDecl
         ;
 
+proofBlockDecl : PROOF LBRACE proofBody RBRACE ;
+proofBody : proofItem* ;
+proofItem : PROVE targets+=expr USING premises+=expr SEMI # ProveUsingCmd
+        |   PROVE targets+=expr SEMI                      # ProveCmd
+        ; 
 
 typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
             | TYPE name=iden ASSIGN type SEMI # PTypeDef

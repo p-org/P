@@ -693,6 +693,31 @@ namespace Plang.Compiler.TypeChecker
             
             return inv;
         }
+
+        public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
+        {
+            var proofCmd = (ProofCommand) nodesToDeclarations.Get(context);
+            var temporaryFunction = new Function(proofCmd.Name, context);
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            List<IPExpr> premises = context._targets.Select(exprVisitor.Visit).ToList();
+            List<IPExpr> goals = context._premises.Select(exprVisitor.Visit).ToList();
+            proofCmd.Premises = premises;
+            proofCmd.Goals = goals;
+            return proofCmd;
+        }
+
+        public override object VisitProveCmd(PParser.ProveCmdContext context)
+        {
+            var proofCmd = (ProofCommand) nodesToDeclarations.Get(context);
+            var temporaryFunction = new Function(proofCmd.Name, context);
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            List<IPExpr> goals = context._targets.Select(exprVisitor.Visit).ToList();
+            proofCmd.Goals = goals;
+            proofCmd.Premises = [];
+            return proofCmd;
+        }
         
         public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)
         {

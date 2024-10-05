@@ -25,6 +25,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, Pure> pures = new Dictionary<string, Pure>();
         private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
         private readonly IDictionary<string, Axiom> axioms = new Dictionary<string, Axiom>();
+        private readonly IDictionary<string, ProofCommand> proofCommands = new Dictionary<string, ProofCommand>();
         private readonly IDictionary<string, AssumeOnStart> assumeOnStarts = new Dictionary<string, AssumeOnStart>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
@@ -93,6 +94,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
+        public IEnumerable<ProofCommand> ProofCommands => proofCommands.Values;
 
         public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
@@ -181,6 +183,11 @@ namespace Plang.Compiler.TypeChecker
         public bool Get(string name, out Axiom tree)
         {
             return axioms.TryGetValue(name, out tree);
+        }
+
+        public bool Get(string name, out ProofCommand tree)
+        {
+            return proofCommands.TryGetValue(name, out tree);
         }
         
         public bool Get(string name, out AssumeOnStart tree)
@@ -345,6 +352,23 @@ namespace Plang.Compiler.TypeChecker
         }
         
         public bool Lookup(string name, out Axiom tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        public bool Lookup(string name, out ProofCommand tree)
         {
             var current = this;
             while (current != null)
@@ -664,6 +688,14 @@ namespace Plang.Compiler.TypeChecker
             CheckConflicts(axiom, Namespace(axioms));
             axioms.Add(name, axiom);
             return axiom;
+        }
+
+        public ProofCommand Put(string name, PParser.ProofItemContext tree)
+        {
+            var proofCommand = new ProofCommand(name, tree);
+            CheckConflicts(proofCommand, Namespace(proofCommands));
+            proofCommands.Add(name, proofCommand);
+            return proofCommand;
         }
         
         public AssumeOnStart Put(string name, PParser.AssumeOnStartDeclContext tree)

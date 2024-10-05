@@ -5,6 +5,7 @@ using System.Linq;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Plang.Compiler.Util;
@@ -694,6 +695,18 @@ namespace Plang.Compiler.TypeChecker
             return inv;
         }
 
+        private bool CheckProofCommand(ProofCommand cmd, Scope globalScope)
+        {
+            foreach (IPExpr e in cmd.Premises.Concat(cmd.Goals))
+            {
+                if (!PrimitiveType.Bool.IsSameTypeAs(e.Type.Canonicalize()))
+                {
+                    throw Handler.TypeMismatch(e.SourceLocation, e.Type, PrimitiveType.Bool);
+                }
+            }
+            return true;
+        }
+
         public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
         {
             var proofCmd = (ProofCommand) nodesToDeclarations.Get(context);
@@ -704,18 +717,7 @@ namespace Plang.Compiler.TypeChecker
             List<IPExpr> goals = context._premises.Select(exprVisitor.Visit).ToList();
             proofCmd.Premises = premises;
             proofCmd.Goals = goals;
-            return proofCmd;
-        }
-
-        public override object VisitProveCmd(PParser.ProveCmdContext context)
-        {
-            var proofCmd = (ProofCommand) nodesToDeclarations.Get(context);
-            var temporaryFunction = new Function(proofCmd.Name, context);
-            temporaryFunction.Scope = CurrentScope.MakeChildScope();
-            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
-            List<IPExpr> goals = context._targets.Select(exprVisitor.Visit).ToList();
-            proofCmd.Goals = goals;
-            proofCmd.Premises = [];
+            CheckProofCommand(proofCmd, CurrentScope);
             return proofCmd;
         }
         

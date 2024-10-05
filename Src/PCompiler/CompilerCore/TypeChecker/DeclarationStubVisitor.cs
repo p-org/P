@@ -47,6 +47,14 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
+        public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
+        {
+            var name = $"prove{CurrentScope.ProofCommands.Count()}";
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
         public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)
         {
             var name = $"init{CurrentScope.AssumeOnStarts.Count()}";

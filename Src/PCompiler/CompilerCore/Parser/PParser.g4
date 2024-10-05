@@ -64,13 +64,12 @@ topDecl : typeDefDecl
         | invariantDecl
         | axiomDecl
         | assumeOnStartDecl
+        | proofBlockDecl
         ;
 
 proofBlockDecl : PROOF LBRACE proofBody RBRACE ;
 proofBody : proofItem* ;
-proofItem : PROVE targets+=expr USING premises+=expr SEMI # ProveUsingCmd
-        |   PROVE targets+=expr SEMI                      # ProveCmd
-        ; 
+proofItem : PROVE targets+=expr (COMMA targets+=expr)* (USING premises+=expr (COMMA premises+=expr)*)* SEMI # ProveUsingCmd ; 
 
 typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
             | TYPE name=iden ASSIGN type SEMI # PTypeDef

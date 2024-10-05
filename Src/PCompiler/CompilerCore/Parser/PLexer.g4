@@ -70,7 +70,7 @@ IS         : 'is';
 FLYING     : 'inflight';
 TARGETS    : 'targets';
 SENT       : 'sent';
-PROOF      : 'proof';
+PROOF      : 'Proof';
 PROVE      : 'prove';
 USING      : 'using';
 

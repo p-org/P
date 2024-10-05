@@ -22,6 +22,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private HashSet<PLanguageType> _chooseToDeclare;
     private HashSet<PLanguageType> _setCheckersToDeclare;
     private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
+    private Dictionary<CompiledFile, ProofCommand> _fileToProofCommands;
+    private Dictionary<Invariant, HashSet<Invariant>> _invariantDependencies;
     private Scope _globalScope;
     
     public bool HasCompilationStage => true;
@@ -66,14 +68,59 @@ public class Uclid5CodeGenerator : ICodeGenerator
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
     {
         _ctx = new CompilationContext(job);
-        _src = new CompiledFile(_ctx.FileName);
         _optionsToDeclare = [];
         _chooseToDeclare = [];
         _specListenMap = new Dictionary<PEvent, List<string>>();
         _setCheckersToDeclare = [];
+        _fileToProofCommands = [];
+        _invariantDependencies = [];
         _globalScope = globalScope;
-        GenerateMain();
-        return new List<CompiledFile> { _src };
+        BuildDependencies(globalScope);
+        var filename_prefix = $"{job.ProjectName}_";
+        var sanityCheckCmd = new ProofCommand("SanityCheck", null) {
+            Goals = [], Premises = []
+        };
+        compileToFile($"sanity_checks", sanityCheckCmd, true);
+        foreach (var proofCmd in globalScope.ProofCommands)
+        {
+            compileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, false);
+        }
+        return _fileToProofCommands.Keys;
+    }
+
+    private CompiledFile compileToFile(string name, ProofCommand cmd, bool sanityCheck)
+    {
+        var filename = $"{name}.ucl";
+        var file = new CompiledFile(filename);
+        _fileToProofCommands.Add(file, cmd);
+        _src = file;
+        GenerateMain(cmd.Goals, cmd.Premises, sanityCheck);
+        return file;
+    }
+
+    private void BuildDependencies(Scope globalScope)
+    {
+        foreach (var cmd in globalScope.ProofCommands)
+        {
+            foreach (var goal in cmd.Goals)
+            {
+                foreach (var dep in cmd.Premises)
+                {
+                    if (!_invariantDependencies.TryGetValue(goal, out HashSet<Invariant> dependencies))
+                    {
+                        dependencies = ([]);
+                        _invariantDependencies.Add(dep, dependencies);
+                    }
+                    dependencies.Add(dep);
+                }
+            }
+        }
+    }
+
+    private string ShowInvariant(IPExpr e)
+    {
+        if (e is InvariantRefExpr inv) return inv.Invariant.Name;
+        else return e.SourceLocation.GetText();
     }
 
     private void EmitLine(string str)
@@ -626,14 +673,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void GenerateMain()
+    private void GenerateMain(List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks = false)
     {
         EmitLine("module main {");
 
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var specs = (from m in _globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
         var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
-        var invariants = _globalScope.AllDecls.OfType<Invariant>().ToList();
+        // var invariants = _globalScope.AllDecls.OfType<Invariant>().ToList();
         var axioms = _globalScope.AllDecls.OfType<Axiom>().ToList();
         var pures = _globalScope.AllDecls.OfType<Pure>().ToList();
 
@@ -704,10 +751,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             foreach (var s in m.States)
             {
-                GenerateEntryHandler(s, invariants);
+                GenerateEntryHandler(s, goals, requires, generateSanityChecks);
                 foreach (var e in events.Where(e => !e.IsNullEvent && s.HasHandler(e)))
                 {
-                    GenerateEventHandler(s, e, invariants);
+                    GenerateEventHandler(s, e, goals, requires, generateSanityChecks);
                 }
             }
         }
@@ -736,7 +783,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
         EmitLine("");
         
-        foreach (var inv in invariants)
+        foreach (var inv in goals)
         {
             EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
             EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} globally");
@@ -749,15 +796,18 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
         EmitLine("");
         
-        // invariants to ensure unique action IDs
-        EmitLine($"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectSent(StateVar)}[a1] && {StateAdtSelectSent(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
-        EmitLine($"invariant _{InvariantPrefix}Unique_Actions: {InvariantPrefix}Unique_Actions();");
-        EmitLine($"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
-        EmitLine($"invariant _{InvariantPrefix}Increasing_Action_Count: {InvariantPrefix}Increasing_Action_Count();");
-        // invariants to ensure received is a subset of sent
-        EmitLine($"define {InvariantPrefix}Received_Subset_Sent(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectReceived(StateVar)}[a] ==> {StateAdtSelectSent(StateVar)}[a];");
-        EmitLine($"invariant _{InvariantPrefix}Received_Subset_Sent: {InvariantPrefix}Received_Subset_Sent();");
-        EmitLine("");
+        if (generateSanityChecks)
+        {
+            // invariants to ensure unique action IDs
+            EmitLine($"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectSent(StateVar)}[a1] && {StateAdtSelectSent(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+            EmitLine($"invariant _{InvariantPrefix}Unique_Actions: {InvariantPrefix}Unique_Actions();");
+            EmitLine($"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+            EmitLine($"invariant _{InvariantPrefix}Increasing_Action_Count: {InvariantPrefix}Increasing_Action_Count();");
+            // invariants to ensure received is a subset of sent
+            EmitLine($"define {InvariantPrefix}Received_Subset_Sent(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectReceived(StateVar)}[a] ==> {StateAdtSelectSent(StateVar)}[a];");
+            EmitLine($"invariant _{InvariantPrefix}Received_Subset_Sent: {InvariantPrefix}Received_Subset_Sent();");
+            EmitLine("");
+        }
         
         GenerateControlBlock(machines, events);
 
@@ -926,7 +976,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateEntryHandler(State s, List<Invariant> invariants)
+    private void GenerateEntryHandler(State s, List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks = false)
     {
         var label = $"{LocalPrefix}Label";
         var target = LabelAdtSelectTarget(label);
@@ -940,15 +990,22 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\trequires {EventOrGotoAdtIsGoto(action)};");
         EmitLine($"\trequires {GotoAdtIsS(g, s)};");
         EmitLine($"\trequires {MachineStateAdtInS(targetMachineState, s.OwningMachine, s)};");
-        EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
-        EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
-        EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
-        EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
-        EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
-        EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
+        if (generateSanityChecks)
+        {
+            EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
+            EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
+            EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
+            EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
+            EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
+            EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
+        }
         
+        foreach (var reqs in requires)
+        {
+            EmitLine($"\trequires {InvariantPrefix}{reqs.Name}();");
+        }
 
-        foreach (var inv in invariants)
+        foreach (var inv in goals)
         {
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
             EmitLine($"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(s)}");
@@ -992,7 +1049,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
 
-    private void GenerateEventHandler(State s, PEvent ev, List<Invariant> invariants)
+    private void GenerateEventHandler(State s, PEvent ev, List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks = false)
     {
         var label = $"{LocalPrefix}Label";
         EmitLine($"procedure [noinline] {s.OwningMachine.Name}_{s.Name}_{ev.Name}({label}: {LabelAdt})");
@@ -1007,16 +1064,24 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine($"\trequires {MachineStateAdtInS(targetMachineState, s.OwningMachine, s)};");
         EmitLine($"\trequires {EventOrGotoAdtIsEvent(action)};");
         EmitLine($"\trequires {EventAdtIsE(e, ev)};");
-        EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
-        EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
-        EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
-        EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
-        EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
-        EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
+        if (generateSanityChecks)
+        {
+            EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
+            EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
+            EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
+            EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
+            EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
+            EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
+        }
 
         var handler = s.AllEventHandlers.ToDictionary()[ev];
+
+        foreach (var reqs in requires)
+        {
+            EmitLine($"\trequires {InvariantPrefix}{reqs.Name}();");
+        }
         
-        foreach (var inv in invariants)
+        foreach (var inv in goals)
         {
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
             EmitLine($"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(handler)}");

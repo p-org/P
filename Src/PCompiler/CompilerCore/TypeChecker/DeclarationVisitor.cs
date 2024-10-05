@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -695,16 +696,31 @@ namespace Plang.Compiler.TypeChecker
             return inv;
         }
 
-        private bool CheckProofCommand(ProofCommand cmd, Scope globalScope)
+        // private bool CheckProofCommand(ProofCommand cmd, Scope globalScope)
+        // {
+        //     foreach (IPExpr e in cmd.Premises.Concat(cmd.Goals))
+        //     {
+        //         if (e is InvariantRefExpr e1)
+        //         {
+        //             Console.WriteLine(e1.Invariant.Name);
+        //         }
+        //         if (!PrimitiveType.Bool.IsSameTypeAs(e.Type.Canonicalize()))
+        //         {
+        //             throw Handler.TypeMismatch(e.SourceLocation, e.Type, PrimitiveType.Bool);
+        //         }
+        //     }
+        //     return true;
+        // }
+
+        private Invariant ToInvariant(IPExpr e, ParserRuleContext context)
         {
-            foreach (IPExpr e in cmd.Premises.Concat(cmd.Goals))
+            if (e is InvariantRefExpr invRef) return invRef.Invariant;
+            if (!PrimitiveType.Bool.IsSameTypeAs(e.Type.Canonicalize()))
             {
-                if (!PrimitiveType.Bool.IsSameTypeAs(e.Type.Canonicalize()))
-                {
-                    throw Handler.TypeMismatch(e.SourceLocation, e.Type, PrimitiveType.Bool);
-                }
+                throw Handler.TypeMismatch(context, e.Type, PrimitiveType.Bool);
             }
-            return true;
+            Invariant inv = new Invariant($"tmp_inv_{Guid.NewGuid()}", e, context);
+            return inv;
         }
 
         public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
@@ -713,11 +729,26 @@ namespace Plang.Compiler.TypeChecker
             var temporaryFunction = new Function(proofCmd.Name, context);
             temporaryFunction.Scope = CurrentScope.MakeChildScope();
             var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
-            List<IPExpr> premises = context._targets.Select(exprVisitor.Visit).ToList();
-            List<IPExpr> goals = context._premises.Select(exprVisitor.Visit).ToList();
-            proofCmd.Premises = premises;
-            proofCmd.Goals = goals;
-            CheckProofCommand(proofCmd, CurrentScope);
+            List<IPExpr> premises = [];
+            List<IPExpr> goals = [];
+            if (context.goalsAll == null)
+            {
+                premises = context._targets.Select(exprVisitor.Visit).ToList();
+            }
+            else
+            {
+                premises = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
+            }
+            if (context.premisesAll == null)
+            {
+                goals = context._premises.Select(exprVisitor.Visit).ToList();
+            }
+            else
+            {
+                goals = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
+            }
+            proofCmd.Premises = premises.Zip(context._premises, (x, y) => ToInvariant(x, y)).ToList();
+            proofCmd.Goals = goals.Zip(context._targets, (x, y) => ToInvariant(x, y)).ToList();
             return proofCmd;
         }
         

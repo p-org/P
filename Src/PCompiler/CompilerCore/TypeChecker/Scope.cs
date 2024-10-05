@@ -25,7 +25,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, Pure> pures = new Dictionary<string, Pure>();
         private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
         private readonly IDictionary<string, Axiom> axioms = new Dictionary<string, Axiom>();
-        private readonly IDictionary<string, ProofCommand> proofCommands = new Dictionary<string, ProofCommand>();
+        private readonly List<(string, ProofCommand)> proofCommands = new List<(string, ProofCommand)>();
         private readonly IDictionary<string, AssumeOnStart> assumeOnStarts = new Dictionary<string, AssumeOnStart>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
@@ -94,7 +94,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
-        public IEnumerable<ProofCommand> ProofCommands => proofCommands.Values;
+        public IEnumerable<ProofCommand> ProofCommands => proofCommands.Select(p => p.Item2);
 
         public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
@@ -187,7 +187,8 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Get(string name, out ProofCommand tree)
         {
-            return proofCommands.TryGetValue(name, out tree);
+            tree = proofCommands.Find(x => x.Item1 == name).Item2;
+            return tree != null;
         }
         
         public bool Get(string name, out AssumeOnStart tree)
@@ -693,8 +694,7 @@ namespace Plang.Compiler.TypeChecker
         public ProofCommand Put(string name, PParser.ProofItemContext tree)
         {
             var proofCommand = new ProofCommand(name, tree);
-            CheckConflicts(proofCommand, Namespace(proofCommands));
-            proofCommands.Add(name, proofCommand);
+            proofCommands.Add((name, proofCommand));
             return proofCommand;
         }
         

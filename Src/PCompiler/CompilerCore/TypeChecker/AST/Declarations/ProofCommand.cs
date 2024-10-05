@@ -13,8 +13,8 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             Name = name;
         }
 
-        public List<IPExpr> Goals { get; set; }
-        public List<IPExpr> Premises { get; set; }
+        public List<Invariant> Goals { get; set; }
+        public List<Invariant> Premises { get; set; }
         public ParserRuleContext SourceLocation { get; }
         public string Name { get; set; }
     }

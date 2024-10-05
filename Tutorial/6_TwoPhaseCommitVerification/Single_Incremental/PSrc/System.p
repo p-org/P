@@ -112,5 +112,5 @@ invariant  a5: forall (p: Participant, c: Coordinator) :: p in c.yesVotes ==> pr
 invariant  a6: coordinator() is Committed ==> (forall (p: Participant) :: p in participants() ==> preference(p) == YES);
 
 Proof {
-    prove safety using a1, a2, a3a, a3b, a4, a5, a6;
+    prove a1;
 }

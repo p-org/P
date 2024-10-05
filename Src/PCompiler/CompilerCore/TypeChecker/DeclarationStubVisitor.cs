@@ -49,7 +49,7 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
         {
-            var name = $"prove{CurrentScope.ProofCommands.Count()}";
+            var name = $"proof_cmd_{CurrentScope.ProofCommands.Count()}";
             var decl = CurrentScope.Put(name, context);
             nodesToDeclarations.Put(context, decl);
             return null;

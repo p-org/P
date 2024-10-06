@@ -167,6 +167,43 @@ namespace Plang.Compiler
             }
         }
 
+        public static Process NonBlockingRun(string activeDirectory, string exeName, params string[] argumentList)
+        {
+            var psi = new ProcessStartInfo(exeName)
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                WorkingDirectory = activeDirectory,
+                Arguments = string.Join(" ", argumentList)
+            };
+
+            var proc = new Process { StartInfo = psi };
+            proc.Start();
+            return proc;
+        }
+
+        public static int WaitForResult(Process proc, out string stdout, out string stderr)
+        {
+            string mStderr = "", mStdout = "";
+            proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
+            proc.ErrorDataReceived += (s, e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(e.Data))
+                {
+                    mStderr += $"{e.Data}\n";
+                }
+            };
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+            proc.WaitForExit();
+            stdout = mStdout;
+            stderr = mStderr;
+            return proc.ExitCode;
+        }
+
         public static int RunWithOutput(string activeDirectory,
             out string stdout,
             out string stderr, string exeName,

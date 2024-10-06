@@ -73,6 +73,8 @@ SENT       : 'sent';
 PROOF      : 'Proof';
 PROVE      : 'prove';
 USING      : 'using';
+LEMMA      : 'Lemma';
+THEOREM    : 'Theorem';
 
 // module-system-specific keywords
 

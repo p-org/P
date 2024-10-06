@@ -62,10 +62,15 @@ topDecl : typeDefDecl
         | testDecl
         | implementationDecl
         | invariantDecl
+        | invariantGroupDecl
         | axiomDecl
         | assumeOnStartDecl
         | proofBlockDecl
         ;
+
+invariantGroupDecl : LEMMA name=iden LBRACE invariantDecl* RBRACE
+                |    THEOREM name=iden LBRACE invariantDecl* RBRACE
+                ;
 
 proofBlockDecl : PROOF LBRACE proofBody RBRACE ;
 proofBody : proofItem* ;

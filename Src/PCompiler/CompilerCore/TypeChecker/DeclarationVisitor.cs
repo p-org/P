@@ -696,31 +696,23 @@ namespace Plang.Compiler.TypeChecker
             return inv;
         }
 
-        // private bool CheckProofCommand(ProofCommand cmd, Scope globalScope)
-        // {
-        //     foreach (IPExpr e in cmd.Premises.Concat(cmd.Goals))
-        //     {
-        //         if (e is InvariantRefExpr e1)
-        //         {
-        //             Console.WriteLine(e1.Invariant.Name);
-        //         }
-        //         if (!PrimitiveType.Bool.IsSameTypeAs(e.Type.Canonicalize()))
-        //         {
-        //             throw Handler.TypeMismatch(e.SourceLocation, e.Type, PrimitiveType.Bool);
-        //         }
-        //     }
-        //     return true;
-        // }
-
-        private Invariant ToInvariant(IPExpr e, ParserRuleContext context)
+        public override object VisitInvariantGroupDecl(PParser.InvariantGroupDeclContext context)
         {
-            if (e is InvariantRefExpr invRef) return invRef.Invariant;
+            var invGroup = (InvariantGroup) nodesToDeclarations.Get(context);
+            invGroup.Invariants = context.invariantDecl().Select(Visit).Cast<Invariant>().ToList();
+            return invGroup;
+        }
+
+        private List<Invariant> ToInvariant(IPExpr e, ParserRuleContext context)
+        {
+            if (e is InvariantGroupRefExpr invGroupRef) return invGroupRef.Invariants;
+            if (e is InvariantRefExpr invRef) return [invRef.Invariant];
             if (!PrimitiveType.Bool.IsSameTypeAs(e.Type.Canonicalize()))
             {
                 throw Handler.TypeMismatch(context, e.Type, PrimitiveType.Bool);
             }
             Invariant inv = new Invariant($"tmp_inv_{Guid.NewGuid()}", e, context);
-            return inv;
+            return [inv];
         }
 
         public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
@@ -731,24 +723,38 @@ namespace Plang.Compiler.TypeChecker
             var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
             List<IPExpr> premises = [];
             List<IPExpr> goals = [];
-            if (context.goalsAll == null)
+            if (context.premisesAll == null)
             {
-                premises = context._targets.Select(exprVisitor.Visit).ToList();
+                premises = context._premises.Select(exprVisitor.Visit).ToList();
             }
             else
             {
                 premises = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
             }
-            if (context.premisesAll == null)
+            if (context.goalsAll == null)
             {
-                goals = context._premises.Select(exprVisitor.Visit).ToList();
+                goals = context._targets.Select(exprVisitor.Visit).ToList();
             }
             else
             {
                 goals = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
             }
-            proofCmd.Premises = premises.Zip(context._premises, (x, y) => ToInvariant(x, y)).ToList();
-            proofCmd.Goals = goals.Zip(context._targets, (x, y) => ToInvariant(x, y)).ToList();
+            if (premises.Count == context._premises.Count)
+            {
+                proofCmd.Premises = premises.Zip(context._premises, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
+            }
+            else
+            {
+                proofCmd.Premises = premises.SelectMany(x => ToInvariant(x, context)).ToList();
+            }
+            if (goals.Count == context._targets.Count)
+            {
+                proofCmd.Goals = goals.Zip(context._targets, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
+            }
+            else
+            {
+                proofCmd.Goals = goals.SelectMany(x => ToInvariant(x, context)).ToList();
+            }
             return proofCmd;
         }
         

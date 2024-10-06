@@ -723,6 +723,11 @@ namespace Plang.Compiler.TypeChecker
                     return new InvariantRefExpr(inv, context);
                 }
 
+                if (table.Lookup(symbolName, out InvariantGroup invGroup))
+                {
+                    return new InvariantGroupRefExpr(invGroup, context);
+                }
+
                 throw handler.MissingDeclaration(context.iden(), "variable, enum element, spec machine, or event", symbolName);
             }
 

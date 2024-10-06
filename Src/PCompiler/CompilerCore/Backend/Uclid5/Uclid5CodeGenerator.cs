@@ -22,46 +22,113 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private HashSet<PLanguageType> _chooseToDeclare;
     private HashSet<PLanguageType> _setCheckersToDeclare;
     private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
-    private Dictionary<CompiledFile, ProofCommand> _fileToProofCommands;
+    private Dictionary<string, ProofCommand> _fileToProofCommands;
     private Dictionary<Invariant, HashSet<Invariant>> _invariantDependencies;
+    private HashSet<Invariant> _provenInvariants;
     private Scope _globalScope;
     
     public bool HasCompilationStage => true;
 
     public void Compile(ICompilerConfiguration job)
     {
-        var filename = $"{job.ProjectName}.ucl";
+        var filename = $"{job.ProjectName}_proof_cmd_0.ucl";
         var stdout = "";
         var stderr = "";
         
         // compile the csproj file
         var args = new[] { "-M", filename };
 
-        var exitCode = Compiler.RunWithOutput(job.OutputDirectory.FullName, out stdout, out stderr, "uclid", args);
+        var proc = Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args);
+        var exitCode = Compiler.WaitForResult(proc, out stdout, out stderr);
         if (exitCode != 0)
         {
             throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
         }
 
-        var failed = Regex.Matches(stdout,  "UNDEF -> ").Count + Regex.Matches(stdout,  "FAILED -> ").Count;
-        var succeeded = Regex.Matches(stdout, "PASSED -> ").Count;
-            
-        job.Output.WriteInfo($"Successfully verified {succeeded} conditions.");
-        job.Output.WriteInfo($"Failed to verify {failed} conditions.");
-
         var undefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
         var fails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
-        
-        var query = File.ReadLines(job.OutputDirectory.FullName + "/" + filename).ToArray();
-        
-        foreach (Match match in fails.Concat(undefs))
+        ShowResult(job, filename, undefs, fails);
+    }
+
+    private void ProcessFailureMessages(MatchCollection collection, string[] query, string reason, List<string> failedInv, List<string> failMessages)
+    {
+        foreach (Match match in collection)
         {
             foreach (var feedback in match.Groups[1].Captures.Zip(match.Groups[2].Captures))
             {
-                var line = query[Int32.Parse(feedback.Second.ToString()) - 1];
+                var line = query[int.Parse(feedback.Second.ToString()) - 1];
                 var step = feedback.First.ToString().Contains("[Step #0]") ? "(base case)" : "";
-                job.Output.WriteInfo($"  -{line.Split("//").Last()} {step}");
+                var msg = $"{reason} {line.Split("//").Last()} {step}";
+                var matchName = Regex.Match(line, @"// Failed to verify invariant (.*) at (.*)");
+                var invName = matchName.Groups[1].Value;
+                failedInv.Add(invName);
+                failMessages.Add($"{reason} {invName} at {matchName.Groups[2].Value} {step}");
             }
+        }
+    }
+
+    private void ShowResult(ICompilerConfiguration job, string filename, MatchCollection undefs, MatchCollection fails)
+    {
+        var cmd = _fileToProofCommands[filename];
+        var query = File.ReadLines(job.OutputDirectory.FullName + "/" + filename).ToArray();
+        List<string> failedInv = [];
+        List<string> failMessages = [];
+        ProcessFailureMessages(fails, query, "❌", failedInv, failMessages);
+        ProcessFailureMessages(undefs, query, "❓", failedInv, failMessages);
+        if (failedInv.Count == 0)
+        {
+            job.Output.WriteInfo($"🎉 Verified {cmd.Goals.Count} invariants!");
+        }
+        List<Invariant> succeededInv = [];
+        foreach (var inv in cmd.Goals)
+        {
+            if (!failedInv.Contains(inv.Name))
+            {
+                MarkProved(inv);
+                succeededInv.Add(inv);
+            }
+        }
+        ShowRemainingGoals(job, succeededInv);
+        if (failedInv.Count > 0)
+        {
+            job.Output.WriteWarning($"====================Failed Invariants====================");
+            for (int i = 0; i < failedInv.Count; i++)
+            {
+                job.Output.WriteError($"{failMessages[i]}");
+            }
+        }
+    }
+
+    private void ShowRemainingGoals(ICompilerConfiguration job, List<Invariant> succeededInv)
+    {
+        string msg = "";
+        Console.WriteLine($"{succeededInv.Count} invariants succeeded");
+        foreach (var inv in succeededInv)
+        {
+            // show remaining premises to prove
+            var remaining = _invariantDependencies[inv].Select(i => (i.Name, GetLocation(i))).ToList();
+            if (remaining.Count > 0)
+            {
+                msg += $"Invariant {inv.Name} at {GetLocation(inv)} has remaining premises to prove:\n";
+                msg += string.Join("\n", remaining.Select(r => $"- {r.Name} at {r.Item2}")) + "\n";
+            }
+        }
+        if (msg != "")
+        {
+            job.Output.WriteInfo("====================Remaining Goals====================");
+            job.Output.WriteInfo(msg);
+        }
+    }
+
+    private void MarkProved(Invariant i)
+    {
+        foreach (var inv in _invariantDependencies.Keys)
+        {
+            _invariantDependencies[inv].Remove(i);
+        }
+        if (_invariantDependencies[i].Count == 0)
+        {
+            _provenInvariants.Add(i);
         }
     }
 
@@ -74,25 +141,23 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _setCheckersToDeclare = [];
         _fileToProofCommands = [];
         _invariantDependencies = [];
+        _provenInvariants = [];
         _globalScope = globalScope;
         BuildDependencies(globalScope);
         var filename_prefix = $"{job.ProjectName}_";
-        var sanityCheckCmd = new ProofCommand("SanityCheck", null) {
-            Goals = [], Premises = []
-        };
-        compileToFile($"sanity_checks", sanityCheckCmd, true);
+        List<CompiledFile> files = [];
         foreach (var proofCmd in globalScope.ProofCommands)
         {
-            compileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, false);
+            files.Add(CompileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, false));
         }
-        return _fileToProofCommands.Keys;
+        return files;
     }
 
-    private CompiledFile compileToFile(string name, ProofCommand cmd, bool sanityCheck)
+    private CompiledFile CompileToFile(string name, ProofCommand cmd, bool sanityCheck)
     {
         var filename = $"{name}.ucl";
         var file = new CompiledFile(filename);
-        _fileToProofCommands.Add(file, cmd);
+        _fileToProofCommands.Add(filename, cmd);
         _src = file;
         GenerateMain(cmd.Goals, cmd.Premises, sanityCheck);
         return file;
@@ -100,18 +165,17 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private void BuildDependencies(Scope globalScope)
     {
+        foreach (var inv in globalScope.AllDecls.OfType<Invariant>())
+        {
+            _invariantDependencies.Add(inv, []);
+        }
         foreach (var cmd in globalScope.ProofCommands)
         {
             foreach (var goal in cmd.Goals)
             {
                 foreach (var dep in cmd.Premises)
                 {
-                    if (!_invariantDependencies.TryGetValue(goal, out HashSet<Invariant> dependencies))
-                    {
-                        dependencies = ([]);
-                        _invariantDependencies.Add(dep, dependencies);
-                    }
-                    dependencies.Add(dep);
+                    _invariantDependencies[goal].Add(dep);
                 }
             }
         }
@@ -577,7 +641,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateSpecProcedures(List<Machine> specs)
+    private void GenerateSpecProcedures(List<Machine> specs, List<Invariant> goals, bool generateSanityChecks = false)
     {
         foreach (var spec in specs)
         {
@@ -608,7 +672,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 foreach (var v in spec.Fields)
                     EmitLine($"{GetLocalName(v)} = {SpecPrefix}{spec.Name}_{v.Name};");
                 
-                GenerateStmt(f.Body, spec);
+                GenerateStmt(f.Body, spec, goals, generateSanityChecks);
                 
                 // update the global variables
                 EmitLine($"{SpecPrefix}{spec.Name}_State = {LocalPrefix}state;");
@@ -673,14 +737,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void GenerateMain(List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks = false)
+    private void GenerateMain(List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks)
     {
         EmitLine("module main {");
 
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var specs = (from m in _globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
         var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
-        // var invariants = _globalScope.AllDecls.OfType<Invariant>().ToList();
+        // goals = _globalScope.AllDecls.OfType<Invariant>().ToList();
         var axioms = _globalScope.AllDecls.OfType<Axiom>().ToList();
         var pures = _globalScope.AllDecls.OfType<Pure>().ToList();
 
@@ -730,20 +794,20 @@ public class Uclid5CodeGenerator : ICodeGenerator
         // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
         if (_ctx.Job.HandlesAll)
         {
-            GenerateNextBlock(machines, events);
+            GenerateNextBlock(machines, events, generateSanityChecks);
             EmitLine("");
         }
         
         // global functions
-        GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>());
+        GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>(), goals, generateSanityChecks);
 
         // Spec support
-        GenerateSpecProcedures(specs); // generate spec methods, called by spec handlers
+        GenerateSpecProcedures(specs, goals, generateSanityChecks); // generate spec methods, called by spec handlers
         GenerateSpecHandlers(specs); // will populate _specListenMap, which is used when ever there is a send statement
         EmitLine("");
         
         // non-handler functions for handlers
-        GenerateMachineProcedures(machines); // generate machine methods, called by handlers below
+        GenerateMachineProcedures(machines, goals, generateSanityChecks); // generate machine methods, called by handlers below
         EmitLine("");
 
         // generate the handlers
@@ -783,6 +847,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
         EmitLine("");
         
+        foreach (var inv in requires)
+        {
+            EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
+        }
+
         foreach (var inv in goals)
         {
             EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
@@ -851,7 +920,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("}");
     }
 
-    private void GenerateNextBlock(List<Machine> machines, List<PEvent> events)
+    private void GenerateNextBlock(List<Machine> machines, List<PEvent> events, bool generateSanityChecks)
     {
         var currentLabel = $"{BuiltinPrefix}CurrentLabel";
         // pick a random label and handle it
@@ -867,11 +936,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     if (!s.HasHandler(e))
                     {
-                        if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
+                        if (generateSanityChecks)
                         {
-                            EmitLine($"({EventGuard(m, s, e)}) : {{");
-                            EmitLine($"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
-                            EmitLine("}");
+                            if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
+                            {
+                                EmitLine($"({EventGuard(m, s, e)}) : {{");
+                                EmitLine($"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
+                                EmitLine("}");
+                            }
                         }
                     }
                 }
@@ -893,7 +965,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateGlobalProcedures(IEnumerable<Function> functions)
+    private void GenerateGlobalProcedures(IEnumerable<Function> functions, List<Invariant> goals, bool generateSanityChecks = false)
     {
         // TODO: these should be side-effect free and we should enforce that
         foreach (var f in functions)
@@ -917,12 +989,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine("{");
             // declare local variables for the method
             foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
-            GenerateStmt(f.Body, null);
+            GenerateStmt(f.Body, null, goals, generateSanityChecks);
             EmitLine("}\n");
         }
     }
 
-    private void GenerateMachineProcedures(List<Machine> machines)
+    private void GenerateMachineProcedures(List<Machine> machines, List<Invariant> goals, bool generateSanityChecks = false)
     {
         foreach (var m in machines)
         {
@@ -957,7 +1029,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     EmitLine($"{GetLocalName(v)} = {MachineStateAdtSelectField(currState, m, v)};");
                 // foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
 
-                GenerateStmt(f.Body, null);
+                GenerateStmt(f.Body, null, goals, generateSanityChecks);
 
                 var fields = m.Fields.Select(GetLocalName).Prepend($"{LocalPrefix}state").ToList();
 
@@ -1238,12 +1310,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
     // specMachine is null iff we are not generating a statement for a spec machine
-    private void GenerateStmt(IPStmt stmt, Machine specMachine)
+    private void GenerateStmt(IPStmt stmt, Machine specMachine, List<Invariant> goals, bool generateSanityChecks = false)
     {
         switch (stmt)
         {
             case CompoundStmt cstmt:
-                foreach (var s in cstmt.Statements) GenerateStmt(s, specMachine);
+                foreach (var s in cstmt.Statements) GenerateStmt(s, specMachine, goals, generateSanityChecks);
                 return;
             case AssignStmt { Value: FunCallExpr, Location: VariableAccessExpr} cstmt:
                 var call = cstmt.Value as FunCallExpr;
@@ -1301,9 +1373,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     _ => ExprToString(ifstmt.Condition),
                 };
                 EmitLine($"if ({cond}) {{");
-                GenerateStmt(ifstmt.ThenBranch, specMachine);
+                GenerateStmt(ifstmt.ThenBranch, specMachine, goals, generateSanityChecks);
                 EmitLine("} else {");
-                GenerateStmt(ifstmt.ElseBranch, specMachine);
+                GenerateStmt(ifstmt.ElseBranch, specMachine, goals, generateSanityChecks);
                 EmitLine("}");
                 return;
             case AssertStmt astmt:
@@ -1384,19 +1456,22 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         // havoc the item
                         EmitLine($"havoc {item};");
                         EmitLine($"while ({checker} != {collection})");
-                        foreach (var inv in  _globalScope.AllDecls.OfType<Invariant>())
+                        foreach (var inv in goals)
                         {
                             EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
                         }
-                        EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
-                        EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
-                        EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent();");
-                        // ensure uniqueness for the new ones too
-                        EmitLine($"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
-                        EmitLine($"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
-                        
-                        // ensure we only ever add sends
-                        EmitLine($"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
+                        if (generateSanityChecks)
+                        {
+                            EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
+                            EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
+                            EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent();");
+                            // ensure uniqueness for the new ones too
+                            EmitLine($"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+                            EmitLine($"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+                            
+                            // ensure we only ever add sends
+                            EmitLine($"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
+                        }
 
                         // user given invariants
                         foreach (var inv in fstmt.Invariants)
@@ -1408,7 +1483,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         // assume that the item is in the set but hasn't been visited
                         EmitLine($"if ({collection}[{item}] && !{checker}[{item}]) {{");
                         // the body of the loop
-                        GenerateStmt(fstmt.Body, specMachine);
+                        GenerateStmt(fstmt.Body, specMachine, goals, generateSanityChecks);
                         // update the checker
                         EmitLine($"{checker} = {checker}[{item} -> true];");
                         EmitLine("}");
@@ -1424,7 +1499,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         // havoc the item, in this case it is a key
                         EmitLine($"havoc {item};");
                         EmitLine($"while ({checker} != {collection})");
-                        foreach (var inv in  _globalScope.AllDecls.OfType<Invariant>())
+                        foreach (var inv in goals)
                         {
                             EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
                         }
@@ -1448,7 +1523,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         // assume that the item is in the set but hasn't been visited
                         EmitLine($"if ({OptionIsSome(mapType.ValueType, $"{collection}[{item}]")} && {OptionIsNone(mapType.ValueType, $"{checker}[{item}]")}) {{");
                         // the body of the loop
-                        GenerateStmt(fstmt.Body, specMachine);
+                        GenerateStmt(fstmt.Body, specMachine, goals, generateSanityChecks);
                         // update the checker
                         EmitLine($"{checker} = {checker}[{item} -> {collection}[{item}]];");
                         EmitLine("}");

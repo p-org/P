@@ -78,7 +78,10 @@ namespace Plang.Compiler
                 var compiledFiles = job.Backend.GenerateCode(job, scope);
                 foreach (var file in compiledFiles)
                 {
-                    job.Output.WriteInfo($"Generated {file.FileName}.");
+                    if (entry != CompilerOutput.Uclid5)
+                    {
+                        job.Output.WriteInfo($"Generated {file.FileName}.");
+                    }
                     job.Output.WriteFile(file);
                 }
 

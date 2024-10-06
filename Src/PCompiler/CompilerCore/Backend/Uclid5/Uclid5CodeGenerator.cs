@@ -26,6 +26,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
     private Dictionary<string, ProofCommand> _fileToProofCommands;
     private Dictionary<ProofCommand, List<string>> _proofCommandToFiles;
+    private List<ProofCommand> _commands;
     private Dictionary<Invariant, HashSet<Invariant>> _invariantDependencies;
     private HashSet<Invariant> _provenInvariants;
     private Scope _globalScope;
@@ -43,7 +44,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             parallelism = Environment.ProcessorCount;
         }
-        foreach (var cmd in _globalScope.ProofCommands)
+        foreach (var cmd in _commands)
         {
             var files = _proofCommandToFiles[cmd];
             List<Process> runningTasks = [];
@@ -208,16 +209,32 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _invariantDependencies = [];
         _provenInvariants = [];
         _proofCommandToFiles = [];
+        _commands = [];
         _globalScope = globalScope;
         BuildDependencies(globalScope);
         var filename_prefix = $"{job.ProjectName}_";
         List<CompiledFile> files = [];
-        foreach (var proofCmd in globalScope.ProofCommands)
+        if (!globalScope.ProofCommands.Any())
         {
-            _proofCommandToFiles.Add(proofCmd, []);
-            files.AddRange(CompileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, false));
+            var proof = new ProofCommand("default", null)
+            {
+                Goals = globalScope.AllDecls.OfType<Invariant>().ToList(),
+                Premises = []
+            };
+            _commands.Add(proof);
+            _proofCommandToFiles.Add(proof, []);
+            files.AddRange(CompileToFile($"{filename_prefix}default", proof, true));
         }
-        return [];
+        else
+        {
+            foreach (var proofCmd in globalScope.ProofCommands)
+            {
+                _proofCommandToFiles.Add(proofCmd, []);
+                files.AddRange(CompileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, false));
+                _commands.Add(proofCmd);
+            }
+        }
+        return files;
     }
 
     private CompiledFile GenerateCompiledFile(ProofCommand cmd, string name, Machine m, State s, PEvent e)
@@ -267,6 +284,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             }
             
         }
+        Console.WriteLine($"Generated {files.Count} files for {name}");
         return files;
     }
 

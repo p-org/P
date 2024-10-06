@@ -50,6 +50,7 @@ namespace Plang.Options
             
             Parser.AddArgument("no-event-handler-checks", "nch", "Do not check that all events are handled", typeof(bool)).IsHidden = true;
             Parser.AddArgument("check-only", "co", "Check only the specified machine", typeof(string)).IsHidden = true;
+            Parser.AddArgument("jobs", "j", "Number of parallel processes to use", typeof(int)).IsHidden = true;
         }
 
         /// <summary>
@@ -174,6 +175,9 @@ namespace Plang.Options
                     break;
                 case "check-only":
                     compilerConfiguration.CheckOnly = (string)option.Value;
+                    break;
+                case "jobs":
+                    compilerConfiguration.Parallelism = (int)option.Value;
                     break;
                 case "mode":
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();

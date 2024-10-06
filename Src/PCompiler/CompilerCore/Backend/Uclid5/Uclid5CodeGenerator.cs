@@ -39,6 +39,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         List<Match> fails = [];
         List<string> failMessages = [];
         HashSet<Invariant> succeededInv = [];
+        HashSet<Invariant> failedInv = [];
         int parallelism = job.Parallelism;
         if (parallelism == 0)
         {
@@ -55,6 +56,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             while (i < last && i < parallelism)
             {
                 filenames.Add(files[i]);
+                Console.WriteLine($"Added {files[i]} to the queue");
                 var filename = files[i];
                 var args = new[] { "-M", filename };
                 runningTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
@@ -69,8 +71,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 List<string> newFilenames = [];
                 for (int j = 0; j < runningTasks.Count; ++j)
                 {
-                    if (runningTasks[j].HasExited)
-                    {
+                    // if (runningTasks[j].HasExited)
+                    // {
                         completed.Add(j);
                         var exitCode = Compiler.WaitForResult(runningTasks[j], out var stdout, out var stderr);
                         if (exitCode != 0)
@@ -78,19 +80,26 @@ public class Uclid5CodeGenerator : ICodeGenerator
                             throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
                         }
                         undefs.AddRange(Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)"));
+                        if (Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)").Count > 0)
+                        {
+                            job.Output.WriteWarning($"{filenames[j]} results in failure(s)");
+                        }
                         fails.AddRange(Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)"));
-                        var (invs, msgs) = AggregateResults(job, filenames[j], undefs, fails);
+                        
+                        var (invs, failed, msgs) = AggregateResults(job, filenames[j], undefs, fails);
                         succeededInv.UnionWith(invs);
+                        failedInv.UnionWith(failed);
                         failMessages.AddRange(msgs);
                         if (i < last)
                         {
                             filenames.Add(files[i]);
+                            Console.WriteLine($"Added {files[i]} to the queue");
                             var filename = files[i];
                             var args = new[] { "-M", filename };
                             newTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
                             i++;
                         }
-                    }
+                    // }
                 }
                 numCompleted += completed.Count;
                 foreach (var j in completed.OrderByDescending(x => x))
@@ -100,19 +109,20 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 }
                 runningTasks.AddRange(newTasks);
                 filenames.AddRange(newFilenames);
-                // if (completed.Count == 0)
-                // {
-                //     Thread.Sleep(500);
-                // }
+                if (completed.Count == 0)
+                {
+                    Thread.Sleep(500);
+                }
             }
         }
+        succeededInv.ExceptWith(failedInv);
         job.Output.WriteInfo($"🎉 Verified {succeededInv.Count} invariants!");
         foreach (var inv in succeededInv)
         {
             job.Output.WriteInfo($"✅ {inv.Name}");
         }
         MarkProvenInvariants(succeededInv);
-        ShowRemainings(job);
+        ShowRemainings(job, failedInv);
         if (failMessages.Count > 0)
         {
             job.Output.WriteInfo($"❌ Failed to verify {failMessages.Count} invariants!");
@@ -138,12 +148,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void ShowRemainings(ICompilerConfiguration job)
+    private void ShowRemainings(ICompilerConfiguration job, HashSet<Invariant> failedInv)
     {
         List<Invariant> remaining = [];
         foreach (var inv in _invariantDependencies.Keys)
         {
-            if (!_provenInvariants.Contains(inv))
+            if (!_provenInvariants.Contains(inv) && !failedInv.Contains(inv))
             {
                 remaining.Add(inv);
             }
@@ -169,13 +179,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var matchName = Regex.Match(line, @"// Failed to verify invariant (.*) at (.*)");
                 var invName = matchName.Groups[1].Value;
                 failedInv.Add(invName);
-                failMessages.Add($"{reason} {invName} at {matchName.Groups[2].Value} {step}");
+                failMessages.Add($"{reason} {line.Split("//").Last()} {step}");
             }
         }
     }
 
     // returns invariants that were successfully verified and failure messages
-    private (HashSet<Invariant>, List<string>) AggregateResults(ICompilerConfiguration job, string filename, List<Match> undefs, List<Match> fails)
+    private (HashSet<Invariant>, HashSet<Invariant>, List<string>) AggregateResults(ICompilerConfiguration job, string filename, List<Match> undefs, List<Match> fails)
     {
         var cmd = _fileToProofCommands[filename];
         var query = File.ReadLines(job.OutputDirectory.FullName + "/" + filename).ToArray();
@@ -185,7 +195,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         ProcessFailureMessages(undefs, query, "❓", failedInv, failMessages);
         if (failedInv.Count == 0)
         {
-            return ([.. cmd.Goals], []);
+            return ([.. cmd.Goals], [], []);
         }
         HashSet<Invariant> succeededInv = [];
         foreach (var inv in cmd.Goals)
@@ -195,7 +205,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 succeededInv.Add(inv);
             }
         }
-        return (succeededInv, failMessages);
+        return (succeededInv, failedInv.Select(x => { _globalScope.Get(x, out Invariant i); return i; }).ToHashSet(), failMessages);
     }
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)

@@ -55,11 +55,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
             // prefill
             while (i < last && i < parallelism)
             {
-                filenames.Add(files[i]);
-                Console.WriteLine($"Added {files[i]} to the queue");
                 var filename = files[i];
                 var args = new[] { "-M", filename };
                 runningTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
+                filenames.Add(filename);
                 i++;
             }
             // fetch
@@ -71,35 +70,32 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 List<string> newFilenames = [];
                 for (int j = 0; j < runningTasks.Count; ++j)
                 {
-                    // if (runningTasks[j].HasExited)
-                    // {
+                    if (runningTasks[j].HasExited)
+                    {
                         completed.Add(j);
                         var exitCode = Compiler.WaitForResult(runningTasks[j], out var stdout, out var stderr);
                         if (exitCode != 0)
                         {
                             throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
                         }
-                        undefs.AddRange(Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)"));
-                        if (Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)").Count > 0)
-                        {
-                            job.Output.WriteWarning($"{filenames[j]} results in failure(s)");
-                        }
-                        fails.AddRange(Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)"));
+                        var curr_undefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
+                        var curr_fails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
+                        undefs.AddRange(curr_undefs);
+                        fails.AddRange(curr_fails);
                         
-                        var (invs, failed, msgs) = AggregateResults(job, filenames[j], undefs, fails);
+                        var (invs, failed, msgs) = AggregateResults(job, filenames[j], curr_undefs.ToList(), curr_fails.ToList());
                         succeededInv.UnionWith(invs);
                         failedInv.UnionWith(failed);
                         failMessages.AddRange(msgs);
                         if (i < last)
                         {
-                            filenames.Add(files[i]);
-                            Console.WriteLine($"Added {files[i]} to the queue");
                             var filename = files[i];
                             var args = new[] { "-M", filename };
                             newTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
+                            filenames.Add(filename);
                             i++;
                         }
-                    // }
+                    }
                 }
                 numCompleted += completed.Count;
                 foreach (var j in completed.OrderByDescending(x => x))
@@ -113,10 +109,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     Thread.Sleep(500);
                 }
+                Console.Write($"\r🔍 Verifying {numCompleted}/{last} files...");
             }
         }
         succeededInv.ExceptWith(failedInv);
-        job.Output.WriteInfo($"🎉 Verified {succeededInv.Count} invariants!");
+        job.Output.WriteInfo($"\n🎉 Verified {succeededInv.Count} invariants!");
         foreach (var inv in succeededInv)
         {
             job.Output.WriteInfo($"✅ {inv.Name}");

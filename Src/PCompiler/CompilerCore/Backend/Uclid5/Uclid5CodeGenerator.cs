@@ -958,17 +958,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             GenerateEntryHandler(state, goals, requires, generateSanityChecks);
         }
-        // foreach (var m in machines)
-        // {
-        //     foreach (var s in m.States)
-        //     {
-        //         GenerateEntryHandler(s, goals, requires, generateSanityChecks);
-        //         foreach (var e in events.Where(e => !e.IsNullEvent && s.HasHandler(e)))
-        //         {
-        //             GenerateEventHandler(s, e, goals, requires, generateSanityChecks);
-        //         }
-        //     }
-        // }
 
         EmitLine("");
 

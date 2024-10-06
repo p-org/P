@@ -117,7 +117,8 @@ Lemma kondo_invs {
     invariant  a6: coordinator() is Committed ==> (forall (p: Participant) :: p in participants() ==> preference(p) == YES);
 }
 
-// Proof {
-//     // prove a1 using no_unexpected_messages;
-//     prove safety using kondo_invs;
-// }
+Proof {
+    prove safety using kondo_invs;
+    prove no_unexpected_messages, system_config;
+    prove kondo_invs using no_unexpected_messages, system_config;
+}

@@ -27,7 +27,7 @@ namespace Plang.Compiler
             Timeout = 60;
             HandlesAll = true;
             CheckOnly = null;
-            Parallelism = Math.Max(Environment.ProcessorCount - 1, 1);
+            Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null, bool debug = false)

@@ -755,6 +755,8 @@ namespace Plang.Compiler.TypeChecker
             {
                 proofCmd.Goals = goals.SelectMany(x => ToInvariant(x, context)).ToList();
             }
+            // exclude things appear in `goals` from `premises`
+            proofCmd.Premises = proofCmd.Premises.Except(proofCmd.Goals).ToList();
             return proofCmd;
         }
         

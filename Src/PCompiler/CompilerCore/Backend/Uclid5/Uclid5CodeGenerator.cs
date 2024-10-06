@@ -47,6 +47,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
         foreach (var cmd in _commands)
         {
+            job.Output.WriteInfo($"Proof command: {cmd.Name}");
             var files = _proofCommandToFiles[cmd];
             List<Process> runningTasks = [];
             List<string> filenames = [];
@@ -78,6 +79,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         {
                             throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
                         }
+                        runningTasks[j].Kill();
                         var curr_undefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
                         var curr_fails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
                         undefs.AddRange(curr_undefs);
@@ -109,8 +111,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     Thread.Sleep(500);
                 }
-                Console.Write($"\r🔍 Verifying {numCompleted}/{last} files...");
+                Console.Write($"\r🔍 Verifying {numCompleted}/{last} goals...");
             }
+            Console.WriteLine();
         }
         succeededInv.ExceptWith(failedInv);
         job.Output.WriteInfo($"\n🎉 Verified {succeededInv.Count} invariants!");
@@ -138,7 +141,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
         foreach (var inv in _invariantDependencies.Keys)
         {
-            if (_invariantDependencies[inv].Count == 0 && succeededInv.Contains(inv))
+            if (succeededInv.Contains(inv))
             {
                 _provenInvariants.Add(inv);
             }
@@ -147,12 +150,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private void ShowRemainings(ICompilerConfiguration job, HashSet<Invariant> failedInv)
     {
-        List<Invariant> remaining = [];
-        foreach (var inv in _invariantDependencies.Keys)
+        HashSet<Invariant> remaining = [];
+        foreach (var inv in _provenInvariants)
         {
-            if (!_provenInvariants.Contains(inv) && !failedInv.Contains(inv))
+            foreach (var dep in _invariantDependencies[inv])
             {
-                remaining.Add(inv);
+                if (!failedInv.Contains(dep) && !_provenInvariants.Contains(dep))
+                {
+                    remaining.Add(dep);
+                }
             }
         }
         if (remaining.Count > 0)
@@ -297,16 +303,17 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private void BuildDependencies(Scope globalScope)
     {
-        foreach (var inv in globalScope.AllDecls.OfType<Invariant>())
-        {
-            _invariantDependencies.Add(inv, []);
-        }
         foreach (var cmd in globalScope.ProofCommands)
         {
             foreach (var goal in cmd.Goals)
             {
                 foreach (var dep in cmd.Premises)
                 {
+                    if (goal == dep) continue;
+                    if (!_invariantDependencies.ContainsKey(goal))
+                    {
+                        _invariantDependencies.Add(goal, []);
+                    }
                     _invariantDependencies[goal].Add(dep);
                 }
             }

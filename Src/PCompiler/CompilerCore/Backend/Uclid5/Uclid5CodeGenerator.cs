@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-
+using System.Threading;
+using System.Threading.Tasks.Dataflow;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -23,6 +25,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private HashSet<PLanguageType> _setCheckersToDeclare;
     private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
     private Dictionary<string, ProofCommand> _fileToProofCommands;
+    private Dictionary<ProofCommand, List<string>> _proofCommandToFiles;
     private Dictionary<Invariant, HashSet<Invariant>> _invariantDependencies;
     private HashSet<Invariant> _provenInvariants;
     private Scope _globalScope;
@@ -31,26 +34,130 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     public void Compile(ICompilerConfiguration job)
     {
-        var filename = $"{job.ProjectName}_proof_cmd_0.ucl";
-        var stdout = "";
-        var stderr = "";
-        
-        // compile the csproj file
-        var args = new[] { "-M", filename };
-
-        var proc = Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args);
-        var exitCode = Compiler.WaitForResult(proc, out stdout, out stderr);
-        if (exitCode != 0)
+        List<Match> undefs = [];
+        List<Match> fails = [];
+        List<string> failMessages = [];
+        HashSet<Invariant> succeededInv = [];
+        int parallelism = job.Parallelism;
+        if (parallelism == 0)
         {
-            throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
+            parallelism = Environment.ProcessorCount;
         }
-
-        var undefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
-        var fails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
-        ShowResult(job, filename, undefs, fails);
+        foreach (var cmd in _globalScope.ProofCommands)
+        {
+            var files = _proofCommandToFiles[cmd];
+            List<Process> runningTasks = [];
+            List<string> filenames = [];
+            int i = 0;
+            int last = files.Count;
+            // prefill
+            while (i < last && i < parallelism)
+            {
+                filenames.Add(files[i]);
+                var filename = files[i];
+                var args = new[] { "-M", filename };
+                runningTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
+                i++;
+            }
+            // fetch
+            int numCompleted = 0;
+            while (numCompleted < last)
+            {
+                HashSet<int> completed = [];
+                List<Process> newTasks = [];
+                List<string> newFilenames = [];
+                for (int j = 0; j < runningTasks.Count; ++j)
+                {
+                    if (runningTasks[j].HasExited)
+                    {
+                        completed.Add(j);
+                        var exitCode = Compiler.WaitForResult(runningTasks[j], out var stdout, out var stderr);
+                        if (exitCode != 0)
+                        {
+                            throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
+                        }
+                        undefs.AddRange(Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)"));
+                        fails.AddRange(Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)"));
+                        var (invs, msgs) = AggregateResults(job, filenames[j], undefs, fails);
+                        succeededInv.UnionWith(invs);
+                        failMessages.AddRange(msgs);
+                        if (i < last)
+                        {
+                            filenames.Add(files[i]);
+                            var filename = files[i];
+                            var args = new[] { "-M", filename };
+                            newTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
+                            i++;
+                        }
+                    }
+                }
+                numCompleted += completed.Count;
+                foreach (var j in completed.OrderByDescending(x => x))
+                {
+                    runningTasks.RemoveAt(j);
+                    filenames.RemoveAt(j);
+                }
+                runningTasks.AddRange(newTasks);
+                filenames.AddRange(newFilenames);
+                // if (completed.Count == 0)
+                // {
+                //     Thread.Sleep(500);
+                // }
+            }
+        }
+        job.Output.WriteInfo($"🎉 Verified {succeededInv.Count} invariants!");
+        foreach (var inv in succeededInv)
+        {
+            job.Output.WriteInfo($"✅ {inv.Name}");
+        }
+        MarkProvenInvariants(succeededInv);
+        ShowRemainings(job);
+        if (failMessages.Count > 0)
+        {
+            job.Output.WriteInfo($"❌ Failed to verify {failMessages.Count} invariants!");
+            foreach (var msg in failMessages)
+            {
+                job.Output.WriteError(msg);
+            }
+        }
     }
 
-    private void ProcessFailureMessages(MatchCollection collection, string[] query, string reason, List<string> failedInv, List<string> failMessages)
+    private void MarkProvenInvariants(HashSet<Invariant> succeededInv)
+    {
+        foreach (var inv in _invariantDependencies.Keys)
+        {
+            _invariantDependencies[inv].ExceptWith(succeededInv);
+        }
+        foreach (var inv in _invariantDependencies.Keys)
+        {
+            if (_invariantDependencies[inv].Count == 0 && succeededInv.Contains(inv))
+            {
+                _provenInvariants.Add(inv);
+            }
+        }
+    }
+
+    private void ShowRemainings(ICompilerConfiguration job)
+    {
+        List<Invariant> remaining = [];
+        foreach (var inv in _invariantDependencies.Keys)
+        {
+            if (!_provenInvariants.Contains(inv))
+            {
+                remaining.Add(inv);
+            }
+        }
+        if (remaining.Count > 0)
+        {
+            job.Output.WriteWarning("❓ Remaining Goals:");
+            foreach (var inv in remaining)
+            {
+                job.Output.WriteWarning($"- {inv.Name} at {GetLocation(inv)}");
+            }
+        }
+    }
+
+    private void ProcessFailureMessages(List<Match> collection, string[] query, string reason, List<string> failedInv, List<string> failMessages)
     {
         foreach (Match match in collection)
         {
@@ -58,7 +165,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
             {
                 var line = query[int.Parse(feedback.Second.ToString()) - 1];
                 var step = feedback.First.ToString().Contains("[Step #0]") ? "(base case)" : "";
-                var msg = $"{reason} {line.Split("//").Last()} {step}";
                 var matchName = Regex.Match(line, @"// Failed to verify invariant (.*) at (.*)");
                 var invName = matchName.Groups[1].Value;
                 failedInv.Add(invName);
@@ -67,7 +173,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void ShowResult(ICompilerConfiguration job, string filename, MatchCollection undefs, MatchCollection fails)
+    // returns invariants that were successfully verified and failure messages
+    private (HashSet<Invariant>, List<string>) AggregateResults(ICompilerConfiguration job, string filename, List<Match> undefs, List<Match> fails)
     {
         var cmd = _fileToProofCommands[filename];
         var query = File.ReadLines(job.OutputDirectory.FullName + "/" + filename).ToArray();
@@ -77,59 +184,17 @@ public class Uclid5CodeGenerator : ICodeGenerator
         ProcessFailureMessages(undefs, query, "❓", failedInv, failMessages);
         if (failedInv.Count == 0)
         {
-            job.Output.WriteInfo($"🎉 Verified {cmd.Goals.Count} invariants!");
+            return ([.. cmd.Goals], []);
         }
-        List<Invariant> succeededInv = [];
+        HashSet<Invariant> succeededInv = [];
         foreach (var inv in cmd.Goals)
         {
             if (!failedInv.Contains(inv.Name))
             {
-                MarkProved(inv);
                 succeededInv.Add(inv);
             }
         }
-        ShowRemainingGoals(job, succeededInv);
-        if (failedInv.Count > 0)
-        {
-            job.Output.WriteWarning($"====================Failed Invariants====================");
-            for (int i = 0; i < failedInv.Count; i++)
-            {
-                job.Output.WriteError($"{failMessages[i]}");
-            }
-        }
-    }
-
-    private void ShowRemainingGoals(ICompilerConfiguration job, List<Invariant> succeededInv)
-    {
-        string msg = "";
-        Console.WriteLine($"{succeededInv.Count} invariants succeeded");
-        foreach (var inv in succeededInv)
-        {
-            // show remaining premises to prove
-            var remaining = _invariantDependencies[inv].Select(i => (i.Name, GetLocation(i))).ToList();
-            if (remaining.Count > 0)
-            {
-                msg += $"Invariant {inv.Name} at {GetLocation(inv)} has remaining premises to prove:\n";
-                msg += string.Join("\n", remaining.Select(r => $"- {r.Name} at {r.Item2}")) + "\n";
-            }
-        }
-        if (msg != "")
-        {
-            job.Output.WriteInfo("====================Remaining Goals====================");
-            job.Output.WriteInfo(msg);
-        }
-    }
-
-    private void MarkProved(Invariant i)
-    {
-        foreach (var inv in _invariantDependencies.Keys)
-        {
-            _invariantDependencies[inv].Remove(i);
-        }
-        if (_invariantDependencies[i].Count == 0)
-        {
-            _provenInvariants.Add(i);
-        }
+        return (succeededInv, failMessages);
     }
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -142,25 +207,67 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _fileToProofCommands = [];
         _invariantDependencies = [];
         _provenInvariants = [];
+        _proofCommandToFiles = [];
         _globalScope = globalScope;
         BuildDependencies(globalScope);
         var filename_prefix = $"{job.ProjectName}_";
         List<CompiledFile> files = [];
         foreach (var proofCmd in globalScope.ProofCommands)
         {
-            files.Add(CompileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, false));
+            _proofCommandToFiles.Add(proofCmd, []);
+            files.AddRange(CompileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, false));
         }
-        return files;
+        return [];
     }
 
-    private CompiledFile CompileToFile(string name, ProofCommand cmd, bool sanityCheck)
+    private CompiledFile GenerateCompiledFile(ProofCommand cmd, string name, Machine m, State s, PEvent e)
     {
-        var filename = $"{name}.ucl";
+        string filename;
+        if (e == null)
+        {
+            filename = $"{name}_{m.Name}_{s.Name}.ucl";
+        }
+        else
+        {
+            filename = $"{name}_{m.Name}_{s.Name}_{e.Name}.ucl";
+        }
         var file = new CompiledFile(filename);
         _fileToProofCommands.Add(filename, cmd);
-        _src = file;
-        GenerateMain(cmd.Goals, cmd.Premises, sanityCheck);
+        _proofCommandToFiles[cmd].Add(filename);
         return file;
+    }
+
+    private List<CompiledFile> CompileToFile(string name, ProofCommand cmd, bool sanityCheck)
+    {
+        var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
+        var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
+        List<CompiledFile> files = [];
+        foreach (var m in machines)
+        {
+            if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(m.Name))
+            {
+                foreach (var s in m.States)
+                {
+                    if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(s.Name))
+                    {
+                        _src = GenerateCompiledFile(cmd, name, m, s, null);
+                        files.Add(_src);
+                        GenerateMain(m, s, null, cmd.Goals, cmd.Premises, sanityCheck);
+                    }
+                    foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
+                    {
+                        if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(e.Name))
+                        {
+                            _src = GenerateCompiledFile(cmd, name, m, s, e);
+                            files.Add(_src);
+                            GenerateMain(m, s, e, cmd.Goals, cmd.Premises, sanityCheck);
+                        }
+                    }
+                }
+            }
+            
+        }
+        return files;
     }
 
     private void BuildDependencies(Scope globalScope)
@@ -737,7 +844,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void GenerateMain(List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks)
+    private void GenerateMain(Machine machine, State state, PEvent @event, List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks)
     {
         EmitLine("module main {");
 
@@ -878,7 +985,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine("");
         }
         
-        GenerateControlBlock(machines, events);
+        GenerateControlBlock(machine, state, @event);
 
         // close the main module
         EmitLine("}");
@@ -1185,31 +1292,40 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
 
-    private void GenerateControlBlock(List<Machine> machines, List<PEvent> events)
+    private void GenerateControlBlock(Machine m, State s, PEvent e)
     {
         EmitLine("control {");
         EmitLine($"set_solver_option(\":Timeout\", {_ctx.Job.Timeout});"); // timeout per query in seconds
 
         EmitLine("induction(1);");
 
-        foreach (var m in machines)
+        if (e == null)
         {
-            foreach (var s in m.States)
-            {
-                if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name)
-                {
-                    EmitLine($"verify({m.Name}_{s.Name});");
-                }
-
-                foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
-                {
-                    if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
-                    {
-                        EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
-                    }
-                }
-            }
+            EmitLine($"verify({m.Name}_{s.Name});");
         }
+        else
+        {
+            EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
+        }
+
+        // foreach (var m in machines)
+        // {
+        //     foreach (var s in m.States)
+        //     {
+        //         if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name)
+        //         {
+        //             EmitLine($"verify({m.Name}_{s.Name});");
+        //         }
+
+        //         foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
+        //         {
+        //             if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
+        //             {
+        //                 EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
+        //             }
+        //         }
+        //     }
+        // }
 
         EmitLine("check;");
         EmitLine("print_results;");

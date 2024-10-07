@@ -358,7 +358,7 @@ namespace Plang.Compiler
             return null;
         }
 
-        private List<(List<PEventVariable>, PEvent, int)> ParseHeaders()
+        private List<(List<PEventVariable>, PEvent, int, int)> ParseHeaders()
         {
             var dir = Job.InvParseFileDir;
             var headerFile = Path.Combine(dir, "parsable_headers.txt");
@@ -368,8 +368,8 @@ namespace Plang.Compiler
                 Environment.Exit(1);
             }
             var lines = File.ReadAllLines(headerFile);
-            List<(List<PEventVariable>, PEvent, int)> headers = [];
-            for (int i = 0; i < lines.Length; i += 3)
+            List<(List<PEventVariable>, PEvent, int, int)> headers = [];
+            for (int i = 0; i < lines.Length; i += 4)
             {
                 if (lines[i] == "") continue;
                 var quantifiedEventsVars = lines[i].Split(" ").ToList();
@@ -381,8 +381,9 @@ namespace Plang.Compiler
                     };
                 }).ToList();
                 var configEvent = lines[i + 1] == "" ? null : GetPEvent(lines[i + 1]);
-                var termDepth = int.Parse(lines[i + 2]);
-                headers.Add((quantified, configEvent, termDepth));
+                var nexists = int.Parse(lines[i + 2]);
+                var termDepth = int.Parse(lines[i + 3]);
+                headers.Add((quantified, configEvent, nexists, termDepth));
             }
             return headers;
         }
@@ -398,11 +399,12 @@ namespace Plang.Compiler
             }
             var invParsable = File.ReadAllLines(invParsableAll);
             int ptr = 0;
-            foreach (var (quantified, configEvent, termDepth) in headers)
+            foreach (var (quantified, configEvent, nexists, termDepth) in headers)
             {
                 Hint h = new("pruning", false, null) {
                     Quantified = quantified,
                     ConfigEvent = configEvent,
+                    ExistentialQuantifiers = nexists,
                     TermDepth = termDepth
                 };
                 Codegen.Reset();
@@ -941,8 +943,9 @@ namespace Plang.Compiler
                             throw new Exception($"[ERROR] Guard {g} cannot be parsed");
                         }
                     }
-                    foreach (var f in keep)
+                    foreach (var f in q)
                     {
+                        if (parsedP.ContainsKey(f)) continue;
                         if (codegen.TryParseToExpr(job, globalScope, f, out var parsed))
                         {
                             parsedQ[f] = parsed;
@@ -1005,6 +1008,7 @@ namespace Plang.Compiler
             using StreamWriter writer = File.AppendText(parsefileHeaders);
             writer.WriteLine(string.Join(" ", hint.Quantified.Select(x => $"{x.Name}:{x.EventName}")));
             writer.WriteLine(hint.ConfigEvent == null ? "" : hint.ConfigEvent.Name);
+            writer.WriteLine(hint.ExistentialQuantifiers);
             writer.WriteLine(hint.TermDepth);
             writer.Close();
             DoChores(job, codegen);

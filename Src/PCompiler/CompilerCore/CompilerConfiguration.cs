@@ -34,6 +34,7 @@ namespace Plang.Compiler
             TraceFolder = "traces";
             // Max level by default
             PInferPruningLevel = 3;
+            UseZ3 = false;
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null, bool debug = false)
@@ -96,6 +97,7 @@ namespace Plang.Compiler
         public string TraceFolder { get; set; }
         public string InvParseFileDir { get; set; }
         public bool Verbose { get; set; }
+        public bool UseZ3 { get; set; }
         public int PInferPruningLevel { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)

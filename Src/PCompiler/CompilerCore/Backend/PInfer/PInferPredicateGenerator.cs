@@ -424,6 +424,11 @@ namespace Plang.Compiler.Backend.PInfer
             return $"({x.Name}:{x.EventName})";
         }
 
+        public string GetRepr(IPExpr e)
+        {
+            return Codegen.GenerateRawExpr(e, true).Split("=>")[0].Trim();
+        }
+
         public static string SimplifiedRepr(JavaCodegen codegen, IPExpr expr)
         {
             return codegen.GenerateRawExpr(expr, true).Split("=>")[0].Trim();

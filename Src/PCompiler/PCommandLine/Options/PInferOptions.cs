@@ -60,6 +60,7 @@ namespace Plang.Options
             pInferGroup.AddArgument("hint", "hint", "Name of the hint to compile/run").IsHidden = true;
             pInferGroup.AddArgument("config-event", "ce", "Name of the event that announce the system setup. This will replace all hints that do not have config event specified").IsHidden = true;
             pInferGroup.AddArgument("parse-inv", "pi", "Path to the directory containing PInfer parsible file and its header").IsRequired = false;
+            pInferGroup.AddArgument("use-z3", "z3", "Use Z3 for pruning", typeof(bool)).IsRequired = false;
         }
         
         internal PInferConfiguration Parse(string[] args)

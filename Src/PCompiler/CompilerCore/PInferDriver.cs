@@ -421,6 +421,14 @@ namespace Plang.Compiler
             }
         }
 
+        private void InitializeZ3()
+        {
+            if (PInferInvoke.UseZ3)
+            {
+                PInferInvoke.Z3Wrapper = new(GlobalScope, Codegen);
+            }
+        }
+
         public static void PerformInferAction(ICompilerConfiguration job, Scope globalScope)
         {
             Hint givenHint = null;
@@ -471,6 +479,7 @@ namespace Plang.Compiler
             var stopwatch = new Stopwatch();
             int numTotalTasks = 0;
             PInferDriver driver = null;
+            PInferInvoke.UseZ3 = job.UseZ3;
             stopwatch.Start();
             switch (job.PInferAction)
             {
@@ -488,6 +497,7 @@ namespace Plang.Compiler
                         Environment.Exit(1);
                     }
                     driver = new PInferDriver(job, globalScope, invOutDir, checkTrace: false);
+                    driver.InitializeZ3();
                     driver.RunPruningSteps();
                     break;
                 }
@@ -497,6 +507,7 @@ namespace Plang.Compiler
                     givenHint.ConfigEvent ??= configEvent;
                     givenHint.PruningLevel = job.PInferPruningLevel;
                     driver = new PInferDriver(job, globalScope, invOutDir);
+                    driver.InitializeZ3();
                     driver.ParameterSearch(givenHint);
                     numTotalTasks = driver.numTotalTasks;
                     break;
@@ -505,6 +516,7 @@ namespace Plang.Compiler
                 {
                     job.Output.WriteInfo("PInfer - Auto Exploration");
                     driver = new PInferDriver(job, globalScope, invOutDir);
+                    driver.InitializeZ3();
                     driver.AutoExplore(job.HintsOnly);
                     numTotalTasks = driver.numTotalTasks;
                     break;
@@ -561,6 +573,7 @@ namespace Plang.Compiler
         internal static int NumInvsMined = 0;
         internal static int NumInvsPrunedByGrammar = 0;
         internal static bool UseZ3 = false;
+        internal static Z3Wrapper Z3Wrapper;
 
         public static void NewInvFiles()
         {
@@ -724,6 +737,32 @@ namespace Plang.Compiler
             }
         }
 
+        private static bool Implies(string key, HashSet<string> p, HashSet<string> q)
+        {
+            bool result = q.IsSubsetOf(p);
+            if (!UseZ3)
+            {
+                return result;
+            }
+            else
+            {
+                try
+                {
+                    return result || Z3Wrapper.CheckImplies(key, p, q, ParsedP[key], ParsedQ[key]);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error checking implication: {e.Message}");
+                    return result;
+                }
+            }
+        }
+
+        private static bool BiImplies(string key, HashSet<string> p, HashSet<string> q)
+        {
+            return Implies(key, p, q) && Implies(key, q, p);
+        }
+
         public static bool ClearUpExistentials()
         {
             bool didSth = false;
@@ -785,7 +824,7 @@ namespace Plang.Compiler
                             removes.Add(i);
                             continue;
                         }
-                        if (qi.IsSubsetOf(pi))
+                        if (Implies(k, pi, qi))
                         {
                             var rec = ShowRecordAt(k, i);
                             job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
@@ -796,7 +835,7 @@ namespace Plang.Compiler
                         {
                             var pj = P[k][j];
                             var qj = Q[k][j];
-                            if (pi.SetEquals(pj) && numExists == 0)
+                            if (BiImplies(k, pi, pj) && numExists == 0)
                             {
                                 // can only merge when there is
                                 // no existential quantifications
@@ -808,14 +847,16 @@ namespace Plang.Compiler
                             // Forall-only rules
                             // Case 1: i ==> j; i.e. pi ==> pj && qj ==> qi
                             // keep j remove i
-                            else if (pj.IsSubsetOf(pi) && qi.IsSubsetOf(qj))
+                            // else if (pj.IsSubsetOf(pi) && qi.IsSubsetOf(qj))
+                            else if (Implies(k, pi, pj) && Implies(k, qj, qi))
                             {
                                 // Console.WriteLine($"Remove {i}");
                                 job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, i)} implied by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
                             }
                             // Case 2: j ==> i; keep i remove j
-                            else if (pi.IsSubsetOf(pj) && qj.IsSubsetOf(qi))
+                            // else if (pi.IsSubsetOf(pj) && qj.IsSubsetOf(qi))
+                            else if (Implies(k, pj, pi) && Implies(k, qi, qj))
                             {
                                 // Console.WriteLine($"Remove {j}");
                                 job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, j)} implied by {ShowRecordAt(k, i)}");
@@ -826,7 +867,8 @@ namespace Plang.Compiler
                             // e.g. forall* P -> Q, moreover P -> R
                             // if it is the case that forall* R -> Q, we remove Q for the stronger guards P
                             // i.e. keeping the weakest guard for Q
-                            else if (pj.IsSubsetOf(pi))
+                            // else if (pj.IsSubsetOf(pi))
+                            else if (Implies(k, pi, pj))
                             {
                                 if (qi.Intersect(qj).Any() && numExists == 0)
                                 {
@@ -835,7 +877,8 @@ namespace Plang.Compiler
                                     didSth = true;
                                 }
                             }
-                            else if (pi.IsSubsetOf(pj))
+                            // else if (pi.IsSubsetOf(pj))
+                            else if (Implies(k, pj, pi))
                             {
                                 if (qj.Intersect(qi).Any() && numExists == 0)
                                 {

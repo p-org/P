@@ -9,16 +9,19 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
 {
-    class Z3Wrapper
+    public class Z3Wrapper
     {
         private readonly Solver solver;
         private readonly Context context;
+        private readonly PInferPredicateGenerator codegen;
         private readonly Dictionary<string, Dictionary<string, Expr>> Enums;
         private readonly Dictionary<string, EnumSort> EnumSorts;
-        public Z3Wrapper(Scope globalScope)
+        private Dictionary<string, List<(HashSet<string>, HashSet<string>, bool)>> cachedQueries = [];
+        public Z3Wrapper(Scope globalScope, PInferPredicateGenerator codegen)
         {
             context = new Context();
             solver = context.MkSolver();
+            this.codegen = codegen;
             Enums = [];
             EnumSorts = [];
             foreach (var enumDecls in globalScope.Enums)
@@ -68,11 +71,15 @@ namespace Plang.Compiler.Backend.PInfer
                     }
                     break;
                 }
+                case PermissionType _:
+                {
+                    return context.IntSort;
+                }
             }
-            throw new Exception($"Unsupported type: {type.CanonicalRepresentation}");
+            throw new Exception($"Unsupported type: {type.CanonicalRepresentation} ({type})");
         }
 
-        private Expr IPExprToSMT(string repr, IPExpr e, Dictionary<IPExpr, Expr> compiled)
+        private Expr IPExprToSMT(IPExpr e, Dictionary<IPExpr, Expr> compiled)
         {
             if (compiled.TryGetValue(e, out Expr value))
             {
@@ -86,10 +93,31 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case VariableAccessExpr varAccess:
                 {
+                    if (compiled.TryGetValue(varAccess, out Expr varExpr))
+                    {
+                        return varExpr;
+                    }
+                    Console.WriteLine($"Creating variable: {varAccess.Variable.Name}");
                     var sort = ToZ3Sort(varAccess.Variable.Type);
                     var v = context.MkConst(varAccess.Variable.Name, sort);
                     compiled[varAccess] = v;
                     return v;
+                }
+                case FunCallExpr funCall:
+                {
+                    if (funCall.Function.Name != "index")
+                    {
+                        throw new Exception($"Unsupported function call: {funCall.Function.Name}");
+                    }
+                    var arg = (VariableAccessExpr) funCall.Arguments[0];
+                    var name = $"index_of_{arg.Variable.Name}";
+                    if (compiled.TryGetValue(arg, out Expr v))
+                    {
+                        return v;
+                    }
+                    var indexVar = context.MkConst(name, context.IntSort);
+                    compiled[arg] = indexVar;
+                    return indexVar;
                 }
                 case BoolLiteralExpr boolLit:
                 {
@@ -105,19 +133,23 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                 {
-                    var tupVar = context.MkConst(repr, ToZ3Sort(namedTupleAccessExpr.Type));
+                    if (compiled.TryGetValue(namedTupleAccessExpr, out Expr tupAccessVar))
+                    {
+                        return tupAccessVar;
+                    }
+                    var tupVar = context.MkConst(codegen.GetRepr(e), ToZ3Sort(namedTupleAccessExpr.Type));
                     compiled[e] = tupVar;
                     return tupVar;
                 }
                 case TupleAccessExpr tupleAccessExpr:
                 {
-                    var tupVar = context.MkConst(repr, ToZ3Sort(tupleAccessExpr.Type));
+                    var tupVar = context.MkConst(codegen.GetRepr(e), ToZ3Sort(tupleAccessExpr.Type));
                     compiled[e] = tupVar;
                     return tupVar;
                 }
                 case UnaryOpExpr unaryOpExpr:
                 {
-                    var arg = IPExprToSMT(repr, unaryOpExpr.SubExpr, compiled);
+                    var arg = IPExprToSMT(unaryOpExpr.SubExpr, compiled);
                     switch (unaryOpExpr.Operation)
                     {
                         case UnaryOpType.Not:
@@ -133,8 +165,9 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case BinOpExpr binOpExpr:
                 {
-                    var lhs = IPExprToSMT(repr, binOpExpr.Lhs, compiled);
-                    var rhs = IPExprToSMT(repr, binOpExpr.Rhs, compiled);
+                    var lhs = IPExprToSMT(binOpExpr.Lhs, compiled);
+                    var rhs = IPExprToSMT(binOpExpr.Rhs, compiled);
+                    Console.WriteLine($"lhs: {lhs}, rhs: {rhs}");
                     switch (binOpExpr.Operation)
                     {
                         case BinOpType.Add:
@@ -196,23 +229,54 @@ namespace Plang.Compiler.Backend.PInfer
             throw new Exception($"Unsupported expression: {e}");
         }
 
-        public bool CheckImplies(IEnumerable<string> lhs, IEnumerable<string> rhs, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
+        private bool CheckCache(string k, IEnumerable<string> lhs, IEnumerable<string> rhs, out bool result)
         {
+            if (cachedQueries.TryGetValue(k, out List<(HashSet<string>, HashSet<string>, bool)> queries))
+            {
+                foreach (var (lhsSet, rhsSet, r) in queries)
+                {
+                    if (lhsSet.SetEquals(lhs) && rhsSet.SetEquals(rhs))
+                    {
+                        result = r;
+                        return true;
+                    }
+                }
+            }
+            result = false;
+            return false;
+        }
+
+        public bool CheckImplies(string k, IEnumerable<string> lhs, IEnumerable<string> rhs, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
+        {
+            if (CheckCache(k, lhs, rhs, out bool cachedResult))
+            {
+                return cachedResult;
+            }
             Dictionary<IPExpr, Expr> compiled = new(new ASTComparer());
             // var lhsZ3 = (BoolExpr) IPExprToSMT(lhs, parsedP[lhs], compiled);
             // var rhsZ3 = (BoolExpr) IPExprToSMT(rhs, parsedQ[rhs], compiled);
-            var lhsClauses = lhs.Select(x => IPExprToSMT(x, parsedP[x], compiled)).Cast<BoolExpr>().ToArray();
-            var rhsClauses = rhs.Select(x => IPExprToSMT(x, parsedQ[x], compiled)).Cast<BoolExpr>().ToArray();
+            IPExpr getExpr(string repr) => parsedP.TryGetValue(repr, out IPExpr value) ? value : parsedQ[repr];
+            var lhsClauses = lhs.Select(x => IPExprToSMT(getExpr(x), compiled)).Cast<BoolExpr>().ToArray();
+            var rhsClauses = rhs.Select(x => IPExprToSMT(getExpr(x), compiled)).Cast<BoolExpr>().ToArray();
             var lhsZ3 = context.MkAnd(lhsClauses);
             var rhsZ3 = context.MkAnd(rhsClauses);
             solver.Push();
             // check lhs -> rhs is a tautology
             var obj = context.MkNot(context.MkImplies(lhsZ3, rhsZ3));
+            // Console.WriteLine($"P: {string.Join(", ", lhs)}");
+            // Console.WriteLine($"Q: {string.Join(", ", rhs)}");
+            // Console.WriteLine($"Checking: {obj}");
             solver.Assert(obj);
             var result = solver.Check();
+            // Console.WriteLine($"Result: {result}");
             // should be UNSAT
             bool r = result == Status.UNSATISFIABLE;
             solver.Pop();
+            if (!cachedQueries.ContainsKey(k))
+            {
+                cachedQueries[k] = [];
+            }
+            cachedQueries[k].Add((new HashSet<string>(lhs), new HashSet<string>(rhs), r));
             return r;
         } 
     }

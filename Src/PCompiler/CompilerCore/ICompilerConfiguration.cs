@@ -37,5 +37,6 @@ namespace Plang.Compiler
         public string TraceFolder { get; }
         public string InvParseFileDir { get; }
         bool Verbose { get; }
+        bool UseZ3 { get; }
     }
 }

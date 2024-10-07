@@ -50,6 +50,7 @@ namespace Plang.Options
                 pInferGroup.AddArgument("traces", "t", "Folder that contains aggregated trace files and metadata.json");
                 pInferGroup.AddArgument("hints-only", "hints-only", "Only run existing hints", typeof(bool));
                 pInferGroup.AddArgument("parse-inv", "pi", "Path to the directory containing PInfer parsible file and its header").IsRequired = false;
+                pInferGroup.AddArgument("use-z3", "z3", "Use Z3 for pruning", typeof(bool)).IsRequired = false;
                 // book-keeping, not used
                 pInferGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto)").IsHidden = true;
             }
@@ -232,6 +233,9 @@ namespace Plang.Options
                     break;
                 case "verbose":
                     compilerConfiguration.Verbose = true;
+                    break;
+                case "use-z3":
+                    compilerConfiguration.UseZ3 = true;
                     break;
                 case "config-event":
                     compilerConfiguration.ConfigEvent = (string)option.Value;

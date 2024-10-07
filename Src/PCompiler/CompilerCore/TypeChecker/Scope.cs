@@ -543,7 +543,7 @@ namespace Plang.Compiler.TypeChecker
         public Function Put(string name, PParser.FunDeclContext tree)
         {
             var function = new Function(name, tree);
-            CheckConflicts(function, Namespace(functions));
+            CheckConflicts(function, Namespace(functions), Namespace(states));
             functions.Add(name, function);
             return function;
         }

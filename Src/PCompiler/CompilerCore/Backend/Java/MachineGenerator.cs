@@ -141,7 +141,7 @@ namespace Plang.Compiler.Backend.Java {
                 return;
             }
 
-            if (f.CanReceive == true)
+            if (f.CanReceive)
             {
                 WriteLine($"// Async function {f.Name} elided");
                 return;
@@ -228,11 +228,11 @@ namespace Plang.Compiler.Backend.Java {
             // If this function has exceptional control flow (for raising events or state transition)
             // we need to annotate it appropriately.
             var throwables = new List<string>();
-            if (f.CanChangeState == true)
+            if (f.CanChangeState)
             {
                 throwables.Add("prt.exceptions.TransitionException");
             }
-            if (f.CanRaiseEvent == true)
+            if (f.CanRaiseEvent)
             {
                 throwables.Add("prt.exceptions.RaiseEventException");
             }

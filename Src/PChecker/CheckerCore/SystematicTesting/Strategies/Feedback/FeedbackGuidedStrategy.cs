@@ -155,7 +155,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     /// <summary>
     /// This method observes the results of previous run and prepare for the next run.
     /// </summary>
-    public virtual void ObserveRunningResults(EventPatternObserver patternObserver, TimelineObserver timelineObserver)
+    public virtual void ObserveRunningResults(TimelineObserver timelineObserver)
     {
         var timelineHash = timelineObserver.GetTimelineHash();
         var timelineMinhash = timelineObserver.GetTimelineMinhash();
@@ -167,18 +167,8 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
             return;
         }
 
-        int priority = 0;
-        if (patternObserver == null)
-        {
-            priority = diversityScore;
-        }
-        else
-        {
-            int coverageResult = patternObserver.ShouldSave();
-            double coverageScore = 1.0 / coverageResult;
-            priority = (int)(diversityScore * coverageScore);
-        }
-
+        int priority = diversityScore;
+        
         if (priority > 0)
         {
             var record = new GeneratorRecord(priority, Generator, timelineMinhash);

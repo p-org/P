@@ -100,19 +100,12 @@ namespace PChecker.SystematicTesting
         /// </summary>
         [DataMember]
         public HashSet<string> InternalErrors { get; internal set; }
-
-
+        
         /// <summary>
         /// Set of hashes of timelines discovered by the scheduler.
         /// </summary>
         [DataMember]
         public Dictionary<int, int> ExploredTimelines = new();
-
-        /// <summary>
-        /// Number of schedulings that satisfies the pattern.
-        /// </summary>
-        [DataMember]
-        public Dictionary<int, int> ValidScheduling = new();
 
         /// <summary>
         /// Lock for the test report.

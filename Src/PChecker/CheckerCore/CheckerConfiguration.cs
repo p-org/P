@@ -258,12 +258,6 @@ namespace PChecker
         public uint TestingProcessId;
 
         /// <summary>
-        /// The source of the pattern generator.
-        /// </summary>
-        [DataMember]
-        public string PatternSource;
-
-        /// <summary>
         /// Additional assembly specifications to instrument for code coverage, besides those in the
         /// dependency graph between <see cref="AssemblyToBeAnalyzed"/> and the Microsoft.Coyote DLLs.
         /// Key is filename, value is whether it is a list file (true) or a single file (false).
@@ -347,7 +341,6 @@ namespace PChecker
 
             PSymArgs = "";
             JvmArgs = "";
-            PatternSource = "";
         }
 
         /// <summary>

@@ -243,7 +243,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             foreach (var proofCmd in globalScope.ProofCommands)
             {
                 _proofCommandToFiles.Add(proofCmd, []);
-                files.AddRange(CompileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, false));
+                files.AddRange(CompileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, true, false));
                 _commands.Add(proofCmd);
             }
         }
@@ -267,7 +267,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return file;
     }
 
-    private List<CompiledFile> CompileToFile(string name, ProofCommand cmd, bool sanityCheck)
+    private List<CompiledFile> CompileToFile(string name, ProofCommand cmd, bool sanityCheck, bool handlerCheck = true)
     {
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
@@ -282,7 +282,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     {
                         _src = GenerateCompiledFile(cmd, name, m, s, null);
                         files.Add(_src);
-                        GenerateMain(m, s, null, cmd.Goals, cmd.Premises, sanityCheck);
+                        GenerateMain(m, s, null, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck);
                     }
                     foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
                     {
@@ -290,7 +290,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         {
                             _src = GenerateCompiledFile(cmd, name, m, s, e);
                             files.Add(_src);
-                            GenerateMain(m, s, e, cmd.Goals, cmd.Premises, sanityCheck);
+                            GenerateMain(m, s, e, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck);
                         }
                     }
                 }
@@ -876,7 +876,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void GenerateMain(Machine machine, State state, PEvent @event, List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks)
+    private void GenerateMain(Machine machine, State state, PEvent @event, List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks, bool handlerCheck = true)
     {
         EmitLine("module main {");
 
@@ -933,7 +933,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
         if (_ctx.Job.HandlesAll)
         {
-            GenerateNextBlock(machines, events, generateSanityChecks);
+            GenerateNextBlock(machines, events, handlerCheck);
             EmitLine("");
         }
         
@@ -1056,7 +1056,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("}");
     }
 
-    private void GenerateNextBlock(List<Machine> machines, List<PEvent> events, bool generateSanityChecks)
+    private void GenerateNextBlock(List<Machine> machines, List<PEvent> events, bool handlerCheck)
     {
         var currentLabel = $"{BuiltinPrefix}CurrentLabel";
         // pick a random label and handle it
@@ -1072,7 +1072,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     if (!s.HasHandler(e))
                     {
-                        if (generateSanityChecks)
+                        if (handlerCheck)
                         {
                             if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
                             {

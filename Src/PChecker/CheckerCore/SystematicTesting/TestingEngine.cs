@@ -66,11 +66,6 @@ namespace PChecker.SystematicTesting
         internal readonly ISchedulingStrategy Strategy;
 
         /// <summary>
-        /// Monitors conflict operations used by the POS Strategy.
-        /// </summary>
-        private ConflictOpMonitor? _conflictOpObserver;
-
-        /// <summary>
         /// Random value generator used by the scheduling strategies.
         /// </summary>
         private readonly IRandomValueGenerator RandomValueGenerator;
@@ -303,12 +298,6 @@ namespace PChecker.SystematicTesting
             {
                 JsonVerboseLogs = new List<List<LogEntry>>();
             }
-
-            if (checkerConfiguration.EnableConflictAnalysis)
-            {
-                _conflictOpObserver = new ConflictOpMonitor();
-            }
-
             if (checkerConfiguration.SchedulingStrategy is "replay")
             {
                 var scheduleDump = GetScheduleForReplay(out var isFair);
@@ -328,8 +317,7 @@ namespace PChecker.SystematicTesting
             }
             else if (checkerConfiguration.SchedulingStrategy is "pos")
             {
-                var scheduler = new POSScheduler(new RandomPriorizationProvider(RandomValueGenerator),
-                    _conflictOpObserver);
+                var scheduler = new POSScheduler(new RandomPriorizationProvider(RandomValueGenerator));
                 Strategy = new PrioritizedSchedulingStrategy(checkerConfiguration.MaxUnfairSchedulingSteps,
                     RandomValueGenerator, scheduler);
             }
@@ -372,7 +360,7 @@ namespace PChecker.SystematicTesting
                 Strategy = new FeedbackGuidedStrategy<RandomInputGenerator, POSScheduleGenerator>(
                     _checkerConfiguration,
                     new RandomInputGenerator(checkerConfiguration),
-                    new POSScheduleGenerator(_checkerConfiguration, _conflictOpObserver));
+                    new POSScheduleGenerator(_checkerConfiguration));
             }
             else if (checkerConfiguration.SchedulingStrategy is "portfolio")
             {
@@ -568,12 +556,6 @@ namespace PChecker.SystematicTesting
                 // Always output a json log of the error
                 JsonLogger = new JsonWriter();
                 runtime.SetJsonLogger(JsonLogger);
-
-                if (_conflictOpObserver != null)
-                {
-                    _conflictOpObserver.VectorClockGenerator = JsonLogger.VcGenerator;
-                    runtime.RegisterLog(_conflictOpObserver);
-                }
         }
 
         /// <summary>
@@ -716,7 +698,6 @@ namespace PChecker.SystematicTesting
 
                 runtimeLogger?.Dispose();
                 runtime?.Dispose();
-                _conflictOpObserver?.Reset();
             }
         }
 

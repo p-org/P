@@ -15,17 +15,14 @@ internal class POSScheduler: PrioritizedScheduler
     /// List of prioritized operations.
     /// </summary>
     private readonly List<AsyncOperation> PrioritizedOperations;
-
-    public ConflictOpMonitor? ConflictOpMonitor;
-
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="PCTStrategy"/> class.
     /// </summary>
-    public POSScheduler(PriorizationProvider provider, ConflictOpMonitor? monitor)
+    public POSScheduler(PriorizationProvider provider)
     {
         Provider = provider;
         PrioritizedOperations = new List<AsyncOperation>();
-        ConflictOpMonitor = monitor;
     }
 
     public bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
@@ -123,11 +120,6 @@ internal class POSScheduler: PrioritizedScheduler
     private bool FindNonRacingOperation(IEnumerable<AsyncOperation> ops, out AsyncOperation next)
     {
         var nonRacingOps = ops.Where(op => op.Type != AsyncOperationType.Send);
-        if (!nonRacingOps.Any() && ConflictOpMonitor != null)
-        {
-            nonRacingOps = ops.Where(op => !ConflictOpMonitor.IsConflictingOp(op));
-        }
-
         if (!nonRacingOps.Any())
         {
             next = null;

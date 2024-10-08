@@ -286,11 +286,6 @@ namespace PChecker
         [DataMember]
         public string JvmArgs;
 
-        /// <summary>
-        /// Enable conflict analysis for scheduling optimization.
-        /// </summary>
-        [DataMember]
-        public bool EnableConflictAnalysis;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
@@ -337,7 +332,6 @@ namespace PChecker
 
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
-            EnableConflictAnalysis = false;
 
             PSymArgs = "";
             JvmArgs = "";

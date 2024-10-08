@@ -81,7 +81,6 @@ namespace Plang.Options
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
-            advancedGroup.AddArgument("conflict-analysis", null, "Enable POS conflict analysis.", typeof(bool));
         }
 
         /// <summary>
@@ -326,9 +325,6 @@ namespace Plang.Options
                     break;
                 case "jvm-args":
                     checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
-                    break;
-                case "conflict-analysis":
-                    checkerConfiguration.EnableConflictAnalysis = true;
                     break;
                 case "pproj":
                     // do nothing, since already configured through UpdateConfigurationWithPProjectFile

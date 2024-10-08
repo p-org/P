@@ -13,25 +13,21 @@ internal class POSScheduleGenerator: POSScheduler, IScheduleGenerator<POSSchedul
     public System.Random Random;
     public RandomChoices<int> PriorityChoices;
     public RandomChoices<double> SwitchPointChoices;
-    public ConflictOpMonitor? Monitor;
 
-    public POSScheduleGenerator(System.Random random, RandomChoices<int>? priorityChoices, RandomChoices<double>? switchPointChoices,
-        ConflictOpMonitor? monitor):
+    public POSScheduleGenerator(System.Random random, RandomChoices<int>? priorityChoices, RandomChoices<double>? switchPointChoices):
         base(new ParametricProvider(
                 priorityChoices != null ? new RandomChoices<int>(priorityChoices) : new RandomChoices<int>(random),
-                switchPointChoices != null ? new RandomChoices<double>(switchPointChoices) : new RandomChoices<double>(random)),
-            monitor)
+                switchPointChoices != null ? new RandomChoices<double>(switchPointChoices) : new RandomChoices<double>(random)))
     {
         Random = random;
         var provider = (ParametricProvider) Provider;
         PriorityChoices = provider.PriorityChoices;
         SwitchPointChoices = provider.SwitchPointChoices;
-        Monitor = monitor;
     }
 
-    public POSScheduleGenerator(CheckerConfiguration checkerConfiguration, ConflictOpMonitor? monitor):
+    public POSScheduleGenerator(CheckerConfiguration checkerConfiguration):
         this(new System.Random((int?)checkerConfiguration.RandomGeneratorSeed ?? Guid.NewGuid().GetHashCode()), null,
-            null, monitor)
+            null)
     {
     }
 
@@ -42,12 +38,12 @@ internal class POSScheduleGenerator: POSScheduler, IScheduleGenerator<POSSchedul
 
     public POSScheduleGenerator New()
     {
-        return new POSScheduleGenerator(Random, null, null, Monitor);
+        return new POSScheduleGenerator(Random, null, null);
     }
 
     public POSScheduleGenerator Copy()
     {
-        return new POSScheduleGenerator(Random, PriorityChoices, SwitchPointChoices, Monitor);
+        return new POSScheduleGenerator(Random, PriorityChoices, SwitchPointChoices);
     }
 
     public AsyncOperation? NextRandomOperation(List<AsyncOperation> enabledOperations, AsyncOperation current)

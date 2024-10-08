@@ -9,8 +9,6 @@ internal class POSScheduleMutator: IMutator<POSScheduleGenerator>
     {
         return new POSScheduleGenerator(prev.Random,
             Utils.MutateRandomChoices(prev.PriorityChoices, _meanMutationCount, _meanMutationSize, _random),
-            Utils.MutateRandomChoices(prev.SwitchPointChoices, _meanMutationCount, _meanMutationSize, _random),
-            prev.Monitor
-        );
+            Utils.MutateRandomChoices(prev.SwitchPointChoices, _meanMutationCount, _meanMutationSize, _random));
     }
 }

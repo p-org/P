@@ -34,21 +34,19 @@ internal class PriorizationSchedulingBase
     /// </summary>
     private readonly List<AsyncOperation> PrioritizedOperations;
 
-    public ConflictOpMonitor? ConflictOpMonitor;
     private int _nextPriorityChangePoint;
     private int _numSwitchPointsLeft;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PCTStrategy"/> class.
     /// </summary>
-    public PriorizationSchedulingBase(int maxPrioritySwitchPoints, int scheduleLength, PriorizationProvider provider, ConflictOpMonitor? monitor)
+    public PriorizationSchedulingBase(int maxPrioritySwitchPoints, int scheduleLength, PriorizationProvider provider)
     {
         Provider = provider;
         ScheduledSteps = 0;
         ScheduleLength = scheduleLength;
         MaxPrioritySwitchPoints = maxPrioritySwitchPoints;
         PrioritizedOperations = new List<AsyncOperation>();
-        ConflictOpMonitor = monitor;
         _numSwitchPointsLeft = maxPrioritySwitchPoints;
 
         double switchPointProbability = 0.1;
@@ -66,7 +64,7 @@ internal class PriorizationSchedulingBase
         var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
         if (enabledOperations.Count == 0)
         {
-            if (ConflictOpMonitor == null && _nextPriorityChangePoint == ScheduledSteps)
+            if (_nextPriorityChangePoint == ScheduledSteps)
             {
                 MovePriorityChangePointForward();
             }
@@ -78,25 +76,9 @@ internal class PriorizationSchedulingBase
         {
             next = highestEnabledOp;
         }
-        if (ConflictOpMonitor != null)
-        {
-            ResetPriorities(next, enabledOperations);
-        }
-
         return true;
     }
 
-    public void ResetPriorities(AsyncOperation next, IEnumerable<AsyncOperation> ops)
-    {
-        foreach (var op in ops)
-        {
-            if (op != next && ConflictOpMonitor.IsRacing(next, op))
-            {
-                PrioritizedOperations.Remove(op);
-            }
-        }
-        PrioritizedOperations.Remove(next);
-    }
 
     private void MovePriorityChangePointForward()
     {
@@ -137,13 +119,8 @@ internal class PriorizationSchedulingBase
             Debug.WriteLine("<PCTLog> Detected new operation '{0}' at index '{1}'.", op.Id, mIndex);
         }
 
-        if (ConflictOpMonitor != null && FindNonRacingOperation(ops, out var next))
-        {
-            return next;
-        }
-
         var prioritizedSchedulable = GetHighestPriorityEnabledOperation(ops);
-        if (ConflictOpMonitor == null && _nextPriorityChangePoint == ScheduledSteps)
+        if (_nextPriorityChangePoint == ScheduledSteps)
         {
             if (ops.Count == 1)
             {
@@ -190,32 +167,6 @@ internal class PriorizationSchedulingBase
         return ops.First(op => op.Equals(prioritizedSchedulable));
     }
 
-    private bool FindNonRacingOperation(IEnumerable<AsyncOperation> ops, out AsyncOperation next)
-    {
-        var nonRacingOps = ops.Where(op => op.Type != AsyncOperationType.Send);
-        if (!nonRacingOps.Any())
-        {
-            var sendOps = ops.Where(op => op.Type == AsyncOperationType.Send);
-            nonRacingOps = ops.Where(op => !ConflictOpMonitor.IsConflictingOp(op));
-        }
-
-        if (!nonRacingOps.Any())
-        {
-            next = null;
-            return false;
-        }
-        else if (!nonRacingOps.Skip(1).Any())
-        {
-            next = nonRacingOps.First();
-            return true;
-        }
-        else
-        {
-            next = GetHighestPriorityEnabledOperation(nonRacingOps);
-            return true;
-        }
-
-    }
 
     public void Reset()
     {

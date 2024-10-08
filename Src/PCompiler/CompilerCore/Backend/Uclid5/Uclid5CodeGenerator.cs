@@ -1337,25 +1337,6 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
         }
 
-        // foreach (var m in machines)
-        // {
-        //     foreach (var s in m.States)
-        //     {
-        //         if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name)
-        //         {
-        //             EmitLine($"verify({m.Name}_{s.Name});");
-        //         }
-
-        //         foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
-        //         {
-        //             if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
-        //             {
-        //                 EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
-        //             }
-        //         }
-        //     }
-        // }
-
         EmitLine("check;");
         EmitLine("print_results;");
         EmitLine("}");

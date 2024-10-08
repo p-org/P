@@ -15,6 +15,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public List<Invariant> Goals { get; set; }
         public List<Invariant> Premises { get; set; }
+        public List<Invariant> Excepts { get; set; }
         public ParserRuleContext SourceLocation { get; }
         public string Name { get; set; }
     }

@@ -723,6 +723,7 @@ namespace Plang.Compiler.TypeChecker
             var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
             List<IPExpr> premises = [];
             List<IPExpr> goals = [];
+            List<IPExpr> excepts = context._excludes.Select(exprVisitor.Visit).ToList();
             if (context.premisesAll == null)
             {
                 premises = context._premises.Select(exprVisitor.Visit).ToList();
@@ -755,8 +756,10 @@ namespace Plang.Compiler.TypeChecker
             {
                 proofCmd.Goals = goals.SelectMany(x => ToInvariant(x, context)).ToList();
             }
+            proofCmd.Excepts = excepts.Zip(context._excludes, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
             // exclude things appear in `goals` from `premises`
-            proofCmd.Premises = proofCmd.Premises.Except(proofCmd.Goals).ToList();
+            proofCmd.Premises = proofCmd.Premises.Except(proofCmd.Goals).Except(proofCmd.Excepts).ToList();
+            proofCmd.Goals = proofCmd.Goals.Except(proofCmd.Excepts).ToList();
             return proofCmd;
         }
         

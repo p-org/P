@@ -74,7 +74,7 @@ invariantGroupDecl : LEMMA name=iden LBRACE invariantDecl* RBRACE
 
 proofBlockDecl : PROOF LBRACE proofBody RBRACE ;
 proofBody : proofItem* ;
-proofItem : PROVE (targets+=expr (COMMA targets+=expr)* | goalsAll=MUL) (USING ((premises+=expr (COMMA premises+=expr)*) | premisesAll=MUL))? SEMI # ProveUsingCmd ; 
+proofItem : PROVE (targets+=expr (COMMA targets+=expr)* | goalsAll=MUL) (USING ((premises+=expr (COMMA premises+=expr)*) | premisesAll=MUL))? (EXCEPT excludes+=expr (COMMA excludes+=expr)*)? SEMI # ProveUsingCmd ; 
 
 typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
             | TYPE name=iden ASSIGN type SEMI # PTypeDef

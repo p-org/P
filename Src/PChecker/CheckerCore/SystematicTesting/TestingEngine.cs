@@ -66,11 +66,6 @@ namespace PChecker.SystematicTesting
         internal readonly ISchedulingStrategy Strategy;
 
         /// <summary>
-        /// Pattern coverage observer if pattern is provided
-        /// </summary>
-        private EventPatternObserver? _eventPatternObserver;
-
-        /// <summary>
         /// Monitors conflict operations used by the POS Strategy.
         /// </summary>
         private ConflictOpMonitor? _conflictOpObserver;
@@ -217,19 +212,12 @@ namespace PChecker.SystematicTesting
             }
 
             TestMethodInfo testMethodInfo = null;
-            EventPatternObserver eventMatcher = null;
             try
             {
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
                 Console.Out.WriteLine($".. Test case :: {testMethodInfo.Name}");
 
                 Type t = assembly.GetType("PImplementation.GlobalFunctions");
-                if (checkerConfiguration.PatternSource.Length > 0)
-                {
-                    var result = t.GetMethod(checkerConfiguration.PatternSource,
-                        BindingFlags.Public | BindingFlags.Static)!;
-                    eventMatcher = new EventPatternObserver(result);
-                }
             }
             catch
             {
@@ -237,7 +225,7 @@ namespace PChecker.SystematicTesting
                     $"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
             }
 
-            return new TestingEngine(checkerConfiguration, testMethodInfo, eventMatcher);
+            return new TestingEngine(checkerConfiguration, testMethodInfo);
         }
 
         /// <summary>
@@ -284,21 +272,15 @@ namespace PChecker.SystematicTesting
             : this(checkerConfiguration, new TestMethodInfo(test))
         {
         }
-
-        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo)
-            : this(checkerConfiguration, testMethodInfo, null)
-        {
-        }
+        
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TestingEngine"/> class.
         /// </summary>
-        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo,
-            EventPatternObserver observer)
+        private TestingEngine(CheckerConfiguration checkerConfiguration, TestMethodInfo testMethodInfo)
         {
             _checkerConfiguration = checkerConfiguration;
             TestMethodInfo = testMethodInfo;
-            _eventPatternObserver = observer;
 
             Logger = new ConsoleLogger();
             ErrorReporter = new ErrorReporter(checkerConfiguration, Logger);
@@ -586,10 +568,6 @@ namespace PChecker.SystematicTesting
                 // Always output a json log of the error
                 JsonLogger = new JsonWriter();
                 runtime.SetJsonLogger(JsonLogger);
-                if (_eventPatternObserver != null)
-                {
-                    runtime.RegisterLog(_eventPatternObserver);
-                }
 
                 if (_conflictOpObserver != null)
                 {
@@ -666,7 +644,7 @@ namespace PChecker.SystematicTesting
 
                 if (Strategy is IFeedbackGuidedStrategy strategy)
                 {
-                    strategy.ObserveRunningResults(_eventPatternObserver, timelineObserver);
+                    strategy.ObserveRunningResults(timelineObserver);
                 }
 
                 // Checks that no monitor is in a hot state at termination. Only
@@ -735,14 +713,9 @@ namespace PChecker.SystematicTesting
                 }
 
                 // Cleans up the runtime before the next iteration starts.
-                if (_eventPatternObserver != null)
-                {
-                    runtime.RemoveLog(_eventPatternObserver);
-                }
 
                 runtimeLogger?.Dispose();
                 runtime?.Dispose();
-                _eventPatternObserver?.Reset();
                 _conflictOpObserver?.Reset();
             }
         }
@@ -1037,29 +1010,17 @@ namespace PChecker.SystematicTesting
             {
                 report.CoverageInfo.CoverageGraph = Graph;
             }
-
-            int shouldSave = 1;
-
-            if (_eventPatternObserver != null)
-            {
-                shouldSave = _eventPatternObserver.ShouldSave();
-                TestReport.ValidScheduling.TryAdd(shouldSave, 0);
-                TestReport.ValidScheduling[shouldSave] += 1;
-            }
-
-            if (shouldSave == 1)
-            {
-                var coverageInfo = runtime.GetCoverageInfo();
-                report.CoverageInfo.Merge(coverageInfo);
-                TestReport.Merge(report);
-                var timelineHash = timelineObserver.GetTimelineHash();
-                TestReport.ExploredTimelines[timelineHash] =
-                    TestReport.ExploredTimelines.GetValueOrDefault(timelineHash, 0) + 1;
-                // Also save the graph snapshot of the last iteration, if there is one.
-                Graph = coverageInfo.CoverageGraph;
-                // Also save the graph snapshot of the last schedule, if there is one.
-                Graph = coverageInfo.CoverageGraph;
-            }
+            
+            var coverageInfo = runtime.GetCoverageInfo();
+            report.CoverageInfo.Merge(coverageInfo);
+            TestReport.Merge(report);
+            var timelineHash = timelineObserver.GetTimelineHash();
+            TestReport.ExploredTimelines[timelineHash] =
+                TestReport.ExploredTimelines.GetValueOrDefault(timelineHash, 0) + 1;
+            // Also save the graph snapshot of the last iteration, if there is one.
+            Graph = coverageInfo.CoverageGraph;
+            // Also save the graph snapshot of the last schedule, if there is one.
+            Graph = coverageInfo.CoverageGraph;
         }
 
         /// <summary>

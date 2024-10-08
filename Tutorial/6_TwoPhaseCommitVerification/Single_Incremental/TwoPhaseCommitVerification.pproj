@@ -1,0 +1,8 @@
+<Project>
+<ProjectName>TwoPhaseCommitVerification</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+<Target>UCLID5</Target>
+</Project>

@@ -6,15 +6,13 @@ namespace PChecker.PRuntime
 {
     public class PEvent : Event, IPrtValue
     {
-        public PEvent(int loc) : base()
+        public PEvent() : base()
         {
-            Loc = loc;
         }
 
-        public PEvent(IPrtValue payload, int loc) : base()
+        public PEvent(IPrtValue payload) : base()
         {
             Payload = payload;
-            Loc = loc;
         }
 
         public IPrtValue Payload { get; }
@@ -52,7 +50,7 @@ namespace PChecker.PRuntime
 
     public class PHalt : PEvent
     {
-        public PHalt(IPrtValue payload, int loc) : base(payload, loc)
+        public PHalt(IPrtValue payload) : base(payload)
         {
         }
     }

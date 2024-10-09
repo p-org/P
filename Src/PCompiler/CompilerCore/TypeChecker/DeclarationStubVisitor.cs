@@ -163,26 +163,6 @@ namespace Plang.Compiler.TypeChecker
 
         #endregion Machines
 
-        #region Scenario
-
-        public override object VisitScenarioDecl(PParser.ScenarioDeclContext context)
-        {
-            var scenarioName = context.scenarioName.GetText();
-            var scenario = CurrentScope.Put(scenarioName, context);
-            nodesToDeclarations.Put(context, scenario);
-            return VisitChildrenWithNewScope(scenario, context);
-        }
-
-        public override object VisitScenarioParam(PParser.ScenarioParamContext context)
-        {
-            var symbolName = context.name.GetText();
-            var decl = CurrentScope.Put(symbolName, context, VariableRole.Param);
-            nodesToDeclarations.Put(context, decl);
-            return null;
-        }
-
-        #endregion
-
         #region Functions
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)

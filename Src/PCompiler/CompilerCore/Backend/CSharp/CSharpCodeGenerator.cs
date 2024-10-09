@@ -579,7 +579,9 @@ namespace Plang.Compiler.Backend.CSharp
 
             if (state.Entry != null)
             {
-                context.WriteLine(output, $"[OnEntry(nameof({context.Names.GetNameForDecl(state.Entry)}))]");
+                var entryFunctionName = context.Names.GetNameForDecl(state.Entry);
+                entryFunctionName = state.Entry.IsAnon ? entryFunctionName : $"_{entryFunctionName}";
+                context.WriteLine(output, $"[OnEntry(nameof({entryFunctionName}))]");
             }
 
             var deferredEvents = new List<string>();
@@ -634,7 +636,9 @@ namespace Plang.Compiler.Backend.CSharp
 
             if (state.Exit != null)
             {
-                context.WriteLine(output, $"[OnExit(nameof({context.Names.GetNameForDecl(state.Exit)}))]");
+                var exitFunctionName = context.Names.GetNameForDecl(state.Exit);
+                exitFunctionName = state.Exit.IsAnon ? exitFunctionName : $"_{exitFunctionName}";
+                context.WriteLine(output, $"[OnExit(nameof({exitFunctionName}))]");
             }
 
             context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : State");

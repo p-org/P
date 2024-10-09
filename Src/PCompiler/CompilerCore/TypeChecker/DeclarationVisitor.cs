@@ -305,7 +305,6 @@ namespace Plang.Compiler.TypeChecker
             // initialize the corresponding interface
             currentScope.Value.Get(machine.Name, out Interface @interface);
             @interface.ReceivableEvents = machine.Receives;
-            @interface.PayloadType = machine.PayloadType;
 
             return machine;
         }
@@ -455,8 +454,6 @@ namespace Plang.Compiler.TypeChecker
                 if (CurrentMachine.StartState != null)
                     throw Handler.DuplicateStartState(context, state, CurrentMachine.StartState, CurrentMachine);
                 CurrentMachine.StartState = state;
-                CurrentMachine.PayloadType =
-                    state.Entry?.Signature.Parameters.ElementAtOrDefault(0)?.Type ?? PrimitiveType.Null;
             }
 
             return state;

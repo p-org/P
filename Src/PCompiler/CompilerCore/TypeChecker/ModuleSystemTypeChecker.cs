@@ -4,6 +4,7 @@ using System.Linq;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.ModuleExprs;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -189,12 +190,20 @@ namespace Plang.Compiler.TypeChecker
                     $"test module is not closed with respect to created interfaces; interface {@interface.First().Name} is created but not implemented inside the module");
             }
 
-            //check that the test module main machine exists
+            // check that the test module main machine exists
             var hasMainMachine = test.ModExpr.ModuleInfo.InterfaceDef.Values.Any(m => m.Name == test.Main && !m.IsSpec);
             if (!hasMainMachine)
             {
                 throw handler.NoMain(test.SourceLocation,
                     $"machine {test.Main} does not exist in the test module");
+            }
+            
+            // make sure that the main machine does not take a parameter as input
+            globalScope.Get(test.Main, out Machine main);
+            if (!main.PayloadType.Equals(PrimitiveType.Null))
+            {
+                throw handler.NoMain(test.SourceLocation,
+                    $"main machine {test.Main} cannot take an input parameter in the start state entry function.");
             }
         }
 

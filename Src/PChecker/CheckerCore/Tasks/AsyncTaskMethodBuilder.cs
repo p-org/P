@@ -84,14 +84,10 @@ namespace PChecker.Tasks
         /// </summary>
         [DebuggerHidden]
         public static AsyncTaskMethodBuilder Create()
-        {
-            if (ControlledRuntime.IsExecutionControlled)
-            {
-                return new AsyncTaskMethodBuilder(ControlledRuntime.Current.TaskController);
-            }
-
-            return new AsyncTaskMethodBuilder(null);
+        { 
+            return new AsyncTaskMethodBuilder(ControlledRuntime.Current.TaskController);
         }
+
 
         /// <summary>
         /// Begins running the builder with the associated state machine.
@@ -245,12 +241,7 @@ namespace PChecker.Tasks
         [DebuggerHidden]
         public static AsyncTaskMethodBuilder<TResult> Create()
         {
-            if (ControlledRuntime.IsExecutionControlled)
-            {
-                return new AsyncTaskMethodBuilder<TResult>(ControlledRuntime.Current.TaskController);
-            }
-
-            return new AsyncTaskMethodBuilder<TResult>(null);
+            return new AsyncTaskMethodBuilder<TResult>(ControlledRuntime.Current.TaskController);
         }
 #pragma warning restore CA1000 // Do not declare static members on generic types
 

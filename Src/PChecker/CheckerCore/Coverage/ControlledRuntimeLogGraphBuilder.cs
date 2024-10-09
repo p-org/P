@@ -7,9 +7,9 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Xml.Linq;
-using PChecker.StateMachines;
-using PChecker.StateMachines.Events;
-using PChecker.StateMachines.Logging;
+using PChecker.Runtime.Events;
+using PChecker.Runtime.Logging;
+using PChecker.Runtime.StateMachines;
 
 namespace PChecker.Coverage
 {

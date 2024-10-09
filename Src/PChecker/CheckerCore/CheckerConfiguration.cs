@@ -238,12 +238,6 @@ namespace PChecker
         [DataMember]
         public string CustomStateMachineRuntimeLogType;
 
-        /// <summary>
-        /// Enables debugging.
-        /// </summary>
-        [DataMember]
-        public bool EnableDebugging;
-
 
         /// <summary>
         /// The testing scheduler unique endpoint.
@@ -327,7 +321,6 @@ namespace PChecker
             DebugActivityCoverage = false;
 
             IsVerbose = false;
-            EnableDebugging = false;
 
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;

@@ -1,6 +1,5 @@
 ﻿using NUnit.Framework;
-using PChecker.PRuntime;
-using PChecker.PRuntime.Values;
+using PChecker.Runtime.Values;
 
 namespace UnitTests
 {

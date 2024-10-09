@@ -14,14 +14,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using PChecker.StateMachines;
-using PChecker.StateMachines.Logging;
 using PChecker.Coverage;
 using PChecker.IO;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
 using PChecker.Random;
 using PChecker.Runtime;
+using PChecker.Runtime.Logging;
 using PChecker.SystematicTesting.Strategies;
 using PChecker.SystematicTesting.Strategies.Exhaustive;
 using PChecker.SystematicTesting.Strategies.Probabilistic;
@@ -515,7 +514,7 @@ namespace PChecker.SystematicTesting
             try
             {
                 // Creates a new instance of the controlled runtime.
-                runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
+                runtime = new ControlledRuntime(_checkerConfiguration, Strategy);
 
                 // Always output a json log of the error
                 JsonLogger = new JsonWriter();

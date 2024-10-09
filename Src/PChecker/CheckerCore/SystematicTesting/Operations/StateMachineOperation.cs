@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PChecker.StateMachines;
+using PChecker.Runtime.StateMachines;
 
 namespace PChecker.SystematicTesting.Operations
 {

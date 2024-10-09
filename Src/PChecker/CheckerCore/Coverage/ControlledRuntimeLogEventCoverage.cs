@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using PChecker.StateMachines;
-using PChecker.StateMachines.Events;
-using PChecker.StateMachines.Logging;
+using PChecker.Runtime.Events;
+using PChecker.Runtime.Logging;
+using PChecker.Runtime.StateMachines;
 
 namespace PChecker.Coverage
 {

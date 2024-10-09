@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using PChecker.StateMachines;
 using PChecker.IO.Debugging;
 using PChecker.Runtime;
 using PChecker.Tasks;

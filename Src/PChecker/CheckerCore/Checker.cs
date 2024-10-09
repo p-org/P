@@ -1,5 +1,4 @@
 using System;
-using PChecker.ExhaustiveSearch;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
 using PChecker.SystematicTesting;

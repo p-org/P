@@ -12,18 +12,6 @@ namespace Plang.Compiler.TypeChecker
 {
     public class ExprVisitor : PParserBaseVisitor<IPExpr>
     {
-        public static readonly string EventFieldSender = "MSG_sender";
-        public static readonly string EventFieldReceiver = "MSG_receiver";
-        public static readonly string EventFieldState = "MSG_state";
-        public static readonly string EventFieldIndex = "MSG_index";
-
-        public static Dictionary<string, NamedTupleEntry> ReservedEventFeilds = new Dictionary<string, NamedTupleEntry>()
-        {
-            { EventFieldSender, new NamedTupleEntry("Sender", -1, PrimitiveType.String) },
-            { EventFieldReceiver, new NamedTupleEntry("Receiver", -1, PrimitiveType.String) },
-            { EventFieldState, new NamedTupleEntry("State", -1, PrimitiveType.String) },
-            { EventFieldIndex, new NamedTupleEntry("Index", -1, PrimitiveType.Int) },
-        };
         private readonly ITranslationErrorHandler handler;
         private readonly Function method;
         private readonly Scope table;
@@ -58,18 +46,11 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitNamedTupleAccessExpr(PParser.NamedTupleAccessExprContext context)
         {
             var subExpr = Visit(context.expr());
-            var fieldName = context.field.GetText();
-            if (subExpr is VariableAccessExpr v && method.Role == FunctionRole.Scenario && method.Signature.Parameters.Contains(v.Variable))
-            {
-                if (ReservedEventFeilds.TryGetValue(fieldName, out var reservedEntry))
-                {
-                    return new NamedTupleAccessExpr(context, subExpr, reservedEntry);
-                }
-            }
             if (!(subExpr.Type.Canonicalize() is NamedTupleType tuple))
             {
                 throw handler.TypeMismatch(subExpr, TypeKind.NamedTuple);
             }
+            var fieldName = context.field.GetText();
             if (!tuple.LookupEntry(fieldName, out var entry))
             {
                 throw handler.MissingNamedTupleEntry(context.field, tuple);
@@ -627,7 +608,7 @@ namespace Plang.Compiler.TypeChecker
                 }
 
                 names.Add(entryName);
-                entries[i] = new NamedTupleEntry(name: entryName, fieldNo: i, type: fields[i].Type);
+                entries[i] = new NamedTupleEntry { Name = entryName, FieldNo = i, Type = fields[i].Type };
             }
 
             var type = new NamedTupleType(entries);

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -349,30 +348,7 @@ namespace Plang.Compiler.TypeChecker
 
             return specMachine;
         }
-
-        public override object VisitScenarioDecl(PParser.ScenarioDeclContext context)
-        {
-            var scenario = (Function)nodesToDeclarations.Get(context);
-            var result = ((Variable, PEvent)[]) Visit(context.scenarioParamList());
-            scenario.Signature.Parameters.AddRange(result.Select(it => it.Item1));
-            scenario.Signature.ParameterEvents.AddRange(result.Select(it => it.Item2));
-            scenario.Signature.ReturnType = PrimitiveType.Int;
-            scenario.Role = FunctionRole.Scenario;
-            return scenario;
-        }
-
-        public override object VisitScenarioParamList(PParser.ScenarioParamListContext context)
-        {
-            return context.scenarioParam().Select(Visit).Cast<(Variable, PEvent)>().ToArray();
-        }
-
-        public override object VisitScenarioParam(PParser.ScenarioParamContext context)
-        {
-            var param = (Variable) nodesToDeclarations.Get(context);
-            var e = (PEvent) Visit(context.nonDefaultEvent());
-            return (param, e);
-        }
-
+        
         public override object VisitMachineBody(PParser.MachineBodyContext context)
         {
             foreach (var machineEntryContext in context.machineEntry())

@@ -15,8 +15,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         EventHandler = 1 << 4,
         ExitHandler = 1 << 5,
         ReceiveHandler = 1 << 6,
-        Foreign = 1 << 7,
-        Scenario = 1 << 8,
+        Foreign = 1 << 7
     }
 
     public class Function : IPDecl, IHasScope
@@ -33,8 +32,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                          sourceNode is PParser.NoParamAnonEventHandlerContext ||
                          sourceNode is PParser.ReceiveStmtContext ||
                          sourceNode is PParser.WhileStmtContext ||
-                         sourceNode is PParser.ForeachStmtContext ||
-                         sourceNode is PParser.ScenarioDeclContext);
+                         sourceNode is PParser.ForeachStmtContext);
             Name = name;
             SourceLocation = sourceNode;
             CanCreate = false;

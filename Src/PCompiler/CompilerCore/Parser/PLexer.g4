@@ -70,7 +70,6 @@ MODULE         : 'module' ;
 IMPLEMENTATION : 'implementation' ;
 TEST           : 'test' ;
 REFINES        : 'refines' ;
-SCENARIO  : 'scenario' ;
 
 // module constructors
 COMPOSE        : 'compose' ;

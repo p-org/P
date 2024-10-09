@@ -84,7 +84,7 @@ namespace PChecker.PRuntime
             Assert(target.Permissions.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            ev = (Event)oneArgConstructor.Invoke(new[] { payload , ev.Loc});
+            ev = (Event)oneArgConstructor.Invoke(new[] { payload });
 
             ev.Sender = Id.ToString();
             ev.Receiver = target.Id.ToString();
@@ -96,7 +96,7 @@ namespace PChecker.PRuntime
         {
             Assert(ev != null, "Machine cannot raise a null event");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            ev = (Event)oneArgConstructor.Invoke(new[] { payload, ev.Loc });
+            ev = (Event)oneArgConstructor.Invoke(new[] { payload });
             RaiseEvent(ev);
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
@@ -190,7 +190,7 @@ namespace PChecker.PRuntime
             }
 
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            var @event = (Event)oneArgConstructor.Invoke(new[] { payload, ev.Loc });
+            var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
             var pText = payload == null ? "" : $" with payload {((IPrtValue)payload).ToEscapedString()}";
 
             Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
@@ -255,7 +255,7 @@ namespace PChecker.PRuntime
 
         public class InitializeParametersEvent : PEvent
         {
-            public InitializeParametersEvent(InitializeParameters payload) : base(payload, 0)
+            public InitializeParametersEvent(InitializeParameters payload) : base(payload)
             {
             }
         }

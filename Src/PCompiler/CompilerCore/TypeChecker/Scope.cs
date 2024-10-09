@@ -518,14 +518,6 @@ namespace Plang.Compiler.TypeChecker
             return machineInterface;
         }
 
-        public Function Put(string name, PParser.ScenarioDeclContext tree)
-        {
-            var scenario = new Function(name, tree);
-            CheckConflicts(scenario, Namespace(functions));
-            functions.Add(name, scenario);
-            return scenario;
-        }
-
         public Machine Put(string name, PParser.ImplMachineDeclContext tree)
         {
             var machine = new Machine(name, tree);

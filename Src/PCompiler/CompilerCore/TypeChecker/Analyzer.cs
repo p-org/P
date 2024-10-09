@@ -179,14 +179,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 DeclarationVisitor.PopulateDeclarations(config.Handler, globalScope, programUnit, nodesToDeclarations);
             }
-
-            // Step 3: Assign param types for scenario events. We have do this after all events are initialized.
-            foreach (var function in globalScope.Functions)
-            {
-                ScenarioEventVisitor.PopulateEventTypes(function);
-            }
-
-
+            
             return globalScope;
         }
 

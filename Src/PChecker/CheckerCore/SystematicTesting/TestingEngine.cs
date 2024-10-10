@@ -179,7 +179,6 @@ namespace PChecker.SystematicTesting
             Create(checkerConfiguration, LoadAssembly(checkerConfiguration.AssemblyToBeAnalyzed));
 
         private Stopwatch watch;
-        private bool ShouldEmitTrace;
 
         /// <summary>
         /// Creates a new systematic testing engine.
@@ -211,13 +210,10 @@ namespace PChecker.SystematicTesting
             {
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
                 Console.Out.WriteLine($".. Test case :: {testMethodInfo.Name}");
-
-                Type t = assembly.GetType("PImplementation.GlobalFunctions");
             }
             catch
             {
-                Error.ReportAndExit(
-                    $"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
+                Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
             }
 
             return new TestingEngine(checkerConfiguration, testMethodInfo);
@@ -449,7 +445,7 @@ namespace PChecker.SystematicTesting
             var options = string.Empty;
             if (_checkerConfiguration.SchedulingStrategy is "random" ||
                 _checkerConfiguration.SchedulingStrategy is "pct" ||
-                _checkerConfiguration.SchedulingStrategy is "poc" ||
+                _checkerConfiguration.SchedulingStrategy is "pos" ||
                 _checkerConfiguration.SchedulingStrategy is "feedbackpct" ||
                 _checkerConfiguration.SchedulingStrategy is "feedbackpctcp" ||
                 _checkerConfiguration.SchedulingStrategy is "feedbackpos" ||
@@ -589,7 +585,6 @@ namespace PChecker.SystematicTesting
 
             try
             {
-                ShouldEmitTrace = false;
                 // Creates a new instance of the controlled runtime.
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
 
@@ -651,7 +646,7 @@ namespace PChecker.SystematicTesting
 
                 GatherTestingStatistics(runtime, timelineObserver);
 
-                if (ShouldEmitTrace || (!IsReplayModeEnabled && TestReport.NumOfFoundBugs > 0))
+                if (!IsReplayModeEnabled && TestReport.NumOfFoundBugs > 0)
                 {
                     if (runtimeLogger != null)
                     {
@@ -840,7 +835,7 @@ namespace PChecker.SystematicTesting
                 Logger.WriteLine($"..... Writing {graphPath}");
             }
 
-            if (!_checkerConfiguration.PerformFullExploration || ShouldEmitTrace)
+            if (!_checkerConfiguration.PerformFullExploration)
             {
                 // Emits the reproducable trace, if it exists.
                 if (!string.IsNullOrEmpty(ReproducableTrace))

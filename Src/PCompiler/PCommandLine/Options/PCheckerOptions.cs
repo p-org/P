@@ -233,20 +233,15 @@ namespace Plang.Options
                     checkerConfiguration.RandomGeneratorSeed = (uint)option.Value;
                     break;
                 case "sch-random":
-                case "sch-rff":
                 case "sch-pos":
                 case "sch-feedbackpos":
                 case "sch-feedback":
-                case "sch-2stagefeedback":
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     break;
                 case "sch-probabilistic":
                 case "sch-pct":
-                case "sch-pctcp":
                 case "sch-fairpct":
                 case "sch-feedbackpct":
-                case "sch-feedbackpctcp":
-                case "sch-2stagefeedbackpct":
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     checkerConfiguration.StrategyBound = (int)(uint)option.Value;
                     break;

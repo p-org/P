@@ -50,7 +50,10 @@ namespace PChecker.SystematicTesting.Operations
         /// True if the next awaiter is controlled, else false.
         /// </summary>
         internal bool IsAwaiterControlled;
-        public Event? LastEvent = null;
+        
+        /// <summary>
+        /// The receiver if the operation is Send.
+        /// </summary>
         public string LastSentReceiver = "";
 
         /// <summary>

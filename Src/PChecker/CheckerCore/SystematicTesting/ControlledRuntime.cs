@@ -459,7 +459,6 @@ namespace PChecker.SystematicTesting
                 "Cannot send event '{0}' to actor id '{1}' that is not bound to an actor instance.",
                 e.GetType().FullName, targetId.Value);
 
-            Scheduler.ScheduledOperation.LastEvent = e;
             Scheduler.ScheduledOperation.LastSentReceiver = targetId.ToString();
 
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);

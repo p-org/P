@@ -29,7 +29,7 @@ namespace PChecker.Runtime.Logging
         }
 
         /// <summary>
-        /// Removes the '<' and '>' tags for a log text.
+        /// Removes the "&lt;" and "&gt;" tags for a log text.
         /// </summary>
         /// <param name="log">The text log</param>
         /// <returns>New string with the tag removed or just the string itself if there is no tag.</returns>

@@ -26,7 +26,7 @@ using PChecker.SystematicTesting;
 using System;
 using System.IO;
 using System.Linq;
-using PChecker.StateMachines;
+using PChecker.Runtime.StateMachines;
 
 namespace PImplementation
 {

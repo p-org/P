@@ -60,7 +60,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// The currently executing runtime.
         /// </summary>
-        internal static new ControlledRuntime Current => AsyncLocalInstance.Value ??
+        internal static ControlledRuntime Current => AsyncLocalInstance.Value ??
                                                                 throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture,
                                                                         "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
                                                                         "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
@@ -71,12 +71,12 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// The checkerConfiguration used by the runtime.
         /// </summary>
-        protected internal readonly CheckerConfiguration CheckerConfiguration;
+        internal readonly CheckerConfiguration CheckerConfiguration;
 
         /// <summary>
         /// List of monitors in the program.
         /// </summary>
-        protected readonly List<Monitor> Monitors;
+        readonly List<Monitor> Monitors;
 
         /// <summary>
         /// Monotonically increasing operation id counter.
@@ -86,7 +86,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Records if the runtime is running.
         /// </summary>
-        protected internal volatile bool IsRunning;
+        internal volatile bool IsRunning;
 
         /// <summary>
         /// Callback that is fired when the program throws an exception which includes failed assertions.
@@ -137,7 +137,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Responsible for writing to all registered <see cref="IControlledRuntimeLog"/> objects.
         /// </summary>
-        protected internal LogWriter LogWriter { get; private set; }
+        internal LogWriter LogWriter { get; private set; }
 
         /// <summary>
         /// Used to log text messages. Use <see cref="ControlledRuntime.SetLogger"/>
@@ -1421,7 +1421,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Raises the <see cref="OnFailure"/> event with the specified <see cref="Exception"/>.
         /// </summary>
-        protected internal void RaiseOnFailureEvent(Exception exception)
+        internal void RaiseOnFailureEvent(Exception exception)
         {
             if (exception is ExecutionCanceledException ||
                 (exception is ActionExceptionFilterException ae && ae.InnerException is ExecutionCanceledException))
@@ -1437,7 +1437,7 @@ namespace PChecker.SystematicTesting
         /// Disposes runtime resources.
         /// </summary>
         [DebuggerStepThrough]
-        protected void Dispose(bool disposing)
+        void Dispose(bool disposing)
         {
             if (disposing)
             {

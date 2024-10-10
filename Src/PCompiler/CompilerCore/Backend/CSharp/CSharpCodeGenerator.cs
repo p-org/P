@@ -150,20 +150,19 @@ namespace Plang.Compiler.Backend.CSharp
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
         {
             context.WriteLine(output, "using PChecker;");
-            context.WriteLine(output, "using PChecker.StateMachines;");
-            context.WriteLine(output, "using PChecker.StateMachines.Events;");
             context.WriteLine(output, "using PChecker.Runtime;");
-            context.WriteLine(output, "using PChecker.Specifications;");
-            context.WriteLine(output, "using Monitor = PChecker.Specifications.Monitors.Monitor;");
+            context.WriteLine(output, "using PChecker.Runtime.StateMachines;");
+            context.WriteLine(output, "using PChecker.Runtime.Events;");
+            context.WriteLine(output, "using PChecker.Runtime.Exceptions;");
+            context.WriteLine(output, "using PChecker.Runtime.Values;");
+            context.WriteLine(output, "using PChecker.Runtime.Specifications;");
+            context.WriteLine(output, "using Monitor = PChecker.Runtime.Specifications.Monitor;");
             context.WriteLine(output, "using System;");
             context.WriteLine(output, "using PChecker.SystematicTesting;");
             context.WriteLine(output, "using System.Runtime;");
             context.WriteLine(output, "using System.Collections.Generic;");
             context.WriteLine(output, "using System.Linq;");
             context.WriteLine(output, "using System.IO;");
-            context.WriteLine(output, "using PChecker.Runtime.Values;");
-            context.WriteLine(output, "using PChecker.Runtime;");
-            context.WriteLine(output, "using PChecker.Runtime.Exceptions;");
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);

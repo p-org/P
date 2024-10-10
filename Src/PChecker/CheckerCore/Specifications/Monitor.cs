@@ -275,7 +275,6 @@ namespace PChecker.Specifications.Monitors
         /// </summary>
         internal void MonitorEvent(Event e, string senderName, string senderType, string senderState)
         {
-            e.Sender = senderName;
             Runtime.LogWriter.LogMonitorProcessEvent(GetType().FullName, CurrentStateName,
                 senderName, senderType, senderState, e);
             HandleEvent(e);

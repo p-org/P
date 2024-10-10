@@ -11,9 +11,5 @@ namespace PChecker.Actors.Events
     [DataContract]
     public abstract class Event
     {
-        public string? Sender;
-        public string? Receiver;
-        public string? State;
-        public int Index;
     }
 }

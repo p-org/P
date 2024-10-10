@@ -21,7 +21,7 @@ namespace PChecker.SystematicTesting.Strategies.Special
         private readonly CheckerConfiguration _checkerConfiguration;
 
         /// <summary>
-        /// The Coyote program schedule trace.
+        /// The program schedule trace.
         /// </summary>
         private readonly ScheduleTrace ScheduleTrace;
 

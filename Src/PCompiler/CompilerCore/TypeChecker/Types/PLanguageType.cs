@@ -29,7 +29,7 @@ namespace Plang.Compiler.TypeChecker.Types
         /// <summary>
         ///     represents the permissions embedded in a type
         /// </summary>
-        public abstract Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
+        public abstract Lazy<IReadOnlyList<Event>> AllowedPermissions { get; }
 
         public abstract bool IsAssignableFrom(PLanguageType otherType);
 

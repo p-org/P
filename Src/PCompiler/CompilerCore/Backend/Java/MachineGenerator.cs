@@ -69,7 +69,7 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteMachineDecl()
         {
-            WriteLine($"// PMachine {_currentMachine.Name} elided ");
+            WriteLine($"// StateMachine {_currentMachine.Name} elided ");
         }
 
         private void WriteMonitorDecl()
@@ -316,7 +316,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($".withEntry(this::{fname})");
         }
 
-        private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
+        private void WriteStateBuilderEventHandler(Event e, IStateAction a)
         {
             var ename = $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(e)}";
 
@@ -492,7 +492,7 @@ namespace Plang.Compiler.Backend.Java {
 
                 case RaiseStmt raiseStmt:
                     Write($"{Constants.TryRaiseEventMethodName}(new ");
-                    WriteExpr(raiseStmt.PEvent);
+                    WriteExpr(raiseStmt.Event);
                     Write("(");
                     foreach (var (sep, expr) in raiseStmt.Payload.WithPrefixSep(", "))
                     {

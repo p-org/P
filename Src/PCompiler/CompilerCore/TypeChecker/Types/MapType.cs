@@ -17,7 +17,7 @@ namespace Plang.Compiler.TypeChecker.Types
             }
             else
             {
-                AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => KeyType
+                AllowedPermissions = new Lazy<IReadOnlyList<Event>>(() => KeyType
                     .AllowedPermissions.Value.Concat(ValueType.AllowedPermissions.Value)
                     .ToList());
             }
@@ -32,7 +32,7 @@ namespace Plang.Compiler.TypeChecker.Types
         public override string CanonicalRepresentation =>
             $"map[{KeyType.CanonicalRepresentation},{ValueType.CanonicalRepresentation}]";
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

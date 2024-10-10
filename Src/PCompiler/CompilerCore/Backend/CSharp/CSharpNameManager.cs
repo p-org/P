@@ -49,7 +49,7 @@ namespace Plang.Compiler.Backend.CSharp
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (decl)
             {
-                case PEvent pEvent:
+                case Event pEvent:
                     if (pEvent.IsNullEvent)
                     {
                         return "DefaultEvent";

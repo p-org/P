@@ -6,7 +6,7 @@ using System;
 namespace PChecker.Exceptions
 {
     /// <summary>
-    /// The exception that is thrown by the Coyote runtime upon assertion failure.
+    /// The exception that is thrown by the ControlledRuntime upon assertion failure.
     /// </summary>
     internal sealed class AssertionFailureException : RuntimeException
     {

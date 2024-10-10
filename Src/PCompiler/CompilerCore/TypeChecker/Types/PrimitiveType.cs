@@ -28,7 +28,7 @@ namespace Plang.Compiler.TypeChecker.Types
                     break;
 
                 default:
-                    AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => new List<PEvent>());
+                    AllowedPermissions = new Lazy<IReadOnlyList<Event>>(() => new List<Event>());
                     break;
             }
         }
@@ -36,7 +36,7 @@ namespace Plang.Compiler.TypeChecker.Types
         public override string OriginalRepresentation { get; }
         public override string CanonicalRepresentation { get; }
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

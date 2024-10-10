@@ -6,7 +6,7 @@ namespace PChecker.Random
     /// <summary>
     /// Interface for random value generators.
     /// </summary>
-    internal interface IRandomValueGenerator
+    public interface IRandomValueGenerator
     {
         /// <summary>
         /// The seed currently used by the generator.

@@ -116,10 +116,10 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPModuleExpr VisitHideEventsModuleExpr([NotNull] PParser.HideEventsModuleExprContext context)
         {
-            var eventList = new List<PEvent>();
+            var eventList = new List<Event>();
             foreach (var eventName in context.nonDefaultEventList()._events)
             {
-                if (!globalScope.Get(eventName.GetText(), out PEvent @event))
+                if (!globalScope.Get(eventName.GetText(), out Event @event))
                 {
                     throw handler.MissingDeclaration(eventName, "event", eventName.GetText());
                 }

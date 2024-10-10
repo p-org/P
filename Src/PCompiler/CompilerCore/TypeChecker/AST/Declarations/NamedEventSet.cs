@@ -7,38 +7,38 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     public interface IEventSet
     {
-        IEnumerable<PEvent> Events { get; }
+        IEnumerable<Event> Events { get; }
 
-        bool AddEvent(PEvent pEvent);
+        bool AddEvent(Event pEvent);
 
-        void AddEvents(IEnumerable<PEvent> evts);
+        void AddEvents(IEnumerable<Event> evts);
 
-        bool Contains(PEvent pEvent);
+        bool Contains(Event pEvent);
 
         bool IsSame(IEventSet eventSet);
 
         bool IsSubsetEqOf(IEventSet eventSet);
 
-        bool IsSubsetEqOf(IEnumerable<PEvent> eventSet);
+        bool IsSubsetEqOf(IEnumerable<Event> eventSet);
 
-        bool Intersects(IEnumerable<PEvent> eventSet);
+        bool Intersects(IEnumerable<Event> eventSet);
     }
 
     public class EventSet : IEventSet
     {
-        private static readonly Comparer<PEvent> EventNameComparer =
-            Comparer<PEvent>.Create((ev1, ev2) => string.Compare(ev1.Name, ev2.Name, StringComparison.Ordinal));
+        private static readonly Comparer<Event> EventNameComparer =
+            Comparer<Event>.Create((ev1, ev2) => string.Compare(ev1.Name, ev2.Name, StringComparison.Ordinal));
 
-        private readonly SortedSet<PEvent> events = new SortedSet<PEvent>(EventNameComparer);
+        private readonly SortedSet<Event> events = new SortedSet<Event>(EventNameComparer);
 
-        public IEnumerable<PEvent> Events => events;
+        public IEnumerable<Event> Events => events;
 
-        public bool AddEvent(PEvent pEvent)
+        public bool AddEvent(Event pEvent)
         {
             return events.Add(pEvent);
         }
 
-        public void AddEvents(IEnumerable<PEvent> evts)
+        public void AddEvents(IEnumerable<Event> evts)
         {
             foreach (var pEvent in evts)
             {
@@ -46,7 +46,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             }
         }
 
-        public bool Contains(PEvent pEvent)
+        public bool Contains(Event pEvent)
         {
             return events.Contains(pEvent);
         }
@@ -61,12 +61,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             return events.IsSubsetOf(eventSet.Events);
         }
 
-        public bool IsSubsetEqOf(IEnumerable<PEvent> eventsList)
+        public bool IsSubsetEqOf(IEnumerable<Event> eventsList)
         {
             return events.IsSubsetOf(eventsList);
         }
 
-        public bool Intersects(IEnumerable<PEvent> eventSet)
+        public bool Intersects(IEnumerable<Event> eventSet)
         {
             return events.Overlaps(eventSet);
         }
@@ -89,14 +89,14 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
         }
 
-        public IEnumerable<PEvent> Events => events.Events;
+        public IEnumerable<Event> Events => events.Events;
 
-        public bool AddEvent(PEvent evt)
+        public bool AddEvent(Event evt)
         {
             return events.AddEvent(evt);
         }
 
-        public bool Contains(PEvent pEvent)
+        public bool Contains(Event pEvent)
         {
             return events.Contains(pEvent);
         }
@@ -106,7 +106,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             return events.IsSame(eventSet);
         }
 
-        public void AddEvents(IEnumerable<PEvent> evts)
+        public void AddEvents(IEnumerable<Event> evts)
         {
             foreach (var pEvent in evts)
             {
@@ -119,12 +119,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             return events.IsSubsetEqOf(eventSet);
         }
 
-        public bool IsSubsetEqOf(IEnumerable<PEvent> eventsList)
+        public bool IsSubsetEqOf(IEnumerable<Event> eventsList)
         {
             return events.IsSubsetEqOf(eventsList);
         }
 
-        public bool Intersects(IEnumerable<PEvent> eventSet)
+        public bool Intersects(IEnumerable<Event> eventSet)
         {
             return events.Intersects(eventSet);
         }

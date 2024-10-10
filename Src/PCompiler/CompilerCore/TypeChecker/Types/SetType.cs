@@ -16,7 +16,7 @@ namespace Plang.Compiler.TypeChecker.Types
         public override string OriginalRepresentation => $"set[{ElementType.OriginalRepresentation}]";
         public override string CanonicalRepresentation => $"set[{ElementType.CanonicalRepresentation}]";
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions => ElementType.AllowedPermissions;
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions => ElementType.AllowedPermissions;
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

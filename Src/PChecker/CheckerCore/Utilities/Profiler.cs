@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace PChecker.Utilities
 {
     /// <summary>
-    /// The Coyote profiler.
+    /// The profiler.
     /// </summary>
     public class Profiler
     {

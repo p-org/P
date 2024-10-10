@@ -16,8 +16,8 @@ namespace Plang.Compiler.TypeChecker.Types
         public override string OriginalRepresentation => EnumDecl.Name;
         public override string CanonicalRepresentation => EnumDecl.Name;
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions =>
-            new Lazy<IReadOnlyList<PEvent>>(() => new List<PEvent>());
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions =>
+            new Lazy<IReadOnlyList<Event>>(() => new List<Event>());
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

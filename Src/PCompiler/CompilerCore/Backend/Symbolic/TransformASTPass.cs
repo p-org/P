@@ -346,7 +346,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case AddStmt addStmt:
                     return new AddStmt(addStmt.SourceLocation, ReplaceVars(addStmt.Variable, varMap), ReplaceVars(addStmt.Value, varMap));
                 case AnnounceStmt announceStmt:
-                    return new AnnounceStmt(announceStmt.SourceLocation, ReplaceVars(announceStmt.PEvent, varMap), ReplaceVars(announceStmt.Payload, varMap));
+                    return new AnnounceStmt(announceStmt.SourceLocation, ReplaceVars(announceStmt.Event, varMap), ReplaceVars(announceStmt.Payload, varMap));
                 case AssertStmt assertStmt:
                     return new AssertStmt(assertStmt.SourceLocation, ReplaceVars(assertStmt.Assertion, varMap), ReplaceVars(assertStmt.Message, varMap));
                 case AssignStmt assignStmt:
@@ -378,9 +378,9 @@ namespace Plang.Compiler.Backend.Symbolic
                 case RaiseStmt raiseStmt:
                     var payload = new List<IPExpr>();
                     foreach(var p in raiseStmt.Payload) payload.Add(ReplaceVars(p, varMap));
-                    return new RaiseStmt(raiseStmt.SourceLocation, ReplaceVars(raiseStmt.PEvent, varMap), payload);
+                    return new RaiseStmt(raiseStmt.SourceLocation, ReplaceVars(raiseStmt.Event, varMap), payload);
                 case ReceiveStmt receiveStmt:
-                    var cases = new Dictionary<PEvent, Function>();
+                    var cases = new Dictionary<Event, Function>();
                     foreach(var entry in receiveStmt.Cases)
                     {
                         var replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
@@ -515,7 +515,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case IfStmt ifStmt:
                     return new IfStmt(ifStmt.SourceLocation, ifStmt.Condition, ReplaceBreaks(ifStmt.ThenBranch, afterStmts), ReplaceBreaks(ifStmt.ElseBranch, afterStmts));
                 case ReceiveStmt receiveStmt:
-                    var cases = new Dictionary<PEvent, Function>();
+                    var cases = new Dictionary<Event, Function>();
                     foreach(var entry in receiveStmt.Cases)
                     {
                         var replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
@@ -602,7 +602,7 @@ namespace Plang.Compiler.Backend.Symbolic
                                 }
                                 break;
                             case ReceiveStmt recv:
-                                IDictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
+                                IDictionary<Event, Function> cases = new Dictionary<Event, Function>();
                                 var canReceiveInCase = false;
                                 foreach (var c in recv.Cases)
                                 {
@@ -775,11 +775,11 @@ namespace Plang.Compiler.Backend.Symbolic
             }
         }
 
-        static private Continuation GetContinuation(Function function, IDictionary<PEvent, Function> cases, IPStmt after, ParserRuleContext location)
+        static private Continuation GetContinuation(Function function, IDictionary<Event, Function> cases, IPStmt after, ParserRuleContext location)
         {
             var continuationName = $"continuation_{continuationNumber}";
             continuationNumber++;
-            var continuation = new Continuation(continuationName, new Dictionary<PEvent, Function>(cases), after, location);
+            var continuation = new Continuation(continuationName, new Dictionary<Event, Function>(cases), after, location);
             continuation.ParentFunction = function;
             function.AddCallee(continuation);
             function.Role = FunctionRole.Method;

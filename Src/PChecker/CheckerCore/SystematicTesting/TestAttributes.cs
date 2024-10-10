@@ -7,7 +7,7 @@ namespace PChecker.SystematicTesting
 {
     /// <summary>
     /// Attribute for declaring the entry point to
-    /// a Coyote program test.
+    /// a program test.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public sealed class TestAttribute : Attribute
@@ -43,8 +43,8 @@ namespace PChecker.SystematicTesting
 
     /// <summary>
     /// Attribute for declaring the factory method that creates
-    /// the Coyote testing runtime. This is an advanced feature,
-    /// only to be used for replacing the original Coyote testing
+    /// the testing runtime. This is an advanced feature,
+    /// only to be used for replacing the original testing
     /// runtime with an alternative implementation.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]

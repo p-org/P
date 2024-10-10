@@ -147,7 +147,7 @@ namespace Plang.Compiler.Backend.Debugging
                         " };");
                     break;
 
-                case PEvent pEvent:
+                case Event pEvent:
                     WriteStmt("event ",
                         pEvent,
                         " assert ",
@@ -168,7 +168,7 @@ namespace Plang.Compiler.Backend.Debugging
                     break;
 
                 case AnnounceStmt announceStmt:
-                    WriteStmt("announce ", announceStmt.PEvent, ", ", announceStmt.Payload, ";");
+                    WriteStmt("announce ", announceStmt.Event, ", ", announceStmt.Payload, ";");
                     break;
 
                 case AssertStmt assertStmt:
@@ -235,7 +235,7 @@ namespace Plang.Compiler.Backend.Debugging
                     break;
 
                 case RaiseStmt raiseStmt:
-                    WriteStmt("raise ", raiseStmt.PEvent, ", ", raiseStmt.Payload, ";");
+                    WriteStmt("raise ", raiseStmt.Event, ", ", raiseStmt.Payload, ";");
                     break;
 
                 case ReceiveStmt receiveStmt:

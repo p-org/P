@@ -26,7 +26,7 @@ using PChecker.SystematicTesting;
 using System;
 using System.IO;
 using System.Linq;
-using PChecker.Actors;
+using PChecker.Runtime.StateMachines;
 
 namespace PImplementation
 {
@@ -39,7 +39,7 @@ namespace PImplementation
             // update the path to the schedule file.
             string schedule = File.ReadAllText(""absolute path to *.schedule file"");
             configuration.WithReplayStrategy(schedule);
-            TestingEngine engine = TestingEngine.Create(configuration, (Action<IActorRuntime>)PImplementation.<Name of the test case>.Execute);
+            TestingEngine engine = TestingEngine.Create(configuration, (Action<ControlledRuntime>)PImplementation.<Name of the test case>.Execute);
             engine.Run();
             string bug = engine.TestReport.BugReports.FirstOrDefault();
                 if (bug != null)

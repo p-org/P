@@ -10,9 +10,6 @@ namespace PChecker.IO.Logging
     /// <summary>
     /// Logger that writes text to the console.
     /// </summary>
-    /// <remarks>
-    /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
-    /// </remarks>
     public sealed class ConsoleLogger : TextWriter
     {
         /// <summary>

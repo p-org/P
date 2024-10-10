@@ -5,12 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PChecker.Actors.Events;
+using PChecker.Runtime.Events;
 
 namespace PChecker.Coverage
 {
     /// <summary>
-    /// The Coyote code coverage reporter.
+    /// The code coverage reporter.
     /// </summary>
     public class ActivityCoverageReporter
     {
@@ -33,17 +33,6 @@ namespace PChecker.Coverage
             CoverageInfo = coverageInfo;
             BuiltInEvents.Add(typeof(GotoStateEvent).FullName);
             BuiltInEvents.Add(typeof(DefaultEvent).FullName);
-        }
-
-        /// <summary>
-        /// Emits the visualization graph.
-        /// </summary>
-        public void EmitVisualizationGraph(string graphFile)
-        {
-            if (CoverageInfo.CoverageGraph != null)
-            {
-                CoverageInfo.CoverageGraph.SaveDgml(graphFile, true);
-            }
         }
 
         /// <summary>

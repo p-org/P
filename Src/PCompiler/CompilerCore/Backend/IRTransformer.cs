@@ -338,7 +338,7 @@ namespace Plang.Compiler.Backend
                 case null:
                     throw new ArgumentNullException(nameof(statement));
                 case AnnounceStmt announceStmt:
-                    (var annEvt, var annEvtDeps) = SimplifyExpression(announceStmt.PEvent);
+                    (var annEvt, var annEvtDeps) = SimplifyExpression(announceStmt.Event);
                     (IExprTerm annPayload, List<IPStmt> annPayloadDeps) = announceStmt.Payload == null
                         ? (null, new List<IPStmt>())
                         : SimplifyExpression(announceStmt.Payload);
@@ -477,7 +477,7 @@ namespace Plang.Compiler.Backend
                     return deps.Concat(new[] { new PrintStmt(location, newMessage) }).ToList();
 
                 case RaiseStmt raiseStmt:
-                    (var raiseEvent, var raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
+                    (var raiseEvent, var raiseEventDeps) = SimplifyExpression(raiseStmt.Event);
                     (var raiseEventTmp, var raiseEventTempDep) = SaveInTemporary(new CloneExpr(raiseEvent));
 
                     (var raiseArgs, var raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);

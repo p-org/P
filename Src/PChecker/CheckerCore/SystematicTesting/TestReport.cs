@@ -11,7 +11,7 @@ using PChecker.Utilities;
 namespace PChecker.SystematicTesting
 {
     /// <summary>
-    /// Class implementing the Coyote test report.
+    /// Class implementing the test report.
     /// </summary>
     [DataContract]
     public class TestReport

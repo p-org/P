@@ -73,7 +73,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"{@interface.Name}";
                 case State state:
                     return $"{state.Name}";
-                case PEvent pEvent:
+                case Event pEvent:
                     if (!pEvent.IsBuiltIn)
                         return $"{pEvent.Name}";
                     else return $"_{pEvent.Name}";

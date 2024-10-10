@@ -95,9 +95,9 @@ namespace Plang.Compiler.Backend.Java
 
             switch (decl)
             {
-                case PEvent { IsNullEvent: true }:
+                case Event { IsNullEvent: true }:
                     return "DefaultEvent";
-                case PEvent { IsHaltEvent: true }:
+                case Event { IsHaltEvent: true }:
                     return "PHalt";
                 case Interface i:
                     name = "I_" + i.Name;

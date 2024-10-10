@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Runtime.CompilerServices;
-using PChecker.Runtime;
+using PChecker.SystematicTesting;
 
 namespace PChecker.Random
 {
@@ -12,23 +12,19 @@ namespace PChecker.Random
     /// During systematic testing, the generation of random values is controlled, which
     /// allows the runtime to explore combinations of choices to find bugs.
     /// </summary>
-    /// <remarks>
-    /// See <see href="/coyote/learn/core/non-determinism" >Program non-determinism</see>
-    /// for more information.
-    /// </remarks>
     public class Generator
     {
         /// <summary>
         /// The runtime associated with this random value generator.
         /// </summary>
-        internal readonly CoyoteRuntime Runtime;
+        internal readonly ControlledRuntime Runtime;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Generator"/> class.
         /// </summary>
         private Generator()
         {
-            Runtime = CoyoteRuntime.Current;
+            Runtime = ControlledRuntime.Current;
         }
 
         /// <summary>

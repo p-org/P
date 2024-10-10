@@ -4,6 +4,6 @@ namespace Plang.Compiler.TypeChecker.AST
 {
     public interface IStateAction : IPAST
     {
-        PEvent Trigger { get; }
+        Event Trigger { get; }
     }
 }

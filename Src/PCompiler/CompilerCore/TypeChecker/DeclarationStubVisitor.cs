@@ -47,6 +47,23 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
+        public override object VisitInvariantGroupDecl(PParser.InvariantGroupDeclContext context)
+        {
+            var name = context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            context.invariantDecl().Select(Visit).ToList();
+            return null;
+        }
+
+        public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
+        {
+            var name = $"proof_cmd_{CurrentScope.ProofCommands.Count()}";
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
         public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)
         {
             var name = $"init{CurrentScope.AssumeOnStarts.Count()}";

@@ -190,7 +190,6 @@ namespace Plang.Options
                     checkerConfiguration.IsVerbose = true;
                     break;
                 case "debug":
-                    checkerConfiguration.EnableDebugging = true;
                     Debug.IsEnabled = true;
                     break;
                 case "timeout":

@@ -15,8 +15,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using PChecker.Actors;
-using PChecker.Actors.Logging;
 using PChecker.Coverage;
 using PChecker.Feedback;
 using PChecker.Generator;
@@ -79,9 +77,6 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// The installed logger.
         /// </summary>
-        /// <remarks>
-        /// See <see href="/coyote/learn/core/logging" >Logging</see> for more information.
-        /// </remarks>
         private TextWriter Logger;
 
         /// <summary>
@@ -140,7 +135,7 @@ namespace PChecker.SystematicTesting
         public TestReport TestReport { get; set; }
 
         /// <summary>
-        /// A graph of the actors, state machines and events of a single test schedule.
+        /// A graph of the state machines, state machines and events of a single test schedule.
         /// </summary>
         private Graph Graph;
 
@@ -225,17 +220,11 @@ namespace PChecker.SystematicTesting
         /// </summary>
         public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action test) =>
             new TestingEngine(checkerConfiguration, test);
-
+        
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<ICoyoteRuntime> test) =>
-            new TestingEngine(checkerConfiguration, test);
-
-        /// <summary>
-        /// Creates a new systematic testing engine.
-        /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<IActorRuntime> test) =>
+        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<ControlledRuntime> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -247,14 +236,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration,
-            Func<ICoyoteRuntime, Task> test) =>
-            new TestingEngine(checkerConfiguration, test);
-
-        /// <summary>
-        /// Creates a new systematic testing engine.
-        /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<IActorRuntime, Task> test) =>
+        internal static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ControlledRuntime, Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -423,7 +405,7 @@ namespace PChecker.SystematicTesting
                     }
 
 
-                    Error.ReportAndExit("Exception thrown during testing outside the context of an actor, " +
+                    Error.ReportAndExit("Exception thrown during testing outside the context of an state machine, " +
                                         "possibly in a test method. Please use /debug /v:2 to print more information.");
                 }
             }
@@ -587,7 +569,7 @@ namespace PChecker.SystematicTesting
             try
             {
                 // Creates a new instance of the controlled runtime.
-                runtime = new ControlledRuntime(_checkerConfiguration, Strategy, RandomValueGenerator);
+                runtime = new ControlledRuntime(_checkerConfiguration, Strategy);
 
                 runtime.RegisterLog(timelineObserver);
                 RegisterObservers(runtime);
@@ -829,13 +811,6 @@ namespace PChecker.SystematicTesting
                 JsonSerializer.Serialize(jsonStreamFile, JsonLogger.Logs, jsonSerializerConfig);
             }
 
-            if (Graph != null && !_checkerConfiguration.PerformFullExploration)
-            {
-                var graphPath = directory + file + "_" + index + ".dgml";
-                Graph.SaveDgml(graphPath, true);
-                Logger.WriteLine($"..... Writing {graphPath}");
-            }
-
             if (!_checkerConfiguration.PerformFullExploration)
             {
                 // Emits the reproducable trace, if it exists.
@@ -865,9 +840,9 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private void InitializeCustomLogging(ControlledRuntime runtime)
         {
-            if (!string.IsNullOrEmpty(_checkerConfiguration.CustomActorRuntimeLogType))
+            if (!string.IsNullOrEmpty(_checkerConfiguration.CustomStateMachineRuntimeLogType))
             {
-                var log = Activate<IActorRuntimeLog>(_checkerConfiguration.CustomActorRuntimeLogType);
+                var log = Activate<IControlledRuntimeLog>(_checkerConfiguration.CustomStateMachineRuntimeLogType);
                 if (log != null)
                 {
                     runtime.RegisterLog(log);
@@ -877,7 +852,7 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.IsDgmlGraphEnabled || _checkerConfiguration.ReportActivityCoverage)
             {
                 // Registers an activity coverage graph builder.
-                runtime.RegisterLog(new ActorRuntimeLogGraphBuilder(false)
+                runtime.RegisterLog(new ControlledRuntimeLogGraphBuilder(false)
                 {
                     CollapseMachineInstances = _checkerConfiguration.ReportActivityCoverage
                 });
@@ -886,13 +861,13 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.ReportActivityCoverage)
             {
                 // Need this additional logger to get the event coverage report correct
-                runtime.RegisterLog(new ActorRuntimeLogEventCoverage());
+                runtime.RegisterLog(new ControlledRuntimeLogEventCoverage());
             }
 
             if (_checkerConfiguration.IsXmlLogEnabled)
             {
                 XmlLog = new StringBuilder();
-                runtime.RegisterLog(new ActorRuntimeLogXmlFormatter(XmlWriter.Create(XmlLog,
+                runtime.RegisterLog(new PCheckerLogXmlFormatter(XmlWriter.Create(XmlLog,
                     new XmlWriterSettings() { Indent = true, IndentChars = "  ", OmitXmlDeclaration = true })));
             }
         }

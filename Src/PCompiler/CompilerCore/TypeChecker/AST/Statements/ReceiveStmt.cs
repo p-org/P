@@ -6,13 +6,13 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
 {
     public class ReceiveStmt : IPStmt
     {
-        public ReceiveStmt(ParserRuleContext sourceLocation, IReadOnlyDictionary<PEvent, Function> cases)
+        public ReceiveStmt(ParserRuleContext sourceLocation, IReadOnlyDictionary<Event, Function> cases)
         {
             SourceLocation = sourceLocation;
             Cases = cases;
         }
 
-        public IReadOnlyDictionary<PEvent, Function> Cases { get; }
+        public IReadOnlyDictionary<Event, Function> Cases { get; }
         public ParserRuleContext SourceLocation { get; }
     }
 }

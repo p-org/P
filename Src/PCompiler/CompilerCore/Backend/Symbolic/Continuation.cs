@@ -10,7 +10,7 @@ namespace Plang.Compiler.Backend.Symbolic
 {
     public class Continuation : Function
     {
-        public Continuation(string name, IReadOnlyDictionary<PEvent, Function> cases, IPStmt after, ParserRuleContext location) : base(name, location)
+        public Continuation(string name, IReadOnlyDictionary<Event, Function> cases, IPStmt after, ParserRuleContext location) : base(name, location)
         {
             Cases = cases;
             After = after;
@@ -29,7 +29,7 @@ namespace Plang.Compiler.Backend.Symbolic
             storeForLocal.Add(local, store);
         }
 
-        public IReadOnlyDictionary<PEvent, Function> Cases { get; }
+        public IReadOnlyDictionary<Event, Function> Cases { get; }
         public IPStmt After { get; }
         public IEnumerable<Variable> StoreParameters => storeParameters;
         public IEnumerable<Variable> LocalParameters => localParameters;

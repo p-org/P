@@ -222,7 +222,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output);
         }
 
-        private void WriteEvent(CompilationContext context, StringWriter output, PEvent ev)
+        private void WriteEvent(CompilationContext context, StringWriter output, Event ev)
         {
             context.WriteLine(output, $"public static Event {context.GetNameForDecl(ev)} = new Event(\"{context.GetNameForDecl(ev)}\");");
         }
@@ -243,7 +243,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     else
                         WriteMachine(context, output, machine);
                     break;
-                case PEvent ev:
+                case Event ev:
                     WriteEvent(context, output, ev);
                     break;
                 case SafetyTest safety:
@@ -500,7 +500,7 @@ namespace Plang.Compiler.Backend.Symbolic
             context.Write(output, "}");
         }
 
-        private void WriteEventHandler(CompilationContext context, StringWriter output, KeyValuePair<PEvent, IStateAction> handler, State state)
+        private void WriteEventHandler(CompilationContext context, StringWriter output, KeyValuePair<Event, IStateAction> handler, State state)
         {
             var eventTag = context.GetNameForDecl(handler.Key);
             switch (handler.Value)
@@ -1039,7 +1039,7 @@ namespace Plang.Compiler.Backend.Symbolic
                     context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
 
                     context.Write(output, $"outcome.raiseGuardedEvent({flowContext.pcScope.PathConstraintVar}, ");
-                    WriteExpr(context, output, flowContext.pcScope, raiseStmt.PEvent);
+                    WriteExpr(context, output, flowContext.pcScope, raiseStmt.Event);
                     if (raiseStmt.Payload.Count > 0)
                     {
                         // TODO: Determine how multi-payload raise statements are supposed to work
@@ -1312,7 +1312,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 }
                 case AnnounceStmt announceStmt:
                     context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
-                    WriteExpr(context, output, flowContext.pcScope, announceStmt.PEvent);
+                    WriteExpr(context, output, flowContext.pcScope, announceStmt.Event);
                     context.Write(output, ", ");
                     if (announceStmt.Payload == null)
                         context.Write(output, "null");

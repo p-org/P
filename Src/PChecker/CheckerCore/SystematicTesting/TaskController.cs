@@ -58,7 +58,7 @@ namespace PChecker.SystematicTesting
                 {
                     // Update the current asynchronous control flow with the current runtime instance,
                     // allowing future retrieval in the same asynchronous call stack.
-                    CoyoteRuntime.AssignAsyncControlFlowRuntime(Runtime);
+                    ControlledRuntime.AssignAsyncControlFlowRuntime(Runtime);
 
                     OperationScheduler.StartOperation(op);
                     if (predecessor != null)
@@ -118,7 +118,7 @@ namespace PChecker.SystematicTesting
                 {
                     // Update the current asynchronous control flow with the current runtime instance,
                     // allowing future retrieval in the same asynchronous call stack.
-                    CoyoteRuntime.AssignAsyncControlFlowRuntime(Runtime);
+                    ControlledRuntime.AssignAsyncControlFlowRuntime(Runtime);
 
                     OperationScheduler.StartOperation(op);
                     if (predecessor != null)
@@ -177,7 +177,7 @@ namespace PChecker.SystematicTesting
                 {
                     // Update the current asynchronous control flow with the current runtime instance,
                     // allowing future retrieval in the same asynchronous call stack.
-                    CoyoteRuntime.AssignAsyncControlFlowRuntime(Runtime);
+                    ControlledRuntime.AssignAsyncControlFlowRuntime(Runtime);
 
                     OperationScheduler.StartOperation(op);
                     if (predecessor != null)
@@ -235,7 +235,7 @@ namespace PChecker.SystematicTesting
                 {
                     // Update the current asynchronous control flow with the current runtime instance,
                     // allowing future retrieval in the same asynchronous call stack.
-                    CoyoteRuntime.AssignAsyncControlFlowRuntime(Runtime);
+                    ControlledRuntime.AssignAsyncControlFlowRuntime(Runtime);
 
                     OperationScheduler.StartOperation(op);
                     if (predecessor != null)

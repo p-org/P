@@ -1,9 +1,8 @@
 using System;
-using PChecker.ExhaustiveSearch;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
-using PChecker.Scheduling;
 using PChecker.SystematicTesting;
+using PChecker.Testing;
 
 namespace PChecker;
 
@@ -53,7 +52,7 @@ public class Checker
             switch (configuration.Mode)
             {
                 case CheckerMode.BugFinding:
-                    TestingProcessScheduler.Create(configuration).Run();
+                    TestingProcess.Create(configuration).Run();
                     break;
                 case CheckerMode.Verification:
                 case CheckerMode.Coverage:

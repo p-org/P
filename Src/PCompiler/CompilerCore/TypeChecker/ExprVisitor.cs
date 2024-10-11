@@ -512,7 +512,7 @@ namespace Plang.Compiler.TypeChecker
                     return new EnumElemRefExpr(context, enumElem);
                 }
 
-                if (table.Lookup(symbolName, out PEvent evt))
+                if (table.Lookup(symbolName, out Event evt))
                 {
                     return new EventRefExpr(context, evt);
                 }
@@ -564,7 +564,7 @@ namespace Plang.Compiler.TypeChecker
 
             if (context.HALT() != null)
             {
-                var success = table.Lookup("halt", out PEvent haltEvent);
+                var success = table.Lookup("halt", out Event haltEvent);
                 Debug.Assert(success);
                 return new EventRefExpr(context, haltEvent);
             }

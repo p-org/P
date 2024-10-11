@@ -280,7 +280,6 @@ namespace PChecker
         [DataMember]
         public string JvmArgs;
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="CheckerConfiguration"/> class.
         /// </summary>

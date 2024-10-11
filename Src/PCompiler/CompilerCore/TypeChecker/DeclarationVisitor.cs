@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Plang.Compiler.Util;
@@ -689,6 +691,73 @@ namespace Plang.Compiler.TypeChecker
             inv.Body = body;
             
             return inv;
+        }
+
+        public override object VisitInvariantGroupDecl(PParser.InvariantGroupDeclContext context)
+        {
+            var invGroup = (InvariantGroup) nodesToDeclarations.Get(context);
+            invGroup.Invariants = context.invariantDecl().Select(Visit).Cast<Invariant>().ToList();
+            return invGroup;
+        }
+
+        private List<Invariant> ToInvariant(IPExpr e, ParserRuleContext context)
+        {
+            if (e is InvariantGroupRefExpr invGroupRef) return invGroupRef.Invariants;
+            if (e is InvariantRefExpr invRef) return [invRef.Invariant];
+            if (!PrimitiveType.Bool.IsSameTypeAs(e.Type.Canonicalize()))
+            {
+                throw Handler.TypeMismatch(context, e.Type, PrimitiveType.Bool);
+            }
+            Invariant inv = new Invariant($"tmp_inv_{Guid.NewGuid()}", e, context);
+            return [inv];
+        }
+
+        public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
+        {
+            var proofCmd = (ProofCommand) nodesToDeclarations.Get(context);
+            var temporaryFunction = new Function(proofCmd.Name, context);
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            List<IPExpr> premises = [];
+            List<IPExpr> goals = [];
+            List<IPExpr> excepts = context._excludes.Select(exprVisitor.Visit).ToList();
+            if (context.premisesAll == null)
+            {
+                premises = context._premises.Select(exprVisitor.Visit).ToList();
+            }
+            else
+            {
+                premises = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
+            }
+            if (context.goalsAll == null)
+            {
+                goals = context._targets.Select(exprVisitor.Visit).ToList();
+            }
+            else
+            {
+                goals = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
+            }
+            if (premises.Count == context._premises.Count)
+            {
+                proofCmd.Premises = premises.Zip(context._premises, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
+            }
+            else
+            {
+                proofCmd.Premises = premises.SelectMany(x => ToInvariant(x, context)).ToList();
+            }
+            if (goals.Count == context._targets.Count)
+            {
+                proofCmd.Goals = goals.Zip(context._targets, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
+            }
+            else
+            {
+                proofCmd.Goals = goals.SelectMany(x => ToInvariant(x, context)).ToList();
+            }
+            proofCmd.Excepts = excepts.Zip(context._excludes, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
+            // exclude things appear in `goals` from `premises`
+            proofCmd.Premises = proofCmd.Premises.Except(proofCmd.Goals).Except(proofCmd.Excepts).ToList();
+            proofCmd.Goals = proofCmd.Goals.Except(proofCmd.Excepts).ToList();
+            return proofCmd;
         }
         
         public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)

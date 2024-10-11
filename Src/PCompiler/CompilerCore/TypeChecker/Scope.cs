@@ -25,6 +25,8 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, Pure> pures = new Dictionary<string, Pure>();
         private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
         private readonly IDictionary<string, Axiom> axioms = new Dictionary<string, Axiom>();
+        private readonly List<(string, ProofCommand)> proofCommands = new List<(string, ProofCommand)>();
+        private readonly IDictionary<string, InvariantGroup> invariantGroups = new Dictionary<string, InvariantGroup>();
         private readonly IDictionary<string, AssumeOnStart> assumeOnStarts = new Dictionary<string, AssumeOnStart>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
@@ -93,6 +95,8 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
+        public IEnumerable<ProofCommand> ProofCommands => proofCommands.Select(p => p.Item2);
+        public IEnumerable<InvariantGroup> InvariantGroups => invariantGroups.Values;
 
         public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
@@ -177,10 +181,21 @@ namespace Plang.Compiler.TypeChecker
         {
             return invariants.TryGetValue(name, out tree);
         }
+
+        public bool Get(string name, out InvariantGroup tree)
+        {
+            return invariantGroups.TryGetValue(name, out tree);
+        }
         
         public bool Get(string name, out Axiom tree)
         {
             return axioms.TryGetValue(name, out tree);
+        }
+
+        public bool Get(string name, out ProofCommand tree)
+        {
+            tree = proofCommands.Find(x => x.Item1 == name).Item2;
+            return tree != null;
         }
         
         public bool Get(string name, out AssumeOnStart tree)
@@ -343,8 +358,42 @@ namespace Plang.Compiler.TypeChecker
             tree = null;
             return false;
         }
+
+        public bool Lookup(string name, out InvariantGroup tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
         
         public bool Lookup(string name, out Axiom tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        public bool Lookup(string name, out ProofCommand tree)
         {
             var current = this;
             while (current != null)
@@ -657,6 +706,14 @@ namespace Plang.Compiler.TypeChecker
             invariants.Add(name, invariant);
             return invariant;
         }
+
+        public InvariantGroup Put(string name, PParser.InvariantGroupDeclContext tree)
+        {
+            var group = new InvariantGroup(name, tree);
+            CheckConflicts(group, Namespace(invariantGroups));
+            invariantGroups.Add(name, group);
+            return group;
+        }
         
         public Axiom Put(string name, PParser.AxiomDeclContext tree)
         {
@@ -664,6 +721,13 @@ namespace Plang.Compiler.TypeChecker
             CheckConflicts(axiom, Namespace(axioms));
             axioms.Add(name, axiom);
             return axiom;
+        }
+
+        public ProofCommand Put(string name, PParser.ProofItemContext tree)
+        {
+            var proofCommand = new ProofCommand(name, tree);
+            proofCommands.Add((name, proofCommand));
+            return proofCommand;
         }
         
         public AssumeOnStart Put(string name, PParser.AssumeOnStartDeclContext tree)

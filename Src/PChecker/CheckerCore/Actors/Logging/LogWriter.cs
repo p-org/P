@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using PChecker.Actors.Events;
 using PChecker.IO.Logging;
+using PChecker.Runtime.Logging;
 
 namespace PChecker.Actors.Logging
 {

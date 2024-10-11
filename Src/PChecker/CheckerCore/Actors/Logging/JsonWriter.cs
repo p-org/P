@@ -6,16 +6,16 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PChecker.Actors.Logging
+namespace PChecker.Runtime.Logging
 {
     /// <summary>
     /// Class for handling generating the vector clock for a log entry
     /// </summary>
-    public class VectorClockGenerator
+    internal class VectorClockGenerator
     {
         /// <summary>
         /// Nested class for handling FIFO send receive requests.
-        /// NOTE: In the case of sending to a the same machine with the same event and same payload.
+        /// NOTE: In the case of sending to the same machine with the same event and same payload.
         /// </summary>
         private class FifoSendReceiveMapping
         {
@@ -61,7 +61,7 @@ namespace PChecker.Actors.Logging
         /// <summary>
         /// Field declaration that keeps track of a global vector clock map of all the machines.
         /// </summary>
-        public readonly Dictionary<string, Dictionary<string, int>> ContextVcMap;
+        private readonly Dictionary<string, Dictionary<string, int>> _contextVcMap;
 
         /// <summary>
         /// Field declaration that keeps track of unprocessed send requests. I.e., when a send request happened
@@ -85,7 +85,7 @@ namespace PChecker.Actors.Logging
         /// </summary>
         public VectorClockGenerator()
         {
-            ContextVcMap = new Dictionary<string, Dictionary<string, int>>();
+            _contextVcMap = new Dictionary<string, Dictionary<string, int>>();
             _unhandledSendRequests = new Dictionary<string, Dictionary<string, int>>();
             _machines = new HashSet<string>();
             _sendRequestsCount = new Dictionary<string, FifoSendReceiveMapping>();
@@ -205,7 +205,7 @@ namespace PChecker.Actors.Logging
         {
             // Get a set of all machine names to update between the sender vc map and the current machine vc map (minus the current machine)
             var machinesToUpdateInVc =
-                new HashSet<string>(ContextVcMap[machine].Keys.Union(senderVcMap.Keys).Except(new[] { machine }));
+                new HashSet<string>(_contextVcMap[machine].Keys.Union(senderVcMap.Keys).Except(new[] { machine }));
 
             // Update local machine's vector clock in _contextVcMap, outside of itself, since it was already updated (incremented) from above
             // right before the switch case.
@@ -213,17 +213,17 @@ namespace PChecker.Actors.Logging
             // the current machine's vector clock. Details can be found here: https://en.wikipedia.org/wiki/Vector_clock
             foreach (var machineToUpdate in machinesToUpdateInVc)
             {
-                if (ContextVcMap[machine].TryGetValue(machineToUpdate, out var localMachineToUpdateValue))
+                if (_contextVcMap[machine].TryGetValue(machineToUpdate, out var localMachineToUpdateValue))
                 {
                     if (senderVcMap.TryGetValue(machineToUpdate, out var senderMachineToUpdateValue))
                     {
-                        ContextVcMap[machine][machineToUpdate] =
+                        _contextVcMap[machine][machineToUpdate] =
                             Math.Max(senderMachineToUpdateValue, localMachineToUpdateValue);
                     }
                 }
                 else
                 {
-                    ContextVcMap[machine].Add(machineToUpdate, senderVcMap[machineToUpdate]);
+                    _contextVcMap[machine].Add(machineToUpdate, senderVcMap[machineToUpdate]);
                 }
             }
         }
@@ -243,11 +243,11 @@ namespace PChecker.Actors.Logging
             if (MachineIsNew(machine))
             {
                 _machines.Add(machine);
-                ContextVcMap.Add(machine, new Dictionary<string, int> { { machine, 0 } });
+                _contextVcMap.Add(machine, new Dictionary<string, int> { { machine, 0 } });
             }
 
             // Always update the local machine count by one on any event.
-            ContextVcMap[machine][machine] += 1;
+            _contextVcMap[machine][machine] += 1;
 
             switch (logType)
             {
@@ -273,13 +273,13 @@ namespace PChecker.Actors.Logging
                     // Update the sendReqId with the send count of it.
                     sendReqId += $":_{_sendRequestsCount[hashedGeneralSendReqId].SentCount}";
                     var hashedSendReqId = HashString(sendReqId);
-                    _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(ContextVcMap[machine]));
+                    _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(_contextVcMap[machine]));
                     break;
 
                 // For MonitorProcessEvents, tie it to the senderMachine's current vector clock
                 // so that there is some association in the timeline
                 case "MonitorProcessEvent":
-                    if (logDetails.Sender != null) updateMachineVcMap(machine, ContextVcMap[logDetails.Sender]);
+                    if (logDetails.Sender != null) updateMachineVcMap(machine, _contextVcMap[logDetails.Sender]);
                     break;
 
                 // On dequeue OR receive event, has the string containing information about the current machine that dequeued (i.e. received the event),
@@ -317,7 +317,7 @@ namespace PChecker.Actors.Logging
             }
 
             // Update the log entry with the vector clock.
-            logEntry.Details.Clock = CopyVcMap(ContextVcMap[machine]);
+            logEntry.Details.Clock = CopyVcMap(_contextVcMap[machine]);
         }
     }
 
@@ -349,23 +349,23 @@ namespace PChecker.Actors.Logging
     /// Enum representing the possible attributes in the details dictionary,
     /// which represents the data associated with a specific log type. All of
     /// the following are available or expanded parameters associated with an
-    /// IActorRuntime method. Naming for them is mostly the same except some
+    /// ControlledRuntime method. Naming for them is mostly the same except some
     /// are changed for simplicity.
-    /// I.e., for OnRaiseEvent(ActorId id, string, stateName, Event e), it
+    /// I.e., for OnRaiseEvent(StateMachineId id, string, stateName, Event e), it
     /// will have attributes id, state (simplified from stateName, event
     /// (simplified from eventName within Event e), and payload (in Event e).
     /// </summary>
     public class LogDetails
     {
         /// <summary>
-        /// The text log from PLogFormatter. Removes the log tags.
+        /// The text log from PCheckerLogTextFormatter. Removes the log tags.
         /// I.e., no &lt;SomeLog&gt; in the beginning.
         /// Available for all log types.
         /// </summary>
         public string? Log { get; set; }
 
         /// <summary>
-        /// The actor id.
+        /// The state machine id.
         /// </summary>
         public string? Id { get; set; }
 
@@ -437,7 +437,7 @@ namespace PChecker.Actors.Logging
         public int? HaltInboxSize { get; set; }
 
         /// <summary>
-        /// Boolean representing whether an actor was waiting for one or more events
+        /// Boolean representing whether an state machine was waiting for one or more events
         /// Available for log type ReceiveEvent.
         /// </summary>
         public bool? WasBlocked { get; set; }
@@ -449,7 +449,7 @@ namespace PChecker.Actors.Logging
         public string? Sender { get; set; }
 
         /// <summary>
-        /// Id of target actor.
+        /// Id of target state machine.
         /// Available for log type SendEvent.
         /// </summary>
         public string? Target { get; set; }
@@ -461,7 +461,7 @@ namespace PChecker.Actors.Logging
         public string? OpGroupId { get; set; }
 
         /// <summary>
-        /// Boolean representing whether the target actor was halted.
+        /// Boolean representing whether the target state machine was halted.
         /// Available for log type SendEvent.
         /// </summary>
         public bool? IsTargetHalted { get; set; }
@@ -533,7 +533,7 @@ namespace PChecker.Actors.Logging
         /// <summary>
         /// Vector clock generator instance to help with vector clock generation.
         /// </summary>
-        internal VectorClockGenerator VcGenerator {get;}
+        private readonly VectorClockGenerator _vcGenerator;
 
         /// <summary>
         /// Getter for accessing log entry details.
@@ -552,13 +552,13 @@ namespace PChecker.Actors.Logging
         {
             _logs = new List<LogEntry>();
             _log = new LogEntry();
-            VcGenerator = new VectorClockGenerator();
+            _vcGenerator = new VectorClockGenerator();
         }
 
         /// <summary>
         /// Enum representing the different log types the JSON error trace logs.
-        /// Referenced from PLogFormatter.cs and ActorRuntimeLogTextFormatter.cs
-        /// to see what those formatter logs. Check IActorRuntimeLog.cs to see
+        /// Referenced from PCheckerLogTextFormatter.cs and PCheckerLogTextFormatter.cs
+        /// to see what those formatter logs. Check IControlledRuntimeLog.cs to see
         /// each log types' description and when they are invoked.
         /// </summary>
         public enum LogType
@@ -567,11 +567,6 @@ namespace PChecker.Actors.Logging
             /// Invoked when the specified assertion failure has occurred.
             /// </summary>
             AssertionFailure,
-
-            /// <summary>
-            /// Invoked when the specified actor has been created.
-            /// </summary>
-            CreateActor,
 
             /// <summary>
             /// Invoked when the specified state machine has been created.
@@ -584,13 +579,13 @@ namespace PChecker.Actors.Logging
             CreateMonitor,
 
             /// <summary>
-            /// Invoked when the specified actor is idle (there is nothing to dequeue) and the default
+            /// Invoked when the specified state machine is idle (there is nothing to dequeue) and the default
             /// event handler is about to be executed.
             /// </summary>
             DefaultEventHandler,
 
             /// <summary>
-            /// Invoked when the specified event is dequeued by an actor.
+            /// Invoked when the specified event is dequeued by an state machine.
             /// </summary>
             DequeueEvent,
 
@@ -600,7 +595,7 @@ namespace PChecker.Actors.Logging
             ExceptionHandled,
 
             /// <summary>
-            /// Invoked when the specified actor throws an exception.
+            /// Invoked when the specified state machine throws an exception.
             /// </summary>
             ExceptionThrown,
 
@@ -610,7 +605,7 @@ namespace PChecker.Actors.Logging
             GotoState,
 
             /// <summary>
-            /// Invoked when the specified actor has been halted.
+            /// Invoked when the specified state machine has been halted.
             /// </summary>
             Halt,
 
@@ -652,12 +647,12 @@ namespace PChecker.Actors.Logging
             RaiseEvent,
 
             /// <summary>
-            /// Invoked when the specified event is received by an actor.
+            /// Invoked when the specified event is received by an state machine.
             /// </summary>
             ReceiveEvent,
 
             /// <summary>
-            /// Invoked when the specified event is sent to a target actor.
+            /// Invoked when the specified event is sent to a target state machine.
             /// </summary>
             SendEvent,
 
@@ -672,12 +667,12 @@ namespace PChecker.Actors.Logging
             StrategyDescription,
 
             /// <summary>
-            /// Invoked when the specified actor waits to receive an event of a specified type.
+            /// Invoked when the specified state machine waits to receive an event of a specified type.
             /// </summary>
             WaitEvent,
 
             /// <summary>
-            /// Invoked when the specified actor waits to receive multiple events of a specified type.
+            /// Invoked when the specified state machine waits to receive multiple events of a specified type.
             /// </summary>
             WaitMultipleEvents,
 
@@ -716,7 +711,7 @@ namespace PChecker.Actors.Logging
             {
                 if (updateVcMap)
                 {
-                    VcGenerator.HandleLogEntry(_log);
+                    _vcGenerator.HandleLogEntry(_log);
                 }
 
                 _logs.Add(_log);

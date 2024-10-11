@@ -16,6 +16,7 @@ using PChecker.Actors.Logging;
 using PChecker.Actors.Managers;
 using PChecker.Random;
 using PChecker.Runtime;
+using PChecker.Runtime.Logging;
 using PChecker.Specifications.Monitors;
 using EventInfo = PChecker.Actors.Events.EventInfo;
 

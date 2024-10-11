@@ -229,7 +229,7 @@ namespace PChecker
         /// Defaults to true.
         /// </summary>
         [DataMember]
-        public bool IsJsonLogEnabled { get; set; } = false;
+        public bool IsJsonLogEnabled { get; set; } = true;
 
         /// <summary>
         /// If specified, requests a custom runtime log to be used instead of the default.
@@ -308,7 +308,7 @@ namespace PChecker
             RandomGeneratorSeed = null;
             IncrementalSchedulingSeed = false;
             PerformFullExploration = false;
-            MaxFairSchedulingSteps = 10000; // 10 times the unfair steps
+            MaxFairSchedulingSteps = 100000; // 10 times the unfair steps
             MaxUnfairSchedulingSteps = 10000;
             UserExplicitlySetMaxFairSchedulingSteps = false;
             TestingProcessId = 0;

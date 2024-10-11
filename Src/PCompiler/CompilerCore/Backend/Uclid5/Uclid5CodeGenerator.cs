@@ -798,6 +798,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 
                 // declare local variables corresponding to the global spec variables
                 EmitLine($"var {LocalPrefix}state: {SpecPrefix}{spec.Name}_StateAdt;");
+                EmitLine($"var {LocalPrefix}sent: [{LabelAdt}]boolean;");
                 foreach (var v in spec.Fields)
                 {
                     EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
@@ -808,6 +809,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 // foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
                 
                 // Set the local variables corresponding to the global spec variables to the correct starting value
+                EmitLine($"{LocalPrefix}sent = {StateAdtSelectSent(StateVar)};");
                 foreach (var v in spec.Fields)
                     EmitLine($"{GetLocalName(v)} = {SpecPrefix}{spec.Name}_{v.Name};");
                 
@@ -946,7 +948,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("");
         
         // non-handler functions for handlers
-        GenerateMachineProcedures(machines, goals, generateSanityChecks); // generate machine methods, called by handlers below
+        GenerateMachineProcedures(machine, goals, generateSanityChecks); // generate machine methods, called by handlers below
         EmitLine("");
 
         // generate the handlers
@@ -1130,57 +1132,54 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateMachineProcedures(List<Machine> machines, List<Invariant> goals, bool generateSanityChecks = false)
+    private void GenerateMachineProcedures(Machine m, List<Invariant> goals, bool generateSanityChecks = false)
     {
-        foreach (var m in machines)
+        foreach (var f in m.Methods)
         {
-            foreach (var f in m.Methods)
+            var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}").Prepend($"this: {MachineRefT}");
+            var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
+            var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
+            EmitLine($"procedure [inline] {name}({string.Join(", ", ps)})");
+
+            var currState = Deref("this");
+            
+            if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}").Prepend($"this: {MachineRefT}");
-                var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
-                var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
-                EmitLine($"procedure [inline] {name}({string.Join(", ", ps)})");
-
-                var currState = Deref("this");
-                
-                if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-                {
-                    EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
-                }
-
-                EmitLine("{");
-
-                // declare necessary local variables
-                EmitLine($"var {LocalPrefix}state: {MachinePrefix}{m.Name}_StateAdt;");
-                EmitLine($"var {LocalPrefix}stage: boolean;");
-                EmitLine($"var {LocalPrefix}sent: [{LabelAdt}]boolean;");
-                foreach (var v in m.Fields) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
-                foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
-
-                // initialize all the local variables to the correct values
-                EmitLine($"{LocalPrefix}state = {MachineStateAdtSelectState(currState, m)};");
-                EmitLine($"{LocalPrefix}stage = false;"); // this can be set to true by a goto statement
-                EmitLine($"{LocalPrefix}sent = {StateAdtSelectSent(StateVar)};");
-                foreach (var v in m.Fields)
-                    EmitLine($"{GetLocalName(v)} = {MachineStateAdtSelectField(currState, m, v)};");
-                // foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
-
-                GenerateStmt(f.Body, null, goals, generateSanityChecks);
-
-                var fields = m.Fields.Select(GetLocalName).Prepend($"{LocalPrefix}state").ToList();
-
-                // make a new machine
-                var newMachine = MachineAdtConstructM(m, fields);
-                // make a new machine state
-                var newMachineState = MachineStateAdtConstruct($"{LocalPrefix}stage", newMachine);
-                // update the machine map
-                EmitLine(
-                    $"{StateAdtSelectMachines(StateVar)} = {StateAdtSelectMachines(StateVar)}[this -> {newMachineState}];");
-                // update the buffer
-                EmitLine($"{StateAdtSelectSent(StateVar)} = {LocalPrefix}sent;");
-
-                EmitLine("}\n");
+                EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
             }
+
+            EmitLine("{");
+
+            // declare necessary local variables
+            EmitLine($"var {LocalPrefix}state: {MachinePrefix}{m.Name}_StateAdt;");
+            EmitLine($"var {LocalPrefix}stage: boolean;");
+            EmitLine($"var {LocalPrefix}sent: [{LabelAdt}]boolean;");
+            foreach (var v in m.Fields) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
+            foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
+
+            // initialize all the local variables to the correct values
+            EmitLine($"{LocalPrefix}state = {MachineStateAdtSelectState(currState, m)};");
+            EmitLine($"{LocalPrefix}stage = false;"); // this can be set to true by a goto statement
+            EmitLine($"{LocalPrefix}sent = {StateAdtSelectSent(StateVar)};");
+            foreach (var v in m.Fields)
+                EmitLine($"{GetLocalName(v)} = {MachineStateAdtSelectField(currState, m, v)};");
+            // foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
+
+            GenerateStmt(f.Body, null, goals, generateSanityChecks);
+
+            var fields = m.Fields.Select(GetLocalName).Prepend($"{LocalPrefix}state").ToList();
+
+            // make a new machine
+            var newMachine = MachineAdtConstructM(m, fields);
+            // make a new machine state
+            var newMachineState = MachineStateAdtConstruct($"{LocalPrefix}stage", newMachine);
+            // update the machine map
+            EmitLine(
+                $"{StateAdtSelectMachines(StateVar)} = {StateAdtSelectMachines(StateVar)}[this -> {newMachineState}];");
+            // update the buffer
+            EmitLine($"{StateAdtSelectSent(StateVar)} = {LocalPrefix}sent;");
+
+            EmitLine("}\n");
         }
     }
 

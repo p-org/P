@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install pip
-        run: apt install python3-pip python3-setuptools python3-wheel
+        run: sudo apt install python3-pip python3-setuptools python3-wheel
       - name: Install MkDocs
         run: |
           pip install mkdocs

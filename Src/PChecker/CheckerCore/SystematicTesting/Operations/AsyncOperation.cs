@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PChecker.Actors.Events;
 #if !DEBUG
 using System.Diagnostics;
 #endif

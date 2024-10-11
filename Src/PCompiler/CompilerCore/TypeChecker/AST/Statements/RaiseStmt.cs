@@ -8,11 +8,11 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
         public RaiseStmt(ParserRuleContext sourceLocation, IPExpr pEvent, IReadOnlyList<IPExpr> payload)
         {
             SourceLocation = sourceLocation;
-            PEvent = pEvent;
+            Event = pEvent;
             Payload = payload;
         }
 
-        public IPExpr PEvent { get; }
+        public IPExpr Event { get; }
         public IReadOnlyList<IPExpr> Payload { get; }
 
         public ParserRuleContext SourceLocation { get; }

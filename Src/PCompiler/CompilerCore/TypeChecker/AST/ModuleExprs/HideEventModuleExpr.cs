@@ -6,7 +6,7 @@ namespace Plang.Compiler.TypeChecker.AST.ModuleExprs
 {
     public class HideEventModuleExpr : IPModuleExpr
     {
-        public HideEventModuleExpr(ParserRuleContext sourceNode, IEnumerable<PEvent> events, IPModuleExpr module)
+        public HideEventModuleExpr(ParserRuleContext sourceNode, IEnumerable<Event> events, IPModuleExpr module)
         {
             SourceLocation = sourceNode;
             HideEvents = new EventSet();

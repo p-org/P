@@ -49,7 +49,7 @@ internal class POSScheduler: PrioritizedScheduler
         {
             if (op.Type == AsyncOperationType.Send)
             {
-                if (op.LastSentReceiver == next.LastSentReceiver)
+                if (op.MessageReceiver == next.MessageReceiver)
                 {
                     PrioritizedOperations.Remove(op);
                 }

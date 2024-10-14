@@ -15,9 +15,9 @@ jobs:
         run: sudo apt install python3-pip python3-setuptools python3-wheel
       - name: Install MkDocs
         run: |
-          pip install mkdocs
-          pip install mkdocs-macros-plugin
-          pip install mkdocs-material
+          sudo apt install mkdocs
+          sudo apt install mkdocs-macros-plugin 
+          sudo apt install mkdocs-material 
       - name: MkDocs build
         working-directory: ./Docs
         run: mkdocs build

@@ -416,10 +416,8 @@ namespace Plang.Compiler
                     currentInvs.Add(invParsable[ptr++]);
                 }
                 var stopwatch = new Stopwatch();
-                stopwatch.Start();
                 PInferInvoke.PruneAndAggregate(Job, GlobalScope, h, Codegen, [.. currentInvs], out var t);
-                stopwatch.Stop();
-                Job.Output.WriteInfo($"Pruning time: {stopwatch.ElapsedMilliseconds} ms");
+                numTotalTasks += t;
                 if (ptr < invParsable.Length - 1) ptr++;
                 else break;
             }
@@ -530,12 +528,18 @@ namespace Plang.Compiler
             stopwatch.Stop();
             if (job.PInferAction == PInferAction.RunHint || job.PInferAction == PInferAction.Auto || job.PInferAction == PInferAction.Pruning)
             {
-                job.Output.WriteInfo($"... Writing pruned invariants to ./invariants_{driver.TraceIndex.GetTraceCount()}.txt");
+                var filename = $"./invariants_{driver.TraceIndex.GetTraceCount()}.txt";
+                var pruning_filename = $"./pruned_stats_{driver.TraceIndex.GetTraceCount()}.json";
+                if (job.PInferAction == PInferAction.Pruning)
+                {
+                    filename = "./pruned_invariants.txt";
+                    pruning_filename = "./pruned_stats.json";
+                }
+                job.Output.WriteInfo($"... Writing pruned invariants to {filename}");
                 var elapsed = stopwatch.ElapsedMilliseconds / 1000.0;
                 job.Output.WriteInfo($"PInfer statistics");
                 job.Output.WriteInfo($"\t# invariants discovered: {PInferInvoke.NumInvsMined}");
-                // job.Output.WriteInfo($"\t# invariants distilled: {numInvsDistilled}");
-                var numInvAfterPruning = PInferInvoke.WriteRecordTo($"invariants_{driver.TraceIndex.GetTraceCount()}.txt");
+                var numInvAfterPruning = PInferInvoke.WriteRecordTo(filename);
                 job.Output.WriteInfo($"\t#Invariants after pruning: {numInvAfterPruning}");
                 job.Output.WriteInfo($"#Times executed by Daikon: {numTotalTasks}");
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
@@ -545,7 +549,7 @@ namespace Plang.Compiler
                     NumInvsPrunedByGrammar = PInferInvoke.NumInvsPrunedByGrammar,
                     TimeElapsed = elapsed
                 };
-                File.WriteAllText($"pinfer_stats_{driver.TraceIndex.GetTraceCount()}.json", JsonSerializer.Serialize(stats));
+                File.WriteAllText(pruning_filename, JsonSerializer.Serialize(stats));
                 job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
                 PInferInvoke.WriteMonitors(driver.Codegen, new(new(job)), globalScope);
             }

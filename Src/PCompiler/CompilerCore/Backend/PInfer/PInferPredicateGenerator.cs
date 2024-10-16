@@ -581,6 +581,13 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 foreach (var parameters in CartesianProduct(sigList, varMap))
                 {
+                    if (parameters.Count() > 1)
+                    {
+                        // if a predicate involves multiple terms as parameters
+                        // check whether the terms are not obtained from the same event
+                        // since we want to build relationships between multiple events
+                        if (parameters.Select(x => FreeEvents[x]).SelectMany(x => x).ToHashSet().Count == 1) continue;
+                    }
                     AddPredicateCall(pred, parameters);
                 }
             }

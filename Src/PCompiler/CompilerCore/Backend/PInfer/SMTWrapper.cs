@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Z3;
 using Plang.Compiler.TypeChecker;
@@ -17,6 +18,8 @@ namespace Plang.Compiler.Backend.PInfer
         private readonly Dictionary<string, Dictionary<string, Expr>> Enums;
         private readonly Dictionary<string, EnumSort> EnumSorts;
         private Dictionary<string, List<(HashSet<string>, HashSet<string>, bool)>> cachedQueries = [];
+        private Dictionary<string, Dictionary<IPExpr, Expr>> compiled = [];
+        private int numQueries = 0;
         public Z3Wrapper(Scope globalScope, PInferPredicateGenerator codegen)
         {
             context = new Context();
@@ -79,9 +82,9 @@ namespace Plang.Compiler.Backend.PInfer
             throw new Exception($"Unsupported type: {type.CanonicalRepresentation} ({type})");
         }
 
-        private Expr IPExprToSMT(IPExpr e, Dictionary<IPExpr, Expr> compiled)
+        private Expr IPExprToSMT(string key, IPExpr e)
         {
-            if (compiled.TryGetValue(e, out Expr value))
+            if (compiled[key].TryGetValue(e, out Expr value))
             {
                 return value;
             }
@@ -93,14 +96,13 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case VariableAccessExpr varAccess:
                 {
-                    if (compiled.TryGetValue(varAccess, out Expr varExpr))
+                    if (compiled[key].TryGetValue(varAccess, out Expr varExpr))
                     {
                         return varExpr;
                     }
-                    Console.WriteLine($"Creating variable: {varAccess.Variable.Name}");
                     var sort = ToZ3Sort(varAccess.Variable.Type);
                     var v = context.MkConst(varAccess.Variable.Name, sort);
-                    compiled[varAccess] = v;
+                    compiled[key][varAccess] = v;
                     return v;
                 }
                 case FunCallExpr funCall:
@@ -111,12 +113,12 @@ namespace Plang.Compiler.Backend.PInfer
                     }
                     var arg = (VariableAccessExpr) funCall.Arguments[0];
                     var name = $"index_of_{arg.Variable.Name}";
-                    if (compiled.TryGetValue(arg, out Expr v))
+                    if (compiled[key].TryGetValue(arg, out Expr v))
                     {
                         return v;
                     }
                     var indexVar = context.MkConst(name, context.IntSort);
-                    compiled[arg] = indexVar;
+                    compiled[key][arg] = indexVar;
                     return indexVar;
                 }
                 case BoolLiteralExpr boolLit:
@@ -133,23 +135,23 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                 {
-                    if (compiled.TryGetValue(namedTupleAccessExpr, out Expr tupAccessVar))
+                    if (compiled[key].TryGetValue(namedTupleAccessExpr, out Expr tupAccessVar))
                     {
                         return tupAccessVar;
                     }
                     var tupVar = context.MkConst(codegen.GetRepr(e), ToZ3Sort(namedTupleAccessExpr.Type));
-                    compiled[e] = tupVar;
+                    compiled[key][e] = tupVar;
                     return tupVar;
                 }
                 case TupleAccessExpr tupleAccessExpr:
                 {
                     var tupVar = context.MkConst(codegen.GetRepr(e), ToZ3Sort(tupleAccessExpr.Type));
-                    compiled[e] = tupVar;
+                    compiled[key][e] = tupVar;
                     return tupVar;
                 }
                 case UnaryOpExpr unaryOpExpr:
                 {
-                    var arg = IPExprToSMT(unaryOpExpr.SubExpr, compiled);
+                    var arg = IPExprToSMT(key, unaryOpExpr.SubExpr);
                     switch (unaryOpExpr.Operation)
                     {
                         case UnaryOpType.Not:
@@ -165,9 +167,9 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case BinOpExpr binOpExpr:
                 {
-                    var lhs = IPExprToSMT(binOpExpr.Lhs, compiled);
-                    var rhs = IPExprToSMT(binOpExpr.Rhs, compiled);
-                    Console.WriteLine($"lhs: {lhs}, rhs: {rhs}");
+                    var lhs = IPExprToSMT(key, binOpExpr.Lhs);
+                    var rhs = IPExprToSMT(key, binOpExpr.Rhs);
+                    // Console.WriteLine($"lhs: {lhs}, rhs: {rhs}");
                     switch (binOpExpr.Operation)
                     {
                         case BinOpType.Add:
@@ -252,12 +254,29 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 return cachedResult;
             }
-            Dictionary<IPExpr, Expr> compiled = new(new ASTComparer());
+            numQueries++;
+            if (numQueries > 1000)
+            {
+                solver.Reset();
+                numQueries = 0;
+            }
+            if (!compiled.ContainsKey(k))
+            {
+                compiled[k] = new(new ASTComparer());
+            }
+
             // var lhsZ3 = (BoolExpr) IPExprToSMT(lhs, parsedP[lhs], compiled);
             // var rhsZ3 = (BoolExpr) IPExprToSMT(rhs, parsedQ[rhs], compiled);
+            // Console.WriteLine("P: " + string.Join(", ", lhs));
+            // Console.WriteLine("Q: " + string.Join(", ", rhs));
             IPExpr getExpr(string repr) => parsedP.TryGetValue(repr, out IPExpr value) ? value : parsedQ[repr];
-            var lhsClauses = lhs.Select(x => IPExprToSMT(getExpr(x), compiled)).Cast<BoolExpr>().ToArray();
-            var rhsClauses = rhs.Select(x => IPExprToSMT(getExpr(x), compiled)).Cast<BoolExpr>().ToArray();
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var lhsClauses = lhs.Select(x => IPExprToSMT(k, getExpr(x))).Cast<BoolExpr>().ToArray();
+            var rhsClauses = rhs.Select(x => IPExprToSMT(k, getExpr(x))).Cast<BoolExpr>().ToArray();
+            // stopwatch.Stop();
+            // Console.WriteLine($"Conversion took {stopwatch.ElapsedMilliseconds}ms");
+            // stopwatch.Reset();
             var lhsZ3 = context.MkAnd(lhsClauses);
             var rhsZ3 = context.MkAnd(rhsClauses);
             solver.Push();
@@ -266,9 +285,13 @@ namespace Plang.Compiler.Backend.PInfer
             // Console.WriteLine($"P: {string.Join(", ", lhs)}");
             // Console.WriteLine($"Q: {string.Join(", ", rhs)}");
             // Console.WriteLine($"Checking: {obj}");
+            // Console.WriteLine("Checking satisfiability");
+            // stopwatch.Start();
             solver.Assert(obj);
             var result = solver.Check();
+            // stopwatch.Stop();
             // Console.WriteLine($"Result: {result}");
+            // Console.WriteLine($"Checking took {stopwatch.ElapsedMilliseconds}ms");
             // should be UNSAT
             bool r = result == Status.UNSATISFIABLE;
             solver.Pop();
@@ -277,6 +300,8 @@ namespace Plang.Compiler.Backend.PInfer
                 cachedQueries[k] = [];
             }
             cachedQueries[k].Add((new HashSet<string>(lhs), new HashSet<string>(rhs), r));
+            stopwatch.Stop();
+            // Console.WriteLine($"Checking took {stopwatch.ElapsedMilliseconds}ms");
             return r;
         } 
     }

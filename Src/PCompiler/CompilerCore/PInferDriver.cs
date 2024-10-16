@@ -415,10 +415,15 @@ namespace Plang.Compiler
                 {
                     currentInvs.Add(invParsable[ptr++]);
                 }
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
                 PInferInvoke.PruneAndAggregate(Job, GlobalScope, h, Codegen, [.. currentInvs], out var t);
+                stopwatch.Stop();
+                Job.Output.WriteInfo($"Pruning time: {stopwatch.ElapsedMilliseconds} ms");
                 if (ptr < invParsable.Length - 1) ptr++;
                 else break;
             }
+            PInferInvoke.DoChores(Job, Codegen);
         }
 
         private void InitializeZ3()
@@ -749,6 +754,7 @@ namespace Plang.Compiler
                 try
                 {
                     return result || Z3Wrapper.CheckImplies(key, p, q, ParsedP[key], ParsedQ[key]);
+                    // return result;
                 }
                 catch (Exception e)
                 {
@@ -808,15 +814,20 @@ namespace Plang.Compiler
             // iterate through the record and merge/discard any duplicates
             // process till fixpoint
             bool didSth = true;
+            int numIters = 0;
+            var stopwatch = new Stopwatch();
             while (didSth)
             {
+                numIters++;
                 didSth = false;
+                Console.WriteLine("[Chores] Iteration " + numIters);
                 foreach (var k in P.Keys)
                 {
                     int numExists = NumExists[k];
                     HashSet<int> removes = [];
                     for (int i = 0; i < P[k].Count; ++i)
                     {
+                        if (removes.Contains(i)) continue;
                         var pi = P[k][i];
                         var qi = Q[k][i];
                         if (qi.Count == 0)
@@ -826,13 +837,14 @@ namespace Plang.Compiler
                         }
                         if (Implies(k, pi, qi))
                         {
-                            var rec = ShowRecordAt(k, i);
-                            job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
+                            // var rec = ShowRecordAt(k, i);
+                            // job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
                             removes.Add(i);
                             continue;
                         }
                         for (int j = i + 1; j < P[k].Count; ++j)
                         {
+                            if (removes.Contains(j)) continue;
                             var pj = P[k][j];
                             var qj = Q[k][j];
                             if (BiImplies(k, pi, pj) && numExists == 0)
@@ -840,7 +852,7 @@ namespace Plang.Compiler
                                 // can only merge when there is
                                 // no existential quantifications
                                 var rec = ShowRecordAt(k, j);
-                                job.Output.WriteWarning($"[Chores][Merge-Remove] {rec}; merged with {ShowRecordAt(k, i)}");
+                                // job.Output.WriteWarning($"[Chores][Merge-Remove] {rec}; merged with {ShowRecordAt(k, i)}");
                                 qi.UnionWith(qj);
                                 removes.Add(j);
                             }
@@ -851,7 +863,7 @@ namespace Plang.Compiler
                             else if (Implies(k, pi, pj) && Implies(k, qj, qi))
                             {
                                 // Console.WriteLine($"Remove {i}");
-                                job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, i)} implied by {ShowRecordAt(k, j)}");
+                                // job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, i)} implied by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
                             }
                             // Case 2: j ==> i; keep i remove j
@@ -859,7 +871,7 @@ namespace Plang.Compiler
                             else if (Implies(k, pj, pi) && Implies(k, qi, qj))
                             {
                                 // Console.WriteLine($"Remove {j}");
-                                job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, j)} implied by {ShowRecordAt(k, i)}");
+                                // job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, j)} implied by {ShowRecordAt(k, i)}");
                                 removes.Add(j);
                             }
                             // Case 3: if i ==> j, then any thing holds under j also holds under i
@@ -872,7 +884,7 @@ namespace Plang.Compiler
                             {
                                 if (qi.Intersect(qj).Any() && numExists == 0)
                                 {
-                                    job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, i)} that is also in {ShowRecordAt(k, j)}");
+                                    // job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, i)} that is also in {ShowRecordAt(k, j)}");
                                     qi.ExceptWith(qj);
                                     didSth = true;
                                 }
@@ -882,20 +894,26 @@ namespace Plang.Compiler
                             {
                                 if (qj.Intersect(qi).Any() && numExists == 0)
                                 {
-                                    job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, j)} that is also in {ShowRecordAt(k, i)}");
+                                    // job.Output.WriteWarning($"[Chores][Remove] common filters from {ShowRecordAt(k, j)} that is also in {ShowRecordAt(k, i)}");
                                     qj.ExceptWith(qi);
                                     didSth = true;
                                 }
                             }
+                            // stopwatch.Stop();
+                            // Console.WriteLine($"[Check] Done in {stopwatch.ElapsedTicks} ticks");
                         }
                     }
+                    // stopwatch.Restart();
                     foreach (var idx in removes.OrderByDescending(x => x))
                     {
                         RemoveRecordAt(k, idx);
                     }
                     didSth |= removes.Count != 0;
+                    // stopwatch.Stop();
+                    // Console.WriteLine($"[Remove] Done in {stopwatch.ElapsedMilliseconds} ms");
                 }
                 // Boolean resolution
+                // stopwatch.Restart();
                 foreach (var k in P.Keys)
                 {
                     for (int i = 0; i < P[k].Count; ++i)
@@ -911,6 +929,7 @@ namespace Plang.Compiler
                 }
                 didSth |= ClearUpExistentials();
             }
+            // Console.WriteLine($"[Chores] Done in {numIters} iterations");
         }
 
         // return the Ps and Qs that should be included to the log
@@ -939,7 +958,6 @@ namespace Plang.Compiler
             {
                 ParsedQ[quantifiers][k] = v;
             }
-            DoChores(job, codegen);
             return (p_prime, q_prime);
         }
     
@@ -1010,6 +1028,7 @@ namespace Plang.Compiler
                 }
                 WriteInvs(codegen, guards, filters, keep, stepback);
             }
+            // DoChores(job, codegen);
             return result;
         }
 

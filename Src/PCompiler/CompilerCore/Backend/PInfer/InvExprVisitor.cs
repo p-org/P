@@ -32,7 +32,7 @@ namespace Plang.Compiler.Backend.PInfer
             GlobalScope = globalScope;
             CC = cc;
             SpeicalConstants = [];
-            SpeicalConstants.Add("_num_e_exists_", new(null, new Variable("_num_e_exists_", null, VariableRole.Temp)));
+            SpeicalConstants.Add("_num_e_exists_", new(null, new Variable("_num_e_exists_", null, VariableRole.Temp) { Type = PInferBuiltinTypes.CollectionSize }));
             if (configEvent != null)
             {
                 foreach (var p in ((NamedTupleType) configEvent.PayloadType).Fields)

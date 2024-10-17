@@ -7,9 +7,10 @@ using System.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using PChecker.PRuntime;
-using PChecker.PRuntime.Values;
-using PChecker.PRuntime.Exceptions;
+using PChecker.Runtime;
+using PChecker.Runtime.Values;
+using PChecker.Runtime.Exceptions;
+using PChecker.Runtime.StateMachines;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,27 +22,27 @@ namespace PImplementation
   // Also, all global foreign functions must be declared static!
   public static partial class GlobalFunctions
   {
-      public static tPriorityQueue CreatePriorityQueue(PMachine machine)
+      public static tPriorityQueue CreatePriorityQueue(StateMachine machine)
       {
           // use these log statements if you want logs in the foreign code to show up in the error trace.
           machine.LogLine("Creating Priority Queue!");
           return new tPriorityQueue();
       }
-      public static tPriorityQueue AddElement(tPriorityQueue queue, IPrtValue elem, PrtInt priority, PMachine machine)
+      public static tPriorityQueue AddElement(tPriorityQueue queue, IPValue elem, PInt priority, StateMachine machine)
       {
           queue.Add(new ElementWithPriority(elem, priority));
           machine.LogLine("Adding Element in the Priority Queue!");
           return queue;
       }
 
-      public static PrtNamedTuple RemoveElement(tPriorityQueue queue, PMachine machine)
+      public static PNamedTuple RemoveElement(tPriorityQueue queue, StateMachine machine)
       {
           var element = queue.PriorityRemove();
-          var retVal = new PrtNamedTuple(new string[] { "element", "queue" }, new IPrtValue[] { element, queue });
+          var retVal = new PNamedTuple(new string[] { "element", "queue" }, new IPValue[] { element, queue });
           return retVal;
       }
 
-      public static PrtInt CountElement(tPriorityQueue queue, PMachine machine)
+      public static PInt CountElement(tPriorityQueue queue, StateMachine machine)
       {
           return queue.Size();
       }
@@ -49,11 +50,11 @@ namespace PImplementation
       /*
        * Modeling Nondeterminism or Randomness in Foreign Functions
        */
-      public static IPrtValue ChooseElement(tPriorityQueue queue, PMachine machine)
+      public static IPValue ChooseElement(tPriorityQueue queue, StateMachine machine)
       {
           // one can write a nondeterministic foreign function using the machine.*Random functions.
           // all machine.TryRandom*() functions are controlled by the P checker during exploration.
-          var index = machine.TryRandomInt(queue.Size());
+          var index = (PInt)machine.TryRandom((PInt)queue.Size());
           machine.LogLine("Choosing element at location: " + index);
           return queue.GetElementAt(index);
       }

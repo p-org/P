@@ -820,7 +820,7 @@ namespace Plang.Compiler.Backend.CSharp
                                           && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
                                           && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
                     WriteLValue(context, output, assignStmt.Location);
-                    context.Write(output, $" = ({GetCSharpType(assignStmt.Location.Type)})(");
+                    context.Write(output, $" = ({GetCSharpType(assignStmt.Location.Type, true)})(");
                     if (needCtorAdapter)
                     {
                         context.Write(output, $"new {GetCSharpType(assignStmt.Location.Type)}(");

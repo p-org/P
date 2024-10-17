@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -31,6 +30,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             Arity = 1;
             NumGuardPredicates = 0;
             NumFilterPredicates = 0;
+            UserHint = false;
         }
 
         public string GetQuantifierHeader()
@@ -191,7 +191,8 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 FilterPredicates = FilterPredicates,
                 CustomFunctions = CustomFunctions,
                 CustomPredicates = CustomPredicates,
-                Scope = Scope
+                Scope = Scope,
+                UserHint = UserHint
             };
             return h;
         }
@@ -213,6 +214,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public Scope Scope { get; set; }
         public string Name { get; set; }
         public bool Exact { get; set; }
+        public bool UserHint { get; set; }
         public ParserRuleContext SourceLocation { get; set; }
 
         // needed because of the [IPExpr] in guards/filters

@@ -248,6 +248,31 @@ namespace Plang.Compiler.Backend.PInfer
             return false;
         }
 
+        private bool CheckImpliesZ3(BoolExpr lhs, BoolExpr rhs)
+        {
+            solver.Push();
+            // check lhs -> rhs is a tautology
+            var obj = context.MkNot(context.MkImplies(lhs, rhs));
+            solver.Assert(obj);
+            var result = solver.Check();
+            bool r = result == Status.UNSATISFIABLE;
+            solver.Pop();
+            return r;
+        }
+
+        public bool CheckImplies(string k, IEnumerable<IPExpr> lhs, IEnumerable<IPExpr> rhs)
+        {
+            if (!compiled.ContainsKey(k))
+            {
+                compiled[k] = new(new ASTComparer());
+            }
+            var lhsClauses = lhs.Select(x => IPExprToSMT(k, x)).Cast<BoolExpr>().ToArray();
+            var rhsClauses = rhs.Select(x => IPExprToSMT(k, x)).Cast<BoolExpr>().ToArray();
+            var lhsZ3 = context.MkAnd(lhsClauses);
+            var rhsZ3 = context.MkAnd(rhsClauses);
+            return CheckImpliesZ3(lhsZ3, rhsZ3);
+        }
+
         public bool CheckImplies(string k, IEnumerable<string> lhs, IEnumerable<string> rhs, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
         {
             if (CheckCache(k, lhs, rhs, out bool cachedResult))
@@ -265,43 +290,17 @@ namespace Plang.Compiler.Backend.PInfer
                 compiled[k] = new(new ASTComparer());
             }
 
-            // var lhsZ3 = (BoolExpr) IPExprToSMT(lhs, parsedP[lhs], compiled);
-            // var rhsZ3 = (BoolExpr) IPExprToSMT(rhs, parsedQ[rhs], compiled);
-            // Console.WriteLine("P: " + string.Join(", ", lhs));
-            // Console.WriteLine("Q: " + string.Join(", ", rhs));
             IPExpr getExpr(string repr) => parsedP.TryGetValue(repr, out IPExpr value) ? value : parsedQ[repr];
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
             var lhsClauses = lhs.Select(x => IPExprToSMT(k, getExpr(x))).Cast<BoolExpr>().ToArray();
             var rhsClauses = rhs.Select(x => IPExprToSMT(k, getExpr(x))).Cast<BoolExpr>().ToArray();
-            // stopwatch.Stop();
-            // Console.WriteLine($"Conversion took {stopwatch.ElapsedMilliseconds}ms");
-            // stopwatch.Reset();
             var lhsZ3 = context.MkAnd(lhsClauses);
             var rhsZ3 = context.MkAnd(rhsClauses);
-            solver.Push();
-            // check lhs -> rhs is a tautology
-            var obj = context.MkNot(context.MkImplies(lhsZ3, rhsZ3));
-            // Console.WriteLine($"P: {string.Join(", ", lhs)}");
-            // Console.WriteLine($"Q: {string.Join(", ", rhs)}");
-            // Console.WriteLine($"Checking: {obj}");
-            // Console.WriteLine("Checking satisfiability");
-            // stopwatch.Start();
-            solver.Assert(obj);
-            var result = solver.Check();
-            // stopwatch.Stop();
-            // Console.WriteLine($"Result: {result}");
-            // Console.WriteLine($"Checking took {stopwatch.ElapsedMilliseconds}ms");
-            // should be UNSAT
-            bool r = result == Status.UNSATISFIABLE;
-            solver.Pop();
+            var r = CheckImpliesZ3(lhsZ3, rhsZ3);
             if (!cachedQueries.ContainsKey(k))
             {
                 cachedQueries[k] = [];
             }
             cachedQueries[k].Add((new HashSet<string>(lhs), new HashSet<string>(rhs), r));
-            stopwatch.Stop();
-            // Console.WriteLine($"Checking took {stopwatch.ElapsedMilliseconds}ms");
             return r;
         } 
     }

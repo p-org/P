@@ -465,6 +465,7 @@ namespace Plang.Compiler.TypeChecker
         {
             var hint = new Hint(name, false, tree);
             CheckConflicts(hint, Namespace(hints));
+            hint.UserHint = true;
             hints.Add(name, hint);
             return hint;
         }
@@ -473,6 +474,7 @@ namespace Plang.Compiler.TypeChecker
         {
             var hint = new Hint(name, true, tree);
             CheckConflicts(hint, Namespace(hints));
+            hint.UserHint = true;
             hints.Add(name, hint);
             return hint;
         }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text.Json;
 using Plang.Compiler.Backend;
 using Plang.Compiler.Backend.PInfer;
@@ -347,7 +346,7 @@ namespace Plang.Compiler
             }
         }
 
-        private PEvent GetPEvent(string name)
+        internal PEvent GetPEvent(string name)
         {
             if (GlobalScope.Lookup(name, out PEvent e))
             {
@@ -358,7 +357,7 @@ namespace Plang.Compiler
             return null;
         }
 
-        private List<(List<PEventVariable>, PEvent, int, int)> ParseHeaders()
+        private List<(List<PEventVariable>, PEvent, int, int, bool)> ParseHeaders()
         {
             var dir = Job.InvParseFileDir;
             var headerFile = Path.Combine(dir, "parsable_headers.txt");
@@ -368,8 +367,8 @@ namespace Plang.Compiler
                 Environment.Exit(1);
             }
             var lines = File.ReadAllLines(headerFile);
-            List<(List<PEventVariable>, PEvent, int, int)> headers = [];
-            for (int i = 0; i < lines.Length; i += 4)
+            List<(List<PEventVariable>, PEvent, int, int, bool)> headers = [];
+            for (int i = 0; i < lines.Length; i += 5)
             {
                 if (lines[i] == "") continue;
                 var quantifiedEventsVars = lines[i].Split(" ").ToList();
@@ -383,7 +382,8 @@ namespace Plang.Compiler
                 var configEvent = lines[i + 1] == "" ? null : GetPEvent(lines[i + 1]);
                 var nexists = int.Parse(lines[i + 2]);
                 var termDepth = int.Parse(lines[i + 3]);
-                headers.Add((quantified, configEvent, nexists, termDepth));
+                var userHint = bool.Parse(lines[i + 4]);
+                headers.Add((quantified, configEvent, nexists, termDepth, userHint));
             }
             return headers;
         }
@@ -399,13 +399,14 @@ namespace Plang.Compiler
             }
             var invParsable = File.ReadAllLines(invParsableAll);
             int ptr = 0;
-            foreach (var (quantified, configEvent, nexists, termDepth) in headers)
+            foreach (var (quantified, configEvent, nexists, termDepth, userHint) in headers)
             {
                 Hint h = new("pruning", false, null) {
                     Quantified = quantified,
                     ConfigEvent = configEvent,
                     ExistentialQuantifiers = nexists,
-                    TermDepth = termDepth
+                    TermDepth = termDepth,
+                    UserHint = userHint
                 };
                 Codegen.Reset();
                 Codegen.WithHint(h);
@@ -489,7 +490,8 @@ namespace Plang.Compiler
                 case PInferAction.Compile:
                     job.Output.WriteInfo($"PInfer - Compile `{givenHint.Name}`");
                     givenHint.ConfigEvent ??= configEvent;
-                    new PInferDriver(job, globalScope, invOutDir, checkTrace: false).CompilePInferHint(givenHint);
+                    driver = new PInferDriver(job, globalScope, invOutDir, checkTrace: false);
+                    driver.CompilePInferHint(givenHint);
                     break;
                 case PInferAction.Pruning:
                 {
@@ -500,6 +502,7 @@ namespace Plang.Compiler
                         Environment.Exit(1);
                     }
                     driver = new PInferDriver(job, globalScope, invOutDir, checkTrace: false);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
                     driver.InitializeZ3();
                     driver.RunPruningSteps();
                     break;
@@ -510,6 +513,7 @@ namespace Plang.Compiler
                     givenHint.ConfigEvent ??= configEvent;
                     givenHint.PruningLevel = job.PInferPruningLevel;
                     driver = new PInferDriver(job, globalScope, invOutDir);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
                     driver.InitializeZ3();
                     driver.ParameterSearch(givenHint);
                     numTotalTasks = driver.numTotalTasks;
@@ -519,6 +523,7 @@ namespace Plang.Compiler
                 {
                     job.Output.WriteInfo("PInfer - Auto Exploration");
                     driver = new PInferDriver(job, globalScope, invOutDir);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
                     driver.InitializeZ3();
                     driver.AutoExplore(job.HintsOnly);
                     numTotalTasks = driver.numTotalTasks;
@@ -543,11 +548,17 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"\t#Invariants after pruning: {numInvAfterPruning}");
                 job.Output.WriteInfo($"#Times executed by Daikon: {numTotalTasks}");
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
+                PInferInvoke.CheckLearnedGoals(globalScope, driver.Codegen);
+                var numGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
+                job.Output.WriteInfo($"#Goals learned with hints: {PInferInvoke.NumGoalsLearnedWithHints} / {numGoals}");
+                job.Output.WriteInfo($"#Goals learned without hints: {PInferInvoke.NumGoalsLearnedWithoutHints} / {numGoals}");
                 PInferStats stats = new() {
                     NumInvsTotal = PInferInvoke.NumInvsMined,
                     NumInvsPrunedBySubsumption = PInferInvoke.NumInvsMined - PInferInvoke.NumInvsPrunedByGrammar - numInvAfterPruning,
                     NumInvsPrunedByGrammar = PInferInvoke.NumInvsPrunedByGrammar,
-                    TimeElapsed = elapsed
+                    TimeElapsed = elapsed,
+                    NumGoalsLearnedWithHints = PInferInvoke.NumGoalsLearnedWithHints,
+                    NumGoalsLearnedWithoutHints = PInferInvoke.NumGoalsLearnedWithoutHints
                 };
                 File.WriteAllText(pruning_filename, JsonSerializer.Serialize(stats));
                 job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
@@ -561,6 +572,8 @@ namespace Plang.Compiler
         public int NumInvsPrunedBySubsumption { get; set; }
         public int NumInvsPrunedByGrammar { get; set; }
         public double TimeElapsed { get; set; }
+        public int NumGoalsLearnedWithHints { get; set; }
+        public int NumGoalsLearnedWithoutHints { get; set; }
     }
 
     internal class PInferInvoke
@@ -577,12 +590,15 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, List<Hint>> Executed = [];
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
+        internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>)>> Goals = [];
         internal static HashSet<string> Learned = [];
         internal static HashSet<string> Recorded = [];
         internal static int NumInvsMined = 0;
         internal static int NumInvsPrunedByGrammar = 0;
         internal static bool UseZ3 = false;
         internal static Z3Wrapper Z3Wrapper;
+        internal static int NumGoalsLearnedWithHints = 0;
+        internal static int NumGoalsLearnedWithoutHints = 0;
 
         public static void NewInvFiles()
         {
@@ -597,6 +613,105 @@ namespace Plang.Compiler
             {
                 int cnt = dir.GetFiles().Where(x => x.Name.StartsWith("stepback_invs")).Count();
                 File.Move(StepbackInvFile, Path.Combine("PInferOutputs", $"stepback_invs_{cnt - 1}.txt"));
+            }
+        }
+
+        public static void LoadGoals(PInferDriver driver, ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen, string filename = "goals.json")
+        {
+            if (!File.Exists(filename))
+            {
+                job.Output.WriteWarning($"Goals file not found: {filename} ... skipping");
+                return;
+            }
+            using StreamReader reader = new(filename);
+            string json = reader.ReadToEnd();
+            List<Goal> goals = JsonSerializer.Deserialize<List<Goal>>(json);
+            reader.Close();
+            foreach (var goal in goals)
+            {
+                List<PEventVariable> quantified = goal.Events.Select(x => {
+                    var parts = x.Split(":");
+                    var pevent = driver.GetPEvent(parts[1]);
+                    return new PEventVariable(parts[0]) {
+                        EventDecl = pevent, Type = pevent.PayloadType
+                    };
+                }).ToList();
+                Hint h = new("goal", false, null) {
+                    Quantified = quantified,
+                    ConfigEvent = goal.ConfigEvent == null ? null : driver.GetPEvent(goal.ConfigEvent),
+                    TermDepth = goal.TermDepth,
+                    ExistentialQuantifiers = goal.NumExists
+                };
+                codegen.Reset();
+                codegen.WithHint(h);
+                codegen.GenerateCode(job, globalScope);
+                var key = h.GetQuantifierHeader();
+                if (!Goals.ContainsKey(key))
+                {
+                    Goals[key] = [];
+                }
+                var goalList = Goals[key];
+                HashSet<IPExpr> p = new(codegen.Comparer);
+                HashSet<IPExpr> q = new(codegen.Comparer);
+                foreach (var g in goal.Guards)
+                {
+                    if (codegen.TryParseToExpr(job, globalScope, g, out var expr))
+                    {
+                        p.Add(expr);
+                    }
+                    else
+                    {
+                        job.Output.WriteError($"Error parsing guard in goals: {g}");
+                        Environment.Exit(1);
+                    }
+                }
+                foreach (var f in goal.Filters)
+                {
+                    if (codegen.TryParseToExpr(job, globalScope, f, out var expr))
+                    {
+                        q.Add(expr);
+                    }
+                    else
+                    {
+                        job.Output.WriteError($"Error parsing filter in goals: {f}");
+                        Environment.Exit(1);
+                    }
+                }
+                goalList.Add((p, q));
+            }
+        }
+
+        public static void CheckLearnedGoals(Scope globalScope, PInferPredicateGenerator codegen)
+        {
+            if (Goals.Count == 0) return;
+            Z3Wrapper z3 = new(globalScope, codegen);
+            HashSet<string> learned = [];
+            HashSet<string> visitedKey = [];
+            foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
+            {
+                if (q.Count == 0 || !Goals.ContainsKey(key)) continue;
+                visitedKey.Add(key);
+                var goals = Goals[key];
+                for (int i = 0; i < goals.Count; ++i)
+                {
+                    var (gp, gq) = goals[i];
+                    var lp = p.Select(x => ParsedP[key][x]).ToList();
+                    var lq = q.Select(x => ParsedQ[key][x]).ToList();
+                    if (z3.CheckImplies(key, gp, lp) && z3.CheckImplies(key, lq, gq))
+                    {
+                        learned.Add(AssembleInvariant(h, p, q));
+                        NumGoalsLearnedWithHints++;
+                        if (!h.UserHint)
+                        {
+                            NumGoalsLearnedWithoutHints++;
+                        }
+                    }
+                }
+            }
+            var missed = Goals.Keys.Except(visitedKey);
+            if (missed.Any())
+            {
+                Console.WriteLine($"Missed: {string.Join(", ", missed)}");
             }
         }
 
@@ -637,6 +752,11 @@ namespace Plang.Compiler
             }
         }
 
+        public static string AssembleInvariant(Hint h, HashSet<string> p, HashSet<string> q)
+        {
+            return h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", q));
+        }
+
         public static int WriteRecordTo(string filename)
         {
             using StreamWriter invwrite = new(filename);
@@ -644,13 +764,25 @@ namespace Plang.Compiler
             foreach (var (_, _, _, h, p, q) in PInferInvoke.AllExecuedAndMined())
             {
                 if (q.Count == 0) continue;
-                var ps = string.Join(" ∧ ", p);
-                var rec = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", q));
+                var rec = AssembleInvariant(h, p, q);
                 if (written.Contains(rec)) continue;
                 written.Add(rec);
                 invwrite.WriteLine(rec);
             }
             return written.Count;
+        }
+
+        // top k for each key
+        public static List<string> TopK(int k)
+        {
+            List<string> result = [];
+            foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
+            {
+                if (q.Count == 0) continue;
+                var rec = AssembleInvariant(h, p, q);
+                
+            }
+            return result;
         }
 
         public static void WriteInvs(PInferPredicateGenerator codegen, string guards, string filters, List<string> keep, List<string> stepback)
@@ -1030,7 +1162,7 @@ namespace Plang.Compiler
                 {
                     result += 1;
                 }
-                WriteInvs(codegen, guards, filters, keep, stepback);
+                // WriteInvs(codegen, guards, filters, keep, stepback);
             }
             // DoChores(job, codegen);
             return result;
@@ -1076,6 +1208,7 @@ namespace Plang.Compiler
             writer.WriteLine(hint.ConfigEvent == null ? "" : hint.ConfigEvent.Name);
             writer.WriteLine(hint.ExistentialQuantifiers);
             writer.WriteLine(hint.TermDepth);
+            writer.WriteLine(hint.UserHint);
             writer.Close();
             DoChores(job, codegen);
             // ShowAll();
@@ -1186,5 +1319,20 @@ namespace Plang.Compiler
             }
             return traceIndex.TryGet(k, out folder);
         }
+    }
+
+    internal class Goal {
+        [System.Text.Json.Serialization.JsonPropertyName("events")]
+        public List<string> Events { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("config_event")]
+        public string ConfigEvent { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("exists")]
+        public int NumExists { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("term_depth")]
+        public int TermDepth { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("guards")]
+        public List<string> Guards { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("filters")]
+        public List<string> Filters { get; set; }
     }
 }

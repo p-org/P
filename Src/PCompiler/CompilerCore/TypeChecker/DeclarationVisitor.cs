@@ -650,12 +650,14 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitFuzzHintDecl(PParser.FuzzHintDeclContext context)
         {
             var hint = (Hint) nodesToDeclarations.Get(context);
+            hint.UserHint = true;
             return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
         }
 
         public override object VisitExactHintDecl(PParser.ExactHintDeclContext context)
         {
             var hint = (Hint) nodesToDeclarations.Get(context);
+            hint.UserHint = true;
             return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
         }
 

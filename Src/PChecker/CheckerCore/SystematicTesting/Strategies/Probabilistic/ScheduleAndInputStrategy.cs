@@ -18,7 +18,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
     /// This strategy is described in the following paper:
     /// https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/asplos277-pct.pdf
     /// </remarks>
-    internal class PrioritizedSchedulingStrategy: ISchedulingStrategy
+    internal class ScheduleAndInputStrategy: ISchedulingStrategy
     {
 
         /// <summary>
@@ -33,12 +33,12 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
 
         private int _scheduledSteps;
 
-        internal readonly PrioritizedScheduler Scheduler;
+        internal readonly IScheduler Scheduler;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PrioritizedSchedulingStrategy"/> class.
+        /// Initializes a new instance of the <see cref="ScheduleAndInputStrategy"/> class.
         /// </summary>
-        public PrioritizedSchedulingStrategy(int maxSteps, IRandomValueGenerator random, PrioritizedScheduler scheduler)
+        public ScheduleAndInputStrategy(int maxSteps, IRandomValueGenerator random, IScheduler scheduler)
         {
             RandomValueGenerator = random;
             MaxScheduledSteps = maxSteps;

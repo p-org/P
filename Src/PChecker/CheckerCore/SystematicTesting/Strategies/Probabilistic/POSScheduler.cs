@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PChecker.Feedback;
+using PChecker.Generator.Object;
 using PChecker.IO.Debugging;
+using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic;
 
-internal class POSScheduler: PrioritizedScheduler
+internal class POSScheduler: IScheduler
 {
-    internal readonly PriorizationProvider Provider;
+    private IRandomValueGenerator _randomValueGenerator;
 
     /// <summary>
     /// List of prioritized operations.
@@ -19,9 +21,9 @@ internal class POSScheduler: PrioritizedScheduler
     /// <summary>
     /// Initializes a new instance of the <see cref="PCTStrategy"/> class.
     /// </summary>
-    public POSScheduler(PriorizationProvider provider)
+    public POSScheduler(IRandomValueGenerator random)
     {
-        Provider = provider;
+        _randomValueGenerator = random;
         PrioritizedOperations = new List<AsyncOperation>();
     }
 
@@ -85,7 +87,7 @@ internal class POSScheduler: PrioritizedScheduler
 
         foreach (var op in ops.Where(op => !PrioritizedOperations.Contains(op)))
         {
-            var mIndex = Provider.AssignPriority(PrioritizedOperations.Count);
+            var mIndex = _randomValueGenerator.Next(PrioritizedOperations.Count) + 1;
             PrioritizedOperations.Insert(mIndex, op);
             Debug.WriteLine("<PCTLog> Detected new operation '{0}' at index '{1}'.", op.Id, mIndex);
         }
@@ -144,5 +146,15 @@ internal class POSScheduler: PrioritizedScheduler
     {
         PrioritizedOperations.Clear();
         return true;
+    }
+
+    public IScheduler Mutate()
+    {
+        return new POSScheduler(((ControlledRandom)_randomValueGenerator).Mutate());
+    }
+
+    public IScheduler New()
+    {
+        return new POSScheduler(((ControlledRandom)_randomValueGenerator).New());
     }
 }

@@ -8,11 +8,5 @@ public interface IGenerator<T>
     /// <returns>A new generator.</returns>
     T Mutate();
 
-    /// <summary>
-    /// Copy the current generator and create a new one.
-    /// </summary>
-    /// <returns>A new generator.</returns>
-    T Copy();
-
     T New();
 }

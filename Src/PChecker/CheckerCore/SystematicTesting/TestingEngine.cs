@@ -19,6 +19,7 @@ using PChecker.Coverage;
 using PChecker.Feedback;
 using PChecker.Generator;
 using PChecker.Generator.Mutator;
+using PChecker.Generator.Object;
 using PChecker.IO;
 using PChecker.IO.Debugging;
 using PChecker.IO.Logging;
@@ -285,27 +286,29 @@ namespace PChecker.SystematicTesting
             }
             else if (checkerConfiguration.SchedulingStrategy is "random")
             {
-                Strategy = new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
+                var scheduler = new RandomScheduler(RandomValueGenerator);
+                Strategy = new ScheduleAndInputStrategy(checkerConfiguration.MaxFairSchedulingSteps,
+                    RandomValueGenerator, scheduler);
             }
             else if (checkerConfiguration.SchedulingStrategy is "pct")
             {
                 var scheduler = new PCTScheduler(checkerConfiguration.StrategyBound, 0,
-                    new RandomPriorizationProvider(RandomValueGenerator));
-                Strategy = new PrioritizedSchedulingStrategy(checkerConfiguration.MaxUnfairSchedulingSteps,
+                    RandomValueGenerator);
+                Strategy = new ScheduleAndInputStrategy(checkerConfiguration.MaxUnfairSchedulingSteps,
                     RandomValueGenerator, scheduler);
             }
             else if (checkerConfiguration.SchedulingStrategy is "pos")
             {
-                var scheduler = new POSScheduler(new RandomPriorizationProvider(RandomValueGenerator));
-                Strategy = new PrioritizedSchedulingStrategy(checkerConfiguration.MaxUnfairSchedulingSteps,
+                var scheduler = new POSScheduler(RandomValueGenerator);
+                Strategy = new ScheduleAndInputStrategy(checkerConfiguration.MaxUnfairSchedulingSteps,
                     RandomValueGenerator, scheduler);
             }
             else if (checkerConfiguration.SchedulingStrategy is "fairpct")
             {
                 var prefixLength = checkerConfiguration.MaxUnfairSchedulingSteps;
                 var scheduler = new PCTScheduler(checkerConfiguration.StrategyBound, 0,
-                    new RandomPriorizationProvider(RandomValueGenerator));
-                var prefixStrategy = new PrioritizedSchedulingStrategy(prefixLength, RandomValueGenerator, scheduler);
+                    RandomValueGenerator);
+                var prefixStrategy = new ScheduleAndInputStrategy(prefixLength, RandomValueGenerator, scheduler);
                 var suffixStrategy =
                     new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
                 Strategy = new ComboStrategy(prefixStrategy, suffixStrategy);
@@ -325,21 +328,18 @@ namespace PChecker.SystematicTesting
             }
             else if (checkerConfiguration.SchedulingStrategy is "feedback")
             {
-                Strategy = new FeedbackGuidedStrategy<RandomInputGenerator, RandomScheduleGenerator>(
-                    _checkerConfiguration, new RandomInputGenerator(checkerConfiguration),
-                    new RandomScheduleGenerator(checkerConfiguration));
+                Strategy = new FeedbackGuidedStrategy(checkerConfiguration, new ControlledRandom(checkerConfiguration),
+                    new RandomScheduler(new ControlledRandom(checkerConfiguration)));
             }
             else if (checkerConfiguration.SchedulingStrategy is "feedbackpct")
             {
-                Strategy = new FeedbackGuidedStrategy<RandomInputGenerator, PctScheduleGenerator>(_checkerConfiguration,
-                    new RandomInputGenerator(checkerConfiguration), new PctScheduleGenerator(checkerConfiguration));
+                Strategy = new FeedbackGuidedStrategy(checkerConfiguration, new ControlledRandom(checkerConfiguration),
+                    new PCTScheduler(checkerConfiguration.StrategyBound, 0, new ControlledRandom(checkerConfiguration)));
             }
             else if (checkerConfiguration.SchedulingStrategy is "feedbackpos")
             {
-                Strategy = new FeedbackGuidedStrategy<RandomInputGenerator, POSScheduleGenerator>(
-                    _checkerConfiguration,
-                    new RandomInputGenerator(checkerConfiguration),
-                    new POSScheduleGenerator(_checkerConfiguration));
+                Strategy = new FeedbackGuidedStrategy(checkerConfiguration, new ControlledRandom(checkerConfiguration),
+                    new POSScheduler(new ControlledRandom(checkerConfiguration)));
             }
             else if (checkerConfiguration.SchedulingStrategy is "portfolio")
             {
@@ -967,8 +967,7 @@ namespace PChecker.SystematicTesting
             report.CoverageInfo.Merge(coverageInfo);
             TestReport.Merge(report);
             var timelineHash = timelineObserver.GetTimelineHash();
-            TestReport.ExploredTimelines[timelineHash] =
-                TestReport.ExploredTimelines.GetValueOrDefault(timelineHash, 0) + 1;
+            TestReport.ExploredTimelines.Add(timelineObserver.GetTimelineHash());
             // Also save the graph snapshot of the last iteration, if there is one.
             Graph = coverageInfo.CoverageGraph;
             // Also save the graph snapshot of the last schedule, if there is one.

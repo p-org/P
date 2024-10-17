@@ -4,17 +4,17 @@ using System.IO;
 using System.Linq;
 using PChecker.Generator;
 using PChecker.Feedback;
+using PChecker.Generator.Object;
+using PChecker.SystematicTesting.Strategies.Probabilistic;
 using AsyncOperation = PChecker.SystematicTesting.Operations.AsyncOperation;
 using Debug = System.Diagnostics.Debug;
 
 namespace PChecker.SystematicTesting.Strategies.Feedback;
 
 
-internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrategy
-    where TInput: IInputGenerator<TInput>
-    where TSchedule: IScheduleGenerator<TSchedule>
+internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
 {
-    public record StrategyGenerator(TInput InputGenerator, TSchedule ScheduleGenerator);
+    public record StrategyGenerator(ControlledRandom InputGenerator, IScheduler Scheduler);
 
     public record GeneratorRecord(int Priority, StrategyGenerator Generator, List<int> MinHash);
 
@@ -39,9 +39,9 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
     /// <summary>
     /// Initializes a new instance of the <see cref="FeedbackGuidedStrategy"/> class.
     /// </summary>
-    public FeedbackGuidedStrategy(CheckerConfiguration checkerConfiguration, TInput input, TSchedule schedule)
+    public FeedbackGuidedStrategy(CheckerConfiguration checkerConfiguration, ControlledRandom inputGenerator, IScheduler scheduler)
     {
-        if (schedule is PctScheduleGenerator)
+        if (scheduler is PCTScheduler)
         {
             _maxScheduledSteps = checkerConfiguration.MaxUnfairSchedulingSteps;
         }
@@ -49,16 +49,15 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
         {
             _maxScheduledSteps = checkerConfiguration.MaxFairSchedulingSteps;
         }
-        Generator = new StrategyGenerator(input, schedule);
+        Generator = new StrategyGenerator(inputGenerator, scheduler);
     }
 
     /// <inheritdoc/>
     public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
     {
-        // var enabledOperations = _nfa != null? _nfa.FindHighPriorityOperations(ops) : ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
-        next = Generator.ScheduleGenerator.NextRandomOperation(ops.ToList(), current);
+        var result = Generator.Scheduler.GetNextOperation(current, ops, out next);
         ScheduledSteps++;
-        return next != null;
+        return result;
     }
 
     /// <inheritdoc/>
@@ -202,7 +201,7 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     private void PrepareNextInput()
     {
-        Generator.ScheduleGenerator.PrepareForNextInput();
+        Generator.Scheduler.PrepareForNextIteration();
         if (_savedGenerators.Count == 0)
         {
             // Mutate current input if no input is saved.
@@ -257,12 +256,12 @@ internal class FeedbackGuidedStrategy<TInput, TSchedule> : IFeedbackGuidedStrate
 
     protected virtual StrategyGenerator MutateGenerator(StrategyGenerator prev)
     {
-        return new StrategyGenerator(prev.InputGenerator.Mutate(), prev.ScheduleGenerator.Mutate());
+        return new StrategyGenerator(prev.InputGenerator.Mutate(), prev.Scheduler.Mutate());
     }
 
     protected virtual StrategyGenerator NewGenerator()
     {
-        return new StrategyGenerator(Generator.InputGenerator.New(), Generator.ScheduleGenerator.New());
+        return new StrategyGenerator(Generator.InputGenerator.New(), Generator.Scheduler.New());
     }
 
     public void DumpStats(TextWriter writer)

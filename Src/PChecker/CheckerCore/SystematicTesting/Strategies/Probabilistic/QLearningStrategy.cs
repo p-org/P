@@ -3,20 +3,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using PChecker.Feedback;
 using System.Text;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
-using PChecker.SystematicTesting.Strategies.Feedback;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic
 {
     /// <summary>
     /// A probabilistic scheduling strategy that uses Q-learning.
     /// </summary>
-    internal class QLearningStrategy : RandomStrategy, IFeedbackGuidedStrategy
+    internal class QLearningStrategy : RandomStrategy
     {
         /// <summary>
         /// Map from program states to a map from next operations to their quality values.
@@ -80,7 +77,6 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// The number of explored executions.
         /// </summary>
         private int Epochs;
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QLearningStrategy"/> class.
@@ -152,6 +148,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <inheritdoc/>
         public override bool PrepareForNextIteration()
         {
+            this.LearnQValues();
             this.ExecutionPath.Clear();
             this.PreviousOperation = 0;
             this.Epochs++;
@@ -361,50 +358,18 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             }
         }
 
-        private readonly HashSet<int> _visitedTimelines = new();
-        private readonly List<List<int>> _savedTimelines = new();
-        private int ComputeDiversity(int timeline, List<int> hash)
+        /// <summary>
+        /// Learn Q values using data from the current execution.
+        /// </summary>
+        private void LearnQValues()
         {
-            if (!_visitedTimelines.Add(timeline))
-            {
-                return 0;
-            }
+            var pathBuilder = new StringBuilder();
 
-            if (_savedTimelines.Count == 0)
-            {
-                return 20;
-            }
-
-            var maxSim = int.MinValue;
-            foreach (var record in _savedTimelines)
-            {
-                var similarity = 0;
-                for (int i = 0; i < hash.Count; i++)
-                {
-                    if (hash[i] == record[i])
-                    {
-                        similarity += 1;
-                    }
-                }
-
-                maxSim = Math.Max(maxSim, similarity);
-            }
-
-
-            return (hash.Count - maxSim) * 10 + 20;
-        }
-
-        public void ObserveRunningResults(TimelineObserver timelineObserver)
-        {
-            var timelineHash = timelineObserver.GetTimelineHash();
-            var timelineMinhash = timelineObserver.GetTimelineMinhash();
-            
-            int priority = 1;
-
-
+            int idx = 0;
             var node = this.ExecutionPath.First;
             while (node != null && node.Next != null)
             {
+                pathBuilder.Append($"{node.Value.op},");
 
                 var (_, _, state) = node.Value;
                 var (nextOp, nextType, nextState) = node.Next.Value;
@@ -421,8 +386,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
 
                 // Compute the reward. Program states that are visited with higher frequency result into lesser rewards.
                 var freq = this.TransitionFrequencies[nextState];
-                double reward = ((nextType == AsyncOperationType.InjectFailure ?
-                    this.FailureInjectionReward : this.BasicActionReward) * freq) / priority;
+                double reward = (nextType == AsyncOperationType.InjectFailure ?
+                    this.FailureInjectionReward : this.BasicActionReward) * freq;
                 if (reward > 0)
                 {
                     // The reward has underflowed.
@@ -442,16 +407,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                                         (this.LearningRate * (reward + (this.Gamma * maxQ)));
 
                 node = node.Next;
+                idx++;
             }
-        }
-
-        public int TotalSavedInputs()
-        {
-            return 0;
-        }
-
-        public void DumpStats(TextWriter writer)
-        {
         }
     }
 }

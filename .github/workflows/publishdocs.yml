@@ -12,12 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install pip
-        run: sudo apt install python3-pip python3-setuptools python3-wheel
+        run: python3 -m pip install --upgrade pip setuptools wheel
       - name: Install MkDocs
         run: |
-          sudo apt install mkdocs
-          sudo apt install mkdocs-macros-plugin 
-          sudo apt install mkdocs-material 
+          pip install mkdocs
+          pip install mkdocs-macros-plugin
+          pip install mkdocs-material
       - name: MkDocs build
         working-directory: ./Docs
         run: mkdocs build

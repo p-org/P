@@ -49,6 +49,11 @@ namespace PChecker.SystematicTesting.Operations
         /// True if the next awaiter is controlled, else false.
         /// </summary>
         internal bool IsAwaiterControlled;
+        
+        /// <summary>
+        /// The receiver if the operation is Send.
+        /// </summary>
+        public string MessageReceiver = "";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncOperation"/> class.

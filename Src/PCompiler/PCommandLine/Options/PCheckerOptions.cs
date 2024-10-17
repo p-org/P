@@ -54,9 +54,16 @@ namespace Plang.Options
 
             var schedulingGroup = Parser.GetOrCreateGroup("scheduling", "Search prioritization options");
             schedulingGroup.AddArgument("sch-random", null, "Choose the random scheduling strategy (this is the default)", typeof(bool));
+            schedulingGroup.AddArgument("sch-feedback", null, "Choose the random scheduling strategy with feedback mutation", typeof(bool));
+
+            schedulingGroup.AddArgument("sch-feedbackpct", null, "Choose the PCT scheduling strategy with feedback mutation", typeof(uint));
+            schedulingGroup.AddArgument("sch-feedbackpos", null,
+                "Choose the POS scheduling strategy with feedback mutation", typeof(bool));
+
             schedulingGroup.AddArgument("sch-probabilistic", "sp", "Choose the probabilistic scheduling strategy with given probability for each scheduling decision where the probability is " +
                                                                    "specified as the integer N in the equation 0.5 to the power of N.  So for N=1, the probability is 0.5, for N=2 the probability is 0.25, N=3 you get 0.125, etc.", typeof(uint));
             schedulingGroup.AddArgument("sch-pct", null, "Choose the PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
+            schedulingGroup.AddArgument("sch-pos", null, "Choose the POS scheduling strategy", typeof(bool));
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-rl", null, "Choose the reinforcement learning (RL) scheduling strategy", typeof(bool)).IsHidden = true;
             var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
@@ -74,7 +81,6 @@ namespace Plang.Options
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
-
         }
 
         /// <summary>
@@ -226,11 +232,15 @@ namespace Plang.Options
                     checkerConfiguration.RandomGeneratorSeed = (uint)option.Value;
                     break;
                 case "sch-random":
+                case "sch-pos":
+                case "sch-feedbackpos":
+                case "sch-feedback":
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     break;
                 case "sch-probabilistic":
                 case "sch-pct":
                 case "sch-fairpct":
+                case "sch-feedbackpct":
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     checkerConfiguration.StrategyBound = (int)(uint)option.Value;
                     break;
@@ -336,15 +346,18 @@ namespace Plang.Options
 
             if (checkerConfiguration.SchedulingStrategy != "portfolio" &&
                 checkerConfiguration.SchedulingStrategy != "random" &&
+                checkerConfiguration.SchedulingStrategy != "feedback" &&
+                checkerConfiguration.SchedulingStrategy != "feedbackpct" &&
+                checkerConfiguration.SchedulingStrategy != "feedbackpos" &&
                 checkerConfiguration.SchedulingStrategy != "pct" &&
+                checkerConfiguration.SchedulingStrategy != "pos" &&
                 checkerConfiguration.SchedulingStrategy != "fairpct" &&
                 checkerConfiguration.SchedulingStrategy != "probabilistic" &&
                 checkerConfiguration.SchedulingStrategy != "rl" &&
                 checkerConfiguration.SchedulingStrategy != "replay" &&
                 checkerConfiguration.SchedulingStrategy != "learn" &&
                 checkerConfiguration.SchedulingStrategy != "dfs" &&
-                checkerConfiguration.SchedulingStrategy != "stateless")
-            {
+                checkerConfiguration.SchedulingStrategy != "stateless") {
                 Error.CheckerReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }
 
@@ -376,7 +389,6 @@ namespace Plang.Options
                 var enumerationOptions = new EnumerationOptions();
                 enumerationOptions.RecurseSubdirectories = true;
                 enumerationOptions.MaxRecursionDepth = 3;
-
 
                 var files =
                     from file in Directory.GetFiles(checkerConfiguration.PCompiledPath, filePattern, enumerationOptions)

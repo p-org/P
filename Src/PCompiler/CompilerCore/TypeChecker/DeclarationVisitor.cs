@@ -347,7 +347,7 @@ namespace Plang.Compiler.TypeChecker
 
             return specMachine;
         }
-
+        
         public override object VisitMachineBody(PParser.MachineBodyContext context)
         {
             foreach (var machineEntryContext in context.machineEntry())

@@ -50,7 +50,6 @@ namespace Plang.Compiler.TypeChecker
             {
                 throw handler.TypeMismatch(subExpr, TypeKind.NamedTuple);
             }
-
             var fieldName = context.field.GetText();
             if (!tuple.LookupEntry(fieldName, out var entry))
             {

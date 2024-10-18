@@ -649,7 +649,7 @@ namespace PChecker.SystematicTesting
             var originInfo = new EventOriginInfo(sender.Id, sender.GetType().FullName,
                 sender.CurrentState.GetType().Name);
 
-            var eventInfo = new EventInfo(e, originInfo);
+            var eventInfo = new EventInfo(e, originInfo, sender.VectorTime);
 
             LogWriter.LogSendEvent(stateMachine.Id, sender.Id.Name, sender.Id.Type, sender.CurrentStateName,
                 e, isTargetHalted: false);

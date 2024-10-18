@@ -55,6 +55,11 @@ namespace PChecker.Runtime.StateMachines
         private protected IEventQueue Inbox;
         
         /// <summary>
+        /// Keeps track of state machine's current vector time.
+        /// </summary>
+        public VectorTime VectorTime;
+        
+        /// <summary>
         /// Cache of state machine types to a map of action names to action declarations.
         /// </summary>
         private static readonly ConcurrentDictionary<Type, Dictionary<string, MethodInfo>> ActionCache =
@@ -295,6 +300,7 @@ namespace PChecker.Runtime.StateMachines
             Id = id;
             Manager = manager;
             Inbox = inbox;
+            VectorTime = new VectorTime(Id);
         }
         
         /// <summary>
@@ -535,6 +541,9 @@ namespace PChecker.Runtime.StateMachines
             Assert(target.Permissions.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
             AnnounceInternal(ev);
+            // Update vector clock
+            VectorTime.Increment();
+            BehavioralObserver.AddToCurrentTimeline(ev, BehavioralObserver.EventType.SEND, VectorTime);
             Runtime.SendEvent(target.Id, ev, this);
         }
         
@@ -590,6 +599,10 @@ namespace PChecker.Runtime.StateMachines
                 
                 if (status is DequeueStatus.Success)
                 {
+                    // Update state machine vector clock
+                    VectorTime.Merge(info.VectorTime);
+                    BehavioralObserver.AddToCurrentTimeline(e, BehavioralObserver.EventType.DEQUEUE, VectorTime);
+                    
                     // Notify the runtime for a new event to handle. This is only used
                     // during bug-finding and operation bounding, because the runtime
                     // has to schedule an state machine when a new operation is dequeued.

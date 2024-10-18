@@ -157,7 +157,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
             // A default event handler exists.
             var stateName = StateMachine.CurrentState.GetType().Name;
             var eventOrigin = new EventOriginInfo(StateMachine.Id, StateMachine.GetType().FullName, stateName);
-            return (DequeueStatus.Default, DefaultEvent.Instance, new EventInfo(DefaultEvent.Instance, eventOrigin));
+            return (DequeueStatus.Default, DefaultEvent.Instance, new EventInfo(DefaultEvent.Instance, eventOrigin, StateMachine.VectorTime));
         }
 
         /// <summary>
@@ -209,7 +209,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         {
             var stateName = StateMachine.CurrentState.GetType().Name;
             var eventOrigin = new EventOriginInfo(StateMachine.Id, StateMachine.GetType().FullName, stateName);
-            var info = new EventInfo(e, eventOrigin);
+            var info = new EventInfo(e, eventOrigin, StateMachine.VectorTime);
             RaisedEvent = (e, info);
             StateMachineManager.OnRaiseEvent(e, info);
         }

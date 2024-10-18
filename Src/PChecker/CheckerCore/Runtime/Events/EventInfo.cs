@@ -23,6 +23,8 @@ namespace PChecker.Runtime.Events
         [DataMember]
         internal EventOriginInfo OriginInfo { get; private set; }
 
+        internal VectorTime VectorTime;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="EventInfo"/> class.
         /// </summary>
@@ -34,10 +36,11 @@ namespace PChecker.Runtime.Events
         /// <summary>
         /// Initializes a new instance of the <see cref="EventInfo"/> class.
         /// </summary>
-        internal EventInfo(Event e, EventOriginInfo originInfo)
+        internal EventInfo(Event e, EventOriginInfo originInfo, VectorTime v)
             : this(e)
         {
             OriginInfo = originInfo;
+            VectorTime = new VectorTime(v);
         }
     }
 }

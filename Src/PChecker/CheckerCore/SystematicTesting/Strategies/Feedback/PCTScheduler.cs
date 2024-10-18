@@ -1,0 +1,236 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using PChecker.Generator.Object;
+using PChecker.IO.Debugging;
+using PChecker.Random;
+using PChecker.SystematicTesting.Operations;
+
+namespace PChecker.SystematicTesting.Strategies.Probabilistic
+{
+    /// <summary>
+    /// A priority-based probabilistic scheduling strategy.
+    /// </summary>
+    /// <remarks>
+    /// This strategy is described in the following paper:
+    /// https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/asplos277-pct.pdf
+    /// </remarks>
+    internal class PCTScheduler : IScheduler
+    {
+        
+        
+        /// <summary>
+        /// Random value generator.
+        /// </summary>
+        private readonly IRandomValueGenerator _randomValueGenerator;
+
+        /// <summary>
+        /// The maximum number of steps to schedule.
+        /// </summary>
+        private readonly int MaxScheduledSteps;
+
+        /// <summary>
+        /// The number of scheduled steps.
+        /// </summary>
+        private int ScheduledSteps;
+
+        /// <summary>
+        /// Max number of priority switch points.
+        /// </summary>
+        internal readonly int MaxPrioritySwitchPoints;
+
+        /// <summary>
+        /// Approximate length of the schedule across all schedules.
+        /// </summary>
+        internal int ScheduleLength;
+
+        /// <summary>
+        /// List of prioritized operations.
+        /// </summary>
+        private readonly List<AsyncOperation> PrioritizedOperations;
+
+        /// <summary>
+        /// Next execution point where the priority should be changed.
+        /// </summary>
+        private int _nextPriorityChangePoint;
+        
+        /// <summary>
+        /// Number of switch points left (leq MaxPrioritySwitchPoints).
+        /// </summary>
+        private int _numSwitchPointsLeft;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PCTStrategy"/> class.
+        /// </summary>
+        public PCTScheduler(int maxPrioritySwitchPoints, int scheduleLength, IRandomValueGenerator random)
+        {
+            _randomValueGenerator = random;
+            ScheduledSteps = 0;
+            ScheduleLength = scheduleLength;
+            MaxPrioritySwitchPoints = maxPrioritySwitchPoints;
+            PrioritizedOperations = new List<AsyncOperation>();
+            double switchPointProbability = 0.1;
+            if (ScheduleLength != 0)
+            {
+                switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
+            }
+            _nextPriorityChangePoint = Generator.Mutator.Utils.SampleGeometric(switchPointProbability, random.NextDouble());
+
+        }
+
+        public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops,
+            out AsyncOperation next)
+        {
+            ScheduledSteps++;
+            next = null;
+            var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
+            if (enabledOperations.Count == 0)
+            {
+                if (_nextPriorityChangePoint == ScheduledSteps)
+                {
+                    MovePriorityChangePointForward();
+                }
+
+                return false;
+            }
+
+            var highestEnabledOp = GetPrioritizedOperation(enabledOperations, current);
+            if (next is null)
+            {
+                next = highestEnabledOp;
+            }
+
+            return true;
+        }
+
+        private void MovePriorityChangePointForward()
+        {
+            _nextPriorityChangePoint += 1;
+            Debug.WriteLine("<PCTLog> Moving priority change to '{0}'.", _nextPriorityChangePoint);
+        }
+
+        private AsyncOperation GetHighestPriorityEnabledOperation(IEnumerable<AsyncOperation> choices)
+        {
+            AsyncOperation prioritizedOp = null;
+            foreach (var entity in PrioritizedOperations)
+            {
+                if (choices.Any(m => m == entity))
+                {
+                    prioritizedOp = entity;
+                    break;
+                }
+            }
+
+            return prioritizedOp;
+        }
+
+
+        /// <summary>
+        /// Returns the prioritized operation.
+        /// </summary>
+        private AsyncOperation GetPrioritizedOperation(List<AsyncOperation> ops, AsyncOperation current)
+        {
+            if (PrioritizedOperations.Count == 0)
+            {
+                PrioritizedOperations.Add(current);
+            }
+
+            foreach (var op in ops.Where(op => !PrioritizedOperations.Contains(op)))
+            {
+                var mIndex = _randomValueGenerator.Next(PrioritizedOperations.Count) + 1;
+                PrioritizedOperations.Insert(mIndex, op);
+                Debug.WriteLine("<PCTLog> Detected new operation '{0}' at index '{1}'.", op.Id, mIndex);
+            }
+
+
+            var prioritizedSchedulable = GetHighestPriorityEnabledOperation(ops);
+            if (_nextPriorityChangePoint == ScheduledSteps)
+            {
+                if (ops.Count == 1)
+                {
+                    MovePriorityChangePointForward();
+                }
+                else
+                {
+                    PrioritizedOperations.Remove(prioritizedSchedulable);
+                    PrioritizedOperations.Add(prioritizedSchedulable);
+                    Debug.WriteLine("<PCTLog> Operation '{0}' changes to lowest priority.", prioritizedSchedulable);
+
+                    _numSwitchPointsLeft -= 1;
+                    // Update the next priority change point.
+                    if (_numSwitchPointsLeft > 0)
+                    {
+                        double switchPointProbability = 0.1;
+                        if (ScheduleLength != 0)
+                        {
+                            switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
+                        }
+
+                        _nextPriorityChangePoint =
+                            Generator.Mutator.Utils.SampleGeometric(switchPointProbability,
+                                _randomValueGenerator.NextDouble()) + ScheduledSteps;
+                    }
+
+                }
+            }
+
+            if (Debug.IsEnabled)
+            {
+                Debug.WriteLine("<PCTLog> Prioritized schedulable '{0}'.", prioritizedSchedulable);
+                Debug.Write("<PCTLog> Priority list: ");
+                for (var idx = 0; idx < PrioritizedOperations.Count; idx++)
+                {
+                    if (idx < PrioritizedOperations.Count - 1)
+                    {
+                        Debug.Write("'{0}', ", PrioritizedOperations[idx]);
+                    }
+                    else
+                    {
+                        Debug.WriteLine("'{0}'.", PrioritizedOperations[idx]);
+                    }
+                }
+            }
+
+            return ops.First(op => op.Equals(prioritizedSchedulable));
+        }
+
+        public void Reset()
+        {
+            ScheduleLength = 0;
+            ScheduledSteps = 0;
+            PrioritizedOperations.Clear();
+        }
+
+        /// <inheritdoc/>
+        public virtual bool PrepareForNextIteration()
+        {
+            ScheduleLength = Math.Max(ScheduleLength, ScheduledSteps);
+            ScheduledSteps = 0;
+            _numSwitchPointsLeft = MaxPrioritySwitchPoints;
+
+            PrioritizedOperations.Clear();
+            double switchPointProbability = 0.1;
+            if (ScheduleLength != 0)
+            {
+                switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
+            }
+
+            _nextPriorityChangePoint =
+                Generator.Mutator.Utils.SampleGeometric(switchPointProbability, _randomValueGenerator.NextDouble());
+            return true;
+        }
+
+        public IScheduler Mutate()
+        {
+            return new PCTScheduler(MaxPrioritySwitchPoints, ScheduleLength, ((ControlledRandom) _randomValueGenerator).Mutate());
+        }
+
+        public IScheduler New()
+        {
+            return new PCTScheduler(MaxPrioritySwitchPoints, ScheduleLength, ((ControlledRandom) _randomValueGenerator).New());
+        }
+    }
+}

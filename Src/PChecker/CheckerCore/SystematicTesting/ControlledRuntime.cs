@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
+using PChecker.Feedback;
 using PChecker.Random;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Logging;
@@ -149,7 +150,6 @@ namespace PChecker.SystematicTesting
         /// Used to log json trace outputs.
         /// </summary>
         public JsonWriter JsonLogger => LogWriter.JsonLogger;
-
 
         /// <summary>
         /// Returns the current hashed state of the monitors.
@@ -618,6 +618,8 @@ namespace PChecker.SystematicTesting
                 "Cannot send event '{0}' to state machine id '{1}' that is not bound to an state machine instance.",
                 e.GetType().FullName, targetId.Value);
 
+            Scheduler.ScheduledOperation.MessageReceiver = targetId.ToString();
+
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender);
 
@@ -647,7 +649,7 @@ namespace PChecker.SystematicTesting
             var originInfo = new EventOriginInfo(sender.Id, sender.GetType().FullName,
                 sender.CurrentState.GetType().Name);
 
-            var eventInfo = new EventInfo(e, originInfo);
+            var eventInfo = new EventInfo(e, originInfo, sender.VectorTime);
 
             LogWriter.LogSendEvent(stateMachine.Id, sender.Id.Name, sender.Id.Type, sender.CurrentStateName,
                 e, isTargetHalted: false);

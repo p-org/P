@@ -286,16 +286,12 @@ namespace PChecker.SystematicTesting
             }
             else if (checkerConfiguration.SchedulingStrategy is "random")
             {
-                var scheduler = new RandomScheduler(RandomValueGenerator);
-                Strategy = new ScheduleAndInputStrategy(checkerConfiguration.MaxFairSchedulingSteps,
-                    RandomValueGenerator, scheduler);
+                Strategy = new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
             }
             else if (checkerConfiguration.SchedulingStrategy is "pct")
             {
-                var scheduler = new PCTScheduler(checkerConfiguration.StrategyBound, 0,
+                Strategy = new PCTStrategy(checkerConfiguration.MaxUnfairSchedulingSteps, checkerConfiguration.StrategyBound,
                     RandomValueGenerator);
-                Strategy = new ScheduleAndInputStrategy(checkerConfiguration.MaxUnfairSchedulingSteps,
-                    RandomValueGenerator, scheduler);
             }
             else if (checkerConfiguration.SchedulingStrategy is "pos")
             {
@@ -306,11 +302,8 @@ namespace PChecker.SystematicTesting
             else if (checkerConfiguration.SchedulingStrategy is "fairpct")
             {
                 var prefixLength = checkerConfiguration.MaxUnfairSchedulingSteps;
-                var scheduler = new PCTScheduler(checkerConfiguration.StrategyBound, 0,
-                    RandomValueGenerator);
-                var prefixStrategy = new ScheduleAndInputStrategy(prefixLength, RandomValueGenerator, scheduler);
-                var suffixStrategy =
-                    new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
+                var prefixStrategy = new PCTStrategy(prefixLength, checkerConfiguration.StrategyBound, RandomValueGenerator);
+                var suffixStrategy = new RandomStrategy(checkerConfiguration.MaxFairSchedulingSteps, RandomValueGenerator);
                 Strategy = new ComboStrategy(prefixStrategy, suffixStrategy);
             }
             else if (checkerConfiguration.SchedulingStrategy is "probabilistic")

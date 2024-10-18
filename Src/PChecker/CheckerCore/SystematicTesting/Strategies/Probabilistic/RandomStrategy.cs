@@ -48,11 +48,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 return false;
             }
 
-            var idx = 0;
-            if (enabledOperations.Count > 1) {
-                idx = RandomValueGenerator.Next(enabledOperations.Count);
-            }
-
+            var idx = RandomValueGenerator.Next(enabledOperations.Count);
             next = enabledOperations[idx];
 
             ScheduledSteps++;

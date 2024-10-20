@@ -155,6 +155,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             return Quantified.Select(v => v.EventDecl).Concat(ConfigEvent == null ? [] : [ConfigEvent]).ToList();
         }
 
+        public List<PEvent> QuantifiedEvents()
+        {
+            return Quantified.Select(v => v.EventDecl).ToList();
+        }
+
         public List<PEvent> ForallQuantified()
         {
             return Quantified.SkipLast(ExistentialQuantifiers).Select(v => v.EventDecl).DistinctBy(x => x.Name).ToList();

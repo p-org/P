@@ -128,13 +128,13 @@ public class TaskPool {
             running -= 1;
             numFinished += 1;
             _startTasks();
-        }
-        String guardsStr = t.guardsStr();
-        String filtersStr = t.filtersStr();
-        int tasksRemain = this.headerToNumTasks.get(guardsStr).get(filtersStr) - 1;
-        this.headerToNumTasks.get(guardsStr).put(filtersStr, tasksRemain);
-        if (tasksRemain == 0) {
-            showResults(guardsStr, filtersStr);
+            String guardsStr = t.guardsStr();
+            String filtersStr = t.filtersStr();
+            int tasksRemain = this.headerToNumTasks.get(guardsStr).get(filtersStr) - 1;
+            this.headerToNumTasks.get(guardsStr).put(filtersStr, tasksRemain);
+            if (tasksRemain == 0) {
+                showResults(guardsStr, filtersStr);
+            }
         }
     }
 

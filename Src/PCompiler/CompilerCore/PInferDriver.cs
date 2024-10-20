@@ -9,6 +9,7 @@ using Plang.Compiler.Backend.PInfer;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Plang.PInfer;
@@ -317,10 +318,12 @@ namespace Plang.Compiler
         {
             List<Machine> machines = GlobalScope.Machines.Where(x => !x.IsSpec).ToList();
             // explore single-machine state
+            PEvent configEvent = Job.ConfigEvent != null ? GetPEvent(Job.ConfigEvent) : null;
             HashSet<Hint> tasks = new(new Hint.EqualityComparer());
             foreach (var hint in GlobalScope.Hints)
             {
                 Job.Output.WriteWarning($"Running user-defined hint: {hint.Name}");
+                hint.ConfigEvent ??= configEvent;
                 ParameterSearch(hint);
             }
             if (hintsOnly)
@@ -335,6 +338,7 @@ namespace Plang.Compiler
             foreach (var task in tasks)
             {
                 Console.WriteLine(string.Join(", ", task.RelatedEvents().Select(x => x.Name)));
+                task.ConfigEvent ??= configEvent;
             }
             for (int i = 0; i <= Job.TermDepth; ++i)
             {
@@ -558,11 +562,14 @@ namespace Plang.Compiler
                     NumInvsPrunedByGrammar = PInferInvoke.NumInvsPrunedByGrammar,
                     TimeElapsed = elapsed,
                     NumGoalsLearnedWithHints = PInferInvoke.NumGoalsLearnedWithHints,
-                    NumGoalsLearnedWithoutHints = PInferInvoke.NumGoalsLearnedWithoutHints
+                    NumGoalsLearnedWithoutHints = PInferInvoke.NumGoalsLearnedWithoutHints,
+                    NumGoals = numGoals
                 };
                 File.WriteAllText(pruning_filename, JsonSerializer.Serialize(stats));
                 job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
                 PInferInvoke.WriteMonitors(driver.Codegen, new(new(job)), globalScope);
+                var topk = PInferInvoke.TopK(5);
+                File.WriteAllText($"topk_invs_{driver.TraceIndex.GetTraceCount()}.txt", string.Join("\n", topk));
             }
         }
     }
@@ -574,6 +581,7 @@ namespace Plang.Compiler
         public double TimeElapsed { get; set; }
         public int NumGoalsLearnedWithHints { get; set; }
         public int NumGoalsLearnedWithoutHints { get; set; }
+        public int NumGoals { get; set; }
     }
 
     internal class PInferInvoke
@@ -590,7 +598,7 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, List<Hint>> Executed = [];
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
-        internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>)>> Goals = [];
+        internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> Goals = [];
         internal static HashSet<string> Learned = [];
         internal static HashSet<string> Recorded = [];
         internal static int NumInvsMined = 0;
@@ -677,7 +685,7 @@ namespace Plang.Compiler
                         Environment.Exit(1);
                     }
                 }
-                goalList.Add((p, q));
+                goalList.Add((p, q, goal.Guards.ToHashSet(), goal.Filters.ToHashSet()));
             }
         }
 
@@ -685,33 +693,51 @@ namespace Plang.Compiler
         {
             if (Goals.Count == 0) return;
             Z3Wrapper z3 = new(globalScope, codegen);
-            HashSet<string> learned = [];
+            Dictionary<string, HashSet<int>> learned = [];
             HashSet<string> visitedKey = [];
             foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
             {
                 if (q.Count == 0 || !Goals.ContainsKey(key)) continue;
                 visitedKey.Add(key);
                 var goals = Goals[key];
+                if (!learned.ContainsKey(key))
+                {
+                    learned[key] = [];
+                }
                 for (int i = 0; i < goals.Count; ++i)
                 {
-                    var (gp, gq) = goals[i];
+                    var (gp, gq, gps, gqs) = goals[i];
                     var lp = p.Select(x => ParsedP[key][x]).ToList();
                     var lq = q.Select(x => ParsedQ[key][x]).ToList();
                     if (z3.CheckImplies(key, gp, lp) && z3.CheckImplies(key, lq, gq))
                     {
-                        learned.Add(AssembleInvariant(h, p, q));
                         NumGoalsLearnedWithHints++;
                         if (!h.UserHint)
                         {
                             NumGoalsLearnedWithoutHints++;
                         }
+                        learned[key].Add(i);
                     }
                 }
             }
+            // check any missed goals and goals not learned
             var missed = Goals.Keys.Except(visitedKey);
             if (missed.Any())
             {
                 Console.WriteLine($"Missed: {string.Join(", ", missed)}");
+            }
+            foreach (var key in Goals.Keys)
+            {
+                if (learned.ContainsKey(key))
+                {
+                    foreach (var i in Enumerable.Range(0, Goals[key].Count))
+                    {
+                        if (!learned[key].Contains(i))
+                        {
+                            Console.WriteLine($"Not learned: {key} Guards: {string.Join(" && ", Goals[key][i].Item3)} Filters: {string.Join(" && ", Goals[key][i].Item4)}");
+                        }
+                    }
+                }
             }
         }
 
@@ -772,15 +798,73 @@ namespace Plang.Compiler
             return written.Count;
         }
 
+        private static HashSet<string> FreeEvents(IPExpr e)
+        {
+            switch (e)
+            {
+                case VariableAccessExpr varAccess:
+                {
+                    return [varAccess.Variable.Name];
+                }
+                case BinOpExpr binOpExpr:
+                {
+                    return FreeEvents(binOpExpr.Lhs).Union(FreeEvents(binOpExpr.Rhs)).ToHashSet();
+                }
+                case UnaryOpExpr unaryOpExpr:
+                {
+                    return FreeEvents(unaryOpExpr.SubExpr);
+                }
+                case FunCallExpr funCallExpr:
+                {
+                    return funCallExpr.Arguments.SelectMany(FreeEvents).ToHashSet();
+                }
+                case TupleAccessExpr tupleAccessExpr:
+                {
+                    return FreeEvents(tupleAccessExpr.SubExpr);
+                }
+                case NamedTupleAccessExpr namedTupleAccessExpr:
+                {
+                    return FreeEvents(namedTupleAccessExpr.SubExpr);
+                }
+                case SizeofExpr sizeofExpr:
+                {
+                    return FreeEvents(sizeofExpr.Expr);
+                }
+                default: return [];
+            }
+        }
+
         // top k for each key
         public static List<string> TopK(int k)
         {
             List<string> result = [];
+            Dictionary<string, List<(string, int)>> topk = [];
             foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
             {
                 if (q.Count == 0) continue;
                 var rec = AssembleInvariant(h, p, q);
-                
+                if (!topk.ContainsKey(key))
+                {
+                    topk[key] = [];
+                }
+                int numRels = 0;
+                foreach (var ap in p.Concat(q))
+                {
+                    if (ParsedP[key].ContainsKey(ap))
+                    {
+                        numRels += FreeEvents(ParsedP[key][ap]).Count > 1 ? 1 : 0;
+                    }
+                    else
+                    {
+                        numRels += FreeEvents(ParsedQ[key][ap]).Count > 1 ? 1 : 0;
+                    }
+                }
+                topk[key].Add((rec, numRels));
+            }
+            foreach (var key in topk.Keys)
+            {
+                var sorted = topk[key].OrderByDescending(x => x.Item2).Take(k).Select(x => x.Item1);
+                result.AddRange(sorted);
             }
             return result;
         }

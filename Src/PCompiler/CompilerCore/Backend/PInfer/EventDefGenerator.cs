@@ -18,7 +18,7 @@ namespace Plang.Compiler.Backend.PInfer
         protected override void GenerateCodeImpl()
         {
             WriteLine($"public class {Constants.EventNamespaceName} {{");
-            if (ConfigEvent != null)
+            if (ConfigEvent != null && !PEvents.Contains(ConfigEvent))
             {
                 WriteEventDecl(ConfigEvent, true);
                 WriteLine();

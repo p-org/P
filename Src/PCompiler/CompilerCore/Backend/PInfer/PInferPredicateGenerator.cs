@@ -606,7 +606,7 @@ namespace Plang.Compiler.Backend.PInfer
             if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
                 var cano = CC.Canonicalize(expr);
                 if (cano != null && Predicates.Contains(cano)) return;
-                if (events.Count > 1 && hint.RelatedEvents().ToHashSet().Count == 1)
+                if (events.Count > 1 && hint.QuantifiedEvents().ToHashSet().Count == 1)
                 {
                     // forall-quantified over a single type of event
                     // then check for asymmetric predicates as they

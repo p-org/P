@@ -1,0 +1,6 @@
+∀e1: eLearn ∀e2: eAcceptReq :: (e1.payload.ballot < e2.payload.ballot_n) -> (e1.payload.v == e2.payload.v)
+∀e0: eLearn ∀e1: eLearn :: (e0.payload.v == e1.payload.v)
+∀e0: eAcceptReq :: ∃e1: ePrepareRsp :: (indexof(e1) < indexof(e0)) ∧ (e1.payload.n_accepted < e0.payload.ballot_n) ∧ (_num_e_exists_ >= quorum) ∧ (e0.payload.ballot_n == e1.payload.promised)
+∀e0: eLearn :: ∃e1: eAcceptRsp :: (indexof(e1) < indexof(e0)) ∧ (e0.payload.ballot == e1.payload.accepted) ∧ (_num_e_exists_ >= quorum)
+∀e0: eAcceptReq ∀e1: eAcceptReq :: (e0.payload.ballot_n == e1.payload.ballot_n) -> (e0.payload.proposer == e1.payload.proposer) ∧ (e0.payload.v == e1.payload.v)
+∀e0: ePrepareRsp ∀e1: ePrepareReq :: (e0.payload.promised == e1.payload.ballot_n) -> (e0.payload.n_accepted < e1.payload.ballot_n)

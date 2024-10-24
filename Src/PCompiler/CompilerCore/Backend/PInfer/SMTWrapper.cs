@@ -107,18 +107,14 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 case FunCallExpr funCall:
                 {
-                    if (funCall.Function.Name != "index")
+                    if (funCall.Function.Name != "index" && funCall.Function.Name != "size")
                     {
                         throw new Exception($"Unsupported function call: {funCall.Function.Name}");
                     }
-                    var arg = (VariableAccessExpr) funCall.Arguments[0];
-                    var name = $"index_of_{arg.Variable.Name}";
-                    if (compiled[key].TryGetValue(arg, out Expr v))
-                    {
-                        return v;
-                    }
+                    var arg = funCall.Arguments[0].GetHashCode();
+                    var name = $"{funCall.Function.Name}_of_{arg}";
                     var indexVar = context.MkConst(name, context.IntSort);
-                    compiled[key][arg] = indexVar;
+                    compiled[key][funCall] = indexVar;
                     return indexVar;
                 }
                 case BoolLiteralExpr boolLit:

@@ -1,0 +1,42 @@
+[
+    {
+        "events": ["e0:eWriteTransResp", "e1:ePrepareResp"],
+        "config_event": "eMonitor_AtomicityInitialize",
+        "guards": ["e0.payload.transId == e1.payload.transId", "e0.payload.status == SUCCESS"],
+        "filters": ["e1.payload.status == SUCCESS", "indexof(e1) < indexof(e0)", "e0.payload.status == e1.payload.status"],
+        "exists": 0,
+        "term_depth": 1
+    },
+    {
+        "events": ["e0:eWriteTransResp", "e1:ePrepareResp"],
+        "config_event": "eMonitor_AtomicityInitialize",
+        "guards": ["e1.payload.status == SUCCESS", "e0.payload.status == ERROR"],
+        "filters": ["e0.payload.transId != e1.payload.transId"],
+        "exists": 0,
+        "term_depth": 1
+    },
+    {
+        "events": ["e0:eWriteTransResp", "e1:ePrepareResp"],
+        "config_event": "eMonitor_AtomicityInitialize",
+        "guards": ["e0.payload.status == SUCCESS", "e1.payload.status == ERROR"],
+        "filters": ["e0.payload.transId != e1.payload.transId"],
+        "exists": 0,
+        "term_depth": 1
+    },
+    {
+        "events": ["e0:eWriteTransResp", "e1:ePrepareResp"],
+        "config_event": "eMonitor_AtomicityInitialize",
+        "guards": ["e0.payload.status == SUCCESS"],
+        "filters": ["indexof(e1) < indexof(e0)", "e1.payload.status == SUCCESS", "_num_e_exists_ == numParticipants", "e0.payload.transId == e1.payload.transId"],
+        "exists": 1,
+        "term_depth": 1
+    },
+    {
+        "events": ["e0:eCommitTrans", "e1:eAbortTrans"],
+        "config_event": "eMonitor_AtomicityInitialize",
+        "guards": [],
+        "filters": ["e0.payload != e1.payload"],
+        "exists": 0,
+        "term_depth": 1
+    }
+]

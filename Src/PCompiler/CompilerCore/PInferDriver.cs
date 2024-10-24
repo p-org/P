@@ -107,8 +107,8 @@ namespace Plang.Compiler
                 return false;
             }
             var cp = hint.Copy();
-            GeneratedPredicates[cp] = Codegen.GeneratedPredicates;
-            GeneratedTerms[cp] = Codegen.GeneratedTerms;
+            GeneratedPredicates[cp] = new(Codegen.GeneratedPredicates);
+            GeneratedTerms[cp] = new(Codegen.GeneratedTerms);
             ExploredHints.Add(cp);
             if (cp.ConfigEvent != null)
             {
@@ -431,10 +431,7 @@ namespace Plang.Compiler
 
         private void InitializeZ3()
         {
-            if (PInferInvoke.UseZ3)
-            {
-                PInferInvoke.Z3Wrapper = new(GlobalScope, Codegen);
-            }
+            PInferInvoke.Z3Wrapper = new(GlobalScope, Codegen);
         }
 
         public static void PerformInferAction(ICompilerConfiguration job, Scope globalScope)
@@ -548,11 +545,15 @@ namespace Plang.Compiler
                 var elapsed = stopwatch.ElapsedMilliseconds / 1000.0;
                 job.Output.WriteInfo($"PInfer statistics");
                 job.Output.WriteInfo($"\t# invariants discovered: {PInferInvoke.NumInvsMined}");
-                var numInvAfterPruning = PInferInvoke.WriteRecordTo(filename);
+                // ranking invariants
+                var sortedInvs = PInferInvoke.GetSortedInvariants();
+                PInferInvoke.CheckLearnedGoals(globalScope, driver.Codegen, sortedInvs, out var cumulative);
+                job.Output.WriteInfo("Writing cumulative stats to cumulative_stats.txt ...");
+                File.WriteAllLines("cumulative_stats.txt", cumulative.Select(x => $"{x.Item1} {x.Item2}"));
+                var numInvAfterPruning = PInferInvoke.WriteRecordTo(filename, sortedInvs);
                 job.Output.WriteInfo($"\t#Invariants after pruning: {numInvAfterPruning}");
                 job.Output.WriteInfo($"#Times executed by Daikon: {numTotalTasks}");
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
-                PInferInvoke.CheckLearnedGoals(globalScope, driver.Codegen);
                 var numGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
                 job.Output.WriteInfo($"#Goals learned with hints: {PInferInvoke.NumGoalsLearnedWithHints} / {numGoals}");
                 job.Output.WriteInfo($"#Goals learned without hints: {PInferInvoke.NumGoalsLearnedWithoutHints} / {numGoals}");
@@ -568,8 +569,6 @@ namespace Plang.Compiler
                 File.WriteAllText(pruning_filename, JsonSerializer.Serialize(stats));
                 job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
                 PInferInvoke.WriteMonitors(driver.Codegen, new(new(job)), globalScope);
-                var topk = PInferInvoke.TopK(5);
-                File.WriteAllText($"topk_invs_{driver.TraceIndex.GetTraceCount()}.txt", string.Join("\n", topk));
             }
         }
     }
@@ -598,6 +597,7 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, List<Hint>> Executed = [];
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
+        internal static readonly Dictionary<HashSet<PEvent>, Dictionary<IPExpr, int>> APFrequency = [];
         internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> Goals = [];
         internal static HashSet<string> Learned = [];
         internal static HashSet<string> Recorded = [];
@@ -689,15 +689,28 @@ namespace Plang.Compiler
             }
         }
 
-        public static void CheckLearnedGoals(Scope globalScope, PInferPredicateGenerator codegen)
+        public static void CheckLearnedGoals(Scope globalScope, PInferPredicateGenerator codegen, IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> invariants, out List<(decimal, decimal)> cumulative)
         {
+            Z3Wrapper = new(globalScope, codegen);
+            cumulative = [];
             if (Goals.Count == 0) return;
-            Z3Wrapper z3 = new(globalScope, codegen);
+            NumGoalsLearnedWithHints = 0;
+            NumGoalsLearnedWithoutHints = 0;
             Dictionary<string, HashSet<int>> learned = [];
+            HashSet<int> confirmed = [];
             HashSet<string> visitedKey = [];
-            foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
+            int totalInvs = invariants.Count();
+            int checkedInvs = 0;
+            var numTotalGoals = Goals.SelectMany(x => x.Value).Count();
+            foreach (var (key, _, _, h, p, q) in invariants)
             {
-                if (q.Count == 0 || !Goals.ContainsKey(key)) continue;
+                if (q.Count == 0) continue;
+                if (!Goals.ContainsKey(key))
+                {
+                    checkedInvs += 1;
+                    cumulative.Add((checkedInvs / (decimal)totalInvs, NumGoalsLearnedWithHints / (decimal)numTotalGoals));
+                    continue;
+                }
                 visitedKey.Add(key);
                 var goals = Goals[key];
                 if (!learned.ContainsKey(key))
@@ -706,10 +719,11 @@ namespace Plang.Compiler
                 }
                 for (int i = 0; i < goals.Count; ++i)
                 {
+                    // if (confirmed.Contains(i)) continue;
                     var (gp, gq, gps, gqs) = goals[i];
                     var lp = p.Select(x => ParsedP[key][x]).ToList();
                     var lq = q.Select(x => ParsedQ[key][x]).ToList();
-                    if (z3.CheckImplies(key, gp, lp) && z3.CheckImplies(key, lq, gq))
+                    if (Z3Wrapper.CheckImplies(key, gp, lp) && Z3Wrapper.CheckImplies(key, lq, gq))
                     {
                         NumGoalsLearnedWithHints++;
                         if (!h.UserHint)
@@ -717,8 +731,11 @@ namespace Plang.Compiler
                             NumGoalsLearnedWithoutHints++;
                         }
                         learned[key].Add(i);
+                        // confirmed.Add(i);
                     }
                 }
+                checkedInvs += 1;
+                cumulative.Add((checkedInvs / (decimal)totalInvs, NumGoalsLearnedWithHints / (decimal)numTotalGoals));
             }
             // check any missed goals and goals not learned
             var missed = Goals.Keys.Except(visitedKey);
@@ -739,6 +756,75 @@ namespace Plang.Compiler
                     }
                 }
             }
+        }
+
+        private static bool GetFrequency(string key, HashSet<PEvent> eventSet, IPExpr e, out int freq, out IPExpr mem)
+        {
+            foreach (var k in APFrequency.Keys)
+            {
+                if (k.SetEquals(eventSet) && APFrequency[k].ContainsKey(e))
+                {
+                    foreach (var p in APFrequency[k].Keys)
+                    {
+                        if (Z3Wrapper.CheckImplies(key, [p], [e]) && Z3Wrapper.CheckImplies(key, [e], [p]))
+                        {
+                            freq = APFrequency[k][p];
+                            mem = p;
+                            return true;
+                        }
+                    }
+                }
+            }
+            freq = 0;
+            mem = null;
+            return false;
+        }
+
+        public static void ComputeFiltersFrequency()
+        {
+            APFrequency.Clear();
+            foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
+            {
+                var quantified = h.QuantifiedEvents().ToHashSet();
+                if (!APFrequency.ContainsKey(quantified))
+                {
+                    APFrequency[quantified] = new(new ASTComparer());
+                }
+                foreach (var ap in q)
+                {
+                    if (GetFrequency(key, quantified, ParsedQ[key][ap], out var freq, out var k))
+                    {
+                        APFrequency[quantified][k] = freq + 1;
+                    }
+                    else
+                    {
+                        APFrequency[quantified][ParsedQ[key][ap]] = 1;
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> GetSortedInvariants()
+        {
+            ComputeFiltersFrequency();
+            List<((string, int, int, Hint, HashSet<string>, HashSet<string>), decimal)> result = [];
+            foreach (var (key, n, e, h, p, q) in AllExecuedAndMined())
+            {
+                decimal weight = 0;
+                var quantified = h.QuantifiedEvents().ToHashSet();
+                foreach (var ap in q)
+                {
+                    if (GetFrequency(key, quantified, ParsedQ[key][ap], out var freq, out var k))
+                    {
+                        // Console.WriteLine($"Frequency of {ap}: {freq}");
+                        var numRels = FreeEvents(ParsedQ[key][ap]).Count;
+                        weight += numRels / (decimal)freq;
+                    }
+                }
+                Console.WriteLine(h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", q)) + " " + weight);
+                result.Add(((key, n, e, h, p, q), weight / q.Count));
+            }
+            return result.OrderByDescending(x => x.Item2).Select(x => x.Item1);
         }
 
         public static IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> AllExecuedAndMined()
@@ -783,11 +869,11 @@ namespace Plang.Compiler
             return h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", q));
         }
 
-        public static int WriteRecordTo(string filename)
+        public static int WriteRecordTo(string filename, IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> record)
         {
             using StreamWriter invwrite = new(filename);
             HashSet<string> written = [];
-            foreach (var (_, _, _, h, p, q) in PInferInvoke.AllExecuedAndMined())
+            foreach (var (_, _, _, h, p, q) in record)
             {
                 if (q.Count == 0) continue;
                 var rec = AssembleInvariant(h, p, q);
@@ -911,16 +997,23 @@ namespace Plang.Compiler
             }
         }
 
-        public static bool Resolution(PInferPredicateGenerator codegen, HashSet<string> p, HashSet<string> q)
+        public static bool Resolution(PInferPredicateGenerator codegen, string key, HashSet<string> p, HashSet<string> q)
         {
             // remove all contradicting predicates in guards
             bool didSth = false;
             HashSet<string> removal = [];
+            bool checkWithZ3(string s1, string s2) {
+                if (!UseZ3) return false;
+                var s1Expr = ParsedP[key][s1];
+                var s2Expr = ParsedP[key][s2];
+                var negatedS1 = new UnaryOpExpr(s1Expr.SourceLocation, UnaryOpType.Not, s1Expr);
+                return Z3Wrapper.CheckImplies(key, [s2Expr], [negatedS1]) && Z3Wrapper.CheckImplies(key, [negatedS1], [s2Expr]);
+            };
             foreach (var s1 in p)
             {
                 foreach (var s2 in q)
                 {
-                    if (codegen.Negating(s1, s2))
+                    if (codegen.Negating(s1, s2) || checkWithZ3(s1, s2))
                     {
                         if (p.Except([s1]).ToHashSet().SetEquals(q.Except([s2])))
                         {
@@ -1140,9 +1233,9 @@ namespace Plang.Compiler
                     {
                         for (int j = i + 1; j < P[k].Count; ++j)
                         {
-                            if (Q[k][i].SetEquals(Q[k][j]))
+                            if (BiImplies(k, Q[k][i], Q[k][j]))
                             {
-                                didSth |= Resolution(codegen, P[k][i], P[k][j]);
+                                didSth |= Resolution(codegen, k, P[k][i], P[k][j]);
                             }
                         }
                     }
@@ -1297,7 +1390,7 @@ namespace Plang.Compiler
             DoChores(job, codegen);
             // ShowAll();
             job.Output.WriteWarning($"Currently mined: {Recorded.Count} invariant(s)");
-            job.Output.WriteWarning($"Currently recorded: {WriteRecordTo($"inv_running_{metadata.GetTraceCount()}.txt")} invariant(s)");
+            job.Output.WriteWarning($"Currently recorded: {WriteRecordTo($"inv_running_{metadata.GetTraceCount()}.txt", AllExecuedAndMined())} invariant(s)");
             Console.WriteLine("Cleaning up ...");
             var dirInfo = new DirectoryInfo("./");
             foreach (var dir in dirInfo.GetDirectories())

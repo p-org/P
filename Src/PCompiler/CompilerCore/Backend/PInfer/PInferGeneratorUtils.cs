@@ -513,6 +513,7 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (var numType in numericTypes)
             {
                 AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, numType, numType);
+                AddBinaryBuiltinPredicate(globalScope, BinOpType.Gt, numType, numType);
             }
 
             AddBinaryBuiltinPredicate(globalScope, BinOpType.Eq, PrimitiveType.Machine, PrimitiveType.Machine);

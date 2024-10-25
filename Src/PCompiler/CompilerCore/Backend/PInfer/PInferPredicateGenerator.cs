@@ -120,6 +120,7 @@ namespace Plang.Compiler.Backend.PInfer
                         if (IsAssignableFrom(types.Item1, t) && IsAssignableFrom(types.Item2, t))
                         {
                             PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, t, t);
+                            PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Gt, t, t);
                             break;
                         }
                     }
@@ -127,6 +128,7 @@ namespace Plang.Compiler.Backend.PInfer
                 else
                 {
                     PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, t, t);
+                    PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Gt, t, t);
                 }
                 return;
             }
@@ -606,21 +608,6 @@ namespace Plang.Compiler.Backend.PInfer
             if (PredicateCallExpr.MkPredicateCall(pred, param, out IPExpr expr)){
                 var cano = CC.Canonicalize(expr);
                 if (cano != null && Predicates.Contains(cano)) return;
-                if (events.Count > 1 && hint.QuantifiedEvents().ToHashSet().Count == 1)
-                {
-                    // forall-quantified over a single type of event
-                    // then check for asymmetric predicates as they
-                    // can introduce symmetry when there is only one type of event being quantified
-                    if (pred.Function.Property.HasFlag(FunctionProperty.Asymmetric))
-                    {
-                        Console.WriteLine("Skipping asymmetric predicate");
-                        // check if swapping the arguments results in a predicate that is already present
-                        if (PredicateCallExpr.MkPredicateCall(pred, param.Select(x => x).Reverse().ToList(), out var swapped))
-                        {
-                            if (Predicates.Contains(swapped)) return;
-                        }
-                    }
-                }
                 FreeEvents[expr] = events;
                 PredicateOrder[expr] = Predicates.Count;
                 Predicates.Add(expr);
@@ -648,7 +635,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<string, HashSet<IPExpr>> varMaps)
+        private IEnumerable<IEnumerable<IPExpr>> CartesianProduct(List<PLanguageType> types, IDictionary<string, HashSet<IPExpr>> varMaps, int termOrder = -1)
         {
             if (types.Count == 0 || varMaps.Count == 0)
             {
@@ -660,7 +647,7 @@ namespace Plang.Compiler.Backend.PInfer
             // ids of terms
             if (types.Count == 1)
             {
-                foreach (var e in varMaps[ShowType(types[0])])
+                foreach (var e in varMaps[ShowType(types[0])].Where(x => TermOrder[x] >= termOrder))
                 {
                     yield return [e];
                 }
@@ -669,7 +656,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 foreach (var e in varMaps[ShowType(types[0])])
                 {
-                    foreach (var rest in CartesianProduct(types.Skip(1).ToList(), varMaps))
+                    foreach (var rest in CartesianProduct(types.Skip(1).ToList(), varMaps, termOrder = TermOrder[e]))
                     {
                         yield return rest.Prepend(e);
                     }

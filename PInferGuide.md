@@ -19,6 +19,17 @@ where `ei` is the name of events to be filtered. If no `-ef` provided, then all 
 
 Notice that there will be a `metadata.json` under `traces` that bookkeeps the folder and event information. Please do not edit it manually.
 
+### Using the python script for generating traces
+There is a `1_prepare_traces.py` under `Tutoiral/PInfer`. To use this script to generate traces, first add an entry to `configurations` dictionary.
+The key should be the name of the folder under `Tutorial/PInfer` that contains the P source code of the benchmark, and the value is a list of names of test cases to run to obtain the traces. 
+
+You may optionally set an environment variable called `PINFER_TRACE_DIR` (e.g. `export PINFER_TRACE_DIR=~/PInferTraces) that specifies the path to store the generated traces. 
+
+After making the changes, run with
+```
+> python3 1_prepare_traces.py --benchmarks [names of benchmarks] --num_traces [a list of numbers representing number of traces to generate] [--trace_dir <path-to-store-traces>]
+```
+
 **Removing traces:** If you want to remove certain traces, simply delete the files. You don't need to remove the metadata in the JSON file.
 
 **How are trace metadata being used?** When checking `n` events of type e1, e2, ..., en, PInfer will first look for any *exact* match on the index, i.e. a folder that have traces that contains events that are *exactly* of type e1, ..., en. If no such folder is found, PInfer looks for any folder that holds traces that is a superset of (e1, ..., en). 
@@ -27,7 +38,15 @@ Notice that there will be a `metadata.json` under `traces` that bookkeeps the fo
 
 ## Step 2: Running PInfer
 ### Fully-automated mode
-Simply run `p infer`, it will infer combinations of events that might yield interesting properties and then perform the search over the lattice. 
+Simply run `p infer`, it will infer combinations of events that might yield interesting properties and then perform the search over the lattice.
+
+If traces are stored under some other paths, you can run it with `p infer -t <path-to-traces>`. Note that there must be a `metadata.json` under the provided path. 
+
+If traces were generated using `1_prepare_traces.py`, then under `PINFER_TRACE_DIR`, traces are stored in folders that have the same name as the benchmark. For example `PINFER_TRACE_DIR/paxos/10000` stores 10k traces for paxos. This is the path you will need to pass to PInfer using `-t` commandline argument. For example, running PInfer under `paxos` with 10k traces is
+
+```
+> p infer -t $PINFER_TRACE_DIR/paxos/10000
+```
 
 Default parameters (upper bounds): 
 - `term_depth`: 2

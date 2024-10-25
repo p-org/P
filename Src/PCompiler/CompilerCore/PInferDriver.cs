@@ -1122,6 +1122,31 @@ namespace Plang.Compiler
             return didSth;
         }
 
+        private static HashSet<string> ToSymmetricGuards(HashSet<string> p)
+        {
+            HashSet<string> result = [];
+            foreach (var f in p)
+            {
+                if (f.Contains("=="))
+                {
+                    result.Add(f);
+                }
+                else if (f.Contains("<"))
+                {
+                    result.Add(f.Replace("<", ">"));
+                }
+                else if (f.Contains(">"))
+                {
+                    result.Add(f.Replace(">", "<"));
+                }
+                else
+                {
+                    result.Add(f);
+                }
+            }
+            return result;
+        }
+
         public static void DoChores(ICompilerConfiguration job, PInferPredicateGenerator codegen)
         {
             // iterate through the record and merge/discard any duplicates
@@ -1215,6 +1240,12 @@ namespace Plang.Compiler
                             // stopwatch.Stop();
                             // Console.WriteLine($"[Check] Done in {stopwatch.ElapsedTicks} ticks");
                         }
+                    }
+                    var repr = Executed[k][0];
+                    if (repr.ExistentialQuantifiers == 0 && repr.QuantifiedEvents().ToHashSet().Count == 1)
+                    {
+                        // check for any symmetric guards
+
                     }
                     // stopwatch.Restart();
                     foreach (var idx in removes.OrderByDescending(x => x))

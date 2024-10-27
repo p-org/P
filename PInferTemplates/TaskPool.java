@@ -8,6 +8,7 @@ public class TaskPool {
     int running;
     int numFinished;
     int numMined;
+    int numSanitized;
     int numTasks;
     List<Task> tasks;
     Map<String, Map<String, Integer>> headerToNumTasks;
@@ -34,6 +35,7 @@ public class TaskPool {
         this.converter = converter;
         this.verbose = verbose;
         this.numTasks = 0;
+        this.numSanitized = 0;
         File outputsParent = new File("PInferOutputs");
         File pinferOutputFileDir = new File(String.valueOf(Paths.get(outputsParent.toString(), outputDir)));
         if (!pinferOutputFileDir.isDirectory()) {
@@ -113,6 +115,8 @@ public class TaskPool {
                 pinferParsableAllStream.write((filters + "\n").getBytes());
                 pinferParsableAllStream.write((String.join(" ∧ ", invariants) + "\n").getBytes());
                 this.numMined += 1;
+            } else {
+                this.numSanitized += 1;
             }
             notify();
         }
@@ -150,9 +154,9 @@ public class TaskPool {
             System.out.println("Time used (seconds): " + (double)(System.currentTimeMillis() - startTime) / 1000.0);
             System.out.println("#Properties mined: " + numMined);
             System.out.println("Output to " + outputFile.getPath());
-            pinferParsableAllStream.write((numFinished + "\n").getBytes());
+            pinferParsableAllStream.write((numFinished + " " + numSanitized + "\n").getBytes());
             pinferParsableAllStream.write(("EOT\n").getBytes());
-            pinferParsableStream.write((numFinished + "").getBytes());
+            pinferParsableStream.write((numFinished + " " + numSanitized).getBytes());
             pinferOutputStream.flush();
             pinferParsableStream.flush();
             pinferParsableAllStream.flush();

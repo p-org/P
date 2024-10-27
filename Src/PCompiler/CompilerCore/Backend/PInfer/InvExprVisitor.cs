@@ -24,14 +24,16 @@ namespace Plang.Compiler.Backend.PInfer
         readonly Scope GlobalScope;
         readonly CongruenceClosure CC;
         readonly Dictionary<string, VariableAccessExpr> SpeicalConstants;
+        readonly Hint hint;
 
-        public InvExprVisitor(ICompilerConfiguration cfg, Scope globalScope, CongruenceClosure cc, PEvent configEvent, Dictionary<string, IPExpr> reprToTerm)
+        public InvExprVisitor(ICompilerConfiguration cfg, Scope globalScope, CongruenceClosure cc, Hint h, PEvent configEvent, Dictionary<string, IPExpr> reprToTerm)
         {
             config = cfg;
             ReprToTerm = reprToTerm;
             GlobalScope = globalScope;
             CC = cc;
             SpeicalConstants = [];
+            hint = h;
             SpeicalConstants.Add("_num_e_exists_", new(null, new Variable("_num_e_exists_", null, VariableRole.Temp) { Type = PInferBuiltinTypes.CollectionSize }));
             if (configEvent != null)
             {
@@ -285,7 +287,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         public override IPExpr VisitFunCallExpr(PParser.FunCallExprContext ctx)
         {
-            // fun calls should be already known
+            // some fun calls should be already known
             if (ReprToTerm.TryGetValue(ctx.GetText(), out var expr))
             {
                 return expr;
@@ -304,6 +306,25 @@ namespace Plang.Compiler.Backend.PInfer
                     throw new DropException($"argument of size expr, {ctx.rvalueList().GetText()} is not a collection type");
                 }
                 return new SizeofExpr(ctx, args[0]);
+            }
+            foreach (var f in hint.CustomFunctions)
+            {
+                if (f.Name == ctx.iden().GetText())
+                {
+                    var args = TypeCheckingUtils.VisitRvalueList(ctx.rvalueList(), this).ToArray();
+                    if (args.Length != f.Signature.Parameters.Count)
+                    {
+                        throw new DropException($"Function {f.Name} expects {f.Signature.Parameters.Count} arguments, but got {args.Count()}");
+                    }
+                    for (int i = 0; i < args.Count(); i++)
+                    {
+                        if (!PInferPredicateGenerator.IsAssignableFrom(f.Signature.Parameters[i].Type, args[i].Type))
+                        {
+                            throw new DropException($"Function {f.Name} expects {f.Signature.Parameters[i].Type}, but got {args[i].Type}");
+                        }
+                    }
+                    return new FunCallExpr(ctx, f, args);
+                }
             }
             throw new DropException($"Unknown fun call: {ctx.GetText()}");
         }

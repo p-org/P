@@ -61,7 +61,7 @@ namespace Plang.Compiler.Backend.PInfer
         {
             WriteLine("public class " + Job.ProjectName + " implements Serializable {");
             WriteLine("public record PredicateWrapper (String repr, boolean negate) {}");
-            Constants.PInferMode = false;
+            // Constants.PInferMode = false;
             foreach (var pred in PredicateStore.Store)
             {
                 WriteFunctionRec(pred.Function);
@@ -70,7 +70,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 WriteFunctionRec(func);
             }
-            Constants.PInferModeOn();
+            // Constants.PInferModeOn();
             Dictionary<string, (string, List<PEventVariable>)> repr2Metadata = [];
             var i = 0;
             foreach (var predicate in Predicates)
@@ -325,12 +325,13 @@ namespace Plang.Compiler.Backend.PInfer
                     {
                         return GenerateCodeExpr(x, simplified);
                     }
-                    switch (x.Type)
-                    {
-                        case SequenceType s: return $"(new ArrayList<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>(Arrays.asList({GenerateCodeExpr(x)})))";
-                        case SetType s: return $"(new HashSet<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>(Set.of({GenerateCodeExpr(x)})))";
-                        default: return GenerateCodeExpr(x);
-                    }
+                    // switch (x.Type)
+                    // {
+                        // case SequenceType s: return $"(new ArrayList<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>(Arrays.asList({GenerateCodeExpr(x)})))";
+                        // case SetType s: return $"(new HashSet<{Types.JavaTypeFor(s.ElementType).ReferenceTypeName}>(Set.of({GenerateCodeExpr(x)})))";
+                    //     default: return GenerateCodeExpr(x);
+                    // }
+                    return GenerateCodeExpr(x);
                 }).ToArray();
                 return GenerateCodeCall(p.Predicate.Name, coercedArgs);
             }

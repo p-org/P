@@ -111,7 +111,7 @@ namespace Plang.Compiler.TypeChecker
 
         public void TryInferIff(IPStmt body)
         {
-            if (body is ReturnStmt stmt)
+            if (body is ReturnStmt stmt && PrimitiveType.Bool.IsAssignableFrom(stmt.ReturnType))
             {
                 method.AddEquiv(stmt.ReturnValue);
             }

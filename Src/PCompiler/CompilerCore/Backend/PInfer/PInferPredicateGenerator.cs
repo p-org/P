@@ -197,14 +197,14 @@ namespace Plang.Compiler.Backend.PInfer
                 throw new Exception("No terms generated");
             }
             Console.WriteLine($"Generating predicates ...");
-            PopulatePredicate();
-            // MkEqComparison();
-            AddHintPredicates(job, globalScope, hint);
-
             CompiledFile terms = new($"{job.ProjectName}.terms.json");
             CompiledFile predicates = new($"{job.ProjectName}.predicates.json");
             JavaCodegen codegen = new(job, $"{ctx.ProjectName}.java", Predicates, VisitedSet, FreeEvents);
             Codegen = codegen;
+            PopulatePredicate();
+            // MkEqComparison();
+            AddHintPredicates(job, globalScope, hint);
+
             IEnumerable<CompiledFile> compiledJavaSrc = codegen.GenerateCode(javaCtx, globalScope);
             int numTerms = WriteTerms(ctx, terms.Stream, codegen);
             int numPredicates = WritePredicates(ctx, predicates.Stream, codegen);
@@ -647,14 +647,14 @@ namespace Plang.Compiler.Backend.PInfer
             // ids of terms
             if (types.Count == 1)
             {
-                foreach (var e in varMaps[ShowType(types[0])].Where(x => TermOrder[x] >= termOrder))
+                foreach (var e in varMaps[ShowType(types[0])].Where(x => TermOrder[x] >= termOrder && IsAssignableFrom(types[0], x.Type)))
                 {
                     yield return [e];
                 }
             }
             else
             {
-                foreach (var e in varMaps[ShowType(types[0])])
+                foreach (var e in varMaps[ShowType(types[0])].Where(x => IsAssignableFrom(types[0], x.Type)))
                 {
                     foreach (var rest in CartesianProduct(types.Skip(1).ToList(), varMaps, termOrder = TermOrder[e]))
                     {
@@ -816,11 +816,11 @@ namespace Plang.Compiler.Backend.PInfer
                 List<IPExpr> newParameters = [];
                 newParameters.AddRange(parameters);
                 IEnumerable<List<IPExpr>> result = [];
-                foreach (var expr in candidateTerms.Where(x => IsAssignableFrom(declParam, x.Type)))
+                foreach (var expr in candidateTerms.Where(x => IsAssignableFrom(declParam, x.Type) && TermOrder[x] >= maxTermOrder))
                 {
                     // Console.WriteLine($"Expr type: {ShowType(expr.Type)}, declParam: {ShowType(declParam)}, IsAssignable => {IsAssignableFrom(declParam, expr.Type)}, {candidateTerms.Where(x => IsAssignableFrom(x.Type, declParam)).Count()}");
                     newParameters.Add(expr);
-                    result = result.Concat(GetParameterCombinations(index - 1, candidateTerms, declParams[1..], newParameters));
+                    result = result.Concat(GetParameterCombinations(index - 1, candidateTerms, declParams[1..], newParameters, maxTermOrder = TermOrder[expr]));
                     newParameters.RemoveAt(newParameters.Count - 1);
                 }
                 return result;
@@ -911,7 +911,7 @@ namespace Plang.Compiler.Backend.PInfer
                 SetType setType => $"Set<{ShowType(setType.ElementType)}>",
                 MapType mapType => $"Map<{ShowType(mapType.KeyType)}, {ShowType(mapType.ValueType)}>",
                 EnumType enumType => $"Enum<{enumType.EnumDecl.Name}>",
-                _ => $"{type}",
+                _ => $"{type.OriginalRepresentation}",
             };
         }
 
@@ -1087,7 +1087,7 @@ namespace Plang.Compiler.Backend.PInfer
         {
             if (TryParseExpr(repr, out var ctx))
             {
-                InvExprVisitor visitor = new(config, globalScope, CC, hint.ConfigEvent, ReprToTerms);
+                InvExprVisitor visitor = new(config, globalScope, CC, hint, hint.ConfigEvent, ReprToTerms);
                 try
                 {
                     IPExpr expr = visitor.Visit(ctx);
@@ -1112,7 +1112,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         public void ParseAndCheck(ICompilerConfiguration config, Scope globalScope, string orig, out PruningStatus status, out string processed, out IPExpr expr)
         {
-            InvExprVisitor visitor = new(config, globalScope, CC, hint.ConfigEvent, ReprToTerms);
+            InvExprVisitor visitor = new(config, globalScope, CC, hint, hint.ConfigEvent, ReprToTerms);
             if (TryParseExpr(orig, out var ctx))
             {
                 try

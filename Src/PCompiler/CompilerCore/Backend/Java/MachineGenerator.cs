@@ -750,7 +750,14 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 case SizeofExpr se:
                     WriteExpr(se.Expr);
-                    Write(".size()");
+                    if (Constants.PInferMode)
+                    {
+                        Write(".length");
+                    }
+                    else
+                    {
+                        Write(".size()");
+                    }
                     break;
                 case StringExpr se:
                 {
@@ -935,9 +942,19 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(seqAccessExpr.SeqExpr);
                     // IndexExpr is a JInt and thus emitted as a long. In this particular case,
                     // though, `ArrayList#get()` takes an int so we have to downcast.
-                    Write($".{t.AccessorMethodName}((int)(");
-                    WriteExpr(seqAccessExpr.IndexExpr);
-                    Write("))");
+                    if (Constants.PInferMode)
+                    {
+                        // use array access
+                        Write("[((int)(");
+                        WriteExpr(seqAccessExpr.IndexExpr);
+                        Write("))]");
+                    }
+                    else
+                    {
+                        Write($".{t.AccessorMethodName}((int)(");
+                        WriteExpr(seqAccessExpr.IndexExpr);
+                        Write("))");
+                    }
                     break;
 
                 case TupleAccessExpr tupleAccessExpr:

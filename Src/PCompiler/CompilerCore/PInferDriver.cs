@@ -403,6 +403,7 @@ namespace Plang.Compiler
             }
             var invParsable = File.ReadAllLines(invParsableAll);
             int ptr = 0;
+            var allCustomFunctions = GlobalScope.Hints.SelectMany(x => x.CustomFunctions).ToHashSet().ToList();
             foreach (var (quantified, configEvent, nexists, termDepth, userHint) in headers)
             {
                 Hint h = new("pruning", false, null) {
@@ -410,7 +411,8 @@ namespace Plang.Compiler
                     ConfigEvent = configEvent,
                     ExistentialQuantifiers = nexists,
                     TermDepth = termDepth,
-                    UserHint = userHint
+                    UserHint = userHint,
+                    CustomFunctions = allCustomFunctions,
                 };
                 Codegen.Reset();
                 Codegen.WithHint(h);
@@ -527,6 +529,7 @@ namespace Plang.Compiler
                     PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
                     driver.InitializeZ3();
                     driver.AutoExplore(job.HintsOnly);
+                    PInferInvoke.DoChores(job, driver.Codegen);
                     numTotalTasks = driver.numTotalTasks;
                     break;
                 }
@@ -544,7 +547,8 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"... Writing pruned invariants to {filename}");
                 var elapsed = stopwatch.ElapsedMilliseconds / 1000.0;
                 job.Output.WriteInfo($"PInfer statistics");
-                job.Output.WriteInfo($"\t# invariants discovered: {PInferInvoke.NumInvsMined}");
+                job.Output.WriteInfo($"\t# invariants discovered: {PInferInvoke.NumInvsMined + PInferInvoke.NumInvPrunedBySanitizing}");
+                job.Output.WriteInfo($"\t# invariants after sanitization: {PInferInvoke.NumInvsMined}");
                 // ranking invariants
                 var sortedInvs = PInferInvoke.GetSortedInvariants();
                 PInferInvoke.CheckLearnedGoals(globalScope, driver.Codegen, sortedInvs, out var cumulative);
@@ -552,15 +556,22 @@ namespace Plang.Compiler
                 File.WriteAllLines("cumulative_stats.txt", cumulative.Select(x => $"{x.Item1} {x.Item2}"));
                 var numInvAfterPruning = PInferInvoke.WriteRecordTo(filename, sortedInvs);
                 job.Output.WriteInfo($"\t#Invariants after pruning: {numInvAfterPruning}");
-                job.Output.WriteInfo($"#Times executed by Daikon: {numTotalTasks}");
+                job.Output.WriteInfo($"#Times executed by Daikon: {PInferInvoke.NumTasksExecuted}");
                 job.Output.WriteInfo($"\tTime elapsed (seconds): {elapsed}");
+                job.Output.WriteInfo($"\t#Invariants pruned by grammar: {PInferInvoke.NumInvsPrunedByGrammar}");
+                job.Output.WriteInfo($"\t#Invariants pruned by tautology: {PInferInvoke.NumTautologyPruned}");
+                job.Output.WriteInfo($"\t#Invariants pruned by subsumption: {PInferInvoke.NumInvsPrunedBySubsumption}");
+                job.Output.WriteInfo($"\t#Invariants pruned by symmetry: {PInferInvoke.NumInvsPrunedBySymmetry}");
+                job.Output.WriteInfo($"\t#Invariants pruned by sanitizing: {PInferInvoke.NumInvPrunedBySanitizing}");
                 var numGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
                 job.Output.WriteInfo($"#Goals learned with hints: {PInferInvoke.NumGoalsLearnedWithHints} / {numGoals}");
                 job.Output.WriteInfo($"#Goals learned without hints: {PInferInvoke.NumGoalsLearnedWithoutHints} / {numGoals}");
                 PInferStats stats = new() {
-                    NumInvsTotal = PInferInvoke.NumInvsMined,
-                    NumInvsPrunedBySubsumption = PInferInvoke.NumInvsMined - PInferInvoke.NumInvsPrunedByGrammar - numInvAfterPruning,
+                    NumInvsTotal = PInferInvoke.NumInvsMined + PInferInvoke.NumInvPrunedBySanitizing,
+                    NumInvsPrunedBySanitizing = PInferInvoke.NumInvPrunedBySanitizing,
                     NumInvsPrunedByGrammar = PInferInvoke.NumInvsPrunedByGrammar,
+                    NumInvsPrunedBySubsumption = PInferInvoke.NumInvsPrunedBySubsumption,
+                    NumInvsPrunedBySymmetry = PInferInvoke.NumInvsPrunedBySymmetry,
                     TimeElapsed = elapsed,
                     NumGoalsLearnedWithHints = PInferInvoke.NumGoalsLearnedWithHints,
                     NumGoalsLearnedWithoutHints = PInferInvoke.NumGoalsLearnedWithoutHints,
@@ -577,6 +588,8 @@ namespace Plang.Compiler
         public int NumInvsTotal { get; set; }
         public int NumInvsPrunedBySubsumption { get; set; }
         public int NumInvsPrunedByGrammar { get; set; }
+        public int NumInvsPrunedBySymmetry { get; set; }
+        public int NumInvsPrunedBySanitizing { get; set; }
         public double TimeElapsed { get; set; }
         public int NumGoalsLearnedWithHints { get; set; }
         public int NumGoalsLearnedWithoutHints { get; set; }
@@ -595,6 +608,7 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, Dictionary<string, IPExpr>> ParsedP = [];
         internal static readonly Dictionary<string, Dictionary<string, IPExpr>> ParsedQ = [];
         internal static readonly Dictionary<string, List<Hint>> Executed = [];
+        internal static readonly Dictionary<string, HashSet<PEvent>> EventCombinations = [];
         internal static readonly Dictionary<string, int> NumExists = [];
         internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
         internal static readonly Dictionary<HashSet<PEvent>, Dictionary<IPExpr, int>> APFrequency = [];
@@ -603,6 +617,11 @@ namespace Plang.Compiler
         internal static HashSet<string> Recorded = [];
         internal static int NumInvsMined = 0;
         internal static int NumInvsPrunedByGrammar = 0;
+        internal static int NumTasksExecuted = 0;
+        internal static int NumInvPrunedBySanitizing = 0;
+        internal static int NumInvsPrunedBySubsumption = 0;
+        internal static int NumInvsPrunedBySymmetry = 0;
+        internal static int NumTautologyPruned = 0;
         internal static bool UseZ3 = false;
         internal static Z3Wrapper Z3Wrapper;
         internal static int NumGoalsLearnedWithHints = 0;
@@ -723,7 +742,7 @@ namespace Plang.Compiler
                     var (gp, gq, gps, gqs) = goals[i];
                     var lp = p.Select(x => ParsedP[key][x]).ToList();
                     var lq = q.Select(x => ParsedQ[key][x]).ToList();
-                    if (Z3Wrapper.CheckImplies(key, gp, lp) && Z3Wrapper.CheckImplies(key, lq, gq))
+                    if (CheckImplies(key, gp, lp) && CheckImplies(key, lq, gq))
                     {
                         NumGoalsLearnedWithHints++;
                         if (!h.UserHint)
@@ -766,7 +785,7 @@ namespace Plang.Compiler
                 {
                     foreach (var p in APFrequency[k].Keys)
                     {
-                        if (Z3Wrapper.CheckImplies(key, [p], [e]) && Z3Wrapper.CheckImplies(key, [e], [p]))
+                        if (CheckImplies(key, [p], [e]) && CheckImplies(key, [e], [p]))
                         {
                             freq = APFrequency[k][p];
                             mem = p;
@@ -821,7 +840,7 @@ namespace Plang.Compiler
                         weight += numRels / (decimal)freq;
                     }
                 }
-                Console.WriteLine(h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", q)) + " " + weight);
+                // Console.WriteLine(h.GetInvariantReprHeader(string.Join(" ∧ ", p), string.Join(" ∧ ", q)) + " " + weight);
                 result.Add(((key, n, e, h, p, q), weight / q.Count));
             }
             return result.OrderByDescending(x => x.Item2).Select(x => x.Item1);
@@ -997,6 +1016,19 @@ namespace Plang.Compiler
             }
         }
 
+        public static bool CheckImplies(string key, IEnumerable<IPExpr> lhs, IEnumerable<IPExpr> rhs)
+        {
+            try
+            {
+                return Z3Wrapper.CheckImplies(key, lhs, rhs);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error checking implication: {e.Message}");
+                return false;
+            }
+        }
+
         public static bool Resolution(PInferPredicateGenerator codegen, string key, HashSet<string> p, HashSet<string> q)
         {
             // remove all contradicting predicates in guards
@@ -1007,7 +1039,7 @@ namespace Plang.Compiler
                 var s1Expr = ParsedP[key][s1];
                 var s2Expr = ParsedP[key][s2];
                 var negatedS1 = new UnaryOpExpr(s1Expr.SourceLocation, UnaryOpType.Not, s1Expr);
-                return Z3Wrapper.CheckImplies(key, [s2Expr], [negatedS1]) && Z3Wrapper.CheckImplies(key, [negatedS1], [s2Expr]);
+                return CheckImplies(key, [negatedS1], [s2Expr]) && CheckImplies(key, [s2Expr], [negatedS1]);
             };
             foreach (var s1 in p)
             {
@@ -1082,6 +1114,23 @@ namespace Plang.Compiler
             return Implies(key, p, q) && Implies(key, q, p);
         }
 
+        private static bool BiImplies(string k, Dictionary<string, IPExpr> parsedLhs, Dictionary<string, IPExpr> parsedRhs, HashSet<string> lhs, HashSet<string> rhs)
+        {
+            bool result = lhs.SetEquals(rhs);
+            if (!UseZ3) return result;
+            try
+            {
+                var lhsExprs = lhs.Select(x => parsedLhs[x]).ToList();
+                var rhsExprs = rhs.Select(x => parsedRhs[x]).ToList();
+                return result || (Z3Wrapper.CheckImplies(k, lhsExprs, rhsExprs) && Z3Wrapper.CheckImplies(k, rhsExprs, lhsExprs));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error checking bi-implication: {e.Message}");
+                return result;
+            }
+        }
+
         public static bool ClearUpExistentials()
         {
             bool didSth = false;
@@ -1089,6 +1138,7 @@ namespace Plang.Compiler
             {
                 int kExists = NumExists[k];
                 var quantifiedEvents = Quantified[k];
+                HashSet<int> removal = [];
                 for (int i = 0; i < Q[k].Count; ++i)
                 {
                     var qs = Q[k][i];
@@ -1096,7 +1146,6 @@ namespace Plang.Compiler
                     // e.g. if forall* P holds
                     // then forall*exists* P is trivially true
                     // we remove P from forall*exists* in this case
-                    HashSet<int> removal = [];
                     foreach (var k1 in P.Keys)
                     {
                         if (!quantifiedEvents.SequenceEqual(Quantified[k1])) continue;
@@ -1105,19 +1154,23 @@ namespace Plang.Compiler
                         {
                             for (int j = 0; j < Q[k1].Count; ++j)
                             {
-                                if (qs.SetEquals(Q[k1][j]))
+                                // if (qs.SetEquals(Q[k1][j]))
+                                if (BiImplies(k, ParsedQ[k], ParsedQ[k1], qs, Q[k1][j]))
                                 {
                                     removal.Add(i);
+                                    NumInvsPrunedBySubsumption += 1;
+                                    break;
                                 }   
                             }
                         }
+                        if (removal.Contains(i)) break;
                     }
-                    foreach (var j in removal.OrderByDescending(x => x))
-                    {
-                        RemoveRecordAt(k, j);
-                    }
-                    didSth |= removal.Count > 0;
                 }
+                foreach (var j in removal.OrderByDescending(x => x))
+                {
+                    RemoveRecordAt(k, j);
+                }
+                didSth |= removal.Count > 0;
             }
             return didSth;
         }
@@ -1171,6 +1224,7 @@ namespace Plang.Compiler
                         if (qi.Count == 0)
                         {
                             removes.Add(i);
+                            NumInvsPrunedBySubsumption += 1;
                             continue;
                         }
                         if (Implies(k, pi, qi))
@@ -1178,10 +1232,12 @@ namespace Plang.Compiler
                             // var rec = ShowRecordAt(k, i);
                             // job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
                             removes.Add(i);
+                            NumTautologyPruned += 1;
                             continue;
                         }
                         for (int j = i + 1; j < P[k].Count; ++j)
                         {
+                            if (removes.Contains(i)) break;
                             if (removes.Contains(j)) continue;
                             var pj = P[k][j];
                             var qj = Q[k][j];
@@ -1193,6 +1249,7 @@ namespace Plang.Compiler
                                 // job.Output.WriteWarning($"[Chores][Merge-Remove] {rec}; merged with {ShowRecordAt(k, i)}");
                                 qi.UnionWith(qj);
                                 removes.Add(j);
+                                NumInvsPrunedBySubsumption += 1;
                             }
                             // Forall-only rules
                             // Case 1: i ==> j; i.e. pi ==> pj && qj ==> qi
@@ -1203,6 +1260,7 @@ namespace Plang.Compiler
                                 // Console.WriteLine($"Remove {i}");
                                 // job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, i)} implied by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
+                                NumInvsPrunedBySubsumption += 1;
                             }
                             // Case 2: j ==> i; keep i remove j
                             // else if (pi.IsSubsetOf(pj) && qj.IsSubsetOf(qi))
@@ -1211,6 +1269,7 @@ namespace Plang.Compiler
                                 // Console.WriteLine($"Remove {j}");
                                 // job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, j)} implied by {ShowRecordAt(k, i)}");
                                 removes.Add(j);
+                                NumInvsPrunedBySubsumption += 1;
                             }
                             // Case 3: if i ==> j, then any thing holds under j also holds under i
                             // we may remove those from pi
@@ -1241,11 +1300,25 @@ namespace Plang.Compiler
                             // Console.WriteLine($"[Check] Done in {stopwatch.ElapsedTicks} ticks");
                         }
                     }
-                    var repr = Executed[k][0];
-                    if (repr.ExistentialQuantifiers == 0 && repr.QuantifiedEvents().ToHashSet().Count == 1)
+                    if (NumExists[k] == 0 && EventCombinations[k].Count == 1)
                     {
                         // check for any symmetric guards
-
+                        for (int i = 0; i < P[k].Count; ++i)
+                        {
+                            if (removes.Contains(i)) continue;
+                            var pi = P[k][i];
+                            var symPi = ToSymmetricGuards(pi);
+                            for (int j = i + 1; j < P[k].Count; ++j)
+                            {
+                                if (removes.Contains(j)) continue;
+                                if (symPi.SetEquals(P[k][j]))
+                                {
+                                    // job.Output.WriteWarning($"[Chores][Remove-Symmetric] {ShowRecordAt(k, j)}");
+                                    removes.Add(j);
+                                    NumInvsPrunedBySymmetry += 1;
+                                }
+                            }
+                        }
                     }
                     // stopwatch.Restart();
                     foreach (var idx in removes.OrderByDescending(x => x))
@@ -1280,12 +1353,19 @@ namespace Plang.Compiler
         public static (HashSet<string>, HashSet<string>) UpdateMinedSpecs(ICompilerConfiguration job, PInferPredicateGenerator codegen, Hint hint, HashSet<string> p_prime, HashSet<string> q_prime, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
         {
             var quantifiers = hint.GetQuantifierHeader();
-            var curr_inv = hint.GetInvariantReprHeader(string.Join(" ∧ ", p_prime), string.Join(" ∨ ", q_prime.Select(x => string.Join(" ∧ ", x))));
+            // var curr_inv = hint.GetInvariantReprHeader(string.Join(" ∧ ", p_prime), string.Join(" ∨ ", q_prime.Select(x => string.Join(" ∧ ", x))));
+            // check whether the invariant establishes sufficient relationships (i.e. the set of free events is equal to the quantified events)
+            // var freeEventsList = p_prime.Select(x => FreeEvents(parsedP[x])).Concat(q_prime.Select(x => FreeEvents(parsedQ[x]))).ToList();
+            // if (hint.ExistentialQuantifiers == 0 && freeEventsList.All(x => !x.SetEquals(hint.Quantified.Select(x => x.Name))))
+            // {
+            //     return (p_prime, q_prime);
+            // }
             int numExists = hint.ExistentialQuantifiers;
             List<PEvent> quantifiedEvents = hint.Quantified.Select(x => x.EventDecl).ToList();
             if (!P.ContainsKey(quantifiers)) P[quantifiers] = [];
             if (!Q.ContainsKey(quantifiers)) Q[quantifiers] = [];
             if (!Executed.ContainsKey(quantifiers)) Executed[quantifiers] = [];
+            if (!EventCombinations.ContainsKey(quantifiers)) EventCombinations[quantifiers] = hint.QuantifiedEvents().ToHashSet();
             if (!ParsedP.ContainsKey(quantifiers)) ParsedP[quantifiers] = [];
             if (!ParsedQ.ContainsKey(quantifiers)) ParsedQ[quantifiers] = [];
             // add the current combination
@@ -1308,7 +1388,10 @@ namespace Plang.Compiler
         public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, string[] contents, out int total)
         {
             int result = 0;
-            total = int.Parse(contents[^1]);
+            var lastLine = contents[^1].Split(" ");
+            total = int.Parse(lastLine[0]);
+            NumTasksExecuted += total;
+            NumInvPrunedBySanitizing += int.Parse(lastLine[1]);
             for (int i = 0; i < contents.Length; i += 3)
             {
                 if (i + 1 >= contents.Length) break;
@@ -1321,6 +1404,7 @@ namespace Plang.Compiler
 
                 var p = guards.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0).ToHashSet();
                 var q = filters.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0).ToHashSet();
+                if (q.Count + properties.Count() == 0) continue;
                 NumInvsMined += 1;
                 List<string> keep = [];
                 List<string> stepback = [];
@@ -1418,7 +1502,6 @@ namespace Plang.Compiler
             writer.WriteLine(hint.TermDepth);
             writer.WriteLine(hint.UserHint);
             writer.Close();
-            DoChores(job, codegen);
             // ShowAll();
             job.Output.WriteWarning($"Currently mined: {Recorded.Count} invariant(s)");
             job.Output.WriteWarning($"Currently recorded: {WriteRecordTo($"inv_running_{metadata.GetTraceCount()}.txt", AllExecuedAndMined())} invariant(s)");

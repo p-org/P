@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -520,9 +521,13 @@ namespace PChecker.SystematicTesting
                     }
                     else
                     {
+                        string GetHash(string input)
+                        {
+                            return string.Join("", SHA256.HashData(Encoding.UTF8.GetBytes(input)).Select(x => x.ToString("X2")));
+                        }
                         var traceIndex = new TraceIndex(_checkerConfiguration.TraceFolder, create: true);
                         Logger.Write("Events Aggregated: " + string.Join(" ", PInferEventObtained));
-                        var saveTo = traceIndex.AddIndex(PInferEventObtained, string.Join("", PInferEventObtained).GetHashCode().ToString("X"), _checkerConfiguration.TestingIterations);
+                        var saveTo = traceIndex.AddIndex(PInferEventObtained, GetHash(string.Join("", PInferEventObtained.OrderDescending())), _checkerConfiguration.TestingIterations);
                         var directory = Path.Combine(_checkerConfiguration.TraceFolder, saveTo);
                         if (!Directory.Exists(directory))
                         {

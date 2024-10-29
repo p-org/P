@@ -1,11 +1,11 @@
 import os
 
 num_traces = [
-    500, 1000, 5000, 10000, 50000, 100000
+    500, 1000, 2000, 4000, 8000, 10000, 20000
 ]
 
 benchmarks = [
-    '2PC', 'ClockBound', 'consensus_epr', 'paxos', 'Raft', 'ring_leader'
+    '2PC', 'ClockBound', 'consensus_epr', 'paxos', 'Raft', 'ring_leader', 'lockserver'
 ]
 
 config_events = {

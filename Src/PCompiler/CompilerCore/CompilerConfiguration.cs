@@ -24,7 +24,7 @@ namespace Plang.Compiler
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;
-            Timeout = 60;
+            Timeout = 600;
             HandlesAll = true;
             CheckOnly = null;
             Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);

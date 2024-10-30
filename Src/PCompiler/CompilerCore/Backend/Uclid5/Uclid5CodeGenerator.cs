@@ -1121,7 +1121,17 @@ public class Uclid5CodeGenerator : ICodeGenerator
             
             if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
+                var retName = f.ReturnVariable is null ? $"{BuiltinPrefix}Return" :  $"{LocalPrefix}{f.ReturnVariable.Name}";
+                EmitLine($"\treturns ({retName}: {TypeToString(f.Signature.ReturnType)})");
+            }
+
+            foreach (var req in f.Requires)
+            {
+                EmitLine($"requires {ExprToString(req)};");
+            }
+            foreach (var ensure in f.Ensures)
+            {
+                EmitLine($"ensures {ExprToString(ensure)};");
             }
 
             EmitLine("{");

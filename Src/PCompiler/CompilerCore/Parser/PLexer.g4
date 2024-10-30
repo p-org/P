@@ -76,6 +76,8 @@ USING      : 'using';
 LEMMA      : 'Lemma';
 THEOREM    : 'Theorem';
 EXCEPT     : 'except';
+REQUIRES   : 'requires';
+ENSURES    : 'ensures';
 
 // module-system-specific keywords
 

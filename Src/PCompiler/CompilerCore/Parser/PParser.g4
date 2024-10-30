@@ -118,6 +118,7 @@ varDecl : VAR idenList COLON type SEMI ;
 
 funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
         | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
+        | FUN name=iden LPAREN funParamList? RPAREN (RETURN LPAREN funParam RPAREN SEMI)? (REQUIRES requires+=expr SEMI)* (ENSURES ensures+=expr SEMI)* # ForeignFunDecl
         ;
         
 pureDecl : PURE name=iden LPAREN funParamList? RPAREN COLON type (ASSIGN body=expr)? SEMI ;

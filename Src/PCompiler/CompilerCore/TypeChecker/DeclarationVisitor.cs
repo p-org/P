@@ -829,6 +829,40 @@ namespace Plang.Compiler.TypeChecker
                 else
                     throw Handler.MissingDeclaration(createdInterface, "interface", createdInterface.GetText());
             }
+            
+            
+            var temporaryFunction = new Function(fun.Name, context);
+            temporaryFunction.Scope = fun.Scope.MakeChildScope();
+            
+            // (RETURN LPAREN funParam RPAREN SEMI)?
+            if (context.funParam() != null)
+            {
+                Variable p = (Variable)Visit(context.funParam());
+                // Add the return variable to the scope so that contracts can refer to it 
+                var ret = temporaryFunction.Scope.Put(p.Name, p.SourceLocation, VariableRole.Param);
+                ret.Type = p.Type;
+                nodesToDeclarations.Put(p.SourceLocation, ret);
+                temporaryFunction.Signature.Parameters.Add(ret);
+                
+                fun.ReturnVariable = ret;
+                // update the return type to match
+                fun.Signature.ReturnType = fun.ReturnVariable.Type;
+            }
+            
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            
+            // (REQUIRES requires+=expr SEMI)*
+            foreach (var req in context._requires)
+            {
+                fun.AddRequire(exprVisitor.Visit(req));
+            }
+
+            // (ENSURES ensures+=expr SEMI)*
+            foreach (var ensure in context._ensures)
+            {
+                fun.AddEnsure(exprVisitor.Visit(ensure));
+            }
+
             return fun;
         }
 

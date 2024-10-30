@@ -33,6 +33,9 @@ event eReadReq  : tReadReq;
 event eReadResp : tReadResp;
 
 fun RandomInt(): int;
+fun RandomParticipant(s: set[machine]) 
+    return (x: machine);
+    ensures x in s;
 
 machine Client {
     start state Loop {
@@ -65,7 +68,7 @@ machine Coordinator
     start state Serving {
         on eReadReq do (req: tReadReq) {
             var p: machine;
-            assume (p in participants());
+            p = RandomParticipant(participants());
             send p, eReadReq, req;
         }
         

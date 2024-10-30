@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
@@ -33,7 +34,8 @@ namespace Plang.Compiler.TypeChecker
 
         public override object VisitInvariantDecl(PParser.InvariantDeclContext context)
         {
-            var name = context.name.GetText();
+            var group = context.Parent as PParser.InvariantGroupDeclContext;
+            var name = group != null ? $"{group.name.GetText()}_{context.name.GetText()}": context.name.GetText();
             var decl = CurrentScope.Put(name, context);
             nodesToDeclarations.Put(context, decl);
             return null;

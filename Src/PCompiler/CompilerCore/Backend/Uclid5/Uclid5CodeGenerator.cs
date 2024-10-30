@@ -1125,9 +1125,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine($"\treturns ({retName}: {TypeToString(f.Signature.ReturnType)})");
             }
 
+            var i = 0;
             foreach (var req in f.Requires)
             {
-                EmitLine($"requires {ExprToString(req)};");
+                i += 1;
+                EmitLine($"requires {ExprToString(req)}; // Violated precondition #{i} of {f.Name}");
             }
             foreach (var ensure in f.Ensures)
             {

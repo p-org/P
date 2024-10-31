@@ -6,7 +6,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks.Dataflow;
 using LiteDB;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
@@ -48,13 +47,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         List<string> failMessages = [];
         HashSet<Invariant> succeededInv = [];
         HashSet<Invariant> failedInv = [];
-        
+
         // Open database (or create if doesn't exist)
         var db = new LiteDatabase(Path.Join(job.OutputDirectory.FullName, ".verifier-cache.db"));
         var md5 = MD5.Create();
         // Get a collection (or create, if doesn't exist)
         var qCollection = db.GetCollection<UclidCache>("qCollection");
-        
+
         int parallelism = job.Parallelism;
         if (parallelism == 0)
         {
@@ -64,119 +63,107 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var cmd in _commands)
         {
             job.Output.WriteInfo($"Proof command: {cmd.Name}");
-            var files = _proofCommandToFiles[cmd];
-            List<Process> runningTasks = [];
-            List<string> filenames = [];
-            Dictionary<string, string> cache = [];
-            int i = 0;
-            int last = files.Count;
+            Dictionary<string, bool> checklist = _proofCommandToFiles[cmd].ToDictionary(x => x, x => false);
+            Dictionary<string, Process> tasks = [];
+
             // prefill (check cache for everything, but only spin up `parallelism` number of runs 
-            while (i < last)
+            foreach (var f in checklist)
             {
-                var filename = files[i];
-                using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, filename)))
+                using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, f.Key)))
                 {
                     var checksum = md5.ComputeHash(stream);
                     var hit = qCollection.FindOne(x => x.Checksum == checksum);
                     if (hit != null)
                     {
-                        cache.Add(filename, hit.Reply);
-                    }
-                    else if (i < parallelism)
-                    {
-                        var args = new[] { "-M", filename };
-                        runningTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
-                        filenames.Add(filename);
-                    }
-                }
-                i++;
-            }
-
-            // process all the hits we found
-            foreach (var hit in cache)
-            {
-                var curr_undefs = Regex.Matches(hit.Value, @"UNDEF -> (.*), line (\d+)");
-                var curr_fails = Regex.Matches(hit.Value, @"FAILED -> (.*), line (\d+)");
-                undefs.AddRange(curr_undefs);
-                fails.AddRange(curr_fails);
-
-                var (invs, failed, msgs) = AggregateResults(job, hit.Key, curr_undefs.ToList(), curr_fails.ToList());
-                succeededInv.UnionWith(invs);
-                failedInv.UnionWith(failed);
-                failMessages.AddRange(msgs);
-
-                last -= 1;
-            }
-
-            // fetch
-            int numCompleted = 0;
-            while (numCompleted < last)
-            {
-                HashSet<int> completed = [];
-                List<Process> newTasks = [];
-                List<string> newFilenames = [];
-                for (int j = 0; j < runningTasks.Count; ++j)
-                {
-                    if (runningTasks[j].HasExited)
-                    {
-                        completed.Add(j);
-                        var exitCode = Compiler.WaitForResult(runningTasks[j], out var stdout, out var stderr);
-                        if (exitCode != 0)
-                        {
-                            throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
-                        }
-                        runningTasks[j].Kill();
-                        
-                        // add stdout to the database along with the corresponding checksum of the uclid query
-                        var newResult = new UclidCache();
-                        newResult.Reply = stdout;
-                        using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, filenames[j])))
-                        {
-                            newResult.Checksum = md5.ComputeHash(stream);
-                        }
-                        qCollection.Insert(newResult);
-                        
-                        var curr_undefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
-                        var curr_fails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
-                        undefs.AddRange(curr_undefs);
-                        fails.AddRange(curr_fails);
-                        
-                        var (invs, failed, msgs) = AggregateResults(job, filenames[j], curr_undefs.ToList(), curr_fails.ToList());
+                        checklist[f.Key] = true;
+                        var currUndefs = Regex.Matches(hit.Reply, @"UNDEF -> (.*), line (\d+)");
+                        var currFails = Regex.Matches(hit.Reply, @"FAILED -> (.*), line (\d+)");
+                        undefs.AddRange(currUndefs);
+                        fails.AddRange(currFails);
+                        var (invs, failed, msgs) =
+                            AggregateResults(job, f.Key, currUndefs.ToList(), currFails.ToList());
                         succeededInv.UnionWith(invs);
                         failedInv.UnionWith(failed);
                         failMessages.AddRange(msgs);
-                        if (i < last)
-                        {
-                            var filename = files[i];
-                            var args = new[] { "-M", filename };
-                            newTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
-                            newFilenames.Add(filename);
-                            i++;
-                        }
+                    }
+                    else if (tasks.Count < parallelism)
+                    {
+                        var args = new[] { "-M", f.Key };
+                        tasks.Add(f.Key, Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
                     }
                 }
-                numCompleted += completed.Count;
-                foreach (var j in completed.OrderByDescending(x => x))
+            }
+
+            // fetch
+            while (checklist.ContainsValue(false))
+            {
+                Dictionary<string, Process> newTasks = [];
+                foreach (var r in tasks)
                 {
-                    runningTasks.RemoveAt(j);
-                    filenames.RemoveAt(j);
+                    if (!r.Value.HasExited || checklist[r.Key]) continue;
+                    // checklist is true if we've already done this
+                    checklist[r.Key] = true;
+
+                    var exitCode = Compiler.WaitForResult(r.Value, out var stdout, out var stderr);
+                    if (exitCode != 0)
+                    {
+                        throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" +
+                                                       $"{stderr}\n");
+                    }
+
+                    r.Value.Kill();
+
+                    // add stdout to the database along with the corresponding checksum of the uclid query
+                    using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, r.Key)))
+                    {
+                        var newResult = new UclidCache
+                        {
+                            Reply = stdout,
+                            Checksum = md5.ComputeHash(stream)
+                        };
+                        qCollection.Insert(newResult);
+                    }
+
+                    var currUndefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
+                    var currFails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
+                    undefs.AddRange(currUndefs);
+                    fails.AddRange(currFails);
+                    var (invs, failed, msgs) = AggregateResults(job, r.Key, currUndefs.ToList(), currFails.ToList());
+                    succeededInv.UnionWith(invs);
+                    failedInv.UnionWith(failed);
+                    failMessages.AddRange(msgs);
+
+                    // find someone that hasn't run and isn't running and run it
+                    var newTask = checklist.FirstOrDefault(x =>
+                        x.Value == false && !tasks.ContainsKey(x.Key) && !newTasks.ContainsKey(x.Key)).Key;
+                    if (newTask == null) continue;
+                    var args = new[] { "-M", newTask };
+                    newTasks.Add(newTask, Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
                 }
-                runningTasks.AddRange(newTasks);
-                filenames.AddRange(newFilenames);
-                if (completed.Count == 0)
+
+                if (newTasks.Count == 0)
                 {
                     Thread.Sleep(500);
                 }
-                Console.Write($"\r🔍 Verifying {numCompleted}/{last} goals...");
+                else
+                {
+                    newTasks.ToList().ForEach(x => tasks.Add(x.Key, x.Value));
+                }
+
+                var numCompleted = checklist.Values.Sum(x => x ? 1 : 0);
+                Console.Write($"\r🔍 Verifying {numCompleted}/{checklist.Count} goals...");
             }
+
             Console.WriteLine();
         }
+
         succeededInv.ExceptWith(failedInv);
         job.Output.WriteInfo($"\n🎉 Verified {succeededInv.Count} invariants!");
         foreach (var inv in succeededInv)
         {
             job.Output.WriteInfo($"✅ {inv.Name}");
         }
+
         MarkProvenInvariants(succeededInv);
         ShowRemainings(job, failedInv);
         if (failMessages.Count > 0)
@@ -187,7 +174,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 job.Output.WriteError(msg);
             }
         }
-        
+
         db.Dispose();
         md5.Dispose();
     }

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks.Dataflow;
+using LiteDB;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -15,6 +17,12 @@ using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Uclid5;
+
+public class UclidCache
+{
+    public string Reply { get; set; }
+    public byte[] Checksum { get; set; }
+}
 
 public class Uclid5CodeGenerator : ICodeGenerator
 {
@@ -30,7 +38,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private Dictionary<Invariant, HashSet<Invariant>> _invariantDependencies;
     private HashSet<Invariant> _provenInvariants;
     private Scope _globalScope;
-    
+
     public bool HasCompilationStage => true;
 
     public void Compile(ICompilerConfiguration job)
@@ -40,28 +48,66 @@ public class Uclid5CodeGenerator : ICodeGenerator
         List<string> failMessages = [];
         HashSet<Invariant> succeededInv = [];
         HashSet<Invariant> failedInv = [];
+        
+        // Open database (or create if doesn't exist)
+        var db = new LiteDatabase(Path.Join(job.OutputDirectory.FullName, ".verifier-cache.db"));
+        var md5 = MD5.Create();
+        // Get a collection (or create, if doesn't exist)
+        var qCollection = db.GetCollection<UclidCache>("qCollection");
+        
         int parallelism = job.Parallelism;
         if (parallelism == 0)
         {
             parallelism = Environment.ProcessorCount;
         }
+
         foreach (var cmd in _commands)
         {
             job.Output.WriteInfo($"Proof command: {cmd.Name}");
             var files = _proofCommandToFiles[cmd];
             List<Process> runningTasks = [];
             List<string> filenames = [];
+            Dictionary<string, string> cache = [];
             int i = 0;
             int last = files.Count;
-            // prefill
-            while (i < last && i < parallelism)
+            // prefill (check cache for everything, but only spin up `parallelism` number of runs 
+            while (i < last)
             {
                 var filename = files[i];
-                var args = new[] { "-M", filename };
-                runningTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
-                filenames.Add(filename);
+                using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, filename)))
+                {
+                    var checksum = md5.ComputeHash(stream);
+                    var hit = qCollection.FindOne(x => x.Checksum == checksum);
+                    if (hit != null)
+                    {
+                        cache.Add(filename, hit.Reply);
+                    }
+                    else if (i < parallelism)
+                    {
+                        var args = new[] { "-M", filename };
+                        runningTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
+                        filenames.Add(filename);
+                    }
+                }
                 i++;
             }
+
+            // process all the hits we found
+            foreach (var hit in cache)
+            {
+                var curr_undefs = Regex.Matches(hit.Value, @"UNDEF -> (.*), line (\d+)");
+                var curr_fails = Regex.Matches(hit.Value, @"FAILED -> (.*), line (\d+)");
+                undefs.AddRange(curr_undefs);
+                fails.AddRange(curr_fails);
+
+                var (invs, failed, msgs) = AggregateResults(job, hit.Key, curr_undefs.ToList(), curr_fails.ToList());
+                succeededInv.UnionWith(invs);
+                failedInv.UnionWith(failed);
+                failMessages.AddRange(msgs);
+
+                last -= 1;
+            }
+
             // fetch
             int numCompleted = 0;
             while (numCompleted < last)
@@ -80,6 +126,16 @@ public class Uclid5CodeGenerator : ICodeGenerator
                             throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
                         }
                         runningTasks[j].Kill();
+                        
+                        // add stdout to the database along with the corresponding checksum of the uclid query
+                        var newResult = new UclidCache();
+                        newResult.Reply = stdout;
+                        using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, filenames[j])))
+                        {
+                            newResult.Checksum = md5.ComputeHash(stream);
+                        }
+                        qCollection.Insert(newResult);
+                        
                         var curr_undefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
                         var curr_fails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
                         undefs.AddRange(curr_undefs);
@@ -94,7 +150,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                             var filename = files[i];
                             var args = new[] { "-M", filename };
                             newTasks.Add(Compiler.NonBlockingRun(job.OutputDirectory.FullName, "uclid", args));
-                            filenames.Add(filename);
+                            newFilenames.Add(filename);
                             i++;
                         }
                     }
@@ -131,6 +187,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 job.Output.WriteError(msg);
             }
         }
+        
+        db.Dispose();
+        md5.Dispose();
     }
 
     private void MarkProvenInvariants(HashSet<Invariant> succeededInv)
@@ -139,6 +198,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             _invariantDependencies[inv].ExceptWith(succeededInv);
         }
+
         foreach (var inv in _invariantDependencies.Keys)
         {
             if (succeededInv.Contains(inv))
@@ -161,6 +221,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 }
             }
         }
+
         if (remaining.Count > 0)
         {
             job.Output.WriteWarning("❓ Remaining Goals:");
@@ -171,7 +232,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void ProcessFailureMessages(List<Match> collection, string[] query, string reason, List<string> failedInv, List<string> failMessages)
+    private void ProcessFailureMessages(List<Match> collection, string[] query, string reason, List<string> failedInv,
+        List<string> failMessages)
     {
         foreach (Match match in collection)
         {
@@ -188,7 +250,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
     // returns invariants that were successfully verified and failure messages
-    private (HashSet<Invariant>, HashSet<Invariant>, List<string>) AggregateResults(ICompilerConfiguration job, string filename, List<Match> undefs, List<Match> fails)
+    private (HashSet<Invariant>, HashSet<Invariant>, List<string>) AggregateResults(ICompilerConfiguration job,
+        string filename, List<Match> undefs, List<Match> fails)
     {
         var cmd = _fileToProofCommands[filename];
         var query = File.ReadLines(job.OutputDirectory.FullName + "/" + filename).ToArray();
@@ -200,6 +263,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             return ([.. cmd.Goals], [], []);
         }
+
         HashSet<Invariant> succeededInv = [];
         foreach (var inv in cmd.Goals)
         {
@@ -208,7 +272,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 succeededInv.Add(inv);
             }
         }
-        return (succeededInv, failedInv.Select(x => { _globalScope.Get(x, out Invariant i); return i; }).ToHashSet(), failMessages);
+
+        return (succeededInv, failedInv.Select(x =>
+        {
+            _globalScope.Get(x, out Invariant i);
+            return i;
+        }).ToHashSet(), failMessages);
     }
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -247,6 +316,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 _commands.Add(proofCmd);
             }
         }
+
         return files;
     }
 
@@ -261,6 +331,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             filename = $"{name}_{m.Name}_{s.Name}_{e.Name}.ucl";
         }
+
         var file = new CompiledFile(filename);
         _fileToProofCommands.Add(filename, cmd);
         _proofCommandToFiles[cmd].Add(filename);
@@ -284,6 +355,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         files.Add(_src);
                         GenerateMain(m, s, null, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck);
                     }
+
                     foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
                     {
                         if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(e.Name))
@@ -295,8 +367,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     }
                 }
             }
-            
         }
+
         Console.WriteLine($"Generated {files.Count} files for {name}");
         return files;
     }
@@ -314,6 +386,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     {
                         _invariantDependencies.Add(goal, []);
                     }
+
                     _invariantDependencies[goal].Add(dep);
                 }
             }
@@ -368,13 +441,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private static string StateAdtConstruct(string sent, string received, string machines)
     {
-        return $"const_record({StateAdtSentSelector} := {sent}, {StateAdtReceivedSelector} := {received}, {StateAdtMachinesSelector} := {machines})";
+        return
+            $"const_record({StateAdtSentSelector} := {sent}, {StateAdtReceivedSelector} := {received}, {StateAdtMachinesSelector} := {machines})";
     }
 
     private static string StateAdtSelectSent(string state)
     {
         return $"{state}.{StateAdtSentSelector}";
     }
+
     private static string StateAdtSelectReceived(string state)
     {
         return $"{state}.{StateAdtReceivedSelector}";
@@ -502,7 +577,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private static string MachineStateAdtInS(string state, Machine m, State s)
     {
-        return $"({MachineStateAdtIsM(state, m)} && {MachineStateAdtSelectState(state, m)} == {MachinePrefix}{m.Name}_{s.Name})";
+        return
+            $"({MachineStateAdtIsM(state, m)} && {MachineStateAdtSelectState(state, m)} == {MachinePrefix}{m.Name}_{s.Name})";
     }
 
 
@@ -562,10 +638,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         EmitLine($"{BuiltinPrefix}ActionCount = {BuiltinPrefix}ActionCount + 1;");
     }
-    
+
     private static string LabelAdtConstruct(string target, string action)
     {
-        return $"const_record({LabelAdtTargetSelector} := {target}, {LabelAdtActionSelector} := {action}, {LabelAdtActionCountSelector} := {BuiltinPrefix}ActionCount)";
+        return
+            $"const_record({LabelAdtTargetSelector} := {target}, {LabelAdtActionSelector} := {action}, {LabelAdtActionCountSelector} := {BuiltinPrefix}ActionCount)";
     }
 
     private static string LabelAdtSelectTarget(string label)
@@ -577,7 +654,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         return $"{label}.{LabelAdtActionSelector}";
     }
-    
+
     private static string LabelAdtSelectActionCount(string label)
     {
         return $"{label}.{LabelAdtActionCountSelector}";
@@ -650,7 +727,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         string EventDeclarationCase(PEvent e)
         {
-            var pt = e.PayloadType.IsSameTypeAs(PrimitiveType.Null) ? "" : $"{EventPrefix}{e.Name}_Payload: {TypeToString(e.PayloadType)}";
+            var pt = e.PayloadType.IsSameTypeAs(PrimitiveType.Null)
+                ? ""
+                : $"{EventPrefix}{e.Name}_Payload: {TypeToString(e.PayloadType)}";
             return
                 $"{EventPrefix}{e.Name} ({pt})";
         }
@@ -684,7 +763,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var action = LabelAdtSelectAction(instance);
         return EventOrGotoAdtIsE(action, e);
     }
-    
+
     private static string LabelAdtSelectPayloadField(string instance, PEvent e, NamedTupleEntry field)
     {
         var action = LabelAdtSelectAction(instance);
@@ -756,7 +835,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return EventOrGotoAdtIsS(action, s);
     }
 
-    
+
     /********************************
      * Spec machines are treated differently than regular machines. For example, there is only ever a single instance of
      * each spec machine.
@@ -771,7 +850,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         foreach (var spec in specs)
         {
-            EmitLine($"type {SpecPrefix}{spec.Name}_StateAdt = enum {{{string.Join(", ", spec.States.Select(n => $"{SpecPrefix}{spec.Name}_{n.Name}"))}}};");
+            EmitLine(
+                $"type {SpecPrefix}{spec.Name}_StateAdt = enum {{{string.Join(", ", spec.States.Select(n => $"{SpecPrefix}{spec.Name}_{n.Name}"))}}};");
             EmitLine($"var {SpecPrefix}{spec.Name}_State: {SpecPrefix}{spec.Name}_StateAdt;");
             foreach (var f in spec.Fields)
             {
@@ -794,8 +874,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
                 }
+
                 EmitLine("{");
-                
+
                 // declare local variables corresponding to the global spec variables
                 EmitLine($"var {LocalPrefix}state: {SpecPrefix}{spec.Name}_StateAdt;");
                 EmitLine($"var {LocalPrefix}sent: [{LabelAdt}]boolean;");
@@ -803,25 +884,25 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
                 }
-                
+
                 // declare local variables for the method
                 foreach (var v in f.LocalVariables) EmitLine($"var {GetLocalName(v)}: {TypeToString(v.Type)};");
                 // foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
-                
+
                 // Set the local variables corresponding to the global spec variables to the correct starting value
                 EmitLine($"{LocalPrefix}sent = {StateAdtSelectSent(StateVar)};");
                 foreach (var v in spec.Fields)
                     EmitLine($"{GetLocalName(v)} = {SpecPrefix}{spec.Name}_{v.Name};");
-                
+
                 GenerateStmt(f.Body, spec, goals, generateSanityChecks);
-                
+
                 // update the global variables
                 EmitLine($"{SpecPrefix}{spec.Name}_State = {LocalPrefix}state;");
                 foreach (var v in spec.Fields)
                 {
                     EmitLine($"{SpecPrefix}{spec.Name}_{v.Name} = {GetLocalName(v)};");
                 }
-                
+
                 EmitLine("}\n");
             }
         }
@@ -843,6 +924,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     _specListenMap.Add(e, [procedureName]);
                 }
+
                 EmitLine($"procedure [inline] {procedureName}({SpecPrefix}Payload: {TypeToString(e.PayloadType)})");
                 EmitLine("{");
                 EmitLine("case");
@@ -864,21 +946,25 @@ public class Uclid5CodeGenerator : ICodeGenerator
                                 EmitLine($"call {name}({payload});");
                                 break;
                             default:
-                                throw new NotSupportedException($"Not supported handler ({handler}) at {GetLocation(handler)}");
+                                throw new NotSupportedException(
+                                    $"Not supported handler ({handler}) at {GetLocation(handler)}");
                         }
+
                         EmitLine("}");
                     }
                 }
+
                 EmitLine("esac");
                 EmitLine("}");
             }
         }
     }
-    
+
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void GenerateMain(Machine machine, State state, PEvent @event, List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks, bool handlerCheck = true)
+    private void GenerateMain(Machine machine, State state, PEvent @event, List<Invariant> goals,
+        List<Invariant> requires, bool generateSanityChecks, bool handlerCheck = true)
     {
         EmitLine("module main {");
 
@@ -921,7 +1007,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine(StateAdtDeclaration());
         EmitLine(StateVarDeclaration);
         EmitLine("");
-        
+
         SpecVariableDeclarations(specs);
         EmitLine("");
 
@@ -938,7 +1024,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             GenerateNextBlock(machines, events, handlerCheck);
             EmitLine("");
         }
-        
+
         // global functions
         GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>(), goals, generateSanityChecks);
 
@@ -946,9 +1032,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
         GenerateSpecProcedures(specs, goals, generateSanityChecks); // generate spec methods, called by spec handlers
         GenerateSpecHandlers(specs); // will populate _specListenMap, which is used when ever there is a send statement
         EmitLine("");
-        
+
         // non-handler functions for handlers
-        GenerateMachineProcedures(machine, goals, generateSanityChecks); // generate machine methods, called by handlers below
+        GenerateMachineProcedures(machine, goals,
+            generateSanityChecks); // generate machine methods, called by handlers below
         EmitLine("");
 
         // generate the handlers
@@ -973,18 +1060,21 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         foreach (var pure in pures)
         {
-            var args = string.Join(", ", pure.Signature.Parameters.Select(p => $"{LocalPrefix}{p.Name}: {TypeToString(p.Type)}"));
+            var args = string.Join(", ",
+                pure.Signature.Parameters.Select(p => $"{LocalPrefix}{p.Name}: {TypeToString(p.Type)}"));
             if (pure.Body is null)
             {
                 EmitLine($"function {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)};");
             }
             else
             {
-                EmitLine($"define {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)} = {ExprToString(pure.Body)};");
+                EmitLine(
+                    $"define {pure.Name}({args}): {TypeToString(pure.Signature.ReturnType)} = {ExprToString(pure.Body)};");
             }
         }
+
         EmitLine("");
-        
+
         foreach (var inv in requires)
         {
             EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
@@ -993,29 +1083,36 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var inv in goals)
         {
             EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
-            EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} globally");
+            EmitLine(
+                $"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} globally");
         }
+
         EmitLine("");
-        
+
         foreach (var ax in axioms)
         {
             EmitLine($"axiom {ExprToString(ax.Body)};");
         }
+
         EmitLine("");
-        
+
         if (generateSanityChecks)
         {
             // invariants to ensure unique action IDs
-            EmitLine($"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectSent(StateVar)}[a1] && {StateAdtSelectSent(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+            EmitLine(
+                $"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectSent(StateVar)}[a1] && {StateAdtSelectSent(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
             EmitLine($"invariant _{InvariantPrefix}Unique_Actions: {InvariantPrefix}Unique_Actions();");
-            EmitLine($"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
-            EmitLine($"invariant _{InvariantPrefix}Increasing_Action_Count: {InvariantPrefix}Increasing_Action_Count();");
+            EmitLine(
+                $"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+            EmitLine(
+                $"invariant _{InvariantPrefix}Increasing_Action_Count: {InvariantPrefix}Increasing_Action_Count();");
             // invariants to ensure received is a subset of sent
-            EmitLine($"define {InvariantPrefix}Received_Subset_Sent(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectReceived(StateVar)}[a] ==> {StateAdtSelectSent(StateVar)}[a];");
+            EmitLine(
+                $"define {InvariantPrefix}Received_Subset_Sent(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectReceived(StateVar)}[a] ==> {StateAdtSelectSent(StateVar)}[a];");
             EmitLine($"invariant _{InvariantPrefix}Received_Subset_Sent: {InvariantPrefix}Received_Subset_Sent();");
             EmitLine("");
         }
-        
+
         GenerateControlBlock(machine, state, @event);
 
         // close the main module
@@ -1047,13 +1144,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("// The buffer starts completely empty");
         EmitLine($"{StateAdtSelectSent(StateVar)} = const(false, [{LabelAdt}]boolean);");
         EmitLine($"{StateAdtSelectReceived(StateVar)} = const(false, [{LabelAdt}]boolean);");
-        
+
         EmitLine("// User assumptions");
         foreach (var assumes in starts)
         {
             EmitLine($"assume ({ExprToString(assumes.Body)}); // {assumes.Name}");
         }
-        
+
         // close the init block
         EmitLine("}");
     }
@@ -1076,10 +1173,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     {
                         if (handlerCheck)
                         {
-                            if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name || _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
+                            if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name ||
+                                _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
                             {
                                 EmitLine($"({EventGuard(m, s, e)}) : {{");
-                                EmitLine($"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
+                                EmitLine(
+                                    $"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
                                 EmitLine("}");
                             }
                         }
@@ -1103,7 +1202,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateGlobalProcedures(IEnumerable<Function> functions, List<Invariant> goals, bool generateSanityChecks = false)
+    private void GenerateGlobalProcedures(IEnumerable<Function> functions, List<Invariant> goals,
+        bool generateSanityChecks = false)
     {
         // TODO: these should be side-effect free and we should enforce that
         foreach (var f in functions)
@@ -1118,10 +1218,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
             {
                 EmitLine($"procedure [inline] {f.Name}({string.Join(", ", ps)})");
             }
-            
+
             if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                var retName = f.ReturnVariable is null ? $"{BuiltinPrefix}Return" :  $"{LocalPrefix}{f.ReturnVariable.Name}";
+                var retName = f.ReturnVariable is null
+                    ? $"{BuiltinPrefix}Return"
+                    : $"{LocalPrefix}{f.ReturnVariable.Name}";
                 EmitLine($"\treturns ({retName}: {TypeToString(f.Signature.ReturnType)})");
             }
 
@@ -1131,6 +1233,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 i += 1;
                 EmitLine($"requires {ExprToString(req)}; // Violated precondition #{i} of {f.Name}");
             }
+
             foreach (var ensure in f.Ensures)
             {
                 EmitLine($"ensures {ExprToString(ensure)};");
@@ -1148,13 +1251,14 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         foreach (var f in m.Methods)
         {
-            var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}").Prepend($"this: {MachineRefT}");
+            var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}")
+                .Prepend($"this: {MachineRefT}");
             var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
             var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
             EmitLine($"procedure [inline] {name}({string.Join(", ", ps)})");
 
             var currState = Deref("this");
-            
+
             if (!f.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
                 EmitLine($"\treturns ({BuiltinPrefix}Return: {TypeToString(f.Signature.ReturnType)})");
@@ -1195,7 +1299,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void GenerateEntryHandler(State s, List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks = false)
+    private void GenerateEntryHandler(State s, List<Invariant> goals, List<Invariant> requires,
+        bool generateSanityChecks = false)
     {
         var label = $"{LocalPrefix}Label";
         var target = LabelAdtSelectTarget(label);
@@ -1203,7 +1308,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var action = LabelAdtSelectAction(label);
         var g = EventOrGotoAdtSelectGoto(action);
         var received = StateAdtSelectReceived(StateVar);
-        
+
         EmitLine($"procedure [noinline] {s.OwningMachine.Name}_{s.Name}({label}: {LabelAdt})");
         EmitLine($"\trequires {InFlight(StateVar, label)};");
         EmitLine($"\trequires {EventOrGotoAdtIsGoto(action)};");
@@ -1218,7 +1323,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
             EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
         }
-        
+
         foreach (var reqs in requires)
         {
             EmitLine($"\trequires {InvariantPrefix}{reqs.Name}();");
@@ -1227,23 +1332,26 @@ public class Uclid5CodeGenerator : ICodeGenerator
         foreach (var inv in goals)
         {
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
-            EmitLine($"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(s)}");
+            EmitLine(
+                $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(s)}");
         }
-        
+
         EmitLine("{");
-        
+
         if (s.Entry is null)
         {
             EmitLine($"var {LocalPrefix}stage: boolean;");
             EmitLine($"var {LocalPrefix}state: {MachinePrefix}{s.OwningMachine.Name}_StateAdt;");
             EmitLine($"var {LocalPrefix}received: [{LabelAdt}]boolean;");
-            
+
             EmitLine($"{LocalPrefix}stage = false;");
             EmitLine($"{LocalPrefix}state = {MachineStateAdtSelectState(targetMachineState, s.OwningMachine)};");
             EmitLine($"{received} = {received}[{label} -> true];");
             EmitLine($"{LocalPrefix}received = {received};");
-            
-            var fields = s.OwningMachine.Fields.Select(v => MachineStateAdtSelectField(targetMachineState, s.OwningMachine, v)).Prepend($"{LocalPrefix}state").ToList();
+
+            var fields = s.OwningMachine.Fields
+                .Select(v => MachineStateAdtSelectField(targetMachineState, s.OwningMachine, v))
+                .Prepend($"{LocalPrefix}state").ToList();
             // make a new machine
             var newMachine = MachineAdtConstructM(s.OwningMachine, fields);
             // make a new machine state
@@ -1259,16 +1367,19 @@ public class Uclid5CodeGenerator : ICodeGenerator
             var f = s.Entry;
             var line = _ctx.LocationResolver.GetLocation(f.SourceLocation).Line;
             var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
-            var payload = f.Signature.Parameters.Count > 0 ? $", {GotoAdtSelectParam(g, f.Signature.Parameters[0].Name, s)}" : "";
+            var payload = f.Signature.Parameters.Count > 0
+                ? $", {GotoAdtSelectParam(g, f.Signature.Parameters[0].Name, s)}"
+                : "";
             EmitLine($"{received} = {received}[{label} -> true];");
             EmitLine($"call {name}({target}{payload});");
         }
-        
+
         EmitLine("}\n");
     }
 
 
-    private void GenerateEventHandler(State s, PEvent ev, List<Invariant> goals, List<Invariant> requires, bool generateSanityChecks = false)
+    private void GenerateEventHandler(State s, PEvent ev, List<Invariant> goals, List<Invariant> requires,
+        bool generateSanityChecks = false)
     {
         var label = $"{LocalPrefix}Label";
         EmitLine($"procedure [noinline] {s.OwningMachine.Name}_{s.Name}_{ev.Name}({label}: {LabelAdt})");
@@ -1299,11 +1410,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             EmitLine($"\trequires {InvariantPrefix}{reqs.Name}();");
         }
-        
+
         foreach (var inv in goals)
         {
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
-            EmitLine($"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(handler)}");
+            EmitLine(
+                $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(handler)}");
         }
 
         switch (handler)
@@ -1383,7 +1495,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EmitLine($"\t| {opt}_None ();");
         }
     }
-    
+
     private void GenerateChooseProcedures()
     {
         foreach (var choosePt in _chooseToDeclare)
@@ -1405,8 +1517,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     EmitLine($"\tensures 0 <= outp && outp <= inp;");
                     break;
                 default:
-                    throw new NotSupportedException($"Not supported choose type: {choosePt} ({choosePt.OriginalRepresentation})");
+                    throw new NotSupportedException(
+                        $"Not supported choose type: {choosePt} ({choosePt.OriginalRepresentation})");
             }
+
             EmitLine("{");
             EmitLine("}\n");
         }
@@ -1426,7 +1540,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     {
         return $"is_{GetOptionName(t)}_Some({instance})";
     }
-    
+
     private string OptionIsNone(PLanguageType t, string instance)
     {
         return $"is_{GetOptionName(t)}_None({instance})";
@@ -1447,14 +1561,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
     // specMachine is null iff we are not generating a statement for a spec machine
-    private void GenerateStmt(IPStmt stmt, Machine specMachine, List<Invariant> goals, bool generateSanityChecks = false)
+    private void GenerateStmt(IPStmt stmt, Machine specMachine, List<Invariant> goals,
+        bool generateSanityChecks = false)
     {
         switch (stmt)
         {
             case CompoundStmt cstmt:
                 foreach (var s in cstmt.Statements) GenerateStmt(s, specMachine, goals, generateSanityChecks);
                 return;
-            case AssignStmt { Value: FunCallExpr, Location: VariableAccessExpr} cstmt:
+            case AssignStmt { Value: FunCallExpr, Location: VariableAccessExpr } cstmt:
                 var call = cstmt.Value as FunCallExpr;
                 var avax = cstmt.Location as VariableAccessExpr;
                 if (call == null) return;
@@ -1465,9 +1580,10 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 {
                     fargs = fargs.Prepend("this");
                 }
+
                 EmitLine($"call ({v}) = {f}({string.Join(", ", fargs)});");
                 return;
-            case AssignStmt {Value: ChooseExpr, Location: VariableAccessExpr} cstmt:
+            case AssignStmt { Value: ChooseExpr, Location: VariableAccessExpr } cstmt:
                 var chooseExpr = (ChooseExpr)cstmt.Value;
                 _chooseToDeclare.Add(chooseExpr.SubExpr.Type);
                 var cvax = (VariableAccessExpr)cstmt.Location;
@@ -1482,7 +1598,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     case VariableAccessExpr vax:
                         EmitLine($"{ExprToString(vax)} = {ExprToString(astmt.Value)};");
                         return;
-                    case MapAccessExpr {MapExpr: VariableAccessExpr} max:
+                    case MapAccessExpr { MapExpr: VariableAccessExpr } max:
                         var map = ExprToString(max.MapExpr);
                         var index = ExprToString(max.IndexExpr);
                         var t = ((MapType)max.MapExpr.Type).ValueType;
@@ -1517,7 +1633,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 return;
             case AssertStmt astmt:
                 EmitLine($"// {((StringExpr)astmt.Message).BaseString}");
-                EmitLine($"assert({ExprToString(astmt.Assertion)}); // Failed to verify assertion at {GetLocation(astmt)}");
+                EmitLine(
+                    $"assert({ExprToString(astmt.Assertion)}); // Failed to verify assertion at {GetLocation(astmt)}");
                 return;
             case AssumeStmt astmt:
                 EmitLine($"// {((StringExpr)astmt.Message).BaseString}");
@@ -1530,17 +1647,18 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 EmitLine(
                     $"call {fapp.Function.Name}({string.Join(", ", fapp.ArgsList.Select(ExprToString).Prepend("this"))});");
                 return;
-            case AddStmt {Variable: VariableAccessExpr} astmt:
+            case AddStmt { Variable: VariableAccessExpr } astmt:
                 // v += (y)
                 var aset = ExprToString(astmt.Variable);
                 var akey = ExprToString(astmt.Value);
                 EmitLine($"{aset} = {aset}[{akey} -> true];");
                 return;
-            case AddStmt {Variable: MapAccessExpr} astmt when ((MapAccessExpr)astmt.Variable).MapExpr is VariableAccessExpr:
+            case AddStmt { Variable: MapAccessExpr } astmt
+                when ((MapAccessExpr)astmt.Variable).MapExpr is VariableAccessExpr:
                 // m[x] += (y)
                 // m = m[x -> some((m[x].some)[y -> true])]
                 var mapInP = ((MapAccessExpr)astmt.Variable);
-                var mapTypeInP = (MapType) mapInP.MapExpr.Type;
+                var mapTypeInP = (MapType)mapInP.MapExpr.Type;
                 var mapM = ExprToString(mapInP.MapExpr);
                 var locX = ExprToString(mapInP.IndexExpr);
                 var valY = ExprToString(astmt.Value);
@@ -1548,7 +1666,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var someUpdated = OptionConstructSome(mapTypeInP.ValueType, $"{someMx}[{valY} -> true]");
                 EmitLine($"{mapM} = {mapM}[{locX} -> {someUpdated}];");
                 return;
-            case RemoveStmt {Variable: VariableAccessExpr} rstmt:
+            case RemoveStmt { Variable: VariableAccessExpr } rstmt:
                 var rset = ExprToString(rstmt.Variable);
                 var rkey = ExprToString(rstmt.Value);
 
@@ -1564,7 +1682,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         throw new NotSupportedException(
                             $"Only support remove statements for sets and maps, got {rstmt.Variable.Type}");
                 }
-            case InsertStmt {Variable: VariableAccessExpr} istmt:
+            case InsertStmt { Variable: VariableAccessExpr } istmt:
                 var imap = ExprToString(istmt.Variable);
                 var idx = ExprToString(istmt.Index);
                 var value = OptionConstructSome(istmt.Value.Type, ExprToString(istmt.Value));
@@ -1575,10 +1693,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 switch (fstmt.IterCollection)
                 {
                     case KeysExpr keysExpr:
-                        fstmt = new ForeachStmt(fstmt.SourceLocation, fstmt.Item, keysExpr.Expr, fstmt.Body, fstmt.Invariants);
+                        fstmt = new ForeachStmt(fstmt.SourceLocation, fstmt.Item, keysExpr.Expr, fstmt.Body,
+                            fstmt.Invariants);
                         break;
                 }
-                
+
                 var item = GetLocalName(fstmt.Item);
                 var checker = GetCheckerName(fstmt.IterCollection.Type);
                 var collection = ExprToString(fstmt.IterCollection);
@@ -1595,27 +1714,33 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         EmitLine($"while ({checker} != {collection})");
                         foreach (var inv in goals)
                         {
-                            EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
+                            EmitLine(
+                                $"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
                         }
+
                         if (generateSanityChecks)
                         {
                             EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
                             EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
                             EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent();");
                             // ensure uniqueness for the new ones too
-                            EmitLine($"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
-                            EmitLine($"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
-                            
+                            EmitLine(
+                                $"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+                            EmitLine(
+                                $"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+
                             // ensure we only ever add sends
-                            EmitLine($"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
+                            EmitLine(
+                                $"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
                         }
 
                         // user given invariants
                         foreach (var inv in fstmt.Invariants)
                         {
-                            EmitLine($"\tinvariant {ExprToString(inv)}; // Failed to verify loop invariant at {GetLocation(inv)}");
+                            EmitLine(
+                                $"\tinvariant {ExprToString(inv)}; // Failed to verify loop invariant at {GetLocation(inv)}");
                         }
-                        
+
                         EmitLine("{");
                         // assume that the item is in the set but hasn't been visited
                         EmitLine($"if ({collection}[{item}] && !{checker}[{item}]) {{");
@@ -1638,27 +1763,34 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         EmitLine($"while ({checker} != {collection})");
                         foreach (var inv in goals)
                         {
-                            EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
+                            EmitLine(
+                                $"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
                         }
+
                         EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
                         EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
                         EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent();");
                         // ensure uniqueness for the new ones too
-                        EmitLine($"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
-                        EmitLine($"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
-                        
+                        EmitLine(
+                            $"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+                        EmitLine(
+                            $"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+
                         // ensure we only ever add sends
-                        EmitLine($"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
+                        EmitLine(
+                            $"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
 
                         // user given invariants
                         foreach (var inv in fstmt.Invariants)
                         {
-                            EmitLine($"\tinvariant {ExprToString(inv)}; // Failed to verify loop invariant at {GetLocation(inv)}");
+                            EmitLine(
+                                $"\tinvariant {ExprToString(inv)}; // Failed to verify loop invariant at {GetLocation(inv)}");
                         }
-                        
+
                         EmitLine("{");
                         // assume that the item is in the set but hasn't been visited
-                        EmitLine($"if ({OptionIsSome(mapType.ValueType, $"{collection}[{item}]")} && {OptionIsNone(mapType.ValueType, $"{checker}[{item}]")}) {{");
+                        EmitLine(
+                            $"if ({OptionIsSome(mapType.ValueType, $"{collection}[{item}]")} && {OptionIsNone(mapType.ValueType, $"{checker}[{item}]")}) {{");
                         // the body of the loop
                         GenerateStmt(fstmt.Body, specMachine, goals, generateSanityChecks);
                         // update the checker
@@ -1703,7 +1835,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     var argument = sstmt.Arguments.Count > 0 ? $"{ExprToString(sstmt.Arguments[0])}" : PNull;
                     EmitLine($"call {procedureName}({argument});");
                 }
-                
+
                 return;
             case ReturnStmt rstmt:
                 EmitLine($"{BuiltinPrefix}Return = {ExprToString(rstmt.ReturnValue)};");
@@ -1734,21 +1866,30 @@ public class Uclid5CodeGenerator : ICodeGenerator
             MapAccessExpr maex =>
                 OptionSelectValue(((MapType)maex.MapExpr.Type).ValueType,
                     $"{ExprToString(maex.MapExpr)}[{ExprToString(maex.IndexExpr)}]"),
-            ContainsExpr cexp when cexp.Collection.Type.Canonicalize() is MapType => OptionIsSome(((MapType) cexp.Collection.Type).ValueType, $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
-            ContainsExpr cexp when cexp.Collection.Type.Canonicalize() is SetType => $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
+            ContainsExpr cexp when cexp.Collection.Type.Canonicalize() is MapType => OptionIsSome(
+                ((MapType)cexp.Collection.Type).ValueType,
+                $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]"),
+            ContainsExpr cexp when cexp.Collection.Type.Canonicalize() is SetType =>
+                $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
             DefaultExpr dexp => DefaultValue(dexp.Type),
-            QuantExpr {Quant: QuantType.Forall} qexpr => $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, true)}({ExprToString(qexpr.Body)}))",
-            QuantExpr {Quant: QuantType.Exists} qexpr => $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, false)}({ExprToString(qexpr.Body)}))",
-            MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine, max.Entry),
+            QuantExpr { Quant: QuantType.Forall } qexpr =>
+                $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, true)}({ExprToString(qexpr.Body)}))",
+            QuantExpr { Quant: QuantType.Exists } qexpr =>
+                $"(exists ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, false)}({ExprToString(qexpr.Body)}))",
+            MachineAccessExpr max => MachineStateAdtSelectField(Deref(ExprToString(max.SubExpr)), max.Machine,
+                max.Entry),
             SpecAccessExpr sax => $"{SpecPrefix}{sax.Spec.Name}_{sax.FieldName}",
             EventAccessExpr eax => LabelAdtSelectPayloadField(ExprToString(eax.SubExpr), eax.PEvent, eax.Entry),
-            TestExpr {Kind: Machine m} texpr  => MachineStateAdtIsM(Deref(ExprToString(texpr.Instance)), m), // must deref because or else we don't have an ADT!
-            TestExpr {Kind: PEvent e} texpr  => LabelAdtIsE(ExprToString(texpr.Instance), e),
-            TestExpr {Kind: State s} texpr => MachineStateAdtInS(Deref(ExprToString(texpr.Instance)), s.OwningMachine, s), // must deref for ADT!
+            TestExpr { Kind: Machine m } texpr => MachineStateAdtIsM(Deref(ExprToString(texpr.Instance)),
+                m), // must deref because or else we don't have an ADT!
+            TestExpr { Kind: PEvent e } texpr => LabelAdtIsE(ExprToString(texpr.Instance), e),
+            TestExpr { Kind: State s } texpr => MachineStateAdtInS(Deref(ExprToString(texpr.Instance)), s.OwningMachine,
+                s), // must deref for ADT!
             PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",
             FlyingExpr fexpr => $"{InFlight(StateVar, ExprToString(fexpr.Instance))}",
             SentExpr sexpr => $"{StateAdtSelectSent(StateVar)}[{ExprToString(sexpr.Instance)}]",
-            TargetsExpr texpr => $"({LabelAdtSelectTarget(ExprToString(texpr.Instance))} == {ExprToString(texpr.Target)})",
+            TargetsExpr texpr =>
+                $"({LabelAdtSelectTarget(ExprToString(texpr.Instance))} == {ExprToString(texpr.Target)})",
             _ => throw new NotSupportedException($"Not supported expr ({expr}) at {GetLocation(expr)}")
             // _ => $"NotHandledExpr({expr})"
         };
@@ -1757,36 +1898,40 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             return $"{string.Join(", ", bound.Select(b => $"{LocalPrefix}{b.Name}: {TypeToString(b.Type)}"))}";
         }
-        
+
         string Guard(List<Variable> bound, bool difference, bool universal)
         {
             var impliesOrAnd = universal ? "==>" : "&&";
-            
+
             List<string> bounds = [];
             foreach (var b in bound)
             {
                 switch (b.Type)
                 {
-                    case PermissionType {Origin: Machine} pt:
-                        bounds.Add(ExprToString(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), pt.Origin)));
+                    case PermissionType { Origin: Machine } pt:
+                        bounds.Add(ExprToString(new TestExpr(b.SourceLocation,
+                            new VariableAccessExpr(b.SourceLocation, b), pt.Origin)));
                         break;
-                    case PermissionType {Origin: Interface} pt:
+                    case PermissionType { Origin: Interface } pt:
                         var name = pt.OriginalRepresentation;
-            
+
                         if (_globalScope.Lookup(name, out Machine m))
                         {
-                            bounds.Add(ExprToString(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), m)));
+                            bounds.Add(ExprToString(new TestExpr(b.SourceLocation,
+                                new VariableAccessExpr(b.SourceLocation, b), m)));
                         }
 
                         break;
-                    case PermissionType {Origin: NamedEventSet} pt:
+                    case PermissionType { Origin: NamedEventSet } pt:
                         var e = ((NamedEventSet)pt.Origin).Events.First();
-                        bounds.Add(ExprToString(new TestExpr(b.SourceLocation, new VariableAccessExpr(b.SourceLocation, b), e)));
+                        bounds.Add(ExprToString(new TestExpr(b.SourceLocation,
+                            new VariableAccessExpr(b.SourceLocation, b), e)));
                         if (difference)
                         {
                             bounds.Add($"{LocalPrefix}sent[{LocalPrefix}{b.Name}]");
                             bounds.Add($"!{StateAdtSelectSent(StateVar)}[{LocalPrefix}{b.Name}]");
                         }
+
                         break;
                     case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Event):
                         if (difference)
@@ -1794,6 +1939,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                             bounds.Add($"{LocalPrefix}sent[{LocalPrefix}{b.Name}]");
                             bounds.Add($"!{StateAdtSelectSent(StateVar)}[{LocalPrefix}{b.Name}]");
                         }
+
                         break;
                 }
             }
@@ -1870,11 +2016,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 return LabelAdt;
             case TypeDefType tdt:
                 return $"{UserPrefix}{tdt.TypeDefDecl.Name}";
-            case PermissionType {Origin: Machine} _:
+            case PermissionType { Origin: Machine } _:
                 return MachineRefT;
-            case PermissionType {Origin: Interface} _:
+            case PermissionType { Origin: Interface } _:
                 return MachineRefT;
-            case PermissionType {Origin: NamedEventSet} _:
+            case PermissionType { Origin: NamedEventSet } _:
                 return LabelAdt;
             case EnumType et:
                 return $"{UserPrefix}{et.EnumDecl.Name}";

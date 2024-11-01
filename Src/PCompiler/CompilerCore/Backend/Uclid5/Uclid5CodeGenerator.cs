@@ -1195,7 +1195,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         // TODO: these should be side-effect free and we should enforce that
         foreach (var f in functions)
         {
-            var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}");
+            var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}").Prepend($"this: {MachineRefT}");
 
             if (f.Body is null)
             {
@@ -1568,7 +1568,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     fargs = fargs.Prepend("this");
                 }
 
-                EmitLine($"call ({v}) = {f}({string.Join(", ", fargs)});");
+                EmitLine($"call ({v}) = {f}({string.Join(", ", fargs.Prepend("this"))});");
                 return;
             case AssignStmt { Value: ChooseExpr, Location: VariableAccessExpr } cstmt:
                 var chooseExpr = (ChooseExpr)cstmt.Value;

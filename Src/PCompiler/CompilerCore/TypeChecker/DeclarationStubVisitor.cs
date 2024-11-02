@@ -61,6 +61,10 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
         {
             var name = string.Join(", ", context._targets.Select(t => t.GetText()));
+            if (context._premises.Count > 0)
+            {
+                name += " using " + string.Join(", ", context._premises.Select(t => t.GetText()));
+            }
             var decl = CurrentScope.Put(name, context);
             nodesToDeclarations.Put(context, decl);
             return null;

@@ -63,7 +63,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         foreach (var cmd in _commands)
         {
-            if (cmd.Name == "default")
+            if (cmd.Name.Contains("default"))
             {
                 missingDefault = false;
             }
@@ -317,19 +317,16 @@ public class Uclid5CodeGenerator : ICodeGenerator
             {
                 if (proofCmd.Goals.Count == 1 && proofCmd.Goals[0].IsDefault)
                 {
-                    var proof = new ProofCommand("default", null)
-                    {
-                        Goals = [],
-                        Premises = proofCmd.Premises
-                    };
-                    _commands.Add(proof);
-                    _proofCommandToFiles.Add(proof, []);
-                    files.AddRange(CompileToFile($"{filenamePrefix}default", proof, true, true, true));
+                    proofCmd.Name = "default" + proofCmd.Name;
+                    proofCmd.Goals = [];
+                    _commands.Add(proofCmd);
+                    _proofCommandToFiles.Add(proofCmd, []);
+                    files.AddRange(CompileToFile($"{filenamePrefix}default", proofCmd, true, true, true));
                 }
                 else
                 {
                     _proofCommandToFiles.Add(proofCmd, []);
-                    files.AddRange(CompileToFile($"{filenamePrefix}{proofCmd.Name}", proofCmd, true, false, false));
+                    files.AddRange(CompileToFile($"{filenamePrefix}{proofCmd.Name.Replace(",", "_").Replace(" ", "_")}", proofCmd, true, false, false));
                     _commands.Add(proofCmd);
                 }
             }

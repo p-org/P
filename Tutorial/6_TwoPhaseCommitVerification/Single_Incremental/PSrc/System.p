@@ -107,7 +107,7 @@ Lemma no_unexpected_messages {
 invariant safety: forall (p1: Participant) :: p1 is Accepted ==> (forall (p2: Participant) :: preference(p2) == YES);
 
 // supporting invariants, based on the Kondo paper
-Lemma kondo_invs {
+Lemma kondo {
     invariant  a1: forall (e: eVoteResp) :: inflight e ==> e.source in participants();
     invariant  a2: forall (e: eVoteResp) :: inflight e ==> e.vote == preference(e.source);
     invariant a3b: forall (e: eAbort)    :: inflight e ==> coordinator() is Aborted;
@@ -118,7 +118,8 @@ Lemma kondo_invs {
 }
 
 Proof {
-    prove safety using kondo_invs;
+    prove safety using kondo;
     prove no_unexpected_messages, system_config;
-    prove kondo_invs using no_unexpected_messages, system_config;
+    prove kondo using no_unexpected_messages, system_config;
+    prove default using no_unexpected_messages, system_config;
 }

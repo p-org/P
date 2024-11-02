@@ -181,6 +181,9 @@ pure preference(m: machine, triple: krvTriple) : tVote;
 
 pure subset(small: set[rvPair], large: set[rvPair]) : bool = forall (rv: rvPair) :: rv in small ==> rv in large;
 
+// lets assume that there is at least one participant
+axiom exists (x: machine) :: x in participants();
+
 // assumptions about how the system is setup and the pure functions above
 init coordinator() is Coordinator;
 init forall (c1: machine, c2: machine) :: (c1 is Coordinator && c2 is Coordinator) ==> c1 == c2;

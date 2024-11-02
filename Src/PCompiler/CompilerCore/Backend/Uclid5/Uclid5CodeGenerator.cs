@@ -47,6 +47,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         List<string> failMessages = [];
         HashSet<Invariant> succeededInv = [];
         HashSet<Invariant> failedInv = [];
+        var missingDefault = true;
 
         // Open database (or create if doesn't exist)
         var db = new LiteDatabase(Path.Join(job.OutputDirectory.FullName, ".verifier-cache.db"));
@@ -62,7 +63,11 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         foreach (var cmd in _commands)
         {
-            job.Output.WriteInfo($"Proof command: {cmd.Name}");
+            if (cmd.Name == "default")
+            {
+                missingDefault = false;
+            }
+            job.Output.WriteInfo($"Proving: {cmd.Name}");
             Dictionary<string, bool> checklist = _proofCommandToFiles[cmd].ToDictionary(x => x, x => false);
             Dictionary<string, Process> tasks = [];
 
@@ -93,6 +98,9 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     }
                 }
             }
+            
+            var numCompleted = checklist.Values.Sum(x => x ? 1 : 0);
+            Console.Write($"\r🔍 Checked {numCompleted}/{checklist.Count} goals...");
 
             // fetch
             while (checklist.ContainsValue(false))
@@ -150,8 +158,8 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     newTasks.ToList().ForEach(x => tasks.Add(x.Key, x.Value));
                 }
 
-                var numCompleted = checklist.Values.Sum(x => x ? 1 : 0);
-                Console.Write($"\r🔍 Verifying {numCompleted}/{checklist.Count} goals...");
+                numCompleted = checklist.Values.Sum(x => x ? 1 : 0);
+                Console.Write($"\r🔍 Checked {numCompleted}/{checklist.Count} goals...");
             }
 
             Console.WriteLine();
@@ -161,14 +169,18 @@ public class Uclid5CodeGenerator : ICodeGenerator
         job.Output.WriteInfo($"\n🎉 Verified {succeededInv.Count} invariants!");
         foreach (var inv in succeededInv)
         {
-            job.Output.WriteInfo($"✅ {inv.Name}");
+            job.Output.WriteInfo($"✅ {inv.Name.Replace("_PGROUP_", ": ")}");
+        }
+        if (!missingDefault && failMessages.Count == 0)
+        {
+            job.Output.WriteInfo($"✅ default P proof obligations");
         }
 
         MarkProvenInvariants(succeededInv);
-        ShowRemainings(job, failedInv);
+        ShowRemainings(job, failedInv, missingDefault);
         if (failMessages.Count > 0)
         {
-            job.Output.WriteInfo($"❌ Failed to verify {failMessages.Count} invariants!");
+            job.Output.WriteInfo($"❌ Failed to verify {failMessages.Count} properties!");
             foreach (var msg in failMessages)
             {
                 job.Output.WriteError(msg);
@@ -195,7 +207,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private void ShowRemainings(ICompilerConfiguration job, HashSet<Invariant> failedInv)
+    private void ShowRemainings(ICompilerConfiguration job, HashSet<Invariant> failedInv, bool missingDefault)
     {
         HashSet<Invariant> remaining = [];
         foreach (var inv in _provenInvariants)
@@ -209,12 +221,17 @@ public class Uclid5CodeGenerator : ICodeGenerator
             }
         }
 
-        if (remaining.Count > 0)
+        if (remaining.Count > 0 || missingDefault)
         {
             job.Output.WriteWarning("❓ Remaining Goals:");
             foreach (var inv in remaining)
             {
-                job.Output.WriteWarning($"- {inv.Name} at {GetLocation(inv)}");
+                job.Output.WriteWarning($"- {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(inv)}");
+            }
+
+            if (missingDefault)
+            {
+                job.Output.WriteWarning($"- default P proof obligations");
             }
         }
     }
@@ -229,7 +246,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                 var line = query[int.Parse(feedback.Second.ToString()) - 1];
                 var step = feedback.First.ToString().Contains("[Step #0]") ? "(base case)" : "";
                 var matchName = Regex.Match(line, @"// Failed to verify invariant (.*) at (.*)");
-                var invName = matchName.Groups[1].Value;
+                var invName = matchName.Groups[1].Value.Replace("_PGROUP_", ": ");
                 failedInv.Add(invName);
                 failMessages.Add($"{reason} {line.Split("//").Last()} {step}");
             }
@@ -281,7 +298,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _commands = [];
         _globalScope = globalScope;
         BuildDependencies(globalScope);
-        var filename_prefix = $"{job.ProjectName}_";
+        var filenamePrefix = $"{job.ProjectName}_";
         List<CompiledFile> files = [];
         if (!globalScope.ProofCommands.Any())
         {
@@ -292,15 +309,29 @@ public class Uclid5CodeGenerator : ICodeGenerator
             };
             _commands.Add(proof);
             _proofCommandToFiles.Add(proof, []);
-            files.AddRange(CompileToFile($"{filename_prefix}default", proof, true));
+            files.AddRange(CompileToFile($"{filenamePrefix}default", proof, true, true, false));
         }
         else
         {
             foreach (var proofCmd in globalScope.ProofCommands)
             {
-                _proofCommandToFiles.Add(proofCmd, []);
-                files.AddRange(CompileToFile($"{filename_prefix}{proofCmd.Name}", proofCmd, true, false));
-                _commands.Add(proofCmd);
+                if (proofCmd.Goals.Count == 1 && proofCmd.Goals[0].IsDefault)
+                {
+                    var proof = new ProofCommand("default", null)
+                    {
+                        Goals = [],
+                        Premises = proofCmd.Premises
+                    };
+                    _commands.Add(proof);
+                    _proofCommandToFiles.Add(proof, []);
+                    files.AddRange(CompileToFile($"{filenamePrefix}default", proof, true, true, true));
+                }
+                else
+                {
+                    _proofCommandToFiles.Add(proofCmd, []);
+                    files.AddRange(CompileToFile($"{filenamePrefix}{proofCmd.Name}", proofCmd, true, false, false));
+                    _commands.Add(proofCmd);
+                }
             }
         }
 
@@ -325,7 +356,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return file;
     }
 
-    private List<CompiledFile> CompileToFile(string name, ProofCommand cmd, bool sanityCheck, bool handlerCheck = true)
+    private List<CompiledFile> CompileToFile(string name, ProofCommand cmd, bool sanityCheck, bool handlerCheck, bool builtin)
     {
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
@@ -340,7 +371,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     {
                         _src = GenerateCompiledFile(cmd, name, m, s, null);
                         files.Add(_src);
-                        GenerateMain(m, s, null, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck);
+                        GenerateMain(m, s, null, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck, builtin);
                     }
 
                     foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
@@ -349,7 +380,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         {
                             _src = GenerateCompiledFile(cmd, name, m, s, e);
                             files.Add(_src);
-                            GenerateMain(m, s, e, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck);
+                            GenerateMain(m, s, e, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck, builtin);
                         }
                     }
                 }
@@ -950,9 +981,15 @@ public class Uclid5CodeGenerator : ICodeGenerator
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void GenerateMain(Machine machine, State state, PEvent @event, List<Invariant> goals,
-        List<Invariant> requires, bool generateSanityChecks, bool handlerCheck = true)
+    private void 
+        GenerateMain(Machine machine, State state, PEvent @event, List<Invariant> goals,
+        List<Invariant> requires, bool generateSanityChecks, bool handlerCheck, bool builtin)
     {
+        if (builtin)
+        {
+            goals = requires;
+        }
+        
         EmitLine("module main {");
 
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
@@ -1062,9 +1099,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         EmitLine("");
 
-        foreach (var inv in requires)
+        if (!builtin)
         {
-            EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
+            foreach (var inv in requires)
+            {
+                EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
+            }
         }
 
         foreach (var inv in goals)

@@ -729,14 +729,20 @@ namespace Plang.Compiler.TypeChecker
             {
                 premises = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
             }
-            if (context.goalsAll == null)
+            
+            if (context.goalsAll == null && context.goalsDefault == null)
             {
                 goals = context._targets.Select(exprVisitor.Visit).ToList();
+            }
+            else if (context.goalsDefault != null)
+            {
+                goals = [new InvariantRefExpr(new Invariant(context), context)];
             }
             else
             {
                 goals = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
             }
+            
             if (premises.Count == context._premises.Count)
             {
                 proofCmd.Premises = premises.Zip(context._premises, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
@@ -745,6 +751,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 proofCmd.Premises = premises.SelectMany(x => ToInvariant(x, context)).ToList();
             }
+            
             if (goals.Count == context._targets.Count)
             {
                 proofCmd.Goals = goals.Zip(context._targets, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
@@ -753,6 +760,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 proofCmd.Goals = goals.SelectMany(x => ToInvariant(x, context)).ToList();
             }
+            
             proofCmd.Excepts = excepts.Zip(context._excludes, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
             // exclude things appear in `goals` from `premises`
             proofCmd.Premises = proofCmd.Premises.Except(proofCmd.Goals).Except(proofCmd.Excepts).ToList();

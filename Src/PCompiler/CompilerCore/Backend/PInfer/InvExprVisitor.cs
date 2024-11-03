@@ -208,6 +208,21 @@ namespace Plang.Compiler.Backend.PInfer
             throw new DropException($"BinOp not allowed: lhs=({ctx.lhs.GetText()}) op=({op}) rhs=({ctx.rhs.GetText()})");
         }
 
+        public override IPExpr VisitUnaryExpr(PParser.UnaryExprContext ctx)
+        {
+           var op = ctx.op.Text;
+           var expr = Visit(ctx.expr());
+           if (op == "-")
+           {
+               return new UnaryOpExpr(ctx, UnaryOpType.Negate, expr);
+           }
+           else if (op == "!")
+           {
+               return new UnaryOpExpr(ctx, UnaryOpType.Not, expr);
+           }
+            throw new DropException($"Unsupported unary op: {op}");
+        }
+
         public override IPExpr VisitMapOrSeqLvalue(PParser.MapOrSeqLvalueContext ctx)
         {
             var lvalue = Visit(ctx.lvalue());

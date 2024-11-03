@@ -123,9 +123,16 @@ namespace Plang.Compiler.Backend.Java
                 case TypeManager.JType.JSet _:
                 case TypeManager.JType.JForeign _:
                 case TypeManager.JType.JNamedTuple _:
-                    Write($"{Constants.PrtDeepCloneMethodName}(");
-                    writeTermToBeCloned();
-                    Write(")");
+                    if (Constants.PInferMode)
+                    {
+                        writeTermToBeCloned();
+                    }
+                    else
+                    {
+                        Write($"{Constants.PrtDeepCloneMethodName}(");
+                        writeTermToBeCloned();
+                        Write(")");
+                    }
                     break;
 
                 default:

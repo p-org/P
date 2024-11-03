@@ -273,6 +273,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             // convert to array
             // first, check whether any list is empty
+            // Do we really need to check `numForall > 0`?
             if (numForall > 0 && numExists > 0)
             {
                 WriteLine("if (numExistsComb == 0) throw new RuntimeException();");

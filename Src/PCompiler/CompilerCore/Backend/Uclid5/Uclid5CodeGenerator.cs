@@ -1108,7 +1108,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
             EmitLine(
-                $"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} globally");
+                $"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} globally");
         }
 
         EmitLine("");
@@ -1357,7 +1357,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
             EmitLine(
-                $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(s)}");
+                $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(s)}");
         }
 
         EmitLine("{");
@@ -1439,7 +1439,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         {
             EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
             EmitLine(
-                $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(handler)}");
+                $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(handler)}");
         }
 
         switch (handler)
@@ -1739,7 +1739,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         foreach (var inv in goals)
                         {
                             EmitLine(
-                                $"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
+                                $"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(fstmt)}");
                         }
 
                         if (generateSanityChecks)
@@ -1788,7 +1788,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                         foreach (var inv in goals)
                         {
                             EmitLine(
-                                $"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name} at {GetLocation(fstmt)}");
+                                $"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(fstmt)}");
                         }
 
                         EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");

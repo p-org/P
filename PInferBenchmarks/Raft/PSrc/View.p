@@ -10,7 +10,7 @@ event eShutdown;
 // A node can notify the view service about its log entires
 // This is used for choosing servers that should receive an election timeout
 type tTS = int;
-event eNotifyLog: (timestamp: tTS, server: Server, log: seq[tServerLog]);
+event eNotifyLog: (timestamp: tTS, server: Server, log: seq[tServerLog], commitIndex: LogIndex);
 
 machine View {
     // the cluster nodes
@@ -95,7 +95,7 @@ machine View {
             send server, eElectionTimeout;
         }
 
-        on eNotifyLog do (payload: (timestamp:int, server: Server, log: seq[tServerLog])) {
+        on eNotifyLog do (payload: (timestamp:int, server: Server, log: seq[tServerLog], commitIndex: LogIndex)) {
             // only track the most up-to-date logs
             if (!(payload.server in keys(lastSeenLogs)) || lastSeenLogs[payload.server] < payload.timestamp) {
                 lastSeenLogs[payload.server] = payload.timestamp;

@@ -515,8 +515,10 @@ namespace Plang.Compiler.Backend.PInfer
                 AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, numType, numType);
                 AddBinaryBuiltinPredicate(globalScope, BinOpType.Gt, numType, numType);
             }
-
+            var seqType = new SequenceType(PrimitiveType.Any);
             AddBinaryBuiltinPredicate(globalScope, BinOpType.Eq, PrimitiveType.Machine, PrimitiveType.Machine);
+            AddBinaryBuiltinPredicate(globalScope, BinOpType.Eq, PInferBuiltinTypes.CollectionSize,  PInferBuiltinTypes.CollectionSize);
+            AddBinaryBuiltinPredicate(globalScope, BinOpType.Eq, seqType, seqType);
 
             foreach (var (op, types) in globalScope.AllowedBinOps)
             {

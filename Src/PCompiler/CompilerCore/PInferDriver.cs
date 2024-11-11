@@ -1331,8 +1331,10 @@ namespace Plang.Compiler
                 }
                 // Boolean resolution
                 // stopwatch.Restart();
+                HashSet<int> insufficient = [];
                 foreach (var k in P.Keys)
                 {
+                    insufficient = [];
                     for (int i = 0; i < P[k].Count; ++i)
                     {
                         for (int j = i + 1; j < P[k].Count; ++j)
@@ -1342,6 +1344,21 @@ namespace Plang.Compiler
                                 didSth |= Resolution(codegen, k, P[k][i], P[k][j]);
                             }
                         }
+                        if (NumExists[k] == 0)
+                        {
+                            // check whether the invariant establishes sufficient relationships (i.e. the set of free events is equal to the quantified events)
+                            var freeEventsList = P[k][i].Select(x => FreeEvents(ParsedP[k][x])).Concat(Q[k][i].Select(x => FreeEvents(ParsedQ[k][x]))).ToList();
+                            var quantified = Executed[k][i].Quantified.Select(x => x.Name).ToHashSet();
+                            if (freeEventsList.All(x => !x.SetEquals(quantified)))
+                            {
+                                insufficient.Add(i);
+                                didSth = true;
+                            }
+                        }
+                    }
+                    foreach (var idx in insufficient.OrderByDescending(x => x))
+                    {
+                        RemoveRecordAt(k, idx);
                     }
                 }
                 didSth |= ClearUpExistentials();

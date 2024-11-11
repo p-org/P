@@ -19,6 +19,7 @@ namespace Plang.Compiler.Backend.PInfer
         private readonly Dictionary<string, EnumSort> EnumSorts;
         private Dictionary<string, List<(HashSet<string>, HashSet<string>, bool)>> cachedQueries = [];
         private Dictionary<string, Dictionary<IPExpr, Expr>> compiled = [];
+        private Dictionary<string, Sort> sorts = [];
         private int numQueries = 0;
         public Z3Wrapper(Scope globalScope, PInferPredicateGenerator codegen)
         {
@@ -78,6 +79,27 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     return context.IntSort;
                 }
+                case SequenceType seqType:
+                {
+                    return context.MkArraySort(context.IntSort, ToZ3Sort(seqType.ElementType));
+                }
+                case NamedTupleType namedTupleType:
+                {
+                    if (sorts.TryGetValue(namedTupleType.OriginalRepresentation, out Sort result))
+                    {
+                        return result;
+                    }
+                    List<Symbol> fieldNames = [];
+                    List<Sort> fieldSorts = [];
+                    foreach (var field in namedTupleType.Fields)
+                    {
+                        fieldNames.Add(context.MkSymbol(field.Name));
+                        fieldSorts.Add(ToZ3Sort(field.Type));
+                    }
+                    var sort = context.MkTupleSort(context.MkSymbol(namedTupleType.OriginalRepresentation), fieldNames.ToArray(), fieldSorts.ToArray());
+                    sorts[namedTupleType.OriginalRepresentation] = sort;
+                    return sort;
+                }
             }
             throw new Exception($"Unsupported type: {type.CanonicalRepresentation} ({type})");
         }
@@ -114,6 +136,8 @@ namespace Plang.Compiler.Backend.PInfer
                     var arg = funCall.Arguments[0].GetHashCode();
                     var name = $"{funCall.Function.Name}_of_{arg}";
                     var indexVar = context.MkConst(name, context.IntSort);
+                    // indices and sizes should be >= 0
+                    solver.Assert(context.MkGe((IntExpr)indexVar, context.MkInt(0)));
                     compiled[key][funCall] = indexVar;
                     return indexVar;
                 }
@@ -246,18 +270,17 @@ namespace Plang.Compiler.Backend.PInfer
 
         private bool CheckImpliesZ3(BoolExpr lhs, BoolExpr rhs)
         {
-            solver.Push();
             // check lhs -> rhs is a tautology
             var obj = context.MkNot(context.MkImplies(lhs, rhs));
             solver.Assert(obj);
             var result = solver.Check();
             bool r = result == Status.UNSATISFIABLE;
-            solver.Pop();
             return r;
         }
 
         public bool CheckImplies(string k, IEnumerable<IPExpr> lhs, IEnumerable<IPExpr> rhs)
         {
+            solver.Push();
             if (!compiled.ContainsKey(k))
             {
                 compiled[k] = new(new ASTComparer());
@@ -266,7 +289,9 @@ namespace Plang.Compiler.Backend.PInfer
             var rhsClauses = rhs.Select(x => IPExprToSMT(k, x)).Cast<BoolExpr>().ToArray();
             var lhsZ3 = context.MkAnd(lhsClauses);
             var rhsZ3 = context.MkAnd(rhsClauses);
-            return CheckImpliesZ3(lhsZ3, rhsZ3);
+            var r = CheckImpliesZ3(lhsZ3, rhsZ3);
+            solver.Pop();
+            return r;
         }
 
         public bool CheckImplies(string k, IEnumerable<string> lhs, IEnumerable<string> rhs, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
@@ -285,7 +310,7 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 compiled[k] = new(new ASTComparer());
             }
-
+            solver.Push();
             IPExpr getExpr(string repr) => parsedP.TryGetValue(repr, out IPExpr value) ? value : parsedQ[repr];
             var lhsClauses = lhs.Select(x => IPExprToSMT(k, getExpr(x))).Cast<BoolExpr>().ToArray();
             var rhsClauses = rhs.Select(x => IPExprToSMT(k, getExpr(x))).Cast<BoolExpr>().ToArray();
@@ -297,6 +322,7 @@ namespace Plang.Compiler.Backend.PInfer
                 cachedQueries[k] = [];
             }
             cachedQueries[k].Add((new HashSet<string>(lhs), new HashSet<string>(rhs), r));
+            solver.Pop();
             return r;
         } 
     }

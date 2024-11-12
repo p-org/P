@@ -283,6 +283,18 @@ namespace Plang.Compiler
                             AddHint($"{s.OwningMachine.Name}_{s.Name}_recvs_{@event.Name}_sends_{send.Name}", tasks, send, @event);
                             AddHint($"{s.OwningMachine.Name}_{s.Name}_sends_{send.Name}_binary", tasks, send, send);
                         }
+                        if (action.Target.SendSet.Count() > 1)
+                        {
+                            // look at pairs of sends
+                            var sends = action.Target.SendSet.ToList();
+                            for (int i = 0; i < sends.Count; ++i)
+                            {
+                                for (int j = i + 1; j < sends.Count; ++j)
+                                {
+                                    AddHint($"{s.OwningMachine.Name}_{s.Name}_sends_multi_{sends[i].Name}_{sends[j].Name}", tasks, sends[i], sends[j]);
+                                }
+                            }
+                        }
                         ExploreFunction(tasks, s, action.Target, trigger: @event);
                     }
                     else if (handler is EventGotoState gotoAction)

@@ -2,7 +2,7 @@
 //     config_event = eMonitor_AtomicityInitialize;
 // }
 
-hint AbortCommit (e0: eCommitTrans, e1: eAbortTrans) {}
+// hint AbortCommit (e0: eCommitTrans, e1: eAbortTrans) {}
 
 // hint exact Atomicity_known (e1: eWriteTransResp, e2: ePrepareResp) {
 //     num_guards = 2;

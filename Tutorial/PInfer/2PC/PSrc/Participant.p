@@ -50,9 +50,9 @@ machine Participant {
       pendingWriteTrans[prepareReq.transId] = prepareReq;
       // non-deterministically pick whether to accept or reject the transaction
       if (!(prepareReq.key in kvStore) || (prepareReq.key in kvStore && prepareReq.transId > kvStore[prepareReq.key].transId)) {
-        send coordinator, ePrepareResp, (participant = this, transId = prepareReq.transId, status = SUCCESS);
+        send coordinator, ePrepareSuccess, (participant = this, transId = prepareReq.transId);
       } else {
-        send coordinator, ePrepareResp, (participant = this, transId = prepareReq.transId, status = ERROR);
+        send coordinator, ePrepareFailure, (participant = this, transId = prepareReq.transId);
       }
     }
 
@@ -60,12 +60,12 @@ machine Participant {
       if(req.key in kvStore)
       {
         // read successful as the key exists
-        send req.client, eReadTransResp, (transId = kvStore[req.key].transId, key = req.key, val = kvStore[req.key].val, status = SUCCESS);
+        send req.client, eReadTransSuccess, (transId = kvStore[req.key].transId, key = req.key, val = kvStore[req.key].val);
       }
       else
       {
         // read failed as the key does not exist
-        send req.client, eReadTransResp, (transId = -1, key = "", val = -1, status = ERROR);
+        send req.client, eReadTransFailure, (key = req.key,);
       }
     }
 

@@ -26,23 +26,39 @@ machine Client {
     entry {
       currTransaction = ChooseRandomTransaction(id * 100 + N /* hack for creating unique transaction id*/);
       send coordinator, eWriteTransReq, (client = this, trans = currTransaction);
+      goto ConfirmTransaction;
     }
-    on eWriteTransResp goto ConfirmTransaction;
   }
 
   state ConfirmTransaction {
-    entry (writeResp: tWriteTransResp) {
-      // assert that if write transaction was successful then value read is the value written.
-      if(writeResp.status == SUCCESS)
+    on eWriteTransFailure do (resp: (transId: TransactionId)) {
+      if(N > 0)
       {
-        send coordinator, eReadTransReq, (client= this, key = currTransaction.key);
-        // await response from the participant
-        receive {
-          case eReadTransResp: (readResp: tReadTransResp) {
-            assert readResp.key == currTransaction.key && readResp.val == currTransaction.val || readResp.transId > currTransaction.transId,
-              format ("Record read is not same as what was written by the client:: read - {0}, written - {1}",
-            readResp.val, currTransaction.val);
-          }
+        N = N - 1;
+        goto SendWriteTransaction;
+      }
+    }
+
+    on eWriteTransTimeout do (resp: (transId: TransactionId)) {
+      if(N > 0)
+      {
+        N = N - 1;
+        goto SendWriteTransaction;
+      }
+    }
+
+    on eWriteTransSuccess do (resp: (transId: TransactionId)) {
+      // assert that if write transaction was successful then value read is the value written.
+      send coordinator, eReadTransReq, (client= this, key = currTransaction.key);
+      // await response from the participant
+      receive {
+        case eReadTransSuccess: (readResp: (transId: TransactionId, key: Key, val: Value)) {
+          assert readResp.key == currTransaction.key && readResp.val == currTransaction.val || readResp.transId > currTransaction.transId,
+            format ("Record read is not same as what was written by the client:: read - {0}, written - {1}",
+          readResp.val, currTransaction.val);
+        }
+        case eReadTransFailure: (readResp: (key: Key)) {
+          assert false, "Read transaction failed";
         }
       }
       // has more work to do?

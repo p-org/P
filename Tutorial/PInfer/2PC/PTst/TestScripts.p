@@ -4,7 +4,7 @@ test tcSingleClientNoFailure [main = SingleClientNoFailure]:
 
 // asserts the liveness monitor along with the default properties
 test tcMultipleClientsNoFailure [main = MultipleClientsNoFailure]:
-  assert AtomicityInvariant, Progress, Atomicity_1 in
+  assert AtomicityInvariant, Progress in
     (union TwoPhaseCommit, TwoPCClient, FailureInjector, { MultipleClientsNoFailure });
 
 // asserts the liveness monitor along with the default properties

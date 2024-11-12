@@ -11,7 +11,8 @@ configurations = {
     'paxos': ['testBasicPaxos1on1', 'testBasicPaxos3on5', 'testBasicPaxos3on3', 'testBasicPaxos3on1', 'testBasicPaxos2on3', 'testBasicPaxos2on2'],
     'Raft': ['oneClientFiveServersReliable', 'oneClientFiveServersUnreliable', 'twoClientsThreeServersReliable', 'twoClientsThreeServersUnreliable'],
     'ring_leader': ['tcOneNode', 'tcTwoNodes', 'tcThreeNodes', 'tcFiveNodes', 'tcTenNodes'],
-    'lockserver': ['tcOneNode', 'tcThreeNodes', 'tcFourNodes', 'tcFiveNodes']
+    'lockserver': ['tcOneNode', 'tcThreeNodes', 'tcFourNodes', 'tcFiveNodes'],
+    'sharded_kv': ['tcTwoNodes', 'tcThreeNodes', 'tcFourNodes', 'tcFiveNodes'],
 }
 
 event_combs = {
@@ -26,6 +27,13 @@ event_combs = {
         # ('eAppendEntriesReply', 'eClientGetRequest'),
         ('eBecomeLeader', 'eRequestVoteReply', 'eRaftConfig'),
         # ('eClientGetRequest', 'eClientPutRequest', 'eRequestVoteReply')
+    ],
+    '2PC': [
+        ('ePrepareReq', 'ePrepareSuccess', 'ePrepareFailure', 'eWriteTransSuccess',
+         'eWriteTransTimeout', 'eWriteTransFailure', 'eCommitTrans', 'eAbortTrans', 'eMonitor_AtomicityInitialize')
+    ],
+    'ring_leader': [
+        ('eNominate', 'eBecomeLeader')
     ]
 }
 

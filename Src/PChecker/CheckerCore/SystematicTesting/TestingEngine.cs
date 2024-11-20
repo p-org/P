@@ -651,8 +651,6 @@ namespace PChecker.SystematicTesting
                 if (ShouldPrintIteration(schedule))
                 {
                     var seconds = watch.Elapsed.TotalSeconds;
-                    Logger.WriteLine($"Elapsed: {seconds}, " +
-                                     $"# timelines: {TestReport.ExploredTimelines.Count}");
                     if (Strategy is IFeedbackGuidedStrategy s)
                     {
                         s.DumpStats(Logger);

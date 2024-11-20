@@ -86,7 +86,6 @@ public class BehavioralObserver
             return;
         }
         int uniqueScore = GetUniqueScore(currSignature);
-        Logger.WriteLine($"----**** UniquenessScore: {uniqueScore}");
         if (uniqueScore != 0)
         {
             AllTimeline.Add(currSignature);

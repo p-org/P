@@ -28,11 +28,6 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         private readonly IRandomValueGenerator _randomValueGenerator;
 
         /// <summary>
-        /// The maximum number of steps to schedule.
-        /// </summary>
-        private readonly int MaxScheduledSteps;
-
-        /// <summary>
         /// The number of scheduled steps.
         /// </summary>
         private int ScheduledSteps;

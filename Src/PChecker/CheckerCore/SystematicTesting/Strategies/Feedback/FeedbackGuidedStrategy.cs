@@ -30,7 +30,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     private int _pendingMutations = 0;
     private bool _shouldExploreNew = false;
     private HashSet<GeneratorRecord> _visitedGenerators = new HashSet<GeneratorRecord>();
-    private GeneratorRecord? _currentParent = null;
+    private GeneratorRecord _currentParent = null;
 
     private System.Random _rnd = new System.Random();
 

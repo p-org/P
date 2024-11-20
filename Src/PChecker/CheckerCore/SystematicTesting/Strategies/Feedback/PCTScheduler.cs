@@ -84,8 +84,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 return false;
             }
 
-            var highestEnabledOp = GetPrioritizedOperation(enabledOperations, current);
-            next = highestEnabledOp;
+            next = GetPrioritizedOperation(enabledOperations, current);
 
             return true;
         }

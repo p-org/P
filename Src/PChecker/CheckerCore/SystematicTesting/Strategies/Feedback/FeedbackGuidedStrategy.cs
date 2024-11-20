@@ -41,14 +41,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     /// </summary>
     public FeedbackGuidedStrategy(CheckerConfiguration checkerConfiguration, ControlledRandom inputGenerator, IScheduler scheduler)
     {
-        if (scheduler is PCTScheduler)
-        {
-            _maxScheduledSteps = checkerConfiguration.MaxUnfairSchedulingSteps;
-        }
-        else
-        {
-            _maxScheduledSteps = checkerConfiguration.MaxFairSchedulingSteps;
-        }
+        _maxScheduledSteps = checkerConfiguration.MaxUnfairSchedulingSteps;
         Generator = new StrategyGenerator(inputGenerator, scheduler);
     }
 

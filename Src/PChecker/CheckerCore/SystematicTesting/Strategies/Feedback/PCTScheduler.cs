@@ -28,11 +28,6 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         private readonly IRandomValueGenerator _randomValueGenerator;
 
         /// <summary>
-        /// The maximum number of steps to schedule.
-        /// </summary>
-        private readonly int MaxScheduledSteps;
-
-        /// <summary>
         /// The number of scheduled steps.
         /// </summary>
         private int ScheduledSteps;
@@ -50,18 +45,13 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <summary>
         /// List of prioritized operations.
         /// </summary>
-        private readonly List<AsyncOperation> PrioritizedOperations;
-
-        /// <summary>
-        /// Next execution point where the priority should be changed.
-        /// </summary>
-        private int _nextPriorityChangePoint;
+        private readonly List<AsyncOperation> PrioritizedOperations = new();
         
         /// <summary>
-        /// Number of switch points left (leq MaxPrioritySwitchPoints).
+        /// Set of priority change points.
         /// </summary>
-        private int _numSwitchPointsLeft;
-
+        private readonly SortedSet<int> PriorityChangePoints = new();
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="PCTStrategy"/> class.
         /// </summary>
@@ -71,14 +61,11 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             ScheduledSteps = 0;
             ScheduleLength = scheduleLength;
             MaxPrioritySwitchPoints = maxPrioritySwitchPoints;
-            PrioritizedOperations = new List<AsyncOperation>();
-            double switchPointProbability = 0.1;
             if (ScheduleLength != 0)
             {
-                switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
+                PreparePriorityChangePoints(ScheduleLength);
             }
-            _nextPriorityChangePoint = Generator.Mutator.Utils.SampleGeometric(switchPointProbability, random.NextDouble());
-
+            
         }
 
         public virtual bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops,
@@ -89,7 +76,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
             if (enabledOperations.Count == 0)
             {
-                if (_nextPriorityChangePoint == ScheduledSteps)
+                if (PriorityChangePoints.Contains(ScheduledSteps))
                 {
                     MovePriorityChangePointForward();
                 }
@@ -97,20 +84,29 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 return false;
             }
 
-            var highestEnabledOp = GetPrioritizedOperation(enabledOperations, current);
-            if (next is null)
-            {
-                next = highestEnabledOp;
-            }
+            next = GetPrioritizedOperation(enabledOperations, current);
 
             return true;
         }
 
+        /// <summary>
+        /// Moves the current priority change point forward. This is a useful
+        /// optimization when a priority change point is assigned in either a
+        /// sequential execution or a nondeterministic choice.
+        /// </summary>
         private void MovePriorityChangePointForward()
         {
-            _nextPriorityChangePoint += 1;
-            Debug.WriteLine("<PCTLog> Moving priority change to '{0}'.", _nextPriorityChangePoint);
+            PriorityChangePoints.Remove(ScheduledSteps);
+            var newPriorityChangePoint = ScheduledSteps + 1;
+            while (PriorityChangePoints.Contains(newPriorityChangePoint))
+            {
+                newPriorityChangePoint++;
+            }
+
+            PriorityChangePoints.Add(newPriorityChangePoint);
+            Debug.WriteLine("<PCTLog> Moving priority change to '{0}'.", newPriorityChangePoint);
         }
+        
 
         private AsyncOperation GetHighestPriorityEnabledOperation(IEnumerable<AsyncOperation> choices)
         {
@@ -146,8 +142,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             }
 
 
-            var prioritizedSchedulable = GetHighestPriorityEnabledOperation(ops);
-            if (_nextPriorityChangePoint == ScheduledSteps)
+            if (PriorityChangePoints.Contains(ScheduledSteps))
             {
                 if (ops.Count == 1)
                 {
@@ -155,27 +150,13 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 }
                 else
                 {
-                    PrioritizedOperations.Remove(prioritizedSchedulable);
-                    PrioritizedOperations.Add(prioritizedSchedulable);
-                    Debug.WriteLine("<PCTLog> Operation '{0}' changes to lowest priority.", prioritizedSchedulable);
-
-                    _numSwitchPointsLeft -= 1;
-                    // Update the next priority change point.
-                    if (_numSwitchPointsLeft > 0)
-                    {
-                        double switchPointProbability = 0.1;
-                        if (ScheduleLength != 0)
-                        {
-                            switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
-                        }
-
-                        _nextPriorityChangePoint =
-                            Generator.Mutator.Utils.SampleGeometric(switchPointProbability,
-                                _randomValueGenerator.NextDouble()) + ScheduledSteps;
-                    }
-
+                    var priority = GetHighestPriorityEnabledOperation(ops);
+                    PrioritizedOperations.Remove(priority);
+                    PrioritizedOperations.Add(priority);
+                    Debug.WriteLine("<PCTLog> Operation '{0}' changes to lowest priority.", priority);
                 }
             }
+            var prioritizedSchedulable = GetHighestPriorityEnabledOperation(ops);
 
             if (Debug.IsEnabled)
             {
@@ -209,18 +190,26 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         {
             ScheduleLength = Math.Max(ScheduleLength, ScheduledSteps);
             ScheduledSteps = 0;
-            _numSwitchPointsLeft = MaxPrioritySwitchPoints;
 
             PrioritizedOperations.Clear();
-            double switchPointProbability = 0.1;
-            if (ScheduleLength != 0)
+            PriorityChangePoints.Clear();
+            return true;
+        }
+
+        private void PreparePriorityChangePoints(int step)
+        {
+            List<int> listOfInts = new List<int>();
+            for (int i = 0; i < step; i++)
             {
-                switchPointProbability = 1.0 * _numSwitchPointsLeft / (ScheduleLength - ScheduledSteps + 1);
+                listOfInts.Add(i);
             }
 
-            _nextPriorityChangePoint =
-                Generator.Mutator.Utils.SampleGeometric(switchPointProbability, _randomValueGenerator.NextDouble());
-            return true;
+            for (int i = 0; i < MaxPrioritySwitchPoints; i++)
+            {
+                int index = _randomValueGenerator.Next(listOfInts.Count);
+                PriorityChangePoints.Add(listOfInts[index]);
+                listOfInts.RemoveAt(index);
+            }
         }
 
         public IScheduler Mutate()

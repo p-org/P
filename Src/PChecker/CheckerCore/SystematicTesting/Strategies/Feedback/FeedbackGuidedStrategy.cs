@@ -30,7 +30,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     private int _pendingMutations = 0;
     private bool _shouldExploreNew = false;
     private HashSet<GeneratorRecord> _visitedGenerators = new HashSet<GeneratorRecord>();
-    private GeneratorRecord? _currentParent = null;
+    private GeneratorRecord _currentParent = null;
 
     private System.Random _rnd = new System.Random();
 
@@ -41,14 +41,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     /// </summary>
     public FeedbackGuidedStrategy(CheckerConfiguration checkerConfiguration, ControlledRandom inputGenerator, IScheduler scheduler)
     {
-        if (scheduler is PCTScheduler)
-        {
-            _maxScheduledSteps = checkerConfiguration.MaxUnfairSchedulingSteps;
-        }
-        else
-        {
-            _maxScheduledSteps = checkerConfiguration.MaxFairSchedulingSteps;
-        }
+        _maxScheduledSteps = checkerConfiguration.MaxUnfairSchedulingSteps;
         Generator = new StrategyGenerator(inputGenerator, scheduler);
     }
 

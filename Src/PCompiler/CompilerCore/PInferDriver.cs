@@ -1241,8 +1241,8 @@ namespace Plang.Compiler
                         }
                         if (Implies(k, pi, qi))
                         {
-                            // var rec = ShowRecordAt(k, i);
-                            // job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
+                            var rec = ShowRecordAt(k, i);
+                            job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
                             removes.Add(i);
                             NumTautologyPruned += 1;
                             continue;

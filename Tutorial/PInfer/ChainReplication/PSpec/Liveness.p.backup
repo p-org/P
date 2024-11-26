@@ -1,0 +1,59 @@
+/* Liveness.p : liveness property of the PUT/GET APIs of a key-value store */
+
+type tReqId  = (client: Client, id: int);
+
+spec ReadLiveness observes eReadRequest, eReadResponse{
+    var pendingRead: set[tReqId];
+    var reqId : tReqId;
+    start cold state NoPendingReqs {
+        on eReadRequest do (req: tReadRequest) {
+            reqId = (client = req.source as Client, id = req.id);
+            pendingRead += (reqId);
+            goto PendingReqs;
+        }
+    }
+    hot state PendingReqs {
+        on eReadRequest do (req: tReadRequest) {
+            reqId = (client = req.source as Client, id = req.id);
+            pendingRead += (reqId);
+            goto PendingReqs;
+        }
+        on eReadResponse do (resp: tReadResponse) {
+            reqId = (client = resp.source as Client, id = resp.id);
+            assert  (reqId) in pendingRead,
+                    format ("READ response ({0}) not expected.", reqId);
+            pendingRead -= reqId;
+            if (sizeof(pendingRead) == 0) {
+                goto NoPendingReqs;
+            }
+        }
+    }
+}
+
+spec WriteLiveness observes eWriteRequest, eWriteResponse {
+    var pendingWrite: set[tReqId];
+    var reqId : tReqId;
+    start cold state NoPendingReqs {
+        on eWriteRequest do (req: tWriteRequest) {
+            reqId = (client = req.source as Client, id = req.id);
+            pendingWrite += (reqId);
+            goto PendingReqs;
+        }
+    }
+    hot state PendingReqs {
+        on eWriteRequest do (req: tWriteRequest) {
+            reqId = (client = req.source as Client, id = req.id);
+            pendingWrite += (reqId);
+            goto PendingReqs;
+        }
+        on eWriteResponse do (resp: tWriteRequest) {
+            reqId = (client = resp.source as Client, id = resp.id);
+            assert  (reqId) in pendingWrite,
+                    format ("WRITE response ({0}) not expected.", reqId);
+            pendingWrite -= reqId;
+            if (sizeof(pendingWrite) == 0) {
+                goto NoPendingReqs;
+            }
+        }
+    }
+}

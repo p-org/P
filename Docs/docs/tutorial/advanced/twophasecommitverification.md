@@ -1,6 +1,6 @@
 # Introduction to Formal Verification in P
 
-This tutorial describes the formal verification features of P through an example. We assume that the reader has P installed along with the verification dependencies (i,e., UCLID5 and Z3). Installation instructions are available [here](https://github.com/p-org/P/blob/experimental/pverifier/INSTALL.md).
+This tutorial describes the formal verification features of P through an example. We assume that the reader has P installed along with the verification dependencies (i,e., UCLID5 and Z3). Installation instructions are available [here](https://github.com/p-org/P/blob/master/Docs/docs/advanced/install-verification-backend.md).
 
 When using P for formal verification, our goal is to show that no execution of any test driver will violate a specification. To do this, we will rely on proofs by induction---more on that later. This backend is different from P's explicit state model checker, which you are accustomed to using. These differences can influence the modeling decisions you make. 
 

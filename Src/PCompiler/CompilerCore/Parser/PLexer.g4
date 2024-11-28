@@ -64,6 +64,7 @@ WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
 
+// PVerifier keywords
 INVARIANT  : 'invariant';
 AXIOM      : 'axiom';
 IS         : 'is';
@@ -78,6 +79,9 @@ THEOREM    : 'Theorem';
 EXCEPT     : 'except';
 REQUIRES   : 'requires';
 ENSURES    : 'ensures';
+FORALL     : 'forall' ;
+EXISTS     : 'exists' ;
+INIT       : 'init-condition';
 
 // module-system-specific keywords
 
@@ -155,10 +159,6 @@ SEMI   : ';' ;
 COMMA  : ',' ;
 DOT    : '.' ;
 COLON  : ':' ;
-
-FORALL  : 'forall' ;
-EXISTS  : 'exists' ;
-INIT    : 'init';
 
 // Identifiers
 

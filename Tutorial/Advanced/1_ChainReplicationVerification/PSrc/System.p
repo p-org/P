@@ -98,15 +98,15 @@ pure tail(): machine;
 pure next_(m: machine): machine;
 
 // set all the fields to their default values
-init forall (p: Head) :: p.kv == default(map[int, int]);
-init forall (p: Body) :: p.kv == default(map[int, int]);
-init forall (p: Tail) :: p.kv == default(map[int, int]);
-init StrongConsistency.kv == default(map[int, int]);
+init-condition forall (p: Head) :: p.kv == default(map[int, int]);
+init-condition forall (p: Body) :: p.kv == default(map[int, int]);
+init-condition forall (p: Tail) :: p.kv == default(map[int, int]);
+init-condition StrongConsistency.kv == default(map[int, int]);
 
 // assume the pure functions match the state at the start
-init forall (m: machine) :: m == head() == m is Head;
-init forall (m: machine) :: m == tail() == m is Tail;
-init forall (m: machine) :: next_(m) is Body || next_(m) is Tail;
+init-condition forall (m: machine) :: m == head() == m is Head;
+init-condition forall (m: machine) :: m == tail() == m is Tail;
+init-condition forall (m: machine) :: next_(m) is Body || next_(m) is Tail;
 // ensure that the pure functions continue to match the state as time goes on
 invariant next_1: forall (m: machine) :: m == head() == m is Head;
 invariant next_2: forall (m: machine) :: m == tail() == m is Tail;

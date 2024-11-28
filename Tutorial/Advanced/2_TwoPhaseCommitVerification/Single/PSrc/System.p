@@ -82,11 +82,11 @@ pure coordinator(): machine;
 pure preference(m: machine) : bool;
 
 // assumptions about how the system is setup and the pure functions above
-init forall (m: machine) :: m == coordinator() == m is Coordinator;
-init forall (m: machine) :: m in participants() == m is Participant;
+init-condition forall (m: machine) :: m == coordinator() == m is Coordinator;
+init-condition forall (m: machine) :: m in participants() == m is Participant;
 
 // set all the fields to their default values
-init forall (c: Coordinator) :: c.yesVotes == default(set[machine]);
+init-condition forall (c: Coordinator) :: c.yesVotes == default(set[machine]);
 
 // making sure that our assumptions about pure functions are not pulled out from underneath us
 Lemma system_config {

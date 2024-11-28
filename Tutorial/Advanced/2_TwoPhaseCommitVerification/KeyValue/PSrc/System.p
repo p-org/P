@@ -185,9 +185,9 @@ pure subset(small: set[rvPair], large: set[rvPair]) : bool = forall (rv: rvPair)
 axiom exists (x: machine) :: x in participants();
 
 // assumptions about how the system is setup and the pure functions above
-init coordinator() is Coordinator;
-init forall (c1: machine, c2: machine) :: (c1 is Coordinator && c2 is Coordinator) ==> c1 == c2;
-init forall (m: machine) :: m in participants() == m is Participant;
+init-condition coordinator() is Coordinator;
+init-condition forall (c1: machine, c2: machine) :: (c1 is Coordinator && c2 is Coordinator) ==> c1 == c2;
+init-condition forall (m: machine) :: m in participants() == m is Participant;
 
 // making sure that our assumptions about pure functions are not pulled out from underneath us
 invariant c_is_coordinator: coordinator() is Coordinator;
@@ -195,13 +195,13 @@ invariant one_coordinator:  forall (c1: machine, c2: machine) :: (c1 is Coordina
 invariant participant_set:  forall (m: machine) :: m in participants() == m is Participant;
 
 // set all the fields to their default values
-init forall (c: Coordinator) :: c.yesVotes == default(map[krvTriple, set[machine]]);
-init forall (c: Coordinator) :: c.commited == default(set[krvTriple]);
-init forall (c: Coordinator) :: c.aborted == default(set[krvTriple]);
-init forall (p: Participant) :: p.commited == default(set[krvTriple]);
-init forall (p: Participant) :: p.aborted == default(set[krvTriple]);
-init forall (p: Participant) :: p.kv == default(map[tKey, set[rvPair]]);
-init Consistency.kv == default(map[tKey, set[rvPair]]);
+init-condition forall (c: Coordinator) :: c.yesVotes == default(map[krvTriple, set[machine]]);
+init-condition forall (c: Coordinator) :: c.commited == default(set[krvTriple]);
+init-condition forall (c: Coordinator) :: c.aborted == default(set[krvTriple]);
+init-condition forall (p: Participant) :: p.commited == default(set[krvTriple]);
+init-condition forall (p: Participant) :: p.aborted == default(set[krvTriple]);
+init-condition forall (p: Participant) :: p.kv == default(map[tKey, set[rvPair]]);
+init-condition Consistency.kv == default(map[tKey, set[rvPair]]);
 
 // make sure we never get a message that we're not expecting
 invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && e targets coordinator() ==> !inflight e;

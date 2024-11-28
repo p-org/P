@@ -148,14 +148,14 @@ We want our model to capture many different system configurations (e.g., number 
 In our 2PC model, for example, we can state that, at initialization, there is a unique machine of type coordinator, and the `coordinator` function points to that machine; and every machine in the participants set is a machine of type participant.
 
 ```
-init forall (m: machine) :: m == coordinator() == m is Coordinator;
-init forall (m: machine) :: m in participants() == m is Participant;
+init-condition forall (m: machine) :: m == coordinator() == m is Coordinator;
+init-condition forall (m: machine) :: m in participants() == m is Participant;
 ```
 
 We can also state that all `yesVotes` tallies start empty.
 
 ```
-init forall (c: Coordinator) :: c.yesVotes == default(set[machine]);
+init-condition forall (c: Coordinator) :: c.yesVotes == default(set[machine]);
 ```
 
 When we write a proof of correctness later in this tutorial, we will be restricting the systems that we consider to those that satisfy the initialization conditions listed above.
@@ -164,7 +164,7 @@ When we write a proof of correctness later in this tutorial, we will be restrict
 
 Our initialization conditions contain two new P features: the `init` keyword, and quantified expressions (`forall` and `exists`). Even more interesting, one quantifier above is over a machine subtype (`coordinator`). 
 
-In P, the only way to dereference a machine variable inside of a specification (like the init conditions above) is by specifically quantifying over that machine type. In other words, `forall (c: Coordinator) :: c.yesVotes == default(set[machine])` is legal but `forall (c: machine) :: c.yesVotes == default(set[machine])` is not, even though they might appear to be similar. The reason for this is that selecting (using the `.` operator) on an incorrect subtype (e.g., trying to get `yesVotes` from a participant machine) is undefined. Undefined behavior in formal verification can lead to surprising results that can be really hard to debug, so in P we syntactically disallow this kind of undefined behavior altogether.
+In P, the only way to dereference a machine variable inside of a specification (like the `init-condition`s above) is by specifically quantifying over that machine type. In other words, `forall (c: Coordinator) :: c.yesVotes == default(set[machine])` is legal but `forall (c: machine) :: c.yesVotes == default(set[machine])` is not, even though they might appear to be similar. The reason for this is that selecting (using the `.` operator) on an incorrect subtype (e.g., trying to get `yesVotes` from a participant machine) is undefined. Undefined behavior in formal verification can lead to surprising results that can be really hard to debug, so in P we syntactically disallow this kind of undefined behavior altogether.
 
 ## P's Builtin Specifications And Our First Proof Attempt
 
@@ -375,7 +375,7 @@ In this tutorial, we formally verified a simplified 2PC protocol in P. The full,
 Our proof followed the running example of Zhang et al. but also included the verification of builtin P specifications. Along the way, we introduced the following new P keywords and concepts.
 
 1. `pure` functions;
-2. `init`ialization conditions;
+2. `init-condition` predicates;
 3. quantifiers;
 4. proofs by induction;
 5. `invariant`s;

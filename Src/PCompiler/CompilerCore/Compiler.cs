@@ -121,6 +121,40 @@ namespace Plang.Compiler
             var fileStream = new AntlrInputStream(fileText);
             var lexer = new PLexer(fileStream);
             var tokens = new CommonTokenStream(lexer);
+
+            if (!job.OutputLanguages.Contains(CompilerOutput.Uclid5))
+            {
+                // disallow any pverifier tokens
+                tokens.Fill();
+                foreach (var token in tokens.GetTokens())
+                {
+                    switch (token.Type)
+                    {
+                        case PParser.INVARIANT:
+                        case PParser.AXIOM:
+                        case PParser.IS:
+                        case PParser.FLYING:
+                        case PParser.TARGETS:
+                        case PParser.SENT:
+                        case PParser.PROOF:
+                        case PParser.PROVE:
+                        case PParser.USING:
+                        case PParser.LEMMA:
+                        case PParser.THEOREM:
+                        case PParser.EXCEPT:
+                        case PParser.REQUIRES:
+                        case PParser.ENSURES:
+                        case PParser.FORALL:
+                        case PParser.EXISTS:
+                        case PParser.INIT:
+                            throw new NotSupportedException(
+                                $"line {token.Line}:{token.Column} \"{token.Text}\" only supported by PVerifier backend.");
+                    }
+                }
+
+                tokens.Reset();
+            }
+
             var parser = new PParser(tokens);
             parser.RemoveErrorListeners();
 

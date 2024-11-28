@@ -242,12 +242,12 @@ namespace Plang.Parser
                         case "stately":
                             outputLanguages.Add(CompilerOutput.Stately);
                             break;
-                        case "uclid5":
+                        case "pverifier":
                             outputLanguages.Add(CompilerOutput.Uclid5);
                             break;
                         default:
                             throw new CommandlineParsingError(
-                                $"Expected CSharp, Java, Stately, UCLID5, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                                $"Expected CSharp, Java, Stately, PVerifier, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
                     }
                 }
             }

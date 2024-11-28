@@ -49,10 +49,10 @@ namespace Plang.Compiler
 
             if (job.OutputLanguages.Contains(CompilerOutput.Uclid5))
             {
-                // If outputing UCLID5, don't output anything else
+                // If using the PVerifier, don't output anything else
                 if (job.OutputLanguages.Count > 1)
                 {
-                    throw new NotSupportedException("UCLID5 backend must be used on its own!");
+                    throw new NotSupportedException("PVerifier backend must be used on its own!");
                 }
             }
             else

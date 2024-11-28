@@ -1,8 +1,8 @@
 <Project>
-<ProjectName>RingLeaderVerification</ProjectName>
+<ProjectName>ChainReplicationVerification</ProjectName>
 <InputFiles>
 	<PFile>./PSrc/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
-<Target>UCLID5</Target>
+<Target>PVerifier</Target>
 </Project>

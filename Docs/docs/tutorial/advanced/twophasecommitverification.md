@@ -370,7 +370,7 @@ Showing that the verification passes. Notice that if you remove any of the invar
 
 ## Recap and Next Steps
 
-In this tutorial, we formally verified a simplified 2PC protocol in P. The full, final code for the verification is available [here](https://github.com/p-org/P/blob/experimental/pverifier/Tutorial/6_TwoPhaseCommitVerification/Single/PSrc/System.p).
+In this tutorial, we formally verified a simplified 2PC protocol in P. The full, final code for the verification is available [here](https://github.com/p-org/P/blob/experimental/pverifier/Tutorial/Advanced/2_TwoPhaseCommitVerification/Single/PSrc/System.p).
 
 Our proof followed the running example of Zhang et al. but also included the verification of builtin P specifications. Along the way, we introduced the following new P keywords and concepts.
 

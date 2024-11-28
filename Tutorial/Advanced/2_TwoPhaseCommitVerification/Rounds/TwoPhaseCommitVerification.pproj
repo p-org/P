@@ -4,5 +4,5 @@
 	<PFile>./PSrc/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
-<Target>UCLID5</Target>
+<Target>PVerifier</Target>
 </Project>

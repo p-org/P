@@ -30,7 +30,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private HashSet<PLanguageType> _optionsToDeclare;
     private HashSet<PLanguageType> _chooseToDeclare;
     private HashSet<PLanguageType> _setCheckersToDeclare;
-    private Dictionary<PEvent, List<string>> _specListenMap; // keep track of the procedure names for each event
+    private Dictionary<Event, List<string>> _specListenMap; // keep track of the procedure names for each event
     private Dictionary<string, ProofCommand> _fileToProofCommands;
     private Dictionary<ProofCommand, List<string>> _proofCommandToFiles;
     private List<ProofCommand> _commands;
@@ -289,7 +289,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         _ctx = new CompilationContext(job);
         _optionsToDeclare = [];
         _chooseToDeclare = [];
-        _specListenMap = new Dictionary<PEvent, List<string>>();
+        _specListenMap = new Dictionary<Event, List<string>>();
         _setCheckersToDeclare = [];
         _fileToProofCommands = [];
         _invariantDependencies = [];
@@ -335,7 +335,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return files;
     }
 
-    private CompiledFile GenerateCompiledFile(ProofCommand cmd, string name, Machine m, State s, PEvent e)
+    private CompiledFile GenerateCompiledFile(ProofCommand cmd, string name, Machine m, State s, Event e)
     {
         string filename;
         if (e == null)
@@ -356,7 +356,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     private List<CompiledFile> CompileToFile(string name, ProofCommand cmd, bool sanityCheck, bool handlerCheck, bool builtin)
     {
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
-        var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
+        var events = _globalScope.AllDecls.OfType<Event>().ToList();
         List<CompiledFile> files = [];
         foreach (var m in machines)
         {
@@ -422,7 +422,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     // Prefixes to avoid name clashes and keywords
     private static string BuiltinPrefix => "P_";
     private static string UserPrefix => "User_";
-    private static string EventPrefix => "PEvent_";
+    private static string EventPrefix => "Event_";
     private static string GotoPrefix => "PGoto_";
     private static string MachinePrefix => "PMachine_";
     private static string LocalPrefix => "PLocal_";
@@ -694,7 +694,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return $"{EventOrGotoAdtEventConstructor}({e})";
     }
 
-    private string EventOrGotoAdtConstructEvent(PEvent ev, IPExpr arg)
+    private string EventOrGotoAdtConstructEvent(Event ev, IPExpr arg)
     {
         var payload = arg is null ? "" : ExprToString(arg);
         var e = EventAdtConstruct(payload, ev);
@@ -735,12 +735,12 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
     private static string EventAdt => $"{EventPrefix}Adt";
 
-    private string EventAdtDeclaration(List<PEvent> events)
+    private string EventAdtDeclaration(List<Event> events)
     {
         var declarationSum = string.Join("\n\t\t| ", events.Select(EventDeclarationCase));
         return $"datatype {EventAdt} = \n\t\t| {declarationSum};";
 
-        string EventDeclarationCase(PEvent e)
+        string EventDeclarationCase(Event e)
         {
             var pt = e.PayloadType.IsSameTypeAs(PrimitiveType.Null)
                 ? ""
@@ -750,22 +750,22 @@ public class Uclid5CodeGenerator : ICodeGenerator
         }
     }
 
-    private static string EventAdtSelectPayload(string eadt, PEvent e)
+    private static string EventAdtSelectPayload(string eadt, Event e)
     {
         return $"{eadt}.{EventPrefix}{e.Name}_Payload";
     }
 
-    private static string EventAdtConstruct(string payload, PEvent e)
+    private static string EventAdtConstruct(string payload, Event e)
     {
         return $"{EventPrefix}{e.Name}({payload})";
     }
 
-    private static string EventAdtIsE(string instance, PEvent e)
+    private static string EventAdtIsE(string instance, Event e)
     {
         return $"is_{EventPrefix}{e.Name}({instance})";
     }
 
-    private static string EventOrGotoAdtIsE(string instance, PEvent e)
+    private static string EventOrGotoAdtIsE(string instance, Event e)
     {
         var isEvent = EventOrGotoAdtIsEvent(instance);
         var selectEvent = EventOrGotoAdtSelectEvent(instance);
@@ -773,13 +773,13 @@ public class Uclid5CodeGenerator : ICodeGenerator
         return $"({isEvent} && {correctEvent})";
     }
 
-    private static string LabelAdtIsE(string instance, PEvent e)
+    private static string LabelAdtIsE(string instance, Event e)
     {
         var action = LabelAdtSelectAction(instance);
         return EventOrGotoAdtIsE(action, e);
     }
 
-    private static string LabelAdtSelectPayloadField(string instance, PEvent e, NamedTupleEntry field)
+    private static string LabelAdtSelectPayloadField(string instance, Event e, NamedTupleEntry field)
     {
         var action = LabelAdtSelectAction(instance);
         return $"{EventAdtSelectPayload(EventOrGotoAdtSelectEvent(action), e)}.{field.Name}";
@@ -979,7 +979,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
     private void 
-        GenerateMain(Machine machine, State state, PEvent @event, List<Invariant> goals,
+        GenerateMain(Machine machine, State state, Event @event, List<Invariant> goals,
         List<Invariant> requires, bool generateSanityChecks, bool handlerCheck, bool builtin)
     {
         if (builtin)
@@ -991,7 +991,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
 
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var specs = (from m in _globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
-        var events = _globalScope.AllDecls.OfType<PEvent>().ToList();
+        var events = _globalScope.AllDecls.OfType<Event>().ToList();
         // goals = _globalScope.AllDecls.OfType<Invariant>().ToList();
         var axioms = _globalScope.AllDecls.OfType<Axiom>().ToList();
         var pures = _globalScope.AllDecls.OfType<Pure>().ToList();
@@ -1179,7 +1179,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("}");
     }
 
-    private void GenerateNextBlock(List<Machine> machines, List<PEvent> events, bool handlerCheck)
+    private void GenerateNextBlock(List<Machine> machines, List<Event> events, bool handlerCheck)
     {
         var currentLabel = $"{BuiltinPrefix}CurrentLabel";
         // pick a random label and handle it
@@ -1217,7 +1217,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         EmitLine("}");
         return;
 
-        string EventGuard(Machine m, State s, PEvent e)
+        string EventGuard(Machine m, State s, Event e)
         {
             var correctMachine = MachineStateAdtIsM(Deref(LabelAdtSelectTarget(currentLabel)), m);
             var correctState = MachineStateAdtInS(Deref(LabelAdtSelectTarget(currentLabel)), m, s);
@@ -1402,7 +1402,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
 
-    private void GenerateEventHandler(State s, PEvent ev, List<Invariant> goals, List<Invariant> requires,
+    private void GenerateEventHandler(State s, Event ev, List<Invariant> goals, List<Invariant> requires,
         bool generateSanityChecks = false)
     {
         var label = $"{LocalPrefix}Label";
@@ -1468,7 +1468,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
     }
 
 
-    private void GenerateControlBlock(Machine m, State s, PEvent e)
+    private void GenerateControlBlock(Machine m, State s, Event e)
     {
         EmitLine("control {");
         EmitLine($"set_solver_option(\":Timeout\", {_ctx.Job.Timeout});"); // timeout per query in seconds
@@ -1906,7 +1906,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
             EventAccessExpr eax => LabelAdtSelectPayloadField(ExprToString(eax.SubExpr), eax.PEvent, eax.Entry),
             TestExpr { Kind: Machine m } texpr => MachineStateAdtIsM(Deref(ExprToString(texpr.Instance)),
                 m), // must deref because or else we don't have an ADT!
-            TestExpr { Kind: PEvent e } texpr => LabelAdtIsE(ExprToString(texpr.Instance), e),
+            TestExpr { Kind: Event e } texpr => LabelAdtIsE(ExprToString(texpr.Instance), e),
             TestExpr { Kind: State s } texpr => MachineStateAdtInS(Deref(ExprToString(texpr.Instance)), s.OwningMachine,
                 s), // must deref for ADT!
             PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",

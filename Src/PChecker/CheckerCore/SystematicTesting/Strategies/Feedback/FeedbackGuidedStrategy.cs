@@ -5,6 +5,7 @@ using System.Linq;
 using PChecker.Generator;
 using PChecker.Feedback;
 using PChecker.Generator.Object;
+using PChecker.Runtime;
 using PChecker.SystematicTesting.Strategies.Probabilistic;
 using AsyncOperation = PChecker.SystematicTesting.Operations.AsyncOperation;
 using Debug = System.Diagnostics.Debug;
@@ -160,6 +161,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
         var timelineMinhash = timelineObserver.GetTimelineMinhash();
 
         int diversityScore = ComputeDiversity(timelineHash, timelineMinhash);
+        // int diversityScore = BehavioralObserver.uniquenessScore;
 
         if (diversityScore == 0)
         {

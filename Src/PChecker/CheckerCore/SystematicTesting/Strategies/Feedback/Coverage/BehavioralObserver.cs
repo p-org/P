@@ -9,7 +9,8 @@ namespace PChecker.Runtime;
 public class BehavioralObserver
 {
     private static HashSet<(VectorTime, Event, EventType)> CurrTimeline = new HashSet<(VectorTime, Event, EventType)>();
-    private static List<int[]> AllTimeline = new List<int[]>();
+    public static int uniquenessScore;
+    public static List<int[]> AllTimeline = new List<int[]>();
     private static TextWriter Logger = new ConsoleLogger();
     // MinHash object with 100 hash functions, check how many of these 100 values are identical between the two sets
     private static MinHash minHash = new MinHash(100);  
@@ -68,6 +69,7 @@ public class BehavioralObserver
         // Sort by event name then vector time
         sortedTimeline.Sort((x, y) => x.Item2.ToString().CompareTo(y.Item2.ToString()));
         sortedTimeline.Sort((x, y) => x.Item1.CompareTo(y.Item1));
+        // PrintTimeline(sortedTimeline);
 
         return sortedTimeline;
     }
@@ -85,9 +87,9 @@ public class BehavioralObserver
             AllTimeline.Add(currSignature);
             return;
         }
-        int uniqueScore = GetUniqueScore(currSignature);
-        Logger.WriteLine($"----**** UniquenessScore: {uniqueScore}");
-        if (uniqueScore != 0)
+        uniquenessScore = GetUniqueScore(currSignature);
+        // Logger.WriteLine($"----**** UniquenessScore: {uniqueScore}");
+        if (uniquenessScore != 0)
         {
             AllTimeline.Add(currSignature);
         }

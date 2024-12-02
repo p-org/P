@@ -542,7 +542,7 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private void RunNextIteration(int schedule)
         {
-            BehavioralObserver.NextIter();
+            // BehavioralObserver.NextIter();
             if (!IsReplayModeEnabled && ShouldPrintIteration(schedule + 1))
             {
                 Logger.WriteLine($"..... Schedule #{schedule + 1}");
@@ -700,6 +700,7 @@ namespace PChecker.SystematicTesting
                     TestReport.NumOfFoundBugs == 1 ? string.Empty : "s");
                 report.AppendLine();
                 report.Append($"... Elapsed {Profiler.GetElapsedTime():0.##} sec and used {Profiler.GetMaxMemoryUsage():0.##} GB.");
+                // report.Append($"... Passed through {BehavioralObserver.AllTimeline.Count} unique timelines");
                 return report.ToString();
             }
 
@@ -969,6 +970,7 @@ namespace PChecker.SystematicTesting
             TestReport.Merge(report);
             var timelineHash = timelineObserver.GetTimelineHash();
             TestReport.ExploredTimelines.Add(timelineObserver.GetTimelineHash());
+            Logger.WriteLine("Timeline:" + timelineObserver.GetAbstractTimeline());
             // Also save the graph snapshot of the last iteration, if there is one.
             Graph = coverageInfo.CoverageGraph;
             // Also save the graph snapshot of the last schedule, if there is one.

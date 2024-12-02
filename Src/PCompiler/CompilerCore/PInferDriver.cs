@@ -1143,6 +1143,17 @@ namespace Plang.Compiler
             }
         }
 
+        private static bool CheckContrapositive(string k, int nExists, Dictionary<string, IPExpr> parsedLhs, Dictionary<string, IPExpr> parsedRhs,
+                            HashSet<string> p1, HashSet<string> q1, HashSet<string> p2, HashSet<string> q2)
+        {
+            if (!UseZ3 || nExists != 0) return false;
+            var p1Exprs = p1.Select(x => parsedLhs[x]).ToList();
+            var q1Exprs = q1.Select(x => parsedRhs[x]).ToList();
+            var p2Exprs = p2.Select(x => parsedLhs[x]).ToList();
+            var q2Exprs = q2.Select(x => parsedRhs[x]).ToList();
+            return Z3Wrapper.CheckImpliesContrapositive(k, p1Exprs, q1Exprs, p2Exprs, q2Exprs);
+        }
+
         public static bool ClearUpExistentials()
         {
             bool didSth = false;
@@ -1283,6 +1294,19 @@ namespace Plang.Compiler
                                 removes.Add(j);
                                 NumInvsPrunedBySubsumption += 1;
                             }
+                            // Case 1.1: i ==> j; i.e., if not qj ==> pi and qj ==> not qi
+                            else if (CheckContrapositive(k, NumExists[k], ParsedP[k], ParsedQ[k], pi, qi, pj, qj))
+                            {
+                                // job.Output.WriteWarning($"Remove {ShowRecordAt(k, j)} by {ShowRecordAt(k, i)}");
+                                removes.Add(j);
+                                NumInvsPrunedBySubsumption += 1;
+                            }
+                            else if (CheckContrapositive(k, NumExists[k], ParsedP[k], ParsedQ[k], pj, qj, pi, qi))
+                            {
+                                // job.Output.WriteWarning($"Remove {ShowRecordAt(k, i)} by {ShowRecordAt(k, j)}");
+                                removes.Add(i);
+                                NumInvsPrunedBySubsumption += 1;
+                            }
                             // Case 3: if i ==> j, then any thing holds under j also holds under i
                             // we may remove those from pi
                             // e.g. forall* P -> Q, moreover P -> R
@@ -1325,7 +1349,7 @@ namespace Plang.Compiler
                                 if (removes.Contains(j)) continue;
                                 if (symPi.SetEquals(P[k][j]))
                                 {
-                                    // job.Output.WriteWarning($"[Chores][Remove-Symmetric] {ShowRecordAt(k, j)}");
+                                    // job.Output.WriteWarning($"[Chores][Remove-Symmetric] {ShowRecordAt(k, j)} by {ShowRecordAt(k, i)}");
                                     removes.Add(j);
                                     NumInvsPrunedBySymmetry += 1;
                                 }

@@ -294,6 +294,35 @@ namespace Plang.Compiler.Backend.PInfer
             return r;
         }
 
+        public bool CheckImpliesContrapositive(string k, IEnumerable<IPExpr> p1, IEnumerable<IPExpr> q1, IEnumerable<IPExpr> p2, IEnumerable<IPExpr> q2)
+        {
+            solver.Push();
+            if (!compiled.ContainsKey(k))
+            {
+                compiled[k] = new(new ASTComparer());
+            }
+            var p1Clauses = p1.Select(x => IPExprToSMT(k, x)).Cast<BoolExpr>().ToArray();
+            var q1Clauses = q1.Select(x => IPExprToSMT(k, x)).Cast<BoolExpr>().ToArray();
+            var p2Clauses = p2.Select(x => IPExprToSMT(k, x)).Cast<BoolExpr>().ToArray();
+            var q2Clauses = q2.Select(x => IPExprToSMT(k, x)).Cast<BoolExpr>().ToArray();
+            // check the following
+            // (p1 -> q1) -> (p2 -> q2) iff
+            // (p1 -> q1) -> (not q2 -> not p2)
+            // By checking 1. (not q2 -> p1) and 2. (q1 -> not p2)
+            var p1Z3 = context.MkAnd(p1Clauses);
+            var q1Z3 = context.MkAnd(q1Clauses);
+            var p2Z3 = context.MkAnd(p2Clauses);
+            var q2Z3 = context.MkAnd(q2Clauses);
+            var obligation1 = context.MkImplies(context.MkNot(q2Z3), p1Z3);
+            var obligation2 = context.MkImplies(q1Z3, context.MkNot(p2Z3));
+            // check both obligations are tautologies
+            solver.Assert(context.MkNot(context.MkAnd(obligation1, obligation2)));
+            var result = solver.Check();
+            bool r = result == Status.UNSATISFIABLE;
+            solver.Pop();
+            return r;
+        }
+
         public bool CheckImplies(string k, IEnumerable<string> lhs, IEnumerable<string> rhs, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
         {
             if (CheckCache(k, lhs, rhs, out bool cachedResult))

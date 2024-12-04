@@ -53,6 +53,9 @@ namespace Plang.Compiler.TypeChecker
             {
                 Visit(varDeclContext);
             }
+            
+            // Then we validate this scope doesn't redeclare the global constant variables
+            method.Scope.ValidateGlobalConstantVariablesUnique(config.Handler);
 
             // Build the statement trees
             var statementVisitor = new StatementVisitor(config, machine, method);

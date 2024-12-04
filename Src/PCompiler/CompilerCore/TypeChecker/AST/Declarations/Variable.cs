@@ -26,6 +26,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         Local = 1 << 0,
         Param = 1 << 1,
         Field = 1 << 2,
-        Temp = 1 << 3
+        Temp = 1 << 3,
+        GlobalConstant = 1 << 4
     }
 }

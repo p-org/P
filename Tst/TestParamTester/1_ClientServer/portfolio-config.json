@@ -1,0 +1,66 @@
+{
+    "pproj": {
+        "help"    : "Name of the .pproj file in the project directory",
+        "default" : "ClientServer.pproj",
+        "metavar" : "F"
+    },
+
+    "dll": {
+        "help"    : "Path to generated .dll file, relative to project directory",
+        "default" : "PGenerated/CSharp/net8.0/ClientServer.dll",
+        "metavar" : "F"
+    },
+
+    "partitions": {
+        "help"    : "Number of runs for parallel analysis, per method",
+        "default" : 2,
+        "metavar" : "N"
+    },
+
+    "timeout": {
+        "help"    : "Timeout for checker run in seconds, per method per partition",
+        "default" : 30,
+        "metavar" : "N"
+    },
+
+    "schedules": {
+        "help"    : "Number of schedules, per method per partition",
+        "default" : 100000,
+        "metavar" : "N"
+    },
+
+    "max-steps": {
+        "help"    : "Max number of scheduling points in execution",
+        "default" : 10000,
+        "metavar" : "N"
+    },
+
+    "methods": {
+        "help"    : "Suffixes of test methods to execute",
+        "metavar" : "M",
+        "default" : [
+            "tcSingleClient",
+            "tcMultipleClients",
+            "tcAbstractServer"
+        ]
+    },
+
+    "polling-interval": {
+        "help"    : "How frequently to check for job completion, in seconds",
+        "metavar" : "N",
+        "default" : 10
+    },
+
+    "verbose": {
+        "help"    : "Verbose output",
+        "default" : false,
+        "action"  : "store_true"
+    },
+
+    "psym-jar": {
+        "help"    : "Path to generated PSym .jar file, relative to project directory",
+        "default" : "PGenerated/Symbolic/target/ClientServer-jar-with-dependencies.jar",
+        "metavar" : "F"
+    }
+
+}

@@ -29,6 +29,21 @@ namespace Plang.Compiler.TypeChecker
             var visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
             visitor.Visit(context);
         }
+        
+        #region GlobalConstantVariables
+        
+        public override object VisitGlobalValDecl(PParser.GlobalValDeclContext context)
+        {
+            foreach (var varName in context.idenList()._names)
+            {
+                var decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.GlobalConstant);
+                nodesToDeclarations.Put(varName, decl);
+            }
+
+            return null;
+        }
+        
+        #endregion GlobalConstantVariables 
 
         #region Events
 
@@ -218,6 +233,17 @@ namespace Plang.Compiler.TypeChecker
             }
             return null;
         }
+        
+        public override object VisitParametricSafetyTestDecl([NotNull] PParser.ParametricSafetyTestDeclContext context)
+        {
+            var symbolName = context.testName.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
+            if (decl == null) return null;
+            decl.Main = context.mainMachine?.GetText();
+            nodesToDeclarations.Put(context, decl);
+            return null ;
+        }
+
 
         public override object VisitRefinementTestDecl([NotNull] PParser.RefinementTestDeclContext context)
         {

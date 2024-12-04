@@ -59,6 +59,7 @@ THIS      : 'this' ;
 TYPE      : 'type' ;
 VALUES    : 'values' ;
 VAR       : 'var' ;
+CONSTANT       : 'constant' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
@@ -69,6 +70,7 @@ CHOOSE    : 'choose' ;
 MODULE         : 'module' ;
 IMPLEMENTATION : 'implementation' ;
 TEST           : 'test' ;
+PARAMTEST      : 'paramtest' ;
 REFINES        : 'refines' ;
 
 // module constructors

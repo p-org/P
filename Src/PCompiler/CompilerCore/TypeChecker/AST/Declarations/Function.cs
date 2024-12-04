@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Statements;
 
@@ -22,6 +23,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     {
         private readonly HashSet<Function> callees = new HashSet<Function>();
         private readonly HashSet<Function> callers = new HashSet<Function>();
+        private readonly List<Variable> _globalConstantVariables = [];
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
 
@@ -66,6 +68,24 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public string Name { get; set; }
         public ParserRuleContext SourceLocation { get; }
 
+        public void AddGlobalConstantVariables(ITranslationErrorHandler handler, List<Variable> gvars)
+        {
+            var localNames = localVariables.Select(x => x.Name);
+            // Console.WriteLine("localNames:" + localNames.ToArray());
+            foreach (var g in gvars)
+            {
+                var res = localVariables.Find(x => x.Name == g.Name);
+                if (res == null)
+                {
+                    _globalConstantVariables.Add(g);
+                }
+                else
+                {
+                    throw handler.RedeclareGlobalConstantVariable(res.SourceLocation, res, g);
+                }
+            }
+        }
+        
         public void AddLocalVariable(Variable local)
         {
             localVariables.Add(local);

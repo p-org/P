@@ -5,7 +5,9 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.ModuleExprs;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -16,6 +18,7 @@ namespace Plang.Compiler.TypeChecker
             Scope globalScope)
         {
             var modExprVisitor = new ModuleExprVisitor(handler, globalScope);
+            var paramExprVisitor = new ParamExprVisitor(handler);
 
             // first do all the named modules
             foreach (var mod in globalScope.NamedModules)
@@ -27,10 +30,37 @@ namespace Plang.Compiler.TypeChecker
             // all the test declarations
             foreach (var test in globalScope.SafetyTests)
             {
-                var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
-                test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                if (test.ParamExpr == null)
+                {
+                    var context = (PParser.ParametricSafetyTestDeclContext)test.SourceLocation;
+                    test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                    var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
+                    var names = ((NamedTupleType)expr.Type).Names.ToList();
+                    var values = expr.TupleFields.ToList();
+                    IDictionary<string, List<IPExpr>> dic = new Dictionary<string, List<IPExpr>>();
+                    foreach (var (name, value) in names.Zip(values))
+                    {
+                        var v = globalScope.Variables.FirstOrDefault(x => x.Name == name);
+                        if (v == null)
+                        {
+                            throw handler.UndeclaredGlobalConstantVariable(context.globalParam, name);
+                        }
+                        var expectedType = new SequenceType(v.Type);
+                        if (!value.Type.Equals(expectedType))
+                        {
+                            throw handler.TypeMismatch(value.SourceLocation, value.Type, expectedType);
+                        }
+                        dic[name] = ((SeqLiteralExpr)value).Value;
+                    }
+                    test.ParamExpr = dic;
+                }
+                else
+                {
+                    var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
+                    test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                }
             }
-
+            
             foreach (var test in globalScope.RefinementTests)
             {
                 var context = (PParser.RefinementTestDeclContext)test.SourceLocation;

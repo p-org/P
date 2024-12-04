@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
@@ -32,7 +34,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
         private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
-        private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
+        private readonly IDictionary<string, Variable> _variables = new Dictionary<string, Variable>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -76,7 +78,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<State> States => states.Values;
         public IEnumerable<NamedTupleType> Tuples => tuples.Values;
         public IEnumerable<TypeDef> Typedefs => typedefs.Values;
-        public IEnumerable<Variable> Variables => variables.Values;
+        public IEnumerable<Variable> Variables => _variables.Values;
         public IEnumerable<SafetyTest> SafetyTests => safetyTests.Values;
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
@@ -183,7 +185,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Get(string name, out Variable tree)
         {
-            return variables.TryGetValue(name, out tree);
+            return _variables.TryGetValue(name, out tree);
         }
 
         public bool Get(string name, out SafetyTest tree)
@@ -567,8 +569,8 @@ namespace Plang.Compiler.TypeChecker
         public Variable Put(string name, ParserRuleContext tree, VariableRole role)
         {
             var variable = new Variable(name, tree, role);
-            CheckConflicts(variable, Namespace(variables));
-            variables.Add(name, variable);
+            CheckConflicts(variable, Namespace(_variables));
+            _variables.Add(name, variable);
             return variable;
         }
 
@@ -609,6 +611,25 @@ namespace Plang.Compiler.TypeChecker
                 {
                     return null;
                 }
+            }
+
+            var safetyTest = new SafetyTest(tree, name);
+            safetyTest.ParamExpr = new Dictionary<string, List<IPExpr>>(); 
+            CheckConflicts(safetyTest,
+                Namespace(implementations),
+                Namespace(safetyTests),
+                Namespace(refinementTests));
+            safetyTests.Add(name, safetyTest);
+            return safetyTest;
+        }
+        
+        public SafetyTest Put(string name, PParser.ParametricSafetyTestDeclContext tree)
+        {
+            // check if test is from an imported project, if so, return null
+            var filePath = config.LocationResolver.GetLocation(tree).File.FullName;
+            if (config.ProjectDependencies.Any(dependencyPath => filePath.StartsWith(dependencyPath)))
+            {
+                return null;
             }
 
             var safetyTest = new SafetyTest(tree, name);
@@ -658,5 +679,69 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion Conflict API
+
+        #region Global Constant Variables
+
+        public void Update(Variable v)
+        {
+            Variable vv;
+            if (_variables.TryGetValue(v.Name, out vv))
+            {
+                _variables[v.Name] = v;
+            }
+            return;
+        }
+        
+        public List<Variable> GetGlobalVariables()
+        {
+            return _variables.Values.Where(v => v.Role == VariableRole.GlobalConstant).ToList();
+        }
+        
+        public void ValidateGlobalConstantVariablesUnique(ITranslationErrorHandler handler)
+        {
+            var current = this;
+            IDictionary<string, Variable> allVariables = new Dictionary<string, Variable>();
+            while (current != null)
+            {
+                foreach (var v in current._variables.Values) {
+                    if (allVariables.Keys.Contains(v.Name))
+                    {
+                        if (v.Role == VariableRole.GlobalConstant)
+                        {
+                            var vv = allVariables[v.Name];
+                            throw handler.DuplicateDeclaration(vv.SourceLocation, vv, v);
+                        }
+                    }
+                    allVariables[v.Name] = v;
+                }
+                current = current.Parent;
+            }
+            return;
+        }
+        
+        public bool LookupLvalue(ITranslationErrorHandler handler, string name, ParserRuleContext pos, out Variable tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    if (tree.Role == VariableRole.GlobalConstant)
+                    {
+                        throw handler.ModifyGlobalConstantVariable(pos, tree); 
+                    }
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        #endregion Global Constant Variables
+        
+
     }
 }

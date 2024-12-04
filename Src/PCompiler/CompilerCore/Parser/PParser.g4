@@ -60,8 +60,10 @@ topDecl : typeDefDecl
         | namedModuleDecl
         | testDecl
         | implementationDecl
+        | globalValDecl
         ;
 
+globalValDecl : CONSTANT idenList COLON type SEMI ;
 
 typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
             | TYPE name=iden ASSIGN type SEMI # PTypeDef
@@ -192,7 +194,7 @@ expr : primitive                                      # PrimitiveExpr
 	 | CHOOSE LPAREN expr? RPAREN					  # ChooseExpr
 	 | formatedString								  # StringExpr
      ;
-
+     
 formatedString	:	StringLiteral
 				|	FORMAT LPAREN StringLiteral (COMMA rvalueList)? RPAREN
 				;	
@@ -241,8 +243,18 @@ modExpr : LPAREN modExpr RPAREN												  # ParenModuleExpr
 bindExpr : (mName=iden | mName=iden RARROW iName=iden) ;
 
 namedModuleDecl : MODULE name=iden ASSIGN modExpr SEMI ;
+seqLiteralBody : primitive
+             | seqLiteral 
+             | primitive (COMMA primitive)+ 
+             ;
+seqLiteral : LBRACK seqLiteralBody RBRACK;
+paramBody : name=iden IN value=seqLiteral
+          | name=iden IN value=seqLiteral (COMMA names=iden IN value=seqLiteral)+
+          ;
+param : LPAREN paramBody RPAREN;
 
 testDecl : TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI                  # SafetyTestDecl
+         | PARAMTEST globalParam=param testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # ParametricSafetyTestDecl
          | TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
          ;
 

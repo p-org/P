@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Linq.Expressions;
-using PChecker.PRuntime;
-using PChecker.PRuntime.Values;
-using PChecker.PRuntime.Exceptions;
+using PChecker.Runtime;
+using PChecker.Runtime.Values;
+using PChecker.Runtime.Exceptions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,7 +21,7 @@ namespace PImplementation
 
      If you want to pretty print the foreign type value, you can also override the ToString() function in their implementation.
      */
-    public class tPriorityQueue : IPrtValue
+    public class tPriorityQueue : IPValue
     {
         // naive implementation of the priority queue as a list of elements with priority
         private List<ElementWithPriority> elements = new List<ElementWithPriority>();
@@ -39,14 +39,14 @@ namespace PImplementation
         }
 
         // priority remove
-        public IPrtValue PriorityRemove()
+        public IPValue PriorityRemove()
         {
             var removeElem = elements.OrderBy(el => el.Priority).First();
             elements.Remove(removeElem);
             return removeElem.Element;
         }
 
-        public bool Equals(IPrtValue other)
+        public bool Equals(IPValue other)
         {
             if (other is tPriorityQueue || other != null)
             {
@@ -58,7 +58,7 @@ namespace PImplementation
             }
         }
 
-        public IPrtValue Clone()
+        public IPValue Clone()
         {
             var cloned = new tPriorityQueue();
             foreach (var elem in elements)
@@ -73,7 +73,7 @@ namespace PImplementation
             return elements.Count;
         }
 
-        public IPrtValue GetElementAt(int index)
+        public IPValue GetElementAt(int index)
         {
             return elements.ElementAt(index).Element;
         }
@@ -81,10 +81,10 @@ namespace PImplementation
 
     public class ElementWithPriority
     {
-        public IPrtValue Element { get; }
+        public IPValue Element { get; }
         public int Priority { get;  }
 
-        public ElementWithPriority(IPrtValue elem, int priority)
+        public ElementWithPriority(IPValue elem, int priority)
         {
             Element = elem;
             Priority = priority;

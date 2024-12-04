@@ -17,7 +17,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public IEventSet ReceivableEvents { get; set; }
 
-        public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
+        public PLanguageType PayloadType = null;
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }

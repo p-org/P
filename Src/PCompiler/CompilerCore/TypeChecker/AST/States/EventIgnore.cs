@@ -5,13 +5,13 @@ namespace Plang.Compiler.TypeChecker.AST.States
 {
     public class EventIgnore : IStateAction
     {
-        public EventIgnore(ParserRuleContext sourceLocation, PEvent trigger)
+        public EventIgnore(ParserRuleContext sourceLocation, Event trigger)
         {
             SourceLocation = sourceLocation;
             Trigger = trigger;
         }
 
         public ParserRuleContext SourceLocation { get; }
-        public PEvent Trigger { get; }
+        public Event Trigger { get; }
     }
 }

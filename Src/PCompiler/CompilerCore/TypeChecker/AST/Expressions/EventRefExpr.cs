@@ -4,15 +4,15 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
-    public class EventRefExpr : IStaticTerm<PEvent>
+    public class EventRefExpr : IStaticTerm<Event>
     {
-        public EventRefExpr(ParserRuleContext sourceLocation, PEvent value)
+        public EventRefExpr(ParserRuleContext sourceLocation, Event value)
         {
             Value = value;
             SourceLocation = sourceLocation;
         }
 
-        public PEvent Value { get; }
+        public Event Value { get; }
 
         public PLanguageType Type { get; } = PrimitiveType.Event;
         public ParserRuleContext SourceLocation { get; }

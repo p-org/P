@@ -55,9 +55,10 @@ machine Client {
   }
 }
 
-/*  This is an external function (implemented in C#) to randomly choose transaction values
-In P, function declarations without body are considered as foreign functions. */
-fun ChooseRandomTransaction(uniqueId: int): tTrans;
+fun ChooseRandomTransaction(uniqueId: int): tTrans {
+  return (key = format("{0}", choose(10)), val = choose(10), transId = uniqueId);
+}
+
 
 // two phase commit client module
 module TwoPCClient = { Client };

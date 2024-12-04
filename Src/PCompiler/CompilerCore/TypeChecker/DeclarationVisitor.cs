@@ -80,7 +80,7 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitEventDecl(PParser.EventDeclContext context)
         {
             // EVENT name=Iden
-            var pEvent = (PEvent) nodesToDeclarations.Get(context);
+            var pEvent = (Event) nodesToDeclarations.Get(context);
 
             // cardinality?
             var hasAssume = context.cardinality()?.ASSUME() != null;
@@ -118,7 +118,7 @@ namespace Plang.Compiler.TypeChecker
                 eventSet = new EventSet();
                 if (context.nonDefaultEventList()?._events is IList<PParser.NonDefaultEventContext> events)
                     foreach (var eventContext in events)
-                        eventSet.AddEvent((PEvent) Visit(eventContext));
+                        eventSet.AddEvent((Event) Visit(eventContext));
             }
 
             mInterface.ReceivableEvents = eventSet;
@@ -267,7 +267,7 @@ namespace Plang.Compiler.TypeChecker
             // EVENTSET name=iden
             var es = (NamedEventSet) nodesToDeclarations.Get(context);
             // ASSIGN LBRACE eventSetLiteral RBRACE
-            es.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
+            es.AddEvents((Event[]) Visit(context.eventSetLiteral()));
             // SEMI
             return es;
         }
@@ -275,14 +275,14 @@ namespace Plang.Compiler.TypeChecker
         public override object VisitEventSetLiteral(PParser.EventSetLiteralContext context)
         {
             // events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)*
-            return context._events.Select(Visit).Cast<PEvent>().ToArray();
+            return context._events.Select(Visit).Cast<Event>().ToArray();
         }
 
         public override object VisitNonDefaultEvent(PParser.NonDefaultEventContext context)
         {
             // HALT | iden
             var eventName = context.GetText();
-            if (!CurrentScope.Lookup(eventName, out PEvent pEvent))
+            if (!CurrentScope.Lookup(eventName, out Event pEvent))
                 throw Handler.MissingDeclaration(context, "event", eventName);
             return pEvent;
         }
@@ -307,7 +307,7 @@ namespace Plang.Compiler.TypeChecker
             // receivesSends*
             foreach (var receivesSends in context.receivesSends())
             {
-                var recvSendTuple = (Tuple<string, PEvent[]>) Visit(receivesSends);
+                var recvSendTuple = (Tuple<string, Event[]>) Visit(receivesSends);
                 var eventSetType = recvSendTuple.Item1;
                 if (eventSetType.Equals("RECV", StringComparison.InvariantCulture))
                 {
@@ -339,24 +339,23 @@ namespace Plang.Compiler.TypeChecker
             // initialize the corresponding interface
             currentScope.Value.Get(machine.Name, out Interface @interface);
             @interface.ReceivableEvents = machine.Receives;
-            @interface.PayloadType = machine.PayloadType;
-            
+
             return machine;
         }
 
         public override object VisitMachineReceive(PParser.MachineReceiveContext context)
         {
             var events = context.eventSetLiteral() == null
-                ? new PEvent[0]
-                : (PEvent[]) Visit(context.eventSetLiteral());
+                ? new Event[0]
+                : (Event[]) Visit(context.eventSetLiteral());
             return Tuple.Create("RECV", events);
         }
 
         public override object VisitMachineSend(PParser.MachineSendContext context)
         {
             var events = context.eventSetLiteral() == null
-                ? new PEvent[0]
-                : (PEvent[]) Visit(context.eventSetLiteral());
+                ? new Event[0]
+                : (Event[]) Visit(context.eventSetLiteral());
             return Tuple.Create("SEND", events);
         }
 
@@ -371,7 +370,7 @@ namespace Plang.Compiler.TypeChecker
 
             // OBSERVES eventSetLiteral
             specMachine.Observes = new EventSet();
-            foreach (var pEvent in (PEvent[]) Visit(context.eventSetLiteral())) specMachine.Observes.AddEvent(pEvent);
+            foreach (var pEvent in (Event[]) Visit(context.eventSetLiteral())) specMachine.Observes.AddEvent(pEvent);
 
             // machineBody
             using (currentScope.NewContext(specMachine.Scope))
@@ -382,7 +381,7 @@ namespace Plang.Compiler.TypeChecker
 
             return specMachine;
         }
-
+        
         public override object VisitMachineBody(PParser.MachineBodyContext context)
         {
             foreach (var machineEntryContext in context.machineEntry())
@@ -491,8 +490,6 @@ namespace Plang.Compiler.TypeChecker
                 if (CurrentMachine.StartState != null)
                     throw Handler.DuplicateStartState(context, state, CurrentMachine.StartState, CurrentMachine);
                 CurrentMachine.StartState = state;
-                CurrentMachine.PayloadType =
-                    state.Entry?.Signature.Parameters.ElementAtOrDefault(0)?.Type ?? PrimitiveType.Null;
             }
 
             return state;
@@ -545,7 +542,7 @@ namespace Plang.Compiler.TypeChecker
             for (var i = 0; i < eventContexts.Count; i++)
             {
                 var token = eventContexts[i];
-                if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
+                if (!CurrentScope.Lookup(token.GetText(), out Event evt))
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
                 actions[i] = new EventDefer(token, evt);
             }
@@ -559,7 +556,7 @@ namespace Plang.Compiler.TypeChecker
             var actions = new List<IStateAction>();
             foreach (var token in context.nonDefaultEventList()._events)
             {
-                if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
+                if (!CurrentScope.Lookup(token.GetText(), out Event evt))
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
                 actions.Add(new EventIgnore(token, evt));
             }
@@ -590,7 +587,7 @@ namespace Plang.Compiler.TypeChecker
             var actions = new List<IStateAction>();
             foreach (var eventIdContext in context.eventList().eventId())
             {
-                if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
+                if (!CurrentScope.Lookup(eventIdContext.GetText(), out Event evt))
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
 
                 actions.Add(new EventDoAction(eventIdContext, evt, fun));
@@ -630,7 +627,7 @@ namespace Plang.Compiler.TypeChecker
             var actions = new List<IStateAction>();
             foreach (var eventIdContext in context.eventList().eventId())
             {
-                if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
+                if (!CurrentScope.Lookup(eventIdContext.GetText(), out Event evt))
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
 
                 actions.Add(new EventGotoState(eventIdContext, evt, target, transitionFunction));

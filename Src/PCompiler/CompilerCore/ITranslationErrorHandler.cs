@@ -67,7 +67,7 @@ namespace Plang.Compiler
         // module system related
         Exception InvalidBindExpr(ParserRuleContext location, string message);
 
-        Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent);
+        Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, Event illegalEvent);
 
         Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor);
 
@@ -103,7 +103,7 @@ namespace Plang.Compiler
         Exception ChangeStateInNonVoidFunction(ParserRuleContext context);
 
 
-        Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent);
+        Exception DuplicateReceiveCase(ParserRuleContext location, Event pEvent);
 
         Exception NoMain(ParserRuleContext sourceLocation, string v);
 
@@ -125,7 +125,7 @@ namespace Plang.Compiler
         Exception IllegalChooseSubExprValue(PParser.ChooseExprContext context, int numChoices);
         Exception IllegalFunctionUsedInSpecMachine(Function function, Machine callerOwner);
 
-        String SpecObservesSetIncompleteWarning(ParserRuleContext loc, PEvent ev, Machine machine);
+        String SpecObservesSetIncompleteWarning(ParserRuleContext loc, Event ev, Machine machine);
         Exception DuplicateBindings(ParserRuleContext loc, Interface @interface);
     }
 }

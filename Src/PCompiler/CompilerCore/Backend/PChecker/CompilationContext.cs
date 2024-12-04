@@ -9,13 +9,13 @@ namespace Plang.Compiler.Backend.CSharp
         public CompilationContext(ICompilerConfiguration job)
             : base(job)
         {
-            Names = new CSharpNameManager("PGEN_");
+            Names = new PCheckerNameManager("PGEN_");
 
             FileName = $"{ProjectName}.cs";
             GlobalFunctionClassName = "GlobalFunctions";
         }
 
-        public CSharpNameManager Names { get; }
+        public PCheckerNameManager Names { get; }
 
         public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 

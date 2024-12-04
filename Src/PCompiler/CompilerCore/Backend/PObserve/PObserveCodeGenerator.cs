@@ -6,7 +6,7 @@ using Plang.Compiler.TypeChecker;
 namespace Plang.Compiler.Backend.Java
 {
 
-    public class JavaCompiler : ICodeGenerator
+    public class PObserveCodeGenerator : ICodeGenerator
     {
         public void GenerateBuildScript(ICompilerConfiguration job)
         {
@@ -46,7 +46,7 @@ namespace Plang.Compiler.Backend.Java
         }
 
         /// <summary>
-        /// Generates all extracted Java code.  Later, this will also generate FFI stubs if they are
+        /// Generates all extracted PObserve code.  Later, this will also generate FFI stubs if they are
         /// absent.
         /// </summary>
         public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope scope)

@@ -7,7 +7,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.CSharp
 {
-    internal class CSharpNameManager : NameManagerBase
+    internal class PCheckerNameManager : NameManagerBase
     {
         private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
         private readonly string[] reservedKeywords = new string[]
@@ -20,7 +20,7 @@ namespace Plang.Compiler.Backend.CSharp
             "namespace", "using", "class", "struct", "interface", "enum", "delegate", "checked", "unchecked", "unsafe", "operator", "implicit", "explicit"
         };
 
-        public CSharpNameManager(string namePrefix) : base(namePrefix)
+        public PCheckerNameManager(string namePrefix) : base(namePrefix)
         {
             Array.Sort(reservedKeywords);
         }

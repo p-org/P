@@ -1622,7 +1622,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             var varName = GetGlobalAndLocalVariableName(context, variableRef.Variable);
-            context.Write(output, $"(({GetCSharpType(variableRef.Type)})((IPrtValue){varName})?.Clone())");
+            context.Write(output, $"(({GetCSharpType(variableRef.Type)})((IPValue){varName})?.Clone())");
         }
 
         private string GetCSharpType(PLanguageType type, bool isVar = false)

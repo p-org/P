@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Plang.Compiler.Util;
@@ -601,7 +603,193 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion
+        
+        public override object VisitPureDecl(PParser.PureDeclContext context)
+        {
+            // PURE name=Iden body=Expr
+            var pure = (Pure) nodesToDeclarations.Get(context);
+            
+            // LPAREN funParamList? RPAREN
+            var paramList = context.funParamList() != null
+                ? (Variable[]) Visit(context.funParamList())
+                : new Variable[0];
+            pure.Signature.Parameters.AddRange(paramList);
+            
+            var temporaryFunction = new Function(pure.Name, context)
+            {
+                Scope = CurrentScope.MakeChildScope()
+            };
 
+            foreach (var p in paramList)
+            {
+                var param = temporaryFunction.Scope.Put(p.Name, p.SourceLocation, VariableRole.Param);
+                param.Type = p.Type;
+                nodesToDeclarations.Put(p.SourceLocation, param);
+                temporaryFunction.Signature.Parameters.Add(param);
+            }
+
+            pure.Scope = temporaryFunction.Scope;
+
+            // (COLON type)?
+            pure.Signature.ReturnType = ResolveType(context.type());
+            
+            if (context.body is not null)
+            {
+                var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+                var body = exprVisitor.Visit(context.body);
+                
+                if (!pure.Signature.ReturnType.IsSameTypeAs(body.Type))
+                {
+                    throw Handler.TypeMismatch(context.body, body.Type, pure.Signature.ReturnType);
+                }
+
+                pure.Body = body;
+            }
+            
+            return pure;
+        }
+        
+        public override object VisitInvariantDecl(PParser.InvariantDeclContext context)
+        {
+            // INVARIANT name=Iden body=Expr
+            var inv = (Invariant) nodesToDeclarations.Get(context);
+            
+            var temporaryFunction = new Function(inv.Name, context);
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            
+            var body = exprVisitor.Visit(context.body);
+            
+            if (!PrimitiveType.Bool.IsSameTypeAs(body.Type))
+            {
+                throw Handler.TypeMismatch(context.body, body.Type, PrimitiveType.Bool);
+            }
+
+            inv.Body = body;
+            
+            return inv;
+        }
+        
+        public override object VisitAxiomDecl(PParser.AxiomDeclContext context)
+        {
+            // Axiom body=Expr
+            var inv = (Axiom) nodesToDeclarations.Get(context);
+            
+            var temporaryFunction = new Function(inv.Name, context);
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            
+            var body = exprVisitor.Visit(context.body);
+            
+            if (!PrimitiveType.Bool.IsSameTypeAs(body.Type))
+            {
+                throw Handler.TypeMismatch(context.body, body.Type, PrimitiveType.Bool);
+            }
+
+            inv.Body = body;
+            
+            return inv;
+        }
+
+        public override object VisitInvariantGroupDecl(PParser.InvariantGroupDeclContext context)
+        {
+            var invGroup = (InvariantGroup) nodesToDeclarations.Get(context);
+            invGroup.Invariants = context.invariantDecl().Select(Visit).Cast<Invariant>().ToList();
+            return invGroup;
+        }
+
+        private List<Invariant> ToInvariant(IPExpr e, ParserRuleContext context)
+        {
+            if (e is InvariantGroupRefExpr invGroupRef) return invGroupRef.Invariants;
+            if (e is InvariantRefExpr invRef) return [invRef.Invariant];
+            if (!PrimitiveType.Bool.IsSameTypeAs(e.Type.Canonicalize()))
+            {
+                throw Handler.TypeMismatch(context, e.Type, PrimitiveType.Bool);
+            }
+            Invariant inv = new Invariant($"tmp_inv_{Guid.NewGuid()}", e, context);
+            return [inv];
+        }
+
+        public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
+        {
+            var proofCmd = (ProofCommand) nodesToDeclarations.Get(context);
+            var temporaryFunction = new Function(proofCmd.Name, context);
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            List<IPExpr> premises = [];
+            List<IPExpr> goals = [];
+            List<IPExpr> excepts = context._excludes.Select(exprVisitor.Visit).ToList();
+            if (context.premisesAll == null)
+            {
+                premises = context._premises.Select(exprVisitor.Visit).ToList();
+            }
+            else
+            {
+                premises = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
+            }
+            
+            if (context.goalsAll == null && context.goalsDefault == null)
+            {
+                goals = context._targets.Select(exprVisitor.Visit).ToList();
+            }
+            else if (context.goalsDefault != null)
+            {
+                goals = [new InvariantRefExpr(new Invariant(context), context)];
+            }
+            else
+            {
+                goals = CurrentScope.AllDecls.OfType<Invariant>().Select(x => (IPExpr) new InvariantRefExpr(x, context)).ToList();
+            }
+            
+            if (premises.Count == context._premises.Count)
+            {
+                proofCmd.Premises = premises.Zip(context._premises, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
+            }
+            else
+            {
+                proofCmd.Premises = premises.SelectMany(x => ToInvariant(x, context)).ToList();
+            }
+            
+            if (goals.Count == context._targets.Count)
+            {
+                proofCmd.Goals = goals.Zip(context._targets, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
+            }
+            else
+            {
+                proofCmd.Goals = goals.SelectMany(x => ToInvariant(x, context)).ToList();
+            }
+            
+            proofCmd.Excepts = excepts.Zip(context._excludes, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
+            // exclude things appear in `goals` from `premises`
+            proofCmd.Premises = proofCmd.Premises.Except(proofCmd.Goals).Except(proofCmd.Excepts).ToList();
+            proofCmd.Goals = proofCmd.Goals.Except(proofCmd.Excepts).ToList();
+            return proofCmd;
+        }
+        
+        public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)
+        {
+            // assume on start: body=Expr
+            var assume = (AssumeOnStart) nodesToDeclarations.Get(context);
+            
+            var temporaryFunction = new Function(assume.Name, context);
+            temporaryFunction.Scope = CurrentScope.MakeChildScope();
+            
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            
+            var body = exprVisitor.Visit(context.body);
+            
+            if (!PrimitiveType.Bool.IsSameTypeAs(body.Type))
+            {
+                throw Handler.TypeMismatch(context.body, body.Type, PrimitiveType.Bool);
+            }
+
+            assume.Body = body;
+            
+            return assume;
+        }
+        
         #region Functions
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)
@@ -649,6 +837,40 @@ namespace Plang.Compiler.TypeChecker
                 else
                     throw Handler.MissingDeclaration(createdInterface, "interface", createdInterface.GetText());
             }
+            
+            
+            var temporaryFunction = new Function(fun.Name, context);
+            temporaryFunction.Scope = fun.Scope.MakeChildScope();
+            
+            // (RETURN LPAREN funParam RPAREN SEMI)?
+            if (context.funParam() != null)
+            {
+                Variable p = (Variable)Visit(context.funParam());
+                // Add the return variable to the scope so that contracts can refer to it 
+                var ret = temporaryFunction.Scope.Put(p.Name, p.SourceLocation, VariableRole.Param);
+                ret.Type = p.Type;
+                nodesToDeclarations.Put(p.SourceLocation, ret);
+                temporaryFunction.Signature.Parameters.Add(ret);
+                
+                fun.ReturnVariable = ret;
+                // update the return type to match
+                fun.Signature.ReturnType = fun.ReturnVariable.Type;
+            }
+            
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            
+            // (REQUIRES requires+=expr SEMI)*
+            foreach (var req in context._requires)
+            {
+                fun.AddRequire(exprVisitor.Visit(req));
+            }
+
+            // (ENSURES ensures+=expr SEMI)*
+            foreach (var ensure in context._ensures)
+            {
+                fun.AddEnsure(exprVisitor.Visit(ensure));
+            }
+
             return fun;
         }
 

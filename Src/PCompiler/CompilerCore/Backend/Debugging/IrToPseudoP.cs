@@ -175,6 +175,10 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteStmt("assert ", assertStmt.Assertion, ", \"", assertStmt.Message, "\";");
                     break;
 
+                case AssumeStmt assumeStmt:
+                    WriteStmt("assume ", assumeStmt.Assumption, ", \"", assumeStmt.Message, "\";");
+                    break;
+                
                 case AssignStmt assignStmt:
                     WriteStmt(assignStmt.Location, " = ", assignStmt.Value, ";");
                     break;

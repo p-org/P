@@ -24,6 +24,10 @@ namespace Plang.Compiler
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;
+            Timeout = 600;
+            HandlesAll = true;
+            CheckOnly = null;
+            Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
             string projectName, DirectoryInfo projectRoot = null, IList<string> projectDependencies = null, string pObservePackageName = null, bool debug = false)
@@ -73,6 +77,10 @@ namespace Plang.Compiler
 
         public IList<string> ProjectDependencies { get; set;  }
         public bool Debug { get; set; }
+        public int Timeout { get; set; }
+        public bool HandlesAll { get; set; }
+        public string CheckOnly { get; set; }
+        public int Parallelism { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)
         {

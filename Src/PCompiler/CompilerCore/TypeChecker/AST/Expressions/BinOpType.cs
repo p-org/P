@@ -16,7 +16,9 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
         Gt,
         Ge,
         And,
-        Or
+        Or,
+        Then,
+        Iff
     }
 
     public enum BinOpKind
@@ -56,6 +58,8 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
                 // Boolean operators:
                 case BinOpType.And:
                 case BinOpType.Or:
+                case BinOpType.Then:
+                case BinOpType.Iff:
                     return BinOpKind.Boolean;
 
                 // This should be dead code.

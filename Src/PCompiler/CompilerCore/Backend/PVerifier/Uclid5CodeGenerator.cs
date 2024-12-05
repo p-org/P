@@ -15,15 +15,15 @@ using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 
-namespace Plang.Compiler.Backend.Uclid5;
+namespace Plang.Compiler.Backend.PVerifier;
 
-public class UclidCache
+public class PVerifierCache
 {
     public string Reply { get; set; }
     public byte[] Checksum { get; set; }
 }
 
-public class Uclid5CodeGenerator : ICodeGenerator
+public class PVerifierCodeGenerator : ICodeGenerator
 {
     private CompilationContext _ctx;
     private CompiledFile _src;
@@ -53,7 +53,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
         var db = new LiteDatabase(Path.Join(job.OutputDirectory.FullName, ".verifier-cache.db"));
         var md5 = MD5.Create();
         // Get a collection (or create, if doesn't exist)
-        var qCollection = db.GetCollection<UclidCache>("qCollection");
+        var qCollection = db.GetCollection<PVerifierCache>("qCollection");
 
         int parallelism = job.Parallelism;
         if (parallelism == 0)
@@ -124,7 +124,7 @@ public class Uclid5CodeGenerator : ICodeGenerator
                     // add stdout to the database along with the corresponding checksum of the uclid query
                     using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, r.Key)))
                     {
-                        var newResult = new UclidCache
+                        var newResult = new PVerifierCache
                         {
                             Reply = stdout,
                             Checksum = md5.ComputeHash(stream)

@@ -7,6 +7,6 @@ namespace Plang.Compiler
         CSharp,
         Java,
         Stately,
-        Uclid5,
+        PVerifier,
     }
 }

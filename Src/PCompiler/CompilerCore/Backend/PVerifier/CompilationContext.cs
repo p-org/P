@@ -1,4 +1,4 @@
-namespace Plang.Compiler.Backend.Uclid5;
+namespace Plang.Compiler.Backend.PVerifier;
 
 internal class CompilationContext : CompilationContextBase
 {

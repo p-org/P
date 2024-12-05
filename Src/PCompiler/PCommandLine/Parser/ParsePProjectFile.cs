@@ -243,7 +243,7 @@ namespace Plang.Parser
                             outputLanguages.Add(CompilerOutput.Stately);
                             break;
                         case "pverifier":
-                            outputLanguages.Add(CompilerOutput.Uclid5);
+                            outputLanguages.Add(CompilerOutput.PVerifier);
                             break;
                         default:
                             throw new CommandlineParsingError(

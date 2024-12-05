@@ -47,7 +47,7 @@ namespace Plang.Compiler
                 return Environment.ExitCode;
             }
 
-            if (job.OutputLanguages.Contains(CompilerOutput.Uclid5))
+            if (job.OutputLanguages.Contains(CompilerOutput.PVerifier))
             {
                 // If using the PVerifier, don't output anything else
                 if (job.OutputLanguages.Count > 1)
@@ -78,7 +78,7 @@ namespace Plang.Compiler
                 var compiledFiles = job.Backend.GenerateCode(job, scope);
                 foreach (var file in compiledFiles)
                 {
-                    if (entry != CompilerOutput.Uclid5)
+                    if (entry != CompilerOutput.PVerifier)
                     {
                         job.Output.WriteInfo($"Generated {file.FileName}.");
                     }
@@ -122,7 +122,7 @@ namespace Plang.Compiler
             var lexer = new PLexer(fileStream);
             var tokens = new CommonTokenStream(lexer);
 
-            if (!job.OutputLanguages.Contains(CompilerOutput.Uclid5))
+            if (!job.OutputLanguages.Contains(CompilerOutput.PVerifier))
             {
                 // disallow any pverifier tokens
                 tokens.Fill();

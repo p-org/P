@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using Antlr4.Runtime;
-using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Expressions

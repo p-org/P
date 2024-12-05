@@ -457,7 +457,8 @@ namespace Plang.Compiler.TypeChecker
             {
                 {"&&", (elhs, erhs) => new BinOpExpr(context, BinOpType.And, elhs, erhs)},
                 {"||", (elhs, erhs) => new BinOpExpr(context, BinOpType.Or, elhs, erhs)},
-                {"==>", (elhs, erhs) => new BinOpExpr(context, BinOpType.Then, elhs, erhs)}
+                {"==>", (elhs, erhs) => new BinOpExpr(context, BinOpType.Then, elhs, erhs)},
+                {"<==>", (elhs, erhs) => new BinOpExpr(context, BinOpType.Iff, elhs, erhs)}
             };
 
             var compCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
@@ -546,6 +547,7 @@ namespace Plang.Compiler.TypeChecker
                 case "&&":
                 case "||": 
                 case "==>":
+                case "<==>":
                     if (!PrimitiveType.Bool.IsAssignableFrom(lhs.Type))
                     {
                         throw handler.TypeMismatch(context.lhs, lhs.Type, PrimitiveType.Bool);

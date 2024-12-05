@@ -2004,6 +2004,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
             BinOpType.Eq => "==",
             BinOpType.Neq => "!=",
             BinOpType.Then => "==>",
+            BinOpType.Iff => "==",
             _ => throw new NotImplementedException($"{op} is not implemented yet!")
         };
     }

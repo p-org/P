@@ -217,6 +217,7 @@ expr : primitive                                      # PrimitiveExpr
      | lhs=expr op=LAND rhs=expr                      # BinExpr
      | lhs=expr op=LOR rhs=expr                       # BinExpr
      | lhs=expr op=LTHEN rhs=expr                     # BinExpr
+     | lhs=expr op=LIFF rhs=expr                      # BinExpr
      | quant=(FORALL | EXISTS)
         diff=NEW? 
             LPAREN bound=funParamList RPAREN 

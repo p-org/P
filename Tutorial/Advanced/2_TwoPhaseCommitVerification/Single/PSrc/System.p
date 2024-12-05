@@ -90,8 +90,8 @@ init-condition forall (c: Coordinator) :: c.yesVotes == default(set[machine]);
 
 // making sure that our assumptions about pure functions are not pulled out from underneath us
 Lemma system_config {
-    invariant one_coordinator: forall (m: machine) :: m == coordinator() == m is Coordinator;
-    invariant participant_set: forall (m: machine) :: m in participants() == m is Participant;
+    invariant one_coordinator: forall (m: machine) :: m == coordinator() <==> m is Coordinator;
+    invariant participant_set: forall (m: machine) :: m in participants() <==> m is Participant;
     invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && e targets coordinator() ==> !inflight e;
     invariant never_abort_to_coordinator: forall (e: event) :: e is eAbort && e targets coordinator() ==> !inflight e;
     invariant never_req_to_coordinator: forall (e: event) :: e is eVoteReq && e targets coordinator() ==> !inflight e;

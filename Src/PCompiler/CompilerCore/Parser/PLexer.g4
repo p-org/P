@@ -36,6 +36,7 @@ EXIT      : 'exit' ;
 FOREACH   : 'foreach';
 FORMAT	  : 'format' ;
 FUN       : 'fun' ;
+PURE      : 'pure' ;
 GOTO      : 'goto' ;
 HALT      : 'halt' ;
 HOT       : 'hot' ;
@@ -62,6 +63,25 @@ VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+
+// PVerifier keywords
+INVARIANT  : 'invariant';
+AXIOM      : 'axiom';
+IS         : 'is';
+FLYING     : 'inflight';
+TARGETS    : 'targets';
+SENT       : 'sent';
+PROOF      : 'Proof';
+PROVE      : 'prove';
+USING      : 'using';
+LEMMA      : 'Lemma';
+THEOREM    : 'Theorem';
+EXCEPT     : 'except';
+REQUIRES   : 'requires';
+ENSURES    : 'ensures';
+FORALL     : 'forall' ;
+EXISTS     : 'exists' ;
+INIT       : 'init-condition';
 
 // module-system-specific keywords
 
@@ -109,6 +129,8 @@ NONDET     : '$'  ;
 LNOT   : '!' ;
 LAND   : '&&' ;
 LOR    : '||' ;
+LTHEN  : '==>';
+LIFF   : '<==>';
 
 EQ     : '==' ;
 NE     : '!=' ;

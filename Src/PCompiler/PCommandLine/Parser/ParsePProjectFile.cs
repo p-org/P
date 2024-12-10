@@ -240,9 +240,12 @@ namespace Plang.Parser
                         case "stately":
                             outputLanguages.Add(CompilerOutput.Stately);
                             break;
+                        case "pverifier":
+                            outputLanguages.Add(CompilerOutput.PVerifier);
+                            break;
                         default:
                             throw new CommandlineParsingError(
-                                $"Expected CSharp, Java, Stately, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                                $"Expected CSharp, Java, Stately, PVerifier, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
                     }
                 }
             }

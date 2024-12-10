@@ -42,6 +42,10 @@ namespace Plang.Compiler
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;
+            Timeout = 600;
+            HandlesAll = true;
+            CheckOnly = null;
+            Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="CompilerConfiguration"/> class with specific settings.
@@ -154,6 +158,10 @@ namespace Plang.Compiler
         /// Gets or sets a value indicating whether debug information should be included in output.
         /// </summary>
         public bool Debug { get; set; }
+        public int Timeout { get; set; }
+        public bool HandlesAll { get; set; }
+        public string CheckOnly { get; set; }
+        public int Parallelism { get; set; }
 
         /// <summary>
         /// Copies all properties from another CompilerConfiguration instance to this instance.

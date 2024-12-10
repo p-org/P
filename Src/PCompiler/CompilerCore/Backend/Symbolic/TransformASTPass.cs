@@ -349,6 +349,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return new AnnounceStmt(announceStmt.SourceLocation, ReplaceVars(announceStmt.Event, varMap), ReplaceVars(announceStmt.Payload, varMap));
                 case AssertStmt assertStmt:
                     return new AssertStmt(assertStmt.SourceLocation, ReplaceVars(assertStmt.Assertion, varMap), ReplaceVars(assertStmt.Message, varMap));
+                case AssumeStmt assumeStmt:
+                    return new AssumeStmt(assumeStmt.SourceLocation, ReplaceVars(assumeStmt.Assumption, varMap), ReplaceVars(assumeStmt.Message, varMap));
                 case AssignStmt assignStmt:
                     return new AssignStmt(assignStmt.SourceLocation, ReplaceVars(assignStmt.Location, varMap), ReplaceVars(assignStmt.Value, varMap));
                 case CompoundStmt compoundStmt:

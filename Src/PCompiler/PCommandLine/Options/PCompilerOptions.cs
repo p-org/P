@@ -45,6 +45,12 @@ namespace Plang.Options
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
 
             Parser.AddArgument("debug", "d", "Enable debug logs", typeof(bool)).IsHidden = true;
+            
+            Parser.AddArgument("timeout", "t", "Set SMT solver timeout in seconds", typeof(int)).IsHidden = true;
+            
+            Parser.AddArgument("no-event-handler-checks", "nch", "Do not check that all events are handled", typeof(bool)).IsHidden = true;
+            Parser.AddArgument("check-only", "co", "Check only the specified machine", typeof(string)).IsHidden = true;
+            Parser.AddArgument("jobs", "j", "Number of parallel processes to use", typeof(int)).IsHidden = true;
         }
 
         /// <summary>
@@ -160,6 +166,18 @@ namespace Plang.Options
                     break;
                 case "debug":
                     compilerConfiguration.Debug = true;
+                    break;
+                case "timeout":
+                    compilerConfiguration.Timeout = (int)option.Value;
+                    break;
+                case "no-event-handler-checks":
+                    compilerConfiguration.HandlesAll = false;
+                    break;
+                case "check-only":
+                    compilerConfiguration.CheckOnly = (string)option.Value;
+                    break;
+                case "jobs":
+                    compilerConfiguration.Parallelism = (int)option.Value;
                     break;
                 case "mode":
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();

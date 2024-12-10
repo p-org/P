@@ -37,6 +37,8 @@ namespace Plang.Compiler
         Exception TypeMismatch(IPExpr expr, params TypeKind[] expected);
 
         Exception MissingNamedTupleEntry(PParser.IdenContext location, NamedTupleType namedTuple);
+        Exception MissingMachineField(PParser.IdenContext location, Machine machine);
+        Exception MissingEventField(PParser.IdenContext location, Event pevent);
 
         Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple);
 

@@ -229,7 +229,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// <summary>
         /// The fully-qualified class name of the Java P runtime's Event class.
         /// </summary>
-        internal static readonly string EventsClass = "prt.events.Event";
+        internal static readonly string EventsClass = "prt.events.PEvent";
 
         #endregion
 

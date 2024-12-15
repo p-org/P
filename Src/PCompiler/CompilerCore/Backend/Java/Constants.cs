@@ -52,7 +52,7 @@ namespace Plang.Compiler.Backend.Java
 
         #region Event source generation
 
-        public static readonly string EventNamespaceName = "Events";
+        public static readonly string EventNamespaceName = "PEvents";
         public static readonly string EventDefnFileName = $"{EventNamespaceName}.java";
 
         #endregion
@@ -227,9 +227,9 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         internal static readonly string PValueClass = "prt.values.PValue";
 
         /// <summary>
-        /// The fully-qualified class name of the Java P runtime's Event class.
+        /// The fully-qualified class name of the Java P runtime's PEvent class.
         /// </summary>
-        internal static readonly string EventsClass = "prt.events.Event";
+        internal static readonly string EventsClass = "prt.events.PEvent";
 
         #endregion
 

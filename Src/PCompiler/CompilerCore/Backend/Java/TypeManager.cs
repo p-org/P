@@ -234,6 +234,11 @@ namespace Plang.Compiler.Backend.Java
                 /// The type of a collection containing the keys of this Map.
                 /// </summary>
                 internal string KeyCollectionType => $"ArrayList<{_k.ReferenceTypeName}>";
+                
+                /// <summary>
+                /// The name of the () -> Set method that produces the values in the map.
+                /// </summary>
+                internal string ValuesMethodName => "values";
 
                 /// <summary>
                 /// The type of a collection containing the keys of this Map.
@@ -307,6 +312,7 @@ namespace Plang.Compiler.Backend.Java
                     _unboxedType = $"{Constants.EventsClass}<?>";
                 }
                 internal override bool IsPrimitive => false;
+                internal override string DefaultValue => "null";
             }
 
             internal class JVoid : JType

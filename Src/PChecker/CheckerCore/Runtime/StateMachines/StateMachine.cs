@@ -300,7 +300,7 @@ namespace PChecker.Runtime.StateMachines
             Id = id;
             Manager = manager;
             Inbox = inbox;
-            VectorTime = new VectorTime(Id);
+            VectorTime = new VectorTime(Id.Name);
         }
         
         /// <summary>
@@ -543,6 +543,7 @@ namespace PChecker.Runtime.StateMachines
             AnnounceInternal(ev);
             // Update vector clock
             VectorTime.Increment();
+            VectorClockTimeline.AddToCurrentTimeline(ev.ToString(), VectorClockTimeline.EventType.SEND, VectorTime.Clock);
             BehavioralObserver.AddToCurrentTimeline(ev, BehavioralObserver.EventType.SEND, VectorTime);
             Runtime.SendEvent(target.Id, ev, this);
         }
@@ -601,6 +602,7 @@ namespace PChecker.Runtime.StateMachines
                 {
                     // Update state machine vector clock
                     VectorTime.Merge(info.VectorTime);
+                    VectorClockTimeline.AddToCurrentTimeline(e.ToString(), VectorClockTimeline.EventType.DEQUEUE, VectorTime.Clock);
                     BehavioralObserver.AddToCurrentTimeline(e, BehavioralObserver.EventType.DEQUEUE, VectorTime);
                     
                     // Notify the runtime for a new event to handle. This is only used

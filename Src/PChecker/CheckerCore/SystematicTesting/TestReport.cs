@@ -6,6 +6,7 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
 using PChecker.Coverage;
+using PChecker.Runtime;
 using PChecker.Utilities;
 
 namespace PChecker.SystematicTesting
@@ -247,6 +248,12 @@ namespace PChecker.SystematicTesting
                 prefix.Equals("...") ? "....." : prefix,
                 ExploredTimelines.Count,
                 ExploredTimelines.Count == 1 ? string.Empty : "s");
+            
+            report.AppendFormat(
+                "{0} Explored {1} vector clock timeline{2}",
+                prefix.Equals("...") ? "....." : prefix,
+                VectorClockTimeline.GetUniqueTimelineCount(),
+                VectorClockTimeline.GetUniqueTimelineCount() == 1 ? string.Empty : "s");
 
             if (totalExploredSchedules > 0 &&
                 NumOfFoundBugs > 0)

@@ -535,7 +535,8 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private void RunNextIteration(int schedule)
         {
-            BehavioralObserver.NextIter();
+            // BehavioralObserver.NextIter();
+            VectorClockTimeline.RecordTimeline();
             if (!IsReplayModeEnabled && ShouldPrintIteration(schedule + 1))
             {
                 Logger.WriteLine($"..... Schedule #{schedule + 1}");

@@ -445,7 +445,8 @@ namespace Plang.Compiler.Backend.Java {
 
                     if (ifStmt.ThenBranch.Statements.Count == 0)
                     {
-                        Write("{}");
+                        WriteLine("{");
+                        WriteLine("}");
                     }
                     else
                     {
@@ -454,7 +455,7 @@ namespace Plang.Compiler.Backend.Java {
 
                     if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Count > 0)
                     {
-                        WriteLine(" else ");
+                        WriteLine("else");
                         WriteStmt(ifStmt.ElseBranch);
                     }
                     break;

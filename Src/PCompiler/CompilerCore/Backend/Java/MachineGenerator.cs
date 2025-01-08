@@ -831,7 +831,7 @@ namespace Plang.Compiler.Backend.Java {
                     // construct a new List from that collection.
                     Write($"new {mt.ValueCollectionType}(");
                     WriteExpr(ve.Expr);
-                    Write($".{mt.KeysMethodName}()");
+                    Write($".{mt.ValuesMethodName}()");
                     Write(")");
                     break;
                 }

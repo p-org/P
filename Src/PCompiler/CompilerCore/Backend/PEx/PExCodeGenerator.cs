@@ -1015,7 +1015,9 @@ internal class PExCodeGenerator : ICodeGenerator
                     context.WriteLine(output,
                         $"{GetPExType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(local.Type)};");
                 }
+            context.WriteLine(output, "{");
             var caseExited = WriteStmt(continuation, context, output, caseContext, caseFun.Body);
+            context.WriteLine(output, "}");
             allCasesExited &= caseExited;
             context.WriteLine(output, "}");
             if (!caseExited) context.WriteLine(output, "break;");

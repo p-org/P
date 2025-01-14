@@ -1010,8 +1010,11 @@ internal class PExCodeGenerator : ICodeGenerator
 
             foreach (var local in caseFun.LocalVariables)
                 if (!continuationLocalParams.Contains(local.Name))
+                {
+                    continuationLocalParams.Add(local.Name);
                     context.WriteLine(output,
                         $"{GetPExType(local.Type)} {CompilationContext.GetVar(local.Name)} = {GetDefaultValue(local.Type)};");
+                }
             var caseExited = WriteStmt(continuation, context, output, caseContext, caseFun.Body);
             allCasesExited &= caseExited;
             context.WriteLine(output, "}");

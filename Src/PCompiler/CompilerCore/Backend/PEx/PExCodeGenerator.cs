@@ -525,6 +525,27 @@ internal class PExCodeGenerator : ICodeGenerator
         context.ReturnType = function.Signature.ReturnType;
         var functionName = context.GetNameForDecl(function);
 
+
+        if (function is WhileFunction)
+        {
+            context.WriteLine(output, $"class {functionName}_class {{");
+            foreach (var local in function.ParentFunction.LocalVariables)
+            {
+                context.WriteLine(output,
+                    $"public {GetPExType(local.Type)} {local.Name} = {GetDefaultValue(local.Type)};");
+            }
+            context.WriteLine(output);
+            
+            context.WriteLine(output,$"public {functionName}_class() {{");
+            context.WriteLine(output, "}");
+
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+            
+            context.WriteLine(output,$"public {functionName}_class {CompilationContext.GetVar(functionName)} = new {functionName}_class();");
+            context.WriteLine(output);
+        }
+
         context.WriteLine(output, $"{staticKeyword}{returnType} ");
 
         context.Write(output, functionName);

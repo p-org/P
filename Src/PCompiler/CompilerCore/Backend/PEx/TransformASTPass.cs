@@ -721,10 +721,10 @@ internal class TransformASTPass
                                 var newVarMap = new Dictionary<Variable, Variable>();
                                 foreach (var local in function.LocalVariables)
                                 {
-                                    var machineVar = new Variable($"{whileName}_{local.Name}", local.SourceLocation,
+                                    var machineVar = new Variable($"{whileName}.{local.Name}", local.SourceLocation,
                                         local.Role);
                                     machineVar.Type = local.Type;
-                                    machine.AddField(machineVar);
+                                    // machine.AddField(machineVar);
                                     newVarMap.Add(local, machineVar);
                                 }
 

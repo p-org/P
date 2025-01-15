@@ -287,22 +287,7 @@ internal sealed class EventBag : IEventQueue
         StateMachineManager.OnReceiveEventWithoutWaiting(receivedEvent.e, receivedEvent.info);
         return Task.FromResult(receivedEvent.e);
     }
-
-    /// <inheritdoc/>
-    public int GetCachedState()
-    {
-        unchecked
-        {
-            var hash = 19;
-            foreach (var (_, info) in Bag)
-            {
-                hash = (hash * 31) + info.EventName.GetHashCode();
-            }
-
-            return hash;
-        }
-    }
-
+    
     /// <inheritdoc/>
     public void Close()
     {

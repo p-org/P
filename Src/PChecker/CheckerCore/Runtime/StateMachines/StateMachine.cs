@@ -1386,8 +1386,6 @@ namespace PChecker.Runtime.StateMachines
 
                 hash = (hash * 31) + Manager.GetCachedState();
                 
-                hash = (hash * 31) + Inbox.GetCachedState();
-
                 return hash;
             }
         }

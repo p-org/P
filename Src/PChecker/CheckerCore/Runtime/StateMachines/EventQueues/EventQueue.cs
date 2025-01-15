@@ -285,21 +285,6 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         }
 
         /// <inheritdoc/>
-        public int GetCachedState()
-        {
-            unchecked
-            {
-                var hash = 19;
-                foreach (var (_, info) in Queue)
-                {
-                    hash = (hash * 31) + info.EventName.GetHashCode();
-                }
-
-                return hash;
-            }
-        }
-
-        /// <inheritdoc/>
         public void Close()
         {
             IsClosed = true;

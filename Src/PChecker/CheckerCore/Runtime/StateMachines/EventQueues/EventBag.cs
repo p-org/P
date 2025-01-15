@@ -262,7 +262,7 @@ internal sealed class EventBag : IEventQueue
 
         (Event e, EventInfo info) receivedEvent = default;
         int index = 0;
-        while (Bag.Count != 0)
+        while (index < Bag.Count)
         {
             receivedEvent = Bag[index];
             // Dequeue the first event that the caller waits to receive, if there is one in the queue.

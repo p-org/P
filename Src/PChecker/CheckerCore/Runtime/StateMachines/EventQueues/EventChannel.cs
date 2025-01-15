@@ -33,7 +33,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         /// <summary>
         /// The list of event sender state machines.
         /// </summary>
-        private Queue<string> SenderMachineNames;
+        private List<string> SenderMachineNames;
         
         /// <summary>
         /// The raised event and its metadata, or null if no event has been raised.
@@ -71,7 +71,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
             StateMachineManager = stateMachineManager;
             StateMachine = stateMachine;
             Map = new Dictionary<string, LinkedList<(Event e, EventInfo info)>>();
-            SenderMachineNames = new Queue<string>();
+            SenderMachineNames = new List<string>();
             EventWaitTypes = new Dictionary<Type, Func<Event, bool>>();
             IsClosed = false;
         }
@@ -97,7 +97,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
             if (!Map.ContainsKey(senderStateMachineName))
             {
                 Map[senderStateMachineName] = new LinkedList<(Event e, EventInfo info)>();
-                SenderMachineNames.Enqueue(senderStateMachineName);
+                SenderMachineNames.Add(senderStateMachineName);
             }
             Map[senderStateMachineName].AddLast((e, info));
             
@@ -172,24 +172,22 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         /// </summary>
         private (Event e, EventInfo info) TryDequeueEvent(bool checkOnly = false)
         {
-            int checkedCount = 0;
-            int totalMachines = SenderMachineNames.Count;
+            List<string> temp = [];
             (Event, EventInfo) nextAvailableEvent = default;
-
-            while (checkedCount < totalMachines)
+            while (SenderMachineNames.Count > 0)
             {
-                if (SenderMachineNames.TryDequeue(out string stateMachine))
+                var randomIndex = StateMachine.RandomInteger(SenderMachineNames.Count);
+                string stateMachine = SenderMachineNames[randomIndex];
+                SenderMachineNames.RemoveAt(randomIndex);
+                temp.Add(stateMachine);
+                if (Map.TryGetValue(stateMachine, out var eventList) && eventList.Count > 0)
                 {
-                    if (Map.TryGetValue(stateMachine, out var eventList) && eventList.Count > 0)
-                    {
-                        nextAvailableEvent = TryDequeueEvent(stateMachine, checkOnly);
-                        SenderMachineNames.Enqueue(stateMachine);
-                        break;
-                    }
-                    SenderMachineNames.Enqueue(stateMachine);
-                    checkedCount++;
+                    nextAvailableEvent = TryDequeueEvent(stateMachine, checkOnly);
+                    SenderMachineNames.AddRange(temp);
+                    break;
                 }
             }
+            SenderMachineNames.AddRange(temp);
             return nextAvailableEvent;
         }
 

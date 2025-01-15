@@ -318,11 +318,18 @@ internal class PExCodeGenerator : ICodeGenerator
         foreach (var state in machine.States) WriteHandlerUpdate(context, output, state);
 
         foreach (var method in machine.Methods)
+        {
             if (method is Continuation)
             {
                 var cont = (Continuation)method;
                 context.WriteLine(output, $"register_{context.GetContinuationName(cont)}();");
             }
+
+            if (method is WhileFunction)
+            {
+                context.WriteLine(output, $"register_{context.GetNameForDecl(method)}();");
+            }
+        }
 
         context.WriteLine(output, "}");
     }
@@ -528,21 +535,34 @@ internal class PExCodeGenerator : ICodeGenerator
 
         if (function is WhileFunction)
         {
-            context.WriteLine(output, $"class {functionName}_class {{");
+            context.WriteLine(output, $"class {functionName}_object extends PLoopObject {{");
             foreach (var local in function.ParentFunction.LocalVariables)
             {
                 context.WriteLine(output,
-                    $"public {GetPExType(local.Type)} {local.Name} = {GetDefaultValue(local.Type)};");
+                    $"public {GetPExType(local.Type)} {local.Name};");
             }
-            context.WriteLine(output);
             
-            context.WriteLine(output,$"public {functionName}_class() {{");
+            context.WriteLine(output);
+            context.WriteLine(output,$"public {functionName}_object() {{");
+            context.WriteLine(output,"clear();");
+            context.WriteLine(output, "}");
+            
+            context.WriteLine(output);
+            context.WriteLine(output,$"public void clear() {{");
+            foreach (var local in function.ParentFunction.LocalVariables)
+            {
+                context.WriteLine(output,
+                    $"{local.Name} = {GetDefaultValue(local.Type)};");
+            }
             context.WriteLine(output, "}");
 
             context.WriteLine(output, "}");
             context.WriteLine(output);
             
-            context.WriteLine(output,$"public {functionName}_class {CompilationContext.GetVar(functionName)} = new {functionName}_class();");
+            context.Write(output, $"void register_{functionName}() ");
+            context.WriteLine(output, "{");
+            context.WriteLine(output, $"registerLoop(\"{functionName}\", new {functionName}_object());");
+            context.WriteLine(output, "}");
             context.WriteLine(output);
         }
 

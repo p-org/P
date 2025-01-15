@@ -6,6 +6,7 @@ import pex.runtime.machine.buffer.DeferQueue;
 import pex.runtime.machine.buffer.SenderQueue;
 import pex.runtime.machine.eventhandlers.EventHandler;
 import pex.runtime.machine.events.PContinuation;
+import pex.runtime.machine.events.PLoopObject;
 import pex.utils.exceptions.BugFoundException;
 import pex.utils.misc.Assert;
 import pex.utils.serialize.SerializableBiFunction;
@@ -31,6 +32,8 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
     @Getter
     private final SenderQueue sendBuffer;
     private final DeferQueue deferQueue;
+    @Getter
+    private final Map<String, PLoopObject> loopMap = new TreeMap<>();
     @Getter
     private final Map<String, PContinuation> continuationMap = new TreeMap<>();
     /**
@@ -139,6 +142,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         this.blockedNewStateEntry = null;
         this.blockedNewStateEntryPayload = null;
 
+        for (Map.Entry<String, PLoopObject> loop : loopMap.entrySet()) {
+            loop.getValue().clear();
+        }
+
         for (PContinuation continuation : continuationMap.values()) {
             continuation.clearVars();
         }
@@ -179,6 +186,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add("_blockedNewStateEntry");
         result.add("_blockedNewStateEntryPayload");
 
+        for (Map.Entry<String, PLoopObject> loop : loopMap.entrySet()) {
+            result.add(loop.getKey());
+        }
+
         for (PContinuation continuation : continuationMap.values()) {
             for (Map.Entry<String, PValue<?>> entry : continuation.getVars().entrySet()) {
                 result.add(entry.getKey());
@@ -215,6 +226,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add(blockedStateExit);
         result.add(blockedNewStateEntry);
         result.add(blockedNewStateEntryPayload);
+
+        for (Map.Entry<String, PLoopObject> loop : loopMap.entrySet()) {
+            result.add(loop.getValue());
+        }
 
         for (PContinuation continuation : continuationMap.values()) {
             for (Map.Entry<String, PValue<?>> entry : continuation.getVars().entrySet()) {
@@ -257,6 +272,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         result.add(blockedNewStateEntry);
         result.add(blockedNewStateEntryPayload);
 
+        for (Map.Entry<String, PLoopObject> loop : loopMap.entrySet()) {
+            result.add(loop.getValue());
+        }
+
         for (PContinuation continuation : continuationMap.values()) {
             for (Map.Entry<String, PValue<?>> entry : continuation.getVars().entrySet()) {
                 result.add(entry.getValue());
@@ -298,6 +317,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         blockedStateExit = (State) values.get(idx++);
         blockedNewStateEntry = (State) values.get(idx++);
         blockedNewStateEntryPayload = (PValue<?>) values.get(idx++);
+
+        for (Map.Entry<String, PLoopObject> loop : loopMap.entrySet()) {
+            loop.setValue((PLoopObject) values.get(idx++));
+        }
 
         for (PContinuation continuation : continuationMap.values()) {
             for (Map.Entry<String, PValue<?>> entry : continuation.getVars().entrySet()) {
@@ -386,6 +409,29 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      */
     public void gotoState(State state, PValue<?> payload) {
         processStateTransition(state, payload);
+    }
+
+    /**
+     * Register a loop
+     *
+     * @param name  Name of the loop
+     * @param value Object value
+     */
+    protected void registerLoop(
+            String name,
+            PLoopObject value) {
+        loopMap.put(name, value);
+    }
+
+    /**
+     * Get loop object
+     *
+     * @param name  Name of the loop
+     */
+    protected PLoopObject getLoopObject(
+            String name) {
+        assert (loopMap.containsKey(name));
+        return loopMap.get(name);
     }
 
     /**

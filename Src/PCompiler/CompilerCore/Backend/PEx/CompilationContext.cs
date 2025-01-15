@@ -90,7 +90,10 @@ internal class CompilationContext : CompilationContextBase
 
     internal static string GetVar(string rawName)
     {
-        return $"var_{rawName}";
+        if (rawName.Contains("getLoopObject("))
+            return rawName;
+        else
+            return $"var_{rawName}";
     }
 
     internal string FreshTempVar()

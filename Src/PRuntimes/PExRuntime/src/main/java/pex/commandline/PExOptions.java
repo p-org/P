@@ -241,7 +241,7 @@ public class PExOptions {
         Option maxChoicesPerCall =
                 Option.builder()
                         .longOpt("max-choices-per-call")
-                        .desc("Max number of choices allowed per choose statement per call (default: 10000)")
+                        .desc("Max number of choices allowed per choose statement per call (default: 20)")
                         .numberOfArgs(1)
                         .hasArg()
                         .argName("(integer)")
@@ -252,7 +252,7 @@ public class PExOptions {
         Option maxChoicesTotal =
                 Option.builder()
                         .longOpt("max-choices-per-schedule")
-                        .desc("Max number of choices allowed per choose statement in total (default: no bound)")
+                        .desc("Max number of choices allowed per choose statement in total (default: 250)")
                         .numberOfArgs(1)
                         .hasArg()
                         .argName("(integer)")

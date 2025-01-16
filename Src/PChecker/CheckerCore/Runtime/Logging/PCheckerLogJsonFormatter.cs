@@ -23,7 +23,7 @@ namespace PChecker.Runtime.Logging
         /// <summary>
         /// Initializes a new instance of the <see cref="PCheckerLogJsonFormatter"/> class.
         /// </summary>
-        protected PCheckerLogJsonFormatter()
+        public PCheckerLogJsonFormatter()
         {
             Writer = new JsonWriter();
         }

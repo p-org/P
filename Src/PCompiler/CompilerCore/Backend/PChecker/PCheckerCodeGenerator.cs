@@ -14,7 +14,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.CSharp
 {
-    public class CSharpCodeGenerator : ICodeGenerator
+    public class PCheckerCodeGenerator : ICodeGenerator
     {
 
         /// <summary>
@@ -154,6 +154,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using PChecker.Runtime.StateMachines;");
             context.WriteLine(output, "using PChecker.Runtime.Events;");
             context.WriteLine(output, "using PChecker.Runtime.Exceptions;");
+            context.WriteLine(output, "using PChecker.Runtime.Logging;");
             context.WriteLine(output, "using PChecker.Runtime.Values;");
             context.WriteLine(output, "using PChecker.Runtime.Specifications;");
             context.WriteLine(output, "using Monitor = PChecker.Runtime.Specifications.Monitor;");
@@ -387,6 +388,8 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output);
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(ControlledRuntime runtime) {");
+            context.WriteLine(output, "runtime.RegisterLog(new PCheckerLogTextFormatter());");
+            context.WriteLine(output, "runtime.RegisterLog(new PCheckerLogJsonFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");

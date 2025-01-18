@@ -449,7 +449,6 @@ namespace PChecker.SystematicTesting
             AssertExpectedCallerStateMachine(creator, "CreateStateMachine");
 
             var stateMachine = CreateStateMachine(id, type, name, creator);
-            LogWriter.LogCreateStateMachine(stateMachine.Id, creator?.Id.Name, creator?.Id.Type);
             RunStateMachineEventHandler(stateMachine, initialEvent, true, null);
             return stateMachine.Id;
         }

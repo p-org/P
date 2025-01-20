@@ -7,14 +7,9 @@ eventbag machine Main {
 	start state Init {
 
 		entry {
-			m1 = new M1((sender= this, num= 0));
+			m1 = new M1(this);
 			i = 0;
 			prev = 0;
-			while (i < 100)
-			{
-				print format("Waiting for events to pile up {0}", i);
-				i = i + 1;
-			}
 		}
 		on e do (p: int) {
 			assert p >= prev;
@@ -27,13 +22,11 @@ machine M1 {
 	var i: int;
 	var j: int;
 	start state Init {
-		entry (payload: (sender: Main, num: int)) {
-			print format("sender: {0}", payload.sender);
-			i = payload.num;
-			j = i + 10;
-			while (i < j)
+		entry (payload: Main) {
+			i = 0;
+			while (i < 10)
 			{
-				send payload.sender, e, i;
+				send payload, e, i;
 				i = i + 1;
 			}
 		}

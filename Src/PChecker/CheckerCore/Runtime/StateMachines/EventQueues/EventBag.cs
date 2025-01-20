@@ -194,9 +194,7 @@ internal sealed class EventBag : IEventQueue
                 Bag.Remove(availableEvent);
                 deferredEvents.Add(availableEvent);
                 availableEvent = default;
-                
             }
-
         }
         
         Bag.AddRange(deferredEvents);

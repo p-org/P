@@ -183,6 +183,10 @@ namespace PChecker.Runtime.StateMachines.EventQueues
                 if (Map.TryGetValue(stateMachine, out var eventList) && eventList.Count > 0)
                 {
                     nextAvailableEvent = TryDequeueEvent(stateMachine, checkOnly);
+                }
+
+                if (nextAvailableEvent != default)
+                {
                     SenderMachineNames.AddRange(temp);
                     break;
                 }

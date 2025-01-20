@@ -1,14 +1,11 @@
 event e: int;
 
-eventBag machine Main {
+eventQueue machine Main {
 	var m1: M1;
-	var i: int;
 	var prev: int;
 	start state Init {
-
 		entry {
-			m1 = new M1(this);
-			i = 0;
+			m1 = new M1((sender= this));
 			prev = 0;
 		}
 		on e do (p: int) {
@@ -22,11 +19,11 @@ machine M1 {
 	var i: int;
 	var j: int;
 	start state Init {
-		entry (payload: Main) {
+		entry (payload: (sender: Main)) {
 			i = 0;
 			while (i < 10)
 			{
-				send payload, e, i;
+				send payload.sender, e, i;
 				i = i + 1;
 			}
 		}

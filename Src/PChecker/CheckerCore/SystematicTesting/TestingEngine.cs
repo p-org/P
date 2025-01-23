@@ -165,9 +165,7 @@ namespace PChecker.SystematicTesting
         /// A guard for printing info.
         /// </summary>
         private int PrintGuard;
-
-        private StreamWriter TimelineFileStream;
-
+        
 
         /// <summary>
         /// Creates a new systematic testing engine.
@@ -272,7 +270,6 @@ namespace PChecker.SystematicTesting
 
             CancellationTokenSource = new CancellationTokenSource();
             PrintGuard = 1;
-            TimelineFileStream = new StreamWriter(checkerConfiguration.OutputDirectory + "timeline.txt");
             // Initialize a new instance of JsonVerboseLogs if running in verbose mode.
             if (checkerConfiguration.IsVerbose)
             {

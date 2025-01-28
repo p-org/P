@@ -13,11 +13,15 @@ public class TaskPool {
     List<Task> tasks;
     Map<String, Map<String, Integer>> headerToNumTasks;
     Map<String, Map<String, List<Task>>> taskIndex;
+    Set<String> activatedGuards;
+    Set<String> allGuards;
     final FromDaikon converter;
     final boolean verbose;
     final BufferedOutputStream pinferOutputStream;
     final BufferedOutputStream pinferParsableStream;
     final BufferedOutputStream pinferParsableAllStream;
+    final BufferedOutputStream pinferActivatedGuardsStream;
+    final BufferedOutputStream pinferAllGuardsStream;
     final long startTime;
     final File outputFile;
     static final File DaikonTracesDir = new File("tmp_daikon_traces");
@@ -29,6 +33,8 @@ public class TaskPool {
         this.tasks = new ArrayList<>();
         this.headerToNumTasks = new HashMap<>();
         this.taskIndex = new HashMap<>();
+        this.activatedGuards = new HashSet<>();
+        this.allGuards = new HashSet<>();
         this.ptr = 0;
         this.numFinished = 0;
         this.numMined = 0;
@@ -44,6 +50,24 @@ public class TaskPool {
         File pinferOutputFile = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), filename)));
         File pinferParsable = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "%PARSEFILE%")));
         File pinferParsableAll = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "all_%PARSEFILE%")));
+        File pinferActivatedGuards = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "activated_guards.txt")));
+        File pinferAllGuards = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "all_guards.txt")));
+        if (!pinferActivatedGuards.exists()) {
+            pinferActivatedGuards.createNewFile();
+        } else {
+            // read from checkpointed results
+            // BufferedReader reader = new BufferedReader(new FileReader(pinferActivatedGuards));
+            // String line;
+            // while ((line = reader.readLine()) != null) {
+            //     activatedGuards.add(line);
+            // }
+            readGuards(pinferActivatedGuards, activatedGuards);
+        }
+        if (!pinferAllGuards.exists()) {
+            pinferAllGuards.createNewFile();
+        } else {
+            readGuards(pinferAllGuards, allGuards);
+        }
         assert pinferOutputFile.createNewFile() : "Failed to create invariant output file " + pinferOutputFile;
         assert pinferParsable.createNewFile() : "Failed to create pinfer parsable file " + "%PARSEFILE%";
         assert pinferParsableAll.createNewFile() : "Failed to create pinfer parsable file " + "all_%PARSEFILE%";
@@ -51,10 +75,20 @@ public class TaskPool {
         this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile));
         this.pinferParsableStream = new BufferedOutputStream(new FileOutputStream(pinferParsable));
         this.pinferParsableAllStream = new BufferedOutputStream(new FileOutputStream(pinferParsableAll, true));
+        this.pinferActivatedGuardsStream = new BufferedOutputStream(new FileOutputStream(pinferActivatedGuards));
+        this.pinferAllGuardsStream = new BufferedOutputStream(new FileOutputStream(pinferAllGuards));
         if (!DaikonTracesDir.exists()) {
             DaikonTracesDir.mkdirs();
         }
         this.startTime = System.currentTimeMillis();
+    }
+
+    private void readGuards(File f, Set<String> guards) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(f));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            guards.add(line);
+        }
     }
 
     public void addTask(Task task) throws IOException {
@@ -93,12 +127,18 @@ public class TaskPool {
             showProgress();
             String header = converter.getFormulaHeader(guards, filters);
             Set<String> invariants = new HashSet<>();
+            boolean guardActivated = false;
             for (var task : taskIndex.get(guards).get(filters)) {
                 var result = task.getDaikonOutput(converter, verbose);
                 if (result != null) {
+                    guardActivated = true;
                     invariants.addAll(result);
                 }
             }
+            if (guardActivated) {
+                activatedGuards.add(guards);
+            }
+            allGuards.add(guards);
             if (!invariants.isEmpty()) {
                 String body = String.join("\n", invariants);
                 pinferOutputStream.write((header + "\n" + body + "\n\n").getBytes());
@@ -116,7 +156,9 @@ public class TaskPool {
                 pinferParsableAllStream.write((String.join(" ∧ ", invariants) + "\n").getBytes());
                 this.numMined += 1;
             } else {
-                this.numSanitized += 1;
+                if (guardActivated) {
+                    numSanitized += 1;
+                }
             }
             notify();
         }
@@ -153,13 +195,24 @@ public class TaskPool {
             System.out.println();
             System.out.println("Time used (seconds): " + (double)(System.currentTimeMillis() - startTime) / 1000.0);
             System.out.println("#Properties mined: " + numMined);
+            System.out.println("#Activated Guards: " + activatedGuards.size());
             System.out.println("Output to " + outputFile.getPath());
             pinferParsableAllStream.write((numFinished + " " + numSanitized + "\n").getBytes());
             pinferParsableAllStream.write(("EOT\n").getBytes());
             pinferParsableStream.write((numFinished + " " + numSanitized).getBytes());
+            for (String guard : activatedGuards) {
+                pinferActivatedGuardsStream.write((guard + "\n").getBytes());
+            }
+            for (String guard : allGuards) {
+                pinferAllGuardsStream.write((guard + "\n").getBytes());
+            }
+            pinferActivatedGuardsStream.flush();
+            pinferAllGuardsStream.flush();
             pinferOutputStream.flush();
             pinferParsableStream.flush();
             pinferParsableAllStream.flush();
+            pinferActivatedGuardsStream.close();
+            pinferAllGuardsStream.close();
             pinferOutputStream.close();
             pinferParsableStream.close();
             pinferParsableAllStream.close();

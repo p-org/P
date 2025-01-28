@@ -45,7 +45,12 @@ namespace Plang.Compiler
         private int numDistilledInvs = 0;
         private int numTotalInvs = 0;
         private int numTotalTasks = 0;
+        private int numEventCombinations = 0;
         private readonly string InvOutputDir = invOutDir;
+        private double tSearchEventCombination = 0.0;
+        private double tCandidateTemplateGen = 0.0;
+        private double tMining = 0.0;
+        private double tPruning = 0.0;
 
         public bool Converged(Hint h, HashSet<string> predicates, HashSet<string> terms)
         {
@@ -65,12 +70,16 @@ namespace Plang.Compiler
                 Job.Output.WriteWarning($"No trace indexed for this event combination: {string.Join(", ", hint.Quantified.Select(x => x.EventName))}. Skipped ...");
                 return false;
             }
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             Codegen.Reset();
             Codegen.WithHint(hint);
             foreach (var file in Codegen.GenerateCode(Job, GlobalScope))
             {
                 Job.Output.WriteFile(file);
             }
+            stopwatch.Stop();
+            tCandidateTemplateGen += stopwatch.ElapsedMilliseconds;
             Job.Output.WriteInfo($"Compiling generated code...");
             try
             {
@@ -120,7 +129,11 @@ namespace Plang.Compiler
             }
             Console.WriteLine("===============Running================");
             hint.ShowHint();
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             numDistilledInvs += PInferInvoke.InvokeMain(Job, TraceIndex, GlobalScope, hint, Codegen, InvOutputDir, out int totalTasks);
+            stopwatch.Stop();
+            tMining += stopwatch.ElapsedMilliseconds / 1000.0;
             numTotalInvs = PInferInvoke.Recorded.Count;
             numTotalTasks = totalTasks;
             Console.WriteLine("=================Done=================");
@@ -337,20 +350,32 @@ namespace Plang.Compiler
                 Job.Output.WriteWarning($"Running user-defined hint: {hint.Name}");
                 hint.ConfigEvent ??= configEvent;
                 ParameterSearch(hint);
+                if (TraceIndex.GetTraceFolder(hint, out var _))
+                {
+                    numEventCombinations += 1;
+                }
             }
             if (hintsOnly)
             {
                 return;
             }
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             foreach (var m in machines)
             {
                 tasks.UnionWith(ExploreHandlers(m.AllStates().ToList()));
             }
+            stopwatch.Stop();
+            tSearchEventCombination = stopwatch.ElapsedMilliseconds;
             Job.Output.WriteInfo("Event combinations:");
             foreach (var task in tasks)
             {
                 Console.WriteLine(string.Join(", ", task.RelatedEvents().Select(x => x.Name)));
                 task.ConfigEvent ??= configEvent;
+                if (TraceIndex.GetTraceFolder(task, out var _))
+                {
+                    numEventCombinations += 1;
+                }
             }
             for (int i = 0; i <= Job.TermDepth; ++i)
             {
@@ -434,13 +459,16 @@ namespace Plang.Compiler
                 {
                     currentInvs.Add(invParsable[ptr++]);
                 }
-                var stopwatch = new Stopwatch();
                 PInferInvoke.PruneAndAggregate(Job, GlobalScope, h, Codegen, [.. currentInvs], out var t);
                 numTotalTasks += t;
                 if (ptr < invParsable.Length - 1) ptr++;
                 else break;
             }
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             PInferInvoke.DoChores(Job, Codegen);
+            stopwatch.Stop();
+            tPruning = stopwatch.ElapsedMilliseconds;
         }
 
         private void InitializeZ3()
@@ -531,6 +559,7 @@ namespace Plang.Compiler
                     PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
                     driver.InitializeZ3();
                     driver.ParameterSearch(givenHint);
+                    driver.numEventCombinations = 1;
                     numTotalTasks = driver.numTotalTasks;
                     break;
                 }
@@ -541,8 +570,13 @@ namespace Plang.Compiler
                     PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
                     driver.InitializeZ3();
                     driver.AutoExplore(job.HintsOnly);
+                    var pruning_stopwatch = new Stopwatch();
+                    pruning_stopwatch.Start();
                     PInferInvoke.DoChores(job, driver.Codegen);
+                    pruning_stopwatch.Stop();
+                    driver.tPruning = pruning_stopwatch.ElapsedMilliseconds;
                     numTotalTasks = driver.numTotalTasks;
+                    // Console.WriteLine($"Num Event combinations: {driver.numEventCombinations}");
                     break;
                 }
             }
@@ -578,6 +612,11 @@ namespace Plang.Compiler
                 var numGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
                 job.Output.WriteInfo($"#Goals learned with hints: {PInferInvoke.NumGoalsLearnedWithHints} / {numGoals}");
                 job.Output.WriteInfo($"#Goals learned without hints: {PInferInvoke.NumGoalsLearnedWithoutHints} / {numGoals}");
+                int numActivatedGuards = PInferInvoke.GetNumActivatedGuards(invOutDir);
+                int numAllGuards = PInferInvoke.GetNumAllGuards(invOutDir);
+                job.Output.WriteInfo($"#Activated Guards: {numActivatedGuards}");
+                job.Output.WriteInfo($"#All Guards: {numAllGuards}");
+                job.Output.WriteInfo($"%Activated Guards: {numActivatedGuards / (double)numAllGuards}");
                 PInferStats stats = new() {
                     NumInvsTotal = PInferInvoke.NumInvsMined + PInferInvoke.NumInvPrunedBySanitizing,
                     NumInvsPrunedBySanitizing = PInferInvoke.NumInvPrunedBySanitizing,
@@ -585,9 +624,17 @@ namespace Plang.Compiler
                     NumInvsPrunedBySubsumption = PInferInvoke.NumInvsPrunedBySubsumption,
                     NumInvsPrunedBySymmetry = PInferInvoke.NumInvsPrunedBySymmetry,
                     TimeElapsed = elapsed,
+                    TimeCandidateTemplateGen = driver.tCandidateTemplateGen,
+                    TimeMining = driver.tMining,
+                    TimePruning = driver.tPruning,
+                    TimeSearchEventCombination = driver.tSearchEventCombination,
                     NumGoalsLearnedWithHints = PInferInvoke.NumGoalsLearnedWithHints,
                     NumGoalsLearnedWithoutHints = PInferInvoke.NumGoalsLearnedWithoutHints,
-                    NumGoals = numGoals
+                    NumGoals = numGoals,
+                    NumDaikonInvocations = PInferInvoke.NumTasksExecuted,
+                    NumEventCombinations = driver.numEventCombinations,
+                    NumActivatedGuards = numActivatedGuards,
+                    NumAllGuards = numAllGuards
                 };
                 File.WriteAllText(pruning_filename, JsonSerializer.Serialize(stats));
                 job.Output.WriteInfo("\tWriting monitors to PInferSpecs ...");
@@ -603,9 +650,17 @@ namespace Plang.Compiler
         public int NumInvsPrunedBySymmetry { get; set; }
         public int NumInvsPrunedBySanitizing { get; set; }
         public double TimeElapsed { get; set; }
+        public double TimeMining { get; set; }
+        public double TimePruning { get; set; }
+        public double TimeSearchEventCombination { get; set; }
+        public double TimeCandidateTemplateGen { get; set; }
         public int NumGoalsLearnedWithHints { get; set; }
         public int NumGoalsLearnedWithoutHints { get; set; }
         public int NumGoals { get; set; }
+        public int NumDaikonInvocations { get; set; }
+        public int NumEventCombinations { get; set; }
+        public int NumActivatedGuards { get; set; }
+        public int NumAllGuards { get; set; }
     }
 
     internal class PInferInvoke
@@ -653,6 +708,24 @@ namespace Plang.Compiler
                 int cnt = dir.GetFiles().Where(x => x.Name.StartsWith("stepback_invs")).Count();
                 File.Move(StepbackInvFile, Path.Combine("PInferOutputs", $"stepback_invs_{cnt - 1}.txt"));
             }
+        }
+
+        public static int GetNumActivatedGuards(string invOutDir) {
+            var activatedGuardsFile = Path.Combine("PInferOutputs", invOutDir, "activated_guards.txt");
+            if (!File.Exists(activatedGuardsFile))
+            {
+                return 0;
+            }
+            return File.ReadAllLines(activatedGuardsFile).Length;
+        }
+
+        public static int GetNumAllGuards(string invOutDir) {
+            var allGuardsFile = Path.Combine("PInferOutputs", invOutDir, "all_guards.txt");
+            if (!File.Exists(allGuardsFile))
+            {
+                return 0;
+            }
+            return File.ReadAllLines(allGuardsFile).Length;
         }
 
         public static void LoadGoals(PInferDriver driver, ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen, string filename = "goals.json")

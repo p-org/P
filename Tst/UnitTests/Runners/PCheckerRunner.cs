@@ -155,7 +155,7 @@ namespace PImplementation
             return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", dllPath);
         }
 
-        private int DoCompile(DirectoryInfo scratchDirectory)
+        public int DoCompile(DirectoryInfo scratchDirectory)
         {
             var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);

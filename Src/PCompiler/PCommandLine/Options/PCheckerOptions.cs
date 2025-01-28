@@ -11,7 +11,7 @@ using Plang.Parser;
 
 namespace Plang.Options
 {
-    internal sealed class PCheckerOptions
+    public sealed class PCheckerOptions
     {
         /// <summary>
         /// The command line parser to use.
@@ -21,7 +21,7 @@ namespace Plang.Options
         /// <summary>
         /// Initializes a new instance of the <see cref="PCheckerOptions"/> class.
         /// </summary>
-        internal PCheckerOptions()
+        public PCheckerOptions()
         {
             Parser = new CommandLineArgumentParser("p check",
                 "The P checker enables systematic exploration of a specified P test case, it generates " +
@@ -87,7 +87,7 @@ namespace Plang.Options
         /// Parses the command line options and returns a checkerConfiguration.
         /// </summary>
         /// <returns>The CheckerConfiguration object populated with the parsed command line options.</returns>
-        internal CheckerConfiguration Parse(string[] args)
+        public CheckerConfiguration Parse(string[] args)
         {
             var configuration = CheckerConfiguration.Create();
             try

@@ -148,6 +148,12 @@ public class Main {
                     List<RawPredicate> guards = isForall ? predicateComb : List.of();
                     List<RawPredicate> filters = isForall ? List.of() : predicateComb;
                     List<RawTerm> forallTerms = isForall ? termComb.stream().map(terms::get).toList() : List.of();
+                    // if (minerConfig.verbose) {
+                    //     System.out.println("Terms:");
+                    //     for (var t: forallTerms) {
+                    //         System.out.println(t.repr());
+                    //     }
+                    // }
                     List<RawTerm> existsTerms = isForall ? List.of() : termComb.stream().map(terms::get).toList();
                     var task = new TaskPool.Task(minerConfig.traces,
                             minerConfig.numForallQuantifiers,

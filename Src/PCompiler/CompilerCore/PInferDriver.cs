@@ -547,7 +547,11 @@ namespace Plang.Compiler
                     driver = new PInferDriver(job, globalScope, invOutDir, checkTrace: false);
                     PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
                     driver.InitializeZ3();
+                    var pruning_stopwatch = new Stopwatch();
+                    pruning_stopwatch.Start();
                     driver.RunPruningSteps();
+                    pruning_stopwatch.Stop();
+                    driver.tPruning = pruning_stopwatch.ElapsedMilliseconds;
                     break;
                 }
                 case PInferAction.RunHint:
@@ -593,7 +597,7 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"... Writing pruned invariants to {filename}");
                 var elapsed = stopwatch.ElapsedMilliseconds / 1000.0;
                 job.Output.WriteInfo($"PInfer statistics");
-                job.Output.WriteInfo($"\t# invariants discovered: {PInferInvoke.NumInvsMined + PInferInvoke.NumInvPrunedBySanitizing}");
+                job.Output.WriteInfo($"\t# invariants discovered: {PInferInvoke.NumInvsMined + PInferInvoke.NumInvPrunedAtPredicateSanitizer}");
                 job.Output.WriteInfo($"\t# invariants after sanitization: {PInferInvoke.NumInvsMined}");
                 // ranking invariants
                 var sortedInvs = PInferInvoke.GetSortedInvariants();
@@ -608,7 +612,7 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"\t#Invariants pruned by tautology: {PInferInvoke.NumTautologyPruned}");
                 job.Output.WriteInfo($"\t#Invariants pruned by subsumption: {PInferInvoke.NumInvsPrunedBySubsumption}");
                 job.Output.WriteInfo($"\t#Invariants pruned by symmetry: {PInferInvoke.NumInvsPrunedBySymmetry}");
-                job.Output.WriteInfo($"\t#Invariants pruned by sanitizing: {PInferInvoke.NumInvPrunedBySanitizing}");
+                job.Output.WriteInfo($"\t#Invariants pruned by sanitizing: {PInferInvoke.NumInvPrunedAtPredicateSanitizer + PInferInvoke.NumInvPrunedBySanitizing}");
                 var numGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
                 job.Output.WriteInfo($"#Goals learned with hints: {PInferInvoke.NumGoalsLearnedWithHints} / {numGoals}");
                 job.Output.WriteInfo($"#Goals learned without hints: {PInferInvoke.NumGoalsLearnedWithoutHints} / {numGoals}");
@@ -618,11 +622,12 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"#All Guards: {numAllGuards}");
                 job.Output.WriteInfo($"%Activated Guards: {numActivatedGuards / (double)numAllGuards}");
                 PInferStats stats = new() {
-                    NumInvsTotal = PInferInvoke.NumInvsMined + PInferInvoke.NumInvPrunedBySanitizing,
-                    NumInvsPrunedBySanitizing = PInferInvoke.NumInvPrunedBySanitizing,
+                    NumInvsTotal = PInferInvoke.NumInvsMined + PInferInvoke.NumInvPrunedAtPredicateSanitizer,
+                    NumInvsPrunedBySanitizing = PInferInvoke.NumInvPrunedBySanitizing + PInferInvoke.NumInvPrunedAtPredicateSanitizer,
                     NumInvsPrunedByGrammar = PInferInvoke.NumInvsPrunedByGrammar,
                     NumInvsPrunedBySubsumption = PInferInvoke.NumInvsPrunedBySubsumption,
                     NumInvsPrunedBySymmetry = PInferInvoke.NumInvsPrunedBySymmetry,
+                    NumInvsPrunedByTauto = PInferInvoke.NumTautologyPruned,
                     TimeElapsed = elapsed,
                     TimeCandidateTemplateGen = driver.tCandidateTemplateGen,
                     TimeMining = driver.tMining,
@@ -646,6 +651,7 @@ namespace Plang.Compiler
     internal class PInferStats {
         public int NumInvsTotal { get; set; }
         public int NumInvsPrunedBySubsumption { get; set; }
+        public int NumInvsPrunedByTauto { get; set; }
         public int NumInvsPrunedByGrammar { get; set; }
         public int NumInvsPrunedBySymmetry { get; set; }
         public int NumInvsPrunedBySanitizing { get; set; }
@@ -686,6 +692,7 @@ namespace Plang.Compiler
         internal static int NumInvsPrunedByGrammar = 0;
         internal static int NumTasksExecuted = 0;
         internal static int NumInvPrunedBySanitizing = 0;
+        internal static int NumInvPrunedAtPredicateSanitizer = 0;
         internal static int NumInvsPrunedBySubsumption = 0;
         internal static int NumInvsPrunedBySymmetry = 0;
         internal static int NumTautologyPruned = 0;
@@ -979,7 +986,10 @@ namespace Plang.Compiler
             HashSet<string> written = [];
             foreach (var (_, _, _, h, p, q) in record)
             {
-                if (q.Count == 0) continue;
+                if (q.Count == 0) {
+                    NumInvPrunedBySanitizing += 1;
+                    continue;
+                }
                 var rec = AssembleInvariant(h, p, q);
                 if (written.Contains(rec)) continue;
                 written.Add(rec);
@@ -1422,7 +1432,7 @@ namespace Plang.Compiler
                                 if (removes.Contains(j)) continue;
                                 if (symPi.SetEquals(P[k][j]))
                                 {
-                                    // job.Output.WriteWarning($"[Chores][Remove-Symmetric] {ShowRecordAt(k, j)} by {ShowRecordAt(k, i)}");
+                                    job.Output.WriteWarning($"[Chores][Remove-Symmetric] {ShowRecordAt(k, j)} by {ShowRecordAt(k, i)}");
                                     removes.Add(j);
                                     NumInvsPrunedBySymmetry += 1;
                                 }
@@ -1461,6 +1471,7 @@ namespace Plang.Compiler
                             if (freeEventsList.All(x => !x.SetEquals(quantified)))
                             {
                                 insufficient.Add(i);
+                                NumInvPrunedBySanitizing += 1;
                                 didSth = true;
                             }
                         }
@@ -1517,7 +1528,7 @@ namespace Plang.Compiler
             var lastLine = contents[^1].Split(" ");
             total = int.Parse(lastLine[0]);
             NumTasksExecuted += total;
-            NumInvPrunedBySanitizing += int.Parse(lastLine[1]);
+            NumInvPrunedAtPredicateSanitizer += int.Parse(lastLine[1]);
             for (int i = 0; i < contents.Length; i += 3)
             {
                 if (i + 1 >= contents.Length) break;

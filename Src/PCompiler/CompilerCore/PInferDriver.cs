@@ -841,8 +841,8 @@ namespace Plang.Compiler
                         {
                             NumGoalsLearnedWithoutHints++;
                         }
+                        Console.WriteLine($"Learned: {key}");
                         learned[key].Add(i);
-                        // confirmed.Add(i);
                     }
                 }
                 checkedInvs += 1;

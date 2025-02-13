@@ -115,13 +115,25 @@ namespace Plang.Compiler.Backend.PInfer
                 PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Eq, t, t);
                 if (globalScope.AllowedBinOpsByKind.ContainsKey(BinOpKind.Comparison))
                 {
+                    bool hasComp = false;
                     foreach (var types in globalScope.AllowedBinOpsByKind[BinOpKind.Comparison])
                     {
                         if (IsAssignableFrom(types.Item1, t) && IsAssignableFrom(types.Item2, t))
                         {
                             PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Lt, t, t);
                             PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Gt, t, t);
+                            hasComp = true;
                             break;
+                        }
+                    }
+                    if (!hasComp && globalScope.AllowedBinOps.ContainsKey(BinOpType.Neq)) {
+                        foreach (var types in globalScope.AllowedBinOps[BinOpType.Neq])
+                        {
+                            if (IsAssignableFrom(types.Item1, t) && IsAssignableFrom(types.Item2, t))
+                            {
+                                PredicateStore.AddBinaryBuiltinPredicate(globalScope, BinOpType.Neq, t, t);
+                                break;
+                            }
                         }
                     }
                 }
@@ -894,6 +906,33 @@ namespace Plang.Compiler.Backend.PInfer
                 return (otherType is TypeDefType otherTypeDef) && (type is TypeDefType typedef)
                         && typedef.TypeDefDecl.Name == otherTypeDef.TypeDefDecl.Name
                         && IsAssignableFrom(typedef.TypeDefDecl.Type, otherTypeDef.TypeDefDecl.Type);
+            }
+            if (type is SequenceType lhsSeq)
+            {
+                var res = otherType is SequenceType otherSeqType
+                        && IsAssignableFrom(lhsSeq.ElementType, otherSeqType.ElementType);
+                return res;
+            }
+            if (type is SetType lhsSet)
+            {
+                var res = otherType is SetType otherSetType
+                        && IsAssignableFrom(lhsSet.ElementType, otherSetType.ElementType);
+                return res;
+            }
+            if (type is NamedTupleType lhsNamedTuple)
+            {
+                var res = otherType is NamedTupleType otherNamedTuple
+                        && lhsNamedTuple.Fields.Count == otherNamedTuple.Fields.Count
+                        && lhsNamedTuple.Fields.Zip(otherNamedTuple.Fields).All(x => x.First.Name == x.Second.Name
+                        && IsAssignableFrom(x.First.Type, x.Second.Type));
+                return res;
+            }
+            if (type is TupleType lhsTuple)
+            {
+                var res = otherType is TupleType otherTuple
+                        && lhsTuple.Types.Count == otherTuple.Types.Count
+                        && lhsTuple.Types.Zip(otherTuple.Types).All(x => IsAssignableFrom(x.First, x.Second));
+                return res;
             }
             return type.IsAssignableFrom(otherType);
         }

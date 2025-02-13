@@ -322,7 +322,7 @@ namespace Plang.Compiler.Backend.PInfer
                 }
                 return new SizeofExpr(ctx, args[0]);
             }
-            foreach (var f in hint.CustomFunctions)
+            foreach (var f in GlobalScope.Functions)
             {
                 if (f.Name == ctx.iden().GetText())
                 {

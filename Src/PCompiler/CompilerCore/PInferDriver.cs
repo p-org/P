@@ -1487,7 +1487,7 @@ namespace Plang.Compiler
         }
 
         // return the Ps and Qs that should be included to the log
-        public static (HashSet<string>, HashSet<string>) UpdateMinedSpecs(ICompilerConfiguration job, PInferPredicateGenerator codegen, Hint hint, HashSet<string> p_prime, HashSet<string> q_prime, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
+        public static bool UpdateMinedSpecs(ICompilerConfiguration job, PInferPredicateGenerator codegen, Hint hint, HashSet<string> p_prime, HashSet<string> q_prime, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ)
         {
             var quantifiers = hint.GetQuantifierHeader();
             // var curr_inv = hint.GetInvariantReprHeader(string.Join(" ∧ ", p_prime), string.Join(" ∨ ", q_prime.Select(x => string.Join(" ∧ ", x))));
@@ -1506,6 +1506,10 @@ namespace Plang.Compiler
             if (!ParsedP.ContainsKey(quantifiers)) ParsedP[quantifiers] = [];
             if (!ParsedQ.ContainsKey(quantifiers)) ParsedQ[quantifiers] = [];
             // add the current combination
+            foreach (var (p, q) in P[quantifiers].Zip(Q[quantifiers]))
+            {
+                if (p.SetEquals(p_prime) && q.SetEquals(q_prime)) return false;
+            }
             P[quantifiers].Add(p_prime);
             Q[quantifiers].Add(q_prime);
             Executed[quantifiers].Add(hint.Copy());
@@ -1519,7 +1523,7 @@ namespace Plang.Compiler
             {
                 ParsedQ[quantifiers][k] = v;
             }
-            return (p_prime, q_prime);
+            return true;
         }
     
         public static int PruneAndAggregate(ICompilerConfiguration job, Scope globalScope, Hint hint, PInferPredicateGenerator codegen, string[] contents, out int total)
@@ -1529,9 +1533,15 @@ namespace Plang.Compiler
             total = int.Parse(lastLine[0]);
             NumTasksExecuted += total;
             NumInvPrunedAtPredicateSanitizer += int.Parse(lastLine[1]);
+            Dictionary<string, List<(HashSet<string>, HashSet<string>)>> memo = [];
+            var quantifiers = hint.GetQuantifierHeader();
             for (int i = 0; i < contents.Length; i += 3)
             {
                 if (i + 1 >= contents.Length) break;
+                if (!memo.ContainsKey(quantifiers))
+                {
+                    memo[quantifiers] = [];
+                }
                 var guards = contents[i];
                 var filters = contents[i + 1];
                 var properties = contents[i + 2]
@@ -1542,6 +1552,8 @@ namespace Plang.Compiler
                 var p = guards.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0).ToHashSet();
                 var q = filters.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0).ToHashSet();
                 if (q.Count + properties.Count() == 0) continue;
+                if (memo[quantifiers].Any(x => x.Item1.SetEquals(p) && x.Item2.SetEquals(q.Concat(properties).ToHashSet()))) continue;
+                memo[quantifiers].Add((p, q.Concat(properties).ToHashSet()));
                 NumInvsMined += 1;
                 List<string> keep = [];
                 List<string> stepback = [];
@@ -1581,7 +1593,10 @@ namespace Plang.Compiler
                             throw new Exception($"[ERROR] Filter {f} cannot be parsed");
                         }
                     }
-                    UpdateMinedSpecs(job, codegen, hint, p, q, parsedP, parsedQ);
+                    if (!UpdateMinedSpecs(job, codegen, hint, p, q, parsedP, parsedQ))
+                    {
+                        NumInvsPrunedBySubsumption += 1;
+                    }
                 }
                 else
                 {

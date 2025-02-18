@@ -2,40 +2,7 @@ import os
 import argparse
 import multiprocessing
 import json
-from constants import num_traces, benchmarks
-
-configurations = {
-    '2PC': ['tcC2P3T3', 'tcC3P4T3', 'tcC3P5T3', 'tcSingleClientNoFailure'],
-    'ClockBound': ['tcC1R3', 'tcC2R3', 'tcC3R3', 'tcC4R3', 'tcC3R5'],
-    'consensus_epr': ['tcOneNode', 'tcTwoNodes', 'tcThreeNodes', 'tcFiveNodes', 'tcTenNodes'],
-    'paxos': ['testBasicPaxos1on1', 'testBasicPaxos3on5', 'testBasicPaxos3on3', 'testBasicPaxos3on1', 'testBasicPaxos2on3', 'testBasicPaxos2on2'],
-    'Raft': ['oneClientFiveServersReliable', 'oneClientFiveServersUnreliable', 'twoClientsThreeServersReliable', 'twoClientsThreeServersUnreliable'],
-    'ring_leader': ['tcOneNode', 'tcTwoNodes', 'tcThreeNodes', 'tcFiveNodes', 'tcTenNodes'],
-    'lockserver': ['tcOneNode', 'tcThreeNodes', 'tcFourNodes', 'tcFiveNodes'],
-    'sharded_kv': ['tcTwoNodes', 'tcThreeNodes', 'tcFourNodes', 'tcFiveNodes'],
-}
-
-event_combs = {
-    'Raft': [
-        # ('eRequestVote', 'eRequestVoteReply'),
-        ('ePutReq', 'eGetReq', 'ePutResp', 'eGetResp', 'eRaftConfig'),
-        # ('eAppendEntries', 'eClientGetRequest', 'eClientPutRequest'),
-        # ('eEntryApplied', 'eAppendEntries', 'eRaftPutResponse'),
-        # ('eNotifyLog',),
-        ('eEntryApplied', 'eBecomeLeader', 'eRaftConfig'),
-        # ('eEntryApplied', 'eRequestVote', 'eClientPutRequest', 'eRequestVoteReply'),
-        # ('eAppendEntriesReply', 'eClientGetRequest'),
-        ('eBecomeLeader', 'eRequestVoteReply', 'eRaftConfig'),
-        # ('eClientGetRequest', 'eClientPutRequest', 'eRequestVoteReply')
-    ],
-    '2PC': [
-        ('ePrepareReq', 'ePrepareSuccess', 'ePrepareFailure', 'eWriteTransSuccess',
-         'eWriteTransTimeout', 'eWriteTransFailure', 'eCommitTrans', 'eAbortTrans', 'eMonitor_AtomicityInitialize')
-    ],
-    'ring_leader': [
-        ('eNominate', 'eBecomeLeader')
-    ]
-}
+from constants import num_traces, benchmarks, configurations, event_combs
 
 def generate_traces(name: str, trace_dir: str, n_traces: list):
     configs = configurations[name]

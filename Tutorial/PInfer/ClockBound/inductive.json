@@ -1,0 +1,13 @@
+[
+    {
+        "events": ["e0:eLocalResponse", "e1:eLocalResponse"],
+        "config_event": null,
+        "guards": ["indexof(e0) < indexof(e1)"],
+        "filters": ["e0.payload.trueTime < e1.payload.trueTime"],
+        "exists": 0,
+        "term_depth": 0
+    },
+    {
+        
+    }
+]

@@ -1,0 +1,8 @@
+[
+    {
+        "events": ["e0:eHasLock", "e1:eHasLock"],
+        "config_event": null,
+        "guards": ["e0.payload.epoch == e1.payload.epoch"],
+        "filters": ["e0.payload.node == e1.payload.node"]
+    }
+]

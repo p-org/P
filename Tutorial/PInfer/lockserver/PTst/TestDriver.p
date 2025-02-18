@@ -9,6 +9,10 @@ fun setUpSystem(num_nodes: int) {
     }
 }
 
+hint hold_and_server (e0: eServerState, e1: eHoldsLock) {}
+hint hold_and_unlock (e0: eHoldsLock, e1: eUnlock) {}
+hint grant_and_unlock (e0: eGrant, e1: eUnlock) {}
+
 machine OneNode {
     start state Init {
         entry {

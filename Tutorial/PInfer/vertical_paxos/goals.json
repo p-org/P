@@ -1,0 +1,26 @@
+[
+    {
+        "events": ["e0:eDecided", "e1:eDecided"],
+        "config_event": null,
+        "guards": [],
+        "filters": ["e0.payload.value == e1.payload.value"],
+        "exists": 0,
+        "term_depth": 0
+    },
+    {
+        "events": ["e0:eP2B", "e1:eP2B"],
+        "config_event": null,
+        "guards": ["e0.payload.round == e1.payload.round"],
+        "filters": ["e0.payload.value == e1.payload.value"],
+        "exists": 0,
+        "term_depth": 0
+    },
+    {
+        "events": ["e0:eDecided", "e1:eP2A"],
+        "config_event": null,
+        "guards": ["e0.payload.round < e1.payload.round"],
+        "filters": ["e0.payload.value == e1.payload.value"],
+        "exists": 0,
+        "term_depth": 0
+    }
+]

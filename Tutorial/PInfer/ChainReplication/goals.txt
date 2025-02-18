@@ -1,4 +1,0 @@
-∀e0: eReadSuccess ∀e1: eWriteResponse :: (indexof(e0) > indexof(e1)) ∧ (e0.payload.k == e1.payload.k) -> (e0.payload.sequence_id >= e1.payload.sequence_id)
-∀e0: eWriteResponse ∀e1: eWriteResponse :: (indexof(e0) > indexof(e1)) ∧ (e0.payload.k == e1.payload.k) -> (e0.payload.sequence_id >= e1.payload.sequence_id)
-∀e0: eReadSuccess ∀e1: eReadSuccess :: (indexof(e0) > indexof(e1)) ∧ (e0.payload.k == e1.payload.k) -> (e0.payload.sequence_id >= e1.payload.sequence_id)
-∀e0: eReadSuccess :: ∃e1: eWriteResponse :: (indexof(e0) > indexof(e1)) ∧ (e0.payload.sequence_id == e1.payload.sequence_id) ∧ (e0.payload.k == e1.payload.k) ∧ (e0.payload.v == e1.payload.v)

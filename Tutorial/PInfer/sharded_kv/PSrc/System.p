@@ -27,6 +27,17 @@ machine Node {
         }
 
         on eTransfer do (e: tTransfer) {
+            var k: KeyT;
+            if (e.dst != this) {
+                return;
+            }
+            foreach (k in keys(kv)) {
+                if (k != e.key) {
+                    continue;
+                } else {
+                    assert false;
+                }
+            }
             kv[e.key] = e.value;
             announce eOwns, (node=this, key=e.key, value=e.value);
         }

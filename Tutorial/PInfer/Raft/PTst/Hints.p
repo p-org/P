@@ -1,7 +1,7 @@
 enum EqEnum {
     YES, NO
 }
-// type LogIndexPair = (log: seq[tServerLog], idx: LogIndex);
+type LogIndexPair = (log: seq[tServerLog], idx: LogIndex);
 
 // hint exact LeaderComplete(e0: eBecomeLeader, e1: eBecomeLeader) {
 //     fun getLogIndexPair(e: tBecomeLeader): LogIndexPair {
@@ -15,7 +15,7 @@ enum EqEnum {
 //         while (i < p1.idx) {
 //             j = 0;
 //             found = false;
-//             while (j < p2.idx) {
+//             while (j < sizeof(p2.log)) {
 //                 if (p1.log[i] == p2.log[j]) {
 //                     found = true;
 //                     break;
@@ -32,29 +32,31 @@ enum EqEnum {
 //     arity = 1;
 // }
 
-hint exact LogMatching (e0: eNotifyLog, e1: eNotifyLog) {
-    fun logMatching(e0: (timestamp: tTS, server: Server, log: seq[tServerLog]), e1: (timestamp: tTS, server: Server, log: seq[tServerLog])): EqEnum {
-        var n: LogIndex;
-        var i: LogIndex;
-        if (sizeof(e0.log) < sizeof(e1.log)) {
-            n = sizeof(e0.log);
-        } else {
-            n = sizeof(e1.log);
-        }
-        i = n - 1;
-        while (i >= 0 && e0.log[i] != e1.log[i]) {
-            i = i - 1;
-        }
-        while (i >= 0) {
-            if (e0.log[i] != e1.log[i]) {
-                return NO;
-            }
-            i = i - 1;
-        }
-        return YES;
-    }
-    num_guards = 0;
-    exists = 0;
-    arity = 1;
-    term_depth = 1;
-}
+// hint exact LogMatching (e0: eNotifyLog, e1: eNotifyLog) {
+//     fun logMatching(e0: (timestamp: tTS, server: Server, log: seq[tServerLog]), e1: (timestamp: tTS, server: Server, log: seq[tServerLog])): EqEnum {
+//         var n: LogIndex;
+//         var i: LogIndex;
+//         if (sizeof(e0.log) < sizeof(e1.log)) {
+//             n = sizeof(e0.log);
+//         } else {
+//             n = sizeof(e1.log);
+//         }
+//         i = n - 1;
+//         while (i >= 0 && e0.log[i] != e1.log[i]) {
+//             i = i - 1;
+//         }
+//         while (i >= 0) {
+//             if (e0.log[i] != e1.log[i]) {
+//                 return NO;
+//             }
+//             i = i - 1;
+//         }
+//         return YES;
+//     }
+//     num_guards = 0;
+//     exists = 0;
+//     arity = 1;
+//     term_depth = 1;
+// }
+
+// hint Test (e0: eEntryApplied, e1: eEntryApplied) {}

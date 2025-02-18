@@ -1,1 +1,1 @@
-hint ProposeAfterDecision (e1: eLearn, e2: eAcceptReq) {}
+// hint ProposeAfterDecision (e0: eLearn, e1: eAcceptReq) {}

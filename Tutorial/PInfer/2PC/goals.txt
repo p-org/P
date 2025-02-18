@@ -1,5 +1,0 @@
-∀e0: eWriteTransResp ∀e1: ePrepareResp :: (e0.payload.transId == e1.payload.transId) ∧ (e0.payload.status == SUCCESS) -> (e1.payload.status == SUCCESS) ∧ (indexof(e1) < indexof(e0)) ∧ (e0.payload.status == e1.payload.status)
-∀e0: eWriteTransResp ∀e1: ePrepareResp :: (e0.payload.status == SUCCESS) ∧ (e1.payload.status == ERROR) -> (e0.payload.transId != e1.payload.transId)
-∀e0: eWriteTransResp ∀e1: ePrepareResp :: (e1.payload.status == SUCCESS) ∧ (e0.payload.status == ERROR) -> (e0.payload.transId != e1.payload.transId)
-∀e0: eWriteTransResp :: (e0.payload.status == SUCCESS) -> ∃e1: ePrepareResp :: (indexof(e1) < indexof(e0)) ∧ (e0.payload.transId == e1.payload.transId) ∧ (e1.payload.status == SUCCESS) ∧ (_num_e_exists_ == numParticipants) ∧ (e0.payload.status == e1.payload.status)
-∀e0: eCommitTrans ∀e1: eAbortTrans :: (e0.payload != e1.payload)

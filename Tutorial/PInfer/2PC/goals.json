@@ -1,13 +1,5 @@
 [
     {
-        "events": ["e0:eCommitTrans", "e1:ePrepareFailure"],
-        "config_event": "eMonitor_AtomicityInitialize",
-        "guards": [],
-        "filters": ["e0.payload != e1.payload.transId"],
-        "exists": 0,
-        "term_depth": 1
-    },
-    {
         "events": ["e0:eCommitTrans", "e1:ePrepareSuccess"],
         "config_event": "eMonitor_AtomicityInitialize",
         "guards": [],

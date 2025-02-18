@@ -5,15 +5,22 @@ fun SetupSystem(n: int) {
     nodes = default(seq[machine]);
     i = 0;
     while (i < n) {
-        nodes += (sizeof(nodes), new Node());
+        nodes += (sizeof(nodes), new Node((ballot=choose(100),)));
         i = i + 1;
     }
     i = 0;
     while (i < n) {
-        send nodes[i], eNodeConfig, (ballot=choose(100), right=nodes[(i+1)%n]);
+        send nodes[i], eConfig, (nxt=nodes[(i + 1) % n],);
         i = i + 1;
     }
-    send nodes[0], eStart;
+    i = 0;
+    while (i < n) {
+        if ($) {
+            send nodes[i], eStart;
+            break;
+        }
+        i = i + 1;
+    }
 }
 
 machine OneNode {

@@ -1,0 +1,1 @@
+module VerticalPaxos = { Proposer, Acceptor, Learner, Orchestrator };

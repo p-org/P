@@ -4,6 +4,7 @@ event eLock: (node: Node);
 event eUnlock: (node: Node, epoch: LockId);
 event eGrant: (node: Node, epoch: LockId);
 event eHoldsLock: (node: Node, epoch: LockId);
+event eServerState: (holdsLock: bool, epoch: LockId); 
 
 event eNotifySelf;
 
@@ -18,6 +19,7 @@ machine LockServer {
         }
 
         on eLock do (e: (node: Node)) {
+            announce eServerState, (holdsLock=holdsLock, epoch=epoch);
             if (holdsLock) {
                 holdsLock = false;
                 send e.node, eGrant, (node=e.node, epoch=epoch);
@@ -25,9 +27,10 @@ machine LockServer {
         }
 
         on eUnlock do (e: (node: Node, epoch: LockId)) {
+            announce eServerState, (holdsLock=holdsLock, epoch=epoch);
             if (!holdsLock && epoch == e.epoch) {
                 holdsLock = true;
-                epoch = epoch + 1;
+                epoch = e.epoch + 1;
             }
         }
     }

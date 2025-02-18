@@ -2,7 +2,14 @@
 ## Prerequisites
 > Note that PInfer has only been tested on Amazon Linux.
 
-**Environment setups**
+### Installing Z3 (before building P)
+1. Clone the Z3 repository: https://github.com/Z3Prover/z3 by `git clone git@github.com:Z3Prover/z3.git`
+2. Run `python scripts/mk_make.py -x --dotnet`
+3. `cd build; make -j$(nproc)`
+4. `sudo make install`
+5. Add `export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/path-to-z3/build/"` to `.bashrc` (or `.zshrc` if using Zsh) where `path-to-z3` is the directory of the cloned Z3 repository in step 1.
+
+#### Environment setups
 - Follow the instruction of [P language here](https://p-org.github.io/P/getstarted/install/) and install dotnet. The version used for developing is 8.0.401.
 - Install Java 22 and maven
     + For amazon linux, [follow the guide here](https://docs.aws.amazon.com/corretto/latest/corretto-22-ug/generic-linux-install.html#rpm-linux-install-instruct)
@@ -11,24 +18,24 @@
 - Compile P: run `dotnet build -c Release` under the root of this repo. 
 
 ## Step 1: Getting traces
-PInfer extends PChecker with a trace filtering mode. This mode automatically index logs aggregated into `traces` folder (you may specify another directory if wanted, see below). Usage:
-```
-p check -tc <testcase> -s <num schedules> --pinfer -ef <e1> <e2> ... <en> --traces <folder to store traces>
-```
-where `ei` is the name of events to be filtered. If no `-ef` provided, then all `SendEvent` and `AnnounceEvent` will be recorded and indexed. 
-
-Notice that there will be a `metadata.json` under `traces` that bookkeeps the folder and event information. Please do not edit it manually.
-
 ### Using the python script for generating traces
-There is a `1_prepare_traces.py` under `Tutoiral/PInfer`. To use this script to generate traces, first add an entry to `configurations` dictionary.
+There is a `1_prepare_traces.py` under `Tutoiral/PInfer`. To use this script to generate traces, first add an entry to `configurations` dictionary in `Tutoiral/PInfer/constants.py`.
 The key should be the name of the folder under `Tutorial/PInfer` that contains the P source code of the benchmark, and the value is a list of names of test cases to run to obtain the traces. 
 
-You may optionally set an environment variable called `PINFER_TRACE_DIR` (e.g. `export PINFER_TRACE_DIR=~/PInferTraces) that specifies the path to store the generated traces. 
+You may optionally set an environment variable called `PINFER_TRACE_DIR` (e.g. `export PINFER_TRACE_DIR=/home/PInferTraces) that specifies the path to store the generated traces. 
 
 After making the changes, run with
 ```
 > python3 1_prepare_traces.py --benchmarks [names of benchmarks] --num_traces [a list of numbers representing number of traces to generate] [--trace_dir <path-to-store-traces>]
 ```
+
+For instance, to generate 10k traces for Paxos storing into `$PINFER_TRACE_DIR`, run the following
+> `python3 1_prepare_traces.py --benchmarks paxos --num_traces 10000`
+
+### Event filters
+By default, the generated traces have all Send and Announce events being recorded.
+For some benchmarks, we may want to only record events that are relevant to the protocol.
+To do so, add an entry in `event_combs` dictionary in `constants.py`, where the key is the name of directory of the benchmark and the value is in the form of `[(e1, e2, e3...)]` where `e1, e2, e3...` are events that are relevant to the protocol.
 
 **Removing traces:** If you want to remove certain traces, simply delete the files. You don't need to remove the metadata in the JSON file.
 
@@ -37,6 +44,9 @@ After making the changes, run with
 > Alternatively, some of the codebase have `generateTrace.sh`. You can simply run `./generateTrace.sh <num schedules> <e1> <e2> ... <en>` and it will gather traces containing e1, e2,...,en using all test cases. 
 
 ## Step 2: Running PInfer
+For our benchmarks, simply execute `run.sh` under the benchmark folders. 
+
+To setup your own experiments:
 ### Fully-automated mode
 Simply run `p infer`, it will infer combinations of events that might yield interesting properties and then perform the search over the lattice.
 
@@ -46,6 +56,11 @@ If traces were generated using `1_prepare_traces.py`, then under `PINFER_TRACE_D
 
 ```
 > p infer -t $PINFER_TRACE_DIR/paxos/10000
+```
+
+To enable SMT-based pruning, add a `-z3` flag, e.g.,
+```
+> p infer -t $PINFER_TRACE_DIR/paxos/10000 -z3
 ```
 
 Default parameters (upper bounds): 

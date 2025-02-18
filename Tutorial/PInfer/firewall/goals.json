@@ -1,0 +1,10 @@
+[
+    {
+        "events": ["e0:Allowed", "e1:SendFromInternal"],
+        "config_event": null,
+        "guards": [],
+        "filters": ["(e0.payload.node == e1.payload.dst)"],
+        "exists": 1,
+        "term_depth": 1
+    }
+]

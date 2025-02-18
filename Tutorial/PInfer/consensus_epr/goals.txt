@@ -1,1 +1,0 @@
-∀e0: eDecide ∀e1: eDecide :: (e0.payload.value >= 0) ∧ (e0.payload.value == e1.payload.value)

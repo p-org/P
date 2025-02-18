@@ -2,35 +2,36 @@ type tBallot = int;
 event eNominate: (ballot: tBallot);
 event eBecomeLeader: (ballot: tBallot);
 
-type tNodeConfig = (ballot: tBallot, right: machine);
-event eNodeConfig: tNodeConfig;
-
+event eConfig: (nxt: machine);
 event eStart;
 
 machine Node {
     var ballot: tBallot;
-    var right: machine;
+    var nxt: machine;
 
     start state Init {
-        on eNodeConfig do (c: tNodeConfig) {
-            ballot = c.ballot;
-            right = c.right;
+        entry (cfg: (ballot: tBallot)) {
+            ballot = cfg.ballot;
+        }
+
+        on eConfig do (cfg: (nxt: machine)) {
+            nxt = cfg.nxt;
             goto Nominating;
         }
     }
 
     state Nominating {
         on eStart do {
-            send right, eNominate, (ballot=ballot,);
+            send nxt, eNominate, (ballot=ballot,);
         }
 
         on eNominate do (n: (ballot: tBallot)) {
             if (n.ballot == ballot) {
                 announce eBecomeLeader, (ballot=ballot,);
             } else if (n.ballot < ballot) {
-                send right, eNominate, (ballot=ballot,);
+                send nxt, eNominate, (ballot=ballot,);
             } else {
-                send right, eNominate, (ballot=n.ballot,);
+                send nxt, eNominate, (ballot=n.ballot,);
             }
         }
     }

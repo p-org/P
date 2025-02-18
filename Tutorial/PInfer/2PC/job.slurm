@@ -9,4 +9,4 @@
 #SBATCH --mail-user=dh7120@princeton.edu
 #SBATCH --partition=malik
 export PINFER_NUM_CORES=$SLURM_CPUS_PER_TASK
-p infer -t /scratch/gpfs/dh7120/2PC/10000 -ce eMonitor_AtomicityInitialize
+p infer -t /scratch/gpfs/dh7120/2PC/10000 -ce eMonitor_AtomicityInitialize -z3

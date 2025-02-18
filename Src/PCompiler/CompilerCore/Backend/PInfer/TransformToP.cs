@@ -49,13 +49,17 @@ namespace Plang.Compiler.Backend.PInfer
                 case TupleAccessExpr tAccess: return $"{toP(tAccess.SubExpr)}[{tAccess.FieldNo}]";
                 case EnumElemRefExpr enumRef: return $"{enumRef.Value.Name}";
                 case IntLiteralExpr intLit: return $"{intLit.Value}";
-                case BoolLiteralExpr boolLit: return $"{boolLit.Value}";
+                case BoolLiteralExpr boolLit: return $"{boolLit.Value}".ToLower();
                 case FloatLiteralExpr floatLit: return $"{floatLit.Value}";
                 case FunCallExpr funCall: {
                     if (funCall.Function.Name == "index")
                     {
                         // specifically for monitor functions
                         return $"{toP(funCall.Arguments[0])}_idx";
+                    }
+                    if (funCall.Function.Name == "size")
+                    {
+                        return $"sizeof({toP(funCall.Arguments[0])})";
                     }
                     return $"{funCall.Function.Name}({string.Join(", ", funCall.Arguments.Select(toP))})";
                 }
@@ -281,7 +285,7 @@ namespace Plang.Compiler.Backend.PInfer
                 && PopulateExprs(job, q.Where(x => !x.Contains("_num_e_exists_")).ToHashSet(), parsedQ, filters)
                 && PopulateExprs(job, q.Where(x => x.Contains("_num_e_exists_")).ToHashSet(), parsedQ, metaFilters))
             {
-                WriteLine($"// Monitor for spec: {inv}");
+                WriteLine($"// {inv}");
                 string config_event = h.ConfigEvent == null ? "" : h.ConfigEvent.Name + ",";
                 WriteLine($"spec {h.Name}_{counter} observes {config_event} {string.Join(", ", h.Quantified.Select(x => x.EventName).Distinct())} {{");
 

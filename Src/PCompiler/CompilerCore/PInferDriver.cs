@@ -439,8 +439,17 @@ namespace Plang.Compiler
                 Environment.Exit(1);
             }
             var invParsable = File.ReadAllLines(invParsableAll);
+            string[] failedGuards = [];
+            if (Path.Exists(Path.Combine(Job.InvParseFileDir, "failed_guards.txt")))
+            {
+                failedGuards = File.ReadAllLines(Path.Combine(Job.InvParseFileDir, "failed_guards.txt"));
+            }
             int ptr = 0;
+            int failedGuardsPtr = 0;
             var allCustomFunctions = GlobalScope.Hints.SelectMany(x => x.CustomFunctions).ToHashSet().ToList();
+            List<string> notBadInvs = [];
+            Dictionary<string, List<HashSet<string>>> notBadInvPredicates = [];
+            Dictionary<string, Hint> headerToHint = [];
             foreach (var (quantified, configEvent, nexists, termDepth, userHint) in headers)
             {
                 Hint h = new("pruning", false, null) {
@@ -451,6 +460,11 @@ namespace Plang.Compiler
                     UserHint = userHint,
                     CustomFunctions = allCustomFunctions,
                 };
+                headerToHint[h.GetQuantifierHeader()] = h;
+                if (!notBadInvPredicates.ContainsKey(h.GetQuantifierHeader()))
+                {
+                    notBadInvPredicates[h.GetQuantifierHeader()] = new();
+                }
                 Codegen.Reset();
                 Codegen.WithHint(h);
                 Codegen.GenerateCode(Job, GlobalScope);
@@ -460,15 +474,59 @@ namespace Plang.Compiler
                     currentInvs.Add(invParsable[ptr++]);
                 }
                 PInferInvoke.PruneAndAggregate(Job, GlobalScope, h, Codegen, [.. currentInvs], out var t);
+                if (nexists == 0)
+                {
+                    while (failedGuardsPtr < failedGuards.Length - 1 && !failedGuards[failedGuardsPtr].StartsWith("EOT"))
+                    {
+                        var line = failedGuards[failedGuardsPtr++];
+                        notBadInvPredicates[h.GetQuantifierHeader()].Add([.. line.Split("∧").Select(x => x.Trim()).Where(x => x.Length > 0)]);
+                    }
+                }
                 numTotalTasks += t;
                 if (ptr < invParsable.Length - 1) ptr++;
                 else break;
+                if (failedGuardsPtr < failedGuards.Length - 1) failedGuardsPtr++;
             }
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             PInferInvoke.DoChores(Job, Codegen);
+            // fast pruning
+            foreach (var (k, parsedFailedGuards) in notBadInvPredicates)
+            {
+                HashSet<int> remove = [];
+                for (int i = 0; i < parsedFailedGuards.Count; ++i)
+                {
+                    if (remove.Contains(i)) continue;
+                    for (int j = i + 1; j < parsedFailedGuards.Count; ++j)
+                    {
+                        if (parsedFailedGuards[i].IsSubsetOf(parsedFailedGuards[j]))
+                        {
+                            remove.Add(j);
+                        }
+                        else if (parsedFailedGuards[j].IsSubsetOf(parsedFailedGuards[i]))
+                        {
+                            remove.Add(i);
+                        }
+                    }
+                }
+                foreach (var r in remove.OrderByDescending(x => x))
+                {
+                    parsedFailedGuards.RemoveAt(r);
+                }
+            }
+            foreach (var (k, gs) in notBadInvPredicates)
+            {
+                // for each G in fg, we have the following invariant:
+                // forall e1, e2...en. not G(e1, e2, ..., en)
+                Hint h = headerToHint[k];
+                foreach (var g in gs)
+                {
+                    notBadInvs.Add($"{h.GetInvariantReprHeader("", $"!({string.Join(" ∧ ", g)})")}");
+                }
+            }
             stopwatch.Stop();
             tPruning = stopwatch.ElapsedMilliseconds;
+            File.WriteAllLines("not_bad_invs.txt", notBadInvs);
         }
 
         private void InitializeZ3()
@@ -954,18 +1012,29 @@ namespace Plang.Compiler
         {
             Dictionary<string, int> monitorCount = [];
             int c = 1;
+            List<MonitorMetadata> monitorMetadata = [];
+            string outdir = Path.Combine(transform.context.Job.OutputDirectory.ToString(), "PInferSpecs");
+            if (Directory.Exists(outdir))
+            {
+                Directory.Delete(outdir, true);
+            }
             foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
             {
                 if (q.Count == 0) continue;
                 var ps = string.Join(" ∧ ", p);
                 monitorCount[h.Name] = monitorCount.TryGetValue(h.Name, out var cnt) ? cnt + 1 : 1;
                 var prop = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", q));
-                CompiledFile monitorFile = new($"{h.Name}_{monitorCount[h.Name]}.p", Path.Combine(transform.context.Job.OutputDirectory.ToString(), "PInferSpecs"));
+                CompiledFile monitorFile = new($"{h.Name}_{monitorCount[h.Name]}.p", outdir);
                 try
                 {
                     transform.WithFile(monitorFile);
-                    transform.WriteSpecMonitor(c++, codegen, transform.context, transform.context.Job, globalScope, h, p, q, ParsedP[key], ParsedQ[key], prop);
+                    transform.WriteSpecMonitor(c, codegen, transform.context, transform.context.Job, globalScope, h, p, q, ParsedP[key], ParsedQ[key], prop);
                     transform.context.Job.Output.WriteFile(monitorFile);
+                    monitorMetadata.Add(new MonitorMetadata {
+                        Name = $"{h.Name}_{c}",
+                        Specification = prop,
+                    });
+                    c++;
                 }
                 catch (Exception e)
                 {
@@ -973,6 +1042,7 @@ namespace Plang.Compiler
                     continue;
                 }
             }
+            File.WriteAllText(Path.Combine(outdir, "metadata.json"), JsonSerializer.Serialize(monitorMetadata));
         }
 
         public static string AssembleInvariant(Hint h, HashSet<string> p, HashSet<string> q)
@@ -1777,5 +1847,12 @@ namespace Plang.Compiler
         public List<string> Guards { get; set; }
         [System.Text.Json.Serialization.JsonPropertyName("filters")]
         public List<string> Filters { get; set; }
+    }
+
+    internal class MonitorMetadata {
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("spec")]
+        public string Specification { get; set; }
     }
 }

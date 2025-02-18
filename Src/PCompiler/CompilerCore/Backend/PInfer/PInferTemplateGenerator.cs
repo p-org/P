@@ -276,7 +276,7 @@ namespace Plang.Compiler.Backend.PInfer
             // Do we really need to check `numForall > 0`?
             if (numForall > 0 && numExists > 0)
             {
-                WriteLine("if (numExistsComb == 0) throw new RuntimeException();");
+                WriteLine("if (numExistsComb == 0) throw new RuntimeException(\"FilterFailedAbort\");");
             }
             for (int i = 0; i < existsTermTypes.Count; ++i)
             {

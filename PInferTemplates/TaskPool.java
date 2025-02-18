@@ -22,6 +22,7 @@ public class TaskPool {
     final BufferedOutputStream pinferParsableAllStream;
     final BufferedOutputStream pinferActivatedGuardsStream;
     final BufferedOutputStream pinferAllGuardsStream;
+    final BufferedOutputStream pinferFailedGuardsStream;
     final long startTime;
     final File outputFile;
     static final File DaikonTracesDir = new File("tmp_daikon_traces");
@@ -52,15 +53,10 @@ public class TaskPool {
         File pinferParsableAll = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "all_%PARSEFILE%")));
         File pinferActivatedGuards = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "activated_guards.txt")));
         File pinferAllGuards = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "all_guards.txt")));
+        File pinferFailedGuards = new File(String.valueOf(Paths.get(pinferOutputFileDir.toString(), "failed_guards.txt")));
         if (!pinferActivatedGuards.exists()) {
             pinferActivatedGuards.createNewFile();
         } else {
-            // read from checkpointed results
-            // BufferedReader reader = new BufferedReader(new FileReader(pinferActivatedGuards));
-            // String line;
-            // while ((line = reader.readLine()) != null) {
-            //     activatedGuards.add(line);
-            // }
             readGuards(pinferActivatedGuards, activatedGuards);
         }
         if (!pinferAllGuards.exists()) {
@@ -71,12 +67,14 @@ public class TaskPool {
         assert pinferOutputFile.createNewFile() : "Failed to create invariant output file " + pinferOutputFile;
         assert pinferParsable.createNewFile() : "Failed to create pinfer parsable file " + "%PARSEFILE%";
         assert pinferParsableAll.createNewFile() : "Failed to create pinfer parsable file " + "all_%PARSEFILE%";
+        assert pinferFailedGuards.createNewFile() : "Failed to create pinfer failed guards file failed_guards.txt";
         this.outputFile = pinferOutputFile;
         this.pinferOutputStream = new BufferedOutputStream(new FileOutputStream(pinferOutputFile));
         this.pinferParsableStream = new BufferedOutputStream(new FileOutputStream(pinferParsable));
         this.pinferParsableAllStream = new BufferedOutputStream(new FileOutputStream(pinferParsableAll, true));
         this.pinferActivatedGuardsStream = new BufferedOutputStream(new FileOutputStream(pinferActivatedGuards));
         this.pinferAllGuardsStream = new BufferedOutputStream(new FileOutputStream(pinferAllGuards));
+        this.pinferFailedGuardsStream = new BufferedOutputStream(new FileOutputStream(pinferFailedGuards, true));
         if (!DaikonTracesDir.exists()) {
             DaikonTracesDir.mkdirs();
         }
@@ -137,6 +135,8 @@ public class TaskPool {
             }
             if (guardActivated) {
                 activatedGuards.add(guards);
+            } else {
+                pinferFailedGuardsStream.write((guards + "\n").getBytes());
             }
             allGuards.add(guards);
             if (!invariants.isEmpty()) {
@@ -200,6 +200,7 @@ public class TaskPool {
             pinferParsableAllStream.write((numFinished + " " + numSanitized + "\n").getBytes());
             pinferParsableAllStream.write(("EOT\n").getBytes());
             pinferParsableStream.write((numFinished + " " + numSanitized).getBytes());
+            pinferFailedGuardsStream.write("EOT\n".getBytes());
             for (String guard : activatedGuards) {
                 pinferActivatedGuardsStream.write((guard + "\n").getBytes());
             }
@@ -211,11 +212,13 @@ public class TaskPool {
             pinferOutputStream.flush();
             pinferParsableStream.flush();
             pinferParsableAllStream.flush();
+            pinferFailedGuardsStream.flush();
             pinferActivatedGuardsStream.close();
             pinferAllGuardsStream.close();
             pinferOutputStream.close();
             pinferParsableStream.close();
             pinferParsableAllStream.close();
+            pinferFailedGuardsStream.close();
         }
     }
 
@@ -286,6 +289,7 @@ public class TaskPool {
             Set<String> properties = new HashSet<>();
             boolean start = false;
             boolean hasResult = false;
+            var stderr = daikonStdErr.toString().trim();
             for (String line : lines) {
                 if (line.contains(":::ENTER") && line.contains("mine_" + templateName)) {
                     start = true;
@@ -297,7 +301,6 @@ public class TaskPool {
                     properties.add(prop);
                 }
             }
-            var stderr = daikonStdErr.toString().trim();
             if (verbose && stderr.contains("Exception")) {
                 System.err.println("Exception raised: " + stderr);
                 return properties;

@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
+using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.Backend.Java;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.AST.Statements;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PInfer
@@ -846,7 +848,26 @@ namespace Plang.Compiler.Backend.PInfer
             {
                 foreach (var f in h.CustomPredicates)
                 {
-                    PredicateStore.AddPredicate(new DefinedPredicate(f), []);
+                    if (f.Equivalences.Any())
+                    {
+                        foreach (var (eq, i) in f.Equivalences.Select((x, i) => (x, i)))
+                        {
+                            PredicateStore.AddPredicate(new MacroPredicate(
+                                $"{f.Name}_eq_{i}", Notation.Prefix, (args) => {
+                                    Dictionary<Variable, IPExpr> varMap = [];
+                                    foreach (var (x, y) in f.Signature.Parameters.Zip(args))
+                                    {
+                                        varMap.Add(x, y);
+                                    }
+                                    return FunctionStore.Subst(eq, varMap);
+                                }, [.. f.Signature.ParameterTypes]
+                            ), []);
+                        }
+                    }
+                    else
+                    {
+                        PredicateStore.AddPredicate(new DefinedPredicate(f), []);
+                    }
                 }
             }
         }
@@ -1159,7 +1180,7 @@ namespace Plang.Compiler.Backend.PInfer
                     expr = visitor.Visit(ctx);
                     if (!PrimitiveType.Bool.IsAssignableFrom(expr.Type))
                     {
-                        config.Output.WriteWarning($"[Drop] {orig} does not have a boolean type");
+                        // config.Output.WriteWarning($"[Drop] {orig} does not have a boolean type");
                         processed = "";
                         status = PruningStatus.DROP;
                     }
@@ -1167,16 +1188,16 @@ namespace Plang.Compiler.Backend.PInfer
                     processed = SimplifiedRepr(Codegen, expr);
                     status = PruningStatus.KEEP;
                 }
-                catch (DropException drop)
+                catch (DropException)
                 {
-                    config.Output.WriteWarning(drop.Message);
+                    // config.Output.WriteWarning(drop.Message);
                     processed = "";
                     expr = null;
                     status = PruningStatus.DROP;
                 }
-                catch (StepbackException sb)
+                catch (StepbackException)
                 {
-                    config.Output.WriteWarning(sb.Message);
+                    // config.Output.WriteWarning(sb.Message);
                     processed = orig;
                     expr = null;
                     status = PruningStatus.STEPBACK;
@@ -1187,7 +1208,7 @@ namespace Plang.Compiler.Backend.PInfer
                 processed = "";
                 expr = null;
                 status = PruningStatus.DROP;
-                config.Output.WriteWarning($"[Drop] Cannot parse {orig}");
+                // config.Output.WriteWarning($"[Drop] Cannot parse {orig}");
             }
         }
 
@@ -1207,7 +1228,7 @@ namespace Plang.Compiler.Backend.PInfer
                         {
                             processed = "";
                             parsed = null;
-                            config.Output.WriteWarning($"[Drop] all enum value are covered in `{lhs} in {rhs}`");
+                            // config.Output.WriteWarning($"[Drop] all enum value are covered in `{lhs} in {rhs}`");
                             return PruningStatus.DROP;
                         }
                         processed = UnfoldContainsEnum(lhs, rhs, t);
@@ -1215,7 +1236,7 @@ namespace Plang.Compiler.Backend.PInfer
                         return PruningStatus.KEEP;
                     }
                 }
-                config.Output.WriteWarning($"[StepBack] lhs={lhs} in rhs={rhs} where rhs is a set of constants");
+                // config.Output.WriteWarning($"[StepBack] lhs={lhs} in rhs={rhs} where rhs is a set of constants");
                 processed = $"{lhs} {op} {rhs}";
                 parsed = null;
                 return PruningStatus.STEPBACK;
@@ -1243,7 +1264,7 @@ namespace Plang.Compiler.Backend.PInfer
             // drop unknown operators
             repr = "";
             expr = null;
-            config.Output.WriteWarning($"[Drop] Unknown operator in {inv}");
+            // config.Output.WriteWarning($"[Drop] Unknown operator in {inv}");
             return PruningStatus.DROP;
         }
 

@@ -54,6 +54,10 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     return EnumSorts[enumType.EnumDecl.Name];
                 }
+                case CollectionSize:
+                {
+                    return context.IntSort;
+                }
                 case PrimitiveType primitiveType:
                 {
                     if (primitiveType == PrimitiveType.Bool)
@@ -126,6 +130,16 @@ namespace Plang.Compiler.Backend.PInfer
                     var v = context.MkConst(varAccess.Variable.Name, sort);
                     compiled[key][varAccess] = v;
                     return v;
+                }
+                case SizeofExpr sizeofExpr:
+                {
+                    var arg = sizeofExpr.Expr.GetHashCode();
+                    var name = $"size_of_{arg}";
+                    var sizeVar = context.MkConst(name, context.IntSort);
+                    // sizes should be >= 0
+                    solver.Assert(context.MkGe((IntExpr)sizeVar, context.MkInt(0)));
+                    compiled[key][sizeofExpr] = sizeVar;
+                    return sizeVar;
                 }
                 case FunCallExpr funCall:
                 {

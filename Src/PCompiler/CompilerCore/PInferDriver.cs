@@ -1304,7 +1304,15 @@ namespace Plang.Compiler
             var q1Exprs = q1.Select(x => parsedRhs[x]).ToList();
             var p2Exprs = p2.Select(x => parsedLhs[x]).ToList();
             var q2Exprs = q2.Select(x => parsedRhs[x]).ToList();
-            return Z3Wrapper.CheckImpliesContrapositive(k, p1Exprs, q1Exprs, p2Exprs, q2Exprs);
+            try
+            {
+                return Z3Wrapper.CheckImpliesContrapositive(k, p1Exprs, q1Exprs, p2Exprs, q2Exprs);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            
         }
 
         public static bool ClearUpExistentials()
@@ -1406,7 +1414,7 @@ namespace Plang.Compiler
                         if (Implies(k, pi, qi))
                         {
                             var rec = ShowRecordAt(k, i);
-                            job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
+                            // job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
                             removes.Add(i);
                             NumTautologyPruned += 1;
                             continue;
@@ -1502,7 +1510,7 @@ namespace Plang.Compiler
                                 if (removes.Contains(j)) continue;
                                 if (symPi.SetEquals(P[k][j]))
                                 {
-                                    job.Output.WriteWarning($"[Chores][Remove-Symmetric] {ShowRecordAt(k, j)} by {ShowRecordAt(k, i)}");
+                                    // job.Output.WriteWarning($"[Chores][Remove-Symmetric] {ShowRecordAt(k, j)} by {ShowRecordAt(k, i)}");
                                     removes.Add(j);
                                     NumInvsPrunedBySymmetry += 1;
                                 }

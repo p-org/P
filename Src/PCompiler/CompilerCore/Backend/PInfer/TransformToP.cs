@@ -26,7 +26,7 @@ namespace Plang.Compiler.Backend.PInfer
             return this;
         }
 
-        public string toP(IPExpr expr)
+        public string toP(IPExpr expr, int numPayloadSeen = 0)
         {
             if (expr == null)
             {
@@ -37,16 +37,16 @@ namespace Plang.Compiler.Backend.PInfer
                 case VariableAccessExpr varAccess: return $"{varAccess.Variable.Name}";
                 case NamedTupleAccessExpr ntAccess:
                 {
-                    if (ntAccess.SubExpr is VariableAccessExpr && ntAccess.FieldName == "payload")
+                    if (ntAccess.SubExpr is VariableAccessExpr && ntAccess.FieldName == "payload" && numPayloadSeen == 0)
                     {
-                        return toP(ntAccess.SubExpr);
+                        return toP(ntAccess.SubExpr, numPayloadSeen + 1);
                     }
                     else
                     {
-                        return $"{toP(ntAccess.SubExpr)}.{ntAccess.FieldName}";
+                        return $"{toP(ntAccess.SubExpr, numPayloadSeen)}.{ntAccess.FieldName}";
                     }
                 }
-                case TupleAccessExpr tAccess: return $"{toP(tAccess.SubExpr)}[{tAccess.FieldNo}]";
+                case TupleAccessExpr tAccess: return $"{toP(tAccess.SubExpr, numPayloadSeen + 1)}[{tAccess.FieldNo}]";
                 case EnumElemRefExpr enumRef: return $"{enumRef.Value.Name}";
                 case IntLiteralExpr intLit: return $"{intLit.Value}";
                 case BoolLiteralExpr boolLit: return $"{boolLit.Value}".ToLower();
@@ -55,13 +55,13 @@ namespace Plang.Compiler.Backend.PInfer
                     if (funCall.Function.Name == "index")
                     {
                         // specifically for monitor functions
-                        return $"{toP(funCall.Arguments[0])}_idx";
+                        return $"{toP(funCall.Arguments[0], numPayloadSeen + 1)}_idx";
                     }
                     if (funCall.Function.Name == "size")
                     {
-                        return $"sizeof({toP(funCall.Arguments[0])})";
+                        return $"sizeof({toP(funCall.Arguments[0], numPayloadSeen + 1)})";
                     }
-                    return $"{funCall.Function.Name}({string.Join(", ", funCall.Arguments.Select(toP))})";
+                    return $"{funCall.Function.Name}({string.Join(", ", funCall.Arguments.Select(x => toP(x, numPayloadSeen + 1)))})";
                 }
                 case UnaryOpExpr unOpExpr:
                 {
@@ -71,7 +71,7 @@ namespace Plang.Compiler.Backend.PInfer
                         UnaryOpType.Not => "!",
                         _ => throw new System.Exception("Unknown unary operator")
                     };
-                    return $"{op}({toP(unOpExpr.SubExpr)})";
+                    return $"{op}({toP(unOpExpr.SubExpr, numPayloadSeen + 1)})";
                 }
                 case BinOpExpr binOpExpr:
                 {
@@ -92,9 +92,9 @@ namespace Plang.Compiler.Backend.PInfer
                         BinOpType.Ge => ">=",
                         _ => throw new System.Exception("Unknown binary operator")
                     };
-                    return $"({toP(binOpExpr.Lhs)} {op} {toP(binOpExpr.Rhs)})";
+                    return $"({toP(binOpExpr.Lhs, numPayloadSeen + 1)} {op} {toP(binOpExpr.Rhs, numPayloadSeen + 1)})";
                 }
-                case SizeofExpr sizeofExpr: return $"sizeof({toP(sizeofExpr.Expr)})";
+                case SizeofExpr sizeofExpr: return $"sizeof({toP(sizeofExpr.Expr, numPayloadSeen + 1)})";
             }
             throw new Exception($"Unsupported expr: {expr}");
         }

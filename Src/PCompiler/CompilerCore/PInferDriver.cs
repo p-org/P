@@ -198,6 +198,7 @@ namespace Plang.Compiler
         public void AddHint(string name, HashSet<Hint> tasks, params PEvent[] events)
         {
             // Enusre all events have some payload
+            name = name.Replace(" ", "_").Replace(".", "_");
             if (events.Select(e => e.PayloadType == PrimitiveType.Null).Any(x => x))
             {
                 Job.Output.WriteWarning($"skipping ae_{name} due to empty payload(s)");

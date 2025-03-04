@@ -76,8 +76,6 @@ namespace Plang.Options
             var advancedGroup = Parser.GetOrCreateGroup("advanced", "Advanced options");
             advancedGroup.AddArgument("explore", null, "Keep testing until the bound (e.g. schedule or time) is reached", typeof(bool));
             advancedGroup.AddArgument("seed", null, "Specify the random value generator seed", typeof(uint));
-            advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the schedule that found a bug", typeof(bool));
-            advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test schedules whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
@@ -271,14 +269,6 @@ namespace Plang.Options
                 case "iterations":
                 case "schedules":
                     checkerConfiguration.TestingIterations = (int)(uint)option.Value;
-                    break;
-                case "graph":
-                    checkerConfiguration.IsDgmlGraphEnabled = true;
-                    checkerConfiguration.IsDgmlBugGraph = false;
-                    break;
-                case "graph-bug":
-                    checkerConfiguration.IsDgmlGraphEnabled = true;
-                    checkerConfiguration.IsDgmlBugGraph = true;
                     break;
                 case "xml-trace":
                     checkerConfiguration.IsXmlLogEnabled = true;

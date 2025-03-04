@@ -838,17 +838,13 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            if (_checkerConfiguration.IsDgmlGraphEnabled || _checkerConfiguration.ReportActivityCoverage)
+            if (_checkerConfiguration.ReportActivityCoverage)
             {
                 // Registers an activity coverage graph builder.
                 runtime.RegisterLog(new ControlledRuntimeLogGraphBuilder(false)
                 {
                     CollapseMachineInstances = _checkerConfiguration.ReportActivityCoverage
                 });
-            }
-
-            if (_checkerConfiguration.ReportActivityCoverage)
-            {
                 // Need this additional logger to get the event coverage report correct
                 runtime.RegisterLog(new ControlledRuntimeLogEventCoverage());
             }

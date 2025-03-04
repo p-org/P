@@ -123,9 +123,7 @@ p check -v
     <PrintLog> --------------
     ... ### Process 0 is terminating
     ... Emitting coverage reports:
-    ..... Writing PCheckerOutput/BugFinding/PriorityQueue.dgml
     ..... Writing PCheckerOutput/BugFinding/PriorityQueue.coverage.txt
-    ..... Writing PCheckerOutput/BugFinding/PriorityQueue.sci
     ... Checking statistics:
     ..... Found 0 bugs.
     ... Scheduling statistics:

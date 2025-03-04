@@ -77,10 +77,6 @@ namespace PChecker.Utilities
             var coverageFilePath = $"{filePath}.coverage.txt";
             Console.WriteLine($"..... Writing {coverageFilePath}");
             codeCoverageReporter.EmitCoverageReport(coverageFilePath);
-
-            var serFilePath = $"{filePath}.sci";
-            Console.WriteLine($"..... Writing {serFilePath}");
-            report.CoverageInfo.Save(serFilePath);
         }
     }
 }

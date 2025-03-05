@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.Backend.Java;
+using Plang.Compiler.Backend.PEx;
 using Plang.Compiler.Backend.Stately;
 using Plang.Compiler.Backend.Symbolic;
 
@@ -17,6 +18,7 @@ namespace Plang.Compiler.Backend
             RegisterCodeGenerator(CompilerOutput.Java, new JavaCompiler());
             RegisterCodeGenerator(CompilerOutput.Symbolic, new SymbolicCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Stately, new StatelyCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.PEx, new PExCodeGenerator());
         }
 
         private static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)

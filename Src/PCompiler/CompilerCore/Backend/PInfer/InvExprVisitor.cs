@@ -168,13 +168,14 @@ namespace Plang.Compiler.Backend.PInfer
                 // return expr;
             }
             // let constants go
-            if ((rhs is IntLiteralExpr || rhs is FloatLiteralExpr) && binOp.GetKind() == BinOpKind.Comparison)
+            if ((rhs is IntLiteralExpr || rhs is FloatLiteralExpr) && (binOp.GetKind() == BinOpKind.Comparison || binOp.GetKind() == BinOpKind.Equality))
             {
-                if (lhs.Type == PInferBuiltinTypes.Index)
-                {
-                    throw new StepbackException($"Comparing an index with a constant");
-                }
-                return expr;
+                // if (lhs.Type == PInferBuiltinTypes.Index)
+                // {
+                //     throw new StepbackException($"Comparing an index with a constant");
+                // }
+                // return expr;
+                throw new StepbackException($"Comparing with a constant on RHS");
             }
             // Next, check whether such comparison is allowed
             if (op == "==" && PInferPredicateGenerator.IsAssignableFrom(lhs.Type, rhs.Type)

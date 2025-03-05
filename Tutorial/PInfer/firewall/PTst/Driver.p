@@ -56,6 +56,14 @@ machine I4E5 {
     }
 }
 
+machine I5E6 {
+    start state Init {
+        entry {
+            SetupSystem(5, 6);
+        }
+    }
+}
+
 test tcI3E1 [main=I3E1]:
     assert Safety in (union { I3E1 }, FirewallMod);
 

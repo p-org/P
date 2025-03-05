@@ -51,6 +51,9 @@ namespace Plang.Compiler
         private double tCandidateTemplateGen = 0.0;
         private double tMining = 0.0;
         private double tPruning = 0.0;
+        private Stopwatch globalTimer = new();
+        private double tLearnGoals = -1.0;
+        private int NumGoals = 0;
 
         public bool Converged(Hint h, HashSet<string> predicates, HashSet<string> terms)
         {
@@ -137,6 +140,13 @@ namespace Plang.Compiler
             numTotalInvs = PInferInvoke.Recorded.Count;
             numTotalTasks = totalTasks;
             Console.WriteLine("=================Done=================");
+            PInferInvoke.CheckLearnedGoals(GlobalScope, Codegen, PInferInvoke.AllExecuedAndMined(), out var _);
+            PInferInvoke.CheckLearnedGoals(GlobalScope, Codegen, PInferInvoke.AllExecuedAndMined(), out var _, checkIndInv: true);
+            if (PInferInvoke.NumGoalsLearnedWithHints == NumGoals)
+            {
+                globalTimer.Stop();
+                tLearnGoals = globalTimer.ElapsedMilliseconds / 1000.0;
+            }
             return true;
         }
 
@@ -604,7 +614,9 @@ namespace Plang.Compiler
                         Environment.Exit(1);
                     }
                     driver = new PInferDriver(job, globalScope, invOutDir, checkTrace: false);
-                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen, PInferInvoke.Goals);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen, PInferInvoke.IndInvs, filename: "inductive.json");
+                    driver.NumGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
                     driver.InitializeZ3();
                     var pruning_stopwatch = new Stopwatch();
                     pruning_stopwatch.Start();
@@ -619,8 +631,11 @@ namespace Plang.Compiler
                     givenHint.ConfigEvent ??= configEvent;
                     givenHint.PruningLevel = job.PInferPruningLevel;
                     driver = new PInferDriver(job, globalScope, invOutDir);
-                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen, PInferInvoke.Goals);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen, PInferInvoke.IndInvs, filename: "inductive.json");
+                    driver.NumGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
                     driver.InitializeZ3();
+                    driver.globalTimer.Start();
                     driver.ParameterSearch(givenHint);
                     driver.numEventCombinations = 1;
                     numTotalTasks = driver.numTotalTasks;
@@ -630,8 +645,11 @@ namespace Plang.Compiler
                 {
                     job.Output.WriteInfo("PInfer - Auto Exploration");
                     driver = new PInferDriver(job, globalScope, invOutDir);
-                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen, PInferInvoke.Goals);
+                    PInferInvoke.LoadGoals(driver, job, globalScope, driver.Codegen, PInferInvoke.IndInvs, filename: "inductive.json");
+                    driver.NumGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
                     driver.InitializeZ3();
+                    driver.globalTimer.Start();
                     driver.AutoExplore(job.HintsOnly);
                     var pruning_stopwatch = new Stopwatch();
                     pruning_stopwatch.Start();
@@ -661,8 +679,9 @@ namespace Plang.Compiler
                 // ranking invariants
                 var sortedInvs = PInferInvoke.GetSortedInvariants();
                 PInferInvoke.CheckLearnedGoals(globalScope, driver.Codegen, sortedInvs, out var cumulative);
-                job.Output.WriteInfo("Writing cumulative stats to cumulative_stats.txt ...");
-                File.WriteAllLines("cumulative_stats.txt", cumulative.Select(x => $"{x.Item1} {x.Item2}"));
+                PInferInvoke.CheckLearnedGoals(globalScope, driver.Codegen, sortedInvs, out var _, checkIndInv: true);
+                // job.Output.WriteInfo("Writing cumulative stats to cumulative_stats.txt ...");
+                // File.WriteAllLines("cumulative_stats.txt", cumulative.Select(x => $"{x.Item1} {x.Item2}"));
                 var numInvAfterPruning = PInferInvoke.WriteRecordTo(filename, sortedInvs);
                 job.Output.WriteInfo($"\t#Invariants after pruning: {numInvAfterPruning}");
                 job.Output.WriteInfo($"#Times executed by Daikon: {PInferInvoke.NumTasksExecuted}");
@@ -675,6 +694,7 @@ namespace Plang.Compiler
                 var numGoals = PInferInvoke.Goals.SelectMany(x => x.Value).Count();
                 job.Output.WriteInfo($"#Goals learned with hints: {PInferInvoke.NumGoalsLearnedWithHints} / {numGoals}");
                 job.Output.WriteInfo($"#Goals learned without hints: {PInferInvoke.NumGoalsLearnedWithoutHints} / {numGoals}");
+                job.Output.WriteInfo($"Time to learn all goals: {driver.tLearnGoals}");
                 int numActivatedGuards = PInferInvoke.GetNumActivatedGuards(invOutDir);
                 int numAllGuards = PInferInvoke.GetNumAllGuards(invOutDir);
                 job.Output.WriteInfo($"#Activated Guards: {numActivatedGuards}");
@@ -685,16 +705,21 @@ namespace Plang.Compiler
                     NumInvsPrunedBySanitizing = PInferInvoke.NumInvPrunedBySanitizing + PInferInvoke.NumInvPrunedAtPredicateSanitizer,
                     NumInvsPrunedByGrammar = PInferInvoke.NumInvsPrunedByGrammar,
                     NumInvsPrunedBySubsumption = PInferInvoke.NumInvsPrunedBySubsumption,
+                    NumInvsPrunedBySubsumptionSem = PInferInvoke.NumInvsPrunedBySubsumptionSem,
                     NumInvsPrunedBySymmetry = PInferInvoke.NumInvsPrunedBySymmetry,
                     NumInvsPrunedByTauto = PInferInvoke.NumTautologyPruned,
+                    NumInvsPrunedByTautoSem = PInferInvoke.NumTautologyPrunedSem,
                     TimeElapsed = elapsed,
                     TimeCandidateTemplateGen = driver.tCandidateTemplateGen,
                     TimeMining = driver.tMining,
                     TimePruning = driver.tPruning,
+                    TimeLearnGoals = driver.tLearnGoals,
                     TimeSearchEventCombination = driver.tSearchEventCombination,
                     NumGoalsLearnedWithHints = PInferInvoke.NumGoalsLearnedWithHints,
                     NumGoalsLearnedWithoutHints = PInferInvoke.NumGoalsLearnedWithoutHints,
                     NumGoals = numGoals,
+                    NumIndInvs = PInferInvoke.IndInvs.SelectMany(x => x.Value).Count(),
+                    NumIndInvsLearned = PInferInvoke.NumIndInvsLearned,
                     NumDaikonInvocations = PInferInvoke.NumTasksExecuted,
                     NumEventCombinations = driver.numEventCombinations,
                     NumActivatedGuards = numActivatedGuards,
@@ -711,12 +736,15 @@ namespace Plang.Compiler
         public int NumInvsTotal { get; set; }
         public int NumInvsPrunedBySubsumption { get; set; }
         public int NumInvsPrunedByTauto { get; set; }
+        public int NumInvsPrunedByTautoSem { get; set; }
         public int NumInvsPrunedByGrammar { get; set; }
         public int NumInvsPrunedBySymmetry { get; set; }
+        public int NumInvsPrunedBySubsumptionSem { get; set; }
         public int NumInvsPrunedBySanitizing { get; set; }
         public double TimeElapsed { get; set; }
         public double TimeMining { get; set; }
         public double TimePruning { get; set; }
+        public double TimeLearnGoals { get; set; }
         public double TimeSearchEventCombination { get; set; }
         public double TimeCandidateTemplateGen { get; set; }
         public int NumGoalsLearnedWithHints { get; set; }
@@ -726,6 +754,8 @@ namespace Plang.Compiler
         public int NumEventCombinations { get; set; }
         public int NumActivatedGuards { get; set; }
         public int NumAllGuards { get; set; }
+        public int NumIndInvs { get; set; }
+        public int NumIndInvsLearned { get; set; }
     }
 
     internal class PInferInvoke
@@ -745,6 +775,7 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
         internal static readonly Dictionary<HashSet<PEvent>, Dictionary<IPExpr, int>> APFrequency = [];
         internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> Goals = [];
+        internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> IndInvs = [];
         internal static HashSet<string> Learned = [];
         internal static HashSet<string> Recorded = [];
         internal static int NumInvsMined = 0;
@@ -753,12 +784,15 @@ namespace Plang.Compiler
         internal static int NumInvPrunedBySanitizing = 0;
         internal static int NumInvPrunedAtPredicateSanitizer = 0;
         internal static int NumInvsPrunedBySubsumption = 0;
+        internal static int NumInvsPrunedBySubsumptionSem = 0;
         internal static int NumInvsPrunedBySymmetry = 0;
         internal static int NumTautologyPruned = 0;
+        internal static int NumTautologyPrunedSem = 0;
         internal static bool UseZ3 = false;
         internal static Z3Wrapper Z3Wrapper;
         internal static int NumGoalsLearnedWithHints = 0;
         internal static int NumGoalsLearnedWithoutHints = 0;
+        internal static int NumIndInvsLearned = -1;
 
         public static void NewInvFiles()
         {
@@ -794,17 +828,8 @@ namespace Plang.Compiler
             return File.ReadAllLines(allGuardsFile).Length;
         }
 
-        public static void LoadGoals(PInferDriver driver, ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen, string filename = "goals.json")
+        public static void LoadTo(PInferDriver driver, ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen, Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> dst, List<Goal> goals)
         {
-            if (!File.Exists(filename))
-            {
-                job.Output.WriteWarning($"Goals file not found: {filename} ... skipping");
-                return;
-            }
-            using StreamReader reader = new(filename);
-            string json = reader.ReadToEnd();
-            List<Goal> goals = JsonSerializer.Deserialize<List<Goal>>(json);
-            reader.Close();
             foreach (var goal in goals)
             {
                 List<PEventVariable> quantified = goal.Events.Select(x => {
@@ -824,11 +849,11 @@ namespace Plang.Compiler
                 codegen.WithHint(h);
                 codegen.GenerateCode(job, globalScope);
                 var key = h.GetQuantifierHeader();
-                if (!Goals.ContainsKey(key))
+                if (!dst.ContainsKey(key))
                 {
-                    Goals[key] = [];
+                    dst[key] = [];
                 }
-                var goalList = Goals[key];
+                var goalList = dst[key];
                 HashSet<IPExpr> p = new(codegen.Comparer);
                 HashSet<IPExpr> q = new(codegen.Comparer);
                 foreach (var g in goal.Guards)
@@ -859,7 +884,25 @@ namespace Plang.Compiler
             }
         }
 
-        public static void CheckLearnedGoals(Scope globalScope, PInferPredicateGenerator codegen, IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> invariants, out List<(decimal, decimal)> cumulative)
+        public static void LoadGoals(PInferDriver driver, ICompilerConfiguration job, Scope globalScope, PInferPredicateGenerator codegen, Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> loadTo, string filename = "goals.json")
+        {
+            if (!File.Exists(filename))
+            {
+                job.Output.WriteWarning($"Goals file not found: {filename} ... skipping");
+                return;
+            }
+            if (filename.Contains("inductive"))
+            {
+                NumIndInvsLearned = 0;
+            }
+            using StreamReader reader = new(filename);
+            string json = reader.ReadToEnd();
+            List<Goal> goals = JsonSerializer.Deserialize<List<Goal>>(json);
+            reader.Close();
+            LoadTo(driver, job, globalScope, codegen, loadTo, goals);
+        }
+
+        public static void CheckLearnedGoals(Scope globalScope, PInferPredicateGenerator codegen, IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> invariants, out List<(decimal, decimal)> cumulative, bool checkIndInv = false)
         {
             Z3Wrapper = new(globalScope, codegen);
             cumulative = [];
@@ -871,18 +914,19 @@ namespace Plang.Compiler
             HashSet<string> visitedKey = [];
             int totalInvs = invariants.Count();
             int checkedInvs = 0;
-            var numTotalGoals = Goals.SelectMany(x => x.Value).Count();
+            var targets = checkIndInv ? Goals : IndInvs;
+            var numTotalGoals = targets.SelectMany(x => x.Value).Count();
             foreach (var (key, _, _, h, p, q) in invariants)
             {
                 if (q.Count == 0) continue;
-                if (!Goals.ContainsKey(key))
+                if (!targets.ContainsKey(key))
                 {
                     checkedInvs += 1;
-                    cumulative.Add((checkedInvs / (decimal)totalInvs, NumGoalsLearnedWithHints / (decimal)numTotalGoals));
+                    // cumulative.Add((checkedInvs / (decimal)totalInvs, NumGoalsLearnedWithHints / (decimal)numTotalGoals));
                     continue;
                 }
                 visitedKey.Add(key);
-                var goals = Goals[key];
+                var goals = targets[key];
                 if (!learned.ContainsKey(key))
                 {
                     learned[key] = [];
@@ -893,10 +937,20 @@ namespace Plang.Compiler
                     var (gp, gq, gps, gqs) = goals[i];
                     var lp = p.Select(x => ParsedP[key][x]).ToList();
                     var lq = q.Select(x => ParsedQ[key][x]).ToList();
-                    if (CheckImplies(key, gp, lp) && CheckImplies(key, lq, gq))
+                    // syntactic check first
+                    var cond1 = p.IsSubsetOf(gps);
+                    var cond2 = gqs.IsSubsetOf(q);
+                    if ((cond1 && cond2) || CheckImplies(key, gp, lp) && CheckImplies(key, lq, gq))
                     {
-                        NumGoalsLearnedWithHints++;
-                        if (!h.UserHint)
+                        if (checkIndInv)
+                        {
+                            NumIndInvsLearned++;
+                        }
+                        else
+                        {
+                            NumGoalsLearnedWithHints++;
+                        }
+                        if (!h.UserHint && !checkIndInv)
                         {
                             NumGoalsLearnedWithoutHints++;
                         }
@@ -905,23 +959,23 @@ namespace Plang.Compiler
                     }
                 }
                 checkedInvs += 1;
-                cumulative.Add((checkedInvs / (decimal)totalInvs, NumGoalsLearnedWithHints / (decimal)numTotalGoals));
+                // cumulative.Add((checkedInvs / (decimal)totalInvs, NumGoalsLearnedWithHints / (decimal)numTotalGoals));
             }
             // check any missed goals and goals not learned
-            var missed = Goals.Keys.Except(visitedKey);
+            var missed = targets.Keys.Except(visitedKey);
             if (missed.Any())
             {
                 Console.WriteLine($"Missed: {string.Join(", ", missed)}");
             }
-            foreach (var key in Goals.Keys)
+            foreach (var key in targets.Keys)
             {
                 if (learned.ContainsKey(key))
                 {
-                    foreach (var i in Enumerable.Range(0, Goals[key].Count))
+                    foreach (var i in Enumerable.Range(0, targets[key].Count))
                     {
                         if (!learned[key].Contains(i))
                         {
-                            Console.WriteLine($"Not learned: {key} Guards: {string.Join(" && ", Goals[key][i].Item3)} Filters: {string.Join(" && ", Goals[key][i].Item4)}");
+                            Console.WriteLine($"Not learned: {key} Guards: {string.Join(" && ", targets[key][i].Item3)} Filters: {string.Join(" && ", targets[key][i].Item4)}");
                         }
                     }
                 }
@@ -1019,6 +1073,7 @@ namespace Plang.Compiler
             {
                 Directory.Delete(outdir, true);
             }
+            Directory.CreateDirectory(outdir);
             foreach (var (key, _, _, h, p, q) in AllExecuedAndMined())
             {
                 if (q.Count == 0) continue;
@@ -1253,46 +1308,58 @@ namespace Plang.Compiler
             }
         }
 
-        private static bool Implies(string key, HashSet<string> p, HashSet<string> q)
+        private static bool Implies(string key, HashSet<string> p, HashSet<string> q, out bool isSyn)
         {
             bool result = q.IsSubsetOf(p);
             if (!UseZ3)
             {
+                isSyn = true;
                 return result;
             }
             else
             {
                 try
                 {
+                    isSyn = false;
                     return result || Z3Wrapper.CheckImplies(key, p, q, ParsedP[key], ParsedQ[key]);
                     // return result;
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine($"Error checking implication: {e.Message}");
+                    isSyn = true;
                     return result;
                 }
             }
         }
 
-        private static bool BiImplies(string key, HashSet<string> p, HashSet<string> q)
+        private static bool BiImplies(string key, HashSet<string> p, HashSet<string> q, out bool isSyn)
         {
-            return Implies(key, p, q) && Implies(key, q, p);
+            var ret = Implies(key, p, q, out var i1);
+            ret &= Implies(key, q, p, out var i2);
+            isSyn = i1 || i2;
+            return ret;
         }
 
-        private static bool BiImplies(string k, Dictionary<string, IPExpr> parsedLhs, Dictionary<string, IPExpr> parsedRhs, HashSet<string> lhs, HashSet<string> rhs)
+        private static bool BiImplies(string k, Dictionary<string, IPExpr> parsedLhs, Dictionary<string, IPExpr> parsedRhs, HashSet<string> lhs, HashSet<string> rhs, out bool isSyn)
         {
             bool result = lhs.SetEquals(rhs);
-            if (!UseZ3) return result;
+            if (!UseZ3) 
+            {
+                isSyn = true;
+                return result;
+            }
             try
             {
                 var lhsExprs = lhs.Select(x => parsedLhs[x]).ToList();
                 var rhsExprs = rhs.Select(x => parsedRhs[x]).ToList();
+                isSyn = false;
                 return result || (Z3Wrapper.CheckImplies(k, lhsExprs, rhsExprs) && Z3Wrapper.CheckImplies(k, rhsExprs, lhsExprs));
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Error checking bi-implication: {e.Message}");
+                isSyn = false;
                 return result;
             }
         }
@@ -1340,10 +1407,11 @@ namespace Plang.Compiler
                             for (int j = 0; j < Q[k1].Count; ++j)
                             {
                                 // if (qs.SetEquals(Q[k1][j]))
-                                if (BiImplies(k, ParsedQ[k], ParsedQ[k1], qs, Q[k1][j]))
+                                if (BiImplies(k, ParsedQ[k], ParsedQ[k1], qs, Q[k1][j], out var isSyn))
                                 {
                                     removal.Add(i);
-                                    NumInvsPrunedBySubsumption += 1;
+                                    // NumInvsPrunedBySubsumption += 1;
+                                    IncSubsumpPruned(isSyn);
                                     break;
                                 }   
                             }
@@ -1385,6 +1453,30 @@ namespace Plang.Compiler
             return result;
         }
 
+        public static void IncTautologyPruned(bool isSyn)
+        {
+            if (isSyn)
+            {
+                NumTautologyPruned += 1;
+            }
+            else
+            {
+                NumTautologyPrunedSem += 1;
+            }
+        }
+
+        public static void IncSubsumpPruned(bool isSyn)
+        {
+            if (isSyn)
+            {
+                NumInvsPrunedBySubsumption += 1;
+            }
+            else
+            {
+                NumInvsPrunedBySubsumptionSem += 1;
+            }
+        }
+
         public static void DoChores(ICompilerConfiguration job, PInferPredicateGenerator codegen)
         {
             // iterate through the record and merge/discard any duplicates
@@ -1392,6 +1484,8 @@ namespace Plang.Compiler
             bool didSth = true;
             int numIters = 0;
             var stopwatch = new Stopwatch();
+            bool isSyn;
+            bool isSyn2;
             while (didSth)
             {
                 numIters++;
@@ -1412,12 +1506,13 @@ namespace Plang.Compiler
                             NumInvsPrunedBySubsumption += 1;
                             continue;
                         }
-                        if (Implies(k, pi, qi))
+                        if (Implies(k, pi, qi, out isSyn))
                         {
                             var rec = ShowRecordAt(k, i);
                             // job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
                             removes.Add(i);
-                            NumTautologyPruned += 1;
+                            // NumTautologyPruned += 1;
+                            IncSubsumpPruned(isSyn);
                             continue;
                         }
                         for (int j = i + 1; j < P[k].Count; ++j)
@@ -1426,7 +1521,7 @@ namespace Plang.Compiler
                             if (removes.Contains(j)) continue;
                             var pj = P[k][j];
                             var qj = Q[k][j];
-                            if (BiImplies(k, pi, pj) && numExists == 0)
+                            if (BiImplies(k, pi, pj, out isSyn) && numExists == 0)
                             {
                                 // can only merge when there is
                                 // no existential quantifications
@@ -1434,40 +1529,45 @@ namespace Plang.Compiler
                                 // job.Output.WriteWarning($"[Chores][Merge-Remove] {rec}; merged with {ShowRecordAt(k, i)}");
                                 qi.UnionWith(qj);
                                 removes.Add(j);
-                                NumInvsPrunedBySubsumption += 1;
+                                // NumInvsPrunedBySubsumption += 1;
+                                IncSubsumpPruned(isSyn);
                             }
                             // Forall-only rules
                             // Case 1: i ==> j; i.e. pi ==> pj && qj ==> qi
                             // keep j remove i
                             // else if (pj.IsSubsetOf(pi) && qi.IsSubsetOf(qj))
-                            else if (Implies(k, pi, pj) && Implies(k, qj, qi))
+                            else if (Implies(k, pi, pj, out isSyn) && Implies(k, qj, qi, out isSyn2))
                             {
                                 // Console.WriteLine($"Remove {i}");
                                 // job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, i)} implied by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
-                                NumInvsPrunedBySubsumption += 1;
+                                // NumInvsPrunedBySubsumption += 1;
+                                IncSubsumpPruned(isSyn || isSyn2);
                             }
                             // Case 2: j ==> i; keep i remove j
                             // else if (pi.IsSubsetOf(pj) && qj.IsSubsetOf(qi))
-                            else if (Implies(k, pj, pi) && Implies(k, qi, qj))
+                            else if (Implies(k, pj, pi, out isSyn) && Implies(k, qi, qj, out isSyn2))
                             {
                                 // Console.WriteLine($"Remove {j}");
                                 // job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, j)} implied by {ShowRecordAt(k, i)}");
                                 removes.Add(j);
-                                NumInvsPrunedBySubsumption += 1;
+                                // NumInvsPrunedBySubsumption += 1;
+                                IncSubsumpPruned(isSyn || isSyn2);
                             }
                             // Case 1.1: i ==> j; i.e., if not qj ==> pi and qj ==> not qi
                             else if (CheckContrapositive(k, NumExists[k], ParsedP[k], ParsedQ[k], pi, qi, pj, qj))
                             {
                                 // job.Output.WriteWarning($"Remove {ShowRecordAt(k, j)} by {ShowRecordAt(k, i)}");
                                 removes.Add(j);
-                                NumInvsPrunedBySubsumption += 1;
+                                // NumInvsPrunedBySubsumption += 1;
+                                IncSubsumpPruned(true);
                             }
                             else if (CheckContrapositive(k, NumExists[k], ParsedP[k], ParsedQ[k], pj, qj, pi, qi))
                             {
                                 // job.Output.WriteWarning($"Remove {ShowRecordAt(k, i)} by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
-                                NumInvsPrunedBySubsumption += 1;
+                                // NumInvsPrunedBySubsumption += 1;
+                                IncSubsumpPruned(true);
                             }
                             // Case 3: if i ==> j, then any thing holds under j also holds under i
                             // we may remove those from pi
@@ -1475,7 +1575,7 @@ namespace Plang.Compiler
                             // if it is the case that forall* R -> Q, we remove Q for the stronger guards P
                             // i.e. keeping the weakest guard for Q
                             // else if (pj.IsSubsetOf(pi))
-                            else if (Implies(k, pi, pj))
+                            else if (Implies(k, pi, pj, out isSyn))
                             {
                                 if (qi.Intersect(qj).Any() && numExists == 0)
                                 {
@@ -1485,7 +1585,7 @@ namespace Plang.Compiler
                                 }
                             }
                             // else if (pi.IsSubsetOf(pj))
-                            else if (Implies(k, pj, pi))
+                            else if (Implies(k, pj, pi, out isSyn))
                             {
                                 if (qj.Intersect(qi).Any() && numExists == 0)
                                 {
@@ -1537,7 +1637,7 @@ namespace Plang.Compiler
                     {
                         for (int j = i + 1; j < P[k].Count; ++j)
                         {
-                            if (BiImplies(k, Q[k][i], Q[k][j]))
+                            if (BiImplies(k, Q[k][i], Q[k][j], out var _))
                             {
                                 didSth |= Resolution(codegen, k, P[k][i], P[k][j]);
                             }

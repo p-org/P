@@ -103,6 +103,7 @@ def run_mc_for(benchmark):
         def save(begin, end):
             with open(checkpoint, 'w') as f:
                 json.dump({'falsified_monitors': list(falsified_monitors), 'time': end - begin}, f)
+        current_set = current_set - falsified_monitors
         while (prev_set != current_set):
             prev_set = current_set
             print_log(f'Running PChecker on {len(current_set)} monitors ...')

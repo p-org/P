@@ -1188,16 +1188,16 @@ namespace Plang.Compiler.Backend.PInfer
                     processed = SimplifiedRepr(Codegen, expr);
                     status = PruningStatus.KEEP;
                 }
-                catch (DropException)
+                catch (DropException drop)
                 {
-                    // config.Output.WriteWarning(drop.Message);
+                    config.Output.WriteWarning(drop.Message);
                     processed = "";
                     expr = null;
                     status = PruningStatus.DROP;
                 }
-                catch (StepbackException)
+                catch (StepbackException sb)
                 {
-                    // config.Output.WriteWarning(sb.Message);
+                    config.Output.WriteWarning(sb.Message);
                     processed = orig;
                     expr = null;
                     status = PruningStatus.STEPBACK;
@@ -1208,7 +1208,7 @@ namespace Plang.Compiler.Backend.PInfer
                 processed = "";
                 expr = null;
                 status = PruningStatus.DROP;
-                // config.Output.WriteWarning($"[Drop] Cannot parse {orig}");
+                config.Output.WriteWarning($"[Drop] Cannot parse {orig}");
             }
         }
 

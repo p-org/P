@@ -108,3 +108,13 @@ machine BasicPaxos1on1 {
 		}
 	}
 }
+
+machine BasicPaxos4on4 {
+	start state Init {
+		entry {
+			var config: tPaxosConfig;
+			config = (n_proposers = 4, n_acceptors = 4, n_learners = 1);
+			SetupPaxos(config);
+		}
+	}
+}

@@ -56,6 +56,14 @@ machine SixNodes {
     }
 }
 
+machine TenNodes {
+    start state Init {
+        entry {
+            SetupSystem(10);
+        }
+    }
+}
+
 test tcThreeNodes [main = ThreeNodes]:
     assert Safety in (union { ThreeNodes }, DistributedLockMod);
 

@@ -72,16 +72,16 @@ module_names = {
 
 test_interface_names = {
     'lockserver': ['OneNode', 'ThreeNodes', 'FourNodes', 'FiveNodes'],
-    '2PC': ['C2P3T3', 'C3P4T3', 'C3P5T3', 'SingleClientNoFailure'],
-    'ChainReplication': ['SingleClientTest', 'SingleClientMultipleKeys', 'MultipleClientSingleKey', 'MultipleClientMultipleKeys'],
-    'ClockBound': ['C1R3', 'C2R3', 'C3R3', 'C4R3', 'C3R5'],
-    'consensus': ['OneNode', 'TwoNodes', 'ThreeNodes', 'FiveNodes', 'FourNodes'],
-    'distributed_lock': ['ThreeNodes', 'FourNodes', 'FiveNodes', 'SixNodes'],
-    'firewall': ['I3E1', 'I1E3', 'I3E3', 'I4E5'],
-    'paxos': ['BasicPaxos1on1', 'BasicPaxos3on5', 'BasicPaxos3on3', 'BasicPaxos3on1', 'BasicPaxos2on3', 'BasicPaxos2on2'],
-    'paxos_hint': ['testBasicPaxos1on1', 'testBasicPaxos3on5', 'testBasicPaxos3on3', 'testBasicPaxos3on1', 'testBasicPaxos2on3', 'testBasicPaxos2on2'],
-    'Raft': ['OneClientFiveServersReliable', 'OneClientFiveServersUnreliable', 'TwoClientsThreeServersReliable', 'TwoClientsThreeServersUnreliable'],
-    'ring_leader': ['OneNode', 'TwoNodes', 'ThreeNodes', 'FiveNodes', 'TenNodes'],
-    'sharded_kv': ['TwoNodes', 'ThreeNodes', 'FourNodes', 'FiveNodes'],
-    'vertical_paxos': ['T1P3A1L', 'T2P3A1L', 'T2P5A1L']
+    '2PC': ['C2P3T3', 'C3P4T3', 'C3P5T3', 'SingleClientNoFailure', 'C4P5T4'],
+    'ChainReplication': ['SingleClientTest', 'SingleClientMultipleKeys', 'MultipleClientSingleKey', 'MultipleClientMultipleKeys', 'PruningTestcase'],
+    'ClockBound': ['C1R3', 'C2R3', 'C3R3', 'C4R3', 'C3R5', 'C5R5'],
+    'consensus': ['OneNode', 'TwoNodes', 'ThreeNodes', 'FiveNodes', 'FourNodes', 'TenNodes'],
+    'distributed_lock': ['ThreeNodes', 'FourNodes', 'FiveNodes', 'SixNodes', 'TenNodes'],
+    'firewall': ['I3E1', 'I1E3', 'I3E3', 'I4E5', 'I5E6'],
+    'paxos': ['BasicPaxos1on1', 'BasicPaxos3on5', 'BasicPaxos3on3', 'BasicPaxos3on1', 'BasicPaxos2on3', 'BasicPaxos2on2', 'BasicPaxos4on4'],
+    'paxos_hint': ['BasicPaxos1on1', 'BasicPaxos3on5', 'BasicPaxos3on3', 'BasicPaxos3on1', 'BasicPaxos2on3', 'BasicPaxos2on2', 'BasicPaxos4on4'],
+    'Raft': ['OneClientFiveServersReliable', 'OneClientFiveServersUnreliable', 'TwoClientsThreeServersReliable', 'TwoClientsThreeServersUnreliable', 'ThreeClientsOneServerReliable'],
+    'ring_leader': ['OneNode', 'TwoNodes', 'ThreeNodes', 'FiveNodes', 'TenNodes', 'TwentyNodes'],
+    'sharded_kv': ['TwoNodes', 'ThreeNodes', 'FourNodes', 'FiveNodes', 'SevenNodes'],
+    'vertical_paxos': ['T1P3A1L', 'T2P3A1L', 'T2P5A1L', 'T3P5A1L']
 }

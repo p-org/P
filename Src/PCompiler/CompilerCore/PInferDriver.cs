@@ -713,6 +713,7 @@ namespace Plang.Compiler
                     TimeCandidateTemplateGen = driver.tCandidateTemplateGen,
                     TimeMining = driver.tMining,
                     TimePruning = driver.tPruning,
+                    TimeSMT = PInferInvoke.tSMT,
                     TimeLearnGoals = driver.tLearnGoals,
                     TimeSearchEventCombination = driver.tSearchEventCombination,
                     NumGoalsLearnedWithHints = PInferInvoke.NumGoalsLearnedWithHints,
@@ -744,6 +745,7 @@ namespace Plang.Compiler
         public double TimeElapsed { get; set; }
         public double TimeMining { get; set; }
         public double TimePruning { get; set; }
+        public double TimeSMT { get; set; }
         public double TimeLearnGoals { get; set; }
         public double TimeSearchEventCombination { get; set; }
         public double TimeCandidateTemplateGen { get; set; }
@@ -793,6 +795,7 @@ namespace Plang.Compiler
         internal static int NumGoalsLearnedWithHints = 0;
         internal static int NumGoalsLearnedWithoutHints = 0;
         internal static int NumIndInvsLearned = -1;
+        internal static double tSMT = 0;
 
         public static void NewInvFiles()
         {
@@ -1311,7 +1314,7 @@ namespace Plang.Compiler
         private static bool Implies(string key, HashSet<string> p, HashSet<string> q, out bool isSyn)
         {
             bool result = q.IsSubsetOf(p);
-            if (!UseZ3)
+            if (!UseZ3 || result)
             {
                 isSyn = true;
                 return result;
@@ -1321,8 +1324,12 @@ namespace Plang.Compiler
                 try
                 {
                     isSyn = false;
-                    return result || Z3Wrapper.CheckImplies(key, p, q, ParsedP[key], ParsedQ[key]);
-                    // return result;
+                    Stopwatch sw = new();
+                    sw.Start();
+                    var ret = Z3Wrapper.CheckImplies(key, p, q, ParsedP[key], ParsedQ[key]);
+                    sw.Stop();
+                    tSMT += sw.ElapsedMilliseconds;
+                    return ret;
                 }
                 catch (Exception e)
                 {
@@ -1344,7 +1351,7 @@ namespace Plang.Compiler
         private static bool BiImplies(string k, Dictionary<string, IPExpr> parsedLhs, Dictionary<string, IPExpr> parsedRhs, HashSet<string> lhs, HashSet<string> rhs, out bool isSyn)
         {
             bool result = lhs.SetEquals(rhs);
-            if (!UseZ3) 
+            if (!UseZ3 || result)
             {
                 isSyn = true;
                 return result;
@@ -1354,7 +1361,12 @@ namespace Plang.Compiler
                 var lhsExprs = lhs.Select(x => parsedLhs[x]).ToList();
                 var rhsExprs = rhs.Select(x => parsedRhs[x]).ToList();
                 isSyn = false;
-                return result || (Z3Wrapper.CheckImplies(k, lhsExprs, rhsExprs) && Z3Wrapper.CheckImplies(k, rhsExprs, lhsExprs));
+                Stopwatch sw = new();
+                sw.Start();
+                var ret = Z3Wrapper.CheckImplies(k, lhsExprs, rhsExprs) && Z3Wrapper.CheckImplies(k, rhsExprs, lhsExprs);
+                sw.Stop();
+                tSMT += sw.ElapsedMilliseconds;
+                return ret;
             }
             catch (Exception e)
             {
@@ -1374,7 +1386,13 @@ namespace Plang.Compiler
             var q2Exprs = q2.Select(x => parsedRhs[x]).ToList();
             try
             {
-                return Z3Wrapper.CheckImpliesContrapositive(k, p1Exprs, q1Exprs, p2Exprs, q2Exprs);
+                Stopwatch sw = new();
+                sw.Start();
+                var ret = Z3Wrapper.CheckImpliesContrapositive(k, p1Exprs, q1Exprs, p2Exprs, q2Exprs);
+                sw.Stop();
+                tSMT += sw.ElapsedMilliseconds;
+                return ret;
+
             }
             catch (Exception)
             {
@@ -1512,7 +1530,7 @@ namespace Plang.Compiler
                             // job.Output.WriteWarning($"[Chores][Remove-Tauto] {rec}");
                             removes.Add(i);
                             // NumTautologyPruned += 1;
-                            IncSubsumpPruned(isSyn);
+                            IncTautologyPruned(isSyn);
                             continue;
                         }
                         for (int j = i + 1; j < P[k].Count; ++j)
@@ -1542,7 +1560,7 @@ namespace Plang.Compiler
                                 // job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, i)} implied by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
                                 // NumInvsPrunedBySubsumption += 1;
-                                IncSubsumpPruned(isSyn || isSyn2);
+                                IncSubsumpPruned(isSyn && isSyn2);
                             }
                             // Case 2: j ==> i; keep i remove j
                             // else if (pi.IsSubsetOf(pj) && qj.IsSubsetOf(qi))
@@ -1552,7 +1570,7 @@ namespace Plang.Compiler
                                 // job.Output.WriteWarning($"[Chores][Remove] {ShowRecordAt(k, j)} implied by {ShowRecordAt(k, i)}");
                                 removes.Add(j);
                                 // NumInvsPrunedBySubsumption += 1;
-                                IncSubsumpPruned(isSyn || isSyn2);
+                                IncSubsumpPruned(isSyn && isSyn2);
                             }
                             // Case 1.1: i ==> j; i.e., if not qj ==> pi and qj ==> not qi
                             else if (CheckContrapositive(k, NumExists[k], ParsedP[k], ParsedQ[k], pi, qi, pj, qj))
@@ -1567,7 +1585,7 @@ namespace Plang.Compiler
                                 // job.Output.WriteWarning($"Remove {ShowRecordAt(k, i)} by {ShowRecordAt(k, j)}");
                                 removes.Add(i);
                                 // NumInvsPrunedBySubsumption += 1;
-                                IncSubsumpPruned(true);
+                                IncSubsumpPruned(false);
                             }
                             // Case 3: if i ==> j, then any thing holds under j also holds under i
                             // we may remove those from pi

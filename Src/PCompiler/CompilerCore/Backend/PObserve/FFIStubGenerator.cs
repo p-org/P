@@ -6,7 +6,7 @@ using Plang.Compiler.TypeChecker.Types;
 namespace Plang.Compiler.Backend.Java
 {
     /// <summary>
-    /// Generates Java-language stubs for foreign types and foreign functions. The layout is as follows:
+    /// Generates PObserve-language stubs for foreign types and foreign functions. The layout is as follows:
     ///
     /// Each Machine scope is contained in its own class, named after the machine itself, in the
     /// `PForeign` package.  This is to hew as closely as possible to the C# code generator that weaves
@@ -114,7 +114,7 @@ namespace Plang.Compiler.Backend.Java
         }
 
         /// <summary>
-        /// Generates Java code for a given compilation job's used events.
+        /// Generates PObserve code for a given compilation job's used events.
         ///
         /// We only emit code for events that are actually used in Monitors (i.e. they
         /// appear in at least one Monitor's `observes` set.)
@@ -274,7 +274,7 @@ namespace Plang.Compiler.Backend.Java
 
             // Class definition: By convention, this "para-class" has the same name as
             // the P machine it is defined within, to mimic the C#-style partial class mixin
-            // functionalty that we are not afforded in Java, unfortunately.
+            // functionalty that we are not afforded in PObserve, unfortunately.
             WriteLine($"public class {mname}{Constants.FFILocalScopeSuffix} {{");
             foreach (var f in ffs)
             {

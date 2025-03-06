@@ -6,7 +6,9 @@ namespace Plang.Compiler
         Symbolic,
         CSharp,
         Java,
-        Stately,
-        PEx
+        PEx,
+        PChecker,
+        PObserve,
+        Stately
     }
 }

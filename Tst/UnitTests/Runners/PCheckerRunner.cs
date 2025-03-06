@@ -53,7 +53,7 @@ namespace UnitTests.Runners
             stderr = "";
 
             // path to generated code
-            DirectoryInfo scratchDirectoryGenerated = Directory.CreateDirectory(Path.Combine(scratchDirectory.FullName, "CSharp"));
+            DirectoryInfo scratchDirectoryGenerated = Directory.CreateDirectory(Path.Combine(scratchDirectory.FullName, "PChecker"));
             // Do not want to use the auto-generated Test.cs file
             CreateFileWithMainFunction(scratchDirectoryGenerated);
             // Do not want to use the auto-generated csproj file
@@ -159,7 +159,7 @@ namespace PImplementation
         {
             var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);
-            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, new List<CompilerOutput>{CompilerOutput.CSharp}, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
+            var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory, new List<CompilerOutput>{CompilerOutput.PChecker}, sources.Select(x => x.FullName).ToList(), "Main", scratchDirectory);
             try
             {
                 return compiler.Compile(compilerConfiguration);

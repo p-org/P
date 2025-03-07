@@ -31,7 +31,7 @@ namespace Plang.Options
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                                                        " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
             var modes = basicOptions.AddArgument("mode", "md", "Checker mode to use. Can be bugfinding or pex. If this option is not passed, bugfinding mode is used as default");
-            modes.AllowedValues = new List<string>() { "bugfinding", "pex", "pobserve", "verification", "coverage" };
+            modes.AllowedValues = new List<string>() { "bugfinding", "pex", "pobserve" };
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
             // basicOptions.AddArgument("smoke-testing", "tsmoke",
             //     "Smoke test the program by running the checker on all the test cases", typeof(bool));
@@ -214,12 +214,6 @@ namespace Plang.Options
                         case "bugfinding":
                             checkerConfiguration.Mode = CheckerMode.BugFinding;
                             break;
-                        case "verification":
-                            checkerConfiguration.Mode = CheckerMode.Verification;
-                            break;
-                        case "coverage":
-                            checkerConfiguration.Mode = CheckerMode.Coverage;
-                            break;
                         case "pex":
                             checkerConfiguration.Mode = CheckerMode.PEx;
                             break;
@@ -327,7 +321,6 @@ namespace Plang.Options
                     checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
                     break;
                 case "checker-args":
-                case "psym-args":
                     checkerConfiguration.CheckerArgs = ((string)option.Value).Replace(':', ' ');
                     break;
                 case "pproj":
@@ -393,8 +386,6 @@ namespace Plang.Options
                 string filePattern =  checkerConfiguration.Mode switch
                 {
                     CheckerMode.BugFinding => "*.dll",
-                    CheckerMode.Verification => "*-jar-with-dependencies.jar",
-                    CheckerMode.Coverage => "*-jar-with-dependencies.jar",
                     CheckerMode.PEx => "*-jar-with-dependencies.jar",
                     _ => "*.dll"
                 };
@@ -419,11 +410,6 @@ namespace Plang.Options
                             || fileName.EndsWith("PCSharpRuntime.dll")
                             || fileName.EndsWith($"{pathSep}P.dll")
                             || fileName.EndsWith($"{pathSep}p.dll"))
-                            continue;
-                    }
-                    else if (checkerConfiguration.Mode == CheckerMode.Verification || checkerConfiguration.Mode == CheckerMode.Coverage)
-                    {
-                        if (!fileName.Contains($"Symbolic{pathSep}"))
                             continue;
                     }
                     else if (checkerConfiguration.Mode == CheckerMode.PEx)

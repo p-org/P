@@ -24,8 +24,6 @@ namespace Plang.Options
                 "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker."
                 // + "\n\nCompiler modes :: (default: bugfinding)\n" +
                 // "  --mode bugfinding   : for bug finding through stratified random search\n" +
-                // "  --mode verification : for verification through exhaustive symbolic exploration\n" +
-                // "  --mode coverage     : for achieving state-space coverage through exhaustive explicit-state search\n" +
                 // "  --mode pobserve     : for runtime monitoring of P specs against implementation logs"
             );
 
@@ -39,7 +37,7 @@ namespace Plang.Options
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
             var modes = Parser.AddArgument("mode", "md", "Compilation mode to use. Can be bugfinding, pex, pobserve, or stately. If this option is not passed, bugfinding mode is used as default");
-            modes.AllowedValues = new List<string>() { "bugfinding", "pex", "pobserve", "stately", "verification", "coverage" };
+            modes.AllowedValues = new List<string>() { "bugfinding", "pex", "pobserve", "stately"};
 
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
 

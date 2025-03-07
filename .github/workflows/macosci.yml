@@ -16,11 +16,13 @@ jobs:
       with:
         java-version: 11
     - name: Cache Maven packages
-      uses: actions/cache@v4
+      uses: actions/cache@v2
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
+    - name: Build Java P runtime
+      run: mvn clean package -f Src/PRuntimes/PJavaRuntime
     - name: Build
       run: dotnet build --configuration Release
     - name: Test

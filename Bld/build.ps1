@@ -4,6 +4,8 @@ pushd ..
 Write-Host "Initializing submodules .."  -ForegroundColor DarkGreen -BackgroundColor White
 git submodule update --init --recursive
 
+mvn clean compile -f ./Src/PRuntimes/PJavaRuntime/pom.xml
+
 # Run the build! :D
 dotnet build -c Release
 

@@ -14,15 +14,15 @@ jobs:
     - name: Set up JDK
       uses: actions/setup-java@v1
       with:
-        java-version: 11
+        java-version: 17
     - name: Cache Maven packages
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
     - name: Build Java P runtime
-      run: mvn clean package -f Src/PRuntimes/PJavaRuntime
+      run: mvn clean compile package -f Src/PRuntimes/PExRuntime/pom.xml
     - name: Build
       run: dotnet build --configuration Release
     - name: Test

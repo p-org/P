@@ -10,11 +10,7 @@ public enum CheckerMode
     /// </summary>
     BugFinding,
     /// <summary>
-    /// Mode for exhaustive symbolic exploration
-    /// </summary>
-    Verification,
-    /// <summary>
     /// Mode for exhaustive explicit-state search with state-space coverage reporting
     /// </summary>
-    Coverage
+    PEx
 }

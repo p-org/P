@@ -267,12 +267,17 @@ namespace PChecker
         /// If true, then environment exit will be disabled.
         /// </summary>
         public bool DisableEnvironmentExit;
+        
+        /// <summary>
+        /// Enables debugging.
+        /// </summary>
+        public bool EnableDebugging;
 
         /// <summary>
-        /// Additional arguments to pass to PSym.
+        /// Additional arguments to pass to checker.
         /// </summary>
         [DataMember]
-        public string PSymArgs;
+        public string CheckerArgs;
 
         /// <summary>
         /// Additional arguments to pass to JVM-based checker.
@@ -325,7 +330,7 @@ namespace PChecker
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
 
-            PSymArgs = "";
+            CheckerArgs = "";
             JvmArgs = "";
         }
 

@@ -11,7 +11,7 @@ using Plang.Parser;
 
 namespace Plang.Options
 {
-    internal sealed class PCheckerOptions
+    public sealed class PCheckerOptions
     {
         /// <summary>
         /// The command line parser to use.
@@ -21,7 +21,7 @@ namespace Plang.Options
         /// <summary>
         /// Initializes a new instance of the <see cref="PCheckerOptions"/> class.
         /// </summary>
-        internal PCheckerOptions()
+        public PCheckerOptions()
         {
             Parser = new CommandLineArgumentParser("p check",
                 "The P checker enables systematic exploration of a specified P test case, it generates " +
@@ -30,9 +30,8 @@ namespace Plang.Options
             var basicOptions = Parser.GetOrCreateGroup("Basic", "Basic options");
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                                                        " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
-            var modes = basicOptions.AddArgument("mode", "md", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
-            modes.IsHidden = true;
+            var modes = basicOptions.AddArgument("mode", "md", "Checker mode to use. Can be bugfinding or pex. If this option is not passed, bugfinding mode is used as default");
+            modes.AllowedValues = new List<string>() { "bugfinding", "pex", "pobserve" };
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
             // basicOptions.AddArgument("smoke-testing", "tsmoke",
             //     "Smoke test the program by running the checker on all the test cases", typeof(bool));
@@ -69,6 +68,8 @@ namespace Plang.Options
             var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
             schCoverage.AllowedValues = new List<string>() { "learn", "random", "dfs", "stateless" };
             schCoverage.IsHidden = true;
+            var schPEx = schedulingGroup.AddArgument("sch-pex", null, "Choose the scheduling strategy for PEx mode (options: random, dfs). (default: random)");
+            schPEx.AllowedValues = new List<string>() { "random", "dfs", "astar" };
 
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
@@ -79,15 +80,16 @@ namespace Plang.Options
             advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the schedule that found a bug", typeof(bool));
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test schedules whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
+            advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of JVM arguments to pass, each starting with a colon").IsHidden = true;
+            advancedGroup.AddArgument("checker-args", null, "Specify a concatenated list of additional checker arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
-            advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of PSym-specific JVM arguments to pass, each starting with a colon").IsHidden = true;
         }
 
         /// <summary>
         /// Parses the command line options and returns a checkerConfiguration.
         /// </summary>
         /// <returns>The CheckerConfiguration object populated with the parsed command line options.</returns>
-        internal CheckerConfiguration Parse(string[] args)
+        public CheckerConfiguration Parse(string[] args)
         {
             var configuration = CheckerConfiguration.Create();
             try
@@ -190,6 +192,7 @@ namespace Plang.Options
                     checkerConfiguration.IsVerbose = true;
                     break;
                 case "debug":
+                    checkerConfiguration.EnableDebugging = true;
                     Debug.IsEnabled = true;
                     break;
                 case "timeout":
@@ -211,11 +214,8 @@ namespace Plang.Options
                         case "bugfinding":
                             checkerConfiguration.Mode = CheckerMode.BugFinding;
                             break;
-                        case "verification":
-                            checkerConfiguration.Mode = CheckerMode.Verification;
-                            break;
-                        case "coverage":
-                            checkerConfiguration.Mode = CheckerMode.Coverage;
+                        case "pex":
+                            checkerConfiguration.Mode = CheckerMode.PEx;
                             break;
                         default:
                             Error.CheckerReportAndExit($"Invalid checker mode '{option.Value}'.");
@@ -249,6 +249,9 @@ namespace Plang.Options
                     checkerConfiguration.IsProgramStateHashingEnabled = true;
                     break;
                 case "sch-coverage":
+                    checkerConfiguration.SchedulingStrategy = (string)option.Value;
+                    break;
+                case "sch-pex":
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
                     break;
                 case "replay":
@@ -314,11 +317,11 @@ namespace Plang.Options
                 case "fail-on-maxsteps":
                     checkerConfiguration.ConsiderDepthBoundHitAsBug = true;
                     break;
-                case "psym-args":
-                    checkerConfiguration.PSymArgs = ((string)option.Value).Replace(':', ' ');
-                    break;
                 case "jvm-args":
                     checkerConfiguration.JvmArgs = ((string)option.Value).Replace(':', ' ');
+                    break;
+                case "checker-args":
+                    checkerConfiguration.CheckerArgs = ((string)option.Value).Replace(':', ' ');
                     break;
                 case "pproj":
                     // do nothing, since already configured through UpdateConfigurationWithPProjectFile
@@ -357,7 +360,9 @@ namespace Plang.Options
                 checkerConfiguration.SchedulingStrategy != "replay" &&
                 checkerConfiguration.SchedulingStrategy != "learn" &&
                 checkerConfiguration.SchedulingStrategy != "dfs" &&
-                checkerConfiguration.SchedulingStrategy != "stateless") {
+                checkerConfiguration.SchedulingStrategy != "stateless" &&
+                checkerConfiguration.SchedulingStrategy != "astar")
+            {
                 Error.CheckerReportAndExit("Please provide a scheduling strategy (see --sch* options)");
             }
 
@@ -381,8 +386,7 @@ namespace Plang.Options
                 string filePattern =  checkerConfiguration.Mode switch
                 {
                     CheckerMode.BugFinding => "*.dll",
-                    CheckerMode.Verification => "*-jar-with-dependencies.jar",
-                    CheckerMode.Coverage => "*-jar-with-dependencies.jar",
+                    CheckerMode.PEx => "*-jar-with-dependencies.jar",
                     _ => "*.dll"
                 };
 
@@ -408,9 +412,9 @@ namespace Plang.Options
                             || fileName.EndsWith($"{pathSep}p.dll"))
                             continue;
                     }
-                    else if (checkerConfiguration.Mode == CheckerMode.Verification || checkerConfiguration.Mode == CheckerMode.Coverage)
+                    else if (checkerConfiguration.Mode == CheckerMode.PEx)
                     {
-                        if (!fileName.Contains($"Symbolic{pathSep}"))
+                        if (!fileName.Contains($"PEx{pathSep}"))
                             continue;
                     }
                     else

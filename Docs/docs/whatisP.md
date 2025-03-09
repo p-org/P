@@ -58,8 +58,6 @@ Although the current P checker is great at finding _deep-hard-to-find_ bugs ("[H
 We are actively working on addressing this challenge and are building two new backends for P. First, a _symbolic execution engine_ that can scale the P checker to models of large
 distributed systems and provide **sound guarantees** of exploring all possible behaviors. Second, a deductive verification engine to perform **mathematical proof** of correctness for P programs. Both these backends will be released publicly soon.
 
-[^1]: They are currently maintained in the dev branch `symbolic-codegen`.
-
 #### Code Generation
 
 The P compiler currently generates C# and C code. The generated code when combined with the P Runtime (that executes the P state machines) can be deployed on any target platform.

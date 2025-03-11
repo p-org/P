@@ -87,6 +87,11 @@ namespace PChecker.Testing
                 Console.WriteLine($"Checker found a bug.");
             }
             
+            if ((!_checkerConfiguration.PerformFullExploration && TestingEngine.TestReport.NumOfFoundBugs > 0))
+            {
+                await EmitTraces();
+            }
+            
             // Closes the remote notification listener.
             if (_checkerConfiguration.IsVerbose)
             {
@@ -113,6 +118,19 @@ namespace PChecker.Testing
             TestingEngine = TestingEngine.Create(_checkerConfiguration);
             Profiler = new Profiler();
             IsProcessCanceled = false;
+        }
+        
+        /// <summary>
+        /// Emits the testing traces.
+        /// </summary>
+        private Task EmitTraces()
+        {
+            var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
+            file += "_" + _checkerConfiguration.TestingProcessId;
+ 
+            Console.WriteLine($"... Emitting traces:");
+            TestingEngine.TryEmitTraces(_checkerConfiguration.OutputDirectory, file);
+            return Task.CompletedTask;
         }
         
         /// <summary>

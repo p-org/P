@@ -910,14 +910,17 @@ namespace Plang.Compiler
             Z3Wrapper = new(globalScope, codegen);
             cumulative = [];
             if (Goals.Count == 0) return;
-            NumGoalsLearnedWithHints = 0;
-            NumGoalsLearnedWithoutHints = 0;
+            if (!checkIndInv)
+            {
+                NumGoalsLearnedWithHints = 0;
+                NumGoalsLearnedWithoutHints = 0;
+            }
             Dictionary<string, HashSet<int>> learned = [];
             HashSet<int> confirmed = [];
             HashSet<string> visitedKey = [];
             int totalInvs = invariants.Count();
             int checkedInvs = 0;
-            var targets = checkIndInv ? Goals : IndInvs;
+            var targets = checkIndInv ? IndInvs : Goals;
             var numTotalGoals = targets.SelectMany(x => x.Value).Count();
             foreach (var (key, _, _, h, p, q) in invariants)
             {

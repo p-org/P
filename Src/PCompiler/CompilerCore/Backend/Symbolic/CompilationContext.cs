@@ -62,10 +62,8 @@ namespace Plang.Compiler.Backend.Symbolic
                         }
                         return $"anonfun_{anonFuncIds[func]}";
                     }
-                    else
-                    {
-                        return $"{func.Name}";
-                    }
+
+                    return $"{func.Name}";
                 case Machine machine:
                     return $"{machine.Name}";
                 case Interface @interface:
@@ -76,7 +74,7 @@ namespace Plang.Compiler.Backend.Symbolic
                 case Event pEvent:
                     if (!pEvent.IsBuiltIn)
                         return $"{pEvent.Name}";
-                    else return $"_{pEvent.Name}";
+                    return $"_{pEvent.Name}";
                 case SafetyTest safety:
                     return $"{safety.Name}";
                 default:

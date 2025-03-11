@@ -14,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
-using PChecker.Feedback;
 using PChecker.Random;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Logging;

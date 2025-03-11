@@ -1,13 +1,13 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using PChecker;
+using Plang.Options;
 using UnitTests.Core;
 using UnitTests.Runners;
-using Plang.Options;
+
 namespace UnitTests;
 
 [TestFixture]

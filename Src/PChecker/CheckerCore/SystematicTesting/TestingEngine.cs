@@ -17,8 +17,6 @@ using System.Threading.Tasks;
 using System.Xml;
 using PChecker.Coverage;
 using PChecker.Feedback;
-using PChecker.Generator;
-using PChecker.Generator.Mutator;
 using PChecker.Generator.Object;
 using PChecker.IO;
 using PChecker.IO.Debugging;
@@ -371,7 +369,7 @@ namespace PChecker.SystematicTesting
             {
                 if (CancellationTokenSource.IsCancellationRequested)
                 {
-                    Logger.WriteLine($"... Checker timed out.");
+                    Logger.WriteLine("... Checker timed out.");
                 }
             }
             catch (AggregateException aex)
@@ -382,7 +380,7 @@ namespace PChecker.SystematicTesting
                 }
                 else
                 {
-                    aex.Handle((ex) =>
+                    aex.Handle(ex =>
                     {
                         Debug.WriteLine(ex.Message);
                         Debug.WriteLine(ex.StackTrace);
@@ -712,7 +710,8 @@ namespace PChecker.SystematicTesting
                 }
                 return newDictionary;
             }
-            else if (obj is Dictionary<int, object> dictionaryInt) {
+
+            if (obj is Dictionary<int, object> dictionaryInt) {
                 var newDictionary = new Dictionary<int, object>();
                 foreach (var item in dictionaryInt) {
                     var newVal = RecursivelyReplaceNullWithString(item.Value);
@@ -721,7 +720,8 @@ namespace PChecker.SystematicTesting
                 }
                 return newDictionary;
             }
-            else if (obj is List<object> list)
+
+            if (obj is List<object> list)
             {
                 var newList = new List<object>();
                 foreach (var item in list)
@@ -733,10 +733,8 @@ namespace PChecker.SystematicTesting
 
                 return newList;
             }
-            else
-            {
-                return obj;
-            }
+
+            return obj;
         }
 
         /// <summary>
@@ -857,7 +855,7 @@ namespace PChecker.SystematicTesting
             {
                 XmlLog = new StringBuilder();
                 runtime.RegisterLog(new PCheckerLogXmlFormatter(XmlWriter.Create(XmlLog,
-                    new XmlWriterSettings() { Indent = true, IndentChars = "  ", OmitXmlDeclaration = true })));
+                    new XmlWriterSettings { Indent = true, IndentChars = "  ", OmitXmlDeclaration = true })));
             }
         }
 
@@ -1021,7 +1019,7 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.ScheduleTrace.Length > 0)
             {
                 scheduleDump =
-                    _checkerConfiguration.ScheduleTrace.Split(new string[] { Environment.NewLine },
+                    _checkerConfiguration.ScheduleTrace.Split(new[] { Environment.NewLine },
                         StringSplitOptions.None);
             }
             else

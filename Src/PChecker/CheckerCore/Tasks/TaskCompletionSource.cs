@@ -3,7 +3,6 @@
 
 using System;
 using System.Threading;
-using PChecker.Runtime;
 using PChecker.SystematicTesting;
 using PChecker.SystematicTesting.Operations;
 using TaskCanceledException = System.Threading.Tasks.TaskCanceledException;

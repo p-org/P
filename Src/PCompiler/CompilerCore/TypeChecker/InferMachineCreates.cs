@@ -37,8 +37,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                     if(_visitedFunctions.Contains(function))
                         return Enumerable.Empty<Interface>();
-                    else
-                        _visitedFunctions.Add(function);
+                    _visitedFunctions.Add(function);
 
                     return InferCreates(function.Body, handler);
 

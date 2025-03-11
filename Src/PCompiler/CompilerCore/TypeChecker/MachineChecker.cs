@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Formats.Asn1;
 using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST.Declarations;

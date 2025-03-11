@@ -66,7 +66,7 @@ namespace PChecker.Coverage
             // a fully expanded edge graph has individual links for each event.
             if (link.Attributes.TryGetValue("EventId", out var eventId))
             {
-                return new string[] { eventId };
+                return new[] { eventId };
             }
 
             return Array.Empty<string>();
@@ -154,7 +154,7 @@ namespace PChecker.Coverage
 
                 if (!CoverageInfo.MachinesToStates.ContainsKey(machine))
                 {
-                    CoverageInfo.MachinesToStates[machine] = new HashSet<string>(new string[] { "ExternalState" });
+                    CoverageInfo.MachinesToStates[machine] = new HashSet<string>(new[] { "ExternalState" });
                 }
 
                 // Per-state data.

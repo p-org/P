@@ -241,12 +241,13 @@ namespace PChecker.SystematicTesting
                 totalExploredSchedules,
                 totalExploredSchedules == 1 ? string.Empty : "s");
             
-            report.AppendLine();
-            report.AppendFormat(
-                "{0} Explored {1} timeline{2}",
-                prefix.Equals("...") ? "....." : prefix,
-                ExploredTimelines.Count,
-                ExploredTimelines.Count == 1 ? string.Empty : "s");
+            // Comment out this part until feedback strategy error is fixed
+            // report.AppendLine();
+            // report.AppendFormat(
+            //     "{0} Explored {1} timeline{2}",
+            //     prefix.Equals("...") ? "....." : prefix,
+            //     ExploredTimelines.Count,
+            //     ExploredTimelines.Count == 1 ? string.Empty : "s");
 
             if (totalExploredSchedules > 0 &&
                 NumOfFoundBugs > 0)

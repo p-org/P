@@ -47,7 +47,7 @@ public class PCheckerLogGeneratorTests
             string generatedFilePath = Path.Combine(generatedDir, fileName);
             string expectedFilePath = Path.Combine(expectedDir, fileName);
 
-            if (fileName == "trace_0_0.trace.json")
+            if (fileName == "Main_0_0.trace.json")
             {
                 // Perform "Is JSON Included" check for this specific file
                 if (!IsJsonContentIncluded(generatedFilePath, expectedFilePath))

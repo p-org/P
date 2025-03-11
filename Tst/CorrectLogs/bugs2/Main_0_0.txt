@@ -12,6 +12,5 @@
 <StrategyLog> Found 1 bug.
 <StrategyLog> Scheduling statistics:
 <StrategyLog> Explored 1 schedule
-<StrategyLog> Explored 1 timeline
 <StrategyLog> Found 100.00% buggy schedules.
 <StrategyLog> Number of scheduling points in terminating schedules: 2 (min), 2 (avg), 2 (max).

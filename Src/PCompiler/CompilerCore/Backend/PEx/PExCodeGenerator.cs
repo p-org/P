@@ -209,10 +209,10 @@ internal class PExCodeGenerator : ICodeGenerator
         context.WriteLine(output);
     }
 
-    private void WriteEvent(CompilationContext context, StringWriter output, PEvent ev)
+    private void WriteEvent(CompilationContext context, StringWriter output, Event ev)
     {
         context.WriteLine(output,
-            $"public static PEvent {context.GetNameForDecl(ev)} = new PEvent(\"{context.GetNameForDecl(ev)}\");");
+            $"public static Event {context.GetNameForDecl(ev)} = new Event(\"{context.GetNameForDecl(ev)}\");");
     }
 
     private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
@@ -231,7 +231,7 @@ internal class PExCodeGenerator : ICodeGenerator
                 else
                     WriteMachine(context, output, machine);
                 break;
-            case PEvent ev:
+            case Event ev:
                 WriteEvent(context, output, ev);
                 break;
             case SafetyTest safety:
@@ -386,8 +386,8 @@ internal class PExCodeGenerator : ICodeGenerator
 
             var exitFunc = state.Exit;
             exitFunc.Name = $"{context.GetNameForDecl(state)}_exit";
-            Debug.Assert(!(exitFunc.CanChangeState ?? false));
-            Debug.Assert(!(exitFunc.CanRaiseEvent ?? false));
+            Debug.Assert(!(exitFunc.CanChangeState));
+            Debug.Assert(!(exitFunc.CanRaiseEvent));
             if (exitFunc.Signature.Parameters.Count() != 0)
                 throw new NotImplementedException("Exit functions with payloads are not yet supported");
             context.WriteLine(output,
@@ -400,7 +400,7 @@ internal class PExCodeGenerator : ICodeGenerator
     }
 
     private void WriteEventHandler(CompilationContext context, StringWriter output,
-        KeyValuePair<PEvent, IStateAction> handler, State state)
+        KeyValuePair<Event, IStateAction> handler, State state)
     {
         var eventTag = context.GetNameForDecl(handler.Key);
         switch (handler.Value)
@@ -439,8 +439,8 @@ internal class PExCodeGenerator : ICodeGenerator
                         "@Override public void transitionFunction(PMachine machine, PValue<?> payload) {");
 
                     var transitionFunc = gotoState.TransitionFunction;
-                    Debug.Assert(!(transitionFunc.CanChangeState ?? false));
-                    Debug.Assert(!(transitionFunc.CanRaiseEvent ?? false));
+                    Debug.Assert(!(transitionFunc.CanChangeState));
+                    Debug.Assert(!(transitionFunc.CanRaiseEvent));
                     if (transitionFunc.Name == "")
                         transitionFunc.Name = $"{context.GetNameForDecl(state)}_{eventTag}_{destTag}";
 
@@ -745,7 +745,7 @@ internal class PExCodeGenerator : ICodeGenerator
                 context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
 
                 context.Write(output, $"{CompilationContext.CurrentMachine}.raiseEvent(");
-                WriteExpr(context, output, raiseStmt.PEvent);
+                WriteExpr(context, output, raiseStmt.Event);
                 if (raiseStmt.Payload.Count > 0)
                 {
                     // TODO: Determine how multi-payload raise statements are supposed to work
@@ -949,7 +949,7 @@ internal class PExCodeGenerator : ICodeGenerator
             }
             case AnnounceStmt announceStmt:
                 context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
-                WriteExpr(context, output, announceStmt.PEvent);
+                WriteExpr(context, output, announceStmt.Event);
                 context.Write(output, ", ");
                 if (announceStmt.Payload == null)
                     context.Write(output, "null");

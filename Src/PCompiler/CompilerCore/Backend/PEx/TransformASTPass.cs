@@ -330,7 +330,7 @@ internal class TransformASTPass
                 return new AddStmt(addStmt.SourceLocation, ReplaceVars(addStmt.Variable, varMap),
                     ReplaceVars(addStmt.Value, varMap));
             case AnnounceStmt announceStmt:
-                return new AnnounceStmt(announceStmt.SourceLocation, ReplaceVars(announceStmt.PEvent, varMap),
+                return new AnnounceStmt(announceStmt.SourceLocation, ReplaceVars(announceStmt.Event, varMap),
                     ReplaceVars(announceStmt.Payload, varMap));
             case AssertStmt assertStmt:
                 return new AssertStmt(assertStmt.SourceLocation, ReplaceVars(assertStmt.Assertion, varMap),
@@ -368,9 +368,9 @@ internal class TransformASTPass
             case RaiseStmt raiseStmt:
                 var payload = new List<IPExpr>();
                 foreach (var p in raiseStmt.Payload) payload.Add(ReplaceVars(p, varMap));
-                return new RaiseStmt(raiseStmt.SourceLocation, ReplaceVars(raiseStmt.PEvent, varMap), payload);
+                return new RaiseStmt(raiseStmt.SourceLocation, ReplaceVars(raiseStmt.Event, varMap), payload);
             case ReceiveStmt receiveStmt:
-                var cases = new Dictionary<PEvent, Function>();
+                var cases = new Dictionary<Event, Function>();
                 foreach (var entry in receiveStmt.Cases)
                 {
                     var replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
@@ -519,7 +519,7 @@ internal class TransformASTPass
                     InlineAfterAndReplaceBreaks(ifStmt.ThenBranch, afterStmts),
                     InlineAfterAndReplaceBreaks(ifStmt.ElseBranch, afterStmts));
             case ReceiveStmt receiveStmt:
-                var cases = new Dictionary<PEvent, Function>();
+                var cases = new Dictionary<Event, Function>();
                 foreach (var entry in receiveStmt.Cases)
                 {
                     var replacement = new Function(entry.Value.Name, entry.Value.SourceLocation);
@@ -619,7 +619,7 @@ internal class TransformASTPass
 
                             break;
                         case ReceiveStmt recv:
-                            IDictionary<PEvent, Function> cases = new Dictionary<PEvent, Function>();
+                            IDictionary<Event, Function> cases = new Dictionary<Event, Function>();
                             var canReceiveInCase = false;
                             foreach (var c in recv.Cases)
                             {
@@ -798,12 +798,12 @@ internal class TransformASTPass
         }
     }
 
-    private static Continuation GetContinuation(Function function, IDictionary<PEvent, Function> cases, IPStmt after,
+    private static Continuation GetContinuation(Function function, IDictionary<Event, Function> cases, IPStmt after,
         ParserRuleContext location)
     {
         var continuationName = $"continuation_{continuationNumber}";
         continuationNumber++;
-        var continuation = new Continuation(continuationName, new Dictionary<PEvent, Function>(cases), after, location);
+        var continuation = new Continuation(continuationName, new Dictionary<Event, Function>(cases), after, location);
         continuation.ParentFunction = function;
         function.AddCallee(continuation);
         function.Role = FunctionRole.Method;

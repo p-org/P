@@ -14,14 +14,14 @@ public class Continuation : Function
     private readonly Dictionary<Variable, Variable> storeForLocal = new();
     private readonly List<Variable> storeParameters = new();
 
-    public Continuation(string name, IReadOnlyDictionary<PEvent, Function> cases, IPStmt after,
+    public Continuation(string name, IReadOnlyDictionary<Event, Function> cases, IPStmt after,
         ParserRuleContext location) : base(name, location)
     {
         Cases = cases;
         After = after;
     }
 
-    public IReadOnlyDictionary<PEvent, Function> Cases { get; }
+    public IReadOnlyDictionary<Event, Function> Cases { get; }
     public IPStmt After { get; }
     public IEnumerable<Variable> StoreParameters => storeParameters;
     public IEnumerable<Variable> LocalParameters => localParameters;

@@ -7,11 +7,11 @@ namespace Plang.Compiler.TypeChecker.AST.Statements
         public AnnounceStmt(ParserRuleContext sourceLocation, IPExpr pEvent, IPExpr payload)
         {
             SourceLocation = sourceLocation;
-            PEvent = pEvent;
+            Event = pEvent;
             Payload = payload;
         }
 
-        public IPExpr PEvent { get; }
+        public IPExpr Event { get; }
         public IPExpr Payload { get; }
 
         public ParserRuleContext SourceLocation { get; }

@@ -146,7 +146,8 @@ namespace Plang.Compiler
 
         public Exception MoreThanOneParameterForHandlers(ParserRuleContext sourceLocation, int count)
         {
-            return IssueError(sourceLocation, $"functions at entry or exit and do or goto transitions cannot take more than 1 parameter, provided function expects {count} parameters");
+            return IssueError(sourceLocation,
+                $"functions at entry or exit and do or goto transitions cannot take more than 1 parameter, provided function expects {count} parameters");
         }
 
         public Exception ParseFailure(FileInfo file, string message)
@@ -156,12 +157,14 @@ namespace Plang.Compiler
 
         public Exception IllegalChooseSubExprType(PParser.ChooseExprContext context, PLanguageType subExprType)
         {
-            return IssueError(context, $"choose expects a parameter of type int (max value) or a collection type (seq, set, or map) got a parameter of type {subExprType}");
+            return IssueError(context,
+                $"choose expects a parameter of type int (max value) or a collection type (seq, set, or map) got a parameter of type {subExprType}");
         }
 
         public Exception IllegalChooseSubExprValue(PParser.ChooseExprContext context, int numChoices)
         {
-            return IssueError(context, $"choose expects a parameter with at most 10000 choices, got {numChoices} choices instead.");
+            return IssueError(context,
+                $"choose expects a parameter with at most 10000 choices, got {numChoices} choices instead.");
         }
 
         public Exception IllegalFunctionUsedInSpecMachine(Function function, Machine callerOwner)
@@ -215,7 +218,7 @@ namespace Plang.Compiler
             return IssueError(sourceLocation, $"Illegal main machine. {message}");
         }
 
-        public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent)
+        public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, Event illegalEvent)
         {
             return IssueError(location,
                 $"invalid assert operation. event {illegalEvent.Name} in observes set of {monitor.Name} is not in the sends set of the module");
@@ -310,7 +313,7 @@ namespace Plang.Compiler
             return IssueError(argSourceLocation, "String interpolation does not support linear arguments.");
         }
 
-        public Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent)
+        public Exception DuplicateReceiveCase(ParserRuleContext location, Event pEvent)
         {
             return IssueError(location, $"Event {pEvent.Name} appears twice in receive statement argument list");
         }
@@ -322,7 +325,8 @@ namespace Plang.Compiler
 
         public Exception ExitFunctionCannotTakeParameters(ParserRuleContext sourceLocation, int count)
         {
-            return IssueError(sourceLocation, $"Exit functions cannot have input parameters, the provided function expects {count} parameters");
+            return IssueError(sourceLocation,
+                $"Exit functions cannot have input parameters, the provided function expects {count} parameters");
         }
 
         private Exception IssueError(ParserRuleContext location, string message)
@@ -340,9 +344,15 @@ namespace Plang.Compiler
             return method.Name.Length > 0 ? method.Name : $"at {locationResolver.GetLocation(method.SourceLocation)}";
         }
 
-        public string SpecObservesSetIncompleteWarning(ParserRuleContext ctx, PEvent ev, Machine machine)
+        public string SpecObservesSetIncompleteWarning(ParserRuleContext ctx, Event ev, Machine machine)
         {
-            return $"[!Warning!]\n[{locationResolver.GetLocation(ctx, ctx.start)}] Event {ev.Name} is not in the observes list of the spec machine {machine.Name}. The event-handler is never triggered as the event is not observed by the spec.\n[!Warning!]";
+            return
+                $"[!Warning!]\n[{locationResolver.GetLocation(ctx, ctx.start)}] Event {ev.Name} is not in the observes list of the spec machine {machine.Name}. The event-handler is never triggered as the event is not observed by the spec.\n[!Warning!]";
+        }
+
+        public Exception DuplicateBindings(ParserRuleContext ctx, Interface @interface)
+        {
+            return IssueError(ctx, $"Interface or machine {@interface.Name} is mentioned or bounded multiple times in the module");
         }
     }
 }

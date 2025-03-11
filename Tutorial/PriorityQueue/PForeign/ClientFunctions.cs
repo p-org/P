@@ -1,5 +1,5 @@
 using System.Collections;
-using PChecker.PRuntime.Values;
+using PChecker.Runtime.Values;
 
 namespace PImplementation
 {
@@ -9,7 +9,7 @@ namespace PImplementation
      */
     partial class Client
     {
-        public static tPriorityQueue AddIntToQueue(tPriorityQueue queue, IPrtValue elem, PrtInt priority)
+        public static tPriorityQueue AddIntToQueue(tPriorityQueue queue, IPValue elem, PInt priority)
         {
             queue.Add(new ElementWithPriority(elem, priority));
             return queue;

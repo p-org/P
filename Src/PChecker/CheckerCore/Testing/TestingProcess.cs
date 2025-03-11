@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using PChecker.SystematicTesting;
+using PChecker.Utilities;
 
 namespace PChecker.Testing
 {
@@ -31,13 +32,23 @@ namespace PChecker.Testing
         private readonly TestingEngine TestingEngine;
 
         /// <summary>
-        /// Creates a Coyote testing process.
+        /// Set if ctrl-c or ctrl-break occurred.
+        /// </summary>
+        public static bool IsProcessCanceled;
+        
+        /// <summary>
+        /// The testing profiler.
+        /// </summary>
+        private readonly Profiler Profiler;
+        
+        /// <summary>
+        /// Creates a testing process.
         /// </summary>
         public static TestingProcess Create(CheckerConfiguration checkerConfiguration)
         {
             return new TestingProcess(checkerConfiguration);
         }
-
+        
         /// <summary>
         /// Get the current test report.
         /// </summary>
@@ -50,11 +61,18 @@ namespace PChecker.Testing
         private readonly TextWriter StdOut = Console.Out;
 
         /// <summary>
-        /// Runs the Coyote testing process.
+        /// Runs the testing process.
         /// </summary>
         public void Run()
         {
+            Profiler.StartMeasuringExecutionTime();
             RunAsync().Wait();
+            Profiler.StopMeasuringExecutionTime();
+            if (!IsProcessCanceled)
+            {
+                // Merges and emits the test report.
+                EmitTestReport();
+            }
         }
 
         private async Task RunAsync()
@@ -68,14 +86,7 @@ namespace PChecker.Testing
             {
                 Console.WriteLine($"Checker found a bug.");
             }
-
-            // we want the graph generation even if doing full exploration.
-            if ((!_checkerConfiguration.PerformFullExploration && TestingEngine.TestReport.NumOfFoundBugs > 0) ||
-                (_checkerConfiguration.IsDgmlGraphEnabled && !_checkerConfiguration.IsDgmlBugGraph))
-            {
-                await EmitTraces();
-            }
-
+            
             // Closes the remote notification listener.
             if (_checkerConfiguration.IsVerbose)
             {
@@ -90,11 +101,6 @@ namespace PChecker.Testing
         {
             Name = Name + "." + checkerConfiguration.TestingProcessId;
 
-            if (checkerConfiguration.SchedulingStrategy is "portfolio")
-            {
-                TestingPortfolio.ConfigureStrategyForCurrentProcess(checkerConfiguration);
-            }
-
             if (checkerConfiguration.RandomGeneratorSeed.HasValue)
             {
                 checkerConfiguration.RandomGeneratorSeed = checkerConfiguration.RandomGeneratorSeed.Value +
@@ -102,23 +108,59 @@ namespace PChecker.Testing
             }
 
             checkerConfiguration.EnableColoredConsoleOutput = true;
-
+            
             _checkerConfiguration = checkerConfiguration;
             TestingEngine = TestingEngine.Create(_checkerConfiguration);
+            Profiler = new Profiler();
+            IsProcessCanceled = false;
         }
-
-
+        
         /// <summary>
-        /// Emits the testing traces.
+        /// Emits the test report.
         /// </summary>
-        private Task EmitTraces()
+        private void EmitTestReport()
         {
-            var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
-            file += "_" + _checkerConfiguration.TestingProcessId;
+            TestReport testReport = GetTestReport();
+            if (testReport == null)
+            {
+                Environment.ExitCode = (int)ExitCode.InternalError;
+                return;
+            }
 
-            Console.WriteLine($"... Emitting traces:");
-            TestingEngine.TryEmitTraces(_checkerConfiguration.OutputDirectory, file);
-            return Task.CompletedTask;
+            if (_checkerConfiguration.ReportActivityCoverage)
+            {
+                Console.WriteLine($"... Emitting coverage report:");
+                Reporter.EmitTestingCoverageReport(testReport);
+            }
+
+            if (_checkerConfiguration.DebugActivityCoverage)
+            {
+                Console.WriteLine($"... Emitting debug coverage report:");
+                Reporter.EmitTestingCoverageReport(testReport);
+            }
+
+            Console.WriteLine(testReport.GetText(_checkerConfiguration, "..."));
+            
+            var file = Path.GetFileNameWithoutExtension(testReport.CheckerConfiguration.AssemblyToBeAnalyzed);
+            var directory = testReport.CheckerConfiguration.OutputDirectory;
+            var pintPath = directory + file + "_pchecker_summary.txt";
+            Console.WriteLine($"..... Writing {pintPath}");
+            File.WriteAllText(pintPath, testReport.GetSummaryText(Profiler));
+            
+            Console.WriteLine($"... Elapsed {Profiler.GetElapsedTime()} sec.");
+
+            if (testReport.InternalErrors.Count > 0)
+            {
+                Environment.ExitCode = (int)ExitCode.InternalError;
+            }
+            else if (testReport.NumOfFoundBugs > 0)
+            {
+                Environment.ExitCode = (int)ExitCode.BugFound;
+            }
+            else
+            {
+                Environment.ExitCode = (int)ExitCode.Success;
+            }
         }
     }
 }

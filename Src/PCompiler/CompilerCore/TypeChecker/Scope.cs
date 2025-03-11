@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
@@ -17,7 +19,7 @@ namespace Plang.Compiler.TypeChecker
 
         private readonly IDictionary<string, EnumElem> enumElems = new Dictionary<string, EnumElem>();
         private readonly IDictionary<string, PEnum> enums = new Dictionary<string, PEnum>();
-        private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
+        private readonly IDictionary<string, Event> events = new Dictionary<string, Event>();
         private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
         private readonly ICompilerConfiguration config;
@@ -40,7 +42,7 @@ namespace Plang.Compiler.TypeChecker
             parent?.children.Add(this);
 
             var eventSetWithHalt = new EventSet();
-            eventSetWithHalt.AddEvent(new PEvent("halt", null));
+            eventSetWithHalt.AddEvent(new Event("halt", null));
             UniversalEventSet = parent == null ? eventSetWithHalt : parent.UniversalEventSet;
         }
 
@@ -66,7 +68,7 @@ namespace Plang.Compiler.TypeChecker
 
         public IEnumerable<EnumElem> EnumElems => enumElems.Values;
         public IEnumerable<PEnum> Enums => enums.Values;
-        public IEnumerable<PEvent> Events => events.Values;
+        public IEnumerable<Event> Events => events.Values;
         public IEnumerable<NamedEventSet> EventSets => eventSets.Values;
         public IEnumerable<Function> Functions => functions.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
@@ -144,7 +146,7 @@ namespace Plang.Compiler.TypeChecker
             return enums.TryGetValue(name, out tree);
         }
 
-        public bool Get(string name, out PEvent tree)
+        public bool Get(string name, out Event tree)
         {
             return events.TryGetValue(name, out tree);
         }
@@ -242,7 +244,7 @@ namespace Plang.Compiler.TypeChecker
             return false;
         }
 
-        public bool Lookup(string name, out PEvent tree)
+        public bool Lookup(string name, out Event tree)
         {
             var current = this;
             while (current != null)
@@ -487,9 +489,9 @@ namespace Plang.Compiler.TypeChecker
             return @enum;
         }
 
-        public PEvent Put(string name, PParser.EventDeclContext tree)
+        public Event Put(string name, PParser.EventDeclContext tree)
         {
-            var @event = new PEvent(name, tree);
+            var @event = new Event(name, tree);
             CheckConflicts(@event, Namespace(events), Namespace(enumElems));
             events.Add(name, @event);
             return @event;
@@ -541,7 +543,7 @@ namespace Plang.Compiler.TypeChecker
         public Function Put(string name, PParser.FunDeclContext tree)
         {
             var function = new Function(name, tree);
-            CheckConflicts(function, Namespace(functions));
+            CheckConflicts(function, Namespace(functions), Namespace(states));
             functions.Add(name, function);
             return function;
         }
@@ -603,7 +605,7 @@ namespace Plang.Compiler.TypeChecker
             string filePath = config.LocationResolver.GetLocation(tree).File.FullName;
             foreach (var dependencyPath in config.ProjectDependencies)
             {
-                if (filePath.StartsWith(dependencyPath))
+                if (filePath.StartsWith($"{dependencyPath}{Path.DirectorySeparatorChar}"))
                 {
                     return null;
                 }

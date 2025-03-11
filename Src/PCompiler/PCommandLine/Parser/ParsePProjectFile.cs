@@ -214,7 +214,7 @@ namespace Plang.Parser
             var projectXml = XElement.Load(fullPathName.FullName);
             if (!projectXml.Elements("Target").Any())
             {
-                outputLanguages.Add(CompilerOutput.CSharp);
+                outputLanguages.Add(CompilerOutput.PChecker);
             }
             else
             {
@@ -224,30 +224,21 @@ namespace Plang.Parser
                 {
                     switch (values[i].ToLowerInvariant())
                     {
-                        case "bugfinding":
-                        case "csharp":
-                            outputLanguages.Add(CompilerOutput.CSharp);
-                            break;
-                        case "verification":
-                        case "coverage":
-                        case "symbolic":
-                        case "psym":
-                        case "pcover":
-                            outputLanguages.Add(CompilerOutput.Symbolic);
+                        case "pchecker":
+                            outputLanguages.Add(CompilerOutput.PChecker);
                             break;
                         case "pex":
                             outputLanguages.Add(CompilerOutput.PEx);
                             break;
                         case "pobserve":
-                        case "java":
-                            outputLanguages.Add(CompilerOutput.Java);
+                            outputLanguages.Add(CompilerOutput.PObserve);
                             break;
                         case "stately":
                             outputLanguages.Add(CompilerOutput.Stately);
                             break;
                         default:
                             throw new CommandlineParsingError(
-                                $"Expected CSharp, Java, Stately, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                                $"Expected PChecker, PObserve, Stately, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
                     }
                 }
             }

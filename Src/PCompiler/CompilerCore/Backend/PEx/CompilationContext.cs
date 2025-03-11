@@ -72,7 +72,7 @@ internal class CompilationContext : CompilationContextBase
                 return $"{@interface.Name}";
             case State state:
                 return $"{state.Name}";
-            case PEvent pEvent:
+            case Event pEvent:
                 if (!pEvent.IsBuiltIn)
                     return $"{pEvent.Name}";
                 return $"_{pEvent.Name}";

@@ -477,7 +477,7 @@ namespace PChecker.SystematicTesting
                 NotifyAssertionFailure(string.Format(CultureInfo.InvariantCulture,
                     "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
                     "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
-                    "actor handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
+                    "state machine handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
                     "you will need to mock them during testing.",
                     Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>"));
             }

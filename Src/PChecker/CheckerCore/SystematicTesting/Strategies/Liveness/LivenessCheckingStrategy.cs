@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using PChecker.Specifications.Monitors;
+using PChecker.Runtime.Specifications;
 using PChecker.SystematicTesting.Operations;
 
 namespace PChecker.SystematicTesting.Strategies.Liveness

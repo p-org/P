@@ -31,7 +31,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public IEnumerable<Function> Methods => methods;
         public State StartState { get; set; }
         public IEventSet Observes { get; set; }
-        public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
+        public PLanguageType PayloadType { get; set; } = null;
 
         public Scope Scope { get; set; }
         public ParserRuleContext SourceLocation { get; }

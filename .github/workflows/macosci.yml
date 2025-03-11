@@ -16,7 +16,7 @@ jobs:
       with:
         java-version: 11
     - name: Cache Maven packages
-      uses: actions/cache@v2
+      uuses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}

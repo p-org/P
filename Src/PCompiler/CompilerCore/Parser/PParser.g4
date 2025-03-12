@@ -255,6 +255,7 @@ param : LPAREN paramBody RPAREN;
 
 testDecl : TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI                  # SafetyTestDecl
          | PARAMTEST globalParam=param testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # ParametricSafetyTestDecl
+         | PARAMTEST globalParam=param ASSUME assumeExpr=expr testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # ParametricAssumeSafetyTestDecl
          | TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
          ;
 

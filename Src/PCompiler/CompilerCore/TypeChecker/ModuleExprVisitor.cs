@@ -13,12 +13,38 @@ namespace Plang.Compiler.TypeChecker
 {
     internal static class ModuleSystemDeclarations
     {
+
+        public static IDictionary<string, List<IPExpr>> make_assignments(ITranslationErrorHandler handler, Scope globalScope, 
+            PParser.ParamContext globalParam,
+            NamedTupleExpr expr)
+        {
+            var names = ((NamedTupleType)expr.Type).Names.ToList();
+            var values = expr.TupleFields.ToList();
+            IDictionary<string, List<IPExpr>> dic = new Dictionary<string, List<IPExpr>>();
+            foreach (var (name, value) in names.Zip(values))
+            {
+                var v = globalScope.Variables.FirstOrDefault(x => x.Name == name);
+                if (v == null)
+                {
+                    throw handler.UndeclaredGlobalConstantVariable(globalParam, name);
+                }
+                var expectedType = new SequenceType(v.Type);
+                if (!value.Type.Equals(expectedType))
+                {
+                    throw handler.TypeMismatch(value.SourceLocation, value.Type, expectedType);
+                }
+                dic[name] = ((SeqLiteralExpr)value).Value;
+            }
+            return dic;
+        }
+        
         public static void PopulateAllModuleExprs(
             ITranslationErrorHandler handler,
             Scope globalScope)
         {
             var modExprVisitor = new ModuleExprVisitor(handler, globalScope);
             var paramExprVisitor = new ParamExprVisitor(handler);
+            var exprVisitor = new ExprVisitor(globalScope, handler);
 
             // first do all the named modules
             foreach (var mod in globalScope.NamedModules)
@@ -30,34 +56,37 @@ namespace Plang.Compiler.TypeChecker
             // all the test declarations
             foreach (var test in globalScope.SafetyTests)
             {
-                if (test.ParamExpr == null)
+                switch (test.TestKind)
                 {
-                    var context = (PParser.ParametricSafetyTestDeclContext)test.SourceLocation;
-                    test.ModExpr = modExprVisitor.Visit(context.modExpr());
-                    var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
-                    var names = ((NamedTupleType)expr.Type).Names.ToList();
-                    var values = expr.TupleFields.ToList();
-                    IDictionary<string, List<IPExpr>> dic = new Dictionary<string, List<IPExpr>>();
-                    foreach (var (name, value) in names.Zip(values))
+                    case TestKind.NormalTest:
                     {
-                        var v = globalScope.Variables.FirstOrDefault(x => x.Name == name);
-                        if (v == null)
-                        {
-                            throw handler.UndeclaredGlobalConstantVariable(context.globalParam, name);
-                        }
-                        var expectedType = new SequenceType(v.Type);
-                        if (!value.Type.Equals(expectedType))
-                        {
-                            throw handler.TypeMismatch(value.SourceLocation, value.Type, expectedType);
-                        }
-                        dic[name] = ((SeqLiteralExpr)value).Value;
+                        var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
+                        test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                        break;
                     }
-                    test.ParamExpr = dic;
-                }
-                else
-                {
-                    var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
-                    test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                    case TestKind.AssumeParametricTest:
+                    {
+                        var context = (PParser.ParametricAssumeSafetyTestDeclContext)test.SourceLocation;
+                        test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                        var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
+                        var dic = make_assignments (handler, globalScope, context.globalParam, expr);
+                        test.ParamExpr = dic;
+                        test.AssumeExpr = exprVisitor.Visit(context.assumeExpr);
+                        break;
+                        
+                    }
+                    case TestKind.ParametricTest:
+                    {
+                        var context = (PParser.ParametricSafetyTestDeclContext)test.SourceLocation;
+                        test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                        var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
+                        var dic = make_assignments (handler, globalScope, context.globalParam, expr);
+                        test.ParamExpr = dic;
+                        // the default assumption is true 
+                        test.AssumeExpr = new BoolLiteralExpr(true);
+                        break;
+                        
+                    }
                 }
             }
             

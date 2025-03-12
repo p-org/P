@@ -21,12 +21,12 @@ machine TestWithMultipleClients
   }
 }
 
-constant globalnumClients: int;
+constant nClients: int;
 
 machine TestWithConfig {
   start state Init {
     entry {
-      SetupClientServerSystem(globalnumClients);
+      SetupClientServerSystem(nClients);
     }
   }
 }

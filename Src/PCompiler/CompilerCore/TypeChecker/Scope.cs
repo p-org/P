@@ -614,7 +614,26 @@ namespace Plang.Compiler.TypeChecker
             }
 
             var safetyTest = new SafetyTest(tree, name);
-            safetyTest.ParamExpr = new Dictionary<string, List<IPExpr>>(); 
+            safetyTest.TestKind = TestKind.NormalTest;
+            CheckConflicts(safetyTest,
+                Namespace(implementations),
+                Namespace(safetyTests),
+                Namespace(refinementTests));
+            safetyTests.Add(name, safetyTest);
+            return safetyTest;
+        }
+
+        public SafetyTest Put(string name, PParser.ParametricAssumeSafetyTestDeclContext tree)
+        {
+            // check if test is from an imported project, if so, return null
+            var filePath = config.LocationResolver.GetLocation(tree).File.FullName;
+            if (config.ProjectDependencies.Any(dependencyPath => filePath.StartsWith(dependencyPath)))
+            {
+                return null;
+            }
+
+            var safetyTest = new SafetyTest(tree, name);
+            safetyTest.TestKind = TestKind.AssumeParametricTest;
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -633,6 +652,8 @@ namespace Plang.Compiler.TypeChecker
             }
 
             var safetyTest = new SafetyTest(tree, name);
+            safetyTest.TestKind = TestKind.ParametricTest;
+            safetyTest.AssumeExpr = new BoolLiteralExpr(true);
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -741,7 +762,5 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion Global Constant Variables
-        
-
     }
 }

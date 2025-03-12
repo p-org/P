@@ -344,22 +344,18 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, $"// TODO: Implement the Foreign Type {declName}");
         }
 
-        private static string RenameSafetyTest(string name, IDictionary<string, int> indexDic)
+        private static string RenameSafetyTest(string name, IDictionary<string, IPExpr> indexDic)
         {
-            var postfix = $"{string.Join('_', indexDic.ToList().Select(p => $"{p.Key}_{p.Value}"))}";
-            return postfix.Length == 0 ? name : $"{name}__{postfix}";
+            var postfix = $"{string.Join("__", indexDic.ToList().Select(p => $"{p.Key}_{p.Value}"))}";
+            return postfix.Length == 0 ? name : $"{name}___{postfix}";
         }
-        
-        private void WriteSingleSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, IDictionary<string, int> indexDic)
+
+        private Dictionary<Variable, IPExpr> IndexDic2Dic(CompilationContext context, IDictionary<string, List<IPExpr>> paramExprDic, IDictionary<string, int> indexDic)
         {
-            // Console.WriteLine($"indexArr: {string.Join(',', indexDic.ToList())}");
-            WriteNameSpacePrologue(context, output);
-            var name = RenameSafetyTest(context.Names.GetNameForDecl(safety), indexDic);
-            context.WriteLine(output, $"public class {name} {{");
             var dic = new Dictionary<Variable, IPExpr>();
             foreach (var (k, i) in indexDic)
             {
-                var values = safety.ParamExpr[k];
+                var values = paramExprDic[k];
                 var variable = _globalVariables.First(v => v.Name == k);
                 if (i >= values.Count)
                 {
@@ -367,6 +363,26 @@ namespace Plang.Compiler.Backend.CSharp
                 }
                 dic[variable] = values[i];
             }
+            return dic;
+        }
+        
+        private Dictionary<string, IPExpr> Dic2StrDic(Dictionary<Variable, IPExpr> dic)
+        {
+            var dicAux = new Dictionary<string, IPExpr>();
+            foreach (var (k, i) in dic)
+            {
+                dicAux[k.Name] = i;
+            }
+            return dicAux;
+        }
+        
+        private void WriteSingleSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, IDictionary<string, int> indexDic)
+        {
+            // Console.WriteLine($"indexArr: {string.Join(',', indexDic.ToList())}");
+            WriteNameSpacePrologue(context, output);
+            var dic = IndexDic2Dic(context, safety.ParamExpr, indexDic);
+            var name = RenameSafetyTest(context.Names.GetNameForDecl(safety), Dic2StrDic(dic));
+            context.WriteLine(output, $"public class {name} {{");
             WriteInitializeGlobalConstantVariables(context, output, dic);
             WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, safety.ModExpr.ModuleInfo.InterfaceDef);
@@ -389,10 +405,99 @@ namespace Plang.Compiler.Backend.CSharp
             }
             return false;
         }
+
+        private static int ForceInt(IPExpr expr)
+        {
+            return expr switch
+            {
+                IntLiteralExpr intLiteralExpr => intLiteralExpr.Value,
+                _ => throw new ArgumentOutOfRangeException(nameof(expr))
+            };
+        }
+
+        private static bool ForceBool(IPExpr expr)
+        {
+            return expr switch
+            {
+                BoolLiteralExpr boolLiteralExpr => boolLiteralExpr.Value,
+                _ => throw new ArgumentOutOfRangeException(nameof(expr))
+            };
+        }
+
+        private static IPExpr EvalEq(IPExpr lhs, IPExpr rhs)
+        {
+            return (lhs, rhs) switch
+            {
+                (BoolLiteralExpr, BoolLiteralExpr) =>
+                    new BoolLiteralExpr(ForceBool(lhs) == ForceBool(rhs)),
+                (IntLiteralExpr, IntLiteralExpr) =>
+                    new BoolLiteralExpr(ForceInt(lhs) == ForceInt(rhs)),
+                _ => throw new ArgumentOutOfRangeException(nameof(lhs))
+            };
+        }
+        
+        private static IPExpr EvalNEq(IPExpr lhs, IPExpr rhs)
+        {
+            return (lhs, rhs) switch
+            {
+                (BoolLiteralExpr, BoolLiteralExpr) =>
+                    new BoolLiteralExpr(ForceBool(lhs) != ForceBool(rhs)),
+                (IntLiteralExpr, IntLiteralExpr) =>
+                    new BoolLiteralExpr(ForceInt(lhs) != ForceInt(rhs)),
+                _ => throw new ArgumentOutOfRangeException(nameof(lhs))
+            };
+        }
+
+        private static IPExpr Eval(Dictionary<Variable, IPExpr> store, IPExpr expr)
+        {
+            switch (expr)
+            {
+                case BoolLiteralExpr:
+                case IntLiteralExpr:
+                    return expr;
+                case UnaryOpExpr unaryOpExpr:
+                {
+                    var subExpr = Eval(store, unaryOpExpr.SubExpr);
+                    return unaryOpExpr.Operation switch
+                    {
+                        UnaryOpType.Negate => new IntLiteralExpr(-ForceInt(subExpr)),
+                        UnaryOpType.Not => new BoolLiteralExpr(!ForceBool(subExpr)),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                }
+                case BinOpExpr binOpExpr:
+                {
+                    var lhs = Eval(store, binOpExpr.Lhs);
+                    var rhs = Eval(store, binOpExpr.Rhs);
+                    return binOpExpr.Operation switch
+                    {
+                        BinOpType.Add => new IntLiteralExpr(ForceInt(lhs) + ForceInt(rhs)),
+                        BinOpType.Sub => new IntLiteralExpr(ForceInt(lhs) - ForceInt(rhs)),
+                        BinOpType.Mul => new IntLiteralExpr(ForceInt(lhs) + ForceInt(rhs)),
+                        BinOpType.Div => new IntLiteralExpr(ForceInt(lhs) / ForceInt(rhs)),
+                        BinOpType.Mod => new IntLiteralExpr(ForceInt(lhs) % ForceInt(rhs)),
+                        BinOpType.Eq => EvalEq(lhs, rhs),
+                        BinOpType.Neq => EvalNEq(lhs, rhs),
+                        BinOpType.Lt => new BoolLiteralExpr(ForceInt(lhs) < ForceInt(rhs)),
+                        BinOpType.Le => new BoolLiteralExpr(ForceInt(lhs) <= ForceInt(rhs)),
+                        BinOpType.Gt => new BoolLiteralExpr(ForceInt(lhs) > ForceInt(rhs)),
+                        BinOpType.Ge => new BoolLiteralExpr(ForceInt(lhs) >= ForceInt(rhs)),
+                        BinOpType.And => new BoolLiteralExpr(ForceBool(lhs) && ForceBool(rhs)),
+                        BinOpType.Or => new BoolLiteralExpr(ForceBool(lhs) || ForceBool(rhs)),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                }
+                case IVariableRef variableRef:
+                    return store[variableRef.Variable];
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(expr));
+            }
+        }
         
         private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
         {
-            if (safety.ParamExpr.Count == 0)
+            // Console.WriteLine($"safety.Name = {safety.Name}");
+            if (safety.TestKind == TestKind.NormalTest)
             {
                 WriteSingleSafetyTestDecl(context, output, safety, new Dictionary<string, int>());
                 return;
@@ -410,8 +515,13 @@ namespace Plang.Compiler.Backend.CSharp
                 {
                     indexDic[indexArr[i].Item1] = indexArr[i].Item2;
                 }
-
-                WriteSingleSafetyTestDecl(context, output, safety, indexDic);
+                var dic = IndexDic2Dic(context, safety.ParamExpr, indexDic);
+                // Console.WriteLine($"{string.Join(',', Dic2DicAux(dic).ToList())} |- {safety.AssumeExpr} = {ForceBool(Eval(dic, safety.AssumeExpr))}");
+                if (ForceBool(Eval(dic, safety.AssumeExpr)))
+                {
+                    WriteSingleSafetyTestDecl(context, output, safety, indexDic);
+                }
+                
             } while (Next(indexArr, globalConstants));
         }
 

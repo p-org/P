@@ -233,8 +233,18 @@ namespace Plang.Compiler.TypeChecker
             }
             return null;
         }
-        
+
         public override object VisitParametricSafetyTestDecl([NotNull] PParser.ParametricSafetyTestDeclContext context)
+        {
+            var symbolName = context.testName.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
+            if (decl == null) return null;
+            decl.Main = context.mainMachine?.GetText();
+            nodesToDeclarations.Put(context, decl);
+            return null ;
+        }
+        
+        public override object VisitParametricAssumeSafetyTestDecl([NotNull] PParser.ParametricAssumeSafetyTestDeclContext context)
         {
             var symbolName = context.testName.GetText();
             var decl = CurrentScope.Put(symbolName, context);

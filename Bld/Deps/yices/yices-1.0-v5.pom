@@ -1,0 +1,29 @@
+    <project>
+      <modelVersion>4.0.0</modelVersion>
+
+      <groupId>io.github.p-org.solvers</groupId>
+      <artifactId>yices</artifactId>
+      <version>1.0-v5</version>
+      <packaging>jar</packaging>
+
+      <name>Yices 2 Java Bindings</name>
+      <description>Yices 2 Java Bindings</description>
+      <url>https://github.com/aman-goel/yices2_java_bindings</url>
+
+      <developers>
+        <developer>
+          <url>${project.url}</url>
+        </developer>
+      </developers>
+
+      <licenses>
+        <license>
+          <url>${project.url}</url>
+        </license>
+      </licenses>
+
+      <scm>
+        <url>${project.url}</url>
+      </scm>
+
+    </project>

@@ -642,10 +642,6 @@ namespace PChecker.SystematicTesting
                 if (ShouldPrintIteration(schedule))
                 {
                     var seconds = watch.Elapsed.TotalSeconds;
-                    if (Strategy is IFeedbackGuidedStrategy s)
-                    {
-                        s.DumpStats(Logger);
-                    }
                 }
 
                 if (!IsReplayModeEnabled && _checkerConfiguration.PerformFullExploration && runtime.Scheduler.BugFound)

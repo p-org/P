@@ -20,13 +20,10 @@ p check -tc tcAbstractServer -s 100
     ... Emitting traces:
     ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.txt
     ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.trace.json
-    ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.dgml
     ..... Writing PCheckerOutput/BugFinding/ClientServer_0_0.schedule
     ... Elapsed 0.2196562 sec.
     ... Emitting coverage reports:
-    ..... Writing PCheckerOutput/BugFinding/ClientServer.dgml
     ..... Writing PCheckerOutput/BugFinding/ClientServer.coverage.txt
-    ..... Writing PCheckerOutput/BugFinding/ClientServer.sci
     ... Checking statistics:
     ..... Found 1 bug.
     ... Scheduling statistics:

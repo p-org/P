@@ -2,7 +2,7 @@ package pex.runtime.machine.buffer;
 
 import pex.runtime.machine.PMachine;
 import pex.utils.exceptions.NotImplementedException;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PValue;
 
 import java.io.Serializable;
@@ -28,7 +28,7 @@ public class SenderQueue extends MessageQueue implements EventBuffer, Serializab
      * @param eventName Event
      * @param payload   Event payload
      */
-    public void send(PMachine target, PEvent eventName, PValue<?> payload) {
+    public void send(PMachine target, Event eventName, PValue<?> payload) {
         throw new NotImplementedException();
     }
 

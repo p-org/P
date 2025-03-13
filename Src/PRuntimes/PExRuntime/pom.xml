@@ -148,7 +148,7 @@
                         <schedules/>
                         <max.steps/>
                     </systemPropertyVariables>
-                    <systemProperties>
+                    <systemPropertyVariables>
                         <property>
                             <name>mode</name>
                             <value/>
@@ -157,7 +157,7 @@
                             <name>pex.args</name>
                             <value/>
                         </property>
-                    </systemProperties>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>

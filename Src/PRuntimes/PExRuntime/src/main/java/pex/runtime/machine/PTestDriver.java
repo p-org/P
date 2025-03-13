@@ -1,6 +1,6 @@
 package pex.runtime.machine;
 
-import pex.values.PEvent;
+import pex.values.Event;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ public abstract class PTestDriver implements Serializable {
     // TODO: pex parallel - make fields thread safe
     public final Map<Class<? extends PMachine>, Class<? extends PMachine>> interfaceMap;
     public final List<Class<? extends PMachine>> monitorList;
-    public final Map<PEvent, List<Class<? extends PMachine>>> observerMap;
+    public final Map<Event, List<Class<? extends PMachine>>> observerMap;
     public Class<? extends PMachine> mainMachine;
 
     /**
@@ -52,7 +52,7 @@ public abstract class PTestDriver implements Serializable {
      *
      * @return Map from event to list of monitors listening/observing that event
      */
-    public Map<PEvent, List<Class<? extends PMachine>>> getListeners() {
+    public Map<Event, List<Class<? extends PMachine>>> getListeners() {
         return observerMap;
     }
 

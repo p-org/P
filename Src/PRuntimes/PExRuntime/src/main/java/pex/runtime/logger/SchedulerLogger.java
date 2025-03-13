@@ -20,7 +20,7 @@ import pex.runtime.scheduler.explicit.ExplicitSearchScheduler;
 import pex.runtime.scheduler.explicit.strategy.SearchTask;
 import pex.runtime.scheduler.replay.ReplayScheduler;
 import pex.values.ComputeHash;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PMessage;
 import pex.values.PValue;
 
@@ -354,7 +354,7 @@ public class SchedulerLogger {
         }
     }
 
-    public void logRaiseEvent(PMachine machine, PEvent event) {
+    public void logRaiseEvent(PMachine machine, Event event) {
         PExGlobal.getScheduler().updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.RaiseLog, String.format("%s raised event %s in state %s.", machine, event, machine.getCurrentState()));
@@ -372,7 +372,7 @@ public class SchedulerLogger {
         PExGlobal.getScheduler().updateLogNumber();
         if (typedLogEnabled()) {
             typedLog(LogType.ReceiveLog, String.format("%s is waiting to dequeue an event of type %s or %s in state %s.",
-                    machine, continuation.getCaseEvents(), PEvent.haltEvent, machine.getCurrentState()));
+                    machine, continuation.getCaseEvents(), Event.haltEvent, machine.getCurrentState()));
         }
     }
 

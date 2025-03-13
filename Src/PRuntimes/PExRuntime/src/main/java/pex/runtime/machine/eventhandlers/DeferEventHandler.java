@@ -3,7 +3,7 @@ package pex.runtime.machine.eventhandlers;
 
 import pex.runtime.machine.PMachine;
 import pex.utils.exceptions.NotImplementedException;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PValue;
 
 /**
@@ -16,7 +16,7 @@ public class DeferEventHandler extends EventHandler {
      *
      * @param event Event to defer
      */
-    public DeferEventHandler(PEvent event) {
+    public DeferEventHandler(Event event) {
         super(event);
     }
 

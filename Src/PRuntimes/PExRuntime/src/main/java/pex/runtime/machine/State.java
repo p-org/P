@@ -5,7 +5,7 @@ import pex.runtime.machine.eventhandlers.EventHandler;
 import pex.runtime.machine.eventhandlers.IgnoreEventHandler;
 import pex.runtime.machine.events.StateEvents;
 import pex.utils.misc.Assert;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PMessage;
 import pex.values.PValue;
 
@@ -86,7 +86,7 @@ public abstract class State implements Serializable {
      * @param event Event to check
      * @return true if event is ignored in this state, else false
      */
-    public boolean isIgnored(PEvent event) {
+    public boolean isIgnored(Event event) {
         return stateEvents.ignored.contains(event);
     }
 
@@ -96,7 +96,7 @@ public abstract class State implements Serializable {
      * @param event Event to check
      * @return true if event is deferred in this state, else false
      */
-    public boolean isDeferred(PEvent event) {
+    public boolean isDeferred(Event event) {
         return stateEvents.deferred.contains(event);
     }
 

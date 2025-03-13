@@ -1,7 +1,7 @@
 package pex.runtime.machine.eventhandlers;
 
 import pex.runtime.machine.PMachine;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PValue;
 
 /**
@@ -14,7 +14,7 @@ public class IgnoreEventHandler extends EventHandler {
      *
      * @param event Event
      */
-    public IgnoreEventHandler(PEvent event) {
+    public IgnoreEventHandler(Event event) {
         super(event);
     }
 

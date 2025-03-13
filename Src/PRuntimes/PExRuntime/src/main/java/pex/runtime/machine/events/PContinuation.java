@@ -4,7 +4,7 @@ import lombok.Getter;
 import pex.runtime.machine.PMachine;
 import pex.runtime.machine.State;
 import pex.utils.serialize.SerializableBiFunction;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PMessage;
 import pex.values.PValue;
 
@@ -53,7 +53,7 @@ public class PContinuation implements Serializable {
         }
     }
 
-    public boolean isDeferred(PEvent event) {
+    public boolean isDeferred(Event event) {
         return !event.isHaltMachineEvent() && !caseEvents.contains(event.toString());
     }
 

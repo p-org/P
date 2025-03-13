@@ -3,16 +3,16 @@ package pex.values;
 /**
  * Represents a P event
  */
-public class PEvent extends PValue<PEvent> {
+public class Event extends PValue<Event> {
     /**
      * Special event send to a machine on creation
      */
-    public static final PEvent createMachine = new PEvent("createMachine");
+    public static final Event createMachine = new Event("createMachine");
 
     /**
      * Special halt event
      */
-    public static final PEvent haltEvent = new PEvent("_halt");
+    public static final Event haltEvent = new Event("_halt");
 
     /**
      * Name of the event
@@ -22,9 +22,9 @@ public class PEvent extends PValue<PEvent> {
     /**
      * Constructor.
      *
-     * @param name PEvent name
+     * @param name Event name
      */
-    public PEvent(String name) {
+    public Event(String name) {
         this.name = name;
         initialize();
     }
@@ -32,9 +32,9 @@ public class PEvent extends PValue<PEvent> {
     /**
      * Constructor.
      *
-     * @param event PEvent
+     * @param event Event
      */
-    public PEvent(PEvent event) {
+    public Event(Event event) {
         this.name = event.name;
         initialize();
     }
@@ -48,8 +48,8 @@ public class PEvent extends PValue<PEvent> {
     }
 
     @Override
-    public PEvent clone() {
-        return new PEvent(name);
+    public Event clone() {
+        return new Event(name);
     }
 
     @Override
@@ -58,16 +58,16 @@ public class PEvent extends PValue<PEvent> {
     }
 
     @Override
-    public PEvent getDefault() {
+    public Event getDefault() {
         return null;
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        else if (!(obj instanceof PEvent)) {
+        else if (!(obj instanceof Event)) {
             return false;
         }
-        return this.name.equals(((PEvent) obj).name);
+        return this.name.equals(((Event) obj).name);
     }
 }

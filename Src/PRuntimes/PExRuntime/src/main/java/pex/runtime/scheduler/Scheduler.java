@@ -236,7 +236,7 @@ public abstract class Scheduler implements SchedulerInterface {
         PMachine machine = allocateMachine(machineType);
 
         // run create machine event
-        processCreateEvent(new PMessage(PEvent.createMachine, machine, null));
+        processCreateEvent(new PMessage(Event.createMachine, machine, null));
     }
 
     /**
@@ -380,7 +380,7 @@ public abstract class Scheduler implements SchedulerInterface {
      * @param event   Event to announce
      * @param payload Event payload
      */
-    public void announce(PEvent event, PValue<?> payload) {
+    public void announce(Event event, PValue<?> payload) {
         if (event == null) {
             throw new NotImplementedException("Machine cannot announce a null event");
         }

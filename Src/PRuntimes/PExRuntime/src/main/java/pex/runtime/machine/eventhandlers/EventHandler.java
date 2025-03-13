@@ -1,7 +1,7 @@
 package pex.runtime.machine.eventhandlers;
 
 import pex.runtime.machine.PMachine;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PValue;
 
 import java.io.Serializable;
@@ -10,14 +10,14 @@ import java.io.Serializable;
  * Represents the base class for all event handlers
  */
 public abstract class EventHandler implements Serializable {
-    public final PEvent event;
+    public final Event event;
 
     /**
      * Constructor
      *
      * @param event Event corresponding to the handler
      */
-    protected EventHandler(PEvent event) {
+    protected EventHandler(Event event) {
         this.event = event;
     }
 

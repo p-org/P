@@ -10,7 +10,7 @@ import pex.runtime.machine.events.PLoopObject;
 import pex.utils.exceptions.BugFoundException;
 import pex.utils.misc.Assert;
 import pex.utils.serialize.SerializableBiFunction;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PMachineValue;
 import pex.values.PMessage;
 import pex.values.PValue;
@@ -87,7 +87,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
 
         // register create machine handler
         startState.registerHandlers(
-                new EventHandler(PEvent.createMachine) {
+                new EventHandler(Event.createMachine) {
                     @Override
                     public void handleEvent(PMachine target, PValue<?> payload) {
                         assert (!target.isStarted());
@@ -364,7 +364,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
             PValue<?> payload) {
         Class<? extends PMachine> trueMachineType = PExGlobal.getModel().getTestDriver().interfaceMap.getOrDefault(machineType, machineType);
         PMachine machine = PExGlobal.getScheduler().allocateMachine(trueMachineType);
-        PMessage msg = new PMessage(PEvent.createMachine, machine, payload);
+        PMessage msg = new PMessage(Event.createMachine, machine, payload);
         sendBuffer.add(msg);
         return new PMachineValue(machine);
     }
@@ -384,10 +384,10 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * Send an event to a target machine
      *
      * @param target  Target machine
-     * @param event   PEvent to send
+     * @param event   Event to send
      * @param payload Payload corresponding to the event
      */
-    public void sendEvent(PMachineValue target, PEvent event, PValue<?> payload) {
+    public void sendEvent(PMachineValue target, Event event, PValue<?> payload) {
         if (PValue.isEqual(target, null)) {
             throw new BugFoundException("Machine in send event cannot be null.");
         }
@@ -481,7 +481,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         blockedBy = null;
     }
 
-    public boolean isDeferred(PEvent event) {
+    public boolean isDeferred(Event event) {
         if (currentState.isDeferred(event)) {
             return true;
         }
@@ -553,7 +553,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param message Message to process
      */
     void runEvent(PMessage message) {
-        PEvent event = message.getEvent();
+        Event event = message.getEvent();
         if (isBlocked()) {
             PContinuation currBlockedBy = this.blockedBy;
             clearBlocked();
@@ -583,7 +583,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      * @param event   Event to raise
      * @param payload Payload
      */
-    public void raiseEvent(PEvent event, PValue<?> payload) {
+    public void raiseEvent(Event event, PValue<?> payload) {
         // do nothing if already halted
         if (isHalted()) {
             return;
@@ -610,7 +610,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
      *
      * @param event Event to raise
      */
-    public void raiseEvent(PEvent event) {
+    public void raiseEvent(Event event) {
         raiseEvent(event, null);
     }
 
@@ -676,7 +676,7 @@ public abstract class PMachine implements Serializable, Comparable<PMachine> {
         newState.entry(this, payload);
     }
 
-    private void addObservedEvent(PEvent newEvent) {
+    private void addObservedEvent(Event newEvent) {
         for (String happenedBeforeEvent : observedEvents) {
             happensBeforePairs.add(String.format("(%s,%s)", happenedBeforeEvent, newEvent));
         }

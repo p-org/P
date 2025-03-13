@@ -8,7 +8,7 @@ import pex.runtime.machine.PMachine;
  */
 @Getter
 public class PMessage extends PValue<PMessage> {
-    private final PEvent event;
+    private final Event event;
     private final PMachine target;
     private final PValue<?> payload;
 
@@ -19,7 +19,7 @@ public class PMessage extends PValue<PMessage> {
      * @param target  Target machine
      * @param payload Event payload
      */
-    public PMessage(PEvent event, PMachine target, PValue<?> payload) {
+    public PMessage(Event event, PMachine target, PValue<?> payload) {
         this.event = event;
         this.target = target;
         this.payload = payload;

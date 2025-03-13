@@ -2,7 +2,7 @@ package pex.runtime.machine.eventhandlers;
 
 import pex.runtime.machine.PMachine;
 import pex.runtime.machine.State;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PValue;
 
 /**
@@ -17,7 +17,7 @@ public class GotoEventHandler extends EventHandler {
      * @param event Event
      * @param dest  Destination state
      */
-    public GotoEventHandler(PEvent event, State dest) {
+    public GotoEventHandler(Event event, State dest) {
         super(event);
         this.gotoState = dest;
     }

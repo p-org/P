@@ -1926,9 +1926,9 @@ internal class PExCodeGenerator : ICodeGenerator
             case EnumType enumType:
                 return "PEnum";
             case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                return "PEvent";
+                return "Event";
             case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
-                return "void";
+                return "PValue";
             case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                 return "PValue<?>";
             default:
@@ -2006,6 +2006,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
                 return $"new {GetPExType(type)}(\"{enumType.OriginalRepresentation}\", \"{minName}\", {minValue})";
             }
+            case PrimitiveType nullType when nullType.IsSameTypeAs(PrimitiveType.Null):
             case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                 return "null";
             case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):

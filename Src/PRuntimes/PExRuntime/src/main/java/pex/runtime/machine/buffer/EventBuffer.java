@@ -1,7 +1,7 @@
 package pex.runtime.machine.buffer;
 
 import pex.runtime.machine.PMachine;
-import pex.values.PEvent;
+import pex.values.Event;
 import pex.values.PValue;
 
 /**
@@ -15,5 +15,5 @@ public interface EventBuffer {
      * @param event   Event
      * @param payload Event payload
      */
-    void send(PMachine target, PEvent event, PValue<?> payload);
+    void send(PMachine target, Event event, PValue<?> payload);
 }

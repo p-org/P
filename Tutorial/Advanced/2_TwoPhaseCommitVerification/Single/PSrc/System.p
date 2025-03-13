@@ -121,6 +121,6 @@ Lemma kondo {
 Proof {
     prove system_config;
     prove kondo using system_config;
-    prove safety using kondo;
+    prove safety using kondo, system_config_participant_set;
     prove default using system_config;
 }

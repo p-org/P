@@ -26,11 +26,11 @@ namespace Plang.Compiler.TypeChecker
 
             // Step 3: Fill function bodies
             var allFunctions = globalScope.GetAllMethods().ToList();
-            // var globalConstantVariables = globalScope.GetVariables();
+            // var globalParams = globalScope.GetVariables();
             foreach (var machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(config, machineFunction);
-                // machineFunction.AddGlobalConstantVariables(handler, globalConstantVariables);
+                // machineFunction.AddGlobalParams(handler, globalParams);
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
            

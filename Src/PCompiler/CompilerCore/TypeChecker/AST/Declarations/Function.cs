@@ -23,7 +23,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     {
         private readonly HashSet<Function> callees = new HashSet<Function>();
         private readonly HashSet<Function> callers = new HashSet<Function>();
-        private readonly List<Variable> _globalConstantVariables = [];
+        private readonly List<Variable> _globalParams = [];
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
 
@@ -68,7 +68,8 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public string Name { get; set; }
         public ParserRuleContext SourceLocation { get; }
 
-        public void AddGlobalConstantVariables(ITranslationErrorHandler handler, List<Variable> gvars)
+/*
+        public void AddGlobalParams(ITranslationErrorHandler handler, List<Variable> gvars)
         {
             var localNames = localVariables.Select(x => x.Name);
             // Console.WriteLine("localNames:" + localNames.ToArray());
@@ -77,14 +78,15 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                 var res = localVariables.Find(x => x.Name == g.Name);
                 if (res == null)
                 {
-                    _globalConstantVariables.Add(g);
+                    _globalParams.Add(g);
                 }
                 else
                 {
-                    throw handler.RedeclareGlobalConstantVariable(res.SourceLocation, res, g);
+                    throw handler.RedeclareGlobalParam(res.SourceLocation, res, g);
                 }
             }
         }
+*/
         
         public void AddLocalVariable(Variable local)
         {

@@ -21,7 +21,7 @@ machine TestWithMultipleClients
   }
 }
 
-constant nClients: int;
+param nClients: int;
 
 machine TestWithConfig {
   start state Init {

@@ -23,7 +23,7 @@ paramtest (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5]) assume (nClients + 
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, Bank, { TestWithConfig });
 
-constant b1: bool;
+param b1: bool;
 
 paramtest (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5], b1 in [true, false]) assume (b1 == (nClients + g1 > g2)) aaaa3 [main=TestWithConfig]:
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in

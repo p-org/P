@@ -30,20 +30,20 @@ namespace Plang.Compiler.TypeChecker
             visitor.Visit(context);
         }
         
-        #region GlobalConstantVariables
+        #region GlobalParams
         
-        public override object VisitGlobalValDecl(PParser.GlobalValDeclContext context)
+        public override object VisitGlobalParamDecl(PParser.GlobalParamDeclContext context)
         {
             foreach (var varName in context.idenList()._names)
             {
-                var decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.GlobalConstant);
+                var decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.GlobalParams);
                 nodesToDeclarations.Put(varName, decl);
             }
 
             return null;
         }
         
-        #endregion GlobalConstantVariables 
+        #endregion GlobalParams
 
         #region Events
 

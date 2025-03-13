@@ -26,7 +26,7 @@ namespace Plang.Compiler.TypeChecker
                 var v = globalScope.Variables.FirstOrDefault(x => x.Name == name);
                 if (v == null)
                 {
-                    throw handler.UndeclaredGlobalConstantVariable(globalParam, name);
+                    throw handler.UndeclaredGlobalParam(globalParam, name);
                 }
                 var expectedType = new SequenceType(v.Type);
                 if (!value.Type.Equals(expectedType))

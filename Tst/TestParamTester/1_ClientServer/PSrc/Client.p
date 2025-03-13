@@ -21,7 +21,7 @@ event eWithDrawReq : tWithDrawReq;
 // event: withdraw response (from bank server to client)
 event eWithDrawResp: tWithDrawResp;
 
-constant g1 : int;
+param g1 : int;
 
 machine Client
 {

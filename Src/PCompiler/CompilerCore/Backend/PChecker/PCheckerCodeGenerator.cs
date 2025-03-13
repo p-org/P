@@ -21,11 +21,11 @@ namespace Plang.Compiler.Backend.CSharp
         /// This compiler has a compilation stage.
         /// </summary>
         public bool HasCompilationStage => true;
-        private List<Variable> _globalVariables = [];
+        private List<Variable> _globalParams = [];
 
-        private string GetGlobalAndLocalVariableName(CompilationContext context, Variable v)
+        private string GetGlobalParamAndLocalVariableName(CompilationContext context, Variable v)
         {
-            return _globalVariables.Contains(v) ? $"({ICodeGenerator.GlobalConfigName}.{v.Name})" : context.Names.GetNameForDecl(v);
+            return _globalParams.Contains(v) ? $"({ICodeGenerator.GlobalConfigName}.{v.Name})" : context.Names.GetNameForDecl(v);
         }
 
         public void Compile(ICompilerConfiguration job)
@@ -97,9 +97,9 @@ namespace Plang.Compiler.Backend.CSharp
 
             WriteSourcePrologue(context, source.Stream);
 
-            _globalVariables = globalScope.GetGlobalVariables();
+            _globalParams = globalScope.GetGlobalVariables();
 
-            DeclareGlobalConstantVariables(context, source.Stream);
+            DeclareGlobalParams(context, source.Stream);
             
             // write the top level declarations
             foreach (var decl in globalScope.AllDecls)
@@ -273,14 +273,14 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        private void DeclareGlobalConstantVariables(CompilationContext context, StringWriter output)
+        private void DeclareGlobalParams(CompilationContext context, StringWriter output)
         {
             WriteNameSpacePrologue(context, output);
             context.WriteLine(output, $"public static class {ICodeGenerator.GlobalConfigName}");
             context.WriteLine(output, "{");
-            foreach (var v in _globalVariables)
+            foreach (var v in _globalParams)
             {
-                if (v.Role != VariableRole.GlobalConstant)
+                if (v.Role != VariableRole.GlobalParams)
                 {
                     throw context.Handler.InternalError(v.SourceLocation, new ArgumentException("The role of global variable is not global."));
                 }
@@ -344,30 +344,46 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, $"// TODO: Implement the Foreign Type {declName}");
         }
 
-        private static string RenameSafetyTest(string name, IDictionary<string, int> indexDic)
+        private static string RenameSafetyTest(string name, IDictionary<string, IPExpr> indexDic)
         {
-            var postfix = $"{string.Join('_', indexDic.ToList().Select(p => $"{p.Key}_{p.Value}"))}";
-            return postfix.Length == 0 ? name : $"{name}__{postfix}";
+            var postfix = $"{string.Join("__", indexDic.ToList().Select(p => $"{p.Key}_{p.Value}"))}";
+            return postfix.Length == 0 ? name : $"{name}___{postfix}";
         }
-        
-        private void WriteSingleSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, IDictionary<string, int> indexDic)
+
+        private Dictionary<Variable, IPExpr> IndexDic2Dic(CompilationContext context, IDictionary<string, List<IPExpr>> paramExprDic, IDictionary<string, int> indexDic)
         {
-            // Console.WriteLine($"indexArr: {string.Join(',', indexDic.ToList())}");
-            WriteNameSpacePrologue(context, output);
-            var name = RenameSafetyTest(context.Names.GetNameForDecl(safety), indexDic);
-            context.WriteLine(output, $"public class {name} {{");
             var dic = new Dictionary<Variable, IPExpr>();
             foreach (var (k, i) in indexDic)
             {
-                var values = safety.ParamExpr[k];
-                var variable = _globalVariables.First(v => v.Name == k);
+                var values = paramExprDic[k];
+                var variable = _globalParams.First(v => v.Name == k);
                 if (i >= values.Count)
                 {
                     throw context.Handler.InternalError(variable.SourceLocation, new ArgumentException("Index out of range in global variable config.")); 
                 }
                 dic[variable] = values[i];
             }
-            WriteInitializeGlobalConstantVariables(context, output, dic);
+            return dic;
+        }
+        
+        private Dictionary<string, IPExpr> Dic2StrDic(Dictionary<Variable, IPExpr> dic)
+        {
+            var dicAux = new Dictionary<string, IPExpr>();
+            foreach (var (k, i) in dic)
+            {
+                dicAux[k.Name] = i;
+            }
+            return dicAux;
+        }
+        
+        private void WriteSingleSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, IDictionary<string, int> indexDic)
+        {
+            // Console.WriteLine($"indexArr: {string.Join(',', indexDic.ToList())}");
+            WriteNameSpacePrologue(context, output);
+            var dic = IndexDic2Dic(context, safety.ParamExpr, indexDic);
+            var name = RenameSafetyTest(context.Names.GetNameForDecl(safety), Dic2StrDic(dic));
+            context.WriteLine(output, $"public class {name} {{");
+            WriteInitializeGlobalParams(context, output, dic);
             WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, safety.ModExpr.ModuleInfo.InterfaceDef);
             WriteInitializeMonitorObserves(context, output, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
@@ -378,29 +394,118 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpaceEpilogue(context, output);
         }
         
-        private bool Next((string, int)[] indexArr, IDictionary<string, List<IPExpr>> globalConstants)
+        private bool Next((string, int)[] indexArr, IDictionary<string, List<IPExpr>> globalParams)
         {
             for (var i = 0; i < indexArr.Length; i++)
             {
                 indexArr[i] = (indexArr[i].Item1, indexArr[i].Item2 + 1);
-                // Console.WriteLine($"globalConstants[globalVariables[{i}].Name].Count = {globalConstants[globalVariables[i].Name].Count}");
-                if (indexArr[i].Item2 < globalConstants[indexArr[i].Item1].Count) return true;
+                // Console.WriteLine($"globalParams[globalVariables[{i}].Name].Count = {globalParams[globalVariables[i].Name].Count}");
+                if (indexArr[i].Item2 < globalParams[indexArr[i].Item1].Count) return true;
                 indexArr[i] = (indexArr[i].Item1, 0);
             }
             return false;
         }
+
+        private static int ForceInt(IPExpr expr)
+        {
+            return expr switch
+            {
+                IntLiteralExpr intLiteralExpr => intLiteralExpr.Value,
+                _ => throw new ArgumentOutOfRangeException(nameof(expr))
+            };
+        }
+
+        private static bool ForceBool(IPExpr expr)
+        {
+            return expr switch
+            {
+                BoolLiteralExpr boolLiteralExpr => boolLiteralExpr.Value,
+                _ => throw new ArgumentOutOfRangeException(nameof(expr))
+            };
+        }
+
+        private static IPExpr EvalEq(IPExpr lhs, IPExpr rhs)
+        {
+            return (lhs, rhs) switch
+            {
+                (BoolLiteralExpr, BoolLiteralExpr) =>
+                    new BoolLiteralExpr(ForceBool(lhs) == ForceBool(rhs)),
+                (IntLiteralExpr, IntLiteralExpr) =>
+                    new BoolLiteralExpr(ForceInt(lhs) == ForceInt(rhs)),
+                _ => throw new ArgumentOutOfRangeException(nameof(lhs))
+            };
+        }
+        
+        private static IPExpr EvalNEq(IPExpr lhs, IPExpr rhs)
+        {
+            return (lhs, rhs) switch
+            {
+                (BoolLiteralExpr, BoolLiteralExpr) =>
+                    new BoolLiteralExpr(ForceBool(lhs) != ForceBool(rhs)),
+                (IntLiteralExpr, IntLiteralExpr) =>
+                    new BoolLiteralExpr(ForceInt(lhs) != ForceInt(rhs)),
+                _ => throw new ArgumentOutOfRangeException(nameof(lhs))
+            };
+        }
+
+        private static IPExpr Eval(Dictionary<Variable, IPExpr> store, IPExpr expr)
+        {
+            switch (expr)
+            {
+                case BoolLiteralExpr:
+                case IntLiteralExpr:
+                    return expr;
+                case UnaryOpExpr unaryOpExpr:
+                {
+                    var subExpr = Eval(store, unaryOpExpr.SubExpr);
+                    return unaryOpExpr.Operation switch
+                    {
+                        UnaryOpType.Negate => new IntLiteralExpr(-ForceInt(subExpr)),
+                        UnaryOpType.Not => new BoolLiteralExpr(!ForceBool(subExpr)),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                }
+                case BinOpExpr binOpExpr:
+                {
+                    var lhs = Eval(store, binOpExpr.Lhs);
+                    var rhs = Eval(store, binOpExpr.Rhs);
+                    return binOpExpr.Operation switch
+                    {
+                        BinOpType.Add => new IntLiteralExpr(ForceInt(lhs) + ForceInt(rhs)),
+                        BinOpType.Sub => new IntLiteralExpr(ForceInt(lhs) - ForceInt(rhs)),
+                        BinOpType.Mul => new IntLiteralExpr(ForceInt(lhs) + ForceInt(rhs)),
+                        BinOpType.Div => new IntLiteralExpr(ForceInt(lhs) / ForceInt(rhs)),
+                        BinOpType.Mod => new IntLiteralExpr(ForceInt(lhs) % ForceInt(rhs)),
+                        BinOpType.Eq => EvalEq(lhs, rhs),
+                        BinOpType.Neq => EvalNEq(lhs, rhs),
+                        BinOpType.Lt => new BoolLiteralExpr(ForceInt(lhs) < ForceInt(rhs)),
+                        BinOpType.Le => new BoolLiteralExpr(ForceInt(lhs) <= ForceInt(rhs)),
+                        BinOpType.Gt => new BoolLiteralExpr(ForceInt(lhs) > ForceInt(rhs)),
+                        BinOpType.Ge => new BoolLiteralExpr(ForceInt(lhs) >= ForceInt(rhs)),
+                        BinOpType.And => new BoolLiteralExpr(ForceBool(lhs) && ForceBool(rhs)),
+                        BinOpType.Or => new BoolLiteralExpr(ForceBool(lhs) || ForceBool(rhs)),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                }
+                case IVariableRef variableRef:
+                    return store[variableRef.Variable];
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(expr));
+            }
+        }
         
         private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
         {
-            if (safety.ParamExpr.Count == 0)
+            // Console.WriteLine($"safety.Name = {safety.Name}");
+            if (safety.TestKind == TestKind.NormalTest)
             {
                 WriteSingleSafetyTestDecl(context, output, safety, new Dictionary<string, int>());
                 return;
             }
-            var globalConstants = safety.ParamExpr;
+            var globalParams = safety.ParamExpr;
             // Console.WriteLine($"safety.ParamExpr.Count = {safety.ParamExpr.Count}");
-            var indexArr = globalConstants.ToList().Zip(Enumerable.Repeat(0, safety.ParamExpr.Count), (x, y) => (x.Key, y)).ToArray();
-            // Console.WriteLine($"global: {string.Join(',', globalConstants.Values.Select(x => x.Count))}");
+            var indexArr = globalParams.ToList().Zip(Enumerable.Repeat(0, safety.ParamExpr.Count), (x, y) => (x.Key, y)).ToArray();
+            // Console.WriteLine($"global: {string.Join(',', globalParams.Values.Select(x => x.Count))}");
             // Console.WriteLine($"indexArr: {string.Join(',', indexArr)}");
 
             do
@@ -410,9 +515,14 @@ namespace Plang.Compiler.Backend.CSharp
                 {
                     indexDic[indexArr[i].Item1] = indexArr[i].Item2;
                 }
-
-                WriteSingleSafetyTestDecl(context, output, safety, indexDic);
-            } while (Next(indexArr, globalConstants));
+                var dic = IndexDic2Dic(context, safety.ParamExpr, indexDic);
+                // Console.WriteLine($"{string.Join(',', Dic2DicAux(dic).ToList())} |- {safety.AssumeExpr} = {ForceBool(Eval(dic, safety.AssumeExpr))}");
+                if (ForceBool(Eval(dic, safety.AssumeExpr)))
+                {
+                    WriteSingleSafetyTestDecl(context, output, safety, indexDic);
+                }
+                
+            } while (Next(indexArr, globalParams));
         }
 
         private void WriteImplementationDecl(CompilationContext context, StringWriter output, Implementation impl)
@@ -472,14 +582,14 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpaceEpilogue(context, output);
         }
 
-        private const string InitGlobalConstantsVariablesFunctionName = "InitializeGlobalConstantVariables";
+        private const string InitGlobalParamsFunctionName = "InitializeGlobalParams";
 
-        private void WriteInitializeGlobalConstantVariables(CompilationContext context, StringWriter output, IDictionary<Variable, IPExpr> dic)
+        private void WriteInitializeGlobalParams(CompilationContext context, StringWriter output, IDictionary<Variable, IPExpr> dic)
         {
-            context.WriteLine(output, $"public static void {InitGlobalConstantsVariablesFunctionName}() {{");
+            context.WriteLine(output, $"public static void {InitGlobalParamsFunctionName}() {{");
             foreach (var (v, value) in dic)
             {
-                var varName = GetGlobalAndLocalVariableName(context, v);
+                var varName = GetGlobalParamAndLocalVariableName(context, v);
                 context.Write(output, $"  {varName} = ");
                 WriteExpr(context, output, value);
                 context.WriteLine(output, $";");
@@ -487,12 +597,12 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "}");
         }
 
-        private void WriteTestFunction(CompilationContext context, StringWriter output, string main, bool ifInitGlobalVars)
+        private void WriteTestFunction(CompilationContext context, StringWriter output, string main, bool ifInitGlobalParams)
         {
             context.WriteLine(output);
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(ControlledRuntime runtime) {");
-            if (ifInitGlobalVars) { context.WriteLine(output, $"{InitGlobalConstantsVariablesFunctionName}();"); }
+            if (ifInitGlobalParams) { context.WriteLine(output, $"{InitGlobalParamsFunctionName}();"); }
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");
@@ -1280,7 +1390,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case VariableAccessExpr variableAccessExpr:
-                    var varName = GetGlobalAndLocalVariableName(context, variableAccessExpr.Variable);
+                    var varName = GetGlobalParamAndLocalVariableName(context, variableAccessExpr.Variable);
                     context.Write(output, varName);
                     break;
 
@@ -1621,7 +1731,7 @@ namespace Plang.Compiler.Backend.CSharp
                 return;
             }
 
-            var varName = GetGlobalAndLocalVariableName(context, variableRef.Variable);
+            var varName = GetGlobalParamAndLocalVariableName(context, variableRef.Variable);
             context.Write(output, $"(({GetCSharpType(variableRef.Type)})((IPValue){varName})?.Clone())");
         }
 

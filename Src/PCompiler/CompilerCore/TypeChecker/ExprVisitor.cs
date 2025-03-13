@@ -22,6 +22,12 @@ namespace Plang.Compiler.TypeChecker
             this.method = method;
             this.handler = handler;
         }
+        
+        public ExprVisitor(Scope scope, ITranslationErrorHandler handler)
+        {
+            table = scope;
+            this.handler = handler;
+        }
 
         public override IPExpr VisitPrimitiveExpr(PParser.PrimitiveExprContext context)
         {

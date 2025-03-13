@@ -16,7 +16,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly StackProperty<Machine> currentMachine = new StackProperty<Machine>();
         private readonly StackProperty<Scope> currentScope;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
-        private IDictionary<string, Variable> globalConstantVariables = new Dictionary<string, Variable>();
+        private IDictionary<string, Variable> globalParams = new Dictionary<string, Variable>();
             
         private DeclarationVisitor(
             ITranslationErrorHandler handler,
@@ -26,7 +26,7 @@ namespace Plang.Compiler.TypeChecker
             Handler = handler;
             foreach (var variable in topLevelScope.Variables)
             {
-                globalConstantVariables.Add(variable.Name, variable);
+                globalParams.Add(variable.Name, variable);
             }
             currentScope = new StackProperty<Scope>(topLevelScope);
             this.nodesToDeclarations = nodesToDeclarations;
@@ -46,17 +46,17 @@ namespace Plang.Compiler.TypeChecker
             visitor.Visit(context);
         }
 
-        private void CheckGlobalConstantVariableRedeclare(Variable decl)
+        private void CheckGlobalParamsRedeclare(Variable decl)
         {
-            if (globalConstantVariables.TryGetValue(decl.Name, out var existingDecl))
+            if (globalParams.TryGetValue(decl.Name, out var existingDecl))
             {
-                throw Handler.RedeclareGlobalConstantVariable(decl.SourceLocation, decl, existingDecl); 
+                throw Handler.RedeclareGlobalParam(decl.SourceLocation, decl, existingDecl); 
             }
         }
 
-        #region GlobalConstantVariables 
+        #region GlobalParams
         
-        public override object VisitGlobalValDecl(PParser.GlobalValDeclContext context)
+        public override object VisitGlobalParamDecl(PParser.GlobalParamDeclContext context)
         {
             // COLON type
             var variableType = ResolveType(context.type());
@@ -70,10 +70,10 @@ namespace Plang.Compiler.TypeChecker
                 currentScope.Value.Update(variable);
             }
             // SEMI
-            return globalConstantVariables;
+            return globalParams;
         } 
         
-        #endregion GlobalConstantVariables 
+        #endregion GlobalParams
         
         #region Events
 
@@ -424,7 +424,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
                 // Console.WriteLine("Local Variable:" + variable.Name);
-                CheckGlobalConstantVariableRedeclare(variable);
+                CheckGlobalParamsRedeclare(variable);
                 variable.Type = variableType;
                 variables[i] = variable;
             }

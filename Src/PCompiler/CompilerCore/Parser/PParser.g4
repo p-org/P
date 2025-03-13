@@ -60,10 +60,10 @@ topDecl : typeDefDecl
         | namedModuleDecl
         | testDecl
         | implementationDecl
-        | globalValDecl
+        | globalParamDecl
         ;
 
-globalValDecl : CONSTANT idenList COLON type SEMI ;
+globalParamDecl : PARAM idenList COLON type SEMI ;
 
 typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
             | TYPE name=iden ASSIGN type SEMI # PTypeDef
@@ -255,6 +255,7 @@ param : LPAREN paramBody RPAREN;
 
 testDecl : TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI                  # SafetyTestDecl
          | PARAMTEST globalParam=param testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # ParametricSafetyTestDecl
+         | PARAMTEST globalParam=param ASSUME assumeExpr=expr testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # ParametricAssumeSafetyTestDecl
          | TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
          ;
 

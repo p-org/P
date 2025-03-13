@@ -1,6 +1,12 @@
 ﻿using Antlr4.Runtime;
 using System.Collections.Generic;
 
+public enum TestKind {
+    NormalTest,
+    ParametricTest,
+    AssumeParametricTest,
+}
+
 namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     public class SafetyTest : IPDecl
@@ -15,6 +21,8 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public IPModuleExpr ModExpr { get; set; }
         
         public IDictionary<string, List<IPExpr>> ParamExpr { get; set; }
+        public IPExpr AssumeExpr { get; set; }
+        public TestKind TestKind { get; set; }
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
     }

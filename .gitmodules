@@ -1,0 +1,3 @@
+[submodule "Ext/libhandler"]
+	path = Ext/libhandler
+	url = https://github.com/koka-lang/libhandler.git

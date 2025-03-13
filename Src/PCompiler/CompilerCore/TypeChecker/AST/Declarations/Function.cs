@@ -23,7 +23,9 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     {
         private readonly HashSet<Function> callees = new HashSet<Function>();
         private readonly HashSet<Function> callers = new HashSet<Function>();
+/*
         private readonly List<Variable> _globalParams = [];
+*/
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
 

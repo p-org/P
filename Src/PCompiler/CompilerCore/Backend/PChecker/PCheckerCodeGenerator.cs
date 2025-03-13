@@ -21,11 +21,11 @@ namespace Plang.Compiler.Backend.CSharp
         /// This compiler has a compilation stage.
         /// </summary>
         public bool HasCompilationStage => true;
-        private List<Variable> _globalVariables = [];
+        private List<Variable> _globalParams = [];
 
-        private string GetGlobalAndLocalVariableName(CompilationContext context, Variable v)
+        private string GetGlobalParamAndLocalVariableName(CompilationContext context, Variable v)
         {
-            return _globalVariables.Contains(v) ? $"({ICodeGenerator.GlobalConfigName}.{v.Name})" : context.Names.GetNameForDecl(v);
+            return _globalParams.Contains(v) ? $"({ICodeGenerator.GlobalConfigName}.{v.Name})" : context.Names.GetNameForDecl(v);
         }
 
         public void Compile(ICompilerConfiguration job)
@@ -97,7 +97,7 @@ namespace Plang.Compiler.Backend.CSharp
 
             WriteSourcePrologue(context, source.Stream);
 
-            _globalVariables = globalScope.GetGlobalVariables();
+            _globalParams = globalScope.GetGlobalVariables();
 
             DeclareGlobalParams(context, source.Stream);
             
@@ -278,7 +278,7 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpacePrologue(context, output);
             context.WriteLine(output, $"public static class {ICodeGenerator.GlobalConfigName}");
             context.WriteLine(output, "{");
-            foreach (var v in _globalVariables)
+            foreach (var v in _globalParams)
             {
                 if (v.Role != VariableRole.GlobalParams)
                 {
@@ -356,7 +356,7 @@ namespace Plang.Compiler.Backend.CSharp
             foreach (var (k, i) in indexDic)
             {
                 var values = paramExprDic[k];
-                var variable = _globalVariables.First(v => v.Name == k);
+                var variable = _globalParams.First(v => v.Name == k);
                 if (i >= values.Count)
                 {
                     throw context.Handler.InternalError(variable.SourceLocation, new ArgumentException("Index out of range in global variable config.")); 
@@ -589,7 +589,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, $"public static void {InitGlobalParamsFunctionName}() {{");
             foreach (var (v, value) in dic)
             {
-                var varName = GetGlobalAndLocalVariableName(context, v);
+                var varName = GetGlobalParamAndLocalVariableName(context, v);
                 context.Write(output, $"  {varName} = ");
                 WriteExpr(context, output, value);
                 context.WriteLine(output, $";");
@@ -597,12 +597,12 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "}");
         }
 
-        private void WriteTestFunction(CompilationContext context, StringWriter output, string main, bool ifInitGlobalVars)
+        private void WriteTestFunction(CompilationContext context, StringWriter output, string main, bool ifInitGlobalParams)
         {
             context.WriteLine(output);
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(ControlledRuntime runtime) {");
-            if (ifInitGlobalVars) { context.WriteLine(output, $"{InitGlobalParamsFunctionName}();"); }
+            if (ifInitGlobalParams) { context.WriteLine(output, $"{InitGlobalParamsFunctionName}();"); }
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");
@@ -1390,7 +1390,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case VariableAccessExpr variableAccessExpr:
-                    var varName = GetGlobalAndLocalVariableName(context, variableAccessExpr.Variable);
+                    var varName = GetGlobalParamAndLocalVariableName(context, variableAccessExpr.Variable);
                     context.Write(output, varName);
                     break;
 
@@ -1731,7 +1731,7 @@ namespace Plang.Compiler.Backend.CSharp
                 return;
             }
 
-            var varName = GetGlobalAndLocalVariableName(context, variableRef.Variable);
+            var varName = GetGlobalParamAndLocalVariableName(context, variableRef.Variable);
             context.Write(output, $"(({GetCSharpType(variableRef.Type)})((IPValue){varName})?.Clone())");
         }
 

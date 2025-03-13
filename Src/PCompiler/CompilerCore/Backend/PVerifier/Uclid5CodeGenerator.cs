@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using LiteDB;
@@ -42,8 +43,6 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
     public void Compile(ICompilerConfiguration job)
     {
-        List<Match> undefs = [];
-        List<Match> fails = [];
         List<string> failMessages = [];
         HashSet<Invariant> succeededInv = [];
         HashSet<Invariant> failedInv = [];
@@ -67,6 +66,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
             {
                 missingDefault = false;
             }
+
             job.Output.WriteInfo($"Proving: {cmd.Name}");
             Dictionary<string, bool> checklist = _proofCommandToFiles[cmd].ToDictionary(x => x, x => false);
             Dictionary<string, Process> tasks = [];
@@ -83,8 +83,6 @@ public class PVerifierCodeGenerator : ICodeGenerator
                         checklist[f.Key] = true;
                         var currUndefs = Regex.Matches(hit.Reply, @"UNDEF -> (.*), line (\d+)");
                         var currFails = Regex.Matches(hit.Reply, @"FAILED -> (.*), line (\d+)");
-                        undefs.AddRange(currUndefs);
-                        fails.AddRange(currFails);
                         var (invs, failed, msgs) =
                             AggregateResults(job, f.Key, currUndefs.ToList(), currFails.ToList());
                         succeededInv.UnionWith(invs);
@@ -98,7 +96,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
                     }
                 }
             }
-            
+
             var numCompleted = checklist.Values.Sum(x => x ? 1 : 0);
             Console.Write($"\r🔍 Checked {numCompleted}/{checklist.Count} goals...");
 
@@ -115,7 +113,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
                     var exitCode = Compiler.WaitForResult(r.Value, out var stdout, out var stderr);
                     if (exitCode != 0)
                     {
-                        throw new TranslationException($"Verifying generated UCLID5 code FAILED!\n" + $"{stdout}\n" +
+                        throw new TranslationException($"Verifying generated UCLID5 code FAILED ({r.Key})!\n" +
+                                                       $"{stdout}\n" +
                                                        $"{stderr}\n");
                     }
 
@@ -134,8 +133,6 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
                     var currUndefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
                     var currFails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
-                    undefs.AddRange(currUndefs);
-                    fails.AddRange(currFails);
                     var (invs, failed, msgs) = AggregateResults(job, r.Key, currUndefs.ToList(), currFails.ToList());
                     succeededInv.UnionWith(invs);
                     failedInv.UnionWith(failed);
@@ -171,6 +168,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
         {
             job.Output.WriteInfo($"✅ {inv.Name.Replace("_PGROUP_", ": ")}");
         }
+
         if (!missingDefault && failMessages.Count == 0)
         {
             job.Output.WriteInfo($"✅ default P proof obligations");
@@ -300,33 +298,49 @@ public class PVerifierCodeGenerator : ICodeGenerator
         BuildDependencies(globalScope);
         var filenamePrefix = $"{job.ProjectName}_";
         List<CompiledFile> files = [];
+        // if there are no proof commands, then create two:
+        // - one called default for checking that everything is handled
+        // - one with all the invariants as goals
         if (!globalScope.ProofCommands.Any())
         {
-            var proof = new ProofCommand("default", null)
+            var defaultProof = new ProofCommand("default", null)
+            {
+                Goals = [],
+                Premises = globalScope.AllDecls.OfType<Invariant>().ToList(),
+            };
+            _commands.Add(defaultProof);
+            _proofCommandToFiles.Add(defaultProof, []);
+            files.AddRange(CompileToFile($"{filenamePrefix}default", defaultProof));
+
+            var fullProof = new ProofCommand("full", null)
             {
                 Goals = globalScope.AllDecls.OfType<Invariant>().ToList(),
-                Premises = []
+                Premises = [],
             };
-            _commands.Add(proof);
-            _proofCommandToFiles.Add(proof, []);
-            files.AddRange(CompileToFile($"{filenamePrefix}default", proof, true, true, false));
+            _commands.Add(fullProof);
+            _proofCommandToFiles.Add(fullProof, []);
+            files.AddRange(CompileToFile($"{filenamePrefix}full", fullProof));
         }
         else
         {
+            // otherwise, go through all the proof commands 
             foreach (var proofCmd in globalScope.ProofCommands)
             {
+                // if one of them is the default, rename it to default so that we can generate the init, next, and invs in compileToFile
+                // TODO: ensure that default can only happen on its own?
                 if (proofCmd.Goals.Count == 1 && proofCmd.Goals[0].IsDefault)
                 {
-                    proofCmd.Name = "default" + proofCmd.Name;
+                    proofCmd.Name = "default";
                     proofCmd.Goals = [];
                     _commands.Add(proofCmd);
                     _proofCommandToFiles.Add(proofCmd, []);
-                    files.AddRange(CompileToFile($"{filenamePrefix}default", proofCmd, true, true, true));
+                    files.AddRange(CompileToFile($"{filenamePrefix}default", proofCmd));
                 }
                 else
                 {
                     _proofCommandToFiles.Add(proofCmd, []);
-                    files.AddRange(CompileToFile($"{filenamePrefix}{proofCmd.Name.Replace(",", "_").Replace(" ", "_")}", proofCmd, true, false, false));
+                    files.AddRange(CompileToFile($"{filenamePrefix}{proofCmd.Name.Replace(",", "_").Replace(" ", "_")}",
+                        proofCmd));
                     _commands.Add(proofCmd);
                 }
             }
@@ -337,15 +351,29 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
     private CompiledFile GenerateCompiledFile(ProofCommand cmd, string name, Machine m, State s, Event e)
     {
-        string filename;
-        if (e == null)
+        var filename = name;
+
+        if (m != null)
         {
-            filename = $"{name}_{m.Name}_{s.Name}.ucl";
+            filename += "_" + m.Name;
         }
-        else
+
+        if (s != null)
         {
-            filename = $"{name}_{m.Name}_{s.Name}_{e.Name}.ucl";
+            filename += "_" + s.Name;
         }
+
+        if (e != null)
+        {
+            filename += "_" + e.Name;
+        }
+        var md5 = MD5.Create();
+        byte[] bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(filename));
+        StringBuilder builder = new StringBuilder();
+        foreach (byte b in bytes) {
+            builder.Append(b.ToString("x2")); // Convert to hexadecimal string
+        }
+        filename = builder + ".ucl";
 
         var file = new CompiledFile(filename);
         _fileToProofCommands.Add(filename, cmd);
@@ -353,31 +381,42 @@ public class PVerifierCodeGenerator : ICodeGenerator
         return file;
     }
 
-    private List<CompiledFile> CompileToFile(string name, ProofCommand cmd, bool sanityCheck, bool handlerCheck, bool builtin)
+    private List<CompiledFile> CompileToFile(string name, ProofCommand cmd)
     {
+        // We essentially just want to call GenerateMain for every relevant bit of the proof command while filtering for checkOnly
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var events = _globalScope.AllDecls.OfType<Event>().ToList();
         List<CompiledFile> files = [];
-        foreach (var m in machines)
-        {
-            if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(m.Name))
-            {
-                foreach (var s in m.States)
-                {
-                    if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(s.Name))
-                    {
-                        _src = GenerateCompiledFile(cmd, name, m, s, null);
-                        files.Add(_src);
-                        GenerateMain(m, s, null, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck, builtin);
-                    }
 
-                    foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
+        if (cmd.Name == "default")
+        {
+            _src = GenerateCompiledFile(cmd, name, null, null, null);
+            files.Add(_src);
+            GenerateMain(null, null, null, cmd);
+        }
+        else
+        {
+            foreach (var m in machines)
+            {
+                if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(m.Name))
+                {
+                    foreach (var s in m.States)
                     {
-                        if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(e.Name))
+                        if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(s.Name))
                         {
-                            _src = GenerateCompiledFile(cmd, name, m, s, e);
+                            _src = GenerateCompiledFile(cmd, name, m, s, null);
                             files.Add(_src);
-                            GenerateMain(m, s, e, cmd.Goals, cmd.Premises, sanityCheck, handlerCheck, builtin);
+                            GenerateMain(m, s, null, cmd);
+                        }
+
+                        foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
+                        {
+                            if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(e.Name))
+                            {
+                                _src = GenerateCompiledFile(cmd, name, m, s, e);
+                                files.Add(_src);
+                                GenerateMain(m, s, e, cmd);
+                            }
                         }
                     }
                 }
@@ -978,21 +1017,16 @@ public class PVerifierCodeGenerator : ICodeGenerator
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void 
-        GenerateMain(Machine machine, State state, Event @event, List<Invariant> goals,
-        List<Invariant> requires, bool generateSanityChecks, bool handlerCheck, bool builtin)
+    private void GenerateMain(Machine machine, State state, Event @event, ProofCommand cmd)
     {
-        if (builtin)
-        {
-            goals = requires;
-        }
-        
+        // cmd.Proof is default iff all the others are null
+        Trace.Assert((cmd.Name == "default") == (machine is null && state is null && @event is null));
+
         EmitLine("module main {");
 
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
         var specs = (from m in _globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList();
         var events = _globalScope.AllDecls.OfType<Event>().ToList();
-        // goals = _globalScope.AllDecls.OfType<Invariant>().ToList();
         var axioms = _globalScope.AllDecls.OfType<Axiom>().ToList();
         var pures = _globalScope.AllDecls.OfType<Pure>().ToList();
 
@@ -1036,47 +1070,12 @@ public class PVerifierCodeGenerator : ICodeGenerator
         EmitLine(InEntryPredicateDeclaration());
         EmitLine("");
 
-        GenerateInitBlock(machines, specs, _globalScope.AllDecls.OfType<AssumeOnStart>());
-        EmitLine("");
-
-        // pick a random label and handle it (with some guards to make sure we always handle gotos before events)
-        if (_ctx.Job.HandlesAll)
-        {
-            GenerateNextBlock(machines, events, handlerCheck);
-            EmitLine("");
-        }
-
         // global functions
-        GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>(), goals, generateSanityChecks);
+        GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>(), cmd.Goals);
 
         // Spec support
-        GenerateSpecProcedures(specs, goals, generateSanityChecks); // generate spec methods, called by spec handlers
+        GenerateSpecProcedures(specs, cmd.Goals); // generate spec methods, called by spec handlers
         GenerateSpecHandlers(specs); // will populate _specListenMap, which is used when ever there is a send statement
-        EmitLine("");
-
-        // non-handler functions for handlers
-        GenerateMachineProcedures(machine, goals,
-            generateSanityChecks); // generate machine methods, called by handlers below
-        EmitLine("");
-
-        // generate the handlers
-        if (@event != null)
-        {
-            GenerateEventHandler(state, @event, goals, requires, generateSanityChecks);
-        }
-        else
-        {
-            GenerateEntryHandler(state, goals, requires, generateSanityChecks);
-        }
-
-        EmitLine("");
-
-        // These have to be done at the end because we don't know what we need until we generate the rest of the code
-        GenerateOptionTypes();
-        EmitLine("");
-        GenerateCheckerVars();
-        EmitLine("");
-        GenerateChooseProcedures();
         EmitLine("");
 
         foreach (var pure in pures)
@@ -1096,19 +1095,14 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
         EmitLine("");
 
-        if (!builtin)
-        {
-            foreach (var inv in requires)
-            {
-                EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
-            }
-        }
-
-        foreach (var inv in goals)
+        foreach (var inv in cmd.Premises)
         {
             EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
-            EmitLine(
-                $"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} globally");
+        }
+
+        foreach (var inv in cmd.Goals)
+        {
+            EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
         }
 
         EmitLine("");
@@ -1120,24 +1114,63 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
         EmitLine("");
 
-        if (generateSanityChecks)
-        {
-            // invariants to ensure unique action IDs
-            EmitLine(
-                $"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectSent(StateVar)}[a1] && {StateAdtSelectSent(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
-            EmitLine($"invariant _{InvariantPrefix}Unique_Actions: {InvariantPrefix}Unique_Actions();");
-            EmitLine(
-                $"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
-            EmitLine(
-                $"invariant _{InvariantPrefix}Increasing_Action_Count: {InvariantPrefix}Increasing_Action_Count();");
-            // invariants to ensure received is a subset of sent
-            EmitLine(
-                $"define {InvariantPrefix}Received_Subset_Sent(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectReceived(StateVar)}[a] ==> {StateAdtSelectSent(StateVar)}[a];");
-            EmitLine($"invariant _{InvariantPrefix}Received_Subset_Sent: {InvariantPrefix}Received_Subset_Sent();");
-            EmitLine("");
-        }
+        // invariants to ensure unique action IDs
+        EmitLine(
+            $"define {InvariantPrefix}Unique_Actions(): boolean = forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {StateAdtSelectSent(StateVar)}[a1] && {StateAdtSelectSent(StateVar)}[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+        EmitLine($"invariant _{InvariantPrefix}Unique_Actions: {InvariantPrefix}Unique_Actions();");
+        EmitLine(
+            $"define {InvariantPrefix}Increasing_Action_Count(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+        EmitLine(
+            $"invariant _{InvariantPrefix}Increasing_Action_Count: {InvariantPrefix}Increasing_Action_Count();");
+        // invariants to ensure received is a subset of sent
+        EmitLine(
+            $"define {InvariantPrefix}Received_Subset_Sent(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectReceived(StateVar)}[a] ==> {StateAdtSelectSent(StateVar)}[a];");
+        EmitLine($"invariant _{InvariantPrefix}Received_Subset_Sent: {InvariantPrefix}Received_Subset_Sent();");
+        EmitLine("");
 
-        GenerateControlBlock(machine, state, @event);
+        if (cmd.Name == "default")
+        {
+            GenerateInitBlock(machines, specs, _globalScope.AllDecls.OfType<AssumeOnStart>());
+            EmitLine("");
+            GenerateNextBlock(machines, events);
+            EmitLine("");
+
+            foreach (var inv in cmd.Premises)
+            {
+                EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}();");
+            }
+
+            EmitLine("");
+            GenerateControlBlock(null, null, null, true);
+        }
+        else
+        {
+            // non-handler functions for handlers
+            GenerateMachineProcedures(machine, cmd.Goals); // generate machine methods, called by handlers below
+            EmitLine("");
+
+            // generate the handlers
+            if (@event != null)
+            {
+                GenerateEventHandler(state, @event, cmd.Goals, cmd.Premises);
+            }
+            else
+            {
+                GenerateEntryHandler(state, cmd.Goals, cmd.Premises);
+            }
+
+            EmitLine("");
+
+            // These have to be done at the end because we don't know what we need until we generate the rest of the code
+            GenerateOptionTypes();
+            EmitLine("");
+            GenerateCheckerVars();
+            EmitLine("");
+            GenerateChooseProcedures();
+            EmitLine("");
+
+            GenerateControlBlock(machine, state, @event, false);
+        }
 
         // close the main module
         EmitLine("}");
@@ -1179,7 +1212,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
         EmitLine("}");
     }
 
-    private void GenerateNextBlock(List<Machine> machines, List<Event> events, bool handlerCheck)
+    private void GenerateNextBlock(List<Machine> machines, List<Event> events)
     {
         var currentLabel = $"{BuiltinPrefix}CurrentLabel";
         // pick a random label and handle it
@@ -1195,16 +1228,13 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 {
                     if (!s.HasHandler(e))
                     {
-                        if (handlerCheck)
+                        if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name ||
+                            _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
                         {
-                            if (_ctx.Job.CheckOnly is null || _ctx.Job.CheckOnly == m.Name ||
-                                _ctx.Job.CheckOnly == s.Name || _ctx.Job.CheckOnly == e.Name)
-                            {
-                                EmitLine($"({EventGuard(m, s, e)}) : {{");
-                                EmitLine(
-                                    $"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
-                                EmitLine("}");
-                            }
+                            EmitLine($"({EventGuard(m, s, e)}) : {{");
+                            EmitLine(
+                                $"assert false; // Failed to verify that {m.Name} never receives {e.Name} in {s.Name}");
+                            EmitLine("}");
                         }
                     }
                 }
@@ -1232,7 +1262,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
         // TODO: these should be side-effect free and we should enforce that
         foreach (var f in functions)
         {
-            var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}").Prepend($"this: {MachineRefT}");
+            var ps = f.Signature.Parameters.Select(p => $"{GetLocalName(p)}: {TypeToString(p.Type)}")
+                .Prepend($"this: {MachineRefT}");
 
             if (f.Body is null)
             {
@@ -1468,20 +1499,28 @@ public class PVerifierCodeGenerator : ICodeGenerator
     }
 
 
-    private void GenerateControlBlock(Machine m, State s, Event e)
+    private void GenerateControlBlock(Machine m, State s, Event e, Boolean handlerCheck)
     {
+        // handlerCheck iff all the others are null
+        Trace.Assert(handlerCheck == (m is null && s is null && e is null));
+
         EmitLine("control {");
         EmitLine($"set_solver_option(\":Timeout\", {_ctx.Job.Timeout});"); // timeout per query in seconds
 
-        EmitLine("induction(1);");
-
-        if (e == null)
+        if (handlerCheck)
         {
-            EmitLine($"verify({m.Name}_{s.Name});");
+            EmitLine("induction(1);");
         }
         else
         {
-            EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
+            if (e == null)
+            {
+                EmitLine($"verify({m.Name}_{s.Name});");
+            }
+            else
+            {
+                EmitLine($"verify({m.Name}_{s.Name}_{e.Name});");
+            }
         }
 
         EmitLine("check;");

@@ -21,7 +21,6 @@ namespace Plang.Compiler
         ITranslationErrorHandler Handler { get; }
         bool Debug { get; }
         int Timeout { get; }
-        bool HandlesAll { get; }
         string CheckOnly { get; }
         int Parallelism { get; }
     }

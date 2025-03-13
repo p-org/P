@@ -25,7 +25,6 @@ namespace Plang.Compiler
             ProjectDependencies = new List<string>();
             Debug = false;
             Timeout = 600;
-            HandlesAll = true;
             CheckOnly = null;
             Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
         }
@@ -78,7 +77,6 @@ namespace Plang.Compiler
         public IList<string> ProjectDependencies { get; set;  }
         public bool Debug { get; set; }
         public int Timeout { get; set; }
-        public bool HandlesAll { get; set; }
         public string CheckOnly { get; set; }
         public int Parallelism { get; set; }
 

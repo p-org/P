@@ -170,9 +170,6 @@ namespace Plang.Options
                 case "timeout":
                     compilerConfiguration.Timeout = (int)option.Value;
                     break;
-                case "no-event-handler-checks":
-                    compilerConfiguration.HandlesAll = false;
-                    break;
                 case "check-only":
                     compilerConfiguration.CheckOnly = (string)option.Value;
                     break;

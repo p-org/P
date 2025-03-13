@@ -1,11 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using PChecker.Feedback;
-using PChecker.IO.Debugging;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
 
@@ -94,7 +90,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <inheritdoc/>
         public string GetDescription()
         {
-            var text = $"pct[seed '" + RandomValueGenerator.Seed + "']";
+            var text = "pct[seed '" + RandomValueGenerator.Seed + "']";
             return text;
         }
 

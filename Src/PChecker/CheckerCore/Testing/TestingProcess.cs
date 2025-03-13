@@ -84,7 +84,7 @@ namespace PChecker.Testing
             if (!_checkerConfiguration.PerformFullExploration &&
                 TestingEngine.TestReport.NumOfFoundBugs > 0)
             {
-                Console.WriteLine($"Checker found a bug.");
+                Console.WriteLine("Checker found a bug.");
             }
             
             if ((!_checkerConfiguration.PerformFullExploration && TestingEngine.TestReport.NumOfFoundBugs > 0))
@@ -147,13 +147,13 @@ namespace PChecker.Testing
 
             if (_checkerConfiguration.ReportActivityCoverage)
             {
-                Console.WriteLine($"... Emitting coverage report:");
+                Console.WriteLine("... Emitting coverage report:");
                 Reporter.EmitTestingCoverageReport(testReport);
             }
 
             if (_checkerConfiguration.DebugActivityCoverage)
             {
-                Console.WriteLine($"... Emitting debug coverage report:");
+                Console.WriteLine("... Emitting debug coverage report:");
                 Reporter.EmitTestingCoverageReport(testReport);
             }
 

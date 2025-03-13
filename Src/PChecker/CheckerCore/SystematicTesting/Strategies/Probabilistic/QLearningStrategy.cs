@@ -85,18 +85,18 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         public QLearningStrategy(int maxSteps, IRandomValueGenerator random)
             : base(maxSteps, random)
         {
-            this.OperationQTable = new Dictionary<int, Dictionary<ulong, double>>();
-            this.ExecutionPath = new LinkedList<(ulong, AsyncOperationType, int)>();
-            this.TransitionFrequencies = new Dictionary<int, ulong>();
-            this.PreviousOperation = 0;
-            this.LearningRate = 0.3;
-            this.Gamma = 0.7;
-            this.TrueChoiceOpValue = ulong.MaxValue;
-            this.FalseChoiceOpValue = ulong.MaxValue - 1;
-            this.MinIntegerChoiceOpValue = ulong.MaxValue - 2;
-            this.FailureInjectionReward = -1000;
-            this.BasicActionReward = -1;
-            this.Epochs = 0;
+            OperationQTable = new Dictionary<int, Dictionary<ulong, double>>();
+            ExecutionPath = new LinkedList<(ulong, AsyncOperationType, int)>();
+            TransitionFrequencies = new Dictionary<int, ulong>();
+            PreviousOperation = 0;
+            LearningRate = 0.3;
+            Gamma = 0.7;
+            TrueChoiceOpValue = ulong.MaxValue;
+            FalseChoiceOpValue = ulong.MaxValue - 1;
+            MinIntegerChoiceOpValue = ulong.MaxValue - 2;
+            FailureInjectionReward = -1000;
+            BasicActionReward = -1;
+            Epochs = 0;
         }
 
         /// <inheritdoc/>
@@ -109,49 +109,49 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 return false;
             }
 
-            int state = this.CaptureExecutionStep(current);
-            this.InitializeOperationQValues(state, ops);
+            int state = CaptureExecutionStep(current);
+            InitializeOperationQValues(state, ops);
 
-            next = this.GetNextOperationByPolicy(state, ops);
-            this.PreviousOperation = next.Id;
+            next = GetNextOperationByPolicy(state, ops);
+            PreviousOperation = next.Id;
 
-            this.ScheduledSteps++;
+            ScheduledSteps++;
             return true;
         }
 
         /// <inheritdoc/>
         public override bool GetNextBooleanChoice(AsyncOperation current, int maxValue, out bool next)
         {
-            int state = this.CaptureExecutionStep(current);
-            this.InitializeBooleanChoiceQValues(state);
+            int state = CaptureExecutionStep(current);
+            InitializeBooleanChoiceQValues(state);
 
-            next = this.GetNextBooleanChoiceByPolicy(state);
+            next = GetNextBooleanChoiceByPolicy(state);
 
-            this.PreviousOperation = next ? this.TrueChoiceOpValue : this.FalseChoiceOpValue;
-            this.ScheduledSteps++;
+            PreviousOperation = next ? TrueChoiceOpValue : FalseChoiceOpValue;
+            ScheduledSteps++;
             return true;
         }
 
         /// <inheritdoc/>
         public override bool GetNextIntegerChoice(AsyncOperation current, int maxValue, out int next)
         {
-            int state = this.CaptureExecutionStep(current);
-            this.InitializeIntegerChoiceQValues(state, maxValue);
+            int state = CaptureExecutionStep(current);
+            InitializeIntegerChoiceQValues(state, maxValue);
 
-            next = this.GetNextIntegerChoiceByPolicy(state, maxValue);
+            next = GetNextIntegerChoiceByPolicy(state, maxValue);
 
-            this.PreviousOperation = this.MinIntegerChoiceOpValue - (ulong)next;
-            this.ScheduledSteps++;
+            PreviousOperation = MinIntegerChoiceOpValue - (ulong)next;
+            ScheduledSteps++;
             return true;
         }
 
         /// <inheritdoc/>
         public override bool PrepareForNextIteration()
         {
-            this.LearnQValues();
-            this.ExecutionPath.Clear();
-            this.PreviousOperation = 0;
-            this.Epochs++;
+            LearnQValues();
+            ExecutionPath.Clear();
+            PreviousOperation = 0;
+            Epochs++;
 
             return base.PrepareForNextIteration();
         }
@@ -167,7 +167,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         {
             var opIds = new List<ulong>();
             var qValues = new List<double>();
-            foreach (var pair in this.OperationQTable[state])
+            foreach (var pair in OperationQTable[state])
             {
                 // Consider only the Q values of enabled operations.
                 if (ops.Any(op => op.Id == pair.Key && op.Status == AsyncOperationStatus.Enabled))
@@ -177,7 +177,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 }
             }
 
-            int idx = this.ChooseQValueIndexFromDistribution(qValues);
+            int idx = ChooseQValueIndexFromDistribution(qValues);
             return ops.FirstOrDefault(op => op.Id == opIds[idx]);
         }
 
@@ -187,8 +187,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// </summary>
         private bool GetNextBooleanChoiceByPolicy(int state)
         {
-            double trueQValue = this.OperationQTable[state][this.TrueChoiceOpValue];
-            double falseQValue = this.OperationQTable[state][this.FalseChoiceOpValue];
+            double trueQValue = OperationQTable[state][TrueChoiceOpValue];
+            double falseQValue = OperationQTable[state][FalseChoiceOpValue];
 
             var qValues = new List<double>(2)
             {
@@ -196,7 +196,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 falseQValue
             };
 
-            int idx = this.ChooseQValueIndexFromDistribution(qValues);
+            int idx = ChooseQValueIndexFromDistribution(qValues);
             return idx == 0 ? true : false;
         }
 
@@ -209,10 +209,10 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             var qValues = new List<double>(maxValue);
             for (ulong i = 0; i < (ulong)maxValue; i++)
             {
-                qValues.Add(this.OperationQTable[state][this.MinIntegerChoiceOpValue - i]);
+                qValues.Add(OperationQTable[state][MinIntegerChoiceOpValue - i]);
             }
 
-            return this.ChooseQValueIndexFromDistribution(qValues);
+            return ChooseQValueIndexFromDistribution(qValues);
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             }).ToList();
 
             // Generate a random double value between 0.0 to 1.0.
-            var rvalue = this.RandomValueGenerator.NextDouble();
+            var rvalue = RandomValueGenerator.NextDouble();
 
             // Find the first index in the cumulative array that is greater
             // or equal than the generated random value.
@@ -278,15 +278,15 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             int state = current.HashedProgramState;
 
             // Update the execution path with the current state.
-            this.ExecutionPath.AddLast((this.PreviousOperation, current.Type, state));
+            ExecutionPath.AddLast((PreviousOperation, current.Type, state));
 
-            if (!this.TransitionFrequencies.ContainsKey(state))
+            if (!TransitionFrequencies.ContainsKey(state))
             {
-                this.TransitionFrequencies.Add(state, 0);
+                TransitionFrequencies.Add(state, 0);
             }
 
             // Increment the state transition frequency.
-            this.TransitionFrequencies[state]++;
+            TransitionFrequencies[state]++;
 
             return state;
         }
@@ -297,10 +297,10 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// </summary>
         private void InitializeOperationQValues(int state, IEnumerable<AsyncOperation> ops)
         {
-            if (!this.OperationQTable.TryGetValue(state, out Dictionary<ulong, double> qValues))
+            if (!OperationQTable.TryGetValue(state, out Dictionary<ulong, double> qValues))
             {
                 qValues = new Dictionary<ulong, double>();
-                this.OperationQTable.Add(state, qValues);
+                OperationQTable.Add(state, qValues);
             }
 
             foreach (var op in ops)
@@ -319,20 +319,20 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// </summary>
         private void InitializeBooleanChoiceQValues(int state)
         {
-            if (!this.OperationQTable.TryGetValue(state, out Dictionary<ulong, double> qValues))
+            if (!OperationQTable.TryGetValue(state, out Dictionary<ulong, double> qValues))
             {
                 qValues = new Dictionary<ulong, double>();
-                this.OperationQTable.Add(state, qValues);
+                OperationQTable.Add(state, qValues);
             }
 
-            if (!qValues.ContainsKey(this.TrueChoiceOpValue))
+            if (!qValues.ContainsKey(TrueChoiceOpValue))
             {
-                qValues.Add(this.TrueChoiceOpValue, 0);
+                qValues.Add(TrueChoiceOpValue, 0);
             }
 
-            if (!qValues.ContainsKey(this.FalseChoiceOpValue))
+            if (!qValues.ContainsKey(FalseChoiceOpValue))
             {
-                qValues.Add(this.FalseChoiceOpValue, 0);
+                qValues.Add(FalseChoiceOpValue, 0);
             }
         }
 
@@ -342,15 +342,15 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// </summary>
         private void InitializeIntegerChoiceQValues(int state, int maxValue)
         {
-            if (!this.OperationQTable.TryGetValue(state, out Dictionary<ulong, double> qValues))
+            if (!OperationQTable.TryGetValue(state, out Dictionary<ulong, double> qValues))
             {
                 qValues = new Dictionary<ulong, double>();
-                this.OperationQTable.Add(state, qValues);
+                OperationQTable.Add(state, qValues);
             }
 
             for (ulong i = 0; i < (ulong)maxValue; i++)
             {
-                ulong opValue = this.MinIntegerChoiceOpValue - i;
+                ulong opValue = MinIntegerChoiceOpValue - i;
                 if (!qValues.ContainsKey(opValue))
                 {
                     qValues.Add(opValue, 0);
@@ -366,7 +366,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             var pathBuilder = new StringBuilder();
 
             int idx = 0;
-            var node = this.ExecutionPath.First;
+            var node = ExecutionPath.First;
             while (node != null && node.Next != null)
             {
                 pathBuilder.Append($"{node.Value.op},");
@@ -376,7 +376,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
 
                 // Compute the max Q value.
                 double maxQ = double.MinValue;
-                foreach (var nextOpQValuePair in this.OperationQTable[nextState])
+                foreach (var nextOpQValuePair in OperationQTable[nextState])
                 {
                     if (nextOpQValuePair.Value > maxQ)
                     {
@@ -385,9 +385,9 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 }
 
                 // Compute the reward. Program states that are visited with higher frequency result into lesser rewards.
-                var freq = this.TransitionFrequencies[nextState];
+                var freq = TransitionFrequencies[nextState];
                 double reward = (nextType == AsyncOperationType.InjectFailure ?
-                    this.FailureInjectionReward : this.BasicActionReward) * freq;
+                    FailureInjectionReward : BasicActionReward) * freq;
                 if (reward > 0)
                 {
                     // The reward has underflowed.
@@ -395,7 +395,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 }
 
                 // Get the operations that are available from the current execution step.
-                var currOpQValues = this.OperationQTable[state];
+                var currOpQValues = OperationQTable[state];
                 if (!currOpQValues.ContainsKey(nextOp))
                 {
                     currOpQValues.Add(nextOp, 0);
@@ -403,8 +403,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
 
                 // Update the Q value of the next operation.
                 // Q = [(1-a) * Q]  +  [a * (rt + (g * maxQ))]
-                currOpQValues[nextOp] = ((1 - this.LearningRate) * currOpQValues[nextOp]) +
-                                        (this.LearningRate * (reward + (this.Gamma * maxQ)));
+                currOpQValues[nextOp] = ((1 - LearningRate) * currOpQValues[nextOp]) +
+                                        (LearningRate * (reward + (Gamma * maxQ)));
 
                 node = node.Next;
                 idx++;

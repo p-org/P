@@ -13,7 +13,7 @@ namespace Plang.Compiler
     {
         public int Compile(ICompilerConfiguration job)
         {
-            job.Output.WriteInfo($"Parsing ...");
+            job.Output.WriteInfo("Parsing ...");
 
             // Run parser on every input file
             PParser.ProgramContext[] trees = null;
@@ -33,7 +33,7 @@ namespace Plang.Compiler
                 return Environment.ExitCode;
             }
 
-            job.Output.WriteInfo($"Type checking ...");
+            job.Output.WriteInfo("Type checking ...");
             // Run type checker and produce AST
             Scope scope = null;
             try
@@ -60,7 +60,7 @@ namespace Plang.Compiler
                 job.Output = new DefaultCompilerOutput(job.OutputDirectory);
                 job.Backend = TargetLanguage.GetCodeGenerator(entry);
 
-                job.Output.WriteInfo($"----------------------------------------");
+                job.Output.WriteInfo("----------------------------------------");
                 job.Output.WriteInfo($"Code generation for {entry}...");
 
                 // Run the selected backend on the project and write the files.
@@ -75,7 +75,7 @@ namespace Plang.Compiler
                 // For those that do, execute that stage.
                 if (job.Backend.HasCompilationStage)
                 {
-                    job.Output.WriteInfo($"Compiling generated code...");
+                    job.Output.WriteInfo("Compiling generated code...");
                     try
                     {
                         job.Backend.Compile(job);
@@ -90,12 +90,12 @@ namespace Plang.Compiler
                 }
                 else
                 {
-                    job.Output.WriteInfo($"Build succeeded.");
+                    job.Output.WriteInfo("Build succeeded.");
                 }
             }
 
-            job.Output.WriteInfo($"----------------------------------------");
-            job.Output.WriteInfo($"Compilation succeeded.");
+            job.Output.WriteInfo("----------------------------------------");
+            job.Output.WriteInfo("Compilation succeeded.");
 
             Environment.ExitCode = 0;
             return Environment.ExitCode;

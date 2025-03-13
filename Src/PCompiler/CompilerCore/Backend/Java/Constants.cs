@@ -277,7 +277,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
             /*"while",*/
         };
 
-        private static HashSet<string> _reservedWords = null;
+        private static HashSet<string> _reservedWords;
 
         /// <summary>
         /// Reflects out all the string fields defined in this class.

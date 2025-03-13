@@ -379,8 +379,8 @@ namespace PChecker
         /// </summary>
         public CheckerConfiguration WithRLStrategy()
         {
-            this.SchedulingStrategy = "rl";
-            this.IsProgramStateHashingEnabled = true;
+            SchedulingStrategy = "rl";
+            IsProgramStateHashingEnabled = true;
             return this;
         }
 
@@ -530,7 +530,7 @@ namespace PChecker
                 Directory.Delete(older, true);
             }
 
-            if(this.SchedulingStrategy != "replay"){
+            if(SchedulingStrategy != "replay"){
                 for (var history = MaxHistory - 2; history >= 0; --history)
                 {
                     var newer = makeHistoryDirName(history);

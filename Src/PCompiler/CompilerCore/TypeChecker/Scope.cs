@@ -613,8 +613,7 @@ namespace Plang.Compiler.TypeChecker
                 }
             }
 
-            var safetyTest = new SafetyTest(tree, name);
-            safetyTest.TestKind = TestKind.NormalTest;
+            var safetyTest = new SafetyTest(tree, name, tree.modExpr());
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -632,8 +631,7 @@ namespace Plang.Compiler.TypeChecker
                 return null;
             }
 
-            var safetyTest = new SafetyTest(tree, name);
-            safetyTest.TestKind = TestKind.AssumeParametricTest;
+            var safetyTest = new SafetyTest(tree, name, tree.modExpr(), tree.globalParam, tree.assumeExpr);
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -651,9 +649,7 @@ namespace Plang.Compiler.TypeChecker
                 return null;
             }
 
-            var safetyTest = new SafetyTest(tree, name);
-            safetyTest.TestKind = TestKind.ParametricTest;
-            safetyTest.AssumeExpr = new BoolLiteralExpr(true);
+            var safetyTest = new SafetyTest(tree, name, tree.modExpr(), tree.globalParam);
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),

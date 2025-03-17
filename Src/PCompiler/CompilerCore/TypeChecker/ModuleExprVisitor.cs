@@ -13,8 +13,7 @@ namespace Plang.Compiler.TypeChecker
 {
     internal static class ModuleSystemDeclarations
     {
-
-        public static IDictionary<string, List<IPExpr>> make_assignments(ITranslationErrorHandler handler, Scope globalScope, 
+        private static IDictionary<string, List<IPExpr>> EnumerateParamAssignments(ITranslationErrorHandler handler, Scope globalScope, 
             PParser.ParamContext globalParam,
             NamedTupleExpr expr)
         {
@@ -56,37 +55,15 @@ namespace Plang.Compiler.TypeChecker
             // all the test declarations
             foreach (var test in globalScope.SafetyTests)
             {
-                switch (test.TestKind)
+                test.ModExpr = modExprVisitor.Visit(test.ModExprContext);
+                if (test.GlobalParam != null)
                 {
-                    case TestKind.NormalTest:
-                    {
-                        var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
-                        test.ModExpr = modExprVisitor.Visit(context.modExpr());
-                        break;
-                    }
-                    case TestKind.AssumeParametricTest:
-                    {
-                        var context = (PParser.ParametricAssumeSafetyTestDeclContext)test.SourceLocation;
-                        test.ModExpr = modExprVisitor.Visit(context.modExpr());
-                        var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
-                        var dic = make_assignments (handler, globalScope, context.globalParam, expr);
-                        test.ParamExpr = dic;
-                        test.AssumeExpr = exprVisitor.Visit(context.assumeExpr);
-                        break;
-                        
-                    }
-                    case TestKind.ParametricTest:
-                    {
-                        var context = (PParser.ParametricSafetyTestDeclContext)test.SourceLocation;
-                        test.ModExpr = modExprVisitor.Visit(context.modExpr());
-                        var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
-                        var dic = make_assignments (handler, globalScope, context.globalParam, expr);
-                        test.ParamExpr = dic;
-                        // the default assumption is true 
-                        test.AssumeExpr = new BoolLiteralExpr(true);
-                        break;
-                        
-                    }
+                    var expr = (NamedTupleExpr)paramExprVisitor.Visit(test.GlobalParam);
+                    test.ParamExprMap = EnumerateParamAssignments (handler, globalScope, test.GlobalParam, expr);
+                }
+                if (test.AssumeExprContext != null)
+                {
+                    test.AssumeExpr = exprVisitor.Visit(test.AssumeExprContext);
                 }
             }
             

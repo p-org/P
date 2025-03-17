@@ -55,15 +55,16 @@ namespace Plang.Compiler.TypeChecker
             // all the test declarations
             foreach (var test in globalScope.SafetyTests)
             {
-                test.ModExpr = modExprVisitor.Visit(test.ModExprContext);
-                if (test.GlobalParam != null)
+                var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
+                test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                if (context.globalParam != null)
                 {
-                    var expr = (NamedTupleExpr)paramExprVisitor.Visit(test.GlobalParam);
-                    test.ParamExprMap = EnumerateParamAssignments (handler, globalScope, test.GlobalParam, expr);
+                    var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
+                    test.ParamExprMap = EnumerateParamAssignments (handler, globalScope, context.globalParam, expr);
                 }
-                if (test.AssumeExprContext != null)
+                if (context.assumeExpr != null)
                 {
-                    test.AssumeExpr = exprVisitor.Visit(test.AssumeExprContext);
+                    test.AssumeExpr = exprVisitor.Visit(context.assumeExpr);
                 }
             }
             

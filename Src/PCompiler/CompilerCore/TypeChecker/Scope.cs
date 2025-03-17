@@ -613,7 +613,7 @@ namespace Plang.Compiler.TypeChecker
                 }
             }
 
-            var safetyTest = new SafetyTest(tree, name, tree.modExpr());
+            var safetyTest = new SafetyTest(tree, name);
             CheckConflicts(safetyTest,
                 Namespace(implementations),
                 Namespace(safetyTests),
@@ -622,41 +622,41 @@ namespace Plang.Compiler.TypeChecker
             return safetyTest;
         }
 
-        public SafetyTest Put(string name, PParser.ParametricAssumeSafetyTestDeclContext tree)
-        {
-            // check if test is from an imported project, if so, return null
-            var filePath = config.LocationResolver.GetLocation(tree).File.FullName;
-            if (config.ProjectDependencies.Any(dependencyPath => filePath.StartsWith(dependencyPath)))
-            {
-                return null;
-            }
-
-            var safetyTest = new SafetyTest(tree, name, tree.modExpr(), tree.globalParam, tree.assumeExpr);
-            CheckConflicts(safetyTest,
-                Namespace(implementations),
-                Namespace(safetyTests),
-                Namespace(refinementTests));
-            safetyTests.Add(name, safetyTest);
-            return safetyTest;
-        }
+        // public SafetyTest Put(string name, PParser.ParametricAssumeSafetyTestDeclContext tree)
+        // {
+        //     // check if test is from an imported project, if so, return null
+        //     var filePath = config.LocationResolver.GetLocation(tree).File.FullName;
+        //     if (config.ProjectDependencies.Any(dependencyPath => filePath.StartsWith(dependencyPath)))
+        //     {
+        //         return null;
+        //     }
+        //
+        //     var safetyTest = new SafetyTest(tree, name, tree.modExpr(), tree.globalParam, tree.assumeExpr);
+        //     CheckConflicts(safetyTest,
+        //         Namespace(implementations),
+        //         Namespace(safetyTests),
+        //         Namespace(refinementTests));
+        //     safetyTests.Add(name, safetyTest);
+        //     return safetyTest;
+        // }
         
-        public SafetyTest Put(string name, PParser.ParametricSafetyTestDeclContext tree)
-        {
-            // check if test is from an imported project, if so, return null
-            var filePath = config.LocationResolver.GetLocation(tree).File.FullName;
-            if (config.ProjectDependencies.Any(dependencyPath => filePath.StartsWith(dependencyPath)))
-            {
-                return null;
-            }
-
-            var safetyTest = new SafetyTest(tree, name, tree.modExpr(), tree.globalParam);
-            CheckConflicts(safetyTest,
-                Namespace(implementations),
-                Namespace(safetyTests),
-                Namespace(refinementTests));
-            safetyTests.Add(name, safetyTest);
-            return safetyTest;
-        }
+        // public SafetyTest Put(string name, PParser.ParametricSafetyTestDeclContext tree)
+        // {
+        //     // check if test is from an imported project, if so, return null
+        //     var filePath = config.LocationResolver.GetLocation(tree).File.FullName;
+        //     if (config.ProjectDependencies.Any(dependencyPath => filePath.StartsWith(dependencyPath)))
+        //     {
+        //         return null;
+        //     }
+        //
+        //     var safetyTest = new SafetyTest(tree, name, tree.modExpr(), tree.globalParam);
+        //     CheckConflicts(safetyTest,
+        //         Namespace(implementations),
+        //         Namespace(safetyTests),
+        //         Namespace(refinementTests));
+        //     safetyTests.Add(name, safetyTest);
+        //     return safetyTest;
+        // }
 
         public RefinementTest Put(string name, PParser.RefinementTestDeclContext tree)
         {

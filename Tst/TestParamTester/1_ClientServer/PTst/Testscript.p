@@ -15,17 +15,17 @@ test tcMultipleClients [main=TestWithMultipleClients]:
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, AbstractBank, { TestWithSingleClient });
 
-paramtest (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5]) aaaa1 [main=TestWithConfig]:
+test param (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5]) aaaa1 [main=TestWithConfig]:
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, Bank, { TestWithConfig });
 
-paramtest (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5]) assume (nClients + g1 < g2) aaaa2 [main=TestWithConfig]:
+test param (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5]) assume (nClients + g1 < g2) aaaa2 [main=TestWithConfig]:
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, Bank, { TestWithConfig });
 
 param b1: bool;
 
-paramtest (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5], b1 in [true, false]) assume (b1 == (nClients + g1 > g2)) aaaa3 [main=TestWithConfig]:
+test param (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5], b1 in [true, false]) assume (b1 == (nClients + g1 > g2)) aaaa3 [main=TestWithConfig]:
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, Bank, { TestWithConfig });
 

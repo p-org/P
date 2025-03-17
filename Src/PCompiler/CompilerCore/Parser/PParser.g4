@@ -253,9 +253,7 @@ paramBody : name=iden IN value=seqLiteral
           ;
 param : LPAREN paramBody RPAREN;
 
-testDecl : TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI                  # SafetyTestDecl
-         | PARAMTEST globalParam=param testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # ParametricSafetyTestDecl
-         | PARAMTEST globalParam=param ASSUME assumeExpr=expr testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # ParametricAssumeSafetyTestDecl
+testDecl : TEST (PARAM globalParam=param)? (ASSUME assumeExpr=expr)? testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI # SafetyTestDecl
          | TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
          ;
 

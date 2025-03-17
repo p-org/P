@@ -52,7 +52,7 @@ public abstract class ParamAssignment
         return false;
     }
 
-    public static void IterateIndexDic(SafetyTest safety, List<Variable> globalParams, Action<Dictionary<Variable, IPExpr>> f)
+    public static void IterateAssignments(SafetyTest safety, List<Variable> globalParams, Action<Dictionary<Variable, IPExpr>> f)
     {
         // Console.WriteLine($"safety.ParamExpr.Count = {safety.ParamExpr.Count}");
         var indexArr = safety.ParamExprMap.ToList().Zip(Enumerable.Repeat(0, safety.ParamExprMap.Count), (x, y) => (x.Key, y)).ToArray();

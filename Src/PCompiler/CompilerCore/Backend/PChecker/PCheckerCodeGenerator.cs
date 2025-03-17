@@ -255,7 +255,8 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case SafetyTest safety:
-                    ParamAssignment.IterateIndexDic(safety, _globalParams, indexDic => WriteSafetyTestDecl(context, output, safety, indexDic));
+                    ParamAssignment.IterateAssignments(safety, _globalParams, 
+                        assignment => WriteSafetyTestDecl(context, output, safety, assignment));
                     break;
 
                 case Interface _:
@@ -345,13 +346,14 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, $"// TODO: Implement the Foreign Type {declName}");
         }
         
-        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, Dictionary<Variable, IPExpr> dic)
+        // For normal test, the assignment is empty dictionary
+        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, Dictionary<Variable, IPExpr> assignment)
         {
             // Console.WriteLine($"dic: {string.Join(',', dic.ToList())}");
             WriteNameSpacePrologue(context, output);
-            var name = ParamAssignment.RenameSafetyTestByAssignment(context.Names.GetNameForDecl(safety), dic);
+            var name = ParamAssignment.RenameSafetyTestByAssignment(context.Names.GetNameForDecl(safety), assignment);
             context.WriteLine(output, $"public class {name} {{");
-            WriteInitializeGlobalParams(context, output, dic);
+            WriteInitializeGlobalParams(context, output, assignment);
             WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, safety.ModExpr.ModuleInfo.InterfaceDef);
             WriteInitializeMonitorObserves(context, output, safety.ModExpr.ModuleInfo.MonitorMap.Keys);

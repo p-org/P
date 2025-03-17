@@ -140,8 +140,8 @@ namespace Plang.Compiler
             numTotalInvs = PInferInvoke.Recorded.Count;
             numTotalTasks = totalTasks;
             Console.WriteLine("=================Done=================");
-            PInferInvoke.CheckLearnedGoals(GlobalScope, Codegen, PInferInvoke.AllExecuedAndMined(), out var _);
-            PInferInvoke.CheckLearnedGoals(GlobalScope, Codegen, PInferInvoke.AllExecuedAndMined(), out var _, checkIndInv: true);
+            PInferInvoke.CheckLearnedGoals(GlobalScope, Job, Codegen, PInferInvoke.AllExecuedAndMined(), out var _);
+            PInferInvoke.CheckLearnedGoals(GlobalScope, Job, Codegen, PInferInvoke.AllExecuedAndMined(), out var _, checkIndInv: true);
             if (PInferInvoke.NumGoalsLearnedWithHints == NumGoals)
             {
                 globalTimer.Stop();
@@ -678,8 +678,8 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"\t# invariants after sanitization: {PInferInvoke.NumInvsMined}");
                 // ranking invariants
                 var sortedInvs = PInferInvoke.GetSortedInvariants();
-                PInferInvoke.CheckLearnedGoals(globalScope, driver.Codegen, sortedInvs, out var cumulative);
-                PInferInvoke.CheckLearnedGoals(globalScope, driver.Codegen, sortedInvs, out var _, checkIndInv: true);
+                PInferInvoke.CheckLearnedGoals(globalScope, job, driver.Codegen, sortedInvs, out var cumulative);
+                PInferInvoke.CheckLearnedGoals(globalScope, job, driver.Codegen, sortedInvs, out var _, checkIndInv: true);
                 // job.Output.WriteInfo("Writing cumulative stats to cumulative_stats.txt ...");
                 // File.WriteAllLines("cumulative_stats.txt", cumulative.Select(x => $"{x.Item1} {x.Item2}"));
                 var numInvAfterPruning = PInferInvoke.WriteRecordTo(filename, sortedInvs);
@@ -778,6 +778,8 @@ namespace Plang.Compiler
         internal static readonly Dictionary<HashSet<PEvent>, Dictionary<IPExpr, int>> APFrequency = [];
         internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> Goals = [];
         internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> IndInvs = [];
+        internal static Dictionary<string, Dictionary<string, IPExpr>> ParsedGoalsP = [];
+        internal static Dictionary<string, Dictionary<string, IPExpr>> ParsedGoalsQ = [];
         internal static HashSet<string> Learned = [];
         internal static HashSet<string> Recorded = [];
         internal static int NumInvsMined = 0;
@@ -855,6 +857,8 @@ namespace Plang.Compiler
                 if (!dst.ContainsKey(key))
                 {
                     dst[key] = [];
+                    ParsedGoalsP[key] = [];
+                    ParsedGoalsQ[key] = [];
                 }
                 var goalList = dst[key];
                 HashSet<IPExpr> p = new(codegen.Comparer);
@@ -864,6 +868,7 @@ namespace Plang.Compiler
                     if (codegen.TryParseToExpr(job, globalScope, g, out var expr))
                     {
                         p.Add(expr);
+                        ParsedGoalsP[key][g] = expr;
                     }
                     else
                     {
@@ -876,6 +881,7 @@ namespace Plang.Compiler
                     if (codegen.TryParseToExpr(job, globalScope, f, out var expr))
                     {
                         q.Add(expr);
+                        ParsedGoalsQ[key][f] = expr;
                     }
                     else
                     {
@@ -905,7 +911,7 @@ namespace Plang.Compiler
             LoadTo(driver, job, globalScope, codegen, loadTo, goals);
         }
 
-        public static void CheckLearnedGoals(Scope globalScope, PInferPredicateGenerator codegen, IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> invariants, out List<(decimal, decimal)> cumulative, bool checkIndInv = false)
+        public static void CheckLearnedGoals(Scope globalScope, ICompilerConfiguration job, PInferPredicateGenerator codegen, IEnumerable<(string, int, int, Hint, HashSet<string>, HashSet<string>)> invariants, out List<(decimal, decimal)> cumulative, bool checkIndInv = false)
         {
             Z3Wrapper = new(globalScope, codegen);
             cumulative = [];
@@ -916,7 +922,6 @@ namespace Plang.Compiler
                 NumGoalsLearnedWithoutHints = 0;
             }
             Dictionary<string, HashSet<int>> learned = [];
-            HashSet<int> confirmed = [];
             HashSet<string> visitedKey = [];
             int totalInvs = invariants.Count();
             int checkedInvs = 0;
@@ -939,14 +944,22 @@ namespace Plang.Compiler
                 }
                 for (int i = 0; i < goals.Count; ++i)
                 {
-                    // if (confirmed.Contains(i)) continue;
+                    if (learned[key].Contains(i)) continue;
                     var (gp, gq, gps, gqs) = goals[i];
                     var lp = p.Select(x => ParsedP[key][x]).ToList();
                     var lq = q.Select(x => ParsedQ[key][x]).ToList();
                     // syntactic check first
                     var cond1 = p.IsSubsetOf(gps);
                     var cond2 = gqs.IsSubsetOf(q);
-                    if ((cond1 && cond2) || CheckImplies(key, gp, lp) && CheckImplies(key, lq, gq))
+                    // check symmetry
+                    bool symmCheck = true;
+                    if (NumExists[key] == 0 && EventCombinations[key].Count == 1)
+                    {
+                        var symmGP = ToSymmetricGuards(ParsedGoalsP[key], gps);
+                        var symmGQ = ToSymmetricGuards(ParsedGoalsQ[key], gqs);
+                        symmCheck = p.IsSubsetOf(symmGP) && symmGQ.IsSubsetOf(q);
+                    }
+                    if (symmCheck || (cond1 && cond2) || CheckImplies(key, gp, lp) && CheckImplies(key, lq, gq))
                     {
                         if (checkIndInv)
                         {
@@ -1314,7 +1327,7 @@ namespace Plang.Compiler
             }
         }
 
-        private static bool Implies(string key, HashSet<string> p, HashSet<string> q, out bool isSyn)
+        private static bool Implies(string key, HashSet<string> p, HashSet<string> q, out bool isSyn, bool recordTime = true)
         {
             bool result = q.IsSubsetOf(p);
             if (!UseZ3 || result)
@@ -1331,7 +1344,10 @@ namespace Plang.Compiler
                     sw.Start();
                     var ret = Z3Wrapper.CheckImplies(key, p, q, ParsedP[key], ParsedQ[key]);
                     sw.Stop();
-                    tSMT += sw.ElapsedMilliseconds;
+                    if (recordTime)
+                    {
+                        tSMT += sw.ElapsedMilliseconds;
+                    }
                     return ret;
                 }
                 catch (Exception e)
@@ -1449,22 +1465,69 @@ namespace Plang.Compiler
             return didSth;
         }
 
-        private static HashSet<string> ToSymmetricGuards(HashSet<string> p)
+        private static HashSet<string> ToSymmetricGuards(Dictionary<string, IPExpr> parsed, HashSet<string> p)
         {
             HashSet<string> result = [];
+            (string, string) SwapPayloadAccess(string lhs, string rhs)
+            {
+                if (lhs.Contains("indexof") || rhs.Contains("indexof"))
+                {
+                    return (lhs, rhs);
+                }
+                var lpos = lhs.IndexOf(".payload") + 8;
+                var rpos = rhs.IndexOf(".payload") + 8;
+                // get everything after the first `.payload`
+                var l = lhs[lpos..];
+                var r = rhs[rpos..];
+                return (lhs[..lpos] + r, rhs[..rpos] + l);
+            }
             foreach (var f in p)
             {
-                if (f.Contains("=="))
+                if (parsed[f] is FunCallExpr)
                 {
+                    // skip custom functions and predicates
                     result.Add(f);
+                    continue;
                 }
-                else if (f.Contains("<"))
+                var g = f;
+                if (f.StartsWith('('))
                 {
-                    result.Add(f.Replace("<", ">"));
+                    g = f[1..^1];
                 }
-                else if (f.Contains(">"))
+                if (f.Contains("==") || f.Contains("!="))
                 {
-                    result.Add(f.Replace(">", "<"));
+                    if (!f.StartsWith('('))
+                    {
+                        result.Add($"({f})");
+                    }
+                    else
+                    {
+                        result.Add(f);
+                    }
+                }
+                else if (f.Contains(">="))
+                {
+                    var parts = g.Split(">=").Select(x => x.Trim()).ToArray();
+                    var (lhs, rhs) = SwapPayloadAccess(parts[0], parts[1]);
+                    result.Add($"({lhs} <= {rhs})");
+                }
+                else if (f.Contains("<="))
+                {
+                    var parts = g.Split("<=").Select(x => x.Trim()).ToArray();
+                    var (lhs, rhs) = SwapPayloadAccess(parts[0], parts[1]);
+                    result.Add($"({lhs} >= {rhs})");
+                }
+                else if (f.Contains('<'))
+                {
+                    var parts = g.Split("<").Select(x => x.Trim()).ToArray();
+                    var (lhs, rhs) = SwapPayloadAccess(parts[0], parts[1]);
+                    result.Add($"({lhs} > {rhs})");
+                }
+                else if (f.Contains('>'))
+                {
+                    var parts = g.Split(">").Select(x => x.Trim()).ToArray();
+                    var (lhs, rhs) = SwapPayloadAccess(parts[0], parts[1]);
+                    result.Add($"({lhs} < {rhs})");
                 }
                 else
                 {
@@ -1626,7 +1689,7 @@ namespace Plang.Compiler
                         {
                             if (removes.Contains(i)) continue;
                             var pi = P[k][i];
-                            var symPi = ToSymmetricGuards(pi);
+                            var symPi = ToSymmetricGuards(ParsedP[k], pi);
                             for (int j = i + 1; j < P[k].Count; ++j)
                             {
                                 if (removes.Contains(j)) continue;

@@ -1153,7 +1153,7 @@ namespace Plang.Compiler.Backend.PInfer
                     IPExpr expr = visitor.Visit(ctx);
                     if (expr != null)
                     {
-                        result = expr;
+                        result = CC.HasExpr(expr) ? CC.Canonicalize(expr) : expr;
                         return true;
                     }
                     else
@@ -1178,6 +1178,7 @@ namespace Plang.Compiler.Backend.PInfer
                 try
                 {
                     expr = visitor.Visit(ctx);
+                    expr = CC.HasExpr(expr) ? CC.Canonicalize(expr) : expr;
                     if (!PrimitiveType.Bool.IsAssignableFrom(expr.Type))
                     {
                         // config.Output.WriteWarning($"[Drop] {orig} does not have a boolean type");
@@ -1251,7 +1252,7 @@ namespace Plang.Compiler.Backend.PInfer
             if (ReprToPredicates.ContainsKey(inv))
             {
                 repr = inv;
-                expr = ReprToPredicates[inv];
+                expr = CC.HasExpr(ReprToPredicates[inv]) ? CC.Canonicalize(ReprToPredicates[inv]) : ReprToPredicates[inv];
                 return PruningStatus.KEEP;
             }
             if (TryParseBinOpExpr(inv, out var exprComp))

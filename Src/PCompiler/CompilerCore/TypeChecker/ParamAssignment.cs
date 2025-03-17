@@ -8,7 +8,7 @@ namespace Plang.Compiler.TypeChecker;
 
 public abstract class ParamAssignment
 {
-    public static Dictionary<string, IPExpr> Dic2StrDic(Dictionary<Variable, IPExpr> dic)
+    private static Dictionary<string, IPExpr> Dic2StrDic(Dictionary<Variable, IPExpr> dic)
     {
         var dicAux = new Dictionary<string, IPExpr>();
         foreach (var (k, i) in dic)
@@ -18,7 +18,7 @@ public abstract class ParamAssignment
         return dicAux;
     }
 
-    public static Dictionary<Variable, IPExpr> IndexDic2Dic(List<Variable> globalParams, IDictionary<string, List<IPExpr>> paramExprDic, IDictionary<string, int> indexDic)
+    private static Dictionary<Variable, IPExpr> IndexDic2Dic(List<Variable> globalParams, IDictionary<string, List<IPExpr>> paramExprDic, IDictionary<string, int> indexDic)
     {
         var dic = new Dictionary<Variable, IPExpr>();
         foreach (var (k, i) in indexDic)
@@ -33,6 +33,12 @@ public abstract class ParamAssignment
         }
         return dic;
     }
+    
+    public static string RenameSafetyTestByAssignment(string name, Dictionary<Variable, IPExpr> dic)
+    {
+        var postfix = $"{string.Join("__", Dic2StrDic(dic).ToList().Select(p => $"{p.Key}_{p.Value}"))}";
+        return postfix.Length == 0 ? name : $"{name}___{postfix}";
+    }
 
     private static bool Next((string, int)[] indexArr, IDictionary<string, List<IPExpr>> globalParams)
     {
@@ -46,7 +52,7 @@ public abstract class ParamAssignment
         return false;
     }
 
-    public static void IterateIndexDic(SafetyTest safety, List<Variable> globalParams, Action<Dictionary<string, int>> f)
+    public static void IterateIndexDic(SafetyTest safety, List<Variable> globalParams, Action<Dictionary<Variable, IPExpr>> f)
     {
         // Console.WriteLine($"safety.ParamExpr.Count = {safety.ParamExpr.Count}");
         var indexArr = safety.ParamExprMap.ToList().Zip(Enumerable.Repeat(0, safety.ParamExprMap.Count), (x, y) => (x.Key, y)).ToArray();
@@ -58,7 +64,7 @@ public abstract class ParamAssignment
             // Console.WriteLine($"{string.Join(',', dic.ToList())} |- {safety.AssumeExpr} = {ForceBool(Eval(dic, safety.AssumeExpr))}");
             if (!SimpleExprEval.ForceBool(SimpleExprEval.Eval(dic, safety.AssumeExpr))) continue;
             // Console.WriteLine($"indexArr: {string.Join(',', indexArr)}");
-            f(indexDic);
+            f(dic);
         } while (Next(indexArr, safety.ParamExprMap));
     }
 }

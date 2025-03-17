@@ -1,7 +1,5 @@
-﻿using System;
-using Antlr4.Runtime;
+﻿using Antlr4.Runtime;
 using System.Collections.Generic;
-using System.Linq;
 using Plang.Compiler.TypeChecker.AST.Expressions;
 
 namespace Plang.Compiler.TypeChecker.AST.Declarations

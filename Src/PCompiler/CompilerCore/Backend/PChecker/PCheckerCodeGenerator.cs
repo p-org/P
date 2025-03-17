@@ -255,7 +255,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case SafetyTest safety:
-                    WriteSafetyTestDecl(context, output, safety);
+                    ParamAssignment.IterateIndexDic(safety, _globalParams, indexDic => WriteSafetyTestDecl(context, output, safety, indexDic));
                     break;
 
                 case Interface _:
@@ -344,19 +344,12 @@ namespace Plang.Compiler.Backend.CSharp
             var declName = foreignType.CanonicalRepresentation;
             context.WriteLine(output, $"// TODO: Implement the Foreign Type {declName}");
         }
-
-        private static string RenameSafetyTest(string name, IDictionary<string, IPExpr> indexDic)
-        {
-            var postfix = $"{string.Join("__", indexDic.ToList().Select(p => $"{p.Key}_{p.Value}"))}";
-            return postfix.Length == 0 ? name : $"{name}___{postfix}";
-        }
         
-        private void WriteSingleSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, IDictionary<string, int> indexDic)
+        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, Dictionary<Variable, IPExpr> dic)
         {
-            Console.WriteLine($"indexArr: {string.Join(',', indexDic.ToList())}");
+            // Console.WriteLine($"dic: {string.Join(',', dic.ToList())}");
             WriteNameSpacePrologue(context, output);
-            var dic = ParamAssignment.IndexDic2Dic(_globalParams, safety.ParamExprMap, indexDic);
-            var name = RenameSafetyTest(context.Names.GetNameForDecl(safety), ParamAssignment.Dic2StrDic(dic));
+            var name = ParamAssignment.RenameSafetyTestByAssignment(context.Names.GetNameForDecl(safety), dic);
             context.WriteLine(output, $"public class {name} {{");
             WriteInitializeGlobalParams(context, output, dic);
             WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
@@ -367,12 +360,6 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "}");
 
             WriteNameSpaceEpilogue(context, output);
-        }
-        
-        
-        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
-        {
-            ParamAssignment.IterateIndexDic(safety, _globalParams, indexDic => WriteSingleSafetyTestDecl(context, output, safety, indexDic));
         }
 
         private void WriteImplementationDecl(CompilationContext context, StringWriter output, Implementation impl)

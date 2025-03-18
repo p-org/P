@@ -10,7 +10,7 @@ Formal verification is important to AWS’s software correctness program (Brooke
 
 ## Getting Started
 
-To start using the new verification backend, you must install P along with the verification dependencies (UCLID5 and an SMT solver like Z3). Detailed installation instructions are available [here](https://github.com/p-org/P/blob/master/Docs/docs/advanced/install-verification-backend.md).
+To start using the new verification backend, you must install P along with the verification dependencies (UCLID5 and an SMT solver like Z3). Detailed installation instructions are available [here](install-pverifier.md); simple usage instructions are available [here](using-pverifier.md).
 
 ## Tutorial: Two-Phase Commit Verification
 

@@ -18,8 +18,7 @@ A PVerifier program consists P top-level declarations along with the following:
 
 | Top Level Declarations                       | Description                                                                                                                             |
 | :------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| [Pure Functions](pure.md)            | P supports declaring pure functions that do not have side effects                                                                       |
-| [Init Conditions](init-condition.md) | P supports declaring initial condition predicates                                                                                       |
-| [Invariants](invariant.md)           | P supports declaring invariants that must hold true for the system                                                                      |
-| [Lemmas](lemmas.md)                  | P supports declaring lemmas as groups of invariants                                                                                     |
-| [Proof Scripts](proof.md)            | P supports declaring proof scripts to verify the correctness of the system                                                              |
+| [Pure Functions](pure.md)                    | P supports declaring pure functions that do not have side effects                                                                               |
+| [Init Conditions](init-condition.md)         | P supports declaring initial condition predicates                                                                                               |
+| [Invariants](specification.md)               | P supports declaring invariants that must hold true for the system                                                                              |
+| [Lemmas and Proofs](proof.md)                | P supports declaring lemmas and proof scripts to verify the correctness of the system                                                           |

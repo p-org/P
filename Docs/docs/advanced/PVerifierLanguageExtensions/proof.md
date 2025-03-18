@@ -1,4 +1,40 @@
-# Proofs
+# Lemmas and Proof Scripts
+
+Lemmas and proof scripts go hand in hand in the P Verifier. Lemmas allow you to decompose specifications and proof scripts allow you to relate lemmas to write larger proofs.
+
+## Lemmas
+
+Lemmas in P allow you to group related invariants together, which helps organize complex proofs, create smaller and more stable verification queries, and enable proof caching.
+
+??? note "P Lemma Declaration Grammar"
+
+    ```
+    lemmaDecl :
+        | Lemma iden { invariantsList }    # P Lemma Declaration
+    
+    invariantsList :
+        | invariant iden: expression;
+        | invariantsList invariant iden: expression;
+    ```
+
+    `iden` is the name of the lemma or invariant, and `expression` is a boolean expression that should hold throughout system execution.
+
+**Syntax:** `Lemma lemmaName { invariant invName1: expr1; invariant invName2: expr2; ... }`
+
+`lemmaName` is the name of the lemma group, `invNameX` are the names of individual invariants, and `exprX` are the boolean expressions that should hold.
+
+=== "Lemma Declaration"
+
+    ```java
+    Lemma system_config {
+        invariant one_coordinator: forall (m: machine) :: m == coordinator() <==> m is Coordinator;
+        invariant participant_set: forall (m: machine) :: m in participants() <==> m is Participant;
+        invariant never_commit_to_coordinator: forall (e: event) :: e is eCommit && e targets coordinator() ==> !inflight e;
+        // More invariants...
+    }
+    ```
+
+## Proofs
 
 In P's verification framework, **proofs** provide a way to structure verification tasks by specifying what to verify and which lemmas to use. Proof scripts help decompose complex verification problems into smaller, more manageable parts and enable caching of intermediate results.
 
@@ -54,10 +90,8 @@ Where `targetN` are the names of lemmas or invariants to verify, and `helper` is
     }
     ```
 
-## Benefits of Proof Scripts
+### Benefits of Proof Scripts
 
-1. **Decomposition**: Break down complex proofs into manageable parts
-2. **Dependency Management**: Explicitly state which lemmas support other lemmas
-3. **Performance**: Reduce verification time by focusing the solver on relevant invariants
-4. **Caching**: Results are cached per lemma, avoiding redundant verification across runs
-5. **Readability**: Make the verification structure more readable and maintainable
+1. **Organization**: Break down complex proofs into manageable parts
+2. **Verification Stability**: They enable the verifier to construct smaller, more focused queries
+3. **Caching**: Results are cached per proof step, avoiding redundant verification across runs

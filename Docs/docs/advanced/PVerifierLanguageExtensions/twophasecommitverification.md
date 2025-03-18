@@ -168,7 +168,7 @@ In P, the only way to dereference a machine variable inside of a specification (
 
 ## P's Builtin Specifications And Our First Proof Attempt
 
-Using the code described above, and by setting the target to `UCLID5` in the `.pproj` file, you can now run the verification engine for the first time (execute `p compile`). This run will result in a large list of failures, containing items like `❌  Failed to verify that Coordinator never receives eVoteReq in Init`. These failures represent P's builtin requirements that all events are handled. They also give us a glimpse into how verification by induction works.
+Using the code described above, and by setting the target to `PVerifier` in the `.pproj` file, you can now run the verification engine for the first time (execute `p compile`). This run will result in a large list of failures, containing items like `❌  Failed to verify that Coordinator never receives eVoteReq in Init`. These failures represent P's builtin requirements that all events are handled. They also give us a glimpse into how verification by induction works.
 
 Proofs by induction consist of a base case check and an inductive step check. The inductive step is more interesting and so we will focus our attention there. The high level idea is that you assume you are in a _good_ state of the system (I will describe what I mean by _good_ in the next section), and then you check if taking any step of the system will again land you in a _good_ state. in P, taking a step of the system means executing any event handler in any machine.
 

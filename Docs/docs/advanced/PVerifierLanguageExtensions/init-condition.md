@@ -19,10 +19,10 @@ Initialization conditions let us constrain the kinds of systems that we consider
 
     ``` java
     // Ensures that there's a unique machine of type coordinator
-    init-condition forall (m: machine) :: m == coordinator() == m is Coordinator;
+    init-condition forall (m: machine) :: m == coordinator() <==> m is Coordinator;
     
     // Ensures that every machine in the participants set is a machine of type participant
-    init-condition forall (m: machine) :: m in participants() == m is Participant;
+    init-condition forall (m: machine) :: m in participants() <==> m is Participant;
     
     // Ensures that all yesVotes tallies start empty
     init-condition forall (c: Coordinator) :: c.yesVotes == default(set[machine]);

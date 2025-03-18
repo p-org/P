@@ -79,7 +79,7 @@ export PATH=$PATH=$HOME/uclid/uclid-0.9.5/bin/
 
 ??? hint "Troubleshoot: Confirm that UCLID5 is correctly installed on your machine."
     ```shell
-    uclid --version
+    uclid --help
     ```
 
     If you get `uclid` command not found error, most likely, you need to add the path to `uclid` in your `PATH`.
@@ -88,7 +88,7 @@ export PATH=$PATH=$HOME/uclid/uclid-0.9.5/bin/
 
 ```sh
 cd ~
-git clone https://github.com/FedericoAureliano/P.git
+git clone https://github.com/p-org/P/tree/dev_p3.0/pverifier
 cd P
 # follow regular P install instructions
 root=$(pwd)

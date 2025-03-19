@@ -332,7 +332,7 @@ namespace Plang.Compiler.Backend.Java
                         var lamv = $"x{GetHashCode()}";
                         if (ReferenceTypeName == "long[]")
                         {
-                            return $"((JSONArray){objectName}).stream().mapToLong(Long::longValue).toArray()";
+                            return $"((JSONArray){objectName}).stream().mapToLong(x -> ((Long) x)).toArray()";
                         }
                         else
                         {
@@ -440,7 +440,7 @@ namespace Plang.Compiler.Backend.Java
                     {
                         if (ReferenceTypeName == "long[]")
                         {
-                            return $"((JSONArray){objectName}).stream().mapToLong(Long::longValue).toArray()";
+                            return $"((JSONArray){objectName}).stream().mapToLong(x -> ((Long) x)).toArray()";
                         }
                         return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({ReferenceTypeName}::new))";
                     }

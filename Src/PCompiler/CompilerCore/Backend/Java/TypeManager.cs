@@ -330,7 +330,14 @@ namespace Plang.Compiler.Backend.Java
                     if (Constants.PInferMode)
                     {
                         var lamv = $"x{GetHashCode()}";
-                        return $"(((JSONArray){objectName}).stream().map({lamv} -> {_contentType.GenerateCastFromObject(lamv)}).toArray({ReferenceTypeName}::new))";
+                        if (ReferenceTypeName == "long[]")
+                        {
+                            return $"((JSONArray){objectName}).stream().mapToLong(Long::longValue).toArray()";
+                        }
+                        else
+                        {
+                            return $"(((JSONArray){objectName}).stream().map({lamv} -> {_contentType.GenerateCastFromObject(lamv)}).toArray({ReferenceTypeName}::new))";
+                        }
                     }
                     else
                     {

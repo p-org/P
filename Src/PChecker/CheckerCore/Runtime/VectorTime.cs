@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using PChecker.Runtime.StateMachines;
-using PChecker.IO.Logging;
 
 public class VectorTime
 {

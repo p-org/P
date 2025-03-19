@@ -107,10 +107,6 @@ namespace PChecker.Coverage
         private readonly EventCoverage InternalEventCoverage = new EventCoverage();
         private Event Dequeued;
 
-        public ControlledRuntimeLogEventCoverage()
-        {
-        }
-
         public EventCoverage EventCoverage => InternalEventCoverage;
 
         public void OnAssertionFailure(string error)

@@ -1,13 +1,13 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using PChecker;
+using Plang.Options;
 using UnitTests.Core;
 using UnitTests.Runners;
-using Plang.Options;
+
 namespace UnitTests;
 
 [TestFixture]
@@ -47,7 +47,7 @@ public class PCheckerLogGeneratorTests
             string generatedFilePath = Path.Combine(generatedDir, fileName);
             string expectedFilePath = Path.Combine(expectedDir, fileName);
 
-            if (fileName == "trace_0_0.trace.json")
+            if (fileName == "Main_0_0.trace.json")
             {
                 // Perform "Is JSON Included" check for this specific file
                 if (!IsJsonContentIncluded(generatedFilePath, expectedFilePath))

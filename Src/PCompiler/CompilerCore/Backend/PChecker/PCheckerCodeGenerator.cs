@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -21,11 +22,11 @@ namespace Plang.Compiler.Backend.CSharp
         /// This compiler has a compilation stage.
         /// </summary>
         public bool HasCompilationStage => true;
-        private List<Variable> _globalVariables = [];
+        private static List<Variable> _globalParams = [];
 
-        private string GetGlobalAndLocalVariableName(CompilationContext context, Variable v)
+        private string GetGlobalParamAndLocalVariableName(CompilationContext context, Variable v)
         {
-            return _globalVariables.Contains(v) ? $"({ICodeGenerator.GlobalConfigName}.{v.Name})" : context.Names.GetNameForDecl(v);
+            return _globalParams.Contains(v) ? $"({ICodeGenerator.GlobalConfigName}.{v.Name})" : context.Names.GetNameForDecl(v);
         }
 
         public void Compile(ICompilerConfiguration job)
@@ -97,9 +98,9 @@ namespace Plang.Compiler.Backend.CSharp
 
             WriteSourcePrologue(context, source.Stream);
 
-            _globalVariables = globalScope.GetGlobalVariables();
+            _globalParams = globalScope.GetGlobalVariables();
 
-            DeclareGlobalConstantVariables(context, source.Stream);
+            DeclareGlobalParams(context, source.Stream);
             
             // write the top level declarations
             foreach (var decl in globalScope.AllDecls)
@@ -254,7 +255,8 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case SafetyTest safety:
-                    WriteSafetyTestDecl(context, output, safety);
+                    ParamAssignment.IterateAssignments(safety, _globalParams, 
+                        assignment => WriteSafetyTestDecl(context, output, safety, assignment));
                     break;
 
                 case Interface _:
@@ -273,14 +275,14 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        private void DeclareGlobalConstantVariables(CompilationContext context, StringWriter output)
+        private void DeclareGlobalParams(CompilationContext context, StringWriter output)
         {
             WriteNameSpacePrologue(context, output);
             context.WriteLine(output, $"public static class {ICodeGenerator.GlobalConfigName}");
             context.WriteLine(output, "{");
-            foreach (var v in _globalVariables)
+            foreach (var v in _globalParams)
             {
-                if (v.Role != VariableRole.GlobalConstant)
+                if (v.Role != VariableRole.GlobalParams)
                 {
                     throw context.Handler.InternalError(v.SourceLocation, new ArgumentException("The role of global variable is not global."));
                 }
@@ -343,31 +345,15 @@ namespace Plang.Compiler.Backend.CSharp
             var declName = foreignType.CanonicalRepresentation;
             context.WriteLine(output, $"// TODO: Implement the Foreign Type {declName}");
         }
-
-        private static string RenameSafetyTest(string name, IDictionary<string, int> indexDic)
-        {
-            var postfix = $"{string.Join('_', indexDic.ToList().Select(p => $"{p.Key}_{p.Value}"))}";
-            return postfix.Length == 0 ? name : $"{name}__{postfix}";
-        }
         
-        private void WriteSingleSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, IDictionary<string, int> indexDic)
+        // For normal test, the assignment is empty dictionary
+        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, Dictionary<Variable, IPExpr> assignment)
         {
-            // Console.WriteLine($"indexArr: {string.Join(',', indexDic.ToList())}");
+            // Console.WriteLine($"dic: {string.Join(',', dic.ToList())}");
             WriteNameSpacePrologue(context, output);
-            var name = RenameSafetyTest(context.Names.GetNameForDecl(safety), indexDic);
+            var name = ParamAssignment.RenameSafetyTestByAssignment(context.Names.GetNameForDecl(safety), assignment);
             context.WriteLine(output, $"public class {name} {{");
-            var dic = new Dictionary<Variable, IPExpr>();
-            foreach (var (k, i) in indexDic)
-            {
-                var values = safety.ParamExpr[k];
-                var variable = _globalVariables.First(v => v.Name == k);
-                if (i >= values.Count)
-                {
-                    throw context.Handler.InternalError(variable.SourceLocation, new ArgumentException("Index out of range in global variable config.")); 
-                }
-                dic[variable] = values[i];
-            }
-            WriteInitializeGlobalConstantVariables(context, output, dic);
+            WriteInitializeGlobalParams(context, output, assignment);
             WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, safety.ModExpr.ModuleInfo.InterfaceDef);
             WriteInitializeMonitorObserves(context, output, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
@@ -376,43 +362,6 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "}");
 
             WriteNameSpaceEpilogue(context, output);
-        }
-        
-        private bool Next((string, int)[] indexArr, IDictionary<string, List<IPExpr>> globalConstants)
-        {
-            for (var i = 0; i < indexArr.Length; i++)
-            {
-                indexArr[i] = (indexArr[i].Item1, indexArr[i].Item2 + 1);
-                // Console.WriteLine($"globalConstants[globalVariables[{i}].Name].Count = {globalConstants[globalVariables[i].Name].Count}");
-                if (indexArr[i].Item2 < globalConstants[indexArr[i].Item1].Count) return true;
-                indexArr[i] = (indexArr[i].Item1, 0);
-            }
-            return false;
-        }
-        
-        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
-        {
-            if (safety.ParamExpr.Count == 0)
-            {
-                WriteSingleSafetyTestDecl(context, output, safety, new Dictionary<string, int>());
-                return;
-            }
-            var globalConstants = safety.ParamExpr;
-            // Console.WriteLine($"safety.ParamExpr.Count = {safety.ParamExpr.Count}");
-            var indexArr = globalConstants.ToList().Zip(Enumerable.Repeat(0, safety.ParamExpr.Count), (x, y) => (x.Key, y)).ToArray();
-            // Console.WriteLine($"global: {string.Join(',', globalConstants.Values.Select(x => x.Count))}");
-            // Console.WriteLine($"indexArr: {string.Join(',', indexArr)}");
-
-            do
-            {
-                var indexDic = new Dictionary<string, int>();
-                for (var i = 0; i < indexArr.Length; i++)
-                {
-                    indexDic[indexArr[i].Item1] = indexArr[i].Item2;
-                }
-
-                WriteSingleSafetyTestDecl(context, output, safety, indexDic);
-            } while (Next(indexArr, globalConstants));
         }
 
         private void WriteImplementationDecl(CompilationContext context, StringWriter output, Implementation impl)
@@ -472,14 +421,14 @@ namespace Plang.Compiler.Backend.CSharp
             WriteNameSpaceEpilogue(context, output);
         }
 
-        private const string InitGlobalConstantsVariablesFunctionName = "InitializeGlobalConstantVariables";
+        private const string InitGlobalParamsFunctionName = "InitializeGlobalParams";
 
-        private void WriteInitializeGlobalConstantVariables(CompilationContext context, StringWriter output, IDictionary<Variable, IPExpr> dic)
+        private void WriteInitializeGlobalParams(CompilationContext context, StringWriter output, IDictionary<Variable, IPExpr> dic)
         {
-            context.WriteLine(output, $"public static void {InitGlobalConstantsVariablesFunctionName}() {{");
+            context.WriteLine(output, $"public static void {InitGlobalParamsFunctionName}() {{");
             foreach (var (v, value) in dic)
             {
-                var varName = GetGlobalAndLocalVariableName(context, v);
+                var varName = GetGlobalParamAndLocalVariableName(context, v);
                 context.Write(output, $"  {varName} = ");
                 WriteExpr(context, output, value);
                 context.WriteLine(output, $";");
@@ -487,12 +436,12 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "}");
         }
 
-        private void WriteTestFunction(CompilationContext context, StringWriter output, string main, bool ifInitGlobalVars)
+        private void WriteTestFunction(CompilationContext context, StringWriter output, string main, bool ifInitGlobalParams)
         {
             context.WriteLine(output);
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(ControlledRuntime runtime) {");
-            if (ifInitGlobalVars) { context.WriteLine(output, $"{InitGlobalConstantsVariablesFunctionName}();"); }
+            if (ifInitGlobalParams) { context.WriteLine(output, $"{InitGlobalParamsFunctionName}();"); }
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");
@@ -1280,7 +1229,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case VariableAccessExpr variableAccessExpr:
-                    var varName = GetGlobalAndLocalVariableName(context, variableAccessExpr.Variable);
+                    var varName = GetGlobalParamAndLocalVariableName(context, variableAccessExpr.Variable);
                     context.Write(output, varName);
                     break;
 
@@ -1621,7 +1570,7 @@ namespace Plang.Compiler.Backend.CSharp
                 return;
             }
 
-            var varName = GetGlobalAndLocalVariableName(context, variableRef.Variable);
+            var varName = GetGlobalParamAndLocalVariableName(context, variableRef.Variable);
             context.Write(output, $"(({GetCSharpType(variableRef.Type)})((IPValue){varName})?.Clone())");
         }
 

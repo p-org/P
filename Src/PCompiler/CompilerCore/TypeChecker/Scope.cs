@@ -34,7 +34,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
         private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
-        private readonly IDictionary<string, Variable> _variables = new Dictionary<string, Variable>();
+        private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -78,7 +78,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<State> States => states.Values;
         public IEnumerable<NamedTupleType> Tuples => tuples.Values;
         public IEnumerable<TypeDef> Typedefs => typedefs.Values;
-        public IEnumerable<Variable> Variables => _variables.Values;
+        public IEnumerable<Variable> Variables => variables.Values;
         public IEnumerable<SafetyTest> SafetyTests => safetyTests.Values;
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
@@ -185,7 +185,7 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Get(string name, out Variable tree)
         {
-            return _variables.TryGetValue(name, out tree);
+            return variables.TryGetValue(name, out tree);
         }
 
         public bool Get(string name, out SafetyTest tree)
@@ -569,8 +569,8 @@ namespace Plang.Compiler.TypeChecker
         public Variable Put(string name, ParserRuleContext tree, VariableRole role)
         {
             var variable = new Variable(name, tree, role);
-            CheckConflicts(variable, Namespace(_variables));
-            _variables.Add(name, variable);
+            CheckConflicts(variable, Namespace(variables));
+            variables.Add(name, variable);
             return variable;
         }
 
@@ -611,25 +611,6 @@ namespace Plang.Compiler.TypeChecker
                 {
                     return null;
                 }
-            }
-
-            var safetyTest = new SafetyTest(tree, name);
-            safetyTest.ParamExpr = new Dictionary<string, List<IPExpr>>(); 
-            CheckConflicts(safetyTest,
-                Namespace(implementations),
-                Namespace(safetyTests),
-                Namespace(refinementTests));
-            safetyTests.Add(name, safetyTest);
-            return safetyTest;
-        }
-        
-        public SafetyTest Put(string name, PParser.ParametricSafetyTestDeclContext tree)
-        {
-            // check if test is from an imported project, if so, return null
-            var filePath = config.LocationResolver.GetLocation(tree).File.FullName;
-            if (config.ProjectDependencies.Any(dependencyPath => filePath.StartsWith(dependencyPath)))
-            {
-                return null;
             }
 
             var safetyTest = new SafetyTest(tree, name);
@@ -680,33 +661,33 @@ namespace Plang.Compiler.TypeChecker
 
         #endregion Conflict API
 
-        #region Global Constant Variables
+        #region Global Params
 
         public void Update(Variable v)
         {
             Variable vv;
-            if (_variables.TryGetValue(v.Name, out vv))
+            if (variables.TryGetValue(v.Name, out vv))
             {
-                _variables[v.Name] = v;
+                variables[v.Name] = v;
             }
             return;
         }
         
         public List<Variable> GetGlobalVariables()
         {
-            return _variables.Values.Where(v => v.Role == VariableRole.GlobalConstant).ToList();
+            return variables.Values.Where(v => v.Role == VariableRole.GlobalParams).ToList();
         }
         
-        public void ValidateGlobalConstantVariablesUnique(ITranslationErrorHandler handler)
+        public void ValidateGlobalParamsUnique(ITranslationErrorHandler handler)
         {
             var current = this;
             IDictionary<string, Variable> allVariables = new Dictionary<string, Variable>();
             while (current != null)
             {
-                foreach (var v in current._variables.Values) {
+                foreach (var v in current.variables.Values) {
                     if (allVariables.Keys.Contains(v.Name))
                     {
-                        if (v.Role == VariableRole.GlobalConstant)
+                        if (v.Role == VariableRole.GlobalParams)
                         {
                             var vv = allVariables[v.Name];
                             throw handler.DuplicateDeclaration(vv.SourceLocation, vv, v);
@@ -726,9 +707,9 @@ namespace Plang.Compiler.TypeChecker
             {
                 if (current.Get(name, out tree))
                 {
-                    if (tree.Role == VariableRole.GlobalConstant)
+                    if (tree.Role == VariableRole.GlobalParams)
                     {
-                        throw handler.ModifyGlobalConstantVariable(pos, tree); 
+                        throw handler.ModifyGlobalParam(pos, tree); 
                     }
                     return true;
                 }
@@ -740,8 +721,6 @@ namespace Plang.Compiler.TypeChecker
             return false;
         }
 
-        #endregion Global Constant Variables
-        
-
+        #endregion Global Params
     }
 }

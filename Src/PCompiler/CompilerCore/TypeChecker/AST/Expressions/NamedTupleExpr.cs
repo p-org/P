@@ -14,7 +14,7 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
         }
 
         public IReadOnlyList<IPExpr> TupleFields { get; }
-        
+
         public ParserRuleContext SourceLocation { get; }
 
         public PLanguageType Type { get; }

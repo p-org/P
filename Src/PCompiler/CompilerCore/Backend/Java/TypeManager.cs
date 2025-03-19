@@ -438,6 +438,10 @@ namespace Plang.Compiler.Backend.Java
                 {
                     if (Constants.PInferMode)
                     {
+                        if (ReferenceTypeName == "long[]")
+                        {
+                            return $"((JSONArray){objectName}).stream().mapToLong(Long::longValue).toArray()";
+                        }
                         return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({ReferenceTypeName}::new))";
                     }
                     return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).collect(Collectors.toCollection(LinkedHashSet::new)))";

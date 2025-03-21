@@ -43,13 +43,11 @@ internal class TransformASTPass
             case Function function:
                 if (function.IsForeign)
                     return function;
-                if (function.CanReceive == true)
+                if (function.CanReceive || function.CanRaiseEvent || function.CanChangeState)
                     return null;
                 return function;
             case Machine machine:
-                if (machine.Receives.Events.GetEnumerator().MoveNext())
-                    return TransformMachine(machine);
-                return machine;
+                return TransformMachine(machine);
             default:
                 return decl;
         }
@@ -264,7 +262,7 @@ internal class TransformASTPass
                 foreach (var statement in compound.Statements) InlineStmt(function, statement, body);
                 break;
             case FunCallStmt call:
-                if (!call.Function.IsForeign & (call.Function.CanReceive == true))
+                if (!call.Function.IsForeign & (call.Function.CanReceive || call.Function.CanRaiseEvent || call.Function.CanChangeState))
                 {
                     var inlined = InlineInFunction(call.Function);
                     if (inlined)
@@ -310,7 +308,7 @@ internal class TransformASTPass
 
     private static bool InlineInFunction(Function function)
     {
-        if (!function.Callees.Contains(function) && function.CanReceive == true)
+        if (!function.Callees.Contains(function) && (function.CanReceive || function.CanRaiseEvent || function.CanChangeState))
         {
             var body = new List<IPStmt>();
             foreach (var stmt in function.Body.Statements) InlineStmt(function, stmt, body);
@@ -377,6 +375,8 @@ internal class TransformASTPass
                     replacement.Owner = entry.Value.Owner;
                     replacement.ParentFunction = entry.Value.ParentFunction;
                     replacement.CanReceive = entry.Value.CanReceive;
+                    replacement.CanRaiseEvent = entry.Value.CanRaiseEvent;
+                    replacement.CanChangeState = entry.Value.CanChangeState;
                     replacement.Role = entry.Value.Role;
                     replacement.Scope = entry.Value.Scope;
                     foreach (var local in entry.Value.LocalVariables) replacement.AddLocalVariable(local);
@@ -484,7 +484,7 @@ internal class TransformASTPass
 
     private static Function TransformFunction(Function function, Machine machine)
     {
-        if (function.CanReceive != true) return function;
+        if (!function.CanReceive) return function;
         if (machine == null)
             throw new NotImplementedException($"Async functions {function.Name} are not supported");
         var transformedFunction = new Function(function.Name, function.SourceLocation);
@@ -495,9 +495,9 @@ internal class TransformASTPass
         transformedFunction.Role = function.Role;
         transformedFunction.Body = (CompoundStmt)HandleReceives(function.Body, function, machine);
         transformedFunction.Scope = function.Scope;
-        transformedFunction.CanChangeState = function.CanChangeState;
-        transformedFunction.CanRaiseEvent = function.CanRaiseEvent;
         transformedFunction.CanReceive = function.CanReceive;
+        transformedFunction.CanRaiseEvent = function.CanRaiseEvent;
+        transformedFunction.CanChangeState = function.CanChangeState;
         transformedFunction.IsNondeterministic = function.IsNondeterministic;
         foreach (var param in function.Signature.Parameters) transformedFunction.Signature.Parameters.Add(param);
         transformedFunction.Signature.ReturnType = function.Signature.ReturnType;
@@ -526,6 +526,8 @@ internal class TransformASTPass
                     replacement.Owner = entry.Value.Owner;
                     replacement.ParentFunction = entry.Value.ParentFunction;
                     replacement.CanReceive = entry.Value.CanReceive;
+                    replacement.CanRaiseEvent = entry.Value.CanRaiseEvent;
+                    replacement.CanChangeState = entry.Value.CanChangeState;
                     replacement.Role = entry.Value.Role;
                     replacement.Scope = entry.Value.Scope;
                     foreach (var local in entry.Value.LocalVariables) replacement.AddLocalVariable(local);
@@ -626,7 +628,7 @@ internal class TransformASTPass
                                 if (c.Key.IsNullEvent)
                                     throw new NotImplementedException(
                                         $"Null events are not supported, found in a receive statement of machine {machine.Name}");
-                                if (c.Value.CanReceive == true)
+                                if (c.Value.CanReceive)
                                 {
                                     canReceiveInCase = true;
                                     if (c.Value.LocalVariables.Count() != 0)
@@ -729,9 +731,9 @@ internal class TransformASTPass
                                 }
 
                                 foreach (var i in function.CreatesInterfaces) rec.AddCreatesInterface(i);
-                                rec.CanChangeState = function.CanChangeState;
-                                rec.CanRaiseEvent = function.CanRaiseEvent;
                                 rec.CanReceive = function.CanReceive;
+                                rec.CanRaiseEvent = function.CanRaiseEvent;
+                                rec.CanChangeState = function.CanChangeState;
                                 rec.IsNondeterministic = function.IsNondeterministic;
                                 // make while loop body
                                 var loopBody = new List<IPStmt>();

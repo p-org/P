@@ -471,8 +471,8 @@ internal class PExCodeGenerator : ICodeGenerator
     {
         var isStatic = function.Owner == null;
 
-        if (function.CanReceive == true)
-            throw new NotImplementedException($"Async functions {context.GetNameForDecl(function)} are not supported");
+        if (function.CanReceive || function.CanRaiseEvent || function.CanChangeState)
+            throw new NotImplementedException($"Foreign functions with receive/goto/raise are not supported: found in {context.GetNameForDecl(function)}");
 
         var staticKeyword = isStatic ? "static " : "";
 

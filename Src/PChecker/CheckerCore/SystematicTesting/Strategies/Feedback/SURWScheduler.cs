@@ -28,6 +28,7 @@ internal class SURWScheduler: IScheduler
         }
         foreach (var op in enabledOperations)
         {
+            var weight = _executionLength.GetValueOrDefault(op.Name, 1);
         }
 
         return true;

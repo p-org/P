@@ -53,6 +53,11 @@ namespace Plang.Compiler
                 $"'{duplicate.Name}' duplicates declaration '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
         }
 
+        public Exception CyclicProof(ParserRuleContext location, ProofCommand cmd)
+        {
+            return IssueError(location,
+                $"Proof commands form a cycle at {locationResolver.GetLocation(cmd.SourceLocation)}");
+        }
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)
         {
             return IssueError(location,

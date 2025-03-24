@@ -762,9 +762,60 @@ namespace Plang.Compiler.TypeChecker
             }
             
             proofCmd.Excepts = excepts.Zip(context._excludes, (x, y) => ToInvariant(x, y)).SelectMany(x => x).ToList();
-            // exclude things appear in `goals` from `premises`
-            proofCmd.Premises = proofCmd.Premises.Except(proofCmd.Goals).Except(proofCmd.Excepts).ToList();
+            proofCmd.Premises = proofCmd.Premises.Except(proofCmd.Excepts).ToList();
             proofCmd.Goals = proofCmd.Goals.Except(proofCmd.Excepts).ToList();
+            
+            // prove A using B, ..., C means A -> B, ..., A -> C
+            // If there is a cycle in the graph formed by all prove-using commands, then we should throw an error. 
+            // We could do this incrementally but the number of prove-using commands will probably be very small anyway
+            // so we are just going to do a topological sort every time (https://gist.github.com/Sup3rc4l1fr4g1l1571c3xp14l1d0c10u5/3341dba6a53d7171fe3397d13d00ee3f)
+            // TODO: using _ to pick out sub invariants?
+            var nodes = new System.Collections.Generic.HashSet<string>();
+            var edges = new System.Collections.Generic.HashSet<(string, string)>();
+            foreach (var cmd in CurrentScope.ProofCommands)
+            {
+                if (cmd.Goals is null) continue;
+                foreach (var source in cmd.Goals.Select(inv => inv.Name))
+                {
+                    if (cmd.Premises is null) continue;
+                    foreach (var target in cmd.Premises.Select(inv => inv.Name))
+                    {
+                        nodes.Add(source);
+                        nodes.Add(target);
+                        edges.Add((source, target));
+                    }
+                }
+            }
+            
+            // Set of all nodes with no incoming edges
+            var S = new System.Collections.Generic.HashSet<string>(nodes.Where(n => edges.All(e => e.Item2.Equals(n) == false)));
+
+            // while S is non-empty do
+            while (S.Any()) {
+
+                //  remove a node n from S
+                var n = S.First();
+                S.Remove(n);
+
+                // for each node m with an edge e from n to m do
+                foreach (var e in edges.Where(e => e.Item1.Equals(n)).ToList()) {
+                    var m = e.Item2;
+
+                    // remove edge e from the graph
+                    edges.Remove(e);
+
+                    // if m has no other incoming edges then
+                    if (edges.All(me => me.Item2.Equals(m) == false)) {
+                        S.Add(m);
+                    }
+                }
+            }
+            
+            // if graph has edges then
+            if (edges.Any()) {
+                throw Handler.CyclicProof(proofCmd.SourceLocation, proofCmd);
+            }
+            
             return proofCmd;
         }
         

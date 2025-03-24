@@ -1429,6 +1429,11 @@ public class PVerifierCodeGenerator : ICodeGenerator
             EmitLine($"call {name}({target}{payload});");
         }
 
+        foreach (var reqs in requires)
+        {
+            EmitLine($"assume {InvariantPrefix}{reqs.Name}();");
+        }
+        
         EmitLine("}\n");
     }
 
@@ -1487,6 +1492,10 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 EmitLine("{");
                 EmitLine($"{received} = {received}[{label} -> true];");
                 EmitLine($"call {name}({target}{payload});");
+                foreach (var reqs in requires)
+                {
+                    EmitLine($"assume {InvariantPrefix}{reqs.Name}();");
+                }
                 EmitLine("}\n");
                 return;
             case EventIgnore _:

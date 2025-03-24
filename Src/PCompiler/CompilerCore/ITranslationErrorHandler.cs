@@ -23,6 +23,8 @@ namespace Plang.Compiler
         Exception DuplicateStateEntry(ParserRuleContext location, Function existingHandler, State state);
 
         Exception DuplicateDeclaration(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
+        
+        Exception CyclicProof(ParserRuleContext location, ProofCommand cmd);
 
         Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount);
 

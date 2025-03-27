@@ -94,6 +94,15 @@ namespace Plang.Compiler.Backend.PInfer
 
         protected void WriteTermInterface(IDictionary<string, (string, List<PEventVariable>)> nameMap)
         {
+            // converter
+            WriteLine("public static long[] ToPrimArr(Long[] arr) {");
+            WriteLine("long[] res = new long[arr.length];");
+            WriteLine("for (int i = 0; i < arr.length; i++) {");
+            WriteLine("res[i] = arr[i].longValue();");
+            WriteLine("}");
+            WriteLine("return res;");
+            WriteLine("}");
+
             WriteLine($"public static Object termOf(String repr, {Constants.PEventsClass}<?>[] arguments) {{");
             if (nameMap.Count == 0)
             {

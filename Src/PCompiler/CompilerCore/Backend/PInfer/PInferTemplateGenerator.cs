@@ -121,10 +121,11 @@ namespace Plang.Compiler.Backend.PInfer
             }
         }
 
-        private static string GenerateCoersion(string type, string value)
+        private string GenerateCoersion(string type, string value)
         {
             return type switch {
                 "String" => $"String.valueOf({value})",
+                "long[]" => $"({Job.ProjectName}.ToPrimArr((Long[]) {value}))",
                 _ => $"(({type}) {value})"
             };
         }

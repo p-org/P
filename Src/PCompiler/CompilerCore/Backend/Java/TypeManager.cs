@@ -141,6 +141,10 @@ namespace Plang.Compiler.Backend.Java
 
             internal virtual string GenerateCastFromObject(string objectName)
             {
+                if (ReferenceTypeName == "Long")
+                {
+                    return $"(Long.valueOf({objectName}.toString()))";
+                }
                 return $"(({ReferenceTypeName}){objectName})";
             }
 

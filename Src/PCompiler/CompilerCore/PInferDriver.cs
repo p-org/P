@@ -356,6 +356,7 @@ namespace Plang.Compiler
             // explore single-machine state
             PEvent configEvent = Job.ConfigEvent != null ? GetPEvent(Job.ConfigEvent) : null;
             HashSet<Hint> tasks = new(new Hint.EqualityComparer());
+            HashSet<string> hintQuantifierHeaders = [];
             foreach (var hint in GlobalScope.Hints)
             {
                 Job.Output.WriteWarning($"Running user-defined hint: {hint.Name}");
@@ -365,6 +366,7 @@ namespace Plang.Compiler
                 {
                     numEventCombinations += 1;
                 }
+                hintQuantifierHeaders.Add(hint.GetQuantifierHeader());
             }
             if (hintsOnly)
             {
@@ -376,6 +378,8 @@ namespace Plang.Compiler
             {
                 tasks.UnionWith(ExploreHandlers(m.AllStates().ToList()));
             }
+            // remove user-provided hints that are already explored
+            tasks = tasks.Where(x => !hintQuantifierHeaders.Contains(x.GetQuantifierHeader())).ToHashSet();
             stopwatch.Stop();
             tSearchEventCombination = stopwatch.ElapsedMilliseconds;
             Job.Output.WriteInfo("Event combinations:");
@@ -1264,7 +1268,7 @@ namespace Plang.Compiler
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error checking implication: {e.Message}");
+                // Console.WriteLine($"Error checking implication: {e.Message}");
                 return false;
             }
         }
@@ -1350,9 +1354,9 @@ namespace Plang.Compiler
                     }
                     return ret;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine($"Error checking implication: {e.Message}");
+                    // Console.WriteLine($"Error checking implication: {e.Message}");
                     isSyn = true;
                     return result;
                 }

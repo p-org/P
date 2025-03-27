@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -69,6 +70,12 @@ namespace Plang.Compiler
         {
             return IssueError(location,
                 $"try to modify a global param '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
+        }
+
+        public Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, int twiseNum, int paramNum)
+        {
+            return IssueError(location,
+                $"invalid twise: wise-number({twiseNum}) should great equal than 2 and less equal than number of parameters ({paramNum}) at {locationResolver.GetLocation(testDecl.SourceLocation)}");
         }
 
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)

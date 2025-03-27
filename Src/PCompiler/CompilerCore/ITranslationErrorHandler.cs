@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
@@ -29,6 +30,8 @@ namespace Plang.Compiler
         Exception UndeclaredGlobalParam(ParserRuleContext location, string name);
         
         Exception ModifyGlobalParam(ParserRuleContext location, IPDecl existing);
+        
+        Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, int twiseNum, int paramNum);
 
         Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount);
 

@@ -66,6 +66,26 @@ namespace Plang.Compiler.TypeChecker
                 {
                     test.AssumeExpr = exprVisitor.Visit(context.assumeExpr);
                 }
+
+                if (context.twise() == null)
+                {
+                    test.Twise = test.ParamExprMap.Count;
+                }
+                else
+                {
+                    if (context.twise().PAIRWISE() != null)
+                    {
+                        test.Twise = 2;
+                    } else if (context.twise().WISE() != null)
+                    {
+                        var t = int.Parse(context.twise().IntLiteral().GetText());
+                        if (!(2 <= t && t <= test.ParamExprMap.Count))
+                        {
+                            throw handler.InvalidTwise(context.twise(), test, t, test.ParamExprMap.Count);
+                        }
+                        test.Twise = t;
+                    }
+                }
             }
             
             foreach (var test in globalScope.RefinementTests)

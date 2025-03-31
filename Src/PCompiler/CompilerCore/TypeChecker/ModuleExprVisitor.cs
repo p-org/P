@@ -60,13 +60,12 @@ namespace Plang.Compiler.TypeChecker
                 if (context.globalParam != null)
                 {
                     var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
-                    test.ParamExprMap = EnumerateParamAssignments (handler, globalScope, context.globalParam, expr);
+                    test.ParamExprMap = EnumerateParamAssignments(handler, globalScope, context.globalParam, expr);
                 }
                 if (context.assumeExpr != null)
                 {
                     test.AssumeExpr = exprVisitor.Visit(context.assumeExpr);
                 }
-
                 if (context.twise() == null)
                 {
                     test.Twise = test.ParamExprMap.Count;
@@ -76,12 +75,14 @@ namespace Plang.Compiler.TypeChecker
                     if (context.twise().PAIRWISE() != null)
                     {
                         test.Twise = 2;
-                    } else if (context.twise().WISE() != null)
+                    }
+                    else if (context.twise().WISE() != null)
                     {
                         var t = int.Parse(context.twise().IntLiteral().GetText());
-                        if (!(2 <= t && t <= test.ParamExprMap.Count))
+                        var (isValid, errMsg) = ParamAssignment.TwiseNumWellFormednessCheck(t, test.ParamExprMap.Count);
+                        if (!isValid)
                         {
-                            throw handler.InvalidTwise(context.twise(), test, t, test.ParamExprMap.Count);
+                            throw handler.InvalidTwise(context.twise(), test, errMsg);
                         }
                         test.Twise = t;
                     }

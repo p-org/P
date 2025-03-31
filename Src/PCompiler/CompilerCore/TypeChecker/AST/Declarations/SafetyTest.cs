@@ -8,6 +8,9 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     {
         public string Main { get; set; }
         public IPModuleExpr ModExpr { get; set; }
+        
+        // from 2 to the number of parameters
+        public int Twise { get; set; }
 
         // When there is no param expression, it fails back to normal test
         public IDictionary<string, List<IPExpr>> ParamExprMap { get; set; } = new Dictionary<string, List<IPExpr>>();

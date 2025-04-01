@@ -14,7 +14,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.CSharp
 {
-    public class CSharpCodeGenerator : ICodeGenerator
+    public class PCheckerCodeGenerator : ICodeGenerator
     {
 
         /// <summary>

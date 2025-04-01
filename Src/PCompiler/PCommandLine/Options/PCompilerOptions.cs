@@ -165,20 +165,11 @@ namespace Plang.Options
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();
                     switch (((string)option.Value).ToLowerInvariant())
                     {
-                        case "bugfinding":
-                        case "csharp":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.CSharp);
-                            break;
-                        case "verification":
-                        case "coverage":
-                        case "symbolic":
-                        case "psym":
-                        case "pcover":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Symbolic);
+                        case "pchecker":
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PChecker);
                             break;
                         case "pobserve":
-                        case "java":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.Java);
+                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PObserve);
                             break;
                         case "stately":
                             compilerConfiguration.OutputLanguages.Add(CompilerOutput.Stately);

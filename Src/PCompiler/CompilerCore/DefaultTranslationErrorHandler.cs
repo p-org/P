@@ -72,10 +72,10 @@ namespace Plang.Compiler
                 $"try to modify a global param '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
         }
 
-        public Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, int twiseNum, int paramNum)
+        public Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, string errMsg)
         {
             return IssueError(location,
-                $"invalid twise: wise-number({twiseNum}) should great equal than 2 and less equal than number of parameters ({paramNum}) at {locationResolver.GetLocation(testDecl.SourceLocation)}");
+                $"invalid twise number at {locationResolver.GetLocation(testDecl.SourceLocation)}: {errMsg}");
         }
 
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)

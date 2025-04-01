@@ -31,7 +31,7 @@ namespace Plang.Compiler
         
         Exception ModifyGlobalParam(ParserRuleContext location, IPDecl existing);
         
-        Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, int twiseNum, int paramNum);
+        Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, string errMsg);
 
         Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount);
 

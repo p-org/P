@@ -12,6 +12,11 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
             Role = role;
         }
+        
+        public Variable(string name)
+        {
+            Name = name;
+        }
 
         public VariableRole Role { get; }
         public PLanguageType Type { get; set; }

@@ -8,13 +8,28 @@ namespace Plang.Compiler.TypeChecker;
 
 public abstract class ParamAssignment
 {
-    private static IEnumerable<IEnumerable<T>> DifferentCombinations<T>(IEnumerable<T> elements, int k)
+    private static IEnumerable<IEnumerable<T>> DifferentCombinationsAux<T>(IEnumerable<T> elements, int k)
     {
         var enumerable = elements as T[] ?? elements.ToArray();
         return k == 0
             ? [Array.Empty<T>()]
             : enumerable.SelectMany((e, i) =>
-                DifferentCombinations(enumerable.Skip(i + 1), k - 1).Select(c => new[] { e }.Concat(c)));
+                DifferentCombinationsAux(enumerable.Skip(i + 1), k - 1).Select(c => new[] { e }.Concat(c)));
+    }
+
+    public static HashSet<HashSet<T>> DifferentCombinations<T>(IEnumerable<T> elements, int k)
+    {
+        var res = DifferentCombinationsAux(elements, k);
+        return new HashSet<HashSet<T>>(res.Select(innerEnumerable => new HashSet<T>(innerEnumerable)),
+            HashSet<T>.CreateSetComparer());
+    }
+
+    // Should use sum type (Option) instead of product type
+    public static (bool, string) TwiseNumWellFormednessCheck(int twise, int numParams)
+    {
+        return twise < 1
+            ? (false, $"twise number {twise} is less than 1.")
+            : (twise > numParams ? (false, $"twise number {twise} is greater than {numParams}.") : (true, ""));
     }
 
     private static Dictionary<int, T> EnumerableToIndexDict<T>(IEnumerable<T> l, Func<T, T> f)
@@ -37,19 +52,15 @@ public abstract class ParamAssignment
                     foreach (var vector in resultCopy) vector.Add(name, i);
                     newResult.AddRange(resultCopy);
                 }
-
                 result = newResult;
             }
-
             vectorSet.UnionWith(result);
         }
-
         return EnumerableToIndexDict(vectorSet, x => x);
     }
 
     private static Dictionary<int, HashSet<int>> MakeAssignmentCoverageMap(
-        Dictionary<int, Dictionary<string, int>> assignmentMap,
-        Dictionary<int, Dictionary<string, int>> vectorMap,
+        Dictionary<int, Dictionary<string, int>> assignmentMap, Dictionary<int, Dictionary<string, int>> vectorMap,
         List<int> assignments)
     {
         var assignmentCoverageMap = new Dictionary<int, HashSet<int>>();
@@ -59,7 +70,6 @@ public abstract class ParamAssignment
             foreach (var kv in vectorMap.Where(kv => kv.Value.All(assignmentMap[assignment].Contains)))
                 assignmentCoverageMap[assignment].Add(kv.Key);
         }
-
         return assignmentCoverageMap;
     }
 
@@ -83,7 +93,6 @@ public abstract class ParamAssignment
             foreach (var kv in assignmentCoverageMap) assignmentCoverageMap[kv.Key].ExceptWith(coverage);
             result.Add(ass);
         }
-
         return result;
     }
 
@@ -105,7 +114,6 @@ public abstract class ParamAssignment
             if (i >= values.Count) throw new ArgumentException("Index out of range in global variable config.");
             dic[variable] = values[i];
         }
-
         return dic;
     }
 
@@ -123,12 +131,11 @@ public abstract class ParamAssignment
             if (indexArr[i].Item2 < globalParams[indexArr[i].Item1].Count) return true;
             indexArr[i] = (indexArr[i].Item1, 0);
         }
-
         return false;
     }
 
     public static void IterateAssignments(SafetyTest safety, List<Variable> globalParams,
-        Action<Dictionary<Variable, IPExpr>> f)
+        Action<Dictionary<Variable, IPExpr>> generateTestCode)
     {
         var indexArr = safety.ParamExprMap.ToList()
             .Zip(Enumerable.Repeat(0, safety.ParamExprMap.Count), (x, y) => (x.Key, y)).ToArray();
@@ -141,8 +148,7 @@ public abstract class ParamAssignment
             if (!SimpleExprEval.ForceBool(SimpleExprEval.Eval(dic, safety.AssumeExpr))) continue;
             assignmentIndices.Add(indexDic);
         } while (Next(indexArr, safety.ParamExprMap));
-
         foreach (var i in GreedyCoverageExplore(universe, assignmentIndices, safety.Twise))
-            f(IndexDic2Dic(globalParams, safety.ParamExprMap, assignmentIndices[i]));
+            generateTestCode(IndexDic2Dic(globalParams, safety.ParamExprMap, assignmentIndices[i]));
     }
 }

@@ -47,6 +47,12 @@ test param (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5], b1 in [true, false
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, Bank, { TestWithConfig });
 
+  test param (nClients in [2, 3, 4], g1 in [1,2], g2 in [4, 5], b1 in [true, false]) 
+  assume (b1 == (nClients + g1 > g2)) 
+  (1 wise) testTWise1 [main=TestWithConfig]:
+assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+(union Client, Bank, { TestWithConfig });
+
 
 // Syntax error
 // paramtest () wrong1 [main=TestWithSingleClient]:

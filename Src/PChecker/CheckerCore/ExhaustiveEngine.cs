@@ -78,6 +78,7 @@ namespace PChecker
                         arguments.Append("--strategy symbolic ");
                         break;
                     case CheckerMode.Coverage:
+                    case CheckerMode.PEx:
                         arguments.Append($"--strategy {_checkerConfiguration.SchedulingStrategy} ");
                         break;
                     default:
@@ -109,7 +110,7 @@ namespace PChecker
                 }
             }
 
-            arguments.Append($"{_checkerConfiguration.PSymArgs} ");
+            arguments.Append($"{_checkerConfiguration.CheckerArgs} ");
 
             return arguments.ToString();
         }

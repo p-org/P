@@ -180,7 +180,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 DeclarationVisitor.PopulateDeclarations(config.Handler, globalScope, programUnit, nodesToDeclarations);
             }
-            
+
             return globalScope;
         }
 

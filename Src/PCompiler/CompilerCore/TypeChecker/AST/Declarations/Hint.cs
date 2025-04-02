@@ -21,6 +21,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             CustomFunctions = [];
             CustomPredicates = [];
             Exact = exact;
+            Ignore = false;
             SourceLocation = sourceNode;
             ConfigEvent = null;
             // can be set by parameter search
@@ -219,6 +220,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public Scope Scope { get; set; }
         public string Name { get; set; }
         public bool Exact { get; set; }
+        public bool Ignore { get; set; }
         public bool UserHint { get; set; }
         public ParserRuleContext SourceLocation { get; set; }
 

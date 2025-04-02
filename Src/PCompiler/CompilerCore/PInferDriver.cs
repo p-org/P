@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using Microsoft.Z3;
 using Plang.Compiler.Backend;
 using Plang.Compiler.Backend.PInfer;
 using Plang.Compiler.TypeChecker;
@@ -356,8 +357,8 @@ namespace Plang.Compiler
             // explore single-machine state
             PEvent configEvent = Job.ConfigEvent != null ? GetPEvent(Job.ConfigEvent) : null;
             HashSet<Hint> tasks = new(new Hint.EqualityComparer());
-            HashSet<string> hintQuantifierHeaders = [];
-            foreach (var hint in GlobalScope.Hints)
+            HashSet<string> hintQuantifierHeaders = [.. GlobalScope.Hints.Select(x => x.GetQuantifierHeader())];
+            foreach (var hint in GlobalScope.Hints.Where(x => !x.Ignore))
             {
                 Job.Output.WriteWarning($"Running user-defined hint: {hint.Name}");
                 hint.ConfigEvent ??= configEvent;
@@ -366,7 +367,6 @@ namespace Plang.Compiler
                 {
                     numEventCombinations += 1;
                 }
-                hintQuantifierHeaders.Add(hint.GetQuantifierHeader());
             }
             if (hintsOnly)
             {

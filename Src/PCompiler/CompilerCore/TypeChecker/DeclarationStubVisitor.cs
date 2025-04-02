@@ -60,6 +60,21 @@ namespace Plang.Compiler.TypeChecker
             return hint;
         }
 
+        public override object VisitIgnoreHintDecl(PParser.IgnoreHintDeclContext context)
+        {
+            var name = context.name.GetText();
+            var hint = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, hint);
+            foreach (var body in context.hintBody())
+            {
+                if (body.funDecl() != null)
+                {
+                    Visit(body.funDecl());
+                }
+            }
+            return hint;
+        }
+
         #region Events
 
         public override object VisitEventDecl(PParser.EventDeclContext context)

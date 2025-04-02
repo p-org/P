@@ -479,6 +479,16 @@ namespace Plang.Compiler.TypeChecker
             return hint;
         }
 
+        public Hint Put(string name, PParser.IgnoreHintDeclContext tree)
+        {
+            var hint = new Hint(name, false, tree);
+            CheckConflicts(hint, Namespace(hints));
+            hint.UserHint = false;
+            hint.Ignore = true;
+            hints.Add(name, hint);
+            return hint;
+        }
+
         public TypeDef Put(string name, PParser.PTypeDefContext tree)
         {
             var typedef = new TypeDef(name, tree);

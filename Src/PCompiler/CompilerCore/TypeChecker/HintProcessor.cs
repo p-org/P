@@ -164,6 +164,11 @@ namespace Plang.Compiler.TypeChecker
             return populateHintFields(context.hintBody());
         }
 
+        public override object VisitIgnoreHintDecl(PParser.IgnoreHintDeclContext context)
+        {
+            return populateHintFields(context.hintBody());
+        }
+
         public Hint populateHintFields(PParser.HintBodyContext[] hintBody)
         {
             

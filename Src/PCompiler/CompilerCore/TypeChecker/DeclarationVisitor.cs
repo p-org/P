@@ -661,6 +661,12 @@ namespace Plang.Compiler.TypeChecker
             return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
         }
 
+        public override object VisitIgnoreHintDecl(PParser.IgnoreHintDeclContext context)
+        {
+            var hint = (Hint) nodesToDeclarations.Get(context);
+            return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
+        }
+
         #endregion
 
         #region Functions

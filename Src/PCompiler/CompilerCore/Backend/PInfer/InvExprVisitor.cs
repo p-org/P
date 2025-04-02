@@ -168,7 +168,11 @@ namespace Plang.Compiler.Backend.PInfer
                 // return expr;
             }
             // let constants go
-            if ((rhs is IntLiteralExpr || rhs is FloatLiteralExpr) && (binOp.GetKind() == BinOpKind.Comparison || binOp.GetKind() == BinOpKind.Equality))
+            if ((rhs is IntLiteralExpr ||
+                    rhs is FloatLiteralExpr ||
+                    ((rhs is UnaryOpExpr unop) 
+                        && (unop.SubExpr is IntLiteralExpr || unop.SubExpr is FloatLiteralExpr)))
+                && (binOp.GetKind() == BinOpKind.Comparison || binOp.GetKind() == BinOpKind.Equality))
             {
                 // if (lhs.Type == PInferBuiltinTypes.Index)
                 // {

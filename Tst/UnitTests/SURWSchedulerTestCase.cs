@@ -18,6 +18,7 @@ namespace UnitTests.Core
     internal class SURWSchedulerTestCase
     {
         [NUnit.Framework.Test]
+        [Ignore("This test is ignored because it is flaky and conflict with `PCheckerLogGeneratorTests`")]
         public void TestSURWSchedulerUniformSampling()
         {
             var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory,

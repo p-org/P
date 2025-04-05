@@ -505,7 +505,7 @@ namespace PChecker.SystematicTesting
             IStateMachineManager stateMachineManager = new StateMachineManager(this, stateMachine);
 
             IEventQueue eventQueue = new EventQueue(stateMachineManager, stateMachine);
-            stateMachine.Configure(this, id, stateMachineManager, eventQueue);
+            stateMachine.Configure(this, id, stateMachineManager, eventQueue, creator);
             stateMachine.SetupEventHandlers();
             stateMachine.self = new PMachineValue(id, stateMachine.receives.ToList());
             stateMachine.interfaceName = "I_" + name;
@@ -616,7 +616,7 @@ namespace PChecker.SystematicTesting
                 "Cannot send event '{0}' to state machine id '{1}' that is not bound to an state machine instance.",
                 e.GetType().FullName, targetId.Value);
 
-            Scheduler.ScheduledOperation.MessageReceiver = targetId.ToString();
+            Scheduler.ScheduledOperation.MessageReceiver = targetId.Value;
 
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender);

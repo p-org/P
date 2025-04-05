@@ -294,6 +294,12 @@ namespace PChecker.SystematicTesting
                 Strategy = new ScheduleAndInputStrategy(checkerConfiguration.MaxUnfairSchedulingSteps,
                     RandomValueGenerator, scheduler);
             }
+            else if (checkerConfiguration.SchedulingStrategy is "surw")
+            {
+                var scheduler = new SURWScheduler(new(), new(), new(), RandomValueGenerator);
+                Strategy = new ScheduleAndInputStrategy(checkerConfiguration.MaxFairSchedulingSteps,
+                    RandomValueGenerator, scheduler);
+            }
             else if (checkerConfiguration.SchedulingStrategy is "fairpct")
             {
                 var prefixLength = checkerConfiguration.MaxUnfairSchedulingSteps;
@@ -328,6 +334,11 @@ namespace PChecker.SystematicTesting
             {
                 Strategy = new FeedbackGuidedStrategy(checkerConfiguration, new ControlledRandom(checkerConfiguration),
                     new POSScheduler(new ControlledRandom(checkerConfiguration)));
+            }
+            else if (checkerConfiguration.SchedulingStrategy is "feedbacksurw")
+            {
+                Strategy = new FeedbackGuidedStrategy(checkerConfiguration, new ControlledRandom(checkerConfiguration),
+                    new SURWScheduler(new(), new(), new(), new ControlledRandom(checkerConfiguration)));
             }
             else if (checkerConfiguration.SchedulingStrategy is "portfolio")
             {
@@ -417,9 +428,11 @@ namespace PChecker.SystematicTesting
             if (_checkerConfiguration.SchedulingStrategy is "random" ||
                 _checkerConfiguration.SchedulingStrategy is "pct" ||
                 _checkerConfiguration.SchedulingStrategy is "pos" ||
+                _checkerConfiguration.SchedulingStrategy is "surw" ||
                 _checkerConfiguration.SchedulingStrategy is "feedbackpct" ||
                 _checkerConfiguration.SchedulingStrategy is "feedbackpctcp" ||
                 _checkerConfiguration.SchedulingStrategy is "feedbackpos" ||
+                _checkerConfiguration.SchedulingStrategy is "feedbacksurw" ||
                 _checkerConfiguration.SchedulingStrategy is "fairpct" ||
                 _checkerConfiguration.SchedulingStrategy is "probabilistic" ||
                 _checkerConfiguration.SchedulingStrategy is "rl")

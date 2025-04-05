@@ -53,7 +53,7 @@ namespace PChecker.SystematicTesting.Operations
         /// <summary>
         /// The receiver if the operation is Send.
         /// </summary>
-        public string MessageReceiver = "";
+        public ulong MessageReceiver = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncOperation"/> class.

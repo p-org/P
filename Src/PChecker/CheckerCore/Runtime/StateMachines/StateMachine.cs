@@ -53,6 +53,11 @@ namespace PChecker.Runtime.StateMachines
         /// Events are dequeued to be processed.
         /// </summary>
         private protected IEventQueue Inbox;
+
+        /// <summary>
+        /// The creator of this state machine. null if the `main` state machine.
+        /// </summary>
+        public StateMachine Creator;
         
         /// <summary>
         /// Keeps track of state machine's current vector time.
@@ -294,13 +299,14 @@ namespace PChecker.Runtime.StateMachines
         /// <summary>
         /// Configures the state machine.
         /// </summary>
-        internal void Configure(ControlledRuntime runtime, StateMachineId id, IStateMachineManager manager, IEventQueue inbox)
+        internal void Configure(ControlledRuntime runtime, StateMachineId id, IStateMachineManager manager, IEventQueue inbox, StateMachine creator)
         {
             Runtime = runtime;
             Id = id;
             Manager = manager;
             Inbox = inbox;
             VectorTime = new VectorTime(Id);
+            Creator = creator;
         }
         
         /// <summary>

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using PChecker.Exceptions;
 
 namespace PChecker.Generator.Object;
@@ -38,13 +37,12 @@ where T: IConvertible
         {
             return (T) Convert.ChangeType(Random.Next(), typeof(T));
         }
-        else if (typeof(T).IsAssignableFrom(typeof(double)))
+
+        if (typeof(T).IsAssignableFrom(typeof(double)))
         {
             return (T) Convert.ChangeType(Random.NextDouble(), typeof(T));
         }
-        else
-        {
-            throw new RuntimeException("The random choices only supports int and double type.");
-        }
+
+        throw new RuntimeException("The random choices only supports int and double type.");
     }
 }

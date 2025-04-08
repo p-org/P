@@ -38,10 +38,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return SuffixStrategy.GetNextOperation(current, ops, out next);
             }
-            else
-            {
-                return PrefixStrategy.GetNextOperation(current, ops, out next);
-            }
+
+            return PrefixStrategy.GetNextOperation(current, ops, out next);
         }
 
         /// <inheritdoc/>
@@ -51,10 +49,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
             }
-            else
-            {
-                return PrefixStrategy.GetNextBooleanChoice(current, maxValue, out next);
-            }
+
+            return PrefixStrategy.GetNextBooleanChoice(current, maxValue, out next);
         }
 
         /// <inheritdoc/>
@@ -64,10 +60,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
             }
-            else
-            {
-                return PrefixStrategy.GetNextIntegerChoice(current, maxValue, out next);
-            }
+
+            return PrefixStrategy.GetNextIntegerChoice(current, maxValue, out next);
         }
 
         /// <inheritdoc/>
@@ -85,10 +79,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return SuffixStrategy.GetScheduledSteps() + PrefixStrategy.GetScheduledSteps();
             }
-            else
-            {
-                return PrefixStrategy.GetScheduledSteps();
-            }
+
+            return PrefixStrategy.GetScheduledSteps();
         }
 
         /// <inheritdoc/>

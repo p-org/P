@@ -22,8 +22,8 @@ namespace UnitTests
             // Delete ONLY if inside the solution directory
             SafeDeleteDirectory(testCase.ScratchDirectory);
         }
-
-        private static void SafeDeleteDirectory(DirectoryInfo toDelete)
+        
+        public static void SafeDeleteDirectory(DirectoryInfo toDelete)
         {
             var safeBase = new DirectoryInfo(Constants.SolutionDirectory);
             for (var scratch = toDelete; scratch.Parent != null; scratch = scratch.Parent)

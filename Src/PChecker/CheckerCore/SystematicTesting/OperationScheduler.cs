@@ -165,7 +165,7 @@ namespace PChecker.SystematicTesting
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {
                 // Checks if the program has deadlocked.
-                CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
+                CheckIfProgramHasDeadlocked(ops.Select(op => op));
 
                 Debug.WriteLine("<ScheduleDebug> Schedule explored.");
                 HasFullyExploredSchedule = true;
@@ -178,7 +178,7 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            ScheduledOperation = next as AsyncOperation;
+            ScheduledOperation = next;
             ScheduleTrace.AddSchedulingChoice(next.Id);
 
             Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
@@ -666,7 +666,7 @@ namespace PChecker.SystematicTesting
             foreach (var operation in OperationMap.Values)
             {
                 // This casting is always safe.
-                var op = operation as AsyncOperation;
+                var op = operation;
                 op.IsActive = true;
                 op.Status = AsyncOperationStatus.Canceled;
 

@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Xml.Linq;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Logging;
 using PChecker.Runtime.StateMachines;
@@ -40,7 +38,7 @@ namespace PChecker.Coverage
         private readonly Dictionary<string, List<EventInfo>> Inbox = new Dictionary<string, List<EventInfo>>();
         private static readonly Dictionary<string, string> EventAliases = new Dictionary<string, string>();
         private readonly HashSet<string> Namespaces = new HashSet<string>();
-        private static readonly char[] TypeSeparators = new char[] { '.', '+' };
+        private static readonly char[] TypeSeparators = new[] { '.', '+' };
 
         private class DoActionEvent : Event
         {
@@ -238,7 +236,7 @@ namespace PChecker.Coverage
                 // Transition to the Halt state.
                 var source = GetOrCreateChild(id?.Name, id?.Type, stateName);
                 var target = GetOrCreateChild(id?.Name, id?.Type, "Halt", "Halt");
-                GetOrCreateEventLink(source, target, new EventInfo() { Event = typeof(HaltEvent).FullName });
+                GetOrCreateEventLink(source, target, new EventInfo { Event = typeof(HaltEvent).FullName });
             }
         }
 
@@ -474,7 +472,7 @@ namespace PChecker.Coverage
                     Inbox[targetId] = inbox;
                 }
 
-                info = new EventInfo()
+                info = new EventInfo
                 {
                     Name = senderName ?? ExternalCodeName,
                     Type = senderType ?? ExternalCodeName,

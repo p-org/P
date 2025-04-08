@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic;

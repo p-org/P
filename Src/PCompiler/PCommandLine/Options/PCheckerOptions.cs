@@ -11,7 +11,7 @@ using Plang.Parser;
 
 namespace Plang.Options
 {
-    internal sealed class PCheckerOptions
+    public sealed class PCheckerOptions
     {
         /// <summary>
         /// The command line parser to use.
@@ -21,7 +21,7 @@ namespace Plang.Options
         /// <summary>
         /// Initializes a new instance of the <see cref="PCheckerOptions"/> class.
         /// </summary>
-        internal PCheckerOptions()
+        public PCheckerOptions()
         {
             Parser = new CommandLineArgumentParser("p check",
                 "The P checker enables systematic exploration of a specified P test case, it generates " +
@@ -66,7 +66,7 @@ namespace Plang.Options
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-rl", null, "Choose the reinforcement learning (RL) scheduling strategy", typeof(bool)).IsHidden = true;
             var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
-            schCoverage.AllowedValues = new List<string>() { "learn", "random", "dfs", "stateless" };
+            schCoverage.AllowedValues = new List<string> { "learn", "random", "dfs", "stateless" };
             schCoverage.IsHidden = true;
             var schPEx = schedulingGroup.AddArgument("sch-pex", null, "Choose the scheduling strategy for PEx mode (options: random, dfs). (default: random)");
             schPEx.AllowedValues = new List<string>() { "random", "dfs", "astar" };
@@ -89,7 +89,7 @@ namespace Plang.Options
         /// Parses the command line options and returns a checkerConfiguration.
         /// </summary>
         /// <returns>The CheckerConfiguration object populated with the parsed command line options.</returns>
-        internal CheckerConfiguration Parse(string[] args)
+        public CheckerConfiguration Parse(string[] args)
         {
             var configuration = CheckerConfiguration.Create();
             try
@@ -413,7 +413,7 @@ namespace Plang.Options
                 {
                     if (checkerConfiguration.Mode == CheckerMode.BugFinding)
                     {
-                        if (!fileName.Contains($"CSharp{pathSep}"))
+                        if (!fileName.Contains($"PChecker{pathSep}"))
                             continue;
                         if (fileName.EndsWith("PCheckerCore.dll")
                             || fileName.EndsWith("PCSharpRuntime.dll")

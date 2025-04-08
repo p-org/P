@@ -2,12 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PChecker.Generator;
 using PChecker.Feedback;
 using PChecker.Generator.Object;
 using PChecker.SystematicTesting.Strategies.Probabilistic;
 using AsyncOperation = PChecker.SystematicTesting.Operations.AsyncOperation;
-using Debug = System.Diagnostics.Debug;
 
 namespace PChecker.SystematicTesting.Strategies.Feedback;
 
@@ -27,10 +25,10 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     private readonly HashSet<int> _visitedTimelines = new();
 
     private List<GeneratorRecord> _savedGenerators = new ();
-    private int _pendingMutations = 0;
-    private bool _shouldExploreNew = false;
+    private int _pendingMutations;
+    private bool _shouldExploreNew;
     private HashSet<GeneratorRecord> _visitedGenerators = new HashSet<GeneratorRecord>();
-    private GeneratorRecord _currentParent = null;
+    private GeneratorRecord _currentParent;
 
     private System.Random _rnd = new System.Random();
 

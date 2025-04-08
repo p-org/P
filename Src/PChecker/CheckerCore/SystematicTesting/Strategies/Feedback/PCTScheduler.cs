@@ -209,6 +209,10 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 int index = _randomValueGenerator.Next(listOfInts.Count);
                 PriorityChangePoints.Add(listOfInts[index]);
                 listOfInts.RemoveAt(index);
+                if (listOfInts.Count == 0)
+                {
+                    break;
+                }
             }
         }
 

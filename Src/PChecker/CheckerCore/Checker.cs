@@ -9,7 +9,7 @@ namespace PChecker;
 /// <summary>
 /// Checker class that implements the run method which acts as the entry point into the P checker.
 /// </summary>
-public class Checker
+public static class Checker
 {
     /// <summary>
     /// Run the P checker for the given configuration

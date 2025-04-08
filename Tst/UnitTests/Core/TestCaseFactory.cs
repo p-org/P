@@ -88,7 +88,7 @@ namespace UnitTests.Core
             // TODO: validate information about the particular kind of compiler error
             var isStaticError = testName.Contains("/StaticError/");
             validator = isStaticError
-                ? (ITestResultsValidator)new StaticErrorValidator()
+                ? new StaticErrorValidator()
                 : new CompileSuccessValidator();
 
             var tempDirName =

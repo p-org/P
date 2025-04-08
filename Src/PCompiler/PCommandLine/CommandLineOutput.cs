@@ -14,10 +14,7 @@ public static class CommandLineOutput
 
     public static void WriteInfo(string msg)
     {
-        var defaultColor = Console.ForegroundColor;
-        Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine(msg);
-        Console.ForegroundColor = defaultColor;
     }
 
     public static void WriteWarning(string msg)

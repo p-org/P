@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Plang.Compiler.Backend.Java
 {
     internal class CompilationContext : CompilationContextBase

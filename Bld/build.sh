@@ -13,9 +13,6 @@ echo -e "${ORANGE} ---- Fetching git submodules ----${NOCOLOR}"
 # Initialize submodules
 git submodule update --init --recursive
 
-echo -e "${ORANGE} ---- Building the Java P runtime ----${NOCOLOR}"
-mvn compile -q -f ./Src/PRuntimes/PJavaRuntime/pom.xml
-
 echo -e "${ORANGE} ---- Building the PCompiler ----${NOCOLOR}"
 # Run the build!
 

@@ -5,8 +5,6 @@ namespace Plang.Compiler
         PChecker,
         PObserve,
         Stately,
-        CSharp,
-        Java,
         PEx
     }
 }

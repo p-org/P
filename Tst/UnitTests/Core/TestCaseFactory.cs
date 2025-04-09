@@ -82,7 +82,7 @@ namespace UnitTests.Core
             ICompilerTestRunner runner;
             ITestResultsValidator validator;
 
-            var output = new List<CompilerOutput>{CompilerOutput.CSharp};
+            var output = new List<CompilerOutput>{CompilerOutput.PChecker};
             runner = new CompileOnlyRunner(output, inputFiles.Select(x => x.FullName).ToList());
 
             // TODO: validate information about the particular kind of compiler error

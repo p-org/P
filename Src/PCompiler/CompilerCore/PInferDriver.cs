@@ -209,6 +209,13 @@ namespace Plang.Compiler
         public void AddHint(string name, HashSet<Hint> tasks, params PEvent[] events)
         {
             // Enusre all events have some payload
+            foreach (var e in events)
+            {
+                if (Job.ConfigEvent != null && e.Name == Job.ConfigEvent)
+                {
+                    return;
+                }
+            }
             name = name.Replace(" ", "_").Replace(".", "_");
             if (events.Select(e => e.PayloadType == PrimitiveType.Null).Any(x => x))
             {

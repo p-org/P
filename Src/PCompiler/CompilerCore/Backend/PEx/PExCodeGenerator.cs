@@ -1931,6 +1931,8 @@ internal class PExCodeGenerator : ICodeGenerator
                 return "PValue";
             case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                 return "PValue<?>";
+            case DataType dataType:
+                return "PValue<?>";
             default:
                 throw new NotImplementedException($"PEx type '{type.OriginalRepresentation}' not supported");
         }
@@ -2010,6 +2012,8 @@ internal class PExCodeGenerator : ICodeGenerator
             case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                 return "null";
             case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
+                return "null";
+            case DataType dataType:
                 return "null";
             default:
                 throw new NotImplementedException($"PEx type '{type.OriginalRepresentation}' not supported");

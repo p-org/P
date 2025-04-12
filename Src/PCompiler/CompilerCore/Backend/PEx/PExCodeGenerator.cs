@@ -108,7 +108,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
         //context.WriteLine(source.Stream);
 
-        IEnumerable<IPDecl> decls = TransformASTPass.GetTransformedDecls(globalScope);
+        IEnumerable<IPDecl> decls = TransformASTPass.GetTransformedDecls(context, globalScope);
         //IEnumerable<IPDecl> decls = globalScope.AllDecls;
 
         var hasSafetyTest = false;

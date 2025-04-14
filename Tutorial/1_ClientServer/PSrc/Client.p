@@ -70,7 +70,10 @@ machine Client
         print format ("Withdrawal with rId = {0} failed, account balance = {1}", resp.rId, resp.balance);
       }
 
-      if(currentBalance > 10)
+      if (currentBalance > 10)
+/* Hint 3: Reduce the number of times WithdrawAmount() is called by changing the above line to the following:
+      if (currentBalance > 10 && nextReqId < (accountId*100 + 5))
+*/
       {
         print format ("Still have account balance = {0}, lets try and withdraw more", currentBalance);
         goto WithdrawMoney;
@@ -81,6 +84,9 @@ machine Client
   // function that returns a random integer between (1 to current balance + 1)
   fun WithdrawAmount() : int {
     return choose(currentBalance) + 1;
+/* Hint 2: Reduce the number of choices by changing the above line to the following:
+    return ((choose(5) * currentBalance) / 4) + 1;
+*/
   }
 
   state NoMoneyToWithDraw {

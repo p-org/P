@@ -230,6 +230,7 @@ Bld/*
 !Bld/Jars/
 !Bld/Deps/
 PGenerated/
+PCheckerOutput/
 !Src/**/Zing/*.zing
 stubs.c
 *.idb

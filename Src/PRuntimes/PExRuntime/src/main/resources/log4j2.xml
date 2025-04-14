@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{1} - %marker: %msg%n"/>
+        </Console>
+        <File name="LogFile" fileName="all.log" immediateFlush="false" append="false">
+            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json">
+                <EventTemplateAdditionalField
+                        key="marker"
+                        format="JSON"
+                        value='{"$resolver": "marker", "field": "name"}'/>
+            </JsonTemplateLayout>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="trace">
+            <AppenderRef ref="Console" level="DEBUG"/>
+            <AppenderRef ref="LogFile" level="DEBUG"/>
+        </Root>
+    </Loggers>
+</Configuration>

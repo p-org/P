@@ -43,7 +43,7 @@ namespace Plang.Compiler.Backend.Java {
                 WriteLine($"static {{ logger.setLevel(Level.OFF); }};");
             }
 
-            foreach (var m in GlobalScope.Machines)
+            foreach (var m in GlobalScope.Machines.ToList())
             {
                 _currentMachine = m;
                 if (m.IsSpec)
@@ -58,7 +58,7 @@ namespace Plang.Compiler.Backend.Java {
             }
 
             // static functions
-            foreach (var f in _calledStaticFunctions)
+            foreach (var f in _calledStaticFunctions.ToList())
             {
                 WriteFunction(f);
             }

@@ -15,12 +15,14 @@ namespace Plang.Compiler.Backend.PEx;
 
 internal class TransformASTPass
 {
+    private static CompilationContext context;
     private static int continuationNumber;
     private static int whileNumber;
     private static int callNum;
 
-    public static List<IPDecl> GetTransformedDecls(Scope globalScope)
+    public static List<IPDecl> GetTransformedDecls(CompilationContext globalContext, Scope globalScope)
     {
+        context = globalContext;
         continuationNumber = 0;
         callNum = 0;
         var decls = new List<IPDecl>();
@@ -124,7 +126,7 @@ internal class TransformASTPass
         {
             if (handler.Key.IsNullEvent)
                 throw new NotImplementedException(
-                    $"Null events are not supported, found in state {transformedState.Name} of machine {transformedState.OwningMachine.Name}");
+                    $"{context.LocationResolver.GetLocation(handler.Key.SourceLocation)}: Null events are not supported in this mode.");
             transformedState[handler.Key] = TransformAction(handler.Value, functionMap);
         }
 
@@ -249,7 +251,7 @@ internal class TransformASTPass
                     {
                         if (CanReturn(entry.Value.Body))
                         {
-                            throw new NotImplementedException($"Function with a return statement inside a receive-case isn't supported. Found in {func.Name}.");
+                            throw new NotImplementedException($"{context.LocationResolver.GetLocation(entry.Value.SourceLocation)}: Function with a return statement inside a receive-case isn't supported in this mode.");
                         }
 
                         entry.Value.Body = new CompoundStmt(entry.Value.Body.SourceLocation,
@@ -262,7 +264,7 @@ internal class TransformASTPass
                 case WhileStmt whileStmt:
                     if (CanReturn(whileStmt.Body))
                     {
-                        throw new NotImplementedException($"Function with a return statement inside a loop isn't supported. Found in {func.Name}.");
+                        throw new NotImplementedException($"{context.LocationResolver.GetLocation(whileStmt.SourceLocation)}: Function with a return statement inside a loop isn't supported in this mode.");
                     }
 
                     var bodyList = new List<IPStmt>();
@@ -546,7 +548,7 @@ internal class TransformASTPass
     {
         if (!function.CanReceive) return function;
         if (machine == null)
-            throw new NotImplementedException($"Async functions {function.Name} are not supported");
+            throw new NotImplementedException($"{context.LocationResolver.GetLocation(function.SourceLocation)}: Async functions are not supported in this mode.");
         var transformedFunction = new Function(function.Name, function.SourceLocation);
         transformedFunction.Owner = function.Owner;
         transformedFunction.ParentFunction = function.ParentFunction;
@@ -687,7 +689,7 @@ internal class TransformASTPass
                             {
                                 if (c.Key.IsNullEvent)
                                     throw new NotImplementedException(
-                                        $"Null events are not supported, found in a receive statement of machine {machine.Name}");
+                                        $"{context.LocationResolver.GetLocation(c.Key.SourceLocation)}: Null events in a receive statement are not supported in this mode.");
                                 if (c.Value.CanReceive)
                                 {
                                     canReceiveInCase = true;
@@ -772,7 +774,8 @@ internal class TransformASTPass
                         case WhileStmt loop:
                             if (CanReceive(loop.Body))
                             {
-                                // throw new NotImplementedException($"Receive in a while statement is not yet supported, found in {machine.Name}");
+                                throw new NotImplementedException(
+                                    $"{context.LocationResolver.GetLocation(loop.SourceLocation)}: Receive in a loop body is not supported in this mode. Suggestion: convert the loop into a recursion.");
                                 // turn the while statement into a recursive function
                                 var whileName = $"while_{whileNumber}";
                                 whileNumber++;

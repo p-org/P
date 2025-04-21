@@ -52,6 +52,16 @@ public class TestPEx {
 
     private static void createExcludeList() {
         /**
+         * TODO: Receive statement inside a loop
+         */
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/pingPongReceive4");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/pingPongReceive5");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive19");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/pingPongReceive4");
+        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/pingPongReceive5");
+        excluded.add("../../../Tst/RegressionTests/Integration/Correct/pingPongReceive3");
+
+        /**
          * TODO: Null events
          */
         // TODO: Null events are not supported

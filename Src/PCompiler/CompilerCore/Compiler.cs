@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -64,7 +66,18 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"Code generation for {entry}...");
 
                 // Run the selected backend on the project and write the files.
-                var compiledFiles = job.Backend.GenerateCode(job, scope);
+                IEnumerable<CompiledFile> compiledFiles;
+                try
+                {
+                    compiledFiles = job.Backend.GenerateCode(job, scope);
+                }
+                catch (NotImplementedException e)
+                {
+                    job.Output.WriteError("[NotImplementedError:]\n" + e.Message);
+                    Environment.ExitCode = 1;
+                    return Environment.ExitCode;
+                }
+                
                 foreach (var file in compiledFiles)
                 {
                     job.Output.WriteInfo($"Generated {file.FileName}.");

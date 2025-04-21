@@ -117,6 +117,9 @@ namespace Plang.Compiler.Backend.Java {
             {
                 WriteFunction(f);
             }
+
+            WriteToString();
+            
             WriteLine();
 
             WriteLine($"}} // {cname} monitor definition");
@@ -964,5 +967,21 @@ namespace Plang.Compiler.Backend.Java {
             }
         }
 
+        private void WriteToString()
+        {
+            WriteLine("public String toString() {");
+            WriteLine($"StringBuilder sb = new StringBuilder(\"{_currentMachine.Name}\");");
+            
+            WriteLine("sb.append(\"[\");");
+            foreach (var (sep, field) in _currentMachine.Fields.WithPrefixSep(", "))
+            {
+                WriteLine($"sb.append(\"{sep}{field.Name}=\" + {Names.GetNameForDecl(field)});");
+            }
+            WriteLine("sb.append(\"]\");");
+            
+            WriteLine("return sb.toString();");
+            WriteLine("} // toString()");
+        }
+        
     }
 }

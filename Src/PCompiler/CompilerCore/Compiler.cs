@@ -106,6 +106,7 @@ namespace Plang.Compiler
             var fileText = File.ReadAllText(inputFile.FullName);
             var fileStream = new AntlrInputStream(fileText);
             var lexer = new PLexer(fileStream);
+            lexer.AddErrorListener(new PLexerErrorListener(inputFile, job.Handler));
             var tokens = new CommonTokenStream(lexer);
             var parser = new PParser(tokens);
             parser.RemoveErrorListeners();
@@ -130,6 +131,28 @@ namespace Plang.Compiler
                 parser.Interpreter.PredictionMode = PredictionMode.Ll;
                 parser.ErrorHandler = new DefaultErrorStrategy();
                 return parser.program();
+            }
+        }
+
+        /// <summary>
+        /// This error listener converts Antlr lexer errors into translation exceptions via the
+        /// active error handler  
+        /// </summary>
+        private class PLexerErrorListener : IAntlrErrorListener<int>
+        {
+            private readonly ITranslationErrorHandler handler;
+            private readonly FileInfo inputFile;
+
+            public PLexerErrorListener(FileInfo inputFile, ITranslationErrorHandler handler)
+            {
+                this.inputFile = inputFile;
+                this.handler = handler;
+            }
+
+            public void SyntaxError(IRecognizer recognizer, int offendingSymbol, int line, int charPositionInLine,
+                string msg, RecognitionException e)
+            {
+                throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
             }
         }
 

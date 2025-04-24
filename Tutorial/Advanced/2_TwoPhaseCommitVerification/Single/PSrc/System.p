@@ -118,9 +118,12 @@ Lemma kondo {
     invariant  a6: coordinator() is Committed ==> (forall (p: Participant) :: p in participants() ==> preference(p));
 }
 
-Proof {
+Proof system_configs {
     prove system_config;
+    prove default using system_config;
+}
+
+Proof kondo_proof {
     prove kondo using system_config;
     prove safety using kondo, system_config_participant_set;
-    prove default using system_config;
 }

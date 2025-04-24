@@ -25,6 +25,7 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
         private readonly IDictionary<string, Axiom> axioms = new Dictionary<string, Axiom>();
         private readonly List<(string, ProofCommand)> proofCommands = new List<(string, ProofCommand)>();
+        private readonly IDictionary<string, ProofBlock> proofBlocks = new Dictionary<string, ProofBlock>();
         private readonly IDictionary<string, InvariantGroup> invariantGroups = new Dictionary<string, InvariantGroup>();
         private readonly IDictionary<string, AssumeOnStart> assumeOnStarts = new Dictionary<string, AssumeOnStart>();
         private readonly ICompilerConfiguration config;
@@ -94,6 +95,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
+        public IEnumerable<ProofBlock> ProofBlocks => proofBlocks.Values;
         public IEnumerable<ProofCommand> ProofCommands => proofCommands.Select(p => p.Item2);
         public IEnumerable<InvariantGroup> InvariantGroups => invariantGroups.Values;
 
@@ -189,6 +191,11 @@ namespace Plang.Compiler.TypeChecker
         public bool Get(string name, out Axiom tree)
         {
             return axioms.TryGetValue(name, out tree);
+        }
+
+        public bool Get(string name, out ProofBlock pb)
+        {
+            return proofBlocks.TryGetValue(name, out pb);
         }
 
         public bool Get(string name, out ProofCommand tree)
@@ -727,6 +734,14 @@ namespace Plang.Compiler.TypeChecker
             var proofCommand = new ProofCommand(name, tree);
             proofCommands.Add((name, proofCommand));
             return proofCommand;
+        }
+
+        public ProofBlock Put(string name, PParser.ProofBlockContext tree)
+        {
+            var proofBlock = new ProofBlock(name, tree);
+            CheckConflicts(proofBlock, Namespace(proofBlocks));
+            proofBlocks.Add(name, proofBlock);
+            return proofBlock;
         }
         
         public AssumeOnStart Put(string name, PParser.AssumeOnStartDeclContext tree)

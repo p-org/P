@@ -72,7 +72,7 @@ invariantGroupDecl : LEMMA name=iden LBRACE invariantDecl* RBRACE
                 |    THEOREM name=iden LBRACE invariantDecl* RBRACE
                 ;
 
-proofBlockDecl : PROOF LBRACE proofBody RBRACE ;
+proofBlockDecl : PROOF (name=iden)? LBRACE proofBody RBRACE # ProofBlock ;
 proofBody : proofItem* ;
 proofItem : PROVE (targets+=expr (COMMA targets+=expr)* | goalsAll=MUL | goalsDefault=DEFAULT) (USING ((premises+=expr (COMMA premises+=expr)*) | premisesAll=MUL))? (EXCEPT excludes+=expr (COMMA excludes+=expr)*)? SEMI # ProveUsingCmd ; 
 

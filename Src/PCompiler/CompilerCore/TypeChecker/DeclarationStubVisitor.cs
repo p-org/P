@@ -58,6 +58,16 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
+        public override object VisitProofBlock(PParser.ProofBlockContext context)
+        {
+
+            var name = context.name == null ? $"ProofBlock_{CurrentScope.ProofBlocks.Count()}" : context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            context.proofBody().proofItem().Select(Visit).ToList();
+            return null;
+        }
+
         public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
         {
             var name = string.Join(", ", context._targets.Select(t => t.GetText()));

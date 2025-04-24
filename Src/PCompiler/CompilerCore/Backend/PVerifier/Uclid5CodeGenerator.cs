@@ -323,8 +323,17 @@ public class PVerifierCodeGenerator : ICodeGenerator
         }
         else
         {
-            // otherwise, go through all the proof commands 
-            foreach (var proofCmd in globalScope.ProofCommands)
+            // otherwise, go through all the proof commands (or ones that are specified in the compiler config)
+            bool emitCode (ProofCommand cmd) => job.TargetProofBlocks.Count == 0 ||
+                                                    (cmd.ProofBlock != null && job.TargetProofBlocks.Contains(cmd.ProofBlock));
+            foreach (var pbname in job.TargetProofBlocks)
+            {
+                if (!globalScope.Get(pbname, out ProofBlock pb))
+                {
+                    job.Output.WriteWarning($"Warning: proof block {pbname} not found. Skipping ...");
+                }
+            }
+            foreach (var proofCmd in globalScope.ProofCommands.Where(emitCode))
             {
                 // if one of them is the default, rename it to default so that we can generate the init, next, and invs in compileToFile
                 // TODO: ensure that default can only happen on its own?
@@ -1127,6 +1136,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
             $"define {InvariantPrefix}Received_Subset_Sent(): boolean = forall (a: {LabelAdt}) :: {StateAdtSelectReceived(StateVar)}[a] ==> {StateAdtSelectSent(StateVar)}[a];");
         EmitLine($"invariant _{InvariantPrefix}Received_Subset_Sent: {InvariantPrefix}Received_Subset_Sent();");
         EmitLine("");
+        GenerateOptionTypes();
+        EmitLine("");
 
         if (cmd.Name == "default")
         {
@@ -1162,7 +1173,6 @@ public class PVerifierCodeGenerator : ICodeGenerator
             EmitLine("");
 
             // These have to be done at the end because we don't know what we need until we generate the rest of the code
-            GenerateOptionTypes();
             EmitLine("");
             GenerateCheckerVars();
             EmitLine("");

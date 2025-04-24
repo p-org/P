@@ -126,7 +126,7 @@ internal class TransformASTPass
         {
             if (handler.Key.IsNullEvent)
                 throw new NotImplementedException(
-                    $"{context.LocationResolver.GetLocation(handler.Key.SourceLocation)}: Null events are not supported in this mode.");
+                    $"{context.LocationResolver.GetLocation(handler.Value.SourceLocation)}: Null events are not supported in this mode.");
             transformedState[handler.Key] = TransformAction(handler.Value, functionMap);
         }
 

@@ -67,9 +67,5 @@ namespace Plang.Compiler.Backend.Java
 
 
 
-        /// <summary>
-        /// This compiler has a compilation stage.
-        /// </summary>
-        public bool HasCompilationStage => false;
     }
 }

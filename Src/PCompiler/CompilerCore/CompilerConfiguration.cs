@@ -26,6 +26,7 @@ namespace Plang.Compiler
             Debug = false;
             Timeout = 600;
             CheckOnly = null;
+            TargetProofBlocks = new List<string>();
             Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
         }
         public CompilerConfiguration(ICompilerOutput output, DirectoryInfo outputDir, IList<CompilerOutput> outputLanguages, IList<string> inputFiles,
@@ -78,6 +79,7 @@ namespace Plang.Compiler
         public bool Debug { get; set; }
         public int Timeout { get; set; }
         public string CheckOnly { get; set; }
+        public IList<string> TargetProofBlocks { get; set; }
         public int Parallelism { get; set; }
 
         public void Copy(CompilerConfiguration parsedConfig)

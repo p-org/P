@@ -18,5 +18,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public List<Invariant> Excepts { get; set; }
         public ParserRuleContext SourceLocation { get; }
         public string Name { get; set; }
+        public string ProofBlock { get; set; }
     }
 }

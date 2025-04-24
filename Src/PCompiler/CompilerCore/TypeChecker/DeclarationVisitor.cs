@@ -712,6 +712,14 @@ namespace Plang.Compiler.TypeChecker
             return [inv];
         }
 
+        public override object VisitProofBlock(PParser.ProofBlockContext context)
+        {
+            var proofBlock = (ProofBlock) nodesToDeclarations.Get(context);
+            proofBlock.Commands = context.proofBody().proofItem().Select(Visit).Cast<ProofCommand>().ToList();
+            proofBlock.Commands.ForEach(x => x.ProofBlock = proofBlock.Name);
+            return proofBlock;
+        }
+
         public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
         {
             var proofCmd = (ProofCommand) nodesToDeclarations.Get(context);

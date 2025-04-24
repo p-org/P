@@ -22,6 +22,7 @@ namespace Plang.Compiler
         bool Debug { get; }
         int Timeout { get; }
         string CheckOnly { get; }
+        IList<string> TargetProofBlocks { get; }
         int Parallelism { get; }
     }
 }

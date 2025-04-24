@@ -2,7 +2,7 @@
 // This is validation XYZ for announceInvocation.p
 event E2 assert 1: bool;
 
-machine Main {
+machine DefaultImpl {
     var XYZ: bool;
 	  var ev2: event;
     start state Real1_Init {
@@ -18,5 +18,5 @@ spec M observes E2 {
 	}
 }
 
-test Main [main=Main]: assert M in { Main };
+test DefaultImpl [main=DefaultImpl]: assert M in { DefaultImpl };
 

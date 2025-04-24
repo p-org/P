@@ -324,7 +324,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
         else
         {
             // otherwise, go through all the proof commands (or ones that are specified in the compiler config)
-            bool emitCode (ProofCommand cmd) => job.TargetProofBlocks.Count == 0 || job.TargetProofBlocks.Contains(cmd.ProofBlock);
+            bool emitCode (ProofCommand cmd) => job.TargetProofBlocks.Count == 0 ||
+                                                    (cmd.ProofBlock != null && job.TargetProofBlocks.Contains(cmd.ProofBlock));
             foreach (var pbname in job.TargetProofBlocks)
             {
                 if (!globalScope.Get(pbname, out ProofBlock pb))

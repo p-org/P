@@ -30,6 +30,16 @@ public abstract class PTestDriver implements Serializable {
     }
 
     /**
+     * Get test driver name
+     */
+    public static String getTestName(Class<? extends PTestDriver> td) {
+        String result = td.getSimpleName();
+        if (result.startsWith("test_"))
+            return result.substring("test_".length());
+        return result;
+    }
+
+    /**
      * Get the start/main machine of this test driver.
      *
      * @return the start/main machine of this test driver.

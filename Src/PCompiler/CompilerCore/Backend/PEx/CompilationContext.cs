@@ -77,7 +77,7 @@ internal class CompilationContext : CompilationContextBase
                     return $"{pEvent.Name}";
                 return $"_{pEvent.Name}";
             case SafetyTest safety:
-                return $"{safety.Name}";
+                return $"test_{safety.Name}";
             default:
                 throw new NotImplementedException($"decl type {decl.GetType().Name} not supported");
         }

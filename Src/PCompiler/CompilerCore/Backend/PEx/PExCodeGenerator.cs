@@ -203,7 +203,7 @@ internal class PExCodeGenerator : ICodeGenerator
                 return;
 
         context.WriteLine(output, "@Generated");
-        context.WriteLine(output, "public static class DefaultImpl extends PTestDriver {");
+        context.WriteLine(output, "public static class test_DefaultImpl extends PTestDriver {");
         WriteDriver(context, output, mainMachine.Name, decls);
         context.WriteLine(output, "}");
         context.WriteLine(output);

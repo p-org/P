@@ -220,7 +220,10 @@ internal class TransformASTPass
             switch (stmt)
             {
                 case ReturnStmt returnStmt:
-                    newBody.Add(new AssignStmt(returnStmt.SourceLocation, location, returnStmt.ReturnValue));
+                    if (location != null)
+                    {
+                        newBody.Add(new AssignStmt(returnStmt.SourceLocation, location, returnStmt.ReturnValue));
+                    }
                     newBody.Add(new AssignStmt(returnStmt.SourceLocation, 
                         new VariableAccessExpr(returnStmt.SourceLocation, inVar), 
                         new BoolLiteralExpr(returnStmt.SourceLocation, false)));
@@ -329,7 +332,20 @@ internal class TransformASTPass
                     var inlined = InlineInFunction(call.Function);
                     if (inlined)
                         function.RemoveCallee(call.Function);
-                    GenerateInline(function, call.Function, call.ArgsList, body, call.SourceLocation);
+                    var appendToBody = new List<IPStmt>();
+                    var inVar = GenerateInline(function, call.Function, call.ArgsList, appendToBody,
+                        call.SourceLocation);
+                    body.Add(new AssignStmt(call.SourceLocation, 
+                        new VariableAccessExpr(call.SourceLocation, inVar), 
+                        new BoolLiteralExpr(call.SourceLocation, true)));
+                    appendToBody = ReplaceReturn(appendToBody, null, inVar, call.Function);
+                    foreach (var statement in appendToBody)
+                    {
+                        var inCond = new BinOpExpr(statement.SourceLocation, BinOpType.Eq,
+                            new VariableAccessExpr(statement.SourceLocation, inVar),
+                            new BoolLiteralExpr(statement.SourceLocation, true));
+                        body.Add(new IfStmt(statement.SourceLocation, inCond, statement, null));
+                    }
                 }
                 else
                 {

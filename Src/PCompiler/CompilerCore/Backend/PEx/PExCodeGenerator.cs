@@ -478,7 +478,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
         string returnType = null;
         var returnStatement = "";
-        if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
         {
             returnType = "void";
         }
@@ -524,7 +524,7 @@ internal class PExCodeGenerator : ICodeGenerator
         var staticKeyword = isStatic ? "static " : "";
 
         string returnType = null;
-        if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             returnType = "void";
         else
             returnType = GetPExType(function.Signature.ReturnType);
@@ -599,7 +599,7 @@ internal class PExCodeGenerator : ICodeGenerator
             context.WriteLine(output);
         }
 
-        if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+        if (function.Signature.ReturnType != null && !function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             context.WriteLine(output,
                 $"{GetPExType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = {GetDefaultValue(function.Signature.ReturnType)};");
 
@@ -610,7 +610,7 @@ internal class PExCodeGenerator : ICodeGenerator
         else
             exited = WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
         if (!exited)
-            if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            if (function.Signature.ReturnType != null && !function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                 context.Write(output, $"return {CompilationContext.ReturnValue};");
     }
 
@@ -733,7 +733,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
                 context.WriteLine(output, ");");
 
-                if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+                if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                     context.WriteLine(output, "return;");
                 else
                     context.WriteLine(output, "return null;");
@@ -756,7 +756,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
                 context.WriteLine(output, ");");
 
-                if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+                if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                     context.WriteLine(output, "return;");
                 else
                     context.WriteLine(output, "return null;");
@@ -979,7 +979,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
     private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)
     {
-        var voidReturn = continuation.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
+        var voidReturn = continuation.Signature.ReturnType == null || continuation.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null);
         if (!voidReturn)
             throw new NotImplementedException(
                 $"Receive statement in a function with non-void return type is not supported. Found in function named {continuation.ParentFunction.Name}.");
@@ -1143,14 +1143,14 @@ internal class PExCodeGenerator : ICodeGenerator
         IReadOnlyList<IPExpr> args, IPExpr dest = null)
     {
         string returnTemp = null;
-        if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+        if (function.Signature.ReturnType != null && !function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
         {
             returnTemp = context.FreshTempVar();
             context.Write(output,
                 $"{GetPExType(function.Signature.ReturnType)} {returnTemp} = ({GetPExType(function.Signature.ReturnType)})");
         }
 
-        if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
         {
             context.Write(output, "ForeignFunctionInterface.accept(");
             context.Write(output, $"x -> ffi_{context.GetNameForDecl(function)}(x)");
@@ -1173,7 +1173,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
         context.WriteLine(output, ");");
 
-        if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
         {
             Debug.Assert(dest == null);
         }
@@ -1195,7 +1195,7 @@ internal class PExCodeGenerator : ICodeGenerator
         }
 
         string returnTemp = null;
-        if (!function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+        if (function.Signature.ReturnType != null && !function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
         {
             returnTemp = context.FreshTempVar();
             context.Write(output, $"{GetPExType(function.Signature.ReturnType)} {returnTemp} = ");
@@ -1213,7 +1213,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
         context.WriteLine(output, ");");
 
-        if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
         {
             Debug.Assert(dest == null);
         }

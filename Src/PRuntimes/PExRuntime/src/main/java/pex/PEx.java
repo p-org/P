@@ -142,7 +142,7 @@ public class PEx {
         Set<Class<? extends PTestDriver>> subTypesDriver = reflections.getSubTypesOf(PTestDriver.class);
         PTestDriver driver = null;
         for (Class<? extends PTestDriver> td : subTypesDriver) {
-            if (td.getSimpleName().equals(name)) {
+            if (PTestDriver.getTestName(td).equals(name)) {
                 driver = td.getDeclaredConstructor().newInstance();
                 break;
             }
@@ -163,7 +163,7 @@ public class PEx {
                             subTypesDriver.size()));
             PExLogger.logInfo("Possible options are:");
             for (Class<? extends PTestDriver> td : subTypesDriver) {
-                PExLogger.logInfo(String.format("%s", td.getSimpleName()));
+                PExLogger.logInfo(String.format("%s", PTestDriver.getTestName(td)));
             }
             if (!name.equals(defaultTestDriver)) {
                 throw new Exception("No test driver found named \"" + PExGlobal.getConfig().getTestDriver() + "\"");
@@ -171,7 +171,7 @@ public class PEx {
                 System.exit(6);
             }
         }
-        PExGlobal.getConfig().setTestDriver(driver.getClass().getSimpleName());
+        PExGlobal.getConfig().setTestDriver(PTestDriver.getTestName(driver.getClass()));
         PExGlobal.getModel().setTestDriver(driver);
     }
 

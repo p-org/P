@@ -1,8 +1,0 @@
-enclave {
-    from "sgx_tstdc.edl" import *;
-
-    trusted {
-        public int PrtEnclaveInit(void);
-    };
-
-};

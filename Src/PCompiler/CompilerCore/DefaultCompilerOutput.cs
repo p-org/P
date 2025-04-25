@@ -19,7 +19,7 @@ namespace Plang.Compiler
             switch (severity)
             {
                 case SeverityKind.Info:
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = defaultColor;
                     break;
 
                 case SeverityKind.Warning:
@@ -31,7 +31,7 @@ namespace Plang.Compiler
                     break;
 
                 default:
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = defaultColor;
                     break;
             }
 
@@ -55,10 +55,7 @@ namespace Plang.Compiler
 
         public void WriteInfo(string msg)
         {
-            var defaultColor = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(msg);
-            Console.ForegroundColor = defaultColor;
         }
 
         public void WriteWarning(string msg)

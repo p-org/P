@@ -139,7 +139,8 @@ namespace Plang.Compiler.Backend
                         deps.Add(new IfStmt(location, andTemp, reassignFromRhs, null));
                         return (andTemp, deps);
                     }
-                    else if (binOpExpr.Operation == BinOpType.Or)
+
+                    if (binOpExpr.Operation == BinOpType.Or)
                     {
                         // Or is short-circuiting, so we need to treat it differently from other binary operators
                         deps.AddRange(lhsDeps);
@@ -149,14 +150,12 @@ namespace Plang.Compiler.Backend
                         deps.Add(new IfStmt(location, orTemp, new NoStmt(location), reassignFromRhs));
                         return (orTemp, deps);
                     }
-                    else
-                    {
-                        (var binOpTemp, var binOpStore) =
-                            SaveInTemporary(new BinOpExpr(location, binOpExpr.Operation, lhsTemp, rhsTemp));
-                        deps.AddRange(lhsDeps.Concat(rhsDeps));
-                        deps.Add(binOpStore);
-                        return (binOpTemp, deps);
-                    }
+
+                    (var binOpTemp, var binOpStore) =
+                        SaveInTemporary(new BinOpExpr(location, binOpExpr.Operation, lhsTemp, rhsTemp));
+                    deps.AddRange(lhsDeps.Concat(rhsDeps));
+                    deps.Add(binOpStore);
+                    return (binOpTemp, deps);
 
                 case CastExpr castExpr:
                     (var castSubExpr, var castDeps) = SimplifyExpression(castExpr.SubExpr);

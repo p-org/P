@@ -84,7 +84,12 @@ namespace PChecker.Testing
             if (!_checkerConfiguration.PerformFullExploration &&
                 TestingEngine.TestReport.NumOfFoundBugs > 0)
             {
-                Console.WriteLine($"Checker found a bug.");
+                Console.WriteLine("Checker found a bug.");
+            }
+            
+            if ((!_checkerConfiguration.PerformFullExploration && TestingEngine.TestReport.NumOfFoundBugs > 0))
+            {
+                await EmitTraces();
             }
             
             // Closes the remote notification listener.
@@ -116,6 +121,19 @@ namespace PChecker.Testing
         }
         
         /// <summary>
+        /// Emits the testing traces.
+        /// </summary>
+        private Task EmitTraces()
+        {
+            var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
+            file += "_" + _checkerConfiguration.TestingProcessId;
+ 
+            Console.WriteLine($"... Emitting traces:");
+            TestingEngine.TryEmitTraces(_checkerConfiguration.OutputDirectory, file);
+            return Task.CompletedTask;
+        }
+        
+        /// <summary>
         /// Emits the test report.
         /// </summary>
         private void EmitTestReport()
@@ -129,13 +147,13 @@ namespace PChecker.Testing
 
             if (_checkerConfiguration.ReportActivityCoverage)
             {
-                Console.WriteLine($"... Emitting coverage report:");
+                Console.WriteLine("... Emitting coverage report:");
                 Reporter.EmitTestingCoverageReport(testReport);
             }
 
             if (_checkerConfiguration.DebugActivityCoverage)
             {
-                Console.WriteLine($"... Emitting debug coverage report:");
+                Console.WriteLine("... Emitting debug coverage report:");
                 Reporter.EmitTestingCoverageReport(testReport);
             }
 

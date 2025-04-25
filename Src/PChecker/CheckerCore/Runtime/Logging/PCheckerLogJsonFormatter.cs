@@ -74,7 +74,7 @@ namespace PChecker.Runtime.Logging
                 return e.GetType().Name;
             }
 
-            var pe = (Event)(e);
+            var pe = e;
             var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString();
             var msg = pe.Payload == null ? "" : $" with payload ({payload})";
             return $"{GetShortName(e.GetType().Name)}{msg}";
@@ -92,7 +92,7 @@ namespace PChecker.Runtime.Logging
                 return null;
             }
 
-            var pe = (Event)(e);
+            var pe = e;
             return pe.Payload?.ToDict();
         }
 
@@ -332,10 +332,10 @@ namespace PChecker.Runtime.Logging
         {
             senderStateName = GetShortName(senderStateName);
             string eventName = GetEventNameWithPayload(e);
-            var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
+            var isHalted = isTargetHalted ? " which has halted" : string.Empty;
             var sender = !string.IsNullOrEmpty(senderName)
                 ? $"'{senderName}' in state '{senderStateName}'"
-                : $"The runtime";
+                : "The runtime";
             var log = $"{sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}.";
 
             Writer.AddLogType(JsonWriter.LogType.SendEvent);

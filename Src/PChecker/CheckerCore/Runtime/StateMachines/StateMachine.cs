@@ -103,7 +103,7 @@ namespace PChecker.Runtime.StateMachines
         /// <summary>
         /// A cached array that contains a single event type.
         /// </summary>
-        private static readonly Type[] SingleEventTypeArray = new Type[] { typeof(Event) };
+        private static readonly Type[] SingleEventTypeArray = new[] { typeof(Event) };
         
         /// <summary>
         /// The current status of the state machine. It is marked volatile as
@@ -187,30 +187,31 @@ namespace PChecker.Runtime.StateMachines
         /// <exception cref="PInternalException"></exception>
         public IPValue TryRandom(IPValue param)
         {
+            var errorContext = $"Incorrect use of choose by Machine {Id.Name} in state {CurrentStateName}. ";
             switch (param)
             {
                 case PInt maxValue:
                 {
-                    Assert(maxValue <= 10000, $"choose expects a parameter with at most 10000 choices, got {maxValue} choices instead.");
+                    Assert(maxValue <= 10000, string.Concat(errorContext, "choose expects a parameter with at most 10000 choices, got {maxValue} choices instead."));
                     return (PInt)RandomInteger(maxValue);
                 }
 
                 case PSeq seq:
                 {
-                    Assert(seq.Any(), "Trying to choose from an empty sequence!");
-                    Assert(seq.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {seq.Count} choices instead.");
+                    Assert(seq.Any(), string.Concat(errorContext,"Trying to choose from an empty sequence!"));
+                    Assert(seq.Count <= 10000, string.Concat(errorContext,$"choose expects a parameter with at most 10000 choices, got {seq.Count} choices instead."));
                     return seq[RandomInteger(seq.Count)];
                 }
                 case PSet set:
                 {
-                    Assert(set.Any(), "Trying to choose from an empty set!");
-                    Assert(set.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {set.Count} choices instead.");
+                    Assert(set.Any(), string.Concat(errorContext, "Trying to choose from an empty set!"));
+                    Assert(set.Count <= 10000, string.Concat(errorContext, $"choose expects a parameter with at most 10000 choices, got {set.Count} choices instead."));
                     return set.ElementAt(RandomInteger(set.Count));
                 }
                 case PMap map:
                 {
-                    Assert(map.Any(), "Trying to choose from an empty map!");
-                    Assert(map.Keys.Count <= 10000, $"choose expects a parameter with at most 10000 choices, got {map.Keys.Count} choices instead.");
+                    Assert(map.Any(), string.Concat(errorContext,"Trying to choose from an empty map!"));
+                    Assert(map.Keys.Count <= 10000, string.Concat(errorContext, $"choose expects a parameter with at most 10000 choices, got {map.Keys.Count} choices instead."));
                     return map.Keys.ElementAt(RandomInteger(map.Keys.Count));
                 }
                 default:
@@ -235,7 +236,7 @@ namespace PChecker.Runtime.StateMachines
 
         public void Announce(Event ev, object payload = null)
         {
-            Assert(ev != null, "Machine cannot announce a null event");
+            Assert(ev != null, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
             if (ev is PHalt)
             {
                 ev = HaltEvent.Instance;
@@ -263,7 +264,7 @@ namespace PChecker.Runtime.StateMachines
 
         private void AnnounceInternal(Event ev)
         {
-            Assert(ev != null, "cannot send a null event");
+            Assert(ev != null, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
             if (!PModule.monitorMap.ContainsKey(interfaceName))
             {
                 return;
@@ -282,7 +283,6 @@ namespace PChecker.Runtime.StateMachines
         /// Initializes a new instance of the <see cref="StateMachine"/> class.
         /// </summary>
         protected StateMachine()
-            : base()
         {
             CurrentStatus = Status.Active;
             CurrentStateName = default;
@@ -350,7 +350,6 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="e">The event to send.</param>
         protected void Monitor(Type type, Event e)
         {
-            Assert(e != null, "{0} is sending a null event.", Id);
             Runtime.Monitor(type, e, Id.Name, Id.Type, CurrentStateName);
         }
         
@@ -534,12 +533,12 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
         public void SendEvent(PMachineValue target, Event ev)
         {
-            Assert(ev != null, "Machine cannot send a null event");
-            Assert(target != null, "Machine in send cannot be null");
+            Assert(ev != null, $"Machine cannot send a null event. Machine {Id} trying to send null event in state {CurrentStateName}.");
+            Assert(target != null, $"Target in send cannot be null. Machine {Id} trying to send event {ev.GetType().Name} to null target in state {CurrentStateName}.");
             Assert(sends.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the sends set of the Machine {GetType().Name}");
             Assert(target.Permissions.Contains(ev.GetType().Name),
-                $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
+                $"Event {ev.GetType().Name} is not in the permissions set of the target machine {target.Id}");
             AnnounceInternal(ev);
             // Update vector clock
             VectorTime.Increment();
@@ -818,7 +817,8 @@ namespace PChecker.Runtime.StateMachines
             {
                 return false;
             }
-            else if (outcome is OnExceptionOutcome.Halt)
+
+            if (outcome is OnExceptionOutcome.Halt)
             {
                 CurrentStatus = Status.Halting;
             }
@@ -964,7 +964,7 @@ namespace PChecker.Runtime.StateMachines
         public void RaiseEvent(Event e)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked RaiseEvent while halting.", Id);
-            Assert(e != null, "{0} is raising a null event.", Id);
+            Assert(e != null, $"{Id} is raising a null event in state {CurrentStateName}");
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.RaiseEvent, default, e);
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
@@ -1603,14 +1603,23 @@ namespace PChecker.Runtime.StateMachines
 
             return pairs;
         }
-
+        
+        /// <summary>
+        /// Function to add an internal exception message prefix.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        private string InternalExceptionMessage(string message)
+        {
+            return string.Concat("[Internal Exception] Please report this to the P team. ", message);
+        }
         /// <summary>
         /// Checks the state machine for state related errors.
         /// </summary>
         private void AssertStateValidity()
         {
-            Assert(StateTypeCache[GetType()].Count > 0, "{0} must have one or more states.", Id);
-            Assert(CurrentState != null, "{0} must not have a null current state.", Id);
+            Assert(StateTypeCache[GetType()].Count > 0, InternalExceptionMessage($"{Id} must have one or more states."));
+            Assert(CurrentState != null, InternalExceptionMessage($"{Id} must not have a null current state."));
         }
 
         /// <summary>

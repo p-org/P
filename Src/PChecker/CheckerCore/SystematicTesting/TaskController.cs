@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
-using PChecker.Runtime;
 using PChecker.SystematicTesting.Operations;
 using Task = PChecker.Tasks.Task;
 
@@ -392,10 +391,8 @@ namespace PChecker.SystematicTesting
             {
                 return Task.FromException(new AggregateException(exceptions));
             }
-            else
-            {
-                return Task.CompletedTask;
-            }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

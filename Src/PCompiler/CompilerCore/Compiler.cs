@@ -13,7 +13,7 @@ namespace Plang.Compiler
     {
         public int Compile(ICompilerConfiguration job)
         {
-            job.Output.WriteInfo($"Parsing ...");
+            job.Output.WriteInfo("Parsing ...");
 
             // Run parser on every input file
             PParser.ProgramContext[] trees = null;
@@ -33,7 +33,7 @@ namespace Plang.Compiler
                 return Environment.ExitCode;
             }
 
-            job.Output.WriteInfo($"Type checking ...");
+            job.Output.WriteInfo("Type checking ...");
             // Run type checker and produce AST
             Scope scope = null;
             try
@@ -60,7 +60,7 @@ namespace Plang.Compiler
                 job.Output = new DefaultCompilerOutput(job.OutputDirectory);
                 job.Backend = TargetLanguage.GetCodeGenerator(entry);
 
-                job.Output.WriteInfo($"----------------------------------------");
+                job.Output.WriteInfo("----------------------------------------");
                 job.Output.WriteInfo($"Code generation for {entry}...");
 
                 // Run the selected backend on the project and write the files.
@@ -75,7 +75,7 @@ namespace Plang.Compiler
                 // For those that do, execute that stage.
                 if (job.Backend.HasCompilationStage)
                 {
-                    job.Output.WriteInfo($"Compiling generated code...");
+                    job.Output.WriteInfo("Compiling generated code...");
                     try
                     {
                         job.Backend.Compile(job);
@@ -90,12 +90,12 @@ namespace Plang.Compiler
                 }
                 else
                 {
-                    job.Output.WriteInfo($"Build succeeded.");
+                    job.Output.WriteInfo("Build succeeded.");
                 }
             }
 
-            job.Output.WriteInfo($"----------------------------------------");
-            job.Output.WriteInfo($"Compilation succeeded.");
+            job.Output.WriteInfo("----------------------------------------");
+            job.Output.WriteInfo("Compilation succeeded.");
 
             Environment.ExitCode = 0;
             return Environment.ExitCode;
@@ -106,6 +106,7 @@ namespace Plang.Compiler
             var fileText = File.ReadAllText(inputFile.FullName);
             var fileStream = new AntlrInputStream(fileText);
             var lexer = new PLexer(fileStream);
+            lexer.AddErrorListener(new PLexerErrorListener(inputFile, job.Handler));
             var tokens = new CommonTokenStream(lexer);
             var parser = new PParser(tokens);
             parser.RemoveErrorListeners();
@@ -130,6 +131,28 @@ namespace Plang.Compiler
                 parser.Interpreter.PredictionMode = PredictionMode.Ll;
                 parser.ErrorHandler = new DefaultErrorStrategy();
                 return parser.program();
+            }
+        }
+
+        /// <summary>
+        /// This error listener converts Antlr lexer errors into translation exceptions via the
+        /// active error handler  
+        /// </summary>
+        private class PLexerErrorListener : IAntlrErrorListener<int>
+        {
+            private readonly ITranslationErrorHandler handler;
+            private readonly FileInfo inputFile;
+
+            public PLexerErrorListener(FileInfo inputFile, ITranslationErrorHandler handler)
+            {
+                this.inputFile = inputFile;
+                this.handler = handler;
+            }
+
+            public void SyntaxError(IRecognizer recognizer, int offendingSymbol, int line, int charPositionInLine,
+                string msg, RecognitionException e)
+            {
+                throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
             }
         }
 

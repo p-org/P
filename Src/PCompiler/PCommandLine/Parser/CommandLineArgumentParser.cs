@@ -189,12 +189,10 @@ namespace Plang.Parser
                 {
                     return true;  // Default for boolean options.
                 }
-                else
+
+                if (!AllowedValues.Contains(string.Empty))
                 {
-                    if (!AllowedValues.Contains(string.Empty))
-                    {
-                        throw new Exception(string.Format("Argument: '{0}' missing a value", LongName));
-                    }
+                    throw new Exception(string.Format("Argument: '{0}' missing a value", LongName));
                 }
             }
 
@@ -258,10 +256,8 @@ namespace Plang.Parser
                     {
                         throw new Exception(string.Format("Argument: '{0}' value '{1}' is not valid", LongName, s));
                     }
-                    else
-                    {
-                        throw new Exception(string.Format("Argument: '{0}' value '{1}' must be one of [{2}]", LongName, s, string.Join(", ", AllowedValues.ToArray())));
-                    }
+
+                    throw new Exception(string.Format("Argument: '{0}' value '{1}' must be one of [{2}]", LongName, s, string.Join(", ", AllowedValues.ToArray())));
                 }
             }
 
@@ -270,7 +266,7 @@ namespace Plang.Parser
 
         internal CommandLineArgument Clone()
         {
-            return new CommandLineArgument()
+            return new CommandLineArgument
             {
                 LongName = LongName,
                 ShortName = ShortName,
@@ -336,7 +332,7 @@ namespace Plang.Parser
         {
             if (value1 == null)
             {
-                return new T[] { (T)value2 };
+                return new[] { (T)value2 };
             }
 
             var existing = (T[])value1;
@@ -513,7 +509,7 @@ namespace Plang.Parser
                 throw new DuplicateNameException(string.Format("Argument {0} already defined", name));
             }
 
-            var argument = new CommandLineArgument()
+            var argument = new CommandLineArgument
             {
                 LongName = name,
                 DataType = dataType,
@@ -554,7 +550,7 @@ namespace Plang.Parser
                 }
             }
 
-            argument = new CommandLineArgument()
+            argument = new CommandLineArgument
             {
                 LongName = longName,
                 ShortName = shortName,
@@ -729,10 +725,8 @@ namespace Plang.Parser
                     {
                         throw new CommandLineException(string.Format("Missing required argument: '{0}'", arg.LongName), result);
                     }
-                    else
-                    {
-                        throw new CommandLineException(string.Format("Missing required argument: '--{0}'", arg.LongName), result);
-                    }
+
+                    throw new CommandLineException(string.Format("Missing required argument: '--{0}'", arg.LongName), result);
                 }
             }
 

@@ -296,6 +296,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
         _commands = [];
         _globalScope = globalScope;
         BuildDependencies(globalScope);
+        PopulateSpecHandlers((from m in _globalScope.AllDecls.OfType<Machine>() where m.IsSpec select m).ToList());
         var filenamePrefix = $"{job.ProjectName}_";
         List<CompiledFile> files = [];
         // if there are no proof commands, then create two:
@@ -356,6 +357,26 @@ public class PVerifierCodeGenerator : ICodeGenerator
         }
 
         return files;
+    }
+
+    private void PopulateSpecHandlers(IEnumerable<Machine> specs)
+    {
+        foreach (var spec in specs)
+        {
+            var events = spec.Observes.Events;
+            foreach (var e in events)
+            {
+                var procedureName = $"{SpecPrefix}{spec.Name}_{e.Name}";
+                if (_specListenMap.ContainsKey(e))
+                {
+                    _specListenMap[e].Add(procedureName);
+                }
+                else
+                {
+                    _specListenMap.Add(e, [procedureName]);
+                }
+            }
+        }
     }
 
     private CompiledFile GenerateCompiledFile(ProofCommand cmd, string name, Machine m, State s, Event e)
@@ -979,14 +1000,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
             foreach (var e in events)
             {
                 var procedureName = $"{SpecPrefix}{spec.Name}_{e.Name}";
-                if (_specListenMap.ContainsKey(e))
-                {
-                    _specListenMap[e].Add(procedureName);
-                }
-                else
-                {
-                    _specListenMap.Add(e, [procedureName]);
-                }
+                Trace.Assert(_specListenMap.ContainsKey(e) && _specListenMap[e].Contains(procedureName),
+                    $"Procedure {procedureName} is not generated for Spec {spec.Name} that listens to {e.Name}");
 
                 EmitLine($"procedure [inline] {procedureName}({SpecPrefix}Payload: {TypeToString(e.PayloadType)})");
                 EmitLine("{");

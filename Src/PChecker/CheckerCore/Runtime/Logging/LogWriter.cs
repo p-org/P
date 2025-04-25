@@ -92,7 +92,6 @@ namespace PChecker.Runtime.Logging
         /// <param name="senderType">The type of the sender, if any.</param>
         /// <param name="senderState">The state name, if the sender is a state machine, else null.</param>
         /// <param name="e">The event being sent.</param>
-        /// <param name="opGroupId">The id used to identify the send operation.</param>
         /// <param name="isTargetHalted">Is the target state machine halted.</param>
         public void LogSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderState,
             Event e, bool isTargetHalted)

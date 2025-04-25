@@ -1,0 +1,1 @@
+type ListUsersPayload = (_: any?);

@@ -21,7 +21,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         {
             SourceLocation = sourceNode;
             IsDefault = true;
-            Name = "defualt";
+            Name = "default";
         }
         
         public IPExpr Body { get; set; }

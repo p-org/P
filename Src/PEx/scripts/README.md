@@ -2,6 +2,21 @@
 
 This directory contains scripts for building and testing the PEx project.
 
+## Java Requirements
+
+The PEx project requires Java 17 to build and run. If you have multiple Java versions installed on your system, make sure to use Java 17 when building the project.
+
+To use Java 17 for building the project:
+
+```bash
+# If using Homebrew Java 17 on macOS
+export JAVA_HOME="/opt/homebrew/Cellar/openjdk@17/17.0.15/libexec/openjdk.jdk/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# Then run the build script
+scripts/build_and_test.sh [options]
+```
+
 ## Available Scripts
 
 ### build.sh

@@ -32,8 +32,8 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build PEx
-        working-directory: Src/PRuntimes/PExRuntime
-        run: ./scripts/build.sh
+        working-directory: Src/PEx
+        run: ./scripts/build_and_test.sh --build
       - name: Test PEx
-        working-directory: Src/PRuntimes/PExRuntime
-        run: mvn test
+        working-directory: Src/PEx
+        run: ./scripts/build_and_test.sh --test

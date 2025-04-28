@@ -13,6 +13,6 @@ popd
 
 pushd .
 echo -e "${ORANGE} ---- Building P ----${NOCOLOR}"
-cd ../../../Bld/
+cd ../../Bld/
 ./build.sh
 popd

@@ -7,8 +7,8 @@ set -e
 
 pushd .
 echo -e "${ORANGE} ---- Building PEx runtime ----${NOCOLOR}"
-mvn clean initialize -q
-mvn install -Dmaven.test.skip -q
+mvn clean initialize
+mvn install -Dmaven.test.skip
 popd
 
 pushd .

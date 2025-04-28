@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  */
 public class TestPEx {
     private static final String outputDirectory = "output/testCases";
+    private static final String testBasePath = "../../Tst/RegressionTests/";
     private static final List<String> excluded = new ArrayList<>();
     private static String timeout = "15";
     private static String schedules = "100";
@@ -54,57 +55,57 @@ public class TestPEx {
         /**
          * TODO: Receive statement inside a loop
          */
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/pingPongReceive4");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/pingPongReceive5");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/receive19");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/pingPongReceive4");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/Correct/pingPongReceive5");
-        excluded.add("../../../Tst/RegressionTests/Integration/Correct/pingPongReceive3");
+        excluded.add(testBasePath + "Feature2Stmts/DynamicError/pingPongReceive4");
+        excluded.add(testBasePath + "Feature2Stmts/DynamicError/pingPongReceive5");
+        excluded.add(testBasePath + "Feature2Stmts/Correct/receive19");
+        excluded.add(testBasePath + "Feature2Stmts/Correct/pingPongReceive4");
+        excluded.add(testBasePath + "Feature2Stmts/Correct/pingPongReceive5");
+        excluded.add(testBasePath + "Integration/Correct/pingPongReceive3");
 
         /**
          * TODO: Null events
          */
         // TODO: Null events are not supported
-        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/BugRepro");
-        excluded.add("../../../Tst/RegressionTests/Feature1SMLevelDecls/Correct/MoreThan32Events");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_36");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_37");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_38");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_39");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_41");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_OneMachine_42");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_10");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_12");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_16");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_17");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_18");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_19");
-        excluded.add("../../../Tst/RegressionTests/Integration/DynamicError/SEM_TwoMachines_9");
-        excluded.add("../../../Tst/RegressionTests/Integration/Correct/openwsn1");
+        excluded.add(testBasePath + "Feature1SMLevelDecls/Correct/BugRepro");
+        excluded.add(testBasePath + "Feature1SMLevelDecls/Correct/MoreThan32Events");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_OneMachine_36");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_OneMachine_37");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_OneMachine_38");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_OneMachine_39");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_OneMachine_41");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_OneMachine_42");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_TwoMachines_10");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_TwoMachines_12");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_TwoMachines_16");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_TwoMachines_17");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_TwoMachines_18");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_TwoMachines_19");
+        excluded.add(testBasePath + "Integration/DynamicError/SEM_TwoMachines_9");
+        excluded.add(testBasePath + "Integration/Correct/openwsn1");
         // TODO: Null events are not supported, found in a receive statement
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive2");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive7");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive10");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive11");
-        excluded.add("../../../Tst/RegressionTests/Feature2Stmts/DynamicError/receive12");
+        excluded.add(testBasePath + "Feature2Stmts/DynamicError/receive2");
+        excluded.add(testBasePath + "Feature2Stmts/DynamicError/receive7");
+        excluded.add(testBasePath + "Feature2Stmts/DynamicError/receive10");
+        excluded.add(testBasePath + "Feature2Stmts/DynamicError/receive11");
+        excluded.add(testBasePath + "Feature2Stmts/DynamicError/receive12");
 
         /**
          * TODO: liveness with temperatures
          */
-        excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1");
-        excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_1_falsePass");
-        excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET");
-        excluded.add("../../../Tst/RegressionTests/Liveness/Correct/Liveness_FAIRNONDET2");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_10");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_1_WarmState");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_2");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_2_LoopMachineAdded");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_3");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_5");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_6");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_7");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_NONDET");
-        excluded.add("../../../Tst/RegressionTests/Liveness/DynamicError/Liveness_NONDET2");
+        excluded.add(testBasePath + "Liveness/Correct/Liveness_1");
+        excluded.add(testBasePath + "Liveness/Correct/Liveness_1_falsePass");
+        excluded.add(testBasePath + "Liveness/Correct/Liveness_FAIRNONDET");
+        excluded.add(testBasePath + "Liveness/Correct/Liveness_FAIRNONDET2");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_10");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_1_WarmState");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_2");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_2_LoopMachineAdded");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_3");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_5");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_6");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_7");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_NONDET");
+        excluded.add(testBasePath + "Liveness/DynamicError/Liveness_NONDET2");
     }
 
     private static void initialize() {
@@ -202,57 +203,52 @@ public class TestPEx {
         return dynamicTests;
     }
 
-    @TestFactory
-        // @Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
-    Collection<DynamicTest> loadSymbolicRegressionsTests() {
-        return loadTests("../PSymRuntime/SymbolicRegressionTests/Integration");
-    }
 
     @TestFactory
     // @Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     public Collection<DynamicTest> loadIntegrationTests() {
-        return loadTests("../../../Tst/RegressionTests/Integration");
+        return loadTests(testBasePath + "Integration");
     }
 
     @TestFactory
         // @Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest> loadCombinedTests() {
-        return loadTests("../../../Tst/RegressionTests/Combined");
+        return loadTests(testBasePath + "Combined");
     }
 
     @TestFactory
     Collection<DynamicTest> loadSMLevelDeclsTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature1SMLevelDecls");
+        return loadTests(testBasePath + "Feature1SMLevelDecls");
     }
 
     @TestFactory
         // @Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest> loadStmtsTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature2Stmts");
+        return loadTests(testBasePath + "Feature2Stmts");
     }
 
     @TestFactory
         // @Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest> loadExpressionTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature3Exprs");
+        return loadTests(testBasePath + "Feature3Exprs");
     }
 
     @TestFactory
         // @Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest> loadDataTypeTests() {
-        return loadTests("../../../Tst/RegressionTests/Feature4DataTypes");
+        return loadTests(testBasePath + "Feature4DataTypes");
     }
 
     // TODO Unsupported: module system
     //    @TestFactory
     //        //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     //    Collection<DynamicTest>  loadModuleSystemTests() {
-    //        return loadTests("../../../Tst/RegressionTests/Feature5ModuleSystem");
+    //        return loadTests(testBasePath + "Feature5ModuleSystem");
     //    }
 
     @TestFactory
         //@Timeout(value = 1, unit = TimeUnit.MILLISECONDS)
     Collection<DynamicTest> loadLivenessTests() {
-        return loadTests("../../../Tst/RegressionTests/Liveness");
+        return loadTests(testBasePath + "Liveness");
     }
 }

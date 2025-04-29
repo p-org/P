@@ -23,7 +23,7 @@ namespace PChecker.Runtime.Logging
         /// <summary>
         /// Initializes a new instance of the <see cref="PCheckerLogJsonFormatter"/> class.
         /// </summary>
-        protected PCheckerLogJsonFormatter()
+        public PCheckerLogJsonFormatter()
         {
             Writer = new JsonWriter();
         }
@@ -74,7 +74,7 @@ namespace PChecker.Runtime.Logging
                 return e.GetType().Name;
             }
 
-            var pe = (Event)(e);
+            var pe = e;
             var payload = pe.Payload == null ? "null" : pe.Payload.ToEscapedString();
             var msg = pe.Payload == null ? "" : $" with payload ({payload})";
             return $"{GetShortName(e.GetType().Name)}{msg}";
@@ -92,14 +92,21 @@ namespace PChecker.Runtime.Logging
                 return null;
             }
 
-            var pe = (Event)(e);
+            var pe = e;
             return pe.Payload?.ToDict();
         }
 
+        /// <summary>
+        /// Called when the log is complete and about to be closed.
+        /// </summary>
         public void OnCompleted()
         {
         }
 
+        /// <summary>
+        /// Invoked when the specified assertion failure has occurred.
+        /// </summary>
+        /// <param name="error">The text of the error.</param>
         public void OnAssertionFailure(string error)
         {
             error = RemoveLogTag(error);
@@ -124,6 +131,11 @@ namespace PChecker.Runtime.Logging
             Writer.AddToLogs(updateVcMap: true);
         }
 
+        /// <summary>
+        /// Invoked when the specified state machine is idle and the default event handler is about to be executed.
+        /// </summary>
+        /// <param name="id">The id of the state machine that the state will execute in.</param>
+        /// <param name="stateName">The state name, if the state machine is a state machine and a state exists, else null.</param>
         public void OnDefaultEventHandler(StateMachineId id, string stateName)
         {
             stateName = GetShortName(stateName);
@@ -139,6 +151,12 @@ namespace PChecker.Runtime.Logging
             Writer.AddToLogs(updateVcMap: true);
         }
 
+        /// <summary>
+        /// Invoked when the specified event is dequeued by an state machine.
+        /// </summary>
+        /// <param name="id">The id of the state machine that the event is being dequeued by.</param>
+        /// <param name="stateName">The state name, if the state machine is a state machine and a state exists, else null.</param>
+        /// <param name="e">The event being dequeued.</param>
         public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
         {
             var eventName = GetEventNameWithPayload(e);
@@ -332,10 +350,10 @@ namespace PChecker.Runtime.Logging
         {
             senderStateName = GetShortName(senderStateName);
             string eventName = GetEventNameWithPayload(e);
-            var isHalted = isTargetHalted ? $" which has halted" : string.Empty;
+            var isHalted = isTargetHalted ? " which has halted" : string.Empty;
             var sender = !string.IsNullOrEmpty(senderName)
                 ? $"'{senderName}' in state '{senderStateName}'"
-                : $"The runtime";
+                : "The runtime";
             var log = $"{sender} sent event '{eventName}' to '{targetStateMachineId}'{isHalted}.";
 
             Writer.AddLogType(JsonWriter.LogType.SendEvent);

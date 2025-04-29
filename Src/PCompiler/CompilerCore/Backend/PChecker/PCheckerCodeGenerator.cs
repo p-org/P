@@ -79,10 +79,8 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 throw new TranslationException($"Compiling generated C# code FAILED!\n" + $"{stdout}\n" + $"{stderr}\n");
             }
-            else
-            {
-                job.Output.WriteInfo($"{stdout}");
-            }
+
+            job.Output.WriteInfo($"{stdout}");
         }
 
         public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
@@ -166,6 +164,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using PChecker.Runtime.StateMachines;");
             context.WriteLine(output, "using PChecker.Runtime.Events;");
             context.WriteLine(output, "using PChecker.Runtime.Exceptions;");
+            context.WriteLine(output, "using PChecker.Runtime.Logging;");
             context.WriteLine(output, "using PChecker.Runtime.Values;");
             context.WriteLine(output, "using PChecker.Runtime.Specifications;");
             context.WriteLine(output, "using Monitor = PChecker.Runtime.Specifications.Monitor;");
@@ -179,7 +178,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);
             context.WriteLine(output, "#pragma warning disable 162, 219, 414, 1998");
-            context.WriteLine(output, $"namespace PImplementation");
+            context.WriteLine(output, "namespace PImplementation");
             context.WriteLine(output, "{");
             context.WriteLine(output, "}");
         }
@@ -191,7 +190,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         private void WriteNameSpacePrologue(CompilationContext context, StringWriter output)
         {
-            context.WriteLine(output, $"namespace PImplementation");
+            context.WriteLine(output, "namespace PImplementation");
             context.WriteLine(output, "{");
         }
 
@@ -208,7 +207,7 @@ namespace Plang.Compiler.Backend.CSharp
                 case Function function:
                     if (!function.IsForeign)
                     {
-                        context.WriteLine(output, $"namespace PImplementation");
+                        context.WriteLine(output, "namespace PImplementation");
                         context.WriteLine(output, "{");
                         context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName}");
                         context.WriteLine(output, "{");
@@ -442,6 +441,8 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(ControlledRuntime runtime) {");
             if (ifInitGlobalParams) { context.WriteLine(output, $"{InitGlobalParamsFunctionName}();"); }
+            context.WriteLine(output, "runtime.RegisterLog(new PCheckerLogTextFormatter());");
+            context.WriteLine(output, "runtime.RegisterLog(new PCheckerLogJsonFormatter());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");
@@ -564,12 +565,12 @@ namespace Plang.Compiler.Backend.CSharp
             var cTorType = GetCSharpType(machine.PayloadType, true);
             context.Write(output, "public class ConstructorEvent : Event");
             context.Write(output, "{");
-            context.Write(output, $"public ConstructorEvent(IPValue val) : base(val) {{ }}");
+            context.Write(output, "public ConstructorEvent(IPValue val) : base(val) { }");
             context.WriteLine(output, "}");
             context.WriteLine(output);
 
             context.WriteLine(output,
-                $"protected override Event GetConstructorEvent(IPValue value) {{ return new ConstructorEvent((IPValue)value); }}");
+                "protected override Event GetConstructorEvent(IPValue value) { return new ConstructorEvent((IPValue)value); }");
 
             // create the constructor to initialize the sends, creates and receives list
             WriteMachineConstructor(context, output, machine);
@@ -859,7 +860,7 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, "currentMachine.Assert(");
                     WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ",");
-                    context.Write(output, $"\"Assertion Failed: \" + ");
+                    context.Write(output, "\"Assertion Failed: \" + ");
                     WriteExpr(context, output, assertStmt.Message);
                     context.WriteLine(output, ");");
                     //last statement
@@ -1031,7 +1032,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case PrintStmt printStmt:
-                    context.Write(output, $"currentMachine.LogLine(\"\" + ");
+                    context.Write(output, "currentMachine.LogLine(\"\" + ");
                     WriteExpr(context, output, printStmt.Message);
                     context.WriteLine(output, ");");
                     break;
@@ -1041,7 +1042,7 @@ namespace Plang.Compiler.Backend.CSharp
                     if (raiseStmt.Payload.Any())
                     {
                         WriteExpr(context, output, raiseStmt.Event);
-                        context.Write(output, $".Payload = ");
+                        context.Write(output, ".Payload = ");
                         WriteExpr(context, output, raiseStmt.Payload.First());
                         context.WriteLine(output, ";");
                     }
@@ -1349,7 +1350,7 @@ namespace Plang.Compiler.Backend.CSharp
                     {
                         context.Write(output, $"(({GetCSharpType(chooseExpr.Type)})currentMachine.TryRandom(");
                         WriteExpr(context, output, chooseExpr.SubExpr);
-                        context.Write(output, $"))");
+                        context.Write(output, "))");
                     }
                     break;
 
@@ -1508,7 +1509,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 case StringExpr stringExpr:
-                    context.Write(output, $"((PString) String.Format(");
+                    context.Write(output, "((PString) String.Format(");
                     context.Write(output, $"\"{stringExpr.BaseString}\"");
                     foreach (var arg in stringExpr.Args)
                     {

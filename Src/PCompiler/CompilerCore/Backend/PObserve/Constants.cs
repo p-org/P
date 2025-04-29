@@ -15,7 +15,7 @@ namespace Plang.Compiler.Backend.Java
     {
         #region P Java runtime constants
 
-        public static readonly string PRTNamespaceName = "prt";
+        public static readonly string PRTNamespaceName = "com.amazon.pobserve.runtime";
 
         public static readonly string TryAssertMethodName = "tryAssert";
         public static readonly string TryRaiseEventMethodName = "tryRaiseEvent";
@@ -52,7 +52,7 @@ namespace Plang.Compiler.Backend.Java
 
         #region Event source generation
 
-        public static readonly string EventNamespaceName = "Events";
+        public static readonly string EventNamespaceName = "PEvents";
         public static readonly string EventDefnFileName = $"{EventNamespaceName}.java";
 
         #endregion
@@ -130,22 +130,6 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     </properties>
     <packaging>jar</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>p.runtime</groupId>
-            <artifactId>PJavaRuntime</artifactId>
-            <version>1.0-SNAPSHOT</version>
-
-            <!-- Do not transitively bundle log4j as whoever uses this jar will also depend on it. -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-    </dependencies>
-
     <build>
         <plugins>
             -foreign-include-
@@ -201,35 +185,35 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// The fully-qualified name of the static `deepClone(PrtValue)` method exposed by
         /// the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtDeepCloneMethodName = "prt.values.Clone.deepClone";
+        internal static readonly string PrtDeepCloneMethodName = "com.amazon.pobserve.runtime.values.Clone.deepClone";
 
         /// <summary>
         /// The fully-qualified name of the static `deepEquality(Object, Object)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtDeepEqualsMethodName = "prt.values.Equality.deepEquals";
+        internal static readonly string PrtDeepEqualsMethodName = "com.amazon.pobserve.runtime.values.Equality.deepEquals";
 
         /// <summary>
         /// The fully-qualified name of the static `compare(Comparable, Comparable)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtCompareMethodName = "prt.values.Equality.compare";
+        internal static readonly string PrtCompareMethodName = "com.amazon.pobserve.runtime.values.Equality.compare";
 
         /// <summary>
         /// The fully-qualified name of the static `elementAt(LinkedHashSet, long)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtSetElementAtMethodName = "prt.values.SetIndexing.elementAt";
+        internal static readonly string PrtSetElementAtMethodName = "com.amazon.pobserve.runtime.values.SetIndexing.elementAt";
 
         /// <summary>
         /// The fully-qualified class name of the Java P runtime's PValue class.
         /// </summary>
-        internal static readonly string PValueClass = "prt.values.PValue";
+        internal static readonly string PValueClass = "com.amazon.pobserve.runtime.values.PValue";
 
         /// <summary>
-        /// The fully-qualified class name of the Java P runtime's Event class.
+        /// The fully-qualified class name of the Java P runtime's PEvent class.
         /// </summary>
-        internal static readonly string EventsClass = "prt.events.Event";
+        internal static readonly string EventsClass = "com.amazon.pobserve.runtime.events.PEvent";
 
         #endregion
 
@@ -293,7 +277,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
             /*"while",*/
         };
 
-        private static HashSet<string> _reservedWords = null;
+        private static HashSet<string> _reservedWords;
 
         /// <summary>
         /// Reflects out all the string fields defined in this class.

@@ -53,7 +53,7 @@ namespace Plang.Compiler.Backend.Java
         {
             GenerateBuildScript(job);
 
-            var generators = new List<JavaSourceGenerator>()
+            var generators = new List<JavaSourceGenerator>
             {
                 new TypesGenerator(job, Constants.TypesDefnFileName),
                 new EventGenerator(job, Constants.EventDefnFileName),
@@ -67,9 +67,5 @@ namespace Plang.Compiler.Backend.Java
 
 
 
-        /// <summary>
-        /// This compiler has a compilation stage.
-        /// </summary>
-        public bool HasCompilationStage => false;
     }
 }

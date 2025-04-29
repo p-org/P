@@ -84,16 +84,14 @@ namespace PChecker.Testing
             if (!_checkerConfiguration.PerformFullExploration &&
                 TestingEngine.TestReport.NumOfFoundBugs > 0)
             {
-                Console.WriteLine($"Checker found a bug.");
+                Console.WriteLine("Checker found a bug.");
             }
-
-            // we want the graph generation even if doing full exploration.
-            if ((!_checkerConfiguration.PerformFullExploration && TestingEngine.TestReport.NumOfFoundBugs > 0) ||
-                (_checkerConfiguration.IsDgmlGraphEnabled && !_checkerConfiguration.IsDgmlBugGraph))
+            
+            if ((!_checkerConfiguration.PerformFullExploration && TestingEngine.TestReport.NumOfFoundBugs > 0))
             {
                 await EmitTraces();
             }
-
+            
             // Closes the remote notification listener.
             if (_checkerConfiguration.IsVerbose)
             {
@@ -121,8 +119,7 @@ namespace PChecker.Testing
             Profiler = new Profiler();
             IsProcessCanceled = false;
         }
-
-
+        
         /// <summary>
         /// Emits the testing traces.
         /// </summary>
@@ -130,7 +127,7 @@ namespace PChecker.Testing
         {
             var file = Path.GetFileNameWithoutExtension(_checkerConfiguration.AssemblyToBeAnalyzed);
             file += "_" + _checkerConfiguration.TestingProcessId;
-
+ 
             Console.WriteLine($"... Emitting traces:");
             TestingEngine.TryEmitTraces(_checkerConfiguration.OutputDirectory, file);
             return Task.CompletedTask;
@@ -150,13 +147,13 @@ namespace PChecker.Testing
 
             if (_checkerConfiguration.ReportActivityCoverage)
             {
-                Console.WriteLine($"... Emitting coverage report:");
+                Console.WriteLine("... Emitting coverage report:");
                 Reporter.EmitTestingCoverageReport(testReport);
             }
 
             if (_checkerConfiguration.DebugActivityCoverage)
             {
-                Console.WriteLine($"... Emitting debug coverage report:");
+                Console.WriteLine("... Emitting debug coverage report:");
                 Reporter.EmitTestingCoverageReport(testReport);
             }
 

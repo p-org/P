@@ -14,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
-using PChecker.Feedback;
 using PChecker.Random;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Logging;
@@ -449,7 +448,6 @@ namespace PChecker.SystematicTesting
             AssertExpectedCallerStateMachine(creator, "CreateStateMachine");
 
             var stateMachine = CreateStateMachine(id, type, name, creator);
-            LogWriter.LogCreateStateMachine(stateMachine.Id, creator?.Id.Name, creator?.Id.Type);
             RunStateMachineEventHandler(stateMachine, initialEvent, true, null);
             return stateMachine.Id;
         }

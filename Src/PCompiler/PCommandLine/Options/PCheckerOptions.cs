@@ -11,7 +11,7 @@ using Plang.Parser;
 
 namespace Plang.Options
 {
-    internal sealed class PCheckerOptions
+    public sealed class PCheckerOptions
     {
         /// <summary>
         /// The command line parser to use.
@@ -21,7 +21,7 @@ namespace Plang.Options
         /// <summary>
         /// Initializes a new instance of the <see cref="PCheckerOptions"/> class.
         /// </summary>
-        internal PCheckerOptions()
+        public PCheckerOptions()
         {
             Parser = new CommandLineArgumentParser("p check",
                 "The P checker enables systematic exploration of a specified P test case, it generates " +
@@ -31,7 +31,7 @@ namespace Plang.Options
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                                                        " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
             var modes = basicOptions.AddArgument("mode", "md", "Choose a checker mode (options: bugfinding, verification, coverage, pobserve). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve" };
+            modes.AllowedValues = new List<string> { "bugfinding", "verification", "coverage", "pobserve" };
             modes.IsHidden = true;
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
             // basicOptions.AddArgument("smoke-testing", "tsmoke",
@@ -67,7 +67,7 @@ namespace Plang.Options
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-rl", null, "Choose the reinforcement learning (RL) scheduling strategy", typeof(bool)).IsHidden = true;
             var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
-            schCoverage.AllowedValues = new List<string>() { "learn", "random", "dfs", "stateless" };
+            schCoverage.AllowedValues = new List<string> { "learn", "random", "dfs", "stateless" };
             schCoverage.IsHidden = true;
 
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
@@ -87,7 +87,7 @@ namespace Plang.Options
         /// Parses the command line options and returns a checkerConfiguration.
         /// </summary>
         /// <returns>The CheckerConfiguration object populated with the parsed command line options.</returns>
-        internal CheckerConfiguration Parse(string[] args)
+        public CheckerConfiguration Parse(string[] args)
         {
             var configuration = CheckerConfiguration.Create();
             try
@@ -400,7 +400,7 @@ namespace Plang.Options
                 {
                     if (checkerConfiguration.Mode == CheckerMode.BugFinding)
                     {
-                        if (!fileName.Contains($"CSharp{pathSep}"))
+                        if (!fileName.Contains($"PChecker{pathSep}"))
                             continue;
                         if (fileName.EndsWith("PCheckerCore.dll")
                             || fileName.EndsWith("PCSharpRuntime.dll")

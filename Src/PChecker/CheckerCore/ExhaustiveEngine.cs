@@ -23,7 +23,7 @@ namespace PChecker
         /// <summary>
         /// Logger.
         /// </summary>
-        private TextWriter Logger;
+        private TextWriter _logger;
 
         /// <summary>
         /// The testing task cancellation token source.
@@ -44,14 +44,14 @@ namespace PChecker
         private ExhaustiveEngine(CheckerConfiguration checkerConfiguration)
         {
             _checkerConfiguration = checkerConfiguration;
-            Logger = new ConsoleLogger();
+            _logger = new ConsoleLogger();
             CancellationTokenSource = new CancellationTokenSource();
         }
 
         /// <summary>
         /// Creates the set of arguments for the exhaustive engine.
         /// </summary>
-        private String CreateArguments()
+        private string CreateArguments()
         {
             var arguments = new StringBuilder();
 
@@ -91,7 +91,7 @@ namespace PChecker
 
                 if (_checkerConfiguration.IsVerbose)
                 {
-                    arguments.Append($"--verbose 1 ");
+                    arguments.Append("--verbose 1 ");
                 }
 
                 arguments.Append($"--schedules {_checkerConfiguration.TestingIterations} ");
@@ -148,19 +148,19 @@ namespace PChecker
                 switch (proc.ExitCode)
                 {
                     case 0:
-                        Logger.WriteLine($"... Checker run finished.");
+                        _logger.WriteLine("... Checker run finished.");
                         break;
                     case 2:
-                        Logger.WriteLine($"... Checker found a bug.");
+                        _logger.WriteLine("... Checker found a bug.");
                         break;
                     case 3:
-                        Logger.WriteLine($"... Checker timed out.");
+                        _logger.WriteLine("... Checker timed out.");
                         break;
                     case 4:
-                        Logger.WriteLine($"... Checker ran out of memory.");
+                        _logger.WriteLine("... Checker ran out of memory.");
                         break;
                     default:
-                        Logger.WriteLine($"... Checker run exited with code {proc.ExitCode}.");
+                        _logger.WriteLine($"... Checker run exited with code {proc.ExitCode}.");
                         break;
                 }
             }
@@ -182,7 +182,7 @@ namespace PChecker
 
             if (_checkerConfiguration.IsVerbose)
             {
-                Logger.WriteLine($"... Executing command: java {arguments}");
+                _logger.WriteLine($"... Executing command: java {arguments}");
             }
 
             var proc = CreateProcess(Directory.GetCurrentDirectory(), "java", arguments);
@@ -196,7 +196,7 @@ namespace PChecker
                 interrupted = true;
                 CancellationTokenSource.Cancel();
                 Cleanup(proc, task);
-                Logger.WriteLine($"... Checker run terminated.");
+                _logger.WriteLine("... Checker run terminated.");
             };
 
             Console.CancelKeyPress += delegate
@@ -204,7 +204,7 @@ namespace PChecker
                 interrupted = true;
                 CancellationTokenSource.Cancel();
                 Cleanup(proc, task);
-                Logger.WriteLine($"... Checker run cancelled by user.");
+                _logger.WriteLine("... Checker run cancelled by user.");
             };
 
             try
@@ -217,14 +217,14 @@ namespace PChecker
                 {
                     if (!interrupted)
                     {
-                        Logger.WriteLine($"... Checker run forcefully cancelled on timeout.");
+                        _logger.WriteLine("... Checker run forcefully cancelled on timeout.");
                     }
                     Error.Report($"{ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                Logger.WriteLine($"... Checker failed due to an internal error: {ex}");
+                _logger.WriteLine($"... Checker failed due to an internal error: {ex}");
                 Error.Report($"{ex.Message}");
             }
             finally

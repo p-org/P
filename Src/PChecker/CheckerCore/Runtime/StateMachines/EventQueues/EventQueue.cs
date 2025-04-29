@@ -100,11 +100,9 @@ namespace PChecker.Runtime.StateMachines.EventQueues
                 {
                     return EnqueueStatus.NextEventUnavailable;
                 }
-                else
-                {
-                    StateMachineManager.IsEventHandlerRunning = true;
-                    return EnqueueStatus.EventHandlerNotRunning;
-                }
+
+                StateMachineManager.IsEventHandlerRunning = true;
+                return EnqueueStatus.EventHandlerNotRunning;
             }
 
             return EnqueueStatus.EventHandlerRunning;

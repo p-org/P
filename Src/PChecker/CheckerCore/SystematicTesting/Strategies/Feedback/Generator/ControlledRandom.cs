@@ -45,6 +45,11 @@ public class ControlledRandom: IRandomValueGenerator
     /// <inheritdoc/>
     public int Next(int maxValue)
     {
+        if (maxValue == 0)
+        {
+            return 0;
+        }
+
         return IntChoices.Next() % maxValue;
     }
 

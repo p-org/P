@@ -36,7 +36,7 @@ namespace PChecker.Runtime.Events
         
         public object ToDict()
         {
-            return this.GetType().Name;
+            return GetType().Name;
         }
 
         public override bool Equals(object obj)

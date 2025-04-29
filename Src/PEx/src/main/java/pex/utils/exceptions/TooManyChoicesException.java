@@ -27,9 +27,8 @@ public class TooManyChoicesException extends BugFoundException {
      * @param numCalls   number of choose(.) calls from this location
      */
     public TooManyChoicesException(String loc, int numChoices, int numCalls) {
-        super(String.format("""
-                        %s: too many choices generated from this statement - total %d choices after %d choose calls.
-                        Reduce the total number of choices generated here to at most %d, by reducing the number of times this choose statement is called.""",
+        super(String.format("%s: too many choices generated from this statement - total %d choices after %d choose calls. " +
+                "Reduce the total number of choices generated here to at most %d, by reducing the number of times this choose statement is called.",
                 loc, numChoices, numCalls, PExGlobal.getConfig().getMaxChoicesPerStmtPerSchedule()));
         this.loc = loc;
     }

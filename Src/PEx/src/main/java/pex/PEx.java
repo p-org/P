@@ -27,70 +27,101 @@ public class PEx {
     /**
      * Main entry point for PEx runtime.
      */
+    /**
+     * Exit codes:
+     * 0 - Success
+     * 2 - Bug found or too many choices
+     * 3 - Timeout
+     * 4 - Out of memory
+     * 5 - Runtime error
+     * 6 - Test driver error
+     */
     public static void main(String[] args) {
         // configure Log4J
         Log4JConfig.configureLog4J();
 
-        // parse the commandline arguments to create the configuration
+        // Parse command line arguments and initialize global settings
+        initializeEnvironment(args);
+        
+        int exitCode = 0;
+        try {
+            // Get model and test driver
+            Reflections reflections = initializeModel();
+            
+            // Setup loggers, random number gen, time and memory monitors
+            setup();
+            
+            // Set test driver and run analysis
+            setTestDriver(reflections);
+            RuntimeExecutor.run();
+        } catch (BugFoundException e) {
+            PExLogger.logInfo("Bug found or too many choices: " + e.getMessage());
+            PExLogger.logTrace(e);
+            exitCode = 2;
+        } catch (InvocationTargetException ex) {
+            PExLogger.logInfo("Invocation target exception: " + ex.getMessage());
+            PExLogger.logTrace(ex);
+            exitCode = 5;
+        } catch (Exception ex) {
+            if ("TIMEOUT".equals(ex.getMessage())) {
+                PExLogger.logInfo("Execution timed out");
+                exitCode = 3;
+            } else if ("MEMOUT".equals(ex.getMessage())) {
+                PExLogger.logInfo("Out of memory: " + MemoryMonitor.getMemSpent() + " MB used");
+                exitCode = 4;
+            } else {
+                PExLogger.logInfo("Runtime exception: " + ex.getMessage());
+                PExLogger.logTrace(ex);
+                exitCode = 5;
+            }
+        } finally {
+            // Log end-of-run metrics
+            StatWriter.log("exit-code", String.format("%d", exitCode));
+            
+            // Exit
+            System.exit(exitCode);
+        }
+    }
+    
+    /**
+     * Initialize global environment settings
+     * 
+     * @param args Command line arguments
+     */
+    private static void initializeEnvironment(String[] args) {
         PExGlobal.setConfig(PExOptions.ParseCommandlineArgs(args));
         PExGlobal.setChoiceSelector();
         PExLogger.Initialize(PExGlobal.getConfig().getVerbosity());
         ComputeHash.Initialize();
-
-        // get reflections corresponding to the model
+    }
+    
+    /**
+     * Initialize the model
+     * 
+     * @return Reflections object for model package
+     * @throws Exception if model initialization fails
+     */
+    private static Reflections initializeModel() throws Exception {
+        // Get reflections corresponding to the model
         Reflections reflections = new Reflections("pex.model");
-
-        try {
-            // get all classes extending PModel
-            Set<Class<? extends PModel>> subTypesPModel = reflections.getSubTypesOf(PModel.class);
-            if (subTypesPModel.isEmpty()) {
-                throw new Exception("No PModel found.");
-            }
-            Optional<Class<? extends PModel>> pModel = subTypesPModel.stream().findFirst();
-
-            // set model instance
-            PExGlobal.setModel(pModel.get().getDeclaredConstructor().newInstance());
-
-            // set project name
-            setProjectName();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            System.exit(5);
+        
+        // Get all classes extending PModel
+        Set<Class<? extends PModel>> subTypesPModel = reflections.getSubTypesOf(PModel.class);
+        if (subTypesPModel.isEmpty()) {
+            throw new Exception("No PModel implementation found in pex.model package.");
         }
-
-        // setup loggers, random number gen, time and memory monitors
-        setup();
-
-        int exit_code = 0;
-        try {
-            // set test driver
-            setTestDriver(reflections);
-
-            // run the analysis
-            RuntimeExecutor.run();
-        } catch (TooManyChoicesException e) {
-            exit_code = 2;
-        } catch (BugFoundException e) {
-            exit_code = 2;
-        } catch (InvocationTargetException ex) {
-            ex.printStackTrace();
-            exit_code = 5;
-        } catch (Exception ex) {
-            if (ex.getMessage().equals("TIMEOUT")) {
-                exit_code = 3;
-            } else if (ex.getMessage().equals("MEMOUT")) {
-                exit_code = 4;
-            } else {
-                ex.printStackTrace();
-                exit_code = 5;
-            }
-        } finally {
-            // log end-of-run metrics
-            StatWriter.log("exit-code", String.format("%d", exit_code));
-
-            // exit
-            System.exit(exit_code);
-        }
+        
+        // Get first model and instantiate it
+        Class<? extends PModel> modelClass = subTypesPModel.stream()
+            .findFirst()
+            .orElseThrow(() -> new Exception("Failed to get PModel instance."));
+            
+        PExGlobal.setModel(modelClass.getDeclaredConstructor().newInstance());
+        
+        // Set project name
+        setProjectName();
+        
+        return reflections;
     }
 
     /**
@@ -134,45 +165,50 @@ public class PEx {
      * @param reflections reflections corresponding to the pex.model
      * @throws Exception Throws exception if test driver is not found
      */
-    private static void setTestDriver(Reflections reflections)
-            throws Exception {
-        final String name = PExGlobal.getConfig().getTestDriver();
+    private static void setTestDriver(Reflections reflections) throws Exception {
+        final String requestedName = PExGlobal.getConfig().getTestDriver();
         final String defaultTestDriver = PExGlobal.getConfig().getTestDriverDefault();
-
-        Set<Class<? extends PTestDriver>> subTypesDriver = reflections.getSubTypesOf(PTestDriver.class);
-        PTestDriver driver = null;
-        for (Class<? extends PTestDriver> td : subTypesDriver) {
-            if (PTestDriver.getTestName(td).equals(name)) {
-                driver = td.getDeclaredConstructor().newInstance();
-                break;
-            }
+        final Set<Class<? extends PTestDriver>> availableDrivers = reflections.getSubTypesOf(PTestDriver.class);
+        
+        // Try to find driver by name
+        Optional<Class<? extends PTestDriver>> driverClass = availableDrivers.stream()
+            .filter(d -> PTestDriver.getTestName(d).equals(requestedName))
+            .findFirst();
+            
+        // If not found but using default driver name and only one driver exists, use that one
+        if (driverClass.isEmpty() && requestedName.equals(defaultTestDriver) && availableDrivers.size() == 1) {
+            driverClass = availableDrivers.stream().findFirst();
         }
-        if (driver == null && name.equals(defaultTestDriver) && subTypesDriver.size() == 1) {
-            for (Class<? extends PTestDriver> td : subTypesDriver) {
-                driver = td.getDeclaredConstructor().newInstance();
-                break;
-            }
+        
+        // If we found a driver, instantiate and configure it
+        if (driverClass.isPresent()) {
+            PTestDriver driver = driverClass.get().getDeclaredConstructor().newInstance();
+            PExGlobal.getConfig().setTestDriver(PTestDriver.getTestName(driver.getClass()));
+            PExGlobal.getModel().setTestDriver(driver);
+            return;
         }
-        if (driver == null) {
-            if (!name.equals(defaultTestDriver)) {
-                PExLogger.logInfo("No test driver found named \"" + name + "\"");
-            }
-            PExLogger.logInfo(
-                    String.format(
-                            "Error: We found '%d' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).",
-                            subTypesDriver.size()));
-            PExLogger.logInfo("Possible options are:");
-            for (Class<? extends PTestDriver> td : subTypesDriver) {
-                PExLogger.logInfo(String.format("%s", PTestDriver.getTestName(td)));
-            }
-            if (!name.equals(defaultTestDriver)) {
-                throw new Exception("No test driver found named \"" + PExGlobal.getConfig().getTestDriver() + "\"");
-            } else {
-                System.exit(6);
-            }
+        
+        // No driver found, report error with available options
+        if (!requestedName.equals(defaultTestDriver)) {
+            PExLogger.logInfo("No test driver found named \"" + requestedName + "\"");
         }
-        PExGlobal.getConfig().setTestDriver(PTestDriver.getTestName(driver.getClass()));
-        PExGlobal.getModel().setTestDriver(driver);
+        
+        PExLogger.logInfo(String.format(
+                "Error: We found %d test cases. Please provide a more precise name using (--testcase | -tc).",
+                availableDrivers.size()));
+        
+        if (!availableDrivers.isEmpty()) {
+            PExLogger.logInfo("Available test driver options:");
+            availableDrivers.forEach(td -> 
+                PExLogger.logInfo(String.format("  - %s", PTestDriver.getTestName(td))));
+        }
+        
+        // Exit with appropriate error
+        if (!requestedName.equals(defaultTestDriver)) {
+            throw new Exception("No test driver found named \"" + requestedName + "\"");
+        } else {
+            System.exit(6);
+        }
     }
 
 }

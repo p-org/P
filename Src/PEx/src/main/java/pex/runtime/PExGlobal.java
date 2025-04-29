@@ -24,144 +24,172 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Represents global data structures represented with a singleton class
+ * Manages global state and shared resources for the PEx runtime.
+ * This class provides centralized access to runtime state, configuration,
+ * schedulers, and statistics tracking.
  */
 public class PExGlobal {
-    /**
-     * Map from state hash to schedulerId-iteration when first visited
-     */
+    // State tracking collections
+    /** Map from state hash to schedulerId-iteration when first visited */
     @Getter
     private static final Map<Object, String> stateCache = new ConcurrentHashMap<>();
-    /**
-     * Set of timelines
-     */
+    
+    /** Set of unique execution timelines */
     @Getter
     private static final Set<Object> timelines = ConcurrentHashMap.newKeySet();
-    /**
-     * List of all search tasks
-     */
+    
+    // Task tracking collections
+    /** Map of all search tasks by ID */
     @Getter
     private static final Map<Integer, SearchTask> allTasks = new ConcurrentHashMap<>();
-    /**
-     * Set of all search tasks that are pending
-     */
+    
+    /** Set of tasks that are waiting to be executed */
     @Getter
     private static final Set<SearchTask> pendingTasks = ConcurrentHashMap.newKeySet();
-    /**
-     * List of all search tasks that finished
-     */
+    
+    /** Set of tasks that have completed execution */
     @Getter
     private static final Set<SearchTask> finishedTasks = ConcurrentHashMap.newKeySet();
-    /**
-     * Set of all search tasks that are currently running
-     */
+    
+    /** Set of tasks currently being executed */
     @Getter
     private static final Set<SearchTask> runningTasks = ConcurrentHashMap.newKeySet();
-    /**
-     * Explicit search schedulers
-     **/
+    
+    // Scheduler management
+    /** Map of explicit search schedulers by ID */
     @Getter
     private static final Map<Integer, ExplicitSearchScheduler> searchSchedulers = new ConcurrentHashMap<>();
+    
+    /** Map of thread IDs to scheduler IDs */
     @Getter
     private static final Map<Long, Integer> threadToSchedulerId = new ConcurrentHashMap<>();
-    /**
-     * Map from scheduler to global machine id
-     */
+    
+    /** Map of scheduler instances to global machine IDs */
     private static final Map<Scheduler, Integer> globalMachineId = new ConcurrentHashMap<>();
-    /**
-     * Map from scheduler to global monitor id
-     */
+    
+    /** Map of scheduler instances to global monitor IDs */
     private static final Map<Scheduler, Integer> globalMonitorId = new ConcurrentHashMap<>();
-    /**
-     * PModel
-     **/
+    
+    // Core runtime components
+    /** The active P model */
     @Getter
     @Setter
     private static PModel model = null;
-    /**
-     * Global configuration
-     **/
+    
+    /** Global runtime configuration */
     @Getter
     @Setter
     private static PExConfig config = null;
-    /**
-     * Replay scheduler
-     */
+    
+    /** Replay scheduler for bug reproduction */
     @Setter
     private static ReplayScheduler replayScheduler = null;
-    /**
-     * Status of the run
-     **/
+    
+    /** Current execution status */
     @Getter
     @Setter
     private static STATUS status = STATUS.INCOMPLETE;
-    /**
-     * Result of the run
-     **/
+    
+    /** Result of the current run */
     @Getter
     @Setter
     private static String result = "error";
-    /**
-     * Choice orchestrator
-     */
+    
+    /** Component for making exploration choices */
     @Getter
     private static ChoiceSelector choiceSelector = null;
-    /**
-     * Time of last status report
-     */
+    
+    /** Time of last status report */
     private static Instant lastReportTime = Instant.now();
 
-    public static void addSearchScheduler(ExplicitSearchScheduler sch) {
-        searchSchedulers.put(sch.getSchedulerId(), sch);
-    }
-
-    public static void registerSearchScheduler(int schId) {
-        assert (searchSchedulers.containsKey(schId));
-
-        long threadId = Thread.currentThread().getId();
-        assert (!threadToSchedulerId.containsKey(threadId));
-        threadToSchedulerId.put(threadId, schId);
-    }
-
-    public static Scheduler getScheduler() {
-        if (replayScheduler == null) {
-            long threadId = Thread.currentThread().getId();
-            Integer schId = threadToSchedulerId.get(threadId);
-            assert (schId != null);
-            return searchSchedulers.get(schId);
-        } else {
-            return replayScheduler;
-        }
-    }
-
-    public static int getGlobalMachineId() {
-        Scheduler sch = getScheduler();
-        if (!globalMachineId.containsKey(sch)) {
-            globalMachineId.put(sch, 1);
-        }
-        return globalMachineId.get(sch);
-    }
-
-    public static void setGlobalMachineId(int id) {
-        Scheduler sch = getScheduler();
-        globalMachineId.put(sch, id);
-    }
-
-    public static int getGlobalMonitorId() {
-        Scheduler sch = getScheduler();
-        if (!globalMonitorId.containsKey(sch)) {
-            globalMonitorId.put(sch, -1);
-        }
-        return globalMonitorId.get(sch);
-    }
-
-    public static void setGlobalMonitorId(int id) {
-        Scheduler sch = getScheduler();
-        globalMonitorId.put(sch, id);
+    /**
+     * Adds a search scheduler to the global registry
+     *
+     * @param scheduler The scheduler to add
+     */
+    public static void addSearchScheduler(ExplicitSearchScheduler scheduler) {
+        searchSchedulers.put(scheduler.getSchedulerId(), scheduler);
     }
 
     /**
-     * Set choice orchestrator
+     * Registers the current thread with a specific scheduler
+     *
+     * @param schedulerId ID of the scheduler to register with the current thread
+     * @throws AssertionError if the scheduler ID is not found or if the thread is already registered
+     */
+    public static void registerSearchScheduler(int schedulerId) {
+        assert searchSchedulers.containsKey(schedulerId) : 
+            "Scheduler ID " + schedulerId + " not found in registry";
+
+        long threadId = Thread.currentThread().getId();
+        assert !threadToSchedulerId.containsKey(threadId) : 
+            "Thread " + threadId + " already registered with a scheduler";
+            
+        threadToSchedulerId.put(threadId, schedulerId);
+    }
+
+    /**
+     * Gets the scheduler associated with the current thread
+     *
+     * @return The scheduler associated with the current thread, or the replay scheduler if active
+     * @throws AssertionError if no scheduler is associated with the current thread
+     */
+    public static Scheduler getScheduler() {
+        // If replay scheduler is active, it takes precedence
+        if (replayScheduler != null) {
+            return replayScheduler;
+        }
+        
+        // Otherwise, find the scheduler for the current thread
+        long threadId = Thread.currentThread().getId();
+        Integer schedulerId = threadToSchedulerId.get(threadId);
+        assert schedulerId != null : "No scheduler registered for thread " + threadId;
+        
+        return searchSchedulers.get(schedulerId);
+    }
+
+    /**
+     * Gets the global machine ID associated with the current scheduler
+     *
+     * @return The global machine ID for the current scheduler
+     */
+    public static int getGlobalMachineId() {
+        Scheduler scheduler = getScheduler();
+        return globalMachineId.computeIfAbsent(scheduler, s -> 1);
+    }
+
+    /**
+     * Sets the global machine ID for the current scheduler
+     *
+     * @param id The machine ID to set
+     */
+    public static void setGlobalMachineId(int id) {
+        globalMachineId.put(getScheduler(), id);
+    }
+
+    /**
+     * Gets the global monitor ID associated with the current scheduler
+     *
+     * @return The global monitor ID for the current scheduler
+     */
+    public static int getGlobalMonitorId() {
+        Scheduler scheduler = getScheduler();
+        return globalMonitorId.computeIfAbsent(scheduler, s -> -1);
+    }
+
+    /**
+     * Sets the global monitor ID for the current scheduler
+     *
+     * @param id The monitor ID to set
+     */
+    public static void setGlobalMonitorId(int id) {
+        globalMonitorId.put(getScheduler(), id);
+    }
+
+    /**
+     * Initializes the choice selector based on configuration
+     * 
+     * @throws RuntimeException if the choice selector mode is invalid
      */
     public static void setChoiceSelector() {
         switch (config.getChoiceSelectorMode()) {
@@ -172,7 +200,8 @@ public class PExGlobal {
                 choiceSelector = new ChoiceSelectorQL();
                 break;
             default:
-                throw new RuntimeException("Unrecognized choice orchestrator: " + config.getChoiceSelectorMode());
+                throw new RuntimeException("Unrecognized choice orchestrator: " + 
+                    config.getChoiceSelectorMode());
         }
     }
 
@@ -202,197 +231,292 @@ public class PExGlobal {
         return numUnexplored;
     }
 
+    /**
+     * Get the total number of unexplored choices across all tasks
+     *
+     * @return Total count of unexplored choices
+     */
     static int getNumUnexploredChoices() {
-        int result = getNumPendingChoices();
-        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
-            result += sch.getSearchStrategy().getCurrTask().getCurrentNumUnexploredChoices();
-        }
-        return result;
-    }
-
-    static int getNumUnexploredDataChoices() {
-        int result = getNumPendingDataChoices();
-        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
-            result += sch.getSearchStrategy().getCurrTask().getCurrentNumUnexploredDataChoices();
-        }
-        return result;
+        int pendingChoices = getNumPendingChoices();
+        
+        // Add choices from currently running tasks
+        int runningTaskChoices = searchSchedulers.values().stream()
+            .mapToInt(sch -> sch.getSearchStrategy().getCurrTask().getCurrentNumUnexploredChoices())
+            .sum();
+            
+        return pendingChoices + runningTaskChoices;
     }
 
     /**
-     * Get the percentage of unexplored choices that are data choices
+     * Get the total number of unexplored data choices across all tasks
      *
-     * @return Percentage of unexplored choices that are data choices
+     * @return Total count of unexplored data choices
+     */
+    static int getNumUnexploredDataChoices() {
+        int pendingDataChoices = getNumPendingDataChoices();
+        
+        // Add data choices from currently running tasks
+        int runningTaskDataChoices = searchSchedulers.values().stream()
+            .mapToInt(sch -> sch.getSearchStrategy().getCurrTask().getCurrentNumUnexploredDataChoices())
+            .sum();
+            
+        return pendingDataChoices + runningTaskDataChoices;
+    }
+
+    /**
+     * Calculate the percentage of unexplored choices that are data choices
+     *
+     * @return Percentage of unexplored choices that are data choices (0-100)
      */
     static double getUnexploredDataChoicesPercent() {
         int totalUnexplored = getNumUnexploredChoices();
         if (totalUnexplored == 0) {
-            return 0;
+            return 0.0;
         }
 
-        int numUnexploredData = getNumUnexploredDataChoices();
-        return (numUnexploredData * 100.0) / totalUnexplored;
+        int dataChoices = getNumUnexploredDataChoices();
+        return (dataChoices * 100.0) / totalUnexplored;
     }
 
+    /**
+     * Update the result status based on current execution state
+     * Does nothing if a bug has already been found
+     */
     public static void updateResult() {
+        // Don't update result if a bug was found
         if (status == STATUS.BUG_FOUND) {
             return;
         }
 
-        String resultString = "";
         int maxStepBound = config.getMaxStepBound();
-        int numUnexplored = getNumUnexploredChoices();
-        if (getMaxSteps() < maxStepBound) {
-            if (numUnexplored == 0) {
-                resultString += "correct for any depth";
+        int currentMaxSteps = getMaxSteps();
+        int unexploredChoices = getNumUnexploredChoices();
+        String resultString;
+        
+        // Generate result string based on step bounds and unexplored choices
+        if (currentMaxSteps < maxStepBound) {
+            // Below step bound
+            if (unexploredChoices == 0) {
+                resultString = "correct for any depth";
             } else {
-                resultString += String.format("partially correct with %,d choices remaining", numUnexplored);
+                resultString = String.format("partially correct with %,d choices remaining", 
+                    unexploredChoices);
             }
         } else {
-            if (numUnexplored == 0) {
-                resultString += String.format("correct up to step %,d", getMaxSteps());
+            // At or exceeding step bound
+            if (unexploredChoices == 0) {
+                resultString = String.format("correct up to step %,d", currentMaxSteps);
             } else {
-                resultString += String.format("partially correct up to step %,d with %,d choices remaining", getMaxSteps(), numUnexplored);
+                resultString = String.format(
+                    "partially correct up to step %,d with %,d choices remaining", 
+                    currentMaxSteps, unexploredChoices);
             }
         }
+        
         result = resultString;
     }
 
+    /**
+     * Records execution statistics to the stats writer
+     * This method logs various metrics about the current execution state
+     */
     public static void recordStats() {
-        // print basic statistics
+        // Log basic schedule and state information
         StatWriter.log("#-schedules", String.format("%d", getTotalSchedules()));
         StatWriter.log("#-timelines", String.format("%d", timelines.size()));
+        
+        // Log state caching information if enabled
         if (config.getStateCachingMode() != StateCachingMode.None) {
             StatWriter.log("#-states", String.format("%d", getTotalStates()));
             StatWriter.log("#-distinct-states", String.format("%d", stateCache.size()));
         }
+        
+        // Log step statistics
         StatWriter.log("steps-min", String.format("%d", getMinSteps()));
-        StatWriter.log("steps-avg", String.format("%d", getTotalSteps() / getTotalSchedules()));
+        
+        // Avoid division by zero
+        int totalSchedules = getTotalSchedules();
+        long avgSteps = totalSchedules > 0 ? getTotalSteps() / totalSchedules : 0;
+        StatWriter.log("steps-avg", String.format("%d", avgSteps));
+        
+        // Log choice exploration statistics
         StatWriter.log("#-choices-unexplored", String.format("%d", getNumUnexploredChoices()));
         StatWriter.log("%-choices-unexplored-data", String.format("%.1f", getUnexploredDataChoicesPercent()));
+        
+        // Log task statistics
         StatWriter.log("#-tasks-finished", String.format("%d", finishedTasks.size()));
         StatWriter.log("#-tasks-pending", String.format("%d", pendingTasks.size()));
+        
+        // Log Q-learning statistics
         StatWriter.log("ql-#-states", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumStates()));
         StatWriter.log("ql-#-actions", String.format("%d", ChoiceSelectorQL.getChoiceQL().getNumActions()));
     }
 
-    static void printCurrentStatus(double newRuntime) {
-        StringBuilder s = new StringBuilder("--------------------");
-        s.append(String.format("\n    Status after %.2f seconds:", newRuntime));
-        s.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
-        s.append(String.format("\n      Schedules:        %d", getTotalSchedules()));
-//        s.append(String.format("\n      Unexplored:       %d", getNumUnexploredChoices()));
-        s.append(String.format("\n      RunningTasks:     %d", runningTasks.size()));
-        s.append(String.format("\n      FinishedTasks:    %d", finishedTasks.size()));
-        s.append(String.format("\n      PendingTasks:     %d", pendingTasks.size()));
-        s.append(String.format("\n      Timelines:        %d", timelines.size()));
+    /**
+     * Print detailed status information to the scratch logger
+     * 
+     * @param elapsedRuntime Current runtime in seconds
+     */
+    static void printCurrentStatus(double elapsedRuntime) {
+        StringBuilder status = new StringBuilder("--------------------");
+        status.append(String.format("\n    Status after %.2f seconds:", elapsedRuntime));
+        status.append(String.format("\n      Memory:           %.2f MB", MemoryMonitor.getMemSpent()));
+        status.append(String.format("\n      Schedules:        %d", getTotalSchedules()));
+        
+        // Add task statistics
+        status.append(String.format("\n      RunningTasks:     %d", runningTasks.size()));
+        status.append(String.format("\n      FinishedTasks:    %d", finishedTasks.size()));
+        status.append(String.format("\n      PendingTasks:     %d", pendingTasks.size()));
+        
+        // Add timeline statistics
+        status.append(String.format("\n      Timelines:        %d", timelines.size()));
+        
+        // Add state information if state caching is enabled
         if (config.getStateCachingMode() != StateCachingMode.None) {
-            s.append(String.format("\n      States:           %d", getTotalStates()));
-            s.append(String.format("\n      DistinctStates:   %d", stateCache.size()));
+            status.append(String.format("\n      States:           %d", getTotalStates()));
+            status.append(String.format("\n      DistinctStates:   %d", stateCache.size()));
         }
-        ScratchLogger.log(s.toString());
+        
+        ScratchLogger.log(status.toString());
     }
 
+    /**
+     * Print the progress table header to the console
+     */
     public static void printProgressHeader() {
-        StringBuilder s = new StringBuilder(100);
-        s.append(StringUtils.center("Time", 11));
-        s.append(StringUtils.center("Memory", 9));
-        s.append(StringUtils.center("Tasks (run/fin/pen)", 24));
-
-        s.append(StringUtils.center("Schedules", 12));
-        s.append(StringUtils.center("Timelines", 12));
-//        s.append(StringUtils.center("Unexplored", 24));
-
+        StringBuilder header = new StringBuilder(100);
+        
+        // Add column headers
+        header.append(StringUtils.center("Time", 11));
+        header.append(StringUtils.center("Memory", 9));
+        header.append(StringUtils.center("Tasks (run/fin/pen)", 24));
+        header.append(StringUtils.center("Schedules", 12));
+        header.append(StringUtils.center("Timelines", 12));
+        
+        // Add state information column if state caching is enabled
         if (config.getStateCachingMode() != StateCachingMode.None) {
-            s.append(StringUtils.center("States", 12));
+            header.append(StringUtils.center("States", 12));
         }
 
+        // Print the header
         System.out.println("--------------------");
-        System.out.println(s);
+        System.out.println(header);
     }
 
+    /**
+     * Print the progress table footer to the console
+     */
     public static void printProgressFooter() {
         System.out.println();
     }
 
+    /**
+     * Print progress information to the console
+     * 
+     * @param forcePrint If true, print regardless of time since last print;
+     *                  if false, only print if sufficient time has elapsed
+     */
     public static void printProgress(boolean forcePrint) {
+        // Check if we should print based on timer or force print
         if (forcePrint || (TimeMonitor.findInterval(lastReportTime) > 10)) {
+            // Update last report time
             lastReportTime = Instant.now();
-            double newRuntime = TimeMonitor.getRuntime();
-            printCurrentStatus(newRuntime);
-            long runtime = (long) (newRuntime * 1000);
-            String runtimeHms =
-                    String.format(
-                            "%02d:%02d:%02d",
-                            TimeUnit.MILLISECONDS.toHours(runtime),
-                            TimeUnit.MILLISECONDS.toMinutes(runtime) % TimeUnit.HOURS.toMinutes(1),
-                            TimeUnit.MILLISECONDS.toSeconds(runtime) % TimeUnit.MINUTES.toSeconds(1));
+            
+            // Get current runtime
+            double elapsedRuntime = TimeMonitor.getRuntime();
+            
+            // Print detailed status to log
+            printCurrentStatus(elapsedRuntime);
+            
+            // Format runtime as HH:MM:SS
+            long runtimeMs = (long)(elapsedRuntime * 1000);
+            String runtimeFormatted = String.format(
+                "%02d:%02d:%02d",
+                TimeUnit.MILLISECONDS.toHours(runtimeMs),
+                TimeUnit.MILLISECONDS.toMinutes(runtimeMs) % TimeUnit.HOURS.toMinutes(1),
+                TimeUnit.MILLISECONDS.toSeconds(runtimeMs) % TimeUnit.MINUTES.toSeconds(1)
+            );
 
-            StringBuilder s = new StringBuilder(100);
-            s.append('\r');
-            s.append(StringUtils.center(String.format("%s", runtimeHms), 11));
-            s.append(
-                    StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
-            s.append(StringUtils.center(String.format("%,d / %,d / %,d",
-                            runningTasks.size(), finishedTasks.size(), pendingTasks.size()),
-                    24));
-
-            s.append(StringUtils.center(String.format("%,d", getTotalSchedules()), 12));
-            s.append(StringUtils.center(String.format("%,d", timelines.size()), 12));
-//                s.append(
-//                        StringUtils.center(
-//                                String.format(
-//                                        "%d (%.0f %% data)", getNumUnexploredChoices(), getUnexploredDataChoicesPercent()),
-//                                24));
-
+            // Build the progress line
+            StringBuilder progress = new StringBuilder(100);
+            progress.append('\r');
+            progress.append(StringUtils.center(runtimeFormatted, 11));
+            progress.append(StringUtils.center(String.format("%.1f GB", MemoryMonitor.getMemSpent() / 1024), 9));
+            
+            // Add task statistics
+            progress.append(StringUtils.center(
+                String.format("%,d / %,d / %,d", runningTasks.size(), finishedTasks.size(), pendingTasks.size()),
+                24
+            ));
+            
+            // Add schedule and timeline statistics
+            progress.append(StringUtils.center(String.format("%,d", getTotalSchedules()), 12));
+            progress.append(StringUtils.center(String.format("%,d", timelines.size()), 12));
+            
+            // Add state information if state caching is enabled
             if (config.getStateCachingMode() != StateCachingMode.None) {
-                s.append(StringUtils.center(String.format("%,d", stateCache.size()), 12));
+                progress.append(StringUtils.center(String.format("%,d", stateCache.size()), 12));
             }
 
-            System.out.print(s);
+            // Print progress line
+            System.out.print(progress);
         }
     }
 
+    /**
+     * Get the total number of schedules explored across all schedulers
+     * 
+     * @return Total schedule count
+     */
     public static int getTotalSchedules() {
-        int result = 0;
-        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
-            result += sch.getStats().numSchedules;
-        }
-        return result;
+        return searchSchedulers.values().stream()
+            .mapToInt(sch -> sch.getStats().numSchedules)
+            .sum();
     }
 
+    /**
+     * Get the minimum number of steps among all schedulers
+     * 
+     * @return Minimum step count, or -1 if no schedulers exist
+     */
     public static int getMinSteps() {
-        int result = -1;
-        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
-            if (result == -1 || result > sch.getStats().minSteps) {
-                result = sch.getStats().minSteps;
-            }
-        }
-        return result;
+        return searchSchedulers.values().stream()
+            .mapToInt(sch -> sch.getStats().minSteps)
+            .min()
+            .orElse(-1);
     }
 
+    /**
+     * Get the maximum number of steps among all schedulers
+     * 
+     * @return Maximum step count, or -1 if no schedulers exist
+     */
     public static int getMaxSteps() {
-        int result = -1;
-        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
-            if (result == -1 || result < sch.getStats().maxSteps) {
-                result = sch.getStats().maxSteps;
-            }
-        }
-        return result;
+        return searchSchedulers.values().stream()
+            .mapToInt(sch -> sch.getStats().maxSteps)
+            .max()
+            .orElse(-1);
     }
 
+    /**
+     * Get the total number of steps executed across all schedulers
+     * 
+     * @return Total step count
+     */
     public static long getTotalSteps() {
-        long result = 0;
-        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
-            result += sch.getStats().totalSteps;
-        }
-        return result;
+        return searchSchedulers.values().stream()
+            .mapToLong(sch -> sch.getStats().totalSteps)
+            .sum();
     }
 
+    /**
+     * Get the total number of states explored across all schedulers
+     * 
+     * @return Total state count
+     */
     public static int getTotalStates() {
-        int result = 0;
-        for (ExplicitSearchScheduler sch : searchSchedulers.values()) {
-            result += sch.getStats().totalStates;
-        }
-        return result;
+        return searchSchedulers.values().stream()
+            .mapToInt(sch -> sch.getStats().totalStates)
+            .sum();
     }
 }

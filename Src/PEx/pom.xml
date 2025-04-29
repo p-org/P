@@ -278,7 +278,7 @@
     </distributionManagement>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>23</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>

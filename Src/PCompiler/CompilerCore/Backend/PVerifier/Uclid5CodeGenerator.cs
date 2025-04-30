@@ -38,6 +38,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
     private Dictionary<Invariant, HashSet<Invariant>> _invariantDependencies;
     private HashSet<Invariant> _provenInvariants;
     private Scope _globalScope;
+    private Invariant _defaultInv;
 
     public bool HasCompilationStage => true;
 
@@ -161,17 +162,18 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
             Console.WriteLine();
         }
-
+        
         succeededInv.ExceptWith(failedInv);
         job.Output.WriteInfo($"\n🎉 Verified {succeededInv.Count} invariants!");
         foreach (var inv in succeededInv)
         {
-            job.Output.WriteInfo($"✅ {inv.Name.Replace("_PGROUP_", ": ")}");
-        }
-
-        if (!missingDefault && failMessages.Count == 0)
-        {
-            job.Output.WriteInfo($"✅ default P proof obligations");
+            if (!inv.IsDefault) {
+                job.Output.WriteInfo($"✅ {inv.Name.Replace("_PGROUP_", ": ")}");
+            }
+            else {
+                job.Output.WriteInfo($"✅ default P proof obligations");
+            }
+            
         }
 
         MarkProvenInvariants(succeededInv);
@@ -244,9 +246,18 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 var line = query[int.Parse(feedback.Second.ToString()) - 1];
                 var step = feedback.First.ToString().Contains("[Step #0]") ? "(base case)" : "";
                 var matchName = Regex.Match(line, @"// Failed to verify invariant (.*) at (.*)");
-                var invName = matchName.Groups[1].Value.Replace("_PGROUP_", ": ");
-                failedInv.Add(invName);
-                failMessages.Add($"{reason} {line.Split("//").Last()} {step}");
+                if (matchName.Success) {
+                    var invName = matchName.Groups[1].Value.Replace("_PGROUP_", ": ");
+                    failedInv.Add(invName);
+                    failMessages.Add($"{reason} {line.Split("// ").Last()} {step}");
+                }
+
+                var matchDefault = Regex.Match(line, 
+                    @"(// Failed to verify that (.*) never receives (.*) in (.*)|// Failed to ensure unique action IDs at (.*)|// Failed to ensure increasing action IDs at (.*)|// Failed to ensure that received is a subset of sent at (.*))");
+                if (matchDefault.Success) {
+                    failedInv.Add("default");
+                    failMessages.Add($"{reason} {line.Split("// ").Last()}");
+                }
             }
         }
     }
@@ -277,6 +288,9 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
         return (succeededInv, failedInv.Select(x =>
         {
+            if (x == "default") {
+                return _defaultInv;
+            }
             _globalScope.Get(x, out Invariant i);
             return i;
         }).ToHashSet(), failMessages);
@@ -300,7 +314,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
         var filenamePrefix = $"{job.ProjectName}_";
         List<CompiledFile> files = [];
         // if there are no proof commands, then create two:
-        // - one called default for checking that everything is handled
+        // - one called default for checking that everything is handled and sanity checkings
         // - one with all the invariants as goals
         if (!globalScope.ProofCommands.Any())
         {
@@ -341,7 +355,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 if (proofCmd.Goals.Count == 1 && proofCmd.Goals[0].IsDefault)
                 {
                     proofCmd.Name = "default";
-                    proofCmd.Goals = [];
+                    _defaultInv = proofCmd.Goals[0];
                     _commands.Add(proofCmd);
                     _proofCommandToFiles.Add(proofCmd, []);
                     files.AddRange(CompileToFile($"{filenamePrefix}default", proofCmd));
@@ -424,29 +438,26 @@ public class PVerifierCodeGenerator : ICodeGenerator
             files.Add(_src);
             GenerateMain(null, null, null, cmd);
         }
-        else
+        foreach (var m in machines)
         {
-            foreach (var m in machines)
+            if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(m.Name))
             {
-                if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(m.Name))
+                foreach (var s in m.States)
                 {
-                    foreach (var s in m.States)
+                    if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(s.Name))
                     {
-                        if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(s.Name))
-                        {
-                            _src = GenerateCompiledFile(cmd, name, m, s, null);
-                            files.Add(_src);
-                            GenerateMain(m, s, null, cmd);
-                        }
+                        _src = GenerateCompiledFile(cmd, name, m, s, null);
+                        files.Add(_src);
+                        GenerateMain(m, s, null, cmd, cmd.Name == "default");
+                    }
 
-                        foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
+                    foreach (var e in events.Where(e => !e.IsNullEvent && !e.IsHaltEvent && s.HasHandler(e)))
+                    {
+                        if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(e.Name))
                         {
-                            if (_ctx.Job.CheckOnly == null || _ctx.Job.CheckOnly.Contains(e.Name))
-                            {
-                                _src = GenerateCompiledFile(cmd, name, m, s, e);
-                                files.Add(_src);
-                                GenerateMain(m, s, e, cmd);
-                            }
+                            _src = GenerateCompiledFile(cmd, name, m, s, e);
+                            files.Add(_src);
+                            GenerateMain(m, s, e, cmd, cmd.Name == "default");
                         }
                     }
                 }
@@ -458,7 +469,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
     }
 
     private void BuildDependencies(Scope globalScope)
-    {
+    {   
         foreach (var cmd in globalScope.ProofCommands)
         {
             foreach (var goal in cmd.Goals)
@@ -1041,11 +1052,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
     /********************************
      * Traverse the P AST and generate the UCLID5 code using the types and helpers defined above
      *******************************/
-    private void GenerateMain(Machine machine, State state, Event @event, ProofCommand cmd)
+    private void GenerateMain(Machine machine, State state, Event @event, ProofCommand cmd, bool generateSanityChecks = false)
     {
-        // cmd.Proof is default iff all the others are null
-        Trace.Assert((cmd.Name == "default") == (machine is null && state is null && @event is null));
-
         EmitLine("module main {");
 
         var machines = (from m in _globalScope.AllDecls.OfType<Machine>() where !m.IsSpec select m).ToList();
@@ -1095,10 +1103,10 @@ public class PVerifierCodeGenerator : ICodeGenerator
         EmitLine("");
 
         // global functions
-        GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>(), cmd.Goals);
+        GenerateGlobalProcedures(_globalScope.AllDecls.OfType<Function>(), cmd.Goals, generateSanityChecks);
 
         // Spec support
-        GenerateSpecProcedures(specs, cmd.Goals); // generate spec methods, called by spec handlers
+        GenerateSpecProcedures(specs, cmd.Goals, generateSanityChecks); // generate spec methods, called by spec handlers
         GenerateSpecHandlers(specs); // will populate _specListenMap, which is used when ever there is a send statement
         EmitLine("");
 
@@ -1126,7 +1134,9 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
         foreach (var inv in cmd.Goals)
         {
-            EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
+            if (!inv.IsDefault) {
+                EmitLine($"define {InvariantPrefix}{inv.Name}(): boolean = {ExprToString(inv.Body)};");
+            }
         }
 
         EmitLine("");
@@ -1154,7 +1164,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
         GenerateOptionTypes();
         EmitLine("");
 
-        if (cmd.Name == "default")
+        if (cmd.Name == "default" && machine == null && state == null && @event == null)
         {
             GenerateInitBlock(machines, specs, _globalScope.AllDecls.OfType<AssumeOnStart>());
             EmitLine("");
@@ -1172,17 +1182,17 @@ public class PVerifierCodeGenerator : ICodeGenerator
         else
         {
             // non-handler functions for handlers
-            GenerateMachineProcedures(machine, cmd.Goals); // generate machine methods, called by handlers below
+            GenerateMachineProcedures(machine, cmd.Goals, generateSanityChecks); // generate machine methods, called by handlers below
             EmitLine("");
 
             // generate the handlers
             if (@event != null)
             {
-                GenerateEventHandler(state, @event, cmd.Goals, cmd.Premises);
+                GenerateEventHandler(state, @event, cmd.Goals, cmd.Premises, generateSanityChecks);
             }
             else
             {
-                GenerateEntryHandler(state, cmd.Goals, cmd.Premises);
+                GenerateEntryHandler(state, cmd.Goals, cmd.Premises, generateSanityChecks);
             }
 
             EmitLine("");
@@ -1394,14 +1404,16 @@ public class PVerifierCodeGenerator : ICodeGenerator
         EmitLine($"\trequires {EventOrGotoAdtIsGoto(action)};");
         EmitLine($"\trequires {GotoAdtIsS(g, s)};");
         EmitLine($"\trequires {MachineStateAdtInS(targetMachineState, s.OwningMachine, s)};");
+
+        EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
+        EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
+        EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
+
         if (generateSanityChecks)
         {
-            EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
-            EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
-            EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
-            EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
-            EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
-            EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
+            EmitLine($"\tensures {InvariantPrefix}Unique_Actions(); // Failed to ensure unique action IDs at {GetLocation(s)}");
+            EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count(); // Failed to ensure increasing action IDs at {GetLocation(s)}");
+            EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent(); // Failed to ensure that received is a subset of sent at {GetLocation(s)}");
         }
 
         foreach (var reqs in requires)
@@ -1411,9 +1423,11 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
         foreach (var inv in goals)
         {
-            EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
-            EmitLine(
+            if (!inv.IsDefault) {
+                EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
+                EmitLine(
                 $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(s)}");
+            }
         }
 
         EmitLine("{");
@@ -1479,17 +1493,19 @@ public class PVerifierCodeGenerator : ICodeGenerator
         EmitLine($"\trequires {MachineStateAdtInS(targetMachineState, s.OwningMachine, s)};");
         EmitLine($"\trequires {EventOrGotoAdtIsEvent(action)};");
         EmitLine($"\trequires {EventAdtIsE(e, ev)};");
-        if (generateSanityChecks)
-        {
-            EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
-            EmitLine($"\tensures {InvariantPrefix}Unique_Actions();");
-            EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
-            EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count();");
-            EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
-            EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent();");
-        }
+
+        EmitLine($"\trequires {InvariantPrefix}Unique_Actions();");
+        EmitLine($"\trequires {InvariantPrefix}Increasing_Action_Count();");
+        EmitLine($"\trequires {InvariantPrefix}Received_Subset_Sent();");
 
         var handler = s.AllEventHandlers.ToDictionary()[ev];
+
+        if (generateSanityChecks)
+        {
+            EmitLine($"\tensures {InvariantPrefix}Unique_Actions(); // Failed to ensure unique action IDs at {GetLocation(handler)}");
+            EmitLine($"\tensures {InvariantPrefix}Increasing_Action_Count(); // Failed to ensure increasing action IDs at {GetLocation(handler)}");
+            EmitLine($"\tensures {InvariantPrefix}Received_Subset_Sent(); // Failed to ensure that received is a subset of sent at {GetLocation(handler)}");
+        }        
 
         foreach (var reqs in requires)
         {
@@ -1498,9 +1514,11 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
         foreach (var inv in goals)
         {
-            EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
-            EmitLine(
-                $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(handler)}");
+            if (!inv.IsDefault) {
+                EmitLine($"\trequires {InvariantPrefix}{inv.Name}();");
+                EmitLine(
+                    $"\tensures {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(handler)}");
+            }
         }
 
         switch (handler)
@@ -1515,8 +1533,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 var name = f.Name == "" ? $"{BuiltinPrefix}{f.Owner.Name}_f{line}" : f.Name;
                 var payload = f.Signature.Parameters.Count > 0 ? $", {EventAdtSelectPayload(e, ev)}" : "";
                 EmitLine("{");
-                EmitLine($"{received} = {received}[{label} -> true];");
                 EmitLine($"call {name}({target}{payload});");
+                EmitLine($"{received} = {received}[{label} -> true];");
                 foreach (var reqs in requires)
                 {
                     EmitLine($"assume {InvariantPrefix}{reqs.Name}();");
@@ -1811,25 +1829,27 @@ public class PVerifierCodeGenerator : ICodeGenerator
                         EmitLine($"while ({checker} != {collection})");
                         foreach (var inv in goals)
                         {
-                            EmitLine(
-                                $"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(fstmt)}");
+                            if (!inv.IsDefault) {
+                                EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(fstmt)}");
+                            }
+                            
                         }
 
                         if (generateSanityChecks)
                         {
-                            EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
-                            EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
-                            EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent();");
-                            // ensure uniqueness for the new ones too
-                            EmitLine(
-                                $"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
-                            EmitLine(
-                                $"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
-
-                            // ensure we only ever add sends
-                            EmitLine(
-                                $"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
+                            EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions(); // Failed to ensure unique action IDs at {GetLocation(fstmt)}");
+                            EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count(); // Failed to ensure increasing action IDs at {GetLocation(fstmt)}");
+                            EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent(); // Failed to ensure that received is a subset of sent at {GetLocation(fstmt)}");
                         }
+                        
+                        // ensure uniqueness for the new ones too
+                        EmitLine(
+                                $"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");
+                        EmitLine(
+                            $"\tinvariant forall (a: {LabelAdt}) :: {LocalPrefix}sent[a] ==> {LabelAdtSelectActionCount("a")} < {BuiltinPrefix}ActionCount;");
+                        // ensure we only ever add sends
+                        EmitLine(
+                            $"\tinvariant forall (e: {LabelAdt}) :: {StateAdtSelectSent(StateVar)}[e] ==> {LocalPrefix}sent[e];");
 
                         // user given invariants
                         foreach (var inv in fstmt.Invariants)
@@ -1860,13 +1880,16 @@ public class PVerifierCodeGenerator : ICodeGenerator
                         EmitLine($"while ({checker} != {collection})");
                         foreach (var inv in goals)
                         {
-                            EmitLine(
-                                $"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(fstmt)}");
+                            if (!inv.IsDefault) {
+                                EmitLine($"\tinvariant {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at {GetLocation(fstmt)}");
+                            }
                         }
 
-                        EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions();");
-                        EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count();");
-                        EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent();");
+                        if (generateSanityChecks) {
+                            EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions(); // Failed to ensure unique action IDs at {GetLocation(fstmt)}");
+                            EmitLine($"\tinvariant{InvariantPrefix}Increasing_Action_Count(); // Failed to ensure increasing action IDs at {GetLocation(fstmt)}");
+                            EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent(); // Failed to ensure that received is a subset of sent at {GetLocation(fstmt)}");
+                        }
                         // ensure uniqueness for the new ones too
                         EmitLine(
                             $"\tinvariant forall (a1: {LabelAdt}, a2: {LabelAdt}) :: (a1 != a2 && {LocalPrefix}sent[a1] && {LocalPrefix}sent[a2]) ==> {LabelAdtSelectActionCount("a1")} != {LabelAdtSelectActionCount("a2")};");

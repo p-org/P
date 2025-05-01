@@ -113,12 +113,6 @@ internal class PExCodeGenerator : ICodeGenerator
         _globalParams = globalScope.GetGlobalVariables();
 
         DeclareGlobalParams(context, source.Stream);
-            
-        // write the top level declarations
-        foreach (var decl in globalScope.AllDecls)
-        {
-            WriteDecl(context, source.Stream, decl);
-        }
 
         //WriteMachineTagDefs(context, source.Stream, globalScope.Machines);
 

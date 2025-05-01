@@ -28,6 +28,12 @@ internal class PExCodeGenerator : ICodeGenerator
     ///     This compiler has a compilation stage.
     /// </summary>
     public bool HasCompilationStage => true;
+    private static List<Variable> _globalParams = [];
+
+    private string GetGlobalParamAndLocalVariableName(Variable v)
+    {
+        return _globalParams.Contains(v) ? $"({ICodeGenerator.GlobalConfigName}.{v.Name})" : CompilationContext.GetVar(v.Name);
+    }
 
     public void Compile(ICompilerConfiguration job)
     {
@@ -103,6 +109,16 @@ internal class PExCodeGenerator : ICodeGenerator
         context.WriteLine(source.Stream);
 
         context.WriteLine(source.Stream);
+        
+        _globalParams = globalScope.GetGlobalVariables();
+
+        DeclareGlobalParams(context, source.Stream);
+            
+        // write the top level declarations
+        foreach (var decl in globalScope.AllDecls)
+        {
+            WriteDecl(context, source.Stream, decl);
+        }
 
         //WriteMachineTagDefs(context, source.Stream, globalScope.Machines);
 
@@ -118,7 +134,7 @@ internal class PExCodeGenerator : ICodeGenerator
             WriteDecl(context, source.Stream, decl);
         }
 
-        if (!hasSafetyTest) WriteMainDriver(context, source.Stream, globalScope, decls);
+        if (!hasSafetyTest) WriteImplementationDecl(context, source.Stream, globalScope, decls);
 
         context.WriteLine(source.Stream, "PTestDriver testDriver = null;");
         context.WriteLine(source.Stream, "@Generated");
@@ -131,20 +147,36 @@ internal class PExCodeGenerator : ICodeGenerator
 
         return source;
     }
+    
+    private const string InitGlobalParamsFunctionName = "InitializeGlobalParams";
 
-    private void WriteDriver(CompilationContext context, StringWriter output, string startMachine,
-        IEnumerable<IPDecl> decls, IDictionary<Interface, Machine> interfaceDef = null)
+    private void WriteInitializeGlobalParams(CompilationContext context, StringWriter output, IDictionary<Variable, IPExpr> dic)
     {
-        WriteDriverConfigure(context, output, startMachine, decls, interfaceDef);
+        context.WriteLine(output, $"public static void {InitGlobalParamsFunctionName}() {{");
+        foreach (var (v, value) in dic)
+        {
+            var varName = GetGlobalParamAndLocalVariableName(v);
+            context.Write(output, $"  {varName} = ");
+            WriteExpr(context, output, value);
+            context.WriteLine(output, $";");
+        }
+        context.WriteLine(output, "}");
+    }
+
+    private void WriteTestFunction(CompilationContext context, StringWriter output, string startMachine,
+        IEnumerable<IPDecl> decls, bool ifInitGlobalParams, IDictionary<Interface, Machine> interfaceDef = null)
+    {
+        WriteTestFunctionConfigure(context, output, startMachine, decls, interfaceDef, ifInitGlobalParams);
         context.WriteLine(output);
     }
 
-    private void WriteDriverConfigure(CompilationContext context, StringWriter output, string startMachine,
-        IEnumerable<IPDecl> decls, IDictionary<Interface, Machine> interfaceDef)
+    private void WriteTestFunctionConfigure(CompilationContext context, StringWriter output, string startMachine,
+        IEnumerable<IPDecl> decls, IDictionary<Interface, Machine> interfaceDef, bool ifInitGlobalParams)
     {
         context.WriteLine(output);
         context.WriteLine(output, "@Generated");
         context.WriteLine(output, "public void configure() {");
+        if (ifInitGlobalParams) { context.WriteLine(output, $"    {InitGlobalParamsFunctionName}();"); }
 
         context.WriteLine(output, $"    mainMachine = {startMachine}.class;");
 
@@ -182,7 +214,7 @@ internal class PExCodeGenerator : ICodeGenerator
         context.WriteLine(output, "}");
     }
 
-    private void WriteMainDriver(CompilationContext context, StringWriter output, Scope globalScope,
+    private void WriteImplementationDecl(CompilationContext context, StringWriter output, Scope globalScope,
         IEnumerable<IPDecl> decls)
     {
         Machine mainMachine = null;
@@ -204,7 +236,7 @@ internal class PExCodeGenerator : ICodeGenerator
 
         context.WriteLine(output, "@Generated");
         context.WriteLine(output, "public static class test_DefaultImpl extends PTestDriver {");
-        WriteDriver(context, output, mainMachine.Name, decls);
+        WriteTestFunction(context, output, mainMachine.Name, decls, false);
         context.WriteLine(output, "}");
         context.WriteLine(output);
     }
@@ -235,19 +267,44 @@ internal class PExCodeGenerator : ICodeGenerator
                 WriteEvent(context, output, ev);
                 break;
             case SafetyTest safety:
-                WriteSafetyTestDecl(context, output, safety);
+                ParamAssignment.IterateAssignments(safety, _globalParams, 
+                    assignment => WriteSafetyTestDecl(context, output, safety, assignment));
+                break;
+            case Variable _:
                 break;
             default:
                 context.WriteLine(output, $"// Skipping {decl.GetType().Name} '{decl.Name}'\n");
                 break;
         }
     }
-
-    private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
+    
+    private void DeclareGlobalParams(CompilationContext context, StringWriter output)
     {
         context.WriteLine(output, "@Generated");
-        context.WriteLine(output, $"public static class {context.GetNameForDecl(safety)} extends PTestDriver {{");
-        WriteDriver(context, output, safety.Main, safety.ModExpr.ModuleInfo.MonitorMap.Keys,
+        context.WriteLine(output, $"public static class {ICodeGenerator.GlobalConfigName}");
+        context.WriteLine(output, "{");
+        foreach (var v in _globalParams)
+        {
+            if (v.Role != VariableRole.GlobalParams)
+            {
+                throw context.Handler.InternalError(v.SourceLocation, new ArgumentException("The role of global variable is not global."));
+            }
+            context.Write(output,
+                $"  public static {GetPExType(v.Type)} {v.Name} = ");
+            context.Write(output, $"{GetDefaultValue(v.Type)}");
+            context.WriteLine(output, $";");
+        }
+        context.WriteLine(output, "}");
+        context.WriteLine(output);
+    }
+    
+    private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, Dictionary<Variable, IPExpr> assignment)
+    {
+        context.WriteLine(output, "@Generated");
+        var name = ParamAssignment.RenameSafetyTestByAssignment(context.GetNameForDecl(safety), assignment);
+        context.WriteLine(output, $"public static class {name} extends PTestDriver {{");
+        WriteInitializeGlobalParams(context, output, assignment);
+        WriteTestFunction(context, output, safety.Main, safety.ModExpr.ModuleInfo.MonitorMap.Keys, true,
             safety.ModExpr.ModuleInfo.InterfaceDef);
         context.WriteLine(output, "}");
         context.WriteLine(output);
@@ -1416,8 +1473,7 @@ internal class PExCodeGenerator : ICodeGenerator
                 );
                 break;
             case VariableAccessExpr variableAccessExpr:
-                var name = variableAccessExpr.Variable.Name;
-                var unguarded = CompilationContext.GetVar(name);
+                var unguarded = GetGlobalParamAndLocalVariableName(variableAccessExpr.Variable);
                 var guardedTemp = context.FreshTempVar();
 
                 context.Write(output, $"{GetPExType(variableAccessExpr.Type)} {guardedTemp}");
@@ -1685,7 +1741,7 @@ internal class PExCodeGenerator : ICodeGenerator
                 break;
             }
             case VariableAccessExpr variableAccessExpr:
-                context.Write(output, $"{CompilationContext.GetVar(variableAccessExpr.Variable.Name)}");
+                context.Write(output, $"{GetGlobalParamAndLocalVariableName(variableAccessExpr.Variable)}");
                 break;
             case FunCallExpr _:
                 throw new InvalidOperationException(

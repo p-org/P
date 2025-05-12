@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+PBIN="../../../Bld/Drops/Release/Binaries/net8.0/p.dll"
+PBIN=$(realpath ${PBIN})
+
+
 cd $1
 
 # Get list of subfolders
@@ -18,7 +23,7 @@ for folder in $folders; do
     echo "------------------------------------------------------"
     echo "Compiling $folder!"
     echo "------------------------------------------------------"
-    dotnet /Bld/Drops/Release/Binaries/net8.0/p.dll compile
+    dotnet ${PBIN} compile
 
     # Check and print any errors
     if [ $? -ne 0 ]; then

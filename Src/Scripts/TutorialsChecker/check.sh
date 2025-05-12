@@ -1,6 +1,8 @@
 #!/bin/bash
 
 SCHEDULES=25000
+PBIN="../../../Bld/Drops/Release/Binaries/net8.0/p.dll"
+PBIN=$(realpath ${PBIN})
 
 cd $1
 
@@ -22,7 +24,7 @@ for folder in $folders; do
     echo "------------------------------------------------------"
 
     checkLog="check.log"
-    dotnet /Bld/Drops/Release/Binaries/net8.0/p.dll compile check -i ${SCHEDULES} 2>&1 | tee ${checkLog}
+    dotnet ${PBIN} /Bld/Drops/Release/Binaries/net8.0/p.dll compile check -i ${SCHEDULES} 2>&1 | tee ${checkLog}
     if grep -q "Possible options are:" ${checkLog}; then
       beginFlag=false
       while IFS=" " read firstWord _; do

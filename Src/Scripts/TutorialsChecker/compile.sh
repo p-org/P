@@ -18,8 +18,7 @@ for folder in $folders; do
     echo "------------------------------------------------------"
     echo "Compiling $folder!"
     echo "------------------------------------------------------"
-    alias pl='dotnet /Bld/Drops/Release/Binaries/net8.0/p.dll'
-    pl compile
+    dotnet /Bld/Drops/Release/Binaries/net8.0/p.dll compile
 
     # Check and print any errors
     if [ $? -ne 0 ]; then

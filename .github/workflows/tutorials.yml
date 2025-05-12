@@ -19,7 +19,7 @@ jobs:
       with:
         java-version: 11
     - name: Install P as a tool
-      run: dotnet tool install --global p
+      run: ./Bld/build.sh
     - name: Compile Tutorials
       run: ./Src/Scripts/TutorialsChecker/compile.sh ./Tutorial
     - name: Check Tutorials

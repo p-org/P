@@ -10,3 +10,11 @@ test tcMultipleClientsNoFailure [main = MultipleClientsNoFailure]:
 // asserts the liveness monitor along with the default properties
 test tcMultipleClientsWithFailure [main = MultipleClientsWithFailure]:
   assert Progress in (union TwoPhaseCommit, TwoPCClient, FailureInjector, { MultipleClientsWithFailure });
+
+test param (
+    pNumClients in [2,3],
+    pNumParticipants in [4,6],
+    pNumTransPerClient in [1,2],
+    pNumFailures in [0,1]
+  )  tcParameterizedTwoPhaseCommit [main=TestWithConfig]:
+  assert Progress in (union TwoPhaseCommit, TwoPCClient, FailureInjector, { TestWithConfig });

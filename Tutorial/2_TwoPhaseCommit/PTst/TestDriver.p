@@ -99,3 +99,29 @@ machine MultipleClientsWithFailure {
     }
   }
 }
+
+
+/*
+This machine creates the participants, coordinator, Failure injector, and clients based on the params passed
+*/
+
+param pNumClients: int;
+param pNumParticipants: int;
+param pNumTransPerClient: int;
+param pNumFailures: int;
+
+machine TestWithConfig {
+  start state Init {
+    entry {
+      var config: t2PCConfig;
+      config = (
+        numClients = pNumClients,
+        numParticipants = pNumParticipants,
+        numTransPerClient = pNumTransPerClient,
+        failParticipants = pNumFailures
+      );
+      SetUpTwoPhaseCommitSystem(config);
+    }
+  }
+}
+

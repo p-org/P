@@ -24,7 +24,7 @@ for folder in $folders; do
     echo "------------------------------------------------------"
 
     checkLog="check.log"
-    dotnet ${PBIN} /Bld/Drops/Release/Binaries/net8.0/p.dll compile check -i ${SCHEDULES} 2>&1 | tee ${checkLog}
+    dotnet ${PBIN} compile check -i ${SCHEDULES} 2>&1 | tee ${checkLog}
     if grep -q "Possible options are:" ${checkLog}; then
       beginFlag=false
       while IFS=" " read firstWord _; do

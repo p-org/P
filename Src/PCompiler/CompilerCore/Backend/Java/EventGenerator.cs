@@ -78,6 +78,45 @@ namespace Plang.Compiler.Backend.Java
                 WriteLine($" return \"{eventName}\"; }}");
             }
 
+            WriteLine();
+            Write("public int hashCode() {");
+            if (hasPayload)
+            {
+                WriteLine(" return payload.hashCode(); }");
+            }
+            else
+            {
+                WriteLine(" return 0; }");
+            }
+
+            WriteLine();
+            Write($"public boolean deepEquals({eventName} other) {{");
+            if (hasPayload)
+            {
+                if (argType.IsPrimitive)
+                {
+                    WriteLine(" return this.payload == other.payload; }");
+                }
+                else
+                {
+                    WriteLine($" return {Constants.PrtDeepEqualsMethodName}(this.payload, other.payload); }}");
+                }
+            }
+            else
+            {
+                WriteLine("return true; }");
+            }
+
+            WriteLine();
+            WriteLine("public boolean equals(Object other) {");
+            Write("return this.getClass() == other.getClass()");
+            if (hasPayload)
+            {
+                Write($" && this.payload.deepEquals((({eventName})other).payload)");
+            }
+            WriteLine(";");
+            WriteLine("}");
+
             WriteLine($"}} // {eventName}");
         }
     }

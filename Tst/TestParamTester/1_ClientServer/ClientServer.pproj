@@ -1,0 +1,10 @@
+<!-- P Project file for the Client Server example -->
+<Project>
+<ProjectName>ClientServer</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

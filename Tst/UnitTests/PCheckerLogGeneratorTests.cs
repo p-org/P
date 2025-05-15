@@ -17,10 +17,16 @@ public class PCheckerLogGeneratorTests
     [Test]
     public void TestLogGenerator()
     {
-        var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestLogGenerator"));
+        var testLogGeneratorPath =  Path.Combine(Constants.ScratchParentDirectory, "TestLogGenerator");
+        // Delete the directory if TestLogGenerator already exists from previous runs
+        if (Directory.Exists(testLogGeneratorPath))
+        {
+            Directory.Delete(testLogGeneratorPath, recursive: true);
+        }
+        var tempDir = Directory.CreateDirectory(testLogGeneratorPath);
         var srcPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tst", "RegressionTests",
             "Feature1SMLevelDecls", "DynamicError", "bug2", "bug2.p"));
-        var dllPath = Path.Combine(Constants.ScratchParentDirectory, "TestLogGenerator", "CSharp", "net8.0", "Main.dll");
+        var dllPath = Path.Combine(Constants.ScratchParentDirectory, "TestLogGenerator", "PChecker", "net8.0", "Main.dll");
         var expectedPath = Path.Combine(Constants.SolutionDirectory, "Tst", "CorrectLogs", "bugs2");
             
         var runner = new PCheckerRunner([srcPath]);

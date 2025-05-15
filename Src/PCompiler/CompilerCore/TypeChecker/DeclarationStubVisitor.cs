@@ -29,6 +29,21 @@ namespace Plang.Compiler.TypeChecker
             var visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
             visitor.Visit(context);
         }
+        
+        #region GlobalParams
+        
+        public override object VisitGlobalParamDecl(PParser.GlobalParamDeclContext context)
+        {
+            foreach (var varName in context.idenList()._names)
+            {
+                var decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.GlobalParams);
+                nodesToDeclarations.Put(varName, decl);
+            }
+
+            return null;
+        }
+        
+        #endregion GlobalParams
 
         #region Events
 

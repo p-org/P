@@ -11,9 +11,18 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
             Value = value;
         }
 
+        public IntLiteralExpr(int value)
+        {
+            Value = value;
+        }
+
         public int Value { get; }
 
         public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type { get; } = PrimitiveType.Int;
+        public override string ToString()
+        {
+            return this.Value.ToString();
+        }
     }
 }

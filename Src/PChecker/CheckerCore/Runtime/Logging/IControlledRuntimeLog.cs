@@ -9,7 +9,7 @@ namespace PChecker.Runtime.Logging
 {
     /// <summary>
     /// Interface that allows an external module to track what
-    /// is happening in the <see cref="ControlledRuntime"/>.
+    /// is happening in the controlled runtime.
     /// </summary>
     public interface IControlledRuntimeLog
     {
@@ -38,7 +38,6 @@ namespace PChecker.Runtime.Logging
         /// <param name="senderType">The type of the sender, if any.</param>
         /// <param name="senderStateName">The state name, if the sender is a state machine, else null.</param>
         /// <param name="e">The event being sent.</param>
-        /// <param name="opGroupId">The id used to identify the send operation.</param>
         /// <param name="isTargetHalted">Is the target state machine halted.</param>
         void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName,
             Event e, bool isTargetHalted);

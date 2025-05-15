@@ -225,6 +225,9 @@ namespace Plang.Parser
                         case "pchecker":
                             outputLanguages.Add(CompilerOutput.PChecker);
                             break;
+                        case "pex":
+                            outputLanguages.Add(CompilerOutput.PEx);
+                            break;
                         case "pobserve":
                             outputLanguages.Add(CompilerOutput.PObserve);
                             break;

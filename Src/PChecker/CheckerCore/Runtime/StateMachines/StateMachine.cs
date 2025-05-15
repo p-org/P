@@ -519,7 +519,6 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="type">Type of the state machine.</param>
         /// <param name="name">Optional name used for logging.</param>
         /// <param name="initialEvent">Optional initialization event.</param>
-        /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
         /// <returns>The unique state machine id.</returns>
         protected StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null) =>
             Runtime.CreateStateMachine(null, type, name, initialEvent, this);
@@ -529,8 +528,7 @@ namespace PChecker.Runtime.StateMachines
         /// Sends an asynchronous <see cref="Event"/> to a target.
         /// </summary>
         /// <param name="target">The target.</param>
-        /// <param name="e">The event to send.</param>
-        /// <param name="opGroupId">Optional id that can be used to identify this operation.</param>
+        /// <param name="ev">The event to send.</param>
         public void SendEvent(PMachineValue target, Event ev)
         {
             Assert(ev != null, $"Machine cannot send a null event. Machine {Id} trying to send null event in state {CurrentStateName}.");

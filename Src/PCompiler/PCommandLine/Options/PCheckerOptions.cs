@@ -65,9 +65,7 @@ namespace Plang.Options
             schedulingGroup.AddArgument("sch-pos", null, "Choose the POS scheduling strategy", typeof(bool));
             schedulingGroup.AddArgument("sch-fairpct", null, "Choose the fair PCT scheduling strategy with given maximum number of priority switch points", typeof(uint));
             schedulingGroup.AddArgument("sch-rl", null, "Choose the reinforcement learning (RL) scheduling strategy", typeof(bool)).IsHidden = true;
-            var schCoverage = schedulingGroup.AddArgument("sch-coverage", null, "Choose the scheduling strategy for coverage mode (options: learn, random, dfs, stateless). (default: learn)");
-            schCoverage.AllowedValues = new List<string> { "learn", "random", "dfs", "stateless" };
-            schCoverage.IsHidden = true;
+            
             var schPEx = schedulingGroup.AddArgument("sch-pex", null, "Choose the scheduling strategy for PEx mode (options: random, dfs). (default: random)");
             schPEx.AllowedValues = new List<string>() { "random", "dfs", "astar" };
 
@@ -214,12 +212,6 @@ namespace Plang.Options
                         case "bugfinding":
                             checkerConfiguration.Mode = CheckerMode.BugFinding;
                             break;
-                        case "verification":
-                            checkerConfiguration.Mode = CheckerMode.Verification;
-                            break;
-                        case "coverage":
-                            checkerConfiguration.Mode = CheckerMode.Coverage;
-                            break;
                         case "pex":
                             checkerConfiguration.Mode = CheckerMode.PEx;
                             break;
@@ -253,9 +245,6 @@ namespace Plang.Options
                 case "sch-rl":
                     checkerConfiguration.SchedulingStrategy = option.LongName.Substring(4);
                     checkerConfiguration.IsProgramStateHashingEnabled = true;
-                    break;
-                case "sch-coverage":
-                    checkerConfiguration.SchedulingStrategy = (string)option.Value;
                     break;
                 case "sch-pex":
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
@@ -393,8 +382,6 @@ namespace Plang.Options
                 string filePattern =  checkerConfiguration.Mode switch
                 {
                     CheckerMode.BugFinding => "*.dll",
-                    CheckerMode.Verification => "*-jar-with-dependencies.jar",
-                    CheckerMode.Coverage => "*-jar-with-dependencies.jar",
                     CheckerMode.PEx => "*-jar-with-dependencies.jar",
                     _ => "*.dll"
                 };
@@ -419,11 +406,6 @@ namespace Plang.Options
                             || fileName.EndsWith("PCSharpRuntime.dll")
                             || fileName.EndsWith($"{pathSep}P.dll")
                             || fileName.EndsWith($"{pathSep}p.dll"))
-                            continue;
-                    }
-                    else if (checkerConfiguration.Mode == CheckerMode.Verification || checkerConfiguration.Mode == CheckerMode.Coverage)
-                    {
-                        if (!fileName.Contains($"Symbolic{pathSep}"))
                             continue;
                     }
                     else if (checkerConfiguration.Mode == CheckerMode.PEx)

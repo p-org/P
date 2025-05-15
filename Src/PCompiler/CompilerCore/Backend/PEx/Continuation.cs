@@ -35,7 +35,6 @@ public class Continuation : Function
             localParameters.Add(local);
         var localAccess = new VariableAccessExpr(SourceLocation, local);
         var storeAccess = new VariableAccessExpr(SourceLocation, store);
-        var storeStmt = new AssignStmt(SourceLocation, storeAccess, localAccess);
         storeForLocal.Add(local, store);
     }
 }

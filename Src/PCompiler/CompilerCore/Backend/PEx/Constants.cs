@@ -17,6 +17,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     <build>
         <sourceDirectory>.</sourceDirectory>
         <plugins>
+            <!-- Placeholder for dynamically including additional plugins based on foreign sources -->
             -foreign-include-
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -98,6 +99,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
                         </goals>
                         <configuration>
                             <sources>
+                                <!-- Placeholder for dynamically including additional source directories -->
 -foreign-source-include-                            </sources>
                         </configuration>
                     </execution>

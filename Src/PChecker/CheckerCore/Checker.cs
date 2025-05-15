@@ -35,8 +35,6 @@ public static class Checker
                     Error.Write(logger, ConsoleColor.Yellow, engine.GetReport());
                 }
                     break;
-                case CheckerMode.Verification:
-                case CheckerMode.Coverage:
                 case CheckerMode.PEx:
                     ExhaustiveEngine.Create(configuration).Run();
                     break;
@@ -55,8 +53,6 @@ public static class Checker
                 case CheckerMode.BugFinding:
                     TestingProcess.Create(configuration).Run();
                     break;
-                case CheckerMode.Verification:
-                case CheckerMode.Coverage:
                 case CheckerMode.PEx:
                     ExhaustiveEngine.Create(configuration).Run();
                     break;

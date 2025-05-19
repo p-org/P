@@ -7,9 +7,9 @@ namespace Plang.Compiler.Backend.PInfer
 {
     class EventDefGenerator : EventGenerator
     {
-        private IEnumerable<PEvent> PEvents;
-        private PEvent ConfigEvent;
-        internal EventDefGenerator(ICompilerConfiguration job, string filename, IEnumerable<PEvent> events, PEvent configEvent) : base(job, filename)
+        private IEnumerable<Event> PEvents;
+        private Event ConfigEvent;
+        internal EventDefGenerator(ICompilerConfiguration job, string filename, IEnumerable<Event> events, Event configEvent) : base(job, filename)
         {
             PEvents = events;
             ConfigEvent = configEvent;

@@ -9,8 +9,8 @@ namespace Plang.Compiler.Backend.PInfer
 {
     public class TraceReaderGenerator : MachineGenerator
     {
-        IEnumerable<PEvent> Events;
-        public TraceReaderGenerator(ICompilerConfiguration job, IEnumerable<PEvent> events) : base(job, PreambleConstants.TraceParserFileName)
+        IEnumerable<Event> Events;
+        public TraceReaderGenerator(ICompilerConfiguration job, IEnumerable<Event> events) : base(job, PreambleConstants.TraceParserFileName)
         {
             Events = events;
         }
@@ -24,7 +24,7 @@ namespace Plang.Compiler.Backend.PInfer
             return $"events.add(new {Constants.EventNamespaceName}.{eventName}(i, sender, target, {payloadType.GenerateCastFromObject(payloadGet)}));";
         }
 
-        private string CaseFor(PEvent e)
+        private string CaseFor(Event e)
         {
             var result = $"case \"{e.Name}\":\n";
             var payloadType = e.PayloadType.Canonicalize();

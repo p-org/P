@@ -39,8 +39,8 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         private readonly HashSet<Function> callers = new HashSet<Function>();
         private readonly List<Variable> localVariables = new List<Variable>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
-        private readonly HashSet<PEvent> sendsSet = [];
-        private readonly HashSet<PEvent> recvSet = [];
+        private readonly HashSet<Event> sendsSet = [];
+        private readonly HashSet<Event> recvSet = [];
         private readonly HashSet<State> gotoStates = [];
         private readonly List<IPExpr> equivalences = [];
         private readonly List<IPExpr> contradictions = [];
@@ -57,10 +57,22 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                          sourceNode is PParser.ForeachStmtContext);
             Name = name;
             SourceLocation = sourceNode;
+            CanCreate = false;
+            CanSend = false;
+            IsNondeterministic = false;
+            CanReceive = false;
+            CanRaiseEvent = false;
+            CanChangeState = false;
         }
 
         public Function(ParserRuleContext sourceNode) : this("", sourceNode)
         {
+            CanCreate = false;
+            CanSend = false;
+            IsNondeterministic = false;
+            CanReceive = false;
+            CanRaiseEvent = false;
+            CanChangeState = false;
         }
 
         public Machine Owner { get; set; }
@@ -111,7 +123,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             localVariables.Remove(local);
         }
 
-        public void AddSends(PEvent e)
+        public void AddSends(Event e)
         {
             sendsSet.Add(e);
             // Propagates to callers
@@ -123,7 +135,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             ParentFunction?.AddSends(e);
         }
 
-        public void AddRecv(PEvent e)
+        public void AddRecv(Event e)
         {
             recvSet.Add(e);
             foreach (var caller in Callers)
@@ -171,17 +183,17 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public bool IsAnon => string.IsNullOrEmpty(Name);
 
-        public bool? CanChangeState { get; set; }
-        public bool? CanRaiseEvent { get; set; }
-        public bool? CanReceive { get; set; }
+        public bool CanChangeState { get; set; }
+        public bool CanRaiseEvent { get; set; }
+        public bool CanReceive { get; set; }
 
-        public bool? CanSend { get; set; }
-        public IEnumerable<PEvent> SendSet => sendsSet;
-        public IEnumerable<PEvent> RecvSet => recvSet;
+        public IEnumerable<Event> SendSet => sendsSet;
+        public IEnumerable<Event> RecvSet => recvSet;
         public IEnumerable<State> NextStates => gotoStates;
+        public bool CanSend { get; set; }
 
-        public bool? CanCreate { get; set; }
-        public bool? IsNondeterministic { get; set; }
+        public bool CanCreate { get; set; }
+        public bool IsNondeterministic { get; set; }
 
         public IEnumerable<Function> Callers => callers;
         public IEnumerable<Function> Callees => callees;

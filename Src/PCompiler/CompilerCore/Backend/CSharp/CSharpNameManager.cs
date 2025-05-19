@@ -10,7 +10,7 @@ namespace Plang.Compiler.Backend.CSharp
     internal class CSharpNameManager : NameManagerBase
     {
         private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
-        private readonly string[] reservedKeywords = new string[]
+        private readonly string[] reservedKeywords = new[]
         {
             "bool", "byte", "sbyte", "short", "ushort", "int", "uint", "long", "ulong", "double", "float", "decimal",
             "string", "char", "void", "object", "typeof", "sizeof", "null", "true", "false", "if", "else", "while", "for", "foreach", "do", "switch",
@@ -49,7 +49,7 @@ namespace Plang.Compiler.Backend.CSharp
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block
             switch (decl)
             {
-                case PEvent pEvent:
+                case Event pEvent:
                     if (pEvent.IsNullEvent)
                     {
                         return "DefaultEvent";

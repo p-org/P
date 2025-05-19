@@ -20,7 +20,7 @@ namespace Plang.Compiler.TypeChecker.Types
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.CanonicalRepresentation}"))})";
             AllowedPermissions = Fields.Any(f => f.Type.AllowedPermissions == null)
                 ? null
-                : new Lazy<IReadOnlyList<PEvent>>(
+                : new Lazy<IReadOnlyList<Event>>(
                     () => Fields.SelectMany(f => f.Type.AllowedPermissions.Value).ToList());
         }
 
@@ -31,7 +31,7 @@ namespace Plang.Compiler.TypeChecker.Types
         public override string OriginalRepresentation { get; }
         public override string CanonicalRepresentation { get; }
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

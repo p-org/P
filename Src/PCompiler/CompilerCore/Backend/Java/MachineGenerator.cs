@@ -69,25 +69,21 @@ namespace Plang.Compiler.Backend.Java {
 
         private void WriteMachineDecl()
         {
-            WriteLine($"// PMachine {_currentMachine.Name} elided ");
+            WriteLine($"// StateMachine {_currentMachine.Name} elided ");
         }
 
         private void WriteMonitorDecl()
         {
             var cname = Names.GetNameForDecl(_currentMachine);
 
-            WriteLine($"public static class {cname} extends prt.Monitor<{cname}.{Constants.StateEnumName}> implements Serializable {{");
+            WriteLine($"public static class {cname} extends com.amazon.pobserve.runtime.Monitor<{cname}.{Constants.StateEnumName}> implements Serializable {{");
 
             WriteLine();
             WriteSupplierCDef(cname);
             WriteLine();
 
             // monitor fields
-            foreach (var field in _currentMachine.Fields)
-            {
-                var type = Types.JavaTypeFor(field.Type);
-                var name = Names.GetNameForDecl(field);
-
+            foreach (var (type, name) in FieldsForCurrentMachine()) {
                 WriteLine($"private {type.TypeName} {name} = {type.DefaultValue};");
                 WriteLine($"public {type.TypeName} get_{name}() {{ return this.{name}; }};");
                 WriteLine();
@@ -117,6 +113,9 @@ namespace Plang.Compiler.Backend.Java {
             {
                 WriteFunction(f);
             }
+
+            WriteOverloads();
+            
             WriteLine();
 
             WriteLine($"}} // {cname} monitor definition");
@@ -141,7 +140,7 @@ namespace Plang.Compiler.Backend.Java {
                 return;
             }
 
-            if (f.CanReceive == true)
+            if (f.CanReceive)
             {
                 WriteLine($"// Async function {f.Name} elided");
                 return;
@@ -228,13 +227,13 @@ namespace Plang.Compiler.Backend.Java {
             // If this function has exceptional control flow (for raising events or state transition)
             // we need to annotate it appropriately.
             var throwables = new List<string>();
-            if (f.CanChangeState == true)
+            if (f.CanChangeState)
             {
-                throwables.Add("prt.exceptions.TransitionException");
+                throwables.Add("com.amazon.pobserve.runtime.exceptions.TransitionException");
             }
-            if (f.CanRaiseEvent == true)
+            if (f.CanRaiseEvent)
             {
-                throwables.Add("prt.exceptions.RaiseEventException");
+                throwables.Add("com.amazon.pobserve.runtime.exceptions.RaiseEventException");
             }
             if (throwables.Count > 0)
             {
@@ -252,9 +251,19 @@ namespace Plang.Compiler.Backend.Java {
 
             foreach (var s in _currentMachine.States)
             {
-                WriteStateBuilderDecl(s);
+                WriteStateBuilderDecl(s, true);
             }
             WriteLine("} // constructor");
+            WriteLine();
+
+            WriteLine($"public void reInitializeMonitor() {{");
+            
+            foreach (var s in _currentMachine.States)
+            {
+                WriteStateBuilderDecl(s, false);
+            }
+            WriteLine("}");
+
         }
 
         private void WriteEventsAccessor()
@@ -271,9 +280,14 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine("}");
         }
 
-        private void WriteStateBuilderDecl(State s)
+        private void WriteStateBuilderDecl(State s, bool isConstructor)
         {
-            WriteLine($"addState(prt.State.keyedOn({Names.IdentForState(s)})");
+            if (isConstructor) {
+                WriteLine($"addState(com.amazon.pobserve.runtime.State.keyedOn({Names.IdentForState(s)})");
+            } else {
+                WriteLine($"registerState(com.amazon.pobserve.runtime.State.keyedOn({Names.IdentForState(s)})");
+            }
+            
             if (s.IsStart)
             {
                 WriteLine($".isInitialState(true)");
@@ -301,7 +315,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($".withEntry(this::{fname})");
         }
 
-        private void WriteStateBuilderEventHandler(PEvent e, IStateAction a)
+        private void WriteStateBuilderEventHandler(Event e, IStateAction a)
         {
             var ename = $"{Constants.EventNamespaceName}.{Names.GetNameForDecl(e)}";
 
@@ -430,7 +444,8 @@ namespace Plang.Compiler.Backend.Java {
 
                     if (ifStmt.ThenBranch.Statements.Count == 0)
                     {
-                        Write("{}");
+                        WriteLine("{");
+                        WriteLine("}");
                     }
                     else
                     {
@@ -439,7 +454,7 @@ namespace Plang.Compiler.Backend.Java {
 
                     if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Count > 0)
                     {
-                        WriteLine(" else ");
+                        WriteLine("else");
                         WriteStmt(ifStmt.ElseBranch);
                     }
                     break;
@@ -477,7 +492,7 @@ namespace Plang.Compiler.Backend.Java {
 
                 case RaiseStmt raiseStmt:
                     Write($"{Constants.TryRaiseEventMethodName}(new ");
-                    WriteExpr(raiseStmt.PEvent);
+                    WriteExpr(raiseStmt.Event);
                     Write("(");
                     foreach (var (sep, expr) in raiseStmt.Payload.WithPrefixSep(", "))
                     {
@@ -822,7 +837,7 @@ namespace Plang.Compiler.Backend.Java {
                     // construct a new List from that collection.
                     Write($"new {mt.ValueCollectionType}(");
                     WriteExpr(ve.Expr);
-                    Write($".{mt.KeysMethodName}()");
+                    Write($".{mt.ValuesMethodName}()");
                     Write(")");
                     break;
                 }
@@ -965,5 +980,59 @@ namespace Plang.Compiler.Backend.Java {
             }
         }
 
+        private void WriteOverloads()
+        {
+            // toString()
+            WriteLine();
+            WriteLine("public String toString() {");
+            WriteLine($"StringBuilder sb = new StringBuilder(\"{_currentMachine.Name}\");");
+
+            WriteLine("sb.append(\"[\");");
+            foreach (var (sep, field) in _currentMachine.Fields.WithPrefixSep(", "))
+            {
+                WriteLine($"sb.append(\"{sep}{field.Name}=\" + {Names.GetNameForDecl(field)});");
+            }
+
+            WriteLine("sb.append(\"]\");");
+
+            WriteLine("return sb.toString();");
+            WriteLine("} // toString()");
+
+            // deepEquals
+            WriteLine();
+            WriteLine($"public boolean deepEquals({_currentMachine.Name} other) {{");
+            WriteLine("return (true");
+            foreach (var (jType, fieldName) in FieldsForCurrentMachine())
+            {
+                Write("&& ");
+                WriteLine(jType.IsPrimitive
+                    ? $"this.{fieldName} == other.{fieldName}"
+                    : $"{Constants.PrtDeepEqualsMethodName}(this.{fieldName}, other.{fieldName})");
+            }
+            WriteLine(");");
+            WriteLine("} // deepEquals()");
+
+            // equals
+            WriteLine();
+            WriteLine("public boolean equals(Object other) {");
+            WriteLine($"return (this.getClass() == other.getClass()) && this.deepEquals(({_currentMachine.Name})other);");
+            WriteLine("} // equals()");
+
+            // hashCode
+            WriteLine();
+            WriteLine("public int hashCode() {");
+            Write("return Objects.hash(");
+            foreach (var (sep, (_, fieldName)) in FieldsForCurrentMachine().WithPrefixSep(", "))
+            {
+                Write($"{sep}{fieldName}");
+            }
+            WriteLine(");");
+            WriteLine("} // hashCode()");
+        }
+
+        private IEnumerable<(TypeManager.JType, string)> FieldsForCurrentMachine()
+        {
+            return _currentMachine.Fields.Select(field => (Types.JavaTypeFor(field.Type), Names.GetNameForDecl(field)));
+        }
     }
 }

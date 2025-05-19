@@ -166,7 +166,7 @@ namespace Plang.Compiler.Backend.PInfer
                 throw new Exception("No search space configuration provided");
             }
 
-            var quantifiedEvents = new List<PEvent>();
+            var quantifiedEvents = new List<Event>();
             foreach (var qe in hint.Quantified)
             {
                 quantifiedEvents.Add(qe.EventDecl);
@@ -177,7 +177,7 @@ namespace Plang.Compiler.Backend.PInfer
                 throw new Exception($"No event being quantified in hint space: {hint.Name}");
             }
 
-            PEvent configEvent = hint.ConfigEvent;
+            Event configEvent = hint.ConfigEvent;
             Constants.PInferModeOn();
             PredicateStore.Initialize(globalScope);
             FunctionStore.Initialize(globalScope);

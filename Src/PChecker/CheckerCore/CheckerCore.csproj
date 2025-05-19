@@ -4,6 +4,7 @@
         <AssemblyName>PCheckerCore</AssemblyName>
         <RootNamespace>PChecker</RootNamespace>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
         <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
         <TargetFramework>net8.0</TargetFramework>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

@@ -54,6 +54,8 @@ namespace PChecker.Coverage
             Machines = new HashSet<string>();
             MachinesToStates = new Dictionary<string, HashSet<string>>();
             RegisteredEvents = new Dictionary<string, HashSet<string>>();
+            EventInfo = new EventCoverage();
+            CoverageGraph = new Graph();
         }
 
         /// <summary>
@@ -79,12 +81,13 @@ namespace PChecker.Coverage
 
         private void InternalAddEvent(string key, string eventName)
         {
-            if (!RegisteredEvents.ContainsKey(key))
+            if (!RegisteredEvents.TryGetValue(key, out HashSet<string> value))
             {
-                RegisteredEvents.Add(key, new HashSet<string>());
+                value = new HashSet<string>();
+                RegisteredEvents.Add(key, value);
             }
 
-            RegisteredEvents[key].Add(eventName);
+            value.Add(eventName);
         }
 
         /// <summary>
@@ -139,12 +142,13 @@ namespace PChecker.Coverage
         {
             Machines.Add(machineName);
 
-            if (!MachinesToStates.ContainsKey(machineName))
+            if (!MachinesToStates.TryGetValue(machineName, out HashSet<string> value))
             {
-                MachinesToStates.Add(machineName, new HashSet<string>());
+                value = new HashSet<string>();
+                MachinesToStates.Add(machineName, value);
             }
 
-            MachinesToStates[machineName].Add(stateName);
+            value.Add(stateName);
         }
 
         /// <summary>
@@ -154,16 +158,14 @@ namespace PChecker.Coverage
         /// <returns>The deserialized coverage info.</returns>
         public static CoverageInfo Load(string filename)
         {
-            using (var fs = new FileStream(filename, FileMode.Open))
+            using var fs = new FileStream(filename, FileMode.Open);
+            using var reader = XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas());
+            var settings = new DataContractSerializerSettings
             {
-                using (var reader = XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas()))
-                {
-                    var settings = new DataContractSerializerSettings();
-                    settings.PreserveObjectReferences = true;
-                    var ser = new DataContractSerializer(typeof(CoverageInfo), settings);
-                    return (CoverageInfo)ser.ReadObject(reader, true);
-                }
-            }
+                PreserveObjectReferences = true
+            };
+            var ser = new DataContractSerializer(typeof(CoverageInfo), settings);
+            return (CoverageInfo)ser.ReadObject(reader, true);
         }
 
         /// <summary>
@@ -172,13 +174,11 @@ namespace PChecker.Coverage
         /// <param name="serFilePath">The path to the file to create.</param>
         public void Save(string serFilePath)
         {
-            using (var fs = new FileStream(serFilePath, FileMode.Create))
-            {
-                var settings = new DataContractSerializerSettings();
-                settings.PreserveObjectReferences = true;
-                var ser = new DataContractSerializer(typeof(CoverageInfo), settings);
-                ser.WriteObject(fs, this);
-            }
+            using var fs = new FileStream(serFilePath, FileMode.Create);
+            var settings = new DataContractSerializerSettings();
+            settings.PreserveObjectReferences = true;
+            var ser = new DataContractSerializer(typeof(CoverageInfo), settings);
+            ser.WriteObject(fs, this);
         }
     }
 }

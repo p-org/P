@@ -11,16 +11,24 @@ namespace Plang.Compiler.TypeChecker
 {
     public static class MachineChecker
     {
-        public static void Validate(ITranslationErrorHandler handler, Machine machine, ICompilerConfiguration job)
+        public static void Validate(ITranslationErrorHandler handler, Machine machine, ICompilerConfiguration job, Scope gScope)
         {
-            var startState = FindStartState(machine, handler);
-            var startStatePayloadType = GetStatePayload(startState);
-            Debug.Assert(startStatePayloadType.IsSameTypeAs(machine.PayloadType));
+            // before validating the machines, lets set the constructor types for machines and interfaces
+            if(!machine.IsSpec) InitializeContructorType(handler, machine, gScope);
+
             ValidateHandlers(handler, machine);
             ValidateTransitions(handler, machine);
             // special validation for monitors:
-            // ensure that each eventhandler is in the observe set.
+            // ensure that each event handler is in the observe set.
             ValidateSpecObservesList(handler, machine, job);
+        }
+
+        private static void InitializeContructorType(ITranslationErrorHandler handler, Machine machine, Scope gScope)
+        {
+            var startState = FindStartState(machine, handler);
+            machine.PayloadType = GetStatePayload(startState);
+            gScope.Get(machine.Name, out Interface @interface);
+            @interface.PayloadType = machine.PayloadType;
         }
 
         private static void ValidateSpecObservesList(ITranslationErrorHandler handler, Machine machine, ICompilerConfiguration job)
@@ -227,14 +235,7 @@ namespace Plang.Compiler.TypeChecker
 
         private static PLanguageType GetStatePayload(State startState)
         {
-            if (!(startState.Entry?.Signature.Parameters.Count > 0))
-            {
-                return PrimitiveType.Null;
-            }
-
-            Debug.Assert(startState.Entry.Signature.Parameters.Count == 1,
-                "Allowed start state entry with multiple parameters");
-            return startState.Entry.Signature.Parameters[0].Type;
+            return startState.Entry?.Signature.Parameters.ElementAtOrDefault(0)?.Type ?? PrimitiveType.Null;
         }
 
         private static State FindStartState(Machine machine, ITranslationErrorHandler handler)

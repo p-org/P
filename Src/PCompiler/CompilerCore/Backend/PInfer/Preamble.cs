@@ -34,18 +34,18 @@ public class TraceParser {{
         }}
     }}
 
-    public List<List<{Constants.PEventsClass}<?>>> loadTrace(String fp) {{
+    public List<List<{Constants.EventsClass}<?>>> loadTrace(String fp) {{
         File jsonFile = new File(fp);
         if (!jsonFile.exists()) {{
             throw new RuntimeException(""Trace file not found: "" + fp);
         }}
-        List<List<{Constants.PEventsClass}<?>>> result = new ArrayList<>();
+        List<List<{Constants.EventsClass}<?>>> result = new ArrayList<>();
         JSONArray traces = read(jsonFile);
         if (traces == null)
             throw new RuntimeException(""Trace "" + jsonFile.getAbsolutePath() + "" cannot be parsed"");
         for (Object obj : traces) {{
             JSONArray trace = (JSONArray) obj;
-            List<{Constants.PEventsClass}<?>> events = new ArrayList<>();
+            List<{Constants.EventsClass}<?>> events = new ArrayList<>();
             for (int i = 0; i < trace.size(); i++) {{
                 JSONObject e = trace.getJSONObject(i);
                 String sender = e.containsKey(""sender"") ? e.getString(""sender"") : null;

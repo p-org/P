@@ -98,6 +98,13 @@ namespace Plang.Compiler.TypeChecker
         public override IPModuleExpr VisitPrimitiveModuleExpr([NotNull] PParser.PrimitiveModuleExprContext context)
         {
             var bindings = context._bindslist.Select(VisitBindExpr).ToList();
+            var seenInterfaces = new List<string>();
+            foreach (var i in bindings.Select(x => x.Item1))
+            {
+                if (seenInterfaces.Contains(i.Name))
+                    throw handler.DuplicateBindings(context, i);
+                seenInterfaces.Add(i.Name);
+            }
             return new BindModuleExpr(context, bindings);
         }
 
@@ -109,10 +116,10 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPModuleExpr VisitHideEventsModuleExpr([NotNull] PParser.HideEventsModuleExprContext context)
         {
-            var eventList = new List<PEvent>();
+            var eventList = new List<Event>();
             foreach (var eventName in context.nonDefaultEventList()._events)
             {
-                if (!globalScope.Get(eventName.GetText(), out PEvent @event))
+                if (!globalScope.Get(eventName.GetText(), out Event @event))
                 {
                     throw handler.MissingDeclaration(eventName, "event", eventName.GetText());
                 }

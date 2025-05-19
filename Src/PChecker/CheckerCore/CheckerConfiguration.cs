@@ -11,7 +11,7 @@ namespace PChecker
 {
 #pragma warning disable CA1724 // Type names should not match namespaces
     /// <summary>
-    /// The Coyote project configurations.
+    /// The checker project configurations.
     /// </summary>
     [DataContract]
     [Serializable]
@@ -99,7 +99,7 @@ namespace PChecker
         public bool IncrementalSchedulingSeed;
 
         /// <summary>
-        /// If true, the Coyote tester performs a full exploration,
+        /// If true, the tester performs a full exploration,
         /// and does not stop when it finds a bug.
         /// </summary>
         [DataMember]
@@ -141,7 +141,7 @@ namespace PChecker
         public bool UserExplicitlySetMaxFairSchedulingSteps;
 
         /// <summary>
-        /// If true, then the Coyote tester will consider an execution
+        /// If true, then the tester will consider an execution
         /// that hits the depth bound as buggy.
         /// </summary>
         [DataMember]
@@ -204,12 +204,13 @@ namespace PChecker
 
         /// <summary>
         /// Enables code coverage reporting of a Coyote program.
+        /// Enables code coverage reporting of a program.
         /// </summary>
         [DataMember]
         public bool ReportCodeCoverage;
 
         /// <summary>
-        /// Enables activity coverage reporting of a Coyote program.
+        /// Enables activity coverage reporting of a program.
         /// </summary>
         [DataMember]
         public bool ReportActivityCoverage { get; set; }
@@ -228,7 +229,7 @@ namespace PChecker
 
         /// <summary>
         /// If specified, requests a DGML graph of the schedule that contains a bug, if a bug is found.
-        /// This is different from a coverage activity graph, as it will also show actor instances.
+        /// This is different from a coverage activity graph, as it will also show state machine instances.
         /// </summary>
         [DataMember]
         public bool IsDgmlGraphEnabled { get; set; }
@@ -251,13 +252,7 @@ namespace PChecker
         /// This is the AssemblyQualifiedName of the type to load.
         /// </summary>
         [DataMember]
-        public string CustomActorRuntimeLogType;
-
-        /// <summary>
-        /// Enables debugging.
-        /// </summary>
-        [DataMember]
-        public bool EnableDebugging;
+        public string CustomStateMachineRuntimeLogType;
 
 
         /// <summary>
@@ -345,7 +340,6 @@ namespace PChecker
             PInferMode = false;
             AllowedEvents = [];
             TraceFolder = "traces";
-            EnableDebugging = false;
 
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
@@ -404,8 +398,8 @@ namespace PChecker
         /// </summary>
         public CheckerConfiguration WithRLStrategy()
         {
-            this.SchedulingStrategy = "rl";
-            this.IsProgramStateHashingEnabled = true;
+            SchedulingStrategy = "rl";
+            IsProgramStateHashingEnabled = true;
             return this;
         }
 
@@ -555,7 +549,7 @@ namespace PChecker
                 Directory.Delete(older, true);
             }
 
-            if(this.SchedulingStrategy != "replay"){
+            if(SchedulingStrategy != "replay"){
                 for (var history = MaxHistory - 2; history >= 0; --history)
                 {
                     var newer = makeHistoryDirName(history);

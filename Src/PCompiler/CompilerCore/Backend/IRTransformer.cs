@@ -139,7 +139,8 @@ namespace Plang.Compiler.Backend
                         deps.Add(new IfStmt(location, andTemp, reassignFromRhs, null));
                         return (andTemp, deps);
                     }
-                    else if (binOpExpr.Operation == BinOpType.Or)
+
+                    if (binOpExpr.Operation == BinOpType.Or)
                     {
                         // Or is short-circuiting, so we need to treat it differently from other binary operators
                         deps.AddRange(lhsDeps);
@@ -149,14 +150,12 @@ namespace Plang.Compiler.Backend
                         deps.Add(new IfStmt(location, orTemp, new NoStmt(location), reassignFromRhs));
                         return (orTemp, deps);
                     }
-                    else
-                    {
-                        (var binOpTemp, var binOpStore) =
-                            SaveInTemporary(new BinOpExpr(location, binOpExpr.Operation, lhsTemp, rhsTemp));
-                        deps.AddRange(lhsDeps.Concat(rhsDeps));
-                        deps.Add(binOpStore);
-                        return (binOpTemp, deps);
-                    }
+
+                    (var binOpTemp, var binOpStore) =
+                        SaveInTemporary(new BinOpExpr(location, binOpExpr.Operation, lhsTemp, rhsTemp));
+                    deps.AddRange(lhsDeps.Concat(rhsDeps));
+                    deps.Add(binOpStore);
+                    return (binOpTemp, deps);
 
                 case CastExpr castExpr:
                     (var castSubExpr, var castDeps) = SimplifyExpression(castExpr.SubExpr);
@@ -338,7 +337,7 @@ namespace Plang.Compiler.Backend
                 case null:
                     throw new ArgumentNullException(nameof(statement));
                 case AnnounceStmt announceStmt:
-                    (var annEvt, var annEvtDeps) = SimplifyExpression(announceStmt.PEvent);
+                    (var annEvt, var annEvtDeps) = SimplifyExpression(announceStmt.Event);
                     (IExprTerm annPayload, List<IPStmt> annPayloadDeps) = announceStmt.Payload == null
                         ? (null, new List<IPStmt>())
                         : SimplifyExpression(announceStmt.Payload);
@@ -477,7 +476,7 @@ namespace Plang.Compiler.Backend
                     return deps.Concat(new[] { new PrintStmt(location, newMessage) }).ToList();
 
                 case RaiseStmt raiseStmt:
-                    (var raiseEvent, var raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
+                    (var raiseEvent, var raiseEventDeps) = SimplifyExpression(raiseStmt.Event);
                     (var raiseEventTmp, var raiseEventTempDep) = SaveInTemporary(new CloneExpr(raiseEvent));
 
                     (var raiseArgs, var raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);

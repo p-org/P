@@ -113,7 +113,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         public string EventName => EventDecl.Name;
         public int Order { get; set; }
-        public PEvent EventDecl { get; set; }
+        public Event EventDecl { get; set; }
     }
 
     public class TypeVar : PLanguageType
@@ -122,13 +122,13 @@ namespace Plang.Compiler.Backend.PInfer
         public TypeVar(string name) : base(TypeKind.Base)
         {
             Name = $"{name}_{NextId++}";
-            AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => []);
+            AllowedPermissions = new Lazy<IReadOnlyList<Event>>(() => []);
         }
         public override string OriginalRepresentation => Name;
 
         public override string CanonicalRepresentation => Name;
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions { get; }
 
         public override PLanguageType Canonicalize()
         {
@@ -312,7 +312,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         public override string CanonicalRepresentation => "index";
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions => null;
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions => null;
 
         public override PLanguageType Canonicalize()
         {
@@ -345,7 +345,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         public override string CanonicalRepresentation => OriginalRepresentation;
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions => null;
+        public override Lazy<IReadOnlyList<Event>> AllowedPermissions => null;
 
         public override PLanguageType Canonicalize()
         {

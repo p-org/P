@@ -4,7 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using PChecker;
 using PChecker.IO.Debugging;
-using PChecker.Scheduling;
+using PChecker.Testing;
 using Plang.Compiler;
 using Plang.Options;
 using Plang.PInfer;
@@ -98,9 +98,9 @@ namespace Plang
         /// </summary>
         private static void OnProcessCanceled(object sender, EventArgs e)
         {
-            if (!TestingProcessScheduler.IsProcessCanceled)
+            if (!TestingProcess.IsProcessCanceled)
             {
-                TestingProcessScheduler.IsProcessCanceled = true;
+                TestingProcess.IsProcessCanceled = true;
                 Shutdown();
             }
         }

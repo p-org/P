@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using PChecker.Actors;
 using PChecker.IO.Debugging;
 using PChecker.Runtime;
 using PChecker.Tasks;
@@ -164,10 +163,10 @@ namespace PChecker.SystematicTesting
                                      testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) != null;
 
             var hasNoInputParameters = testParams.Length is 0;
-            var hasActorInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(IActorRuntime);
-            var hasTaskInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ICoyoteRuntime);
+            var hasStateMachineInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ControlledRuntime);
+            var hasTaskInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ControlledRuntime);
 
-            if (!((hasVoidReturnType || hasAsyncReturnType) && (hasNoInputParameters || hasActorInputParameters || hasTaskInputParameters) &&
+            if (!((hasVoidReturnType || hasAsyncReturnType) && (hasNoInputParameters || hasStateMachineInputParameters || hasTaskInputParameters) &&
                   !testMethod.IsAbstract && !testMethod.IsVirtual && !testMethod.IsConstructor &&
                   !testMethod.ContainsGenericParameters && testMethod.IsPublic && testMethod.IsStatic))
             {
@@ -176,27 +175,27 @@ namespace PChecker.SystematicTesting
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
                                     $"  public static void {testMethod.Name}() {{ ... }}\n\n" +
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static void {testMethod.Name}(ICoyoteRuntime runtime) {{ ... }}\n\n" +
+                                    $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}\n\n" +
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static void {testMethod.Name}(IActorRuntime runtime) {{ ... }}\n\n" +
+                                    $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}\n\n" +
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
                                     $"  public static async {typeof(Task).FullName} {testMethod.Name}() {{ ... await ... }}\n\n" +
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ICoyoteRuntime runtime) {{ ... await ... }}\n\n" +
+                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ControlledRuntime runtime) {{ ... await ... }}\n\n" +
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(IActorRuntime runtime) {{ ... await ... }}");
+                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ControlledRuntime runtime) {{ ... await ... }}");
             }
 
             Delegate test;
             if (hasAsyncReturnType)
             {
-                if (hasActorInputParameters)
+                if (hasStateMachineInputParameters)
                 {
-                    test = Delegate.CreateDelegate(typeof(Func<IActorRuntime, Task>), testMethod);
+                    test = Delegate.CreateDelegate(typeof(Func<ControlledRuntime, Task>), testMethod);
                 }
                 else if (hasTaskInputParameters)
                 {
-                    test = Delegate.CreateDelegate(typeof(Func<ICoyoteRuntime, Task>), testMethod);
+                    test = Delegate.CreateDelegate(typeof(Func<ControlledRuntime, Task>), testMethod);
                 }
                 else
                 {
@@ -205,13 +204,13 @@ namespace PChecker.SystematicTesting
             }
             else
             {
-                if (hasActorInputParameters)
+                if (hasStateMachineInputParameters)
                 {
-                    test = Delegate.CreateDelegate(typeof(Action<IActorRuntime>), testMethod);
+                    test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
                 }
                 else if (hasTaskInputParameters)
                 {
-                    test = Delegate.CreateDelegate(typeof(Action<ICoyoteRuntime>), testMethod);
+                    test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
                 }
                 else
                 {

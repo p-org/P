@@ -90,7 +90,7 @@ namespace Plang.Compiler.TypeChecker
             return result;
         }
 
-        public PEvent GetSingleEvent(PParser.HintItemContext ctx)
+        public Event GetSingleEvent(PParser.HintItemContext ctx)
         {
             if (ctx.value.rvalue().Count() > 1)
             {
@@ -105,7 +105,7 @@ namespace Plang.Compiler.TypeChecker
                 if (context.iden() != null)
                 {
                     var eventName = context.iden().GetText();
-                    if (hint.Scope.Lookup(eventName, out PEvent e))
+                    if (hint.Scope.Lookup(eventName, out Event e))
                     {
                         return e;
                     }

@@ -556,7 +556,7 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine);
             }
 
-            var cases = new Dictionary<PEvent, Function>();
+            var cases = new Dictionary<Event, Function>();
             foreach (var caseContext in context.recvCase())
             {
 
@@ -582,7 +582,7 @@ namespace Plang.Compiler.TypeChecker
 
                     FunctionBodyVisitor.PopulateMethod(config, recvHandler);
 
-                    if (!table.Lookup(eventIdContext.GetText(), out PEvent pEvent))
+                    if (!table.Lookup(eventIdContext.GetText(), out Event pEvent))
                     {
                         throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                     }
@@ -600,7 +600,7 @@ namespace Plang.Compiler.TypeChecker
                             pEvent.PayloadType);
                     }
 
-                    if (recvHandler.CanChangeState == true)
+                    if (recvHandler.CanChangeState)
                     {
                         if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                         {
@@ -610,7 +610,7 @@ namespace Plang.Compiler.TypeChecker
                         method.CanChangeState = true;
                     }
 
-                    if (recvHandler.CanRaiseEvent == true)
+                    if (recvHandler.CanRaiseEvent)
                     {
                         if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                         {

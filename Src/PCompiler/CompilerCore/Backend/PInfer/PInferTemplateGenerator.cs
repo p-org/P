@@ -31,14 +31,14 @@ namespace Plang.Compiler.Backend.PInfer
         private TypeNameComparison TypeNameCmp;
         IDictionary<IPExpr, HashSet<int>> PredicateBoundedTerms;
         IDictionary<int, IPExpr> TermOrderToTerms;
-        PEvent ConfigEvent;
+        Event ConfigEvent;
         public readonly HashSet<string> TemplateNames;
-        public PInferTemplateGenerator(ICompilerConfiguration job, List<PEvent> quantifiedEvents,
+        public PInferTemplateGenerator(ICompilerConfiguration job, List<Event> quantifiedEvents,
                 HashSet<IPExpr> predicates, IEnumerable<IPExpr> terms,
                 IDictionary<IPExpr, HashSet<PEventVariable>> freeEvents,
                 IDictionary<IPExpr, HashSet<int>> predicateBoundedTerms,
                 IDictionary<int, IPExpr> termOrderToTerms,
-                PEvent configEvent) : base(job, PreambleConstants.TemplatesFileName)
+                Event configEvent) : base(job, PreambleConstants.TemplatesFileName)
         {
             QuantifiedEvents = quantifiedEvents.Select((x, i) => x.Name).ToList();
             EventVariableNames = quantifiedEvents.Select((x, i) => $"e{i}").ToList();
@@ -206,16 +206,16 @@ namespace Plang.Compiler.Backend.PInfer
             // exists-n (e.g. quorum)
             bool generateExistsN = ConfigEvent != null && numExists != 0;
             static string getEventTypeName(string e) => $"{Constants.EventNamespaceName}.{e}.class";
-            void declVar(string name, string idx) => WriteLine($"{Constants.PEventsClass}<?> {name} = trace.get({idx});");
+            void declVar(string name, string idx) => WriteLine($"{Constants.EventsClass}<?> {name} = trace.get({idx});");
             WriteDefAndConstructor(templateName, fullDecls, numExists != 0, generateExistsN);
-            WriteLine($"public static void execute(TraceIndex indices, List<{Constants.PEventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> guards, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> forallTerms, List<String> existsTerms) {{");
+            WriteLine($"public static void execute(TraceIndex indices, List<{Constants.EventsClass}<?>> trace, List<{Job.ProjectName}.PredicateWrapper> guards, List<{Job.ProjectName}.PredicateWrapper> filters, List<String> forallTerms, List<String> existsTerms) {{");
             if (numExists > 0)
             {
                 for (int i = 0; i < existsTypeDecls.Count; ++i)
                 {
                     WriteLine($"List<List<{existsTypeDecls[i].ReferenceTypeName}>> etLst{i} = new ArrayList<>();");
                 }
-                WriteLine($"List<{Constants.PEventsClass}[]> guardsArgsLst = new ArrayList<>();");
+                WriteLine($"List<{Constants.EventsClass}[]> guardsArgsLst = new ArrayList<>();");
                 WriteLine($"List<Integer> numExistsLst = new ArrayList<>();");
             }
             if (generateExistsN)
@@ -240,7 +240,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("try {");
             if (numForall > 0)
             {
-                WriteLine($"{Constants.PEventsClass}<?>[] guardsArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall).Select(i => $"e{i}"))} }};");
+                WriteLine($"{Constants.EventsClass}<?>[] guardsArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall).Select(i => $"e{i}"))} }};");
                 WriteLine($"if (!({Job.ProjectName}.conjoin(guards, guardsArgs))) continue;");
             }
             // define aggregation arrays for each existentially quantified terms
@@ -259,7 +259,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             if (numExists > 0)
             {
-                WriteLine($"{Constants.PEventsClass}<?>[] filterArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall + numExists).Select(i => $"e{i}"))} }};");
+                WriteLine($"{Constants.EventsClass}<?>[] filterArgs = {{ {string.Join(", ", Enumerable.Range(0, numForall + numExists).Select(i => $"e{i}"))} }};");
                 WriteLine($"if (!({Job.ProjectName}.conjoin(filters, filterArgs))) continue;");
                 WriteLine($"numExistsComb += 1;");
             }

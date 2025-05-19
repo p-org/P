@@ -117,7 +117,7 @@ namespace Plang.Compiler.Backend.PInfer
         private static string Counter(string varName) => $"Counter_{varName}";
         private static string HistItem(string payload, string idx) => $"(payload={payload}, idx={idx})";
 
-        private void WriteHandlerForall(Hint h, PEvent e)
+        private void WriteHandlerForall(Hint h, Event e)
         {
             PEventVariable current = new("curr") { EventDecl = e };
             List<PEventVariable> forallVars = [];
@@ -198,7 +198,7 @@ namespace Plang.Compiler.Backend.PInfer
             
         }
 
-        private void WriteHandlerExists(Hint h, PEvent e)
+        private void WriteHandlerExists(Hint h, Event e)
         {
             var pendingType = $"({string.Join(", ", h.ForallQuantifiedVars().Select(x => $"{Counter(x.Name)}: int"))})";
             WriteLine("var exists: bool;");
@@ -241,7 +241,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("}");
         }
 
-        private void WriteHandlerFor(PEvent e, Hint h, bool inHotState, bool existential)
+        private void WriteHandlerFor(Event e, Hint h, bool inHotState, bool existential)
         {
             WriteLine($"on {e.Name} do (payload: {e.PayloadType.OriginalRepresentation}) {{");
             if (existential)

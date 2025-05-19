@@ -55,8 +55,8 @@ namespace Plang.Options
                 pInferGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto)").IsHidden = true;
             }
 
-            var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately, pinfer). (default: bugfinding)");
-            modes.AllowedValues = new List<string>() { "bugfinding", "verification", "coverage", "pobserve", "stately", "pinfer" };
+            var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately). (default: bugfinding)");
+            modes.AllowedValues = new List<string> { "bugfinding", "verification", "coverage", "pobserve", "stately" };
             modes.IsHidden = true;
 
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;

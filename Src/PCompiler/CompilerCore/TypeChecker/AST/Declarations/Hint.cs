@@ -151,22 +151,22 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             return Arity <= maxArity && ExistentialQuantifiers <= 1 && NumFilterPredicates <= job.MaxFilters && NumGuardPredicates <= job.MaxGuards;
         }
 
-        public List<PEvent> RelatedEvents()
+        public List<Event> RelatedEvents()
         {
             return Quantified.Select(v => v.EventDecl).Concat(ConfigEvent == null ? [] : [ConfigEvent]).ToList();
         }
 
-        public List<PEvent> QuantifiedEvents()
+        public List<Event> QuantifiedEvents()
         {
             return Quantified.Select(v => v.EventDecl).ToList();
         }
 
-        public List<PEvent> ForallQuantified()
+        public List<Event> ForallQuantified()
         {
             return Quantified.SkipLast(ExistentialQuantifiers).Select(v => v.EventDecl).DistinctBy(x => x.Name).ToList();
         }
 
-        public List<PEvent> ExistentialQuantified()
+        public List<Event> ExistentialQuantified()
         {
             return Quantified.TakeLast(ExistentialQuantifiers).Select(v => v.EventDecl).DistinctBy(x => x.Name).ToList();
         }
@@ -212,7 +212,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public int Arity { get; set; }
         public int? TermDepth { get; set; }
         public bool QuantifiedSame => Quantified.Select(x => x.EventName).ToHashSet().Count == 1;
-        public PEvent ConfigEvent { get; set; }
+        public Event ConfigEvent { get; set; }
         public List<IPExpr> GuardPredicates;
         public List<IPExpr> FilterPredicates;
         public List<Function> CustomFunctions;

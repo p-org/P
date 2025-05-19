@@ -7,7 +7,7 @@ namespace Plang.Compiler.TypeChecker.AST.States
 {
     public class State : IPDecl
     {
-        private readonly IDictionary<PEvent, IStateAction> actions = new Dictionary<PEvent, IStateAction>();
+        private readonly IDictionary<Event, IStateAction> actions = new Dictionary<Event, IStateAction>();
 
         public State(ParserRuleContext sourceNode, string name)
         {
@@ -20,13 +20,13 @@ namespace Plang.Compiler.TypeChecker.AST.States
 
         public bool IsStart { get; set; }
         public Function Entry { get; set; }
-        public IEnumerable<KeyValuePair<PEvent, IStateAction>> AllEventHandlers => actions;
+        public IEnumerable<KeyValuePair<Event, IStateAction>> AllEventHandlers => actions;
 
         public Function Exit { get; set; }
         public Machine OwningMachine { get; set; }
         public IStateContainer Container { get; set; }
 
-        public IStateAction this[PEvent index]
+        public IStateAction this[Event index]
         {
             get => actions[index];
             set => actions[index] = value;
@@ -51,7 +51,7 @@ namespace Plang.Compiler.TypeChecker.AST.States
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
 
-        public bool HasHandler(PEvent pEvent)
+        public bool HasHandler(Event pEvent)
         {
             return actions.ContainsKey(pEvent);
         }

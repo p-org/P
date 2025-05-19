@@ -21,7 +21,7 @@ namespace PChecker.SystematicTesting.Strategies.Special
         private readonly CheckerConfiguration _checkerConfiguration;
 
         /// <summary>
-        /// The Coyote program schedule trace.
+        /// The program schedule trace.
         /// </summary>
         private readonly ScheduleTrace ScheduleTrace;
 
@@ -120,11 +120,9 @@ namespace PChecker.SystematicTesting.Strategies.Special
                         next = null;
                         return false;
                     }
-                    else
-                    {
-                        IsReplaying = false;
-                        return SuffixStrategy.GetNextOperation(current, asyncOperations, out next);
-                    }
+
+                    IsReplaying = false;
+                    return SuffixStrategy.GetNextOperation(current, asyncOperations, out next);
                 }
 
                 ScheduledSteps++;
@@ -174,11 +172,9 @@ namespace PChecker.SystematicTesting.Strategies.Special
                         next = false;
                         return false;
                     }
-                    else
-                    {
-                        IsReplaying = false;
-                        return SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
-                    }
+
+                    IsReplaying = false;
+                    return SuffixStrategy.GetNextBooleanChoice(current, maxValue, out next);
                 }
 
                 next = nextStep.BooleanChoice.Value;
@@ -229,11 +225,9 @@ namespace PChecker.SystematicTesting.Strategies.Special
                         next = 0;
                         return false;
                     }
-                    else
-                    {
-                        IsReplaying = false;
-                        return SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
-                    }
+
+                    IsReplaying = false;
+                    return SuffixStrategy.GetNextIntegerChoice(current, maxValue, out next);
                 }
 
                 next = nextStep.IntegerChoice.Value;
@@ -252,10 +246,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return SuffixStrategy.PrepareForNextIteration();
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -265,10 +257,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return ScheduledSteps + SuffixStrategy.GetScheduledSteps();
             }
-            else
-            {
-                return ScheduledSteps;
-            }
+
+            return ScheduledSteps;
         }
 
         /// <inheritdoc/>
@@ -278,10 +268,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return SuffixStrategy.HasReachedMaxSchedulingSteps();
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -291,10 +279,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return SuffixStrategy.IsFair();
             }
-            else
-            {
-                return IsSchedulerFair;
-            }
+
+            return IsSchedulerFair;
         }
 
         /// <inheritdoc/>
@@ -304,10 +290,8 @@ namespace PChecker.SystematicTesting.Strategies.Special
             {
                 return "replay(" + SuffixStrategy.GetDescription() + ")";
             }
-            else
-            {
-                return "replay";
-            }
+
+            return "replay";
         }
 
         /// <inheritdoc/>

@@ -37,8 +37,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                     if(_visitedFunctions.Contains(function))
                         return Enumerable.Empty<Interface>();
-                    else
-                        _visitedFunctions.Add(function);
+                    _visitedFunctions.Add(function);
 
                     return InferCreates(function.Body, handler);
 
@@ -47,7 +46,7 @@ namespace Plang.Compiler.TypeChecker
                         .Union(InferCreatesForExpr(addStmt.Value, handler));
 
                 case AnnounceStmt announce:
-                    return InferCreatesForExpr(announce.PEvent, handler)
+                    return InferCreatesForExpr(announce.Event, handler)
                         .Union(InferCreatesForExpr(announce.Payload, handler));
 
                 case AssertStmt assertStmt:
@@ -92,7 +91,7 @@ namespace Plang.Compiler.TypeChecker
                     return InferCreatesForExpr(printStmt.Message, handler);
 
                 case RaiseStmt raiseStmt:
-                    return InferCreatesForExpr(raiseStmt.PEvent, handler)
+                    return InferCreatesForExpr(raiseStmt.Event, handler)
                         .Union(raiseStmt.Payload.SelectMany(expr => InferCreatesForExpr(expr, handler)));
 
                 case ReceiveStmt receiveStmt:

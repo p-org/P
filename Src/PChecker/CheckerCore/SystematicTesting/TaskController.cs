@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Exceptions;
 using PChecker.IO.Debugging;
-using PChecker.Runtime;
 using PChecker.SystematicTesting.Operations;
 using Task = PChecker.Tasks.Task;
 
@@ -58,7 +57,7 @@ namespace PChecker.SystematicTesting
                 {
                     // Update the current asynchronous control flow with the current runtime instance,
                     // allowing future retrieval in the same asynchronous call stack.
-                    CoyoteRuntime.AssignAsyncControlFlowRuntime(Runtime);
+                    ControlledRuntime.AssignAsyncControlFlowRuntime(Runtime);
 
                     OperationScheduler.StartOperation(op);
                     if (predecessor != null)
@@ -118,7 +117,7 @@ namespace PChecker.SystematicTesting
                 {
                     // Update the current asynchronous control flow with the current runtime instance,
                     // allowing future retrieval in the same asynchronous call stack.
-                    CoyoteRuntime.AssignAsyncControlFlowRuntime(Runtime);
+                    ControlledRuntime.AssignAsyncControlFlowRuntime(Runtime);
 
                     OperationScheduler.StartOperation(op);
                     if (predecessor != null)
@@ -177,7 +176,7 @@ namespace PChecker.SystematicTesting
                 {
                     // Update the current asynchronous control flow with the current runtime instance,
                     // allowing future retrieval in the same asynchronous call stack.
-                    CoyoteRuntime.AssignAsyncControlFlowRuntime(Runtime);
+                    ControlledRuntime.AssignAsyncControlFlowRuntime(Runtime);
 
                     OperationScheduler.StartOperation(op);
                     if (predecessor != null)
@@ -235,7 +234,7 @@ namespace PChecker.SystematicTesting
                 {
                     // Update the current asynchronous control flow with the current runtime instance,
                     // allowing future retrieval in the same asynchronous call stack.
-                    CoyoteRuntime.AssignAsyncControlFlowRuntime(Runtime);
+                    ControlledRuntime.AssignAsyncControlFlowRuntime(Runtime);
 
                     OperationScheduler.StartOperation(op);
                     if (predecessor != null)
@@ -392,10 +391,8 @@ namespace PChecker.SystematicTesting
             {
                 return Task.FromException(new AggregateException(exceptions));
             }
-            else
-            {
-                return Task.CompletedTask;
-            }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

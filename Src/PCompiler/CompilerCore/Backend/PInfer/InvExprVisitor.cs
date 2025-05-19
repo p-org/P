@@ -26,7 +26,7 @@ namespace Plang.Compiler.Backend.PInfer
         readonly Dictionary<string, VariableAccessExpr> SpeicalConstants;
         readonly Hint hint;
 
-        public InvExprVisitor(ICompilerConfiguration cfg, Scope globalScope, CongruenceClosure cc, Hint h, PEvent configEvent, Dictionary<string, IPExpr> reprToTerm)
+        public InvExprVisitor(ICompilerConfiguration cfg, Scope globalScope, CongruenceClosure cc, Hint h, Event configEvent, Dictionary<string, IPExpr> reprToTerm)
         {
             config = cfg;
             ReprToTerm = reprToTerm;

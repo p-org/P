@@ -3,13 +3,13 @@ using System.Text.RegularExpressions;
 
 namespace Plang;
 
-public class CheckFileValidity
+public static partial class CheckFileValidity
 {
     #region Functions to check if the commandline inputs are legal
 
     public static bool IsLegalProjectName(string projectName)
     {
-        return Regex.IsMatch(projectName, "^[A-Za-z_][A-Za-z_0-9]*$");
+        return MyRegex().IsMatch(projectName);
     }
 
     public static bool IsPFile(string fileName)
@@ -67,6 +67,9 @@ public class CheckFileValidity
 
         return true;
     }
+
+    [GeneratedRegex("^[A-Za-z_][A-Za-z_0-9]*$")]
+    private static partial Regex MyRegex();
 
     #endregion Functions to check if the commandline inputs are legal
 }

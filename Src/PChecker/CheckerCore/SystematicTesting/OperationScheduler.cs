@@ -165,7 +165,7 @@ namespace PChecker.SystematicTesting
             if (!Strategy.GetNextOperation(current, ops, out var next))
             {
                 // Checks if the program has deadlocked.
-                CheckIfProgramHasDeadlocked(ops.Select(op => op as AsyncOperation));
+                CheckIfProgramHasDeadlocked(ops.Select(op => op));
 
                 Debug.WriteLine("<ScheduleDebug> Schedule explored.");
                 HasFullyExploredSchedule = true;
@@ -178,7 +178,7 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            ScheduledOperation = next as AsyncOperation;
+            ScheduledOperation = next;
             ScheduleTrace.AddSchedulingChoice(next.Id);
 
             Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
@@ -477,7 +477,7 @@ namespace PChecker.SystematicTesting
                 NotifyAssertionFailure(string.Format(CultureInfo.InvariantCulture,
                     "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
                     "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
-                    "actor handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
+                    "state machine handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
                     "you will need to mock them during testing.",
                     Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>"));
             }
@@ -666,7 +666,7 @@ namespace PChecker.SystematicTesting
             foreach (var operation in OperationMap.Values)
             {
                 // This casting is always safe.
-                var op = operation as AsyncOperation;
+                var op = operation;
                 op.IsActive = true;
                 op.Status = AsyncOperationStatus.Canceled;
 

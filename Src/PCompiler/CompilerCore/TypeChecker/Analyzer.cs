@@ -20,7 +20,8 @@ namespace Plang.Compiler.TypeChecker
             // Step 2: Validate machine specifications
             foreach (var machine in globalScope.Machines)
             {
-                MachineChecker.Validate(handler, machine, config);
+                
+                MachineChecker.Validate(handler, machine, config, globalScope);
             }
 
             // Step 3: Fill function bodies
@@ -64,13 +65,13 @@ namespace Plang.Compiler.TypeChecker
             foreach (var function in allFunctions)
             {
                 // This can been checked before but just doing it again for safety!
-                if (function.Owner?.IsSpec == true && (function.IsNondeterministic == true || function.CanCreate == true || function.CanSend == true|| function.CanReceive == true))
+                if (function.Owner?.IsSpec == true && (function.IsNondeterministic || function.CanCreate || function.CanSend || function.CanReceive))
                 {
                     throw handler.IllegalFunctionUsedInSpecMachine(function, function.Owner);
                 }
 
                 // A static function if it has side effects or is non-deterministic then it cannot be called from a spec machine
-                if (function.Owner == null && (function.IsNondeterministic == true || function.CanCreate == true || function.CanSend == true|| function.CanReceive == true))
+                if (function.Owner == null && (function.IsNondeterministic || function.CanCreate || function.CanSend|| function.CanReceive))
                 {
                     foreach (var caller in function.Callers)
                     {
@@ -80,7 +81,7 @@ namespace Plang.Compiler.TypeChecker
                         }
                     }
                 }
-                if ((function.CanChangeState == true || function.CanRaiseEvent == true) &&
+                if ((function.CanChangeState || function.CanRaiseEvent) &&
                     (function.Role.HasFlag(FunctionRole.TransitionFunction) ||
                      function.Role.HasFlag(FunctionRole.ExitHandler)))
                 {
@@ -186,7 +187,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 DeclarationVisitor.PopulateDeclarations(config.Handler, globalScope, programUnit, nodesToDeclarations);
             }
-
+            
             return globalScope;
         }
 

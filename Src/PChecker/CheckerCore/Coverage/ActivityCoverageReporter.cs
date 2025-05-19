@@ -5,12 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PChecker.Actors.Events;
+using PChecker.Runtime.Events;
 
 namespace PChecker.Coverage
 {
     /// <summary>
-    /// The Coyote code coverage reporter.
+    /// The code coverage reporter.
     /// </summary>
     public class ActivityCoverageReporter
     {
@@ -33,17 +33,6 @@ namespace PChecker.Coverage
             CoverageInfo = coverageInfo;
             BuiltInEvents.Add(typeof(GotoStateEvent).FullName);
             BuiltInEvents.Add(typeof(DefaultEvent).FullName);
-        }
-
-        /// <summary>
-        /// Emits the visualization graph.
-        /// </summary>
-        public void EmitVisualizationGraph(string graphFile)
-        {
-            if (CoverageInfo.CoverageGraph != null)
-            {
-                CoverageInfo.CoverageGraph.SaveDgml(graphFile, true);
-            }
         }
 
         /// <summary>
@@ -77,7 +66,7 @@ namespace PChecker.Coverage
             // a fully expanded edge graph has individual links for each event.
             if (link.Attributes.TryGetValue("EventId", out var eventId))
             {
-                return new string[] { eventId };
+                return new[] { eventId };
             }
 
             return Array.Empty<string>();
@@ -165,7 +154,7 @@ namespace PChecker.Coverage
 
                 if (!CoverageInfo.MachinesToStates.ContainsKey(machine))
                 {
-                    CoverageInfo.MachinesToStates[machine] = new HashSet<string>(new string[] { "ExternalState" });
+                    CoverageInfo.MachinesToStates[machine] = new HashSet<string>(new[] { "ExternalState" });
                 }
 
                 // Per-state data.

@@ -162,7 +162,7 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JAny : JType
             {
-                /// A JAny can either be a PEvent, a PValue, or a collection type like ArrayList, HashSet, etc.
+                /// A JAny can either be a Event, a PValue, or a collection type like ArrayList, HashSet, etc.
                 /// For a complete list, see the implementation of `deepEquals()` and `deepClone` in the P java runtime:
                 internal JAny()
                 {
@@ -259,7 +259,7 @@ namespace Plang.Compiler.Backend.Java
 
             internal class JMachine : JType
             {
-                // Source/CheckerCore/Actors/ActorId.cs stores ActorID values as ulongs
+                // Source/CheckerCore/StateMachines/StateMachineId.cs stores StateMachineID values as ulongs
 
                 internal JMachine()
                 {
@@ -376,6 +376,11 @@ namespace Plang.Compiler.Backend.Java
                 /// The type of a collection containing the keys of this Map.
                 /// </summary>
                 internal string KeyCollectionType => $"ArrayList<{_k.ReferenceTypeName}>";
+                
+                /// <summary>
+                /// The name of the () -> Set method that produces the values in the map.
+                /// </summary>
+                internal string ValuesMethodName => "values";
 
                 /// <summary>
                 /// The type of a collection containing the keys of this Map.
@@ -510,13 +515,14 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal JEvent()
                 {
-                    _unboxedType = $"{Constants.PEventsClass}<?>";
+                    _unboxedType = $"{Constants.EventsClass}<?>";
                 }
                 internal override bool IsPrimitive => false;
                 internal override string GenerateFromJSON(string jsonVariable, string fieldName)
                 {
                     return "null";
                 }
+                internal override string DefaultValue => "null";
             }
 
             internal class JVoid : JType

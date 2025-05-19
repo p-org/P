@@ -78,9 +78,9 @@ namespace PChecker.SystematicTesting.Traces
         /// <summary>
         /// Adds a scheduling choice.
         /// </summary>
-        internal void AddSchedulingChoice(ulong scheduledActorId)
+        internal void AddSchedulingChoice(ulong scheduledStateMachineId)
         {
-            var scheduleStep = ScheduleStep.CreateSchedulingChoice(Count, scheduledActorId);
+            var scheduleStep = ScheduleStep.CreateSchedulingChoice(Count, scheduledStateMachineId);
             Push(scheduleStep);
         }
 

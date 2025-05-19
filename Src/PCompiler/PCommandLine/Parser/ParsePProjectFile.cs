@@ -27,7 +27,7 @@ namespace Plang.Parser
                 {
                     throw new CommandlineParsingError($"Illegal P project file name {projectFile} or file {projectFilePath?.FullName} not found");
                 }
-                CommandLineOutput.WriteInfo($"----------------------------------------");
+                CommandLineOutput.WriteInfo("----------------------------------------");
                 CommandLineOutput.WriteInfo($"==== Loading project file: {projectFile}");
 
                 var inputFiles = new HashSet<string>();
@@ -61,7 +61,7 @@ namespace Plang.Parser
                     projectRoot: projectFilePath.Directory, projectDependencies: projectDependencies.ToList(),
                     pObservePackageName: pObservePackageName);
 
-                CommandLineOutput.WriteInfo($"----------------------------------------");
+                CommandLineOutput.WriteInfo("----------------------------------------");
             }
             catch (CommandlineParsingError ex)
             {
@@ -190,8 +190,7 @@ namespace Plang.Parser
             var projectXml = XElement.Load(fullPathName.FullName);
             if (projectXml.Elements("OutputDir").Any())
                 return Directory.CreateDirectory(projectXml.Element("OutputDir")?.Value);
-            else
-                return new DirectoryInfo(Directory.GetCurrentDirectory());
+            return new DirectoryInfo(Directory.GetCurrentDirectory());
         }
 
         /// <summary>
@@ -204,8 +203,7 @@ namespace Plang.Parser
             var projectXml = XElement.Load(fullPathName.FullName);
             if (projectXml.Elements("OutputDir").Any())
                 return projectXml.Element("OutputDir")?.Value;
-            else
-                return Directory.GetCurrentDirectory();
+            return Directory.GetCurrentDirectory();
         }
 
         private IList<CompilerOutput> GetTargetLanguages(FileInfo fullPathName)

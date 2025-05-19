@@ -30,9 +30,9 @@ namespace Plang.Compiler.Backend.Java
         }
 
 
-        private IEnumerable<PEvent> monitoredEvents(IEnumerable<Machine> machines)
+        private IEnumerable<Event> monitoredEvents(IEnumerable<Machine> machines)
         {
-            var events = new HashSet<PEvent>();
+            var events = new HashSet<Event>();
 
             foreach (var m in machines.Where(m => m.IsSpec))
             {
@@ -70,7 +70,7 @@ namespace Plang.Compiler.Backend.Java
             return $"({objName}.get(\"{field}\"))";
         }
 
-        internal void WriteEventDecl(PEvent e, bool pinfer = false)
+        internal void WriteEventDecl(Event e, bool pinfer = false)
         {
             var eventName = Names.GetNameForDecl(e);
             var argType = Types.JavaTypeFor(e.PayloadType);
@@ -78,7 +78,7 @@ namespace Plang.Compiler.Backend.Java
             var payloadType = argType.TypeName;
             var payloadRefType = argType.ReferenceTypeName;
 
-            WriteLine($"public static class {eventName} extends {Constants.PEventsClass}<{payloadRefType}> implements Serializable {{");
+            WriteLine($"public static class {eventName} extends {Constants.EventsClass}<{payloadRefType}> implements Serializable {{");
 
             var hasPayload = !(argType is TypeManager.JType.JVoid);
             if (pinfer)

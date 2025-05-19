@@ -12,6 +12,6 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
 
         public ParserRuleContext SourceLocation { get; }
 
-        public PLanguageType Type { get; } = PrimitiveType.Any;
+        public PLanguageType Type { get; } = PrimitiveType.Null;
     }
 }

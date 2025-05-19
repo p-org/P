@@ -19,7 +19,7 @@ namespace Plang.Compiler
 {
     class CompilationOutputs
     {
-        private readonly Dictionary<HashSet<PEvent>, HashSet<string>> results = [];
+        private readonly Dictionary<HashSet<Event>, HashSet<string>> results = [];
         public CompilationOutputs()
         {
         }
@@ -27,7 +27,7 @@ namespace Plang.Compiler
         public void Add(PInferPredicateGenerator codegen)
         {
             if (codegen.hint == null) return;
-            HashSet<PEvent> events = codegen.hint.Quantified.Select(x => x.EventDecl).ToHashSet();
+            HashSet<Event> events = codegen.hint.Quantified.Select(x => x.EventDecl).ToHashSet();
             
         }
     }
@@ -41,7 +41,7 @@ namespace Plang.Compiler
         private readonly HashSet<Hint> ExploredHints = new(new Hint.EqualityComparer());
         private readonly Dictionary<Hint, HashSet<string>> GeneratedPredicates = new(new Hint.EqualityComparer());
         private readonly Dictionary<Hint, HashSet<string>> GeneratedTerms = new(new Hint.EqualityComparer());
-        private readonly List<List<PEvent>> AddedCombinations = [];
+        private readonly List<List<Event>> AddedCombinations = [];
 
         private int numDistilledInvs = 0;
         private int numTotalInvs = 0;
@@ -199,14 +199,14 @@ namespace Plang.Compiler
             ExploredHints.Add(hint.Copy());
         }
 
-        public PEventVariable MkEventVar(PEvent e, int i)
+        public PEventVariable MkEventVar(Event e, int i)
         {
             return new PEventVariable($"e{i}") {
                 EventDecl = e, Type = e.PayloadType, Order = i
             };
         }
 
-        public void AddHint(string name, HashSet<Hint> tasks, params PEvent[] events)
+        public void AddHint(string name, HashSet<Hint> tasks, params Event[] events)
         {
             // Enusre all events have some payload
             foreach (var e in events)
@@ -234,7 +234,7 @@ namespace Plang.Compiler
             });
         }
 
-        public void ExploreFunction(HashSet<Hint> tasks, State s, Function f, PEvent trigger = null)
+        public void ExploreFunction(HashSet<Hint> tasks, State s, Function f, Event trigger = null)
         {
             if (f == null) return;
             // Look at recv inside function
@@ -362,7 +362,7 @@ namespace Plang.Compiler
         {
             List<Machine> machines = GlobalScope.Machines.Where(x => !x.IsSpec).ToList();
             // explore single-machine state
-            PEvent configEvent = Job.ConfigEvent != null ? GetPEvent(Job.ConfigEvent) : null;
+            Event configEvent = Job.ConfigEvent != null ? GetPEvent(Job.ConfigEvent) : null;
             HashSet<Hint> tasks = new(new Hint.EqualityComparer());
             HashSet<string> hintQuantifierHeaders = [.. GlobalScope.Hints.Select(x => x.GetQuantifierHeader())];
             foreach (var hint in GlobalScope.Hints.Where(x => !x.Ignore))
@@ -409,9 +409,9 @@ namespace Plang.Compiler
             }
         }
 
-        internal PEvent GetPEvent(string name)
+        internal Event GetPEvent(string name)
         {
-            if (GlobalScope.Lookup(name, out PEvent e))
+            if (GlobalScope.Lookup(name, out Event e))
             {
                 return e;
             }
@@ -420,7 +420,7 @@ namespace Plang.Compiler
             return null;
         }
 
-        private List<(List<PEventVariable>, PEvent, int, int, bool)> ParseHeaders()
+        private List<(List<PEventVariable>, Event, int, int, bool)> ParseHeaders()
         {
             var dir = Job.InvParseFileDir;
             var headerFile = Path.Combine(dir, "parsable_headers.txt");
@@ -430,7 +430,7 @@ namespace Plang.Compiler
                 Environment.Exit(1);
             }
             var lines = File.ReadAllLines(headerFile);
-            List<(List<PEventVariable>, PEvent, int, int, bool)> headers = [];
+            List<(List<PEventVariable>, Event, int, int, bool)> headers = [];
             for (int i = 0; i < lines.Length; i += 5)
             {
                 if (lines[i] == "") continue;
@@ -585,10 +585,10 @@ namespace Plang.Compiler
                     Environment.Exit(1);
                 }
             }
-            PEvent configEvent = null;
+            Event configEvent = null;
             if (job.ConfigEvent != null)
             {
-                if (globalScope.Lookup(job.ConfigEvent, out PEvent e))
+                if (globalScope.Lookup(job.ConfigEvent, out Event e))
                 {
                     configEvent = e;
                 }
@@ -783,10 +783,10 @@ namespace Plang.Compiler
         internal static readonly Dictionary<string, Dictionary<string, IPExpr>> ParsedP = [];
         internal static readonly Dictionary<string, Dictionary<string, IPExpr>> ParsedQ = [];
         internal static readonly Dictionary<string, List<Hint>> Executed = [];
-        internal static readonly Dictionary<string, HashSet<PEvent>> EventCombinations = [];
+        internal static readonly Dictionary<string, HashSet<Event>> EventCombinations = [];
         internal static readonly Dictionary<string, int> NumExists = [];
-        internal static readonly Dictionary<string, List<PEvent>> Quantified = [];
-        internal static readonly Dictionary<HashSet<PEvent>, Dictionary<IPExpr, int>> APFrequency = [];
+        internal static readonly Dictionary<string, List<Event>> Quantified = [];
+        internal static readonly Dictionary<HashSet<Event>, Dictionary<IPExpr, int>> APFrequency = [];
         internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> Goals = [];
         internal static Dictionary<string, List<(HashSet<IPExpr>, HashSet<IPExpr>, HashSet<string>, HashSet<string>)>> IndInvs = [];
         internal static Dictionary<string, Dictionary<string, IPExpr>> ParsedGoalsP = [];
@@ -1012,7 +1012,7 @@ namespace Plang.Compiler
             }
         }
 
-        private static bool GetFrequency(string key, HashSet<PEvent> eventSet, IPExpr e, out int freq, out IPExpr mem)
+        private static bool GetFrequency(string key, HashSet<Event> eventSet, IPExpr e, out int freq, out IPExpr mem)
         {
             foreach (var k in APFrequency.Keys)
             {
@@ -1273,7 +1273,7 @@ namespace Plang.Compiler
             {
                 return Z3Wrapper.CheckImplies(key, lhs, rhs);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // Console.WriteLine($"Error checking implication: {e.Message}");
                 return false;
@@ -1772,7 +1772,7 @@ namespace Plang.Compiler
             //     return (p_prime, q_prime);
             // }
             int numExists = hint.ExistentialQuantifiers;
-            List<PEvent> quantifiedEvents = hint.Quantified.Select(x => x.EventDecl).ToList();
+            List<Event> quantifiedEvents = hint.Quantified.Select(x => x.EventDecl).ToList();
             if (!P.ContainsKey(quantifiers)) P[quantifiers] = [];
             if (!Q.ContainsKey(quantifiers)) Q[quantifiers] = [];
             if (!Executed.ContainsKey(quantifiers)) Executed[quantifiers] = [];

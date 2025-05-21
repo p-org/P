@@ -28,6 +28,9 @@ fun CreateRandomInitialAccounts(numAccounts: int) : map[int, int]
   var bankBalance: map[int, int];
   while(i < numAccounts) {
     bankBalance[i] = choose(100) + 10; // min 10 in the account
+/* Hint 1: Reduce the number of choices by changing the above line to the following:
+    bankBalance[i] = choose(10) + 10; // min 10 in the account
+*/
     i = i + 1;
   }
   return bankBalance;

@@ -22,6 +22,12 @@ namespace Plang.Compiler.TypeChecker
             this.method = method;
             this.handler = handler;
         }
+        
+        public ExprVisitor(Scope scope, ITranslationErrorHandler handler)
+        {
+            table = scope;
+            this.handler = handler;
+        }
 
         public override IPExpr VisitPrimitiveExpr(PParser.PrimitiveExprContext context)
         {
@@ -502,6 +508,8 @@ namespace Plang.Compiler.TypeChecker
             if (context.iden() != null)
             {
                 var symbolName = context.iden().GetText();
+                // Console.WriteLine("Looking up " + symbolName);
+                // Console.WriteLine("Table: " + String.Join(", ", table.GetVariables().Select(x =>x.Name).ToArray()));
                 if (table.Lookup(symbolName, out Variable variable))
                 {
                     return new VariableAccessExpr(context, variable);
@@ -516,7 +524,7 @@ namespace Plang.Compiler.TypeChecker
                 {
                     return new EventRefExpr(context, evt);
                 }
-
+                
                 throw handler.MissingDeclaration(context.iden(), "variable, enum element, or event", symbolName);
             }
 
@@ -659,7 +667,7 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitVarLvalue(PParser.VarLvalueContext context)
         {
             var varName = context.name.GetText();
-            if (!table.Lookup(varName, out Variable variable))
+            if (!table.LookupLvalue(handler, varName, context, out Variable variable))
             {
                 throw handler.MissingDeclaration(context, "variable", varName);
             }

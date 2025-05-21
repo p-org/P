@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
@@ -51,6 +52,30 @@ namespace Plang.Compiler
         {
             return IssueError(location,
                 $"'{duplicate.Name}' duplicates declaration '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
+        }
+        
+        public Exception RedeclareGlobalParam(ParserRuleContext location, IPDecl duplicate, IPDecl existing)
+        {
+            return IssueError(location,
+                $"'{duplicate.Name}' redeclares a global param '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
+        }
+        
+        public Exception UndeclaredGlobalParam(ParserRuleContext location, string name)
+        {
+            return IssueError(location,
+                $"'global param {name}' is not undeclared");
+        }
+        
+        public Exception ModifyGlobalParam(ParserRuleContext location, IPDecl existing)
+        {
+            return IssueError(location,
+                $"try to modify a global param '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
+        }
+
+        public Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, string errMsg)
+        {
+            return IssueError(location,
+                $"invalid twise number at {locationResolver.GetLocation(testDecl.SourceLocation)}: {errMsg}");
         }
 
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)

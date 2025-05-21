@@ -7,13 +7,11 @@ using PChecker.Runtime.StateMachines;
 
 namespace PChecker.Feedback;
 
-internal class TimelineObserver: IControlledRuntimeLog
+internal class TimelineObserver : IControlledRuntimeLog
 {
-
     private HashSet<(string, string, string)> _timelines = new();
     private Dictionary<string, HashSet<string>> _allEvents = new();
     private Dictionary<string, List<string>> _orderedEvents = new();
-    private IControlledRuntimeLog _controlledRuntimeLogImplementation;
 
     public static readonly List<(int, int)> Coefficients = new();
     public static int NumOfCoefficients = 50;

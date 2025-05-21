@@ -1,1 +1,0 @@
-// hint Test(e0: eLocalResponse) {}

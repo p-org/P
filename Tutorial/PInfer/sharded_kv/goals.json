@@ -1,8 +1,0 @@
-[
-    {
-        "events": ["e0:eOwns", "e1:eOwns"],
-        "config_event": null,
-        "guards": ["e0.payload.key == e1.payload.key"],
-        "filters": ["e0.payload.value == e1.payload.value", "e0.payload.node == e1.payload.node"]
-    }
-]

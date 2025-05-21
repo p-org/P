@@ -237,6 +237,12 @@ namespace Plang.Compiler.TypeChecker
             {
                 DeclarationVisitor.PopulateDeclarations(config.Handler, globalScope, programUnit, nodesToDeclarations);
             }
+
+            // Step 3: fill in proof blocks
+            foreach (var proofBlock in globalScope.ProofBlocks)
+            {
+                ProofBlockVisitor.PopulateProofBlocks(config.Handler, globalScope, proofBlock.SourceLocation, nodesToDeclarations);
+            }
             
             return globalScope;
         }

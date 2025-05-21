@@ -633,19 +633,7 @@ namespace Plang.Compiler.TypeChecker
             // (COLON type)?
             pure.Signature.ReturnType = ResolveType(context.type());
             
-            if (context.body is not null)
-            {
-                var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
-                var body = exprVisitor.Visit(context.body);
-                
-                if (!pure.Signature.ReturnType.IsSameTypeAs(body.Type))
-                {
-                    throw Handler.TypeMismatch(context.body, body.Type, pure.Signature.ReturnType);
-                }
-
-                pure.Body = body;
-            }
-            
+            // body will be handled in a later stage
             return pure;
         }
         
@@ -653,21 +641,6 @@ namespace Plang.Compiler.TypeChecker
         {
             // INVARIANT name=Iden body=Expr
             var inv = (Invariant) nodesToDeclarations.Get(context);
-            
-            var temporaryFunction = new Function(inv.Name, context);
-            temporaryFunction.Scope = CurrentScope.MakeChildScope();
-            
-            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
-            
-            var body = exprVisitor.Visit(context.body);
-            
-            if (!PrimitiveType.Bool.IsSameTypeAs(body.Type))
-            {
-                throw Handler.TypeMismatch(context.body, body.Type, PrimitiveType.Bool);
-            }
-
-            inv.Body = body;
-            
             return inv;
         }
         
@@ -675,21 +648,6 @@ namespace Plang.Compiler.TypeChecker
         {
             // Axiom body=Expr
             var inv = (Axiom) nodesToDeclarations.Get(context);
-            
-            var temporaryFunction = new Function(inv.Name, context);
-            temporaryFunction.Scope = CurrentScope.MakeChildScope();
-            
-            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
-            
-            var body = exprVisitor.Visit(context.body);
-            
-            if (!PrimitiveType.Bool.IsSameTypeAs(body.Type))
-            {
-                throw Handler.TypeMismatch(context.body, body.Type, PrimitiveType.Bool);
-            }
-
-            inv.Body = body;
-            
             return inv;
         }
 
@@ -831,21 +789,7 @@ namespace Plang.Compiler.TypeChecker
         {
             // assume on start: body=Expr
             var assume = (AssumeOnStart) nodesToDeclarations.Get(context);
-            
-            var temporaryFunction = new Function(assume.Name, context);
-            temporaryFunction.Scope = CurrentScope.MakeChildScope();
-            
-            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
-            
-            var body = exprVisitor.Visit(context.body);
-            
-            if (!PrimitiveType.Bool.IsSameTypeAs(body.Type))
-            {
-                throw Handler.TypeMismatch(context.body, body.Type, PrimitiveType.Bool);
-            }
-
-            assume.Body = body;
-            
+            // body will be handled in a later stage
             return assume;
         }
         

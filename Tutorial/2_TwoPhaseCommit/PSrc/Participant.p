@@ -60,12 +60,12 @@ machine Participant {
       if(req.key in kvStore)
       {
         // read successful as the key exists
-        send req.client, eReadTransResp, (transId = kvStore[req.key].transId, key = req.key, val = kvStore[req.key].val, status = SUCCESS);
+        send req.client, eReadTransResp, (key = req.key, val = kvStore[req.key].val, status = SUCCESS);
       }
       else
       {
         // read failed as the key does not exist
-        send req.client, eReadTransResp, (transId = -1, key = "", val = -1, status = ERROR);
+        send req.client, eReadTransResp, (key = "", val = -1, status = ERROR);
       }
     }
 

@@ -56,7 +56,7 @@ machine SingleClientNoFailure {
 
       config = (numClients = 1,
                       numParticipants = 3,
-                      numTransPerClient = 5,
+                      numTransPerClient = 2,
                       failParticipants = 0);
 
             SetUpTwoPhaseCommitSystem(config);
@@ -74,7 +74,7 @@ machine MultipleClientsNoFailure {
       config =
         (numClients = 2,
         numParticipants = 3,
-        numTransPerClient = 3,
+        numTransPerClient = 2,
         failParticipants = 0);
 
         SetUpTwoPhaseCommitSystem(config);

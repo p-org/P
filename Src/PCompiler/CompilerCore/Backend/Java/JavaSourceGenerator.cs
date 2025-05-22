@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java
 {
@@ -14,7 +15,7 @@ namespace Plang.Compiler.Backend.Java
 
         internal NameManager Names => _context.Names;
         internal TypeManager Types => _context.Types;
-        internal String PackageName => $"{Job.PObservePackageName}";
+        internal String PackageName => Constants.PInferMode ? $"{Job.ProjectName}.pinfer" : $"{Job.PObservePackageName}";
 
         /// <summary>
         /// Constructs a new Java source generator for a particular output file.
@@ -23,7 +24,14 @@ namespace Plang.Compiler.Backend.Java
         internal JavaSourceGenerator(ICompilerConfiguration job, string filename)
         {
             Job = job;
-            Source = new CompiledFile(filename);
+            if (Constants.PInferMode)
+            {
+                Source = new CompiledFile(filename, $"{job.OutputDirectory}/{job.ProjectName}/pinfer");
+            }
+            else
+            {
+                Source = new CompiledFile(filename, $"{job.OutputDirectory}/{job.ProjectName}/pobserve");
+            }
         }
 
         private void Initialize(CompilationContext ctx, Scope scope)
@@ -43,11 +51,20 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
         }
 
-        private void WriteImports()
+        internal void WriteImports()
         {
             foreach (var stmt in Constants.ImportStatements())
             {
                 WriteLine(stmt);
+            }
+            if (Constants.PInferMode)
+            {
+                WriteLine("import com.alibaba.fastjson2.JSONArray;");
+                WriteLine("import com.alibaba.fastjson2.JSONObject;");
+                WriteLine("import com.alibaba.fastjson2.JSONPath;");
+                WriteLine("import com.alibaba.fastjson2.JSONReader;");
+                WriteLine();
+                WriteLine("import java.util.stream.Collectors;\nimport java.io.*;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;");
             }
         }
 
@@ -88,6 +105,7 @@ namespace Plang.Compiler.Backend.Java
                 case TypeManager.JType.JInt _:
                 case TypeManager.JType.JFloat _:
                 case TypeManager.JType.JMachine _:
+                case TypeManager.JType.JEvent _:
                     writeTermToBeCloned();
                     break;
 
@@ -105,14 +123,63 @@ namespace Plang.Compiler.Backend.Java
                 case TypeManager.JType.JSet _:
                 case TypeManager.JType.JForeign _:
                 case TypeManager.JType.JNamedTuple _:
-                case TypeManager.JType.JEvent _:
-                    Write($"{Constants.PrtDeepCloneMethodName}(");
-                    writeTermToBeCloned();
-                    Write(")");
+                    if (Constants.PInferMode)
+                    {
+                        writeTermToBeCloned();
+                    }
+                    else
+                    {
+                        Write($"{Constants.PrtDeepCloneMethodName}(");
+                        writeTermToBeCloned();
+                        Write(")");
+                    }
                     break;
 
                 default:
                     throw new NotImplementedException(t.ToString());
+            }
+        }
+        private static string GenerateGetLong(string e, string fieldName)
+        {
+            return $"{e}.getLong(\"{fieldName}\")";
+        }
+
+        private static string GenerateGetMachine(string e, string fieldName)
+        {
+            return $"{e}.getString(\"{fieldName}\")";
+        }
+
+        internal string GenerateJSONObjectGet(string e, string fieldName, PLanguageType type)
+        {
+            if (type is PermissionType)
+            {
+                return GenerateGetMachine(e, fieldName);
+            }
+            var t = type.Canonicalize();
+            var javaType = Types.JavaTypeFor(t);
+            if (t is EnumType enumType)
+            {
+                return $"{Constants.TypesNamespaceName}.{enumType.EnumDecl.Name}.from({GenerateGetLong(e, fieldName)}.intValue())";
+            }
+            else if (t is PrimitiveType || javaType.IsPrimitive)
+            {
+                if (javaType.ReferenceTypeName.Equals("Object"))
+                {
+                    return $"({e}.get(\"{fieldName}\"))";
+                }
+                return $"({e}.get{javaType.ReferenceTypeName}(\"{fieldName}\"))";
+            }
+            else if (t is NamedTupleType || t is MapType)
+            {
+                return $"({e}.getJSONObject(\"{fieldName}\"))";
+            }
+            else if (t is SequenceType || t is SetType)
+            {
+                return $"({e}.getJSONArray(\"{fieldName}\"))";
+            }
+            else 
+            {
+                throw new Exception($"Unhandled initialization for type: {t}");
             }
         }
         protected void WriteLine(string s = "")

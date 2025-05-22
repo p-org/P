@@ -516,6 +516,30 @@ namespace PChecker.Runtime.Logging
     }
 
     /// <summary>
+    /// PInferLog is used for PInfer to perform invariant inference
+    /// Simplified representation is a tuple of (event, sender, target, payload?)
+    /// </summary>
+    public class PInferLog
+    {
+        /// <summary>
+        ///  Event name
+        /// </summary>
+        public string? Event { get; set; }
+        /// <summary>
+        /// Payload of the event
+        /// </summary>
+        public object? Payload { get; set; }
+        /// <summary>
+        /// Event sender
+        /// </summary>
+        public string? Sender { get; set; }
+        /// <summary>
+        /// Event receiver
+        /// </summary>
+        public string? Target { get; set; }
+    }
+
+    /// <summary>
     /// JsonWriter to write the Json output.
     /// </summary>
     public class JsonWriter
@@ -553,6 +577,22 @@ namespace PChecker.Runtime.Logging
             _logs = new List<LogEntry>();
             _log = new LogEntry();
             _vcGenerator = new VectorClockGenerator();
+        }
+
+        /// <summary>
+        /// Convert a complete log detail to a PInfer log
+        /// </summary>
+        /// <param name="details">the details field of the log entry</param>
+        /// <returns>Simplified representation for PInfer</returns>
+        public static PInferLog ToPInferLog (LogDetails details)
+        {
+            return new PInferLog
+            {
+                Event = details.Event,
+                Payload = details.Payload,
+                Sender = details.Sender,
+                Target = details.Target
+            };
         }
 
         /// <summary>

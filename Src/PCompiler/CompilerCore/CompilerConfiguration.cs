@@ -42,6 +42,17 @@ namespace Plang.Compiler
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;
+            TermDepth = 1;
+            MaxGuards = 2;
+            MaxFilters = 2;
+            PInferAction = PInferAction.Auto;
+            HintName = null;
+            Verbose = false;
+            ConfigEvent = null;
+            TraceFolder = "traces";
+            // Max level by default
+            PInferPruningLevel = 3;
+            UseZ3 = false;
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="CompilerConfiguration"/> class with specific settings.
@@ -86,8 +97,10 @@ namespace Plang.Compiler
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
             OutputLanguages = outputLanguages;
             Backend = null;
+            InvParseFileDir = "SpecMining";
             ProjectDependencies = projectDependencies ?? new List<string>();
             Debug = debug;
+            TermDepth = 2;
         }
 
         /// <summary>
@@ -155,6 +168,19 @@ namespace Plang.Compiler
         /// </summary>
         public bool Debug { get; set; }
 
+        public int TermDepth { get; set; }
+        public int MaxGuards { get; set; }
+        public int MaxFilters { get; set; }
+        public PInferAction PInferAction { get; set; }
+        public string HintName { get; set; }
+        public bool HintsOnly { get; set; }
+        public string ConfigEvent { get; set; }
+        public string TraceFolder { get; set; }
+        public string InvParseFileDir { get; set; }
+        public bool Verbose { get; set; }
+        public bool UseZ3 { get; set; }
+        public int PInferPruningLevel { get; set; }
+
         /// <summary>
         /// Copies all properties from another CompilerConfiguration instance to this instance.
         /// </summary>
@@ -178,6 +204,7 @@ namespace Plang.Compiler
             OutputLanguages = parsedConfig.OutputLanguages;
             ProjectRootPath = parsedConfig.ProjectRootPath;
             Debug = parsedConfig.Debug;
+            HintsOnly = false;
         }
     }
 }

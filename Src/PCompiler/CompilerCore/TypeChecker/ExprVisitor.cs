@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime.Misc;
+using Plang.Compiler.Backend.PInfer;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -148,6 +149,15 @@ namespace Plang.Compiler.TypeChecker
                     var type = TypeResolver.ResolveType(context.type(), table, handler);
                     return new DefaultExpr(context, type.Canonicalize());
                 }
+                case "indexof":
+                {
+                    var name = context.iden().GetText();
+                    if (table.Lookup(name, out Variable v))
+                    {
+                        return new FunCallExpr(context, BuiltinFunction.IndexOf, [new VariableAccessExpr(context.iden(), v)]);
+                    }
+                    throw handler.MissingDeclaration(context.iden(), "event variable", name);
+                }
                 default:
                 {
                     throw handler.InternalError(context,
@@ -246,7 +256,7 @@ namespace Plang.Compiler.TypeChecker
             var rhs = Visit(context.rhs);
             var op = context.op.Text;
 
-            var arithCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
+            var arithCtors = new Dictionary<string, Func<IPExpr, IPExpr, BinOpExpr>>
             {
                 {"*", (elhs, erhs) => new BinOpExpr(context, BinOpType.Mul, elhs, erhs)},
                 {"/", (elhs, erhs) => new BinOpExpr(context, BinOpType.Div, elhs, erhs)},
@@ -259,13 +269,13 @@ namespace Plang.Compiler.TypeChecker
                 {">=", (elhs, erhs) => new BinOpExpr(context, BinOpType.Ge, elhs, erhs)}
             };
 
-            var logicCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
+            var logicCtors = new Dictionary<string, Func<IPExpr, IPExpr, BinOpExpr>>
             {
                 {"&&", (elhs, erhs) => new BinOpExpr(context, BinOpType.And, elhs, erhs)},
                 {"||", (elhs, erhs) => new BinOpExpr(context, BinOpType.Or, elhs, erhs)}
             };
 
-            var compCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
+            var compCtors = new Dictionary<string, Func<IPExpr, IPExpr, BinOpExpr>>
             {
                 {"==", (elhs, erhs) => new BinOpExpr(context, BinOpType.Eq, elhs, erhs)},
                 {"!=", (elhs, erhs) => new BinOpExpr(context, BinOpType.Neq, elhs, erhs)}
@@ -281,7 +291,9 @@ namespace Plang.Compiler.TypeChecker
                         PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
                         PrimitiveType.Float.IsAssignableFrom(rhs.Type))
                     {
-                        return arithCtors[op](lhs, rhs);
+                        var addExpr = arithCtors[op](lhs, rhs);
+                        table.AddAllowedBinOp(addExpr.Operation, lhs.Type, rhs.Type, addExpr.Type);
+                        return addExpr;
                     }
                     throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
                 case "*":
@@ -298,7 +310,9 @@ namespace Plang.Compiler.TypeChecker
                         PrimitiveType.String.IsAssignableFrom(lhs.Type) &&
                         PrimitiveType.String.IsAssignableFrom(rhs.Type))
                     {
-                        return arithCtors[op](lhs, rhs);
+                        var arithExpr =  arithCtors[op](lhs, rhs);
+                        table.AddAllowedBinOp(arithExpr.Operation, lhs.Type, rhs.Type, arithExpr.Type);
+                        return arithCtors[op](lhs, rhs);;
                     }
                     throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
                 case "%":
@@ -307,17 +321,21 @@ namespace Plang.Compiler.TypeChecker
                         PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
                         PrimitiveType.Float.IsAssignableFrom(rhs.Type))
                     {
-                        return arithCtors[op](lhs, rhs);
+                        var modExpr = arithCtors[op](lhs, rhs);
+                        table.AddAllowedBinOp(modExpr.Operation, lhs.Type, rhs.Type, modExpr.Type);
+                        return modExpr;
                     }
                     throw handler.IncomparableTypes(context, lhs.Type, rhs.Type);
                 case "in":
                     var rhsType = rhs.Type.Canonicalize();
+                    var contentType = lhs.Type;
                     if (rhsType is MapType rhsMap)
                     {
                         if (!rhsMap.KeyType.IsAssignableFrom(lhs.Type))
                         {
                             throw handler.TypeMismatch(context.lhs, lhs.Type, rhsMap.KeyType);
                         }
+                        contentType = rhsMap.KeyType;
                     }
                     else if (rhsType is SequenceType rhsSeq)
                     {
@@ -325,6 +343,7 @@ namespace Plang.Compiler.TypeChecker
                         {
                             throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSeq.ElementType);
                         }
+                        contentType = rhsSeq.ElementType;
                     }
                     else if (rhsType is SetType rhsSet)
                     {
@@ -332,11 +351,13 @@ namespace Plang.Compiler.TypeChecker
                         {
                             throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSet.ElementType);
                         }
+                        contentType = rhsSet.ElementType;
                     }
                     else
                     {
                         throw handler.TypeMismatch(rhs, TypeKind.Map, TypeKind.Sequence);
                     }
+                    table.AddAllowedBinOp(BinOpType.Eq, lhs.Type, contentType, PrimitiveType.Bool);
                     return new ContainsExpr(context, lhs, rhs);
 
                 case "==":
@@ -345,8 +366,9 @@ namespace Plang.Compiler.TypeChecker
                     {
                         throw handler.IncomparableTypes(context, lhs.Type, rhs.Type);
                     }
-
-                    return compCtors[op](lhs, rhs);
+                    var compExpr = compCtors[op](lhs, rhs);
+                    table.AddAllowedBinOp(compExpr.Operation, lhs.Type, rhs.Type, compExpr.Type);
+                    return compExpr;
 
                 case "&&":
                 case "||":

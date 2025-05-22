@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -31,6 +32,7 @@ using PChecker.SystematicTesting.Strategies.Probabilistic;
 using PChecker.SystematicTesting.Strategies.Special;
 using PChecker.SystematicTesting.Traces;
 using PChecker.Utilities;
+using Plang.PInfer;
 using Debug = PChecker.IO.Debugging.Debug;
 using Task = PChecker.Tasks.Task;
 
@@ -90,6 +92,14 @@ namespace PChecker.SystematicTesting
         /// [log iter 1, log iter 2, log iter 3, ...]
         /// </summary>
         private readonly List<List<LogEntry>> JsonVerboseLogs;
+
+        /// <summary>
+        /// Field declaration for PInferLogs
+        /// Similar to the field above, instead this maintains
+        /// a simplified representation of logs for PInfer
+        /// </summary>
+        private readonly List<List<PInferLog>> PInferLogs;
+        private readonly HashSet<string> PInferEventObtained;
 
         /// <summary>
         /// Field declaration with default JSON serializer options
@@ -273,6 +283,13 @@ namespace PChecker.SystematicTesting
             {
                 JsonVerboseLogs = new List<List<LogEntry>>();
             }
+
+            if (checkerConfiguration.PInferMode)
+            {
+                PInferLogs = [];
+                PInferEventObtained = [];
+            }
+
             if (checkerConfiguration.SchedulingStrategy is "replay")
             {
                 var scheduleDump = GetScheduleForReplay(out var isFair);
@@ -512,6 +529,38 @@ namespace PChecker.SystematicTesting
                     using var jsonStreamFile = File.Create(jsonVerbosePath);
                     JsonSerializer.Serialize(jsonStreamFile, JsonVerboseLogs, jsonSerializerConfig);
                 }
+
+                if (_checkerConfiguration.PInferMode)
+                {
+                    if (TestReport.NumOfFoundBugs > 0)
+                    {
+                        Logger.WriteLine("Skipped for PInfer trace aggregation due to bugs");
+                    }
+                    else
+                    {
+                        string GetHash(string input)
+                        {
+                            return string.Join("", SHA256.HashData(Encoding.UTF8.GetBytes(input)).Select(x => x.ToString("X2")));
+                        }
+                        var traceIndex = new TraceIndex(_checkerConfiguration.TraceFolder, create: true);
+                        Logger.Write("Events Aggregated: " + string.Join(" ", PInferEventObtained));
+                        var saveTo = traceIndex.AddIndex(PInferEventObtained, GetHash(string.Join("", PInferEventObtained.OrderDescending())), _checkerConfiguration.TestingIterations);
+                        var directory = Path.Combine(_checkerConfiguration.TraceFolder, saveTo);
+                        if (!Directory.Exists(directory))
+                        {
+                            Directory.CreateDirectory(directory);
+                        }
+                        var numFiles = Directory.GetFiles(directory).Length;
+                        var filename = $"{_checkerConfiguration.TestCaseName}_{_checkerConfiguration.TestingIterations}_{numFiles}.json";
+                        var filePath = Path.Combine(directory, filename);
+                        using var jsonStreamFile = File.Create(filePath);
+                        Logger.WriteLine($"... Emitting PInfer trace to {filePath}");
+                        JsonSerializer.Serialize(jsonStreamFile, PInferLogs, jsonSerializerConfig);
+                        // save the index
+                        traceIndex.Commit();
+                    }
+                }
+
             }, CancellationTokenSource.Token);
         }
 
@@ -612,6 +661,26 @@ namespace PChecker.SystematicTesting
                 if (_checkerConfiguration.IsVerbose)
                 {
                     JsonVerboseLogs.Add(JsonLogger.Logs);
+                }
+
+                if (_checkerConfiguration.PInferMode)
+                {
+                    PInferLogs.Add(JsonLogger.Logs.Where(
+                        x => {
+                            if ((x.Type == JsonWriter.LogType.Announce.ToString() 
+                                            || x.Type == JsonWriter.LogType.SendEvent.ToString())
+                                            && (_checkerConfiguration.AllowedEvents.Count == 0 // no filter provided then aggregate them all
+                                                || _checkerConfiguration.AllowedEvents.Contains(x.Details.Event)))
+                            {
+                                PInferEventObtained.Add(x.Details.Event);
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                    ).Select(x => JsonWriter.ToPInferLog(x.Details)).ToList());
                 }
 
                 runtime.LogWriter.LogCompletion();

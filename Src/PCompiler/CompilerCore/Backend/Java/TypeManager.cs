@@ -19,6 +19,33 @@ namespace Plang.Compiler.Backend.Java
             Names = names;
         }
 
+        internal string SimplifiedJavaType(PLanguageType type)
+        {
+            if (type is EnumType || type is PInfer.Index || type is PInfer.CollectionSize)
+            {
+                return "long";
+            }
+            if (type is TypeDefType def)
+            {
+                return SimplifiedJavaType(def.TypeDefDecl.Type);
+            }
+            var javaType = JavaTypeFor(type);
+            if (javaType.IsPrimitive)
+            {
+                return javaType.TypeName;
+            }
+            if (type.Equals(PrimitiveType.Any))
+            {
+                return "Object";
+            }
+            var name = string.Join("", javaType.TypeName.Where(x => (x >= 'A' && x <= 'Z') || (x >= 'a' && x <= 'z')));
+            if (javaType is JType.JSet || javaType is JType.JList)
+            {
+                return $"ArrayOf{name}";
+            }
+            return name;
+        }
+
         internal class JType
         {
             private string _unboxedType;
@@ -99,6 +126,39 @@ namespace Plang.Compiler.Backend.Java
             /// </summary>
             internal virtual string RemoveMethodName =>
                 throw new Exception($"RemoveMethodName not implemented for {TypeName}");
+            
+            internal virtual string GenerateFromJSON(string jsonVariable, string fieldName) {
+                if (TypeName.Equals("Object"))
+                {
+                    return $"({jsonVariable}.get(\"{fieldName}\"))";
+                }
+                if (IsPrimitive || this is JString)
+                {
+                    return $"({jsonVariable}.get{ReferenceTypeName}(\"{fieldName}\"))";
+                }
+                return GenerateCastFromObject($"({jsonVariable}.get(\"{fieldName}\"))");
+            }
+
+            internal virtual string GenerateCastFromObject(string objectName)
+            {
+                if (ReferenceTypeName == "Long")
+                {
+                    return $"(Long.valueOf({objectName}.toString()))";
+                }
+                return $"(({ReferenceTypeName}){objectName})";
+            }
+
+            internal virtual string GenerateFromString(string varName)
+            {
+                if (this is JString)
+                {
+                    return varName;
+                }
+                else
+                {
+                    return $"({ReferenceTypeName}.parse{ReferenceTypeName}({varName}))";
+                }
+            }
 
             internal class JAny : JType
             {
@@ -112,6 +172,14 @@ namespace Plang.Compiler.Backend.Java
                 internal override bool IsPrimitive => false;
 
                 internal override string DefaultValue => "null";
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    return $"((Object){objectName})";
+                }
+                internal override string GenerateFromString(string varName)
+                {
+                    return varName;
+                }
             }
 
             internal class JBool : JType
@@ -127,6 +195,10 @@ namespace Plang.Compiler.Backend.Java
                 internal static string ToJavaLiteral(bool b)
                 {
                     return b ? "true" : "false";
+                }
+                internal override string GenerateFromString(string objectName)
+                {
+                    return $"Boolean.parseBoolean({objectName})";
                 }
             }
 
@@ -144,6 +216,10 @@ namespace Plang.Compiler.Backend.Java
                 {
                     return l + "L";
                 }
+                internal override string GenerateFromString(string objectName)
+                {
+                    return $"Long.parseLong({objectName})";
+                }
             }
 
             internal class JFloat : JType
@@ -158,6 +234,10 @@ namespace Plang.Compiler.Backend.Java
                 internal static string ToJavaLiteral(double d)
                 {
                     return d + "f";
+                }
+                internal override string GenerateFromString(string objectName)
+                {
+                    return $"Float.parseFloat({objectName})";
                 }
             }
 
@@ -183,29 +263,91 @@ namespace Plang.Compiler.Backend.Java
 
                 internal JMachine()
                 {
-                    _unboxedType = "long";
-                    _refType = "Long";
+                    if (Constants.PInferMode)
+                    {
+                        _unboxedType = "String";
+                        _refType = "String";
+                    }
+                    else
+                    {
+                        _unboxedType = "long";
+                        _refType = "Long";
+                    }
+                    
                 }
-                internal override string DefaultValue => ToJavaLiteral(0L);
+                internal override string DefaultValue => Constants.PInferMode ? "\"\"" : ToJavaLiteral(0L);
                 internal static string ToJavaLiteral(long l)
                 {
                     return l + "L";
+                }
+                internal override string GenerateFromString(string objectName)
+                {
+                    if (Constants.PInferMode)
+                    {
+                        return objectName;
+                    }
+                    return $"(Long.parseLong({objectName}))";
+                }
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    if (Constants.PInferMode)
+                    {
+                        return $"((String){objectName})";
+                    }
+                    return $"(Long.parseLong({objectName}.toString()))";
                 }
             }
 
             internal class JList : JType
             {
-                internal JList(JType t)
+                internal JType _contentType;
+                internal JList(JType t, bool use_ref = true)
                 {
-                    _unboxedType = $"ArrayList<{t.ReferenceTypeName}>";
+                    _contentType = t;
+                    if (Constants.PInferMode)
+                    {
+                        if (use_ref)
+                        {
+                            _unboxedType = $"{t.ReferenceTypeName}[]";
+                        }
+                        else
+                        {
+                            _unboxedType = $"{t.TypeName}[]";
+                        }
+                    }
+                    else
+                    {
+                        _unboxedType = $"ArrayList<{t.ReferenceTypeName}>";
+                    }
                 }
 
+                internal override string DefaultValue => Constants.PInferMode ? $"new {TypeName}{{}}" : $"new {TypeName}()";
                 internal override bool IsPrimitive => false;
                 internal override string AccessorMethodName => "get";
                 internal override string ContainsMethodName => "contains";
                 internal override string MutatorMethodName => "set";
                 internal override string InsertMethodName => "add";
                 internal override string RemoveMethodName => "remove";
+
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    if (Constants.PInferMode)
+                    {
+                        var lamv = $"x{GetHashCode()}";
+                        if (ReferenceTypeName == "long[]")
+                        {
+                            return $"((JSONArray){objectName}).stream().mapToLong(x -> ((Long) x)).toArray()";
+                        }
+                        else
+                        {
+                            return $"(((JSONArray){objectName}).stream().map({lamv} -> {_contentType.GenerateCastFromObject(lamv)}).toArray({ReferenceTypeName}::new))";
+                        }
+                    }
+                    else
+                    {
+                        return $"(new ArrayList<{_contentType.ReferenceTypeName}>(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toList()))";
+                    }
+                }
             }
             internal class JMap : JType
             {
@@ -244,15 +386,51 @@ namespace Plang.Compiler.Backend.Java
                 /// The type of a collection containing the keys of this Map.
                 /// </summary>
                 internal string ValueCollectionType => $"ArrayList<{_v.ReferenceTypeName}>";
+                // internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                // {
+                //     var getObj = $"({jsonVariable}.getJSONObject(\"fieldName\"))";
+                //     var body = @$"{getObj}
+                //                     .entrySet()
+                //                     .stream()
+                //                     .collect(
+                //                         Collectors.toMap(
+                //                             e -> {_k.GenerateFromString("(String)(e.getKey())")},
+                //                             e -> {_v.GenerateCastFromObject("(e.getValue())")}
+                //                         )
+                //                     )";
+                //     return $"new {ReferenceTypeName}({body})";
+                // }
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    var body = @$"((JSONObject){objectName})
+                                    .entrySet()
+                                    .stream()
+                                    .collect(
+                                        Collectors.toMap(
+                                            e -> {_k.GenerateFromString("(String)(e.getKey())")},
+                                            e -> {_v.GenerateCastFromObject("(e.getValue())")}
+                                        )
+                                    )";
+                    return $"new {ReferenceTypeName}({body})";
+                }
             }
 
             internal class JSet : JType
             {
+                internal JType _contentType;
                 internal JSet(JType t)
                 {
-                    _unboxedType = $"LinkedHashSet<{t.ReferenceTypeName}>";
+                    _contentType = t;
+                    if (Constants.PInferMode)
+                    {
+                        _unboxedType = $"{t.TypeName}[]";
+                    }
+                    else
+                    {
+                        _unboxedType = $"LinkedHashSet<{t.ReferenceTypeName}>";
+                    }
                 }
-
+                internal override string DefaultValue => Constants.PInferMode ? $"new {TypeName}{{}}" : $"new {TypeName}()";
                 internal override bool IsPrimitive => false;
 
                 // Note: There's no AccessorMethodName for a JSet because, unfortunately,
@@ -265,6 +443,18 @@ namespace Plang.Compiler.Backend.Java
                 internal override string InsertMethodName => "add";
                 internal override string MutatorMethodName => "add";
                 internal override string RemoveMethodName => "remove";
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    if (Constants.PInferMode)
+                    {
+                        if (ReferenceTypeName == "long[]")
+                        {
+                            return $"((JSONArray){objectName}).stream().mapToLong(x -> ((Long) x)).toArray()";
+                        }
+                        return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).toArray({ReferenceTypeName}::new))";
+                    }
+                    return $"(((JSONArray){objectName}).stream().map(x -> {_contentType.GenerateCastFromObject("x")}).collect(Collectors.toCollection(LinkedHashSet::new)))";
+                }
             }
 
             internal class JNamedTuple : JType
@@ -275,6 +465,14 @@ namespace Plang.Compiler.Backend.Java
                 }
 
                 internal override bool IsPrimitive => false;
+                internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                {
+                    return $"new {ReferenceTypeName}({jsonVariable}.getJSONObject(\"{fieldName}\"))";
+                }
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    return $"new {ReferenceTypeName}((JSONObject) {objectName})";
+                }
             }
 
             internal class JForeign : JType
@@ -301,6 +499,14 @@ namespace Plang.Compiler.Backend.Java
 
 
                 internal override string DefaultValue => $"{_unboxedType}.{_defaultValue}";
+                internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                {
+                    return $"({ReferenceTypeName}.from({jsonVariable}.get(\"{fieldName}\")))";
+                }
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    return $"({ReferenceTypeName}.from({objectName}))";
+                }
             }
 
             //TODO: not sure about this one.  Is the base class sufficient?
@@ -312,6 +518,10 @@ namespace Plang.Compiler.Backend.Java
                     _unboxedType = $"{Constants.EventsClass}<?>";
                 }
                 internal override bool IsPrimitive => false;
+                internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                {
+                    return "null";
+                }
                 internal override string DefaultValue => "null";
             }
 
@@ -325,6 +535,15 @@ namespace Plang.Compiler.Backend.Java
                 {
                     _refType = "Void";
                     _unboxedType = "void";
+                }
+
+                internal override string GenerateFromJSON(string jsonVariable, string fieldName)
+                {
+                    return DefaultValue;
+                }
+                internal override string GenerateCastFromObject(string objectName)
+                {
+                    return DefaultValue;
                 }
             }
         }
@@ -380,7 +599,7 @@ namespace Plang.Compiler.Backend.Java
         /// <param name="type">The P type.</param>
         /// <returns>The Java type.</returns>
         /// TODO: Make this private and stick a weak ref cache in front of it.
-        internal JType JavaTypeFor(PLanguageType type)
+        internal JType JavaTypeFor(PLanguageType type, bool use_ref = true)
         {
             switch (type.Canonicalize())
             {
@@ -431,13 +650,19 @@ namespace Plang.Compiler.Backend.Java
                     return new JType.JVoid();
 
                 case SequenceType s:
-                    return new JType.JList(JavaTypeFor(s.ElementType));
+                    return new JType.JList(JavaTypeFor(s.ElementType, use_ref), use_ref);
 
                 case SetType s:
                     return new JType.JSet(JavaTypeFor(s.ElementType));
 
                 case TupleType t:
                     return JavaTypeFor(t.ToNamedTuple());
+                
+                case PInfer.Index:
+                    return new JType.JInt();
+                
+                case PInfer.CollectionSize:
+                    return new JType.JInt();
 
                 default:
                     throw new NotImplementedException($"{type} values not implemented");

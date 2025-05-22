@@ -11,14 +11,14 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
-    internal class MachineGenerator : JavaSourceGenerator
+    public class MachineGenerator : JavaSourceGenerator
     {
 
         private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
         private HashSet<Function> _calledStaticFunctions = new HashSet<Function>(); // static functions allowed
         private bool debug = false;
 
-        internal MachineGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
+        public MachineGenerator(ICompilerConfiguration job, string filename) : base(job, filename)
         {
             debug = job.Debug;
         }
@@ -133,7 +133,7 @@ namespace Plang.Compiler.Backend.Java {
         }
 
 
-        private void WriteFunction(Function f)
+        internal void WriteFunction(Function f)
         {
             if (f.IsForeign)
             {
@@ -178,14 +178,14 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine("}");
         }
 
-        private void WriteFunctionSignature(Function f)
+        internal void WriteFunctionSignature(Function f)
         {
             var fname = Names.GetNameForDecl(f);
 
             Write("private ");
 
             var isStatic = f.Owner == null;
-            if (isStatic)
+            if (isStatic || Constants.PInferMode)
             {
                 Write("static ");
             }
@@ -667,7 +667,7 @@ namespace Plang.Compiler.Backend.Java {
             Write($")");
         }
 
-        private void WriteExpr(IPExpr expr)
+        internal void WriteExpr(IPExpr expr)
         {
             TypeManager.JType t;
 
@@ -765,7 +765,14 @@ namespace Plang.Compiler.Backend.Java {
                     break;
                 case SizeofExpr se:
                     WriteExpr(se.Expr);
-                    Write(".size()");
+                    if (Constants.PInferMode)
+                    {
+                        Write(".length");
+                    }
+                    else
+                    {
+                        Write(".size()");
+                    }
                     break;
                 case StringExpr se:
                 {
@@ -950,9 +957,19 @@ namespace Plang.Compiler.Backend.Java {
                     WriteExpr(seqAccessExpr.SeqExpr);
                     // IndexExpr is a JInt and thus emitted as a long. In this particular case,
                     // though, `ArrayList#get()` takes an int so we have to downcast.
-                    Write($".{t.AccessorMethodName}((int)(");
-                    WriteExpr(seqAccessExpr.IndexExpr);
-                    Write("))");
+                    if (Constants.PInferMode)
+                    {
+                        // use array access
+                        Write("[((int)(");
+                        WriteExpr(seqAccessExpr.IndexExpr);
+                        Write("))]");
+                    }
+                    else
+                    {
+                        Write($".{t.AccessorMethodName}((int)(");
+                        WriteExpr(seqAccessExpr.IndexExpr);
+                        Write("))");
+                    }
                     break;
 
                 case TupleAccessExpr tupleAccessExpr:

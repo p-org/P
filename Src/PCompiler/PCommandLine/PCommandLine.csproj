@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\PChecker\CheckerCore\CheckerCore.csproj" />
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
+    <ProjectReference Include="..\..\PInfer\PInfer.csproj" />
     <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />
     <None Include="../../../README.md" Pack="true" PackagePath="" />
   </ItemGroup>

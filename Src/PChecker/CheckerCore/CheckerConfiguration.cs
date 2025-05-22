@@ -188,6 +188,22 @@ namespace PChecker
         public bool IsVerbose { get; set; }
 
         /// <summary>
+        /// If true, only announce/send events are logged
+        /// </summary>
+        [DataMember]
+        public bool PInferMode { get; set;}
+
+        /// <summary>
+        /// Event filters for PInfer traces
+        /// </summary>
+        [DataMember]
+        public HashSet<string> AllowedEvents {get; set; }
+
+        [DataMember]
+        public string TraceFolder { get; set; }
+
+        /// <summary>
+        /// Enables code coverage reporting of a Coyote program.
         /// Enables code coverage reporting of a program.
         /// </summary>
         [DataMember]
@@ -321,6 +337,9 @@ namespace PChecker
             DebugActivityCoverage = false;
 
             IsVerbose = false;
+            PInferMode = false;
+            AllowedEvents = [];
+            TraceFolder = "traces";
 
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;

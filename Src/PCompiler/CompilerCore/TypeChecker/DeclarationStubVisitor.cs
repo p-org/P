@@ -30,6 +30,51 @@ namespace Plang.Compiler.TypeChecker
             visitor.Visit(context);
         }
 
+        public override object VisitFuzzHintDecl(PParser.FuzzHintDeclContext context)
+        {
+            var name = context.name.GetText();
+            var hint = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, hint);
+            foreach (var body in context.hintBody())
+            {
+                if (body.funDecl() != null)
+                {
+                    Visit(body.funDecl());
+                }
+            }
+            return hint;
+        }
+
+        public override object VisitExactHintDecl(PParser.ExactHintDeclContext context)
+        {
+            var name = context.name.GetText();
+            var hint = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, hint);
+            foreach (var body in context.hintBody())
+            {
+                if (body.funDecl() != null)
+                {
+                    Visit(body.funDecl());
+                }
+            }
+            return hint;
+        }
+
+        public override object VisitIgnoreHintDecl(PParser.IgnoreHintDeclContext context)
+        {
+            var name = context.name.GetText();
+            var hint = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, hint);
+            foreach (var body in context.hintBody())
+            {
+                if (body.funDecl() != null)
+                {
+                    Visit(body.funDecl());
+                }
+            }
+            return hint;
+        }
+
         #region Events
 
         public override object VisitEventDecl(PParser.EventDeclContext context)

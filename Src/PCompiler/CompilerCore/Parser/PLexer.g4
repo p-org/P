@@ -36,6 +36,7 @@ EXIT      : 'exit' ;
 FOREACH   : 'foreach';
 FORMAT	  : 'format' ;
 FUN       : 'fun' ;
+AT        : '@';
 GOTO      : 'goto' ;
 HALT      : 'halt' ;
 HOT       : 'hot' ;
@@ -62,6 +63,9 @@ VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+INDEX     : 'indexof';
+HINT      : 'hint';
+EXACT     : 'exact';
 
 // module-system-specific keywords
 

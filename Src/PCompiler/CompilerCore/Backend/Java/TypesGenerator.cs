@@ -33,11 +33,16 @@ namespace Plang.Compiler.Backend.Java
         {
         }
 
+        protected override void GenerateCodeImpl()
+        {
+            GenerateCodeImplWrapper();
+        }
+
         /// <summary>
         /// Generates Java code for a given compilation job's user-defined types like enums
         /// and tuples.
         /// </summary>
-        protected override void GenerateCodeImpl()
+        protected void GenerateCodeImplWrapper(bool pinfer = false)
         {
             WriteLine($"public class {Constants.TypesNamespaceName} {{");
 
@@ -51,7 +56,6 @@ namespace Plang.Compiler.Backend.Java
                 }
                 WriteLine();
             }
-
             var tuples = AllTuples(GlobalScope);
             if (tuples.Any())
             {
@@ -59,7 +63,7 @@ namespace Plang.Compiler.Backend.Java
                 WriteLine();
                 foreach (var t in tuples)
                 {
-                    WriteNamedTupleDecl(t);
+                    WriteNamedTupleDecl(t, pinfer);
                 }
                 WriteLine();
             }
@@ -79,12 +83,26 @@ namespace Plang.Compiler.Backend.Java
 
             WriteLine("private final int value;");
             WriteLine($"{e.Name}(int i) {{ value = i; }}");
+            if (Constants.PInferMode)
+            {
+                WriteLine($"public int getValue() {{ return value; }}");
+                WriteLine($"public static {e.Name} from(int i) {{");
+                WriteLine("switch (i) {");
+                foreach (var param in e.Values)
+                {
+                    WriteLine($"case {param.Value}: return {param.Name};");
+                }
+                WriteLine($"default: throw new IllegalArgumentException(\"Invalid enum value \" + i + \" for ${e.Name}\");");
+                WriteLine("}");
+                WriteLine("}");
+                WriteLine($"public static {e.Name} from(Object x) {{ return (x instanceof {e.Name}) ? ({e.Name}) x : {e.Name}.from((int) x); }}");
+            }
 
             WriteLine("}");
         }
 
 
-        private void WriteNamedTupleDecl(NamedTupleType t)
+        private void WriteNamedTupleDecl(NamedTupleType t, bool pinfer = false)
         {
             // This is a sequence of <type, field name> pairs.
             var fields =
@@ -115,10 +133,10 @@ namespace Plang.Compiler.Backend.Java
             WriteNamedTupleFields(fields);
             WriteLine();
 
-            WriteNamedTupleConstructors(tname, fields);
+            WriteNamedTupleConstructors(tname, fields, pinfer);
             WriteLine();
 
-            WriteNamedTupleEqualityMethods(tname, fields);
+            WriteNamedTupleEqualityMethods(tname, fields, pinfer);
             WriteLine();
 
             WriteNamedTupleToString(tname, fields);
@@ -137,14 +155,20 @@ namespace Plang.Compiler.Backend.Java
             }
         }
 
-        private void WriteNamedTupleConstructors(string tname, List<(TypeManager.JType, string)> fields)
+        private void WriteNamedTupleConstructors(string tname, List<(TypeManager.JType, string)> fields, bool pinfer = false)
         {
             // Write the default constructor.
             WriteLine($"public {tname}() {{");
             foreach (var (jtype, fieldName) in fields)
             {
-                WriteLine($"this.{fieldName} = {jtype.DefaultValue};");
-
+                if (jtype is TypeManager.JType.JEvent)
+                {
+                    WriteLine($"this.{fieldName} = null;");
+                }
+                else
+                {
+                    WriteLine($"this.{fieldName} = {jtype.DefaultValue};");
+                }
             }
             WriteLine($"}}");
             WriteLine();
@@ -163,6 +187,18 @@ namespace Plang.Compiler.Backend.Java
             WriteLine($"}}");
             WriteLine();
 
+            if (pinfer)
+            {
+                // from JSONObject
+                WriteLine($"public {tname}(JSONObject json) {{");
+                foreach (var (ty, fieldName) in fields)
+                {
+                    // WriteLine($"this.{fieldName} = new {ty.ReferenceTypeName}(json.getJSONObject(\"{fieldName}\"));");
+                    WriteLine($"this.{fieldName} = {ty.GenerateFromJSON("json", fieldName)};");
+                }
+                WriteLine("}");
+            }
+
             // Write the copy constructor for cloning.
             WriteLine($"public {tname} deepClone() {{");
             Write($"return new {tname}(");
@@ -176,7 +212,7 @@ namespace Plang.Compiler.Backend.Java
             WriteLine();
         }
 
-        private void WriteNamedTupleEqualityMethods(string tname, List<(TypeManager.JType, string)> fields)
+        private void WriteNamedTupleEqualityMethods(string tname, List<(TypeManager.JType, string)> fields, bool pinfer = false)
         {
             // .equals() implementation: this simply defers to deepEquals() but explicitly overriding it is useful
             // for calling assertEquals() in unit tests, for example.
@@ -206,7 +242,7 @@ namespace Plang.Compiler.Backend.Java
             {
                 Write(" && ");
                 WriteLine(jType.IsPrimitive
-                    ? $"this.{fieldName} == other.{fieldName}"
+                    ? $"Objects.equals(this.{fieldName}, other.{fieldName})"
                     : $"{Constants.PrtDeepEqualsMethodName}(this.{fieldName}, other.{fieldName})");
             }
             WriteLine(");");

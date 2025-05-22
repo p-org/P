@@ -5,7 +5,9 @@ using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Plang.Compiler.Backend;
+using Plang.Compiler.Backend.PInfer;
 using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
 namespace Plang.Compiler
 {
@@ -59,6 +61,11 @@ namespace Plang.Compiler
                 job.OutputDirectory = Directory.CreateDirectory(Path.Combine(parentDirectory.FullName, entry.ToString()));
                 job.Output = new DefaultCompilerOutput(job.OutputDirectory);
                 job.Backend = TargetLanguage.GetCodeGenerator(entry);
+                if (entry == CompilerOutput.PInfer)
+                {
+                    PInferDriver.PerformInferAction(job, scope);
+                    continue;
+                }
 
                 job.Output.WriteInfo("----------------------------------------");
                 job.Output.WriteInfo($"Code generation for {entry}...");

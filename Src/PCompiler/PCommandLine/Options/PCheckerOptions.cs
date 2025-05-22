@@ -45,6 +45,12 @@ namespace Plang.Options
             basicGroup.AddArgument("verbose", "v", "Enable verbose log output during exploration", typeof(bool));
             basicGroup.AddArgument("debug", "d", "Enable debugging", typeof(bool)).IsHidden = true;
 
+            var pinferModeGroup = Parser.GetOrCreateGroup("PInfer", "PInfer trace generation mode");
+            pinferModeGroup.AddArgument("pinfer", "pinfer", "Enable trace dumping for PInfer", typeof(bool));
+            pinferModeGroup.AddArgument("trace-folder", "tf", "Output destination of traces for PInfer (default: ./traces)");
+            var eventFilterOpt = pinferModeGroup.AddArgument("events-filter", "ef", "Filter event types for PInfer traces (only effective when --pinfer is enabled)");
+            eventFilterOpt.IsMultiValue = true;
+
             var exploreGroup = Parser.GetOrCreateGroup("explore", "Systematic exploration options");
             exploreGroup.AddArgument("iterations", "i", "Number of schedules to explore", typeof(uint)).IsHidden = true;
             exploreGroup.AddArgument("schedules", "s", "Number of schedules to explore", typeof(uint));
@@ -188,6 +194,15 @@ namespace Plang.Options
                     break;
                 case "verbose":
                     checkerConfiguration.IsVerbose = true;
+                    break;
+                case "pinfer":
+                    checkerConfiguration.PInferMode = true;
+                    break;
+                case "events-filter":
+                    checkerConfiguration.AllowedEvents = [.. ((string[]) option.Value)];
+                    break;
+                case "trace-folder":
+                    checkerConfiguration.TraceFolder = (string)option.Value;
                     break;
                 case "debug":
                     Debug.IsEnabled = true;
@@ -404,6 +419,7 @@ namespace Plang.Options
                             continue;
                         if (fileName.EndsWith("PCheckerCore.dll")
                             || fileName.EndsWith("PCSharpRuntime.dll")
+                            || fileName.EndsWith("PInfer.dll")
                             || fileName.EndsWith($"{pathSep}P.dll")
                             || fileName.EndsWith($"{pathSep}p.dll"))
                             continue;

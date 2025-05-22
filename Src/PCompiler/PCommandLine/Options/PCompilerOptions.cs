@@ -18,9 +18,9 @@ namespace Plang.Options
         /// <summary>
         /// Initializes a new instance of the <see cref="PCompilerOptions"/> class.
         /// </summary>
-        internal PCompilerOptions()
+        internal PCompilerOptions(bool pinferCompiler = false)
         {
-            Parser = new CommandLineArgumentParser("p compile",
+            Parser = new CommandLineArgumentParser(pinferCompiler ? "p infer --compile" : "p compile",
                 "The P compiler compiles all the P files in the project together and generates the executable that can be checked for correctness by the P checker."
                 // + "\n\nCompiler modes :: (default: bugfinding)\n" +
                 // "  --mode bugfinding   : for bug finding through stratified random search\n" +
@@ -37,6 +37,23 @@ namespace Plang.Options
             pfilesGroup.AddArgument("pfiles", "pf", "List of P files to compile").IsMultiValue = true;
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
+
+            if (pinferCompiler) {
+                var pInferGroup = Parser.GetOrCreateGroup("pinfer", "Options for PInfer");
+                pInferGroup.AddArgument("max-term-depth", "td", "Max depth of terms in the predicates");
+                pInferGroup.AddArgument("max-guards-predicates", "max-guards", "Max. number of atomic predicates in guards");
+                pInferGroup.AddArgument("max-filters-predicates", "max-filters", "Max. number of atomic predicates in filters");
+                pInferGroup.AddArgument("hint", "hint", "Name of the hint to compile/run");
+                pInferGroup.AddArgument("verbose", "v", "Print Stderr of SpecMiner", typeof(bool)).IsRequired = false;
+                pInferGroup.AddArgument("pruning-level", "pl", "Pruning level for SpecMiner post-processing (default: 3)", typeof(int)).IsRequired = false;
+                pInferGroup.AddArgument("config-event", "ce", "Name of the event that announce the system setup. This will replace all hints that do not have config event specified");
+                pInferGroup.AddArgument("traces", "t", "Folder that contains aggregated trace files and metadata.json");
+                pInferGroup.AddArgument("hints-only", "hints-only", "Only run existing hints", typeof(bool));
+                pInferGroup.AddArgument("parse-inv", "pi", "Path to the directory containing PInfer parsible file and its header").IsRequired = false;
+                pInferGroup.AddArgument("use-z3", "z3", "Use Z3 for pruning", typeof(bool)).IsRequired = false;
+                // book-keeping, not used
+                pInferGroup.AddArgument("action", "action", "PInfer action :: (compile | run | auto)").IsHidden = true;
+            }
 
             var modes = Parser.AddArgument("mode", "md", "Compilation mode :: (bugfinding, verification, coverage, pobserve, stately). (default: bugfinding)");
             modes.AllowedValues = new List<string> { "bugfinding", "verification", "coverage", "pobserve", "stately" };
@@ -93,7 +110,7 @@ namespace Plang.Options
             return compilerConfiguration;
         }
 
-        private static void FindLocalPProject(List<CommandLineArgument> result)
+        public static void FindLocalPProject(List<CommandLineArgument> result, bool verbose = true)
         {
             foreach (var arg in result)
             {
@@ -101,7 +118,10 @@ namespace Plang.Options
                     return;
             }
 
-            CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
+            if (verbose)
+            {
+                CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
+            }
             var filtered =
                 from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj")
                 let info = new FileInfo(file)
@@ -119,7 +139,10 @@ namespace Plang.Options
                 commandlineArg.Value = files.First();
                 commandlineArg.LongName = "pproj";
                 commandlineArg.ShortName = "pp";
-                CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
+                if (verbose)
+                {
+                    CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
+                }
                 result.Add(commandlineArg);
             }
         }
@@ -183,9 +206,45 @@ namespace Plang.Options
                         case "stately":
                             compilerConfiguration.OutputLanguages.Add(CompilerOutput.Stately);
                             break;
+                        case "pinfer":
+                            // compilerConfiguration.OutputLanguages.Add(CompilerOutput.PInfer);
+                            throw new Exception ($"Deprecated. Use `p infer --compile <args>` instead");
                         default:
                             throw new Exception($"Unexpected mode: '{option.Value}'");
                     }
+                    break;
+                case "max-term-depth":
+                    compilerConfiguration.TermDepth = int.Parse((string)option.Value);
+                    break;
+                case "max-guards-predicates":
+                    compilerConfiguration.MaxGuards = int.Parse((string)option.Value);
+                    break;
+                case "max-filters-predicates":
+                    compilerConfiguration.MaxFilters = int.Parse((string)option.Value);
+                    break;
+                case "pruning-level":
+                    compilerConfiguration.PInferPruningLevel = (int)option.Value;
+                    break;
+                case "hint":
+                    compilerConfiguration.HintName = (string)option.Value;
+                    break;
+                case "hints-only":
+                    compilerConfiguration.HintsOnly = true;
+                    break;
+                case "verbose":
+                    compilerConfiguration.Verbose = true;
+                    break;
+                case "use-z3":
+                    compilerConfiguration.UseZ3 = true;
+                    break;
+                case "config-event":
+                    compilerConfiguration.ConfigEvent = (string)option.Value;
+                    break;
+                case "traces":
+                    compilerConfiguration.TraceFolder = (string) option.Value;
+                    break;
+                case "parse-inv":
+                    compilerConfiguration.InvParseFileDir = (string) option.Value;
                     break;
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;
@@ -205,6 +264,9 @@ namespace Plang.Options
                         }
                     }
                 }
+                    break;
+                case "action":
+                    // handled earlier in PInferOptions
                     break;
                 case "pproj":
                 {
@@ -250,6 +312,14 @@ namespace Plang.Options
                 compilerConfiguration.OutputDirectory = Directory.CreateDirectory("PGenerated");
                 compilerConfiguration.Output = new DefaultCompilerOutput(compilerConfiguration.OutputDirectory);
             }
+
+            // if (compilerConfiguration.OutputLanguages.Contains(CompilerOutput.PInfer))
+            // {
+            //     if (compilerConfiguration.HintName == null)
+            //     {
+            //         Error.CompilerReportAndExit("PInfer compilation/execution requires a hint to be specified via `--hint`.");
+            //     }
+            // }
         }
 
 

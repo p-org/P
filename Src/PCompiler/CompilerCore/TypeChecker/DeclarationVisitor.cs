@@ -602,6 +602,70 @@ namespace Plang.Compiler.TypeChecker
 
         #endregion
 
+        #region Hints
+
+        public Hint processHint(Hint hint, PParser.HintParamContext[] eventList, PParser.HintBodyContext[] hintBodyDecls)
+        {
+            hint.Scope = CurrentScope.MakeChildScope();
+            if (eventList != null)
+            {
+                foreach (var (ctx, i) in eventList.Select((x, i) => (x, i)))
+                {
+                    if (!CurrentScope.Lookup(ctx.eventName.GetText(), out Event e))
+                    {
+                        throw Handler.MissingDeclaration(ctx, "event", ctx.eventName.GetText());
+                    }
+                    hint.Scope.Put(ctx.name.GetText(), ctx.name, VariableRole.Param);
+                    if (hint.Scope.Lookup(ctx.name.GetText(), out Variable v))
+                    {
+                        v.Type = e.PayloadType;
+                    }
+                    hint.Quantified.Add(new Backend.PInfer.PEventVariable(ctx.name.GetText()) { EventDecl = e, Order = i, Type = e.PayloadType });
+                }
+                // process function defs first; other defs will be processed later
+                foreach (var ctx in hintBodyDecls)
+                {
+                    if (ctx.funDecl() != null)
+                    {
+                        Function fun = (Function) Visit(ctx.funDecl());
+                        hint.Scope.Put(fun.Name, ctx.funDecl());
+                        if (fun.Signature.ReturnType.IsAssignableFrom(PrimitiveType.Bool))
+                        {
+                            hint.CustomPredicates.Add(fun);
+                        }
+                        else
+                        {
+                            hint.CustomFunctions.Add(fun);
+                        }
+                    }
+                }
+                return hint;
+            }
+            throw new Exception($"Hint {hint.Name} does not have any hinted events");
+        }
+
+        public override object VisitFuzzHintDecl(PParser.FuzzHintDeclContext context)
+        {
+            var hint = (Hint) nodesToDeclarations.Get(context);
+            hint.UserHint = true;
+            return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
+        }
+
+        public override object VisitExactHintDecl(PParser.ExactHintDeclContext context)
+        {
+            var hint = (Hint) nodesToDeclarations.Get(context);
+            hint.UserHint = true;
+            return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
+        }
+
+        public override object VisitIgnoreHintDecl(PParser.IgnoreHintDeclContext context)
+        {
+            var hint = (Hint) nodesToDeclarations.Get(context);
+            return processHint(hint, context.hintParamList().hintParam(), context.hintBody());
+        }
+
+        #endregion
+
         #region Functions
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)

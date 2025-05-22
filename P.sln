@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CheckerCore", "Src\PChecker
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PTool", "PTool", "{8BAB6184-8545-4E17-8199-86110AC5228F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PInfer", "Src\PInfer\PInfer.csproj", "{3DFC4318-5D40-41A0-B46D-F0896180B45C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,10 @@ Global
 		{37778F65-BDBF-4AEA-BA34-01026A223083}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37778F65-BDBF-4AEA-BA34-01026A223083}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37778F65-BDBF-4AEA-BA34-01026A223083}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DFC4318-5D40-41A0-B46D-F0896180B45C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DFC4318-5D40-41A0-B46D-F0896180B45C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DFC4318-5D40-41A0-B46D-F0896180B45C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DFC4318-5D40-41A0-B46D-F0896180B45C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

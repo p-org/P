@@ -13,8 +13,15 @@ namespace Plang.Compiler.Backend.Java
             var pomPath = Path.Combine(job.OutputDirectory.FullName, Constants.BuildFileName);
 
             // create the pom.xml file
-            var pomTemplate = Constants.pomTemplate;
-            pomTemplate = pomTemplate.Replace("-package-name-",job.PObservePackageName);
+            var pomTemplate = Constants.PomTemplate(Constants.PInferMode);
+            if (Constants.PInferMode)
+            {
+                pomTemplate = pomTemplate.Replace("-package-name-", $"{job.ProjectName}.pinfer");
+            }
+            else
+            {
+                pomTemplate = pomTemplate.Replace("-package-name-", job.PObservePackageName);
+            }
 
             string foreignInclude = "";
             var foreignFiles = job.InputForeignFiles.Where(x => x.EndsWith(".java"));
@@ -49,7 +56,7 @@ namespace Plang.Compiler.Backend.Java
         /// Generates all extracted Java code.  Later, this will also generate FFI stubs if they are
         /// absent.
         /// </summary>
-        public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope scope)
+        public virtual IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope scope)
         {
             GenerateBuildScript(job);
 

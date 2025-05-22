@@ -24,9 +24,19 @@ namespace Plang.Compiler.TypeChecker.Types
             return TypeDefDecl.Type.IsAssignableFrom(otherType);
         }
 
+        public override int GetHashCode()
+        {
+            return $"{OriginalRepresentation}({CanonicalRepresentation})".GetHashCode();
+        }
+
         public override PLanguageType Canonicalize()
         {
             return TypeDefDecl.Type.Canonicalize();
+        }
+
+        public override string ToString()
+        {
+            return $"{TypeDefDecl.Name}({TypeDefDecl.Type.CanonicalRepresentation})";
         }
     }
 }

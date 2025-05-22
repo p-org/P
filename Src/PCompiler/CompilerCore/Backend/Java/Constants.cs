@@ -13,6 +13,12 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal static class Constants
     {
+        internal static bool PInferMode = false;
+        public static void PInferModeOn()
+        {
+            PInferMode = true;
+        }
+
         #region P Java runtime constants
 
         public static readonly string PRTNamespaceName = "com.amazon.pobserve.runtime";
@@ -111,8 +117,8 @@ in the body of each function definition as necessary for your project's business
 
         internal static string BuildFileName => "pom.xml";
 
-        internal static readonly string pomTemplate =
-            @"
+        internal static string PomTemplate(bool pinferMode) {
+            return @$"
 <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
 xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
     <modelVersion>4.0.0</modelVersion>
@@ -124,11 +130,38 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
     <name>-package-name-</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <buildDirectory>${{project.basedir}}/PObserve</buildDirectory>
+        <maven.compiler.source>{(pinferMode ? 22 : 11)}</maven.compiler.source>
+        <maven.compiler.target>{(pinferMode ? 22 : 11)}</maven.compiler.target>
+        <buildDirectory>${{project.basedir}}/${(pinferMode ? "pinfer" : "pobserve")}</buildDirectory>
     </properties>
     <packaging>jar</packaging>
+
+    <dependencies>
+        {(pinferMode ? @"<dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>2.0.51</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-cli/commons-cli -->
+        <dependency>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+            <version>1.8.0</version>
+        </dependency>" : "")}
+        <dependency>
+            <groupId>p.runtime</groupId>
+            <artifactId>PJavaRuntime</artifactId>
+            <version>1.0-SNAPSHOT</version>
+
+            <!-- Do not transitively bundle log4j as whoever uses this jar will also depend on it. -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -155,6 +188,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         <sourceDirectory>.</sourceDirectory>
     </build>
 </project>";
+        }
 
         internal static readonly string pomForeignTemplate =
             @"
@@ -211,9 +245,9 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         internal static readonly string PValueClass = "com.amazon.pobserve.runtime.values.PValue";
 
         /// <summary>
-        /// The fully-qualified class name of the Java P runtime's PEvent class.
+        /// The fully-qualified class name of the Java P runtime's Event class.
         /// </summary>
-        internal static readonly string EventsClass = "com.amazon.pobserve.runtime.events.PEvent";
+        internal static readonly string EventsClass = "com.amazon.pobserve.runtime.events.Event";
 
         #endregion
 

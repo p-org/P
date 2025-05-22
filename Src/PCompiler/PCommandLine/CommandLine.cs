@@ -1,11 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using PChecker;
 using PChecker.IO.Debugging;
 using PChecker.Testing;
 using Plang.Compiler;
 using Plang.Options;
+using Plang.PInfer;
+using Plang.Compiler.Backend;
 
 namespace Plang
 {
@@ -42,6 +45,9 @@ namespace Plang
                 case "check":
                     RunChecker(args.Skip(1).ToArray());
                     break;
+                case "infer":
+                    RunPInfer(args.Skip(1).ToArray());
+                    break;
                 case   "version":
                 case  "-v":
                 case  "-version":
@@ -54,7 +60,7 @@ namespace Plang
                     PrintCommandHelp();
                     break;
                 default:
-                    CommandLineOutput.WriteError($"Expected (compile | check) as the command input but received `{args[0]}`");
+                    CommandLineOutput.WriteError($"Expected (compile | check | infer) as the command input but received `{args[0]}`");
                     PrintCommandHelp();
                     break;
             }
@@ -134,6 +140,14 @@ namespace Plang
         /// </summary>
         private static void Shutdown()
         {
+            // DirectoryInfo dir = new(".");
+            // foreach (var f in dir.GetFiles())
+            // {
+            //     if (f.Name.EndsWith(".inv.gz"))
+            //     {
+            //         f.Delete();
+            //     }
+            // }
             CommandLineOutput.WriteInfo("~~ [PTool]: Thanks for using P! ~~");
         }
 
@@ -142,6 +156,183 @@ namespace Plang
             var configuration = new PCompilerOptions().Parse(args);
             ICompiler compiler = new Compiler.Compiler();
             compiler.Compile(configuration);
+        }
+
+        #nullable enable
+        private static object? ParseString(Type type, string v)
+        {
+            object? result = null;
+            if (type == typeof(string))
+            {
+               result = v; 
+            }
+            else if (type == typeof(int))
+            {
+                if (int.TryParse(v, out var x))
+                {
+                    result = x;
+                }
+            }
+            else if (type == typeof(int[]))
+            {
+                List<int>? x = [];
+                foreach (var s in v.Split(" "))
+                {
+                    object? r = ParseString(typeof(int), s);
+                    if (r != null)
+                    {
+                        x.Add((int) r);
+                    }
+                    else
+                    {
+                        x = null;
+                        break;
+                    }
+                }
+                result = x;
+            }
+            else if (type == typeof(string[]))
+            {
+                List<string>? x = [];
+                foreach (var s in v.Split(" "))
+                {
+                    object? r = ParseString(typeof(string), s);
+                    if (r != null)
+                    {
+                        x.Add((string) r);
+                    }
+                    else
+                    {
+                        x = null;
+                        break;
+                    }
+                }
+                result = x;
+            }
+            else if (type == typeof(bool))
+            {
+                if (v.ToLower() == "y")
+                {
+                    result = true;
+                }
+                else if (v.ToLower() == "n")
+                {
+                    result = false;
+                }
+                else
+                {
+                    result = null;
+                }
+            }
+            return result;
+        }
+        #nullable disable
+
+        private static object GetInputOrDefault(int step, string prompt, Type type, object defaultValue, Func<object, bool> validate, bool allowDefault = true)
+        {
+            object r = null;
+            do {
+                Console.Write($"[{step}] " + prompt + ": ");
+                var line = Console.ReadLine();
+                if (String.IsNullOrEmpty(line))
+                {
+                    if (allowDefault)
+                    {
+                        return defaultValue;
+                    }
+                }
+                else
+                {
+                    r = ParseString(type, line);
+                }
+                if (r == null || !validate(r))
+                {
+                   CommandLineOutput.WriteWarning($"`{line}` is not a valid input. Please try again."); 
+                }
+            } while (r == null);
+            return r;
+        }
+
+        public static bool DoPInferAction(PInferMode mode, string[] args)
+        {
+            if (!(mode == PInferMode.Compile || mode == PInferMode.Auto || mode == PInferMode.RunHint || mode == PInferMode.Pruning))
+            {
+                return false;
+            }
+            HashSet<string> pinferModeOptions = [
+                "--interactive", "-i", "--compile", "--auto"
+            ];
+            CompilerConfiguration compileConfig = new PCompilerOptions(true).Parse(args.Where(x => {
+                return !pinferModeOptions.Contains(x);
+            }).ToArray());
+            ICompiler compiler = new Compiler.Compiler();
+            compileConfig.OutputLanguages = [CompilerOutput.PInfer];
+            switch (mode)
+            {
+                case PInferMode.Compile: compileConfig.PInferAction = PInferAction.Compile; break;
+                case PInferMode.RunHint: compileConfig.PInferAction = PInferAction.RunHint; break;
+                case PInferMode.Auto:    compileConfig.PInferAction = PInferAction.Auto; break;
+                case PInferMode.Pruning: compileConfig.PInferAction = PInferAction.Pruning; break;
+            }
+            // if ((mode == PInferMode.Compile || mode == PInferMode.RunHint) && compileConfig.HintName == null)
+            // {
+            //     Error.ReportAndExit("[Error] `compile` and `run` requires a hint name");
+            // }
+            if ((mode == PInferMode.Auto || mode == PInferMode.RunHint) && compileConfig.TraceFolder == null)
+            {
+                Error.ReportAndExit("[Error] `auto` and `run` requires an aggregated trace folder");
+            }
+            compiler.Compile(compileConfig);
+            return true;
+        }
+
+        public static void RunPInfer(string[] args)
+        {
+            var configuration = new PInferOptions().Parse(args);
+            if (configuration.Mode == PInferMode.Interactive)
+            {
+                // Interactive mode
+                Console.WriteLine("============PInfer Interactive Miner Setup============");
+                PInferOptions.WritePredicates(configuration);
+                int step = 1;
+                configuration.NumForallQuantifiers = (int) GetInputOrDefault(step++, "Number of preceding forall quantifiers (default: # of quantified events)", typeof(int), -1, x => ((int) x) >= 0);
+                configuration.NumGuardPredicates = (int) GetInputOrDefault(step++, "Number of atomic predicates in the guard (default: 0)", typeof(int), 0, x => ((int) x) >= 0);
+                int nFilters = 0;
+                if (configuration.NumForallQuantifiers >= 0)
+                {
+                    nFilters = (int) GetInputOrDefault(step++, "Number of atomic predicates in the filter (default: 0)", typeof(int), 0, x => ((int) x) >= 0);
+                }
+                configuration.NumFilterPredicates = nFilters;
+                // configuration.TracePaths = ((List<string>) GetInputOrDefault(step++, "Paths to trace files, separated by space (must provide at least 1 trace)", typeof(string[]), "", false)).ToArray();
+                configuration.InvArity = (int) GetInputOrDefault(step++, "Arity of candidate properties (default: 2)", typeof(int), 2, x => ((int) x) >= 0);
+                int pruningLevel = (int) GetInputOrDefault(step++, "Level of pruning [0-3] (default: 3, see `p infer -h` for more details)", typeof(int), 3, x => ((int) x) >= 0 && ((int) x) <= 3);
+                configuration.PruningLevel = pruningLevel;
+                bool hintGuards = (bool) GetInputOrDefault(step, "Include manual hints for guards? y/[n]", typeof(bool), false, x => true);
+                int[] mustIncludeGuards = [];
+                int[] mustIncludeFilters = [];
+                List<int> defaultList = [];
+                if (hintGuards) 
+                {
+                    // PInferOptions.WritePredicates(configuration);
+                    mustIncludeGuards = ((List<int>) GetInputOrDefault(step, "Enter predicate IDs, separated by spaces", typeof(int[]), defaultList, xs => ((List<int>) xs).All(x => x >= 0))).ToArray();
+                }
+                configuration.MustIncludeGuard = mustIncludeGuards;
+                step += 1;
+                bool hintFilters = (bool) GetInputOrDefault(step, "Include manual hints for filters? y/[n]", typeof(bool), false, x => true);
+                if (hintFilters)
+                {
+                    // PInferOptions.WritePredicates(configuration);
+                    mustIncludeFilters = ((List<int>) GetInputOrDefault(step, "Enter predicate IDs, separated by spaces", typeof(int[]), defaultList, xs => ((List<int>) xs).All(x => x >= 0))).ToArray();
+                }
+                configuration.MustIncludeFilter = mustIncludeFilters;
+                step += 1;
+                configuration.SkipTrivialCombinations = (bool) GetInputOrDefault(step++, "Skip trivial guard-filter-terms combinations? [y]/n", typeof(bool), true, x => true);
+            }
+            // fall-through
+            if (!DoPInferAction(configuration.Mode, args))
+            {
+                PInfer.PInferInvoke.invokeMain(configuration);
+            }
         }
     }
 }

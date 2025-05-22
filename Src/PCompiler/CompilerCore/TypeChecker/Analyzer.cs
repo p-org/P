@@ -32,6 +32,13 @@ namespace Plang.Compiler.TypeChecker
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
 
+            // Step 3.1: Fill Hints
+            var allHints = globalScope.Hints;
+            foreach (Hint h in allHints)
+            {
+                HintProcessor.ParsePredicateExprs(config, h);
+            }
+
             // Step 2: Validate no static handlers
             foreach (var machine in globalScope.Machines)
             {

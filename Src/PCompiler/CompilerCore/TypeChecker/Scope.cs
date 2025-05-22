@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -5,6 +6,7 @@ using System.Linq;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 
@@ -32,6 +34,9 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, NamedTupleType> tuples = new Dictionary<string, NamedTupleType>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
+        private readonly IDictionary<string, Hint> hints = new Dictionary<string, Hint>();
+        private readonly IDictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>> allowedBinOps = new Dictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>>();
+        private readonly IDictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>> allowedBinOpsByKind = new Dictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>>();
 
         private Scope(ICompilerConfiguration config, Scope parent = null)
         {
@@ -80,6 +85,7 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
+        public IEnumerable<Hint> Hints => hints.Values;
 
         public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
@@ -134,6 +140,11 @@ namespace Plang.Compiler.TypeChecker
         #endregion Add Tuple Declaration
 
         #region Overloaded getters
+
+        public bool Get(string name, out Hint hint)
+        {
+            return hints.TryGetValue(name, out hint);
+        }
 
         public bool Get(string name, out EnumElem tree)
         {
@@ -451,6 +462,34 @@ namespace Plang.Compiler.TypeChecker
 
         #region Conflict-checking putters
 
+        public Hint Put(string name, PParser.FuzzHintDeclContext tree)
+        {
+            var hint = new Hint(name, false, tree);
+            CheckConflicts(hint, Namespace(hints));
+            hint.UserHint = true;
+            hints.Add(name, hint);
+            return hint;
+        }
+
+        public Hint Put(string name, PParser.ExactHintDeclContext tree)
+        {
+            var hint = new Hint(name, true, tree);
+            CheckConflicts(hint, Namespace(hints));
+            hint.UserHint = true;
+            hints.Add(name, hint);
+            return hint;
+        }
+
+        public Hint Put(string name, PParser.IgnoreHintDeclContext tree)
+        {
+            var hint = new Hint(name, false, tree);
+            CheckConflicts(hint, Namespace(hints));
+            hint.UserHint = false;
+            hint.Ignore = true;
+            hints.Add(name, hint);
+            return hint;
+        }
+
         public TypeDef Put(string name, PParser.PTypeDefContext tree)
         {
             var typedef = new TypeDef(name, tree);
@@ -631,6 +670,37 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion Conflict-checking putters
+
+        public void AddAllowedBinOp(BinOpType op, PLanguageType lhs, PLanguageType rhs, PLanguageType ret)
+        {
+            if (lhs == PrimitiveType.Any || rhs == PrimitiveType.Any)
+            {
+                // dont go too general
+                return;
+            }
+            if (Parent == null)
+            {
+                if (!allowedBinOps.TryGetValue(op, out var table))
+                {
+                    table = [];
+                    allowedBinOps[op] = table;
+                }
+                table.Add((lhs, rhs, ret));
+                if (!allowedBinOpsByKind.TryGetValue(op.GetKind(), out var kindTable))
+                {
+                    kindTable = [];
+                    allowedBinOpsByKind[op.GetKind()] = kindTable;
+                }
+                kindTable.Add((lhs, rhs));
+            }
+            else
+            {
+                Parent.AddAllowedBinOp(op, lhs, rhs, ret);
+            }
+        }
+
+        public IDictionary<BinOpType, HashSet<(PLanguageType, PLanguageType, PLanguageType)>> AllowedBinOps => Parent == null ? allowedBinOps : Parent.AllowedBinOps;
+        public IDictionary<BinOpKind, HashSet<(PLanguageType, PLanguageType)>> AllowedBinOpsByKind => Parent == null ? allowedBinOpsByKind : Parent.AllowedBinOpsByKind;
 
         #region Conflict API
 

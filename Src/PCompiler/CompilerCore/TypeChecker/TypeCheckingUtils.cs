@@ -51,7 +51,7 @@ namespace Plang.Compiler.TypeChecker
             }
         }
 
-        public static IEnumerable<IPExpr> VisitRvalueList(PParser.RvalueListContext context, ExprVisitor visitor)
+        public static IEnumerable<IPExpr> VisitRvalueList(PParser.RvalueListContext context, PParserBaseVisitor<IPExpr> visitor)
         {
             return context?.rvalue().Select(visitor.Visit) ?? Enumerable.Empty<IPExpr>();
         }

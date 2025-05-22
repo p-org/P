@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -30,6 +32,50 @@ namespace Plang.Compiler.TypeChecker
             {
                 FunctionBodyVisitor.PopulateMethod(config, machineFunction);
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
+            }
+
+            // Step 3b: for PVerifier, fill in body of Invariants, Axioms, Init conditions and Pure functions
+            foreach (var inv in globalScope.Invariants)
+            {
+                var ctx = (PParser.InvariantDeclContext) inv.SourceLocation;
+                var temporaryFunction = new Function(inv.Name, inv.SourceLocation)
+                {
+                    Scope = globalScope
+                };
+                inv.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler);
+            }
+
+            foreach (var axiom in globalScope.Axioms)
+            {
+                var ctx = (PParser.AxiomDeclContext) axiom.SourceLocation;
+                var temporaryFunction = new Function(axiom.Name, axiom.SourceLocation)
+                {
+                    Scope = globalScope
+                };
+                axiom.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler);
+            }
+
+            foreach (var initCond in globalScope.AssumeOnStarts)
+            {
+                var ctx = (PParser.AssumeOnStartDeclContext)initCond.SourceLocation;
+                var temporaryFunction = new Function(initCond.Name, initCond.SourceLocation)
+                {
+                    Scope = globalScope
+                };
+                initCond.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler); 
+            }
+
+            foreach (var pure in globalScope.Pures)
+            {
+                var temporaryFunction = new Function(pure.Name, pure.SourceLocation)
+                {
+                    Scope = pure.Scope
+                };
+                var context = (PParser.PureDeclContext) pure.SourceLocation;
+                if (context.body is not null)
+                {
+                    pure.Body = PopulateExpr(temporaryFunction, context.body, pure.Signature.ReturnType, handler);
+                }
             }
 
             // Step 2b: Validate no static handlers
@@ -120,6 +166,17 @@ namespace Plang.Compiler.TypeChecker
             return globalScope;
         }
 
+        private static IPExpr PopulateExpr(Function func, ParserRuleContext ctx, PLanguageType type, ITranslationErrorHandler handler)
+        {
+            var exprVisitor = new ExprVisitor(func, handler);
+            var body = exprVisitor.Visit(ctx);
+            if (!type.IsSameTypeAs(body.Type))
+            {
+                throw handler.TypeMismatch(ctx, body.Type, type);
+            }
+            return body;
+        }
+
         private static Propagation<T> CreatePropagation<T>(Func<Function, T> getter, Action<Function, T> setter,
             T value)
         {
@@ -179,6 +236,12 @@ namespace Plang.Compiler.TypeChecker
             foreach (var programUnit in programUnits)
             {
                 DeclarationVisitor.PopulateDeclarations(config.Handler, globalScope, programUnit, nodesToDeclarations);
+            }
+
+            // Step 3: fill in proof blocks
+            foreach (var proofBlock in globalScope.ProofBlocks)
+            {
+                ProofBlockVisitor.PopulateProofBlocks(config.Handler, globalScope, proofBlock.SourceLocation, nodesToDeclarations);
             }
             
             return globalScope;

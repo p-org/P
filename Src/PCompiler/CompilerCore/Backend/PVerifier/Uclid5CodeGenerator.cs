@@ -55,7 +55,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
     public void Compile(ICompilerConfiguration job)
     {
-        List<string> failMessages = [];
+        HashSet<string> failMessages = [];
         HashSet<Invariant> succeededInv = [];
         HashSet<Invariant> failedInv = [];
         var missingDefault = true;
@@ -98,7 +98,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
                             AggregateResults(job, f.Key, currUndefs.ToList(), currFails.ToList());
                         succeededInv.UnionWith(invs);
                         failedInv.UnionWith(failed);
-                        failMessages.AddRange(msgs);
+                        failMessages.UnionWith(msgs);
                     }
                     else if (tasks.Count < parallelism)
                     {
@@ -136,7 +136,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
                     var (invs, failed, msgs) = AggregateResults(job, r.Key, currUndefs.ToList(), currFails.ToList());
                     succeededInv.UnionWith(invs);
                     failedInv.UnionWith(failed);
-                    failMessages.AddRange(msgs.Where(x => !failMessages.Contains(x)));
+                    failMessages.UnionWith(msgs);
                     // cache the results only when no invariant times out
                     if (currUndefs.Count == 0)
                     {

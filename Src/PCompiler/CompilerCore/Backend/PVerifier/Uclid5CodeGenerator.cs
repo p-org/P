@@ -55,7 +55,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
     public void Compile(ICompilerConfiguration job)
     {
-        List<string> failMessages = [];
+        HashSet<string> failMessages = [];
         HashSet<Invariant> succeededInv = [];
         HashSet<Invariant> failedInv = [];
         var missingDefault = true;
@@ -98,7 +98,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
                             AggregateResults(job, f.Key, currUndefs.ToList(), currFails.ToList());
                         succeededInv.UnionWith(invs);
                         failedInv.UnionWith(failed);
-                        failMessages.AddRange(msgs);
+                        failMessages.UnionWith(msgs);
                     }
                     else if (tasks.Count < parallelism)
                     {
@@ -136,7 +136,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
                     var (invs, failed, msgs) = AggregateResults(job, r.Key, currUndefs.ToList(), currFails.ToList());
                     succeededInv.UnionWith(invs);
                     failedInv.UnionWith(failed);
-                    failMessages.AddRange(msgs);
+                    failMessages.UnionWith(msgs);
                     // cache the results only when no invariant times out
                     if (currUndefs.Count == 0)
                     {
@@ -151,7 +151,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
                     }
 
                     // find someone that hasn't run and isn't running and run it
-                        var newTask = checklist.FirstOrDefault(x =>
+                    var newTask = checklist.FirstOrDefault(x =>
                         x.Value == false && !tasks.ContainsKey(x.Key) && !newTasks.ContainsKey(x.Key)).Key;
                     if (newTask == null) continue;
                     var args = new[] { "-M", newTask };
@@ -258,17 +258,31 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 var line = query[int.Parse(feedback.Second.ToString()) - 1];
                 var step = feedback.First.ToString().Contains("[Step #0]") ? "(base case)" : "";
                 var matchName = Regex.Match(line, @"// Failed to verify invariant (.*) at (.*)");
-                if (matchName.Success) {
+                if (matchName.Success)
+                {
                     var invName = matchName.Groups[1].Value.Replace("_PGROUP_", ": ");
                     failedInv.Add(invName);
                     failMessages.Add($"{reason} {line.Split("// ").Last()} {step}");
                 }
 
-                var matchDefault = Regex.Match(line, 
+                var matchDefault = Regex.Match(line,
                     @"(// Failed to verify that (.*) never receives (.*) in (.*)|// Failed to ensure unique action IDs at (.*)|// Failed to ensure increasing action IDs at (.*)|// Failed to ensure that received is a subset of sent at (.*))");
-                if (matchDefault.Success) {
+                if (matchDefault.Success)
+                {
                     failedInv.Add("default");
                     failMessages.Add($"{reason} {line.Split("// ").Last()}");
+                }
+
+                var matchLoopInvs = Regex.Match(line,
+                    @"// Failed to verify loop invariant at (.*)");
+                if (matchLoopInvs.Success)
+                {
+                    var msg = $"{reason} {line.Split("// ").Last()}";
+                    if (!failMessages.Contains(msg))
+                    {
+                        failMessages.Add(msg);
+                    }
+                    failedInv.Add("loop invariant @ " + matchLoopInvs.Groups[1].Value);
                 }
             }
         }

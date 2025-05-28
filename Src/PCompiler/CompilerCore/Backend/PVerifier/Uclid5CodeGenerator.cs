@@ -42,6 +42,17 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
     public bool HasCompilationStage => true;
 
+    private byte[] ComputeCheckSum(FileStream stream)
+    {
+        string file_content = new StreamReader(stream).ReadToEnd();
+        // ignore `set_solver_option` statements
+        file_content = Regex.Replace(file_content, @"set_solver_option\((.*)\);", "", RegexOptions.Multiline);
+        using (var md5 = MD5.Create())
+        {
+            return md5.ComputeHash(Encoding.UTF8.GetBytes(file_content));
+        }
+    }
+
     public void Compile(ICompilerConfiguration job)
     {
         List<string> failMessages = [];
@@ -51,7 +62,6 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
         // Open database (or create if doesn't exist)
         var db = new LiteDatabase(Path.Join(job.OutputDirectory.FullName, ".verifier-cache.db"));
-        var md5 = MD5.Create();
         // Get a collection (or create, if doesn't exist)
         var qCollection = db.GetCollection<PVerifierCache>("qCollection");
 
@@ -77,7 +87,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
             {
                 using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, f.Key)))
                 {
-                    var checksum = md5.ComputeHash(stream);
+                    var checksum = ComputeCheckSum(stream);
                     var hit = qCollection.FindOne(x => x.Checksum == checksum);
                     if (hit != null)
                     {
@@ -121,26 +131,27 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
                     r.Value.Kill();
 
-                    // add stdout to the database along with the corresponding checksum of the uclid query
-                    using (var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, r.Key)))
-                    {
-                        var newResult = new PVerifierCache
-                        {
-                            Reply = stdout,
-                            Checksum = md5.ComputeHash(stream)
-                        };
-                        qCollection.Insert(newResult);
-                    }
-
                     var currUndefs = Regex.Matches(stdout, @"UNDEF -> (.*), line (\d+)");
                     var currFails = Regex.Matches(stdout, @"FAILED -> (.*), line (\d+)");
                     var (invs, failed, msgs) = AggregateResults(job, r.Key, currUndefs.ToList(), currFails.ToList());
                     succeededInv.UnionWith(invs);
                     failedInv.UnionWith(failed);
                     failMessages.AddRange(msgs);
+                    // cache the results only when no invariant times out
+                    if (currUndefs.Count == 0)
+                    {
+                        // add stdout to the database along with the corresponding checksum of the uclid query
+                        using var stream = File.OpenRead(Path.Join(job.OutputDirectory.FullName, r.Key));
+                        var newResult = new PVerifierCache
+                        {
+                            Reply = stdout,
+                            Checksum = ComputeCheckSum(stream)
+                        };
+                        qCollection.Insert(newResult);
+                    }
 
                     // find someone that hasn't run and isn't running and run it
-                    var newTask = checklist.FirstOrDefault(x =>
+                        var newTask = checklist.FirstOrDefault(x =>
                         x.Value == false && !tasks.ContainsKey(x.Key) && !newTasks.ContainsKey(x.Key)).Key;
                     if (newTask == null) continue;
                     var args = new[] { "-M", newTask };
@@ -162,18 +173,20 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
             Console.WriteLine();
         }
-        
+
         succeededInv.ExceptWith(failedInv);
         job.Output.WriteInfo($"\n🎉 Verified {succeededInv.Count} invariants!");
         foreach (var inv in succeededInv)
         {
-            if (!inv.IsDefault) {
+            if (!inv.IsDefault)
+            {
                 job.Output.WriteInfo($"✅ {inv.Name.Replace("_PGROUP_", ": ")}");
             }
-            else {
+            else
+            {
                 job.Output.WriteInfo($"✅ default P proof obligations");
             }
-            
+
         }
 
         MarkProvenInvariants(succeededInv);
@@ -188,7 +201,6 @@ public class PVerifierCodeGenerator : ICodeGenerator
         }
 
         db.Dispose();
-        md5.Dispose();
     }
 
     private void MarkProvenInvariants(HashSet<Invariant> succeededInv)

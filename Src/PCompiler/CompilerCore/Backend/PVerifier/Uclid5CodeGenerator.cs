@@ -193,7 +193,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
         ShowRemainings(job, failedInv, missingDefault);
         if (failMessages.Count > 0)
         {
-            job.Output.WriteInfo($"❌ Failed to verify {failMessages.Count} properties!");
+            job.Output.WriteInfo($"❌ Failed to verify {failMessages.Count} {(failMessages.Count > 1 ? "properties" : "property")}!");
             foreach (var msg in failMessages)
             {
                 job.Output.WriteError(msg);
@@ -278,11 +278,20 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 if (matchLoopInvs.Success)
                 {
                     var msg = $"{reason} {line.Split("// ").Last()}";
-                    if (!failMessages.Contains(msg))
-                    {
-                        failMessages.Add(msg);
-                    }
+                    failMessages.Add(msg);
                     failedInv.Add("loop invariant @ " + matchLoopInvs.Groups[1].Value);
+                }
+
+                var assertFails = Regex.Match(line,
+                    @"// Failed to verify assertion at (.*)");
+                if (assertFails.Success)
+                {
+                    var parts = line.Split("// ");
+                    var assertStmt = parts[0].Trim().Replace(";", "");
+                    var locInfo = assertFails.Groups[1].Value;
+                    var msg = $"{reason} {assertStmt} at {locInfo} failed";
+                    failMessages.Add(msg);
+                    failedInv.Add($"{assertStmt} @ " + locInfo);
                 }
             }
         }

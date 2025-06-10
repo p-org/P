@@ -229,6 +229,8 @@ namespace Plang.Compiler.Backend.PInfer
             Console.WriteLine($"Generated {numTerms} terms and {numPredicates} predicates");
             NumTerms = numTerms;
             NumPredicates = numPredicates;
+            var pJavaRtDependencies = PreambleConstants.PObserveDeps;
+            var outDepsFiles = pJavaRtDependencies.SelectMany(x => new PJavaRtDependenciesGenerator(job, x, PreambleConstants.ReadTemplate(x)).GenerateCode(javaCtx, globalScope));
             return compiledJavaSrc.Concat(new TraceReaderGenerator(job, quantifiedEvents.Concat([configEvent])).GenerateCode(javaCtx, globalScope))
                                 .Concat(templateCodegen.GenerateCode(javaCtx, globalScope))
                                 .Concat(new DriverGenerator(job, templateCodegen.TemplateNames).GenerateCode(javaCtx, globalScope))
@@ -241,6 +243,7 @@ namespace Plang.Compiler.Backend.PInfer
                                 .Concat(new TermEnumeratorGenerator(job).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TemplateInstantiatorGenerator(job, quantifiedEvents.Count).GenerateCode(javaCtx, globalScope))
                                 .Concat(new TraceIndexGenerator(job).GenerateCode(javaCtx, globalScope))
+                                .Concat(outDepsFiles)
                                 .Concat([terms, predicates]);
         }
 

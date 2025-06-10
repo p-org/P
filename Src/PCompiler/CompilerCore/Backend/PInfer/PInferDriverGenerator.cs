@@ -20,13 +20,13 @@ namespace Plang.Compiler.Backend.PInfer
             foreach (string name in TemplateNames)
             {
                 insert += @$"case ""{name}"":
-                for (List<{Constants.EventsClass}<?>> ts: eventsTrace) {{
+                for (List<{Constants.EventsClass()}<?>> ts: eventsTrace) {{
                     Templates.{name}.execute(indices, ts, guards, filters, forallTerms, existsTerms);
                 }}
                 break;
                 ";
             }
-            WriteLine(template.Replace("%TEMPLATE%", insert).Replace("%EVENT_BASE%", $"{Constants.EventsClass}<?>").Replace("%PROJECT_NAME%", Job.ProjectName));
+            WriteLine(template.Replace("%TEMPLATE%", insert).Replace("%EVENT_BASE%", $"{Constants.EventsClass()}<?>").Replace("%PROJECT_NAME%", Job.ProjectName));
         }
     }
 }

@@ -893,7 +893,7 @@ namespace Plang.Compiler.Backend.Java {
                 case BinOpKind.Comparison:
                     Write("(");
 
-                    Write($"{Constants.PrtCompareMethodName}(");
+                    Write($"{Constants.PrtCompareMethodName()}(");
                     WriteExpr(left);
                     Write(", ");
                     WriteExpr(right);
@@ -906,7 +906,7 @@ namespace Plang.Compiler.Backend.Java {
                 case BinOpKind.Equality:
                     Write("(");
 
-                    Write($"{Constants.PrtDeepEqualsMethodName}(");
+                    Write($"{Constants.PrtDeepEqualsMethodName()}(");
                     WriteExpr(left);
                     Write(", ");
                     WriteExpr(right);
@@ -1007,7 +1007,7 @@ namespace Plang.Compiler.Backend.Java {
                 Write("&& ");
                 WriteLine(jType.IsPrimitive
                     ? $"this.{fieldName} == other.{fieldName}"
-                    : $"{Constants.PrtDeepEqualsMethodName}(this.{fieldName}, other.{fieldName})");
+                    : $"{Constants.PrtDeepEqualsMethodName()}(this.{fieldName}, other.{fieldName})");
             }
             WriteLine(");");
             WriteLine("} // deepEquals()");

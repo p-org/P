@@ -515,7 +515,7 @@ namespace Plang.Compiler.Backend.Java
             {
                 internal JEvent()
                 {
-                    _unboxedType = $"{Constants.EventsClass}<?>";
+                    _unboxedType = $"{Constants.EventsClass()}<?>";
                 }
                 internal override bool IsPrimitive => false;
                 internal override string GenerateFromJSON(string jsonVariable, string fieldName)

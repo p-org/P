@@ -17,6 +17,9 @@ namespace Plang.Compiler.Backend.PInfer
         internal static string PredicateEnumeratorFileName = "PredicateEnumerator.java";
         internal static string TermEnumeratorFileName = "TermEnumerator.java";
         internal static string TraceIndexFileName = "TraceIndex.java";
+        // inlined dependencies
+        internal static string[] PObserveDeps = ["PEvent.java", "PValue.java", "Clone.java", "Equality.java",
+                                                "IncomparableValuesException.java", "UncloneableValueException.java"];
         internal static string TraceReaderTemplate = @$"
 import com.alibaba.fastjson2.*;
 
@@ -34,18 +37,18 @@ public class TraceParser {{
         }}
     }}
 
-    public List<List<{Constants.EventsClass}<?>>> loadTrace(String fp) {{
+    public List<List<{Constants.EventsClass()}<?>>> loadTrace(String fp) {{
         File jsonFile = new File(fp);
         if (!jsonFile.exists()) {{
             throw new RuntimeException(""Trace file not found: "" + fp);
         }}
-        List<List<{Constants.EventsClass}<?>>> result = new ArrayList<>();
+        List<List<{Constants.EventsClass()}<?>>> result = new ArrayList<>();
         JSONArray traces = read(jsonFile);
         if (traces == null)
             throw new RuntimeException(""Trace "" + jsonFile.getAbsolutePath() + "" cannot be parsed"");
         for (Object obj : traces) {{
             JSONArray trace = (JSONArray) obj;
-            List<{Constants.EventsClass}<?>> events = new ArrayList<>();
+            List<{Constants.EventsClass()}<?>> events = new ArrayList<>();
             for (int i = 0; i < trace.size(); i++) {{
                 JSONObject e = trace.getJSONObject(i);
                 String sender = e.containsKey(""sender"") ? e.getString(""sender"") : null;
@@ -115,7 +118,7 @@ public class PInferDriver {
             var currentDir = AppDomain.CurrentDomain.BaseDirectory;
             DirectoryInfo info = new(currentDir);
             return string.Join("\n", File.ReadAllLines(
-                Path.Combine(Path.Combine(info.Parent.Parent.Parent.Parent.Parent.ToString(), "PInferTemplates"), filename)
+                Path.Combine(Path.Combine([info.Parent.Parent.Parent.Parent.Parent.ToString(), "Src", "PInfer", "PInferTemplates"]), filename)
             ));
         }
     }

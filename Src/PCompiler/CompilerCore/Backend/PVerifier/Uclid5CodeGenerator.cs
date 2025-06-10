@@ -569,6 +569,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
     private static string StateAdtReceivedSelector => $"{StateAdt}_Received";
     private static string StateAdtMachinesSelector => $"{StateAdt}_Machines";
 
+    private static bool useLocalPrefix = false;
+
     private static string StateAdtConstruct(string sent, string received, string machines)
     {
         return
@@ -598,7 +600,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
     private static string InFlight(string state, string action)
     {
-        return $"({StateAdtSelectSent(state)}[{action}] && !{StateAdtSelectReceived(state)}[{action}])";
+        return useLocalPrefix ? $"({LocalPrefix}sent[{action}] && !{StateAdtSelectReceived(state)}[{action}])" : $"({StateAdtSelectSent(state)}[{action}] && !{StateAdtSelectReceived(state)}[{action}])";
     }
 
     private static string StateVar => $"{BuiltinPrefix}State";
@@ -1024,7 +1026,9 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 foreach (var v in spec.Fields)
                     EmitLine($"{GetLocalName(v)} = {SpecPrefix}{spec.Name}_{v.Name};");
 
+                useLocalPrefix = true;
                 GenerateStmt(f.Body, spec, goals, generateSanityChecks);
+                useLocalPrefix = false;
 
                 // update the global variables
                 EmitLine($"{SpecPrefix}{spec.Name}_State = {LocalPrefix}state;");
@@ -1406,7 +1410,9 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 EmitLine($"{GetLocalName(v)} = {MachineStateAdtSelectField(currState, m, v)};");
             // foreach (var v in f.LocalVariables) EmitLine($"{GetLocalName(v)} = {DefaultValue(v.Type)};");
 
+            useLocalPrefix = true;
             GenerateStmt(f.Body, null, goals, generateSanityChecks);
+            useLocalPrefix = false;
 
             var fields = m.Fields.Select(GetLocalName).Prepend($"{LocalPrefix}state").ToList();
 
@@ -2042,7 +2048,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 s), // must deref for ADT!
             PureCallExpr pexpr => $"{pexpr.Pure.Name}({string.Join(", ", pexpr.Arguments.Select(ExprToString))})",
             FlyingExpr fexpr => $"{InFlight(StateVar, ExprToString(fexpr.Instance))}",
-            SentExpr sexpr => $"{StateAdtSelectSent(StateVar)}[{ExprToString(sexpr.Instance)}]",
+            SentExpr sexpr => useLocalPrefix ? $"{LocalPrefix}sent[{ExprToString(sexpr.Instance)}]" : $"{StateAdtSelectSent(StateVar)}[{ExprToString(sexpr.Instance)}]",
             TargetsExpr texpr =>
                 $"({LabelAdtSelectTarget(ExprToString(texpr.Instance))} == {ExprToString(texpr.Target)})",
             _ => throw new NotSupportedException($"Not supported expr ({expr}) at {GetLocation(expr)}")

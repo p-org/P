@@ -735,17 +735,7 @@ namespace Plang.Compiler.TypeChecker
             
             var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
             
-            // (REQUIRES requires+=expr SEMI)*
-            foreach (var req in context._requires)
-            {
-                fun.AddRequire(exprVisitor.Visit(req));
-            }
-
-            // (ENSURES ensures+=expr SEMI)*
-            foreach (var ensure in context._ensures)
-            {
-                fun.AddEnsure(exprVisitor.Visit(ensure));
-            }
+            // pre/post conditions are handled in a later phase
 
             return fun;
         }

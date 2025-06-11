@@ -34,10 +34,10 @@ namespace Plang.Compiler.TypeChecker
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
 
-            // Step 3b: for PVerifier, fill in body of Invariants, Axioms, Init conditions and Pure functions
+            // Step 3b: for PVerifier, fill in body of Invariants, Axioms, Init conditions and Pure functions and functions with pre/post conditions
             foreach (var inv in globalScope.Invariants)
             {
-                var ctx = (PParser.InvariantDeclContext) inv.SourceLocation;
+                var ctx = (PParser.InvariantDeclContext)inv.SourceLocation;
                 var temporaryFunction = new Function(inv.Name, inv.SourceLocation)
                 {
                     Scope = globalScope
@@ -75,6 +75,22 @@ namespace Plang.Compiler.TypeChecker
                 if (context.body is not null)
                 {
                     pure.Body = PopulateExpr(temporaryFunction, context.body, pure.Signature.ReturnType, handler);
+                }
+            }
+
+            foreach (var func in allFunctions.Where(func => func.Role.HasFlag(FunctionRole.Foreign)))
+            {
+                // populate pre/post conditions
+                var ctx = (PParser.ForeignFunDeclContext)func.SourceLocation;
+                foreach (var req in ctx._requires)
+                {
+                    var preExpr = PopulateExpr(func, req, PrimitiveType.Bool, handler);
+                    func.AddRequire(preExpr);
+                }
+                foreach (var post in ctx._ensures)
+                {
+                    var postExpr = PopulateExpr(func, post, PrimitiveType.Bool, handler);
+                    func.AddEnsure(postExpr);
                 }
             }
 

@@ -103,7 +103,7 @@ namespace Plang.Compiler.Backend.PInfer
             WriteLine("return res;");
             WriteLine("}");
 
-            WriteLine($"public static Object termOf(String repr, {Constants.EventsClass}<?>[] arguments) {{");
+            WriteLine($"public static Object termOf(String repr, {Constants.EventsClass()}<?>[] arguments) {{");
             if (nameMap.Count == 0)
             {
                 WriteLine("return null;");
@@ -123,7 +123,7 @@ namespace Plang.Compiler.Backend.PInfer
 
         protected void WritePredicateInterface(IDictionary<string, (string, List<PEventVariable>)> nameMap)
         {
-            WriteLine($"public static boolean invoke(PredicateWrapper repr, {Constants.EventsClass}<?>[] arguments) {{");
+            WriteLine($"public static boolean invoke(PredicateWrapper repr, {Constants.EventsClass()}<?>[] arguments) {{");
             if (nameMap.Count == 0)
             {
                 WriteLine("return false;");
@@ -140,7 +140,7 @@ namespace Plang.Compiler.Backend.PInfer
             }
             WriteLine("}");
 
-            WriteLine($"public static boolean conjoin(List<PredicateWrapper> repr, {Constants.EventsClass}<?>[] arguments) {{");
+            WriteLine($"public static boolean conjoin(List<PredicateWrapper> repr, {Constants.EventsClass()}<?>[] arguments) {{");
             WriteLine("for (PredicateWrapper wrapper: repr) {");
             WriteLine("if (wrapper.negate() == invoke(wrapper, arguments)) return false;");
             WriteLine("}");

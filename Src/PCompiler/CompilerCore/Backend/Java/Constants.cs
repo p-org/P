@@ -148,19 +148,6 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
             <artifactId>commons-cli</artifactId>
             <version>1.8.0</version>
         </dependency>" : "")}
-        <dependency>
-            <groupId>p.runtime</groupId>
-            <artifactId>PJavaRuntime</artifactId>
-            <version>1.0-SNAPSHOT</version>
-
-            <!-- Do not transitively bundle log4j as whoever uses this jar will also depend on it. -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
     <build>
@@ -225,13 +212,13 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// The fully-qualified name of the static `deepEquality(Object, Object)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtDeepEqualsMethodName = "com.amazon.pobserve.runtime.values.Equality.deepEquals";
+        internal static string PrtDeepEqualsMethodName() => PInferMode ? "Equality.deepEquals" : "com.amazon.pobserve.runtime.values.Equality.deepEquals";
 
         /// <summary>
         /// The fully-qualified name of the static `compare(Comparable, Comparable)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtCompareMethodName = "com.amazon.pobserve.runtime.values.Equality.compare";
+        internal static string PrtCompareMethodName() => PInferMode ? "Equality.compare" : "com.amazon.pobserve.runtime.values.Equality.compare";
 
         /// <summary>
         /// The fully-qualified name of the static `elementAt(LinkedHashSet, long)` method
@@ -242,12 +229,12 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// <summary>
         /// The fully-qualified class name of the Java P runtime's PValue class.
         /// </summary>
-        internal static readonly string PValueClass = "com.amazon.pobserve.runtime.values.PValue";
+        internal static string PValueClass() => PInferMode ? "PValue" : "com.amazon.pobserve.runtime.values.PValue";
 
         /// <summary>
         /// The fully-qualified class name of the Java P runtime's Event class.
         /// </summary>
-        internal static readonly string EventsClass = "com.amazon.pobserve.runtime.events.Event";
+        internal static string EventsClass() => PInferMode ? "PEvent" : "com.amazon.pobserve.runtime.events.Event";
 
         #endregion
 

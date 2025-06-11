@@ -127,7 +127,7 @@ namespace Plang.Compiler.Backend.Java
             }
 
             var tname = Names.NameForNamedTuple(t);
-            WriteLine($"public static class {tname} implements {Constants.PValueClass}<{tname}>, Serializable {{");
+            WriteLine($"public static class {tname} implements {Constants.PValueClass()}<{tname}>, Serializable {{");
             WriteLine($"// {t.CanonicalRepresentation}");
 
             WriteNamedTupleFields(fields);
@@ -243,7 +243,7 @@ namespace Plang.Compiler.Backend.Java
                 Write(" && ");
                 WriteLine(jType.IsPrimitive
                     ? $"Objects.equals(this.{fieldName}, other.{fieldName})"
-                    : $"{Constants.PrtDeepEqualsMethodName}(this.{fieldName}, other.{fieldName})");
+                    : $"{Constants.PrtDeepEqualsMethodName()}(this.{fieldName}, other.{fieldName})");
             }
             WriteLine(");");
             WriteLine("} // deepEquals()");

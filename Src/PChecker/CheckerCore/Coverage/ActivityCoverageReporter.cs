@@ -42,34 +42,8 @@ namespace PChecker.Coverage
         {
             using (var writer = new StreamWriter(coverageFile))
             {
-                if (CoverageInfo.CoverageGraph != null)
-                {
-                    WriteCoverageText(writer);
-                }
+                WriteCoverageText(writer);
             }
-        }
-
-        /// <summary>
-        /// Return all events represented by this link.
-        /// </summary>
-        private static IEnumerable<string> GetEventIds(GraphLink link)
-        {
-            if (link.AttributeLists != null)
-            {
-                // a collapsed edge graph
-                if (link.AttributeLists.TryGetValue("EventIds", out var idList))
-                {
-                    return idList;
-                }
-            }
-
-            // a fully expanded edge graph has individual links for each event.
-            if (link.Attributes.TryGetValue("EventId", out var eventId))
-            {
-                return new[] { eventId };
-            }
-
-            return Array.Empty<string>();
         }
 
         /// <summary>
@@ -79,31 +53,6 @@ namespace PChecker.Coverage
         {
             var machines = new List<string>(CoverageInfo.Machines);
             machines.Sort();
-
-            var machineTypes = new Dictionary<string, string>();
-
-            var hasExternalSource = false;
-            var externalSrcId = "ExternalCode";
-
-            // look for any external source links.
-            foreach (var link in CoverageInfo.CoverageGraph.Links)
-            {
-                var srcId = link.Source.Id;
-                if (srcId == externalSrcId && !hasExternalSource)
-                {
-                    machines.Add(srcId);
-                    hasExternalSource = true;
-                }
-            }
-
-            foreach (var node in CoverageInfo.CoverageGraph.Nodes)
-            {
-                var id = node.Id;
-                if (machines.Contains(id))
-                {
-                    machineTypes[id] = node.Category ?? "StateMachine";
-                }
-            }
 
             // (machines + "." + states => registered events
             var uncoveredEvents = new Dictionary<string, HashSet<string>>();
@@ -126,8 +75,7 @@ namespace PChecker.Coverage
             // Per-machine data.
             foreach (var machine in machines)
             {
-                machineTypes.TryGetValue(machine, out var machineType);
-                WriteHeader(writer, string.Format("{0}: {1}", machineType, GetSanitizedName(machine)));
+                WriteHeader(writer, string.Format("StateMachine: {0}", GetSanitizedName(machine)));
 
                 // find all possible events for this machine.
                 var uncoveredMachineEvents = new Dictionary<string, HashSet<string>>();
@@ -175,38 +123,7 @@ namespace PChecker.Coverage
                         eventCoverage = totalStateEvents == 0 ? "100.0" : ((totalStateEvents - uncoveredStateEvents) * 100.0 / totalStateEvents).ToString("F1");
                         writer.WriteLine("\t\tState event coverage: {0}%", eventCoverage);
                     }
-
-                    // Now use the graph to find incoming links to each state in this machine
-                    var stateIncomingStates = new HashSet<string>();
-                    var stateOutgoingStates = new HashSet<string>();
-                    foreach (var link in CoverageInfo.CoverageGraph.Links)
-                    {
-                        if (link.Category != "Contains")
-                        {
-                            var srcId = link.Source.Id;
-                            var srcMachine = GetMachineId(srcId);
-                            var targetId = link.Target.Id;
-                            var targetMachine = GetMachineId(targetId);
-                            var intraMachineTransition = targetMachine == machine && srcMachine == machine;
-                            if (intraMachineTransition)
-                            {
-                                foreach (var id in GetEventIds(link))
-                                {
-                                    if (targetId == key)
-                                    {
-                                        // we want to show incoming/outgoing states within the current machine only.
-                                        stateIncomingStates.Add(GetStateName(srcId));
-                                    }
-
-                                    if (srcId == key)
-                                    {
-                                        // we want to show incoming/outgoing states within the current machine only.
-                                        stateOutgoingStates.Add(GetStateName(targetId));
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    
 
                     var received = new HashSet<string>(CoverageInfo.EventInfo.GetEventsReceived(key));
                     RemoveBuiltInEvents(received);
@@ -228,16 +145,6 @@ namespace PChecker.Coverage
                     if (stateUncoveredEvents != null && stateUncoveredEvents.Count > 0)
                     {
                         writer.WriteLine("\t\tEvents not covered: {0}", string.Join(", ", SortHashSet(stateUncoveredEvents)));
-                    }
-
-                    if (stateIncomingStates.Count > 0)
-                    {
-                        writer.WriteLine("\t\tPrevious states: {0}", string.Join(", ", SortHashSet(stateIncomingStates)));
-                    }
-
-                    if (stateOutgoingStates.Count > 0)
-                    {
-                        writer.WriteLine("\t\tNext states: {0}", string.Join(", ", SortHashSet(stateOutgoingStates)));
                     }
                 }
 
@@ -275,33 +182,6 @@ namespace PChecker.Coverage
                     eventSet.Remove(e);
                 }
             }
-        }
-
-        private IEnumerable<string> GetPushedStates(string stateId)
-        {
-            var pushed = new Stack<string>();
-            var result = new HashSet<string>();
-            pushed.Push(stateId);
-            while (pushed.Count > 0)
-            {
-                var id = pushed.Pop();
-                var source = CoverageInfo.CoverageGraph.GetNode(stateId);
-                foreach (var link in CoverageInfo.CoverageGraph.Links)
-                {
-                    if (link.Category == "push")
-                    {
-                        var srcId = link.Source.Id;
-                        var targetId = link.Target.Id;
-                        if (srcId == id && !result.Contains(targetId))
-                        {
-                            result.Add(targetId);
-                            pushed.Push(targetId);
-                        }
-                    }
-                }
-            }
-
-            return result;
         }
 
         private static List<string> SortHashSet(HashSet<string> items)
@@ -342,9 +222,6 @@ namespace PChecker.Coverage
 
             return nodeId;
         }
-
-        private static string GetStateId(string machineName, string stateName) =>
-            string.Format("{0}::{1}", stateName, machineName);
 
         private static string GetSanitizedName(string name)
         {

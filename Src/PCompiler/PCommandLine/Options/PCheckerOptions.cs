@@ -270,14 +270,6 @@ namespace Plang.Options
                 case "schedules":
                     checkerConfiguration.TestingIterations = (int)(uint)option.Value;
                     break;
-                case "graph":
-                    checkerConfiguration.IsDgmlGraphEnabled = true;
-                    checkerConfiguration.IsDgmlBugGraph = false;
-                    break;
-                case "graph-bug":
-                    checkerConfiguration.IsDgmlGraphEnabled = true;
-                    checkerConfiguration.IsDgmlBugGraph = true;
-                    break;
                 case "xml-trace":
                     checkerConfiguration.IsXmlLogEnabled = true;
                     break;

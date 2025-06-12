@@ -70,7 +70,7 @@ namespace PChecker.Runtime.Logging
         /// Logs that the specified state machine executes an action.
         /// </summary>
         /// <param name="id">The id of the state machine executing the action.</param>
-        /// <param name="handlingStateName">The state that declared this action (can be different from currentStateName in the case of PushStates.</param>
+        /// <param name="handlingStateName">The state that declared this action</param>
         /// <param name="currentStateName">The state name, if the state machine is a state machine and a state exists, else null.</param>
         /// <param name="actionName">The name of the action being executed.</param>
         public void LogExecuteAction(StateMachineId id, string handlingStateName, string currentStateName, string actionName)
@@ -305,25 +305,6 @@ namespace PChecker.Runtime.Logging
                 foreach (var log in Logs)
                 {
                     log.OnHandleRaisedEvent(id, stateName, e);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Logs that the specified event cannot be handled in the current state, its exit
-        /// handler is executed and then the state is popped and any previous "current state"
-        /// is reentered. This handler is called when that pop has been done.
-        /// </summary>
-        /// <param name="id">The id of the state machine that the pop executed in.</param>
-        /// <param name="stateName">The state name, if the state machine is a state machine and a state exists, else null.</param>
-        /// <param name="e">The event that cannot be handled.</param>
-        public void LogPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
-        {
-            if (Logs.Count > 0)
-            {
-                foreach (var log in Logs)
-                {
-                    log.OnPopStateUnhandledEvent(id, stateName, e);
                 }
             }
         }

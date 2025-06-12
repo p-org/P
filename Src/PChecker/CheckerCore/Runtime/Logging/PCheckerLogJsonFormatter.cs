@@ -260,47 +260,6 @@ namespace PChecker.Runtime.Logging
         }
 
         /// <inheritdoc />
-        public void OnPopState(StateMachineId id, string currentStateName, string restoredStateName)
-        {
-            currentStateName = string.IsNullOrEmpty(currentStateName) ? "[not recorded]" : currentStateName;
-            var reenteredStateName = restoredStateName ?? string.Empty;
-            var log = $"{id} popped state '{currentStateName}' and reentered state '{reenteredStateName}'.";
-
-            Writer.AddLogType(JsonWriter.LogType.PopState);
-            Writer.LogDetails.Id = id.ToString();
-            Writer.LogDetails.StartState = currentStateName;
-            Writer.LogDetails.EndState = reenteredStateName;
-            Writer.AddLog(log);
-            Writer.AddToLogs(updateVcMap: true);
-        }
-
-        /// <inheritdoc />
-        public void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
-        {
-            var log = $"{id} popped state {stateName} due to unhandled event '{e.GetType().Name}'.";
-
-            Writer.AddLogType(JsonWriter.LogType.PopStateUnhandledEvent);
-            Writer.LogDetails.Id = id.ToString();
-            Writer.LogDetails.State = stateName;
-            Writer.LogDetails.Event = e.GetType().Name;
-            Writer.AddLog(log);
-            Writer.AddToLogs(updateVcMap: true);
-        }
-
-        /// <inheritdoc />
-        public void OnPushState(StateMachineId id, string currentStateName, string newStateName)
-        {
-            var log = $"{id} pushed from state '{currentStateName}' to state '{newStateName}'.";
-
-            Writer.AddLogType(JsonWriter.LogType.PushState);
-            Writer.LogDetails.Id = id.ToString();
-            Writer.LogDetails.StartState = currentStateName;
-            Writer.LogDetails.EndState = newStateName;
-            Writer.AddLog(log);
-            Writer.AddToLogs(updateVcMap: true);
-        }
-
-        /// <inheritdoc />
         public void OnRaiseEvent(StateMachineId id, string stateName, Event e)
         {
             stateName = GetShortName(stateName);

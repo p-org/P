@@ -134,11 +134,6 @@ namespace PChecker.SystematicTesting
         public TestReport TestReport { get; set; }
 
         /// <summary>
-        /// A graph of the state machines, state machines and events of a single test schedule.
-        /// </summary>
-        private Graph Graph;
-
-        /// <summary>
         /// Contains a single schedule of XML log output in the case where the IsXmlLogEnabled
         /// checkerConfiguration is specified.
         /// </summary>
@@ -828,15 +823,6 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            if (_checkerConfiguration.IsDgmlGraphEnabled || _checkerConfiguration.ReportActivityCoverage)
-            {
-                // Registers an activity coverage graph builder.
-                runtime.RegisterLog(new ControlledRuntimeLogGraphBuilder(false)
-                {
-                    CollapseMachineInstances = _checkerConfiguration.ReportActivityCoverage
-                });
-            }
-
             if (_checkerConfiguration.ReportActivityCoverage)
             {
                 // Need this additional logger to get the event coverage report correct
@@ -937,20 +923,11 @@ namespace PChecker.SystematicTesting
         private void GatherTestingStatistics(ControlledRuntime runtime, TimelineObserver timelineObserver)
         {
             var report = runtime.Scheduler.GetReport();
-            if (_checkerConfiguration.ReportActivityCoverage)
-            {
-                report.CoverageInfo.CoverageGraph = Graph;
-            }
-            
             var coverageInfo = runtime.GetCoverageInfo();
             report.CoverageInfo.Merge(coverageInfo);
             TestReport.Merge(report);
             var timelineHash = timelineObserver.GetTimelineHash();
             TestReport.ExploredTimelines.Add(timelineObserver.GetTimelineHash());
-            // Also save the graph snapshot of the last iteration, if there is one.
-            Graph = coverageInfo.CoverageGraph;
-            // Also save the graph snapshot of the last schedule, if there is one.
-            Graph = coverageInfo.CoverageGraph;
         }
 
         /// <summary>

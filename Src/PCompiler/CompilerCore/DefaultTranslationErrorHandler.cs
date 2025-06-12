@@ -299,7 +299,7 @@ namespace Plang.Compiler
         public Exception IllegalMonitorOperation(ParserRuleContext location, IToken operation, Machine monitor)
         {
             return IssueError(location, operation,
-                $"{monitor.Name}: $, $$, this, new, send, announce, receive, and pop are not allowed in monitors");
+                $"{monitor.Name}: $, $$, this, new, send, announce, receive are not allowed in monitors");
         }
 
         public Exception DeferredEventInMonitor(ParserRuleContext location, Machine monitor)

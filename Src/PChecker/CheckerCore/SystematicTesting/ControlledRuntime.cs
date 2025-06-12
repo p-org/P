@@ -1277,12 +1277,6 @@ namespace PChecker.SystematicTesting
             var result = CoverageInfo;
             if (result != null)
             {
-                var builder = LogWriter.GetLogsOfType<ControlledRuntimeLogGraphBuilder>().FirstOrDefault();
-                if (builder != null)
-                {
-                    result.CoverageGraph = builder.SnapshotGraph(CheckerConfiguration.IsDgmlBugGraph);
-                }
-
                 var eventCoverage = LogWriter.GetLogsOfType<ControlledRuntimeLogEventCoverage>().FirstOrDefault();
                 if (eventCoverage != null)
                 {

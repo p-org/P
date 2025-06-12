@@ -203,19 +203,6 @@ namespace PChecker.Coverage
         {
         }
 
-        public void OnPopState(StateMachineId id, string currentStateName, string restoredStateName)
-        {
-        }
-
-        public void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
-        {
-        }
-
-        public void OnPushState(StateMachineId id, string currentStateName, string newStateName)
-        {
-            OnEventHandled(id, currentStateName);
-        }
-
         public void OnRaiseEvent(StateMachineId id, string stateName, Event e)
         {
             var eventName = e.GetType().FullName;

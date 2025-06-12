@@ -70,14 +70,6 @@ namespace PChecker.Runtime.Logging
         }
 
         /// <inheritdoc/>
-        public void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
-        {
-            var eventName = e.GetType().Name;
-            var text = $"<PopLog> {id} popped state {stateName} due to unhandled event '{eventName}'.";
-            Logger.WriteLine(text);
-        }
-
-        /// <inheritdoc/>
         public void OnDefaultEventHandler(StateMachineId id, string stateName)
         {
             string text;

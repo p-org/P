@@ -5,8 +5,7 @@ namespace PChecker.Runtime.Exceptions
     public enum NonStandardReturn
     {
         Raise,
-        Goto,
-        Pop
+        Goto
     }
 
     public class PNonStandardReturnException : Exception

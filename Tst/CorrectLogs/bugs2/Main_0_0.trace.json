@@ -66,19 +66,6 @@
     }
   },
   {
-    "type": "PopStateUnhandledEvent",
-    "details": {
-      "log": "Main(1) popped state S due to unhandled event \u0027a\u0027.",
-      "id": "Main(1)",
-      "event": "a",
-      "state": "S",
-      "payload": "null",
-      "clock": {
-        "Main(1)": 6
-      }
-    }
-  },
-  {
     "type": "ExceptionThrown",
     "details": {
       "log": "Main(1) running action \u0027\u0027 in state \u0027S\u0027 threw exception \u0027UnhandledEventException\u0027.",
@@ -88,7 +75,7 @@
       "action": "",
       "exception": "UnhandledEventException",
       "clock": {
-        "Main(1)": 7
+        "Main(1)": 6
       }
     }
   },

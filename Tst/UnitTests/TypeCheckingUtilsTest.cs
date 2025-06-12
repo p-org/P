@@ -1,6 +1,4 @@
 ﻿using NUnit.Framework;
-using System;
-using NUnit.Framework;
 using Plang.Compiler.TypeChecker;
 
 namespace UnitTests

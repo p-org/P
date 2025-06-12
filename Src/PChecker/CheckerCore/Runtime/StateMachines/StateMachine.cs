@@ -1101,7 +1101,6 @@ namespace PChecker.Runtime.StateMachines
                         await ExecuteCurrentStateOnExitAsync(null, e);
                         if (CurrentStatus is Status.Active)
                         {
-                            Runtime.LogWriter.LogPopStateUnhandledEvent(Id, CurrentStateName, e);
                             EventHandlerMap = EmptyEventHandlerMap;
                             CurrentState = null;
                             CurrentStateName = string.Empty;
@@ -1145,10 +1144,6 @@ namespace PChecker.Runtime.StateMachines
             else if (eventHandler is GotoStateTransition gotoTransition)
             {
                 await GotoStateAsync(gotoTransition.TargetState, gotoTransition.Lambda, e);
-            }
-            else if (eventHandler is PushStateTransition pushTransition)
-            {
-                await PushStateAsync(pushTransition.TargetState, e);
             }
         }
 
@@ -1300,19 +1295,6 @@ namespace PChecker.Runtime.StateMachines
                 // The state machine performs the on entry action of the new state.
                 await ExecuteCurrentStateOnEntryAsync(e);
             }
-        }
-
-        /// <summary>
-        /// Performs a push transition to the specified state.
-        /// </summary>
-        private async Task PushStateAsync(Type s, Event e)
-        {
-
-            var nextState = StateInstanceCache[GetType()].First(val => val.GetType().Equals(s));
-            DoStateTransition(nextState);
-
-            // The state machine performs the on entry statements of the new state.
-            await ExecuteCurrentStateOnEntryAsync(e);
         }
 
         /// <summary>

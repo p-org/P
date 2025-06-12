@@ -35,12 +35,6 @@ namespace PChecker.Coverage
         public Dictionary<string, HashSet<string>> RegisteredEvents { get; private set; }
 
         /// <summary>
-        /// The coverage graph.
-        /// </summary>
-        [DataMember]
-        public Graph CoverageGraph { get; set; }
-
-        /// <summary>
         /// Information about events sent and received
         /// </summary>
         [DataMember]
@@ -55,7 +49,6 @@ namespace PChecker.Coverage
             MachinesToStates = new Dictionary<string, HashSet<string>>();
             RegisteredEvents = new Dictionary<string, HashSet<string>>();
             EventInfo = new EventCoverage();
-            CoverageGraph = new Graph();
         }
 
         /// <summary>
@@ -114,15 +107,6 @@ namespace PChecker.Coverage
                 {
                     InternalAddEvent(tup.Key, e);
                 }
-            }
-
-            if (CoverageGraph == null)
-            {
-                CoverageGraph = coverageInfo.CoverageGraph;
-            }
-            else if (coverageInfo.CoverageGraph != null && CoverageGraph != coverageInfo.CoverageGraph)
-            {
-                CoverageGraph.Merge(coverageInfo.CoverageGraph);
             }
 
             if (EventInfo == null)

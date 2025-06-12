@@ -134,10 +134,6 @@ internal class TimelineObserver : IControlledRuntimeLog
     {
     }
 
-    public void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
-    {
-    }
-
     public void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
     {
     }

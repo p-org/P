@@ -396,13 +396,13 @@ namespace PChecker.Runtime.Logging
 
         /// <summary>
         /// The initial state associated with an event, machine, etc...
-        /// Available for log types GotoState, PopState, PushState
+        /// Available for log types GotoState
         /// </summary>
         public string? StartState { get; set; }
 
         /// <summary>
         /// The initial state associated with an event, machine, etc...
-        /// Available for log types GotoState, PopState, PushState
+        /// Available for log types GotoState
         /// </summary>
         public string? EndState { get; set; }
 
@@ -623,23 +623,6 @@ namespace PChecker.Runtime.Logging
             /// Invoked when the specified monitor enters or exits a state.
             /// </summary>
             MonitorStateTransition,
-
-            /// <summary>
-            /// Invoked when the specified state machine has popped its current state.
-            /// </summary>
-            PopState,
-
-            /// <summary>
-            /// Invoked when the specified event cannot be handled in the current state, its exit
-            /// handler is executed and then the state is popped and any previous "current state"
-            /// is reentered. This handler is called when that pop has been done.
-            /// </summary>
-            PopStateUnhandledEvent,
-
-            /// <summary>
-            /// Invoked when the specified state machine is being pushed to a state.
-            /// </summary>
-            PushState,
 
             /// <summary>
             /// Invoked when the specified state machine raises an event.

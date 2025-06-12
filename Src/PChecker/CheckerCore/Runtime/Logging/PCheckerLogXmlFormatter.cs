@@ -212,48 +212,6 @@ namespace PChecker.Runtime.Logging
             }
         }
 
-        public void OnPopState(StateMachineId id, string currentStateName, string restoredStateName)
-        {
-            if (Closed)
-            {
-                return;
-            }
-
-            Writer.WriteStartElement("Pop");
-            Writer.WriteAttributeString("id", id.ToString());
-            Writer.WriteAttributeString("currState", currentStateName);
-            Writer.WriteAttributeString("restoredState", restoredStateName);
-            Writer.WriteEndElement();
-        }
-
-        public void OnPopStateUnhandledEvent(StateMachineId id, string stateName, Event e)
-        {
-            if (Closed)
-            {
-                return;
-            }
-
-            Writer.WriteStartElement("PopUnhandled");
-            Writer.WriteAttributeString("id", id.ToString());
-            Writer.WriteAttributeString("state", stateName);
-            Writer.WriteAttributeString("event", e.GetType().FullName);
-            Writer.WriteEndElement();
-        }
-
-        public void OnPushState(StateMachineId id, string currentStateName, string newStateName)
-        {
-            if (Closed)
-            {
-                return;
-            }
-
-            Writer.WriteStartElement("Push");
-            Writer.WriteAttributeString("id", id.ToString());
-            Writer.WriteAttributeString("currState", currentStateName);
-            Writer.WriteAttributeString("newState", newStateName);
-            Writer.WriteEndElement();
-        }
-
         public void OnRaiseEvent(StateMachineId id, string stateName, Event e)
         {
             if (Closed)

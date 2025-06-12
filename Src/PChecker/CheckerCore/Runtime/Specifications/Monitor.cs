@@ -225,7 +225,6 @@ namespace PChecker.Runtime.Specifications
         /// Raise a special event that performs a goto state operation at the end of the current action.
         /// </summary>
         /// <remarks>
-        /// Goto state pops the current <see cref="State"/> and pushes the specified <see cref="State"/> on the active state stack.
         ///
         /// This is shorthand for the following code:
         /// <code>

@@ -210,13 +210,7 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public bool IsDgmlBugGraph;
-
-        /// <summary>
-        /// If specified, requests a DGML graph of the schedule that contains a bug, if a bug is found.
-        /// This is different from a coverage activity graph, as it will also show state machine instances.
-        /// </summary>
-        [DataMember]
-        public bool IsDgmlGraphEnabled { get; set; }
+        
 
         /// <summary>
         /// Produce an XML formatted runtime log file.
@@ -493,16 +487,6 @@ namespace PChecker
         public CheckerConfiguration WithActivityCoverageEnabled(bool isEnabled = true)
         {
             ReportActivityCoverage = isEnabled;
-            return this;
-        }
-
-        /// <summary>
-        /// Updates the checkerConfiguration with DGML graph generation enabled or disabled.
-        /// </summary>
-        /// <param name="isEnabled">If true, then enables DGML graph generation.</param>
-        public CheckerConfiguration WithDgmlGraphEnabled(bool isEnabled = true)
-        {
-            IsDgmlGraphEnabled = isEnabled;
             return this;
         }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Plang.Compiler;
 using UnitTests.Runners;
 using UnitTests.Validators;
@@ -58,7 +59,18 @@ namespace UnitTests.Core
             if (output.Equals(CompilerOutput.PChecker))
             {
                 var nativeFiles = testDir.GetFiles("*.cs");
-                runner = new PCheckerRunner(inputFiles, nativeFiles);
+                
+                // Check if this is a parametric test
+                bool isParametricTest = HasParametricTests(inputFiles);
+                
+                if (isParametricTest)
+                {
+                    runner = new ParametricPCheckerRunner(inputFiles, nativeFiles);
+                }
+                else
+                {
+                    runner = new PCheckerRunner(inputFiles, nativeFiles);
+                }
             }
             else
             {
@@ -94,6 +106,33 @@ namespace UnitTests.Core
             var tempDirName =
                 Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, output.ToString(), testName));
             return new CompilerTestCase(tempDirName, runner, validator);
+        }
+
+        /// <summary>
+        /// Checks if any of the input files contain parametric test declarations
+        /// </summary>
+        /// <param name="inputFiles">Array of P source files to check</param>
+        /// <returns>True if parametric tests are found, false otherwise</returns>
+        private bool HasParametricTests(FileInfo[] inputFiles)
+        {
+            foreach (var file in inputFiles)
+            {
+                try
+                {
+                    var content = File.ReadAllText(file.FullName);
+                    // Look for "test param" declarations which indicate parametric tests
+                    if (content.Contains("test param"))
+                    {
+                        return true;
+                    }
+                }
+                catch (Exception)
+                {
+                    // If we can't read the file, assume it's not a parametric test
+                    continue;
+                }
+            }
+            return false;
         }
     }
 }

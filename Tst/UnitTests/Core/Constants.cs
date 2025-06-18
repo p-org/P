@@ -44,6 +44,8 @@ namespace UnitTests.Core
 
         public static string TestDirectory => Path.Combine(SolutionDirectory, TestDirectoryName);
 
+        public static string TestParamTesterDirectory => Path.Combine(TestDirectory, "TestParamTester");
+
         public static readonly string ScratchParentDirectory = Path.Combine(TestDirectory, "temp_builds");
     }
 }

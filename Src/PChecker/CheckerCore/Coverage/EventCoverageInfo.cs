@@ -22,7 +22,7 @@ namespace PChecker.Coverage
         public HashSet<string> Machines { get; private set; }
 
         /// <summary>
-        /// Map from machines to set of all states states defined in that machine.
+        /// Map from machines to set of all states defined in that machine.
         /// </summary>
         [DataMember]
         public Dictionary<string, HashSet<string>> MachinesToStates { get; private set; }

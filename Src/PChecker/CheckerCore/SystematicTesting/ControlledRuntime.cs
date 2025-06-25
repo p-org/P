@@ -367,7 +367,7 @@ namespace PChecker.SystematicTesting
         internal void RunTest(Delegate testMethod, string testName)
         {
             testName = string.IsNullOrEmpty(testName) ? string.Empty : $" '{testName}'";
-            Logger.WriteLine($"<TestLog> Running test {testName}.");
+            Logger.WriteLine($"<TestLog> Running test{testName}.");
             Assert(testMethod != null, "Unable to execute a null test method.");
             Assert(Task.CurrentId != null, "The test must execute inside a controlled task.");
 

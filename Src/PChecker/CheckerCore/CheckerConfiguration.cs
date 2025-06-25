@@ -194,43 +194,22 @@ namespace PChecker
         public bool ReportCodeCoverage;
 
         /// <summary>
-        /// Enables activity coverage reporting of a program.
+        /// Enables code coverage tracking from emit_coverage statements.
         /// </summary>
         [DataMember]
-        public bool ReportActivityCoverage { get; set; }
+        public bool EnableEmitCoverage;
 
         /// <summary>
-        /// Enables activity coverage debugging.
-        /// </summary>
-        public bool DebugActivityCoverage;
-
-        /// <summary>
-        /// Is DGML graph showing all test schedules or just one "bug" schedule.
-        /// False means all, and True means only the schedule containing a bug.
+        /// Path to store the code coverage report from emit_coverage statements.
         /// </summary>
         [DataMember]
-        public bool IsDgmlBugGraph;
-        
+        public string EmitCoverageReportPath;
 
         /// <summary>
-        /// Produce an XML formatted runtime log file.
+        /// Enables CSV output for code coverage metrics from emit_coverage statements.
         /// </summary>
         [DataMember]
-        public bool IsXmlLogEnabled { get; set; }
-
-        /// <summary>
-        /// Produce a JSON formatted runtime log file.
-        /// Defaults to true.
-        /// </summary>
-        [DataMember]
-        public bool IsJsonLogEnabled { get; set; } = true;
-
-        /// <summary>
-        /// If specified, requests a custom runtime log to be used instead of the default.
-        /// This is the AssemblyQualifiedName of the type to load.
-        /// </summary>
-        [DataMember]
-        public string CustomStateMachineRuntimeLogType;
+        public bool EmitCoverageCsvOutput;
 
         /// <summary>
         /// Enables debugging.
@@ -250,13 +229,6 @@ namespace PChecker
         /// </summary>
         [DataMember]
         public uint TestingProcessId;
-
-        /// <summary>
-        /// Additional assembly specifications to instrument for code coverage, besides those in the
-        /// dependency graph between <see cref="AssemblyToBeAnalyzed"/> and the Microsoft.Coyote DLLs.
-        /// Key is filename, value is whether it is a list file (true) or a single file (false).
-        /// </summary>
-        public Dictionary<string, bool> AdditionalCodeCoverageAssemblies;
 
         /// <summary>
         /// Enables colored console output.
@@ -317,8 +289,9 @@ namespace PChecker
             ScheduleTrace = string.Empty;
 
             ReportCodeCoverage = false;
-            ReportActivityCoverage = true;
-            DebugActivityCoverage = false;
+            EnableEmitCoverage = false;
+            EmitCoverageReportPath = "code-coverage.txt";
+            EmitCoverageCsvOutput = false;
 
             IsVerbose = false;
             EnableDebugging = false;
@@ -481,22 +454,21 @@ namespace PChecker
         }
 
         /// <summary>
-        /// Updates the checkerConfiguration with activity coverage enabled or disabled.
+        /// Updates the checkerConfiguration with emit_coverage tracking enabled or disabled.
         /// </summary>
-        /// <param name="isEnabled">If true, then enables activity coverage.</param>
-        public CheckerConfiguration WithActivityCoverageEnabled(bool isEnabled = true)
+        /// <param name="isEnabled">If true, then enables emit_coverage tracking.</param>
+        /// <param name="reportPath">Path to the code coverage report file.</param>
+        /// <param name="generateCsv">If true, generates a CSV format report in addition to the text report.</param>
+        public CheckerConfiguration WithEmitCoverageEnabled(bool isEnabled = true, string reportPath = null, bool generateCsv = false)
         {
-            ReportActivityCoverage = isEnabled;
-            return this;
-        }
-
-        /// <summary>
-        /// Updates the checkerConfiguration with XML log generation enabled or disabled.
-        /// </summary>
-        /// <param name="isEnabled">If true, then enables XML log generation.</param>
-        public CheckerConfiguration WithXmlLogEnabled(bool isEnabled = true)
-        {
-            IsXmlLogEnabled = isEnabled;
+            EnableEmitCoverage = isEnabled;
+            
+            if (reportPath != null)
+            {
+                EmitCoverageReportPath = reportPath;
+            }
+            
+            EmitCoverageCsvOutput = generateCsv;
             return this;
         }
 

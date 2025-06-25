@@ -1,92 +1,184 @@
-/** Events used to communicate between the bank server and the backend database **/
-// event: send update the database, i.e. the `balance` associated with the `accountId`
+/**
+ * Database Communication Events
+ * ============================
+ * These events facilitate communication between the bank server and database
+ */
+
+/**
+ * Update query event - Sent to update an account's balance in the database
+ *
+ * @field accountId The account identifier to update
+ * @field balance   The new balance value to store
+ */
 event eUpdateQuery: (accountId: int, balance: int);
-// event: send a read request for the `accountId`.
+
+/**
+ * Read query event - Sent to request an account's current balance
+ *
+ * @field accountId The account identifier to read
+ */
 event eReadQuery: (accountId: int);
-// event: send a response (`balance`) corresponding to the read request for an `accountId`
+
+/**
+ * Read query response event - Database response with the requested balance
+ *
+ * @field accountId The account identifier that was queried
+ * @field balance   The current balance value stored for this account
+ */
 event eReadQueryResp: (accountId: int, balance: int);
 
-/*************************************************************
-The BankServer machine uses a database machine as a service to store the bank balance for all its clients.
-On receiving an eWithDrawReq (withdraw requests) from a client, it reads the current balance for the account,
-if there is enough money in the account then it updates the new balance in the database after withdrawal
-and sends a response back to the client.
-*************************************************************/
+/**
+ * BankServer Machine
+ * =================
+ * 
+ * The BankServer processes client withdrawal requests by:
+ * 1. Receiving withdrawal requests from clients
+ * 2. Querying the database for the current account balance
+ * 3. Validating if sufficient funds exist for withdrawal
+ * 4. Updating the database with new balance if withdrawal succeeds
+ * 5. Sending appropriate response back to the client
+ * 
+ * The BankServer maintains a policy that all accounts must maintain
+ * a minimum balance of 10.
+ */
 machine BankServer
 {
-  var database: Database;
+  var databaseInstance: Database;  // Reference to the backend database service
 
+  /**
+   * Initial state for bank server setup
+   */
   start state Init {
     entry (initialBalance: map[int, int]){
-      database = new Database((server = this, initialBalance = initialBalance));
+      // Create a new database instance with initial account balances
+      databaseInstance = new Database((server = this, initialBalance = initialBalance));
       goto WaitForWithdrawRequests;
     }
   }
 
+  /**
+   * Main processing state - Handles client withdrawal requests
+   */
   state WaitForWithdrawRequests {
-    on eWithDrawReq do (wReq: tWithDrawReq) {
-      var currentBalance: int;
-      var response: tWithDrawResp;
+    on eWithDrawReq do (withdrawRequest: tWithDrawReq) {
+      var accountBalance: int;
+      var withdrawalResponse: tWithDrawResp;
 
-      // read the current account balance from the database
-      currentBalance = ReadBankBalance(database, wReq.accountId);
-      // if there is enough money in account after withdrawal
-      if(currentBalance - wReq.amount >= 10)
+      // Query database for current account balance
+      accountBalance = ReadBankBalance(databaseInstance, withdrawRequest.accountId);
+      
+      // Check if withdrawal would maintain minimum balance requirement (10)
+      if(accountBalance - withdrawRequest.amount >= 10)
       {
-        UpdateBankBalance(database, wReq.accountId, currentBalance - wReq.amount);
-        response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = currentBalance - wReq.amount, rId = wReq.rId);
+        // Sufficient funds: update database with new balance
+        var newBalance = accountBalance - withdrawRequest.amount;
+        UpdateBankBalance(databaseInstance, withdrawRequest.accountId, newBalance);
+        
+        // Prepare success response
+        withdrawalResponse = (
+          status = WITHDRAW_SUCCESS, 
+          accountId = withdrawRequest.accountId, 
+          balance = newBalance, 
+          rId = withdrawRequest.rId
+        );
       }
-      else // not enough money after withdraw
+      else // Insufficient funds for withdrawal
       {
-        response = (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = currentBalance, rId = wReq.rId);
+        // Prepare error response (balance remains unchanged)
+        withdrawalResponse = (
+          status = WITHDRAW_ERROR, 
+          accountId = withdrawRequest.accountId, 
+          balance = accountBalance, 
+          rId = withdrawRequest.rId
+        );
       }
 
-      // send response to the client
-      send wReq.source, eWithDrawResp, response;
+      // Send response back to the requesting client
+      send withdrawRequest.source, eWithDrawResp, withdrawalResponse;
     }
   }
 }
 
-/***************************************************************
-The Database machine acts as a helper service for the Bank server and stores the bank balance for
-each account. There are two API's or functions to interact with the Database:
-ReadBankBalance and UpdateBankBalance.
-****************************************************************/
+/**
+ * Database Machine
+ * ===============
+ * 
+ * Provides persistent storage for account balances. The Database handles:
+ * 1. Storing and retrieving account balances
+ * 2. Processing update and read queries from the BankServer
+ * 3. Validating account existence before operations
+ * 
+ * External interaction occurs through two helper functions:
+ * - ReadBankBalance: Retrieves the current balance for an account
+ * - UpdateBankBalance: Updates the balance for an account
+ */
 machine Database
 {
-  var server: BankServer;
-  var balance: map[int, int];
+  var ownerServer: BankServer;                // Reference to the bank server that owns this database
+  var accountBalances: map[int, int];         // Storage for account balances (accountId -> balance)
+  
   start state Init {
     entry(input: (server : BankServer, initialBalance: map[int, int])){
-      server = input.server;
-      balance = input.initialBalance;
+      ownerServer = input.server;
+      accountBalances = input.initialBalance;
     }
-    on eUpdateQuery do (query: (accountId: int, balance: int)) {
-      assert query.accountId in balance, "Invalid accountId received in the update query!";
-      balance[query.accountId] = query.balance;
+    
+    // Handle balance update requests
+    on eUpdateQuery do (updateRequest: (accountId: int, balance: int)) {
+      // Validate account exists before updating
+      assert updateRequest.accountId in accountBalances, "Invalid accountId received in the update query!";
+      
+      // Update the account balance
+      accountBalances[updateRequest.accountId] = updateRequest.balance;
     }
-    on eReadQuery do (query: (accountId: int))
+    
+    // Handle balance read requests
+    on eReadQuery do (readRequest: (accountId: int))
     {
-      assert query.accountId in balance, "Invalid accountId received in the read query!";
-      send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
+      // Validate account exists before reading
+      assert readRequest.accountId in accountBalances, "Invalid accountId received in the read query!";
+      
+      // Send the current balance back to the requesting server
+      send ownerServer, eReadQueryResp, (
+        accountId = readRequest.accountId, 
+        balance = accountBalances[readRequest.accountId]
+      );
     }
   }
 }
 
-// Function to read the bank balance corresponding to the accountId
+/**
+ * ReadBankBalance - Helper function to retrieve an account's balance
+ * 
+ * @param database  The Database instance to query
+ * @param accountId The account to look up
+ * @return The current balance for the specified account
+ */
 fun ReadBankBalance(database: Database, accountId: int) : int {
-    var currentBalance: int;
+    var retrievedBalance: int;
+    
+    // Send read request to database
     send database, eReadQuery, (accountId = accountId,);
+    
+    // Wait for and process database response
     receive {
-      case eReadQueryResp: (resp: (accountId: int, balance: int)) {
-        currentBalance = resp.balance;
+      case eReadQueryResp: (response: (accountId: int, balance: int)) {
+        retrievedBalance = response.balance;
       }
     }
-    return currentBalance;
+    
+    return retrievedBalance;
 }
 
-// Function to update the account balance for the account Id
-fun UpdateBankBalance(database: Database, accId: int, bal: int)
+/**
+ * UpdateBankBalance - Helper function to modify an account's balance
+ * 
+ * @param database  The Database instance to update
+ * @param accountId The account to modify
+ * @param newBalance The new balance to set for the account
+ */
+fun UpdateBankBalance(database: Database, accountId: int, newBalance: int)
 {
-  send database, eUpdateQuery, (accountId = accId, balance = bal);
+  // Send update request to database
+  send database, eUpdateQuery, (accountId = accountId, balance = newBalance);
 }

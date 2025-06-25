@@ -10,7 +10,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
-    public class StatementVisitor : PParserBaseVisitor<IPStmt>
+    public partial class StatementVisitor : PParserBaseVisitor<IPStmt>
     {
         private readonly ExprVisitor exprVisitor;
         private readonly ICompilerConfiguration config;
@@ -547,7 +547,29 @@ namespace Plang.Compiler.TypeChecker
             method.CanReceive = true;
             return new ReceiveStmt(context, cases);
         }
+        
+        /// <summary>
+        /// Type checks the emit_coverage statement and creates an EmitCoverageStmt AST node.
+        /// The label must be a string expression, and the optional payload can be any expression.
+        /// </summary>
+        /// <param name="context">The parser context for the emit_coverage statement</param>
+        /// <returns>A validated EmitCoverageStmt AST node</returns>
+        public override IPStmt VisitEmitCoverageStmt(PParser.EmitCoverageStmtContext context)
+        {
+            // Check the first expression (label) - must be string type
+            var label = exprVisitor.Visit(context.expr(0));
+            if (!PrimitiveType.String.IsAssignableFrom(label.Type))
+            {
+                throw handler.TypeMismatch(context.expr(0), label.Type, PrimitiveType.String);
+            }
 
+            // Check if there's an optional second expression (payload)
+            var payload = context.expr().Length > 1 ? exprVisitor.Visit(context.expr(1)) : null;
+            
+            // Return the AST node
+            return new EmitCoverageStmt(context, label, payload);
+        }
+        
         public override IPStmt VisitNoStmt(PParser.NoStmtContext context)
         {
             return new NoStmt(context);

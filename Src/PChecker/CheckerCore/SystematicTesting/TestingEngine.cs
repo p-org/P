@@ -16,6 +16,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using PChecker.Coverage;
+using PChecker.Coverage.Code;
+using PChecker.Coverage.Event;
 using PChecker.Feedback;
 using PChecker.Generator.Object;
 using PChecker.IO;
@@ -79,12 +81,6 @@ namespace PChecker.SystematicTesting
         private TextWriter Logger;
 
         /// <summary>
-        /// Contains a single schedule of JSON log output in the case where the IsJsonLogEnabled
-        /// checkerConfiguration is specified.
-        /// </summary>
-        private JsonWriter JsonLogger;
-
-        /// <summary>
         /// Field declaration for the JsonVerboseLogs
         /// Structure representation is a list of the JsonWriter logs.
         /// [log iter 1, log iter 2, log iter 3, ...]
@@ -134,15 +130,14 @@ namespace PChecker.SystematicTesting
         public TestReport TestReport { get; set; }
 
         /// <summary>
-        /// Contains a single schedule of XML log output in the case where the IsXmlLogEnabled
-        /// checkerConfiguration is specified.
-        /// </summary>
-        private StringBuilder XmlLog;
-
-        /// <summary>
         /// The readable trace, if any.
         /// </summary>
         public string ReadableTrace { get; private set; }
+        
+        /// <summary>
+        /// Json trace, if any.
+        /// </summary>
+        public List<LogEntry> JsonTrace { get; private set; }
 
         /// <summary>
         /// The reproducable trace, if any.
@@ -511,16 +506,6 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Register required observers.
-        /// </summary>
-        private void RegisterObservers(ControlledRuntime runtime)
-        {
-                // Always output a json log of the error
-                JsonLogger = new JsonWriter();
-                runtime.SetJsonLogger(JsonLogger);
-        }
-
-        /// <summary>
         /// Runs the next testing schedule.
         /// </summary>
         private void RunNextIteration(int schedule)
@@ -540,8 +525,6 @@ namespace PChecker.SystematicTesting
             // Runtime used to serialize and test the program in this schedule.
             ControlledRuntime runtime = null;
 
-            TimelineObserver timelineObserver = new TimelineObserver();
-
             // Logger used to intercept the program output if no custom logger
             // is installed and if verbosity is turned off.
             InMemoryLogger runtimeLogger = null;
@@ -555,9 +538,7 @@ namespace PChecker.SystematicTesting
                 // Creates a new instance of the controlled runtime.
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy);
 
-                runtime.RegisterLog(timelineObserver);
-                RegisterObservers(runtime);
-
+                
 
                 // If verbosity is turned off, then intercept the program log, and also redirect
                 // the standard output and error streams to a nul logger.
@@ -571,7 +552,7 @@ namespace PChecker.SystematicTesting
                     Console.SetError(writer);
                 }
 
-                InitializeCustomLogging(runtime);
+                RegisterLoggers(runtime);
 
                 // Runs the test and waits for it to terminate.
                 runtime.RunTest(TestMethodInfo.Method, TestMethodInfo.Name);
@@ -588,7 +569,7 @@ namespace PChecker.SystematicTesting
 
                 if (Strategy is IFeedbackGuidedStrategy strategy)
                 {
-                    strategy.ObserveRunningResults(timelineObserver);
+                    strategy.ObserveRunningResults(runtime.LogWriter.GetLogsOfType<TimelineObserver>().FirstOrDefault());
                 }
 
                 // Checks that no monitor is in a hot state at termination. Only
@@ -606,12 +587,12 @@ namespace PChecker.SystematicTesting
                 // Only add the current schedule of JsonLogger logs to JsonVerboseLogs if in verbose mode
                 if (_checkerConfiguration.IsVerbose)
                 {
-                    JsonVerboseLogs.Add(JsonLogger.Logs);
+                    JsonVerboseLogs.Add(runtime.LogWriter.GetLogsOfType<PCheckerLogJsonFormatter>().FirstOrDefault()?.Writer.Logs);
                 }
 
                 runtime.LogWriter.LogCompletion();
 
-                GatherTestingStatistics(runtime, timelineObserver);
+                GatherTestingStatistics(runtime, runtime.LogWriter.GetLogsOfType<TimelineObserver>().FirstOrDefault());
 
                 if (!IsReplayModeEnabled && TestReport.NumOfFoundBugs > 0)
                 {
@@ -622,6 +603,7 @@ namespace PChecker.SystematicTesting
                     }
 
                     ConstructReproducableTrace(runtime);
+                    ConstructJSonErrorTrace(runtime);
                 }
             }
             finally
@@ -653,6 +635,11 @@ namespace PChecker.SystematicTesting
             }
         }
 
+        private void ConstructJSonErrorTrace(ControlledRuntime runtime)
+        {
+            JsonTrace = runtime.LogWriter.GetLogsOfType<PCheckerLogJsonFormatter>().FirstOrDefault()?.Writer.Logs;
+        }
+
         /// <summary>
         /// Stops the testing engine.
         /// </summary>
@@ -677,51 +664,6 @@ namespace PChecker.SystematicTesting
             }
 
             return TestReport.GetText(_checkerConfiguration, "...");
-        }
-
-        /// <summary>
-        /// Returns an object where the value null is replaced with "null"
-        /// </summary>
-        public object RecursivelyReplaceNullWithString(object obj)
-        {
-            if (obj == null)
-            {
-                return "null";
-            }
-            if (obj is Dictionary<string, object> dictionaryStr) {
-                var newDictionary = new Dictionary<string, object>();
-                foreach (var item in dictionaryStr) {
-                    var newVal = RecursivelyReplaceNullWithString(item.Value);
-                    if (newVal != null)
-                        newDictionary[item.Key] = newVal;
-                }
-                return newDictionary;
-            }
-
-            if (obj is Dictionary<int, object> dictionaryInt) {
-                var newDictionary = new Dictionary<int, object>();
-                foreach (var item in dictionaryInt) {
-                    var newVal = RecursivelyReplaceNullWithString(item.Value);
-                    if (newVal != null)
-                        newDictionary[item.Key] = newVal;
-                }
-                return newDictionary;
-            }
-
-            if (obj is List<object> list)
-            {
-                var newList = new List<object>();
-                foreach (var item in list)
-                {
-                    var newItem = RecursivelyReplaceNullWithString(item);
-                    if (newItem != null)
-                        newList.Add(newItem);
-                }
-
-                return newList;
-            }
-
-            return obj;
         }
 
         /// <summary>
@@ -761,29 +703,22 @@ namespace PChecker.SystematicTesting
                 }
             }
 
-            if (_checkerConfiguration.IsXmlLogEnabled)
+            // Emit combined coverage report if enabled
+            if (_checkerConfiguration.EnableEmitCoverage)
             {
-                var xmlPath = directory + file + "_" + index + ".trace.xml";
-                Logger.WriteLine($"..... Writing {xmlPath}");
-                File.WriteAllText(xmlPath, XmlLog.ToString());
+                EmitCombinedCoverageReport();
             }
 
-            if (_checkerConfiguration.IsJsonLogEnabled)
-            {
-                var jsonPath = directory + file + "_" + index + ".trace.json";
-                Logger.WriteLine($"..... Writing {jsonPath}");
+            var jsonPath = directory + file + "_" + index + ".trace.json";
+            Logger.WriteLine($"..... Writing {jsonPath}");
 
-                // Remove the null objects from payload recursively for each log event
-                for (int i = 0; i < JsonLogger.Logs.Count; i++)
-                {
-                    JsonLogger.Logs[i].Details.Payload =
-                        RecursivelyReplaceNullWithString(JsonLogger.Logs[i].Details.Payload);
-                }
-
-                // Stream directly to the output file while serializing the JSON
-                using var jsonStreamFile = File.Create(jsonPath);
-                JsonSerializer.Serialize(jsonStreamFile, JsonLogger.Logs, jsonSerializerConfig);
-            }
+            // Create a formatter to handle serialization
+            var jsonFormatter = new PCheckerLogJsonFormatter();
+            jsonFormatter.Writer.Logs.AddRange(JsonTrace);
+            
+            // Serialize the logs to file using the formatter
+            jsonFormatter.SerializeLogsToFile(jsonPath, jsonSerializerConfig);
+            
 
             if (!_checkerConfiguration.PerformFullExploration)
             {
@@ -812,28 +747,53 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// LogWriters on the given object.
         /// </summary>
-        private void InitializeCustomLogging(ControlledRuntime runtime)
+        private void RegisterLoggers(ControlledRuntime runtime)
         {
-            if (!string.IsNullOrEmpty(_checkerConfiguration.CustomStateMachineRuntimeLogType))
+            runtime.RegisterLog(new PCheckerLogTextFormatter());
+            runtime.RegisterLog(new PCheckerLogJsonFormatter());
+            runtime.RegisterLog(new ControlledRuntimeLogEventCoverage());
+            runtime.RegisterLog(new ControlledRuntimeLogCodeCoverage());
+            runtime.RegisterLog(new TimelineObserver());
+        }
+        
+        /// <summary>
+        /// Emits a combined code and event coverage report.
+        /// </summary>
+        internal void EmitCombinedCoverageReport()
+        {
+            if (!_checkerConfiguration.EnableEmitCoverage)
             {
-                var log = Activate<IControlledRuntimeLog>(_checkerConfiguration.CustomStateMachineRuntimeLogType);
-                if (log != null)
+                return;
+            }
+            
+            // Get the file path to output the coverage report
+            var directory = _checkerConfiguration.OutputDirectory;
+            var coverageReportPath = Path.Combine(directory, _checkerConfiguration.EmitCoverageReportPath);
+            
+            Logger.WriteLine("... Emitting coverage report:");
+            Logger.WriteLine($"..... Writing {coverageReportPath}");
+            
+            // Check if there's code and event coverage information in the test report
+            if (TestReport.CodeCoverage != null && TestReport.EventCoverageInfo != null)
+            {
+                // Create and use the combined coverage reporter
+                var coverageReporter = new CoverageReporter(
+                    TestReport.CodeCoverage,
+                    TestReport.EventCoverageInfo);
+                
+                coverageReporter.EmitCoverageReport(coverageReportPath);
+                
+                // Generate CSV report if configured
+                if (_checkerConfiguration.EmitCoverageCsvOutput)
                 {
-                    runtime.RegisterLog(log);
+                    var csvPath = Path.ChangeExtension(coverageReportPath, ".csv");
+                    Logger.WriteLine($"..... Writing {csvPath}");
+                    coverageReporter.EmitCodeCoverageCsvReport(csvPath);
                 }
             }
-
-            if (_checkerConfiguration.ReportActivityCoverage)
+            else 
             {
-                // Need this additional logger to get the event coverage report correct
-                runtime.RegisterLog(new ControlledRuntimeLogEventCoverage());
-            }
-
-            if (_checkerConfiguration.IsXmlLogEnabled)
-            {
-                XmlLog = new StringBuilder();
-                runtime.RegisterLog(new PCheckerLogXmlFormatter(XmlWriter.Create(XmlLog,
-                    new XmlWriterSettings { Indent = true, IndentChars = "  ", OmitXmlDeclaration = true })));
+                Logger.WriteLine("..... No coverage information available.");
             }
         }
 
@@ -918,15 +878,31 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Gathers the exploration strategy statistics from the specified runtimne.
+        /// Gathers the exploration strategy statistics from the specified runtime.
         /// </summary>
         private void GatherTestingStatistics(ControlledRuntime runtime, TimelineObserver timelineObserver)
         {
             var report = runtime.Scheduler.GetReport();
-            var coverageInfo = runtime.GetCoverageInfo();
-            report.CoverageInfo.Merge(coverageInfo);
+            
+            // Gather event coverage information
+            var eventCoverageInfo = runtime.GetCoverageInfo();
+            report.EventCoverageInfo.Merge(eventCoverageInfo);
+            
+            // Gather code coverage information
+            var codeCoverage = runtime.GetCodeCoverage();
+            if (codeCoverage != null)
+            {
+                if (report.CodeCoverage == null)
+                {
+                    report.CodeCoverage = codeCoverage;
+                }
+                else
+                {
+                    report.CodeCoverage.Merge(codeCoverage);
+                }
+            }
+            
             TestReport.Merge(report);
-            var timelineHash = timelineObserver.GetTimelineHash();
             TestReport.ExploredTimelines.Add(timelineObserver.GetTimelineHash());
         }
 

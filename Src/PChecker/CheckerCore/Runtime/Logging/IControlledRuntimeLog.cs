@@ -229,5 +229,7 @@ namespace PChecker.Runtime.Logging
         /// Invoked when a log is complete (and is about to be closed).
         /// </summary>
         void OnCompleted();
+
+        void OnAnnouceEvent(string machineName, Event @event);
     }
 }

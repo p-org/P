@@ -182,4 +182,8 @@ internal class TimelineObserver : IControlledRuntimeLog
     public void OnCompleted()
     {
     }
+
+    public void OnAnnouceEvent(string machineName, Event @event)
+    {
+    }
 }

@@ -140,11 +140,6 @@ namespace PChecker.Runtime.StateMachines
         /// The installed runtime logger.
         /// </summary>
         protected TextWriter Logger => Runtime.Logger;
-
-        /// <summary>
-        /// The installed runtime json logger.
-        /// </summary>
-        protected JsonWriter JsonLogger => Runtime.JsonLogger;
         
         protected IPValue gotoPayload;
         
@@ -222,11 +217,6 @@ namespace PChecker.Runtime.StateMachines
         public void LogLine(string message)
         {
             Logger.WriteLine($"<PrintLog> {message}");
-
-            // Log message to JSON output
-            JsonLogger.AddLogType(JsonWriter.LogType.Print);
-            JsonLogger.AddLog(message);
-            JsonLogger.AddToLogs(updateVcMap: false);
         }
 
         public void Log(string message)
@@ -244,21 +234,8 @@ namespace PChecker.Runtime.StateMachines
 
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
-            var pText = payload == null ? "" : $" with payload {((IPValue)payload).ToEscapedString()}";
-
-            Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
-
-            // Log message to JSON output
-            JsonLogger.AddLogType(JsonWriter.LogType.Announce);
-            JsonLogger.LogDetails.Id = $"{Id}";
-            JsonLogger.LogDetails.Event = ev.GetType().Name;
-            if (payload != null)
-            {
-                JsonLogger.LogDetails.Payload = ((IPValue)payload).ToDict();
-            }
-            JsonLogger.AddLog($"{Id} announced event {ev.GetType().Name}{pText}.");
-            JsonLogger.AddToLogs(updateVcMap: true);
-
+            
+            Runtime.LogWriter.LogAnnounceEvent(CurrentStateName, @event);
             AnnounceInternal(@event);
         }
 

@@ -6,6 +6,8 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
 using PChecker.Coverage;
+using PChecker.Coverage.Code;
+using PChecker.Coverage.Event;
 using PChecker.Utilities;
 
 namespace PChecker.SystematicTesting
@@ -23,10 +25,16 @@ namespace PChecker.SystematicTesting
         public CheckerConfiguration CheckerConfiguration { get; private set; }
 
         /// <summary>
+        /// Information regarding event coverage.
+        /// </summary>
+        [DataMember]
+        public EventCoverageInfo EventCoverageInfo { get; private set; }
+
+        /// <summary>
         /// Information regarding code coverage.
         /// </summary>
         [DataMember]
-        public CoverageInfo CoverageInfo { get; private set; }
+        public CodeCoverage CodeCoverage { get; set; }
 
         /// <summary>
         /// Number of explored fair schedules.
@@ -120,7 +128,8 @@ namespace PChecker.SystematicTesting
         {
             CheckerConfiguration = checkerConfiguration;
 
-            CoverageInfo = new CoverageInfo();
+            EventCoverageInfo = new EventCoverageInfo();
+            CodeCoverage = new CodeCoverage();
 
             NumOfExploredFairSchedules = 0;
             NumOfExploredUnfairSchedules = 0;
@@ -153,7 +162,14 @@ namespace PChecker.SystematicTesting
 
             lock (Lock)
             {
-                CoverageInfo.Merge(testReport.CoverageInfo);
+                EventCoverageInfo.Merge(testReport.EventCoverageInfo);
+                
+                // Merge code coverage if available
+                if (testReport.CodeCoverage != null)
+                {
+                    CodeCoverage.Merge(testReport.CodeCoverage);
+                }
+                
                 ExploredTimelines.UnionWith(testReport.ExploredTimelines);
 
                 NumOfFoundBugs += testReport.NumOfFoundBugs;

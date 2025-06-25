@@ -13,6 +13,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using PChecker.Coverage;
+using PChecker.Coverage.Code;
+using PChecker.Coverage.Event;
 using PChecker.Exceptions;
 using PChecker.Random;
 using PChecker.Runtime.Events;
@@ -104,9 +106,14 @@ namespace PChecker.SystematicTesting
         internal TaskController TaskController { get; private set; }
 
         /// <summary>
-        /// Data structure containing information regarding testing coverage.
+        /// Data structure containing information regarding event coverage.
         /// </summary>
-        internal CoverageInfo CoverageInfo;
+        internal EventCoverageInfo EventCoverageInfo;
+        
+        /// <summary>
+        /// Data structure containing information regarding code coverage.
+        /// </summary>
+        internal CodeCoverage CodeCoverage;
 
         /// <summary>
         /// Map that stores all unique names and their corresponding state machine ids.
@@ -144,11 +151,6 @@ namespace PChecker.SystematicTesting
         /// to replace the logger with a custom one.
         /// </summary>
         public TextWriter Logger => LogWriter.Logger;
-
-        /// <summary>
-        /// Used to log json trace outputs.
-        /// </summary>
-        public JsonWriter JsonLogger => LogWriter.JsonLogger;
 
         /// <summary>
         /// Returns the current hashed state of the monitors.
@@ -222,7 +224,8 @@ namespace PChecker.SystematicTesting
             RootTaskId = Task.CurrentId;
             NameValueToStateMachineId = new ConcurrentDictionary<string, StateMachineId>();
 
-            CoverageInfo = new CoverageInfo();
+            EventCoverageInfo = new EventCoverageInfo();
+            CodeCoverage = new CodeCoverage();
 
             var scheduleTrace = new ScheduleTrace();
             if (checkerConfiguration.IsLivenessCheckingEnabled)
@@ -250,7 +253,7 @@ namespace PChecker.SystematicTesting
             RootTaskId = Task.CurrentId;
             NameValueToStateMachineId = new ConcurrentDictionary<string, StateMachineId>();
 
-            CoverageInfo = new CoverageInfo();
+            EventCoverageInfo = new EventCoverageInfo();
             
             // Update the current asynchronous control flow with this runtime instance,
             // allowing future retrieval in the same asynchronous call stack.
@@ -364,7 +367,7 @@ namespace PChecker.SystematicTesting
         internal void RunTest(Delegate testMethod, string testName)
         {
             testName = string.IsNullOrEmpty(testName) ? string.Empty : $" '{testName}'";
-            Logger.WriteLine($"<TestLog> Running test{testName}.");
+            Logger.WriteLine($"<TestLog> Running test {testName}.");
             Assert(testMethod != null, "Unable to execute a null test method.");
             Assert(Task.CurrentId != null, "The test must execute inside a controlled task.");
 
@@ -510,10 +513,7 @@ namespace PChecker.SystematicTesting
             stateMachine.self = new PMachineValue(id, stateMachine.receives.ToList());
             stateMachine.interfaceName = "I_" + name;
 
-            if (CheckerConfiguration.ReportActivityCoverage)
-            {
-                ReportActivityCoverageOfStateMachine(stateMachine);
-            }
+            ReportActivityCoverageOfStateMachine(stateMachine);
 
             var result = Scheduler.RegisterOperation(new StateMachineOperation(stateMachine));
             Assert(result, "StateMachine id '{0}' is used by an existing or previously halted state machine.", id.Value);
@@ -786,10 +786,7 @@ namespace PChecker.SystematicTesting
 
             LogWriter.LogCreateMonitor(type.FullName);
 
-            if (CheckerConfiguration.ReportActivityCoverage)
-            {
-                ReportActivityCoverageOfMonitor(monitor);
-            }
+            ReportActivityCoverageOfMonitor(monitor);
 
             Monitors.Add(monitor);
 
@@ -1250,12 +1247,6 @@ namespace PChecker.SystematicTesting
         
         /// <inheritdoc/>
         public TextWriter SetLogger(TextWriter logger) => LogWriter.SetLogger(logger);
-
-        /// <summary>
-        /// Sets the JsonLogger in LogWriter.cs
-        /// </summary>
-        /// <param name="jsonLogger">jsonLogger instance</param>
-        public void SetJsonLogger(JsonWriter jsonLogger) => LogWriter.SetJsonLogger(jsonLogger);
         
         /// <summary>
         /// Use this method to register an <see cref="IControlledRuntimeLog"/>.
@@ -1268,13 +1259,12 @@ namespace PChecker.SystematicTesting
         public void RemoveLog(IControlledRuntimeLog log) => LogWriter.RemoveLog(log);
 
         /// <summary>
-        /// Get the coverage graph information (if any). This information is only available
-        /// when <see cref="CheckerConfiguration.ReportActivityCoverage"/> is enabled.
+        /// Get the coverage graph information (if any).
         /// </summary>
-        /// <returns>A new CoverageInfo object.</returns>
-        public CoverageInfo GetCoverageInfo()
+        /// <returns>A new EventCoverageInfo object.</returns>
+        public EventCoverageInfo GetCoverageInfo()
         {
-            var result = CoverageInfo;
+            var result = EventCoverageInfo;
             if (result != null)
             {
                 var eventCoverage = LogWriter.GetLogsOfType<ControlledRuntimeLogEventCoverage>().FirstOrDefault();
@@ -1286,6 +1276,21 @@ namespace PChecker.SystematicTesting
 
             return result;
         }
+        
+        /// <summary>
+        /// Get the code coverage information (if any).
+        /// </summary>
+        /// <returns>A CodeCoverage object with the collected coverage data.</returns>
+        public CodeCoverage GetCodeCoverage()
+        {
+            var codeCoverageLog = LogWriter.GetLogsOfType<ControlledRuntimeLogCodeCoverage>().FirstOrDefault();
+            if (codeCoverageLog != null)
+            {
+                return codeCoverageLog.GetCodeCoverage();
+            }
+            
+            return CodeCoverage;
+        }
 
         /// <summary>
         /// Reports state machines that are to be covered in coverage report.
@@ -1293,7 +1298,7 @@ namespace PChecker.SystematicTesting
         private void ReportActivityCoverageOfStateMachine(StateMachine stateMachine)
         {
             var name = stateMachine.GetType().FullName;
-            if (CoverageInfo.IsMachineDeclared(name))
+            if (EventCoverageInfo.IsMachineDeclared(name))
             {
                 return;
             }
@@ -1302,14 +1307,14 @@ namespace PChecker.SystematicTesting
             var states = stateMachine.GetAllStates();
             foreach (var state in states)
             {
-                CoverageInfo.DeclareMachineState(name, state);
+                EventCoverageInfo.DeclareMachineState(name, state);
             }
 
             // Fetch registered events.
             var pairs = stateMachine.GetAllStateEventPairs();
             foreach (var tup in pairs)
             {
-                CoverageInfo.DeclareStateEvent(name, tup.Item1, tup.Item2);
+                EventCoverageInfo.DeclareStateEvent(name, tup.Item1, tup.Item2);
             }
         }
 
@@ -1319,7 +1324,7 @@ namespace PChecker.SystematicTesting
         private void ReportActivityCoverageOfMonitor(Monitor monitor)
         {
             var monitorName = monitor.GetType().FullName;
-            if (CoverageInfo.IsMachineDeclared(monitorName))
+            if (EventCoverageInfo.IsMachineDeclared(monitorName))
             {
                 return;
             }
@@ -1329,7 +1334,7 @@ namespace PChecker.SystematicTesting
 
             foreach (var state in states)
             {
-                CoverageInfo.DeclareMachineState(monitorName, state);
+                EventCoverageInfo.DeclareMachineState(monitorName, state);
             }
 
             // Fetch registered events.
@@ -1337,7 +1342,7 @@ namespace PChecker.SystematicTesting
 
             foreach (var tup in pairs)
             {
-                CoverageInfo.DeclareStateEvent(monitorName, tup.Item1, tup.Item2);
+                EventCoverageInfo.DeclareStateEvent(monitorName, tup.Item1, tup.Item2);
             }
         }
 

@@ -26,11 +26,7 @@ namespace PChecker.Runtime.Logging
         /// Used to log messages.
         /// </summary>
         internal TextWriter Logger { get; private set; }
-
-        /// <summary>
-        /// Used to log json messages.
-        /// </summary>
-        public JsonWriter JsonLogger { get; private set; }
+        
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LogWriter"/> class.
@@ -398,6 +394,17 @@ namespace PChecker.Runtime.Logging
             }
         }
 
+        public void LogAnnounceEvent(string machineName, Event e)
+        {
+            if (Logs.Count > 0)
+            {
+                foreach (var log in Logs)
+                {
+                    log.OnAnnouceEvent(machineName, e);
+                }
+            }
+        }
+
         /// <summary>
         /// Logs that the specified monitor raised an event.
         /// </summary>
@@ -531,12 +538,6 @@ namespace PChecker.Runtime.Logging
             return prevLogger;
         }
 
-        /// <summary>
-        /// Sets the JsonLogger to an instance created on runtime.
-        /// </summary>
-        /// <param name="jsonLogger">The jsonLogger instance created from runtime before running tests.</param>
-        internal void SetJsonLogger(JsonWriter jsonLogger) => JsonLogger = jsonLogger;
-
         private PCheckerLogTextFormatter GetOrCreateTextLog()
         {
             var textLog = GetLogsOfType<PCheckerLogTextFormatter>().FirstOrDefault();
@@ -581,13 +582,6 @@ namespace PChecker.Runtime.Logging
                 {
                     a.Logger = Logger;
                 }
-            }
-
-            // If log is or of subclass PCheckerLogJsonFormatter (i.e. when log is PCheckerLogJsonFormatter),
-            // update the Writer reference to the JsonLogger instance defined within LogWriter.cs
-            if (log is PCheckerLogJsonFormatter tempJsonFormatter)
-            {
-                tempJsonFormatter.Writer = JsonLogger;
             }
 
             Logs.Add(log);

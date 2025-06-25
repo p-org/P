@@ -11,7 +11,7 @@
     <PackageReference Include="Antlr4" Version="4.6.5-beta001" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="Microsoft.NETCore.Targets" Version="3.1.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="6.0.0-preview.4.21253.7" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Antlr4 Include="Parser/PParser.g4">
@@ -24,5 +24,8 @@
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>Plang.Compiler</CustomToolNamespace>
     </Antlr4>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Backend\Java\" />
   </ItemGroup>
 </Project>

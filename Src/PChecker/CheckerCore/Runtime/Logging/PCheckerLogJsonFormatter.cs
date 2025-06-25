@@ -2,11 +2,17 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Exceptions;
 using PChecker.Runtime.StateMachines;
+using PChecker.Runtime.Values;
 
 namespace PChecker.Runtime.Logging
 {
@@ -101,6 +107,19 @@ namespace PChecker.Runtime.Logging
         /// </summary>
         public void OnCompleted()
         {
+        }
+
+        public void OnAnnouceEvent(string machineName, Event @event)
+        {
+            Writer.AddLogType(JsonWriter.LogType.Announce);
+            Writer.LogDetails.Id = $"{machineName}";
+            Writer.LogDetails.Event = @event.GetType().Name;
+            if (@event.Payload != null)
+            {
+                Writer.LogDetails.Payload = ((IPValue)@event.Payload).ToDict();
+            }
+            Writer.AddLog($"{machineName} announced event {@event}.");
+            Writer.AddToLogs(updateVcMap: true);
         }
 
         /// <summary>
@@ -503,6 +522,102 @@ namespace PChecker.Runtime.Logging
             Writer.LogDetails.StrategyDescription = description;
             Writer.AddLog(log);
             Writer.AddToLogs();
+        }
+        
+        /// <summary>
+        /// Returns an object where the value null is replaced with "null" string
+        /// </summary>
+        /// <param name="obj">Object that potentially contains null values</param>
+        /// <returns>Object with null values replaced with "null" strings</returns>
+        public static object RecursivelyReplaceNullWithString(object obj)
+        {
+            if (obj == null)
+            {
+                return "null";
+            }
+            if (obj is Dictionary<string, object> dictionaryStr) {
+                var newDictionary = new Dictionary<string, object>();
+                foreach (var item in dictionaryStr) {
+                    var newVal = RecursivelyReplaceNullWithString(item.Value);
+                    if (newVal != null)
+                        newDictionary[item.Key] = newVal;
+                }
+                return newDictionary;
+            }
+
+            if (obj is Dictionary<int, object> dictionaryInt) {
+                var newDictionary = new Dictionary<int, object>();
+                foreach (var item in dictionaryInt) {
+                    var newVal = RecursivelyReplaceNullWithString(item.Value);
+                    if (newVal != null)
+                        newDictionary[item.Key] = newVal;
+                }
+                return newDictionary;
+            }
+
+            if (obj is List<object> list)
+            {
+                var newList = new List<object>();
+                foreach (var item in list)
+                {
+                    var newItem = RecursivelyReplaceNullWithString(item);
+                    if (newItem != null)
+                        newList.Add(newItem);
+                }
+
+                return newList;
+            }
+
+            return obj;
+        }
+        
+        /// <summary>
+        /// Serializes logs to a JSON file, replacing null values with "null" strings
+        /// </summary>
+        /// <param name="jsonPath">Path to the output JSON file</param>
+        /// <param name="jsonSerializerConfig">Optional JSON serializer configuration</param>
+        public void SerializeLogsToFile(string jsonPath, JsonSerializerOptions jsonSerializerConfig = null)
+        {
+            // Create default serializer options if not provided
+            if (jsonSerializerConfig == null)
+            {
+                jsonSerializerConfig = new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true,
+                    Converters = { new EncodingConverter() }
+                };
+            }
+            
+            // Remove the null objects from payload recursively for each log event
+            for (int i = 0; i < Writer.Logs.Count; i++)
+            {
+                Writer.Logs[i].Details.Payload =
+                    RecursivelyReplaceNullWithString(Writer.Logs[i].Details.Payload);
+            }
+
+            // Stream directly to the output file while serializing the JSON
+            using var jsonStreamFile = File.Create(jsonPath);
+            JsonSerializer.Serialize(jsonStreamFile, Writer.Logs, jsonSerializerConfig);
+        }
+        
+        /// <summary>
+        /// JSON converter for System.Text.Encoding
+        /// </summary>
+        internal class EncodingConverter : JsonConverter<System.Text.Encoding>
+        {
+            public override System.Text.Encoding Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                var name = reader.GetString();
+                if (name == null)
+                    return null;
+                return System.Text.Encoding.GetEncoding(name);
+            }
+            public override void Write(Utf8JsonWriter writer, System.Text.Encoding value, JsonSerializerOptions options)
+            {
+                writer.WriteStringValue(value.WebName);
+            }
         }
     }
 }

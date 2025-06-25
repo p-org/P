@@ -1,178 +1,350 @@
-/* User Defined Types */
+/**
+ * Two-Phase Commit (2PC) Type Definitions
+ * =====================================
+ * This section defines the data structures used in the 2PC protocol implementation.
+ */
 
-// a transaction consisting of the key, value, and the unique transaction id.
+/**
+ * Transaction type - Represents a key-value pair modification with a unique identifier
+ * 
+ * @field key     The key identifier in the key-value store
+ * @field val     The new value to be stored
+ * @field transId The unique identifier for this transaction
+ */
 type tTrans = (key: string, val: int, transId: int);
-// payload type associated with the `eWriteTransReq` event where `client`: client sending the
-// transaction, `trans`: transaction to be committed.
+
+/**
+ * WriteTransactionRequest type - Client's request to modify data
+ * 
+ * @field client  The client machine initiating the transaction
+ * @field trans   The transaction details (key, value, ID)
+ */
 type tWriteTransReq = (client: Client, trans: tTrans);
-// payload type associated with the `eWriteTransResp` event where `transId` is the transaction Id
-// and `status` is the return status of the transaction request.
+
+/**
+ * WriteTransactionResponse type - Coordinator's response to a write request
+ * 
+ * @field transId The transaction ID this response corresponds to
+ * @field status  The result of the transaction (SUCCESS, ERROR, TIMEOUT)
+ */
 type tWriteTransResp = (transId: int, status: tTransStatus);
-// payload type associated with the `eReadTransReq` event where `client` is the Client machine sending
-// the read request and `key` is the key whose value the client wants to read.
+
+/**
+ * ReadTransactionRequest type - Client's request to retrieve data
+ * 
+ * @field client  The client machine requesting data
+ * @field key     The key identifier to read from the store
+ */
 type tReadTransReq = (client: Client, key: string);
-// payload type associated with the `eReadTransResp` event where `val` is the value corresponding to
-// the `key` in the read request and `status` is the read status (e.g., success or failure)
+
+/**
+ * ReadTransactionResponse type - Response to a read request
+ * 
+ * @field key     The key that was queried
+ * @field val     The value associated with the key (if successful)
+ * @field status  The result of the read operation
+ */
 type tReadTransResp = (key: string, val: int, status: tTransStatus);
 
-// transaction status
+/**
+ * TransactionStatus enum - Possible outcomes of transaction operations
+ */
 enum tTransStatus {
-  SUCCESS,
-  ERROR,
-  TIMEOUT
+  SUCCESS,  // Operation completed successfully
+  ERROR,    // Operation failed due to an error
+  TIMEOUT   // Operation failed due to timeout
 }
 
-/* Events used by the 2PC clients to communicate with the 2PC coordinator */
-// event: write transaction request (client to coordinator)
+/**
+ * Client-Coordinator Communication Events
+ * ====================================
+ * Events used for interaction between clients and the coordinator
+ */
+
+// Client sends write transaction request to coordinator
 event eWriteTransReq : tWriteTransReq;
-// event: write transaction response (coordinator to client)
+
+// Coordinator sends write transaction result to client
 event eWriteTransResp : tWriteTransResp;
-// event: read transaction request (client to coordinator)
+
+// Client sends read data request to coordinator
 event eReadTransReq : tReadTransReq;
-// event: read transaction response (participant to client)
+
+// Participant sends read data result to client (via coordinator)
 event eReadTransResp: tReadTransResp;
 
-/* Events used for communication between the coordinator and the participants */
-// event: prepare request for a transaction (coordinator to participant)
-event ePrepareReq: tPrepareReq;
-// event: prepare response for a transaction (participant to coodinator)
-event ePrepareResp: tPrepareResp;
-// event: commit transaction (coordinator to participant)
-event eCommitTrans: int;
-// event: abort transaction (coordinator to participant)
-event eAbortTrans: int;
+/**
+ * Coordinator-Participant Communication Events
+ * ========================================
+ * Events used for the two-phase commit protocol communication
+ */
 
-/* User Defined Types */
-// payload type associated with the `ePrepareReq` event
+// Phase 1: Coordinator asks participants if they can commit the transaction
+event ePrepareReq: tPrepareReq;
+
+// Phase 1: Participants vote on whether they can commit the transaction
+event ePrepareResp: tPrepareResp;
+
+// Phase 2: Coordinator instructs participants to commit the transaction
+event eCommitTrans: int;  // Payload is transactionId
+
+// Phase 2: Coordinator instructs participants to abort the transaction
+event eAbortTrans: int;   // Payload is transactionId
+
+/**
+ * Protocol-specific Type Definitions
+ * ===============================
+ */
+
+/**
+ * PrepareRequest type - First phase of 2PC protocol
+ * This type is equivalent to tTrans, containing the transaction details
+ */
 type tPrepareReq = tTrans;
-// payload type assocated with the `ePrepareResp` event where `participant` is the participant machine
-// sending the response, `transId` is the transaction id, and `status` is the status of the prepare
-// request for that transaction.
+
+/**
+ * PrepareResponse type - Participant's vote on transaction commit
+ * 
+ * @field participant  The participant machine responding
+ * @field transId      The transaction ID being voted on
+ * @field status       The participant's vote (SUCCESS = can commit, ERROR/TIMEOUT = cannot commit)
+ */
 type tPrepareResp = (participant: Participant, transId: int, status: tTransStatus);
 
-// event: inform participant about the coordinator
+// Used during initialization to inform participants about the coordinator
 event eInformCoordinator: Coordinator;
 
-/*****************************************************************************************
-The Coordinator machine receives write and read transactions from the clients. The coordinator machine
-services these transactions one by one in the order in which they were received. On receiving a write
-transaction the coordinator sends prepare request to all the participants and waits for prepare
-responses from all the participants. Based on the responses, the coordinator either commits or aborts
-the transaction. If the coordinator fails to receive agreement from participants in time, then it
-timesout and aborts the transaction. On receiving a read transaction, the coordinator randomly selects
-a participant and  forwards the read request to that participant.
-******************************************************************************************/
+/**
+ * Coordinator Machine
+ * =================
+ * 
+ * The coordinator is the central component of the two-phase commit protocol,
+ * responsible for managing the distributed transaction workflow.
+ * 
+ * Key responsibilities:
+ * 1. Managing write transactions through the two-phase commit process:
+ *    - Phase 1: Ask all participants to prepare (can you commit?)
+ *    - Phase 2: Based on responses, either commit or abort
+ * 
+ * 2. Managing read transactions by:
+ *    - Selecting an appropriate participant to fulfill the read
+ *    - Forwarding read requests to that participant
+ * 
+ * 3. Transaction sequencing:
+ *    - Processing transactions one at a time, in order of reception
+ *    - Maintaining atomicity of transactions (all-or-nothing)
+ * 
+ * 4. Failure handling:
+ *    - Using timeouts to detect participant failures
+ *    - Aborting transactions when consensus cannot be reached
+ *    - Ensuring system consistency even during failures
+ */
 machine Coordinator
 {
-  // set of participants
-  var participants: set[Participant];
-  // current write transaction being handled
-  var currentWriteTransReq: tWriteTransReq;
-  // previously seen transaction ids
-  var seenTransIds: set[int];
-  var timer: Timer;
+  // All participants involved in the distributed transaction system
+  var participantNodes: set[Participant];
+  
+  // Currently processing write transaction (only one active at a time)
+  var activeWriteRequest: tWriteTransReq;
+  
+  // Transaction IDs that have been processed (prevents duplicates)
+  var processedTransactionIds: set[int];
+  
+  // Timer for transaction timeout management
+  var transactionTimer: Timer;
 
+  /**
+   * Initialization State
+   * -----------------
+   * Sets up the coordinator and notifies participants
+   */
   start state Init {
     entry (payload: set[Participant]){
-      participants = payload;
-      timer = CreateTimer(this);
-      // inform all participants that I am the coordinator
+      // Store references to all participants in the system
+      participantNodes = payload;
+      
+      // Create timer for managing transaction timeouts
+      transactionTimer = CreateTimer(this);
+      
+      // Register this coordinator with all participants
       BroadcastToAllParticipants(eInformCoordinator, this);
+      
+      // Ready to process transactions
       goto WaitForTransactions;
     }
   }
 
+  /**
+   * WaitForTransactions State
+   * ----------------------
+   * Idle state waiting for client transaction requests (read or write)
+   */
   state WaitForTransactions {
-    on eWriteTransReq do (wTrans : tWriteTransReq) {
-      if(wTrans.trans.transId in seenTransIds) // transId have to be unique
+    // Handle write transaction requests from clients
+    on eWriteTransReq do (writeRequest: tWriteTransReq) {
+      // Enforce transaction ID uniqueness - reject duplicates
+      if(writeRequest.trans.transId in processedTransactionIds)
       {
-        send wTrans.client, eWriteTransResp, (transId = wTrans.trans.transId, status = TIMEOUT);
+        // Respond with timeout status for duplicate transaction IDs
+        send writeRequest.client, eWriteTransResp, (
+          transId = writeRequest.trans.transId, 
+          status = TIMEOUT
+        );
         return;
       }
 
-      currentWriteTransReq = wTrans;
-      BroadcastToAllParticipants(ePrepareReq, wTrans.trans);
-      //start timer while waiting for responses from all participants
-      StartTimer(timer);
+      // Store the current transaction for processing
+      activeWriteRequest = writeRequest;
+      
+      // Phase 1: Send prepare requests to all participants
+      BroadcastToAllParticipants(ePrepareReq, writeRequest.trans);
+      
+      // Start timeout timer for this transaction
+      StartTimer(transactionTimer);
+      
+      // Move to state that collects votes from participants
       goto WaitForPrepareResponses;
     }
 
-    on eReadTransReq do (rTrans : tReadTransReq) {
-      // non-deterministically pick a participant to read from.
-      send choose(participants), eReadTransReq, rTrans;
+    // Handle read transaction requests from clients
+    on eReadTransReq do (readRequest: tReadTransReq) {
+      // Forward read request to a randomly selected participant
+      // This provides load balancing and availability
+      send choose(participantNodes), eReadTransReq, readRequest;
     }
 
-    // when in this state it is fine to drop these messages as they are from the previous transaction
+    // Ignore prepare responses and timeouts when not processing a transaction
+    // These are likely from previous transactions and can be safely ignored
     ignore ePrepareResp, eTimeOut;
   }
 
-  var countPrepareResponses: int;
+  /**
+   * Counter for tracking "YES" votes from participants
+   * Needs to match the total number of participants for a commit decision
+   */
+  var positiveVoteCount: int;
 
+  /**
+   * WaitForPrepareResponses State
+   * --------------------------
+   * Collects votes from all participants in phase 1 of 2PC
+   * Decides whether to commit or abort based on collected votes
+   */
   state WaitForPrepareResponses {
-    // defer requests, we are going to process transactions sequentially
+    // Queue any incoming write requests since we're processing a transaction
+    // These will be handled after current transaction completes
     defer eWriteTransReq;
 
-    on ePrepareResp do (resp : tPrepareResp) {
-      // check if the response is for the current transaction else ignore it
-      if (currentWriteTransReq.trans.transId == resp.transId) {
-        if(resp.status == SUCCESS)
+    // Handle prepare responses (votes) from participants
+    on ePrepareResp do (response: tPrepareResp) {
+      // Verify this response is for our active transaction
+      if (activeWriteRequest.trans.transId == response.transId) {
+        if(response.status == SUCCESS)
         {
-          countPrepareResponses = countPrepareResponses + 1;
-          // check if we have received all responses
-          if(countPrepareResponses == sizeof(participants))
+          // Count this "YES" vote
+          positiveVoteCount = positiveVoteCount + 1;
+          
+          // Check if we have unanimous agreement from all participants
+          if(positiveVoteCount == sizeof(participantNodes))
           {
-            // lets commit the transaction
+            // All participants voted YES - commit the transaction
             DoGlobalCommit();
-            // safe to go back and service the next transaction
+            
+            // Return to idle state to process next transaction
             goto WaitForTransactions;
           }
         }
         else
         {
+          // At least one participant voted NO - abort the transaction
           DoGlobalAbort(ERROR);
-          // safe to go back and service the next transaction
+          
+          // Return to idle state to process next transaction
           goto WaitForTransactions;
         }
       }
     }
 
-    // on timeout abort the transaction
+    // Handle transaction timeout (missing responses from participants)
     on eTimeOut goto WaitForTransactions with { DoGlobalAbort(TIMEOUT); }
 
-    on eReadTransReq do (rTrans : tReadTransReq) {
-      // non-deterministically pick a participant to read from.
-      send choose(participants), eReadTransReq, rTrans;
+    // Still handle read requests during an ongoing write transaction
+    on eReadTransReq do (readRequest: tReadTransReq) {
+      // Forward read to randomly selected participant
+      send choose(participantNodes), eReadTransReq, readRequest;
     }
 
+    // Reset vote counter when leaving this state
     exit {
-      countPrepareResponses = 0;
+      positiveVoteCount = 0;
     }
   }
 
-  fun DoGlobalAbort(respStatus: tTransStatus) {
-    // ask all participants to abort and fail the transaction
-    BroadcastToAllParticipants(eAbortTrans, currentWriteTransReq.trans.transId);
-    send currentWriteTransReq.client, eWriteTransResp, (transId = currentWriteTransReq.trans.transId, status = respStatus);
-    if(respStatus != TIMEOUT)
-      CancelTimer(timer);
+  /**
+   * DoGlobalAbort - Executes the abort decision for the current transaction
+   * 
+   * This function handles the phase 2 for an ABORT decision:
+   * 1. Notifies all participants to abort the transaction
+   * 2. Responds to the client with the failure status
+   * 3. Cancels the transaction timer if not already triggered
+   * 
+   * @param responseStatus The specific reason for the abort (ERROR or TIMEOUT)
+   */
+  fun DoGlobalAbort(responseStatus: tTransStatus) {
+    // Notify all participants to abort/rollback the transaction
+    BroadcastToAllParticipants(eAbortTrans, activeWriteRequest.trans.transId);
+    
+    // Notify client that the transaction has failed
+    send activeWriteRequest.client, eWriteTransResp, (
+      transId = activeWriteRequest.trans.transId, 
+      status = responseStatus
+    );
+    
+    // Cancel the timer if abort is due to error (not needed for timeout)
+    if(responseStatus != TIMEOUT)
+      CancelTimer(transactionTimer);
   }
 
+  /**
+   * DoGlobalCommit - Executes the commit decision for the current transaction
+   * 
+   * This function handles phase 2 for a COMMIT decision:
+   * 1. Instructs all participants to permanently apply the transaction
+   * 2. Notifies the client of successful completion
+   * 3. Cancels the transaction timeout timer
+   */
   fun DoGlobalCommit() {
-    // ask all participants to commit and respond to client
-    BroadcastToAllParticipants(eCommitTrans, currentWriteTransReq.trans.transId);
-    send currentWriteTransReq.client, eWriteTransResp,
-      (transId = currentWriteTransReq.trans.transId, status = SUCCESS);
-    CancelTimer(timer);
+    // Record this transaction ID as processed
+    processedTransactionIds += activeWriteRequest.trans.transId;
+    
+    // Instruct all participants to permanently commit the transaction
+    BroadcastToAllParticipants(eCommitTrans, activeWriteRequest.trans.transId);
+    
+    // Notify client of successful transaction
+    send activeWriteRequest.client, eWriteTransResp, (
+      transId = activeWriteRequest.trans.transId, 
+      status = SUCCESS
+    );
+    
+    // Cancel the transaction timer
+    CancelTimer(transactionTimer);
   }
 
-  //function to broadcast messages to all participants
+  /**
+   * BroadcastToAllParticipants - Sends a message to all participants in the system
+   * 
+   * This helper function provides efficient communication with all participants,
+   * which is essential for both phases of the 2PC protocol.
+   * 
+   * @param message The event type to broadcast
+   * @param payload The data payload to send with the event
+   */
   fun BroadcastToAllParticipants(message: event, payload: any)
   {
-    var i: int;
-    while (i < sizeof(participants)) {
-      send participants[i], message, payload;
-      i = i + 1;
+    var participantIndex: int;
+    while (participantIndex < sizeof(participantNodes)) {
+      send participantNodes[participantIndex], message, payload;
+      participantIndex = participantIndex + 1;
     }
   }
 }
-

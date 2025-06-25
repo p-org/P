@@ -109,11 +109,6 @@ namespace PChecker.Runtime.Specifications
         protected TextWriter Logger => Runtime.Logger;
 
         /// <summary>
-        /// The runtime installed json logger;
-        /// </summary>
-        protected JsonWriter JsonLogger => Runtime.JsonLogger;
-
-        /// <summary>
         /// Gets the current state.
         /// </summary>
         protected internal Type CurrentState
@@ -206,11 +201,6 @@ namespace PChecker.Runtime.Specifications
         public void LogLine(string message)
         {
             Logger.WriteLine($"<PrintLog> {message}");
-
-            // Log message to JSON output
-            JsonLogger.AddLogType(JsonWriter.LogType.Print);
-            JsonLogger.AddLog(message);
-            JsonLogger.AddToLogs(updateVcMap: false);
         }
 
         /// <summary>

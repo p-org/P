@@ -65,6 +65,7 @@ WISE      : 'wise' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+EMIT_COVERAGE : 'emit_coverage' ;
 
 // module-system-specific keywords
 

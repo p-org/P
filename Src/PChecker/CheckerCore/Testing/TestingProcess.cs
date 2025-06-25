@@ -144,19 +144,10 @@ namespace PChecker.Testing
                 Environment.ExitCode = (int)ExitCode.InternalError;
                 return;
             }
-
-            if (_checkerConfiguration.ReportActivityCoverage)
-            {
-                Console.WriteLine("... Emitting coverage report:");
-                Reporter.EmitTestingCoverageReport(testReport);
-            }
-
-            if (_checkerConfiguration.DebugActivityCoverage)
-            {
-                Console.WriteLine("... Emitting debug coverage report:");
-                Reporter.EmitTestingCoverageReport(testReport);
-            }
-
+            
+            Console.WriteLine("... Emitting coverage report:");
+            Reporter.EmitTestingCoverageReport(testReport);
+            
             Console.WriteLine(testReport.GetText(_checkerConfiguration, "..."));
             
             var file = Path.GetFileNameWithoutExtension(testReport.CheckerConfiguration.AssemblyToBeAnalyzed);

@@ -343,7 +343,13 @@ namespace PChecker.Runtime.Logging
         public void OnCompleted()
         {
         }
-        
+
+        public void OnAnnouceEvent(string machineName, Event @event)
+        {
+            var eventPayload = GetEventNameWithPayload(@event);
+            Logger.WriteLine($"<AnnounceLog> {machineName} announced event {eventPayload}.");
+        }
+
         /// <inheritdoc/>
         public void OnStrategyDescription(string strategyName, string description)
         {

@@ -270,9 +270,6 @@ namespace Plang.Options
                 case "schedules":
                     checkerConfiguration.TestingIterations = (int)(uint)option.Value;
                     break;
-                case "xml-trace":
-                    checkerConfiguration.IsXmlLogEnabled = true;
-                    break;
                 case "explore":
                     checkerConfiguration.PerformFullExploration = true;
                     break;

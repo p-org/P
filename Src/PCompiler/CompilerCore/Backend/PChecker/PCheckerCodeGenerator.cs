@@ -438,8 +438,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "[PChecker.SystematicTesting.Test]");
             context.WriteLine(output, "public static void Execute(ControlledRuntime runtime) {");
             if (ifInitGlobalParams) { context.WriteLine(output, $"{InitGlobalParamsFunctionName}();"); }
-            context.WriteLine(output, "runtime.RegisterLog(new PCheckerLogTextFormatter());");
-            context.WriteLine(output, "runtime.RegisterLog(new PCheckerLogJsonFormatter());");
+            
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");

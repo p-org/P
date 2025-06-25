@@ -156,6 +156,7 @@ statement : LBRACE statement* RBRACE							# CompoundStmt
           | ANNOUNCE expr (COMMA rvalueList)? SEMI				# AnnounceStmt
           | GOTO stateName (COMMA rvalueList)? SEMI				# GotoStmt
           | RECEIVE LBRACE recvCase+ RBRACE						# ReceiveStmt
+          | EMIT_COVERAGE expr (COMMA expr)? SEMI				# EmitCoverageStmt
           | SEMI												# NoStmt
           ;
 

@@ -77,8 +77,7 @@ machine Participant {
         transactionId, pendingTransactions);
         
       // Apply the transaction to the key-value store (make it permanent)
-      var transaction = pendingTransactions[transactionId];
-      keyValueStore[transaction.key] = transaction;
+      keyValueStore[pendingTransactions[transactionId].key] = pendingTransactions[transactionId];
       
       // Remove from pending transactions since it's now committed
       pendingTransactions -= (transactionId);

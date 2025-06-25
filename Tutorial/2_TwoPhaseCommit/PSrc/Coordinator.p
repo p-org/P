@@ -315,7 +315,7 @@ machine Coordinator
    */
   fun DoGlobalCommit() {
     // Record this transaction ID as processed
-    processedTransactionIds += activeWriteRequest.trans.transId;
+    processedTransactionIds += (activeWriteRequest.trans.transId);
     
     // Instruct all participants to permanently commit the transaction
     BroadcastToAllParticipants(eCommitTrans, activeWriteRequest.trans.transId);

@@ -71,14 +71,13 @@ machine BankServer
       if(accountBalance - withdrawRequest.amount >= 10)
       {
         // Sufficient funds: update database with new balance
-        var newBalance = accountBalance - withdrawRequest.amount;
-        UpdateBankBalance(databaseInstance, withdrawRequest.accountId, newBalance);
+        UpdateBankBalance(databaseInstance, withdrawRequest.accountId, accountBalance - withdrawRequest.amount);
         
         // Prepare success response
         withdrawalResponse = (
           status = WITHDRAW_SUCCESS, 
           accountId = withdrawRequest.accountId, 
-          balance = newBalance, 
+          balance = accountBalance - withdrawRequest.amount, 
           rId = withdrawRequest.rId
         );
       }

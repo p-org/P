@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using NUnit.Framework;
 using UnitTests.Core;
 
@@ -13,7 +14,7 @@ namespace UnitTests
             {
                 Console.WriteLine("Test failed!\n");
                 WriteOutput(stdout, stderr, exitCode);
-                Assert.Fail($"EXIT: {exitCode}\n{stderr}");
+                Assert.Fail($"EXIT: {exitCode}\n{stderr}\n{stdout}");
             }
 
             Console.WriteLine("Test succeeded!\n");
@@ -33,7 +34,22 @@ namespace UnitTests
                 {
                     if (toDelete.Exists)
                     {
-                        toDelete.Delete(true);
+                        for (int i = 0; i < 5; i++)
+                        {
+                            try
+                            {
+                                toDelete.Delete(true);
+                                break;
+                            }
+                            catch (IOException)
+                            {
+                                Thread.Sleep(200);
+                            }
+                            catch (UnauthorizedAccessException)
+                            {
+                                Thread.Sleep(200);
+                            }
+                        }
                     }
 
                     return;

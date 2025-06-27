@@ -1,5 +1,3 @@
-<TestLog> Running test 'DefaultImpl'.
-<CreateLog> Main(1) was created by task '2'.
 <StateLog> Main(1) enters state 'S'.
 <RaiseLog> 'Main(1)' raised event 'x with payload (<a,3,>)' in state 'S'.
 <RaiseLog> 'Main(1)' raised event 'a with payload (3)' in state 'S'.

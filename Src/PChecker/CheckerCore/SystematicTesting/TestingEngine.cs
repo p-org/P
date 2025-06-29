@@ -176,7 +176,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Assembly assembly)
+        private static TestingEngine Create(CheckerConfiguration checkerConfiguration, Assembly assembly)
         {
             if (checkerConfiguration.ListTestCases)
             {
@@ -190,7 +190,7 @@ namespace PChecker.SystematicTesting
                         Console.Out.WriteLine($"{mi.DeclaringType.Name}");
                     }
 
-                    Environment.Exit(0);
+                    return null;
                 }
                 catch
                 {

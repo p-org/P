@@ -46,16 +46,25 @@ namespace Plang.Compiler.TypeChecker
             if (context.primitive() != null)
             {
                 var values = context.primitive().Select(Visit).ToList();
-                if (values.Count == 0) return new SeqLiteralExpr(context, values, PrimitiveType.Int);
-                // Console.WriteLine($"value[0] = {values[0].GetType()}");
+
+                if (values.Count == 2 &&
+                    values[0] is IntLiteralExpr first &&
+                    values[1] is IntLiteralExpr second &&
+                    first.Value == second.Value)
+                {
+                    throw handler.InternalError(context, new Exception("Invalid range: start and end must not be equal (e.g., [2, 2] is not allowed)"));                }
+
+                if (values.Count == 0)
+                    return new SeqLiteralExpr(context, values, PrimitiveType.Int);
+
                 var type = values[0].Type;
                 foreach (var v in values.Where(v => !v.Type.Equals(type)))
                 {
                     throw handler.TypeMismatch(v.SourceLocation, v.Type, type);
                 }
+
                 return new SeqLiteralExpr(context, values, new SequenceType(type));
-                
-            } 
+            }
             if (context.seqLiteral() != null)
             {
                 return Visit(context.seqLiteral());

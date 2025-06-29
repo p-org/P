@@ -110,6 +110,11 @@ public abstract class ParamAssignment
         foreach (var (k, i) in indexDic)
         {
             var values = paramExprDic[k];
+            if (!globalParams.Any(v => v.Name == k))
+            {
+                throw new Exception($"Variable name '{k}' not found in globalParams. " +
+                                    $"GlobalParams are: [{string.Join(", ", globalParams.Select(v => v.Name))}]");
+            }
             var variable = globalParams.First(v => v.Name == k);
             if (i >= values.Count) throw new ArgumentException("Index out of range in global variable config.");
             dic[variable] = values[i];

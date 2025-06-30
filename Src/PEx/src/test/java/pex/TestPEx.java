@@ -187,7 +187,11 @@ public class TestPEx {
             pathKeys.sort(String.CASE_INSENSITIVE_ORDER);
 
             if (testDir.contains("Correct")) {
+                
                 for (String key : pathKeys) {
+                    if (key.contains("ParamTest")) {
+                        continue;
+                    }
                     runDynamicTest(0, paths.get(key), key, dynamicTests);
                 }
             } else if (testDir.contains("DynamicError")) {

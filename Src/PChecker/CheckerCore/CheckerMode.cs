@@ -9,12 +9,9 @@ public enum CheckerMode
     /// Mode for prioritized random search
     /// </summary>
     BugFinding,
+    
     /// <summary>
-    /// Mode for exhaustive symbolic exploration
+    /// Mode for P exploration and execution
     /// </summary>
-    Verification,
-    /// <summary>
-    /// Mode for exhaustive explicit-state search with state-space coverage reporting
-    /// </summary>
-    Coverage
+    PEx
 }

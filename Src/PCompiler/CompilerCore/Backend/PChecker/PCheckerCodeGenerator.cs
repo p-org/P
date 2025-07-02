@@ -104,7 +104,6 @@ namespace Plang.Compiler.Backend.CSharp
             // write the top level declarations
             foreach (var decl in globalScope.AllDecls)
             {
-                // Console.WriteLine("top-level decl: " + decl.Name);
                 WriteDecl(context, source.Stream, decl);
             }
 

@@ -13,15 +13,24 @@ event eDelayedTimeOut;
 machine Timer {
   // user/client of the timer
   var client: machine;
+  // Bound the maximum number of delays that are possible
+  var maxDelays: int;
+  var remainingDelays: int;
 
   start state Init {
     entry (_client : machine) {
       client = _client;
+      maxDelays = 50;
+      remainingDelays = maxDelays;
       goto WaitForTimerRequests;
     }
   }
 
   state WaitForTimerRequests {
+    entry {
+      remainingDelays = maxDelays;
+    }
+
     on eStartTimer goto TimerStarted;
 
     ignore eCancelTimer, eDelayedTimeOut;
@@ -29,11 +38,13 @@ machine Timer {
 
   state TimerStarted {
     entry {
-      // Only fire the timer with a chance of 1/10 to avoid livelocks
-      if(choose(10) == 0) {
+      // Only fire the timer with a chance of 1/maxDelays to avoid livelocks
+      // Also bound the maximum number of times we can delay
+      if(choose(maxDelays) == 0 || remainingDelays == 0) {
         send client, eTimeOut;
         goto WaitForTimerRequests;
       } else {
+        remainingDelays = remainingDelays - 1;
         send this, eDelayedTimeOut;
       }
     }

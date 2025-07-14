@@ -37,6 +37,11 @@ namespace UnitTests.Runners
 
         private string GetSourceDirectoryName(FileInfo[] sources)
         {
+            if (sources == null)
+            {
+                // Fallback to GUID if sources is null
+                return $"Test_{Guid.NewGuid():N}";
+            }
             var pFile = sources.FirstOrDefault(f => f.Extension == ".p");
             if (pFile?.Directory != null)
             {
@@ -155,9 +160,10 @@ namespace UnitTests.Runners
                 return 1;
             }
             
-
+            // If there is exactly one expected line, treat it as a test case name for further processing, else return here
             if (expectedLines.Count != 1)
-            { return 0;
+            {
+                return 0;
             }
             
             var config = CheckerConfiguration.Create()

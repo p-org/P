@@ -3,7 +3,9 @@
 
 using System;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
+using PChecker.IO.Debugging;
 using PChecker.SystematicTesting;
 using PChecker.Utilities;
 
@@ -97,6 +99,26 @@ namespace PChecker.Testing
             {
                 Console.WriteLine($"... ### Process {_checkerConfiguration.TestingProcessId} is terminating");
             }
+        }
+
+        public static void FetchTestCases(CheckerConfiguration checkerConfiguration)
+        {
+            Assembly assembly = TestingEngine.LoadAssembly(checkerConfiguration.AssemblyToBeAnalyzed);
+            try
+            {
+                var testMethods = TestMethodInfo.GetAllTestMethodsFromAssembly(assembly);
+                Console.Out.WriteLine($".. List of test cases (total {testMethods.Count})");
+
+                foreach (var mi in testMethods)
+                {
+                    Console.Out.WriteLine($"{mi.DeclaringType.Name}");
+                }
+            }
+            catch
+            {
+                Error.ReportAndExit($"Failed to list test methods from assembly '{assembly.FullName}'");
+            }
+
         }
 
         /// <summary>

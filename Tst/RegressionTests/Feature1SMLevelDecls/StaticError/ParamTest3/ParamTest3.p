@@ -4,7 +4,7 @@ machine Main {
 	var M: machine;
 	start state Init {
 		entry {
-			print format("global varaible g1 = {0}", g1);
+			print format("global variable g1 = {0}", g1);
 		}
 	}
 }

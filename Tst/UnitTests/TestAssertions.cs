@@ -27,6 +27,7 @@ namespace UnitTests
         public static void SafeDeleteDirectory(DirectoryInfo toDelete)
         {
             var safeBase = new DirectoryInfo(Constants.SolutionDirectory);
+            var retrySleepDurationMs = 200;
             for (var scratch = toDelete; scratch.Parent != null; scratch = scratch.Parent)
             {
                 if (string.Compare(scratch.FullName, safeBase.FullName, StringComparison.InvariantCultureIgnoreCase) ==
@@ -43,11 +44,11 @@ namespace UnitTests
                             }
                             catch (IOException)
                             {
-                                Thread.Sleep(200);
+                                Thread.Sleep(retrySleepDurationMs);
                             }
                             catch (UnauthorizedAccessException)
                             {
-                                Thread.Sleep(200);
+                                Thread.Sleep(retrySleepDurationMs);
                             }
                         }
                     }

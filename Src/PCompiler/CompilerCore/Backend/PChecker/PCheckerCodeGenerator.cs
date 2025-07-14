@@ -348,7 +348,6 @@ namespace Plang.Compiler.Backend.CSharp
         // For normal test, the assignment is empty dictionary
         private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety, Dictionary<Variable, IPExpr> assignment)
         {
-            // Console.WriteLine($"dic: {string.Join(',', dic.ToList())}");
             WriteNameSpacePrologue(context, output);
             var name = ParamAssignment.RenameSafetyTestByAssignment(context.Names.GetNameForDecl(safety), assignment);
             context.WriteLine(output, $"public class {name} {{");

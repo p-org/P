@@ -508,8 +508,6 @@ namespace Plang.Compiler.TypeChecker
             if (context.iden() != null)
             {
                 var symbolName = context.iden().GetText();
-                // Console.WriteLine("Looking up " + symbolName);
-                // Console.WriteLine("Table: " + String.Join(", ", table.GetVariables().Select(x =>x.Name).ToArray()));
                 if (table.Lookup(symbolName, out Variable variable))
                 {
                     return new VariableAccessExpr(context, variable);

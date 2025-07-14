@@ -60,7 +60,6 @@ namespace Plang.Compiler.TypeChecker
         {
             // COLON type
             var variableType = ResolveType(context.type());
-            // Console.WriteLine("variableType:" + variableType);
 
             // VAR idenList
             foreach (var t in context.idenList()._names)
@@ -423,7 +422,6 @@ namespace Plang.Compiler.TypeChecker
             for (var i = 0; i < varNameCtxs.Count; i++)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
-                // Console.WriteLine("Local Variable:" + variable.Name);
                 CheckGlobalParamsRedeclare(variable);
                 variable.Type = variableType;
                 variables[i] = variable;

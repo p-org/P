@@ -243,10 +243,11 @@ modExpr : LPAREN modExpr RPAREN												  # ParenModuleExpr
 bindExpr : (mName=iden | mName=iden RARROW iName=iden) ;
 
 namedModuleDecl : MODULE name=iden ASSIGN modExpr SEMI ;
-seqLiteralBody : primitive
-             | seqLiteral 
-             | primitive (COMMA primitive)+ 
+seqPrimitive : BoolLiteral
+             | IntLiteral
+             | SUB IntLiteral
              ;
+seqLiteralBody : seqPrimitive (COMMA seqPrimitive)* ;
 seqLiteral : LBRACK seqLiteralBody RBRACK;
 paramBody : name=iden IN value=seqLiteral
           | name=iden IN value=seqLiteral (COMMA names=iden IN value=seqLiteral)+

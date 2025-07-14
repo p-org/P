@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 
 namespace Plang.Compiler.TypeChecker;
 
@@ -124,8 +125,18 @@ public abstract class ParamAssignment
 
     public static string RenameSafetyTestByAssignment(string name, Dictionary<Variable, IPExpr> dic)
     {
-        var postfix = $"{string.Join("__", Dic2StrDic(dic).ToList().Select(p => $"{p.Key}_{p.Value}"))}";
-        return postfix.Length == 0 ? name : $"{name}___{postfix}";
+        var postfix = string.Join("__", Dic2StrDic(dic).Select(p => $"{p.Key}_{MangleExprForName(p.Value)}"));
+        return string.IsNullOrEmpty(postfix) ? name : $"{name}___{postfix}";
+    }
+    
+    private static string MangleExprForName(IPExpr expr)
+    {
+        return expr switch
+        {
+            IntLiteralExpr intLit => intLit.Value < 0 ? $"neg{Math.Abs(intLit.Value)}" : intLit.Value.ToString(),
+            BoolLiteralExpr boolLit => boolLit.Value ? "true" : "false",
+            _ => throw new NotImplementedException($"Unhandled param expr type: {expr.GetType().Name}")
+        };
     }
 
     private static bool Next((string, int)[] indexArr, IDictionary<string, List<IPExpr>> globalParams)

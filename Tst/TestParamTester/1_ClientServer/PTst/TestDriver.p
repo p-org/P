@@ -37,7 +37,7 @@ fun CreateRandomInitialAccounts(numAccounts: int) : map[int, int]
   var i: int;
   var bankBalance: map[int, int];
   while(i < numAccounts) {
-    bankBalance[i] = choose(100) + 10; // min 10 in the account
+    bankBalance[i] = choose(10) + 10; // min 10 in the account
     i = i + 1;
   }
   return bankBalance;

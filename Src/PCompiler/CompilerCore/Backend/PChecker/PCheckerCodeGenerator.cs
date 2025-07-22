@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -21,7 +22,8 @@ namespace Plang.Compiler.Backend.CSharp
         /// This compiler has a compilation stage.
         /// </summary>
         public bool HasCompilationStage => true;
-        private static List<Variable> _globalParams = [];
+        [ThreadStatic]
+        private static List<Variable> _globalParams;
 
         private string GetGlobalParamAndLocalVariableName(CompilationContext context, Variable v)
         {

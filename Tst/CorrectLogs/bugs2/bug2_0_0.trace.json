@@ -1,15 +1,4 @@
-[
-  {
-    "type": "CreateStateMachine",
-    "details": {
-      "log": "Main(1) was created by task \u00272\u0027.",
-      "id": "Main(1)",
-      "payload": "null",
-      "clock": {
-        "Main(1)": 1
-      }
-    }
-  },
+ [
   {
     "type": "StateTransition",
     "details": {

@@ -41,26 +41,62 @@ namespace Plang.Compiler.TypeChecker
             return Visit(context.seqLiteralBody());
         }
         
-        public override IPExpr VisitSeqLiteralBody([NotNull] PParser.SeqLiteralBodyContext context)
+        public override IPExpr VisitSeqPrimitive(PParser.SeqPrimitiveContext context)
         {
-            if (context.primitive() != null)
+            if (context.BoolLiteral() != null)
             {
-                var values = context.primitive().Select(Visit).ToList();
-                if (values.Count == 0) return new SeqLiteralExpr(context, values, PrimitiveType.Int);
-                // Console.WriteLine($"value[0] = {values[0].GetType()}");
-                var type = values[0].Type;
-                foreach (var v in values.Where(v => !v.Type.Equals(type)))
-                {
-                    throw handler.TypeMismatch(v.SourceLocation, v.Type, type);
-                }
-                return new SeqLiteralExpr(context, values, new SequenceType(type));
-                
-            } 
-            if (context.seqLiteral() != null)
-            {
-                return Visit(context.seqLiteral());
+                return new BoolLiteralExpr(context, context.BoolLiteral().GetText().Equals("true"));
             }
-            throw handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context), "unknown primitive literal"));
+
+            if (context.SUB() != null && context.IntLiteral() != null)
+            {
+                int value = -int.Parse(context.IntLiteral().GetText());
+                return new IntLiteralExpr(context, value);
+            }
+
+            if (context.IntLiteral() != null)
+            {
+                int value = int.Parse(context.IntLiteral().GetText());
+                return new IntLiteralExpr(context, value);
+            }
+
+            throw handler.InternalError(context, new Exception("Unrecognized seqPrimitive input"));
+        }
+        
+        public override IPExpr VisitSeqLiteralBody(PParser.SeqLiteralBodyContext context)
+        {
+            var values = context.seqPrimitive().Select(p =>
+            {
+                var expr = Visit(p) as IPExpr;
+                if (expr is null)
+                {
+                    throw handler.InternalError(p, new Exception("Visit returned null for a seqPrimitive."));
+                }
+                return expr;
+            }).ToList();
+
+            var baseType = values[0].Type;
+            var seenIntValues = new HashSet<int>();
+
+            foreach (var v in values)
+            {
+                if (!v.Type.Equals(baseType))
+                {
+                    throw handler.TypeMismatch(v.SourceLocation, v.Type, baseType);
+                }
+
+                if (v is IntLiteralExpr intLiteral && !seenIntValues.Add(intLiteral.Value))
+                {
+                    throw handler.InternalError(
+                        context,
+                        new Exception(
+                            $"Invalid parameter list: Duplicate integer value '{intLiteral.Value}' found. " +
+                            $"All test values must be unique (e.g., [2, 2] is not allowed)."
+                        ));
+                }
+            }
+
+            return new SeqLiteralExpr(context, values, new SequenceType(baseType));
         }
         
         public override IPExpr VisitPrimitive(PParser.PrimitiveContext context)

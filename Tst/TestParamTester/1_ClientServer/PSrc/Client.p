@@ -35,8 +35,8 @@ machine Client
 
     entry (input : (serv : BankServer, accountId: int, balance : int))
     {
-      print format("global varaible g1 = {0}", g1);
-      print format("global varaible g2 = {0}", g2);
+      print format("global variable g1 = {0}", g1);
+      print format("global variable g2 = {0}", g2);
       server = input.serv;
       currentBalance =  input.balance;
       accountId = input.accountId;

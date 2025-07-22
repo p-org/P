@@ -26,10 +26,10 @@ public class PCheckerLogGeneratorTests
         var tempDir = Directory.CreateDirectory(testLogGeneratorPath);
         var srcPath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tst", "RegressionTests",
             "Feature1SMLevelDecls", "DynamicError", "bug2", "bug2.p"));
-        var dllPath = Path.Combine(Constants.ScratchParentDirectory, "TestLogGenerator", "PChecker", "net8.0", "Main.dll");
+        var runner = new PCheckerRunner([srcPath]);
+        var dllPath = Path.Combine(Constants.ScratchParentDirectory, "TestLogGenerator", "PChecker", "net8.0", "bug2.dll");
         var expectedPath = Path.Combine(Constants.SolutionDirectory, "Tst", "CorrectLogs", "bugs2");
             
-        var runner = new PCheckerRunner([srcPath]);
         runner.DoCompile(tempDir);
         
         var configuration = new PCheckerOptions().Parse([dllPath, "-o", tempDir.ToString()]);
@@ -53,12 +53,23 @@ public class PCheckerLogGeneratorTests
             string generatedFilePath = Path.Combine(generatedDir, fileName);
             string expectedFilePath = Path.Combine(expectedDir, fileName);
 
-            if (fileName == "Main_0_0.trace.json")
+            if (fileName == "bug2_0_0.trace.json")
             {
                 // Perform "Is JSON Included" check for this specific file
                 if (!IsJsonContentIncluded(generatedFilePath, expectedFilePath))
                 {
                     Assert.Fail($"Test Failed \nContent of {expectedFilePath} is not fully included in {generatedFilePath}");
+                }
+            }
+            else if (fileName == "bug2_0_0.txt")
+            {
+                // Perform "Is text included" check for this specific file
+                var expectedContent = File.ReadAllText(expectedFilePath);
+                var generatedContent = File.ReadAllText(generatedFilePath);
+
+                if (!generatedContent.Contains(expectedContent))
+                {
+                    Assert.Fail($"Test Failed \nExpected content from {expectedFilePath} not found in {generatedFilePath}");
                 }
             }
             else

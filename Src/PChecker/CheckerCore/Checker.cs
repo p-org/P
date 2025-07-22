@@ -51,6 +51,11 @@ public static class Checker
             switch (configuration.Mode)
             {
                 case CheckerMode.BugFinding:
+                    if (configuration.ListTestCases)
+                    {
+                        TestingProcess.FetchTestCases(configuration);
+                        break;
+                    }
                     TestingProcess.Create(configuration).Run();
                     break;
                 case CheckerMode.PEx:

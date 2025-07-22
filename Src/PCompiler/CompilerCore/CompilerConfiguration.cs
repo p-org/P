@@ -175,10 +175,6 @@ namespace Plang.Compiler
         /// This method performs a shallow copy of all properties from the specified configuration
         /// to the current instance, effectively replacing the current configuration.
         /// </remarks>        public int Timeout { get; set; }
-        public string CheckOnly { get; set; }
-        public IList<string> TargetProofBlocks { get; set; }
-        public int Parallelism { get; set; }
-
         public void Copy(CompilerConfiguration parsedConfig)
         {
             Backend = parsedConfig.Backend;

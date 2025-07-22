@@ -29,7 +29,8 @@ machine Timer {
 
   state TimerStarted {
     entry {
-      if($) {
+      // Only fire the timer with a chance of 1/10 to avoid livelocks
+      if(choose(10) == 0) {
         send client, eTimeOut;
         goto WaitForTimerRequests;
       } else {
@@ -37,24 +38,9 @@ machine Timer {
       }
     }
 
-    on eDelayedTimeOut goto TimerDelayed;
+    on eDelayedTimeOut goto TimerStarted;
     on eCancelTimer goto WaitForTimerRequests;
     defer eStartTimer;
-  }
-
-  state TimerDelayed {
-    entry {
-      if($) {
-        send client, eTimeOut;
-        goto WaitForTimerRequests;
-      } else {
-        // do nothing, wait for eCancelTimer and ignore any old eDelayedTimeOut
-      }
-    }
-
-    on eCancelTimer goto WaitForTimerRequests;
-    defer eStartTimer;
-    ignore eDelayedTimeOut;
   }
 }
 

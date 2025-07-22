@@ -266,8 +266,6 @@ init-condition exists (l: Learner) :: l in learners();
 // Initialize learner state
 init-condition forall (l: Learner) :: l.chosenValue == -1;
 
-axiom forall (e1: ePropose, e2: ePropose, m1: Proposer, m2: Proposer) :: sent e1 && sent e2 && e1 targets m1 && e2 targets m2 && m1 != m2 ==> e1.value != e2.value;
-
 // ============================================================================
 // SYSTEM CONFIGURATION INVARIANTS
 // ============================================================================

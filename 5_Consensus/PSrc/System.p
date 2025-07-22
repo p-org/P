@@ -5,9 +5,9 @@ pure nodes(): set[machine];
 pure isQuorum(s: set[machine]): bool;
 
 init-condition forall (m: machine) :: m in nodes() == m is Node;
-init-condition forall (q1: set[machine], q2: set[machine]) :: 
+axiom forall (q1: set[machine], q2: set[machine]) :: 
     isQuorum(q1) && isQuorum(q2) ==> exists (a: machine) :: a in q1 && a in q2;
-init-condition forall (q: set[machine]) :: 
+axiom forall (q: set[machine]) :: 
     isQuorum(q) ==> forall (a: machine) :: a in q ==> a in nodes();
 
 init-condition forall (n: Node) :: !n.voted && n.votes == default(set[machine]);

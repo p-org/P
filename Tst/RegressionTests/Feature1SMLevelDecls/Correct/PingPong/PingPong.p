@@ -1,5 +1,5 @@
-event Ping assert 1: machine;
-event Pong assert 2: machine;
+event Ping : machine;
+event Pong : machine;
 event Success;
 event M_Ping;
 event M_Pong;

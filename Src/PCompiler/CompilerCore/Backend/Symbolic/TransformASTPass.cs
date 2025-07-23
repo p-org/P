@@ -65,8 +65,6 @@ namespace Plang.Compiler.Backend.Symbolic
         static private Machine TransformMachine(Machine machine)
         {
             var transformedMachine = new Machine(machine.Name, machine.SourceLocation);
-            transformedMachine.Assume = machine.Assume;
-            transformedMachine.Assert = machine.Assert;
             transformedMachine.Receives = machine.Receives;
             transformedMachine.Sends = machine.Sends;
             transformedMachine.Creates = machine.Creates;

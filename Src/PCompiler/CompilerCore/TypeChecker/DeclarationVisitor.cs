@@ -50,13 +50,6 @@ namespace Plang.Compiler.TypeChecker
             // EVENT name=Iden
             var pEvent = (Event)nodesToDeclarations.Get(context);
 
-            // cardinality?
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            pEvent.Assume = hasAssume ? cardinality : -1;
-            pEvent.Assert = hasAssert ? cardinality : -1;
-
             // (COLON type)?
             pEvent.PayloadType = ResolveType(context.type());
 
@@ -263,14 +256,6 @@ namespace Plang.Compiler.TypeChecker
         {
             // MACHINE name=iden
             var machine = (Machine) nodesToDeclarations.Get(context);
-
-            // cardinality?
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            if (cardinality > uint.MaxValue) throw Handler.ValueOutOfRange(context.cardinality(), "uint32");
-            machine.Assume = hasAssume ? (uint?) cardinality : null;
-            machine.Assert = hasAssert ? (uint?) cardinality : null;
 
             // receivesSends*
             foreach (var receivesSends in context.receivesSends())

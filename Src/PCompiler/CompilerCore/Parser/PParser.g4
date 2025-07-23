@@ -88,10 +88,7 @@ enumElem : name=iden ;
 numberedEnumElemList : numberedEnumElem (COMMA numberedEnumElem)* ;
 numberedEnumElem : name=iden ASSIGN value=IntLiteral ;
 
-eventDecl : EVENT name=iden cardinality? (COLON type)? SEMI;
-cardinality : ASSERT IntLiteral
-            | ASSUME IntLiteral
-            ;
+eventDecl : EVENT name=iden (COLON type)? SEMI;
 
 eventSetDecl : EVENTSET name=iden ASSIGN LBRACE eventSetLiteral RBRACE SEMI ;
 eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
@@ -99,7 +96,8 @@ eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
 interfaceDecl : INTERFACE name=iden LPAREN type? RPAREN (RECEIVES nonDefaultEventList?) SEMI ;
 
 // has scope
-implMachineDecl : MACHINE name=iden cardinality? receivesSends* machineBody ;
+implMachineDecl : MACHINE name=iden receivesSends* machineBody ;
+
 idenList : names+=iden (COMMA names+=iden)* ;
 
 receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive

@@ -4,8 +4,8 @@
 // E2 is handled by Action2 after entering Real1_Init upon "goto" transition
 // Result: assert on line 30 is raised by Zing
 
-event E2 assert 1;
-event E1 assert 1;
+event E2;
+event E1;
 
 machine Main {
     start state Real1_Init {

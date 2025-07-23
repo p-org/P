@@ -46,10 +46,6 @@ namespace Plang.Compiler
             CheckOnly = null;
             TargetProofBlocks = new List<string>();
             Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
-            Timeout = 600;
-            CheckOnly = null;
-            TargetProofBlocks = new List<string>();
-            Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="CompilerConfiguration"/> class with specific settings.
@@ -174,7 +170,7 @@ namespace Plang.Compiler
         /// <remarks>
         /// This method performs a shallow copy of all properties from the specified configuration
         /// to the current instance, effectively replacing the current configuration.
-        /// </remarks>        public int Timeout { get; set; }
+        /// </remarks>
         public void Copy(CompilerConfiguration parsedConfig)
         {
             Backend = parsedConfig.Backend;

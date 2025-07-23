@@ -22,7 +22,6 @@ DATA      : 'data' ;
 ANNOUNCE  : 'announce' ;
 AS        : 'as' ;
 ASSERT    : 'assert' ;
-ASSUME    : 'assume' ;
 BREAK     : 'break' ;
 CASE      : 'case' ;
 COLD      : 'cold' ;
@@ -36,7 +35,6 @@ EXIT      : 'exit' ;
 FOREACH   : 'foreach';
 FORMAT	  : 'format' ;
 FUN       : 'fun' ;
-PURE      : 'pure' ;
 GOTO      : 'goto' ;
 HALT      : 'halt' ;
 HOT       : 'hot' ;
@@ -82,6 +80,8 @@ ENSURES    : 'ensures';
 FORALL     : 'forall' ;
 EXISTS     : 'exists' ;
 INIT       : 'init-condition';
+PURE       : 'pure' ;
+ASSUME     : 'assume' ;
 
 // module-system-specific keywords
 

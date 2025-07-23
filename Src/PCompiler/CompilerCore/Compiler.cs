@@ -148,6 +148,8 @@ namespace Plang.Compiler
                         case PParser.FORALL:
                         case PParser.EXISTS:
                         case PParser.INIT:
+                        case PParser.PURE:
+                        case PParser.ASSUME:
                             throw new NotSupportedException(
                                 $"line {token.Line}:{token.Column} \"{token.Text}\" only supported by PVerifier backend.");
                     }

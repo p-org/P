@@ -1,22 +1,22 @@
-event eOpenDoor assume 1;
-event eCloseDoor assume 1;
-event eResetDoor assert 1;
-event eDoorOpened assert 1;
-event eDoorClosed assert 1;
-event eDoorStopped assert 1;
-event eObjectDetected assert 1;
-event eTimerFired assume 1;
-event eOperationSuccess assert 1;
-event eOperationFailure assert 1;
-event eSendCommandToOpenDoor assume 1;
-event eSendCommandToCloseDoor assume 1;
-event eSendCommandToStopDoor assume 1;
-event eSendCommandToResetDoor assume 1;
-event eStartDoorCloseTimer assume 1;
-event eStopDoorCloseTimer assume 1;
-event eUnit assert 1;
-event eStopTimerReturned assert 1;
-event eObjectEncountered assert 1;
+event eOpenDoor;
+event eCloseDoor;
+event eResetDoor;
+event eDoorOpened;
+event eDoorClosed;
+event eDoorStopped;
+event eObjectDetected;
+event eTimerFired;
+event eOperationSuccess;
+event eOperationFailure;
+event eSendCommandToOpenDoor;
+event eSendCommandToCloseDoor;
+event eSendCommandToStopDoor;
+event eSendCommandToResetDoor;
+event eStartDoorCloseTimer;
+event eStopDoorCloseTimer;
+event eUnit;
+event eStopTimerReturned;
+event eObjectEncountered;
 
 machine Elevator
 receives eOpenDoor, eCloseDoor, eDoorOpened, eTimerFired, eStopTimerReturned, eDoorClosed, eObjectDetected, eDoorStopped,

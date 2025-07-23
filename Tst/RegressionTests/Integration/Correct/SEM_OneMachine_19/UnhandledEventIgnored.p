@@ -1,8 +1,8 @@
 // P semantics XYZ: one machine, "ignore" of an unhandled event
 // Compare this XYZ to SendInExitUnhandledEvent.p
 
-event E2 assert 2;
-event E1 assert 1;
+event E2;
+event E1;
 
 machine Main {
     var XYZ: bool;  //init with "false"

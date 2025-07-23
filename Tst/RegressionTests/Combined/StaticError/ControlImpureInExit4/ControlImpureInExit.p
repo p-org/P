@@ -3,10 +3,10 @@
 // "pop" and "raise" in "exit" function,
 // in both anon and named functions
 
-event E1 assert 1;
-event E2 assert 1;
-event E3 assert 1;
-event unit assert 1;
+event E1;
+event E2;
+event E3;
+event unit;
 
 machine Main {
     var i: int;	

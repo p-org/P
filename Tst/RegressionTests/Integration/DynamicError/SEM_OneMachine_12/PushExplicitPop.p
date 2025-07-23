@@ -3,9 +3,9 @@
 // Compare error trace for this XYZ with the one for PushTransInheritance.p
 
 
-event E2 assert 1;
-event E1 assert 1;
-event E3 assert 1;
+event E2;
+event E1;
+event E3;
 
 machine Main {
     var XYZ: bool;

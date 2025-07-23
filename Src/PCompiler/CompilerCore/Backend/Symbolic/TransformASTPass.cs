@@ -65,8 +65,6 @@ namespace Plang.Compiler.Backend.Symbolic
         static private Machine TransformMachine(Machine machine)
         {
             var transformedMachine = new Machine(machine.Name, machine.SourceLocation);
-            transformedMachine.Assume = machine.Assume;
-            transformedMachine.Assert = machine.Assert;
             transformedMachine.Receives = machine.Receives;
             transformedMachine.Sends = machine.Sends;
             transformedMachine.Creates = machine.Creates;
@@ -349,6 +347,8 @@ namespace Plang.Compiler.Backend.Symbolic
                     return new AnnounceStmt(announceStmt.SourceLocation, ReplaceVars(announceStmt.Event, varMap), ReplaceVars(announceStmt.Payload, varMap));
                 case AssertStmt assertStmt:
                     return new AssertStmt(assertStmt.SourceLocation, ReplaceVars(assertStmt.Assertion, varMap), ReplaceVars(assertStmt.Message, varMap));
+                case AssumeStmt assumeStmt:
+                    return new AssumeStmt(assumeStmt.SourceLocation, ReplaceVars(assumeStmt.Assumption, varMap), ReplaceVars(assumeStmt.Message, varMap));
                 case AssignStmt assignStmt:
                     return new AssignStmt(assignStmt.SourceLocation, ReplaceVars(assignStmt.Location, varMap), ReplaceVars(assignStmt.Value, varMap));
                 case CompoundStmt compoundStmt:

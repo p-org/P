@@ -2,11 +2,11 @@
 // Cases covered:
 // enclosed function calls used in "do" and "goto"
 
-event E1 assert 1;
-event E2 assert 1;
-event E3 assert 1;
-event E4 assert 1;
-event unit assert 1;
+event E1;
+event E2;
+event E3;
+event E4;
+event unit;
 
 machine Main {
     var i: int;	

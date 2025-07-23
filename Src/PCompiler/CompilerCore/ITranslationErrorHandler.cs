@@ -23,6 +23,8 @@ namespace Plang.Compiler
         Exception DuplicateStateEntry(ParserRuleContext location, Function existingHandler, State state);
 
         Exception DuplicateDeclaration(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
+        
+        Exception CyclicProof(ParserRuleContext location, ProofCommand cmd);
 
         Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount);
 
@@ -37,6 +39,8 @@ namespace Plang.Compiler
         Exception TypeMismatch(IPExpr expr, params TypeKind[] expected);
 
         Exception MissingNamedTupleEntry(PParser.IdenContext location, NamedTupleType namedTuple);
+        Exception MissingMachineField(PParser.IdenContext location, Machine machine);
+        Exception MissingEventField(PParser.IdenContext location, Event pevent);
 
         Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple);
 

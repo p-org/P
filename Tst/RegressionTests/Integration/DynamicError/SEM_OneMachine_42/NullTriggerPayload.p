@@ -1,8 +1,8 @@
 // P semantics XYZ: one machine, XYZing for "null" event, both
 // payload is null
 
-event E1 assert 2;
-event unit assert 1;
+event E1;
+event unit;
 
 machine Main {
     var XYZ: bool;  //init with "false"

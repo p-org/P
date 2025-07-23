@@ -1,4 +1,4 @@
-event Empty assert 1;
+event Empty;
 event a;
 event b;
 event c;

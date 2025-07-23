@@ -2,15 +2,15 @@
 //XYZs static errors
 //Basic types: int, bool, event
 
-event E assert 1: int;
+event E : int;
 event EI1: int;
 event EI2: int;
 event EI3: int;
 event EI4: int;
 event EI5: int;
 event EI6: int;
-event E1 assert 1;
-event E2 assert 1;
+event E1;
+event E2;
 event ET1: (a: int, b: bool);
 event ET2: (a: int, b: bool);
 event ESEQ1: seq[int];

@@ -1,7 +1,7 @@
 //This is a repro for a bug in static checking (corrected since):
 //SUCCESS is deferred and there's a transition on SUCCESS in the same state
-event PING assert 1 : machine;
-event PONG assert 1;
+event PING : machine;
+event PONG;
 event SUCCESS;
 
 machine Main {

@@ -1,12 +1,12 @@
-event Empty   assert 1           ;
-event Sending assert 1 : machine ;
-event Done    assert 1 : machine ;
-event Unit    assert 0           ;
-event Next    assert 1 : machine ;
+event Empty;
+event Sending : machine ;
+event Done : machine ;
+event Unit;
+event Next : machine ;
 event Send             : machine ;
 event Ready                      ;
 
-machine Node assume 100 {
+machine Node {
 
   var IsSending    : bool;
   var NextMachine  : machine;

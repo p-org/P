@@ -14,12 +14,7 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
             Name = name;
             SourceLocation = sourceNode;
             PayloadType = PrimitiveType.Null;
-            Assert = -1;
-            Assume = -1;
         }
-
-        public int Assume { get; set; }
-        public int Assert { get; set; }
         public PLanguageType PayloadType { get; set; }
 
         public bool IsHaltEvent => string.Equals(Name, "halt");

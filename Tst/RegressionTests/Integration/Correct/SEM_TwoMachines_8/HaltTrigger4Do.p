@@ -1,7 +1,7 @@
 // P semantics XYZ: two machines, "halt" as a transition trigger for "do"
 // Case when "halt" is explicitly handled
-event Ping assert 1 : machine;
-event Pong assert 1;
+event Ping : machine;
+event Pong;
 event Success;
 event PingIgnored;
 

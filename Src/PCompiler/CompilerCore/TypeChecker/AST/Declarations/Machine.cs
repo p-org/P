@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -22,8 +23,6 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         }
 
         public bool IsSpec { get; }
-        public uint? Assume { get; set; }
-        public uint? Assert { get; set; }
         public IEventSet Receives { get; set; }
         public IEventSet Sends { get; set; }
         public IInterfaceSet Creates { get; set; }
@@ -82,6 +81,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public void AddFields(IEnumerable<Variable> variables)
         {
             fields.AddRange(variables);
+        }
+        
+        public bool LookupEntry(string name, out Variable entry)
+        {
+            var lookupTable = fields.ToDictionary(f => f.Name, f => f);
+            return lookupTable.TryGetValue(name, out entry);
         }
     }
 }

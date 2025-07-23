@@ -1,8 +1,8 @@
 // 1.7.7. "null" event cannot be "ignored"
 // (parsing error)
 
-event E1 assert 2;
-event unit assert 1;
+event E1;
+event unit;
 
 machine Main {
     var XYZ: bool;  //init with "false"

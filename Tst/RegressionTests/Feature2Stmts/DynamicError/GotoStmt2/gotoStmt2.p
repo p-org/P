@@ -1,9 +1,9 @@
 // P semantics XYZ: one machine, "goto" statement, action is not inherited by the destination state
 // This XYZ checks that after "goto" statement, action of the src state is not inherited by the dest state
 
-event E2 assert 1;
-event E1 assert 1;
-event E3 assert 1;
+event E2;
+event E1;
+event E3;
 
 machine Main {
     var XYZ: bool;

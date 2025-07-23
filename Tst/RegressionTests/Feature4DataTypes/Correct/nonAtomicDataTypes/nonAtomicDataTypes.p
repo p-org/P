@@ -1,10 +1,10 @@
 //XYZs complex data types in assign/remove/insert errors): sequences, tuples, maps
 //Basic types: int, bool, event
 
-event E assert 1;
-event E1 assert 1;
-event E2 assert 1;
-event E3 assert 1;
+event E;
+event E1;
+event E2;
+event E3;
 
 machine Main {
     var t : (a: seq [int], b: map[int, seq[int]]);

@@ -22,7 +22,6 @@ DATA      : 'data' ;
 ANNOUNCE  : 'announce' ;
 AS        : 'as' ;
 ASSERT    : 'assert' ;
-ASSUME    : 'assume' ;
 BREAK     : 'break' ;
 CASE      : 'case' ;
 COLD      : 'cold' ;
@@ -62,6 +61,27 @@ VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+
+// PVerifier keywords
+INVARIANT  : 'invariant';
+AXIOM      : 'axiom';
+IS         : 'is';
+FLYING     : 'inflight';
+TARGETS    : 'targets';
+SENT       : 'sent';
+PROOF      : 'Proof';
+PROVE      : 'prove';
+USING      : 'using';
+LEMMA      : 'Lemma';
+THEOREM    : 'Theorem';
+EXCEPT     : 'except';
+REQUIRES   : 'requires';
+ENSURES    : 'ensures';
+FORALL     : 'forall' ;
+EXISTS     : 'exists' ;
+INIT       : 'init-condition';
+PURE       : 'pure' ;
+ASSUME     : 'assume' ;
 
 // module-system-specific keywords
 
@@ -109,6 +129,8 @@ NONDET     : '$'  ;
 LNOT   : '!' ;
 LAND   : '&&' ;
 LOR    : '||' ;
+LTHEN  : '==>';
+LIFF   : '<==>';
 
 EQ     : '==' ;
 NE     : '!=' ;

@@ -72,7 +72,22 @@ The test scenarios folder for FailureDetector ([PTst](https://github.com/p-org/P
     This file consists of a single test driver machine that sets up the system under test given the number of nodes and clients in the system. The [`SetupSystemWithFailureInjector`](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestDriver.p#L20-L42) function creates the clients, nodes, failure injector and the failure detector machines.
 
 ??? tip "[Expand]: Let's walk through TestScript.p"
-    There is a single testcase ([TestFailureDetector](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestScript.p#L1-L3)) defined for the FailureDetector system. The test case asserts the `ReliableFailureDetector` specification on a system which is a composition of the `FailureDetector`, `FailureInjector`, and the test-driver `TestMultipleClients`.
+    The test script contains two test cases:
+
+    1. Basic test case ([TestFailureDetector](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestScript.p#L1-L3)) that asserts the `ReliableFailureDetector` specification on a system composed of the `FailureDetector`, `FailureInjector`, and test-driver `TestMultipleClients`.
+
+    2. Parameterized test case ([tcTest_BalancedLoad](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PTst/TestScript.p#L7-L11)) that systematically explores different system configurations:
+        ```
+        test param (numNodes in [3, 4, 5], numClients in [2, 3, 4]) tcTest_BalancedLoad:
+          assume (numClients <= numNodes);  // Only test valid configurations
+          assert ReliableFailureDetector in
+          union { TestWithConfig }, FailureDetector, FailureInjector;
+        ```
+        This test:
+        - Uses parameters declared in TestDriver.p: `param numNodes: int; param numClients: int;`
+        - Tests different system sizes (3-5 nodes) and monitoring loads (2-4 clients)
+        - Uses `assume` to ensure clients don't outnumber nodes for better monitoring distribution
+        - Tests each valid configuration with the `ReliableFailureDetector` specification
 
 ### Compiling FailureDetector
 
@@ -128,10 +143,42 @@ p compile
 
 ### Checking FailureDetector
 
-There is only a single test case in the FailureDetector project and we can directly run the test case for 10,000 schedules:
+You can get the list of test cases defined in the FailureDetector project by running the P Checker:
 
 ```shell
-p check -s 10000
+p check
+```
+
+??? note "Expected Output"
+
+    ```hl_lines="8 9"
+    $ p check
+
+    .. Searching for a P compiled file locally in folder ./PGenerated/
+    .. Found a P compiled file: ./PGenerated/PChecker/net8.0/FailureDetector.dll
+    .. Checking ./PGenerated/PChecker/net8.0/FailureDetector.dll
+    Error: We found '9' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
+    Possible options are: 
+    tcTest_FailureDetector
+    tcTest_BalancedLoad___numNodes_3__numClients_2
+    tcTest_BalancedLoad___numNodes_4__numClients_2
+    tcTest_BalancedLoad___numNodes_5__numClients_2
+    tcTest_BalancedLoad___numNodes_3__numClients_3
+    tcTest_BalancedLoad___numNodes_4__numClients_3
+    tcTest_BalancedLoad___numNodes_5__numClients_3
+    tcTest_BalancedLoad___numNodes_4__numClients_4
+    tcTest_BalancedLoad___numNodes_5__numClients_4
+
+    ~~ [PTool]: Thanks for using P! ~~
+    ```
+
+Above shows the test cases defined in the FailureDetector project and you can specify which
+test case to run by using the `-tc` parameter along with the `-s` parameter for the number of schedules to explore.
+
+Check the `tcTest_FailureDetector` test case for 10,000 schedules:
+
+```shell
+p check -tc tcTest_FailureDetector -s 10000
 ```
 
 ### Discussion: Modeling Message Reordering
@@ -142,4 +189,3 @@ p check -s 10000
 
 !!! success "What did we learn through this example?"
     In this example, we saw how to use data nondeterminism to model message loss and unreliable sends. We also discussed how to model other types of network nondeterminism.
-

@@ -86,8 +86,8 @@ The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestD
 The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PTst)) consists of two files [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p).
 
 ??? tip "[Expand]: Let's walk through TestDriver.p"
-    - ([L36 - L60](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L36-L60)) &rarr; Function `SetupClientServerSystem` takes as input the number of clients to be created and configures the ClientServer system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L25-L34) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
-    The function also  [`announce` the event](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L49-L51) `eSpec_BankBalanceIsAlwaysCorrect_Init` to initialize the monitors with initial balance for all accounts (manual: [annouce statement](../manual/statements.md#announce)).
+    - ([L49 - L72](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L49-L72)) &rarr; Function `SetupClientServerSystem` takes as input the number of clients to be created and configures the ClientServer system by creating the `Client` and `BankServer` machines. The [`CreateRandomInitialAccounts`](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L34-L47) function uses the [`choose`](../manual/expressions.md#choose) primitive to randomly initialize the accounts map.
+    The function also  [`announce` the event](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L64) `eSpec_BankBalanceIsAlwaysCorrect_Init` to initialize the monitors with initial balance for all accounts (manual: [annouce statement](../manual/statements.md#announce)).
     - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L3-L22)) &rarr; Machines `TestWithSingleClient` and `TestWithMultipleClients` are simple test driver machines that configure the system to be checked by the P checker for different scenarios. In this case, test the ClientServer system by first randomly initializing the accounts map and then checking it with either one `Client` or with multiple `Client`s (between 2 and 4)).
 
 ??? tip "[Expand]: Let's walk through TestScript.p"
@@ -95,6 +95,20 @@ The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tr
 
     - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)). The `assert` module constructor is used to attach monitors or specifications to be checked on the modules (manual: [assert](../manual/modulesystem.md#assert-monitors-module)).
     - In the `tcAbstractServer` test case, instead of composing with the Bank module, we use the AbstractBank module. Hence, in the composed system, whenever the creation of a BankServer machine is invoked the binding will instead create an AbstractBankServer machine.
+
+### Parameterized Tests
+
+The ClientServer tutorial demonstrates P's parameterized testing capabilities that allow systematic exploration of different system configurations. These tests enable checking the system with varying numbers of clients to validate scalability and concurrent access patterns.
+
+??? tip "[Expand]: Let's walk through parameterized TestDrivers.p"
+    - ([L24](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L24)) &rarr; Parameter declaration `param nClients: int;` defines a configurable parameter for the number of clients to create in the test scenarios.
+    - ([L26 - L32](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/TestDriver.p#L26-L32)) &rarr; `TestWithConfig` machine creates a configurable number of clients based on the `nClients` parameter, enabling systematic testing of different client loads against the bank server.
+   
+
+??? tip "[Expand]: Let's walk through parameterized TestScripts.p"
+    - ([L18 - L21](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L18-L21)) &rarr; Parameterized test case `tcParameterizedMultipleClients` with `param (nClients in [2, 3, 4])` demonstrates how to systematically test the bank system with different numbers of concurrent clients (2, 3, and 4 clients), generating 3 distinct test scenarios.
+    - This parameterized approach allows verification of the bank's correctness properties under different concurrency levels, ensuring that the `BankBalanceIsAlwaysCorrect` and `GuaranteedWithDrawProgress` specifications hold regardless of client count.
+    - The test cases generated are: `tcParameterizedMultipleClients___nClients_2`, `tcParameterizedMultipleClients___nClients_3`, and `tcParameterizedMultipleClients___nClients_4`, each testing the system with the corresponding number of clients.
 
 ### Compiling ClientServer
 
@@ -158,16 +172,19 @@ p check
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
     .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-    Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
+    Error: We found '6' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClient
     tcMultipleClients
     tcAbstractServer
+    tcParameterizedMultipleClients___nClients_2
+    tcParameterizedMultipleClients___nClients_3
+    tcParameterizedMultipleClients___nClients_4
 
     ~~ [PTool]: Thanks for using P! ~~
     ```
 
-There are three test cases defined in the ClientServer project, and you can specify which
+There are six test cases defined in the ClientServer project, and you can specify which
 test case to run by using the `-tc` parameter along with the `-s` parameter for the number of schedules to explore.
 
 Check the `tcSingleClient` test case for 1000 schedules:

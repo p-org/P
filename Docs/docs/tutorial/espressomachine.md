@@ -61,7 +61,25 @@ it is reset and after which it returns to the `Warmup` state.
 
 The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios. TestScripts are collections of test cases that are automatically run by the P checker.
 
-The test scenarios folder for EspressoMachine ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_EspressoMachine/PTst)) consists of three files: [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestDrivers.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestScripts.p) are just like other previous examples. The [User.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p) declares two machines: (1) a [`SaneUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L4-L51) that uses the EspressoMachine with care, pressing the buttons in the right order, and cleaning up the grounds after the coffee is made; and (2) a [`CrazyUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L66-L136) who has never used an espresso machine before, gets too excited, and starts pushing random buttons on the control panel.
+The test scenarios folder for EspressoMachine ([PTst](https://github.com/p-org/P/tree/master/Tutorial/1_EspressoMachine/PTst)) consists of three files: [TestDriver.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestDrivers.p) and [TestScript.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestScripts.p) are just like other previous examples. The [User.p](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p) declares two machines: (1) a [`SaneUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L4-L51) that uses the EspressoMachine with care, pressing the buttons in the right order, and cleaning up the grounds after the coffee is made; and (2) a [`CrazyUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L66-L136) who has never used an espresso machine before, gets too excited, and starts pushing random buttons on the control panel. Additionally, (3) a [`SteamerTestUser` machine](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/Users.p#L108-L139) that is specifically designed to test steamer functionality, focusing on steamer operations and subsequent espresso making to validate the machine's handling of steamer-related features.
+
+### Generated Parameterized Tests
+
+The EspressoMachine tutorial includes comprehensive examples of parameterized testing that demonstrate P's advanced testing capabilities. These tests allow systematic exploration of different system configurations and user behaviors.
+
+??? tip "[Expand]: Let's walk through TestDrivers.p"
+    - ([L22 - L27](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestDrivers.p#L22-L27)) &rarr; Parameter declarations for comprehensive testing scenarios including `nOps` (number of operations), `nUsers` (number of users), `waterLevel` and `beanLevel` (resource constraints), and boolean flags for `enableSteamer` and `cleaningMode`.
+    - ([L40 - L60](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestDrivers.p#L40-L60)) &rarr; `TestWithMultipleUsers` machine creates multiple users, each with their own coffee machine to avoid contention. This demonstrates testing concurrent scenarios while maintaining realistic one-user-per-machine constraints.
+    - ([L63 - L77](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestDrivers.p#L63-L77)) &rarr; `TestWithResourceConstraints` machine demonstrates resource-aware testing by conditionally creating users based on available water and bean levels.
+    - ([L80 - L96](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestDrivers.p#L80-L96)) &rarr; `TestWithMixedConfiguration` machine shows feature flag testing, creating different user types based on machine configuration parameters like cleaning mode and steamer availability.
+    
+
+??? tip "[Expand]: Let's walk through TestScripts.p"
+    - ([L10 - L11](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestScripts.p#L10-L11)) &rarr; Basic parameter test `tcCrazyUserParamOps` demonstrates single-parameter variation testing with `nOps in [4, 5, 6]`, generating 3 test cases with different operation counts.
+    - ([L16 - L17](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestScripts.p#L16-L17)) &rarr; Multi-parameter test `tcMultiUserOperations` shows Cartesian product testing with `(nUsers in [1, 2, 3], nOps in [3, 5, 7])`, generating 9 test combinations (3×3) to test different user loads and operation counts.
+    - ([L20 - L21](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestScripts.p#L20-L21)) &rarr; Resource constraint testing `tcResourceConstraints` demonstrates testing with different water and bean levels to validate system behavior under various resource conditions.
+    - ([L26 - L27](https://github.com/p-org/P/blob/master/Tutorial/3_EspressoMachine/PTst/TestScripts.p#L26-L27)) &rarr; Boolean parameter test `tcBooleanConfigs` tests all combinations of feature flags `enableSteamer` and `cleaningMode` to ensure proper feature interaction behavior.
+
 
 ### Compiling EspressoMachine
 
@@ -125,15 +143,43 @@ p check
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/3_EspressoMachine/PGenerated/CSharp/net6.0/EspressoMachine.dll
     .. Checking P/Tutorial/3_EspressoMachine/PGenerated/CSharp/net6.0/EspressoMachine.dll
-    Error: We found '2' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
+    Error: We found '30' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSaneUserUsingCoffeeMachine
     tcCrazyUserUsingCoffeeMachine
+    tcCrazyUserParamOps___nOps_4
+    tcCrazyUserParamOps___nOps_5
+    tcCrazyUserParamOps___nOps_6
+    tcMultiUserOperations___nUsers_1__nOps_3
+    tcMultiUserOperations___nUsers_2__nOps_3
+    tcMultiUserOperations___nUsers_3__nOps_3
+    tcMultiUserOperations___nUsers_1__nOps_5
+    tcMultiUserOperations___nUsers_2__nOps_5
+    tcMultiUserOperations___nUsers_3__nOps_5
+    tcMultiUserOperations___nUsers_1__nOps_7
+    tcMultiUserOperations___nUsers_2__nOps_7
+    tcMultiUserOperations___nUsers_3__nOps_7
+    tcResourceConstraints___waterLevel_0__beanLevel_0
+    tcResourceConstraints___waterLevel_25__beanLevel_0
+    tcResourceConstraints___waterLevel_50__beanLevel_0
+    tcResourceConstraints___waterLevel_100__beanLevel_0
+    tcResourceConstraints___waterLevel_0__beanLevel_25
+    tcResourceConstraints___waterLevel_25__beanLevel_25
+    tcResourceConstraints___waterLevel_50__beanLevel_25
+    tcResourceConstraints___waterLevel_100__beanLevel_25
+    tcResourceConstraints___waterLevel_0__beanLevel_50
+    tcResourceConstraints___waterLevel_25__beanLevel_50
+    tcResourceConstraints___waterLevel_50__beanLevel_50
+    tcResourceConstraints___waterLevel_100__beanLevel_50
+    tcBooleanConfigs___enableSteamer_true__cleaningMode_true
+    tcBooleanConfigs___enableSteamer_false__cleaningMode_true
+    tcBooleanConfigs___enableSteamer_true__cleaningMode_false
+    tcBooleanConfigs___enableSteamer_false__cleaningMode_false
 
     ~~ [PTool]: Thanks for using P! ~~
     ```
 
-There are two test cases defined in the EspressoMachine project and you can specify which
+Above shows the test cases defined in the EspressoMachine project and you can specify which
 test case to run by using the `-tc` parameter along with the `-s` parameter for the number of schedules to explore.
 
 Check the `tcSaneUserUsingCoffeeMachine` test case for 10,000 schedules:

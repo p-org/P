@@ -1,5 +1,5 @@
 <Project>
-<ProjectName>ShardedKV</ProjectName>
+<ProjectName>LockServer</ProjectName>
 <InputFiles>
 	<PFile>./PSrc/</PFile>
 </InputFiles>

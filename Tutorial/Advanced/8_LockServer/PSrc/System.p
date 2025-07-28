@@ -74,7 +74,7 @@ Theorem safety {
     invariant unique_lock_holder:
         forall (n1: Node, n2: Node) :: n1.has_lock && n2.has_lock ==> n1 == n2;
 
-    // Mutually relative inductive lemmas
+    // Mutually relatively inductive lemmas
     invariant unique_grant:
         forall (e1: eGrant, e2: eGrant) :: inflight e1 && inflight e2 ==> e1 == e2;
     invariant unique_unlock:

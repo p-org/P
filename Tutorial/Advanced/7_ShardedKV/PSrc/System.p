@@ -23,8 +23,6 @@ machine Node {
         }
 
         on eTransfer do (e: tTransfer) {
-            var k: tKey;
-            var v: tValue;
             kv[e.key] = e.value;
         }
     }

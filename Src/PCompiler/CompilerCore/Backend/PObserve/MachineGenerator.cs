@@ -83,11 +83,7 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine();
 
             // monitor fields
-            foreach (var field in _currentMachine.Fields)
-            {
-                var type = Types.JavaTypeFor(field.Type);
-                var name = Names.GetNameForDecl(field);
-
+            foreach (var (type, name) in FieldsForCurrentMachine()) {
                 WriteLine($"private {type.TypeName} {name} = {type.DefaultValue};");
                 WriteLine($"public {type.TypeName} get_{name}() {{ return this.{name}; }};");
                 WriteLine();
@@ -118,7 +114,7 @@ namespace Plang.Compiler.Backend.Java {
                 WriteFunction(f);
             }
 
-            WriteToString();
+            WriteOverloads();
             
             WriteLine();
 
@@ -967,21 +963,59 @@ namespace Plang.Compiler.Backend.Java {
             }
         }
 
-        private void WriteToString()
+        private void WriteOverloads()
         {
+            // toString()
+            WriteLine();
             WriteLine("public String toString() {");
             WriteLine($"StringBuilder sb = new StringBuilder(\"{_currentMachine.Name}\");");
-            
+
             WriteLine("sb.append(\"[\");");
             foreach (var (sep, field) in _currentMachine.Fields.WithPrefixSep(", "))
             {
                 WriteLine($"sb.append(\"{sep}{field.Name}=\" + {Names.GetNameForDecl(field)});");
             }
+
             WriteLine("sb.append(\"]\");");
-            
+
             WriteLine("return sb.toString();");
             WriteLine("} // toString()");
+
+            // deepEquals
+            WriteLine();
+            WriteLine($"public boolean deepEquals({_currentMachine.Name} other) {{");
+            WriteLine("return (true");
+            foreach (var (jType, fieldName) in FieldsForCurrentMachine())
+            {
+                Write("&& ");
+                WriteLine(jType.IsPrimitive
+                    ? $"this.{fieldName} == other.{fieldName}"
+                    : $"{Constants.PrtDeepEqualsMethodName}(this.{fieldName}, other.{fieldName})");
+            }
+            WriteLine(");");
+            WriteLine("} // deepEquals()");
+
+            // equals
+            WriteLine();
+            WriteLine("public boolean equals(Object other) {");
+            WriteLine($"return (this.getClass() == other.getClass()) && this.deepEquals(({_currentMachine.Name})other);");
+            WriteLine("} // equals()");
+
+            // hashCode
+            WriteLine();
+            WriteLine("public int hashCode() {");
+            Write("return Objects.hash(");
+            foreach (var (sep, (_, fieldName)) in FieldsForCurrentMachine().WithPrefixSep(", "))
+            {
+                Write($"{sep}{fieldName}");
+            }
+            WriteLine(");");
+            WriteLine("} // hashCode()");
         }
-        
+
+        private IEnumerable<(TypeManager.JType, string)> FieldsForCurrentMachine()
+        {
+            return _currentMachine.Fields.Select(field => (Types.JavaTypeFor(field.Type), Names.GetNameForDecl(field)));
+        }
     }
 }

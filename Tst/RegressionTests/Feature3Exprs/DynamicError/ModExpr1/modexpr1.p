@@ -4,7 +4,7 @@ machine Main {
 			var x, y : int;
 			var z, w : float;
 			var ys: set[int];
-			x = choose(100);
+			x = choose(10);
 			ys += (113);
 			ys += (123);
 			ys += (113);

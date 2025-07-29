@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
@@ -862,5 +864,67 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion Conflict API
+
+        #region Global Params
+
+        public void Update(Variable v)
+        {
+            Variable vv;
+            if (variables.TryGetValue(v.Name, out vv))
+            {
+                variables[v.Name] = v;
+            }
+            return;
+        }
+        
+        public List<Variable> GetGlobalVariables()
+        {
+            return variables.Values.Where(v => v.Role == VariableRole.GlobalParams).ToList();
+        }
+        
+        public void ValidateGlobalParamsUnique(ITranslationErrorHandler handler)
+        {
+            var current = this;
+            IDictionary<string, Variable> allVariables = new Dictionary<string, Variable>();
+            while (current != null)
+            {
+                foreach (var v in current.variables.Values) {
+                    if (allVariables.Keys.Contains(v.Name))
+                    {
+                        if (v.Role == VariableRole.GlobalParams)
+                        {
+                            var vv = allVariables[v.Name];
+                            throw handler.DuplicateDeclaration(vv.SourceLocation, vv, v);
+                        }
+                    }
+                    allVariables[v.Name] = v;
+                }
+                current = current.Parent;
+            }
+            return;
+        }
+        
+        public bool LookupLvalue(ITranslationErrorHandler handler, string name, ParserRuleContext pos, out Variable tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    if (tree.Role == VariableRole.GlobalParams)
+                    {
+                        throw handler.ModifyGlobalParam(pos, tree); 
+                    }
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        #endregion Global Params
     }
 }

@@ -18,13 +18,18 @@ namespace Plang.Compiler.TypeChecker
         private readonly StackProperty<Machine> currentMachine = new StackProperty<Machine>();
         private readonly StackProperty<Scope> currentScope;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
-
+        private IDictionary<string, Variable> globalParams = new Dictionary<string, Variable>();
+            
         private DeclarationVisitor(
             ITranslationErrorHandler handler,
             Scope topLevelScope,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             Handler = handler;
+            foreach (var variable in topLevelScope.Variables)
+            {
+                globalParams.Add(variable.Name, variable);
+            }
             currentScope = new StackProperty<Scope>(topLevelScope);
             this.nodesToDeclarations = nodesToDeclarations;
         }
@@ -43,6 +48,34 @@ namespace Plang.Compiler.TypeChecker
             visitor.Visit(context);
         }
 
+        private void CheckGlobalParamsRedeclare(Variable decl)
+        {
+            if (globalParams.TryGetValue(decl.Name, out var existingDecl))
+            {
+                throw Handler.RedeclareGlobalParam(decl.SourceLocation, decl, existingDecl); 
+            }
+        }
+
+        #region GlobalParams
+        
+        public override object VisitGlobalParamDecl(PParser.GlobalParamDeclContext context)
+        {
+            // COLON type
+            var variableType = ResolveType(context.type());
+
+            // VAR idenList
+            foreach (var t in context.idenList()._names)
+            {
+                var variable = (Variable) nodesToDeclarations.Get(t);
+                variable.Type = variableType;
+                currentScope.Value.Update(variable);
+            }
+            // SEMI
+            return globalParams;
+        } 
+        
+        #endregion GlobalParams
+        
         #region Events
 
         public override object VisitEventDecl(PParser.EventDeclContext context)
@@ -376,6 +409,7 @@ namespace Plang.Compiler.TypeChecker
             for (var i = 0; i < varNameCtxs.Count; i++)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
+                CheckGlobalParamsRedeclare(variable);
                 variable.Type = variableType;
                 variables[i] = variable;
             }

@@ -79,7 +79,7 @@ namespace UnitTests.Runners
             var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);
             var compilerConfiguration = new CompilerConfiguration(outputStream, scratchDirectory,
-                new List<CompilerOutput>{CompilerOutput.C}, sources.Select(x => x.FullName).ToList(), "main");
+                new List<CompilerOutput>{CompilerOutput.PChecker}, sources.Select(x => x.FullName).ToList(), "main");
             compiler.Compile(compilerConfiguration);
         }
 

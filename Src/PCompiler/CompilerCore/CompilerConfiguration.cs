@@ -38,7 +38,7 @@ namespace Plang.Compiler
             ProjectRootPath = new DirectoryInfo(Directory.GetCurrentDirectory());
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
-            OutputLanguages = new List<CompilerOutput>{CompilerOutput.CSharp};
+            OutputLanguages = new List<CompilerOutput>{CompilerOutput.PChecker};
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;

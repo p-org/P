@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using NUnit.Framework;
 using UnitTests.Core;
 
@@ -13,7 +14,7 @@ namespace UnitTests
             {
                 Console.WriteLine("Test failed!\n");
                 WriteOutput(stdout, stderr, exitCode);
-                Assert.Fail($"EXIT: {exitCode}\n{stderr}");
+                Assert.Fail($"EXIT: {exitCode}\n{stderr}\n{stdout}");
             }
 
             Console.WriteLine("Test succeeded!\n");
@@ -26,6 +27,7 @@ namespace UnitTests
         public static void SafeDeleteDirectory(DirectoryInfo toDelete)
         {
             var safeBase = new DirectoryInfo(Constants.SolutionDirectory);
+            var retrySleepDurationMs = 200;
             for (var scratch = toDelete; scratch.Parent != null; scratch = scratch.Parent)
             {
                 if (string.Compare(scratch.FullName, safeBase.FullName, StringComparison.InvariantCultureIgnoreCase) ==
@@ -33,7 +35,22 @@ namespace UnitTests
                 {
                     if (toDelete.Exists)
                     {
-                        toDelete.Delete(true);
+                        for (int i = 0; i < 5; i++)
+                        {
+                            try
+                            {
+                                toDelete.Delete(true);
+                                break;
+                            }
+                            catch (IOException)
+                            {
+                                Thread.Sleep(retrySleepDurationMs);
+                            }
+                            catch (UnauthorizedAccessException)
+                            {
+                                Thread.Sleep(retrySleepDurationMs);
+                            }
+                        }
                     }
 
                     return;

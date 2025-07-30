@@ -25,6 +25,7 @@ namespace Plang.Compiler
 
         Exception DuplicateDeclaration(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
         Exception CyclicProof(ParserRuleContext location, ProofCommand cmd);
+        
         Exception RedeclareGlobalParam(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
 
         Exception UndeclaredGlobalParam(ParserRuleContext location, string name);

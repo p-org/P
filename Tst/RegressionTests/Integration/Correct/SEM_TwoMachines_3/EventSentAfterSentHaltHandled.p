@@ -1,7 +1,7 @@
 // XYZs that event sent to a machine after it received the "halt" event is ignored by the halted machine
 // Case when "halt" is explicitly handled
-event Ping assert 1 : machine;
-event Pong assert 1;
+event Ping : machine;
+event Pong;
 event Success;
 event PingIgnored;
 

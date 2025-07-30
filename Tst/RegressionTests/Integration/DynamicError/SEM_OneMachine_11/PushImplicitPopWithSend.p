@@ -3,9 +3,9 @@
 // Also, if a state is re-entered (meaning that the state was already on the stack),
 // entry function is not executed
 
-event E2 assert 1;
-event E1 assert 1;
-event E3 assert 1;
+event E2;
+event E1;
+event E3;
 
 machine Main {
     var XYZ: bool;

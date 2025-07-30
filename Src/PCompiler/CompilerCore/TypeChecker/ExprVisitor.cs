@@ -6,6 +6,7 @@ using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
@@ -14,7 +15,7 @@ namespace Plang.Compiler.TypeChecker
     {
         private readonly ITranslationErrorHandler handler;
         private readonly Function method;
-        private readonly Scope table;
+        private Scope table;
 
         public ExprVisitor(Function method, ITranslationErrorHandler handler)
         {
@@ -51,18 +52,82 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitNamedTupleAccessExpr(PParser.NamedTupleAccessExprContext context)
         {
-            var subExpr = Visit(context.expr());
-            if (!(subExpr.Type.Canonicalize() is NamedTupleType tuple))
-            {
-                throw handler.TypeMismatch(subExpr, TypeKind.NamedTuple);
-            }
+            IPExpr subExpr = Visit(context.expr());
             var fieldName = context.field.GetText();
-            if (!tuple.LookupEntry(fieldName, out var entry))
-            {
-                throw handler.MissingNamedTupleEntry(context.field, tuple);
-            }
 
-            return new NamedTupleAccessExpr(context, subExpr, entry);
+            switch (subExpr.Type.Canonicalize())
+            {
+                case NamedTupleType tuple:
+                    if (!tuple.LookupEntry(fieldName, out var entry))
+                    {
+                        throw handler.MissingNamedTupleEntry(context.field, tuple);
+                    }
+
+                    return new NamedTupleAccessExpr(context, subExpr, entry);
+                
+                case PermissionType {Origin: Machine} permission:
+                    var machine = (Machine) permission.Origin;
+                    
+                    if (!machine.LookupEntry(fieldName, out var field))
+                    {
+                        throw handler.MissingMachineField(context.field, machine);
+                    }
+                    return new MachineAccessExpr(context, machine, subExpr, field);
+                
+                case PermissionType {Origin: Interface} permission:
+                    var pname = permission.Origin.Name;
+                   
+                    if (!table.Lookup(pname, out Machine m))
+                    {
+                        throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+                    }
+                    
+                    if (!m.LookupEntry(fieldName, out var mfield))
+                    {
+                        throw handler.MissingMachineField(context.field, m);
+                    }
+                    return new MachineAccessExpr(context, m, subExpr, mfield);
+                
+                case PermissionType {Origin: NamedEventSet} permission:
+
+                    var pevents = ((NamedEventSet)permission.Origin).Events.ToList();
+
+                    foreach (var pevent in pevents)
+                    {
+                        switch (pevent.PayloadType.Canonicalize())
+                        {
+                            case NamedTupleType namedTupleType:
+                                if (namedTupleType.LookupEntry(fieldName, out var pentry))
+                                {
+                                    return new EventAccessExpr(context, pevent, subExpr, pentry);
+                                }
+                                break;
+                        }
+                    }
+                    
+                    throw handler.MissingEventField(context.field, pevents.First());
+                
+                case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Machine):
+                    Machine spec;
+
+                    switch (subExpr)
+                    {
+                        case SpecRefExpr specRefExpr:
+                            spec = specRefExpr.Value;
+                            break;
+                        default:
+                            throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+                    }
+                    
+                    if (!spec.LookupEntry(fieldName, out var sfield))
+                    {
+                        throw handler.MissingMachineField(context.field, spec);
+                    }
+                    return new SpecAccessExpr(context, spec, subExpr, sfield);
+                
+                default:
+                    throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+            }
         }
 
         public override IPExpr VisitTupleAccessExpr(PParser.TupleAccessExprContext context)
@@ -186,33 +251,68 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitFunCallExpr(PParser.FunCallExprContext context)
         {
             var funName = context.fun.GetText();
-            if (!table.Lookup(funName, out Function function))
+            if (table.Lookup(funName, out Function function))
             {
-                throw handler.MissingDeclaration(context.fun, "function", funName);
-            }
+                // Check the arguments
+                var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
+                ISet<Variable> linearVariables = new System.Collections.Generic.HashSet<Variable>();
 
-            // Check the arguments
-            var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-            ISet<Variable> linearVariables = new HashSet<Variable>();
-
-            if (function.Signature.Parameters.Count != arguments.Length)
-            {
-                throw handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count);
-            }
-
-            for (var i = 0; i < arguments.Length; i++)
-            {
-                var argument = arguments[i];
-                var paramType = function.Signature.Parameters[i].Type;
-                if (!paramType.IsAssignableFrom(argument.Type))
+                if (function.Signature.Parameters.Count != arguments.Length)
                 {
-                    throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
+                    throw handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count);
                 }
 
-            }
+                for (var i = 0; i < arguments.Length; i++)
+                {
+                    var argument = arguments[i];
+                    var paramType = function.Signature.Parameters[i].Type;
+                    if (!paramType.IsAssignableFrom(argument.Type))
+                    {
+                        throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
+                    }
 
-            method.AddCallee(function);
-            return new FunCallExpr(context, function, arguments);
+                }
+
+                method.AddCallee(function);
+                return new FunCallExpr(context, function, arguments);
+            }
+            if (table.Lookup(funName, out Pure pure))
+            {
+                // Check the arguments
+                var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
+                ISet<Variable> linearVariables = new System.Collections.Generic.HashSet<Variable>();
+
+                if (pure.Signature.Parameters.Count != arguments.Length)
+                {
+                    throw handler.IncorrectArgumentCount(context, arguments.Length, pure.Signature.Parameters.Count);
+                }
+
+                for (var i = 0; i < arguments.Length; i++)
+                {
+                    var argument = arguments[i];
+                    var paramType = pure.Signature.Parameters[i].Type;
+                    if (!paramType.IsAssignableFrom(argument.Type))
+                    {
+                        switch (paramType)
+                        {
+                            case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Event):
+                                switch (argument.Type)
+                                {
+                                    case PermissionType {Origin: NamedEventSet} per when ((NamedEventSet)(per.Origin)).Events.Count() == 1:
+                                        continue;
+                                }
+                                break;
+                        }
+                        throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
+                    }
+
+                }
+                
+                return new PureCallExpr(context, pure, arguments);
+            }
+            
+            throw handler.MissingDeclaration(context.fun, "function", funName);
+
         }
 
         public override IPExpr VisitUnaryExpr(PParser.UnaryExprContext context)
@@ -246,6 +346,100 @@ namespace Plang.Compiler.TypeChecker
             }
         }
 
+        public override IPExpr VisitQuantExpr(PParser.QuantExprContext context)
+        {
+            var oldTable = table;
+            table = table.MakeChildScope();
+
+            bool diff = context.diff != null;
+
+            var bound = context.bound.funParam().Select(p =>
+            {
+                var symbolName = p.name.GetText();
+                var param = table.Put(symbolName, p, VariableRole.Param);
+                param.Type = TypeResolver.ResolveType(p.type(), table, handler);
+                return param;
+            }).Cast<Variable>().ToArray();
+
+            if (diff && bound.ToList().Count != 1)
+            {
+                // we have the "new" annotation so the bound must be a single thing and it must be an event
+                throw handler.InternalError(context, new ArgumentException($"Difference quantifiers must have exactly one bound variable", nameof(context)));
+            }
+
+            if (diff)
+            {
+                switch (bound[0].Type.Canonicalize())
+                {
+                    case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Event):
+                        break;
+                    case PermissionType {Origin: NamedEventSet} _:
+                        break;
+                    default:
+                        throw handler.TypeMismatch(context.bound, bound[0].Type, PrimitiveType.Event);
+                }
+            }
+            
+            var body = Visit(context.body);
+
+            table = oldTable;
+
+            if (context.quant.Text == "forall")
+            {
+                return new QuantExpr(context, QuantType.Forall, bound.ToList(), body, diff);
+            }
+            
+            return new QuantExpr(context, QuantType.Exists, bound.ToList(), body, diff);
+        }
+
+        public override IPExpr VisitTestExpr(PParser.TestExprContext context)
+        {
+            var instance = Visit(context.instance);
+            string name = context.kind.GetText();
+            
+            if (table.Lookup(name, out Machine m))
+            {
+                return new TestExpr(context, instance, m);
+            }
+            
+            if (table.Lookup(name, out Event e))
+            {
+                return new TestExpr(context, instance, e);
+            }
+            
+            if (table.Lookup(name, out State s))
+            {
+                return new TestExpr(context, instance, s);
+            }
+            
+            throw handler.MissingDeclaration(context, "machine, event, or state", name);
+        }
+        
+        public override IPExpr VisitTargetsExpr(PParser.TargetsExprContext context)
+        {
+            var instance = Visit(context.instance);
+            var target = Visit(context.target);
+            
+            // TODO: type check to make sure instance is an event and machine is a machine
+            return new TargetsExpr(context, instance, target);
+        }
+        
+        public override IPExpr VisitFlyingExpr(PParser.FlyingExprContext context)
+        {
+            var instance = Visit(context.instance);
+            
+            // TODO: type check to make sure instance is an event
+            return new FlyingExpr(context, instance);
+        }
+        
+        public override IPExpr VisitSentExpr(PParser.SentExprContext context)
+        {
+            var instance = Visit(context.instance);
+            
+            // TODO: type check to make sure instance is an event
+            return new SentExpr(context, instance);
+        }
+        
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
             var lhs = Visit(context.lhs);
@@ -268,7 +462,9 @@ namespace Plang.Compiler.TypeChecker
             var logicCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
                 {"&&", (elhs, erhs) => new BinOpExpr(context, BinOpType.And, elhs, erhs)},
-                {"||", (elhs, erhs) => new BinOpExpr(context, BinOpType.Or, elhs, erhs)}
+                {"||", (elhs, erhs) => new BinOpExpr(context, BinOpType.Or, elhs, erhs)},
+                {"==>", (elhs, erhs) => new BinOpExpr(context, BinOpType.Then, elhs, erhs)},
+                {"<==>", (elhs, erhs) => new BinOpExpr(context, BinOpType.Iff, elhs, erhs)}
             };
 
             var compCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
@@ -355,7 +551,9 @@ namespace Plang.Compiler.TypeChecker
                     return compCtors[op](lhs, rhs);
 
                 case "&&":
-                case "||":
+                case "||": 
+                case "==>":
+                case "<==>":
                     if (!PrimitiveType.Bool.IsAssignableFrom(lhs.Type))
                     {
                         throw handler.TypeMismatch(context.lhs, lhs.Type, PrimitiveType.Bool);
@@ -522,6 +720,23 @@ namespace Plang.Compiler.TypeChecker
                 {
                     return new EventRefExpr(context, evt);
                 }
+
+                if (table.Lookup(symbolName, out Machine mac) && mac.IsSpec)
+                {
+                    return new SpecRefExpr(context, mac);
+                }
+
+                if (table.Lookup(symbolName, out Invariant inv))
+                {
+                    return new InvariantRefExpr(inv, context);
+                }
+
+                if (table.Lookup(symbolName, out InvariantGroup invGroup))
+                {
+                    return new InvariantGroupRefExpr(invGroup, context);
+                }
+
+                throw handler.MissingDeclaration(context.iden(), "variable, enum element, spec machine, or event", symbolName);
                 
                 throw handler.MissingDeclaration(context.iden(), "variable, enum element, or event", symbolName);
             }
@@ -604,7 +819,7 @@ namespace Plang.Compiler.TypeChecker
             var fields = context._values.Select(Visit).ToArray();
 
             var entries = new NamedTupleEntry[fields.Length];
-            var names = new HashSet<string>();
+            var names = new System.Collections.Generic.HashSet<string>();
             for (var i = 0; i < fields.Length; i++)
             {
                 var entryName = context._names[i].GetText();

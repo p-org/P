@@ -1,7 +1,7 @@
 // P semantics XYZ: two machines, machine is halted with "raise halt" (unhandled)
 // Action2 is never executed after raising E1; XYZ passes
-event E1 assert 1;
-event E2 assert 1;
+event E1;
+event E2;
 
 machine Main {
     var XYZ: bool;  //init with "false"

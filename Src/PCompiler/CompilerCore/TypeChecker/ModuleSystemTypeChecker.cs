@@ -130,7 +130,7 @@ namespace Plang.Compiler.TypeChecker
                 currentModule.InterfaceDef.Add(ipItem.Key, ipItem.Value);
             }
         }
-
+        
         internal void CheckRefinementTest(RefinementTest test)
         {
             //check that the test module is closed with respect to creates

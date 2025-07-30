@@ -2,9 +2,9 @@
 // the number of reachable states is unbounded"
 // unlimited number of "push" transitions with no "pop"
 // so zing is not running on this XYZ
-event Ping assert 1 : machine;
-event Pong assert 1;
-event Success assert 1;
+event Ping : machine;
+event Pong;
+event Success;
 
 machine Main {
     var pongId: machine;

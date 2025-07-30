@@ -78,6 +78,11 @@ namespace Plang.Compiler
                 $"invalid twise number at {locationResolver.GetLocation(testDecl.SourceLocation)}: {errMsg}");
         }
 
+        public Exception CyclicProof(ParserRuleContext location, ProofCommand cmd)
+        {
+            return IssueError(location,
+                $"Proof commands form a cycle at {locationResolver.GetLocation(cmd.SourceLocation)}");
+        }
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)
         {
             return IssueError(location,
@@ -140,6 +145,17 @@ namespace Plang.Compiler
         {
             return IssueError(location,
                 $"named tuple type {namedTuple.OriginalRepresentation} has no '{location.GetText()}' field");
+        }
+
+        public Exception MissingMachineField(PParser.IdenContext location, Machine machine)
+        {
+            return IssueError(location,
+                $"machine {machine.Name} has no '{location.GetText()}' field");
+        }
+        public Exception MissingEventField(PParser.IdenContext location, Event pevent)
+        {
+            return IssueError(location,
+                $"machine {pevent.Name} payload has no '{location.GetText()}' field");
         }
 
         public Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple)

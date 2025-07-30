@@ -5,7 +5,7 @@
 // "halt" is not handled, since state Real1_Init is removed once goto is executed
 // Compare this XYZ to SendInExitUnhandledEvent.p
 
-event E1 assert 1;
+event E1;
 
 machine Main {
     var XYZ: bool;  //init with "false"

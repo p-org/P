@@ -1,8 +1,8 @@
 //Check contexts for swap and move
 
-event E1 assert 1: int;
-event E2 assert 1: int;
-event E3 assert 1: int;
+event E1 : int;
+event E2 : int;
+event E3 : int;
 
 machine Main {
 	var x: int;

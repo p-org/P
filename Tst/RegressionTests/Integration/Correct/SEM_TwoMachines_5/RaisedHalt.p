@@ -1,8 +1,8 @@
 // P semantics XYZ: two machines, machine is halted with "raise halt" (unhandled)
 // This XYZ is for the case when "halt" is not explicitly handled - hence, default semantics of "halt" is engaged.
 // The program finishes in the deadlock in Ping_WaitPong after 2nd Pong is sent
-event Ping assert 1 : machine;
-event Pong assert 1;
+event Ping : machine;
+event Pong;
 event Success;
 event PongIgnored;
 //event PongHalted;

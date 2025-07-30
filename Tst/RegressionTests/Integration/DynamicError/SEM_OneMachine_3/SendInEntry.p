@@ -1,5 +1,5 @@
 // P semantics XYZ: one machine, "send" to itself in entry actions
-event E2 assert 1;
+event E2;
 
 machine Main {
     var XYZ: bool;  //init with "false"

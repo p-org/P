@@ -1,10 +1,10 @@
 //XYZs "Value must have a concrete type" error
 //Basic types: int, bool, event
 //This XYZ found a bug in Zinger
-event E assert 1;
-event E1 assert 1;
-event E2 assert 1;
-event E3 assert 1;
+event E;
+event E1;
+event E2;
+event E3;
 
 machine Main {
     var y : int;

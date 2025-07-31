@@ -61,8 +61,8 @@ dependencies {
     implementation("software.amazon.awssdk:regions:2.29.15")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.1")
     implementation("com.github.javaparser:javaparser-core:3.24.0")
-    implementation("javax.validation:validation-api:2.0.+")
-    implementation("org.junit.jupiter:junit-jupiter-api:5.+")
+    implementation("javax.validation:validation-api:2.0.1.Final")
+    implementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
 }
 
 group = "io.github.p-org"

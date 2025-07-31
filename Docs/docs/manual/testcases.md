@@ -93,3 +93,11 @@ param g1 : int;         // For another numeric parameter
     2. All local assertions hold
     3. No deadlocks
     4. All [specification monitors](modulesystem.md#assert-monitors-module) properties hold
+
+!!! example "Tutorial Examples"
+    For complete examples of parameterized testing in action, see:
+    
+    - [Client Server](../tutorial/clientserver.md#parameterized-tests): Basic example showing parameter declarations and usage
+    - [Two Phase Commit](../tutorial/twophasecommit.md#test-scenarios): Shows pairwise testing of system configurations with assumptions
+    - [Failure Detector](../tutorial/failuredetector.md#parameterized-tests): Demonstrates testing different system sizes and monitoring loads
+    - [Espresso Machine](../tutorial/espressomachine.md#parameterized-tests): Illustrates testing various user interaction scenarios

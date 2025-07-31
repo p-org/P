@@ -81,11 +81,40 @@ The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/
 ??? tip "[Expand]: Let's walk through TestDriver.p"
     - ([L9 - L42](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p#L9-L42)) &rarr; Function `SetUpTwoPhaseCommitSystem` takes as input `t2PCConfig` that specifies the number of clients, participants, etc. to be created and sets up the system by creating the machines. The function also initializes the spec monitors by informing them about the number of participants in the system before the system starts executing [here](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p#L23-L24).
     - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p#L50-L101)) &rarr; Machines `SingleClientNoFailure`, `MultipleClientsNoFailure` and `MultipleClientsWithFailure` are simple test driver machines that configure the system to be checked by the P checker for different scenarios.
+    - The `TestWithConfig` machine enables parameterized testing with four configurable parameters:
+        ```
+        param numClients: int;         // Number of clients in the system
+        param numParticipants: int;    // Number of participants
+        param numTransPerClient: int;   // Transactions per client
+        param failParticipants: int;   // Number of participants that can failt
+        ```
+        This allows systematic exploration of different system configurations and failure scenarios.
 
 ??? tip "[Expand]: Let's walk through TestScript.p"
     P allows programmers to write different test cases. Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators. To better understand the P test cases, please look at manual: [P test cases](../manual/testcases.md).
 
-    - ([L1 - L12](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestScripts.p#L1-L12)) &rarr; Declares three test cases each checking a different scenario in the system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)). The `assert` module constructor is used to attach monitors or specifications to be checked on the modules (manual: [assert](../manual/modulesystem.md#assert-monitors-module)).
+    The test script contains two types of test cases:
+
+    1. Basic test cases that use fixed configurations:
+        - `tcSingleClientNoFailure`: Tests with 1 client, 3 participants, no failures
+        - `tcMultipleClientsNoFailure`: Tests with 2 clients, 3 participants, no failures
+        - `tcMultipleClientsWithFailure`: Tests with 2 clients, 3 participants, 1 failure
+
+    2. Parameterized test case that systematically explores different configurations:
+        ```
+        test param (numClients in [2, 3], numParticipants in [3, 4, 5], 
+                   numTransPerClient in [1, 2], failParticipants in [0, 1])
+          assume (numParticipants > numClients && failParticipants < numParticipants/2)
+          (2 wise) tcPairwiseTest [main=TestWithConfig]:
+          assert AtomicityInvariant, Progress in
+          (union TwoPhaseCommit, TwoPCClient, FailureInjector, { TestWithConfig });
+        ```
+        This test:
+        - Uses pairwise testing to efficiently cover parameter combinations
+        - Ensures valid configurations through assumptions:
+          - More participants than clients for proper distribution
+          - Less than half participants can fail for system stability
+        - Tests both atomicity and progress properties
 
 ??? tip "[Expand]: Let's walk through Client.p"
     The `Client` machine implements the client of the two-phase-commit transaction service. Each client issues N non-deterministic write-transactions, if the transaction succeeds then it performs a read-transaction on the same key and asserts that the value read is same as what was written by the write transaction.

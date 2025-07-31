@@ -99,3 +99,28 @@ machine MultipleClientsWithFailure {
     }
   }
 }
+
+/*
+This machine allows parameterized testing with configurable number of clients, participants, and failures
+*/
+machine TestWithConfig {
+  // Parameters for system configuration
+  param numClients: int;
+  param numParticipants: int;
+  param numTransPerClient: int;
+  param failParticipants: int;
+
+  start state Init {
+    entry {
+      var config: t2PCConfig;
+      config = (
+        numClients = numClients,
+        numParticipants = numParticipants,
+        numTransPerClient = numTransPerClient,
+        failParticipants = failParticipants
+      );
+
+      SetUpTwoPhaseCommitSystem(config);
+    }
+  }
+}

@@ -39,6 +39,9 @@ jobs:
           # Replace version in build.gradle.kts
           sed -i "s/version = \".*\"/version = \"${{ github.event.inputs.releaseVersion }}\"/" build.gradle.kts
       
+      - name: Generate Gradle Wrapper Files
+        run: gradle wrapper
+
       - name: Build with Gradle
         run: ./gradlew build
       

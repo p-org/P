@@ -1,18 +1,23 @@
 import com.github.spotbugs.snom.SpotBugsTask
+import com.vanniktech.maven.publish.JavaLibrary
+import com.vanniktech.maven.publish.JavadocJar
 
 plugins {
     id("java")
-    id("maven-publish")
     id("checkstyle")
     id("com.github.spotbugs") version "5.+"
     id("com.diffplug.spotless") version "6.+"
     id("java-library")
-    id("signing")
+    id("com.vanniktech.maven.publish") version "0.33.0"
 }
 
 repositories {
     mavenLocal()
     mavenCentral()
+}
+
+tasks.withType<Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // spotbugs
@@ -68,55 +73,32 @@ dependencies {
 group = "io.github.p-org"
 version = "1.0.0"
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
+mavenPublishing {
+    configure(JavaLibrary(
+        javadocJar = JavadocJar.None(),
+        sourcesJar = true,
+    ))
+    publishToMavenCentral(automaticRelease = true)
 
-            groupId = "io.github.p-org"
-            artifactId = "pobserve-commons"
-            version = "1.0.0"
-            
-            pom {
-                name.set("PObserveCommons")
-                description.set("Common utilities for PObserve runtime monitoring")
-                url.set("https://github.com/p-org/P")
-                
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://github.com/p-org/P/blob/master/LICENSE.txt")
-                    }
-                }
-                
-                scm {
-                    connection.set("scm:git:git@github.com:p-org/P.git")
-                    developerConnection.set("scm:git:ssh://github.com:p-org/P.git")
-                    url.set("https://github.com/p-org/P/tree/master")
-                }
+    signAllPublications()
+
+    coordinates(group.toString(), "pobserve-commons", version.toString())
+
+    pom {
+        name.set("PObserveCommons")
+        description.set("Common utilities for PObserve runtime monitoring")
+        inceptionYear.set("2024")
+        url.set("https://github.com/p-org/P")
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://github.com/p-org/P/blob/master/LICENSE.txt")
             }
         }
-    }
-    
-    repositories {
-        maven {
-            name = "OSSRH"
-            val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-            credentials {
-                username = System.getenv("MAVEN_USERNAME")
-                password = System.getenv("MAVEN_PASSWORD")
-            }
+        scm {
+            connection.set("scm:git:git@github.com:p-org/P.git")
+            developerConnection.set("scm:git:ssh://github.com:p-org/P.git")
+            url.set("https://github.com/p-org/P/tree/master")
         }
     }
-}
-
-// Signing configuration
-signing {
-    val signingKey = System.getenv("SIGNING_KEY")
-    val signingPassword = System.getenv("SIGNING_PASSWORD")
-
-    useInMemoryPgpKeys(signingKey, signingPassword)
-    sign(publishing.publications["mavenJava"])
 }

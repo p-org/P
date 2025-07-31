@@ -8,8 +8,9 @@ on:
         required: true
         default: '1.0.0'
         type: string
-  release:
-    types: [created]
+  push:
+    branches:
+      - dev_pobserve/mchadala # Adding this temporarily to publish pobserve commons to maven on push
 
 jobs:
   publish:

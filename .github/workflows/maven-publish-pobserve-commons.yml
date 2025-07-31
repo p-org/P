@@ -8,9 +8,6 @@ on:
         required: true
         default: '1.0.0'
         type: string
-  push:
-    branches:
-      - dev_pobserve/mchadala # Adding this temporarily to publish pobserve commons to maven on push
 
 jobs:
   publish:
@@ -47,8 +44,8 @@ jobs:
       
       - name: Publish PObserve Commons to Maven Central
         env:
-          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-          SIGNING_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          SIGNING_PASSWORD: ${{ secrets.GPG_PASSPHRASE }}
-        run: ./gradlew publish
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: ./gradlew publishToMavenCentral --info --build-cache

@@ -36,7 +36,7 @@ public class PTraceParserUtils {
         private static final String namedTupleDelimiter = ", ";
 
         /**
-         * Given a serialized named tuple of the form `<k1:v1, k2:v2, ... kn:vn, >`, return an array
+         * Given a serialized named tuple of the form `<code>&lt;k1:v1, k2:v2, ... kn:vn, &gt;</code>`, return an array
          * of Strings containing all the key-value pairs.  (Note the trailing ", " after the final
          * key-value pair[1]; the suprious empty final element is truncated from the final result array.)
          *
@@ -53,7 +53,7 @@ public class PTraceParserUtils {
         }
 
         /**
-         * Given a serialised tuple of the form `<v1,v2,v3...vn,>`, return an array of Strings
+         * Given a serialised tuple of the form `<code>&lt;v1,v2,v3...vn,&gt;</code>`, return an array of Strings
          * containing all the values.  (Notice the trailing "," after the final value[1]; this spurious
          * element is truncated from the final result.)
          *

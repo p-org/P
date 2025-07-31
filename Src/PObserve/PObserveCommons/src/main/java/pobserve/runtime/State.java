@@ -22,7 +22,7 @@ public class State<K extends Enum<K>> {
     }
 
     /**
-     * Functionally-equivalent to a Consumer<T>, but may throw exceptional control flow within accept().
+     * Functionally-equivalent to a <code>Consumer&lt;T&gt;</code>, but may throw exceptional control flow within accept().
      * @param <T> The type to be consumed.
      */
     @FunctionalInterface
@@ -213,7 +213,7 @@ public class State<K extends Enum<K>> {
          * state machine to transition to the current state with a payload _other_ than P!
          * In that case, a ClassCastException will be thrown _at runtime_.
          *
-         * TODO: we could simply hard-code this consumer to consume an Optional<j.l.Object>?
+         * TODO: we could simply hard-code this consumer to consume an <code>Optional&lt;j.l.Object&gt;?</code>
          * I like that less but makes the "untyped-ness" clearer to developers...
          *
          * @param f the P -> void function to invoke.

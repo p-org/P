@@ -28,7 +28,7 @@ how do you machine the non det back off
 
 //this event is enqueued by the Timer machine. In real systems this will be replaced by the timer interrupt routine
 
-event newSlot assert 1 : (bool, (machine,machine));
+event newSlot : (bool, (machine,machine));
 event endSlot;
 event Local;
 event TxDone;
@@ -36,9 +36,9 @@ event TxDone;
 event Tx;
 event Rx;
 event Sleep;
-event Data assert 4 : (machine,int);
-event Ack assert 1 : (machine,int);
-event Initialize assert 1 : (machine,seq[machine]);
+event Data : (machine,int);
+event Ack : (machine,int);
+event Initialize : (machine,seq[machine]);
 
 machine Main {
 	var N1:machine;var N2:machine;var N3:machine;var N4:machine;

@@ -44,6 +44,14 @@ namespace Plang.Options
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
 
             Parser.AddArgument("debug", "d", "Enable debug logs", typeof(bool)).IsHidden = true;
+            
+            var pvGroup = Parser.GetOrCreateGroup("pverifier", "PVerifier options");
+            pvGroup.AddArgument("timeout", "t", "Set SMT solver timeout in seconds", typeof(int)).IsHidden = true;
+            
+            pvGroup.AddArgument("no-event-handler-checks", "nch", "Do not check that all events are handled", typeof(bool)).IsHidden = true;
+            pvGroup.AddArgument("proof-blocks", "pb", "List of proof blocks to check").IsMultiValue = true;
+            pvGroup.AddArgument("check-only", "co", "Check only the specified machine", typeof(string)).IsHidden = true;
+            pvGroup.AddArgument("jobs", "j", "Number of parallel processes to use", typeof(int)).IsHidden = true;
         }
 
         /// <summary>
@@ -160,6 +168,15 @@ namespace Plang.Options
                 case "debug":
                     compilerConfiguration.Debug = true;
                     break;
+                case "timeout":
+                    compilerConfiguration.Timeout = (int)option.Value;
+                    break;
+                case "check-only":
+                    compilerConfiguration.CheckOnly = (string)option.Value;
+                    break;
+                case "jobs":
+                    compilerConfiguration.Parallelism = (int)option.Value;
+                    break;
                 case "mode":
                     compilerConfiguration.OutputLanguages = new List<CompilerOutput>();
                     switch (((string)option.Value).ToLowerInvariant())
@@ -183,6 +200,15 @@ namespace Plang.Options
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;
                     break;
+                case "proof-blocks":
+                {
+                    var proofBlocks = (string[])option.Value;
+                    foreach (var block in proofBlocks.Distinct())
+                    {
+                        compilerConfiguration.TargetProofBlocks.Add(block);
+                    }
+                    break;
+                }
                 case "pfiles":
                 {
                     var files = (string[])option.Value;

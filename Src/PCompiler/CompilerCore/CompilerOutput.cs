@@ -5,6 +5,7 @@ namespace Plang.Compiler
         PChecker,
         PObserve,
         Stately,
-        PEx
+        PEx,
+        PVerifier
     }
 }

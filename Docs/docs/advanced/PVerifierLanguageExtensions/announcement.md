@@ -1,0 +1,23 @@
+# Announcing the New Verification Backend for P
+
+We are excited to announce the release of a new verification backend for the P programming language! This backend, which we call the P Verifier, allows you to prove that your systems behave correctly under all possible scenarios. The P Verifier is based on Mora et al. ([OOPSLA '23](https://dl.acm.org/doi/10.1145/3622876)) and uses UCLID5 (Polgreen et al., [CAV '22](https://dl.acm.org/doi/10.1007/978-3-031-13185-1_27)).
+
+Before the P Verifier, P helped users catch design-level bugs early in the development process through explicit-state model checking (Brooker and Desai, [Queue '25](https://doi.org/10.1145/3712057)). Given a formal model, specification, and a test driver describing a system configuration, the model checking backend systematically explores the given model in search of an execution that violates the given specification for the given system configuration. See the [Two-Phase Commit example tutorial](twopahsecommitverification.md) for an example model, specification, and three test drivers corresponding to three different system configurations (e.g., a configuration with three participants, one coordinator, and one client). P was used in this way to help AWS migrate [S3 (Simple Storage Service) from eventual to strong read-after-write consistency](https://aws.amazon.com/blogs/aws/amazon-s3-update-strong-read-after-write-consistency/).
+
+The new verification backend allows users to **prove** that their system design is correct for all executions over all possible system configurations. Instead of using explicit-state model checking, the new backend supports proofs by induction. Users still provide a formal model and specification. But, instead of giving a test driver, users must provide assumptions about what is possible in the system and an inductive invariant that implies that the given model satisfies the given specification under the given assumptions. The main job of the backend is to check that that given invariant is indeed inductive (all possible events in the system preserve it) and that the given invariant does indeed imply the given specification. UCLID5 accomplishes this job by way of a satisfiability modulo theories (SMT) solver, like Z3 (de Moura and Bjørner, [TACAS '08](https://doi.org/10.1007/978-3-540-78800-3_24)).
+
+Formal verification is important to AWS’s software correctness program (Brooker and Desai, [Queue '25](https://doi.org/10.1145/3712057)). Several formal tools have had successful applications within AWS in their respective domains. The new verification backend in P gives users the benefits of correctness proofs for the domain of distributed systems design, all while preserving the existing benefits of systematic testing.
+
+## Getting Started and Tutorial
+
+To start using the P Verifier, you must install P along with the verification dependencies (UCLID5 and an SMT solver like Z3). Detailed installation instructions are available [here](install-pverifier.md); simple usage instructions are available [here](using-pverifier.md).
+
+To help you get acquainted with the new verification features, we have prepared a comprehensive tutorial that walks you through the formal verification of a simplified two-phase commit (2PC) protocol. This tutorial covers the key concepts and steps of using the verification backend. You can find the tutorial [here](twophasecommitverification.md).
+
+## Industrial Application Inside Amazon Web Services
+
+The two-phase commit protocol described in the tutorial is deliberately simplified to help new users get started. In that protocol, one coordinator works with a fixed set of participants to agree on a single boolean value. Industrial systems, however, call for a number of generalizations. 
+
+We used the new verification backend to verify an industrial version of the two-phase commit protocol with the following generalizations. First, the protocol works for multiple rounds (think participants agreeing on sequences of boolean values instead of a single boolean value). Second, the participants agree on the state of a key-value store instead of boolean values. Third, the system works at the granularity of transactions (reads and writes) instead of individual values. Fourth, the key-value store is partitioned across sets of participants ("shards"). Finally, fifth, the safety property is a more general kind of consistency called [Snapshot Isolation](https://software.imdea.org/~gotsman/papers/si-podc16.pdf). We hope to release the internal details of this system and the corresponding proof of correctness at a later date.
+
+We look forward to your feedback. Happy verifying!

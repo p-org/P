@@ -1,9 +1,9 @@
 // 1.6.6.1.	Multiple handlers for the event: ignore/defer case
 //
 
-event E1 assert 2;
-event E2 assert 2;
-event unit assert 1;
+event E1;
+event E2;
+event unit;
 
 machine Main {
     var XYZ: bool;  //init with "false"

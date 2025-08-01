@@ -3,6 +3,7 @@ using Plang.Compiler.Backend.CSharp;
 using Plang.Compiler.Backend.Java;
 using Plang.Compiler.Backend.PEx;
 using Plang.Compiler.Backend.Stately;
+using Plang.Compiler.Backend.PVerifier;
 
 namespace Plang.Compiler.Backend
 {
@@ -16,6 +17,7 @@ namespace Plang.Compiler.Backend
             RegisterCodeGenerator(CompilerOutput.PChecker, new PCheckerCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.PObserve, new PObserveCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.Stately, new StatelyCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.PVerifier, new PVerifierCodeGenerator());
             RegisterCodeGenerator(CompilerOutput.PEx, new PExCodeGenerator());
         }
 

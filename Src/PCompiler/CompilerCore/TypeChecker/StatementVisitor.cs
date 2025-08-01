@@ -63,6 +63,30 @@ namespace Plang.Compiler.TypeChecker
 
             return new AssertStmt(context, assertion, assertMessage);
         }
+        
+        
+        public override IPStmt VisitAssumeStmt(PParser.AssumeStmtContext context)
+        {
+            var assumption = exprVisitor.Visit(context.assumption);
+            if (!PrimitiveType.Bool.IsSameTypeAs(assumption.Type))
+            {
+                throw handler.TypeMismatch(context.assumption, assumption.Type, PrimitiveType.Bool);
+            }
+            IPExpr assertMessage = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context).ToString().Replace(@"\", @"\\")}",new List<IPExpr>());
+            if (context.message != null)
+            {
+                var message = exprVisitor.Visit(context.message);
+                if (!message.Type.IsSameTypeAs(PrimitiveType.String))
+                {
+                    throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
+                }
+
+                assertMessage = new StringExpr(message.SourceLocation, "{0} {1}",new List<IPExpr>() {assertMessage,
+                    message});
+            }
+
+            return new AssumeStmt(context, assumption, assertMessage);
+        }
 
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
         {
@@ -258,9 +282,12 @@ namespace Plang.Compiler.TypeChecker
                 throw handler.TypeMismatch(context.item, itemType, expectedItemType);
 
             var body = Visit(context.statement());
-            return new ForeachStmt(context, var, collection, body);
-        }
 
+            var invs = context._invariants.Select(exprVisitor.Visit).ToList();
+            
+            return new ForeachStmt(context, var, collection, body, invs);
+        }
+        
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
         {
             var condition = exprVisitor.Visit(context.expr());

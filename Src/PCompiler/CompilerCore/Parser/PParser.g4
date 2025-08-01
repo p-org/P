@@ -57,12 +57,25 @@ topDecl : typeDefDecl
         | implMachineDecl
         | specMachineDecl
         | funDecl
+        | pureDecl
         | namedModuleDecl
         | testDecl
         | implementationDecl
         | globalParamDecl
+        | invariantDecl
+        | invariantGroupDecl
+        | axiomDecl
+        | assumeOnStartDecl
+        | proofBlockDecl
         ;
 
+invariantGroupDecl : LEMMA name=iden LBRACE invariantDecl* RBRACE
+                |    THEOREM name=iden LBRACE invariantDecl* RBRACE
+                ;
+
+proofBlockDecl : PROOF (name=iden)? LBRACE proofBody RBRACE # ProofBlock ;
+proofBody : proofItem* ;
+proofItem : PROVE (targets+=expr (COMMA targets+=expr)* | goalsAll=MUL | goalsDefault=DEFAULT) (USING ((premises+=expr (COMMA premises+=expr)*) | premisesAll=MUL))? (EXCEPT excludes+=expr (COMMA excludes+=expr)*)? SEMI # ProveUsingCmd ; 
 globalParamDecl : PARAM idenList COLON type SEMI ;
 
 typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
@@ -77,10 +90,7 @@ enumElem : name=iden ;
 numberedEnumElemList : numberedEnumElem (COMMA numberedEnumElem)* ;
 numberedEnumElem : name=iden ASSIGN value=IntLiteral ;
 
-eventDecl : EVENT name=iden cardinality? (COLON type)? SEMI;
-cardinality : ASSERT IntLiteral
-            | ASSUME IntLiteral
-            ;
+eventDecl : EVENT name=iden (COLON type)? SEMI;
 
 eventSetDecl : EVENTSET name=iden ASSIGN LBRACE eventSetLiteral RBRACE SEMI ;
 eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
@@ -88,7 +98,8 @@ eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
 interfaceDecl : INTERFACE name=iden LPAREN type? RPAREN (RECEIVES nonDefaultEventList?) SEMI ;
 
 // has scope
-implMachineDecl : MACHINE name=iden cardinality? receivesSends* machineBody ;
+implMachineDecl : MACHINE name=iden receivesSends* machineBody ;
+
 idenList : names+=iden (COMMA names+=iden)* ;
 
 receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
@@ -107,7 +118,15 @@ varDecl : VAR idenList COLON type SEMI ;
 
 funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? (CREATES interfaces+=iden)? SEMI # ForeignFunDecl
         | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
+        | FUN name=iden LPAREN funParamList? RPAREN (RETURN LPAREN funParam RPAREN SEMI)? (REQUIRES requires+=expr SEMI)* (ENSURES ensures+=expr SEMI)* # ForeignFunDecl
         ;
+        
+pureDecl : PURE name=iden LPAREN funParamList? RPAREN COLON type (ASSIGN body=expr)? SEMI ;
+
+invariantDecl: INVARIANT name=iden COLON body=expr SEMI ;
+axiomDecl: AXIOM body=expr SEMI ;
+
+assumeOnStartDecl: INIT body=expr SEMI ;
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=iden LBRACE stateBodyItem* RBRACE ;
 
@@ -135,6 +154,7 @@ stateName : state=iden ;
 functionBody : LBRACE varDecl* statement* RBRACE ;
 statement : LBRACE statement* RBRACE							# CompoundStmt
           | ASSERT assertion=expr (COMMA message=expr)? SEMI	# AssertStmt
+          | ASSUME assumption=expr (COMMA message=expr)? SEMI	# AssumeStmt
           | PRINT message=expr SEMI								# PrintStmt
           | RETURN expr? SEMI									# ReturnStmt
           | BREAK SEMI											# BreakStmt
@@ -144,8 +164,9 @@ statement : LBRACE statement* RBRACE							# CompoundStmt
 		  | lvalue INSERT LPAREN rvalue RPAREN SEMI				# AddStmt
           | lvalue REMOVE expr SEMI								# RemoveStmt
           | WHILE LPAREN expr RPAREN statement					# WhileStmt
-          | FOREACH LPAREN item=iden IN collection=expr
-                                        RPAREN statement		# ForeachStmt
+          | FOREACH LPAREN item=iden IN collection=expr RPAREN 
+                             (INVARIANT invariants+=expr SEMI)*
+                                                     statement  # ForeachStmt
           | IF LPAREN expr RPAREN thenBranch=statement
                             (ELSE elseBranch=statement)?		# IfStmt
           | NEW iden LPAREN rvalueList? RPAREN SEMI				# CtorStmt
@@ -175,6 +196,10 @@ expr : primitive                                      # PrimitiveExpr
      | LPAREN expr RPAREN                             # ParenExpr
      | expr DOT field=iden                            # NamedTupleAccessExpr
      | expr DOT field=int                             # TupleAccessExpr
+     | instance=expr IS kind=iden                     # TestExpr
+     | instance=expr TARGETS target=expr              # TargetsExpr
+     | FLYING instance=expr                           # FlyingExpr
+     | SENT instance=expr                             # SentExpr
      | seq=expr LBRACK index=expr RBRACK              # SeqAccessExpr
      | fun=KEYS LPAREN expr RPAREN                    # KeywordExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
@@ -191,6 +216,12 @@ expr : primitive                                      # PrimitiveExpr
      | lhs=expr op=(EQ | NE) rhs=expr                 # BinExpr
      | lhs=expr op=LAND rhs=expr                      # BinExpr
      | lhs=expr op=LOR rhs=expr                       # BinExpr
+     | lhs=expr op=LTHEN rhs=expr                     # BinExpr
+     | lhs=expr op=LIFF rhs=expr                      # BinExpr
+     | quant=(FORALL | EXISTS)
+        diff=NEW? 
+            LPAREN bound=funParamList RPAREN 
+                COLON COLON body=expr                 # QuantExpr
 	 | CHOOSE LPAREN expr? RPAREN					  # ChooseExpr
 	 | formatedString								  # StringExpr
      ;

@@ -2,7 +2,7 @@
 //XYZs static errors; XYZ Correct\CastInExprsAsserts XYZs all asserts
 //Basic types: int, bool, event
 
-event E assert 1: int;
+event E : int;
 event EI1: int;
 event EI2: int;
 event EI3: int;

@@ -5,14 +5,14 @@
 // This XYZ enables "Unhandled event" exception
 // (for E0 in state Real1_S1)
 
-event E0 assert 1: any;
-event E1 assert 1: any;
-event E2 assert 5: event;
-event E3 assert 1: bool;
-event E4 assert 1: any;
-event E5 assert 1: bool;
-event E6 assert 1: int;
-event E7 assert 1: bool;
+event E0 : any;
+event E1 : any;
+event E2 : event;
+event E3 : bool;
+event E4 : any;
+event E5 : bool;
+event E6 : int;
+event E7 : bool;
 
 machine Main {
     var XYZ: bool;

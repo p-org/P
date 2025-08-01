@@ -83,10 +83,10 @@ The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/
     - ([L3 - L22](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/TestDriver.p#L50-L101)) &rarr; Machines `SingleClientNoFailure`, `MultipleClientsNoFailure` and `MultipleClientsWithFailure` are simple test driver machines that configure the system to be checked by the P checker for different scenarios.
     - The `TestWithConfig` machine enables parameterized testing with four configurable parameters:
         ```
-        param numClients: int;         // Number of clients in the system
-        param numParticipants: int;    // Number of participants
-        param numTransPerClient: int;   // Transactions per client
-        param failParticipants: int;   // Number of participants that can failt
+        param pNumClients: int;         // Number of clients in the system
+        param pNumParticipants: int;    // Number of participants
+        param pNumTransPerClient: int;   // Transactions per client
+        param pFailParticipants: int;   // Number of participants that can failt
         ```
         This allows systematic exploration of different system configurations and failure scenarios.
 
@@ -102,12 +102,12 @@ The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/
 
     2. Parameterized test case that systematically explores different configurations:
         ```
-        test param (numClients in [2, 3], numParticipants in [3, 4, 5], 
-                   numTransPerClient in [1, 2], failParticipants in [0, 1])
-          assume (numParticipants > numClients && failParticipants < numParticipants/2)
-          (2 wise) tcPairwiseTest [main=TestWithConfig]:
-          assert AtomicityInvariant, Progress in
-          (union TwoPhaseCommit, TwoPCClient, FailureInjector, { TestWithConfig });
+        test param (pNumClients in [2, 3], pNumParticipants in [3, 4, 5], 
+                pNumTransPerClient in [1, 2], pFailParticipants in [0, 1])
+        assume (pNumParticipants > pNumClients && pFailParticipants < pNumParticipants/2)
+        (2 wise) tcPairwiseTest [main=TestWithConfig]:
+        assert AtomicityInvariant, Progress in
+        (union TwoPhaseCommit, TwoPCClient, FailureInjector, { TestWithConfig });
         ```
         This test:
         - Uses pairwise testing to efficiently cover parameter combinations
@@ -184,17 +184,24 @@ p check
 
 ??? note "Expected Output"
 
-    ```hl_lines="8 9 10"
+    ```hl_lines="8 9 10 11 12 13 14 15 16 17"
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
     .. Found a P compiled file: P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
     .. Checking P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
-    Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
+    Error: We found '10' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClientNoFailure
     tcMultipleClientsNoFailure
     tcMultipleClientsWithFailure
+    tcParametricTests___pNumClients_2__pNumParticipants_3__pNumTransPerClient_1__pFailParticipants_0
+    tcParametricTests___pNumClients_3__pNumParticipants_4__pNumTransPerClient_2__pFailParticipants_0
+    tcParametricTests___pNumClients_3__pNumParticipants_5__pNumTransPerClient_1__pFailParticipants_1
+    tcParametricTests___pNumClients_2__pNumParticipants_4__pNumTransPerClient_2__pFailParticipants_1
+    tcParametricTests___pNumClients_2__pNumParticipants_5__pNumTransPerClient_2__pFailParticipants_0
+    tcParametricTests___pNumClients_2__pNumParticipants_4__pNumTransPerClient_1__pFailParticipants_0
+    tcParametricTests___pNumClients_2__pNumParticipants_3__pNumTransPerClient_2__pFailParticipants_0
 
     ~~ [PTool]: Thanks for using P! ~~
     ```
@@ -240,6 +247,10 @@ p check -tc tcMultipleClientsWithFailure -s 10000
     If you comment out the part of the Client state machine code that performs the read transaction then you would see that the Progress liveness monitor starts complaining.
 
 
+Check the parameterized generated `tcParametricTests` test cases for 1000 schedules each:
+```shell
+p check -tc tcParametricTests -s 1000
+```
 
 ### Exercise Problem
 

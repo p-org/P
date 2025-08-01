@@ -11,10 +11,10 @@ test tcMultipleClientsNoFailure [main = MultipleClientsNoFailure]:
 test tcMultipleClientsWithFailure [main = MultipleClientsWithFailure]:
   assert Progress in (union TwoPhaseCommit, TwoPCClient, FailureInjector, { MultipleClientsWithFailure });
 
-// pairwise testing of all parameters
-test param (numClients in [2, 3], numParticipants in [3, 4, 5], 
-           numTransPerClient in [1, 2], failParticipants in [0, 1])
-  assume (numParticipants > numClients && failParticipants < numParticipants/2)
-  (2 wise) tcPairwiseTest [main=TestWithConfig]:
+// parametric testing of all parameters
+test param (pNumClients in [2, 3], pNumParticipants in [3, 4, 5], 
+           pNumTransPerClient in [1, 2], pFailParticipants in [0, 1])
+  assume (pNumParticipants > pNumClients && pFailParticipants < pNumParticipants/2)
+  (2 wise) tcParametricTests [main=TestWithConfig]:
   assert AtomicityInvariant, Progress in
   (union TwoPhaseCommit, TwoPCClient, FailureInjector, { TestWithConfig });

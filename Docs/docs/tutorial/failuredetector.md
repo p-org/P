@@ -151,7 +151,7 @@ p check
 
 ??? note "Expected Output"
 
-    ```hl_lines="8 9"
+    ```hl_lines="8-16"
     $ p check
 
     .. Searching for a P compiled file locally in folder ./PGenerated/

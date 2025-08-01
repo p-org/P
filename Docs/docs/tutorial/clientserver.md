@@ -166,7 +166,7 @@ p check
 
 ??? note "Expected Output"
 
-    ```hl_lines="8 9 10"
+    ```hl_lines="8 9 10 11 12 13"
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
@@ -197,6 +197,11 @@ Check the `tcMultipleClients` test case for 1000 schedules:
 
 ```shell
 p check -tc tcMultipleClients -s 1000
+```
+
+Check the parameterized generated `tcParameterizedMultipleClients` test cases for 1000 schedules each:
+```shell
+p check -tc tcParameterizedMultipleClients -s 1000
 ```
 
 Check the `tcAbstractServer` test case for 1000 schedules:

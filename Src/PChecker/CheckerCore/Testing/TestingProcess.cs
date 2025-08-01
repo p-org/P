@@ -107,16 +107,16 @@ namespace PChecker.Testing
             Assembly assembly = TestingEngine.LoadAssembly(checkerConfiguration.AssemblyToBeAnalyzed);
             List<string> testCases = new List<string>();
             string testCaseName = checkerConfiguration.TestCaseName;
-            if (testCaseName is "")
-            {
-                return [""];
-            }
             try
             {
                 var testMethods = TestMethodInfo.GetAllTestMethodsFromAssembly(assembly);
                 if (checkerConfiguration.ListTestCases)
                 {
                     Console.Out.WriteLine($".. List of test cases (total {testMethods.Count})");
+                }
+                else if (testCaseName is "")
+                {
+                    return [""];
                 }
                 else
                 {

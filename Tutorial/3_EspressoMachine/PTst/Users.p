@@ -104,6 +104,40 @@ machine CrazyUser {
   }
 }
 
+// Specialized user for testing steamer functionality
+machine SteamerTestUser
+{
+  var coffeeMakerPanel: CoffeeMakerControlPanel;
+  
+  start state Init {
+    entry (coffeeMaker: CoffeeMakerControlPanel) {
+      coffeeMakerPanel = coffeeMaker;
+      send coffeeMakerPanel, eCoffeeMachineUser, this;
+      goto TestSteamer;
+    }
+  }
+  
+  state TestSteamer {
+    entry {
+      // Test steamer operations specifically
+      PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_PressSteamerButton);
+      
+      receive {
+        case eCoffeeMakerReady: {
+          // Continue with espresso after steamer test
+          PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_PressEspressoButton);
+        }
+        case eCoffeeMakerError: (status: tCoffeeMakerState) {
+          // Reset and try again
+          PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_PressResetButton);
+        }
+      }
+    }
+    
+    ignore eEspressoCompleted;
+  }
+}
+
 
 /* Function to perform an operation on the CoffeeMaker */
 fun PerformOperationOnCoffeeMaker(coffeeMakerCP: CoffeeMakerControlPanel, CM_Ops: tCoffeeMakerOperations)

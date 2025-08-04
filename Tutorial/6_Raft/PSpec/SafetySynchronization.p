@@ -81,7 +81,6 @@ spec SafetySynchronization observes eClientPutRequest, eClientGetRequest, eRaftG
                 assert payload.client in keys(putRequestMap);
                 execResult = executePut(localKVStore, putRequestMap[payload.client][payload.transId].key, putRequestMap[payload.client][payload.transId].value);
                 localKVStore = execResult.newState;
-                // assert execResult.result.value == payload.value, format("Inconsistent Get result! Expected {0}, got {1}", execResult.result.value, payload.value);
             }
         }
     }

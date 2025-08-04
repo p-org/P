@@ -48,7 +48,6 @@ spec SafetyLogMatching observes eNotifyLog {
         while (i >= 0 && logsA[i] != logsB[i]) {
            i = i - 1;
         }
-        highestMatch = i;
         while (i >= 0) {
             if (logsA[i] != logsB[i]) {
                 return false;

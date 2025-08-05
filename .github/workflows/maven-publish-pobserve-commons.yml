@@ -1,0 +1,51 @@
+name: Publish PObserveCommons to Maven Central
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: 'Release version'
+        required: true
+        default: '1.0.0'
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Src/PObserve/PObserveCommons
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+      
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      
+      - name: Set release version
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          # Replace version in build.gradle.kts
+          sed -i "s/version = \".*\"/version = \"${{ github.event.inputs.releaseVersion }}\"/" build.gradle.kts
+      
+      - name: Generate Gradle Wrapper Files
+        run: gradle wrapper
+
+      - name: Build with Gradle
+        run: ./gradlew build
+      
+      - name: Publish PObserve Commons to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: ./gradlew publishToMavenCentral --info --build-cache

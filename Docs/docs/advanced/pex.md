@@ -1,0 +1,121 @@
+# PEx: Exhaustive Model Checking
+
+PEx is an exhaustive model checker for P programs that performs a systematic search to verify correctness properties for small (finite) instances of the system. It explores all possible behaviors of the system by analyzing finite inputs and finite processes.
+
+### Prerequisites
+
+PEx requires Java 17+ and Maven 3.7+ to be installed on your system.
+
+=== "MacOS"
+    ```shell
+    # Install Java 17
+    brew install openjdk@17
+    
+    # Install Maven
+    brew install maven
+    ```
+    Don't have Homebrew? Download [Java](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) and [Maven](https://maven.apache.org/install.html) directly.
+
+=== "Ubuntu"
+    ```shell
+    # Install Java 17
+    sudo apt install openjdk-17-jdk
+    
+    # Install Maven
+    sudo apt install maven
+    ```
+
+=== "Windows"
+    - Download and install [Java 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+    - Follow the [Maven installation guide](https://maven.apache.org/install.html)
+
+??? hint "Verify installations"
+    ```shell
+    java -version   # Should show version 17 or higher
+    mvn -version    # Should show version 3.7 or higher
+    ```
+
+### Building with PEx
+
+To compile a P program for exhaustive model checking:
+
+```shell
+p compile --mode pex
+```
+
+### Running PEx
+
+Basic usage to run PEx on a test case with a 60-second timeout and maximum steps limit on tutorial #1 Client Server:
+
+```shell
+p check --mode pex -tc tcSingleClient --timeout 60 --max-steps 100000
+```
+
+??? example "Expected Output"
+    ```
+    .. Searching for a P compiled file locally in folder ./PGenerated/
+    .. Found a P compiled file: ./PGenerated/PEx/target/ClientServer-jar-with-dependencies.jar
+    .. Checking ./PGenerated/PEx/target/ClientServer-jar-with-dependencies.jar
+    WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
+    .. Test case :: tcSingleClient
+    ... Checker is using 'random' strategy with 1 threads (seed:1754429957918)
+    --------------------
+       Time     Memory    Tasks (run/fin/pen)    Schedules   Timelines     States   
+     00:01:10   8.4 GB         1 / 0 / 0             1           1         17,491   
+    
+    --------------------
+    ... Checking statistics:
+    ..... Found 0 bugs.
+    ... Search statistics:
+    ..... Explored 17,491 distinct states over 1 timelines
+    ..... Explored 1 distinct schedules
+    ..... Finished 0 search tasks (0 pending)
+    ..... Number of steps explored: -1 (min), 0 (avg), -1 (max).
+    ... Elapsed 70 seconds and used 8.6 GB
+    ..  Result: partially correct with 9 choices remaining 
+    . Done
+    ... Checker timed out.
+    ~~ [PTool]: Thanks for using P! ~~
+    ... Checker run terminated.
+    ```
+
+    Understanding the output:
+
+    **States and Timelines**:
+    - Explored 17,491 distinct states in a single timeline/schedule
+    
+    **Resource Usage**:
+    - Used 8.4 GB of memory during exploration
+    - Timed out after 70 seconds (hit the 60-second timeout plus overhead)
+    
+    **Results**:
+    - Found no bugs in the explored state space
+    - "partially correct with 9 choices remaining" indicates there are still 9 unexplored choices when the checker timed out
+    - The negative values in "steps explored" indicate the checker was interrupted before completing its exploration
+
+### Advanced Options
+
+??? tip "Exploring PEx Runtime Options"
+    View available runtime options:
+    ```shell
+    # Print basic help menu
+    p check --mode pex --checker-args :--help
+
+    # Print expert help menu with advanced options
+    p check --mode pex --checker-args :--help-all
+    ```
+
+### Parallel Execution
+
+PEx supports parallel execution to speed up the verification process. To run with multiple cores on tutorial #1 Client Server:
+
+```shell
+p check --mode pex -tc tcSingleClient --timeout 60 --max-steps 100000 --checker-args :--nproc:32
+```
+
+This example uses 32 cores for parallel exploration of the state space.
+
+!!! note "Performance Tips"
+    - Start with a reasonable timeout value (e.g., 60 seconds) and adjust based on your system's complexity
+    - For large state spaces, use parallel execution with multiple cores
+    - Consider using abstractions to reduce the state space when possible

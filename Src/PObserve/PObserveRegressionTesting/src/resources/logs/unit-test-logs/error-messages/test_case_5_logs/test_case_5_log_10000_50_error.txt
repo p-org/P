@@ -1,0 +1,5 @@
+1706564565343: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_5.p:35:7 Validation failed for key 1! newValue: 1, expectedValue: 0,
+1706564562141: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_5.p:35:7 Validation failed for key 2! newValue: 1, expectedValue: 0,
+1706564561483: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_5.p:35:7 Validation failed for key 3! newValue: 0, expectedValue: 1,
+1706564557368: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_5.p:35:7 Validation failed for key 4! newValue: 1, expectedValue: 0,
+1706564554011: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_5.p:35:7 Validation failed for key 5! newValue: 0, expectedValue: 1,

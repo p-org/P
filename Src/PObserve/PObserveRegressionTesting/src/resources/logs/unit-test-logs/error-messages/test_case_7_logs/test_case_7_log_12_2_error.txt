@@ -1,0 +1,2 @@
+1706726080914: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:30:17 Invalid start status for key 1, event 3. Current status: start,
+1706726080917: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:50:17 For key 2, event 4 has not ended. Current status: start,

@@ -1,0 +1,3 @@
+--specName: DualNodesBinary
+--consumer: DualNodesBinary
+--parser: TestCase6Parser

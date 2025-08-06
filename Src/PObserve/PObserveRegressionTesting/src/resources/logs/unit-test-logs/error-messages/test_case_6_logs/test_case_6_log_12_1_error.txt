@@ -1,0 +1,1 @@
+1706724239554: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_6.p:84:7 Incorrect counts for key 1: node1 expected value: 3, actual value: 2; ,

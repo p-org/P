@@ -1,0 +1,1 @@
+1706726089138: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:50:17 For key 1, event 5 has not ended. Current status: start,

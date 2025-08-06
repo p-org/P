@@ -1,0 +1,5 @@
+1706581879906: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_6.p:43:7 Key provided for ValidateLogEntry has not been initialized. Key received: 972,
+1706581893457: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_6.p:84:7 Incorrect counts for key 1: total expected value: 202, actual value: 200; ,
+1706581893330: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_6.p:84:7 Incorrect counts for key 2: node1 expected value: 27, actual value: 30; ,
+1706581893430: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_6.p:84:7 Incorrect counts for key 3: node2 expected value: 41, actual value: 36; ,
+1706581893434: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_6.p:65:7 Key provided for ValidateFinalCount does not exist. Key: 278,

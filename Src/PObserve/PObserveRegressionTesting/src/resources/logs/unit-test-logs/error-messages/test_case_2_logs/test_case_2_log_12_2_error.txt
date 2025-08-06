@@ -1,0 +1,2 @@
+1706894854333: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_2.p:97:9 Bank balance for the account 0 is 99,872 and not the expected value 99,871, Bank is lying!,
+1706894854331: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_2.p:97:9 Bank balance for the account 1 is 99,786 and not the expected value 99,785, Bank is lying!,

@@ -1,0 +1,6 @@
+1706652320054: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:38:13 Invalid end status for key 1, event 2,483. Event not started,
+1706652325521: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:30:17 Invalid start status for key 2, event 311. Current status: start,
+1706652326213: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:40:13 Invalid end status for key 3, event 855. Current status: end,
+1706652327477: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:50:17 For key 4, event 1,827 has not ended. Current status: start,
+1706652327477: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:50:17 For key 5, event 148 has not ended. Current status: start,
+1706652324900: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_7.p:38:13 Invalid end status for key 6, event 2,483. Event not started,

@@ -1,0 +1,4 @@
+1706796538705: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_3.p:41:9 Lock 0 is already acquired, expects lock error but received lock success,
+1706796538706: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_3.p:56:9 Lock 1 is being acquired by other clients in release request, should have returned release error. rId: 9,969,
+1706796538669: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_3.p:41:9 Lock 2 is already acquired, expects lock error but received lock success,
+1706796538755: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_3.p:56:9 Lock 3 is being acquired by other clients in release request, should have returned release error. rId: 9,999,

@@ -1,0 +1,5 @@
+1706564504321: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_4.p:26:9 Validation failed for key 1! newValue: 1,134, highestValue: 1,135,
+1706564511620: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_4.p:26:9 Validation failed for key 2! newValue: 4,070, highestValue: 4,070,
+1706564514980: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_4.p:26:9 Validation failed for key 3! newValue: 27, highestValue: 5,043,
+1706564502705: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_4.p:26:9 Validation failed for key 4! newValue: 195, highestValue: 225,
+1706564508667: Spec Violation: Consumer threw an exception: Assertion failure: src/java/com/amazon/pobserve/testing/spec/pSpecs/test_case_4.p:26:9 Validation failed for key 5! newValue: 2,824, highestValue: 2,824,

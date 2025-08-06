@@ -76,7 +76,7 @@ namespace Plang.Compiler.Backend.Java {
         {
             var cname = Names.GetNameForDecl(_currentMachine);
 
-            WriteLine($"public static class {cname} extends com.amazon.pobserve.runtime.Monitor<{cname}.{Constants.StateEnumName}> implements Serializable {{");
+            WriteLine($"public static class {cname} extends pobserve.runtime.Monitor<{cname}.{Constants.StateEnumName}> implements Serializable {{");
 
             WriteLine();
             WriteSupplierCDef(cname);
@@ -229,11 +229,11 @@ namespace Plang.Compiler.Backend.Java {
             var throwables = new List<string>();
             if (f.CanChangeState)
             {
-                throwables.Add("com.amazon.pobserve.runtime.exceptions.TransitionException");
+                throwables.Add("pobserve.runtime.exceptions.TransitionException");
             }
             if (f.CanRaiseEvent)
             {
-                throwables.Add("com.amazon.pobserve.runtime.exceptions.RaiseEventException");
+                throwables.Add("pobserve.runtime.exceptions.RaiseEventException");
             }
             if (throwables.Count > 0)
             {
@@ -283,9 +283,9 @@ namespace Plang.Compiler.Backend.Java {
         private void WriteStateBuilderDecl(State s, bool isConstructor)
         {
             if (isConstructor) {
-                WriteLine($"addState(com.amazon.pobserve.runtime.State.keyedOn({Names.IdentForState(s)})");
+                WriteLine($"addState(pobserve.runtime.State.keyedOn({Names.IdentForState(s)})");
             } else {
-                WriteLine($"registerState(com.amazon.pobserve.runtime.State.keyedOn({Names.IdentForState(s)})");
+                WriteLine($"registerState(pobserve.runtime.State.keyedOn({Names.IdentForState(s)})");
             }
             
             if (s.IsStart)

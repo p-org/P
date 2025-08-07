@@ -26,10 +26,11 @@ import java.util.jar.JarFile;
 
 public abstract class BaseHelperFunctions {
     /**
-     * createArgs(Map<String, String> keyValues, String[] baseArgs)
-     * return type: String[]
-     * - This function generates a new array of arguments by updating the baseArgs
-     * with the provided key-value pairs.
+     * Creates a new array of arguments by updating the baseArgs with the provided key-value pairs.
+     *
+     * @param keyValues the map containing key-value pairs to update the arguments
+     * @param baseArgs the original array of arguments to be updated
+     * @return a new array with updated arguments
      */
     protected static String[] createArgs(Map<String, String> keyValues, String[] baseArgs) {
         String[] customArgs = Arrays.copyOf(baseArgs, baseArgs.length);
@@ -48,7 +49,7 @@ public abstract class BaseHelperFunctions {
 
     /**
      * getExpectedErrors(String resourcePath)
-     * return type: AbstractMap.SimpleEntry<List<Long>, List<String>>
+     * return type: <code>AbstractMap.SimpleEntry&lt;List&lt;Long%gt;, List&lt;String&gt;&gt;</code>
      * This function parses a file in the format "key: value", and returns a list of
      * the two values.
      */
@@ -142,7 +143,7 @@ public abstract class BaseHelperFunctions {
 
     /**
      * parseParams(String content)
-     * return type: Map<String, String>
+     * return type: <code>Map&lt;String, String&gt;</code>
      * This private function takes the contents of a param.txt file, and returns
      * the arguments in a kv pair.
      */
@@ -161,7 +162,7 @@ public abstract class BaseHelperFunctions {
 
     /**
      * extractParamsFromTempDir(String resourcePath)
-     * return type: Map<String, Map<String, String>>
+     * return type: <code>Map&lt;String, Map&lt;String, String&gt;&gt;</code>
      * This function takes the path of the params directory, and returns the
      * parameters needed to run PObserve for each test case.
      * format: test_case_x_params.txt={kv pairs}
@@ -185,7 +186,7 @@ public abstract class BaseHelperFunctions {
 
     /**
      * extractSubDirs(String resourcePath)
-     * return type: Map<String, Integer>
+     * return type: <code>Map&lt;String, Integer&gt;</code>
      * This function returns all .txt files and directories one level below the
      * resourcePath.
      * e.g. if path="logs/", this will return "logs/test_case_2.txt" and

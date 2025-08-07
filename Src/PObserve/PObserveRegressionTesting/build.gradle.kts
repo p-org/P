@@ -74,6 +74,16 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.3")
 }
 
+// TODO: Add windows support to run the setup script
+tasks.register<Exec>("preBuildScript") {
+    commandLine("bash", "setup.sh") // Or "./prebuild.sh" if executable
+    workingDir = File("${project.rootDir}") // Set the working directory if needed
+}
+
+tasks.named("compileJava") {
+    dependsOn("preBuildScript")
+}
+
 
 group = "io.github.p-org"
 version = "1.0.0"

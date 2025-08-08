@@ -1,0 +1,37 @@
+Here is the description of PInfer specifications:
+<PInfer_specifications>
+Specifications discovered by PInfer are first-order logic formulas over P events.  The formulas are in the form of ∀+∃* (i.e., at least 1 forall-quantified variable and 0 or more existentially quantified variables).
+
+<synax of PInfer specifications>
+The syntax of a PInfer specification is:
+(∀+e_i:T_i) :: G(e_i) -> (∃*ej:T_j) :: F(e_i, e_j) ∧ H(e_i, e_j)
+
+where G, F, H are conjunctions of atomic predicates over terms involving e_i, e_j. The syntax of terms and atomic predicates is
+
+Event Variables (E) :: e_i, e_j, ...
+Constants (C) :: 0 | 1 | ...
+Terms (T) :: C | E.v | f(T+) | indexof(E)
+
+Event Predicates (PE) :: E == E | E < E
+Field Predicates (PF) :: T == T | T != T | T < T | T > T | T <= T | T >= T | uP(uf(T+))
+Atomic Predicates (P) :: PE | PF
+
+Notice that PE defines equivalence and the happens-before (by Lamport) relation, which can also be expressed by indexof(E) = indexof(E), indexof(E) > indexof(E) and indexof(E) < indexof(E).
+
+<semantics of specifications>
+For example, suppose the following events are defined in a P model of a firewall protocol:
+
+```
+event eReceive: (src: machine, allowed: bool, data: any);
+event eGrant: (host: machine);
+```
+
+where `eReceive` denotes that the server behind the firewall is going to receive the respective payload. `allowed` means the whether this receiving is allowed by the firewal.
+`eGrant` events denote the firewall grant the external `host` to send payloads to servers behind the firewall.
+
+The specification for the firewall, in English, is "If a receving is allowed, then the host sending the payload must have been granted the permission by the firewall". The PInfer specification is the following formula:
+
+∀e0: eReceive :: e0.payload.allowed -> ∃e1: eGrant :: indexof(e0) > indexof(e1) ∧ e0.payload.src == e1.payload.host
+
+The semantics of specifications is defined over event traces using traditional interpretation of quantifiers, arithemtics, happens-before relations and equalities. We say a formula I holds for a trace T, denoted as T |= I, i.e., T is a model of I. We say a formula I is a specification, if I holds for all possible traces T, i.e., ∀T. T |= I.
+In particular, `_num_e_exists_` denotes the number of instantiations of existentially quantified variables that satisfy the formula. The traditional existential quantification is equivalent to `_num_e_exists_ > 0`.

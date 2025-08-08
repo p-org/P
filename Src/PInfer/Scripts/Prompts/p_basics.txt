@@ -1,0 +1,33 @@
+Here is the basic P language guide:
+<guide>
+A P program consists of a collection of following top-level declarations:
+1. Enums
+2. User Defined Types
+3. Events
+4. State Machines
+5. Specification Monitors
+6. Global Functions
+7. Module System
+</guide>
+
+Here is the P events guide:
+<P_events_guide>
+1. A P program is a collection of state machines communicating with each other by exchanging events.
+2. An event in P has two parts: an event name and a payload value (optional) that can be sent along with the event.
+
+Here is a correct example of events:
+<events_example>
+// declarations of events with no payloads
+event ePing;
+event ePong;
+
+// declaration of events that have payloads
+type tRequest = (client: machine, requestId: int, key: string);
+// eRequest event with payload of user defined type tRequest
+event eRequest: tRequest;
+
+type tWriteTransResp = (transId: int, status: tTransStatus);
+// eWriteTransResp event with payload of user defined type tWriteTransResp
+event eWriteTransResp : tWriteTransResp;
+</events_example>
+</P_events_guide>

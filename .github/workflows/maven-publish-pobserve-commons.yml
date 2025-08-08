@@ -1,13 +1,9 @@
 name: Publish PObserveCommons to Maven Central
 
 on:
+  push:
+    branches: [ "maven-publish-pobserve-commons-**" ]
   workflow_dispatch:
-    inputs:
-      releaseVersion:
-        description: 'Release version'
-        required: true
-        default: '1.0.0'
-        type: string
 
 jobs:
   publish:

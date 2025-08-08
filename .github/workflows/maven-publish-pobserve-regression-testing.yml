@@ -2,7 +2,7 @@ name: Publish PObserveRegressionTesting to Maven Central
 
 on:
   push:
-    branches: [ "maven-publish-**" ]
+    branches: [ "maven-publish-pobserve-regression-testing-**" ]
   workflow_dispatch:
 
 jobs:

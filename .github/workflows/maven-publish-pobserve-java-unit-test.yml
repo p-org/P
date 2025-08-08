@@ -2,7 +2,7 @@ name: Publish PObserveJavaUnitTest to Maven Central
 
 on:
   push:
-    branches: [ "maven-publish-**" ]
+    branches: [ "maven-publish-pobserve-java-unit-test-**" ]
   workflow_dispatch:
 
 jobs:

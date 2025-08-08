@@ -1,0 +1,3 @@
+--specName: EventPairs
+--consumer: EventPairs
+--parser: TestCase7Parser

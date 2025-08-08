@@ -1,0 +1,4 @@
+1706896342349: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_2.p:97:9 Bank balance for the account 0 is 91,146 and not the expected value 91,145, Bank is lying!,
+1706896342316: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_2.p:97:9 Bank balance for the account 1 is 91,673 and not the expected value 91,672, Bank is lying!,
+1706896342230: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_2.p:97:9 Bank balance for the account 2 is 93,516 and not the expected value 93,515, Bank is lying!,
+1706896342383: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_2.p:97:9 Bank balance for the account 3 is 93,032 and not the expected value 93,031, Bank is lying!,

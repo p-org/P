@@ -1,6 +1,15 @@
 # PEx: Exhaustive Model Checking
 
-PEx is an exhaustive model checker for P programs that performs a systematic search to verify correctness properties for small (finite) instances of the system. It explores all possible behaviors of the system by analyzing finite inputs and finite processes.
+PEx is an exhaustive model checker for P programs that performs a systematic search to verify correctness properties for small (finite) instances of the system. It explores all possible behaviors of the system by analyzing finite inputs and finite processes. 
+
+## Architecture
+
+PEx uses a multi-threaded, stateful search optimized to scale to billions of protocol states. The core architecture includes:
+
+- **State Tracking**: Maintains record of all unexplored state transitions
+- **Dynamic Prioritization**: Optimizes exploration order during search
+- **State Caching**: Prevents redundant work by caching visited states  
+- **Parallel Execution**: Leverages thread-level parallelism for performance
 
 ### Prerequisites
 
@@ -45,10 +54,10 @@ p compile --mode pex
 
 ### Running PEx
 
-Basic usage to run PEx on a test case with a 60-second timeout and maximum steps limit on tutorial #1 Client Server:
+Basic usage to run PEx on a test case with a 60-second timeout on tutorial #1 Client Server:
 
 ```shell
-p check --mode pex -tc tcSingleClient --timeout 60 --max-steps 100000
+p check --mode pex -tc tcSingleClient --timeout 60
 ```
 
 ??? example "Expected Output"
@@ -110,7 +119,7 @@ p check --mode pex -tc tcSingleClient --timeout 60 --max-steps 100000
 PEx supports parallel execution to speed up the verification process. To run with multiple cores on tutorial #1 Client Server:
 
 ```shell
-p check --mode pex -tc tcSingleClient --timeout 60 --max-steps 100000 --checker-args :--nproc:32
+p check --mode pex -tc tcSingleClient --timeout 60 --checker-args :--nproc:32
 ```
 
 This example uses 32 cores for parallel exploration of the state space.

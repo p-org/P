@@ -202,6 +202,17 @@ namespace Plang.Compiler.Backend.PInfer
                 {
                     return false;
                 }
+                if (predicate.Function.Name == "==")
+                {
+                    var (lhs, rhs) = (arguments[0], arguments[1]);
+                    if (lhs.Type is PermissionType && rhs.Type is PermissionType
+                        && !lhs.Type.Canonicalize().OriginalRepresentation.Equals(rhs.Type.Canonicalize().OriginalRepresentation))
+                    {
+                        // if both are permissions, but not the same, then we cannot use equality
+                        predicateCall = null;
+                        return false;
+                    }
+                }
             }
             if (predicate is MacroPredicate macro)
             {

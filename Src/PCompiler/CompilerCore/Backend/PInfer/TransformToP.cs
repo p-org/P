@@ -112,7 +112,7 @@ namespace Plang.Compiler.Backend.PInfer
             }).All(x => x);
         }
 
-        private void WriteLine(string line) => context.WriteLine(monitorFile.Stream, line);
+        private void WriteLine(string line, int indentation = 0) => context.WriteLine(monitorFile.Stream, $"{new string(' ', indentation * 4)}{line}");
         private static string MCBuff(string eventName) => $"Hist_{eventName}";
         private static string Counter(string varName) => $"Counter_{varName}";
         private static string HistItem(string payload, string idx) => $"(payload={payload}, idx={idx})";
@@ -417,6 +417,112 @@ namespace Plang.Compiler.Backend.PInfer
             else
             {
                 return;
+            }
+        }
+
+        public void WriteLogMonitor(int counter, PInferPredicateGenerator codegen, CompilationContext ctx, ICompilerConfiguration job, Scope globalScope, Hint h, HashSet<string> p, HashSet<string> q, Dictionary<string, IPExpr> parsedP, Dictionary<string, IPExpr> parsedQ, string inv)
+        {
+            // Generate a monitor for logs in Python
+            WriteLine($"# {inv}");
+            WriteLine("import json");
+            List<IPExpr> guards = [];
+            List<IPExpr> filters = [];
+            List<IPExpr> metaFilters = [];
+            int indentation = 0;
+            void WriteLineLocal(string line) => WriteLine(line, indentation);
+            string EventAt(string idx) => $"trace[{idx}]";
+            WriteLineLocal("class RuntimeMonitor:");
+            indentation += 1;
+            WriteLineLocal($"__inv__ = \"{inv}\"");
+            if (PopulateExprs(job, p, parsedP, guards)
+                && PopulateExprs(job, q.Where(x => !x.Contains("_num_e_exists_")).ToHashSet(), parsedQ, filters)
+                && PopulateExprs(job, q.Where(x => x.Contains("_num_e_exists_")).ToHashSet(), parsedQ, metaFilters))
+            {
+                int ec = 0;
+                List<string> forall_ev = Enumerable.Range(0, h.Quantified.SkipLast(h.ExistentialQuantifiers).Count())
+                    .Select(i => $"e{ec + i}").ToList();
+                ec += forall_ev.Count;
+                List<string> exists_ev = Enumerable.Range(0, h.ExistentialQuantifiers)
+                    .Select(i => $"e{ec + i}").ToList();
+                WriteLineLocal("@staticmethod");
+                WriteLineLocal("def checkGuards(trace, " + string.Join(", ", forall_ev.Select(x => $"{x}_idx")) + "):");
+                indentation += 1;
+                foreach (var (e, ev) in h.Quantified.Take(forall_ev.Count).Zip(forall_ev))
+                {
+                    WriteLineLocal($"{e.Name} = trace[{ev}_idx]");
+                }
+                WriteLineLocal(guards.Count > 0 ? $"return {string.Join(" and ", guards.Select(toP))}" : "return True");
+                indentation -= 1;
+
+                WriteLineLocal("@staticmethod");
+                WriteLineLocal("def checkFilters(trace, " + string.Join(", ", forall_ev.Concat(exists_ev).Select(x => $"{x}_idx")) + "):");
+                indentation += 1;
+                foreach (var (e, ev) in h.Quantified.Zip(forall_ev.Concat(exists_ev)))
+                {
+                    WriteLineLocal($"{e.Name} = trace[{ev}_idx]");
+                }
+                WriteLineLocal(filters.Count > 0 ? $"return {string.Join(" and ", filters.Select(toP))}" : "return True");
+                indentation -= 1;
+
+                WriteLineLocal("@staticmethod");
+                WriteLineLocal("def checkMetaFilters(_num_e_exists_, " + string.Join(", ", forall_ev.Concat(exists_ev).Select(x => $"{x}_idx")) + "):");
+                indentation += 1;
+                if (h.ConfigEvent != null)
+                {
+                    foreach (var field in ((NamedTupleType)h.ConfigEvent.PayloadType.Canonicalize()).Fields)
+                    {
+                        WriteLineLocal($"{field.Name} = RuntimeMonitor.{field.Name}");
+                    }
+                }
+                WriteLineLocal(metaFilters.Count > 0 ? $"return {string.Join(" and ", metaFilters.Select(toP))}" : "return True");
+                indentation -= 1;
+
+                WriteLineLocal("@staticmethod");
+                WriteLineLocal("def checkSpec(trace: list):");
+                indentation += 1;
+                if (h.ConfigEvent != null)
+                {
+                    WriteLineLocal($"cfgEvent = [e for e in trace if e.name() == {h.ConfigEvent.Name}][0]");
+                    foreach (var field in ((NamedTupleType)h.ConfigEvent.PayloadType.Canonicalize()).Fields)
+                    {
+                        WriteLineLocal($"RuntimeMonitor.{field.Name} = cfgEvent.{field.Name}");
+                    }
+                }
+                foreach (var (e, ev) in h.Quantified.Take(forall_ev.Count).Zip(forall_ev))
+                {
+                    WriteLineLocal($"for {ev} in range(len(trace)):");
+                    indentation += 1;
+                    WriteLineLocal($"if {EventAt($"{ev}")}.name() != '{e.EventName}': continue");
+                }
+
+                WriteLineLocal("if not RuntimeMonitor.checkGuards(trace, " + string.Join(", ", forall_ev) + "): continue");
+                if (h.ExistentialQuantifiers > 0)
+                {
+                    WriteLineLocal("exists = False");
+                    WriteLineLocal("n_exists = 0");
+                }
+
+                foreach (var (e, ev) in h.Quantified.TakeLast(h.ExistentialQuantifiers).Zip(exists_ev))
+                {
+                    WriteLineLocal($"for {ev} in range(len(trace)):");
+                    indentation += 1;
+                    WriteLineLocal($"if {EventAt($"{ev}")}.name() != '{e.EventName}': continue");
+                    WriteLineLocal("if exists: break");
+                }
+
+                if (h.ExistentialQuantifiers > 0)
+                {
+                    WriteLineLocal("if not RuntimeMonitor.checkFilters(trace, " + string.Join(", ", forall_ev.Concat(exists_ev)) + "): continue");
+                    WriteLineLocal("n_exists += 1");
+                    WriteLineLocal("if not RuntimeMonitor.checkMetaFilters(n_exists, " + string.Join(", ", forall_ev.Concat(exists_ev)) + "): continue");
+                    WriteLineLocal("exists = True");
+                    indentation -= h.ExistentialQuantified().Count;
+                    WriteLineLocal($"assert exists, f\"Existential quantification failed for the combination: {{({string.Join(", ", forall_ev.Select(x => $"trace[{x}]"))})}}\"");
+                }
+                else
+                {
+                    WriteLineLocal($"assert RuntimeMonitor.checkFilters(trace, {string.Join(", ", forall_ev)}), f\"Filters failed for the combination: {{({string.Join(", ", forall_ev.Select(x => $"trace[{x}]"))})}}\"");
+                }
             }
         }
     }

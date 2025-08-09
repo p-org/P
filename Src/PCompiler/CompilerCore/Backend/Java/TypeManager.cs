@@ -402,13 +402,15 @@ namespace Plang.Compiler.Backend.Java
                 // }
                 internal override string GenerateCastFromObject(string objectName)
                 {
+                    var e1 = $"e{Guid.NewGuid().ToString("n")}";
+                    var e2 = $"e{Guid.NewGuid().ToString("n")}";
                     var body = @$"((JSONObject){objectName})
                                     .entrySet()
                                     .stream()
                                     .collect(
                                         Collectors.toMap(
-                                            e -> {_k.GenerateFromString("(String)(e.getKey())")},
-                                            e -> {_v.GenerateCastFromObject("(e.getValue())")}
+                                            {e1} -> {_k.GenerateFromString($"(String)({e1}.getKey())")},
+                                            {e2} -> {_v.GenerateCastFromObject($"({e2}.getValue())")}
                                         )
                                     )";
                     return $"new {ReferenceTypeName}({body})";

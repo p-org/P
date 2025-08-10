@@ -76,6 +76,11 @@ namespace Plang.Compiler.TypeChecker
             return new TupleAccessExpr(context, subExpr, fieldNo, tuple.Types[fieldNo]);
         }
 
+        public override IPExpr VisitSequenceLiteralExpr(PParser.SequenceLiteralExprContext context) {
+            var elems = context.seqElems()._elems.Select(Visit).ToArray();
+            return new SequenceLiteralExpr(context, elems);
+        }
+
         public override IPExpr VisitSeqAccessExpr(PParser.SeqAccessExprContext context)
         {
             var seqOrMap = Visit(context.seq);

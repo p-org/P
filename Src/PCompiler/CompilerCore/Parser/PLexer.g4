@@ -134,6 +134,8 @@ LBRACK : '[' ;
 RBRACK : ']' ;
 LPAREN : '(' ;
 RPAREN : ')' ;
+LSEQ   : '{|';
+RSEQ   : '|}';
 SEMI   : ';' ;
 COMMA  : ',' ;
 DOT    : '.' ;

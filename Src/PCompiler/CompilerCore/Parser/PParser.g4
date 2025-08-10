@@ -170,6 +170,7 @@ noParamAnonEventHandler : functionBody;
 expr : primitive                                      # PrimitiveExpr
      | LPAREN unnamedTupleBody RPAREN                 # UnnamedTupleExpr
      | LPAREN namedTupleBody RPAREN                   # NamedTupleExpr
+     | LSEQ seqElems RSEQ                             # SequenceLiteralExpr
      | LPAREN expr RPAREN                             # ParenExpr
      | expr DOT field=iden                            # NamedTupleAccessExpr
      | expr DOT field=int                             # TupleAccessExpr
@@ -211,6 +212,10 @@ primitive : iden
 floatLiteral : pre=IntLiteral? DOT post=IntLiteral # DecimalFloat
              | FLOAT LPAREN base=IntLiteral COMMA exp=IntLiteral RPAREN # ExpFloat
              ;
+
+seqElems : elems+=primitive
+         | elems+=primitive (COMMA elems+=primitive)*
+         ;
 
 unnamedTupleBody : fields+=rvalue COMMA
                  | fields+=rvalue (COMMA fields+=rvalue)+

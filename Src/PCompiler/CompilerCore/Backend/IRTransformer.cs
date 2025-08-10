@@ -268,6 +268,13 @@ namespace Plang.Compiler.Backend
                     deps.Add(ndStore);
                     return (ndTemp, deps);
 
+                case SequenceLiteralExpr sequenceLiteralExpr:
+                    (var sequenceElements, var sequenceElementDeps) = SimplifyArgPack(sequenceLiteralExpr.SequenceElements);
+                    deps.AddRange(sequenceElementDeps);
+                    (var seqElementsVal, var seqElementsStore) = SaveInTemporary(new SequenceLiteralExpr(location, sequenceElements));
+                    deps.Add(seqElementsStore);
+                    return (seqElementsVal, deps);
+
                 case SeqAccessExpr seqAccessExpr:
                     (var seqExpr, var seqDeps) = SimplifyExpression(seqAccessExpr.SeqExpr);
                     (var seqIdx, var seqIdxDeps) = SimplifyExpression(seqAccessExpr.IndexExpr);

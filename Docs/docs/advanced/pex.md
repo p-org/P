@@ -67,40 +67,35 @@ p check --mode pex -tc tcSingleClient --timeout 60
     .. Checking ./PGenerated/PEx/target/ClientServer-jar-with-dependencies.jar
     WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
     .. Test case :: tcSingleClient
-    ... Checker is using 'random' strategy with 1 threads (seed:1754429957918)
+    ... Checker is using 'random' strategy with 1 threads (seed:1754700972405)
     --------------------
-       Time     Memory    Tasks (run/fin/pen)    Schedules   Timelines     States   
-     00:01:10   8.4 GB         1 / 0 / 0             1           1         17,491   
-    
+    Time     Memory    Tasks (run/fin/pen)    Schedules   Timelines     States   
+    00:00:28   3.0 GB         0 / 1 / 0             10          1         90,000   
+
     --------------------
     ... Checking statistics:
     ..... Found 0 bugs.
     ... Search statistics:
-    ..... Explored 17,491 distinct states over 1 timelines
-    ..... Explored 1 distinct schedules
-    ..... Finished 0 search tasks (0 pending)
-    ..... Number of steps explored: -1 (min), 0 (avg), -1 (max).
-    ... Elapsed 70 seconds and used 8.6 GB
-    ..  Result: partially correct with 9 choices remaining 
+    ..... Explored 90,000 distinct states over 1 timelines
+    ..... Explored 10 distinct schedules
+    ..... Finished 1 search tasks (0 pending)
+    ..... Number of steps explored: 0 (min), 9,000 (avg), 10,001 (max).
+    ... Elapsed 28 seconds and used 6.4 GB
+    ..  Result: correct up to step 10,001 
     . Done
-    ... Checker timed out.
+    ... Checker run finished.
     ~~ [PTool]: Thanks for using P! ~~
     ... Checker run terminated.
     ```
 
-    Understanding the output:
+    Key Metrics:
 
-    **States and Timelines**:
-    - Explored 17,491 distinct states in a single timeline/schedule
+    **Exploration Results**:
+    Explored 90,000 distinct states in a single timeline; Examined 10 different schedules; Reached maximum step limit of 10,001 steps; Found no bugs in explored state space
     
-    **Resource Usage**:
-    - Used 8.4 GB of memory during exploration
-    - Timed out after 70 seconds (hit the 60-second timeout plus overhead)
+    **Resource Usage**: Runtime: 28 seconds; Memory: 6.4 GB peak usage; Threads: Single thread with random strategy
     
-    **Results**:
-    - Found no bugs in the explored state space
-    - "partially correct with 9 choices remaining" indicates there are still 9 unexplored choices when the checker timed out
-    - The negative values in "steps explored" indicate the checker was interrupted before completing its exploration
+    **Results**: Completed normally (hit step limit); Verified correct up to step 10,001; All properties satisfied in explored states
 
 ### Advanced Options
 

@@ -543,6 +543,10 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteParts("null");
                     break;
 
+                case SequenceLiteralExpr sequenceLiteralExpr:
+                    WriteParts("{|", sequenceLiteralExpr.SequenceElements, "|}");
+                    break;
+
                 case SeqAccessExpr seqAccessExpr:
                     WriteParts("(", seqAccessExpr.SeqExpr, ")[", seqAccessExpr.IndexExpr, "]");
                     break;

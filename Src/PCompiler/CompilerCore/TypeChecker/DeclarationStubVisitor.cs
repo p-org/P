@@ -246,6 +246,11 @@ namespace Plang.Compiler.TypeChecker
             return null;
         }
 
+        public override object VisitSequenceLiteralExpr(PParser.SequenceLiteralExprContext context)
+        {
+            return null;
+        }
+
         public override object VisitSeqAccessExpr(PParser.SeqAccessExprContext context)
         {
             return null;

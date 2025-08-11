@@ -1486,6 +1486,19 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, ")");
                     break;
 
+                case SequenceLiteralExpr sequenceLiteralExpr:
+                    context.Write(output, $"new {GetCSharpType(sequenceLiteralExpr.Type)}(new List<IPValue>");
+                    context.Write(output, "{");
+                    var sep2 = "";
+                    foreach (var elem in sequenceLiteralExpr.SequenceElements)
+                    {
+                        context.Write(output, sep2);
+                        WriteExpr(context, output, elem);
+                        sep2 = ", ";
+                    }
+                    context.Write(output, "})");
+                    break;
+
                 case ValuesExpr valuesExpr:
                     context.Write(output, "(");
                     WriteExpr(context, output, valuesExpr.Expr);

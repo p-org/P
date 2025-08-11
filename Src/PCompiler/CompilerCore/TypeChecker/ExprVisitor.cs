@@ -76,6 +76,23 @@ namespace Plang.Compiler.TypeChecker
             return new TupleAccessExpr(context, subExpr, fieldNo, tuple.Types[fieldNo]);
         }
 
+        public override IPExpr VisitSequenceLiteralExpr(PParser.SequenceLiteralExprContext context) {
+            var elems = context.seqElems()._elems.Select(Visit).ToArray();
+
+            // check whether all elements have the same type
+            if (elems.Count() > 0) {
+                var firstElementType = elems[0].Type;
+                for (int i = 1; i < elems.Count(); i++) {
+                    var currElementType = elems[i].Type;
+                    if (!currElementType.Equals(firstElementType)) {
+                        throw handler.TypeMismatch(context.seqElems()._elems[i], currElementType, firstElementType);
+                    }
+                }
+            }
+
+            return new SequenceLiteralExpr(context, elems);
+        }
+
         public override IPExpr VisitSeqAccessExpr(PParser.SeqAccessExprContext context)
         {
             var seqOrMap = Visit(context.seq);

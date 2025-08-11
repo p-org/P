@@ -128,7 +128,7 @@ public class Main {
         Map<String, Set<TaskPool.Task>> properties = new HashMap<>();
         List<String> propertyKeys = new ArrayList<>();
         int numTasks = 0;
-        FromDaikon converter = new FromDaikon(termsToPredicates, terms, isForall ? "Forall" : "Exists", 0, minerConfig.pruningLevel);
+        FromDaikon converter = new FromDaikon(termsToPredicates, terms, isForall ? "Forall" : "Exists", 0, minerConfig.pruningLevel, minerConfig.verbose);
         TaskPool taskPool = new TaskPool(getChunkSize(), converter, minerConfig.getOutputFilename(), minerConfig.outputDir, minerConfig.verbose);
         while (enumerator.hasNext()) {
             List<RawPredicate> predicateComb = enumerator.next();
@@ -196,7 +196,7 @@ public class Main {
         TermEnumerator termEnumerator = new TermEnumerator(termsToPredicates, terms.size(), minerConfig.numTermsToChoose);
         Map<String, Map<String, List<TaskPool.Task>>> tasks = new HashMap<>();
         int numTasks = 0;
-        FromDaikon converter = new FromDaikon(termsToPredicates, terms, "ForallExists", minerConfig.numExistsQuantifiers, minerConfig.pruningLevel);
+        FromDaikon converter = new FromDaikon(termsToPredicates, terms, "ForallExists", minerConfig.numExistsQuantifiers, minerConfig.pruningLevel, minerConfig.verbose);
         TaskPool taskPool = new TaskPool(getChunkSize(), converter, minerConfig.getOutputFilename(), minerConfig.outputDir, minerConfig.verbose);
         Map<String, List<String>> keysSequences = new HashMap<>();
         List<String> guardKeySequence = new ArrayList<>();

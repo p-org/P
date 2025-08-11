@@ -12,15 +12,18 @@ public class FromDaikon {
     private static final String[] FILTERED_INVS = { "!= null", ".getClass().getName()", "[] ==" };
     private static final String[] COMP_OPS = { "!=", "<=", "<", ">=", ">" };
     private static final Map<String, String> substs = new HashMap<>();
+    private boolean verbose;
 
     public FromDaikon(Map<Set<Integer>, List<Main.RawPredicate>> termsToPredicates,
-                      List<Main.RawTerm> terms, String templateFamily, int numExtQuantfiers, int pruningLevel) {
+                      List<Main.RawTerm> terms, String templateFamily,
+                      int numExtQuantfiers, int pruningLevel, boolean verbose) {
         this.termsToPredicates = termsToPredicates;
         this.terms = terms;
         this.templateHeaderCar = "";
         this.templateHeaderCdr = "";
         this.numExists = numExtQuantfiers;
         this.pruningLevel = pruningLevel;
+        this.verbose = verbose;
         StringBuilder sb = new StringBuilder();
         switch (templateFamily) {
             case "Forall":
@@ -173,7 +176,12 @@ public class FromDaikon {
             // prune nullptr comparisons
             // and type name comparisons
             for (var stub : FILTERED_INVS) {
-                if (line.contains(stub)) return false;
+                if (line.contains(stub)) {
+                    if (verbose) {
+                        System.out.println("[Sanitized] Filtered out " + line + " by stub: " + stub);
+                    }
+                    return false;
+                }
             }
         }
         if (pruningLevel >= 2) {
@@ -191,10 +199,20 @@ public class FromDaikon {
                 }
             }
             for (Main.RawPredicate p: guards) {
-                if (p.terms().equals(minedPropertyBoundedTerms)) return false;
+                if (p.terms().equals(minedPropertyBoundedTerms)) {
+                    if (verbose) {
+                        System.out.println("[Sanitized] Trivial predicate " + line + " by guard: " + p);
+                    }
+                    return false;
+                }
             }
             for (Main.RawPredicate p: filters) {
-                if (p.terms().equals(minedPropertyBoundedTerms)) return false;
+                if (p.terms().equals(minedPropertyBoundedTerms)) {
+                    if (verbose) {
+                        System.out.println("[Sanitized] Trivial predicate " + line + " by witness: " + p);
+                    }
+                    return false;
+                }
             }
         }
         if (pruningLevel >= 3) {
@@ -210,7 +228,9 @@ public class FromDaikon {
                         var rhsTerm = getTermByTemplateField(rhs, forallTerms, existsTerms);
                         if (lhsTerm != null && rhsTerm != null) {
                             if (lhsTerm.shortRepr().endsWith(".index()")
-                                    && rhsTerm.shortRepr().endsWith(".index()")) return false;
+                                    && rhsTerm.shortRepr().endsWith(".index()")) {
+                                        return false;
+                            }
                         }
                     }
                     boolean rhsIsConst = isNumber(rhs) || (rhs.startsWith("\"") && rhs.endsWith("\""));
@@ -219,6 +239,7 @@ public class FromDaikon {
                             // if a comparison does not involve a term on lhs,
                             // it should not involve a term on rhs either (avoid `_num_e_exists_ > [some term]`)
                             // however, we do want to see size([some term]) / config constants on rhs.
+                            System.out.println("[Sanitized] Filtered out " + line + " by comparison: " + lhs + " " + op + " " + rhs);
                             return false;
                         }
                         break;

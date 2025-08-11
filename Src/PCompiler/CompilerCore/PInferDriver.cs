@@ -933,6 +933,7 @@ namespace Plang.Compiler
                 NumGoalsLearnedWithoutHints = 0;
             }
             Dictionary<string, HashSet<int>> learned = [];
+            HashSet<string> identifiedSpecs = [];
             HashSet<string> visitedKey = [];
             int totalInvs = invariants.Count();
             int checkedInvs = 0;
@@ -963,7 +964,7 @@ namespace Plang.Compiler
                     var cond1 = p.IsSubsetOf(gps);
                     var cond2 = gqs.IsSubsetOf(q);
                     // check symmetry
-                    bool symmCheck = true;
+                    bool symmCheck = false;
                     if (NumExists[key] == 0 && EventCombinations[key].Count == 1)
                     {
                         var symmGP = ToSymmetricGuards(ParsedGoalsP[key], gps);
@@ -986,6 +987,8 @@ namespace Plang.Compiler
                         }
                         Console.WriteLine($"Learned: {key}");
                         learned[key].Add(i);
+                        var invStr = AssembleInvariant(h, p, q);
+                        identifiedSpecs.Add(invStr);
                     }
                 }
                 checkedInvs += 1;
@@ -1008,6 +1011,14 @@ namespace Plang.Compiler
                             Console.WriteLine($"Not learned: {key} Guards: {string.Join(" && ", targets[key][i].Item3)} Filters: {string.Join(" && ", targets[key][i].Item4)}");
                         }
                     }
+                }
+            }
+            if (!checkIndInv)
+            {
+                using StreamWriter writer = new("confirmed_specs.txt");
+                foreach (var spec in identifiedSpecs)
+                {
+                    writer.WriteLine(spec);
                 }
             }
         }
@@ -1099,6 +1110,7 @@ namespace Plang.Compiler
             int c = 1;
             List<MonitorMetadata> monitorMetadata = [];
             string outdir = Path.Combine(transform.context.Job.OutputDirectory.ToString(), "PInferSpecs");
+            string rt_monitorDir = Path.Combine(transform.context.Job.OutputDirectory.ToString(), "PInferRT");
             if (Directory.Exists(outdir))
             {
                 Directory.Delete(outdir, true);
@@ -1111,16 +1123,22 @@ namespace Plang.Compiler
                 monitorCount[h.Name] = monitorCount.TryGetValue(h.Name, out var cnt) ? cnt + 1 : 1;
                 var prop = h.GetInvariantReprHeader(ps, string.Join(" ∧ ", q));
                 CompiledFile monitorFile = new($"{h.Name}_{monitorCount[h.Name]}.p", outdir);
+                CompiledFile runtimeFile = new($"{h.Name}_{monitorCount[h.Name]}_runtime.py", rt_monitorDir);
                 try
                 {
                     transform.WithFile(monitorFile);
                     transform.WriteSpecMonitor(c, codegen, transform.context, transform.context.Job, globalScope, h, p, q, ParsedP[key], ParsedQ[key], prop);
                     transform.context.Job.Output.WriteFile(monitorFile);
-                    monitorMetadata.Add(new MonitorMetadata {
+                    monitorMetadata.Add(new MonitorMetadata
+                    {
                         Name = $"{h.Name}_{c}",
                         Specification = prop,
                     });
                     c++;
+
+                    transform.WithFile(runtimeFile);
+                    transform.WriteLogMonitor(c, codegen, transform.context, transform.context.Job, globalScope, h, p, q, ParsedP[key], ParsedQ[key], prop);
+                    transform.context.Job.Output.WriteFile(runtimeFile);
                 }
                 catch (Exception e)
                 {

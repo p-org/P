@@ -191,6 +191,14 @@ namespace Plang.Compiler.Backend.PInfer
             var i = 0;
             var termDepth = hint.TermDepth == null ? job.TermDepth : hint.TermDepth.Value;
             foreach (var eventAtom in hint.Quantified) {
+                // var payloadType = eventAtom.EventDecl.PayloadType;
+                // if (eventAtom.EventDecl.PayloadType is TypeDefType typeDefType &&
+                //     typeDefType.TypeDefDecl.Type is not PrimitiveType)
+                // {
+                //     payloadType = typeDefType.Canonicalize();
+                // }
+                // eventAtom.EventDecl.PayloadType = payloadType;
+                eventAtom.Type = eventAtom.EventDecl.PayloadType;
                 var expr = new VariableAccessExpr(null, eventAtom);
                 AddTerm(0, expr, [eventAtom]);
                 foreach (var (e, w) in TryMkTupleAccess(expr).Concat(TryMakeNamedTupleAccess(expr)))

@@ -83,7 +83,7 @@ machine Client
 
   // function that returns a random integer between (1 to current balance + 1)
   fun WithdrawAmount() : int {
-    return 10;
+    return choose(currentBalance) + 1;
 /* Hint 2: Reduce the number of choices by changing the above line to the following:
     return ((choose(5) * currentBalance) / 4) + 1;
 */

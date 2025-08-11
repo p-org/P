@@ -11,7 +11,13 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
         {
             SourceLocation = sourceLocation;
             SequenceElements = sequenceElements;
-            Type = new SequenceType(sequenceElements[0].Type);
+
+            if (sequenceElements.Count > 0) {
+                Type = new SequenceType(sequenceElements[0].Type);
+            }
+            else {
+                Type = new SequenceType(PrimitiveType.Any);
+            }
         }
 
         public IReadOnlyList<IPExpr> SequenceElements { get; }

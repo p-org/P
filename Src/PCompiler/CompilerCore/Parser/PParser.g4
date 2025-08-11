@@ -213,7 +213,7 @@ floatLiteral : pre=IntLiteral? DOT post=IntLiteral # DecimalFloat
              | FLOAT LPAREN base=IntLiteral COMMA exp=IntLiteral RPAREN # ExpFloat
              ;
 
-seqElems : elems+=primitive
+seqElems :
          | elems+=primitive (COMMA elems+=primitive)*
          ;
 

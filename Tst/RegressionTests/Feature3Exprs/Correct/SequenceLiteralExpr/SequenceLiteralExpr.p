@@ -1,6 +1,7 @@
 machine Main {
     var s1: seq[int];
     var s2: seq[any];
+    var s3: seq[bool];
     var a: int;
 	
     start state S
@@ -21,6 +22,8 @@ machine Main {
           assert (s1[0] == 0);
           assert (s1[1] == 0);
           assert (s1[2] == 0);
+
+          s3 = {||} as seq[bool];
        }
     }
 }

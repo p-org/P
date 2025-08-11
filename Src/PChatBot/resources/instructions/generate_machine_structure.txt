@@ -1,0 +1,10 @@
+Write the structure of P code for the state machine {machineName}. Include all variable declarations, state declarations, event handlers, and function declarations, BUT leave all function bodies empty (with just placeholder comments). Ensure that the components in <components></components> tags and the interactions in <interactions></interactions> tags are reflected in the structure. The structure should include:
+
+1. Machine declaration with local variable declarations
+2. All states with their annotations (start, hot, cold)
+3. Entry and exit function references within states
+4. Event handlers (on-do and on-goto statements)
+5. Defer and ignore statements
+6. Function declarations with proper parameters and return types, but EMPTY bodies, do add COMMENTS for future stages of code generation.
+
+Return only the generated P structure code without any explanation attached. Return the P code enclosed in XML tags where the tag name is "structure".

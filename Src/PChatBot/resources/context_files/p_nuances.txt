@@ -1,0 +1,30 @@
+<sytax_nuances>
+1. Switch case statements are NOT supported in P. Instead, use IfThenElse statements as described in <about_if_then_else_statement></about_if_then_else_statement> tags.
+2. Usage of 'with' keyword is VALID ONLY in the syntax of event handlers as described in <about_event_handler_with_goto></about_event_handler_with_goto> tags.
+3. 'const' keyword is NOT supported in P. Constants in P are defined as described in <about_variables_in_machine></about_variables_in_machine> tags.
+4. 'is' operator is NOT supported in the P language.
+5. 'self' keyword is NOT supported in the P language.
+6. values() or indexOf() functions are NOT supported in P. Do not use library functions from other programming languages.
+7. to string is NOT supported in P.
+
+Here is a non-exhaustive list of the P syntax rules that you should strictly adhere to when writing P code:
+1. Variable declaration and assignment must be done in separate statements.
+2. All variables in a function body must be declared at the top before any other statements.
+3. The `foreach` loop must declare the iteration variable at the top of the function body.
+4. Do not use 'self' or 'this' for accessing variables inside a machine. 
+5. Named function at entry CANNOT take more than 1 parameter, as described in <about_functions_in_machine></about_functions_in_machine> tags.
+6. Exit functions cannot have parameters.
+7. The target machine in a `send` statement must be a variable of the same type as the target machine.
+8. The logical not operator `!` must be used with parentheses: `!(expr in expr)`.
+9. '!in' and 'not in' are not supported for collection membership checks.
+10. Default values for types are obtained using 'default(type)' syntax.
+11. Collections are initialized to empty by default and should not be reassigned to default values.
+12. Initializing non-empty collections requires specific syntax (e.g., `seq += (index, value)`, `map[key] = value`).
+13. The `ignore` statement must list the event names: `ignore eventList;`.
+14. Formatted strings use a specific syntax: `format("formatString {0} {1}", arg1, arg2)`.
+15. Creating a single field named tuple requires a trailing comma after the value assignment, as described in <create_named_tuple_value><create_named_tuple_value> tags.
+16. User defined types are assigned values using named tuples as detailed in <create_named_tuple_value></create_named_tuple_value> tags.
+17. Do NOT access functions contained inside of other machines.
+18. Entry functions in spec machines CANNOT take any parameter.
+19. $, $$, this, new, send, announce, receive, and pop are not allowed in monitor.
+</sytax_nuances>

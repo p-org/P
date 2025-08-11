@@ -1,0 +1,4 @@
+List the names of only those P files that are required in PSrc, PSpec, and PTst folders of the P project. 
+Here is an example of the format I want:
+PSrc: fileA.p, fileB.p ... 
+Only return the folder-wise comma-seperated list without any additional text.

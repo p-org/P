@@ -1,0 +1,29 @@
+Here is the P enums guide:
+<P_enums_guide>
+1. Enum values in P are considered as global constants and must have unique name.
+2. If an enum is used in a user defined type declaration, the enum identifier cannot be a reserved keyword.
+
+Syntax:: enum enumName { enumElemList }
+
+Here is an example of enum declaration:
+<enum_declaration_example>
+// enum representing the response status for the withdraw request
+enum tWithDrawRespStatus { WITHDRAW_SUCCESS, WITHDRAW_ERROR }
+
+// User Defined Type
+type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int, rId: int);
+</enum_declaration_example>
+
+Here is an example of enum declaration with values:
+<enum_declaration_with_values_example>
+enum tResponseStatus { ERROR = 500, SUCCESS = 200, TIMEOUT = 400; }
+
+// usage of enums
+var status: tResponseStatus;
+status = ERROR;
+
+// you can coerce an enum to int
+assert (ERROR to int) == 500;
+</enum_declaration_with_values_example>
+
+</P_enums_guide>

@@ -1,0 +1,588 @@
+Here is the P types guide:
+<P_types_guide>
+P Supports the following data types:
+1. Primitive: int, bool, float, string, machine, and event.
+2. Record: tuple and named tuple.
+3. Collection: map, seq, and set.
+4. User Defined: These are user defined types that are constructed using any of the P types listed above.
+5. Universal Supertypes: any and data.
+
+Here are the syntactical details of each of these data types:
+
+<about_primitive_types>
+Here is an example of how primitive data types are declared:
+<primitive_type_example>
+// some function body in the P program
+{
+    var i: int;
+    var j: float;
+    var k: string;
+    var l: bool;
+
+    i = 10; 
+    j = 10.0; 
+    k = "Failure!!";
+    l = (i == (j to int));
+}
+</primitive_type_example>
+</about_primitive_types>
+
+<about_record>
+1. The fields of a tuple can be accessed by using the . operation followed by the field index.
+2. Named tuples are similar to tuples with each field having an associated name. 
+3. The fields of a named tuple can be accessed by using the . operation followed by the field name.
+
+Here is an example of a tuple:
+<tuple_example>
+// tuple with three fields
+var tupleEx: (int, bool, int);
+
+// constructing a value of tuple type.
+tupleEx = (20, false, 21);
+
+// accessing the first and third element of the tupleEx
+tupleEx.0 = tupleEx.0 + tupleEx.2;
+</tuple_example>
+
+Here is an example of a named tuple:
+<named_tuple_example>
+// named tuple with three fields
+var namedTupleEx: (x1: int, x2: bool, x3: int);
+
+// constructing a value of named tuple type.
+namedTupleEx = (x1 = 20, x2 = false, x3 = 21);
+
+// accessing the first and third element of the namedTupleEx
+namedTupleEx.x1 = namedTupleEx.x1 + namedTupleEx.x3;
+</named_tuple_example>
+
+<create_tuple_value>
+A tuple value can be created using the following expressions:
+Syntax:: (rvalue,) for a single field tuple value, or (rvalue (, rvalue)+) for tuple with multiple fields.
+
+Here is an example of creating tuple value:
+<creating_tuple_value_example>
+// tuple value of type (int,)
+(10,)
+
+// tuple value of type (string, (string, string))
+("Hello", ("World", "!"))
+
+// assume x: int and y: string
+// tuple value of type (int, string)
+(x, y)
+</creating_tuple_value_example>
+</create_tuple_value>
+
+<create_named_tuple_value>
+A named tuple value can be created using the following syntax:
+Syntax:: (iden = rvalue,) for a single field named tuple value, or (iden = rvalue (, iden = rvalue)+) for a named tuple with multiple fields.
+A trailing comma is required after the value assignment in a single field named tuple.
+
+Here is an example of creating a single field named tuple value:
+<creating_single_field_named_tuple_value_example>
+// named tuple value of type (reqId: int, )
+(reqId = 10,)
+</creating_single_field_named_tuple_value_example>
+
+Here is an incorrect example of creating a single field named tuple value:
+<creating_single_field_named_tuple_value_incorrect_example>
+(reqId = 10) // Missing comma
+</creating_single_field_named_tuple_value_incorrect_example>
+
+Here is an example of creating a named tuple with multiple fields:
+<creating_named_tuple_with_multiple_fields_example>
+// assume x: int and y: string
+// named tuple value of type (val:int, str:string)
+(val = x, str = y)
+
+// named tuple value of type (h: string, (w: string, a: string))
+(h = "Hello", (w = "World", a = "!"))
+</creating_named_tuple_with_multiple_fields_example>
+
+Here is an incorrect example of creating a named tuple with multiple fields:
+<creating_named_tuple_with_multiple_fields_incorrect_example>
+// assume x: int and y: string
+(x, y)
+<creating_named_tuple_with_multiple_fields_incorrect_example>
+</create_named_tuple_value>
+</about_record>
+
+<about_collection_types>
+P supports three collection types:
+1. map[K, V] represents a map type with keys of type K and values of type V.
+2. seq[T] represents a sequence type with elements of type T.
+3. set[T] represents a set type with elements of type T.
+
+<about_indexing_into_collection>
+Here is the syntax to index into collections to access its elements:
+Syntax:: expr_c[expr_i]
+1. If expr_c is a value of sequence type, then expr_i must be an integer expression and expr_c[expr_i] represents the element at index expr_i.
+2. If expr_c is a value of set type, then expr_i must be an integer expression and expr_c[expr_i] represents the element at index expr_i but note that for a set there is no guarantee for the order in which elements are stored in the set.
+3. If expr_c is a value of map type, then expr_i represents the key to look up and expr_c[expr_i] represents the value for the key expr_i.
+</about_indexing_into_collection>
+
+<about_foreach_statement>
+foreach statement can be used to iterate over a collection in P.
+Syntax:: foreach (iden in expr)
+Declare iden at the top of the function body in EACH function. Type of iden must be same as the elements type in the collection.
+
+1. iden is the name of the variable that stores the element from the collection during iterations. 
+2. expr represents the collection over which we want to iterate.
+3. One can mutate the collection represented by expr when iterating over it as the foreach statement enumerates over a clone of the collection.
+
+Here is an example of foreach over a sequence:
+<foreach_over_sequence_example>
+var sq : seq[string];
+var str : string; // str is declared
+
+foreach(str in sq) {
+  print str; 
+}
+</foreach_over_sequence_example>
+
+Here is an INCORRECT example of foreach over a sequence:
+<foreach_over_sequence_incorrect_example>
+var sq : seq[string];
+// Missing declaration of str
+foreach(str in sq) {
+  print str; 
+}
+</foreach_over_sequence_incorrect_example>
+
+Here is an example of foreach over a set:
+<foreach_over_set_example>
+var ints: set[int];
+var iter, sum: int;
+// iterate over a set of integers
+foreach(iter in ints)
+{
+  sum = sum + iter;
+}
+</foreach_over_set_example>
+
+Here is an example of foreach over a map:
+<foreach_over_map_example>
+var intsM: map[int, int];
+var key: int;
+foreach(key in keys(intsM))
+{
+  intsM[key] = intsM[key] + delta;
+}
+</foreach_over_map_example>
+
+Here is an example of mutating a collection with foreach:
+<foreach_mutating_collection_example>
+var ints: set[int];
+var i: int;
+foreach(i in ints)
+{
+  ints -= (i);
+}
+assert sizeof(ints) == 0;
+</foreach_mutating_collection_example>
+</about_foreach_statement>
+
+<about_insert_into_collection>
+Here are the details on how to add an element into a sequence:
+<about_insert_into_sequence>
+1. For a sequence sq, the value of index i should be between 0 <= i <= sizeof(sq).
+2. Index i = 0 inserts x at the start of sq and i = sizeof(sq) appends x at the end of sq.
+3. To insert an element in an empty sequence, reference the details given in <about_initialize_sequence></about_initialize_sequence> tags.
+Syntax:: lvalue += (expr, rvalue);
+expr is the index of the sequence and rvalue is the value to be inserted. Round brackets are important.
+
+Here is an example of inserting an element into a sequence:
+<insert_into_sequence_example>
+type Task = (description: string, assignedTo: string, dueDate: int);
+
+machine TaskManager {
+  var allTasks: seq[Task];
+
+  start state Idle {
+    entry Idle_Entry;
+  }
+
+  fun Idle_Entry() {
+    // Initialize the sequence to be empty
+    allTasks = default(seq[Task]);
+  }
+
+  // Function to add a new task to the sequence
+  fun AddTask(task: Task) {
+    allTasks += (sizeof(allTasks), task);
+  }
+}
+</insert_into_sequence_example>
+
+Here is an incorrect example of inserting an element in a sequence:
+<insert_into_sequence_incorrect_example>
+var sq : seq[T];
+var x: int;
+// round brackets should contain a pair of values
+sq += (x);
+</insert_into_sequence_incorrect_example>
+</about_insert_into_sequence>
+
+<about_insert_in_map>
+Here is the syntax to add or insert an element in a map:
+Syntax: lvalue += (expr, rvalue);
+lvalue is a value of map in P. expr is the key to be inserted and rvalue is its corresponding value.
+round brackets surrounding rvalue are important.
+
+Here is an example of inserting an element into a map:
+<insert_into_map_example>
+var mp : map[K,V];
+var x: K, y: V;
+
+// adds (x, y) into the map
+mp += (x, y);
+
+// adds (x, y) into the map, if key x already exists then updates its value to y.
+mp[x] = y;
+</insert_into_map_example>
+</about_insert_in_map>
+
+<about_insert_in_set>
+Here is the syntax to add or insert an element in a set:
+Syntax:: lvalue += (rvalue);
+lvalue is a value of set in P. round brackets surrounding rvalue are important.
+
+Here is an example of inserting an element into a set:
+<insert_into_set_example>
+var st : set[T];
+var x: T;
+
+// adds x into the set st
+// x is surrounded by round brackets
+st += (x);
+</insert_into_set_example>
+
+Here is an incorrect example of inserting an element into a set:
+<insert_into_set_incorrect_example>
+var st : set[T];
+var x: T;
+
+// Missing round brackets surrounding x
+st += x;
+</insert_into_set_incorrect_example>
+</about_insert_in_set>
+</about_insert_into_collection>
+
+<about_default_value_of_collection>
+1. The default feature in P can be used to obtain the default value of a collection.
+2. P variables on declaration are automatically initialized to their default values.
+
+Syntax:: default(type)
+type is any P type and default(type) represents the default value for the type
+
+Here is an example of initializing an empty sequence:
+<default_value_of_sequence>
+var sq : seq[int];
+// by default a seq type is initialized to an empty seq
+assert sizeof(sq) == 0;
+
+// set the variable to an empty seq
+sq = default(seq[int]);
+</default_value_of_sequence>
+
+Here is an example of initializing an empty map:
+<default_value_of_map>
+var myMap: map[int, int];
+
+// by default a map type is initialized to an empty map
+assert sizeof(myMap) == 0;
+
+// set the variable to an empty map
+myMap = default(map[int, int]);
+</default_value_of_map>
+
+<default_value_of_set>
+var s : set[int];
+// by default a set type is initialized to an empty set
+assert sizeof(s) == 0;
+
+// set the variable to an empty set
+s = default(set[int]);
+</default_value_of_set>
+</about_default_value_of_collection>
+
+<about_initialize_collection>
+In P language, a collection when declared is automatically initialized by default to empty collection. Do NOT set it to empty again.
+
+<about_initialize_sequence>
+In P, a sequence when declared is initialized by default to empty sequence. Do NOT set the sequence to empty again.
+
+Here is an example of initializing a non-empty sequence:
+<initialize_sequence_example>
+var mySeq: seq[int];
+var i: int;
+var numOfIterations: int;
+
+i = 0;
+numOfIterations = 5;
+
+// initialize mySeq
+while(index < numOfIterations) {
+  mySeq += (sizeof(mySeq), i);  // Append i to the end of mySeq
+  i = i + 1;
+}
+
+// At this point, mySeq contains [0, 1, 2, 3, 4]
+</initialize_sequence_example>
+</about_initialize_sequence>
+
+<about_initialize_map>
+In P, a map when declared is initialized by default to empty map. Do NOT set the map to empty again.
+
+Here is an example of how to initialize a non-empty map:
+<initialize_map_example>
+var bankBalance: map[int, int];
+var i: int;
+while(i < 6) {
+  bankBalance[i] = choose(100) + 10;
+  i = i + 1;
+}
+</initialize_map_example>
+</about_initialize_map>
+
+<about_initialize_set>
+In P, a set when declared is initialized by default to empty set. Do NOT set the set to empty again.
+
+Here is an example of how to initialize a non-empty set:
+<initialize_set_example>
+var participants: set[Participant];
+var i : int;
+var num: int;
+
+num = 7;
+while (i < num) {
+  participants += (new Participant());
+  i = i + 1;
+}
+</about_initialize_set>
+</about_initialize_collection>
+
+<about_remove_from_collection>
+Remove statement is used to remove an element from a collection.
+Syntax:: lvalue -= rvalue;
+
+<about_remove_from_sequence>
+For a sequence sq, the value of index i above should be between 0 <= i <= sizeof(sq) - 1.
+
+Here is an example of removing an element at an index from a sequence:
+<remove_from_sequence_example>
+var sq : seq[T];
+var i : int;
+
+// i is the index in sq, NOT an element of sq
+sq -= (i);
+</remove_from_sequence_example>
+
+Here is an incorrect example of removing an element at an index from a sequence:
+<remove_from_sequence_incorrect_example>
+var sq : seq[T];
+var i : int;
+
+// Missing round brackets surrounding i
+sq -= i;
+</remove_from_sequence_incorrect_example>
+</about_remove_from_sequence>
+
+<about_remove_from_map>
+Here is an example of removing an element from a map:
+<remove_from_map_example>
+var mp : map[K,V];
+var x: K;
+
+// Removes the element (x, _) from the map i.e., removes the element with key x from mp
+mp -= (x);
+</remove_from_map_example>
+</about_remove_from_map>
+
+<about_remove_from_set>
+Here is an example of removing an element from a set:
+<remove_from_set_example>
+var st : set[T];
+var x: T;
+
+// removes x from the set st
+st -= (x);
+</remove_from_set_example>
+
+Here is an INCORRECT example of removing an element from a set:
+<remove_from_set_incorrect_example>
+var st : set[T];
+var x: T;
+
+// Missing round brackets surrounding x
+st -= x;
+</remove_from_set_incorrect_example>
+</about_remove_from_set>
+</about_remove_from_collection>
+
+<about_operations_on_collections>
+P supports four operations on collection types:
+1. sizeof
+2. keys
+3. values
+4. in (to check containment)
+
+<about_sizeof_expression>
+Syntax:: sizeof(expr)
+expr is a value of type set, seq or map, returns an integer value representing the size or length of the collection.
+
+Here is an example of sizeof:
+<sizeof_example>
+var sq: seq[int];
+while (i < sizeof(sq)) {
+    i = i + 1;
+}
+</sizeof_example>
+</about_sizeof_expression>
+
+<about_keys_of_map>
+keys function is used to get access to a sequence of all the keys in map and then operate over it.
+Syntax:: keys(expr)
+1. expr must be a map value
+2. If expr: map[K, V], then keys(expr) returns a sequence (of type seq[K]) of all keys in the map.
+
+Here is an example of keys function:
+<get_keys_example>
+var iter: int;
+foreach(iter in keys(mapI))
+{
+    assert iter in mapI, "Key should be in the map";
+    mapI[iter] = 0;
+}
+</get_keys_example>
+</about_keys_of_map>
+
+<about_values_of_map>
+values function is used to get access to a sequence of all the values in map and then operate over it.
+Syntax:: values(expr)
+1. expr must be a map value
+2. If expr: map[K, V], then values(expr) returns a sequence (of type seq[V]) of all values in the map.
+
+Here is an example of values function:
+<get_values_of_map_example>
+var iter: int;
+var rooms: map[int, tRoomInfo];
+foreach(iter in values(rooms))
+{
+    assert iter == 0, "All values must be zero!";
+}
+</get_values_of_map_example>
+</about_values_of_map>
+
+<about_in_expression>
+1. P provides the in operation to check if an element (or key in the case of a map) belongs to a collection.
+2. The in expression evaluates to true if the collection contains the element and false otherwise.
+3. !in is NOT supported in P.
+4. 'not in' is NOT supported in P.
+
+Syntax:: expr_e in expr_c
+expr_e is the element (or key in the case of map) and expr_c is the collection value.
+
+Here is an example of checking whether an element is contained in a collection:
+<in_expression_example>
+var sq: seq[tRequest];
+var mp: map[int, tRequest];
+var rr: tRequest; 
+var i: int;
+if(rr in sq && rr in values(mp) && i in mp) { 
+  // do something 
+}
+if (!(rr in sq)) {
+  // do something else
+}
+</in_expression_example>
+</about_in_expression>
+
+</about_operations_on_collections>
+</about_collection_types>
+
+<about_user_defined_types>
+1. P supports assigning names to types i.e., creating typedef.
+2. NOTE that these typedefs are simply assigning names to P types and does not effect the sub-typing relation.
+3. User defined types are assigned values using named tuples as detailed in <create_named_tuple_value></create_named_tuple_value> tags.
+
+Syntax:: type typeName = typedef;
+typeName should not be named as any of the reserved keywords listed in the <reserved_keywords></reserved_keywords> tags.
+
+Here is an example of declaring a user defined type:
+<declare_user_defined_type_example>
+// defining a type tLookUpRequest
+type tLookUpRequest = (client: machine, requestId: int, key: string);
+
+// defining a type tLookUpRequestX
+type tLookUpRequestX = (client: machine, requestId: int, key: string);
+
+// Note that the types tLookUpRequest and tLookUpRequestX are same, the compiler does not distinguish between the two types.
+</declare_user_defined_type_example>
+
+Here is another example of declaring a user defined type:
+<declare_user_defined_type_another_example>
+enum tTransStatus { SUCCESS, ERROR, TIMEOUT }
+
+// defining a type tWriteTransResp
+type tWriteTransResp = (transId: int, status: tTransStatus);
+
+</declare_user_defined_type_another_example>
+
+Here is an example of assigning value to a user defined type:
+<assigning_value_to_user_defined_type_example>
+var resp: tWriteTransResp;
+// named tuple
+resp = (transId = trans.transId, status = TIMEOUT);
+</assigning_value_to_user_defined_type_example>
+</about_user_defined_types>
+
+<about_universal_types>
+1. any type in P is the supertype of all types. Also, note that in P, seq[any] is a super type of seq[int] and similarly for other collection types.
+2. data type in P is the supertype of all types in P that do not have a machine type embedded in it. 
+3. For example, data is a supertype of (key: string, value: int) but not (key: string, client: machine).
+</about_universal_types>
+
+<about_default_value_for_a_type>
+1. The default feature in P can be used to obtain the default value of any P type.
+2. P variables on declaration are automatically initialized to their default values.
+
+Syntax:: default(type)
+type is any P type and default(type) represents the default value for the type
+
+Here is an example of default value:
+<default_value_initialization_example>
+type tRequest = (client: machine, requestId: int);
+
+// somewhere inside a function
+x = default(tRequest);
+
+assert x.client == default(machine);
+</default_value_initialization_example>
+
+Here's a table of P Types and their corresponding default values:
+<table>
+  <row>
+    <PType>P Types</PType>
+    <DefaultValue>Default Value</DefaultValue>
+  </row>
+  <row>
+    <PType>int</PType>
+    <DefaultValue>0</DefaultValue>
+  </row>
+  <row>
+    <PType>float</PType>
+    <DefaultValue>0.0</DefaultValue>
+  </row>
+  <row>
+    <PType>bool</PType>
+    <DefaultValue>false</DefaultValue>
+  </row>
+  <row>
+    <PType>string</PType>
+    <DefaultValue>""</DefaultValue>
+  </row>
+</table>
+</about_default_value_for_a_type>
+</P_types_guide>

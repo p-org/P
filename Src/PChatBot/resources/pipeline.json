@@ -1,0 +1,46 @@
+{
+    "Types": {
+        "task_id": 1,
+        "operations": [
+            {
+                "operation_id": 1,
+                "operation_type": "Generate Types",
+                "instructions": "instructions/generate_types.txt",
+                "predefined_context": "context_files/P_syntax_guide.txt"
+            }
+        ]
+    },
+    "Enums": {
+        "task_id": 2,
+        "operations": [
+            {
+                "operation_id": 2,
+                "operation_type": "Generate Enums",
+                "instructions": "instructions/generate_enums.txt",
+                "predefined_context": "context_files/P_syntax_guide.txt"
+            }
+        ]
+    },
+    "Events": {
+        "task_id": 3,
+        "operations": [
+            {
+                "operation_id": 3,
+                "operation_type": "Generate Events",
+                "instructions": "instructions/generate_events.txt",
+                "predefined_context": "context_files/P_syntax_guide.txt"
+            }
+        ]
+    },
+    "Machines": {
+        "task_id": 4,
+        "operations": [
+            {
+                "operation_id": 5,
+                "operation_type": "Generate Basic Machines",
+                "instructions": "instructions/generate_machines.txt",
+                "predefined_context": "context_files/P_syntax_guide.txt"
+            }
+        ]
+    }
+}

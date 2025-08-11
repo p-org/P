@@ -1,0 +1,10 @@
+<!-- P Project file for {project_name} -->
+<Project>
+<ProjectName>{project_name}</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

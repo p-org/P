@@ -1,0 +1,12 @@
+flask
+botocore
+boto3
+flask_socketio
+streamlit
+pytest
+mcp[cli]>=1.10.1
+matplotlib
+sentence-transformers
+whatthepatch
+st-diff-viewer
+streamlit_scrollable_textbox

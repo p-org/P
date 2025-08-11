@@ -1,0 +1,99 @@
+<system_design_document>
+<title> Basic Paxos Protocol </title>
+
+<introduction>
+The goal of this system is to model a basic version of the Paxos consensus algorithm. Paxos is designed to achieve consensus among a group of participants (referred to as proposers, acceptors, and learners) in a distributed system, even in the presence of failures. The protocol ensures that multiple participants agree on a single value, which is crucial for consistency in distributed systems.
+
+Assumptions: 
+1. Our system models a basic version of Paxos, focusing on single-value consensus without optimizations like multi-Paxos.
+2. The system assumes reliable delivery of messages, though participants may fail or recover. 
+3. Our model does not consider network partitions or Byzantine failures.
+
+</introduction>
+
+<components>
+
+1. Proposer
+* Initiates the proposal of values to reach consensus.
+* Generates proposals with unique proposal numbers.
+* Sends proposals to a majority of acceptors and waits for responses.
+
+2. Acceptor
+* Participates in voting on proposals.
+* Maintains the highest proposal number it has seen and the value associated with the highest accepted proposal.
+* Responds to proposals with either a promise not to accept lower-numbered proposals or an acceptance of the proposal.
+
+3. Learner
+* Learns the chosen value once consensus is reached.
+* Collects accepted proposals from acceptors.
+* Learns the final agreed-upon value once a majority of acceptors have accepted the same proposal.
+
+4. Client
+* Acts as a client of the Paxos protocol, initiating requests for consensus on values.
+* Interacts with the Proposer to start the consensus process.
+
+</components>
+
+<interactions>
+
+1. ePropose
+* Source: Proposer
+* Target: Acceptors
+* Payload: Proposer, Proposal number, proposed value
+* Description: Proposer sends a proposal to acceptors for consideration.
+* Effects:
+    * Acceptor checks if the proposal number is higher than any previously seen proposal number.
+    * If higher, the acceptor promises not to accept any lower-numbered proposals and may accept the proposal.
+
+2. ePromise
+* Source: Acceptor
+* Target: Proposer
+* Payload: Proposer, Highest proposal number seen, any previously accepted value
+* Description: Acceptor sends a promise to the proposer, agreeing not to accept proposals with lower numbers.
+* Effects:
+    * Proposer may proceed with the proposal if a majority of acceptors send promises.
+
+3. eAcceptRequest
+* Source: Proposer
+* Target: Acceptors
+* Payload: Proposer, Proposal number, proposed value
+* Description: Proposer requests acceptors to accept the proposal.
+* Effects:
+    * Acceptor accepts the proposal if it has not already promised a higher-numbered proposal.
+    * Acceptor sends an acceptance notification to the proposer and learners.
+
+4. eAccepted
+* Source: Acceptor
+* Target: Learners
+* Payload: Learner, Proposal number, accepted value
+* Description: Acceptor notifies learners that it has accepted a proposal.
+* Effects:
+    * Learners collect accepted proposals.
+    * Once a majority of acceptors have accepted the same proposal, learners conclude that consensus has been reached.
+
+5. eLearn
+* Source: Learner
+* Target: All components
+* Payload: All components, final agreed-upon value
+* Description: Learner announces the final value agreed upon by the majority of acceptors.
+* Effects:
+    * All components update their state to reflect the chosen value.
+
+</interactions>
+
+<global_specifications>
+
+1. Safety: The protocol ensures that only one value is chosen, and once a value is chosen, it cannot be changed.
+2. Liveness: If a majority of participants are functioning correctly and can communicate, the protocol will eventually reach consensus.
+
+</global_specifications>
+
+<possible_scenarios>
+
+1. 3 acceptors, 1 proposer, 1 learner, and no failures.
+2. 5 acceptors, 2 proposers, and 1 learner with one proposer failing.
+3. Network partition scenarios with the recovery of proposers and acceptors.
+
+</possible_scenarios>
+
+</system_design_document>

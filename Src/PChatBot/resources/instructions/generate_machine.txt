@@ -1,0 +1,8 @@
+Using the provided P state machine structure as a starting point, implement all function bodies for the machine {machineName}. DO NOT change any of the structure, including variable declarations, state declarations, event handlers, or function signatures. Focus ONLY on implementing the body of each function.
+
+For each function:
+1. Implement the body according to the intended behavior
+2. Use proper P statements and expressions (conditionals, loops, send statements, etc.)
+3. Ensure the implementation aligns with the components in <components></components> tags and interactions in <interactions></interactions> tags
+
+Before finalizing the implementation, identify all attributes and events that would be needed to properly setup and initialize this machine in test cases later. Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

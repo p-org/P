@@ -1,0 +1,75 @@
+<system_design_document>
+<title> Hotel Management Application </title>
+
+<introduction>
+The goal of this system is to develop a hotel service booking application that enables the front desk to handle client requests, including room reservations, special requests, and cancellations. The application will maintain a centralized database to record room bookings and prevent double booking of rooms.
+</introduction>
+
+<components>
+
+1. Front Desk
+* Manages client requests, including room reservations, special requests, and cancellations.
+* Keeps track of room availability and existing reservations.
+* Communicates with clients regarding their requests and reservations.
+
+2. Client
+* Makes room reservation requests.
+* Submits special requests (e.g., preferences for room placement).
+* Cancels room reservations.
+* Waits for responses from the front desk.
+* May make additional requests based on responses received.
+
+</components>
+
+<interactions>
+
+1. RoomReservationRequest
+* Source: Client sending the request
+* Target: Front Desk
+* Payload: Client, Client id, Client name
+* Description: A client requests a room. If successful, the client is assigned a room. If unsuccessful, the client is informed of the failure.
+* Effects:
+    * If a room is available, the front desk assigns it to the client and provides the room number.
+    * If no rooms are available, the front desk informs the client of the inability to reserve a room.
+
+2. CancellationRequest
+* Source: Client sending the request
+* Target: Front Desk
+* Payload: Client, Client id, Client name, room number
+* Description: A client requests to cancel their reservation. The request is processed if the client’s name matches the reservation for the given room. If it does not match, the request is rejected.
+* Effects:
+    * If the client’s name matches the reservation, the room is freed up, and the client is notified of successful cancellation.
+    * If the client’s name does not match the reservation, the cancellation is rejected, and the client is informed.
+
+3. SpecialRequest
+* Source: Client sending the request
+* Target: Front Desk
+* Payload: Client, Client id, Client name, room number, and special request details
+* Description: A client with an existing reservation submits a special request. The request is recorded if the client is staying in the room mentioned. Otherwise, the request is discarded.
+* Effects:
+    * If the client’s name matches the reservation for the specified room, the request is noted, and the client is informed of its successful recording.
+    * If the client’s name does not match the reservation, the request is discarded, and the client is informed.
+
+</interactions>
+
+<global_specifications>
+
+1. Each room is assigned to only one client at a time.
+2. Client ids are unique.
+3. The number of rooms is fixed and cannot be altered.
+4. Special requests do not alter room assignments.
+5. Room reservations remain unchanged during a new reservation request.
+6. No new reservations are processed during a cancellation request.
+
+</global_specifications>
+
+<possible_scenarios>
+
+1. A client may attempt to reserve multiple rooms.
+2. A client might try to cancel a reservation they do not hold.
+3. A client might attempt to make a request or cancel a reservation for a room they are not assigned to.
+4. One front desk may handle multiple clients.
+
+</possible_scenarios>
+
+</system_design_document>

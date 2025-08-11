@@ -1,0 +1,37 @@
+This context file provides guidance for fixing common P language compilation errors. Keep these in mind to avoid compilation issues
+1. Variable Declarations:
+   CORRECT: var i: int; i = 0;
+   WRONG: var i: int = 0;
+
+2. Event Payload Access:
+   CORRECT: Use function parameters to receive payloads
+   state SomeState {
+       entry (payload: PayloadType) { ... }
+       on eEvent do (payload: PayloadType) { ... }
+   }
+   WRONG: var payload = receive(eEvent);
+
+3. State Transitions:
+   CORRECT: goto StateName;
+   
+4. Null Handling:
+   CORRECT: if (variable != null) { ... }
+
+COMMON ERRORS AND FIXES:
+
+Error: "extraneous input 'receive' expecting..."
+Fix: Remove receive() calls, use function parameters instead
+
+Error: Variable declaration issues
+Fix: Separate declaration and assignment
+
+Error: Type mismatch
+Fix: Add explicit type annotations
+
+DEBUGGING INSTRUCTIONS:
+- Maintain original program logic
+- Fix syntax only
+- Check for receive() calls first
+- Ensure all variables declared with types
+- Use parameter-based payload access
+- Keep event-driven state machine structure intact

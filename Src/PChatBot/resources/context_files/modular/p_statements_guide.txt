@@ -1,0 +1,437 @@
+Here is the P statements and expressions guide:
+<P_statements_guide>
+P provides various statements and expressions for state machines to communicate, control flow, and perform operations. This guide covers the key statements and expressions in P language.
+
+<statements_grammar>
+P Statements Grammar:
+```
+statement : { statement* }                           # CompoundStmt
+| assert expr (, expr)? ;                            # AssertStmt
+| print expr ;                                       # PrintStmt
+| foreach (iden in expr) statement                   # ForeachStmt
+| while ( expr ) statement                           # WhileStmt
+| if ( expr ) statement (else statement)?            # IfThenElseStmt
+| break ;                                            # BreakStmt
+| continue ;                                         # ContinueStmt
+| return expr? ;                                     # ReturnStmt
+| lvalue = rvalue ;                                  # AssignStmt
+| lvalue += ( expr, rvalue ) ;                       # InsertStmt
+| lvalue += ( rvalue ) ;                             # AddStmt
+| lvalue -= rvalue ;                                 # RemoveStmt
+| new iden (rvalue?) ;                               # CtorStmt
+| iden ( rvalueList? ) ;                             # FunCallStmt
+| raise expr (, rvalue)? ;                           # RaiseStmt
+| send expr, expr (, rvalue)? ;                      # SendStmt
+| announce expr (, rvalue)? ;                        # AnnounceStmt
+| goto iden (, rvalue)? ;                            # GotoStmt
+| receive { recvCase+ }                              # ReceiveStmt
+;
+```
+
+P Expressions Grammar:
+```
+expr :
+| (expr)                        # ParenExpr
+| primitiveExpr                 # PrimitiveExpr
+| formatedString                # FormatStringExpr
+| (tupleBody)                   # TupleExpr
+| (namedTupleBody)              # NamedTupleExpr
+| expr.int                      # TupleAccessExpr
+| expr.iden                     # NamedTupleAccessExpr
+| expr[expr]                    # AccessExpr
+| keys(expr)                    # KeysExpr
+| values(expr)                  # ValuesExpr
+| sizeof(expr)                  # SizeofExpr
+| expr in expr                  # ContainsExpr
+| default(type)                 # DefaultExpr
+| new iden ( rvalueList? )      # NewExpr
+| iden ( rvalueList? )          # FunCallExpr
+| (- | !) expr                  # UnaryExpr
+| expr (* | / | + | -) expr     # ArithBinExpr
+| expr (== | !=) expr           # EqualityBinExpr
+| expr (&& | ||) expr           # LogicalBinExpr
+| expr (< | > | >= | <= ) expr  # CompBinExpr
+| expr as type                  # CastExpr
+| expr to type                  # CoerceExpr
+| choose ( expr? )              # ChooseExpr
+;
+```
+</statements_grammar>
+
+Here is an example of assert statement that asserts that the requestId is always greater than 1 and is in the set of all requests:
+<assert_example>
+assert (requestId > 1) && (requestId in allRequestsSet);
+</assert_example>
+
+Here is an example of assert statement with error message:
+<assert_example_with_error_message>
+assert x >= 0, "Expected x to be always positive";
+</assert_example_with_error_message>
+
+Here is an example of assert with formatted error message:
+assert (requestId in allRequestsSet),
+format ("requestId {0} is not in the requests set = {1}", requestId, allRequestsSet);
+</assert_example_with_formatted_error_message>
+</about_assert_statement>
+
+<about_print_statement>
+Print statements can be used for writing or printing log messages into the error traces (especially for debugging purposes).
+Syntax:: print expr;
+The print statement must have an expression of type string.
+
+Here is an example of print statement that prints "Hello World!" in the execution trace log:
+<print_example>
+print "Hello World!";
+</print_example>
+
+Here is an example of print statement that prints formatted string message "Hello World to You!!" in the execution trace log:
+<print_formatted_string_message>
+x = "You";
+print format("Hello World to {0}!!", x);
+</print_formatted_string_message>
+</about_print_statement>
+
+<about_while_statement>
+While statement in P is just like while loops in other popular programming languages like C, C# or Java.
+Syntax:: while (expr) statement
+expr is the conditional boolean expression and statement could be any P statement.
+
+Here is an example of while loop:
+<while_example>
+i = 0;
+while (i < 10)
+{
+  i = i + 1;
+}
+</while_example>
+
+Here is an example of while loop iterating over collection:
+<while_iterating_over_collection_example>
+i = 0;
+while (i < sizeof(s))
+{
+    print s[i];
+    i = i + 1;
+}
+</while_iterating_over_collection_example>
+</about_while_statement>
+
+<about_if_then_else_statement>
+IfThenElse statement in P is just like conditional if statements in other popular programming languages like C, C# or Java.
+Syntax:: if(expr) statement (else statement)?
+expr is the conditional boolean expression and statement could be any P statement. The else block is optional.
+
+<if_statement_example>
+if(x > 10) {
+    x = x + 20;
+}
+</if_statement_example>
+
+<if_else_statement_example>
+if(x > 10)
+{
+    x = 0;
+}
+else
+{
+    x = x + 1;
+}
+</if_else_statement_example>
+</about_if_then_else_statement>
+
+<about_break_and_continue_statement>
+break and continue statements in P are just like in other popular programming languages like C, C# or Java to break out of the while loop or to continue to the next iteration of the loop respectively.
+<break_example>
+while(true) {
+    if(x == 10)
+        break;
+    x = x + 1;
+}
+</break_example>
+
+<continue_example>
+while(true) {
+    if(x == 10) // skip the loop when x is 10
+        continue;
+}
+</continue_example>
+</about_break_and_continue_statement>
+
+<about_return_statement>
+1. return statement in P can be used to return (or return a value) from any function.
+2. return statement is written in the function body.
+3. If a function has a returnType, the function should necessarily contain a return statement in the function body.
+
+Here is an example of return statement:
+<return_example>
+fun IncrementX() {
+    if(x > MAX_INT)
+        return;
+    x = x + 1;
+}
+</return_example>
+
+Here is an example of return value statement:
+<return_value_example>
+fun Max(x: int, y: int) : int{
+if(x > y)
+    return x;
+else
+    return y;
+}
+</return_value_example>
+</about_return_statement>
+
+<about_assignment>
+P has value semantics or copy-by-value semantics and does not support any notion of references.
+
+Syntax:: leftvalue = rightvalue;
+1. Note that because of value semantics, assignment in P copies the value of the rightvalue into leftvalue.
+2. leftvalue could be any variable, a tuple field access, or an element in a collection. 
+3. rightvalue could be any expression that evaluates to the same type as lvalue.
+4. In P language syntax, variable assignment CANNOT be combined with variable declaration.
+5. Compound assignment operators (+=, -=) are NOT supported for primitive type variables.
+
+Here is an example of assignment:
+<assignment_example>
+var a: seq[string];
+var b: seq[string];
+b += (0, "b");
+a = b; // copy value
+a += (1, "a");
+print a; // will print ["b", "a"]
+print b; // will print ["b"]
+</assignment_example>
+
+Here is another example of assignment:
+<another_assignment_example>
+a = 10; 
+s[i] = 20; 
+tup1.a = "x";
+tup2.0 = 10; 
+t = foo();
+</another_assignment_example>
+
+Here is an INCORRECT example of assignment:
+<assignment_incorrect_example>
+var i: int;
+var requestId = 5;  // Direct assignment without variable declaration is incorrect
+var availableServer: machine = ChooseAvailableServer(); // Incorrect to combine declaration and assignment
+i += 1; // operator += not supported for int
+<assignment_incorrect_example>
+</about_assignment>
+
+<about_new_statement>
+New statement is used to create an instance of a machine in P.
+Syntax:: new iden (rvalue?);
+
+Here is an example that uses new to create a dynamic instance of a Client machine
+new Client();
+</new_example>
+</about_new_statement>
+
+<about_raise_statement>
+1. The statement raise e, v; terminates the evaluation of the function raising an event e with payload v.
+2. The control of the state machine jumps to end of the function and the state machine immediately handles the raised event.
+
+Syntax:: raise expr (, rvalue)?;
+rvalue should be same as the payloadType of expr and should STRICTLY be a NAMED TUPLE as detailed in <create_named_tuple_value></create_named_tuple_value> tags.
+
+Here is an example of raise event:
+<raise_event_example>
+fun handleRequest(req: tRequest)
+{
+    // ohh, this is a Add request and I have a event handler for it
+    if(req.type == "Add")
+      raise eAddOperation; // terminates function
+    
+    assert req.type != "Add"; // valid
+}
+
+state HandleRequest {
+  on eAddOperation do AddOperation;
+}
+</raise_event_example>
+</about_raise_statement>
+
+<about_send_statement>
+1. Send statement is one of the most important statements in P as it is used to send messages to other state machines.
+2. Send takes as argument a triple send t, e, v, where t is a reference to the target state machine, e is the event sent and v is the associated payload.
+3. Sends in P are asynchronous and non-blocking. Statement send t, e, v enqueues the event e with payload v into the target machine t's message buffer.
+4. Within EACH machine where you write the send statement, declare variable for the target machine t with the same type as the target machine. If the type for target machine does not exist, declare t as a machine.
+5. t should ALWAYS be a machine and v should ALWAYS be of the same type as the payload type defined for the event e. Do NOT use nested named tuples as the payload v when the payload type is a single field named tuple.
+
+Syntax:: send lvalue, expr (, rvalue)?;
+lvalue should STRICTLY be of the same type as the target machine t.
+rvalue should STRICTLY be of the same type as the payload type defined for the event. Do NOT use nested named tuples as the payload when the payload type is a single field named tuple.
+
+Here is an example of send event with no payload:
+<send_event_example>
+machine BankServer {
+  // inside machine
+}
+
+machine Database {
+    // BankServer is a state machine
+    var server: BankServer;
+    
+    fun AfterReadQuery(query: (accountId: int)) {
+      assert query.accountId in balance, "Invalid accountId received in the read query!";
+      send server, eReadQueryResp;
+    }
+}
+</send_event_example>
+
+Here is an example of send event with payload:
+<send_event_with_payload_example>
+var server: BankServer;
+send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
+</send_event_with_payload_example>
+
+Here is an INCORRECT example of send event with payload:
+<send_event_with_payload_incorrect_example>
+// Missing names in the tuple
+send server, eReadQueryResp, (query.accountId, balance[query.accountId]);
+</send_event_with_payload_incorrect_example>
+</about_send_statement>
+
+<about_announce_statement>
+1. Announce is used to publish messages to specification monitors in P.
+2. Each monitor observes a set of events and whenever a machine sends an event that is in the observes set of a monitor then it is synchronously delivered to the monitor. Announce can be used to publish an event to all the monitors that are observing that event.
+3. Announce only delivers events to specification monitors (not state machines) and hence has no side effect on the system behavior.
+Syntax:: annouce eventName (, rvalue)?;
+rvalue should STRICTLY be of the same type as the payload type defined for the event. Do NOT use nested named tuples as the payload when the payload type is a single field named tuple.
+
+Here is an example of announce event with payload:
+<announce_event_example>
+// Consider a specification monitor that continuously observes eStateUpdate event to keep track of the system state and then asserts a required property when the system converges.
+spec CheckConvergedState observes eStateUpdate, eSystemConverged {
+  // something inside spec
+}
+
+//announce statement can be used to inform the monitor when the system has converged and that we should assert the global specification.
+announce eSystemConverged, payload;
+</announce_event_example>
+</about_announce_statement>
+
+<about_goto_statement>
+1. Goto statement can be used to jump to a particular state. 
+2. On executing a goto, the state machine exits the current state (terminating the execution of the current function) and enters the target state.
+3. Goto statement should ALWAYS be written WITHIN a function body.
+4. The optional payload accompanying the goto statement becomes the input parameter to the function at entry of the target state.
+Syntax:: goto stateName (, rvalue)?;
+
+Here is an example of goto:
+<goto_example>
+start state Init {
+  on eProcessRequest goto SendPingsToAllNodes;
+}
+
+state SendPingsToAllNodes { 
+  // do something 
+}
+
+state {
+  on eFailure, eCancelled goto Done;
+}
+
+state Done {
+  // do something
+}
+</goto_example>
+
+Here is an example of goto with payload:
+<goto_with_payload_example>
+state ServiceRequests {
+  fun processRequest(req: tRequest) {
+    // process request with some logic
+    lastReqId = req.Id;
+    goto WaitForRequests, lastReqId;
+  }
+}
+
+state WaitForRequests {
+    entry AfterRequest_Entry;
+}
+
+fun AfterRequest_Entry(lastReqId: int) {
+  // do something 
+}
+</goto_with_payload_example>
+</about_goto_statement>
+
+<about_receive_statement>
+1. Receive statements in P are used to perform blocking await/receive for a set of events inside a function.
+2. Each receive statement can block or wait on a set of events, all other events are automatically deferred by the state machine.
+3. On receiving an event that the receive is blocking on (case blocks), the state machine unblocks, executes the corresponding case-handler and resumes executing the next statement after receive.
+
+Syntax::
+receive { recvCase+ }
+/* case block inside a receive statement */
+recvCase : case eventList : anonFunction
+
+Here is an example of receive awaiting a single event:
+<receive_awaiting_single_event_example>
+fun AcquireLock(lock: machine)
+{
+    send lock, eAcquireLock;
+    receive {
+        case eLockGranted: (result: tResponse) { /* case handler */ }
+    }
+    print "Lock Acquired!"
+    // Note that when executing the AcquireLock function the state machine blocks at the receive statement, it automatically defers all the events except the eLockGranted event. 
+    // On receiving the eLockGranted, the case-handler is executed and then the print statement.
+}
+</receive_awaiting_single_event_example>
+
+Here is an example of receive awaiting multiple events:
+<receive_awaiting_multiple_events_example>
+fun WaitForTime(timer: Timer, time: int)
+{
+    var success: bool;
+    send timer, eStartTimer, time;
+    receive {
+        case eTimeOut: { success = true; }
+        case eStartTimerFailed: { success = false; }
+    }
+    if (success) print "Successfully waited!"
+    // Note that when executing the WaitForTime function the state machine blocks at the receive statement, it automatically defers all the events except the eTimeOut and eStartTimerFailed events.
+}
+</receive_awaiting_multiple_events_example>
+</about_receive_statement>
+
+<additional_instructions>
+1. Switch case statements are NOT supported in P. Instead, use IfThenElse statements as described in <about_if_then_else_statement></about_if_then_else_statement> tags.
+2. Usage of 'with' keyword is VALID ONLY in the syntax of event handlers as described in <about_event_handler_with_goto></about_event_handler_with_goto> tags.
+3. 'const' keyword is NOT supported in P. Constants in P are defined as described in <about_variables_in_machine></about_variables_in_machine> tags.
+4. 'is' operator is NOT supported in the P language.
+5. 'self' keyword is NOT supported in the P language.
+6. values() or indexOf() functions are NOT supported in P. Do not use library functions from other programming languages.
+7. to string is NOT supported in P.
+
+Here is a non-exhaustive list of the P syntax rules that you should strictly adhere to when writing P code:
+1. Variable declaration and assignment must be done in separate statements.
+2. All variables in a function body must be declared at the top before any other statements.
+3. The `foreach` loop must declare the iteration variable at the top of the function body.
+4. Do not use 'self' or 'this' for accessing variables inside a machine. 
+5. Named function at entry CANNOT take more than 1 parameter, as described in <about_functions_in_machine></about_functions_in_machine> tags.
+6. Exit functions cannot have parameters.
+7. The target machine in a `send` statement must be a variable of the same type as the target machine.
+8. The logical not operator `!` must be used with parentheses: `!(expr in expr)`.
+9. '!in' and 'not in' are not supported for collection membership checks.
+10. Default values for types are obtained using 'default(type)' syntax.
+11. Collections are initialized to empty by default and should not be reassigned to default values.
+12. Initializing non-empty collections requires specific syntax (e.g., `seq += (index, value)`, `map[key] = value`).
+13. The `ignore` statement must list the event names: `ignore eventList;`.
+14. Formatted strings use a specific syntax: `format("formatString {0} {1}", arg1, arg2)`.
+15. Creating a single field named tuple requires a trailing comma after the value assignment, as described in <create_named_tuple_value><create_named_tuple_value> tags.
+16. User defined types are assigned values using named tuples as detailed in <create_named_tuple_value></create_named_tuple_value> tags.
+17. Do NOT access functions contained inside of other machines.
+18. Entry functions in spec machines CANNOT take any parameter.
+19. $, $$, this, new, send, announce, receive, and pop are not allowed in monitor.
+20. All events referenced in the code must be declared and make sure duplicate enum declarations are not present across multiple files.
+21. Ensure all type definitions are available before they are used.
+22. Inside a function, all variable declarations must come at the very beginning of a function, before any executable statements.
+23. P language does not support the += operator for set operations. Use explicit set union syntax or other valid set manipulation methods instead of += for adding elements to sets.
+</additional_instructions>
+</P_statements_guide>

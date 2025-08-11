@@ -1,0 +1,8 @@
+<Project>
+<InputFiles>
+    <PFile>./PSrc</PFile>
+    <PFile>./PTst</PFile>
+</InputFiles>
+<ProjectName>SharedMemory</ProjectName>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

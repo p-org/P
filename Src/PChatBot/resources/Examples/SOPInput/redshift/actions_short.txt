@@ -1,0 +1,27 @@
+findStatus:
+  * description: Returns the status of the query with given id
+  * payload:
+    - query_id: int
+  * returns:
+    - status: string [aborted, failed, canceled, success]
+
+findErrorMessage:
+  * description: Returns the error message of a failed query with given id
+  * payload:
+    - query_id: int
+  * returns:
+    - error_message: string
+
+findExecutionTime:
+  * description: Returns the total time running in the service class
+  * payload:
+    - query_id: int
+  * returns:
+    - execution_time: float
+
+finish:
+    * description: Finishes the investigation
+    * payload:
+      - query_id: int
+    * returns:
+    

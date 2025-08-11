@@ -1,0 +1,85 @@
+Here is the P specification monitors guide:
+<P_specification_monitors_guide>
+P specification monitors or spec machines are used to write the safety and liveness specifications the system must satisfy for correctness.
+
+Syntactically, machines and spec machines in P are very similar in terms of the state machine structure. But, they have some key differences:
+1. spec machines in P are observer machines (imagine runtime monitors); they observe a set of events in the execution of the system and, based on these observed events (may keep track of local states), assert the desired global safety and liveness specifications.
+2. Since spec machines are observer machines, they cannot have any side effects on the system behavior and hence, spec machines cannot perform send, receive, new, and annouce.
+3. spec machines are global machines; in other words, there is only a single instance of each monitor created at the start of the execution of the system.
+4. Since dynamic creation of monitors is not supported, spec machines cannot use this expression described in <about_this_expression></about_this_expression> tags.
+5. spec machines are synchronously composed with the system that is monitored. The way this is achieved is: each time there is a send or announce of an event during the execution of a system, all the monitors or specifications that are observing that event are executed synchronously at that point.
+6. Another way to imagine this is: just before send or annouce of an event, we deliver this event to all the monitors that are observing the event and synchronously execute the monitors at that point.
+7. spec machines can have hot and cold annotations on their states to model liveness specifications.
+8. $, $$, this, new, send, announce, receive, and pop are NOT allowed in monitors.
+9. Entry functions in spec machines CANNOT take any parameter.
+
+Syntax: spec iden observes eventsList statemachineBody;
+iden is the name of the spec machine, 
+eventsList is the comma separated list of events observed by the spec machine, and 
+statemachineBody is the implementation of the specification and its grammar is similar to the grammar in the <about_state_body_in_machine><about_state_body_in_machine> tags.
+
+<safety_specification>
+Here is a specification that checks a very simple global invariant that all eRequest events that are being sent by clients in the system have a globally monotonically increasing rId:
+<safety_specification_example>
+/*******************************************************************
+ReqIdsAreMonotonicallyIncreasing observes the eRequest event and
+checks that the payload (Id) associated with the requests sent
+by all concurrent clients in the system is always globally
+monotonically increasing by 1
+*******************************************************************/
+spec ReqIdsAreMonotonicallyIncreasing observes eRequest {
+    // keep track of the Id in the previous request
+    var previousId : int;
+    start state Init {
+        on eRequest do AfterRequest;
+    }
+
+    fun CheckIfReqIdsAreMonotonicallyIncreasing(req: tRequest) {
+      assert req.rId > previousId, format ("Request Ids not monotonically increasing, got {0}, previously seen Id was {1}", req.rId, previousId);
+      previousId = req.rId;
+    }
+}
+</safety_specification_example>
+</safety_specification>
+
+<liveness_specification>
+1. hot annotation can be used on states to mark them as intermediate or error states.
+2. The key idea is that the system satisfies a liveness specification if, at the end of the execution, the monitor is not in a hot state.
+3. Properties like 'eventually something holds' or 'every event X is eventually followed by Y' or 'eventually the system enters a convergence state' can be specified by marking the intermediate state as hot states and the checker checks that all the executions of the system eventually end in a non-hot state.
+4. If there exists an execution that fails to come out of a hot state eventually, then it is flagged as a potential liveness violation.
+
+Here is a specification that checks the global liveness property that every event eRequest is eventually followed by a corresponding successful eResponse event:
+<liveness_specification_example>
+/**************************************************************************
+GuaranteedProgress observes the eRequest and eResponse events;
+it asserts that every request is always responded by a successful response.
+***************************************************************************/
+spec GuaranteedProgress observes eRequest, eResponse {
+    // keep track of the pending requests
+    var pendingReqs: set[int];
+    start state NopendingRequests {
+        on eRequest goto PendingReqs with AddPendingRequest;
+    }
+
+    hot state PendingReqs {
+      on eResponse do AfterResponse;
+      on eRequest goto PendingReqs with AddPendingRequest;
+    }
+
+    fun AddPendingRequest(req: tRequest) {
+      pendingReqs += (req.rId);
+    }
+
+    fun AfterResponse(resp: tResponse) {
+      assert resp.rId in pendingReqs, format ("unexpected rId: {0} received, expected one of {1}", resp.rId, pendingReqs);
+      if(resp.status == SUCCESS)
+      {
+        pendingReqs -= (resp.rId);
+        if(sizeof(pendingReqs) == 0) // requests already responded
+        goto NopendingRequests;
+      }
+    }
+}
+</liveness_specification_example>
+</liveness_specification>
+</P_specification_monitors_guide>

@@ -1,0 +1,9 @@
+Please generate a design document for the provided P code.
+Here are the instructions on the content that must be included in each section of the design document:
+1. Title: the title of the system modeled in the given P code
+2. Overview: Brief overview of the system described in the P code
+3. Components: For each component or actor in the system, include a brief description of what the component represents and a bulleted list of actions performed by the component
+4. Interactions: For each messages/event being passed between different components/machines, include a description of the interaction, a bulleted list of the Source and Target components, payload, all possible effects of this interaction 
+5. Global Specifications: For each specification, include a bulleted list of correctness properties being checked and assertions made to check these properties
+6. Possible Scenarios: Include a bulleted list of all the possible scenarios of component/actor behaviour that could occur within the system
+7. Enclose the design document content in <design_document></design_document> tags

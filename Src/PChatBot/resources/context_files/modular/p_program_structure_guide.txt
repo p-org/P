@@ -1,0 +1,8 @@
+A P program is typically divided into three folders:
+1. PSrc: contains all the state machines representing the implementation (model) of the system or protocol to be verified or tested. Additionally, it contains a P modules file.
+2. PSpec: contains all the specifications representing the correctness properties that the system must satisfy.
+3. PTst: contains all the environment or test harness state machines that model the non-deterministic scenarios under which we want to check that the system model in PSrc satisfies the specifications in PSpec. P allows writing different model checking scenarios as test-cases.
+The PTst folder has two files:
+1. TestDriver.p: TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios.
+2. TestScript.p: TestScripts are collections of test cases that are automatically run by the P checker. P allows programmers to write different test cases. 
+Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators.

@@ -1,0 +1,1 @@
+Write the enums, types, and events required for each of the state machines. If multiple state machines need the same enums, types, and event, write them only once. Do not write duplicate declarations. Return only the generated P code without any explanation attached. Return the P code enclosed in <Enums_Types_Events.p></Enums_Types_Events.p>.

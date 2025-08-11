@@ -1,0 +1,153 @@
+Here is the P module system guide:
+<P_module_system_guide>
+The P module system allows programmers to decompose their complex system into modules to implement and test the system compositionally. It provides mechanisms for organizing related machines and creating larger systems by combining modules.
+
+<about_modules>
+## Module System Overview
+
+In its simplest form, a module in P is a collection of state machines. The P module system allows constructing larger modules by composing or unioning modules together.
+
+When building distributed systems consisting of multiple components, each component can be implemented as a separate module. These modules can then be:
+- Tested independently with abstractions of other components
+- Combined to validate the entire system
+- Used to verify specific correctness properties
+
+For P test cases, a module representing a **closed system** is used as input for validation. A closed system is one where all machines or interfaces that are created are defined or implemented in the unioned modules.
+</about_modules>
+
+<module_grammar>
+## Module Grammar
+
+```
+modExpr :
+| ( modExpr )                          # AnnonymousModuleExpr
+| { bindExpr (, bindExpr)* }           # PrimitiveModuleExpr
+| union modExpr (, modExpr)+           # UnionModuleExpr
+| assert idenList in modExpr           # AssertModuleExpr
+| iden                                 # NamedModule
+;
+
+# Bind a machine to an interface
+bindExpr : (iden | iden -> iden) ;     # MachineBindExpr
+
+# Create a named module i.e., assign a name to a module
+namedModuleDecl : module iden = modExpr ;   # Named module declaration
+```
+</module_grammar>
+
+<module_types>
+## Module Types
+
+P provides several types of modules to support different system organization needs:
+
+### Named Module
+
+A named module declaration simply assigns a name to a module expression.
+
+**Syntax**: `module mName = modExpr;`
+
+Where `mName` is the assigned name for the module and `modExpr` is any valid module expression.
+
+**Example**:
+```kotlin
+module serverModule = { Server, Timer };
+```
+
+This example assigns the name `serverModule` to a primitive module consisting of machines `Server` and `Timer`.
+
+### Primitive Module
+
+A primitive module is a collection of state machines, optionally with bindings to map machine names.
+
+**Syntax**: `{ bindExpr (, bindExpr)* }`
+
+Where `bindExpr` is either:
+- A machine name (`iden`)
+- A mapping `mName -> replaceName` that binds a machine `mName` to replace a machine name `replaceName`
+
+**Example 1**: Simple machine collection
+```kotlin
+// Define modules for client and server components
+module client = { Client };
+module server = { Server, Timer };
+```
+
+**Example 2**: Module with machine bindings
+```kotlin
+// Replace Server with AbstractServer when this module is used
+module serverAbs = { AbstractServer -> Server, Timer };
+```
+
+The binding in `serverAbs` means that whenever the module is used and a `Server` machine would be created (with `new Server(...)`), the `AbstractServer` machine will be created instead. This is particularly useful for replacing concrete implementations with abstractions for testing or verification.
+
+### Union Module
+
+Union modules combine multiple modules to create larger, more complex modules.
+
+**Syntax**: `union modExpr (, modExpr)+`
+
+Where `modExpr` is any P module expression.
+
+**Example**:
+```kotlin
+// Combine client and server modules
+module system = (union client, server);
+
+// Combine client with abstract server
+module systemAbs = (union client, serverAbs);
+```
+
+In the `system` module, `Client` interacts with `Server`, while in the `systemAbs` module, `Client` interacts with `AbstractServer` because of the binding in `serverAbs`.
+
+### Assert Monitors Module
+
+Assert monitors modules attach specification monitors to a module to verify that the module satisfies certain properties.
+
+**Syntax**: `assert idenList in modExpr`
+
+Where `idenList` is a comma-separated list of monitor (spec machine) names, and `modExpr` is the module whose executions are being monitored.
+
+**Example**:
+```kotlin
+assert AtomicitySpec, EventualResponse in TwoPhaseCommit
+```
+
+This module asserts that all executions of the `TwoPhaseCommit` module satisfy the properties specified by the monitors `AtomicitySpec` and `EventualResponse`.
+
+Important: When attaching monitors to a module, the events observed by the monitors must be sent by some machine in the module.
+</module_types>
+
+<advanced_usage>
+## Advanced Module Features
+
+P also supports more advanced module constructors:
+- **compose**: For compositional reasoning between modules
+- **hide**: For information hiding between modules
+- **rename**: For renaming machines or events
+
+These are primarily used for more advanced compositional reasoning techniques.
+
+### Example of Real-World Module Usage
+
+In complex distributed systems, you might structure modules as:
+
+```kotlin
+// Basic components
+module clientImpl = { Client, ClientLogger };
+module serverImpl = { Server, Timer, Cache };
+module networkImpl = { NetworkProxy, FailureDetector };
+
+// Create a system with all components
+module fullSystem = (union clientImpl, serverImpl, networkImpl);
+
+// Create a test system with abstract network
+module abstractNetwork = { AbstractNetwork -> NetworkProxy };
+module testSystem = (union clientImpl, serverImpl, abstractNetwork);
+
+// Attach safety and liveness specs
+assert SafetySpec, LivenessSpec in fullSystem
+```
+
+This structure allows testing components independently or together, while also enabling formal verification of system properties.
+</advanced_usage>
+</P_module_system_guide>

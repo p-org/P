@@ -1,0 +1,503 @@
+# User-Defined Types
+// Tuple types with named fields
+type tWithDrawReq = (source: Client, accountId: int, amount: int, rId: int);
+type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int, rId: int);
+
+
+// Input parameter type
+type DatabaseInput = (server: BankServer, initialBalance: map[int, int]);
+
+
+# Enumerations
+enum tWithDrawRespStatus {
+  WITHDRAW_SUCCESS,
+  WITHDRAW_ERROR
+}
+
+
+# Collection Types
+// Maps (key-value pairs)
+var balance: map[int, int];              // map from account ID to balance
+var pendingWithDraws: map[int, tWithDrawReq];  // map from request ID to request
+
+
+// Sets
+var pendingWDReqs: set[int];             // set of request IDs
+
+
+// Sequences
+var accountIds: seq[int];                // sequence of account IDs
+
+
+# Events
+## Event Declarations
+// Events with payload types
+event eWithDrawReq : tWithDrawReq;       // withdraw request event
+event eWithDrawResp: tWithDrawResp;      // withdraw response event
+
+
+// Events with inline tuple types
+event eUpdateQuery: (accountId: int, balance: int);
+event eReadQuery: (accountId: int);
+event eReadQueryResp: (accountId: int, balance: int);
+
+
+// Events for specifications
+event eSpec_BankBalanceIsAlwaysCorrect_Init: map[int, int];
+
+
+# State Machines
+## Basic Machine Structure
+machine MachineName
+{
+  // State variables
+  var variableName: type;
+  
+  // States
+  start state StateName {
+    // State body
+  }
+  
+  state AnotherState {
+    // State body
+  }
+}
+
+
+# Complete Machine Example
+machine Client
+{
+  // Machine variables
+  var server: BankServer;
+  var accountId: int;
+  var nextReqId: int;
+  var numOfWithdrawOps: int;
+  var currentBalance: int;
+
+
+  // Start state with entry action and parameters
+  start state Init {
+    entry (input: (serv: BankServer, accountId: int, balance: int))
+    {
+      server = input.serv;
+      currentBalance = input.balance;
+      accountId = input.accountId;
+      nextReqId = accountId * 100 + 1; // unique request IDs
+      goto WithdrawMoney;
+    }
+  }
+
+
+  // State with entry action and event handlers
+  state WithdrawMoney {
+    entry {
+      if(currentBalance <= 10)
+        goto NoMoneyToWithDraw;
+
+
+      send server, eWithDrawReq, 
+        (source = this, accountId = accountId, amount = WithdrawAmount(), rId = nextReqId);
+      nextReqId = nextReqId + 1;
+    }
+
+
+    on eWithDrawResp do (resp: tWithDrawResp) {
+      assert resp.balance >= 10, "Bank balance must be greater than 10!!";
+      
+      if(resp.status == WITHDRAW_SUCCESS) {
+        print format("Withdrawal succeeded, new balance = {0}", resp.balance);
+        currentBalance = resp.balance;
+      }
+      else {
+        assert currentBalance == resp.balance, "Balance should not change on failure";
+        print format("Withdrawal failed, balance = {0}", resp.balance);
+      }
+
+
+      if(currentBalance > 10) {
+        goto WithdrawMoney;
+      }
+    }
+  }
+
+
+  state NoMoneyToWithDraw {
+    entry {
+      assert currentBalance == 10, "Should have exactly 10 when no money to withdraw";
+      print format("No money to withdraw, waiting for deposits!");
+    }
+  }
+}
+
+
+# State Operations
+## State Transitions
+// Unconditional transition
+goto TargetState;
+
+
+// Conditional transitions
+if(condition)
+  goto StateA;
+else
+  goto StateB;
+
+
+##  Entry Actions
+start state Init {
+  entry (parameters) {
+    // Initialize machine variables
+    // Perform setup actions
+  }
+}
+
+
+state SomeState {
+  entry {
+    // Actions performed when entering state
+  }
+}
+
+
+## Event Handlers
+state WaitingState {
+  // Handle specific event
+  on eWithDrawReq do (wReq: tWithDrawReq) {
+    // Process the event
+    // Access payload via parameter
+  }
+  
+  // Handle multiple events
+  on eUpdateQuery do (query: (accountId: int, balance: int)) {
+    balance[query.accountId] = query.balance;
+  }
+  
+  on eReadQuery do (query: (accountId: int)) {
+    send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
+  }
+}
+
+
+# Communication
+## Sending Events
+// Send event with payload
+send targetMachine, eventName, payloadData;
+
+
+// Examples
+send server, eWithDrawReq, (source = this, accountId = accountId, amount = 100, rId = 1);
+send wReq.source, eWithDrawResp, response;
+send database, eUpdateQuery, (accountId = accId, balance = bal);
+
+
+## Receiving Events (Synchronous)
+fun ReadBankBalance(database: Database, accountId: int): int {
+  var currentBalance: int;
+  send database, eReadQuery, (accountId = accountId,);
+  receive {
+    case eReadQueryResp: (resp: (accountId: int, balance: int)) {
+      currentBalance = resp.balance;
+    }
+  }
+  return currentBalance;
+}
+
+
+## Creating New Machines
+// Create machine with parameters
+database = new Database((server = this, initialBalance = initialBalance));
+
+
+// Create machine in function
+server = new BankServer(initAccBalance);
+new Client((serv = server, accountId = accountIds[i], balance = initAccBalance[accountIds[i]]));
+
+
+# Functions
+## Function Declaration and Calls
+// Function with return value
+fun WithdrawAmount(): int {
+  return choose(currentBalance) + 1;
+}
+
+
+// Function with parameters
+fun UpdateBankBalance(database: Database, accId: int, bal: int) {
+  send database, eUpdateQuery, (accountId = accId, balance = bal);
+}
+
+
+// Function returning complex type
+fun CreateRandomInitialAccounts(numAccounts: int): map[int, int] {
+  var i: int;
+  var bankBalance: map[int, int];
+  while(i < numAccounts) {
+    bankBalance[i] = choose(100) + 10;
+    i = i + 1;
+  }
+  return bankBalance;
+}
+
+
+# Control Flow
+## Conditionals
+// If-else statements
+if(balance[wReq.accountId] - wReq.amount > 10) {
+  balance[wReq.accountId] = balance[wReq.accountId] - wReq.amount;
+  send wReq.source, eWithDrawResp, successResponse;
+}
+else {
+  send wReq.source, eWithDrawResp, errorResponse;
+}
+
+
+// Complex conditions
+if(currentBalance - wReq.amount >= 10) {
+  UpdateBankBalance(database, wReq.accountId, currentBalance - wReq.amount);
+  response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, 
+              balance = currentBalance - wReq.amount, rId = wReq.rId);
+}
+
+
+# Loops
+// While loops
+while(i < numAccounts) {
+  bankBalance[i] = choose(100) + 10;
+  i = i + 1;
+}
+
+
+while(i < sizeof(accountIds)) {
+  new Client((serv = server, accountId = accountIds[i], balance = initAccBalance[accountIds[i]]));
+  i = i + 1;
+}
+
+
+# Built-in Operations
+## Assertions
+// Runtime assertions with messages
+assert wReq.accountId in balance, "Invalid accountId received in the withdraw request!";
+assert resp.balance >= 10, "Bank balance must be greater than 10!!";
+assert currentBalance == resp.balance, "Balance should not change on failure";
+
+
+// Formatted assertion messages
+assert resp.rId in pendingWithDraws, 
+  format("Unknown rId {0} in the withdraw response!", resp.rId);
+
+
+## Non-deterministic Choice
+// Choose random value in range [0, n)
+return choose(currentBalance) + 1;    // Random value [1, currentBalance+1]
+SetupClientServerSystem(choose(3) + 2); // Random value [2, 4]
+bankBalance[i] = choose(100) + 10;    // Random value [10, 109]
+
+
+## Collection Operations
+// Map operations
+balance[accountId] = newValue;        // Assignment
+assert accountId in balance;          // Membership test
+keys(bankBalance);                    // Get all keys
+
+
+// Set operations
+pendingWDReqs += (req.rId);          // Add to set
+pendingWDReqs -= (resp.rId);         // Remove from set
+sizeof(pendingWDReqs);               // Set size
+
+
+// Sequence operations
+sizeof(accountIds);                  // Sequence length
+
+
+## String Formatting and Printing
+// Formatted print statements
+print format("Withdrawal with rId = {0} succeeded, new balance = {1}", resp.rId, resp.balance);
+print format("Still have balance = {0}, lets try to withdraw more", currentBalance);
+
+
+// Formatted assertion messages
+format("Unknown accountId {0} in withdraw request. Valid accountIds = {1}", 
+       req.accountId, keys(bankBalance));
+
+
+# Specifications
+## Safety Specifications
+spec BankBalanceIsAlwaysCorrect observes eWithDrawReq, eWithDrawResp, eSpec_BankBalanceIsAlwaysCorrect_Init {
+  var bankBalance: map[int, int];
+  var pendingWithDraws: map[int, tWithDrawReq];
+
+
+  start state Init {
+    on eSpec_BankBalanceIsAlwaysCorrect_Init goto WaitForWithDrawReqAndResp with (balance: map[int, int]) {
+      bankBalance = balance;
+    }
+  }
+
+
+  state WaitForWithDrawReqAndResp {
+    on eWithDrawReq do (req: tWithDrawReq) {
+      assert req.accountId in bankBalance;
+      pendingWithDraws[req.rId] = req;
+    }
+
+
+    on eWithDrawResp do (resp: tWithDrawResp) {
+      assert resp.balance >= 10, "Bank balance must always be >= 10!";
+      
+      if(resp.status == WITHDRAW_SUCCESS) {
+        assert resp.balance == bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount;
+        bankBalance[resp.accountId] = resp.balance;
+      }
+      else {
+        assert bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount < 10;
+        assert bankBalance[resp.accountId] == resp.balance;
+      }
+    }
+  }
+}
+
+
+## Liveness Specifications
+spec GuaranteedWithDrawProgress observes eWithDrawReq, eWithDrawResp {
+  var pendingWDReqs: set[int];
+
+
+  start state NopendingRequests {
+    on eWithDrawReq goto PendingReqs with (req: tWithDrawReq) {
+      pendingWDReqs += (req.rId);
+    }
+  }
+
+
+  hot state PendingReqs {  // 'hot' indicates liveness-critical state
+    on eWithDrawResp do (resp: tWithDrawResp) {
+      assert resp.rId in pendingWDReqs;
+      pendingWDReqs -= (resp.rId);
+      if(sizeof(pendingWDReqs) == 0)
+        goto NopendingRequests;
+    }
+
+
+    on eWithDrawReq goto PendingReqs with (req: tWithDrawReq) {
+      pendingWDReqs += (req.rId);
+    }
+  }
+}
+
+
+# Modules and Testing
+## Module Definitions
+// Group related machines into modules
+module Client = { Client };
+module Bank = { BankServer, Database };
+
+
+// Module with abstraction (substitution)
+module AbstractBank = { AbstractBankServer -> BankServer };
+
+
+## Test Scenarios
+// Test machines
+machine TestWithSingleClient {
+  start state Init {
+    entry {
+      SetupClientServerSystem(1);
+    }
+  }
+}
+
+
+machine TestWithMultipleClients {
+  start state Init {
+    entry {
+      SetupClientServerSystem(choose(3) + 2);
+    }
+  }
+}
+
+
+## Test Scripts
+// Define test cases with assertions
+test tcSingleClient [main=TestWithSingleClient]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, Bank, { TestWithSingleClient });
+
+
+test tcMultipleClients [main=TestWithMultipleClients]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, Bank, { TestWithMultipleClients });
+
+
+// Test with abstraction
+test tcAbstractServer [main=TestWithSingleClient]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, AbstractBank, { TestWithSingleClient });
+
+
+# Advanced Features
+## Event Announcements
+// Broadcast events to specifications
+announce eSpec_BankBalanceIsAlwaysCorrect_Init, initAccBalance;
+
+
+## State Transitions with Data
+// Transition with data passing
+on eSpec_BankBalanceIsAlwaysCorrect_Init goto WaitForWithDrawReqAndResp with (balance: map[int, int]) {
+  bankBalance = balance;
+}
+
+
+## Machine References
+// Store references to other machines
+var server: BankServer;
+var database: Database;
+
+
+// Use 'this' to refer to current machine
+send server, eWithDrawReq, (source = this, accountId = accountId, amount = 100, rId = 1);
+
+
+# Common Patterns
+## Request-Response Pattern
+// Sender side
+send targetMachine, eRequest, requestData;
+
+
+// Handler side
+on eRequest do (req: RequestType) {
+  // Process request
+  var response = processRequest(req);
+  send req.source, eResponse, response;
+}
+
+
+// Response handling
+on eResponse do (resp: ResponseType) {
+  // Handle response
+}
+
+
+State Machine Initialization
+start state Init {
+  entry (params: ParamType) {
+    // Initialize variables from parameters
+    // Create helper machines if needed
+    // Transition to main logic state
+    goto MainState;
+  }
+}
+
+
+## Error Handling Pattern
+if(operationSuccessful) {
+  // Success path
+  send client, eSuccessResponse, successData;
+}
+else {
+  // Error path
+  send client, eErrorResponse, errorData;
+}
+
+
+This guide covers the essential P language syntax through practical examples. The language focuses on state machines, event-driven communication, and formal verification of distributed systems properties.

@@ -1,0 +1,90 @@
+<system_design_document>
+<title> Distributed Lock Server </title>
+
+<introduction>
+The goal of this system is to model a distributed lock server, which is used to manage access to shared resources in a distributed environment. The lock server ensures that only one client can hold a lock on a resource at any given time, preventing conflicts and ensuring consistency.
+
+Assumptions: 
+1. The system allows multiple clients to request and release locks concurrently. 
+2. The lock server is assumed to be reliable; it does not fail, and it always responds to client requests. 
+3. The system does not support lock server replication; there is only a single lock server managing all locks. 
+4. The system models reliable communication between clients and the lock server.
+
+</introduction>
+
+<components>
+
+1. Lock Server
+* Manages locks on resources.
+* Processes lock requests and release requests from clients in the order they are received.
+* Maintains a table of currently held locks and the clients holding them.
+* Grants a lock if it is available, otherwise, it queues the request.
+* Releases a lock when requested by the client holding it, and if there are pending requests for the same lock, it grants the lock to the next client in the queue.
+
+2. Client
+* Sends lock requests to the Lock Server for a specific resource.
+* After acquiring a lock, performs operations on the resource.
+* Sends a release request to the Lock Server after the operations are complete.
+
+</components>
+
+<interactions>
+
+1. eLockRequest
+* Source: Client sending the request
+* Target: Lock Server
+* Payload: Client, Client id, resource Id
+* Description: Client requests a lock on a specific resource.
+* Effects:
+    * If the lock is available, grant it to the client.
+    * If the lock is held by another client, queue the request.
+
+2. eLockResponse
+* Source: Lock Server
+* Target: Client
+* Payload: Client, Client id, resource Id, status (granted/failed)
+* Description: Lock server responds to the client's lock request.
+* Effects:
+    * Client either proceeds with operations on the resource if the lock is granted or waits if queued.
+
+3. eReleaseRequest
+* Source: Client sending the request
+* Target: Lock Server
+* Payload: Client, Client id, resource Id
+* Description: Client sends a request to release the lock on a specific resource.
+* Effects:
+    * Lock Server releases the lock and grants it to the next client in the queue if any.
+
+4. eReleaseResponse
+* Source: Lock Server
+* Target: Client
+* Payload: Client, Client id, resource Id, status (released/granted to next client)
+* Description: Lock Server confirms the release of the lock and informs the next client in the queue if the lock is reassigned.
+* Effects:
+    * The client receives confirmation that the lock has been successfully released.
+
+5. eInformLockServer
+* Source: Lock Server
+* Target: Client
+* Payload: Lock Server
+* Description: LockServer informs clients of its existence and readiness to process requests.
+* Effects:
+    * Clients start sending lock and release requests.
+
+</interactions>
+
+<global_specifications>
+
+1. Mutual Exclusion (safety property): At most one client can hold a lock on a given resource at any time.
+2. Deadlock Freedom (liveness property): The system should ensure that no client is indefinitely waiting for a lock.
+
+</global_specifications>
+
+<possible_scenarios>
+
+1. Multiple clients request the same lock concurrently, and the lock server handles the contention.
+2. Clients request and release locks on different resources, with no contention.
+
+</possible_scenarios>
+
+</system_design_document>

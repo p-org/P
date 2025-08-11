@@ -1,0 +1,16 @@
+Here is the basic P language guide:
+<guide>
+A P program consists of a collection of following top-level declarations:
+1. Enums
+2. User Defined Types
+3. Events
+4. State Machines
+5. Specification Monitors
+6. Global Functions
+7. Module System
+
+Here is the list of all words reserved by the P language. These words have a special meaning and purpose, and they cannot be used as identifiers for variables, enums, types, events, machines, function parameters, etc.:
+<reserved_keywords>
+var, type, enum, event, on, do, goto, data, send, announce, receive, case, raise, machine, state, hot, cold, start, spec, module, test, main, fun, observes, entry, exit, with, union, foreach, else, while, return, break, continue, ignore, defer, assert, print, new, sizeof, keys, values, choose, format, if, halt, this, as, to, in, default, Interface, true, false, int, bool, float, string, seq, map, set, any
+</reserved_keywords>
+</guide>

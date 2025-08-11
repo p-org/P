@@ -1,0 +1,152 @@
+<system_design_document>
+<title> Two Phase Commit Protocol </title>
+
+<introduction>
+The goal of this system is to model a simplified version of the classic two phase commit protocol. 
+The two phase commit protocol uses a coordinator to gain consensus for any transaction spanning across multiple participants. A transaction in our case is simply a write operation for a key-value data store where the data store is replicated across multiple participants. More concretely, a write transaction must be committed by the coordinator only if it's accepted by all the participant replicas, and must be aborted if any one of the participant replicas rejects the write request.
+
+Assumptions: Our transaction commit system is simplified. To list a few:
+1. Our system allows multiple concurrent clients to issue transactions in parallel, but the coordinator serializes these transactions and services them one-by-one.
+2. Our system is not fault-tolerant to node failures, failure of either the coordinator or any of the participants will block the progress forever.
+3. Our system models assume reliable delivery of messages.
+</introduction>
+
+<components>
+<source_components>
+
+1. Coordinator
+* Receives write and read transactions from the clients. 
+* Processes transactions (write and read) from clients one by one in the order received.
+* On receiving a write transaction:
+    * Sends prepare requests to all participants.
+    * Waits for prepare responses from all participants.
+    * Commits or aborts the transaction based on responses.
+    * Times out and aborts if responses are not received in time.
+* On receiving a read transaction:
+    *  randomly selects a participant and forwards the read request to that participant.
+
+2. Participant
+* Waits for requests from the Coordinator.
+* Maintains a local key-value store, which is updated based on the transactions committed by the coordinator.
+* Processes prepare requests from the coordinator by either accepting or rejecting the transaction based on the associated transaction id.
+
+3. Timer
+* Models the non-deterministic behavior of an OS timer.
+* Contains events eStartTimer, eCancelTimer, eTimeOut.
+* Contains functions or API's to interact with the OS Timer.
+
+</source_components>
+
+<test_components>
+
+1. Client
+* Implements the client of the two-phase-commit transaction service.
+* Issues N non-deterministic write-transactions.
+* If the transaction succeeds, then it performs a read-transaction on the same key and asserts that the value read is same as what was written by the write transaction.
+
+</test_components>
+</components>
+
+<interactions>
+A transaction consists of a key, value, and a unique transaction id.
+
+1. eWriteTransReq
+* Source: Client sending the request
+* Target: Coordinator
+* Payload: Client sending the transaction, transaction to be committed.
+* Description: Client sends a write transaction request to the coordinator.
+* Effects:
+    * If the transaction ID is reused, send a timeout response to the client.
+    * Otherwise:
+        * Broadcast prepare requests to all participants.
+        * Start a timer and wait for a prepare success or prepare failure response.
+    * If handling another write transaction, queue the request.
+
+2. eWriteTransResp
+* Source: Coordinator
+* Target: Client
+* Payload: Client sending the transaction, transaction to be committed.
+* Description: Coordinator sends the result of the write transaction request back to the client.
+* Effects:
+    * On success, client sends a read request to the coordinator to verify the value.
+
+3. eReadTransReq
+* Source: Client sending the request
+* Target: Coordinator
+* Payload: Client, key string to read
+* Description: Client requests to read a specific key.
+* Effects:
+    * Coordinator selects a participant to handle the read request.
+
+4. eReadTransResp
+* Source: Participant
+* Target: Client
+* Payload: Key string, value corresponding to the key, read status (success/failure)
+* Description: Participant responds with the value read and status.
+* Effects:
+    * Client verifies that:
+        * the key received in the participant’s response is same as the key sent in the read request.
+        * the value received in the participant’s response is same as the value written by the client.
+
+5. ePrepareReq
+* Source: Coordinator
+* Target: Participant
+* Payload: Key string, value corresponding to the key, transaction ID
+* Description: Coordinator requests the participant to prepare for a transaction.
+* Effects:
+    * Participant adds the transaction to pending transactions if not already present.
+    * Sends SUCCESS if the key is absent from the data store or transaction ID is higher than the current, otherwise sends ERROR.
+
+6. ePrepareResp
+* Source: Participant
+* Target: Coordinator
+* Payload: Participant sending the response, transaction ID, and status of the prepare request for that transaction.
+* Description: Participant responds to the prepare request.
+* Effects:
+    * Coordinator checks if the response is for the current transaction, else ignores it.
+    * If status is successful and all responses are received, Coordinator instructs participants to commit the transaction.
+    * If status is not successful, Coordinator instructs participants to abort the transaction.
+
+7. eCommitTrans
+* Source: Coordinator
+* Target: Participant
+* Payload: Current transaction ID.
+* Description: Coordinator requests the participant to commit a transaction.
+* Effects:
+    * Participant checks that commit transaction request is received for one of the pending transactions only.
+    * Participant commits the transaction and updates its key-value store.
+
+8. eAbortTrans
+* Source: Coordinator
+* Target: Participant
+* Payload: Current transaction ID.
+* Description: Coordinator requests the participant to abort a transaction.
+* Effects:
+    * Participant checks that abort transaction request is received for one of the pending transactions only.
+    * Participant removes the transaction from pending transactions.
+
+9. eInformCoordinator
+* Source: Coordinator
+* Target: Participant
+* Payload: Coordinator
+* Description: Coordinator informs the participant of its existence.
+* Effects:
+    * Participant starts waiting for requests.
+
+</interactions>
+
+<global_specifications>
+
+1. Atomicity (safety property): If a transaction is committed by the coordinator, then it was agreed on by all participants, and if the transaction is aborted, then at least one participant must have rejected the transaction.
+2. Progress (liveness property): Every transaction request from a client must be eventually responded to.
+
+</global_specifications>
+
+<possible_scenarios>
+
+1. 3 participants, 1 coordinator, 1 client, and no failure.
+2. 3 participants, 1 coordinator, and 2 clients, and no failure.
+
+</possible_scenarios>
+
+</system_design_document>

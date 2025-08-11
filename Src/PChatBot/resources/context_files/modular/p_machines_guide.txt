@@ -1,0 +1,410 @@
+Here is the P state machine guide:
+<P_state_machine_guide>
+A P program is a collection of concurrently executing state machines that communicate with each other by sending events (or messages) asynchronously.
+
+The underlying model of computation is similar to that of Gul Agha's Actor-model-of-computation. Here is a summary of the important semantic details of P State Machine:
+1. Each P state machine has an unbounded FIFO buffer associated with it.
+2. Sends are asynchronous, i.e., executing a send operation send t,e,v; adds event e with payload value v into the FIFO buffer of the target machine t.
+3. Variables and functions declared within a machine are local, i.e., they are accessible ONLY from within that machine.
+4. Each state in a machine has an entry and an exit function associated with it. The entry function gets executed when the machine enters that state, and similarly, the exit function gets executed when the machine exits that state on an outgoing transition.
+5. After executing the entry function, a machine tries to dequeue an event from its input buffer or blocks if the buffer is empty. Upon dequeueing an event from its input queue, a machine executes the attached event handler which might transition the machine to a different state.
+6. DO NOT REFER to `module` when creating machine code
+7. Variable declarations using var must be placed at the very beginning of their scope (function or machine level) before any executable statements. You cannot declare variables in the middle of a function after other statements have been executed.
+8. Type consistency is strictly enforced - you cannot assign values of one type to variables of another type. Common issues include assigning integer IDs to machine reference variables, mixing machine references with primitive types, and function parameter/return type mismatches.
+
+
+Do NOT leave a machine empty.
+Do NOT explicitly initialize a machine to null.
+Do NOT access functions contained inside of other machines.
+
+<state_machine_grammar>
+Here's the formal grammar for P State Machines:
+
+```
+# State Machine in P
+machineDecl : machine name machineBody
+
+# State Machine Body
+machineBody : LBRACE machineEntry* RBRACE;
+machineEntry
+  | varDecl
+  | funDecl
+  | stateDecl
+  ;
+
+# Variable Decl
+varDecl : var iden : type ;
+
+# State Declaration in P
+stateDecl : start? (hot | cold)? state name { stateBody* }
+
+# State Body
+stateBody:
+  | entry funName ;                   # StateEntryFunNamed
+  | exit funName;                     # StateExitFunNamed
+
+  ## Transition or Event Handlers in each state
+  | defer eventList ;                               # StateDeferHandler
+  | ignore eventList ;                              # StateIgnoreHandler
+  | on eventList do funName ;                       # OnEventDoHandler
+  | on eventList goto stateName ;                   # OnEventGotoState
+  | on eventList goto stateName with funName ;      # OnEventGotoStateWithNamedHandler
+  ;
+```
+</state_machine_grammar>
+
+<state_machine_declaration>
+A state machine in P is declared using the 'machine' keyword followed by the machine name and a body enclosed in curly braces.
+
+Syntax:: machine MachineName { machineBody }
+
+Example:
+```
+machine TaskManager {
+  // Machine declarations (variables, states, functions)
+}
+```
+
+The machine body can contain:
+1. Variable declarations
+2. State declarations
+3. Function declarations
+</state_machine_declaration>
+
+<about_variables_in_machine>
+A machine can define a set of local variables that are accessible only from within that machine.
+
+Syntax: `var iden : type ;`
+
+Where `iden` is the name of the variable and `type` is the variable datatype.
+
+Example:
+```
+var server: BankServer;
+var accountId: int;
+var nextReqId: int;
+var currentBalance: int;
+```
+</about_variables_in_machine>
+
+<about_state_in_machine>
+A state can be declared in a machine with a name and a stateBody.
+Syntax:: start? (hot | cold)? state name { stateBody* }
+1. A single state in each machine should be marked as the start state to identify this state as the starting state on machine creation.
+2. A machine should contain at least the start state.
+3. Each state in the machine SHOULD have a UNIQUE name.
+
+State annotations:
+- start: The initial state when a machine is created
+- hot: A state where an unhandled event is treated as an error
+- cold: A state where an unhandled event is silently discarded (default if not specified)
+
+The state body can contain:
+1. Entry function declaration (optional)
+2. Exit function declaration (optional)
+3. Event handlers
+4. Defer statements
+5. Ignore statements
+
+Here is an example of a state machine with multiple states:
+<state_machine_example>
+machine TaskManager {
+  // Machine's local variables
+  var tasks: seq[Task];
+  var currentState: int;
+  
+  // Start state - executed when machine is created
+  start state Idle {
+    entry Idle_Entry;
+    
+    on eNewTask do HandleNewTask;
+    on eProcessTask goto Processing;
+  }
+  
+  state Processing {
+    entry Processing_Entry;
+    exit Processing_Exit;
+    
+    on eTaskComplete goto Idle;
+    on eTaskFailed do HandleFailure;
+    
+    // Defer these events until we're back in Idle state
+    defer eNewTask;
+    
+    // Ignore these events in this state
+    ignore eStatusRequest;
+  }
+  
+  // Entry/exit functions and event handlers
+  fun Idle_Entry() {
+    currentState = 0;
+  }
+  
+  fun Processing_Entry() {
+    currentState = 1;
+  }
+  
+  fun Processing_Exit() {
+    // Cleanup before leaving Processing state
+  }
+  
+  fun HandleNewTask(task: Task) {
+    tasks += (sizeof(tasks), task);
+  }
+  
+  fun HandleFailure() {
+    // Handle failure logic
+  }
+}
+</state_machine_example>
+</about_state_in_machine>
+
+<about_named_functions_with_parameters>
+Functions in P state machines can take parameters, which is especially useful for event handlers that need to access payload data from events. These functions are defined using the standard function declaration syntax.
+
+Syntax:
+```
+fun FunctionName(param1: Type1, param2: Type2, ...): ReturnType {
+  // Function body
+}
+```
+
+Examples:
+
+```
+// Event handler function that takes a task parameter
+fun HandleNewTask(task: Task) {
+  print format("Processing task with id: {0}", task.id);
+  tasks += (sizeof(tasks), task);
+}
+
+// Event handler function that takes a withdrawal request parameter
+fun ProcessWithdrawRequest(req: tWithDrawReq) {
+  assert req.accountId in bankBalance,
+    format("Unknown accountId {0} in the withdraw request. Valid accountIds = {1}",
+      req.accountId, keys(bankBalance));
+  
+  // Process the withdrawal
+  if (bankBalance[req.accountId] >= req.amount) {
+    bankBalance[req.accountId] = bankBalance[req.accountId] - req.amount;
+    send req.source, eWithDrawResp, (status = WITHDRAW_SUCCESS, accountId = req.accountId, 
+                                   balance = bankBalance[req.accountId], rId = req.rId);
+  } else {
+    send req.source, eWithDrawResp, (status = WITHDRAW_ERROR, accountId = req.accountId, 
+                                   balance = bankBalance[req.accountId], rId = req.rId);
+  }
+}
+
+// Function that takes multiple parameters with different types
+fun TransferFunds(sourceAcct: int, destAcct: int, amount: int): bool {
+  if (sourceAcct in bankBalance && destAcct in bankBalance && bankBalance[sourceAcct] >= amount) {
+    bankBalance[sourceAcct] = bankBalance[sourceAcct] - amount;
+    bankBalance[destAcct] = bankBalance[destAcct] + amount;
+    return true;
+  }
+  return false;
+}
+```
+
+When these functions are used in event handlers, they receive the payload from the event:
+
+```
+state WaitingForRequests {
+  // The ProcessWithdrawRequest function receives the payload from the eWithDrawReq event
+  on eWithDrawReq do ProcessWithdrawRequest;
+  
+  // Similarly with other event handlers
+  on eTransferFundsReq do HandleTransferRequest;
+}
+
+// This function will be called with the payload from the eTransferFundsReq event
+fun HandleTransferRequest(req: tTransferReq) {
+  var result = TransferFunds(req.sourceAcct, req.destAcct, req.amount);
+  send req.source, eTransferResp, (success = result, rId = req.rId);
+}
+```
+</about_named_functions_with_parameters>
+
+<about_entry_exit_functions>
+Entry and exit functions define behavior that executes when entering or exiting a state.
+
+Entry Function:
+- Executed automatically when a machine enters the state
+- Can optionally take parameters (useful for start states)
+- Defined using 'entry' keyword
+
+Syntax:
+```
+entry FunctionName;  // Reference to a separately defined function that can take parameters
+```
+
+Exit Function:
+- Executed automatically when a machine exits the state
+- Defined using 'exit' keyword
+
+Syntax:
+```
+exit FunctionName;   // Reference to a separately defined function
+```
+
+Examples:
+```
+// State with entry and exit function references
+state Processing {
+  entry ProcessingEntry;
+  exit ProcessingExit;
+}
+
+// Start state with parameterized entry function
+start state Init {
+  entry InitState;
+}
+
+// The entry function defined separately with parameters
+fun InitState(input: (serv: BankServer, accountId: int, balance: int)) {
+  server = input.serv;
+  currentBalance = input.balance;
+  accountId = input.accountId;
+}
+
+// Simple exit function
+fun ProcessingExit() {
+  // Cleanup code
+  pendingOperations = 0;
+}
+```
+
+Defining entry and exit functions for a state is optional. By default, each function is defined as a no-op function, i.e., `{ // nothing }`.
+</about_entry_exit_functions>
+
+<about_machine_creation>
+Machines can be created dynamically using the 'new' keyword. When creating a new machine, you can pass parameters to its start state's entry function:
+
+Syntax:: new MachineName(parameters);
+
+Example:
+```
+// Create a new database machine and pass initialization parameters
+var database = new Database((server = this, initialBalance = initialBalance));
+```
+
+The created machine starts executing from its start state, passing the provided parameters to the entry function.
+</about_machine_creation>
+
+<about_event_handler>
+1. An event handler defined for event E in state S describes what statements are executed when a machine dequeues event E in state S.
+2. An event handler is ALWAYS defined WITHIN a state where you expect the corresponding event to be handled.
+3. An event handler references a named function that can take parameters.
+
+Syntax:
+- To execute an event-handler function on receiving an event: on eNameList do funName;
+- To transition to another state: on eNameList goto stateName;
+- To call a function and transition: on eNameList goto stateName with funName;
+
+Examples of event handlers:
+<event_handler_example>
+state WaitForRelease {
+  // Call function without state change
+  on eRead do SendReadResponse;
+  
+  // Change state without function call
+  on eTimeout goto Error;
+  
+  // Call function and change state
+  on eReset goto Init with ResetSystem;
+}
+</event_handler_example>
+
+Event handlers with functions that take parameters:
+```
+state WaitForWithdrawRequests {
+  // ProcessWithdrawRequest will receive the event payload
+  on eWithDrawReq do ProcessWithdrawRequest;
+  
+  // HandleErrorResponse will receive the error details
+  on eError goto ErrorState with HandleErrorResponse;
+}
+
+fun ProcessWithdrawRequest(req: tWithDrawReq) {
+  // Access the request parameters
+  var accountId = req.accountId;
+  var amount = req.amount;
+  var requestId = req.rId;
+  
+  // Process the request
+  // ...
+}
+
+fun HandleErrorResponse(error: tErrorDetail) {
+  // Log the error before transitioning to ErrorState
+  LogError(error.code, error.message);
+}
+```
+
+Event handlers can also be grouped for multiple events:
+```
+// Multiple events handled the same way
+on eTimeout, eError, eCancel goto CleanupState;
+```
+</about_event_handler>
+
+<about_defer_statement>
+An event can be deferred in a state, which delays the processing of the event until the machine transitions to a state that doesn't defer it.
+
+Syntax:: defer eventList;
+
+<defer_statement_example>
+state Processing {
+  // Defer new requests until we're done processing
+  defer eNewRequest, eConfigChange;
+  
+  // Multiple events can be deferred with a comma-separated list
+  defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
+}
+</defer_statement_example>
+
+Deferred events remain in the machine's input queue but are skipped over until the machine enters a state where the event is not deferred. This is useful for maintaining event ordering while postponing specific events until the machine is ready to handle them.
+
+Important: Whenever a machine encounters a dequeue event, the machine goes over its unbounded FIFO buffer from the front and removes the first event that is not deferred in its current state, keeping the rest of the buffer unchanged.
+</about_defer_statement>
+
+<about_ignore_statement>
+An event can be ignored in a state, which drops the event when received in that state.
+
+Syntax:: ignore eventList;
+
+<ignore_statement_example>
+state WaitForTimerRequests {
+  // Ignore these events in this state (they will be discarded)
+  ignore eCancelTimer, eDelayedTimeOut;
+  
+  // Multiple events can be ignored with a comma-separated list
+  ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
+}
+</ignore_statement_example>
+
+Ignored events are removed from the machine's input queue when received in that state, without triggering any handler. This is useful when certain events are not relevant in a particular state.
+
+You can think of ignore as a shorthand for a no-op handler for the event.
+</about_ignore_statement>
+
+<state_machine_interaction_patterns>
+State machines in P interact with each other primarily through asynchronous event passing. Common patterns include:
+
+1. Client-Server Pattern:
+   - Server machines provide services by handling request events
+   - Client machines send requests and process responses
+
+2. Observer Pattern:
+   - Subject machines send notification events
+   - Observer machines listen for and react to notifications
+
+3. Request-Response Pattern:
+   - Machine A sends a request event to Machine B
+   - Machine B processes the request and sends a response event back to Machine A
+
+4. State Synchronization Pattern:
+   - Machines coordinate by exchanging state information
+   - Used to maintain consistent views of distributed state
+</state_machine_interaction_patterns>
+</P_state_machine_guide>

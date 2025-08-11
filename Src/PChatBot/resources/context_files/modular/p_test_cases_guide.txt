@@ -1,0 +1,122 @@
+Here is the P test cases guide:
+<P_test_cases_guide>
+P test cases are used to define different finite scenarios under which the correctness of a system or module can be verified. Test cases allow developers to systematically check that their systems behave correctly under various conditions.
+
+<test_case_basics>
+## Test Case Overview
+
+Test cases in P define the specific scenarios under which a module or system should be validated. Each test case typically consists of:
+- A system module being tested
+- An environment module (test harness/driver) that generates inputs
+- Optional specification monitors that verify properties
+
+The P checker automatically checks these test cases by exploring all possible executions of the system to ensure it behaves correctly under all scenarios defined by the test case.
+</test_case_basics>
+
+<test_case_grammar>
+## Test Case Grammar
+
+```
+testcase
+| test iden [main=iden] : modExpr ;                  # TestDecl
+;
+```
+
+Where:
+- `iden` (first occurrence) is the test case name
+- `iden` (second occurrence, optional) is the name of the main machine
+- `modExpr` is the module under test, specified using P module expressions
+</test_case_grammar>
+
+<test_case_declaration>
+## Test Case Declaration
+
+**Syntax**: `test tName [main=mName] : module_under_test ;`
+
+Where:
+- `tName` is the name of the test case
+- `mName` (optional) is the name of the **main** machine where the execution of the system starts
+- `module_under_test` is the module to be tested, which can be any valid module expression
+
+When a test case is executed, the P checker creates the specified main machine to start the system's execution. If no main machine is specified, the checker determines a suitable start machine automatically.
+</test_case_declaration>
+
+<properties_checked>
+## Properties Checked by the P Checker
+
+For each test case, the P checker automatically verifies several properties across all possible execution paths:
+
+1. **No Unhandled Events**: Ensures that all events sent to machines are properly handled
+2. **Assertion Validity**: Confirms all local assertions in the program hold
+3. **Deadlock Freedom**: Verifies that the system never reaches a deadlocked state
+4. **Specification Compliance**: Validates that all specification monitors attached to the module are satisfied:
+   - Safety properties are never violated
+   - Liveness properties are eventually satisfied (the system does not remain indefinitely in a "hot" state)
+</properties_checked>
+
+<test_case_examples>
+## Test Case Examples
+
+### Basic Test Case with a Main Machine
+```
+// Test with a single client and a server
+test tcSingleClient [main=TestWithSingleClient]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, Bank, { TestWithSingleClient });
+```
+
+This test case:
+- Is named `tcSingleClient`
+- Starts execution from the `TestWithSingleClient` machine
+- Tests a module consisting of `Client` and `Bank` modules plus a test driver
+- Verifies properties specified by the `BankBalanceIsAlwaysCorrect` and `GuaranteedWithDrawProgress` monitors
+
+### Multiple Test Cases for Different Scenarios
+```
+// Test with a single client and a server
+test tcSingleClient [main=TestDriverSingle]: 
+  (union clientSystem, { TestDriverSingle });
+
+// Test with multiple clients and a server
+test tcMultipleClients [main=TestDriverMultiple]: 
+  (union clientSystem, { TestDriverMultiple });
+
+// Test with clients, server and an abstract network model
+test tcWithNetwork [main=TestDriverNetwork]: 
+  assert NetworkSpec in (union clientSystem, abstractNetwork, { TestDriverNetwork });
+```
+
+These test cases validate the system under different scenarios, from simple single-client tests to more complex configurations with multiple clients or abstract network models.
+</test_case_examples>
+
+<best_practices>
+## Best Practices for Test Cases
+
+1. **Start Simple**: Begin with simple test cases and gradually increase complexity
+2. **Isolate Components**: Test individual components before testing the entire system
+3. **Use Abstractions**: Replace complex components with simpler abstractions to focus testing
+4. **Test Edge Cases**: Create test cases specifically designed to cover edge cases and error scenarios
+5. **Monitor Key Properties**: Attach appropriate specification monitors to verify important system properties
+6. **Incremental Testing**: Create a suite of test cases that incrementally test more features or components
+
+Example of an incremental testing approach:
+```
+// Define component modules
+module clientModule = { Client };
+module serverModule = { Server };
+module networkModule = { Network };
+
+// Define test scenarios with increasing complexity
+test tcClientOnly [main=ClientTest]: 
+  assert ClientSpec in (union clientModule, { ClientTest });
+
+test tcClientServer [main=ClientServerTest]: 
+  assert ClientServerSpec in 
+  (union clientModule, serverModule, { ClientServerTest });
+
+test tcFullSystem [main=FullSystemTest]: 
+  assert SystemSpec in 
+  (union clientModule, serverModule, networkModule, { FullSystemTest });
+```
+</best_practices>
+</P_test_cases_guide>

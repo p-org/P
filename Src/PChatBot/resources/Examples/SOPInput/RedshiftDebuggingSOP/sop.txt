@@ -1,0 +1,81 @@
+Here is the standard operating procedure (SOP) of how to proceed with the investigation:
+Step 1: 
+    * Instruction: Start the investigation. Run the action findStatus to find the status and move on to next step
+    * Action: findStatus
+
+Step 2: 
+    * Instruction:
+        - If the status is Aborted, finish the investigation
+        - If the status is not aborted, then move on to next step
+
+Step 3: 
+    * Instruction:
+        - If the status is Failed, then run the action findErrorMessage to find why the query failed. Once you get the response from findErrorMessage, finish the investigation
+        - If the status is not Failed, then move to next step
+    * Action: findErrorMessage
+
+Step 4: 
+    * Instruction:
+        - If the status is Canceled, finish the investigation
+        - If the status is not canceled, move to next step
+
+Step 5: 
+    * Instruction:
+        - If the status is Finished, that means query ran successfully and we need to debug why it is slow. Run the action findExecutionTime to first verify if query is indeed slow and move on to the next step.
+        - If the status is not Finished, finish the investigation as its invalid input
+    * Action: findExecutionTime
+
+Step 6: 
+    * Instruction:
+        - If the execution time of query is < 60 units, that means it is not slow. Finish the investigation
+        - If the execution time of query is >= 60, then run action checkIfSameQueryPlan to check if slow query and fast query have the same query plan and move to the next step
+    * Action: checkIfSameQueryPlan
+
+Step 7:
+    * Instruction:
+        - If the query plans for slow and fast query are not the same, finish the investigation
+        - If the query plans are same, run action getReturnedRows to get the rows returned by the slow query and the fast query and move to the next step
+    * Action: getReturnedRows
+
+Step 8:
+    * Instruction:
+        - If the rows returned by slow query is more than fast query, finish the investigation
+        - If not, run action getTotalSpilledBlocks to get the total spilled blocks by the slow query and the fast query and move to the next step
+    * Action: getTotalSpilledBlocks
+
+Step 9:
+    * Instruction:
+        - If the total spilled blocks by slow query is more than fast query, finish the inestigation
+        - If not, run action compareTotalSkewness to find if the total skewness for slow and fast queries are similar and move to the next step
+    * Action: compareTotalSkewness
+
+Step 10:
+    * Instruction:
+        - If skewness is different, then finish the investigation
+        - If not, run action getQueueTimes to get the compile times of the slow and fast query and move to the next step
+    * Action: getQueueTimes
+
+Step 11: 
+    * Instruction: 
+        - If queue time for slow query is higher than fast query, finish the investigation
+        - If not, run action getCompileTimes to get the compile times of slow and fast query and move to the next step
+    * Action: getCompileTimes
+
+Step 12: 
+    * Instruction:
+        - If the compile time for the slow query is more than the fast query, finish the investigation
+        - If not, run action getPlanningTimes to get the planning times of slow and fast queries and move to the next step
+    * Action: getPlanningTimes
+
+Step 13: 
+    * Instruction:
+        - If the planning time of slow query is more than the fast query, finish the investigation
+        - If not, run action getLockWaitTimes to get lock wait times for slow and fast queries and move to the next step
+    * Action: getLockWaitTimes
+
+Step 14:
+    * Instruction:
+        - If the lock wait time for slow query is higher than fast query, finish the investigation
+        - If not, finish the investigation with "Could not find anything that explains the query slowness. Ask the user to run the query again so you can re-run the investigation." as the cause
+        
+ 

@@ -15,7 +15,7 @@ namespace Plang.Compiler.Backend.Java
     {
         #region P Java runtime constants
 
-        public static readonly string PRTNamespaceName = "com.amazon.pobserve.runtime";
+        public static readonly string PRTNamespaceName = "pobserve.runtime";
 
         public static readonly string TryAssertMethodName = "tryAssert";
         public static readonly string TryRaiseEventMethodName = "tryRaiseEvent";
@@ -117,15 +117,15 @@ in the body of each function definition as necessary for your project's business
 xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.amazon.p</groupId>
+    <groupId>io.github.p</groupId>
     <artifactId>-package-name-</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <name>-package-name-</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <buildDirectory>${{project.basedir}}/PObserve</buildDirectory>
     </properties>
     <packaging>jar</packaging>
@@ -185,35 +185,35 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// The fully-qualified name of the static `deepClone(PrtValue)` method exposed by
         /// the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtDeepCloneMethodName = "com.amazon.pobserve.runtime.values.Clone.deepClone";
+        internal static readonly string PrtDeepCloneMethodName = "pobserve.runtime.values.Clone.deepClone";
 
         /// <summary>
         /// The fully-qualified name of the static `deepEquality(Object, Object)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtDeepEqualsMethodName = "com.amazon.pobserve.runtime.values.Equality.deepEquals";
+        internal static readonly string PrtDeepEqualsMethodName = "pobserve.runtime.values.Equality.deepEquals";
 
         /// <summary>
         /// The fully-qualified name of the static `compare(Comparable, Comparable)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtCompareMethodName = "com.amazon.pobserve.runtime.values.Equality.compare";
+        internal static readonly string PrtCompareMethodName = "pobserve.runtime.values.Equality.compare";
 
         /// <summary>
         /// The fully-qualified name of the static `elementAt(LinkedHashSet, long)` method
         /// exposed by the Java PRT runtime.
         /// </summary>
-        internal static readonly string PrtSetElementAtMethodName = "com.amazon.pobserve.runtime.values.SetIndexing.elementAt";
+        internal static readonly string PrtSetElementAtMethodName = "pobserve.runtime.values.SetIndexing.elementAt";
 
         /// <summary>
         /// The fully-qualified class name of the Java P runtime's PValue class.
         /// </summary>
-        internal static readonly string PValueClass = "com.amazon.pobserve.runtime.values.PValue";
+        internal static readonly string PValueClass = "pobserve.runtime.values.PValue";
 
         /// <summary>
         /// The fully-qualified class name of the Java P runtime's PEvent class.
         /// </summary>
-        internal static readonly string EventsClass = "com.amazon.pobserve.runtime.events.PEvent";
+        internal static readonly string EventsClass = "pobserve.runtime.events.PEvent";
 
         #endregion
 

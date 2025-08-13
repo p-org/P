@@ -1,7 +1,7 @@
 // P semantics XYZ: two machines, "send", "raise" with payload for non-constant event expressions
 
-event E1 assert 1;
-event E2 assert 1: bool;
+event E1;
+event E2 : bool;
 
 machine Main {
     var XYZ: bool;

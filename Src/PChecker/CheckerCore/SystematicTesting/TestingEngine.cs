@@ -176,28 +176,8 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Creates a new systematic testing engine.
         /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Assembly assembly)
+        private static TestingEngine Create(CheckerConfiguration checkerConfiguration, Assembly assembly)
         {
-            if (checkerConfiguration.ListTestCases)
-            {
-                try
-                {
-                    var testMethods = TestMethodInfo.GetAllTestMethodsFromAssembly(assembly);
-                    Console.Out.WriteLine($".. List of test cases (total {testMethods.Count})");
-
-                    foreach (var mi in testMethods)
-                    {
-                        Console.Out.WriteLine($"{mi.DeclaringType.Name}");
-                    }
-
-                    Environment.Exit(0);
-                }
-                catch
-                {
-                    Error.ReportAndExit($"Failed to list test methods from assembly '{assembly.FullName}'");
-                }
-            }
-
             TestMethodInfo testMethodInfo = null;
             try
             {
@@ -891,7 +871,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Loads and returns the specified assembly.
         /// </summary>
-        private static Assembly LoadAssembly(string assemblyFile)
+        public static Assembly LoadAssembly(string assemblyFile)
         {
             Assembly assembly = null;
 

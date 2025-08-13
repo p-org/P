@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.States;
 using Plang.Compiler.TypeChecker.Types;
 using Plang.Compiler.Util;
@@ -16,13 +18,18 @@ namespace Plang.Compiler.TypeChecker
         private readonly StackProperty<Machine> currentMachine = new StackProperty<Machine>();
         private readonly StackProperty<Scope> currentScope;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
-
+        private IDictionary<string, Variable> globalParams = new Dictionary<string, Variable>();
+            
         private DeclarationVisitor(
             ITranslationErrorHandler handler,
             Scope topLevelScope,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             Handler = handler;
+            foreach (var variable in topLevelScope.Variables)
+            {
+                globalParams.Add(variable.Name, variable);
+            }
             currentScope = new StackProperty<Scope>(topLevelScope);
             this.nodesToDeclarations = nodesToDeclarations;
         }
@@ -41,19 +48,40 @@ namespace Plang.Compiler.TypeChecker
             visitor.Visit(context);
         }
 
+        private void CheckGlobalParamsRedeclare(Variable decl)
+        {
+            if (globalParams.TryGetValue(decl.Name, out var existingDecl))
+            {
+                throw Handler.RedeclareGlobalParam(decl.SourceLocation, decl, existingDecl); 
+            }
+        }
+
+        #region GlobalParams
+        
+        public override object VisitGlobalParamDecl(PParser.GlobalParamDeclContext context)
+        {
+            // COLON type
+            var variableType = ResolveType(context.type());
+
+            // VAR idenList
+            foreach (var t in context.idenList()._names)
+            {
+                var variable = (Variable) nodesToDeclarations.Get(t);
+                variable.Type = variableType;
+                currentScope.Value.Update(variable);
+            }
+            // SEMI
+            return globalParams;
+        } 
+        
+        #endregion GlobalParams
+        
         #region Events
 
         public override object VisitEventDecl(PParser.EventDeclContext context)
         {
             // EVENT name=Iden
-            var pEvent = (Event) nodesToDeclarations.Get(context);
-
-            // cardinality?
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            pEvent.Assume = hasAssume ? cardinality : -1;
-            pEvent.Assert = hasAssert ? cardinality : -1;
+            var pEvent = (Event)nodesToDeclarations.Get(context);
 
             // (COLON type)?
             pEvent.PayloadType = ResolveType(context.type());
@@ -262,14 +290,6 @@ namespace Plang.Compiler.TypeChecker
             // MACHINE name=iden
             var machine = (Machine) nodesToDeclarations.Get(context);
 
-            // cardinality?
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            if (cardinality > uint.MaxValue) throw Handler.ValueOutOfRange(context.cardinality(), "uint32");
-            machine.Assume = hasAssume ? (uint?) cardinality : null;
-            machine.Assert = hasAssert ? (uint?) cardinality : null;
-
             // receivesSends*
             foreach (var receivesSends in context.receivesSends())
             {
@@ -389,6 +409,7 @@ namespace Plang.Compiler.TypeChecker
             for (var i = 0; i < varNameCtxs.Count; i++)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varNameCtxs[i]);
+                CheckGlobalParamsRedeclare(variable);
                 variable.Type = variableType;
                 variables[i] = variable;
             }
@@ -601,7 +622,69 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion
+        
+        public override object VisitPureDecl(PParser.PureDeclContext context)
+        {
+            // PURE name=Iden body=Expr
+            var pure = (Pure) nodesToDeclarations.Get(context);
+            
+            // LPAREN funParamList? RPAREN
+            var paramList = context.funParamList() != null
+                ? (Variable[]) Visit(context.funParamList())
+                : new Variable[0];
+            pure.Signature.Parameters.AddRange(paramList);
+            
+            var temporaryFunction = new Function(pure.Name, context)
+            {
+                Scope = CurrentScope.MakeChildScope()
+            };
 
+            foreach (var p in paramList)
+            {
+                var param = temporaryFunction.Scope.Put(p.Name, p.SourceLocation, VariableRole.Param);
+                param.Type = p.Type;
+                nodesToDeclarations.Put(p.SourceLocation, param);
+                temporaryFunction.Signature.Parameters.Add(param);
+            }
+
+            pure.Scope = temporaryFunction.Scope;
+
+            // (COLON type)?
+            pure.Signature.ReturnType = ResolveType(context.type());
+            
+            // body will be handled in a later stage
+            return pure;
+        }
+        
+        public override object VisitInvariantDecl(PParser.InvariantDeclContext context)
+        {
+            // INVARIANT name=Iden body=Expr
+            var inv = (Invariant) nodesToDeclarations.Get(context);
+            return inv;
+        }
+        
+        public override object VisitAxiomDecl(PParser.AxiomDeclContext context)
+        {
+            // Axiom body=Expr
+            var inv = (Axiom) nodesToDeclarations.Get(context);
+            return inv;
+        }
+
+        public override object VisitInvariantGroupDecl(PParser.InvariantGroupDeclContext context)
+        {
+            var invGroup = (InvariantGroup) nodesToDeclarations.Get(context);
+            invGroup.Invariants = context.invariantDecl().Select(Visit).Cast<Invariant>().ToList();
+            return invGroup;
+        }
+        
+        public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)
+        {
+            // assume on start: body=Expr
+            var assume = (AssumeOnStart) nodesToDeclarations.Get(context);
+            // body will be handled in a later stage
+            return assume;
+        }
+        
         #region Functions
 
         public override object VisitPFunDecl(PParser.PFunDeclContext context)
@@ -649,6 +732,30 @@ namespace Plang.Compiler.TypeChecker
                 else
                     throw Handler.MissingDeclaration(createdInterface, "interface", createdInterface.GetText());
             }
+            
+            
+            var temporaryFunction = new Function(fun.Name, context);
+            temporaryFunction.Scope = fun.Scope.MakeChildScope();
+            
+            // (RETURN LPAREN funParam RPAREN SEMI)?
+            if (context.funParam() != null)
+            {
+                Variable p = (Variable)Visit(context.funParam());
+                // Add the return variable to the scope so that contracts can refer to it 
+                var ret = temporaryFunction.Scope.Put(p.Name, p.SourceLocation, VariableRole.Param);
+                ret.Type = p.Type;
+                nodesToDeclarations.Put(p.SourceLocation, ret);
+                temporaryFunction.Signature.Parameters.Add(ret);
+                
+                fun.ReturnVariable = ret;
+                // update the return type to match
+                fun.Signature.ReturnType = fun.ReturnVariable.Type;
+            }
+            
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            
+            // pre/post conditions are handled in a later phase
+
             return fun;
         }
 

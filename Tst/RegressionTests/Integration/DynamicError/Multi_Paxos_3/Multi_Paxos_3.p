@@ -1,11 +1,11 @@
 /*
 The basic paxos algorithm.
 */
-event prepare assume 3: (proposer: machine, slot : int, proposal : (round: int, servermachine : int)) ;
-event accept  assume 3: (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
-event agree assume 6: (slot:int, proposal : (round: int, servermachine : int), value : int) ;
-event reject  assume 6: (slot: int, proposal : (round: int, servermachine : int));
-event accepted  assume 6: (slot:int, proposal : (round: int, servermachine : int), value : int);
+event prepare : (proposer: machine, slot : int, proposal : (round: int, servermachine : int)) ;
+event accept : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
+event agree : (slot:int, proposal : (round: int, servermachine : int), value : int) ;
+event reject : (slot: int, proposal : (round: int, servermachine : int));
+event accepted : (slot:int, proposal : (round: int, servermachine : int), value : int);
 event local;
 event success;
 event allNodes: (nodes: seq[machine]);
@@ -421,7 +421,7 @@ spec ValmachineityCheck observes announce_client_sent, announce_proposer_sent, a
 The leader election protocol for multi-paxos, the protocol is based on broadcast based approach.
 
 */
-event Ping  assume 4: (rank:int, server : machine);
+event Ping : (rank:int, server : machine);
 event newLeader : (rank:int, server : machine);
 event timeout : (mymachine : machine);
 event startTimer;

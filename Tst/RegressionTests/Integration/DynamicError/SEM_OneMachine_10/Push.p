@@ -2,8 +2,8 @@
 // This XYZ checks that upon executing "goto" transition, exit function is executed,
 // but upon executing "push" transition, exit function is not executed
 
-event E2 assert 1;
-event E1 assert 1;
+event E2;
+event E1;
 
 machine Main {
     start state Real1_Init {

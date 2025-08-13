@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -47,12 +49,23 @@ namespace Plang.Compiler
                 return Environment.ExitCode;
             }
 
-            // Convert functions to lowered SSA form with explicit cloning
-            foreach (var fun in scope.GetAllMethods())
+            if (job.OutputLanguages.Contains(CompilerOutput.PVerifier))
             {
-                IRTransformer.SimplifyMethod(fun);
+                // If using the PVerifier, don't output anything else
+                if (job.OutputLanguages.Count > 1)
+                {
+                    throw new NotSupportedException("PVerifier backend must be used on its own!");
+                }
             }
-
+            else
+            {
+                // Convert functions to lowered SSA form with explicit cloning
+                foreach (var fun in scope.GetAllMethods())
+                {
+                    IRTransformer.SimplifyMethod(fun);
+                }
+            }
+            
             DirectoryInfo parentDirectory = job.OutputDirectory;
             foreach (var entry in job.OutputLanguages.Distinct())
             {
@@ -64,10 +77,24 @@ namespace Plang.Compiler
                 job.Output.WriteInfo($"Code generation for {entry}...");
 
                 // Run the selected backend on the project and write the files.
-                var compiledFiles = job.Backend.GenerateCode(job, scope);
+                IEnumerable<CompiledFile> compiledFiles;
+                try
+                {
+                    compiledFiles = job.Backend.GenerateCode(job, scope);
+                }
+                catch (NotImplementedException e)
+                {
+                    job.Output.WriteError("[NotImplementedError:]\n" + e.Message);
+                    Environment.ExitCode = 1;
+                    return Environment.ExitCode;
+                }
+                
                 foreach (var file in compiledFiles)
                 {
-                    job.Output.WriteInfo($"Generated {file.FileName}.");
+                    if (entry != CompilerOutput.PVerifier)
+                    {
+                        job.Output.WriteInfo($"Generated {file.FileName}.");
+                    }
                     job.Output.WriteFile(file);
                 }
 
@@ -108,6 +135,41 @@ namespace Plang.Compiler
             var lexer = new PLexer(fileStream);
             lexer.AddErrorListener(new PLexerErrorListener(inputFile, job.Handler));
             var tokens = new CommonTokenStream(lexer);
+
+            if (!job.OutputLanguages.Contains(CompilerOutput.PVerifier))
+            {
+                // disallow any pverifier tokens
+                tokens.Fill();
+                foreach (var token in tokens.GetTokens())
+                {
+                    switch (token.Type)
+                    {
+                        case PParser.INVARIANT:
+                        case PParser.AXIOM:
+                        case PParser.IS:
+                        case PParser.FLYING:
+                        case PParser.TARGETS:
+                        case PParser.SENT:
+                        case PParser.PROOF:
+                        case PParser.PROVE:
+                        case PParser.USING:
+                        case PParser.LEMMA:
+                        case PParser.THEOREM:
+                        case PParser.EXCEPT:
+                        case PParser.REQUIRES:
+                        case PParser.ENSURES:
+                        case PParser.FORALL:
+                        case PParser.EXISTS:
+                        case PParser.INIT:
+                        case PParser.PURE:
+                            throw new NotSupportedException(
+                                $"line {token.Line}:{token.Column} \"{token.Text}\" only supported by PVerifier backend.");
+                    }
+                }
+
+                tokens.Reset();
+            }
+
             var parser = new PParser(tokens);
             parser.RemoveErrorListeners();
 
@@ -177,6 +239,43 @@ namespace Plang.Compiler
             {
                 throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
             }
+        }
+
+        public static Process NonBlockingRun(string activeDirectory, string exeName, params string[] argumentList)
+        {
+            var psi = new ProcessStartInfo(exeName)
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                WorkingDirectory = activeDirectory,
+                Arguments = string.Join(" ", argumentList)
+            };
+
+            var proc = new Process { StartInfo = psi };
+            proc.Start();
+            return proc;
+        }
+
+        public static int WaitForResult(Process proc, out string stdout, out string stderr)
+        {
+            string mStderr = "", mStdout = "";
+            proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
+            proc.ErrorDataReceived += (s, e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(e.Data))
+                {
+                    mStderr += $"{e.Data}\n";
+                }
+            };
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+            proc.WaitForExit();
+            stdout = mStdout;
+            stderr = mStderr;
+            return proc.ExitCode;
         }
 
         public static int RunWithOutput(string activeDirectory,

@@ -2,9 +2,9 @@
 // This XYZ checks that when the state is explicitly popped,  exit function of that state is executed
 // Compare this XYZ to PushExplicitPop.p and ImplicitPopExit.p
 
-event E2 assert 1;
-event E1 assert 1;
-event E3 assert 1;
+event E2;
+event E1;
+event E3;
 
 machine Main {
     var XYZ: bool;

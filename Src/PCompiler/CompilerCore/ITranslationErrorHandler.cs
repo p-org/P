@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
@@ -23,6 +24,15 @@ namespace Plang.Compiler
         Exception DuplicateStateEntry(ParserRuleContext location, Function existingHandler, State state);
 
         Exception DuplicateDeclaration(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
+        Exception CyclicProof(ParserRuleContext location, ProofCommand cmd);
+        
+        Exception RedeclareGlobalParam(ParserRuleContext location, IPDecl duplicate, IPDecl existing);
+
+        Exception UndeclaredGlobalParam(ParserRuleContext location, string name);
+        
+        Exception ModifyGlobalParam(ParserRuleContext location, IPDecl existing);
+        
+        Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, string errMsg);
 
         Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount);
 
@@ -37,6 +47,8 @@ namespace Plang.Compiler
         Exception TypeMismatch(IPExpr expr, params TypeKind[] expected);
 
         Exception MissingNamedTupleEntry(PParser.IdenContext location, NamedTupleType namedTuple);
+        Exception MissingMachineField(PParser.IdenContext location, Machine machine);
+        Exception MissingEventField(PParser.IdenContext location, Event pevent);
 
         Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple);
 

@@ -95,7 +95,7 @@ namespace UnitTests
         {
             var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
             var factory = new TestCaseFactory(scratchDir);
-            var testCasePChecker = factory.CreateTestCase(testDir, CompilerOutput.CSharp);
+            var testCasePChecker = factory.CreateTestCase(testDir, CompilerOutput.PChecker);
             TestAssertions.AssertTestCase(testCasePChecker);
         }
     }

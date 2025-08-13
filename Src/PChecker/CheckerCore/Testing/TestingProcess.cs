@@ -2,8 +2,11 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
+using PChecker.IO.Debugging;
 using PChecker.SystematicTesting;
 using PChecker.Utilities;
 
@@ -97,6 +100,48 @@ namespace PChecker.Testing
             {
                 Console.WriteLine($"... ### Process {_checkerConfiguration.TestingProcessId} is terminating");
             }
+        }
+
+        public static List<string> FetchTestCases(CheckerConfiguration checkerConfiguration)
+        {
+            Assembly assembly = TestingEngine.LoadAssembly(checkerConfiguration.AssemblyToBeAnalyzed);
+            List<string> testCases = new List<string>();
+            string testCaseName = checkerConfiguration.TestCaseName;
+            try
+            {
+                var testMethods = TestMethodInfo.GetAllTestMethodsFromAssembly(assembly);
+                if (checkerConfiguration.ListTestCases)
+                {
+                    Console.Out.WriteLine($".. List of test cases (total {testMethods.Count})");
+                }
+                else if (testCaseName is "")
+                {
+                    return [""];
+                }
+                else
+                {
+                    Console.Out.WriteLine($".. Running test cases with prefix '{testCaseName}':");
+                }
+
+                foreach (var mi in testMethods)
+                {
+                    if (checkerConfiguration.ListTestCases)
+                    {
+                        Console.Out.WriteLine($"{mi.DeclaringType.Name}");
+                    }
+
+                    if (mi.DeclaringType.Name.StartsWith(testCaseName))
+                    {
+                        Console.Out.WriteLine($"{mi.DeclaringType.Name}");
+                        testCases.Add(mi.DeclaringType.Name);
+                    }
+                }
+            }
+            catch
+            {
+                Error.ReportAndExit($"Failed to list test methods from assembly '{assembly.FullName}'");
+            }
+            return testCases;
         }
 
         /// <summary>

@@ -55,12 +55,7 @@ namespace UnitTests.Core
                 throw new CompilerTestException(TestCaseError.UnrecognizedTestCaseType);
             }
 
-            if (output.Equals(CompilerOutput.C))
-            {
-                var nativeFiles = testDir.GetFiles("*.c");
-                runner = new PrtRunner(inputFiles, nativeFiles);
-            }
-            else if (output.Equals(CompilerOutput.CSharp))
+            if (output.Equals(CompilerOutput.PChecker))
             {
                 var nativeFiles = testDir.GetFiles("*.cs");
                 runner = new PCheckerRunner(inputFiles, nativeFiles);
@@ -87,7 +82,7 @@ namespace UnitTests.Core
             ICompilerTestRunner runner;
             ITestResultsValidator validator;
 
-            var output = new List<CompilerOutput>{CompilerOutput.C};
+            var output = new List<CompilerOutput>{CompilerOutput.PChecker};
             runner = new CompileOnlyRunner(output, inputFiles.Select(x => x.FullName).ToList());
 
             // TODO: validate information about the particular kind of compiler error

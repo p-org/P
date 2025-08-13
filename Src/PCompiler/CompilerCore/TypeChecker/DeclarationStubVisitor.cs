@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Plang.Compiler.TypeChecker.AST;
@@ -29,7 +31,86 @@ namespace Plang.Compiler.TypeChecker
             var visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
             visitor.Visit(context);
         }
+        
+        #region GlobalParams
+        
+        public override object VisitGlobalParamDecl(PParser.GlobalParamDeclContext context)
+        {
+            foreach (var varName in context.idenList()._names)
+            {
+                var decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.GlobalParams);
+                nodesToDeclarations.Put(varName, decl);
+            }
 
+            return null;
+        }
+        
+        #endregion GlobalParams
+
+        public override object VisitInvariantDecl(PParser.InvariantDeclContext context)
+        {
+            var group = context.Parent as PParser.InvariantGroupDeclContext;
+            var name = group != null ? $"{group.name.GetText()}_{context.name.GetText()}": context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+        
+        public override object VisitAxiomDecl(PParser.AxiomDeclContext context)
+        {
+            var name = $"axiom{CurrentScope.Axioms.Count()}";
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
+        public override object VisitInvariantGroupDecl(PParser.InvariantGroupDeclContext context)
+        {
+            var name = context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            context.invariantDecl().Select(Visit).ToList();
+            return null;
+        }
+
+        public override object VisitProofBlock(PParser.ProofBlockContext context)
+        {
+
+            var name = context.name == null ? $"ProofBlock_{CurrentScope.ProofBlocks.Count()}" : context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            context.proofBody().proofItem().Select(Visit).ToList();
+            return null;
+        }
+
+        public override object VisitProveUsingCmd(PParser.ProveUsingCmdContext context)
+        {
+            var name = string.Join(", ", context._targets.Select(t => t.GetText()));
+            if (context._premises.Count > 0)
+            {
+                name += " using " + string.Join(", ", context._premises.Select(t => t.GetText()));
+            }
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
+        public override object VisitAssumeOnStartDecl(PParser.AssumeOnStartDeclContext context)
+        {
+            var name = $"init{CurrentScope.AssumeOnStarts.Count()}";
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+        
+        public override object VisitPureDecl(PParser.PureDeclContext context)
+        {
+            var name = context.name.GetText();
+            var decl = CurrentScope.Put(name, context);
+            nodesToDeclarations.Put(context, decl);
+            return VisitChildrenWithNewScope(decl, context);
+        }
+        
         #region Events
 
         public override object VisitEventDecl(PParser.EventDeclContext context)
@@ -265,6 +346,10 @@ namespace Plang.Compiler.TypeChecker
         {
             return null;
         }
+        public override object VisitQuantExpr(PParser.QuantExprContext context)
+        {
+            return null;
+        }
 
         public override object VisitUnaryExpr(PParser.UnaryExprContext context)
         {
@@ -377,6 +462,10 @@ namespace Plang.Compiler.TypeChecker
         }
 
         public override object VisitAssertStmt(PParser.AssertStmtContext context)
+        {
+            return null;
+        }
+        public override object VisitAssumeStmt(PParser.AssumeStmtContext context)
         {
             return null;
         }

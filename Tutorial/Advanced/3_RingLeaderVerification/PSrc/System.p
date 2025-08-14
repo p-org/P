@@ -51,7 +51,6 @@ Proof {
 }
 
 machine Server {
-  var aux: set[machine];
   start state Proposing {
     entry {
       send right(this), eNominate, (voteFor=this,);

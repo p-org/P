@@ -169,7 +169,7 @@ namespace Plang.Compiler
                         case PParser.INIT:
                         case PParser.PURE:
                             throw new NotSupportedException(
-                                $"{inputFile.FullName} (line {token.Line}:{token.Column}): \"{token.Text}\" only supported by PVerifier backend.");
+                                $"{inputFile.FullName} (line {token.Line}:{token.Column}): \"{token.Text}\" keyword is only supported by PVerifier backend.");
                     }
                 }
 

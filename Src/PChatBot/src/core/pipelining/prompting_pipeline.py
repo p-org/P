@@ -3,7 +3,7 @@ import json
 from botocore.exceptions import ClientError
 from botocore.config import Config
 from pathlib import Path
-from utils import file_utils
+from utils import file_utils, global_state
 import os
 import utils.constants as constants
 
@@ -111,7 +111,7 @@ class PromptingPipeline:
                 def default(self, obj):
                     if isinstance(obj, bytes):
                         return f"{obj}"
-                    
+
                     return super().default(obj)
             print("======= VALIDATION EXCEPTION WHILE CALLING CONVERSE ======== ")
             # print("------ CONVERSATION ------")
@@ -143,8 +143,14 @@ class PromptingPipeline:
                     model=constants.CLAUDE_3_7, 
                     candidates=1, 
                     heuristic='random', 
-                    inference_config={"maxTokens": 100000, "temperature": 1.0, "topP": 0.999},
+                    inference_config=None,
                     tool_config = {"tools": [DEFAULT_TOOL]}):
+        if inference_config is None:
+            inference_config = {
+                "maxTokens": global_state.maxTokens,
+                "temperature": global_state.temperature,
+                "topP": global_state.topP
+            }
 
         bedrock_client = self._create_bedrock_client()
         

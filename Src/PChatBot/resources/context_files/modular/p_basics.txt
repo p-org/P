@@ -13,4 +13,15 @@ Here is the list of all words reserved by the P language. These words have a spe
 <reserved_keywords>
 var, type, enum, event, on, do, goto, data, send, announce, receive, case, raise, machine, state, hot, cold, start, spec, module, test, main, fun, observes, entry, exit, with, union, foreach, else, while, return, break, continue, ignore, defer, assert, print, new, sizeof, keys, values, choose, format, if, halt, this, as, to, in, default, Interface, true, false, int, bool, float, string, seq, map, set, any
 </reserved_keywords>
+
+<p_specific_restrictions>
+1. DO NOT generate interface declarations in P files. P does not use standalone interface declarations.
+2. Variable declarations: Use only "var name: type;" - NO inline initialization with =
+3. Sequence operations: Use "seq += (index, value)" - NOT "seq += (value)"
+4. Set operations: Use "set += (value)" for direct addition
+5. Module definitions: Only reference existing/declared machines in module lists
+</p_specific_restrictions>
+
+
+
 </guide>

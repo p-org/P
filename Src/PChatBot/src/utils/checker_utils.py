@@ -4,8 +4,9 @@ import os
 from datetime import datetime
 from glob import glob
 
-def run_pchecker_test_case(test_name, project_path, schedules=100, timeout_seconds=20):
-    cmd = ['p', 'check', '-tc', test_name, '-s', str(schedules)]
+def run_pchecker_test_case(test_name, project_path, schedules=100, timeout_seconds=20, seed="default-seed"):
+    cmd = ['p', 'check', '-tc', test_name, '-s', str(schedules), "--seed", str(hash(seed) & 0xffffffff)]
+    print(" ".join(cmd))
     try:
         result = subprocess.run(cmd, capture_output=True, cwd=project_path, timeout=timeout_seconds)
         return result.returncode == 0, result
@@ -22,7 +23,7 @@ def discover_tests(project_path):
     lines = result.stdout.decode('utf-8').split("\n")
     return list(filter(lambda l: starts_with_letter(l), lines))
 
-def try_pchecker(project_path, captured_streams_output_dir=None, schedules=100, timeout=20):
+def try_pchecker(project_path, captured_streams_output_dir=None, schedules=100, timeout=20, seed="default-seed"):
 
     if not captured_streams_output_dir:
         timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -34,7 +35,7 @@ def try_pchecker(project_path, captured_streams_output_dir=None, schedules=100, 
     trace_logs = {}
 
     for test_name in tests:
-        is_pass, result_obj = run_pchecker_test_case(test_name, project_path, schedules=schedules, timeout_seconds=timeout)
+        is_pass, result_obj = run_pchecker_test_case(test_name, project_path, schedules=schedules, timeout_seconds=timeout, seed=seed)
         out_dir = f"{captured_streams_output_dir}/{test_name}" if captured_streams_output_dir else None
         
         if out_dir:

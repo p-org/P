@@ -150,4 +150,25 @@ assert SafetySpec, LivenessSpec in fullSystem
 
 This structure allows testing components independently or together, while also enabling formal verification of system properties.
 </advanced_usage>
+
+<p_module_syntax_rules>>
+WRONG - Interface mapping syntax:
+module MultiClientSystem = { Client -> Client1, Client -> Client2 };
+
+WRONG - Test declarations in module files:
+test testMain = TestConfig;  // WRONG! Test declarations are not allowed in module files
+
+CORRECT - List machines directly:
+module MultiClientSystem = { Client1, Client2, Coordinator, Participant };
+
+Key Rules:
+1. Modules list machine names, not mappings
+2. Use comma-separated machine names only
+3. No -> arrows in module definitions
+4. Only reference machines that are actually defined/declared
+5. Check what machines are available before creating modules
+6. Use only the machine names that appear in your PSrc files
+7. NO test declarations allowed in module files
+</p_module_syntax_rules>
+
 </P_module_system_guide>

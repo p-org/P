@@ -210,7 +210,18 @@ machine TaskManager {
 
   // Function to add a new task to the sequence
   fun AddTask(task: Task) {
-    allTasks += (sizeof(allTasks), task);
+    // Add task to end of sequence using proper index syntax
+    allTasks += (sizeof(allTasks), task);  // Add at index sizeof(allTasks)
+  }
+
+  // Examples of other sequence operations:
+  fun InsertTaskAtStart(task: Task) {
+    allTasks += (0, task);  // Add at index 0
+  }
+
+  fun InsertTaskAtPosition(task: Task, position: int) {
+    // position must be 0 <= position <= sizeof(allTasks)
+    allTasks += (position, task);  // Add at specific index
   }
 }
 </insert_into_sequence_example>
@@ -218,9 +229,15 @@ machine TaskManager {
 Here is an incorrect example of inserting an element in a sequence:
 <insert_into_sequence_incorrect_example>
 var sq : seq[T];
-var x: int;
-// round brackets should contain a pair of values
-sq += (x);
+var x: T;
+
+// WRONG - Missing index:
+sq += (x);  // Wrong: Must specify index
+
+// WRONG - Cannot concatenate sequences:
+sq = sq + (x,);  // Wrong: Cannot use + operator
+sq = append(sq, x);  // Wrong: No append function exists
+sq = sq + default(seq[T]) + (x,);  // Wrong: Cannot concatenate sequences
 </insert_into_sequence_incorrect_example>
 </about_insert_into_sequence>
 

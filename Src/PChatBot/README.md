@@ -33,6 +33,7 @@ python3 -m pip install -r requirements.txt
 ```
 5. Run the following line to run the chatbot.
 ```
-pytest tests/pipeline/pipeline_tests.py::test_pcode_to_designdoc_orig --log-cli-level=INFO
+cd P-Chatbot
+streamlit run src/app.py
 ``` 
 

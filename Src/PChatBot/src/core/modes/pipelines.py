@@ -360,7 +360,7 @@ def request_fix(pipeline, prompt, error_category):
     response = pipeline.get_last_response()
     return response
 
-def apply_patch_correction(filename, contents, patches, err_msg):
+def apply_patch_correction(filename, contents, patches, err_msg, max_attempts=5):
     pipeline = PromptingPipeline()
     pipeline.add_system_prompt("You respond in unified diff format for a given task. No talking.")
     pipeline.add_user_msg(
@@ -379,7 +379,7 @@ Please fix the issue with the patch and give it back.
     attempts = 0
     attempted_patches = []
     while True:
-        if attempts < 5:
+        if attempts < max_attempts:
             pipeline.invoke_llm()
             new_patch = pipeline.get_last_response()
             if new_patch.startswith("`"):
@@ -403,15 +403,10 @@ Please fix the issue with the patch and give it back.
 
     return False, attempted_patches, contents, pipeline.get_token_usage()
 
+
 def create_base_pipeline_fewshot():
-    # Get the absolute path to the project root directory
-    current_file_path = os.path.abspath(__file__)
-    # Go up 3 levels: file -> modes -> core -> src -> project_root
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_file_path))))
-    
-    # Create absolute paths to the required files
-    p_few_shot = os.path.join(project_root, 'resources', 'context_files', 'modular-fewshot', 'p-fewshot-formatted.txt')
-    p_nuances = os.path.join(project_root, 'resources', 'context_files', 'p_nuances.txt')
+    p_few_shot = 'resources/context_files/modular-fewshot/p-fewshot-formatted.txt'
+    p_nuances = 'resources/context_files/p_nuances.txt'
 
     system_prompt = \
         "You are a chatbot dedicated to help with the P language. " + \
@@ -424,7 +419,8 @@ def create_base_pipeline_fewshot():
     
     pipeline = PromptingPipeline()
     pipeline.add_system_prompt(system_prompt)
-    pipeline.add_user_msg(initial_msg, documents = [p_few_shot,p_nuances])
+    pipeline.add_user_msg(initial_msg, documents = [p_nuances])
+    pipeline.add_documents_inline([p_few_shot], preprocessing_function=lambda _, c: f"\n\n<syntax_examples>\n{c}\n</syntax_examples>\n\n")
     return pipeline
 
 def setup_fix_pipeline():

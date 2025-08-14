@@ -8,7 +8,7 @@ P test cases are used to define different finite scenarios under which the corre
 Test cases in P define the specific scenarios under which a module or system should be validated. Each test case typically consists of:
 - A system module being tested
 - An environment module (test harness/driver) that generates inputs
-- Optional specification monitors that verify properties
+- Optional specification monitors that verify properties - If so,use existing specification names in assert clauses
 
 The P checker automatically checks these test cases by exploring all possible executions of the system to ensure it behaves correctly under all scenarios defined by the test case.
 </test_case_basics>
@@ -27,7 +27,10 @@ Where:
 - `iden` (second occurrence, optional) is the name of the main machine
 - `modExpr` is the module under test, specified using P module expressions
 </test_case_grammar>
-
+<test_file_organization>
+</test_file_organization>
+- **TestDriver file**: Contains state machines that implement test harnesses/environment machines
+- **TestScripts file**: Contains test case declarations that reference the test drivers
 <test_case_declaration>
 ## Test Case Declaration
 
@@ -98,6 +101,7 @@ These test cases validate the system under different scenarios, from simple sing
 4. **Test Edge Cases**: Create test cases specifically designed to cover edge cases and error scenarios
 5. **Monitor Key Properties**: Attach appropriate specification monitors to verify important system properties
 6. **Incremental Testing**: Create a suite of test cases that incrementally test more features or components
+7. **NEVER declare the same event in both test scripts and test drivers** - this causes compilation errors!
 
 Example of an incremental testing approach:
 ```
@@ -117,6 +121,14 @@ test tcClientServer [main=ClientServerTest]:
 test tcFullSystem [main=FullSystemTest]: 
   assert SystemSpec in 
   (union clientModule, serverModule, networkModule, { FullSystemTest });
+```
+
+8. When writing P test cases, the main machine must exist in the test module being executed. If using a test driver machine as the main machine, it must be included in the module expression using union syntax.
+
+Example Pattern
+```
+test testName [main=TestDriverMachine] :
+  assert specifications in (union SystemModule, {TestDriverMachine});
 ```
 </best_practices>
 </P_test_cases_guide>

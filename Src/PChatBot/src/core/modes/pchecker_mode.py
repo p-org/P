@@ -16,6 +16,7 @@ from core.pipelining.prompting_pipeline import PromptingPipeline
 from utils import string_utils
 from st_diff_viewer import diff_viewer
 import streamlit_scrollable_textbox as stx
+from pathlib import Path
 
 class Stages(Enum):
     INITIAL = 0
@@ -36,6 +37,7 @@ class Stages(Enum):
 class CheckerConfig:
     schedules: int = 100
     timeout_seconds: int = 20
+    seed: str = "default-seed"
 
 @dataclass
 class InteractiveModeState:
@@ -56,7 +58,10 @@ class InteractiveModeState:
     current_pipeline: PromptingPipeline = pipelines.create_base_pipeline_fewshot()
     debug_str: str = ""
     recent_compile_output: str = ""
-    
+    patch_debug_info: Dict[str, tuple] = field(default_factory=dict) 
+    patch_results_dict: Dict[str, tuple] = field(default_factory=dict) 
+    remaining_faulty_patches_to_fix: Dict[str, tuple] = field(default_factory=dict) 
+    tmp_project_dir: str = ""
 
 @dataclass
 class PCheckerState:
@@ -168,6 +173,10 @@ class PCheckerMode:
                 "Timeout (seconds)", 
                 min_value=1, 
                 value=state.config.timeout_seconds
+            )
+            state.config.seed = st.text_input(
+                "Seed",
+                value=state.config.seed
             )
 
     def _handle_project_submit(self, state):
@@ -295,6 +304,12 @@ class PCheckerMode:
             im_state.current_stage = Stages.RUNNING_FILE_ANALYSIS
             st.rerun()
 
+    @st.dialog("Saved!")
+    def display_save_success_dialog(self, state, im_state):
+        st.text(f"Project was sucessfully saved!")
+        if st.button("Close"):
+            st.rerun()
+
     @st.dialog(f"Test case still Failing!")
     def display_fix_failed_dialog(self, state, im_state):
         print("[display_fix_failed_dialog]")
@@ -316,7 +331,7 @@ class PCheckerMode:
         ptst_files = []
         
         for file_path in im_state.current_project_state.keys():
-            if file_path.endswith('.pproj'):
+            if file_path.endswith('.pproj') or file_path.endswith('.ddoc'):
                 project_files.append(file_path)
             elif file_path.startswith('PSrc/'):
                 psrc_files.append(file_path)
@@ -377,7 +392,7 @@ class PCheckerMode:
         print(f"SELECTED FILES:")
         print('\n\t'.join(im_state.selected_files))
         
-        if st.button("Submit Selected Files"):
+        if st.button("⌯⌲ Submit Selected Files"):
             im_state.current_stage = Stages.RUNNING_ERROR_ANALYSIS
             st.rerun()
     
@@ -388,18 +403,67 @@ class PCheckerMode:
         im_state.additional_user_guidance = st.text_area("Additional guidance:",placeholder="Optional")
         cols = st.columns([1,1,5])
         with cols[0]:
-            if st.button("Agree"): 
+            if st.button("Agree ✅"): 
                 im_state.current_stage = Stages.RUNNING_GET_FIX
                 st.rerun()
         with cols[1]:
-            if st.button("Disagree"): 
+            if st.button("Disagree ❌"): 
                 im_state.current_stage = Stages.RUNNING_ERROR_ANALYSIS
                 st.rerun()
+
+
+    def _handle_save_current_project(self, state, im_state, save_path):
+        try:
+            # Convert to Path objects for easier handling
+            source_dir = Path(im_state.tmp_project_dir)
+            target_dir = Path(save_path)
+            
+            # Check if source directory exists
+            if not source_dir.exists():
+                st.error(f"Source directory does not exist: {source_dir}")
+                return
+            
+            # Create target directory if it doesn't exist
+            target_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create a unique project folder name to avoid overwriting
+            project_name = source_dir.name or "project"
+            final_target = target_dir / project_name
+            
+            # If the target already exists, add a number suffix
+            counter = 1
+            while final_target.exists():
+                final_target = target_dir / f"{project_name}_{counter}"
+                counter += 1
+            
+            # Copy the entire directory tree
+            shutil.copytree(source_dir, final_target)
+            
+            self.display_save_success_dialog(state, im_state)
+            
+        except PermissionError:
+            st.error("Permission denied. Please check that you have write access to the selected folder.")
+        except Exception as e:
+            st.error(f"An error occurred while saving the project: {str(e)}")
+
+    def display_current_goal(self, state, im_state):
+        st.markdown(f"#### Current Goal")
+        st.write(f"Fixing `{im_state.current_error_category}` for `{im_state.current_test_name}`")
+        stx.scrollableTextbox(state.trace_logs[im_state.current_test_name], height=300)
+
+    def display_save_recent_project(self, state, im_state):
+        st.markdown("#### Save Most Recent Project")
+        save_path = st.text_input("Enter the full path where you want to save the project", disabled=not im_state.tmp_project_dir, placeholder="e.g. /home/user/Desktop")
+        st.button("Save", on_click=lambda : self._handle_save_current_project(state, im_state, save_path), disabled=not im_state.tmp_project_dir)
+        if not im_state.tmp_project_dir:
+            st.markdown("_There is no recent project yet_")
 
     def display_interactive_mode_control_center_header(self, state, im_state):
         print("[display_interactive_mode_control_center_header]")
         st.subheader("Interactive Mode Control Center")
-        st.markdown(f"#### Currently fixing {im_state.current_test_name} ")
+        self.display_current_goal(state, im_state)
+        self.display_save_recent_project(state, im_state)
+        st.write("---")
 
     def update_usage_stats(self, state, usage_stats):
         state.usage_stats['cumulative']['inputTokens'] += usage_stats['cumulative']['inputTokens']
@@ -434,7 +498,8 @@ class PCheckerMode:
 
     def run_error_analysis(self, state, im_state):
         selected_files_dict = { f:im_state.current_project_state[f] for f in im_state.selected_files }
-
+        
+        im_state.current_pipeline = pipelines.create_base_pipeline_fewshot()
         with st.spinner("Analyzing error based on selected files ..."):
             im_state.current_error_analysis = pipelines.get_error_analysis(
                 im_state.current_pipeline, 
@@ -446,38 +511,51 @@ class PCheckerMode:
                 )
         im_state.current_stage = Stages.ERROR_ANALYSIS_COMPLETE
         im_state.additional_user_guidance = ""
+
+        im_state.files_to_fix = [f.strip() for f in string_utils.extract_tag_contents(im_state.current_error_analysis, "files_to_fix").split(",")]
         
+        self.update_usage_stats(state, im_state.current_pipeline.get_token_usage())
         # Can't use self.update_usage stats since this is a special case  the pipeline is being reused between this and the previous steps
-        state.usage_stats['cumulative']['inputTokens'] = im_state.current_pipeline.get_token_usage()["cumulative"]["inputTokens"]
-        state.usage_stats['cumulative']['outputTokens'] = im_state.current_pipeline.get_token_usage()["cumulative"]["outputTokens"]
-        state.usage_stats['last_action']['inputTokens'] = im_state.current_pipeline.get_token_usage()["sequential"][-1]["inputTokens"]
-        state.usage_stats['last_action']['outputTokens'] = im_state.current_pipeline.get_token_usage()["sequential"][-1]["outputTokens"]
+        # state.usage_stats['cumulative']['inputTokens'] = im_state.current_pipeline.get_token_usage()["cumulative"]["inputTokens"]
+        # state.usage_stats['cumulative']['outputTokens'] = im_state.current_pipeline.get_token_usage()["cumulative"]["outputTokens"]
+        # state.usage_stats['last_action']['inputTokens'] = im_state.current_pipeline.get_token_usage()["sequential"][-1]["inputTokens"]
+        # state.usage_stats['last_action']['outputTokens'] = im_state.current_pipeline.get_token_usage()["sequential"][-1]["outputTokens"]
 
         st.rerun()
         
     def run_get_fix(self, state, im_state):
         print("[run_get_fix]")
-        selected_files_dict = { f:string_utils.add_line_numbers(im_state.current_project_state[f]) for f in im_state.selected_files }
+        selected_files_dict_numbered = { f:string_utils.add_line_numbers(im_state.current_project_state[f]) for f in im_state.selected_files }
         im_state.current_pipeline = pipelines.create_base_pipeline_fewshot()
-        with st.spinner("Getting fix from LLM..."):
+        files_str = ",".join(im_state.selected_files)
+        with st.spinner(f"Getting fix from LLM. Sent: {files_str}..."):
             patches = pipelines.attempt_fix_error_patches(
                 im_state.current_pipeline,
-                selected_files_dict,
+                selected_files_dict_numbered,
                 im_state.current_error_analysis,
                 im_state.current_error_category,
                 im_state.additional_user_guidance
             )
-            # im_state.new_files_dict = new_files_dict
-            # print(new_files_dict)
+
             im_state.patches = patches
-        
+
+        selected_files_dict = { f:im_state.current_project_state[f] for f in im_state.patches }
+        im_state.patch_results_dict = string_utils.apply_patch_whatthepatch_per_file(im_state.patches, selected_files_dict)
+        im_state.remaining_faulty_patches_to_fix = { k:(c,e) for k,(c,e) in im_state.patch_results_dict.items() if e }
+
         im_state.current_stage = Stages.GET_FIX_COMPLETE
         self.update_usage_stats(state, im_state.current_pipeline.get_token_usage())
         st.rerun()
 
-    def display_fix_diff(self, state, im_state):
-        print("[display_fix_diff]")
+    def display_debug_info_attempted_patches(self, state, im_state):
+        for (filename, (fixed, attempted_patches)) in im_state.patch_debug_info.items():
+            status = "FIXED" if fixed else "FAILED"
+            with st.expander(f"[{status}] {filename}"):
+                for i, ap in enumerate(attempted_patches):
+                        with st.expander(f"Patch Attempt {i}"):
+                            st.code(ap)
 
+    def display_patch_debug_info(self, state, im_state):
         numbered_files_dict = { f:string_utils.add_line_numbers(im_state.current_project_state[f]) for f in im_state.selected_files }
 
         with st.expander("[DevTool] Debug info"):
@@ -489,52 +567,70 @@ class PCheckerMode:
                 for f in numbered_files_dict:
                     with st.expander(f):
                         st.code(numbered_files_dict[f])
-            
-        selected_files_dict = { f:im_state.current_project_state[f] for f in im_state.selected_files }
-        patch_results_dict = string_utils.apply_patch_whatthepatch_per_file(im_state.patches, selected_files_dict)
 
-        st.subheader("File diffs for the generated fix")
-        # print(f"patch_results_dict = \n{patch_results_dict}")
-        for (filename, (contents, err_msg)) in patch_results_dict.items():
-            if not err_msg:
-                print(f"No errors for {filename}")
-                st.markdown(f"###### 📄 {filename}")
+            self.display_debug_info_attempted_patches(state, im_state)
+
+    
+    def run_faulty_patch_adjustment(self, state, im_state, filename, contents, err_msg):
+        fixed, attempted_patches, patched_content, token_usage = pipelines.apply_patch_correction(
+            filename, 
+            contents, 
+            im_state.patches[filename], 
+            err_msg, 
+            max_attempts=5
+        )
+        
+        im_state.patch_results_dict[filename] = (patched_content, err_msg if not fixed else "")
+        im_state.patch_debug_info[filename] = (fixed, attempted_patches)
+        self.update_usage_stats(state, token_usage)
+        del im_state.remaining_faulty_patches_to_fix[filename]
+
+    def display_fix_diff(self, state, im_state):
+        print("[display_fix_diff]")
+
+        self.display_patch_debug_info(state, im_state)
+
+        good_patch_files = [f for f in im_state.patch_results_dict if f not in im_state.remaining_faulty_patches_to_fix]
+        faulty_patch_files = [f for f in im_state.remaining_faulty_patches_to_fix]
+        print(f"faulty_patch_files = {faulty_patch_files}")
+
+        ordered_files = good_patch_files + faulty_patch_files
+
+        for filename in ordered_files:
+            (contents, err_msg) = im_state.patch_results_dict[filename]
+            st.markdown(f"###### 📄 {filename}")
+            if filename in faulty_patch_files:
+                with st.spinner(f"Fixing faulty patch for {filename}"):
+                    self.run_faulty_patch_adjustment(state, im_state, filename, contents, err_msg)
+                st.rerun()
+            else:
+                st.write(f"Orig {len(im_state.current_project_state[filename])} : {(len(contents))} New")
+                with st.expander("Full Code"):
+                    with st.expander(f"Original - {len(im_state.current_project_state[filename])} chars"):
+                        st.code(im_state.current_project_state[filename])
+                    with st.expander(f"New - {len(contents)} chars"):
+                        st.code(contents)
+
                 diff_viewer(
                     im_state.current_project_state[filename], 
                     contents, 
                     split_view=True,
                     disabled_word_diff=True
                     )
-            if err_msg:
-                fixed = False
-                with st.spinner(f"Correcting patch for {filename} ..."):
-                    fixed, attempted_patches, patched_content, token_usage = pipelines.apply_patch_correction(filename, contents, im_state.patches[filename], err_msg)
-                    self.update_usage_stats(state, token_usage)
-                    st.markdown(f"###### 📄 {filename}")
-                    for i, ap in enumerate(attempted_patches):
-                        with st.expander(f"Patch Attempt {i}"):
-                            st.code(ap)
-                    if fixed:
-                        diff_viewer(
-                            im_state.current_project_state[filename], 
-                            patched_content, 
-                            split_view=True,
-                            disabled_word_diff=True
-                            )
-                    else:
-                        st.warning(f"{filename}: {err_msg}")
-                    
-        
-        im_state.new_files_dict = {k:c for (k, (c, _)) in patch_results_dict.items()}
-            # additional_comments[filename] = st.text_area("Comments", key=filename, placeholder="Optional")
+                if err_msg:
+                    st.warning(f"{filename}: {err_msg}")
                 
-        if st.button("Approve"):
-            im_state.current_stage = Stages.RUNNING_APPLY_FIX
-            st.rerun()
+        cols = st.columns([1,1,5])
+        with cols[0]:
+            if st.button("Approve ✅"):
+                im_state.new_files_dict = {k:c for (k, (c, _)) in im_state.patch_results_dict.items()}
+                im_state.current_stage = Stages.RUNNING_APPLY_FIX
+                st.rerun()
 
-        if st.button("Retry"):
-            im_state.current_stage = Stages.RUNNING_GET_FIX
-            st.rerun()
+        with cols[1]:
+            if st.button("Retry ❌"):
+                im_state.current_stage = Stages.RUNNING_GET_FIX
+                st.rerun()
 
     def run_apply_fix(self, state, im_state):
         print("[run_apply_fix]")
@@ -560,6 +656,12 @@ class PCheckerMode:
         print("[display_compile_failed_page]")
         st.subheader("Compilation Error")
         stx.scrollableTextbox(im_state.recent_compile_output, height = 300)
+
+        with st.expander("[DevTools] Patches"):
+            for filename, (patch, _) in im_state.patch_results_dict.items():
+                with st.expander(f"{filename}"):
+                    st.code(patch)
+
         if st.button("Regenerate Fix"):
             im_state.current_stage = Stages.RUNNING_GET_FIX
             st.rerun()
@@ -593,7 +695,8 @@ class PCheckerMode:
             results, trace_dicts, trace_logs = checker_utils.try_pchecker(
                 im_state.tmp_project_dir, 
                 schedules=state.config.schedules, 
-                timeout=state.config.timeout_seconds
+                timeout=state.config.timeout_seconds,
+                seed=state.config.seed
                 )
             
             current_test = im_state.current_test_name
@@ -639,6 +742,8 @@ class PCheckerMode:
             self.run_get_fix(state, im_state)
         if stage == Stages.GET_FIX_COMPLETE:
             self.display_fix_diff(state, im_state)
+            if im_state.remaining_faulty_patches_to_fix:
+                self.run_faulty_patch_adjustment(state, im_state)
         if stage == Stages.RUNNING_APPLY_FIX:
             self.run_apply_fix(state, im_state)
         if stage == Stages.APPLY_FIX_COMPLETE:
@@ -686,7 +791,6 @@ class PCheckerMode:
     def display_statistics_hud(self, state):
         if not state.usage_stats:
             return
-        st.markdown("---")
         st.markdown("### 📊 Token Usage Statistics")
         col1, col2 = st.columns(2)
         with col1:
@@ -718,7 +822,8 @@ class PCheckerMode:
         
         if state.results:
             self.display_checker_summary(state)
-            self.display_statistics_hud(state)
-            st.write("---")
+            st.markdown("---")
             if state.interactive_mode_active:
+                self.display_statistics_hud(state)
+                st.write("---")
                 self.display_interactve_mode_control_center(state)

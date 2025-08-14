@@ -1,105 +1,140 @@
 You are tasked with checking P language code files for compliance with critical compilation rules and making necessary corrections. Follow these steps carefully:
 
-REQUIRED CONTEXT
-Before performing any checks, you must have access to:
-1. The Enums_Types_Events.p file content - This contains all core declarations
-2. List of machine names in the project
-3. Any other existing P files that may contain relevant declarations
-
 1. EVENT DECLARATIONS CHECK
-- First analyze Enums_Types_Events.p to understand existing declarations
+- Analyze Enums_Types_Events.p to understand existing declarations
 - Cross-reference with machine names to understand the system structure
 - Scan the target file for event declarations and usage
+- Module definitions: Only reference existing/declared machines in module lists
+- DO NOT DEFINE ANY NEW MACHINES OR SPECS OR TESTS IN modules
 - Verify that every event used is either:
-  * Declared in Enums_Types_Events.p, or
-  * Properly declared within the current file
+  * Declared in Enums_Types_Events.p, or in any other available files in the context or
+  * Properly declared within the current file 
 - Check for duplicate declarations against Enums_Types_Events.p
-- If an event is used but not declared anywhere, add its declaration to Enums_Types_Events.p
+- If an event is used but not declared anywhere, add its declaration to the current file
 
 2. TYPE DEFINITIONS CHECK
-- First analyze Enums_Types_Events.p for existing type definitions
+- Analyze Enums_Types_Events.p for existing type definitions
 - Create a dependency graph of type usage in the current file
 - For each type reference:
   * Check if it's defined in Enums_Types_Events.p
   * If not, verify it's defined in the current file before usage
   * For types defined in the current file:
-    - Ensure they appear before their first usage
+    - Ensure the types appear before their first usage
     - Check for conflicts with types in Enums_Types_Events.p
     - Move definitions earlier if needed
 
-3. VARIABLE DECLARATIONS CHECK
-- For each function and state in the code:
-  * Identify ALL variable declarations, including those in:
-    - Function bodies
-    - Loop bodies (while, foreach)
-    - Conditional blocks (if/else)
-    - State entry blocks
-  * Move ALL declarations to the beginning of their enclosing scope
-  * For variables used in loops or conditionals:
-    - Move the declaration outside and before the block
-    - Example:
-      ```
-      // INCORRECT:
-      while (i < count) {
-        var temp: int;
-        // ...
+3. VARIABLE DECLARATIONS AND SCOPE CHECK
+- Common Error Pattern 1 - Variables Declared Mid-Block:
+  ```p
+  // INCORRECT
+  machine Client {
+    start state Init {
+      entry {
+        DoSomething();
+        var temp: int;  // Declaration after code
+        temp = 5;
       }
-      
-      // CORRECT:
-      var temp: int;
-      while (i < count) {
-        // ...
-      }
-      ```
-  * Maintain declaration order when moving variables
-  * Ensure all variables are declared before any executable statements
-  * Special attention to machine-level variables:
-    - Should be declared at the top of the machine, before any states or functions
-    - Example:
-      ```
-      machine TestMachine {
-        var client: Client;      // Machine-level variable
-        var count: int;          // Machine-level variable
-        
-        start state Init {
-          var temp: int;         // State-level variable
-          entry Init_Entry { ... }
-        }
-      }
-      ```
+    }
+  }
 
-4. SET AND SEQUENCE OPERATIONS CHECK
-- Search for any use of += operator with sets and sequences
-- For sets, replace += operations with proper set union syntax:
-  * Instead of: set += element
-  * Use: set = set + (element)
-  * Example: resourcesLocked = resourcesLocked + (resourceId)
-- For sequences, use proper sequence append syntax:
-  * Instead of: seq += element
-  * Use: seq = seq + (element,)
-  * The comma is required in the tuple for sequence append
-  * Example: result = result + (elem,)
+  // CORRECT
+  machine Client {
+    start state Init {
+      entry {
+        var temp: int;  // Declaration at start
+        DoSomething();
+        temp = 5;
+      }
+    }
+  }
+  ```
+
+- Common Error Pattern 2 - Variables in Wrong Scope:
+  ```p
+  // INCORRECT
+  machine Server {
+    fun ProcessRequest() {
+      while (HasMore()) {
+        var request: Request;  // Wrong scope
+        HandleRequest(request);
+      }
+    }
+  }
+
+  // CORRECT
+  machine Server {
+    fun ProcessRequest() {
+      var request: Request;  // Correct scope
+      while (HasMore()) {
+        HandleRequest(request);
+      }
+    }
+  }
+  ```
+
+- Declare First, Initialize Later Pattern:
+  ```p
+  // CORRECT P Syntax
+  // ✅ Declaration only
+  var participantsArray: seq[machine];
+  var counter: int;
+  var isReady: bool;
+
+  // ✅ Initialize separately
+  fun InitializeVariables() {
+      participantsArray = default(seq[machine]);
+      counter = 0;
+      isReady = false;
+  }
+  ```
+
+- P Auto-Defaults (Often No Initialization Needed):
+  ```p
+  var counter: int;           // Automatically 0
+  var sequence: seq[int];     // Automatically empty
+  var mapping: map[int, string]; // Automatically empty
+  ```
+
+- CRITICAL: P does NOT support these operations:
+  * NO append() function exists - use seq = seq + (element,)
+  * NO inline initialization like var seq: seq[int] = {};
+
+
+- Type compatibility checks:
+  ```p
+  // Sequence Operations in P:
+  var seq: seq[T];
+  var x: T, i: int;
+
+  // CORRECT - Add element x at index i
+  seq += (i, x);
+
+  // CORRECT - Add element to end of sequence
+  seq += (sizeof(seq), x);
+
+  // WRONG - These are not supported:
+  seq = seq + (x,);           // Wrong: Cannot concatenate with tuple
+  seq = append(seq, x);       // Wrong: No append function
+  seq = seq + default(seq[T]) + (x,);  // Wrong: Cannot concatenate sequences
+  ```
 
 5. VARIABLE INITIALIZATION CHECK
-- Ensure all set and sequence variables are properly initialized before use
-- Set initialization: var = {}
-- Sequence initialization: var = default(seq[type])
-- Initialize at declaration, not after other statements
-- Example:
-  ```
-  var resourcesLocked: set[int] = {};
-  var pendingLockRequests: set[int] = {};
-  ```
+- Initialize collections properly:
+  * Sets: `var mySet: set[int]; mySet = {};`
+  * Sequences: `var mySeq: seq[int]; mySeq = default(seq[int]);`
+  * Maps: `var myMap: map[int, string]; myMap = default(map[int, string]);`
+- Initialize at appropriate scope level, not mixed with other statements
 
 6. TYPE COMPATIBILITY CHECK
 - Check operations between different types:
   * Set operations must be between same set types
   * Cannot directly convert between set and sequence
+  * Sequence element types must match exactly
   * When using set elements in sequence, convert properly:
     - Use helper functions like SetToSeq for conversion
     - Ensure return types match expected types
   * Example:
-    ```
+    ```p
     fun SetToSeq(s: set[int]) : seq[int] {
       var result: seq[int];
       foreach (elem in s) {
@@ -109,39 +144,67 @@ Before performing any checks, you must have access to:
     }
     ```
 
+
+
+8. DUPLICATE DECLARATION CHECK
+- Scan across ALL files for duplicate declarations
+- Check for duplicate spec/monitor names across PSpec files
+- Common error: Same spec declared in multiple files
+- Example fix:
+  ```p
+  // If DeadlockFreedom exists in MutualExclusionSpec.p
+  // Remove it from DeadlockFreedomSpec.p or rename it
+  ```
+
 7. VARIABLE SCOPE CHECK
 - Declare all variables at the start of their scope
 - Move any var declarations found mid-function to the top
 - Ensure variables used in foreach loops are properly declared
+- CRITICAL: P does NOT allow inline initialization in declarations
 - Example:
-  ```
+  ```p
   fun ProcessNextInQueue(resourceId: int) {
+    // ALL variable declarations first - NO inline initialization
     var nextClient: machine;
     var nextClientId: int;
     var i: int;
     var newQueue: seq[machine];
-    // Rest of function...
+    var lockRequest: tLockRequest;
+
+    // Then initialization separately
+    newQueue = default(seq[machine]);
+    i = 0;
+
+    // Rest of function logic...
   }
+  ```
+
+- Fix parser errors like "mismatched input '=' expecting ';'":
+  ```p
+  // WRONG - Causes parser error
+  var lockQueue: seq[tLockRequest] = default(seq[tLockRequest]);
+
+  // CORRECT - Separate declaration and initialization
+  var lockQueue: seq[tLockRequest];
+  lockQueue = default(seq[tLockRequest]);
   ```
 
 CORRECTION PROCESS:
 1. First scan the entire file to identify all issues
 2. Create a list of required changes
 3. Make changes in this order:
-   - Type definitions (to ensure dependencies are correct)
-   - Event declarations
+   - Type definitions and event declarations
    - Variable declarations and initializations
-   - Set and sequence operations
+   - Collection operations syntax
    - Type compatibility issues
-   - Variable scope fixes
 4. For each change:
    - Ensure the syntax matches P language requirements exactly
    - Verify type compatibility
    - Check variable scoping and initialization
-   - Maintain proper tuple syntax (e.g., (elem,) for sequences)
+   - Use correct collection syntax: seq + (elem,), set + (elem), map + (key, value)
 5. After changes:
    - Verify all variables are declared at scope start
-   - Check all set/sequence operations use proper syntax
+   - Check all collection operations use proper P syntax
    - Ensure type compatibility across operations
    - Validate helper functions for type conversions
 6. Maintain original code formatting and comments
@@ -151,11 +214,16 @@ IMPORTANT NOTES:
 - Keep all comments and documentation intact
 - Maintain consistent indentation and code style
 - If multiple solutions are possible, choose the one that requires minimal code changes
-- Document all changes made in comments for traceability
+- Use verified P language syntax for all operations
 
 OUTPUT FORMAT:
-For each file modified, provide:
-1. List of issues found
-2. Changes made to resolve each issue
-3. Before/after code snippets for significant changes
-4. Verification that no new issues were introduced
+These Rules are CRITICAL. YOU MUST FIX THE CODE IF SOMETHING IS WRONG.
+
+MANDATORY REQUIREMENTS:
+- Always return corrected P code, never return unchanged code if issues exist
+- Fix ALL variable declaration positioning issues
+- Fix ALL collection operation syntax issues
+- Fix ALL type compatibility issues
+- Fix ALL event/type declaration issues
+
+Return only the corrected P code without any explanation. Return the P code enclosed in XML tags where the tag name is the filename.

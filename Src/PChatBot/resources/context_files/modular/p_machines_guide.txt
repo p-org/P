@@ -17,6 +17,34 @@ Do NOT leave a machine empty.
 Do NOT explicitly initialize a machine to null.
 Do NOT access functions contained inside of other machines.
 
+
+<machine_file_example>
+```
+// Standalone functions (if needed)
+fun UtilityFunction(param: int): bool {
+  // Implementation
+  return param > 0;
+}
+
+// Machine definitions - no events/types/enums
+machine TaskManager {
+  var tasks: seq[Task];  // Task type comes from context
+  
+  start state Idle {
+    on eStart goto Processing;  // eStart event comes from context
+  }
+  
+  state Processing {
+    on eTask do HandleTask;     // eTask event comes from context
+  }
+  
+  fun HandleTask(task: Task) {
+    // Implementation using contextual types and events
+  }
+}
+```
+</machine_file_example>
+
 <state_machine_grammar>
 Here's the formal grammar for P State Machines:
 
@@ -387,6 +415,35 @@ Ignored events are removed from the machine's input queue when received in that 
 
 You can think of ignore as a shorthand for a no-op handler for the event.
 </about_ignore_statement>
+
+<about_send_statements>
+Machines communicate by sending events asynchronously to other machines using the send statement.
+
+Syntax:: send target, event, payload;
+
+<about_send_statements_example>
+// Send event without payload
+send client, eAcknowledge;
+
+// Send event with simple payload
+send server, eRequest, requestId;
+
+// Send event with complex payload (named tuple)
+send req.source, eWithDrawResp, (status = WITHDRAW_SUCCESS, accountId = req.accountId, 
+                               balance = bankBalance[req.accountId], rId = req.rId);
+
+// Send to dynamically created machine
+var newWorker = new WorkerMachine();
+send newWorker, eStartWork, (taskId = currentTask, priority = HIGH_PRIORITY);
+</about_send_statements_example>
+
+
+The target can be:
+1. A machine reference variable 
+2. this (to send to the current machine)
+3. A field from an event payload that contains a machine reference
+
+</about_send_statements>
 
 <state_machine_interaction_patterns>
 State machines in P interact with each other primarily through asynchronous event passing. Common patterns include:

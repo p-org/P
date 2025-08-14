@@ -1,4 +1,5 @@
 import whatthepatch
+import re
 
 def tag_surround(tagname, contents):
     return f"<{tagname}>\n{contents}\n</{tagname}>"
@@ -46,7 +47,6 @@ def tags_to_md(s, tag_level=4):
     Returns:
     str: Markdown formatted string with section tags converted to headings
     """
-    import re
     
     # Initialize result string
     result = ""
@@ -195,6 +195,24 @@ def apply_patch_whatthepatch_per_file(patch_content_dict, file_contents):
         
     return result
 
+
+def extract_tag_contents(full_string, tag_name):
+    """
+    Extracts the contents between XML-style tags in a multiline string.
+    
+    Parameters:
+    full_string (str): The input string containing tagged content
+    tag_name (str): The name of the tag to extract content from
+    
+    Returns:
+    str: The content between the opening and closing tags, or None if not found
+    """
+    pattern = f"<{tag_name}>(.*?)</{tag_name}>"
+    match = re.search(pattern, full_string, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return None
+    
 
 # Alternative implementation using whatthepatch (another good option)
 def apply_patch_whatthepatch(patch_content, file_contents):

@@ -12,6 +12,6 @@ Below is the P project code where each .p file is provided within XML tags with 
 
 Based on the code and error trace above, generate the following:
 1. A clear explanation of what's causing the error. Enclose the explanation in "error_understanding" xml tag
-2. Generate the single most recommended solution to fix this issue. Please provide fix description of only the best approach. Enclose this in "fix_description" xml tag
+2. Please provide a brief, natural language description of only the best approach to fixing the error. Enclose this in "fix_description" xml tag
 3. Based on the recommended solution above, list only the files that need to be modified (separated by commas). Enclose this in "files_to_fix" xml tags
 4. Do NOT modify, add, or remove test cases.

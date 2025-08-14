@@ -1,0 +1,183 @@
+P Language Compiler Guide: Common Errors and Solutions
+
+1. State Transition Function State Changes
+Error: "Method is used as a transition function, but might change state here"
+Problem: When a transition function (used in 'on' handlers) contains state-changing logic but also has conditional state transitions, it can lead to non-deterministic behavior.
+Solution: 
+- Move state-changing logic (like variable assignments) to the entry function of the target state
+- Keep transition functions focused purely on determining the next state
+- Use 'do' handlers instead of 'goto' with conditions if you need complex logic
+Example:
+Incorrect:
+```
+on eResponse goto Working with (response) {
+    if (response.status == SUCCESS) {
+        someVar = true;  // State change!
+    } else {
+        goto Ready;  // Conditional transition
+    }
+}
+```
+
+Correct:
+```
+on eResponse do (response) {
+    if (response.status == SUCCESS) {
+        goto Working;
+    } else {
+        goto Ready;
+    }
+}
+
+state Working {
+    entry {
+        someVar = true;  // State change moved to entry
+        // other initialization
+    }
+}
+```
+
+Best Practices:
+1. Keep transition functions pure - they should only determine the next state
+2. Put state-changing logic in entry/exit functions
+3. Use 'do' handlers when you need complex conditional logic
+4. Ensure state transitions are deterministic
+
+2. Duplicate Declarations
+Error: "'name' duplicates declaration 'name' at file:line:column"
+Problem: In P language, module names, machine names, and other declarations must be unique. This error occurs when the same name is declared multiple times.
+Solution:
+- Ensure each module has a unique name
+- Check for duplicate machine declarations
+- Remove the duplicate declaration in the current file
+Example:
+Incorrect:
+```
+module distributedLockSystem {
+  // First declaration
+}
+
+module distributedLockSystem {  // Error: Duplicate module name
+  // Second declaration
+}
+```
+
+Correct:
+```
+module distributedLockSystem {
+  // Single declaration with unique name
+}
+
+module clientModule {  // Different name for second module
+  // Another module
+}
+```
+
+Best Practices:
+1. Use descriptive, unique names for modules and machines
+2. Keep a consistent naming convention
+3. Check for name conflicts across all project files
+4. Consider using prefixes for related modules
+
+3. Variable Declaration Scope
+Error: "parse error: extraneous input 'var' expecting {...}"
+Problem: In P language, variable declarations must appear at the start of their scope block, before any other statements.
+Solution:
+- Move all variable declarations to the beginning of the scope block
+- Declare all variables needed in a function/state at the start
+Example:
+Incorrect:
+```
+fun MyFunction() {
+    DoSomething();
+    var x: int;  // Error: var declaration after statements
+    x = 5;
+}
+```
+
+Correct:
+```
+fun MyFunction() {
+    var x: int;  // Correct: var declaration at start of scope
+    DoSomething();
+    x = 5;
+}
+```
+
+3. Collection Type Operations
+Error: "expected int/float but got seq/set/map"
+Problem: P language has strict type checking for collections (seq, set, map). Common errors occur when:
+- Trying to add elements of wrong type to collections
+- Using incorrect insertion syntax
+- Mixing collection types
+
+Solution:
+For sequences (seq):
+```
+var mySeq: seq[int];            // Declare sequence of integers
+mySeq += (0, 5);               // Add element 5 at index 0
+mySeq += (sizeof(mySeq), 10);  // Add element 10 at end of sequence
+
+// WRONG - These are not supported:
+mySeq = mySeq + (5,);          // Wrong: Cannot concatenate with tuple
+mySeq = append(mySeq, 5);      // Wrong: No append function
+```
+
+For sets (set):
+```
+var mySet: set[string];     // Declare set of strings
+mySet += ("element");       // Add element using += with parentheses
+mySet -= ("element");       // Remove element using -=
+```
+
+For maps (map):
+```
+var myMap: map[int, string];    // Declare map with int keys, string values
+myMap += (1, "value");          // Add using += tuple syntax
+myMap[1] = "value";            // Alternative: direct key assignment
+```
+
+Best Practices:
+1. Always declare collection type with proper element type(s)
+2. Use correct syntax for each collection type:
+   - Sequence: += (index, value) for insertion
+   - Set: += (element) with parentheses
+   - Map: Either += (key, value) or key assignment
+3. For sequences, use sizeof() to append to end
+4. Never try to concatenate sequences with +
+5. Always use parentheses around elements for set operations
+
+4. Module Visibility and Imports
+Error: "could not find variable, enum element, or event 'name'"
+Problem: Even though the type/enum/event exists in another file (like Enums_Types_Events.p), it's not visible in the current module because it hasn't been properly imported.
+Solution:
+- Import the module containing the declarations
+- Use the correct module name in the import statement
+- Place imports at the top of the file
+
+Example:
+Incorrect:
+```
+// Client.p
+machine Client {
+    var state: ConsensusState;  // Error: ConsensusState not found
+}
+```
+
+Correct:
+```
+// Client.p
+module ClientModule {
+    import Enums_Types_Events;  // Import module containing ConsensusState
+
+    machine Client {
+        var state: ConsensusState;  // Now ConsensusState is visible
+    }
+}
+```
+
+Best Practices:
+1. Always import modules that contain needed declarations
+2. Place all imports at the top of the file
+3. Use consistent module names across the project
+4. Check import statements when declarations can't be found

@@ -1,3 +1,5 @@
+Here are P language syntax examples that demonstrate proper syntax usage when writing/correcting P programs:
+
 # User-Defined Types
 // Tuple types with named fields
 type tWithDrawReq = (source: Client, accountId: int, amount: int, rId: int);
@@ -434,6 +436,62 @@ test tcAbstractServer [main=TestWithSingleClient]:
   assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
   (union Client, AbstractBank, { TestWithSingleClient });
 
+
+# Event Handling Control
+## Ignoring Events
+// Use ignore to explicitly drop certain events in specific states without causing unhandled event exceptions:
+pstate WaitForTransactions {
+  on eWriteTransReq do (wTrans : tWriteTransReq) {
+    // Handle write transaction
+    currentWriteTransReq = wTrans;
+    BroadcastToAllParticipants(ePrepareReq, wTrans.trans);
+    StartTimer(timer);
+    goto WaitForPrepareResponses;
+  }
+
+  on eReadTransReq do (rTrans : tReadTransReq) {
+    // Handle read transaction
+    send choose(participants), eReadTransReq, rTrans;
+  }
+
+  // Ignore these events when in this state - they're from previous transactions
+  ignore ePrepareResp, eTimeOut;
+}
+
+# Deferring Events
+// Use defer to postpone handling of events until the machine transitions to a state that can handle them:
+pstate WaitForPrepareResponses {
+  // Defer write requests - process transactions sequentially
+  defer eWriteTransReq;
+
+  on ePrepareResp do (resp : tPrepareResp) {
+    // Process prepare response
+    if (currentWriteTransReq.trans.transId == resp.transId) {
+      if(resp.status == SUCCESS) {
+        countPrepareResponses = countPrepareResponses + 1;
+        if(countPrepareResponses == sizeof(participants)) {
+          DoGlobalCommit();
+          goto WaitForTransactions; // Deferred events will be handled here
+        }
+      }
+      else {
+        DoGlobalAbort(ERROR);
+        goto WaitForTransactions; // Deferred events will be handled here
+      }
+    }
+  }
+
+  on eTimeOut goto WaitForTransactions with { DoGlobalAbort(TIMEOUT); }
+
+  // Still handle read requests immediately
+  on eReadTransReq do (rTrans : tReadTransReq) {
+    send choose(participants), eReadTransReq, rTrans;
+  }
+}
+# Key Differences:
+
+ignore: Events are permanently dropped and lost
+defer: Events are queued and will be processed when the machine transitions to a state that can handle them
 
 # Advanced Features
 ## Event Announcements

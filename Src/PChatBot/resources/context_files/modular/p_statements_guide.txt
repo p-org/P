@@ -432,6 +432,5 @@ Here is a non-exhaustive list of the P syntax rules that you should strictly adh
 20. All events referenced in the code must be declared and make sure duplicate enum declarations are not present across multiple files.
 21. Ensure all type definitions are available before they are used.
 22. Inside a function, all variable declarations must come at the very beginning of a function, before any executable statements.
-23. P language does not support the += operator for set operations. Use explicit set union syntax or other valid set manipulation methods instead of += for adding elements to sets.
 </additional_instructions>
 </P_statements_guide>

@@ -11,7 +11,12 @@ def log_Pcode(Pcode, parent_dirname, dirname, filename):
     Logs the provided P code to a specified file within a directory structure.
     """
     folder_path = globals.custom_dir_path or globals.recent_dir_path
-    file_path = os.path.join(folder_path, parent_dirname, dirname, filename)
+    # If filename already contains dirname (e.g. "PSrc/Client.p"), don't add dirname again
+    if dirname in filename:
+        file_path = os.path.join(folder_path, parent_dirname, filename)
+    else:
+        file_path = os.path.join(folder_path, parent_dirname, dirname, filename)
+    logger.info(f"Writing P code to: {file_path}")
     file_utils.write_file(file_path, Pcode)
 
 
@@ -19,8 +24,7 @@ def log_Pcode_to_file(Pcode, file_path):
     """
     Logs the provided P code to the specified file path.
     """
-    if os.path.exists(file_path):
-        logger.info(f"File doesnt exists to write {file_path} ")
+    logger.info(f"Writing P code to: {file_path}")
     file_utils.write_file(file_path, Pcode)
 
 

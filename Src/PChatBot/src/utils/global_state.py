@@ -24,10 +24,23 @@ model_id_sonnet3_5_v2 = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
 
 # Claude 3.7 Sonnet
 model_id_sonnet3_7 = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+model_id_sonnet4 = "us.anthropic.claude-sonnet-4-20250514-v1:0"
+model_id_opus_4 = "us.anthropic.claude-opus-4-20250514-v1:0"
 
+# Model-specific token limits
+model_token_limits = {
+    "us.anthropic.claude-opus-4-20250514-v1:0": 65536,
+    "us.anthropic.claude-sonnet-4-20250514-v1:0": 65536,
+    "us.anthropic.claude-3-7-sonnet-20250219-v1:0": 100000,
+    "us.anthropic.claude-3-5-sonnet-20241022-v2:0": 100000,
+    "us.anthropic.claude-3-5-sonnet-20240620-v1:0": 100000,
+    "anthropic.claude-3-sonnet-20240229-v1:0": 100000,
+    "mistral.mistral-large-2407-v1:0": 100000
+}
+
+# Default model and its token limit
 model_id = model_id_sonnet3_7
-
-maxTokens = 100000
+maxTokens = model_token_limits[model_id]  # Initialize with default model's limit
 temperature = 1.0
 topP = 0.999
 
@@ -81,6 +94,8 @@ P_MODULE_SYSTEM_GUIDE = os.path.join(RESOURCES_DIR, "context_files", "modular", 
 P_SPEC_MONITORS_GUIDE = os.path.join(RESOURCES_DIR, "context_files", "modular", "p_spec_monitors_guide.txt")
 P_TEST_CASES_GUIDE = os.path.join(RESOURCES_DIR, "context_files", "modular", "p_test_cases_guide.txt")
 P_PROGRAM_STRUCTURE_GUIDE = os.path.join(RESOURCES_DIR, "context_files", "modular", "p_program_structure_guide.txt")
+P_SYNTAX_SUMMARY = os.path.join(RESOURCES_DIR, "context_files", "modular-fewshot", "p-fewshot-formatted.txt")
+P_COMPILER_GUIDE = os.path.join(RESOURCES_DIR, "context_files", "modular", "p_compiler_guide.txt")
 
 # generated code
 logs_dir_path = os.path.join(PROJECT_ROOT, "generated_code")
@@ -110,3 +125,6 @@ specific_errors_list_path = os.path.join(RESOURCES_DIR, "compile_analysis", "err
 current_mode = "admin"
 
 chat_history = ChatHistory()
+
+# Flag to track if we've already attempted a restart
+has_restarted = False

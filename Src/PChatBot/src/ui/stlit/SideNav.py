@@ -31,6 +31,10 @@ class SideNav:
         try:
             if st.session_state["llm_model"] == "Claude 3.7 Sonnet":
                 global_state.model_id = global_state.model_id_sonnet3_7
+            elif st.session_state["llm_model"] == "Claude 4 Opus":
+                global_state.model_id = global_state.model_id_opus_4
+            elif st.session_state["llm_model"] == "Claude 4 Sonnet":
+                global_state.model_id = global_state.model_id_sonnet4
             elif st.session_state["llm_model"] == "Claude 3.5 Sonnet v2":
                 global_state.model_id = global_state.model_id_sonnet3_5_v2
             elif st.session_state["llm_model"] == "Claude 3.5 Sonnet":
@@ -39,8 +43,13 @@ class SideNav:
                 global_state.model_id = global_state.model_id_sonnet3
             elif st.session_state["llm_model"] == "Mistral Large":
                 global_state.model_id = global_state.model_id_mistral
+            
+            # Update maxTokens based on model's limit
+            global_state.maxTokens = global_state.model_token_limits[global_state.model_id]
+            print(f"Model {st.session_state['llm_model']} - Token limit: {global_state.maxTokens}")
+            st.toast(f"Model changed to: {st.session_state['llm_model']}")
         except Exception as e:
-            st.warning("An error occured when switching the LLM through the LLM dropdwon menu.", icon="⚠️")
+            st.warning(f"An error occurred when switching the LLM through the LLM dropdown menu: {str(e)}", icon="⚠️")
 
 
     def switch_main_menu(self):
@@ -96,7 +105,11 @@ class SideNav:
             if global_state.current_mode == "admin":
                 history, configurations = st.tabs(["P Chatbot History", "Configurations"])
                 configurations.title("Configurations")
-                configurations.selectbox("Which Large Language model would you like to use today?", ("Claude 3.7 Sonnet", "Claude 3.5 Sonnet v2", "Claude 3.5 Sonnet", "Claude 3 Sonnet", "Mistral Large"), on_change=self.change_llm_model, key="llm_model")
+                configurations.selectbox("Which Large Language model would you like to use today?", 
+                    ("Claude 4 Opus", "Claude 4 Sonnet", "Claude 3.7 Sonnet", "Claude 3.5 Sonnet v2", "Claude 3.5 Sonnet", "Claude 3 Sonnet", "Mistral Large"), 
+                    index=2,  # Set default to Claude 3.7 Sonnet to match global_state
+                    on_change=self.change_llm_model, 
+                    key="llm_model")
                 configurations.slider("Temperature", 0.0, 1.0, global_state.temperature, key = "temp", on_change=self.change_temp)
                 configurations.write("Change the temperature of the P chatbot to increase or decrease the creativity of the chatbot's responses!")
                 configurations.slider("Top P", 0.0, 1.0, global_state.topP, key = "top_p", on_change=self.change_top_p)

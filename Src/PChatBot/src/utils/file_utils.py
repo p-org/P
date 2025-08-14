@@ -389,7 +389,7 @@ def capture_project_state(project_dir):
     project_dir = os.path.abspath(project_dir)
     
     # Get all files in the project directory
-    files = get_all_files(project_dir, filter_ext=["p", "pproj"])
+    files = get_all_files(project_dir, filter_ext=["p", "pproj", "ddoc"])
     
     # Read each file and store with relative path
     for file_path in files:

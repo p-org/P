@@ -64,14 +64,21 @@ def get_context_files():
                 global_state.P_MACHINES_GUIDE
             ],
             PSRC: [
+                global_state.P_TYPES_GUIDE,
                 global_state.P_STATEMENTS_GUIDE,
                 global_state.P_MODULE_SYSTEM_GUIDE
             ],
             PSPEC: [
+                global_state.P_TYPES_GUIDE,
                 global_state.P_SPEC_MONITORS_GUIDE
             ],
             PTST: [
+                global_state.P_TYPES_GUIDE,
                 global_state.P_TEST_CASES_GUIDE
+            ],
+            "COMPILE" :[
+                global_state.P_SYNTAX_SUMMARY,
+                global_state.P_COMPILER_GUIDE
             ]
         }
 
@@ -85,6 +92,23 @@ def entry_point(design_doc_content, backend_status):
     file_utils.empty_file(global_state.full_log_path)
     file_utils.empty_file(global_state.code_diff_log_path)
     create_proj_files(backend_status)
+
+    # Reset has_restarted flag at the very beginning
+#     global_state.has_restarted = False
+    def try_generate():
+        result = generate_p_code(design_doc_content, backend_status)
+        if result is None and not global_state.has_restarted:  # Only restart on first attempt
+            backend_status.write(f":yellow[Restarting code generation from scratch...]")
+            global_state.has_restarted = True  # Mark that we've used our one restart
+            start_time = time.time()
+            set_project_name_from_design_doc(design_doc_content)
+            log_utils.move_recent_to_archive()
+            file_utils.empty_file(global_state.full_log_path)
+            file_utils.empty_file(global_state.code_diff_log_path)
+            create_proj_files(backend_status)
+            result = generate_p_code(design_doc_content, backend_status)  # Try one more time
+        return result
+
     all_responses = generate_p_code(design_doc_content, backend_status)
     global_state.total_runtime = round(time.time() - start_time, 3)
     return all_responses
@@ -121,13 +145,14 @@ def generate_p_code(design_doc_content, backend_status):
             file_names = generate_filenames(system_prompt,design_doc_content,machines_list, backend_status, True)
 
             # Generate enums, types, and events
-            response= generate_enum_types_events(system_prompt,design_doc_content,machines_list, backend_status)
-            log_filename, Pcode = extract_validate_and_log_Pcode(response, 
+            response = generate_enum_types_events(system_prompt,design_doc_content,machines_list, backend_status)
+            backend_status.write("Running sanity check on response...")
+            fixed_response = sanity_check(system_prompt, response, all_responses, machines_list)
+
+            log_filename, Pcode = extract_validate_and_log_Pcode(fixed_response,
                                                             global_state.project_name_with_timestamp, PSRC)
             if log_filename is not None and Pcode is not None:
                 # Run sanity check on the generated code
-                backend_status.write(f"Running sanity check on {log_filename}...")
-                Pcode = sanity_check(system_prompt, Pcode, log_filename, all_responses, machines_list)
                 file_abs_path = os.path.join(parent_abs_path, global_state.project_name_with_timestamp, PSRC, log_filename)
                 backend_status.write(f":blue[. . . filepath: {file_abs_path}]")            
                 all_responses[log_filename] = Pcode
@@ -155,9 +180,10 @@ def generate_p_code(design_doc_content, backend_status):
                         all_responses[log_filename] = Pcode
 
                 backend_status.write(f"Running the P compiler and analyzer on {dirname}...")
-                num_iterations = 10
-                compiler_analysis( system_prompt,design_doc_content,all_responses, machines_list,num_iterations, backend_status)
-
+                num_iterations = 15
+                compiler_analysis(system_prompt,all_responses, machines_list,num_iterations, backend_status)
+#                 if restart:
+#                     return None
             return all_responses
 
         except ClientError as err:
@@ -234,13 +260,13 @@ def generate_machine_code(system_prompt, design_doc_content,machines_list, filen
     # Stage 1: Generate structure
     backend_status.write(f"  . . . Stage 1: Generating structure for {filename}.p")
     pipeline = prompting_pipeline.PromptingPipeline()
-    pipeline.add_system_prompt(system_prompt)
-    pipeline.add_user_msg("These are the example P Programs ",[global_state.P_program_example_path])
+    pipeline.add_system_prompt(read_instructions()['MACHINE_STRUCTURE'].format(machineName=filename))
+    # pipeline.add_user_msg("These are the example P Programs ",[global_state.P_program_example_path])
     pipeline.add_documents_inline(get_context_files()["MACHINE_STRUCTURE"], tag_surround)
-    pipeline.add_user_msg(f"All of the above are for your reference and context")
-    pipeline.add_user_msg(read_instructions()['MACHINE_STRUCTURE'].format(machineName=filename), [global_state.P_basics_path])
+    # pipeline.add_user_msg(f"All of the above are for your reference and context")
+    pipeline.add_user_msg("P_basics_file",[global_state.P_basics_path])
     pipeline.add_user_msg(f"This is the Design Document for which I want you to generate the code for : /n {design_doc_content}")
-    pipeline.add_user_msg(f"Continue the code from this , These are teh other files of this P Program, Use the enums, events and types from these if needed : {json.dumps(all_responses)}")
+    pipeline.add_user_msg(f"Other relevant files of this P Program that may contain declarations: {json.dumps(all_responses)}")
 
     stage1_response = pipeline.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
 
@@ -250,27 +276,27 @@ def generate_machine_code(system_prompt, design_doc_content,machines_list, filen
         # Two-stage generation
         machine_structure = match.group(1).strip()
         backend_status.write(f"  . . . Stage 2: Implementing function bodies for {filename}.p")
-        pipeline.add_user_msg(read_instructions()[MACHINE].format(machineName=filename)+ "\n\nHere is the starting structure:\n\n" + machine_structure)
+        # Format instruction text first, then combine with machine structure
+        instruction_text = read_instructions()[MACHINE].format(machineName=filename)
+        # Replace any curly braces in machine structure with escaped versions
+        pipeline.add_user_msg(f"{instruction_text}\n\nHere is the starting structure:\n\n"+ machine_structure)
         pipeline.add_documents_inline(get_context_files()[dirname], tag_surround)
         response = pipeline.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
-        logger.info(response)
+        # logger.info(response)
     else:
         # Fallback to single-stage
         backend_status.write(f"  . . . :red[Failed to extract structure for {filename}.p. Falling back to single-stage generation.]")
         pipeline.add_user_msg(read_instructions()[MACHINE].format(machineName=filename))
         pipeline.add_documents_inline(get_context_files()[dirname], tag_surround)
         response = pipeline.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
-        logger.info(response)
 
     logger.info(f"Pipeline invoke_llm for implementing machine code for {filename}.p - Input tokens: {pipeline.get_total_input_tokens()}, Output tokens: {pipeline.get_total_output_tokens()}")
     backend_status.write(f"Total input tokens : {pipeline.get_total_input_tokens()}")
     backend_status.write(f"Total output tokens : {pipeline.get_total_output_tokens()}")
 
-    log_filename, Pcode = extract_validate_and_log_Pcode(response, global_state.project_name_with_timestamp, dirname)
-    if log_filename is not None and Pcode is not None:
-        # Run sanity check on the generated code
-        backend_status.write(f"Running sanity check on {log_filename}...")
-        Pcode = sanity_check(system_prompt, Pcode, log_filename, all_responses, machines_list)
+    backend_status.write(f"Running sanity check on response...")
+    fixed_response = sanity_check(system_prompt, response, all_responses, machines_list)
+    log_filename, Pcode = extract_validate_and_log_Pcode(fixed_response, global_state.project_name_with_timestamp, dirname)
     return log_filename, Pcode
 
 
@@ -279,23 +305,21 @@ def generate_generic_file(system_prompt, design_doc_content,machines_list, filen
     """Generate a generic P file."""
     pipeline = prompting_pipeline.PromptingPipeline()
     pipeline.add_system_prompt(system_prompt)
-    pipeline.add_user_msg("These are the example P Programs ",[global_state.P_program_example_path])
+    # pipeline.add_user_msg("These are the example P Programs ",[global_state.P_program_example_path])
     pipeline.add_documents_inline(get_context_files()[dirname])
 
-    pipeline.add_user_msg(f"All of the above are for your reference and context")
+    # pipeline.add_user_msg(f"All of the above are for your reference and context")
     pipeline.add_user_msg(read_instructions()[dirname].format(filename=filename),[global_state.P_basics_path])
     pipeline.add_user_msg(f"This is the Design Document for which I want you to generate the code for : /n {design_doc_content}")
-    pipeline.add_user_msg(f"Continue the code from this , These are the other files of this P Program, Use the enums, events and types and other files from these if needed : {json.dumps(all_responses)}")
+    pipeline.add_user_msg(f"Other relevant files of this P Program that may contain declarations: {json.dumps(all_responses)}")
     response = pipeline.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
     input_tokens = pipeline.get_total_input_tokens()
     output_tokens = pipeline.get_total_output_tokens()
     logger.info(f"Pipeline invoke_llm for generic file {filename}.p - Input tokens: {input_tokens}, Output tokens: {output_tokens}")
     
-    log_filename, Pcode = extract_validate_and_log_Pcode(response, global_state.project_name_with_timestamp, dirname)
-    if log_filename is not None and Pcode is not None:
-        # Run sanity check on the generated code
-        backend_status.write(f"Running sanity check on {log_filename}...")
-        Pcode = sanity_check(system_prompt, Pcode, log_filename, all_responses, machines_list)
+    backend_status.write(f"Running sanity check on response...")
+    fixed_response = sanity_check(system_prompt, response, all_responses, machines_list)
+    log_filename, Pcode = extract_validate_and_log_Pcode(fixed_response, global_state.project_name_with_timestamp, dirname)
     return log_filename, Pcode
 
 
@@ -384,20 +408,18 @@ def set_project_name_from_design_doc(userTextInput):
     global_state.project_name_with_timestamp = f"{global_state.project_name}_{timestamp}"
 
 
-
-def sanity_check(system_prompt, file_content, file_name, all_responses, machines_list):
+def sanity_check(system_prompt, response, all_responses, machines_list):
     """
-    Performs sanity checks on a single P code file to ensure it follows compilation rules.
+    Performs sanity checks on a P code response to ensure it follows compilation rules.
     
     Args:
         system_prompt: The system prompt for the LLM pipeline
-        file_content: Content of the P file to check
-        file_name: Name of the file being checked
+        response: The LLM response containing P code to check
         all_responses: Dictionary containing all generated P files
         machines_list: List of machine names in the project
         
     Returns:
-        Fixed file content if changes were needed, otherwise original content
+        Response string in the same format with fixed P code if changes were needed
     """
     pipeline = prompting_pipeline.PromptingPipeline()
     pipeline.add_system_prompt(system_prompt)
@@ -405,7 +427,22 @@ def sanity_check(system_prompt, file_content, file_name, all_responses, machines
     enums_types_events = all_responses.get("Enums_Types_Events.p", "")
     
     pipeline.add_user_msg(f"""
-    Please check this P code file and fix any issues according to the compilation rules.
+    CRITICAL RULES TO ENFORCE:
+    1. Move ALL variable declarations to start of their scope
+    2. Use correct P collection syntax for insertion:
+       - Sequences: mySeq = mySeq + (element,)
+       - Sets: mySet = mySet + (element)
+       - Maps: myMap = myMap + (key, value)
+    
+    3. For functions: declare ALL variables at the start, before any other code
+    
+    4. Initialize sequences properly:
+       - RIGHT: var seq: seq[int];             // No inline initialization
+       - RIGHT: seq = default(seq[int]);       // Initialize later
+
+    6. Initialize sets properly:
+       - RIGHT: var mySet: set[int];           // Declaration only
+       - RIGHT: mySet = default(set[int]);     // Initialize to empty set
     
     CONTEXT:
     1. Core declarations (Enums_Types_Events.p):
@@ -414,41 +451,67 @@ def sanity_check(system_prompt, file_content, file_name, all_responses, machines
     2. Machine names in project:
     {machines_list}
     
-    3. Current file to check:
-    File name: {file_name}
-    
-    File content:
-    {file_content}
+    3. Response to check:
+    {response}
     
     4. Other relevant files that may contain declarations:
     {json.dumps(all_responses, indent=2)}
     
-    Please analyze this file in the context of the entire project and fix any issues.
+    Please analyze this response and fix ALL variable declarations to be at the start of their scope, and follow the syntax rules of sets and collections.
+    This is CRITICAL - the code must follow all the rules specified.
+    Return the response in the same format with <filename.p> tags.
     """)
     
-    response = pipeline.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
-    logger.info(f"Pipeline invoke_llm for sanity check of {file_name} - Input tokens: {pipeline.get_total_input_tokens()}, Output tokens: {pipeline.get_total_output_tokens()}")
+    fixed_response = pipeline.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
     
-    _, fixed_code = extract_validate_and_log_Pcode(response, "", "")
-    if fixed_code is not None:
-        return fixed_code
-    return file_content
+    return fixed_response
 
 
-# PRESERVED: This function is purposefully redundant with compiler_analysis() in generate_p_code.py to preserve old chatbot functionality
-def compiler_analysis(system_prompt, design_doc_content, all_responses, machines_list, num_of_iterations, backend_status, ctx_pruning=None):
-      
+def compiler_analysis(system_prompt,all_responses,machines_list, num_of_iterations, backend_status, ctx_pruning=None):
+    # Track line numbers per file to detect loops
+    line_history = {}  # {filename: [(line_number, iteration)]}
+
+    def is_stuck_in_loop(filename, line_number, current_iteration):
+        try:
+            # Convert line_number to int if it's a string
+            line_num = int(line_number) if isinstance(line_number, str) else line_number
+
+            if filename not in line_history:
+                line_history[filename] = []
+            line_history[filename].append((line_num, current_iteration))
+
+            # Look at last 5 iterations for this file
+            recent_lines = line_history[filename][-5:]
+            if len(recent_lines) < 5:
+                return False
+
+            # Check if we're hitting same line or nearby lines
+            target_line = int(recent_lines[-1][0])  # Convert target line to int once
+            nearby_hits = 0
+            for line, _ in recent_lines:
+                try:
+                    line_num = int(line)
+                    if abs(line_num - target_line) <= 4:  # Compare integers
+                        nearby_hits += 1
+                except (ValueError, TypeError):
+                    continue  # Skip invalid line numbers
+
+            return nearby_hits >= 8  # True if we've hit nearby lines 5+ times
+        except (ValueError, TypeError):
+            # If we can't convert line numbers to int, assume not stuck
+            return False
+
     # Always send the latest version of files
     def get_latest_context(all_responses):
         # Get latest Enums_Types_Events
         enums_types_events = {"Enums_Types_Events.p": all_responses["Enums_Types_Events.p"]}
         
         # Get latest version of all machine files
-        machine_files = {k: v for k, v in all_responses.items() if k.startswith("PSrc/") and k != "PSrc/Enums_Types_Events.p"}
+        machine_files = {k: v for k, v in all_responses.items() if k != "Enums_Types_Events.p"}
         
         return {
             "declarations": enums_types_events,
-            "machines": machine_files,
+            "all_files": list(all_responses.keys()),
             "machine_names": machines_list
         }
 
@@ -464,15 +527,80 @@ def compiler_analysis(system_prompt, design_doc_content, all_responses, machines
     P_filenames_dict = regex_utils.get_all_P_files(compilation_result)
     while (not compilation_success and num_of_iterations > 0):
         file_name, line_number, column_number = compile_utils.parse_compile_error(compilation_result)
-        backend_status.write(f". . . :red[[Iteration #{(max_iterations - num_of_iterations)}] Compilation failed in {file_name} at line {line_number}:{column_number}. Fixing the error...]")
+        current_iteration = max_iterations - num_of_iterations
+
+#         # Check if we're stuck in a loop
+#         if is_stuck_in_loop(file_name, line_number, current_iteration):
+#             if not global_state.has_restarted:
+#                 backend_status.write(f":warning: Detected repeated compilation errors around line {line_number} in {file_name}. Restarting generation...")
+#                 global_state.has_restarted = True  # Mark that we've used our one restart
+#                 return False  # Special return value to trigger restart
+#             else:
+#                 backend_status.write(f":warning: Still seeing errors around line {line_number}, continuing compilation...")
+#                 line_history[file_name] = []  # Reset history for this file to avoid more warnings
+
+        backend_status.write(f". . . :red[[Iteration #{current_iteration}] Compilation failed in {file_name} at line {line_number}:{column_number}. Fixing the error...]")
         # 1. Obtain the error message's information. 
         custom_msg, file_path, file_contents = compile_utils.get_correction_instruction(P_filenames_dict, compilation_result)
         # Get latest context with most up-to-date file versions
         latest_context = get_latest_context(all_responses)
-        custom_msg, file_path, file_contents = compile_utils.get_correction_instruction(P_filenames_dict, compilation_result)
+        pipeline_for_req_files = prompting_pipeline.PromptingPipeline()
+        pipeline_for_req_files.add_system_prompt(system_prompt)
+        pipeline_for_req_files.add_user_msg(f"""
+            Here is the current context for fixing the compilation error:
+
+            1. Core declarations (types, events, enums):
+            {json.dumps(latest_context["declarations"], indent=2)}
+        
+
+            2. Available machines in the program:
+            {json.dumps(latest_context["machine_names"], indent=2)}
+            3. Error details:
+            - File to fix: {file_name}
+            - Error location: Line {line_number}, Column {column_number}
+            - Error message: {custom_msg}
+
+            4. Current file contents:
+            {file_contents}
+            
+            5. All the other Files :  {json.dumps(list(latest_context["all_files"]))}
+            Before you proceed with fixing this compilation error, do you need the implementation details of any specific file to understand the context better and to help fix the issue?
+    
+            Only respond with a JSON list of files that you need to see the implementation for without any additional explanation. If you don't need any additional machine context, return an empty list [].
+            
+            Example response format:
+            ["MachineName1.p", "MachineName2.p", "Spec1.p", "TestDriver".p] or []
+            """)
+
+        required_machines_response = pipeline_for_req_files.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
+        logger.info("Required machines response: %s", repr(required_machines_response))
+        if isinstance(required_machines_response, str):
+            try:
+                required_machines = json.loads(required_machines_response.strip())
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON from required_machines_response: {repr(required_machines_response)}")
+                backend_status.write(f"Failed to parse JSON from required_machines_response: {repr(required_machines_response)}")
+                raise e
+            except Exception as ex:
+                logger.error("Exception occured in compiler_analysis ")
+                backend_status.write("Exception occured in compiler_analysis ")
+                raise ex
+        else:
+            logger.error(f"Expected string response, got {type(required_machines_response)} instead.")
+            raise TypeError("Expected string response from LLM")
+        required_machines = json.loads(required_machines_response.strip())
+        additional_context = {}
+        if required_machines:
+            for machine_name in required_machines:
+                additional_context[machine_name] = all_responses[machine_name]  # Access dictionary directly
+        custom_msg += "\nReturn only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename."
+        logger.info("Required machines: " + required_machines_response)
+
+
+        # pipeline.add_user_msg("These are the example P Programs - just for reference ",[global_state.P_program_example_path])
         pipeline = prompting_pipeline.PromptingPipeline()
         pipeline.add_system_prompt(system_prompt)
-        pipeline.add_user_msg("These are the example P Programs - just for reference ",[global_state.P_program_example_path])
+        pipeline.add_documents_inline(get_context_files()["COMPILE"], tag_surround)
 
         # Send context and error information
         pipeline.add_user_msg(f"""
@@ -491,14 +619,22 @@ def compiler_analysis(system_prompt, design_doc_content, all_responses, machines
 
             4. Current file contents:
             {file_contents}
-            """)  
-       
+            
+            5. Additional Context : {additional_context}
+
+            """)
+
+
         # Continue the conversation to fix compiler errors
         # Apply context pruning before fixing errors
-        if ctx_pruning:
-            original_messages = messages.copy()
-            messages = ctx_pruning.prune_context(messages, file_name)
-            ctx_pruning.log_context_metrics(original_messages, messages, backend_status)
+        # if ctx_pruning:
+        #     original_messages = messages.copy()
+        #     messages = ctx_pruning.prune_context(messages, file_name)
+        #     ctx_pruning.log_context_metrics(original_messages, messages, backend_status)
+        #prompt if you need some files
+
+
+
         response = pipeline.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
         logger.info(f"Pipeline invoke_llm for compiler fix {file_name} - Input tokens: {pipeline.get_total_input_tokens()}, Output tokens: {pipeline.get_total_output_tokens()}")
         backend_status.write(f". . . . . . Compiling the fixed code...")
@@ -517,3 +653,4 @@ def compiler_analysis(system_prompt, design_doc_content, all_responses, machines
         logger.info(f"Compilation succeeded in {max_iterations - num_of_iterations} iterations.")
     global_state.compile_iterations += (max_iterations - num_of_iterations)
     global_state.compile_success = compilation_success
+#     return False

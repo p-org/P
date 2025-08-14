@@ -12,6 +12,7 @@ Syntactically, machines and spec machines in P are very similar in terms of the 
 7. spec machines can have hot and cold annotations on their states to model liveness specifications.
 8. $, $$, this, new, send, announce, receive, and pop are NOT allowed in monitors.
 9. Entry functions in spec machines CANNOT take any parameter.
+10. Never generate empty functions or functions with only comments. Every function declaration must include complete, working implementation with actual executable code. If you create or reference a function, it must be fully implemented, not just a placeholder or TODO comment.
 
 Syntax: spec iden observes eventsList statemachineBody;
 iden is the name of the spec machine, 

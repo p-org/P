@@ -1,6 +1,6 @@
 import logging, re, os, subprocess, difflib
 from utils import global_state as globals
-from utils import file_utils, log_utils, generate_p_code, regex_utils
+from utils import file_utils, log_utils, generate_p_code, regex_utils, global_state
 from collections import namedtuple
 from pathlib import Path
 from datetime import datetime
@@ -134,7 +134,6 @@ def get_correction_instruction(P_filenames_dict, compilation_result):
     else:
         correction_instruction += get_instructions_for_general_errors(error_message)
 
-    correction_instruction += "\nReturn only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename."
     return LLMCorrectionInstruction(correction_instruction, target_file_path, target_file_content)
 
 

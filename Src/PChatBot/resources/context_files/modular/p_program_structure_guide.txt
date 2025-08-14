@@ -1,8 +1,79 @@
-A P program is typically divided into three folders:
-1. PSrc: contains all the state machines representing the implementation (model) of the system or protocol to be verified or tested. Additionally, it contains a P modules file.
-2. PSpec: contains all the specifications representing the correctness properties that the system must satisfy.
-3. PTst: contains all the environment or test harness state machines that model the non-deterministic scenarios under which we want to check that the system model in PSrc satisfies the specifications in PSpec. P allows writing different model checking scenarios as test-cases.
-The PTst folder has two files:
-1. TestDriver.p: TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios.
-2. TestScript.p: TestScripts are collections of test cases that are automatically run by the P checker. P allows programmers to write different test cases. 
-Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators.
+# P Project Structure Generation Instructions
+
+## MANDATORY PROJECT STRUCTURE
+
+You MUST generate a P project with EXACTLY this folder and file structure. Do NOT deviate from this structure:
+
+## FOLDER CONTENTS SPECIFICATION
+
+### PSrc Folder - Implementation Files
+**Purpose**: Contains all state machines representing the implementation (model) of the system or protocol to be verified or tested.
+
+**Required Files**:
+1. **Individual Machine Files**: One `.p` file per major machine/component
+   - `<ComponentName>.p` (e.g., `Coordinator.p`, `Participant.p`, `Client.p`)
+   - NO specs, NO tests, NO modules in these files
+
+2. **Modules.p**: Contains module definitions that group related machines
+
+**Note**: Enums_Types_Events.p is generated separately and provided as context - DO NOT generate this file.
+
+### PSpec Folder - Specification Files
+**Purpose**: contains all the specifications representing the correctness properties that the system must satisfy.
+
+**Required Files**:
+- `<PropertyName>.p` files (e.g., `SafetySpec.p`, `LivenessSpec.p`)
+- Each file contains monitor specifications using `spec` keyword
+
+
+### PTst Folder - Test Files
+**Purpose**: Contains all the environment or test harness state machines that model the non-deterministic scenarios under which we want to check that the system model in PSrc satisfies the specifications in PSpec. P allows writing different model checking scenarios as test-cases.
+
+
+**Required Files**:
+
+1. **TestDriver.p**: TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios.
+
+2. **TestScript.p**: TestScripts are collections of test cases that are automatically run by the P checker. P allows programmers to write different test cases.
+
+
+## GENERATION RULES
+
+### MANDATORY REQUIREMENTS:
+1. **Create EXACTLY these 3 folders**: PSrc, PSpec, PTst
+2. **PSrc must contain**: Individual machine files + Modules.p (EventTypesAndEnums.p is provided separately)
+3. **PSpec must contain**: Specification monitor files
+4. **PTst must contain**: TestDriver.p + TestScript.p
+5. **DO NOT generate EventTypesAndEnums.p** - this is provided as context from separate generator
+
+
+## DESIGN DOCUMENT ANALYSIS
+
+When given a design document:
+
+1. **Identify Components**: Extract all system components → Create individual machine files in PSrc
+2. **Identify Properties**: Extract safety/liveness requirements → Create spec files in PSpec
+3. **Identify Test Scenarios**: Extract testing requirements → Create test cases in PTst
+4. **Create Modules**: Group related machines → Add to Modules.p
+
+**Note**: Events, types, and enums are provided via EventTypesAndEnums.p context - do not extract or generate these.
+
+## EXAMPLE PROJECT STRUCTURE
+
+```
+TwoPhaseCommit/
+├── PSrc/
+│   ├── Coordinator.p        # Coordinator machine only
+│   ├── Participant.p        # Participant machine only
+│   ├── Timer.p             # Timer machine only
+│   └── Modules.p           # Module definitions
+├── PSpec/
+│   ├── AtomicitySpec.p     # Atomicity safety monitor
+│   └── ProgressSpec.p      # Progress liveness monitor
+└── PTst/
+    ├── TestDriver.p        # Test environment machines
+    └── TestScript.p        # Test case definitions
+
+Note: EventTypesAndEnums.p is provided separately as context
+```
+

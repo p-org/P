@@ -6,5 +6,5 @@
 	<PFile>./PTst/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
-<Target>CSharp</Target>
+<Target>PChecker</Target>
 </Project>

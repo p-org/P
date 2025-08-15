@@ -256,13 +256,12 @@ public class PVerifierCodeGenerator : ICodeGenerator
             foreach (var feedback in match.Groups[1].Captures.Zip(match.Groups[2].Captures))
             {
                 var line = query[int.Parse(feedback.Second.ToString()) - 1];
-                var step = feedback.First.ToString().Contains("[Step #0]") ? "(base case)" : "";
                 var matchName = Regex.Match(line, @"// Failed to verify invariant (.*) at (.*)");
                 if (matchName.Success)
                 {
                     var invName = matchName.Groups[1].Value.Replace("_PGROUP_", ": ");
                     failedInv.Add(invName);
-                    failMessages.Add($"{reason} {line.Split("// ").Last()} {step}");
+                    failMessages.Add($"{reason} {line.Split("// ").Last()}");
                 }
 
                 var matchDefault = Regex.Match(line,
@@ -1212,7 +1211,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
             foreach (var inv in cmd.Premises)
             {
-                EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}();");
+                EmitLine($"invariant _{InvariantPrefix}{inv.Name}: {InvariantPrefix}{inv.Name}(); // Failed to verify invariant {inv.Name.Replace("_PGROUP_", ": ")} at base case");
             }
 
             EmitLine("");

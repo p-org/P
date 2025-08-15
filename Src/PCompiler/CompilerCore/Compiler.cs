@@ -34,6 +34,12 @@ namespace Plang.Compiler
                 Environment.ExitCode = 1;
                 return Environment.ExitCode;
             }
+            catch (NotSupportedException e)
+            {
+                job.Output.WriteError("[NotSupportedError:]\n" + e.Message);
+                Environment.ExitCode = 1;
+                return Environment.ExitCode;
+            }
 
             job.Output.WriteInfo("Type checking ...");
             // Run type checker and produce AST
@@ -163,7 +169,7 @@ namespace Plang.Compiler
                         case PParser.INIT:
                         case PParser.PURE:
                             throw new NotSupportedException(
-                                $"line {token.Line}:{token.Column} \"{token.Text}\" only supported by PVerifier backend.");
+                                $"{inputFile.FullName} (line {token.Line}:{token.Column}): \"{token.Text}\" keyword is only supported by PVerifier backend.");
                     }
                 }
 

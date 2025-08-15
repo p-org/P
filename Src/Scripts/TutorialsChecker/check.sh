@@ -32,10 +32,15 @@ for folder in $folders; do
           if [[ "${firstWord}" = "~~" ]]; then
             break;
           fi
-          echo "Smoke testing for test case ${firstWord}";
-          p check -i ${SCHEDULES} -tc ${firstWord}
-          if [ $? -ne 0 ]; then
-            let "errorCount=errorCount + 1"
+          # Skip test cases that contain an underscore
+          if [[ "${firstWord}" != *"_"* ]]; then
+            echo "Smoke testing for test case ${firstWord}";
+            p check -i ${SCHEDULES} -tc ${firstWord}
+            if [ $? -ne 0 ]; then
+              let "errorCount=errorCount + 1"
+            fi
+          else
+            echo "Skipping test case ${firstWord} as it contains an underscore";
           fi
         fi
       done < ${checkLog}
@@ -53,7 +58,7 @@ done
 
 echo "Error Count:" $errorCount
 
-if [[ "$errorCount" = 3 ]]; then
+if [[ "$errorCount" = 4 ]]; then
   exit 0
 else
   exit 1

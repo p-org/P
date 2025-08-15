@@ -16,29 +16,3 @@ spec OneValueTaught observes eLearn {
 		}
 	}
 }
-
-event eProgressMonitorInitialize: int;
-
-spec Progress observes eLearn, eProgressMonitorInitialize {
-	var pendingLearns: int;
-
-	start state Init {
-		on eProgressMonitorInitialize do (numLearners: int) {
-			pendingLearns = numLearners;
-			goto WaitForLearning;
-		}
-	}
-
-	hot state WaitForLearning {
-		on eLearn do (payload: (ballot: tBallot, v: tValue)) {
-			pendingLearns = pendingLearns - 1;
-			if (pendingLearns == 0) {
-				goto LearningDone;
-			}
-		}
-	}
-
-	cold state LearningDone {
-		ignore eLearn;
-	}
-}

@@ -68,7 +68,7 @@ done
 
 echo "Error Count:" $errorCount
 
-if [[ "$errorCount" = 4 ]]; then
+if [[ "$errorCount" = 3 ]]; then
   exit 0
 else
   exit 1

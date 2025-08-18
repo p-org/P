@@ -6,5 +6,4 @@
 	<PFile>./PTst/</PFile>
 </InputFiles>
 <OutputDir>./PGenerated/</OutputDir>
-<Target>PChecker</Target>
 </Project>

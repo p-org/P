@@ -24,7 +24,7 @@ import java.io.InputStream;
                 PMachines.ResponseOnlyOnRequest.Supplier.class
         }
 )
-public class PObserveDemoTest extends PObserveLogFileBaseTest {
+public class LockServerPObserveTest extends PObserveLogFileBaseTest {
 
     @Test
     public void testErrorCaseLogFileWith1Key() {
@@ -59,6 +59,6 @@ public class PObserveDemoTest extends PObserveLogFileBaseTest {
     }
 
     private InputStream getResourceFromFile(String file) {
-        return PObserveDemoTest.class.getClassLoader().getResourceAsStream(file);
+        return LockServerPObserveTest.class.getClassLoader().getResourceAsStream(file);
     }
 }

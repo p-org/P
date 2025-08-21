@@ -1,6 +1,6 @@
 # PObserve: Log Parser
 ## What is a PObserve Log Parser?
-In order to use PObserve, a *log parser* is an essential component that converts system-generated log lines to PObserve events which are later consumed by a PObserve monitor. It takes a log line (text or JSON) as input and converts it into a PObserveEvent object.
+In order to use PObserve, a *log parser* is an essential component that converts system-generated log lines to PObserve events which are later consumed by a PObserve monitor. The log parser takes a log line (text or JSON) as input and converts it into a PObserveEvent object.
 
 !!! note ""
     
@@ -85,8 +85,4 @@ public class LockServerParser implements Parser<PEvent> {
 !!!note "Note"
     The key used while creating the PObserve event will be used for partitioning the events to appropriate monitors.
 
-**[Step 3] Move the Parser code to the right package**
-
-Put the parser file in the "Parser" folder of your PObserve package. Check out the completed [LockServerParser](https://github.com/p-org/P/blob/dev/pobserve/Src/PObserve/Examples/LockServerPObserve/src/main/java/lockserver/pobserve/parser/LockServerParser.java) in the [LockServerPObserve](http://github.com/p-org/P/tree/dev/pobserve/Src/PObserve/Examples/LockServerPObserve) package.
-
-Building the PObserve package will include the parser in the generated uber JAR which can then be used with PObserve.
+Refer to the completed [LockServerParser](https://github.com/p-org/P/blob/dev/pobserve/Src/PObserve/Examples/LockServerPObserve/src/main/java/lockserver/pobserve/parser/LockServerParser.java) in the [LockServerPObserve](http://github.com/p-org/P/tree/dev/pobserve/Src/PObserve/Examples/LockServerPObserve) package.

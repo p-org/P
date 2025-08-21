@@ -1,23 +1,7 @@
-# Example: Lock Server
+# Running PObserve CLI on Lock Server Example
 
 This page demonstrates how to use PObserve CLI to verify system correctness using a lock server as an example.
 
-## Lock Server Overview
-
-Consider a simple lock server that manages access to shared resources by granting or denying locks. The lock server grants locks if resources are available, denies locks if resources are locked, and releases locks when the client is done using resources.
-
-To ensure the correctness of the lock server, we want to check if the following correctness properties hold in the presence of concurrent client requests:
-
-* *The lock server grants a lock to only one client at a time (Mutual Exclusion)*
-* *The lock server responds to a client only when requested (Response Only On Request)*
-
-## Lock Server PObserve Package
-
-The [LockServerPObserve](https://github.com/p-org/P/tree/dev/pobserve/Src/PObserve/Examples/LockServerPObserve) package will be used to demonstrate how to use PObserve CLI on the lock server example. This package contains three components:
-
-1. **Parser**: The `LockServerParser` converts the service log lines to PObserve Events
-2. **P Specification**: The `LockServerCorrect.p` implements two correctness specifications - `MutualExclusion` and `ResponseOnlyOnRequest`
-3. **Logs**: The resources folder contains multiple lock server logs. Feel free to experiment with PObserve CLI using these logs.
 
 ## Building PObserve and LockServerPObserve JARs
 
@@ -106,4 +90,5 @@ java -jar PObserve-1.0.jar \
     0                        1                        0                             0   
     ```
 
-:confetti_ball: Congratulations! You have successfully run your first example with PObserve CLI.
+!!! success ""
+    :confetti_ball: Congratulations! You have successfully run your first example with PObserve CLI.

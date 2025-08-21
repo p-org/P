@@ -1,8 +1,8 @@
 # Setting Up a PObserve Package with Gradle
 
-This guide walks you through setting up a PObserve package using Gradle, assuming you already have your P specifications and Java parser implemented. You'll learn how to create an empty Gradle project, add your existing parser and spec files, and configure the necessary Gradle settings.
+This guide walks you through setting up a PObserve package using Gradle. You'll learn how to create an empty Gradle project with the proper structure, configure the build for your intended usage (JUnit integration or PObserve CLI).
 
-## [Step 1] Create Empty Gradle Project
+## [Step 1] Create Empty Gradle Project Structure
 
 First, create a new directory for your PObserve project and initialize it as a Gradle project:
 
@@ -12,23 +12,25 @@ cd YourPObserveProject
 gradle init --type java-library --dsl kotlin
 ```
 
-This will create a basic Gradle project structure with Kotlin DSL.
+This creates a basic Gradle project structure with Kotlin DSL.
 
-## [Step 2] Set Up Project Structure
+## [Step 2] Set Up PObserve Directory Structure
 
-Assuming you have already implemented your P specifications and Java parser, you'll need to place them in the corresponding directories as follows:
+Create the necessary directories for your PObserve package:
 
-**1. Add P Specification**
+```bash
+# Create directories for P specifications
+mkdir -p src/main/PSpec
 
-1. Copy your existing P specification files to `src/main/PSpec/`
-2. Update the YourProject.pproj file to reference the new file paths in the Gradle project structure
+# Create directories for Java parser
+mkdir -p src/main/java/your/package/parser
 
-**2. Add Java Parser**
+# Create test directories if you intend to write unit tests
+mkdir -p src/test/java/your/package
+mkdir -p src/test/resources
+```
 
-1. Copy your existing Java parser to `src/main/java/your/package/parser/`
-2. Update the P event imports in your parser to match the package paths where the generated P code will be placed
-
-After adjusting the package names in the newly added files, your PObserve package should have a directory structure similar to this:
+Your project structure should now look like this:
 
 ```
 YourPObserveProject/
@@ -43,91 +45,139 @@ YourPObserveProject/
     ├── main/
     │   ├── java/
     │   │   └── your/package/
-    │   │       └── parser/
-    │   │           └── YourParser.java        # Your existing log parser
-    │   ├── PSpec/
-    │   │   └── YourSpec.p                     # Your existing P specification
-    │   └── YourProject.pproj                  # P project file
+    │   │       └── parser/            # Your parser will go here
+    │   └── PSpec/                     # Your P specifications will go here
     └── test/
         ├── java/
-        │   └── your/package/
-        │       └── YourPObserveTest.java      # JUnit tests
-        └── resources/
-            └── sample_logs.txt                # Test log files
+        │   └── your/package/          # Your tests will go here
+        └── resources/                 # Test log files will go here
 ```
 
-## [Step 3] Configure Gradle Build File
+## [Step 3] Configure Gradle Build
 
-**1. Add Required Plugins**
+Configure your `build.gradle.kts` file with the base configuration and add the specific components you need to integrate with different pobserve modes as you need:
 
-Add these plugins at the top of your build.gradle.kts:
+### Base Configuration
 
-```
+Start with this base configuration that's common to all PObserve packages:
+
+```kotlin
 plugins {
     id("java")
     id("java-library")
-    // Required for creating an uber JAR
-    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
-```
 
-**2. Configure Dependencies**
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
 
-Add PObserve-specific dependencies:
-
-```
 dependencies {
-    // PObserve core dependencies
+    // PObserve dependencies
     implementation("io.github.p-org:pobserve-commons:1.0.0")
     implementation("io.github.p-org:pobserve-java-unit-test:1.0.0")
+    
+    // Testing dependencies
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs("src/main/java")
+        }
+        resources {
+            srcDirs("src/main/resources")
+        }
+    }
+    test {
+        java {
+            srcDirs("src/test/java")
+        }
+        resources {
+            srcDirs("src/test/resources")
+        }
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
+// P Compiler integration
+tasks.register<Exec>("compilePSpec") {
+    commandLine("p", "compile", "--mode", "pobserve")
+    workingDir = File("${project.rootDir}/src/main")
+}
+
+tasks.named("compileJava") {
+    dependsOn("compilePSpec")
+}
+
+group = "your.group.id"
+version = "1.0.0"
+```
+
+### Additional Configuration for PObserve JUnit Integration
+
+If you want to use your package to run pobserve with unit tests, add these components to your `build.gradle.kts`:
+
+**1. Add Maven Publish Plugin**
+```kotlin
+plugins {
+    // ... existing plugins
+    id("maven-publish")  // Add this for JUnit integration
 }
 ```
 
-**3. Configure P Compiler Integration**
-
-The P compiler integration needs to be configured to generate Java code that PObserve can use. You can do this either through Gradle automation or manual compilation.
-
-* [Option A] Automated Compilation via Gradle Task
-
-    Add these tasks to automatically compile P specifications during the build process (assuming P >= v2.4 has already been installed):
-    ```
-    tasks.register<Exec>("compilePSpec") {
-        commandLine("p", "compile", "--mode", "pobserve")
-        workingDir = File("${project.rootDir}/src/main")
+**2. Add Maven Publication Configuration**
+```kotlin
+// Maven publication for JUnit integration
+publishing { 
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            
+            groupId = group.toString()
+            artifactId = "YourProjectName"
+            version = version.toString()
+        }
     }
-
-    // Ensure P specs are compiled before Java compilation
-    tasks.named("compileJava") {
-        dependsOn("compilePSpec")
+    repositories {
+        mavenLocal()
     }
-    ```
-    ??? note "Important: Make sure your P Project file is configured correctly when using automated compilation via Gradle"
-        When using automated compilation, ensure your pproj file has the correct configuration:
-
-        1. Set the correct output directory for generated Java code
-        ```xml
-        <OutputDir>java/your/package/spec</OutputDir>
-        ```
-
-        2. Specify the Java package name for generated code based on the output directory used in the `OutputDir` param
-        ```xml
-        <pobserve-package>your.package.spec</pobserve-package>
-        ```
-        Refer to [LockServerPObserve.pproj]() in the LockServerPObserve example package to see how the .pproj file was configured
-
-* [Option B] Manual Compilation
-
-    Alternatively, you can manually compile your P specifications by running `p compile --mode pobserve` in your original P project directory, then copy the generated files from `PGenerated/Java/` to `src/main/java/your/package/spec/` in your new PObserve Gradle project. Make sure to adjust the package declarations in the copied files to match your target package structure.
-
-
-!!!tip "The automated approach (Option A) is recommended for consistent builds and better integration with your development workflow"
-
-
-**4. Configure JAR Packaging**
-
-Add tasks for creating an uber JAR that packages your classes and their dependencies into a single JAR file for PObserve to consume:
-
+}
 ```
+
+!!! info ""
+    Publishing your PObserve package to Maven Local repository allows you to import the parser and spec components in your system implementation's unit tests. Alternatively, you can publish them to your custom Maven repository and import from there to run PObserve in your unit tests."
+
+### Additional Configuration for PObserve CLI Usage
+
+To use PObserve CLI, you need to provide both the parser and specification as an uber JAR. Add the following components to your `build.gradle.kts` to package your classes and their dependencies into a single uber JAR:
+
+**1. Add Shadow Plugin**
+```kotlin
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+plugins {
+    // ... existing plugins
+    id("com.github.johnrengelman.shadow") version "7.1.2"  // Add this for CLI usage
+}
+```
+
+**2. Add Uber JAR Tasks**
+```kotlin
+tasks.named<ProcessResources>("processTestResources") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Uber JAR configuration for PObserve CLI
 tasks.withType<ShadowJar> {
     archiveBaseName.set("YourProjectName")
     archiveClassifier.set("all")
@@ -140,31 +190,68 @@ tasks.register<ShadowJar>("uberjar") {
     archiveClassifier.set("uber")
     archiveVersion.set("1.0.0")
     from(sourceSets.main.get().output)
-    configurations = listOf(project.configurations.runtimeClasspath.get())
+    from(sourceSets.test.get().output)
+    configurations = listOf(
+        project.configurations.runtimeClasspath.get(),
+        project.configurations.testRuntimeClasspath.get()
+    )
     mergeServiceFiles()
     exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 }
 ```
 
-## [Step 4] Build the Gradle Project
+!!! tip "Combining Both Configurations"
+    You can add both JUnit and CLI configurations to the same `build.gradle.kts` file to support both use cases. Simply include all the plugins and configurations from both sections above.
 
-Build the PObserve project with the following command:
+
+## [Step 4] Create P Project Configuration
+
+Create a P project file `src/main/YourProject.pproj` to configure P compilation:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectName>YourProject</ProjectName>
+  <InputFiles>
+    <PFile>PSpec/YourSpec.p</PFile>
+  </InputFiles>
+  <OutputDir>java/your/package/spec</OutputDir>
+  <pobserve-package>your.package.spec</pobserve-package>
+</Project>
+```
+
+
+## [Step 5] Build Your PObserve Package
+
+**Build Commands**
 
 ```bash
+# Build the project (always required)
 ./gradlew build
 ```
 
-This will:
+**For JUnit Integration (if configured)**
 
-1. Compile your P specifications to Java classes (if automated compilation is configured)
-2. Compile your Java parser and spec code
-3. Run tests (if any are present)
-4. Create an uber JAR file in the `build/libs/` folder
+```bash
+# Publish to local Maven repository
+./gradlew publishToMavenLocal
+```
 
-The final uber JAR will be created at `build/libs/YourProject-1.0.0-uber.jar` and contains all your compiled code and dependencies needed for PObserve.
+**For PObserve CLI Usage (if configured)**
 
-!!!info ""
-    Refer to the [build.gradle.kts](https://github.com/p-org/P/blob/dev/pobserve/Src/PObserve/Examples/LockServerPObserve/build.gradle.kts) in the  LockServerPObserve example package for reference
+```bash
+# Create the uber JAR
+./gradlew uberjar
+```
 
-!!!success ""
-    Your PObserve package is now ready to be used with PObserve to monitor system logs against your formal specifications! 🚀✨
+!!! success ""
+    :tada: Your PObserve package setup is now complete!
+
+    **What next?**
+
+    Create your P specifications in `src/main/PSpec/` and implement your Java parser in `src/main/java/your/package/parser/`.
+
+    For implementation guidance, see:
+
+    - **[Writing P Specifications](../../../manual/monitors)** - How to write P specifications
+    - **[Writing Log Parser](logparser.md)** - How to implement your Java log parser

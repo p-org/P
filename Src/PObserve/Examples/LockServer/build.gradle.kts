@@ -14,11 +14,11 @@ tasks.withType<Copy> {
 
 dependencies {
     // P PObserve package dependency
-    implementation("io.github.p-org:LockServerPObserve:1.0.0")
+    testImplementation("io.github.p-org:LockServerPObserve:1.0.0")
 
     // PObserve dependencies
     implementation("io.github.p-org:pobserve-commons:1.0.0")
-    implementation("io.github.p-org:pobserve-java-unit-test:1.0.0")
+    testImplementation("io.github.p-org:pobserve-java-unit-test:1.0.0")
 
     // Log4j dependencies
     implementation("org.apache.logging.log4j:log4j-core:2.20.0")

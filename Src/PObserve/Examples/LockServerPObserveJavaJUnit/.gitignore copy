@@ -1,0 +1,11 @@
+.gradle/
+.idea/
+/build
+/buildSrc/build/
+/gradle/
+/gradlew
+/gradlew.bat
+/wrapper/
+/PObserveExample-LockServer.iml
+/bin/
+/all.log

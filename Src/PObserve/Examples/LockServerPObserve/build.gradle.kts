@@ -3,6 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     id("java")
     id("java-library")
+    id("maven-publish")
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
@@ -10,8 +11,6 @@ repositories {
     mavenLocal()
     mavenCentral()
 }
-
-val pobserveVersion = "1.0.0"
 
 dependencies {
     // PObserve dependencies
@@ -87,3 +86,19 @@ tasks.register<ShadowJar>("uberjar") {
 
 group = "io.github.p-org"
 version = "1.0.0"
+
+// Publish to maven local for pobserve java junit example
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            
+            groupId = group.toString()
+            artifactId = "LockServerPObserve"
+            version = version.toString()
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}

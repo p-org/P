@@ -73,6 +73,17 @@ nav:
 #        - What is PSym?: advanced/psym/whatisPSym.md
 #        - Installing PSym: advanced/psym/install.md
 #        - Using PSym: advanced/psym/usingPSym.md
+      - PObserve: 
+        - Overview: advanced/pobserve/pobserve.md
+        - Getting Started: advanced/pobserve/gettingstarted.md
+        - Setting Up PObserve Package: advanced/pobserve/package-setup.md
+        - Writing a Log Parser: advanced/pobserve/logparser.md
+        - PObserve Java Unit Test: advanced/pobserve/pobservejunit.md
+        - PObserve CLI: advanced/pobserve/pobservecli.md
+        - "[Example] Lock Server":
+          - Overview: advanced/pobserve/example/lockserver.md
+          - Running with PObserve JUnit: advanced/pobserve/example/lockserverwithpobservejunit.md
+          - Running with PObserve CLI: advanced/pobserve/example/lockserverwithpobservecli.md
   - Language Manual:
       - P Program (Outline): manualoutline.md
       - P DataTypes: manual/datatypes.md

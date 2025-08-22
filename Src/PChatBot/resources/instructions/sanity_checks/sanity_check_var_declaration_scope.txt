@@ -1,0 +1,97 @@
+You are tasked with checking P language code files for VARIABLE DECLARATIONS AND SCOPE compliance. Follow these steps:
+
+VARIABLE DECLARATIONS AND SCOPE CHECK:
+- Common Error Pattern 1 - Variables Declared Mid-Block:
+  ```p
+  // INCORRECT
+  machine Client {
+    start state Init {
+      entry {
+        DoSomething();
+        var temp: int;  // Declaration after code
+        temp = 5;
+      }
+    }
+  }
+
+  // CORRECT
+  machine Client {
+    start state Init {
+      entry {
+        var temp: int;  // Declaration at start
+        DoSomething();
+        temp = 5;
+      }
+    }
+  }
+  ```
+
+- Common Error Pattern 2 - Variables in Wrong Scope:
+  ```p
+  // INCORRECT
+  machine Server {
+    fun ProcessRequest() {
+      while (HasMore()) {
+        var request: Request;  // Wrong scope
+        HandleRequest(request);
+      }
+    }
+  }
+
+  // CORRECT
+  machine Server {
+    fun ProcessRequest() {
+      var request: Request;  // Correct scope
+      while (HasMore()) {
+        HandleRequest(request);
+      }
+    }
+  }
+  ```
+
+VARIABLE SCOPE CHECK:
+- Declare all variables at the start of their scope
+- Move any var declarations found mid-function to the top
+- Ensure variables used in foreach loops are properly declared
+- CRITICAL: P does NOT allow inline initialization in declarations
+
+Example:
+```p
+fun ProcessNextInQueue(resourceId: int) {
+  // ALL variable declarations first - NO inline initialization
+  var nextClient: machine;
+  var nextClientId: int;
+  var i: int;
+  var newQueue: seq[machine];
+  var lockRequest: tLockRequest;
+
+  // Then initialization separately
+  newQueue = default(seq[machine]);
+  i = 0;
+
+  // Rest of function logic...
+}
+```
+
+Fix parser errors like "mismatched input '=' expecting ';'":
+```p
+// WRONG - Causes parser error
+var lockQueue: seq[tLockRequest] = default(seq[tLockRequest]);
+
+// CORRECT - Separate declaration and initialization
+var lockQueue: seq[tLockRequest];
+lockQueue = default(seq[tLockRequest]);
+```
+
+CORRECTION PROCESS:
+1. Scan the entire file to identify variable declaration and scope issues
+2. Create a list of required changes for variables only
+3. Make changes ensuring:
+   - All variables declared at scope start
+   - No inline initialization in declarations
+   - Proper variable scoping
+4. Maintain original functionality while fixing syntax
+
+OUTPUT FORMAT:
+Return only the corrected P code with variable declaration fixes applied.
+Return the P code enclosed in XML tags where the tag name is the filename.

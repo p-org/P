@@ -1,0 +1,44 @@
+You are tasked with checking P language code files for TYPE DEFINITIONS compliance. Follow these steps:
+
+TYPE DEFINITIONS CHECK:
+- Analyze Enums_Types_Events.p for existing type definitions
+- Create a dependency graph of type usage in the current file
+- For each type reference:
+  * Check if it's defined in Enums_Types_Events.p
+  * If not, verify it's defined in the current file before usage
+  * For types defined in the current file:
+    - Ensure the types appear before their first usage
+    - Check for conflicts with types in Enums_Types_Events.p
+    - Move definitions earlier if needed
+
+TYPE COMPATIBILITY CHECK:
+- Check operations between different types:
+  * Set operations must be between same set types
+  * Cannot directly convert between set and sequence
+  * Sequence element types must match exactly
+  * When using set elements in sequence, convert properly:
+    - Use helper functions like SetToSeq for conversion
+    - Ensure return types match expected types
+  * Example:
+    ```p
+    fun SetToSeq(s: set[int]) : seq[int] {
+      var result: seq[int];
+      foreach (elem in s) {
+        result = result + (elem,);
+      }
+      return result;
+    }
+    ```
+
+CORRECTION PROCESS:
+1. Scan the entire file to identify type definition and compatibility issues
+2. Create a list of required changes for types only
+3. Make changes ensuring:
+   - Type definitions appear before usage
+   - No type conflicts exist
+   - Type compatibility is maintained across operations
+4. Add helper functions for type conversions if needed
+
+OUTPUT FORMAT:
+Return only the corrected P code with type definition fixes applied.
+Return the P code enclosed in XML tags where the tag name is the filename.

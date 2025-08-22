@@ -1,0 +1,48 @@
+You are tasked with checking P language code files for VARIABLE INITIALIZATION compliance. Follow these steps:
+
+VARIABLE INITIALIZATION CHECK:
+- Declare First, Initialize Later Pattern:
+  ```p
+  // CORRECT P Syntax
+  // ✅ Declaration only
+  var participantsArray: seq[machine];
+  var counter: int;
+  var isReady: bool;
+
+  // ✅ Initialize separately
+  fun InitializeVariables() {
+      participantsArray = default(seq[machine]);
+      counter = 0;
+      isReady = false;
+  }
+  ```
+
+- P Auto-Defaults (Often No Initialization Needed):
+  ```p
+  var counter: int;           // Automatically 0
+  var sequence: seq[int];     // Automatically empty
+  var mapping: map[int, string]; // Automatically empty
+  ```
+
+- Initialize collections properly:
+  * Sets: `var mySet: set[int]; mySet = {};`
+  * Sequences: `var mySeq: seq[int]; mySeq = default(seq[int]);`
+  * Maps: `var myMap: map[int, string]; myMap = default(map[int, string]);`
+- Initialize at appropriate scope level, not mixed with other statements
+
+CRITICAL - P does NOT support these operations:
+* NO append() function exists
+* NO inline initialization like var seq: seq[int] = {};
+
+CORRECTION PROCESS:
+1. Scan the entire file to identify initialization issues
+2. Create a list of required changes for initialization only
+3. Make changes ensuring:
+   - Proper collection initialization syntax
+   - Separate declaration from initialization
+   - Use of default() for complex types
+4. Remove any unsupported initialization patterns
+
+OUTPUT FORMAT:
+Return only the corrected P code with initialization fixes applied.
+Return the P code enclosed in XML tags where the tag name is the filename.

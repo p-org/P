@@ -79,6 +79,7 @@ generate_fixed_file_for_pchecker = os.path.join(RESOURCES_DIR, "instructions", "
 generate_machine_structure_path = os.path.join(RESOURCES_DIR, "instructions", "generate_machine_structure.txt")
 generate_project_structure_path = os.path.join(RESOURCES_DIR, "instructions", "generate_project_structure.txt")
 sanity_check_instructions_path = os.path.join(RESOURCES_DIR, "instructions", "p_code_sanity_check.txt")
+sanity_check_folder = os.path.join(RESOURCES_DIR, "instructions", "sanity_checks")
 
 template_path_hot_state_bug_analysis = os.path.join(RESOURCES_DIR, "instructions", "semantic-fix-sets", "hot-state", "analysis_prompt.txt")
 template_ask_llm_which_files_it_needs = os.path.join(RESOURCES_DIR, "instructions", "streamlit-snappy", "1_ask_llm_which_files_it_needs.txt")

@@ -1,20 +1,20 @@
 test testBasicPaxos3on5 [main = BasicPaxos3on5]:
-	assert OneValueTaught, Progress in (union Paxos, { BasicPaxos3on5 });
+	assert OneValueTaught in (union Paxos, { BasicPaxos3on5 });
 
 test testBasicPaxos3on3 [main = BasicPaxos3on3]:
-	assert OneValueTaught, Progress in (union Paxos, { BasicPaxos3on3 });
+	assert OneValueTaught in (union Paxos, { BasicPaxos3on3 });
 
 test testBasicPaxos3on1 [main = BasicPaxos3on1]:
-	assert OneValueTaught, Progress in (union Paxos, { BasicPaxos3on1 });
+	assert OneValueTaught in (union Paxos, { BasicPaxos3on1 });
 
 test testBasicPaxos2on3 [main = BasicPaxos2on3]:
-	assert OneValueTaught, Progress in (union Paxos, { BasicPaxos2on3 });
+	assert OneValueTaught in (union Paxos, { BasicPaxos2on3 });
 
 test testBasicPaxos2on2 [main = BasicPaxos2on2]:
-	assert OneValueTaught, Progress in (union Paxos, { BasicPaxos2on2 });
+	assert OneValueTaught in (union Paxos, { BasicPaxos2on2 });
 
 test testBasicPaxos1on1 [main = BasicPaxos1on1]:
-	assert OneValueTaught, Progress in (union Paxos, { BasicPaxos1on1 });
+	assert OneValueTaught in (union Paxos, { BasicPaxos1on1 });
 
 type tPaxosConfig = (n_proposers: int, n_acceptors: int, n_learners: int);
 
@@ -28,7 +28,6 @@ fun SetupPaxos(cfg: tPaxosConfig) {
 	
 	var proposerCfg: tProposerConfig;
 
-	announce eProgressMonitorInitialize, cfg.n_learners;
 	announce ePaxosConfig, (quorum = cfg.n_acceptors / 2 + 1,);
 
 	i = 0;

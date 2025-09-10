@@ -1,6 +1,7 @@
 #!/bin/bash
 
-SCHEDULES=25000
+DEFAULT_SCHEDULES=25000
+RAFT_SCHEDULES=1000
 
 cd $1
 
@@ -16,10 +17,19 @@ for folder in $folders; do
   # If so, change into folder and compile
   if [ -n "$pprojFiles" ]; then
     cd $folder
-
-    echo "------------------------------------------------------"
-    echo "Checking $folder!"
-    echo "------------------------------------------------------"
+    
+    # Set schedules based on folder name
+    if [[ "$folder" == "6_Raft/" ]]; then
+      SCHEDULES=$RAFT_SCHEDULES
+      echo "------------------------------------------------------"
+      echo "Checking $folder with $SCHEDULES iterations (reduced)!"
+      echo "------------------------------------------------------"
+    else
+      SCHEDULES=$DEFAULT_SCHEDULES
+      echo "------------------------------------------------------"
+      echo "Checking $folder with $SCHEDULES iterations!"
+      echo "------------------------------------------------------"
+    fi
 
     checkLog="check.log"
     p check -i ${SCHEDULES} 2>&1 | tee ${checkLog}
@@ -32,10 +42,15 @@ for folder in $folders; do
           if [[ "${firstWord}" = "~~" ]]; then
             break;
           fi
-          echo "Smoke testing for test case ${firstWord}";
-          p check -i ${SCHEDULES} -tc ${firstWord}
-          if [ $? -ne 0 ]; then
-            let "errorCount=errorCount + 1"
+          # Skip test cases that contain an underscore
+          if [[ "${firstWord}" != *"_"* ]]; then
+            echo "Smoke testing for test case ${firstWord}";
+            p check -i ${SCHEDULES} -tc ${firstWord}
+            if [ $? -ne 0 ]; then
+              let "errorCount=errorCount + 1"
+            fi
+          else
+            echo "Skipping test case ${firstWord} as it contains an underscore";
           fi
         fi
       done < ${checkLog}

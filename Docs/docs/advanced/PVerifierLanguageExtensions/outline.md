@@ -1,5 +1,5 @@
 !!! tip ""
-    **We recommend that you start with the [Tutorials](tutsoutline.md) to get familiar with
+    **We recommend that you start with the [Tutorials](../../tutsoutline.md) to get familiar with
     the P language and its tool chain.**
 
 ??? note "PVerifier Extension Top Level Declarations Grammar"

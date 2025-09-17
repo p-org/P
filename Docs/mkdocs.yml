@@ -74,6 +74,16 @@ nav:
 #        - Installing PSym: advanced/psym/install.md
 #        - Using PSym: advanced/psym/usingPSym.md
       - P Exhaustive Mode: advanced/pex.md
+      - PVerifier:
+        - Announcement: advanced/PVerifierLanguageExtensions/announcement.md
+        - Outline: advanced/PVerifierLanguageExtensions/outline.md
+        - Installation: advanced/PVerifierLanguageExtensions/install-pverifier.md
+        - Using PVerifier: advanced/PVerifierLanguageExtensions/using-pverifier.md
+        - Pure Functions: advanced/PVerifierLanguageExtensions/pure.md
+        - Init Conditions: advanced/PVerifierLanguageExtensions/init-condition.md
+        - Specifications: advanced/PVerifierLanguageExtensions/specification.md
+        - Lemmas and Proofs: advanced/PVerifierLanguageExtensions/proof.md
+        - Two Phase Commit Verification: advanced/PVerifierLanguageExtensions/twophasecommitverification.md
   - Language Manual:
       - P Program (Outline): manualoutline.md
       - P DataTypes: manual/datatypes.md

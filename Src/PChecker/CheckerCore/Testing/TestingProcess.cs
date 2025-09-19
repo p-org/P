@@ -130,7 +130,7 @@ namespace PChecker.Testing
                         Console.Out.WriteLine($"{mi.DeclaringType.Name}");
                     }
 
-                    if (mi.DeclaringType.Name.StartsWith(testCaseName))
+                    else if (mi.DeclaringType.Name.StartsWith(testCaseName))
                     {
                         Console.Out.WriteLine($"{mi.DeclaringType.Name}");
                         testCases.Add(mi.DeclaringType.Name);

@@ -1,0 +1,5 @@
+1706581761576: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_6.p:43:7 Key provided for ValidateLogEntry has not been initialized. Key received: 3,276,
+1706581775458: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_6.p:84:7 Incorrect counts for key 1: total expected value: 101, actual value: 100; ,
+1706581775644: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_6.p:84:7 Incorrect counts for key 2: node1 expected value: 22, actual value: 20; ,
+1706581775460: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_6.p:84:7 Incorrect counts for key 3: node2 expected value: 18, actual value: 19; ,
+1706581774659: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_6.p:65:7 Key provided for ValidateFinalCount does not exist. Key: 912,

@@ -1,0 +1,2 @@
+1706870091428: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_3.p:59:9 Lock 0 in the release request has not been acquired yet, should have returned release error. rId: 3,
+1706870091430: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_3.p:59:9 Lock 1 in the release request has not been acquired yet, should have returned release error. rId: 4,

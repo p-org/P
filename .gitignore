@@ -242,6 +242,12 @@ Tst/temp_builds/*
 target/
 *.class
 
+# Gradle
+.gradle
+gradle
+gradlew
+gradlew.bat
+
 #Mkdocs
 site/
 

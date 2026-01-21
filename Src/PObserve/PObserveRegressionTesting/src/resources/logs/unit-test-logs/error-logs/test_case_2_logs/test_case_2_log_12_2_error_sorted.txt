@@ -1,0 +1,13 @@
+2024-02-02 17:27:34.309.13813999095916 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE; AccountID=0; RecipientAccountID=null; TransactionType=CREATE_ACCOUNT; Amount=0.00; TransactionID=12345; Result=SUCCESS; Message=[[0, 100000.0], [1, 100000.0]]
+2024-02-02 17:27:34.323.13814012797041 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST; AccountID=1; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=125.00; TransactionID=12346; Result=null; Message=null
+2024-02-02 17:27:34.324.13814014679750 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE; AccountID=1; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=99875.00; TransactionID=12346; Result=SUCCESS; Message=null
+2024-02-02 17:27:34.326.13814016190708 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST; AccountID=1; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=7.00; TransactionID=12347; Result=null; Message=null
+2024-02-02 17:27:34.328.13814017843416 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE; AccountID=1; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=99868.00; TransactionID=12347; Result=SUCCESS; Message=null
+2024-02-02 17:27:34.328.13814018183333 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST; AccountID=1; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=26.00; TransactionID=12348; Result=null; Message=null
+2024-02-02 17:27:34.330.13814019726458 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE; AccountID=1; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=99842.00; TransactionID=12348; Result=SUCCESS; Message=null
+2024-02-02 17:27:34.330.13814020014208 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST; AccountID=1; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=57.00; TransactionID=12349; Result=null; Message=null
+// Injecting Error: changing amount from 99785 to 99786
+2024-02-02 17:27:34.331.13814021505916 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE; AccountID=1; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=99786.00; TransactionID=12349; Result=SUCCESS; Message=null
+2024-02-02 17:27:34.332.13814021745083 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST; AccountID=0; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=129.00; TransactionID=12350; Result=null; Message=null
+// Injecting Error: changing amount from 99871 to 99872
+2024-02-02 17:27:34.333.13814023231666 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE; AccountID=0; RecipientAccountID=null; TransactionType=WITHDRAW; Amount=99872.00; TransactionID=12350; Result=SUCCESS; Message=null

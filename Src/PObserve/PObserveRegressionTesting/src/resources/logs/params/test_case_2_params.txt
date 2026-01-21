@@ -1,0 +1,3 @@
+--specName: BankBalanceIsAlwaysCorrect
+--consumer: BankBalanceIsAlwaysCorrect
+--parser: TestCase2Parser

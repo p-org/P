@@ -1,0 +1,14 @@
+2024-02-02 10:34:51.428.306356755798083 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=1, LockID=0, TransactionType=RELEASE, TransactionID=3, Result=SUCCESS, LockStatus=FREE, Message=null
+2024-02-02 10:34:51.427.306356754311125 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=1, LockID=0, TransactionType=RELEASE, TransactionID=3, Result=null, LockStatus=null, Message=null
+2024-02-02 10:34:51.425.306356752536083 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=1, LockID=0, TransactionType=RELEASE, TransactionID=2, Result=null, LockStatus=null, Message=null
+
+2024-02-02 10:34:51.428.306356756043583 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=0, LockID=0, TransactionType=RELEASE, TransactionID=4, Result=null, LockStatus=null, Message=null
+// Injecting Error: changing result from FAIL to SUCCESS
+2024-02-02 10:34:51.406.306356733323291 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=0, LockID=0, TransactionType=RELEASE, TransactionID=0, Result=null, LockStatus=null, Message=null
+2024-02-02 10:34:51.421.306356748795500 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=1, LockID=0, TransactionType=LOCK, TransactionID=1, Result=null, LockStatus=null, Message=null
+// Injecting Error: changing result from FAIL to SUCCESS
+2024-02-02 10:34:51.426.306356754062625 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=1, LockID=0, TransactionType=RELEASE, TransactionID=2, Result=SUCCESS, LockStatus=FREE, Message=null
+2024-02-02 10:34:51.430.306356757521958 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=0, LockID=1, TransactionType=RELEASE, TransactionID=4, Result=SUCCESS, LockStatus=FREE, Message=null
+2024-02-02 10:34:51.420.306356747796750 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=0, LockID=0, TransactionType=RELEASE, TransactionID=0, Result=FAIL, LockStatus=null, Message=null
+
+2024-02-02 10:34:51.424.306356751262083 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=1, LockID=0, TransactionType=LOCK, TransactionID=1, Result=SUCCESS, LockStatus=LOCKED, Message=null

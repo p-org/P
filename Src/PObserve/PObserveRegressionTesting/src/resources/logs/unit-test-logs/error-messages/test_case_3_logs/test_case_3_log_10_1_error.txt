@@ -1,0 +1,1 @@
+1706870069680: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_3.p:44:9 Expect success lock lockId: 0 in lock response, but received failed lock,

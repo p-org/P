@@ -1,0 +1,2 @@
+1706724251258: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_6.p:84:7 Incorrect counts for key 1: total expected value: 6, actual value: 5; ,
+1706724251256: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_6.p:84:7 Incorrect counts for key 2: node2 expected value: 3, actual value: 1; ,

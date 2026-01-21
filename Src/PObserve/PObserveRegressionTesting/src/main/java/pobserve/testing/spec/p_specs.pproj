@@ -1,0 +1,9 @@
+<!-- P Project file for the Increasing Integers Test Case -->
+<Project>
+<ProjectName>Test_Cases</ProjectName>
+<InputFiles>
+    <PFile>./pSpecs/</PFile>
+</InputFiles>
+<OutputDir>PGenerated</OutputDir>
+<pobserve-package>pobserve.testing.spec.PGenerated.Java</pobserve-package>
+</Project>

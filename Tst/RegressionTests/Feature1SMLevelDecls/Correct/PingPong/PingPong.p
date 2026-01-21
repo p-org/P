@@ -1,5 +1,5 @@
-event Ping assert 1: machine;
-event Pong assert 2: machine;
+event Ping : machine;
+event Pong : machine;
 event Success;
 event M_Ping;
 event M_Pong;
@@ -75,11 +75,11 @@ spec M observes M_Ping, M_Pong {
     }
 }
 
-fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: machine) : machine
+fun _CREATEMACHINE(cner: machine, typeOfMachine: int, parameter : any, newMachine: machine) : machine
 {
 	if(typeOfMachine == 1)
 	{
-		newMachine = new PING(param as (machine, machine));
+		newMachine = new PING(parameter as (machine, machine));
 	}
 	else if(typeOfMachine == 2)
 	{

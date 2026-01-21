@@ -5,17 +5,45 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.AST.ModuleExprs;
+using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
     internal static class ModuleSystemDeclarations
     {
+        private static IDictionary<string, List<IPExpr>> EnumerateParamAssignments(ITranslationErrorHandler handler, Scope globalScope, 
+            PParser.ParamContext globalParam,
+            NamedTupleExpr expr)
+        {
+            var names = ((NamedTupleType)expr.Type).Names.ToList();
+            var values = expr.TupleFields.ToList();
+            IDictionary<string, List<IPExpr>> dic = new Dictionary<string, List<IPExpr>>();
+            foreach (var (name, value) in names.Zip(values))
+            {
+                var v = globalScope.Variables.FirstOrDefault(x => x.Name == name);
+                if (v == null)
+                {
+                    throw handler.UndeclaredGlobalParam(globalParam, name);
+                }
+                var expectedType = new SequenceType(v.Type);
+                if (!value.Type.Equals(expectedType))
+                {
+                    throw handler.TypeMismatch(value.SourceLocation, value.Type, expectedType);
+                }
+                dic[name] = ((SeqLiteralExpr)value).Value;
+            }
+            return dic;
+        }
+        
         public static void PopulateAllModuleExprs(
             ITranslationErrorHandler handler,
             Scope globalScope)
         {
             var modExprVisitor = new ModuleExprVisitor(handler, globalScope);
+            var paramExprVisitor = new ParamExprVisitor(handler);
+            var exprVisitor = new ExprVisitor(globalScope, handler);
 
             // first do all the named modules
             foreach (var mod in globalScope.NamedModules)
@@ -29,8 +57,38 @@ namespace Plang.Compiler.TypeChecker
             {
                 var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
                 test.ModExpr = modExprVisitor.Visit(context.modExpr());
+                if (context.globalParam != null)
+                {
+                    var expr = (NamedTupleExpr)paramExprVisitor.Visit(context.globalParam);
+                    test.ParamExprMap = EnumerateParamAssignments(handler, globalScope, context.globalParam, expr);
+                }
+                if (context.assumeExpr != null)
+                {
+                    test.AssumeExpr = exprVisitor.Visit(context.assumeExpr);
+                }
+                if (context.twise() == null)
+                {
+                    test.Twise = test.ParamExprMap.Count;
+                }
+                else
+                {
+                    if (context.twise().PAIRWISE() != null)
+                    {
+                        test.Twise = 2;
+                    }
+                    else if (context.twise().WISE() != null)
+                    {
+                        var t = int.Parse(context.twise().IntLiteral().GetText());
+                        var (isValid, errMsg) = ParamAssignment.TwiseNumWellFormednessCheck(t, test.ParamExprMap.Count);
+                        if (!isValid)
+                        {
+                            throw handler.InvalidTwise(context.twise(), test, errMsg);
+                        }
+                        test.Twise = t;
+                    }
+                }
             }
-
+            
             foreach (var test in globalScope.RefinementTests)
             {
                 var context = (PParser.RefinementTestDeclContext)test.SourceLocation;

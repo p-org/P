@@ -1,0 +1,51 @@
+package pex.runtime.scheduler.choice;
+
+import lombok.Getter;
+import lombok.Setter;
+import pex.runtime.machine.PMachineId;
+import pex.runtime.scheduler.explicit.StepState;
+
+@Getter
+@Setter
+public class ScheduleChoice extends Choice<PMachineId> {
+    /**
+     * Step number
+     */
+    private int stepNumber = 0;
+    /**
+     * Choice number
+     */
+    private int choiceNumber = 0;
+
+    /**
+     * Protocol state at the schedule step
+     */
+    private transient StepState choiceState = null;
+
+    /**
+     * Constructor
+     */
+    public ScheduleChoice(int stepNum, int choiceNum, PMachineId c, StepState s) {
+        super(c);
+        this.stepNumber = stepNum;
+        this.choiceNumber = choiceNum;
+        this.choiceState = s;
+    }
+
+    public Choice copyCurrent(boolean copyState) {
+        if (copyState) {
+            return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, this.choiceState);
+        } else {
+            return new ScheduleChoice(this.stepNumber, this.choiceNumber, this.current, null);
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (current != null) {
+            sb.append(String.format("curr@%s", current));
+        }
+        return sb.toString();
+    }
+}

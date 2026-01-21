@@ -100,9 +100,6 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteStmt(machine.IsSpec ? "spec " : "",
                         "machine ",
                         machine);
-                    var machineAssume = machine.Assume?.ToString() ?? "max";
-                    var machineAssert = machine.Assert?.ToString() ?? "max";
-                    WriteStmt("  assert ", machineAssert, " assume ", machineAssume);
                     WriteStmt("  receives ", WriteEventSet(machine.Receives));
                     WriteStmt("  sends ", WriteEventSet(machine.Sends));
                     if (machine.IsSpec)
@@ -150,10 +147,6 @@ namespace Plang.Compiler.Backend.Debugging
                 case Event pEvent:
                     WriteStmt("event ",
                         pEvent,
-                        " assert ",
-                        pEvent.Assert,
-                        " assume ",
-                        pEvent.Assume,
                         " : ",
                         pEvent.PayloadType,
                         ";");
@@ -175,6 +168,10 @@ namespace Plang.Compiler.Backend.Debugging
                     WriteStmt("assert ", assertStmt.Assertion, ", \"", assertStmt.Message, "\";");
                     break;
 
+                case AssumeStmt assumeStmt:
+                    WriteStmt("assume ", assumeStmt.Assumption, ", \"", assumeStmt.Message, "\";");
+                    break;
+                
                 case AssignStmt assignStmt:
                     WriteStmt(assignStmt.Location, " = ", assignStmt.Value, ";");
                     break;

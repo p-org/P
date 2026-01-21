@@ -1,5 +1,5 @@
 
-event E assert 1;
+event E;
 
 machine Main {
 	var vAny: any;

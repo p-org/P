@@ -4,8 +4,8 @@
 // Result: semantics error reported by Zing:
 // "<Exception> Attempting to enqueue event ____E1 more than max instance of 1"
 
-event E2 assert 1;
-event E1 assert 1;
+event E2;
+event E1;
 
 machine Main {
     start state Real1_Init {

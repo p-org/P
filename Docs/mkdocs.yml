@@ -69,10 +69,6 @@ nav:
       - Structure of a P Program: advanced/structureOfPProgram.md
       - P Project File: advanced/PProject.md
       - Debugging Error Traces (counter examples): advanced/debuggingerror.md
-#      - PSym:
-#        - What is PSym?: advanced/psym/whatisPSym.md
-#        - Installing PSym: advanced/psym/install.md
-#        - Using PSym: advanced/psym/usingPSym.md
       - PObserve: 
         - Overview: advanced/pobserve/pobserve.md
         - Getting Started: advanced/pobserve/gettingstarted.md
@@ -84,6 +80,17 @@ nav:
           - Overview: advanced/pobserve/example/lockserver.md
           - Running with PObserve JUnit: advanced/pobserve/example/lockserverwithpobservejunit.md
           - Running with PObserve CLI: advanced/pobserve/example/lockserverwithpobservecli.md
+      - PExhaustive Mode: advanced/pex.md
+      - PVerifier:
+        - Announcement: advanced/PVerifierLanguageExtensions/announcement.md
+        - Outline: advanced/PVerifierLanguageExtensions/outline.md
+        - Installation: advanced/PVerifierLanguageExtensions/install-pverifier.md
+        - Using PVerifier: advanced/PVerifierLanguageExtensions/using-pverifier.md
+        - Pure Functions: advanced/PVerifierLanguageExtensions/pure.md
+        - Init Conditions: advanced/PVerifierLanguageExtensions/init-condition.md
+        - Specifications: advanced/PVerifierLanguageExtensions/specification.md
+        - Lemmas and Proofs: advanced/PVerifierLanguageExtensions/proof.md
+        - Two Phase Commit Verification: advanced/PVerifierLanguageExtensions/twophasecommitverification.md
   - Language Manual:
       - P Program (Outline): manualoutline.md
       - P DataTypes: manual/datatypes.md

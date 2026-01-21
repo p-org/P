@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using Antlr4.Runtime;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
@@ -21,6 +23,13 @@ namespace Plang.Compiler.TypeChecker
         private readonly IDictionary<string, Event> events = new Dictionary<string, Event>();
         private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
+        private readonly IDictionary<string, Pure> pures = new Dictionary<string, Pure>();
+        private readonly IDictionary<string, Invariant> invariants = new Dictionary<string, Invariant>();
+        private readonly IDictionary<string, Axiom> axioms = new Dictionary<string, Axiom>();
+        private readonly List<(string, ProofCommand)> proofCommands = new List<(string, ProofCommand)>();
+        private readonly IDictionary<string, ProofBlock> proofBlocks = new Dictionary<string, ProofBlock>();
+        private readonly IDictionary<string, InvariantGroup> invariantGroups = new Dictionary<string, InvariantGroup>();
+        private readonly IDictionary<string, AssumeOnStart> assumeOnStarts = new Dictionary<string, AssumeOnStart>();
         private readonly ICompilerConfiguration config;
         private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
@@ -55,6 +64,10 @@ namespace Plang.Compiler.TypeChecker
                 .Concat(Events)
                 .Concat(EventSets)
                 .Concat(Functions)
+                .Concat(Invariants)
+                .Concat(Axioms)
+                .Concat(AssumeOnStarts)
+                .Concat(Pures)
                 .Concat(Interfaces)
                 .Concat(Machines)
                 .Concat(States)
@@ -70,6 +83,10 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<Event> Events => events.Values;
         public IEnumerable<NamedEventSet> EventSets => eventSets.Values;
         public IEnumerable<Function> Functions => functions.Values;
+        public IEnumerable<Invariant> Invariants => invariants.Values;
+        public IEnumerable<Axiom> Axioms => axioms.Values;
+        public IEnumerable<AssumeOnStart> AssumeOnStarts => assumeOnStarts.Values;
+        public IEnumerable<Pure> Pures => pures.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
         public IEnumerable<Machine> Machines => machines.Values;
         public IEnumerable<State> States => states.Values;
@@ -80,6 +97,9 @@ namespace Plang.Compiler.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
+        public IEnumerable<ProofBlock> ProofBlocks => proofBlocks.Values;
+        public IEnumerable<ProofCommand> ProofCommands => proofCommands.Select(p => p.Item2);
+        public IEnumerable<InvariantGroup> InvariantGroups => invariantGroups.Values;
 
         public static Scope CreateGlobalScope(ICompilerConfiguration config)
         {
@@ -158,6 +178,42 @@ namespace Plang.Compiler.TypeChecker
         public bool Get(string name, out Function tree)
         {
             return functions.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out Invariant tree)
+        {
+            return invariants.TryGetValue(name, out tree);
+        }
+
+        public bool Get(string name, out InvariantGroup tree)
+        {
+            return invariantGroups.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out Axiom tree)
+        {
+            return axioms.TryGetValue(name, out tree);
+        }
+
+        public bool Get(string name, out ProofBlock pb)
+        {
+            return proofBlocks.TryGetValue(name, out pb);
+        }
+
+        public bool Get(string name, out ProofCommand tree)
+        {
+            tree = proofCommands.Find(x => x.Item1 == name).Item2;
+            return tree != null;
+        }
+        
+        public bool Get(string name, out AssumeOnStart tree)
+        {
+            return assumeOnStarts.TryGetValue(name, out tree);
+        }
+        
+        public bool Get(string name, out Pure tree)
+        {
+            return pures.TryGetValue(name, out tree);
         }
 
         public bool Get(string name, out Interface tree)
@@ -293,7 +349,92 @@ namespace Plang.Compiler.TypeChecker
             tree = null;
             return false;
         }
+        
+        public bool Lookup(string name, out Invariant tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
 
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        public bool Lookup(string name, out InvariantGroup tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
+        public bool Lookup(string name, out Axiom tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        public bool Lookup(string name, out ProofCommand tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
+        public bool Lookup(string name, out Pure tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+        
         public bool Lookup(string name, out Interface tree)
         {
             var current = this;
@@ -336,6 +477,16 @@ namespace Plang.Compiler.TypeChecker
                 if (current.Get(name, out tree))
                 {
                     return true;
+                }
+
+                // look inside machines to find the state.
+                // TODO: bug if multiple machines have the same state name
+                foreach (var m in current.Machines)
+                {
+                    if (m.Scope.Get(name, out tree))
+                    {
+                        return true;
+                    }
                 }
 
                 current = current.Parent;
@@ -547,6 +698,62 @@ namespace Plang.Compiler.TypeChecker
             return function;
         }
 
+
+        public Pure Put(string name, PParser.PureDeclContext tree)
+        {
+            var pure = new Pure(name, tree);
+            CheckConflicts(pure, Namespace(pures));
+            pures.Add(name, pure);
+            return pure;
+        }
+        
+        public Invariant Put(string name, PParser.InvariantDeclContext tree)
+        {
+            var invariant = new Invariant(name, null, tree); // need to add expr later
+            CheckConflicts(invariant, Namespace(invariants));
+            invariants.Add(name, invariant);
+            return invariant;
+        }
+
+        public InvariantGroup Put(string name, PParser.InvariantGroupDeclContext tree)
+        {
+            var group = new InvariantGroup(name, tree);
+            CheckConflicts(group, Namespace(invariantGroups));
+            invariantGroups.Add(name, group);
+            return group;
+        }
+        
+        public Axiom Put(string name, PParser.AxiomDeclContext tree)
+        {
+            var axiom = new Axiom(name, null, tree); // need to add expr later
+            CheckConflicts(axiom, Namespace(axioms));
+            axioms.Add(name, axiom);
+            return axiom;
+        }
+
+        public ProofCommand Put(string name, PParser.ProofItemContext tree)
+        {
+            var proofCommand = new ProofCommand(name, tree);
+            proofCommands.Add((name, proofCommand));
+            return proofCommand;
+        }
+
+        public ProofBlock Put(string name, PParser.ProofBlockContext tree)
+        {
+            var proofBlock = new ProofBlock(name, tree);
+            CheckConflicts(proofBlock, Namespace(proofBlocks));
+            proofBlocks.Add(name, proofBlock);
+            return proofBlock;
+        }
+        
+        public AssumeOnStart Put(string name, PParser.AssumeOnStartDeclContext tree)
+        {
+            var assumeOnStart = new AssumeOnStart(name, null, tree); // need to add expr later
+            CheckConflicts(assumeOnStart, Namespace(assumeOnStarts));
+            assumeOnStarts.Add(name, assumeOnStart);
+            return assumeOnStart;
+        }
+        
         public EnumElem Put(string name, PParser.EnumElemContext tree)
         {
             var enumElem = new EnumElem(name, tree);
@@ -657,5 +864,67 @@ namespace Plang.Compiler.TypeChecker
         }
 
         #endregion Conflict API
+
+        #region Global Params
+
+        public void Update(Variable v)
+        {
+            Variable vv;
+            if (variables.TryGetValue(v.Name, out vv))
+            {
+                variables[v.Name] = v;
+            }
+            return;
+        }
+        
+        public List<Variable> GetGlobalVariables()
+        {
+            return variables.Values.Where(v => v.Role == VariableRole.GlobalParams).ToList();
+        }
+        
+        public void ValidateGlobalParamsUnique(ITranslationErrorHandler handler)
+        {
+            var current = this;
+            IDictionary<string, Variable> allVariables = new Dictionary<string, Variable>();
+            while (current != null)
+            {
+                foreach (var v in current.variables.Values) {
+                    if (allVariables.Keys.Contains(v.Name))
+                    {
+                        if (v.Role == VariableRole.GlobalParams)
+                        {
+                            var vv = allVariables[v.Name];
+                            throw handler.DuplicateDeclaration(vv.SourceLocation, vv, v);
+                        }
+                    }
+                    allVariables[v.Name] = v;
+                }
+                current = current.Parent;
+            }
+            return;
+        }
+        
+        public bool LookupLvalue(ITranslationErrorHandler handler, string name, ParserRuleContext pos, out Variable tree)
+        {
+            var current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    if (tree.Role == VariableRole.GlobalParams)
+                    {
+                        throw handler.ModifyGlobalParam(pos, tree); 
+                    }
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        #endregion Global Params
     }
 }

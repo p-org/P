@@ -385,6 +385,12 @@ namespace Plang.Compiler.Backend.Java {
                     t = Types.JavaTypeFor(addStmt.Variable.Type);
                     WriteExpr(addStmt.Variable);
                     Write($".{t.MutatorMethodName}(");
+                    // If mutating a sequence, cast the value to int so that it calls the
+                    // expected set method
+                    if (PLanguageType.TypeIsOfKind(addStmt.Variable.Type, TypeKind.Sequence))
+                    {
+                        Write("(int)");
+                    }
                     WriteExpr(addStmt.Value);
                     WriteLine(");");
                     break;
@@ -510,6 +516,12 @@ namespace Plang.Compiler.Backend.Java {
                     t = Types.JavaTypeFor(removeStmt.Variable.Type);
                     WriteExpr(removeStmt.Variable);
                     Write($".{t.RemoveMethodName}(");
+                    // If removing from a sequence, cast the value to int so that it calls the
+                    // expected remove-by-index method
+                    if (PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence))
+                    {
+                        Write("(int)");
+                    }
                     WriteExpr(removeStmt.Value);
                     WriteLine(");");
                     break;
@@ -597,7 +609,9 @@ namespace Plang.Compiler.Backend.Java {
 
                 case SeqAccessExpr seqAccessExpr:
                     WriteExpr(seqAccessExpr.SeqExpr);
-                    Write($".{t.MutatorMethodName}(");
+                    // If mutating a sequence, cast the value to int so that it calls the
+                    // expected set methodk
+                    Write($".{t.MutatorMethodName}((int)");
                     WriteExpr(seqAccessExpr.IndexExpr);
                     Write(",");
                     WriteExpr(rval);

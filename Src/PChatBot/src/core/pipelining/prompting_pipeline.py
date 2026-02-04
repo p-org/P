@@ -27,6 +27,15 @@ DEFAULT_TOOL = {
         }
     }
 
+# LLM Provider configuration - set via environment variables
+# ANTHROPIC_API_KEY: API key for Anthropic API
+# ANTHROPIC_BASE_URL: Base URL for Anthropic API (optional, uses default if not set)
+# LLM_PROVIDER: "anthropic" (default) or "bedrock"
+
+def get_llm_provider():
+    """Get the LLM provider from environment variable, default to anthropic"""
+    return os.environ.get("LLM_PROVIDER", "anthropic").lower()
+
 class PromptingPipeline:
 
     def __init__(self):
@@ -96,6 +105,171 @@ class PromptingPipeline:
         config = Config(read_timeout=1000)
         return boto3.client(service_name='bedrock-runtime', region_name='us-west-2', config=config)
 
+    def _create_anthropic_client(self):
+        """Create and return an Anthropic client"""
+        import anthropic
+        import httpx
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        base_url = os.environ.get("ANTHROPIC_BASE_URL")
+        
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable is required for Anthropic provider")
+        
+        client_kwargs = {"api_key": api_key}
+        if base_url:
+            client_kwargs["base_url"] = base_url
+            # For Snowflake Cortex, add Authorization header with Bearer token
+            client_kwargs["default_headers"] = {
+                "Authorization": f"Bearer {api_key}"
+            }
+        
+        return anthropic.Anthropic(**client_kwargs)
+
+    def _convert_conversation_to_anthropic_format(self):
+        """Convert Bedrock conversation format to Anthropic format"""
+        messages = []
+        system_text = ""
+        
+        # Extract system prompt
+        if self.system_prompt:
+            system_text = self.system_prompt[0].get("text", "")
+        
+        # Convert each message
+        for msg in self.conversation:
+            role = msg["role"]
+            content_parts = msg.get("content", [])
+            
+            # Extract text content, handle documents by reading their content
+            text_content = []
+            for part in content_parts:
+                if "text" in part:
+                    text_content.append(part["text"])
+                elif "document" in part:
+                    # Extract document content from bytes
+                    doc = part["document"]
+                    doc_bytes = doc.get("source", {}).get("bytes", b"")
+                    if isinstance(doc_bytes, bytes):
+                        doc_text = doc_bytes.decode("utf-8")
+                    else:
+                        doc_text = str(doc_bytes)
+                    doc_name = doc.get("name", "document")
+                    text_content.append(f"<{doc_name}>\n{doc_text}\n</{doc_name}>")
+            
+            combined_content = "\n\n".join(text_content)
+            messages.append({"role": role, "content": combined_content})
+        
+        return messages, system_text
+
+    def _get_single_response_anthropic(self, client, model, inference_config):
+        """Get response from Anthropic API or Snowflake Cortex"""
+        import httpx
+        
+        # Check if using Snowflake Cortex (OpenAI-compatible endpoint)
+        openai_base_url = os.environ.get("OPENAI_BASE_URL")
+        if openai_base_url and "snowflakecomputing.com" in openai_base_url:
+            return self._get_single_response_snowflake_cortex(inference_config)
+        
+        # Otherwise use the standard Anthropic SDK
+        messages, system_text = self._convert_conversation_to_anthropic_format()
+        
+        # Map model names for Anthropic API
+        anthropic_model = os.environ.get("ANTHROPIC_MODEL_NAME", "claude-3-5-sonnet")
+        
+        # Cap max_tokens to avoid streaming requirement
+        max_tokens = min(inference_config.get("maxTokens", 4096), 8192)
+        
+        try:
+            response = client.messages.create(
+                model=anthropic_model,
+                max_tokens=max_tokens,
+                system=system_text,
+                messages=messages,
+                timeout=httpx.Timeout(600.0, connect=60.0)
+            )
+            
+            return {
+                "output": {
+                    "message": {
+                        "role": "assistant",
+                        "content": [{"text": response.content[0].text}]
+                    }
+                },
+                "stopReason": response.stop_reason,
+                "usage": {
+                    "inputTokens": response.usage.input_tokens,
+                    "outputTokens": response.usage.output_tokens,
+                    "totalTokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cacheReadInputTokens": 0,
+                    "cacheWriteInputTokens": 0
+                },
+                "metrics": {"latencyMs": 0}
+            }
+        except Exception as e:
+            print("======= EXCEPTION WHILE CALLING ANTHROPIC API ======== ")
+            print(f"Error: {e}")
+            raise e
+
+    def _get_single_response_snowflake_cortex(self, inference_config):
+        """Get response from Snowflake Cortex using OpenAI SDK (Cortex is OpenAI-compatible)"""
+        from openai import OpenAI
+        
+        messages, system_text = self._convert_conversation_to_anthropic_format()
+        
+        base_url = os.environ.get("OPENAI_BASE_URL", "").rstrip("/")
+        api_key = os.environ.get("OPENAI_API_KEY")
+        model_name = os.environ.get("OPENAI_MODEL_NAME", "claude-3-5-sonnet")
+        
+        max_tokens = min(inference_config.get("maxTokens", 4096), 8192)
+        
+        # Prepare messages with system message
+        formatted_messages = []
+        if system_text:
+            formatted_messages.append({"role": "system", "content": system_text})
+        formatted_messages.extend(messages)
+        
+        try:
+            print(f"======= SNOWFLAKE CORTEX REQUEST ========")
+            print(f"Base URL: {base_url}")
+            print(f"Model: {model_name}")
+            
+            client = OpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=600.0,
+            )
+            
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=formatted_messages,
+                max_completion_tokens=max_tokens,
+                temperature=inference_config.get("temperature", 1.0),
+                top_p=inference_config.get("topP", 0.999),
+            )
+            
+            print(f"Response received successfully")
+            
+            return {
+                "output": {
+                    "message": {
+                        "role": "assistant",
+                        "content": [{"text": response.choices[0].message.content}]
+                    }
+                },
+                "stopReason": response.choices[0].finish_reason,
+                "usage": {
+                    "inputTokens": response.usage.prompt_tokens if response.usage else 0,
+                    "outputTokens": response.usage.completion_tokens if response.usage else 0,
+                    "totalTokens": response.usage.total_tokens if response.usage else 0,
+                    "cacheReadInputTokens": 0,
+                    "cacheWriteInputTokens": 0
+                },
+                "metrics": {"latencyMs": 0}
+            }
+        except Exception as e:
+            print("======= EXCEPTION WHILE CALLING SNOWFLAKE CORTEX ======== ")
+            print(f"Error: {e}")
+            raise e
+
     def _get_single_response(self, bedrock_client, model, inference_config, tool_config={"tools": [DEFAULT_TOOL]}):
 
         try:
@@ -152,11 +326,24 @@ class PromptingPipeline:
                 "topP": global_state.topP
             }
 
-        bedrock_client = self._create_bedrock_client()
+        provider = get_llm_provider()
+        
+        # Check if using Snowflake Cortex (OpenAI-compatible endpoint)
+        openai_base_url = os.environ.get("OPENAI_BASE_URL", "")
+        is_snowflake_cortex = openai_base_url and "snowflakecomputing.com" in openai_base_url
         
         responses = []
         for _ in range(candidates):
-            response_dict = self._get_single_response(bedrock_client, model, inference_config, tool_config=tool_config)
+            if provider == "bedrock":
+                bedrock_client = self._create_bedrock_client()
+                response_dict = self._get_single_response(bedrock_client, model, inference_config, tool_config=tool_config)
+            elif is_snowflake_cortex:
+                # Use OpenAI SDK for Snowflake Cortex
+                response_dict = self._get_single_response_snowflake_cortex(inference_config)
+            else:  # default to anthropic
+                client = self._create_anthropic_client()
+                response_dict = self._get_single_response_anthropic(client, model, inference_config)
+            
             # print(response_dict)
             if response_dict['stopReason'] == "tool_use":
                 print(response_dict)

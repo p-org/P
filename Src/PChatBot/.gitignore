@@ -1,0 +1,49 @@
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+
+# Cursor MCP settings (contains local paths)
+cursor-mcp-settings.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Build
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Logs
+*.log
+logs/
+
+# Generated code output
+generated_code/
+PCheckerOutput/
+
+# Test artifacts
+test_mcp_paxos.py
+

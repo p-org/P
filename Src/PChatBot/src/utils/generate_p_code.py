@@ -299,8 +299,16 @@ def extract_filenames(llm_response):
 
     lines = llm_response.split('\n')
     for line in lines:
-        folder, files = line.split(': ')
-        filenames_map[folder] = [file.strip().replace('.p', '') for file in files.split(',')]
+        line = line.strip()
+        if not line or ': ' not in line:
+            continue
+        parts = line.split(': ', 1)  # Split only on first ': '
+        if len(parts) != 2:
+            continue
+        folder, files = parts
+        folder = folder.strip()
+        if folder in folders:
+            filenames_map[folder] = [file.strip().replace('.p', '') for file in files.split(',') if file.strip()]
     
     return filenames_map
 

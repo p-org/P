@@ -230,6 +230,7 @@ Bld/*
 !Bld/Jars/
 !Bld/Deps/
 PGenerated/
+PCheckerOutput/
 !Src/**/Zing/*.zing
 stubs.c
 *.idb
@@ -240,6 +241,12 @@ Tst/temp_builds/*
 # Maven
 target/
 *.class
+
+# Gradle
+.gradle
+gradle
+gradlew
+gradlew.bat
 
 #Mkdocs
 site/

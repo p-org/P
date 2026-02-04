@@ -40,6 +40,10 @@ namespace Plang.Compiler.TypeChecker
                     when (assertStmt.Assertion as BoolLiteralExpr)?.Value == false:
                     return true;
 
+                case AssumeStmt assumeStmt
+                    when (assumeStmt.Assumption as BoolLiteralExpr)?.Value == false:
+                    return true;
+
                 case GotoStmt _:
                     return true;
 

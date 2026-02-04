@@ -1,0 +1,15 @@
+<StateLog> Main(1) enters state 'S'.
+<RaiseLog> 'Main(1)' raised event 'x with payload (<a,3,>)' in state 'S'.
+<RaiseLog> 'Main(1)' raised event 'a with payload (3)' in state 'S'.
+<StateLog> Main(1) exits state 'S'.
+<PopLog> Main(1) popped state S due to unhandled event 'a'.
+<ExceptionLog> Main(1) running action '' in state 'S' threw exception 'UnhandledEventException'.
+<ErrorLog> Main(1) received event 'PImplementation.a' that cannot be handled.
+<StrategyLog> Found bug using 'random' strategy.
+<StrategyLog> Checking statistics:
+<StrategyLog> Found 1 bug.
+<StrategyLog> Scheduling statistics:
+<StrategyLog> Explored 1 schedule
+<StrategyLog> Explored 1 timeline
+<StrategyLog> Found 100.00% buggy schedules.
+<StrategyLog> Number of scheduling points in terminating schedules: 2 (min), 2 (avg), 2 (max).

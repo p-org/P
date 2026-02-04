@@ -1,6 +1,6 @@
 //XYZs complex data types in assign/remove/insert: sequences, tuples, maps
 //XYZs "insert" for sequences errors
-event E assert 1;
+event E;
 machine Main {
      var t : (a: seq [int], b: map[int, seq[int]]);
 	var ts: (a: int, b: int);

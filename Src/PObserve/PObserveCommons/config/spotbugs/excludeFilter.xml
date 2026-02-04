@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <Match>
+        <Source name="~.*\/PGenerated\/.*"/>
+    </Match>
+    <Match>
+        <package name="pobserve.*"/>
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <package name="pobserve.*"/>
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+    <Match>
+        <package name="pobserve.*"/>
+        <Bug pattern="NP_METHOD_PARAMETER_TIGHTENS_ANNOTATION" />
+    </Match>
+</FindBugsFilter>

@@ -17,7 +17,7 @@ namespace Plang
 
         private static readonly object ConsoleLock = new object();
 
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             // Save these so we can force output to happen even if TestingProcess has re-routed it.
             StdOut = Console.Out;

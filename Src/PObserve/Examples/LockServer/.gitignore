@@ -1,0 +1,7 @@
+.idea/
+spec/
+/build
+dependencies.*
+/dependencies
+compile.log
+.DS_Store

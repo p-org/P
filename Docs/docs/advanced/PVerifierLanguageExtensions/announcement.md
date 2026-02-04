@@ -10,9 +10,9 @@ Formal verification is important to AWS’s software correctness program (Brooke
 
 ## Getting Started and Tutorial
 
-To start using the P Verifier, you must install P along with the verification dependencies (UCLID5 and an SMT solver like Z3). Detailed installation instructions are available [here](https://github.com/p-org/P/blob/major/P3.0/Docs/docs/advanced/PVerifierLanguageExtensions/install-pverifier.md); simple usage instructions are available [here](https://github.com/p-org/P/blob/major/P3.0/Docs/docs/advanced/PVerifierLanguageExtensions/using-pverifier.md).
+To start using the P Verifier, you must install P along with the verification dependencies (UCLID5 and an SMT solver like Z3). Detailed installation instructions are available [here](install-pverifier.md); simple usage instructions are available [here](using-pverifier.md).
 
-To help you get acquainted with the new verification features, we have prepared a comprehensive tutorial that walks you through the formal verification of a simplified two-phase commit (2PC) protocol. This tutorial covers the key concepts and steps of using the verification backend. You can find the tutorial [here](https://github.com/p-org/P/blob/major/P3.0/Docs/docs/advanced/PVerifierLanguageExtensions/twophasecommitverification.md).
+To help you get acquainted with the new verification features, we have prepared a comprehensive tutorial that walks you through the formal verification of a simplified two-phase commit (2PC) protocol. This tutorial covers the key concepts and steps of using the verification backend. You can find the tutorial [here](twophasecommitverification.md).
 
 ## Industrial Application Inside Amazon Web Services
 

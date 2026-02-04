@@ -16,6 +16,19 @@ machine TestMultipleClients {
   }
 }
 
+param numNodes: int;
+param numClients: int;
+
+machine TestWithConfig {
+  start state Init {
+    entry {
+      var config: tSystemConfig;
+      config = (numNodes = numNodes, numClients = numClients);
+      SetupSystemWithFailureInjector(config);
+    }
+  }
+}
+
 // setup the system for failure detection
 fun SetupSystemWithFailureInjector(config: tSystemConfig)
 {

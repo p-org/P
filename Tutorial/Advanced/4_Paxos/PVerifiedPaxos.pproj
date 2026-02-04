@@ -1,0 +1,8 @@
+<Project>
+<ProjectName>PVerifiedPaxos</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+<Target>PVerifier</Target>
+</Project>

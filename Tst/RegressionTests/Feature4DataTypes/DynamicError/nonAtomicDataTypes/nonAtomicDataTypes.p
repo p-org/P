@@ -1,7 +1,7 @@
 //XYZs complex data types in assign/remove/insert: sequences, tuples, maps
-event E assert 1;
-event E1 assert 1;
-event E2 assert 1;
+event E;
+event E1;
+event E2;
 machine Main {
     var y, tmp, tmp1, i: int;
 	var tmp2: (a: seq [any], b: map[int, seq[any]]);

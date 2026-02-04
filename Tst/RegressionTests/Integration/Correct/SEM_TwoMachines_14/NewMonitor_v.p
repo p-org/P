@@ -1,6 +1,6 @@
 // P semantics XYZ: two machines, announce announce instantiation parameter
 // This is validation XYZ for announceInvocation.p
-event E2 assert 1: bool;
+event E2 : bool;
 
 machine Main {
     var XYZ: bool;

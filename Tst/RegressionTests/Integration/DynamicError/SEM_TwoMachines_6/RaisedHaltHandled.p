@@ -1,8 +1,8 @@
 // P semantics XYZ: two machines, machine is halted with "raise halt" (handled)
 // This XYZ is for the case when "halt" is explicitly handled - hence, it is processed as any other event.
 //
-event Ping assert 1 : machine;
-event Pong assert 1;
+event Ping : machine;
+event Pong;
 event Success;
 event PongIgnored;
 //event PongHalted;

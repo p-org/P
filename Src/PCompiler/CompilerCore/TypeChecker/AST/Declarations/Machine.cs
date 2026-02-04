@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -82,6 +83,12 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public void AddFields(IEnumerable<Variable> variables)
         {
             fields.AddRange(variables);
+        }
+        
+        public bool LookupEntry(string name, out Variable entry)
+        {
+            var lookupTable = fields.ToDictionary(f => f.Name, f => f);
+            return lookupTable.TryGetValue(name, out entry);
         }
     }
 }

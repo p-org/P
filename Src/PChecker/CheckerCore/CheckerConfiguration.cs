@@ -238,6 +238,12 @@ namespace PChecker
         [DataMember]
         public string CustomStateMachineRuntimeLogType;
 
+        /// <summary>
+        /// Enables debugging.
+        /// </summary>
+        [DataMember]
+        public bool EnableDebugging;
+
 
         /// <summary>
         /// The testing scheduler unique endpoint.
@@ -269,10 +275,10 @@ namespace PChecker
         public bool DisableEnvironmentExit;
 
         /// <summary>
-        /// Additional arguments to pass to PSym.
+        /// Additional arguments to pass to checker.
         /// </summary>
         [DataMember]
-        public string PSymArgs;
+        public string CheckerArgs;
 
         /// <summary>
         /// Additional arguments to pass to JVM-based checker.
@@ -321,11 +327,12 @@ namespace PChecker
             DebugActivityCoverage = false;
 
             IsVerbose = false;
+            EnableDebugging = false;
 
             EnableColoredConsoleOutput = false;
             DisableEnvironmentExit = true;
 
-            PSymArgs = "";
+            CheckerArgs = "";
             JvmArgs = "";
         }
 

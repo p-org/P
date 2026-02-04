@@ -1,0 +1,1 @@
+1706894775007: Spec Violation: Consumer threw an exception: Assertion failure: pSpecs/test_case_2.p:97:9 Bank balance for the account 0 is 99,677 and not the expected value 99,676, Bank is lying!,

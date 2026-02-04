@@ -1,6 +1,6 @@
 // P semantics XYZ: one machine, "send" to itself in exit function
 // exit function is never executed, since control never leaves the Real1_Init state
-event E2 assert 1;
+event E2;
 
 machine Main {
     start state Real1_Init {

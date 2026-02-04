@@ -1,5 +1,5 @@
-event PING assert 1 : machine;
-event PONG assert 1;
+event PING : machine;
+event PONG;
 event SUCCESS;
 
 machine Main {

@@ -1,0 +1,8 @@
+<Project>
+<InputFiles>
+    <PFile>./PSpec/</PFile>
+</InputFiles>
+<ProjectName>LockServerPObserve</ProjectName>
+<OutputDir>java/lockserver/pobserve/spec</OutputDir>
+<pobserve-package>lockserver.pobserve.spec</pobserve-package>
+</Project>

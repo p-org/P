@@ -1,0 +1,20 @@
+/build
+/eclipse-bin
+.classpath
+.project
+.settings/
+target/
+
+# Ignore IntelliJ project files
+*.iml
+/bin/
+.idea
+out/
+
+out.log
+all.log
+
+annotation-generated-src
+annotation-generated-tst
+
+

@@ -1,0 +1,3 @@
+--specName: AlternatingInts
+--consumer: AlternatingInts
+--parser: TestCase5Parser

@@ -24,4 +24,10 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release
     - name: Test
-      run: dotnet test --configuration Release
+      run: dotnet test --configuration Release --blame-crash --blame-hang --blame-hang-timeout 300s --logger:"console;verbosity=detailed"
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()  # This ensures it runs even after test failure
+      with:
+        name: test-results
+        path: Tst/UnitTests/TestResults/**/*.xml

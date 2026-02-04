@@ -71,6 +71,7 @@ namespace Plang.Compiler.TypeChecker
                 case AddStmt _:
                 case AnnounceStmt _:
                 case AssertStmt _:
+                case AssumeStmt _:
                 case AssignStmt _:
                 case CtorStmt _:
                 case FunCallStmt _:

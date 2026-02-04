@@ -3,10 +3,10 @@
 //TODO(not included): anonymous tuples;
 //TODO(add later): XYZs for variables declared but not used
 
-event E assert 1;
-event E1 assert 1;
-event E2 assert 1;
-event E3 assert 1;
+event E;
+event E1;
+event E2;
+event E3;
 
 enum Foo { foo0, foo1, foo2, foo3, foo4 }
 enum Bar { bar0, bar1, bar2, bar3 }

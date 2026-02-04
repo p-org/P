@@ -23,6 +23,8 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         private readonly HashSet<Function> callees = new HashSet<Function>();
         private readonly HashSet<Function> callers = new HashSet<Function>();
         private readonly List<Variable> localVariables = new List<Variable>();
+        private readonly List<IPExpr> requireExprs = new List<IPExpr>();
+        private readonly List<IPExpr> ensureExprs = new List<IPExpr>();
         private readonly List<Interface> createsInterfaces = new List<Interface>();
 
         public Function(string name, ParserRuleContext sourceNode)
@@ -57,6 +59,9 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
         public Function ParentFunction { get; set; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
         public IEnumerable<Variable> LocalVariables => localVariables;
+        public Variable ReturnVariable { get; set; }
+        public IEnumerable<IPExpr> Requires => requireExprs;
+        public IEnumerable<IPExpr> Ensures => ensureExprs;
         public IEnumerable<Interface> CreatesInterfaces => createsInterfaces;
         public FunctionRole Role { get; set; }
 
@@ -65,12 +70,20 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public string Name { get; set; }
         public ParserRuleContext SourceLocation { get; }
-
+        
         public void AddLocalVariable(Variable local)
         {
             localVariables.Add(local);
         }
-
+        public void AddRequire(IPExpr expr)
+        {
+            requireExprs.Add(expr);
+        }
+        public void AddEnsure(IPExpr expr)
+        {
+            ensureExprs.Add(expr);
+        }
+        
         public void RemoveLocalVariable(Variable local)
         {
             localVariables.Remove(local);

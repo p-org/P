@@ -1,11 +1,11 @@
 namespace Plang.Compiler
 {
     public enum CompilerOutput
-    {
-        C,
-        Symbolic,
-        CSharp,
-        Java,
-        Stately
+    {   
+        PChecker,
+        PObserve,
+        Stately,
+        PEx,
+        PVerifier
     }
 }

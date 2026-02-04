@@ -1,6 +1,6 @@
 // P semantics XYZ: one machine, "halt" is raised and handled
 
-event E1 assert 1;
+event E1;
 
 machine Main {
     var XYZ: bool;  //init with "false"

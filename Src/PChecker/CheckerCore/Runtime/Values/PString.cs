@@ -92,73 +92,73 @@ namespace PChecker.Runtime.Values
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator <(in PString pString1, in PString pString2)
         {
-            return string.Compare(pString1.value, pString2.value) == -1;
+            return string.Compare(pString1.value, pString2.value) < 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator <(in IPValue pValue1, in PString pValue2)
         {
-            return pValue1 is PString pString && string.Compare(pString.value, pValue2.value) == -1;
+            return pValue1 is PString pString && string.Compare(pString.value, pValue2.value) < 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator <(in PString pValue1, in IPValue pValue2)
         {
-            return pValue2 is PString pString && string.Compare(pString.value, pValue1.value) == -1;
+            return pValue2 is PString pString && string.Compare(pString.value, pValue1.value) < 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator >(in PString pString1, in PString pString2)
         {
-            return string.Compare(pString1.value, pString2.value) == 1;
+            return string.Compare(pString1.value, pString2.value) > 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator >(in IPValue pValue1, in PString pValue2)
         {
-            return pValue1 is PString pString && string.Compare(pString.value, pValue2.value) == 1;
+            return pValue1 is PString pString && string.Compare(pString.value, pValue2.value) > 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator >(in PString pValue1, in IPValue pValue2)
         {
-            return pValue2 is PString pString && string.Compare(pString.value, pValue1.value) == 1;
+            return pValue2 is PString pString && string.Compare(pString.value, pValue1.value) > 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator <=(in PString pString1, in PString pString2)
         {
-            return string.Compare(pString1.value, pString2.value) != 1;
+            return string.Compare(pString1.value, pString2.value) <= 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator <=(in IPValue pValue1, in PString pValue2)
         {
-            return pValue1 is PString pString && string.Compare(pString.value, pValue2.value) != 1;
+            return pValue1 is PString pString && string.Compare(pString.value, pValue2.value) <= 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator <=(in PString pValue1, in IPValue pValue2)
         {
-            return pValue2 is PString pString && string.Compare(pString.value, pValue1.value) != 1;
+            return pValue2 is PString pString && string.Compare(pString.value, pValue1.value) <= 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator >=(in PString pString1, in PString pString2)
         {
-            return string.Compare(pString1.value, pString2.value) != -1;
+            return string.Compare(pString1.value, pString2.value) >= 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator >=(in IPValue pValue1, in PString pValue2)
         {
-            return pValue1 is PString pString && string.Compare(pString.value, pValue2.value) != -1;
+            return pValue1 is PString pString && string.Compare(pString.value, pValue2.value) >= 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PBool operator >=(in PString pValue1, in IPValue pValue2)
         {
-            return pValue2 is PString pString && string.Compare(pString.value, pValue1.value) != -1;
+            return pValue2 is PString pString && string.Compare(pString.value, pValue1.value) >= 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

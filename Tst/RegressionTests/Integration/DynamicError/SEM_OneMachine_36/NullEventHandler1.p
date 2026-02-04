@@ -1,8 +1,8 @@
 // P semantics XYZ, one machine: "null" handler semantics
 // XYZing that null handler is enabled in the simplest case
 
-event E1 assert 1;
-event unit assert 1;
+event E1;
+event unit;
 
 machine Main {
     var XYZ: bool;  //init with "false"

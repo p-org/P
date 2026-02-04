@@ -1,11 +1,11 @@
 // Liveness XYZ: "check passed"
 // This is a simplest sample with FAIRNONDET in liveness
 
-event UserEvent assert 1;
-event Done assert 1;
-event Loop assert 1;
-event Waiting assert 1;
-event Computing assert 1;
+event UserEvent;
+event Done;
+event Loop;
+event Waiting;
+event Computing;
 
 machine Main {
        start state WaitForUser

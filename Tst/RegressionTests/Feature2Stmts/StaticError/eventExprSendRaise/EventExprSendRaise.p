@@ -1,7 +1,7 @@
 // "raise", "send" and announce invocation with non-constant event expression
 
-event E1 assert 1;
-event E2 assert 1;
+event E1;
+event E2;
 
 machine Main {
     var XYZ: bool;

@@ -1,0 +1,12 @@
+2024-02-02 10:34:29.656.306334984273791 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=0, LockID=0, TransactionType=LOCK, TransactionID=0, Result=null, LockStatus=null, Message=null
+2024-02-02 10:34:29.672.306335000014666 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=0, LockID=0, TransactionType=LOCK, TransactionID=0, Result=SUCCESS, LockStatus=LOCKED, Message=null
+2024-02-02 10:34:29.673.306335001104166 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=0, LockID=0, TransactionType=LOCK, TransactionID=1, Result=null, LockStatus=null, Message=null
+2024-02-02 10:34:29.675.306335002609666 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=0, LockID=0, TransactionType=LOCK, TransactionID=1, Result=FAIL, LockStatus=LOCKED, Message=null
+2024-02-02 10:34:29.675.306335002833625 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=0, LockID=0, TransactionType=LOCK, TransactionID=2, Result=null, LockStatus=null, Message=null
+2024-02-02 10:34:29.676.306335004302625 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=0, LockID=0, TransactionType=LOCK, TransactionID=2, Result=FAIL, LockStatus=LOCKED, Message=null
+2024-02-02 10:34:29.677.306335004519916 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=0, LockID=0, TransactionType=RELEASE, TransactionID=3, Result=null, LockStatus=null, Message=null
+2024-02-02 10:34:29.678.306335006027750 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=0, LockID=0, TransactionType=RELEASE, TransactionID=3, Result=SUCCESS, LockStatus=FREE, Message=null
+2024-02-02 10:34:29.679.306335006711791 [Test worker] INFO  StructuredLogger - : MessageType=REQUEST, ClientID=0, LockID=0, TransactionType=LOCK, TransactionID=4, Result=null, LockStatus=null, Message=null
+
+// Injecting Error: changing result from SUCCESS to FAIL
+2024-02-02 10:34:29.680.306335008198125 [Test worker] INFO  StructuredLogger - : MessageType=RESPONSE, ClientID=0, LockID=0, TransactionType=LOCK, TransactionID=4, Result=FAIL, LockStatus=LOCKED, Message=null

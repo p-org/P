@@ -38,10 +38,14 @@ namespace Plang.Compiler
             ProjectRootPath = new DirectoryInfo(Directory.GetCurrentDirectory());
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
-            OutputLanguages = new List<CompilerOutput>{CompilerOutput.CSharp};
+            OutputLanguages = new List<CompilerOutput>{CompilerOutput.PChecker};
             Backend = null;
             ProjectDependencies = new List<string>();
             Debug = false;
+            Timeout = 600;
+            CheckOnly = null;
+            TargetProofBlocks = new List<string>();
+            Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="CompilerConfiguration"/> class with specific settings.
@@ -154,6 +158,10 @@ namespace Plang.Compiler
         /// Gets or sets a value indicating whether debug information should be included in output.
         /// </summary>
         public bool Debug { get; set; }
+        public int Timeout { get; set; }
+        public string CheckOnly { get; set; }
+        public IList<string> TargetProofBlocks { get; set; }
+        public int Parallelism { get; set; }
 
         /// <summary>
         /// Copies all properties from another CompilerConfiguration instance to this instance.

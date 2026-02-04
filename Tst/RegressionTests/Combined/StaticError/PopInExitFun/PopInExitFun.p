@@ -2,7 +2,7 @@
 // case: "pop" in exit function of the state:
 // PurityError(c, called) :- c is StateDecl(_, owner, _, called, _), called = AnonFunDecl(owner, _), ControlImpure(called).
 
-event E1 assert 1;
+event E1;
 
 machine Main {
     var XYZ: bool;  //init with "false"

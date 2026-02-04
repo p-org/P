@@ -22,7 +22,6 @@ DATA      : 'data' ;
 ANNOUNCE  : 'announce' ;
 AS        : 'as' ;
 ASSERT    : 'assert' ;
-ASSUME    : 'assume' ;
 BREAK     : 'break' ;
 CASE      : 'case' ;
 COLD      : 'cold' ;
@@ -59,9 +58,33 @@ THIS      : 'this' ;
 TYPE      : 'type' ;
 VALUES    : 'values' ;
 VAR       : 'var' ;
+PARAM     : 'param' ;
+PAIRWISE  : 'pairwise' ;
+WISE      : 'wise' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 CHOOSE    : 'choose' ;
+
+// PVerifier keywords
+INVARIANT  : 'invariant';
+AXIOM      : 'axiom';
+IS         : 'is';
+FLYING     : 'inflight';
+TARGETS    : 'targets';
+SENT       : 'sent';
+PROOF      : 'Proof';
+PROVE      : 'prove';
+USING      : 'using';
+LEMMA      : 'Lemma';
+THEOREM    : 'Theorem';
+EXCEPT     : 'except';
+REQUIRES   : 'requires';
+ENSURES    : 'ensures';
+FORALL     : 'forall' ;
+EXISTS     : 'exists' ;
+INIT       : 'init-condition';
+PURE       : 'pure' ;
+ASSUME     : 'assume' ;
 
 // module-system-specific keywords
 
@@ -69,6 +92,7 @@ CHOOSE    : 'choose' ;
 MODULE         : 'module' ;
 IMPLEMENTATION : 'implementation' ;
 TEST           : 'test' ;
+PARAMTEST      : 'paramtest' ;
 REFINES        : 'refines' ;
 
 // module constructors
@@ -109,6 +133,8 @@ NONDET     : '$'  ;
 LNOT   : '!' ;
 LAND   : '&&' ;
 LOR    : '||' ;
+LTHEN  : '==>';
+LIFF   : '<==>';
 
 EQ     : '==' ;
 NE     : '!=' ;

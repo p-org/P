@@ -1,8 +1,8 @@
 // P semantics XYZ: one machine, XYZing  top  "null" event handler overriding
 //inherited (by push transition) handler
 
-event E1 assert 2;
-event unit assert 1;
+event E1;
+event unit;
 event local;
 
 machine Main {

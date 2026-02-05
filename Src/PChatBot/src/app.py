@@ -1,6 +1,6 @@
 import streamlit as st
 # from utils.global_state import chat_history
-from core.modes.DesignDocInputMode import DesignDocInputMode
+from core.modes.DesignDocInputModeV2 import DesignDocInputModeV2Wrapper
 # from chatbot_modes.InteractiveMode import InteractiveMode
 from ui.stlit.SideNav import SideNav
 from core.modes.pchecker_mode import PCheckerMode
@@ -49,7 +49,7 @@ def display_page():
     else:
         # back_button.button('Back to Start Page', on_click=back)
         if st.session_state['p_chatbot_state'] == "DesignDocInputMode":
-            DesignDocInputMode()
+            DesignDocInputModeV2Wrapper()
         elif st.session_state['p_chatbot_state'] == "PCheckerMode":
             PCheckerMode()
         elif st.session_state['p_chatbot_state'] == "InteractiveMode":

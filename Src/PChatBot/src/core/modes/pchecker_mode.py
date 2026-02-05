@@ -18,6 +18,12 @@ from st_diff_viewer import diff_viewer
 import streamlit_scrollable_textbox as stx
 from pathlib import Path
 
+from core.llm import get_default_provider
+from core.services import CompilationService, FixerService
+from core.services.base import ResourceLoader
+
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+
 class Stages(Enum):
     INITIAL = 0
     RUNNING_FILE_ANALYSIS = 1
@@ -96,32 +102,69 @@ class PCheckerMode:
     def __init__(self):
         self.display_page()
 
-    def handle_auto_fix(self, test_name: str, project_path: str, trace_dict: dict, trace_log: str, progress_bar=None, spinner_column=None):
+    def _get_services(self):
+        if not hasattr(self, "_services"):
+            provider = get_default_provider()
+            resource_loader = ResourceLoader(PROJECT_ROOT / "resources")
+            compilation = CompilationService(
+                llm_provider=provider,
+                resource_loader=resource_loader
+            )
+            fixer = FixerService(
+                llm_provider=provider,
+                resource_loader=resource_loader,
+                compilation_service=compilation
+            )
+            self._services = {
+                "compilation": compilation,
+                "fixer": fixer
+            }
+        return self._services
+
+    def _run_checker(self, project_path: str, schedules: int, timeout: int):
+        services = self._get_services()
+        return services["compilation"].run_checker(
+            project_path=project_path,
+            schedules=schedules,
+            timeout=timeout
+        )
+
+    def handle_auto_fix(self, test_name: str, project_path: str, trace_log: str, progress_bar=None, spinner_column=None):
         print("[handle_auto_fix]")
         """Handle auto fix for a single test"""
         state = st.session_state.pchecker_state
+        services = self._get_services()
+        error_category = pipelines.identify_error_category(trace_log)
 
-
-        def update_progress(name, new_progress_value):
-            progress_bar.progress(new_progress_value)
-            # state.fix_progress.get(name, new_progress_value)
-
-        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        if progress_bar:
+            progress_bar.progress(0.1)
 
         with spinner_column:
             with st.spinner("Fixing...", show_time=False):
-                _, new_project_path, _ = pipelines.test_fix_pchecker_errors(
-                    ("ProjectName", state.latest_project_path), 
-                    filter_tests=[test_name],
-                    out_dir=f"/Users/ahmayun/Desktop/pchatbot/src/P-Chatbot/results/streamlit-ui/{timestamp}",
-                    cb_progress=update_progress,
-                    cb_test_status_changed=update_test_statuses,
-                    cb_update_trace_logs=update_trace_logs
+                fix_result = services["fixer"].fix_checker_error(
+                    project_path=project_path,
+                    trace_log=trace_log,
+                    error_category=str(error_category) if error_category else None
                 )
 
-                state.latest_project_path = new_project_path
+                if fix_result.needs_guidance:
+                    state.user_guidance_request = fix_result.guidance_request
 
-    def fix_tests(self, project_path: str, failed_tests: List[str], trace_dicts: Dict, trace_logs: Dict, ui_elements=None):
+        if progress_bar:
+            progress_bar.progress(0.7)
+
+        checker_result = self._run_checker(
+            project_path=project_path,
+            schedules=state.config.schedules,
+            timeout=state.config.timeout_seconds
+        )
+        state.results = checker_result.test_results
+        state.trace_logs = checker_result.trace_logs
+
+        if progress_bar:
+            progress_bar.progress(1.0)
+
+    def fix_tests(self, project_path: str, failed_tests: List[str], trace_logs: Dict, ui_elements=None):
         print("[fix_tests]")
         """Handle auto fix for all failed tests"""
         state = st.session_state.pchecker_state
@@ -130,26 +173,18 @@ class PCheckerMode:
             ui_elements[name]["progress_bar"].progress(new_progress_value)
             # st.rerun()
 
-        def handle_user_feedback_request(req):
-            state.user_guidance_request = req
-
-
-        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-        
         with st.spinner("Attempting to auto fix all tests...", show_time=True):
-            _, new_path, _ = pipelines.test_fix_pchecker_errors(
-                ("ProjectName", state.latest_project_path), 
-                filter_tests=failed_tests,
-                out_dir=f"/Users/ahmayun/Desktop/pchatbot/src/P-Chatbot/results/streamlit-ui/{timestamp}",
-                cb_progress=update_progress,
-                cb_test_status_changed=update_test_statuses,
-                cb_update_trace_logs=update_trace_logs,
-                cb_request_user_feedback=handle_user_feedback_request,
-            )
-
-        print("Finished!")
-        print(f"New project path {new_path}")
-        state.latest_project_path = new_path
+            for test_name in failed_tests:
+                trace_log = trace_logs.get(test_name, "")
+                if not trace_log:
+                    continue
+                self.handle_auto_fix(
+                    test_name=test_name,
+                    project_path=project_path,
+                    trace_log=trace_log,
+                    progress_bar=ui_elements[test_name]["progress_bar"],
+                    spinner_column=ui_elements[test_name]["spinner"]
+                )
 
     def display_project_path_box(self, state):
         print("[display_project_path_box]")
@@ -193,11 +228,14 @@ class PCheckerMode:
         state.usage_stats = {"cumulative": {"inputTokens": 0, "outputTokens":0}, "last_action": {"inputTokens": 0, "outputTokens":0}}
         
         with st.spinner("Getting Project State...."):
-            state.results, state.trace_dicts, state.trace_logs = checker_utils.try_pchecker(
+            checker_result = self._run_checker(
                 state.latest_project_path,
                 schedules=state.config.schedules,
                 timeout=state.config.timeout_seconds
             )
+            state.results = checker_result.test_results
+            state.trace_logs = checker_result.trace_logs
+            state.trace_dicts = {}
 
     def display_submit_button(self, state):
         print("[display_submit_button]")
@@ -214,7 +252,6 @@ class PCheckerMode:
         st.button("🔧 Auto Fix", key=f"fix_{test_name}", on_click=lambda: self.handle_auto_fix(
             test_name=test_name,
             project_path=state.latest_project_path,
-            trace_dict=state.trace_dicts[test_name],
             trace_log=state.trace_logs[test_name],
             progress_bar=progress_bar,
             spinner_column = spinner_column     
@@ -270,7 +307,6 @@ class PCheckerMode:
         self.fix_tests(
             project_path=state.latest_project_path,
             failed_tests=failed_tests,
-            trace_dicts=state.trace_dicts,
             trace_logs=state.trace_logs,
             ui_elements=ui_elements
         )

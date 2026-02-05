@@ -20,8 +20,11 @@ SAVED_GLOBAL_STATE = None
 
 
 
-def test1(ddoc = "/Users/ahmayun/Desktop/mcp/test-env/LightSwitch_DesignDoc.txt", out_dir = "/Users/ahmayun/Desktop/mcp/test-env/output"):
+def test1(ddoc: str | None = None, out_dir: str | None = None):
     from core.modes.pipelines import old_chatbot_replicated
+    project_root = Path(__file__).parent.parent.parent
+    ddoc = ddoc or str(project_root / "resources" / "p-model-benchmark" / "3_designdoc2pproj" / "1_lightswitch.txt")
+    out_dir = out_dir or str(project_root / ".tmp" / "pipeline-tests")
     old_chatbot_replicated(ddoc, out_dir=out_dir)
 
 

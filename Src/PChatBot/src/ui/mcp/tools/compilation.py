@@ -1,0 +1,104 @@
+"""Compilation-related MCP tools."""
+
+from typing import Dict, Any
+from pydantic import BaseModel, Field
+import logging
+
+logger = logging.getLogger(__name__)
+
+try:
+    from core.compilation import parse_compilation_output
+    HAS_NEW_COMPILATION = True
+except ImportError:
+    HAS_NEW_COMPILATION = False
+
+
+class PCompileParams(BaseModel):
+    """Parameters for compilation"""
+    path: str = Field(
+        ...,
+        description="Absolute path to the P project directory (must contain .pproj file)"
+    )
+
+
+class PCheckParams(BaseModel):
+    """Parameters for PChecker"""
+    path: str = Field(..., description="Absolute path to the P project directory")
+    schedules: int = Field(default=100, description="Number of schedules to explore")
+    timeout: int = Field(default=60, description="Timeout in seconds")
+
+
+def register_compilation_tools(mcp, get_services, with_metadata):
+    """Register compilation tools."""
+
+    @mcp.tool(
+        name="p_compile",
+        description="Compile a P project and return compilation results"
+    )
+    def p_compile(params: PCompileParams) -> Dict[str, Any]:
+        logger.info(f"[TOOL] p_compile: {params.path}")
+
+        services = get_services()
+        result = services["compilation"].compile(params.path)
+
+        response = {
+            "success": result.success,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "return_code": result.return_code,
+            "error": result.error
+        }
+
+        if not result.success and HAS_NEW_COMPILATION:
+            try:
+                parsed = parse_compilation_output(result.stdout or result.stderr or "")
+                if parsed.errors:
+                    response["parsed_errors"] = [
+                        {
+                            "file": e.file,
+                            "line": e.line,
+                            "column": e.column,
+                            "category": e.category.value,
+                            "message": e.message,
+                            "suggestion": e.suggestion,
+                        }
+                        for e in parsed.errors
+                    ]
+                    response["error_summary"] = f"Found {len(parsed.errors)} error(s)"
+                    if parsed.errors:
+                        first_error = parsed.errors[0]
+                        response["first_error"] = {
+                            "file": first_error.file,
+                            "line": first_error.line,
+                            "message": first_error.message,
+                            "suggestion": first_error.suggestion,
+                        }
+            except Exception as e:
+                logger.debug(f"Error parsing compilation output: {e}")
+
+        return with_metadata("p_compile", response)
+
+    @mcp.tool(
+        name="p_check",
+        description="Run PChecker on a P project to verify correctness via model checking"
+    )
+    def p_check(params: PCheckParams) -> Dict[str, Any]:
+        logger.info(f"[TOOL] p_check: {params.path}")
+
+        services = get_services()
+        result = services["compilation"].run_checker(
+            project_path=params.path,
+            schedules=params.schedules,
+            timeout=params.timeout
+        )
+
+        payload = {
+            "success": result.success,
+            "test_results": result.test_results,
+            "passed_tests": result.passed_tests,
+            "failed_tests": result.failed_tests,
+            "error": result.error
+        }
+        return with_metadata("p_check", payload)
+
+    return {"p_compile": p_compile, "p_check": p_check}

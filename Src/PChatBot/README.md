@@ -115,6 +115,28 @@ export LLM_PROVIDER=bedrock
    - Check that `OPENAI_MODEL_NAME` is set to a valid model
    - Verify the model is available in your Snowflake region
 
+### MCP Contract Test Preflight
+
+For fresh machines, run dependency preflight and MCP contract tests:
+
+```bash
+cd Src/PChatBot
+bash scripts/run_contract_tests.sh
+```
+
+Or via Makefile:
+
+```bash
+cd Src/PChatBot
+make test-contracts
+```
+
+This validates required Python modules (`pydantic`, `fastmcp`, `python-dotenv`) and then runs:
+
+```bash
+python3 -m unittest tests.test_mcp_contracts -v
+```
+
 ---
 
 ## MCP Server for Cursor IDE

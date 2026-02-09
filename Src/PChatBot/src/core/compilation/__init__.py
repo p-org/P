@@ -43,6 +43,15 @@ from .checker_fixers import (
     analyze_and_suggest_fix,
 )
 
+from .p_post_processor import (
+    PCodePostProcessor,
+    PostProcessResult,
+    TypeConsistencyChecker,
+    MachineConfigDetector,
+    post_process_file,
+    check_type_consistency,
+)
+
 __all__ = [
     # Error parsing
     "PCompilerError",
@@ -72,4 +81,11 @@ __all__ = [
     "CheckerFix",
     "PCheckerErrorFixer",
     "analyze_and_suggest_fix",
+    # Post-processing
+    "PCodePostProcessor",
+    "PostProcessResult",
+    "TypeConsistencyChecker",
+    "MachineConfigDetector",
+    "post_process_file",
+    "check_type_consistency",
 ]

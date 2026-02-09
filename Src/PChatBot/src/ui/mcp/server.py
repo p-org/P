@@ -12,8 +12,6 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 import os
 import sys
-import uuid
-from datetime import datetime
 
 # ============================================================================
 # PATH SETUP
@@ -39,6 +37,7 @@ load_dotenv(PROJECT_ROOT / ".env")
 from core.llm import get_default_provider
 from core.services import GenerationService, CompilationService, FixerService
 from core.services.base import ResourceLoader
+from ui.mcp.contracts import with_metadata as contract_with_metadata
 
 try:
     from core.compilation import ensure_environment
@@ -107,28 +106,6 @@ def get_services() -> Dict[str, Any]:
 # METADATA HELPERS
 # ============================================================================
 
-def _tool_metadata(
-    tool_name: str,
-    token_usage: Optional[Dict[str, Any]] = None,
-    provider_name: Optional[str] = None,
-    model: Optional[str] = None,
-) -> Dict[str, Any]:
-    provider = provider_name
-    model_name = model
-    provider_obj = _services.get("llm_provider")
-    if provider_obj:
-        provider = provider or getattr(provider_obj, "name", None)
-        model_name = model_name or getattr(provider_obj, "default_model", None)
-    return {
-        "tool": tool_name,
-        "operation_id": str(uuid.uuid4()),
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "provider": provider,
-        "model": model_name,
-        "token_usage": token_usage or {},
-    }
-
-
 def _with_metadata(
     tool_name: str,
     payload: Dict[str, Any],
@@ -136,13 +113,14 @@ def _with_metadata(
     provider_name: Optional[str] = None,
     model: Optional[str] = None,
 ) -> Dict[str, Any]:
-    payload["metadata"] = _tool_metadata(
+    return contract_with_metadata(
         tool_name=tool_name,
         token_usage=token_usage,
+        payload=payload,
         provider_name=provider_name,
         model=model,
+        provider_resolver=lambda: _services.get("llm_provider"),
     )
-    return payload
 
 
 # ============================================================================

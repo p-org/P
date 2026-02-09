@@ -44,26 +44,52 @@ class PErrorFixer:
             ErrorCategory.UNHANDLED_EVENT: self._fix_unhandled_event,
             ErrorCategory.MISSING_SEMICOLON: self._fix_missing_semicolon,
         }
+        # Additional pattern-based fixers for issues without categories
+        self._pattern_fixers = [
+            (r"no viable alternative.*'reason=\d+\)'", self._fix_single_field_tuple),
+            (r"no viable alternative.*'reservationId=", self._fix_single_field_tuple),
+            (r"no viable alternative.*testTest", self._fix_test_declaration),
+            (r"could not find.*type.*'(\w+)'", self._fix_undefined_type),
+            (r"extraneous input 'var'", self._fix_var_declaration_order_from_message),
+        ]
     
     def can_fix(self, error: PCompilerError) -> bool:
         """Check if we can automatically fix this error."""
-        return error.category in self._fixers
+        if error.category in self._fixers:
+            return True
+        # Check pattern-based fixers
+        for pattern, _ in self._pattern_fixers:
+            if re.search(pattern, error.message, re.IGNORECASE):
+                return True
+        return False
     
     def fix(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
         """
         Attempt to fix an error in the code.
         Returns CodeFix if successful, None otherwise.
         """
+        # Try category-based fixer first
         fixer = self._fixers.get(error.category)
-        if not fixer:
-            logger.debug(f"No fixer available for category: {error.category}")
-            return None
+        if fixer:
+            try:
+                result = fixer(error, code)
+                if result:
+                    return result
+            except Exception as e:
+                logger.error(f"Error in fixer for {error.category}: {e}")
         
-        try:
-            return fixer(error, code)
-        except Exception as e:
-            logger.error(f"Error in fixer for {error.category}: {e}")
-            return None
+        # Try pattern-based fixers
+        for pattern, pattern_fixer in self._pattern_fixers:
+            if re.search(pattern, error.message, re.IGNORECASE):
+                try:
+                    result = pattern_fixer(error, code)
+                    if result:
+                        return result
+                except Exception as e:
+                    logger.error(f"Error in pattern fixer for {pattern}: {e}")
+        
+        logger.debug(f"No fixer available for error: {error.message[:100]}")
+        return None
     
     def _fix_var_declaration_order(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
         """Fix variable declarations that appear after statements."""
@@ -300,6 +326,146 @@ class PErrorFixer:
             fixed_code=fixed_code,
             description=f"Added missing semicolon at line {error.line}",
             line_changes=[(error.line, problem_line, stripped + ';')]
+        )
+    
+    def _fix_single_field_tuple(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
+        """Fix single-field tuple missing trailing comma."""
+        # Find send statements with single-field payloads on the error line
+        lines = code.split('\n')
+        error_line_idx = error.line - 1
+        
+        if error_line_idx >= len(lines):
+            return None
+        
+        problem_line = lines[error_line_idx]
+        
+        # Pattern: send target, event, (field = value);
+        # Fix to: send target, event, (field = value,);
+        pattern = r'(\([^,()]+\s*=\s*[^,()]+)\)(\s*;)'
+        
+        match = re.search(pattern, problem_line)
+        if match:
+            # Add trailing comma before closing paren
+            fixed_line = re.sub(pattern, r'\1,)\2', problem_line)
+            lines[error_line_idx] = fixed_line
+            
+            return CodeFix(
+                file_path=error.file,
+                original_code=code,
+                fixed_code='\n'.join(lines),
+                description=f"Added trailing comma to single-field tuple at line {error.line}",
+                line_changes=[(error.line, problem_line, fixed_line)]
+            )
+        
+        return None
+    
+    def _fix_test_declaration(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
+        """Fix test declaration syntax."""
+        # Common issues:
+        # - test Name [main=X]: assert Y in (union ...)  -> test Name [main=X]: assert Y in (union ...)
+        # - Missing module declaration
+        
+        lines = code.split('\n')
+        
+        # Find test declarations
+        fixed_lines = []
+        changed = False
+        
+        for i, line in enumerate(lines):
+            # Fix: test X [main=Y]: assert Z in (union {A, B})
+            # To: module SystemModule = { A, B }; test X [main=Y]: assert Z in (union SystemModule, { Y })
+            if 'test ' in line and '[main=' in line:
+                # Check for malformed union syntax
+                if 'union {' in line and 'union ' not in line.replace('union {', ''):
+                    # Extract machines from union
+                    union_match = re.search(r'union\s*\{([^}]+)\}', line)
+                    if union_match:
+                        machines = union_match.group(1)
+                        # This is already valid syntax, skip
+                        fixed_lines.append(line)
+                        continue
+            
+            fixed_lines.append(line)
+        
+        if not changed:
+            return None
+        
+        return CodeFix(
+            file_path=error.file,
+            original_code=code,
+            fixed_code='\n'.join(fixed_lines),
+            description="Fixed test declaration syntax"
+        )
+    
+    def _fix_undefined_type(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
+        """Add placeholder for undefined type."""
+        # Extract type name from error
+        match = re.search(r"could not find.*type.*'(\w+)'", error.message, re.IGNORECASE)
+        if not match:
+            return None
+        
+        type_name = match.group(1)
+        
+        # Add placeholder type at the beginning of the file
+        placeholder = f"// TODO: Define type properly\ntype {type_name} = (placeholder: int);\n\n"
+        fixed_code = placeholder + code
+        
+        return CodeFix(
+            file_path=error.file,
+            original_code=code,
+            fixed_code=fixed_code,
+            description=f"Added placeholder for undefined type '{type_name}'"
+        )
+    
+    def _fix_var_declaration_order_from_message(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
+        """Fix var declaration order based on 'extraneous input var' message."""
+        # This handles the case when category isn't set but message indicates var order issue
+        lines = code.split('\n')
+        error_line_idx = error.line - 1
+        
+        if error_line_idx >= len(lines):
+            return None
+        
+        problem_line = lines[error_line_idx]
+        
+        # Verify it's a var declaration
+        if not problem_line.strip().startswith('var '):
+            return None
+        
+        # Find function/entry block start
+        block_start = None
+        for i in range(error_line_idx - 1, -1, -1):
+            line = lines[i]
+            if re.match(r'\s*(fun\s+\w+|entry)', line):
+                block_start = i
+                break
+        
+        if block_start is None:
+            return None
+        
+        # Find where vars should go (after opening brace)
+        insert_pos = block_start + 1
+        for i in range(block_start, error_line_idx):
+            if '{' in lines[i]:
+                insert_pos = i + 1
+                break
+        
+        # Move the var declaration
+        var_decl = lines.pop(error_line_idx)
+        
+        # Find end of existing var declarations
+        for i in range(insert_pos, len(lines)):
+            if not lines[i].strip().startswith('var ') and lines[i].strip():
+                insert_pos = i
+                break
+        
+        lines.insert(insert_pos, var_decl)
+        
+        return CodeFix(
+            file_path=error.file,
+            original_code=code,
+            fixed_code='\n'.join(lines),
+            description=f"Moved var declaration to start of function/block"
         )
 
 

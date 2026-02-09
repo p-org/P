@@ -3,6 +3,9 @@ Generation Service
 
 Handles P code generation from design documents.
 This service is UI-agnostic and can be used by Streamlit, CLI, or MCP.
+
+Supports RAG (Retrieval-Augmented Generation) for improved code quality
+by providing relevant examples from the P program corpus.
 """
 
 import os
@@ -14,6 +17,13 @@ from dataclasses import dataclass, field
 
 from .base import BaseService, ServiceResult, EventCallback, ResourceLoader
 from ..llm import LLMProvider, LLMConfig, Message, MessageRole
+
+# Try to import RAG service
+try:
+    from ..rag import get_rag_service, RAGService
+    HAS_RAG = True
+except ImportError:
+    HAS_RAG = False
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +62,9 @@ class GenerationService(BaseService):
     - Generating machine implementations
     - Generating specs and tests
     - Running sanity checks
+    
+    Optionally uses RAG (Retrieval-Augmented Generation) to provide
+    relevant examples from the P program corpus for improved generation.
     """
     
     def __init__(
@@ -59,8 +72,40 @@ class GenerationService(BaseService):
         llm_provider: Optional[LLMProvider] = None,
         resource_loader: Optional[ResourceLoader] = None,
         callbacks: Optional[EventCallback] = None,
+        use_rag: bool = True,
     ):
         super().__init__(llm_provider, resource_loader, callbacks)
+        
+        # Initialize RAG service if available
+        self._rag: Optional['RAGService'] = None
+        if use_rag and HAS_RAG:
+            try:
+                self._rag = get_rag_service()
+                logger.info(f"RAG enabled with {self._rag.get_stats()['total_examples']} examples")
+            except Exception as e:
+                logger.warning(f"Failed to initialize RAG: {e}")
+    
+    def _get_rag_context(self, context_type: str, description: str, design_doc: Optional[str] = None) -> str:
+        """Get RAG context for generation."""
+        if self._rag is None:
+            return ""
+        
+        try:
+            if context_type == "machine":
+                context = self._rag.get_machine_context(description, design_doc=design_doc)
+            elif context_type == "spec":
+                context = self._rag.get_spec_context(description)
+            elif context_type == "test":
+                context = self._rag.get_test_context(description)
+            elif context_type == "types":
+                context = self._rag.get_types_context(description)
+            else:
+                return ""
+            
+            return context.to_prompt_section()
+        except Exception as e:
+            logger.warning(f"Failed to get RAG context: {e}")
+            return ""
     
     def create_project_structure(
         self,
@@ -484,6 +529,14 @@ class GenerationService(BaseService):
             content=f"<enums_guide>\n{enums_guide}\n</enums_guide>"
         ))
         
+        # Add RAG context (similar type/event examples from corpus)
+        rag_context = self._get_rag_context("types", "types and events", design_doc)
+        if rag_context:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content=f"<similar_examples>\n{rag_context}\n</similar_examples>"
+            ))
+        
         # Add design doc
         messages.append(Message(
             role=MessageRole.USER,
@@ -520,6 +573,14 @@ class GenerationService(BaseService):
             role=MessageRole.USER,
             content=f"<machines_guide>\n{machines_guide}\n</machines_guide>"
         ))
+        
+        # Add RAG context (similar examples from corpus)
+        rag_context = self._get_rag_context("machine", machine_name, design_doc)
+        if rag_context:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content=f"<similar_examples>\n{rag_context}\n</similar_examples>"
+            ))
         
         # Add context files
         if context_files:
@@ -709,11 +770,13 @@ class GenerationService(BaseService):
             
             # Post-process the code to fix common issues
             try:
-                from ..validation import PCodePostProcessor
-                code, fixes = PCodePostProcessor.process(code)
-                if fixes:
-                    logger.info(f"Post-processing applied {len(fixes)} fix(es) to {filename}")
-                    for fix in fixes:
+                from ..compilation.p_post_processor import PCodePostProcessor
+                processor = PCodePostProcessor()
+                result = processor.process(code, filename)
+                code = result.code
+                if result.fixes_applied:
+                    logger.info(f"Post-processing applied {len(result.fixes_applied)} fix(es) to {filename}")
+                    for fix in result.fixes_applied:
                         logger.debug(f"  - {fix}")
             except ImportError:
                 logger.debug("PCodePostProcessor not available, skipping post-processing")

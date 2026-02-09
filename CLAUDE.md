@@ -68,6 +68,15 @@ dotnet test --configuration Release
 
 # Run specific test project
 dotnet test Tst/UnitTests/UnitTests.csproj
+
+# Run a single test by name
+dotnet test --filter "FullyQualifiedName~TestClassName.TestMethodName"
+
+# Run tests in a specific category
+dotnet test --filter "Category=Unit"
+
+# Run tests with detailed output
+dotnet test --logger "console;verbosity=detailed"
 ```
 
 ### Working with P Programs
@@ -182,6 +191,19 @@ PChatBot is designed as a modular AI-assistance system with several key architec
 - **Examples and Benchmarks**: Test cases and reference implementations in `resources/p-model-benchmark/`
 - **Utilities**: Helper functions for P compilation, analysis, and code generation
 
+### PChatBot MCP Tools for P Development:
+When using the MCP server, these tools are available for P language development:
+- `generate_project_structure`: Create new P project skeleton
+- `generate_types_events`: Generate Enums_Types_Events.p file
+- `generate_machine`: Generate a state machine
+- `generate_spec`: Generate specification monitor
+- `generate_test`: Generate test file
+- `p_compile`: Compile the P project
+- `p_check`: Run PChecker verification
+- `fix_compiler_error`: Automatically fix compilation errors
+- `fix_checker_error`: Fix PChecker verification errors
+- `syntax_helper`: Get P language syntax help
+
 ### Common PChatBot Tasks:
 ```bash
 # Run evaluation metrics on chatbot performance
@@ -190,12 +212,57 @@ python compute_metrics.py
 # Analyze P compiler errors and suggest fixes
 python analyze-errors.py
 
+# Analyze PChecker errors specifically
+python analyze-checker-errors.py
+
 # Evaluate chatbot responses using pass@k metrics
 python evaluate_chatbot.py
 
+# Visualize performance metrics
+python visualize-pk-vs-tokens.py
+
+# Test MCP integration with P examples
+python test_mcp_paxos.py
+
 # Run PChatBot tests
 pytest tests/
+
+# Run pipeline tests specifically
+pytest tests/pipeline/pipeline_tests.py
 ```
+
+## P Language Syntax Guidelines
+
+When working with P programs, be aware of these syntax patterns and common pitfalls:
+
+### Reserved Keywords
+Never use these as identifiers: `var`, `type`, `enum`, `event`, `on`, `do`, `goto`, `data`, `send`, `announce`, `receive`, `case`, `raise`, `machine`, `state`, `hot`, `cold`, `start`, `spec`, `module`, `test`, `main`, `fun`, `observes`, `entry`, `exit`, `with`, `union`, `foreach`, `else`, `while`, `return`, `break`, `continue`, `ignore`, `defer`, `assert`, `print`, `new`, `sizeof`, `keys`, `values`, `choose`, `format`, `if`, `halt`, `this`, `as`, `to`, `in`, `default`, `Interface`, `true`, `false`, `int`, `bool`, `float`, `string`, `seq`, `map`, `set`, `any`
+
+### Common P Syntax Mistakes to Avoid
+
+1. **Variable Initialization**: Separate declaration from assignment
+   ```p
+   // WRONG
+   var x: int = 0;
+   // CORRECT
+   var x: int;
+   x = 0;
+   ```
+
+2. **Sequence Operations**: Use index-value pairs
+   ```p
+   // WRONG
+   mySeq += (value);
+   // CORRECT
+   mySeq += (sizeof(mySeq), value);
+   ```
+
+3. **Map Access**: Check existence before accessing
+   ```p
+   if (key in myMap) {
+       var v = myMap[key];
+   }
+   ```
 
 ## CI/CD Integration
 

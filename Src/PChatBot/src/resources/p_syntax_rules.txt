@@ -1,0 +1,142 @@
+CRITICAL P LANGUAGE SYNTAX RULES
+=================================
+
+Follow these rules EXACTLY when generating P code. Violations will cause compilation errors.
+
+1. VARIABLE DECLARATION ORDER
+   All 'var' declarations MUST come at the START of a function, BEFORE any statements.
+   
+   WRONG:
+   fun MyFunction() {
+     x = 1;           // statement
+     var y: int;      // ERROR: var after statement
+     y = 2;
+   }
+   
+   CORRECT:
+   fun MyFunction() {
+     var y: int;      // vars first
+     x = 1;           // then statements
+     y = 2;
+   }
+
+2. SINGLE-FIELD NAMED TUPLES REQUIRE TRAILING COMMA
+   When a tuple has only ONE named field, you MUST add a trailing comma.
+   
+   WRONG:
+   send target, eEvent, (fieldName = value);     // Missing comma!
+   
+   CORRECT:
+   send target, eEvent, (fieldName = value,);    // Trailing comma required
+   
+   Multi-field tuples don't need trailing comma:
+   send target, eEvent, (field1 = v1, field2 = v2);  // OK
+
+3. ENUM VALUES - NO TYPE PREFIX
+   Access enum values directly, NOT with TypeName.VALUE syntax.
+   
+   WRONG:
+   status = tBookingStatus.CONFIRMED;  // ERROR
+   
+   CORRECT:
+   status = CONFIRMED;                  // Just the value name
+
+4. ENTRY FUNCTION SYNTAX
+   Entry can be inline block or function reference (no parentheses).
+   
+   WRONG:
+   entry MyFunction();   // ERROR: no parentheses
+   
+   CORRECT:
+   entry MyFunction;     // Function reference
+   entry { ... }         // Inline block
+
+5. TEST DECLARATION SYNTAX
+   Tests use module unions, not assert-in syntax.
+   
+   WRONG:
+   test MyTest [main=Driver]: assert SafetySpec in (union { A, B });
+   
+   CORRECT:
+   module MyModule = { Machine1, Machine2 };
+   test MyTest [main=Driver]: (union MyModule, { Driver });
+   
+   Or with spec:
+   test MyTest [main=Driver]: assert SafetySpec in (union MyModule, { Driver });
+
+6. MACHINE CONFIGURATION PATTERN
+   When a machine needs references to other machines, use configuration events.
+   
+   PATTERN:
+   // In types file:
+   event eConfigMyMachine: OtherMachine;
+   
+   // In machine:
+   machine MyMachine {
+     var other: OtherMachine;
+     
+     start state Init {
+       on eConfigMyMachine do Configure;
+       // other handlers...
+     }
+     
+     fun Configure(ref: OtherMachine) {
+       other = ref;
+     }
+   }
+   
+   // In test driver:
+   var myMachine: MyMachine;
+   var otherMachine: OtherMachine;
+   myMachine = new MyMachine();
+   otherMachine = new OtherMachine();
+   send myMachine, eConfigMyMachine, otherMachine;
+
+7. TYPE DEFINITIONS
+   Always define types before using them.
+   
+   // Define in Enums_Types_Events.p:
+   type tMyRequest = (client: machine, value: int);
+   type tMyResponse = (status: int, result: int);
+   
+   // Then use in machines
+
+8. EVENT PAYLOAD TYPES
+   Events with payloads must have the type declared.
+   
+   event eNoPayload;                           // No payload
+   event eWithPayload: tPayloadType;           // With payload
+   event eWithMachinePayload: SomeMachine;     // Machine reference
+
+9. FUNCTION RETURN TYPES
+   Functions returning values must declare return type.
+   
+   fun MyFunction(): int {
+     return 42;
+   }
+   
+   fun VoidFunction() {   // No return type = void
+     print "hello";
+   }
+
+10. FOREACH ITERATION
+    Use 'foreach x in collection' syntax.
+    
+    foreach (key in keys(myMap)) {
+      var value: int;
+      value = myMap[key];
+    }
+
+11. NONDETERMINISTIC CHOICE
+    Use $ for boolean choice, choose() for value choice.
+    
+    if ($) {        // Nondeterministic boolean
+      // branch 1
+    } else {
+      // branch 2
+    }
+
+12. PRINT FORMAT SYNTAX
+    Use format() for string interpolation.
+    
+    print format("Value is {0}, name is {1}", value, name);

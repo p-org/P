@@ -1,1 +1,10 @@
-Write P code for the {filename} file. Ensure that the specifications specified in <global_specifications></global_specifications> tags are implemented. Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.
+Write P code for the {filename} file. Ensure that the specifications specified in <global_specifications></global_specifications> tags are implemented.
+
+CRITICAL RULES FOR SPEC MONITORS:
+1. Spec monitors are declared with `spec SpecName observes event1, event2 {{ ... }}`.
+2. Spec monitors CANNOT use: `this`, `new`, `send`, `announce`, `receive`, `$`, `$$`, `pop`. These are ILLEGAL in monitors and will cause compilation errors.
+3. Monitors can ONLY observe events and maintain internal state (variables, maps, sets). They assert properties based on observed event payloads.
+4. If you need to track per-machine state (e.g., per-consumer offsets), use a `map[machine, ...]` keyed by the machine reference from the event payload — NOT `this`.
+5. Each safety property from <global_specifications> should be a separate `spec` declaration.
+
+Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

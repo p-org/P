@@ -384,10 +384,26 @@ Returns comprehensive results including all generated files and any issues found
                     except Exception as e:
                         results["warnings"].append(f"Post-processing failed for {filename}: {e}")
 
-            type_checker = TypeConsistencyChecker()
-            type_issues = type_checker.check_project(project_path)
-            if type_issues:
-                results["warnings"].append(f"Type consistency issues: {type_issues}")
+            # Run type consistency check across all generated files
+            try:
+                type_checker = TypeConsistencyChecker()
+                project_files = services["compilation"].get_project_files(project_path)
+                # Extract definitions from all files first
+                for _, content in project_files.items():
+                    type_checker.extract_definitions(content)
+                # Then check each file for undefined references
+                all_issues = []
+                for rel_path, content in project_files.items():
+                    undef_types = type_checker.find_undefined_types(content)
+                    undef_events = type_checker.find_undefined_events(content)
+                    if undef_types:
+                        all_issues.append(f"{rel_path}: undefined types {undef_types}")
+                    if undef_events:
+                        all_issues.append(f"{rel_path}: undefined events {undef_events}")
+                if all_issues:
+                    results["warnings"].append(f"Type consistency issues: {'; '.join(all_issues)}")
+            except Exception as e:
+                logger.debug(f"Type consistency check skipped: {e}")
 
             compile_result = services["compilation"].compile(project_path)
             results["compilation"] = {

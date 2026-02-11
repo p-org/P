@@ -65,7 +65,12 @@ class GenerationService(BaseService):
     
     Optionally uses RAG (Retrieval-Augmented Generation) to provide
     relevant examples from the P program corpus for improved generation.
+    
+    Generation methods automatically retry on extraction failure
+    (up to MAX_GENERATION_RETRIES times) to mitigate LLM non-determinism.
     """
+
+    MAX_GENERATION_RETRIES = 2
     
     def __init__(
         self,
@@ -179,9 +184,17 @@ class GenerationService(BaseService):
             config = LLMConfig(max_tokens=4096)
             response = self.llm.complete(messages, config, system_prompt)
             
-            # Extract code from response
+            # Extract code — retry on extraction failure
             filename, code = self._extract_p_code(response.content)
-            
+
+            if not filename or not code:
+                for retry in range(self.MAX_GENERATION_RETRIES):
+                    self._warning(f"Code extraction failed for types/events, retry {retry + 1}")
+                    response = self.llm.complete(messages, config, system_prompt)
+                    filename, code = self._extract_p_code(response.content)
+                    if filename and code:
+                        break
+
             if filename and code:
                 file_path = os.path.join(project_path, PSRC, filename)
                 
@@ -205,7 +218,7 @@ class GenerationService(BaseService):
             else:
                 return GenerationResult(
                     success=False,
-                    error="Could not extract P code from response",
+                    error="Could not extract P code from response after retries",
                     raw_response=response.content,
                     token_usage=response.usage.to_dict(),
                 )
@@ -289,9 +302,23 @@ class GenerationService(BaseService):
                 config = LLMConfig(max_tokens=4096)
                 response = self.llm.complete(impl_messages, config, system_prompt)
             
-            # Extract code
+            # Extract code — retry on extraction failure
             filename, code = self._extract_p_code(response.content)
-            
+
+            if not filename or not code:
+                for retry in range(self.MAX_GENERATION_RETRIES):
+                    self._warning(
+                        f"Code extraction failed for {machine_name}, retry {retry + 1}/{self.MAX_GENERATION_RETRIES}"
+                    )
+                    impl_messages = self._build_machine_impl_messages(
+                        machine_name, design_doc, context_files
+                    )
+                    config = LLMConfig(max_tokens=4096)
+                    response = self.llm.complete(impl_messages, config, system_prompt)
+                    filename, code = self._extract_p_code(response.content)
+                    if filename and code:
+                        break
+
             if filename and code:
                 file_path = os.path.join(project_path, PSRC, filename)
                 
@@ -315,7 +342,7 @@ class GenerationService(BaseService):
             else:
                 return GenerationResult(
                     success=False,
-                    error="Could not extract P code from response",
+                    error="Could not extract P code from response after retries",
                     raw_response=response.content,
                     token_usage=response.usage.to_dict(),
                 )
@@ -358,7 +385,15 @@ class GenerationService(BaseService):
             response = self.llm.complete(messages, config, system_prompt)
             
             filename, code = self._extract_p_code(response.content)
-            
+
+            if not filename or not code:
+                for retry in range(self.MAX_GENERATION_RETRIES):
+                    self._warning(f"Code extraction failed for spec {spec_name}, retry {retry + 1}")
+                    response = self.llm.complete(messages, config, system_prompt)
+                    filename, code = self._extract_p_code(response.content)
+                    if filename and code:
+                        break
+
             if filename and code:
                 file_path = os.path.join(project_path, PSPEC, filename)
                 
@@ -382,7 +417,7 @@ class GenerationService(BaseService):
             else:
                 return GenerationResult(
                     success=False,
-                    error="Could not extract P code from response",
+                    error="Could not extract P code from response after retries",
                     raw_response=response.content,
                 )
                 
@@ -423,8 +458,16 @@ class GenerationService(BaseService):
             config = LLMConfig(max_tokens=4096)
             response = self.llm.complete(messages, config, system_prompt)
             
-            filename, code = self._extract_p_code(response.content)
-            
+            filename, code = self._extract_p_code(response.content, is_test_file=True)
+
+            if not filename or not code:
+                for retry in range(self.MAX_GENERATION_RETRIES):
+                    self._warning(f"Code extraction failed for test {test_name}, retry {retry + 1}")
+                    response = self.llm.complete(messages, config, system_prompt)
+                    filename, code = self._extract_p_code(response.content, is_test_file=True)
+                    if filename and code:
+                        break
+
             if filename and code:
                 file_path = os.path.join(project_path, PTST, filename)
                 
@@ -448,7 +491,7 @@ class GenerationService(BaseService):
             else:
                 return GenerationResult(
                     success=False,
-                    error="Could not extract P code from response",
+                    error="Could not extract P code from response after retries",
                     raw_response=response.content,
                 )
                 
@@ -751,7 +794,7 @@ class GenerationService(BaseService):
         
         return messages
     
-    def _extract_p_code(self, response: str) -> tuple:
+    def _extract_p_code(self, response: str, is_test_file: bool = False) -> tuple:
         """
         Extract P code from LLM response.
         
@@ -761,6 +804,11 @@ class GenerationService(BaseService):
         3. Markdown code block (```p ... ```) using first `machine` name
         
         Also post-processes the code to fix common issues.
+        
+        Args:
+            response: Raw LLM response text
+            is_test_file: If True, this is a PTst file; the post-processor
+                          will ensure test declarations exist.
         
         Returns:
             Tuple of (filename, code) or (None, None) if not found
@@ -820,7 +868,7 @@ class GenerationService(BaseService):
         try:
             from ..compilation.p_post_processor import PCodePostProcessor
             processor = PCodePostProcessor()
-            result = processor.process(code, filename)
+            result = processor.process(code, filename, is_test_file=is_test_file)
             code = result.code
             if result.fixes_applied:
                 logger.info(f"Post-processing applied {len(result.fixes_applied)} fix(es) to {filename}")

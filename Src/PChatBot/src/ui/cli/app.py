@@ -26,12 +26,9 @@ if str(SRC_ROOT) not in sys.path:
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# Change to project root
-os.chdir(str(PROJECT_ROOT))
-
 # Load environment
 from dotenv import load_dotenv
-load_dotenv(PROJECT_ROOT / ".env")
+load_dotenv(PROJECT_ROOT / ".env", override=True)
 
 from core.workflow import (
     WorkflowEngine,

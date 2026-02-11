@@ -10,10 +10,15 @@ Runs complete MCP tool flows for:
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
+
+logger = logging.getLogger(__name__)
+# Suppress noisy Streamlit warnings when running outside Streamlit
+logging.getLogger("streamlit").setLevel(logging.ERROR)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
@@ -36,7 +41,7 @@ from src.ui.mcp.tools.compilation import (
     PCompileParams,
     PCheckParams,
 )
-from src.ui.mcp.tools.fixing import register_fixing_tools, FixIterativelyParams
+from src.ui.mcp.tools.fixing import register_fixing_tools, FixIterativelyParams, FixBuggyProgramParams
 from src.core.workflow.factory import extract_machine_names_from_design_doc
 
 
@@ -199,6 +204,37 @@ def run_protocol(tools: Dict[str, Any], design_doc: str, out_root: Path, project
         "failed_tests": check_resp.get("failed_tests", []),
         "error": check_resp.get("error"),
     }
+
+    # If PChecker found bugs, attempt automated fix and re-check (up to 2 rounds)
+    MAX_CHECKER_FIX_ROUNDS = 2
+    checker_fix_round = 0
+    while not check_resp.get("success") and check_resp.get("failed_tests") and checker_fix_round < MAX_CHECKER_FIX_ROUNDS:
+        checker_fix_round += 1
+        logger.info(f"[CHECKER-FIX] Round {checker_fix_round}: attempting fix_buggy_program")
+        fix_bug_resp = tools["fix_buggy_program"](
+            FixBuggyProgramParams(project_path=project_path)
+        )
+        result.setdefault("checker_fixes", []).append(fix_bug_resp)
+
+        if not fix_bug_resp.get("fixed"):
+            break
+
+        # Recompile after fix
+        recompile = tools["p_compile"](PCompileParams(path=project_path))
+        if not recompile.get("success"):
+            result["errors"].append(f"Recompilation failed after checker fix round {checker_fix_round}")
+            break
+
+        # Re-check
+        check_resp = tools["p_check"](
+            PCheckParams(path=project_path, schedules=100, timeout=90)
+        )
+        result["check"] = {
+            "success": check_resp.get("success"),
+            "failed_tests": check_resp.get("failed_tests", []),
+            "error": check_resp.get("error"),
+        }
+
     result["success"] = bool(check_resp.get("success"))
     if not result["success"]:
         result["errors"].append("PChecker reported failing tests")
@@ -224,6 +260,9 @@ def main() -> int:
     runs = [
         ("Paxos", docs_dir / "[Design Doc] Basic Paxos Protocol.txt"),
         ("TwoPhaseCommit", docs_dir / "[Design Doc] Two Phase Commit.txt"),
+        ("MessageBroker", docs_dir / "[Design Doc] Simple Message Broker.txt"),
+        ("DistributedLock", docs_dir / "[Design Doc] Distributed Lock Server.txt"),
+        ("HotelManagement", docs_dir / "[Design Doc] Hotel Management Application.txt"),
     ]
 
     for name, path in runs:

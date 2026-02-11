@@ -201,6 +201,10 @@ class CompilationService(BaseService):
                 )
             )
 
+        # Clean up error messages: strip P tool trailer
+        for err in errors:
+            err.message = re.sub(r'\s*~~\s*\[PTool\].*$', '', err.message, flags=re.DOTALL).strip()
+
         # Deduplicate while preserving order.
         deduped: List[ParsedError] = []
         seen = set()

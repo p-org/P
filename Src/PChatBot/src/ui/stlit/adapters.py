@@ -39,7 +39,7 @@ from core.llm import get_default_provider
 
 # Load environment
 from dotenv import load_dotenv
-load_dotenv(PROJECT_ROOT / ".env")
+load_dotenv(PROJECT_ROOT / ".env", override=True)
 
 
 class StreamlitEventListener:

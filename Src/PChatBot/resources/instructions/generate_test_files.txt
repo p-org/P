@@ -1,1 +1,43 @@
-Write P code for the {filename} file. Ensure that the test scenarios specified in <possible_scenarios></possible_scenarios> tags are implemented. Always create all dependent machines before initializing machines that will send events/messages to them; never use default/null machine references in initialization. Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.
+Write P code for the {filename} file.
+
+CRITICAL REQUIREMENTS:
+1. For EACH scenario in <possible_scenarios>, create a dedicated scenario machine (e.g., Scenario1_XXX) with a start state that instantiates the system.
+2. For EACH scenario machine, you MUST write a `test` declaration. Without test declarations, PChecker cannot discover or run any tests. The format is:
+   test tcScenarioName [main=ScenarioMachine]:
+     assert SpecName1, SpecName2 in
+     {{ MachineA, MachineB, ..., ScenarioMachine }};
+   Use the spec/monitor names from the PSpec files in the assert clause. List ALL machines that participate in the scenario inside the braces.
+3. Always create all dependent machines before initializing machines that will send events/messages to them; never use default/null machine references in initialization.
+4. The test driver file MUST contain BOTH the scenario machines AND the test declarations. Do NOT put them in separate files.
+5. Do NOT re-declare or re-define machines that already exist in PSrc (Broker, Producer, etc.). Only define NEW test-specific machines here (scenario drivers and test_component machines like Consumer if it was listed under <test_components>).
+6. You MUST only use events that are already defined in Enums_Types_Events.p. Do NOT invent new events (e.g., eStartProducing, eStartConsuming). If a machine needs to start doing work, trigger it via its constructor payload or entry action — not a custom start event.
+7. Scenario machines must be SIMPLE launchers. They create all system components in the correct order and then stop. They should NOT handle any protocol events (no `on eXxx` handlers). If a component like Timer needs a `client: machine` reference, pass the actual component that uses the timer (e.g., the Coordinator), NOT the scenario machine itself (`this`).
+8. Ensure every machine is fully initialized before other machines send events to it. Create machines in dependency order: infrastructure first (Timer), then core (Coordinator, Broker), then clients (Client, Producer, Consumer). Pass all required references via constructor payloads — do not leave machine references uninitialized.
+
+Example structure for a file with 2 scenarios:
+
+machine Scenario1_SingleClient {{
+    start state Init {{
+        entry {{
+            // create system components
+        }}
+    }}
+}}
+
+machine Scenario2_MultipleClients {{
+    start state Init {{
+        entry {{
+            // create system components
+        }}
+    }}
+}}
+
+test tcSingleClient [main=Scenario1_SingleClient]:
+    assert SafetySpec in
+    {{ ComponentA, ComponentB, Scenario1_SingleClient }};
+
+test tcMultipleClients [main=Scenario2_MultipleClients]:
+    assert SafetySpec in
+    {{ ComponentA, ComponentB, Scenario2_MultipleClients }};
+
+Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

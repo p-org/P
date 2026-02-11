@@ -1,0 +1,129 @@
+<system_design_document>
+<title> Simple Message Broker (Kafka-like) </title>
+
+<introduction>
+The goal of this system is to model a simplified distributed message broker inspired by Apache Kafka. The broker manages topics where producers publish messages and consumers read messages. A topic maintains an ordered log of messages. Consumers track their own read offset and consume messages in order. The broker supports multiple producers and multiple consumers per topic.
+
+Assumptions:
+1. The system models a single topic with a single partition for simplicity.
+2. Messages are delivered reliably between components (no network failures).
+3. Consumers read messages sequentially from the log starting from their current offset.
+4. The broker acknowledges each published message to the producer.
+5. Consumers poll the broker for new messages rather than receiving pushes.
+</introduction>
+
+<components>
+<source_components>
+
+1. Broker
+* Manages a single topic as an append-only log of messages.
+* Receives publish requests from producers, appends the message to the log, and sends an acknowledgment back to the producer.
+* Receives poll requests from consumers, returns the next batch of messages starting from the consumer's current offset.
+* Tracks registered consumers and their committed offsets.
+* Receives offset commit requests from consumers after they have processed messages.
+
+2. Producer
+* Publishes messages to the broker.
+* Waits for an acknowledgment from the broker before publishing the next message.
+* Each producer sends a configurable number of messages.
+
+</source_components>
+
+<test_components>
+
+3. Consumer
+* Polls the broker for new messages starting from its committed offset.
+* Processes received messages and then commits the new offset back to the broker.
+* Asserts that messages are received in order (offsets are strictly increasing).
+* Continues polling until it has consumed a target number of messages.
+
+</test_components>
+</components>
+
+<interactions>
+
+1. ePublish
+* Source: Producer
+* Target: Broker
+* Payload: producer (machine), key (int), value (int)
+* Description: Producer publishes a key-value message to the broker's topic log.
+* Effects:
+    * Broker appends the message to the end of the log.
+    * Broker sends an acknowledgment with the assigned offset back to the producer.
+
+2. ePublishAck
+* Source: Broker
+* Target: Producer
+* Payload: offset (int) assigned to the published message
+* Description: Broker acknowledges a successful publish with the offset.
+* Effects:
+    * Producer may publish the next message.
+
+3. ePoll
+* Source: Consumer
+* Target: Broker
+* Payload: consumer (machine), fromOffset (int)
+* Description: Consumer requests messages starting from the given offset.
+* Effects:
+    * Broker reads messages from the log starting at fromOffset.
+    * Broker responds with available messages (up to a batch size).
+
+4. ePollResp
+* Source: Broker
+* Target: Consumer
+* Payload: messages as a sequence of (offset (int), key (int), value (int)), endOffset (int)
+* Description: Broker returns a batch of messages to the consumer.
+* Effects:
+    * Consumer processes the messages in order.
+    * Consumer sends a commit request with the new offset.
+
+5. eCommitOffset
+* Source: Consumer
+* Target: Broker
+* Payload: consumer (machine), offset (int)
+* Description: Consumer commits its read offset after processing messages.
+* Effects:
+    * Broker updates the consumer's committed offset.
+
+6. eCommitOffsetAck
+* Source: Broker
+* Target: Consumer
+* Payload: offset (int)
+* Description: Broker acknowledges the offset commit.
+* Effects:
+    * Consumer resumes polling from the committed offset.
+
+7. eRegisterConsumer
+* Source: Consumer
+* Target: Broker
+* Payload: consumer (machine)
+* Description: Consumer registers with the broker before it can start polling.
+* Effects:
+    * Broker initializes the consumer's offset to 0.
+
+8. eRegisterConsumerAck
+* Source: Broker
+* Target: Consumer
+* Description: Broker acknowledges consumer registration.
+* Effects:
+    * Consumer starts polling.
+
+</interactions>
+
+<global_specifications>
+
+1. OrderedDelivery (safety property): Messages delivered to any consumer must have strictly increasing offsets. A consumer never receives a message with an offset less than or equal to a previously received message offset.
+2. NoMessageLoss (safety property): Every message published by a producer and acknowledged by the broker must eventually be consumable. The broker log offset must be monotonically increasing.
+3. ConsistentOffsets (safety property): A consumer's committed offset must never exceed the broker's current log end offset.
+
+</global_specifications>
+
+<possible_scenarios>
+
+1. 1 producer, 1 consumer, 5 messages, no failures.
+2. 2 producers, 1 consumer, 3 messages each, no failures.
+3. 1 producer, 2 consumers, 5 messages, no failures.
+
+</possible_scenarios>
+
+</system_design_document>

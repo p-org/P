@@ -37,13 +37,15 @@ class PCodePostProcessor:
         self.fixes_applied: List[str] = []
         self.warnings: List[str] = []
     
-    def process(self, code: str, filename: str = "") -> PostProcessResult:
+    def process(self, code: str, filename: str = "", is_test_file: bool = False) -> PostProcessResult:
         """
         Process P code and fix common issues.
         
         Args:
             code: The P code to process
             filename: Optional filename for better error messages
+            is_test_file: If True, this file belongs to PTst and must
+                          contain test declarations.
             
         Returns:
             PostProcessResult with fixed code and list of fixes applied
@@ -60,6 +62,13 @@ class PCodePostProcessor:
         code = self._fix_test_declaration_syntax(code)
         code = self._fix_missing_semicolons(code)
         code = self._fix_entry_function_syntax(code)
+        code = self._fix_bare_halt(code)
+        code = self._fix_forbidden_in_monitors(code)
+        
+        # For PTst files, check for common wiring bugs and ensure test declarations
+        if is_test_file:
+            code = self._warn_timer_wired_to_this(code, filename)
+            code = self._ensure_test_declarations(code, filename)
         
         if code != original_code:
             logger.info(f"Post-processing applied {len(self.fixes_applied)} fix(es) to {filename or 'code'}")
@@ -234,6 +243,169 @@ class PCodePostProcessor:
             self.fixes_applied.append("Fixed entry function syntax: removed ()")
         
         return code
+
+    def _fix_bare_halt(self, code: str) -> str:
+        """
+        Fix bare `halt;` → `raise halt;`.
+        In P, `halt` is an event and must be raised, not used as a statement.
+        """
+        pattern = r'(?<!\braise\s)(?<!\w)\bhalt\s*;'
+        if re.search(pattern, code):
+            code = re.sub(pattern, 'raise halt;', code)
+            self.fixes_applied.append("Fixed bare 'halt;' → 'raise halt;'")
+        return code
+
+    def _fix_forbidden_in_monitors(self, code: str) -> str:
+        """
+        Detect and remove forbidden keywords inside spec monitor bodies.
+        P spec monitors cannot use: this, new, send, announce, receive, $, $$, pop.
+        """
+        # Find all spec blocks
+        spec_pattern = r'\bspec\s+(\w+)\s+observes\s+[^{]+\{'
+        for match in re.finditer(spec_pattern, code):
+            spec_name = match.group(1)
+            start = match.end() - 1
+            depth = 0
+            body_end = start
+            for ci in range(start, len(code)):
+                if code[ci] == '{':
+                    depth += 1
+                elif code[ci] == '}':
+                    depth -= 1
+                    if depth == 0:
+                        body_end = ci
+                        break
+            body = code[start:body_end + 1]
+
+            # Check for forbidden keywords (only standalone uses, not in strings/comments)
+            forbidden = {
+                'this': r'\bthis\b',
+                'new': r'\bnew\s+\w+',
+                'send': r'\bsend\s+',
+                'announce': r'\bannounce\s+',
+                'receive': r'\breceive\s*\{',
+            }
+            for kw, pattern_kw in forbidden.items():
+                if re.search(pattern_kw, body):
+                    self.warnings.append(
+                        f"Spec monitor '{spec_name}' uses forbidden keyword '{kw}'. "
+                        "Monitors cannot use this/new/send/announce/receive/$/$$/pop."
+                    )
+                    logger.warning(self.warnings[-1])
+
+            # Auto-fix `this as machine` → remove the line (common pattern)
+            if re.search(r'\bthis\b', body):
+                # Try to remove `var = this as machine;` assignments
+                fixed_body = re.sub(
+                    r'\n\s*\w+\s*=\s*this\s+as\s+machine\s*;\s*\n',
+                    '\n',
+                    body,
+                )
+                if fixed_body != body:
+                    code = code[:start] + fixed_body + code[body_end + 1:]
+                    self.fixes_applied.append(
+                        f"Removed 'this as machine' from spec monitor '{spec_name}'"
+                    )
+
+        return code
+
+    def _warn_timer_wired_to_this(self, code: str, filename: str) -> str:
+        """
+        Detect when a Timer is created with `this` as client inside a
+        scenario/test machine.  Timer(this) in a scenario machine is almost
+        always wrong — the timer should fire to the Coordinator or the
+        machine that actually handles eTimeOut.
+        """
+        # Find `new Timer(this)` or `new Timer((client = this, ...))` patterns
+        pattern = r'\bnew\s+Timer\s*\(\s*this\s*\)'
+        if re.search(pattern, code):
+            self.warnings.append(
+                f"[{filename}] Timer created with 'this' as client. "
+                "In a scenario machine this means eTimeOut will be sent "
+                "to the scenario machine which likely doesn't handle it. "
+                "Pass the Coordinator or the machine that handles eTimeOut instead."
+            )
+            logger.warning(self.warnings[-1])
+        # Also check named-tuple form: (client = this, ...) passed to Timer
+        pattern2 = r'\bnew\s+Timer\s*\(\s*\([^)]*client\s*=\s*this[^)]*\)\s*\)'
+        if re.search(pattern2, code):
+            self.warnings.append(
+                f"[{filename}] Timer created with 'client = this'. "
+                "See above — pass the actual handler machine instead."
+            )
+            logger.warning(self.warnings[-1])
+        return code
+
+    def _ensure_test_declarations(self, code: str, filename: str) -> str:
+        """
+        Check that a test file contains `test` declarations.
+        If machines exist but no test declarations, generate stub
+        declarations so PChecker can discover and run the tests.
+        """
+        has_test_decl = bool(re.search(r'^\s*test\s+\w+\s*\[', code, re.MULTILINE))
+        if has_test_decl:
+            return code  # Already has test declarations
+
+        # Find all machine names in the file
+        machine_names = re.findall(r'\bmachine\s+(\w+)', code)
+        if not machine_names:
+            return code
+
+        # In PTst files, any machine that creates other machines (has `new`)
+        # is a test entry point and needs a test declaration.
+        candidate_machines: List[str] = []
+
+        for name in machine_names:
+            pattern = rf'\bmachine\s+{re.escape(name)}\s*\{{'
+            match = re.search(pattern, code)
+            if match:
+                # Extract body by counting braces from the opening `{`
+                start = match.end() - 1
+                depth = 0
+                body_end = start
+                for ci in range(start, len(code)):
+                    if code[ci] == '{':
+                        depth += 1
+                    elif code[ci] == '}':
+                        depth -= 1
+                        if depth == 0:
+                            body_end = ci
+                            break
+                body = code[start:body_end]
+                if 'new ' in body:
+                    candidate_machines.append(name)
+
+        if not candidate_machines:
+            self.warnings.append(
+                f"[{filename}] No test declarations found and no scenario machines detected. "
+                "PChecker will not discover any tests. "
+                "Add 'test tcName [main=Machine]: ...;' declarations."
+            )
+            logger.warning(self.warnings[-1])
+            return code
+
+        # Collect all machine names for the test scope
+        all_machines = ', '.join(machine_names)
+
+        # Generate test declarations
+        test_lines = ['\n// Auto-generated test declarations (post-processor)']
+        for sc in candidate_machines:
+            tc_name = 'tc' + sc.replace('Scenario', '').replace('_', '')
+            test_lines.append(
+                f'test {tc_name} [main={sc}]:\n'
+                f'  {{{all_machines}}};'
+            )
+
+        appended = '\n'.join(test_lines) + '\n'
+        self.fixes_applied.append(
+            f"Added {len(candidate_machines)} test declaration(s) for scenario machines: "
+            + ', '.join(candidate_machines)
+        )
+        logger.info(
+            f"[{filename}] Auto-generated {len(candidate_machines)} test declaration(s): "
+            + ', '.join(candidate_machines)
+        )
+        return code + appended
 
 
 class TypeConsistencyChecker:

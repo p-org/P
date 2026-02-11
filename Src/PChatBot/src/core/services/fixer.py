@@ -244,12 +244,13 @@ class FixerService(BaseService):
                     logger.info("Specialized fix didn't resolve error, trying LLM")
             
             # Fall back to LLM-based fixing
-            # Build fix messages
+            # Build fix messages — include all project files for cross-file context
             messages = self._build_compile_fix_messages(
                 error,
                 file_content,
                 project_path,
                 user_guidance,
+                all_project_files=self._compilation.get_project_files(project_path),
             )
             
             # Get system prompt
@@ -617,6 +618,10 @@ class FixerService(BaseService):
             "total_iterations": 0,
         }
         
+        # Track error messages to detect spirals (same error repeating)
+        recent_errors: List[str] = []
+        SPIRAL_THRESHOLD = 3
+        
         for i in range(max_iterations):
             self._progress("Compilation fix", i + 1, max_iterations)
             
@@ -641,6 +646,23 @@ class FixerService(BaseService):
                     "iteration": i + 1,
                     "error": "Could not parse error",
                     "output": combined[:500],
+                })
+                break
+            
+            # Detect spiral: if the same core error repeats, stop early
+            core_msg = error.message[:80]
+            recent_errors.append(core_msg)
+            if recent_errors.count(core_msg) >= SPIRAL_THRESHOLD:
+                self._warning(
+                    f"Spiral detected: same error '{core_msg}' seen "
+                    f"{SPIRAL_THRESHOLD} times. Stopping."
+                )
+                results["iterations"].append({
+                    "iteration": i + 1,
+                    "error": error.message,
+                    "fixed": False,
+                    "needs_guidance": False,
+                    "spiral_detected": True,
                 })
                 break
             
@@ -698,8 +720,9 @@ class FixerService(BaseService):
         file_content: str,
         project_path: str,
         user_guidance: Optional[str],
+        all_project_files: Optional[Dict[str, str]] = None,
     ) -> List[Message]:
-        """Build messages for compilation error fixing"""
+        """Build messages for compilation error fixing, including cross-file context."""
         messages = []
         
         # Add guides
@@ -724,11 +747,22 @@ class FixerService(BaseService):
             content=f"<compiler_guide>\n{compiler_guide}\n</compiler_guide>"
         ))
         
-        # Add file content
-        filename = Path(error.file_path).name
+        # Add ALL project files for cross-file context (types, other machines, etc.)
+        error_filename = Path(error.file_path).name
+        if all_project_files:
+            for rel_path, content in all_project_files.items():
+                fname = Path(rel_path).name
+                if fname == error_filename:
+                    continue  # Will be added separately as the error file
+                messages.append(Message(
+                    role=MessageRole.USER,
+                    content=f"<{fname}>\n{content}\n</{fname}>"
+                ))
+        
+        # Add the error file content
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"File with error ({filename}):\n```\n{file_content}\n```"
+            content=f"File with error ({error_filename}):\n```\n{file_content}\n```"
         ))
         
         # Add error details
@@ -761,8 +795,9 @@ Compilation error at line {error.line_number}, column {error.column_number}:
             role=MessageRole.USER,
             content=f"""
 Please fix the compilation error in this P code.
+The error may be caused by mismatches with types/events defined in other project files shown above.
 Return the complete fixed file content wrapped in XML tags using the filename.
-Example: <{filename}>...fixed code...</{filename}>
+Example: <{error_filename}>...fixed code...</{error_filename}>
 """
         ))
         

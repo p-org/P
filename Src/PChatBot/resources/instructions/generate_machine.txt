@@ -12,5 +12,7 @@ For each function:
 2. Declare: `var name: type;`
 3. Initialize later: `name = value;` (in functions/entry blocks)
 4. P provides defaults - explicit initialization often unnecessary
+5. EVERY event that can be received by this machine in a given state MUST be handled in that state. If an event is not relevant in a state, add `ignore eEventName;` to that state. If it should be processed later, add `defer eEventName;`. PChecker will flag unhandled events as bugs.
+6. Think about which events could arrive late or out-of-order. For example, if a machine transitions from PhaseA to PhaseB, events from PhaseA may still be in the queue — add `ignore` for those stale events in PhaseB.
 
 Before finalizing the implementation, identify all attributes and events that would be needed to properly setup and initialize this machine in test cases later. Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

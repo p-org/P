@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "p-easyai": {
+      "command": "python",
+      "args": ["-m", "src.ui.mcp.server"],
+      "cwd": "${workspaceFolder}/Src/PeasyAI",
+      "env": {
+        "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
+        "OPENAI_BASE_URL": "${env:OPENAI_BASE_URL}",
+        "OPENAI_MODEL_NAME": "${env:OPENAI_MODEL_NAME}"
+      }
+    }
+  }
+}
+
+
+
+

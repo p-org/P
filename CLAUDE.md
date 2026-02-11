@@ -20,13 +20,13 @@ The P framework consists of four main components organized in `Src/`:
 
 - **PEx** (`Src/PEx/`): Java-based execution engine that provides symbolic execution capabilities
 
-- **PChatBot** (`Src/PChatBot/`): AI-powered chatbot system for P language development assistance
-  - `src/core/`: Core chatbot logic including different interaction modes
+- **PeasyAI** (`Src/PeasyAI/`): AI-powered system for P language development assistance
+  - `src/core/`: Core logic including different interaction modes
   - `src/ui/`: User interface components (Streamlit web app, CLI, MCP server)
   - `src/utils/`: Utilities for code generation, compilation, and P language analysis
   - `resources/`: Context files, examples, and instruction templates for AI interactions
 
-The project follows a multi-language approach with the compiler written in C# (.NET), the execution engine in Java with Maven build system, and the chatbot system in Python.
+The project follows a multi-language approach with the compiler written in C# (.NET), the execution engine in Java with Maven build system, and the AI assistant system in Python.
 
 ## Common Development Commands
 
@@ -95,13 +95,13 @@ p compile --mode pex
 p check --mode pex
 ```
 
-### Working with PChatBot
+### Working with PeasyAI
 
-The PChatBot system provides AI-assisted P language development through multiple interfaces:
+The PeasyAI system provides AI-assisted P language development through multiple interfaces:
 
 ```bash
-# Set up PChatBot environment
-cd Src/PChatBot
+# Set up PeasyAI environment
+cd Src/PeasyAI
 python3 -m venv venv
 source venv/bin/activate
 source .env
@@ -119,7 +119,7 @@ python src/ui/cli/app.py
 python src/ui/mcp/server.py
 ```
 
-PChatBot supports multiple interaction modes:
+PeasyAI supports multiple interaction modes:
 - **Design Document Input**: Generate P programs from high-level design documents
 - **Interactive Mode**: Conversational assistance with P language development
 - **PChecker Mode**: Automated error analysis and fixing for P programs
@@ -148,9 +148,9 @@ Tutorial examples in `Tutorial/` serve as integration tests and demonstrate P la
 - `Directory.Build.props`: MSBuild properties shared across projects
 - `Bld/build.sh`: Main build script with comprehensive options
 - `Src/PEx/pom.xml`: Maven configuration for Java components
-- `Src/PChatBot/.env`: Environment configuration for PChatBot (requires AWS Bedrock credentials)
-- `Src/PChatBot/requirements.txt`: Python dependencies for PChatBot
-- `Src/PChatBot/resources/context_files/`: P language context and documentation for AI assistance
+- `Src/PeasyAI/.env`: Environment configuration for PeasyAI (requires AWS Bedrock credentials)
+- `Src/PeasyAI/requirements.txt`: Python dependencies for PeasyAI
+- `Src/PeasyAI/resources/context_files/`: P language context and documentation for AI assistance
 
 ## Development Workflow
 
@@ -158,7 +158,7 @@ Tutorial examples in `Tutorial/` serve as integration tests and demonstrate P la
 2. **Testing**: Always run `dotnet test` before commits; tutorial tests validate end-to-end functionality
 3. **Cross-platform Support**: The project supports Windows, macOS, and Ubuntu - check CI workflows for platform-specific considerations
 4. **Java Components**: PEx components require JDK 11+ and Maven; use cached dependencies in CI
-5. **PChatBot Development**: PChatBot requires Python 3.x, AWS Bedrock credentials, and specific Python dependencies. Set up `.env` file with AWS credentials before development
+5. **PeasyAI Development**: PeasyAI requires Python 3.x, AWS Bedrock credentials, and specific Python dependencies. Set up `.env` file with AWS credentials before development
 
 ## Working with Tutorial Examples
 
@@ -175,9 +175,9 @@ Each tutorial contains:
 - `.pproj` project files
 - Test configurations and specifications
 
-## PChatBot Architecture and Usage
+## PeasyAI Architecture and Usage
 
-PChatBot is designed as a modular AI-assistance system with several key architectural patterns:
+PeasyAI is designed as a modular AI-assistance system with several key architectural patterns:
 
 ### Core Components:
 - **Modes**: Different interaction patterns (`DesignDocInputMode`, `PCheckerMode`, `InteractiveMode`)
@@ -191,7 +191,7 @@ PChatBot is designed as a modular AI-assistance system with several key architec
 - **Examples and Benchmarks**: Test cases and reference implementations in `resources/p-model-benchmark/`
 - **Utilities**: Helper functions for P compilation, analysis, and code generation
 
-### PChatBot MCP Tools for P Development:
+### PeasyAI MCP Tools for P Development:
 When using the MCP server, these tools are available for P language development:
 - `generate_project_structure`: Create new P project skeleton
 - `generate_types_events`: Generate Enums_Types_Events.p file
@@ -204,9 +204,9 @@ When using the MCP server, these tools are available for P language development:
 - `fix_checker_error`: Fix PChecker verification errors
 - `syntax_helper`: Get P language syntax help
 
-### Common PChatBot Tasks:
+### Common PeasyAI Tasks:
 ```bash
-# Run evaluation metrics on chatbot performance
+# Run evaluation metrics on AI performance
 python compute_metrics.py
 
 # Analyze P compiler errors and suggest fixes
@@ -215,8 +215,8 @@ python analyze-errors.py
 # Analyze PChecker errors specifically
 python analyze-checker-errors.py
 
-# Evaluate chatbot responses using pass@k metrics
-python evaluate_chatbot.py
+# Evaluate PeasyAI responses using pass@k metrics
+python evaluate_peasyai.py
 
 # Visualize performance metrics
 python visualize-pk-vs-tokens.py
@@ -224,7 +224,7 @@ python visualize-pk-vs-tokens.py
 # Test MCP integration with P examples
 python test_mcp_paxos.py
 
-# Run PChatBot tests
+# Run PeasyAI tests
 pytest tests/
 
 # Run pipeline tests specifically

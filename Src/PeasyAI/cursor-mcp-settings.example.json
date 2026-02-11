@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/getcursor/cursor/main/schema/mcp-settings.json",
+  "mcpServers": {
+    "p-easyai": {
+      "command": "python",
+      "args": ["-m", "src.ui.mcp.server"],
+      "cwd": "/absolute/path/to/P/Src/PeasyAI",
+      "env": {
+        "OPENAI_API_KEY": "your-api-key-here",
+        "OPENAI_BASE_URL": "https://your-endpoint.com/api/v2/cortex/openai",
+        "OPENAI_MODEL_NAME": "claude-3-5-sonnet"
+      }
+    }
+  }
+}
+
+
+
+

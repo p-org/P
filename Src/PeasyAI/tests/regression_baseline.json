@@ -1,0 +1,542 @@
+{
+  "timestamp": "2026-02-11T14:54:29.449317",
+  "output_root": "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429",
+  "environment": {
+    "success": true,
+    "issues": [],
+    "details": {
+      "p_compiler_path": "/Users/adesai/.dotnet/tools/p",
+      "dotnet_path": "/usr/local/share/dotnet/dotnet",
+      "toolchain_issues": [],
+      "llm_provider_detected": "snowflake_cortex"
+    },
+    "message": "Environment valid",
+    "api_version": "1.0",
+    "error_category": null,
+    "retryable": false,
+    "next_actions": [],
+    "metadata": {
+      "tool": "validate_environment",
+      "operation_id": "ccbe7ae1-5e53-4774-82c1-7ff18750da10",
+      "timestamp": "2026-02-11T22:54:29.449266Z",
+      "provider": null,
+      "model": null,
+      "token_usage": {}
+    }
+  },
+  "protocols": [
+    {
+      "project_name": "Paxos",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Acceptor",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Learner",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Proposer",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/Paxos_2026_02_11_14_55_00/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/Paxos_2026_02_11_14_55_00/PSrc/Acceptor.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/Paxos_2026_02_11_14_55_00/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/Paxos_2026_02_11_14_55_00/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/Paxos_2026_02_11_14_55_00/PSrc/Learner.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/Paxos_2026_02_11_14_55_00/PSrc/Proposer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/Paxos_2026_02_11_14_55_00/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funInitEntry(config:(learners:seq[machine],)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "got type: tLearnPayload, expected: (acceptors:seq[machine],learners:seq[machine])",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "Module not closed. test module is not closed with respect to created interfaces; interface Acceptor is created but not implemented inside the module",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 4,
+            "error": "missing '=' at '{'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 5,
+            "error": "no viable alternative at input 'learners=learners)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 6,
+            "error": "no viable alternative at input 'learners=default(seq[machine]))'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 7,
+            "error": "no viable alternative at input 'learners=emptyLearners)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 8,
+            "error": "no viable alternative at input 'learners=default(seq[machine]))'",
+            "fixed": false,
+            "needs_guidance": false
+          }
+        ],
+        "success": false,
+        "total_iterations": 8,
+        "api_version": "1.0",
+        "error_category": "internal",
+        "retryable": true,
+        "next_actions": [
+          "Retry the operation or inspect the error details."
+        ],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "a6ac9c6f-5cc0-46a8-a858-6cd639bff4d3",
+          "timestamp": "2026-02-11T22:58:14.776749Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": null,
+      "checker_fixes": [],
+      "errors": [
+        "Compilation failed after fix attempts"
+      ],
+      "timing": {
+        "total_s": 225.5
+      },
+      "compile_after_fix": {
+        "success": false,
+        "error": null
+      },
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 0,
+          "tests_discovered": 0,
+          "all_tests_pass": 0
+        },
+        "total": 20,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "TwoPhaseCommit",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Coordinator",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Participant",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Timer",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/TwoPhaseCommit_2026_02_11_15_01_10/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/TwoPhaseCommit_2026_02_11_15_01_10/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/TwoPhaseCommit_2026_02_11_15_01_10/PSrc/Coordinator.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/TwoPhaseCommit_2026_02_11_15_01_10/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/TwoPhaseCommit_2026_02_11_15_01_10/PSrc/Participant.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/TwoPhaseCommit_2026_02_11_15_01_10/PSrc/Timer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/TwoPhaseCommit_2026_02_11_15_01_10/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funInitEntry(config:(client:machine,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "Method TimerStartedEntry is used as a transition function, but might change state here.",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "could not find spec machine 'AtomicityInvariant'",
+            "fixed": true,
+            "needs_guidance": false
+          }
+        ],
+        "success": true,
+        "total_iterations": 3,
+        "api_version": "1.0",
+        "error_category": null,
+        "retryable": false,
+        "next_actions": [],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "7324b57c-cd1c-4f81-bdbf-281484a78c4a",
+          "timestamp": "2026-02-11T23:03:04.950045Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": false,
+        "failed_tests": [
+          "tcSingleClient",
+          "tcMultipleClients"
+        ],
+        "passed_tests": [],
+        "error": null
+      },
+      "checker_fixes": [
+        {
+          "round": 1,
+          "fixed": false
+        }
+      ],
+      "errors": [
+        "PChecker reported failing tests"
+      ],
+      "timing": {
+        "total_s": 116.0
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 0
+        },
+        "total": 50,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "MessageBroker",
+      "success": true,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Broker",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Consumer",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Producer",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/MessageBroker_2026_02_11_15_03_06/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/MessageBroker_2026_02_11_15_03_06/PSrc/Broker.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/MessageBroker_2026_02_11_15_03_06/PSrc/Consumer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/MessageBroker_2026_02_11_15_03_06/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/MessageBroker_2026_02_11_15_03_06/PSrc/Producer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/MessageBroker_2026_02_11_15_03_06/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": true,
+        "error": null
+      },
+      "fix": null,
+      "check": {
+        "success": true,
+        "failed_tests": [],
+        "passed_tests": [
+          "tcSingleProducerSingleConsumer",
+          "tcTwoProducersSingleConsumer",
+          "tcSingleProducerTwoConsumers"
+        ],
+        "error": null
+      },
+      "checker_fixes": [],
+      "errors": [],
+      "timing": {
+        "total_s": 62.4
+      },
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 25,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 25
+        },
+        "total": 100,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "DistributedLock",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Lock",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/DistributedLock_2026_02_11_15_04_08/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/DistributedLock_2026_02_11_15_04_08/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/DistributedLock_2026_02_11_15_04_08/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/DistributedLock_2026_02_11_15_04_08/PSrc/LockServer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/DistributedLock_2026_02_11_15_04_08/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": true,
+        "error": null
+      },
+      "fix": null,
+      "check": {
+        "success": false,
+        "failed_tests": [
+          "tcConcurrentSameLock",
+          "tcDifferentResources"
+        ],
+        "passed_tests": [],
+        "error": null
+      },
+      "checker_fixes": [
+        {
+          "round": 1,
+          "fixed": false
+        }
+      ],
+      "errors": [
+        "PChecker reported failing tests"
+      ],
+      "timing": {
+        "total_s": 48.2
+      },
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 25,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 0
+        },
+        "total": 75,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "HotelManagement",
+      "success": true,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Front",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/HotelManagement_2026_02_11_15_04_57/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/HotelManagement_2026_02_11_15_04_57/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/HotelManagement_2026_02_11_15_04_57/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/HotelManagement_2026_02_11_15_04_57/PSrc/FrontDesk.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260211_145429/HotelManagement_2026_02_11_15_04_57/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funInitEntry(config:(numRooms:int,)'",
+            "fixed": true,
+            "needs_guidance": false
+          }
+        ],
+        "success": true,
+        "total_iterations": 1,
+        "api_version": "1.0",
+        "error_category": null,
+        "retryable": false,
+        "next_actions": [],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "0684b8fe-a7b6-4034-af5e-c1b2b1d4b105",
+          "timestamp": "2026-02-11T23:06:07.580687Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": true,
+        "failed_tests": [],
+        "passed_tests": [
+          "tcMultipleReservations",
+          "tcInvalidCancellation",
+          "tcInvalidSpecialRequest",
+          "tcMultipleConcurrentClients"
+        ],
+        "error": null
+      },
+      "checker_fixes": [],
+      "errors": [],
+      "timing": {
+        "total_s": 72.4
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 25
+        },
+        "total": 75,
+        "max": 100
+      },
+      "attempt": 1
+    }
+  ]
+}

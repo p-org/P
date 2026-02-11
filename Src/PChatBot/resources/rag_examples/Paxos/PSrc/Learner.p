@@ -1,3 +1,9 @@
+// Learner machine for Paxos protocol.
+// Learns the chosen value once a majority of acceptors agree.
+//
+// BEST PRACTICE: For circular dependency resolution (Learner needs allComponents
+// but components need Learner), use a setup event to pass the component list
+// AFTER all machines are created. See eSetupLearnerComponents below.
 machine Learner {
     var acceptedValues: map[int, int];
     var acceptedCounts: map[int, int];
@@ -9,23 +15,39 @@ machine Learner {
 
     start state Init {
         entry InitEntry;
+        // BEST PRACTICE: Accept a setup event for post-creation initialization.
+        // This solves circular dependency: Learner needs to know about all components,
+        // but components (Acceptors, Proposers) need the Learner reference first.
+        on eSetupLearnerComponents do HandleSetupComponents;
+        ignore eLearn;
     }
 
     state WaitingForAcceptances {
         on eAccepted do HandleAccepted;
+        // BEST PRACTICE: Also accept setup event in this state in case it
+        // arrives after we've transitioned (due to event ordering).
+        on eSetupLearnerComponents do HandleSetupComponents;
+        ignore eLearn;
     }
 
     state ValueChosen {
-        // Final state after consensus is reached
+        // Terminal state after consensus is reached.
+        // BEST PRACTICE: Ignore events that may still be in flight.
+        ignore eAccepted, eLearn, eSetupLearnerComponents;
     }
 
-    fun InitEntry(payload: (acceptors: int, components: seq[machine])) {
+    fun InitEntry(payload: (acceptors: int,)) {
         totalAcceptors = payload.acceptors;
         majorityThreshold = (totalAcceptors / 2) + 1;
         hasChosenValue = false;
         chosenValue = 0;
-        allComponents = payload.components;
         goto WaitingForAcceptances;
+    }
+
+    // BEST PRACTICE: Use a dedicated setup event handler instead of misusing
+    // protocol events (like eLearn) for initialization.
+    fun HandleSetupComponents(components: seq[machine]) {
+        allComponents = components;
     }
 
     fun HandleAccepted(acceptance: tAccepted) {

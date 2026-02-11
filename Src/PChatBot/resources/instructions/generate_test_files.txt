@@ -1,43 +1,108 @@
 Write P code for the {filename} file.
 
 CRITICAL REQUIREMENTS:
+
 1. For EACH scenario in <possible_scenarios>, create a dedicated scenario machine (e.g., Scenario1_XXX) with a start state that instantiates the system.
 2. For EACH scenario machine, you MUST write a `test` declaration. Without test declarations, PChecker cannot discover or run any tests. The format is:
    test tcScenarioName [main=ScenarioMachine]:
      assert SpecName1, SpecName2 in
      {{ MachineA, MachineB, ..., ScenarioMachine }};
    Use the spec/monitor names from the PSpec files in the assert clause. List ALL machines that participate in the scenario inside the braces.
-3. Always create all dependent machines before initializing machines that will send events/messages to them; never use default/null machine references in initialization.
-4. The test driver file MUST contain BOTH the scenario machines AND the test declarations. Do NOT put them in separate files.
-5. Do NOT re-declare or re-define machines that already exist in PSrc (Broker, Producer, etc.). Only define NEW test-specific machines here (scenario drivers and test_component machines like Consumer if it was listed under <test_components>).
-6. You MUST only use events that are already defined in Enums_Types_Events.p. Do NOT invent new events (e.g., eStartProducing, eStartConsuming). If a machine needs to start doing work, trigger it via its constructor payload or entry action — not a custom start event.
-7. Scenario machines must be SIMPLE launchers. They create all system components in the correct order and then stop. They should NOT handle any protocol events (no `on eXxx` handlers). If a component like Timer needs a `client: machine` reference, pass the actual component that uses the timer (e.g., the Coordinator), NOT the scenario machine itself (`this`).
-8. Ensure every machine is fully initialized before other machines send events to it. Create machines in dependency order: infrastructure first (Timer), then core (Coordinator, Broker), then clients (Client, Producer, Consumer). Pass all required references via constructor payloads — do not leave machine references uninitialized.
+3. The test driver file MUST contain BOTH the scenario machines AND the test declarations. Do NOT put them in separate files.
+4. Do NOT re-declare or re-define machines that already exist in PSrc. Only define NEW scenario-driver machines here.
+5. You MUST only use events that are already defined in Enums_Types_Events.p. Do NOT invent new events.
+6. Scenario machines must be SIMPLE launchers. They create all system components in the correct order and then stop. They should NOT handle any protocol events (no `on eXxx` handlers).
 
-Example structure for a file with 2 scenarios:
+## CRITICAL: Machine Wiring — Read the Machine Entry Signatures
 
-machine Scenario1_SingleClient {{
+Look at every machine file provided as context. Each machine's start state has an entry function. That entry function's parameter defines EXACTLY what the machine expects when created. You MUST match it.
+
+There are two initialization patterns used by the machines:
+
+### Pattern A: Constructor payload — machine expects config via `new Machine(payload)`
+If a machine's start-state entry function has a parameter, you MUST pass a matching named-tuple payload when creating it with `new`.
+
+Example — if Proposer.p has:
+```
+start state Init {{
+    entry InitEntry;
+    ...
+}}
+fun InitEntry(config: (acceptors: seq[machine], learners: seq[machine], id: int)) {{
+    ...
+}}
+```
+Then the test driver MUST create it as:
+```
+proposer = new Proposer((acceptors = acceptorSeq, learners = learnerSeq, id = 1));
+```
+
+### Pattern B: Initialization event — machine blocks on a config event
+If a machine's start state waits for an event (e.g., `on eAcceptorConfig goto Ready with Configure;`), you MUST send that event after creating the machine.
+
+Example — if Acceptor.p has:
+```
+start state WaitForConfig {{
+    on eAcceptorConfig goto Ready with Configure;
+    defer ePropose, eAcceptRequest;
+}}
+fun Configure(config: tAcceptorConfig) {{
+    ...
+}}
+```
+Then the test driver MUST do:
+```
+acceptor1 = new Acceptor();
+send acceptor1, eAcceptorConfig, (learners = learnerSeq,);
+```
+
+### Wiring Rules
+- Create machines in DEPENDENCY ORDER: machines with no dependencies first (e.g., Learner), then machines that reference them (e.g., Acceptor needs learners), then machines that reference those (e.g., Proposer needs acceptors).
+- Build `seq[machine]` or `set[machine]` collections BEFORE passing them to dependent machines.
+- NEVER leave machine-typed variables uninitialized (default/null). Every machine reference must point to a created machine.
+- NEVER pass `this` (the scenario machine) as a protocol participant reference.
+- For each `new` call, verify the payload tuple field names and types match the machine's entry function parameter EXACTLY.
+
+## Complete Example
+
+Given machines with these signatures:
+- Learner: `fun InitEntry()` — no config needed
+- Acceptor: `fun InitEntry(config: (learners: seq[machine],))` — needs learners
+- Proposer: `fun InitEntry(config: (acceptors: seq[machine], learners: seq[machine], id: int))` — needs acceptors + learners
+- Client: `fun InitEntry(config: (proposer: machine, value: int))` — needs proposer
+
+The scenario machine must be:
+```
+machine Scenario1_BasicPaxos {{
     start state Init {{
         entry {{
-            // create system components
+            var learner1: machine;
+            var acceptors: seq[machine];
+            var learners: seq[machine];
+            var proposer: machine;
+            var client: machine;
+
+            // 1. Create machines with no dependencies
+            learner1 = new Learner();
+            learners += (0, learner1);
+
+            // 2. Create machines that depend on step 1
+            acceptors += (0, new Acceptor((learners = learners,)));
+            acceptors += (1, new Acceptor((learners = learners,)));
+            acceptors += (2, new Acceptor((learners = learners,)));
+
+            // 3. Create machines that depend on steps 1-2
+            proposer = new Proposer((acceptors = acceptors, learners = learners, id = 1));
+
+            // 4. Create clients that depend on proposer
+            client = new Client((proposer = proposer, value = 42));
         }}
     }}
 }}
 
-machine Scenario2_MultipleClients {{
-    start state Init {{
-        entry {{
-            // create system components
-        }}
-    }}
-}}
-
-test tcSingleClient [main=Scenario1_SingleClient]:
-    assert SafetySpec in
-    {{ ComponentA, ComponentB, Scenario1_SingleClient }};
-
-test tcMultipleClients [main=Scenario2_MultipleClients]:
-    assert SafetySpec in
-    {{ ComponentA, ComponentB, Scenario2_MultipleClients }};
+test tcBasicPaxos [main=Scenario1_BasicPaxos]:
+    assert OnlyOneValueChosen in
+    {{ Proposer, Acceptor, Learner, Client, Scenario1_BasicPaxos }};
+```
 
 Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

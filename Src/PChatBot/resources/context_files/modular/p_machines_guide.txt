@@ -20,29 +20,35 @@ Do NOT access functions contained inside of other machines.
 
 <machine_file_example>
 ```
-// Standalone functions (if needed)
-fun UtilityFunction(param: int): bool {
-  // Implementation
-  return param > 0;
-}
-
-// Machine definitions - no events/types/enums
+// Machine definitions - no events/types/enums (they come from Enums_Types_Events.p)
 machine TaskManager {
-  var tasks: seq[Task];  // Task type comes from context
-  
-  start state Idle {
-    on eStart goto Processing;  // eStart event comes from context
+  var workers: seq[machine];  // receive from constructor or config event
+  var tasks: seq[Task];       // Task type comes from context
+
+  // Start state receives configuration via constructor payload
+  start state Init {
+    entry InitEntry;
+    on eNewTask goto Processing;
   }
-  
+
   state Processing {
-    on eTask do HandleTask;     // eTask event comes from context
+    on eTask do HandleTask;
+    defer eNewTask;           // queue new tasks while busy
+    ignore eStatusRequest;    // drop status pings while processing
   }
-  
+
+  // Entry function receives the constructor payload
+  fun InitEntry(config: (workers: seq[machine],)) {
+    workers = config.workers;
+  }
+
   fun HandleTask(task: Task) {
     // Implementation using contextual types and events
   }
 }
 ```
+
+Created by test driver as: `new TaskManager((workers = workerList,));`
 </machine_file_example>
 
 <state_machine_grammar>

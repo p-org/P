@@ -562,6 +562,238 @@ class GenerationService(BaseService):
 
         return results
 
+    def generate_machine_ensemble(
+        self,
+        machine_name: str,
+        design_doc: str,
+        project_path: str,
+        context_files: Optional[Dict[str, str]] = None,
+        ensemble_size: int = 3,
+        save_to_disk: bool = True,
+    ) -> GenerationResult:
+        """
+        Generate a P state machine using ensemble: produce N candidates and
+        pick the best one based on static quality scoring.
+
+        This improves generation reliability by mitigating single-shot LLM
+        non-determinism.  For example, some candidates will correctly add
+        ``defer`` or ``ignore`` clauses for events that could arrive in
+        unexpected states – a common source of PChecker failures.
+
+        Args:
+            machine_name: Name of the machine to generate
+            design_doc: Design document content
+            project_path: Path to the P project
+            context_files: Additional context files
+            ensemble_size: Number of candidates to generate (default 3)
+            save_to_disk: Whether to write the best candidate to disk
+
+        Returns:
+            GenerationResult for the best candidate
+        """
+        if ensemble_size <= 1:
+            return self.generate_machine(
+                machine_name, design_doc, project_path, context_files,
+                save_to_disk=save_to_disk,
+            )
+
+        self._status(f"Generating {machine_name} with ensemble (n={ensemble_size})")
+        candidates: List[GenerationResult] = []
+
+        def _gen(_idx: int) -> GenerationResult:
+            return self.generate_machine(
+                machine_name, design_doc, project_path, context_files,
+                save_to_disk=False,
+            )
+
+        with ThreadPoolExecutor(max_workers=min(ensemble_size, 4)) as pool:
+            futures = [pool.submit(_gen, i) for i in range(ensemble_size)]
+            for future in as_completed(futures):
+                try:
+                    result = future.result()
+                    if result.success and result.code:
+                        candidates.append(result)
+                except Exception as e:
+                    logger.warning(f"Ensemble candidate for {machine_name} failed: {e}")
+
+        if not candidates:
+            self._warning(f"All ensemble candidates failed for {machine_name}, falling back to single generation")
+            return self.generate_machine(
+                machine_name, design_doc, project_path, context_files,
+                save_to_disk=save_to_disk,
+            )
+
+        # Score and pick the best
+        best = max(
+            candidates,
+            key=lambda c: self._score_p_candidate(c.code, machine_name, context_files, file_type="machine"),
+        )
+        self._status(
+            f"Selected best of {len(candidates)} candidates for {machine_name} "
+            f"(score={self._score_p_candidate(best.code, machine_name, context_files, file_type='machine'):.1f})"
+        )
+
+        if save_to_disk and best.file_path:
+            os.makedirs(os.path.dirname(best.file_path), exist_ok=True)
+            with open(best.file_path, "w") as f:
+                f.write(best.code)
+
+        return best
+
+    def generate_machines_ensemble(
+        self,
+        machine_names: List[str],
+        design_doc: str,
+        project_path: str,
+        context_files: Optional[Dict[str, str]] = None,
+        ensemble_size: int = 3,
+        save_to_disk: bool = True,
+    ) -> Dict[str, GenerationResult]:
+        """
+        Generate multiple machines sequentially, each with ensemble selection.
+
+        Unlike ``generate_machines_parallel`` (which generates all machines
+        concurrently with a shared context snapshot), this method generates
+        machines one-by-one so that each subsequent machine can see the code
+        of previously generated machines, improving cross-machine consistency.
+
+        Args:
+            machine_names: List of machine names to generate
+            design_doc: Design document content
+            project_path: Path to the P project
+            context_files: Shared context (types file, etc.)
+            ensemble_size: Number of candidates per machine
+            save_to_disk: Whether to write files to disk
+
+        Returns:
+            Dictionary mapping machine name → GenerationResult
+        """
+        results: Dict[str, GenerationResult] = {}
+        ctx = dict(context_files) if context_files else {}
+
+        for mn in machine_names:
+            result = self.generate_machine_ensemble(
+                mn, design_doc, project_path, ctx,
+                ensemble_size=ensemble_size, save_to_disk=save_to_disk,
+            )
+            results[mn] = result
+
+            # Feed successful results as context for subsequent machines
+            if result.success and result.code and result.filename:
+                ctx[result.filename] = result.code
+
+        return results
+
+    def generate_spec_ensemble(
+        self,
+        spec_name: str,
+        design_doc: str,
+        project_path: str,
+        context_files: Optional[Dict[str, str]] = None,
+        ensemble_size: int = 3,
+        save_to_disk: bool = True,
+    ) -> GenerationResult:
+        """Generate a P specification with ensemble selection."""
+        if ensemble_size <= 1:
+            return self.generate_spec(
+                spec_name, design_doc, project_path, context_files,
+                save_to_disk=save_to_disk,
+            )
+
+        self._status(f"Generating spec {spec_name} with ensemble (n={ensemble_size})")
+        candidates: List[GenerationResult] = []
+
+        def _gen(_idx: int) -> GenerationResult:
+            return self.generate_spec(
+                spec_name, design_doc, project_path, context_files,
+                save_to_disk=False,
+            )
+
+        with ThreadPoolExecutor(max_workers=min(ensemble_size, 4)) as pool:
+            futures = [pool.submit(_gen, i) for i in range(ensemble_size)]
+            for future in as_completed(futures):
+                try:
+                    result = future.result()
+                    if result.success and result.code:
+                        candidates.append(result)
+                except Exception as e:
+                    logger.warning(f"Ensemble candidate for spec {spec_name} failed: {e}")
+
+        if not candidates:
+            self._warning(f"All ensemble candidates failed for spec {spec_name}, falling back")
+            return self.generate_spec(
+                spec_name, design_doc, project_path, context_files,
+                save_to_disk=save_to_disk,
+            )
+
+        best = max(
+            candidates,
+            key=lambda c: self._score_p_candidate(c.code, spec_name, context_files, file_type="spec"),
+        )
+        self._status(f"Selected best of {len(candidates)} candidates for spec {spec_name}")
+
+        if save_to_disk and best.file_path:
+            os.makedirs(os.path.dirname(best.file_path), exist_ok=True)
+            with open(best.file_path, "w") as f:
+                f.write(best.code)
+
+        return best
+
+    def generate_test_ensemble(
+        self,
+        test_name: str,
+        design_doc: str,
+        project_path: str,
+        context_files: Optional[Dict[str, str]] = None,
+        ensemble_size: int = 3,
+        save_to_disk: bool = True,
+    ) -> GenerationResult:
+        """Generate a P test file with ensemble selection."""
+        if ensemble_size <= 1:
+            return self.generate_test(
+                test_name, design_doc, project_path, context_files,
+                save_to_disk=save_to_disk,
+            )
+
+        self._status(f"Generating test {test_name} with ensemble (n={ensemble_size})")
+        candidates: List[GenerationResult] = []
+
+        def _gen(_idx: int) -> GenerationResult:
+            return self.generate_test(
+                test_name, design_doc, project_path, context_files,
+                save_to_disk=False,
+            )
+
+        with ThreadPoolExecutor(max_workers=min(ensemble_size, 4)) as pool:
+            futures = [pool.submit(_gen, i) for i in range(ensemble_size)]
+            for future in as_completed(futures):
+                try:
+                    result = future.result()
+                    if result.success and result.code:
+                        candidates.append(result)
+                except Exception as e:
+                    logger.warning(f"Ensemble candidate for test {test_name} failed: {e}")
+
+        if not candidates:
+            self._warning(f"All ensemble candidates failed for test {test_name}, falling back")
+            return self.generate_test(
+                test_name, design_doc, project_path, context_files,
+                save_to_disk=save_to_disk,
+            )
+
+        best = max(
+            candidates,
+            key=lambda c: self._score_p_candidate(c.code, test_name, context_files, file_type="test"),
+        )
+        self._status(f"Selected best of {len(candidates)} candidates for test {test_name}")
+
+        if save_to_disk and best.file_path:
+            os.makedirs(os.path.dirname(best.file_path), exist_ok=True)
+            with open(best.file_path, "w") as f:
+                f.write(best.code)
+
+        return best
+
     def save_p_file(
         self,
         file_path: str,
@@ -603,6 +835,87 @@ class GenerationService(BaseService):
     # Private helper methods
     # =========================================================================
     
+    def _score_p_candidate(
+        self,
+        code: str,
+        name: str,
+        context_files: Optional[Dict[str, str]],
+        file_type: str = "machine",
+    ) -> float:
+        """
+        Score a P code candidate for quality using static heuristics.
+
+        Higher scores indicate higher-quality candidates.  The scoring
+        rewards:
+        - Correct P constructs (machine, start state, spec, test)
+        - Use of ``defer`` / ``ignore`` (reduces PChecker unhandled-event bugs)
+        - Event coverage (references to events from the types file)
+        - Structural completeness (states, handlers, assertions)
+        - Balanced braces (basic syntax sanity)
+        """
+        if not code:
+            return 0.0
+
+        score = 0.0
+
+        # ── Common scoring (all file types) ────────────────────────────
+        # Balanced braces
+        open_b = code.count("{")
+        close_b = code.count("}")
+        if open_b == close_b:
+            score += 5
+        else:
+            score -= abs(open_b - close_b) * 2
+
+        # Code completeness (line count, diminishing returns)
+        lines = len(code.strip().split("\n"))
+        score += min(lines * 0.1, 10)
+
+        # Event references from context
+        if context_files:
+            for _fname, content in context_files.items():
+                for ev in re.findall(r"\bevent\s+(\w+)", content):
+                    if ev in code:
+                        score += 2
+
+        # ── Machine-specific scoring ───────────────────────────────────
+        if file_type == "machine":
+            if re.search(rf"\bmachine\s+{re.escape(name)}\b", code):
+                score += 10
+            if re.search(r"\bstart\s+state\b", code):
+                score += 10
+            # States
+            state_count = len(re.findall(r"\bstate\s+\w+\s*\{", code))
+            score += min(state_count * 3, 15)
+            # Entry handlers
+            score += min(len(re.findall(r"\bentry\b", code)) * 2, 10)
+            # on-event handlers
+            score += min(len(re.findall(r"\bon\s+\w+\s+(?:do|goto)\b", code)) * 2, 10)
+            # defer — VERY important for avoiding unhandled-event bugs
+            score += len(re.findall(r"\bdefer\b", code)) * 5
+            # ignore
+            score += len(re.findall(r"\bignore\b", code)) * 3
+
+        # ── Spec-specific scoring ──────────────────────────────────────
+        elif file_type == "spec":
+            if re.search(r"\bspec\s+\w+\s+observes\b", code):
+                score += 15
+            score += len(re.findall(r"\bassert\b", code)) * 5
+            spec_count = len(re.findall(r"\bspec\s+\w+\b", code))
+            score += min(spec_count * 5, 20)
+
+        # ── Test-specific scoring ──────────────────────────────────────
+        elif file_type == "test":
+            test_decl_count = len(re.findall(r"\btest\s+\w+\s*\[", code))
+            score += test_decl_count * 10
+            if re.search(r"\bassert\s+\w+\s+in\b", code):
+                score += 10
+            score += len(re.findall(r"\bnew\s+\w+", code)) * 2
+            # Scenario machines
+            score += len(re.findall(r"\bmachine\s+Scenario\w*", code)) * 5
+
+        return score
+
     def _build_types_events_messages(self, design_doc: str) -> List[Message]:
         """Build messages for types/events generation"""
         messages = []
@@ -839,6 +1152,21 @@ class GenerationService(BaseService):
                     content=f"<{filename}>\n{content}\n</{filename}>"
                 ))
         
+        # Extract and inject machine wiring information so the LLM
+        # knows the exact constructor signature for each machine.
+        wiring_info = self._extract_machine_wiring_info(context_files)
+        if wiring_info:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content=(
+                    "<machine_wiring_reference>\n"
+                    "Below is the EXACT constructor/initialization signature for each machine. "
+                    "You MUST match these when creating machines with `new` or sending config events.\n\n"
+                    f"{wiring_info}\n"
+                    "</machine_wiring_reference>"
+                ),
+            ))
+        
         # Add design doc
         messages.append(Message(
             role=MessageRole.USER,
@@ -854,6 +1182,106 @@ class GenerationService(BaseService):
         
         return messages
     
+    @staticmethod
+    def _extract_machine_wiring_info(
+        context_files: Optional[Dict[str, str]],
+    ) -> str:
+        """
+        Extract machine initialization signatures from generated machine code.
+
+        Scans context files for patterns like:
+          machine Foo { ... start state Init { entry InitEntry; ... } ... fun InitEntry(cfg: ...) { ... } }
+        and also config-event patterns like:
+          start state WaitForConfig { on eMyConfig goto Ready with ConfigureHandler; }
+
+        Returns a human-readable summary the LLM can use to wire machines
+        correctly in the test driver.
+        """
+        if not context_files:
+            return ""
+
+        lines_out: list = []
+
+        for filename, code in context_files.items():
+            if not filename.endswith(".p"):
+                continue
+            # Skip types/events/spec files — we only want machines
+            if "Enums" in filename or "Types" in filename or "Safety" in filename:
+                continue
+
+            # Find machine name
+            machine_match = re.search(r"\bmachine\s+(\w+)\s*\{", code)
+            if not machine_match:
+                continue
+            machine_name = machine_match.group(1)
+
+            # Find start state
+            start_state_match = re.search(
+                r"start\s+state\s+(\w+)\s*\{(.*?)\n\s*\}",
+                code,
+                re.DOTALL,
+            )
+            if not start_state_match:
+                continue
+            start_state_name = start_state_match.group(1)
+            start_body = start_state_match.group(2)
+
+            # Pattern A: entry function with parameter (constructor payload)
+            entry_match = re.search(r"\bentry\s+(\w+)\s*;", start_body)
+            if entry_match:
+                entry_fn_name = entry_match.group(1)
+                # Find the function definition and its parameter
+                fn_pattern = rf"\bfun\s+{re.escape(entry_fn_name)}\s*\(([^)]*)\)"
+                fn_match = re.search(fn_pattern, code)
+                if fn_match:
+                    param_text = fn_match.group(1).strip()
+                    if param_text:
+                        lines_out.append(
+                            f"- {machine_name}: created via `new {machine_name}({param_text.split(':',1)[-1].strip()})` "
+                            f"  (entry function: `fun {entry_fn_name}({param_text})`)"
+                        )
+                    else:
+                        lines_out.append(
+                            f"- {machine_name}: created via `new {machine_name}()` — no constructor config needed"
+                        )
+                    continue
+
+            # Pattern A alt: inline entry block (entry { ... }) — no config
+            if re.search(r"\bentry\s*\{", start_body):
+                lines_out.append(
+                    f"- {machine_name}: created via `new {machine_name}()` — inline entry, no constructor config"
+                )
+                continue
+
+            # Pattern B: config event in start state
+            config_event_match = re.search(
+                r"\bon\s+(\w+)\s+goto\s+\w+(?:\s+with\s+(\w+))?\s*;",
+                start_body,
+            )
+            if config_event_match:
+                event_name = config_event_match.group(1)
+                handler_name = config_event_match.group(2)
+                # Find handler parameter to get the payload type
+                payload_info = ""
+                if handler_name:
+                    handler_fn = re.search(
+                        rf"\bfun\s+{re.escape(handler_name)}\s*\(([^)]*)\)",
+                        code,
+                    )
+                    if handler_fn and handler_fn.group(1).strip():
+                        payload_info = f" with payload `{handler_fn.group(1).strip()}`"
+                lines_out.append(
+                    f"- {machine_name}: created via `new {machine_name}()`, then send `{event_name}`{payload_info}"
+                )
+                continue
+
+            # Fallback — no config detected
+            lines_out.append(
+                f"- {machine_name}: created via `new {machine_name}()` — no config detected"
+            )
+
+        return "\n".join(lines_out)
+
     def _extract_p_code(self, response: str, is_test_file: bool = False) -> tuple:
         """
         Extract P code from LLM response.

@@ -18,7 +18,75 @@ Write the structure of P code for the state machine {machineName}. Include all v
 5. Defer and ignore statements
 6. Function declarations with proper parameters and return types, but EMPTY bodies, do add COMMENTS for future stages of code generation.
 
+## CRITICAL: Machine Configuration / Initialization
 
+If this machine depends on references to other machines (e.g., a list of acceptors, a server reference, learner machines) or any configuration, it MUST receive them through one of these two patterns:
+
+### Pattern A — Constructor payload (preferred when all deps are known at creation time)
+
+The start state entry function receives configuration directly from the `new` call:
+
+```
+machine ExampleServer {{
+    var workers: seq[machine];
+    var serverId: int;
+
+    start state Init {{
+        entry InitEntry;       // receives config from new ExampleServer(config)
+        on eRequest goto Serving;
+    }}
+
+    fun InitEntry(config: (workers: seq[machine], id: int)) {{
+        workers = config.workers;
+        serverId = config.id;
+    }}
+    ...
+}}
+```
+Test driver creates it as: `new ExampleServer((workers = workerList, id = 1));`
+
+### Pattern B — Initialization event (when config arrives after creation)
+
+The machine blocks in its start state waiting for a configuration event, then transitions to its core logic:
+
+```
+machine ExampleWorker {{
+    var coordinator: machine;
+
+    start state WaitForConfig {{
+        on eWorkerConfig goto Ready with Configure;
+        defer eTask;     // defer work events until configured
+    }}
+
+    state Ready {{
+        on eTask do HandleTask;
+    }}
+
+    fun Configure(config: tWorkerConfig) {{
+        coordinator = config.coordinator;
+    }}
+    ...
+}}
+```
+Test driver creates and configures it as:
+```
+worker1 = new ExampleWorker();
+send worker1, eWorkerConfig, (coordinator = coord,);
+```
+
+### Rules
+- Pick ONE pattern per machine and be consistent.
+- Do NOT use ad-hoc event names like eStart or eInit that carry no typed payload. If using Pattern B, define a proper typed config event with a named-tuple payload in Enums_Types_Events.p.
+- If a machine has no external dependencies, its entry function can take no parameters.
+
+## Event Handling Completeness
+
+For EVERY state, think about which events could arrive in that state (including events from prior states still in the queue) and add:
+- `on eX do Handler;` — if the event should be processed
+- `defer eX;` — if the event should be queued for a later state
+- `ignore eX;` — if the event should be silently dropped
+
+PChecker will report an unhandled-event bug for any event that arrives in a state without a handler, defer, or ignore.
 
 The machine file should NOT contain:
 

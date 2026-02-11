@@ -97,6 +97,12 @@ class GenerateCompleteProjectParams(BaseModel):
         default=False,
         description="Run PChecker after successful compilation"
     )
+    ensemble_size: int = Field(
+        default=1,
+        description="Number of candidate generations per file for ensemble selection. "
+                    "Higher values (e.g. 3) produce more reliable code by picking the "
+                    "best candidate, at the cost of more LLM calls."
+    )
 
 
 class SavePFileParams(BaseModel):
@@ -259,7 +265,7 @@ This tool performs the following steps:
 Returns comprehensive results including all generated files and any issues found."""
     )
     def generate_complete_project(params: GenerateCompleteProjectParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_complete_project: {params.project_name}")
+        logger.info(f"[TOOL] generate_complete_project: {params.project_name} (ensemble={params.ensemble_size})")
 
         import os
         from pathlib import Path
@@ -271,6 +277,7 @@ Returns comprehensive results including all generated files and any issues found
         from core.workflow.factory import extract_machine_names_from_design_doc, validate_design_doc
 
         services = get_services()
+        use_ensemble = params.ensemble_size > 1
         results = {
             "success": False,
             "project_path": None,
@@ -279,7 +286,8 @@ Returns comprehensive results including all generated files and any issues found
             "compilation": None,
             "checker": None,
             "errors": [],
-            "warnings": []
+            "warnings": [],
+            "ensemble_size": params.ensemble_size,
         }
 
         try:
@@ -332,14 +340,27 @@ Returns comprehensive results including all generated files and any issues found
             config_detector = MachineConfigDetector()
             machine_dependencies = {}
 
-            # Generate all machines in parallel for speed
-            machine_results = services["generation"].generate_machines_parallel(
-                machine_names=machine_names,
-                design_doc=params.design_doc,
-                project_path=project_path,
-                context_files=context_files,
-                save_to_disk=True,
-            )
+            # ── Machine generation: ensemble or parallel ───────────────
+            if use_ensemble:
+                # Ensemble: sequential machines, N candidates each, best-of-N selection.
+                # Each machine sees code from previously generated machines.
+                machine_results = services["generation"].generate_machines_ensemble(
+                    machine_names=machine_names,
+                    design_doc=params.design_doc,
+                    project_path=project_path,
+                    context_files=context_files,
+                    ensemble_size=params.ensemble_size,
+                    save_to_disk=True,
+                )
+            else:
+                # Non-ensemble: parallel generation for speed
+                machine_results = services["generation"].generate_machines_parallel(
+                    machine_names=machine_names,
+                    design_doc=params.design_doc,
+                    project_path=project_path,
+                    context_files=context_files,
+                    save_to_disk=True,
+                )
 
             for machine_name in machine_names:
                 machine_result = machine_results.get(machine_name)
@@ -358,35 +379,59 @@ Returns comprehensive results including all generated files and any issues found
                     err = machine_result.error if machine_result else "Generation returned no result"
                     results["errors"].append(f"Failed to generate {machine_name}: {err}")
 
+            # ── Spec generation: ensemble or single ────────────────────
             spec_filename = None
             if params.include_spec:
-                spec_result = services["generation"].generate_spec(
-                    spec_name="Safety",
-                    design_doc=params.design_doc,
-                    project_path=project_path,
-                    context_files=context_files,
-                    save_to_disk=True
-                )
+                if use_ensemble:
+                    spec_result = services["generation"].generate_spec_ensemble(
+                        spec_name="Safety",
+                        design_doc=params.design_doc,
+                        project_path=project_path,
+                        context_files=context_files,
+                        ensemble_size=params.ensemble_size,
+                        save_to_disk=True,
+                    )
+                else:
+                    spec_result = services["generation"].generate_spec(
+                        spec_name="Safety",
+                        design_doc=params.design_doc,
+                        project_path=project_path,
+                        context_files=context_files,
+                        save_to_disk=True
+                    )
                 if spec_result.success:
                     spec_filename = spec_result.filename or "Safety.p"
                     results["generated_files"][spec_filename] = spec_result.file_path
+                    context_files[spec_filename] = spec_result.code
                 else:
                     results["warnings"].append(f"Spec generation failed: {spec_result.error}")
 
+            # ── Test generation: ensemble or single ────────────────────
             if params.include_test:
-                test_result = services["generation"].generate_test(
-                    test_name="TestDriver",
-                    design_doc=params.design_doc,
-                    project_path=project_path,
-                    context_files=context_files,
-                    save_to_disk=True
-                )
+                if use_ensemble:
+                    test_result = services["generation"].generate_test_ensemble(
+                        test_name="TestDriver",
+                        design_doc=params.design_doc,
+                        project_path=project_path,
+                        context_files=context_files,
+                        ensemble_size=params.ensemble_size,
+                        save_to_disk=True,
+                    )
+                else:
+                    test_result = services["generation"].generate_test(
+                        test_name="TestDriver",
+                        design_doc=params.design_doc,
+                        project_path=project_path,
+                        context_files=context_files,
+                        save_to_disk=True
+                    )
                 if test_result.success:
                     test_filename = test_result.filename or "TestDriver.p"
                     results["generated_files"][test_filename] = test_result.file_path
                 else:
                     results["warnings"].append(f"Test generation failed: {test_result.error}")
 
+            # ── Post-processing ────────────────────────────────────────
             processor = PCodePostProcessor()
             for filename, file_path in results["generated_files"].items():
                 if filename.endswith(".p"):
@@ -419,10 +464,8 @@ Returns comprehensive results including all generated files and any issues found
             try:
                 type_checker = TypeConsistencyChecker()
                 project_files = services["compilation"].get_project_files(project_path)
-                # Extract definitions from all files first
                 for _, content in project_files.items():
                     type_checker.extract_definitions(content)
-                # Then check each file for undefined references
                 all_issues = []
                 for rel_path, content in project_files.items():
                     undef_types = type_checker.find_undefined_types(content)
@@ -436,6 +479,7 @@ Returns comprehensive results including all generated files and any issues found
             except Exception as e:
                 logger.debug(f"Type consistency check skipped: {e}")
 
+            # ── Compilation ────────────────────────────────────────────
             compile_result = services["compilation"].compile(project_path)
             results["compilation"] = {
                 "success": compile_result.success,
@@ -450,7 +494,16 @@ Returns comprehensive results including all generated files and any issues found
                 )
                 results["compilation"]["fix_results"] = fix_results
 
+                # Re-check compilation status after iterative fix
+                recompile = services["compilation"].compile(project_path)
+                results["compilation"]["success"] = recompile.success
+                if recompile.success:
+                    results["compilation"]["output"] = recompile.stdout[:500] if recompile.stdout else ""
+                    results["compilation"]["error"] = None
+
+            # ── PChecker + auto-fix loop ───────────────────────────────
             if params.run_checker and results["compilation"]["success"]:
+                MAX_CHECKER_FIX_ROUNDS = 2
                 checker_result = services["compilation"].run_checker(
                     project_path=project_path,
                     schedules=100,
@@ -458,10 +511,62 @@ Returns comprehensive results including all generated files and any issues found
                 )
                 results["checker"] = {
                     "success": checker_result.success,
-                    "output": checker_result.stdout[:500] if checker_result.stdout else ""
+                    "test_results": checker_result.test_results,
+                    "passed_tests": checker_result.passed_tests,
+                    "failed_tests": checker_result.failed_tests,
                 }
 
+                checker_fix_round = 0
+                while (
+                    not checker_result.success
+                    and checker_result.failed_tests
+                    and checker_fix_round < MAX_CHECKER_FIX_ROUNDS
+                ):
+                    checker_fix_round += 1
+                    logger.info(f"[CHECKER-FIX] Round {checker_fix_round}: attempting auto-fix")
+
+                    # Try to fix using trace logs from the failed test
+                    fixed_any = False
+                    for failed_test in checker_result.failed_tests:
+                        trace = checker_result.trace_logs.get(failed_test, "")
+                        if trace:
+                            fix_result = services["fixer"].fix_checker_error(
+                                project_path=project_path,
+                                trace_log=trace,
+                                error_category=None,
+                            )
+                            if fix_result.fixed:
+                                fixed_any = True
+                                break
+
+                    if not fixed_any:
+                        logger.info("[CHECKER-FIX] No fix applied, stopping")
+                        break
+
+                    # Recompile after fix
+                    recompile = services["compilation"].compile(project_path)
+                    if not recompile.success:
+                        results["warnings"].append(
+                            f"Recompilation failed after checker fix round {checker_fix_round}"
+                        )
+                        break
+
+                    # Re-run PChecker
+                    checker_result = services["compilation"].run_checker(
+                        project_path=project_path,
+                        schedules=100,
+                        timeout=60
+                    )
+                    results["checker"] = {
+                        "success": checker_result.success,
+                        "test_results": checker_result.test_results,
+                        "passed_tests": checker_result.passed_tests,
+                        "failed_tests": checker_result.failed_tests,
+                    }
+
             results["success"] = results["compilation"]["success"]
+            if params.run_checker and results.get("checker"):
+                results["success"] = results["success"] and results["checker"]["success"]
             results["message"] = "Project generated successfully" if results["success"] else "Project generated with errors"
 
         except Exception as e:

@@ -356,7 +356,7 @@ class FixerService(BaseService):
                     trace_log, project_path, project_files
                 )
                 
-                # Build analysis dict for response
+                # Build analysis dict for response with enhanced context
                 analysis_dict = {
                     "error_category": trace_analysis.error.category.value,
                     "error_message": trace_analysis.error.message,
@@ -367,6 +367,30 @@ class FixerService(BaseService):
                     "machines_involved": trace_analysis.machines_involved,
                     "last_actions": trace_analysis.last_actions,
                 }
+
+                # Include enhanced analysis in response
+                if trace_analysis.error.sender_info:
+                    sender = trace_analysis.error.sender_info
+                    analysis_dict["sender"] = {
+                        "machine": sender.machine,
+                        "state": sender.state,
+                        "is_test_driver": sender.is_test_driver,
+                        "is_initialization_pattern": sender.is_initialization_pattern,
+                        "semantic_mismatch": sender.semantic_mismatch,
+                    }
+                if trace_analysis.error.cascading_impact:
+                    cascade = trace_analysis.error.cascading_impact
+                    analysis_dict["cascading_impact"] = {
+                        "unhandled_in": cascade.unhandled_in,
+                        "broadcasters": cascade.broadcasters,
+                        "all_receivers": cascade.all_receivers,
+                    }
+                analysis_dict["is_test_driver_bug"] = trace_analysis.error.is_test_driver_bug
+                analysis_dict["requires_new_event"] = trace_analysis.error.requires_new_event
+                analysis_dict["requires_multi_file_fix"] = trace_analysis.error.requires_multi_file_fix
+                if specialized_fix:
+                    analysis_dict["fix_strategy"] = specialized_fix.fix_strategy
+                    analysis_dict["is_multi_file_fix"] = specialized_fix.is_multi_file
                 
                 root_cause = trace_analysis.error.root_cause
                 suggested_fixes = trace_analysis.error.suggested_fixes
@@ -375,13 +399,30 @@ class FixerService(BaseService):
                 
                 # Step 2: Try specialized fixer first
                 if specialized_fix:
-                    self._status(f"Applying specialized fix: {specialized_fix.description}")
+                    self._status(f"Applying specialized fix ({specialized_fix.fix_strategy or 'auto'}): {specialized_fix.description}")
                     
-                    # Write the fix
+                    # Collect all file backups for potential revert
+                    backups = {}
+                    
+                    # Apply primary fix
+                    backups[specialized_fix.file_path] = specialized_fix.original_code
                     self._compilation.write_file(
                         specialized_fix.file_path,
                         specialized_fix.fixed_code
                     )
+                    
+                    # Apply additional patches for multi-file fixes
+                    if specialized_fix.is_multi_file and specialized_fix.additional_patches:
+                        for patch in specialized_fix.additional_patches:
+                            backups[patch.file_path] = patch.original_code
+                            self._compilation.write_file(
+                                patch.file_path,
+                                patch.fixed_code
+                            )
+                        self._status(
+                            f"Applied {1 + len(specialized_fix.additional_patches)} "
+                            f"file patches (strategy: {specialized_fix.fix_strategy})"
+                        )
                     
                     # Verify by recompiling
                     compile_result = self._compilation.compile(project_path)
@@ -393,10 +434,15 @@ class FixerService(BaseService):
                         )
                         
                         if checker_result.success:
+                            # Vacuous pass detection: check if safety specs observed events
+                            vacuous_warning = self._check_vacuous_pass(
+                                project_path, project_files, trace_analysis
+                            )
+
                             self._tracker.clear(error_key)
                             self._status("Fix successful (specialized fixer)!")
                             
-                            return FixResult(
+                            result = FixResult(
                                 success=True,
                                 fixed=True,
                                 filename=Path(specialized_fix.file_path).name,
@@ -409,12 +455,13 @@ class FixerService(BaseService):
                                 suggested_fixes=suggested_fixes,
                                 confidence=specialized_fix.confidence,
                             )
+                            if vacuous_warning:
+                                analysis_dict["vacuous_pass_warning"] = vacuous_warning
+                            return result
                     
-                    # Revert if fix didn't work
-                    self._compilation.write_file(
-                        specialized_fix.file_path,
-                        specialized_fix.original_code
-                    )
+                    # Revert ALL patches if fix didn't work
+                    for file_path, original_code in backups.items():
+                        self._compilation.write_file(file_path, original_code)
                     logger.info("Specialized fix didn't resolve error, trying LLM")
                     
             except Exception as e:
@@ -433,20 +480,16 @@ class FixerService(BaseService):
         
         # Step 4: Fall back to LLM-based fixing
         try:
-            # Build fix messages with enhanced context
+            # Build fix messages with enhanced context (including sender & cascading analysis)
             messages = self._build_checker_fix_messages(
                 trace_log,
                 project_files,
                 error_category,
                 user_guidance,
+                analysis_dict=analysis_dict,
+                root_cause=root_cause,
+                suggested_fixes=suggested_fixes,
             )
-            
-            # Add analysis context if available
-            if root_cause:
-                messages.insert(-1, Message(
-                    role=MessageRole.USER,
-                    content=f"Root cause analysis: {root_cause}"
-                ))
             
             # Get system prompt
             system_prompt = self.resources.load_context("about_p.txt")
@@ -768,6 +811,74 @@ class FixerService(BaseService):
         return False
 
     # =========================================================================
+    # Vacuous pass detection
+    # =========================================================================
+
+    def _check_vacuous_pass(
+        self,
+        project_path: str,
+        project_files: Dict[str, str],
+        trace_analysis: Any = None,
+    ) -> Optional[str]:
+        """
+        Check if a fix might have caused the test to pass vacuously.
+        
+        A vacuous pass occurs when a safety specification monitors events that
+        are never delivered (e.g., because all are ignored), so the spec
+        trivially passes without actually verifying anything.
+        
+        Returns a warning string if a vacuous pass is suspected, None otherwise.
+        """
+        try:
+            # Find all spec machines and the events they observe
+            spec_events: Dict[str, List[str]] = {}  # spec_name -> [events]
+            for filepath, content in project_files.items():
+                if not (filepath.startswith('PSpec/') or '/PSpec/' in filepath):
+                    continue
+
+                # Find spec declarations: "spec SpecName observes event1, event2 {"
+                spec_pattern = r'spec\s+(\w+)\s+observes\s+([^{]+)\{'
+                for match in re.finditer(spec_pattern, content):
+                    spec_name = match.group(1)
+                    events_str = match.group(2).strip()
+                    events = [e.strip() for e in events_str.split(',')]
+                    spec_events[spec_name] = events
+
+            if not spec_events:
+                return None
+
+            # Check if any observed event is now universally ignored by all protocol machines
+            # Re-read current project files (after fix was applied)
+            current_files = self._compilation.get_project_files(project_path)
+
+            warnings = []
+            for spec_name, events in spec_events.items():
+                for event in events:
+                    # Check if any protocol machine still sends this event
+                    has_sender = False
+                    for filepath, content in current_files.items():
+                        if filepath.startswith('PSpec/') or filepath.startswith('PTst/'):
+                            continue
+                        send_pattern = rf'send\s+[^,]+\s*,\s*{re.escape(event)}\b'
+                        if re.search(send_pattern, content):
+                            has_sender = True
+                            break
+
+                    if not has_sender:
+                        warnings.append(
+                            f"Spec '{spec_name}' observes event '{event}' but no "
+                            f"protocol machine sends it — the spec may pass vacuously."
+                        )
+
+            if warnings:
+                return " | ".join(warnings)
+
+        except Exception as e:
+            logger.debug(f"Vacuous pass check failed: {e}")
+
+        return None
+
+    # =========================================================================
     # Private helper methods
     # =========================================================================
 
@@ -886,8 +997,11 @@ Example: <{error_filename}>...fixed code...</{error_filename}>
         project_files: Dict[str, str],
         error_category: Optional[str],
         user_guidance: Optional[str],
+        analysis_dict: Optional[Dict[str, Any]] = None,
+        root_cause: Optional[str] = None,
+        suggested_fixes: Optional[List[str]] = None,
     ) -> List[Message]:
-        """Build messages for checker error fixing"""
+        """Build messages for checker error fixing with enhanced context."""
         messages = []
         
         # Add guide
@@ -897,7 +1011,7 @@ Example: <{error_filename}>...fixed code...</{error_filename}>
             content=f"<p_basics>\n{p_basics}\n</p_basics>"
         ))
         
-        # Add all project files
+        # Add all project files, clearly labeled by folder
         for filepath, content in project_files.items():
             messages.append(Message(
                 role=MessageRole.USER,
@@ -916,6 +1030,70 @@ Example: <{error_filename}>...fixed code...</{error_filename}>
                 role=MessageRole.USER,
                 content=f"Error category: {error_category}"
             ))
+
+        # Add enhanced analysis context
+        if root_cause:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content=f"Root cause analysis: {root_cause}"
+            ))
+
+        if analysis_dict:
+            # Include sender analysis
+            sender = analysis_dict.get("sender")
+            if sender:
+                sender_ctx = (
+                    f"Sender analysis:\n"
+                    f"- Event sent by: {sender.get('machine', 'unknown')} "
+                    f"in state '{sender.get('state', 'unknown')}'\n"
+                    f"- Is test driver: {sender.get('is_test_driver', False)}\n"
+                    f"- Is initialization pattern: {sender.get('is_initialization_pattern', False)}"
+                )
+                if sender.get("semantic_mismatch"):
+                    sender_ctx += f"\n- Semantic mismatch: {sender['semantic_mismatch']}"
+                messages.append(Message(
+                    role=MessageRole.USER,
+                    content=sender_ctx
+                ))
+
+            # Include cascading impact
+            cascade = analysis_dict.get("cascading_impact")
+            if cascade and cascade.get("unhandled_in"):
+                cascade_ctx = "Cascading impact analysis:\n"
+                for machine, states in cascade["unhandled_in"].items():
+                    cascade_ctx += f"- {machine} also lacks handler in states: {', '.join(states)}\n"
+                messages.append(Message(
+                    role=MessageRole.USER,
+                    content=cascade_ctx
+                ))
+
+            # Include fix strategy hints
+            if analysis_dict.get("is_test_driver_bug"):
+                messages.append(Message(
+                    role=MessageRole.USER,
+                    content=(
+                        "IMPORTANT: This bug originates in the TEST DRIVER, not the protocol. "
+                        "The test driver is misusing a protocol event for initialization. "
+                        "The fix should introduce a new setup event and modify the test driver, "
+                        "not just add ignore statements to protocol machines."
+                    )
+                ))
+            if analysis_dict.get("requires_multi_file_fix"):
+                messages.append(Message(
+                    role=MessageRole.USER,
+                    content=(
+                        "IMPORTANT: This requires changes to MULTIPLE files. "
+                        "Return ALL modified files, including types, machines, and test driver."
+                    )
+                ))
+
+        if suggested_fixes:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content="Suggested fix approaches:\n" + "\n".join(
+                    f"- {fix}" for fix in suggested_fixes
+                )
+            ))
         
         # Add user guidance
         if user_guidance:
@@ -929,8 +1107,20 @@ Example: <{error_filename}>...fixed code...</{error_filename}>
             role=MessageRole.USER,
             content="""
 Analyze the PChecker trace and fix the error.
+
+CRITICAL RULES:
+1. If the bug is in a test driver (PTst/ file), fix the test driver — don't just mask 
+   the symptom by adding ignore to protocol machines.
+2. If a protocol event is being misused for initialization, introduce a NEW dedicated 
+   setup event in the types file and add handlers accordingly.
+3. If multiple machines are affected, fix ALL of them. Return every modified file.
+4. Ensure safety specifications can still observe the events they monitor 
+   (don't make tests pass vacuously by suppressing all events).
+
 Return any modified files wrapped in XML tags using their filenames.
-Example: <MachineName.p>...fixed code...</MachineName.p>
+Example: <Enums_Types_Events.p>...fixed types code...</Enums_Types_Events.p>
+<MachineName.p>...fixed machine code...</MachineName.p>
+<TestDriver.p>...fixed test code...</TestDriver.p>
 """
         ))
         

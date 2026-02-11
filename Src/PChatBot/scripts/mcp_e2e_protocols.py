@@ -34,6 +34,7 @@ from src.ui.mcp.tools.generation import (
     GenerateMachineParams,
     GenerateSpecParams,
     GenerateTestParams,
+    GenerateCompleteProjectParams,
     SavePFileParams,
 )
 from src.ui.mcp.tools.compilation import (
@@ -73,12 +74,13 @@ def _register_tools() -> Dict[str, Any]:
     fix_tools = register_fixing_tools(
         dummy_mcp, mcp_server.get_services, mcp_server._with_metadata
     )
-    return {
+    all_tools = {
         "validate_environment": env_tools,
         **gen_tools,
         **comp_tools,
         **fix_tools,
     }
+    return all_tools
 
 
 def _save_generated(tools: Dict[str, Any], generated: Dict[str, Dict[str, Any]]) -> None:
@@ -92,10 +94,109 @@ def _save_generated(tools: Dict[str, Any], generated: Dict[str, Dict[str, Any]])
             )
 
 
-def run_protocol(tools: Dict[str, Any], design_doc: str, out_root: Path, project_name: str) -> Dict[str, Any]:
+def run_protocol_ensemble(
+    tools: Dict[str, Any],
+    design_doc: str,
+    out_root: Path,
+    project_name: str,
+    ensemble_size: int = 3,
+) -> Dict[str, Any]:
+    """
+    Run a protocol end-to-end using ``generate_complete_project`` with
+    ensemble generation.  This is the primary flow — it generates N candidates
+    per file, picks the best, compiles, fixes, and runs PChecker in one call.
+    """
     result: Dict[str, Any] = {
         "project_name": project_name,
         "success": False,
+        "mode": "ensemble",
+        "ensemble_size": ensemble_size,
+        "steps": [],
+        "generated_files": [],
+        "compile": None,
+        "check": None,
+        "errors": [],
+    }
+
+    resp = tools["generate_complete_project"](
+        GenerateCompleteProjectParams(
+            design_doc=design_doc,
+            output_dir=str(out_root),
+            project_name=project_name,
+            include_spec=True,
+            include_test=True,
+            auto_fix=True,
+            run_checker=True,
+            ensemble_size=ensemble_size,
+        )
+    )
+
+    result["steps"].append({
+        "name": "generate_complete_project",
+        "success": resp.get("success"),
+    })
+    result["project_path"] = resp.get("project_path")
+    result["generated_files"] = sorted(resp.get("generated_files", {}).values())
+    result["compile"] = resp.get("compilation")
+    result["check"] = resp.get("checker")
+    result["errors"] = resp.get("errors", [])
+    result["warnings"] = resp.get("warnings", [])
+    result["success"] = bool(resp.get("success"))
+
+    # If generate_complete_project didn't run checker or checker failed,
+    # try the explicit fix_buggy_program loop as a fallback.
+    project_path = resp.get("project_path")
+    check_info = resp.get("checker")
+    compile_info = resp.get("compilation", {})
+    if (
+        project_path
+        and compile_info.get("success")
+        and check_info
+        and not check_info.get("success")
+        and check_info.get("failed_tests")
+    ):
+        MAX_CHECKER_FIX_ROUNDS = 2
+        for fix_round in range(1, MAX_CHECKER_FIX_ROUNDS + 1):
+            logger.info(f"[CHECKER-FIX] Round {fix_round}: attempting fix_buggy_program")
+            fix_bug_resp = tools["fix_buggy_program"](
+                FixBuggyProgramParams(project_path=project_path)
+            )
+            result.setdefault("checker_fixes", []).append(fix_bug_resp)
+
+            if not fix_bug_resp.get("fixed"):
+                break
+
+            recompile = tools["p_compile"](PCompileParams(path=project_path))
+            if not recompile.get("success"):
+                result["errors"].append(
+                    f"Recompilation failed after checker fix round {fix_round}"
+                )
+                break
+
+            recheck = tools["p_check"](
+                PCheckParams(path=project_path, schedules=100, timeout=90)
+            )
+            result["check"] = {
+                "success": recheck.get("success"),
+                "failed_tests": recheck.get("failed_tests", []),
+                "error": recheck.get("error"),
+            }
+            if recheck.get("success"):
+                result["success"] = True
+                break
+
+    return result
+
+
+def run_protocol(tools: Dict[str, Any], design_doc: str, out_root: Path, project_name: str) -> Dict[str, Any]:
+    """
+    Run a protocol end-to-end using the step-by-step flow (legacy).
+    Kept for backward compatibility; prefer ``run_protocol_ensemble``.
+    """
+    result: Dict[str, Any] = {
+        "project_name": project_name,
+        "success": False,
+        "mode": "step_by_step",
         "steps": [],
         "generated_files": [],
         "compile": None,
@@ -265,9 +366,14 @@ def main() -> int:
         ("HotelManagement", docs_dir / "[Design Doc] Hotel Management Application.txt"),
     ]
 
+    ensemble_size = 3  # Default ensemble size for higher reliability
+
     for name, path in runs:
         design_doc = _load_design_doc(path)
-        proto_result = run_protocol(tools, design_doc, out_root, name)
+        proto_result = run_protocol_ensemble(
+            tools, design_doc, out_root, name,
+            ensemble_size=ensemble_size,
+        )
         report["protocols"].append(proto_result)
 
     report_path = out_root / "mcp_e2e_report.json"

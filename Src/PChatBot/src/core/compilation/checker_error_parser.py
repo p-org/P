@@ -85,6 +85,35 @@ class EventInfo:
 
 
 @dataclass
+class SenderInfo:
+    """Information about who sent the problematic event."""
+    machine_type: Optional[str] = None
+    machine_id: Optional[str] = None
+    state: Optional[str] = None
+    is_test_driver: bool = False
+    event_payload: Optional[str] = None
+    is_initialization_pattern: bool = False
+    semantic_mismatch: Optional[str] = None
+
+    @property
+    def machine(self) -> Optional[str]:
+        if self.machine_type and self.machine_id:
+            return f"{self.machine_type}({self.machine_id})"
+        return self.machine_type
+
+
+@dataclass
+class CascadingImpact:
+    """Analysis of which other machines/states would also be affected."""
+    # machines that also lack handlers for the event: {machine_type: [states]}
+    unhandled_in: Dict[str, List[str]] = field(default_factory=dict)
+    # machines that broadcast this event
+    broadcasters: List[str] = field(default_factory=list)
+    # all receiver machines for this event
+    all_receivers: List[str] = field(default_factory=list)
+
+
+@dataclass
 class CheckerError:
     """Parsed PChecker error with analysis."""
     category: CheckerErrorCategory
@@ -100,6 +129,13 @@ class CheckerError:
     root_cause: Optional[str] = None
     affected_machines: List[str] = field(default_factory=list)
     suggested_fixes: List[str] = field(default_factory=list)
+
+    # Enhanced analysis fields
+    sender_info: Optional[SenderInfo] = None
+    cascading_impact: Optional[CascadingImpact] = None
+    is_test_driver_bug: bool = False
+    requires_new_event: bool = False
+    requires_multi_file_fix: bool = False
     
     @property
     def machine(self) -> Optional[str]:
@@ -128,6 +164,22 @@ class TraceAnalysis:
         
         if self.error.machine:
             lines.append(f"**Affected Machine:** {self.error.machine} in state '{self.error.machine_state}'")
+        
+        if self.error.sender_info:
+            sender = self.error.sender_info
+            lines.append(f"**Sender:** {sender.machine or 'unknown'} in state '{sender.state or 'unknown'}'")
+            if sender.is_test_driver:
+                lines.append(f"**Bug Location:** Test driver (not protocol logic)")
+            if sender.is_initialization_pattern:
+                lines.append(f"**Pattern:** Event used for initialization (semantic mismatch)")
+            if sender.semantic_mismatch:
+                lines.append(f"**Semantic Mismatch:** {sender.semantic_mismatch}")
+        
+        if self.error.cascading_impact and self.error.cascading_impact.unhandled_in:
+            lines.append(f"")
+            lines.append(f"### Cascading Impact")
+            for machine, states in self.error.cascading_impact.unhandled_in.items():
+                lines.append(f"  - {machine} also lacks handler in states: {', '.join(states)}")
         
         if self.error.root_cause:
             lines.append(f"")
@@ -216,12 +268,15 @@ class PCheckerErrorParser:
         # 2. Unhandled event error
         unhandled_match = self.UNHANDLED_EVENT_PATTERN.search(error_line)
         if unhandled_match:
+            raw_event = unhandled_match.group(3)
+            # Strip namespace prefix (e.g., PImplementation.eLearn -> eLearn)
+            clean_event = raw_event.split('.')[-1] if '.' in raw_event else raw_event
             return CheckerError(
                 category=CheckerErrorCategory.UNHANDLED_EVENT,
                 message=error_line,
                 machine_type=unhandled_match.group(1),
                 machine_id=unhandled_match.group(2),
-                event_name=unhandled_match.group(3),
+                event_name=clean_event,
                 raw_error_line=error_line,
             )
         
@@ -374,7 +429,7 @@ class PCheckerErrorParser:
         trace_log: str,
         project_files: Dict[str, str]
     ):
-        """Analyze unhandled event error."""
+        """Analyze unhandled event error with sender trace-back and cascading impact."""
         # Find what state the machine was in
         state_match = re.search(
             rf"{error.machine_type}\({error.machine_id}\).*state\s+'([^']+)'",
@@ -382,20 +437,277 @@ class PCheckerErrorParser:
         )
         if state_match:
             error.machine_state = state_match.group(1).split('.')[-1]
-        
-        error.root_cause = (
+
+        # --- Sender trace-back analysis ---
+        sender_info = self._trace_back_to_sender(error, trace_log, project_files)
+        error.sender_info = sender_info
+
+        # --- Cascading impact analysis ---
+        cascading = self._analyze_cascading_impact(error, project_files)
+        error.cascading_impact = cascading
+
+        # --- Build root cause with enhanced context ---
+        root_parts = [
             f"Machine '{error.machine_type}' received event '{error.event_name}' "
-            f"in state '{error.machine_state or 'unknown'}' but has no handler for it. "
-            f"This can happen when events arrive out of order or a state transition "
-            f"is missing an event handler."
-        )
-        
-        error.suggested_fixes = [
-            f"Add 'on {error.event_name} do HandleXXX;' to state '{error.machine_state}'",
-            f"Add 'ignore {error.event_name};' if this event should be silently dropped",
-            f"Add 'defer {error.event_name};' if this event should be handled later",
-            "Review the state machine transitions to ensure all states handle expected events",
+            f"in state '{error.machine_state or 'unknown'}' but has no handler for it."
         ]
+
+        if sender_info:
+            if sender_info.is_test_driver:
+                root_parts.append(
+                    f" The event was sent by test driver '{sender_info.machine_type}' "
+                    f"during setup (not by protocol logic)."
+                )
+                error.is_test_driver_bug = True
+            else:
+                root_parts.append(
+                    f" The event was sent by '{sender_info.machine or 'unknown'}' "
+                    f"in state '{sender_info.state or 'unknown'}'."
+                )
+
+            if sender_info.is_initialization_pattern:
+                root_parts.append(
+                    f" This appears to be a SEMANTIC MISMATCH: the event '{error.event_name}' "
+                    f"is a protocol event being misused for initialization/setup."
+                )
+                error.requires_new_event = True
+
+            if sender_info.semantic_mismatch:
+                root_parts.append(f" {sender_info.semantic_mismatch}")
+
+        if cascading and cascading.unhandled_in:
+            other_machines = [m for m in cascading.unhandled_in if m != error.machine_type]
+            if other_machines:
+                root_parts.append(
+                    f" Additionally, machines [{', '.join(other_machines)}] also lack "
+                    f"handlers for '{error.event_name}' — this is a multi-file issue."
+                )
+                error.requires_multi_file_fix = True
+
+        error.root_cause = "".join(root_parts)
+
+        # --- Build suggested fixes with enhanced context ---
+        fixes = []
+        if error.is_test_driver_bug:
+            fixes.append(
+                f"Fix the test driver: introduce a dedicated setup event "
+                f"(e.g., eSetup{error.machine_type}) instead of reusing "
+                f"the protocol event '{error.event_name}' for initialization"
+            )
+            fixes.append(
+                f"Define the new setup event in Enums_Types_Events.p and "
+                f"add a handler for it in {error.machine_type}'s Init state"
+            )
+        if error.requires_new_event:
+            fixes.append(
+                "This requires a design-level change: add a new event type "
+                "to the types file, not just a handler in the receiving machine"
+            )
+        if error.requires_multi_file_fix:
+            fixes.append(
+                f"Add 'ignore {error.event_name};' to ALL machines that may "
+                f"receive it: {', '.join(cascading.all_receivers) if cascading else 'unknown'}"
+            )
+        # Always include the mechanical fixes as fallback
+        fixes.append(f"Add 'on {error.event_name} do HandleXXX;' to state '{error.machine_state}'")
+        fixes.append(f"Add 'ignore {error.event_name};' if this event should be silently dropped")
+        fixes.append(f"Add 'defer {error.event_name};' if this event should be handled later")
+
+        error.suggested_fixes = fixes
+
+    def _trace_back_to_sender(
+        self,
+        error: CheckerError,
+        trace_log: str,
+        project_files: Dict[str, str]
+    ) -> Optional[SenderInfo]:
+        """
+        Trace back through the execution log to find who sent the problematic event
+        and analyze their intent.
+        """
+        event_name = error.event_name
+        if not event_name:
+            return None
+
+        # Strip namespace prefix (e.g. PImplementation.eLearn -> eLearn)
+        clean_event = event_name.split('.')[-1] if '.' in event_name else event_name
+
+        # Find the SendLog that sent this event to the error machine
+        receiver_pattern = rf"<SendLog>\s*'(\w+)\((\d+)\)'\s+in state '([^']+)'.*sent event '{clean_event}.*to '{error.machine_type}\({error.machine_id}\)'"
+        send_match = re.search(receiver_pattern, trace_log)
+
+        if not send_match:
+            # Try with namespace prefix
+            receiver_pattern2 = rf"<SendLog>\s*'(\w+)\((\d+)\)'\s+in state '([^']+)'.*sent event '.*{clean_event}.*to '{error.machine_type}\({error.machine_id}\)'"
+            send_match = re.search(receiver_pattern2, trace_log)
+
+        if not send_match:
+            return None
+
+        sender_type = send_match.group(1)
+        sender_id = send_match.group(2)
+        sender_state = send_match.group(3).split('.')[-1]
+
+        sender_info = SenderInfo(
+            machine_type=sender_type,
+            machine_id=sender_id,
+            state=sender_state,
+        )
+
+        # --- Test driver detection ---
+        # Heuristics: test driver machines are in PTst/ and often have names like
+        # "Scenario*", "TestDriver*", "Test*", or are the main machine in a test decl.
+        sender_info.is_test_driver = self._is_test_driver_machine(
+            sender_type, sender_state, project_files
+        )
+
+        # --- Initialization pattern detection ---
+        # If the sender is a test driver and the event was sent during the start
+        # state's entry action, this is likely an initialization pattern.
+        if sender_info.is_test_driver and sender_state == "Init":
+            sender_info.is_initialization_pattern = True
+
+        # --- Semantic mismatch detection ---
+        # Check if the event has a "real" protocol purpose by looking at
+        # whether protocol machines (non-test) also send this event.
+        protocol_senders = self._find_protocol_senders(clean_event, project_files)
+        if sender_info.is_test_driver and protocol_senders:
+            sender_info.semantic_mismatch = (
+                f"Event '{clean_event}' is used in protocol logic by "
+                f"[{', '.join(protocol_senders)}], but the test driver is also "
+                f"sending it with a dummy payload for setup purposes. "
+                f"This is a semantic mismatch — use a dedicated setup event instead."
+            )
+
+        # Extract the payload from the SendLog line
+        payload_match = re.search(r'with payload \(([^)]+)\)', send_match.group(0))
+        if payload_match:
+            sender_info.event_payload = payload_match.group(1)
+
+            # Check for dummy payload indicators (e.g., value:0, default values)
+            payload = sender_info.event_payload
+            if sender_info.is_initialization_pattern:
+                # Count how many fields look like defaults (0, false, null, default)
+                default_indicators = re.findall(r':\s*(?:0|false|null|default)\b', payload)
+                if default_indicators:
+                    sender_info.semantic_mismatch = (
+                        sender_info.semantic_mismatch or ""
+                    ) + (
+                        f" The payload contains {len(default_indicators)} default/zero value(s), "
+                        f"suggesting this is a dummy initialization message, not a real protocol event."
+                    )
+
+        return sender_info
+
+    def _is_test_driver_machine(
+        self,
+        machine_type: str,
+        state: str,
+        project_files: Dict[str, str]
+    ) -> bool:
+        """Determine if a machine type is a test driver (lives in PTst/)."""
+        # Check if this machine is defined in PTst/ files
+        for filepath, content in project_files.items():
+            if filepath.startswith('PTst/') or '/PTst/' in filepath:
+                if f"machine {machine_type}" in content:
+                    return True
+        
+        # Heuristic: common test driver naming patterns
+        test_patterns = [
+            r'^Scenario\d*',
+            r'^Test',
+            r'TestDriver',
+            r'TestHarness',
+            r'_Test$',
+        ]
+        for pattern in test_patterns:
+            if re.match(pattern, machine_type, re.IGNORECASE):
+                return True
+
+        return False
+
+    def _find_protocol_senders(
+        self,
+        event_name: str,
+        project_files: Dict[str, str]
+    ) -> List[str]:
+        """Find non-test machines that send a given event."""
+        senders = []
+        for filepath, content in project_files.items():
+            if filepath.startswith('PTst/') or '/PTst/' in filepath:
+                continue
+            if filepath.startswith('PSpec/') or '/PSpec/' in filepath:
+                continue
+            # Look for send statements with this event
+            # Use [^,]+ to match targets like allComponents[i]
+            send_pattern = rf"send\s+[^,]+\s*,\s*{re.escape(event_name)}\b"
+            if re.search(send_pattern, content):
+                # Extract machine name from this file
+                machine_match = re.search(r'machine\s+(\w+)', content)
+                if machine_match:
+                    senders.append(machine_match.group(1))
+        return senders
+
+    def _analyze_cascading_impact(
+        self,
+        error: CheckerError,
+        project_files: Dict[str, str]
+    ) -> Optional[CascadingImpact]:
+        """
+        Analyze which other machines and states also lack handlers for this event.
+        This identifies multi-file fix requirements.
+        """
+        event_name = error.event_name
+        if not event_name:
+            return None
+
+        # Strip namespace prefix
+        clean_event = event_name.split('.')[-1] if '.' in event_name else event_name
+
+        impact = CascadingImpact()
+
+        # Find all machines that could receive this event
+        # (look for send statements targeting various machines)
+        for filepath, content in project_files.items():
+            if filepath.startswith('PSpec/') or '/PSpec/' in filepath:
+                continue
+
+            # Find machines defined in this file
+            machine_matches = re.finditer(r'machine\s+(\w+)\s*\{', content)
+            for mm in machine_matches:
+                machine_name = mm.group(1)
+
+                # Check if this machine sends the event (broadcaster)
+                # Use [^,]+ to match targets like allComponents[i]
+                send_pattern = rf'send\s+[^,]+\s*,\s*{re.escape(clean_event)}\b'
+                if re.search(send_pattern, content):
+                    if machine_name not in impact.broadcasters:
+                        impact.broadcasters.append(machine_name)
+
+                # Find all states in this machine
+                states = re.findall(
+                    r'(?:start\s+)?state\s+(\w+)\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}',
+                    content
+                )
+
+                unhandled_states = []
+                for state_name, state_body in states:
+                    # Check if this state handles the event
+                    handlers = [
+                        rf'on\s+{re.escape(clean_event)}\b',
+                        rf'ignore\s+[^;]*\b{re.escape(clean_event)}\b',
+                        rf'defer\s+[^;]*\b{re.escape(clean_event)}\b',
+                    ]
+                    handled = any(re.search(h, state_body) for h in handlers)
+                    if not handled:
+                        unhandled_states.append(state_name)
+
+                if unhandled_states:
+                    impact.unhandled_in[machine_name] = unhandled_states
+                    if machine_name not in impact.all_receivers:
+                        impact.all_receivers.append(machine_name)
+
+        return impact
     
     def _analyze_assertion_failure(
         self,

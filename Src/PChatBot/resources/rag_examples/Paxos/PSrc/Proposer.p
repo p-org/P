@@ -1,3 +1,8 @@
+// Proposer machine for Paxos protocol.
+// Initiates proposals and drives consensus with acceptors.
+//
+// BEST PRACTICE: Every state should handle or ignore events that may arrive
+// from broadcast messages (e.g., eLearn broadcast by Learner).
 machine Proposer {
     var currentProposalNumber: int;
     var proposedValue: int;
@@ -15,24 +20,30 @@ machine Proposer {
 
     start state Init {
         entry InitEntry;
+        ignore eLearn;
     }
 
     state WaitingForClientRequest {
         on eProposeRequest do HandleClientRequest;
+        ignore eLearn;
     }
 
     state PreparingProposal {
         on ePromise do HandlePromise;
         on eAcceptRequest goto SendingAcceptRequests;
+        ignore eLearn;
     }
 
     state SendingAcceptRequests {
         entry SendAcceptRequestsEntry;
         on eAccepted do HandleAccepted;
+        // BEST PRACTICE: Use goto to transition when consensus is reached.
         on eLearn goto Finished;
     }
 
     state Finished {
+        // BEST PRACTICE: In terminal states, ignore all events that may still arrive.
+        ignore ePromise, eAccepted, eLearn, eProposeRequest;
     }
 
     fun InitEntry(payload: (acceptors: seq[machine], learner: machine, totalAcceptors: int)) {
@@ -112,22 +123,9 @@ machine Proposer {
 
     fun HandleAccepted(accepted: tAccepted) {
         acceptsReceived = acceptsReceived + 1;
-        send learner, eAccepted, (learner = learner, proposalNumber = accepted.proposalNumber, value = accepted.value);
         
         if (acceptsReceived >= majorityThreshold) {
             isProposalActive = false;
-        }
-    }
-
-    fun BroadcastToAcceptors(eventToSend: event, payload: any) {
-        var i: int;
-        var acceptor: machine;
-        
-        i = 0;
-        while (i < sizeof(acceptors)) {
-            acceptor = acceptors[i];
-            send acceptor, eventToSend, payload;
-            i = i + 1;
         }
     }
 }

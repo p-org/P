@@ -65,12 +65,40 @@ def _get_manual_fix_guidance(analysis) -> Dict[str, Any]:
     }
 
     if error.category == CheckerErrorCategory.UNHANDLED_EVENT:
-        guidance["steps"] = [
-            "1. Find where the event is sent and add a handler in the receiving state",
-            "2. Ensure the handler transitions to a valid state or defers/ignores the event",
-            "3. Update specs/tests if expected behavior changes",
-        ]
-        guidance["example_fix"] = f"""
+        if error.is_test_driver_bug:
+            guidance["steps"] = [
+                "1. Identify why the test driver is sending this protocol event",
+                "2. Create a dedicated setup event in Enums_Types_Events.p",
+                "3. Add a handler for the setup event in the receiving machine's Init state",
+                "4. Update the test driver to use the new setup event instead",
+                "5. Add 'ignore' for the protocol event in all machines that may receive it",
+                "6. Ensure safety specs can still observe the events they monitor",
+            ]
+            guidance["example_fix"] = f"""
+// In Enums_Types_Events.p — add a dedicated setup event:
+event eSetup{error.machine_type}Components: seq[machine];
+
+// In {error.machine_type}.p — handle the setup event:
+start state Init {{
+    entry InitEntry;
+    on eSetup{error.machine_type}Components do (payload: seq[machine]) {{
+        components = payload;
+    }}
+    ignore {error.event_name};
+}}
+
+// In TestDriver.p — use the new setup event instead:
+send {error.machine_type.lower()}, eSetup{error.machine_type}Components, allComponents;
+"""
+        else:
+            guidance["steps"] = [
+                "1. Trace back to the sender — find where the event is sent",
+                "2. Determine if this is a test-driver bug or protocol-logic bug",
+                "3. Add a handler, ignore, or defer in the receiving state",
+                "4. Check if other machines also lack handlers for this event",
+                "5. Update specs/tests if expected behavior changes",
+            ]
+            guidance["example_fix"] = f"""
 state {error.machine_state} {{
     // Option A: Ignore the event
     ignore {error.event_name};
@@ -224,6 +252,10 @@ If you receive needs_guidance, ask the user the questions and call again with us
             response["filename"] = result.filename
             response["file_path"] = result.file_path
 
+        # Surface vacuous pass warnings if present
+        if result.analysis and "vacuous_pass_warning" in result.analysis:
+            response["vacuous_pass_warning"] = result.analysis["vacuous_pass_warning"]
+
         return with_metadata("fix_checker_error", response, token_usage=result.token_usage)
 
     @mcp.tool(
@@ -267,19 +299,37 @@ Returns:
 
         project_path = Path(params.project_path)
 
-        trace_dir = project_path / "PCheckerOutput" / "BugFinding"
-        if not trace_dir.exists():
+        # Find the most recent BugFinding*/ directory — that contains
+        # the trace for the latest failing test.
+        checker_output = project_path / "PCheckerOutput"
+        if not checker_output.exists():
             payload = {
                 "success": False,
-                "error": f"No PChecker output found at {trace_dir}. Run p_check first.",
+                "error": f"No PChecker output found at {checker_output}. Run p_check first.",
             }
             return with_metadata("fix_buggy_program", payload)
 
-        trace_files = list(trace_dir.glob("*_0_0.txt"))
+        bug_dirs = sorted(
+            [d for d in checker_output.glob("BugFinding*") if d.is_dir()],
+            key=lambda d: d.stat().st_mtime,
+            reverse=True,
+        )
+        if not bug_dirs:
+            payload = {
+                "success": False,
+                "error": "No BugFinding directories found. Run p_check first.",
+            }
+            return with_metadata("fix_buggy_program", payload)
+
+        # Use the most recently modified BugFinding*/ directory
+        latest_bug_dir = bug_dirs[0]
+        trace_files = list(latest_bug_dir.glob("*_0_0.txt"))
+
         if not trace_files:
             payload = {
                 "success": False,
-                "error": "No trace files found. The program may have passed all tests.",
+                "error": f"No trace files found in {latest_bug_dir.name}/. "
+                         "The program may have passed all tests.",
             }
             return with_metadata("fix_buggy_program", payload)
 
@@ -331,14 +381,49 @@ Returns:
                 "requires_manual_fix": False,
             }
 
+            # Include enhanced analysis fields in response
+            if analysis.error.sender_info:
+                sender = analysis.error.sender_info
+                response["analysis"]["sender"] = {
+                    "machine": sender.machine,
+                    "state": sender.state,
+                    "is_test_driver": sender.is_test_driver,
+                    "is_initialization_pattern": sender.is_initialization_pattern,
+                    "semantic_mismatch": sender.semantic_mismatch,
+                }
+            if analysis.error.cascading_impact:
+                cascade = analysis.error.cascading_impact
+                response["analysis"]["cascading_impact"] = {
+                    "unhandled_in": cascade.unhandled_in,
+                    "broadcasters": cascade.broadcasters,
+                    "all_receivers": cascade.all_receivers,
+                }
+            response["analysis"]["is_test_driver_bug"] = analysis.error.is_test_driver_bug
+            response["analysis"]["requires_new_event"] = analysis.error.requires_new_event
+            response["analysis"]["requires_multi_file_fix"] = analysis.error.requires_multi_file_fix
+
             if specialized_fix:
-                logger.info(f"Attempting specialized fix: {specialized_fix.description}")
+                logger.info(f"Attempting specialized fix ({specialized_fix.fix_strategy or 'auto'}): {specialized_fix.description}")
 
                 try:
+                    # Collect all backups for potential revert
+                    backups = {}
+
+                    # Apply primary fix
+                    backups[specialized_fix.file_path] = specialized_fix.original_code
                     services["compilation"].write_file(
                         specialized_fix.file_path,
                         specialized_fix.fixed_code
                     )
+
+                    # Apply additional patches for multi-file fixes
+                    if specialized_fix.is_multi_file and specialized_fix.additional_patches:
+                        for patch in specialized_fix.additional_patches:
+                            backups[patch.file_path] = patch.original_code
+                            services["compilation"].write_file(
+                                patch.file_path,
+                                patch.fixed_code
+                            )
 
                     response["fix_applied"] = {
                         "description": specialized_fix.description,
@@ -346,6 +431,9 @@ Returns:
                         "confidence": specialized_fix.confidence,
                         "requires_review": specialized_fix.requires_review,
                         "review_notes": specialized_fix.review_notes,
+                        "strategy": specialized_fix.fix_strategy,
+                        "is_multi_file": specialized_fix.is_multi_file,
+                        "files_modified": list(backups.keys()),
                     }
 
                     compile_result = services["compilation"].compile(str(project_path))
@@ -363,10 +451,9 @@ Returns:
                             response["verification"] = "Fix applied but bug persists"
                             response["requires_manual_fix"] = True
                     else:
-                        services["compilation"].write_file(
-                            specialized_fix.file_path,
-                            specialized_fix.original_code
-                        )
+                        # Revert ALL patches
+                        for file_path, original_code in backups.items():
+                            services["compilation"].write_file(file_path, original_code)
                         response["fix_applied"]["reverted"] = True
                         response["requires_manual_fix"] = True
                         response["verification"] = f"Fix caused compilation error: {compile_result.stdout[:200]}"

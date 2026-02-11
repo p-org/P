@@ -15,4 +15,16 @@ For each function:
 5. EVERY event that can be received by this machine in a given state MUST be handled in that state. If an event is not relevant in a state, add `ignore eEventName;` to that state. If it should be processed later, add `defer eEventName;`. PChecker will flag unhandled events as bugs.
 6. Think about which events could arrive late or out-of-order. For example, if a machine transitions from PhaseA to PhaseB, events from PhaseA may still be in the queue — add `ignore` for those stale events in PhaseB.
 
-Before finalizing the implementation, identify all attributes and events that would be needed to properly setup and initialize this machine in test cases later. Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.
+## Initialization:
+If this machine has a start-state entry function with a parameter, that parameter carries the machine's constructor config (e.g., references to other machines, IDs, sizes). The implementation MUST:
+- Store every field from the config payload into the corresponding local variable.
+- Compute derived values (e.g., majoritySize = sizeof(acceptors) / 2 + 1).
+- If using the init-event pattern instead, the configuration handler function must similarly store all fields and then `goto` the first operational state.
+
+## Checklist before returning code:
+- Every state has handlers, defer, or ignore for EVERY event this machine could receive.
+- The start state entry correctly unpacks the constructor payload (if parameterized).
+- All `send` targets are machine-typed variables (never null/default).
+- No events, types, or enums are declared in this file.
+
+Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

@@ -35,10 +35,13 @@ from .checker_error_parser import (
     PCheckerErrorParser,
     MachineState,
     EventInfo,
+    SenderInfo,
+    CascadingImpact,
 )
 
 from .checker_fixers import (
     CheckerFix,
+    FilePatch,
     PCheckerErrorFixer,
     analyze_and_suggest_fix,
 )
@@ -78,7 +81,10 @@ __all__ = [
     "PCheckerErrorParser",
     "MachineState",
     "EventInfo",
+    "SenderInfo",
+    "CascadingImpact",
     "CheckerFix",
+    "FilePatch",
     "PCheckerErrorFixer",
     "analyze_and_suggest_fix",
     # Post-processing

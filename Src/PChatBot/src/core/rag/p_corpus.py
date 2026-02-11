@@ -332,6 +332,51 @@ class PCorpus:
                     project_name=project_name
                 ))
         
+        # Index full test driver files as complete examples.
+        # Test drivers are best understood as a whole — the machine creation order,
+        # setup event usage, and wiring patterns are only visible in context.
+        is_test_file = (
+            'PTst/' in source_file or '/PTst/' in source_file or
+            'TestDriver' in Path(source_file).stem or
+            'Test' in Path(source_file).stem
+        )
+        if is_test_file and 'machine ' in content:
+            file_name = Path(source_file).stem
+            tags = self._infer_tags(content)
+            tags.append("test-driver-full")
+            tags.append("machine-wiring")
+            
+            # Extract a description from comments at the top of the file
+            desc = self._extract_file_description(content)
+            
+            examples.append(PExample(
+                id=f"testdriver_{file_name}_{hashlib.md5(content.encode()).hexdigest()[:8]}",
+                name=f"{file_name} (Full Test Driver)",
+                description=desc or f"Complete test driver showing machine initialization and wiring patterns from {file_name}",
+                code=content,
+                category="test",
+                tags=tags,
+                source_file=source_file,
+                project_name=project_name
+            ))
+        
+        # Index files with BEST PRACTICE annotations as best-practice examples
+        if 'BEST PRACTICE' in content:
+            file_name = Path(source_file).stem
+            tags = self._infer_tags(content)
+            tags.append("best-practice-guide")
+            
+            examples.append(PExample(
+                id=f"bestpractice_{file_name}_{hashlib.md5(content.encode()).hexdigest()[:8]}",
+                name=f"{file_name} (Best Practices)",
+                description=f"Annotated best practices from {file_name}",
+                code=content,
+                category="machine",
+                tags=tags,
+                source_file=source_file,
+                project_name=project_name
+            ))
+        
         return examples
     
     def _extract_description(self, content: str, position: int) -> Optional[str]:
@@ -355,6 +400,25 @@ class PCorpus:
         
         return ' '.join(comments) if comments else None
     
+    def _extract_file_description(self, content: str) -> Optional[str]:
+        """Extract description from the header comments at the top of a file."""
+        lines = content.split('\n')
+        comments = []
+        for line in lines[:20]:  # Look at first 20 lines
+            stripped = line.strip()
+            if stripped.startswith('//'):
+                text = stripped[2:].strip()
+                # Skip separator lines like "// ========="
+                if text and not all(c in '=-*/' for c in text):
+                    comments.append(text)
+            elif stripped.startswith('/*'):
+                text = stripped[2:].rstrip('*/').strip()
+                if text:
+                    comments.append(text)
+            elif stripped and not stripped.startswith('*'):
+                break
+        return ' '.join(comments) if comments else None
+    
     def _infer_tags(self, code: str) -> List[str]:
         """Infer tags from code content."""
         tags = []
@@ -373,10 +437,36 @@ class PCorpus:
             tags.append("iteration")
         if 'map[' in code or 'seq[' in code:
             tags.append("collections")
-        if '$' in code:
+        if '$' in code or 'choose(' in code:
             tags.append("nondeterminism")
         if 'assert ' in code:
             tags.append("assertions")
+        
+        # Enhanced pattern detection
+        if 'ignore ' in code:
+            tags.append("ignore-pattern")
+        if re.search(r'while\s*\(.*sizeof.*\)\s*\{.*send\b', code, re.DOTALL):
+            tags.append("broadcast-pattern")
+        if re.search(r'eSetup\w+|eConfig\w+|eInform\w+|eInit\w+', code):
+            tags.append("setup-event")
+        if re.search(r'BEST\s+PRACTICE', code):
+            tags.append("best-practice")
+        if re.search(r'ANTI.?PATTERN', code):
+            tags.append("anti-pattern")
+        
+        # Test driver detection
+        if re.search(r'machine\s+\w*(?:Test|Scenario|Driver)\w*', code):
+            tags.append("test-driver")
+        if 'fun SetUp' in code or 'fun Setup' in code:
+            tags.append("test-setup")
+        
+        # Distributed protocol patterns
+        if 'majority' in code.lower() or 'quorum' in code.lower():
+            tags.append("quorum-pattern")
+        if re.search(r'seq\[machine\]|set\[machine\]', code):
+            tags.append("machine-collection")
+        if 'allComponents' in code or 'allMachines' in code or 'all_components' in code:
+            tags.append("component-list")
         
         return tags
     

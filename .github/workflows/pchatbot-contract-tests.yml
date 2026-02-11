@@ -1,13 +1,13 @@
-name: PChatBot Contract Tests
+name: PeasyAI Contract Tests
 
 on:
   push:
     paths:
-      - "Src/PChatBot/**"
+      - "Src/PeasyAI/**"
       - ".github/workflows/pchatbot-contract-tests.yml"
   pull_request:
     paths:
-      - "Src/PChatBot/**"
+      - "Src/PeasyAI/**"
       - ".github/workflows/pchatbot-contract-tests.yml"
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: Src/PChatBot
+        working-directory: Src/PeasyAI
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -3,7 +3,13 @@ import os
 import numpy as np
 from pathlib import Path
 import sys
-sys.path.append("resources")
+
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src" / "rag"))
+
+# Skip the entire module if faiss is not installed (optional heavy dependency)
+faiss = pytest.importorskip("faiss", reason="faiss not installed – skipping RAG index tests")
+
 from create_rag_index import (
     get_text_files,
     create_chunks,
@@ -20,9 +26,12 @@ def test_get_text_files():
     assert "resources/context_files/about_p.txt" in files
 
 def test_create_chunks():
-    test_text = "This is a test document. It has multiple sentences. We will chunk it properly."
+    # Text must be longer than the default chunk_size (500) so the splitter
+    # actually produces more than one chunk.
+    test_text = ("This is a test document about the P programming language. " * 20
+                 + "It has multiple sentences covering state machines, events, and monitors. " * 20)
     chunks = create_chunks([test_text])
-    assert len(chunks) > 0
+    assert len(chunks) > 1, "Text longer than chunk_size should be split into multiple chunks"
     assert isinstance(chunks[0], str)
     assert len(chunks[0]) < len(test_text)
 

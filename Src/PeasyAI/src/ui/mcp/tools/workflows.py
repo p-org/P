@@ -28,6 +28,7 @@ class RunWorkflowParams(BaseModel):
     machine_names: Optional[List[str]] = Field(default=None, description="List of machine names (auto-extracted from design_doc if not provided)")
     schedules: int = Field(default=100, description="Number of schedules for PChecker")
     timeout: int = Field(default=60, description="Timeout in seconds for PChecker")
+    ensemble_size: int = Field(default=3, description="Number of candidates per file for ensemble selection")
 
 
 class ResumeWorkflowParams(BaseModel):
@@ -117,7 +118,8 @@ def register_workflow_tools(mcp, get_services, with_metadata):
                     return with_metadata("run_workflow", payload)
 
             workflow = factory.create_full_generation_workflow(
-                machine_names=machine_names
+                machine_names=machine_names,
+                ensemble_size=params.ensemble_size,
             )
             engine.register_workflow(workflow)
 

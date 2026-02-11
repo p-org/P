@@ -9,7 +9,7 @@ from typing import List, Tuple
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 import pickle
 import sys
 from datetime import datetime

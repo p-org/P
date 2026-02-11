@@ -39,6 +39,11 @@ class GenerateMachineParams(BaseModel):
         default=None,
         description="Additional context files (filename -> content)"
     )
+    ensemble_size: int = Field(
+        default=3,
+        description="Number of candidate generations for ensemble selection (best-of-N). "
+                    "Set to 1 to disable ensemble."
+    )
 
 
 class GenerateSpecParams(BaseModel):
@@ -50,6 +55,11 @@ class GenerateSpecParams(BaseModel):
         default=None,
         description="Additional context files"
     )
+    ensemble_size: int = Field(
+        default=3,
+        description="Number of candidate generations for ensemble selection (best-of-N). "
+                    "Set to 1 to disable ensemble."
+    )
 
 
 class GenerateTestParams(BaseModel):
@@ -60,6 +70,11 @@ class GenerateTestParams(BaseModel):
     context_files: Optional[Dict[str, str]] = Field(
         default=None,
         description="Additional context files"
+    )
+    ensemble_size: int = Field(
+        default=3,
+        description="Number of candidate generations for ensemble selection (best-of-N). "
+                    "Set to 1 to disable ensemble."
     )
 
 
@@ -98,7 +113,7 @@ class GenerateCompleteProjectParams(BaseModel):
         description="Run PChecker after successful compilation"
     )
     ensemble_size: int = Field(
-        default=1,
+        default=3,
         description="Number of candidate generations per file for ensemble selection. "
                     "Higher values (e.g. 3) produce more reliable code by picking the "
                     "best candidate, at the cost of more LLM calls."
@@ -167,17 +182,27 @@ def register_generation_tools(mcp, get_services, with_metadata):
         description="Generate a single P state machine implementation using two-stage generation (structure first, then implementation). Returns code for preview - use save_p_file to save."
     )
     def generate_machine(params: GenerateMachineParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_machine: {params.machine_name} (preview)")
+        logger.info(f"[TOOL] generate_machine: {params.machine_name} (preview, ensemble={params.ensemble_size})")
 
         services = get_services()
-        result = services["generation"].generate_machine(
-            machine_name=params.machine_name,
-            design_doc=params.design_doc,
-            project_path=params.project_path,
-            context_files=params.context_files,
-            two_stage=True,
-            save_to_disk=False  # Preview only
-        )
+        if params.ensemble_size > 1:
+            result = services["generation"].generate_machine_ensemble(
+                machine_name=params.machine_name,
+                design_doc=params.design_doc,
+                project_path=params.project_path,
+                context_files=params.context_files,
+                ensemble_size=params.ensemble_size,
+                save_to_disk=False  # Preview only
+            )
+        else:
+            result = services["generation"].generate_machine(
+                machine_name=params.machine_name,
+                design_doc=params.design_doc,
+                project_path=params.project_path,
+                context_files=params.context_files,
+                two_stage=True,
+                save_to_disk=False  # Preview only
+            )
 
         payload = {
             "success": result.success,
@@ -196,16 +221,26 @@ def register_generation_tools(mcp, get_services, with_metadata):
         description="Generate a P specification/monitor file. Returns code for preview - use save_p_file to save."
     )
     def generate_spec(params: GenerateSpecParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_spec: {params.spec_name} (preview)")
+        logger.info(f"[TOOL] generate_spec: {params.spec_name} (preview, ensemble={params.ensemble_size})")
 
         services = get_services()
-        result = services["generation"].generate_spec(
-            spec_name=params.spec_name,
-            design_doc=params.design_doc,
-            project_path=params.project_path,
-            context_files=params.context_files,
-            save_to_disk=False  # Preview only
-        )
+        if params.ensemble_size > 1:
+            result = services["generation"].generate_spec_ensemble(
+                spec_name=params.spec_name,
+                design_doc=params.design_doc,
+                project_path=params.project_path,
+                context_files=params.context_files,
+                ensemble_size=params.ensemble_size,
+                save_to_disk=False  # Preview only
+            )
+        else:
+            result = services["generation"].generate_spec(
+                spec_name=params.spec_name,
+                design_doc=params.design_doc,
+                project_path=params.project_path,
+                context_files=params.context_files,
+                save_to_disk=False  # Preview only
+            )
 
         payload = {
             "success": result.success,
@@ -224,16 +259,26 @@ def register_generation_tools(mcp, get_services, with_metadata):
         description="Generate a P test file. Returns code for preview - use save_p_file to save."
     )
     def generate_test(params: GenerateTestParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_test: {params.test_name} (preview)")
+        logger.info(f"[TOOL] generate_test: {params.test_name} (preview, ensemble={params.ensemble_size})")
 
         services = get_services()
-        result = services["generation"].generate_test(
-            test_name=params.test_name,
-            design_doc=params.design_doc,
-            project_path=params.project_path,
-            context_files=params.context_files,
-            save_to_disk=False  # Preview only
-        )
+        if params.ensemble_size > 1:
+            result = services["generation"].generate_test_ensemble(
+                test_name=params.test_name,
+                design_doc=params.design_doc,
+                project_path=params.project_path,
+                context_files=params.context_files,
+                ensemble_size=params.ensemble_size,
+                save_to_disk=False  # Preview only
+            )
+        else:
+            result = services["generation"].generate_test(
+                test_name=params.test_name,
+                design_doc=params.design_doc,
+                project_path=params.project_path,
+                context_files=params.context_files,
+                save_to_disk=False  # Preview only
+            )
 
         payload = {
             "success": result.success,

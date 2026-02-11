@@ -188,10 +188,11 @@ def run_protocol_ensemble(
     return result
 
 
-def run_protocol(tools: Dict[str, Any], design_doc: str, out_root: Path, project_name: str) -> Dict[str, Any]:
+def run_protocol(tools: Dict[str, Any], design_doc: str, out_root: Path, project_name: str, ensemble_size: int = 3) -> Dict[str, Any]:
     """
-    Run a protocol end-to-end using the step-by-step flow (legacy).
-    Kept for backward compatibility; prefer ``run_protocol_ensemble``.
+    Run a protocol end-to-end using the step-by-step flow.
+    Now uses ensemble generation (best-of-N) for each file by default.
+    For the single-call ensemble flow, prefer ``run_protocol_ensemble``.
     """
     result: Dict[str, Any] = {
         "project_name": project_name,
@@ -242,6 +243,7 @@ def run_protocol(tools: Dict[str, Any], design_doc: str, out_root: Path, project
                 design_doc=design_doc,
                 project_path=project_path,
                 context_files=context_files,
+                ensemble_size=ensemble_size,
             )
         )
         generated[f"machine:{machine_name}"] = machine_resp
@@ -255,6 +257,7 @@ def run_protocol(tools: Dict[str, Any], design_doc: str, out_root: Path, project
             design_doc=design_doc,
             project_path=project_path,
             context_files=context_files,
+            ensemble_size=ensemble_size,
         )
     )
     generated["spec"] = spec_resp
@@ -266,6 +269,7 @@ def run_protocol(tools: Dict[str, Any], design_doc: str, out_root: Path, project
             design_doc=design_doc,
             project_path=project_path,
             context_files=context_files,
+            ensemble_size=ensemble_size,
         )
     )
     generated["test"] = test_resp

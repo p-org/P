@@ -120,14 +120,16 @@ class GenerateMachineStep(WorkflowStep):
     description = "Generate a P state machine implementation"
     max_retries = 3
     
-    def __init__(self, generation_service: GenerationService, machine_name: str):
+    def __init__(self, generation_service: GenerationService, machine_name: str, ensemble_size: int = 3):
         self.service = generation_service
         self.machine_name = machine_name
+        self.ensemble_size = ensemble_size
         self.name = f"generate_machine_{machine_name}"
     
     def execute(self, context: Dict[str, Any]) -> StepResult:
         design_doc = context.get("design_doc")
         project_path = context.get("project_path")
+        ensemble_size = context.get("ensemble_size", self.ensemble_size)
         
         if not design_doc:
             return StepResult.failure("design_doc is required")
@@ -148,13 +150,23 @@ class GenerateMachineStep(WorkflowStep):
                 context_files[machine_file] = value
         
         try:
-            result = self.service.generate_machine(
-                machine_name=self.machine_name,
-                design_doc=design_doc,
-                project_path=project_path,
-                context_files=context_files,
-                save_to_disk=False  # Preview mode
-            )
+            if ensemble_size > 1:
+                result = self.service.generate_machine_ensemble(
+                    machine_name=self.machine_name,
+                    design_doc=design_doc,
+                    project_path=project_path,
+                    context_files=context_files,
+                    ensemble_size=ensemble_size,
+                    save_to_disk=False  # Preview mode
+                )
+            else:
+                result = self.service.generate_machine(
+                    machine_name=self.machine_name,
+                    design_doc=design_doc,
+                    project_path=project_path,
+                    context_files=context_files,
+                    save_to_disk=False  # Preview mode
+                )
             
             if result.success:
                 return StepResult.success(
@@ -185,14 +197,16 @@ class GenerateSpecStep(WorkflowStep):
     description = "Generate a P specification/monitor file"
     max_retries = 3
     
-    def __init__(self, generation_service: GenerationService, spec_name: str = "Safety"):
+    def __init__(self, generation_service: GenerationService, spec_name: str = "Safety", ensemble_size: int = 3):
         self.service = generation_service
         self.spec_name = spec_name
+        self.ensemble_size = ensemble_size
         self.name = f"generate_spec_{spec_name}"
     
     def execute(self, context: Dict[str, Any]) -> StepResult:
         design_doc = context.get("design_doc")
         project_path = context.get("project_path")
+        ensemble_size = context.get("ensemble_size", self.ensemble_size)
         
         if not design_doc:
             return StepResult.failure("design_doc is required")
@@ -203,13 +217,23 @@ class GenerateSpecStep(WorkflowStep):
         context_files = self._collect_context_files(context, project_path)
         
         try:
-            result = self.service.generate_spec(
-                spec_name=self.spec_name,
-                design_doc=design_doc,
-                project_path=project_path,
-                context_files=context_files,
-                save_to_disk=False
-            )
+            if ensemble_size > 1:
+                result = self.service.generate_spec_ensemble(
+                    spec_name=self.spec_name,
+                    design_doc=design_doc,
+                    project_path=project_path,
+                    context_files=context_files,
+                    ensemble_size=ensemble_size,
+                    save_to_disk=False
+                )
+            else:
+                result = self.service.generate_spec(
+                    spec_name=self.spec_name,
+                    design_doc=design_doc,
+                    project_path=project_path,
+                    context_files=context_files,
+                    save_to_disk=False
+                )
             
             if result.success:
                 return StepResult.success(
@@ -265,14 +289,16 @@ class GenerateTestStep(WorkflowStep):
     description = "Generate a P test driver file"
     max_retries = 3
     
-    def __init__(self, generation_service: GenerationService, test_name: str = "TestDriver"):
+    def __init__(self, generation_service: GenerationService, test_name: str = "TestDriver", ensemble_size: int = 3):
         self.service = generation_service
         self.test_name = test_name
+        self.ensemble_size = ensemble_size
         self.name = f"generate_test_{test_name}"
     
     def execute(self, context: Dict[str, Any]) -> StepResult:
         design_doc = context.get("design_doc")
         project_path = context.get("project_path")
+        ensemble_size = context.get("ensemble_size", self.ensemble_size)
         
         if not design_doc:
             return StepResult.failure("design_doc is required")
@@ -283,13 +309,23 @@ class GenerateTestStep(WorkflowStep):
         context_files = self._collect_all_context(context, project_path)
         
         try:
-            result = self.service.generate_test(
-                test_name=self.test_name,
-                design_doc=design_doc,
-                project_path=project_path,
-                context_files=context_files,
-                save_to_disk=False
-            )
+            if ensemble_size > 1:
+                result = self.service.generate_test_ensemble(
+                    test_name=self.test_name,
+                    design_doc=design_doc,
+                    project_path=project_path,
+                    context_files=context_files,
+                    ensemble_size=ensemble_size,
+                    save_to_disk=False
+                )
+            else:
+                result = self.service.generate_test(
+                    test_name=self.test_name,
+                    design_doc=design_doc,
+                    project_path=project_path,
+                    context_files=context_files,
+                    save_to_disk=False
+                )
             
             if result.success:
                 return StepResult.success(

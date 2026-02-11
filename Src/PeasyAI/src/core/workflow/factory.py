@@ -67,7 +67,8 @@ class WorkflowFactory:
         self,
         machine_names: List[str],
         spec_name: str = "Safety",
-        test_name: str = "TestDriver"
+        test_name: str = "TestDriver",
+        ensemble_size: int = 3,
     ) -> WorkflowDefinition:
         """
         Create a full project generation workflow.
@@ -76,6 +77,7 @@ class WorkflowFactory:
             machine_names: List of machine names to generate
             spec_name: Name for the specification file
             test_name: Name for the test file
+            ensemble_size: Number of candidates per file for ensemble selection
             
         Returns:
             WorkflowDefinition ready for execution
@@ -88,12 +90,12 @@ class WorkflowFactory:
         # Add machine generation steps
         for machine_name in machine_names:
             steps.append(
-                GenerateMachineStep(self.generation_service, machine_name)
+                GenerateMachineStep(self.generation_service, machine_name, ensemble_size=ensemble_size)
             )
         
         # Add spec and test
-        steps.append(GenerateSpecStep(self.generation_service, spec_name))
-        steps.append(GenerateTestStep(self.generation_service, test_name))
+        steps.append(GenerateSpecStep(self.generation_service, spec_name, ensemble_size=ensemble_size))
+        steps.append(GenerateTestStep(self.generation_service, test_name, ensemble_size=ensemble_size))
         
         # Save files
         steps.append(SaveGeneratedFilesStep())
@@ -109,13 +111,13 @@ class WorkflowFactory:
             continue_on_failure=False
         )
     
-    def create_add_machine_workflow(self, machine_name: str) -> WorkflowDefinition:
+    def create_add_machine_workflow(self, machine_name: str, ensemble_size: int = 3) -> WorkflowDefinition:
         """Create workflow to add a single machine to existing project."""
         return WorkflowDefinition(
             name=f"add_machine_{machine_name}",
             description=f"Add {machine_name} machine to project",
             steps=[
-                GenerateMachineStep(self.generation_service, machine_name),
+                GenerateMachineStep(self.generation_service, machine_name, ensemble_size=ensemble_size),
                 SaveGeneratedFilesStep(),
                 CompileProjectStep(self.compilation_service),
                 FixCompilationErrorsStep(self.fixer_service),
@@ -123,13 +125,13 @@ class WorkflowFactory:
             continue_on_failure=False
         )
     
-    def create_add_spec_workflow(self, spec_name: str) -> WorkflowDefinition:
+    def create_add_spec_workflow(self, spec_name: str, ensemble_size: int = 3) -> WorkflowDefinition:
         """Create workflow to add a specification to existing project."""
         return WorkflowDefinition(
             name=f"add_spec_{spec_name}",
             description=f"Add {spec_name} specification to project",
             steps=[
-                GenerateSpecStep(self.generation_service, spec_name),
+                GenerateSpecStep(self.generation_service, spec_name, ensemble_size=ensemble_size),
                 SaveGeneratedFilesStep(),
                 CompileProjectStep(self.compilation_service),
                 FixCompilationErrorsStep(self.fixer_service),

@@ -1,0 +1,1 @@
+module EspressoMachine = { CoffeeMakerControlPanel, EspressoCoffeeMaker };

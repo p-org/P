@@ -121,7 +121,7 @@ class LLMProviderFactory:
             return cls.create("snowflake", {
                 "api_key": openai_api_key,
                 "base_url": openai_base_url,
-                "model": os.environ.get("OPENAI_MODEL_NAME", "claude-4-5-opus-high"),
+                "model": os.environ.get("OPENAI_MODEL_NAME", "claude-sonnet-4-5"),
                 "timeout": float(os.environ.get("LLM_TIMEOUT", "600")),
             })
         
@@ -159,7 +159,7 @@ class LLMProviderFactory:
             return cls.create("snowflake", {
                 "api_key": os.environ.get("OPENAI_API_KEY"),
                 "base_url": os.environ.get("OPENAI_BASE_URL"),
-                "model": os.environ.get("OPENAI_MODEL_NAME", "claude-4-5-opus-high"),
+                "model": os.environ.get("OPENAI_MODEL_NAME", "claude-sonnet-4-5"),
                 "timeout": float(os.environ.get("LLM_TIMEOUT", "600")),
             })
         

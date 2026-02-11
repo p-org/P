@@ -755,34 +755,80 @@ class GenerationService(BaseService):
         """
         Extract P code from LLM response.
         
-        Looks for content wrapped in <filename.p>...</filename.p> tags.
+        Tries multiple extraction strategies in order:
+        1. XML-style <filename.p>...</filename.p> tags
+        2. Markdown code block with filename comment  (```p // filename.p ...)
+        3. Markdown code block (```p ... ```) using first `machine` name
+        
         Also post-processes the code to fix common issues.
         
         Returns:
             Tuple of (filename, code) or (None, None) if not found
         """
-        pattern = r'<(\w+\.p)>(.*?)</\1>'
-        match = re.search(pattern, response, re.DOTALL)
-        
+        filename: Optional[str] = None
+        code: Optional[str] = None
+
+        # Strategy 1: XML-style tags  <Filename.p>...</Filename.p>
+        xml_pattern = r'<(\w+\.p)>(.*?)</\1>'
+        match = re.search(xml_pattern, response, re.DOTALL)
         if match:
             filename = match.group(1)
             code = match.group(2).strip()
-            
-            # Post-process the code to fix common issues
-            try:
-                from ..compilation.p_post_processor import PCodePostProcessor
-                processor = PCodePostProcessor()
-                result = processor.process(code, filename)
-                code = result.code
-                if result.fixes_applied:
-                    logger.info(f"Post-processing applied {len(result.fixes_applied)} fix(es) to {filename}")
-                    for fix in result.fixes_applied:
-                        logger.debug(f"  - {fix}")
-            except ImportError:
-                logger.debug("PCodePostProcessor not available, skipping post-processing")
-            except Exception as e:
-                logger.warning(f"Post-processing failed: {e}")
-            
-            return filename, code
-        
-        return None, None
+
+        # Strategy 2: Markdown code block with a filename hint on the first line
+        if not code:
+            md_pattern = r'```(?:p)?\s*\n\s*//\s*(\w+\.p)\s*\n(.*?)```'
+            match = re.search(md_pattern, response, re.DOTALL)
+            if match:
+                filename = match.group(1)
+                code = match.group(2).strip()
+
+        # Strategy 3: Bare markdown code block – derive filename from `machine` keyword
+        if not code:
+            md_bare = r'```(?:p)?\s*\n(.*?)```'
+            match = re.search(md_bare, response, re.DOTALL)
+            if match:
+                candidate = match.group(1).strip()
+                # Try to derive a filename from the first machine declaration
+                name_match = re.search(r'\bmachine\s+(\w+)', candidate)
+                if name_match:
+                    filename = f"{name_match.group(1)}.p"
+                    code = candidate
+
+        # Strategy 4: No fences at all – look for `machine Foo {` blocks
+        if not code:
+            machine_block = re.search(
+                r'(machine\s+\w+\s*\{.*)',
+                response,
+                re.DOTALL,
+            )
+            if machine_block:
+                candidate = machine_block.group(1).strip()
+                name_match = re.search(r'\bmachine\s+(\w+)', candidate)
+                if name_match:
+                    filename = f"{name_match.group(1)}.p"
+                    code = candidate
+
+        if not filename or not code:
+            return None, None
+
+        # Strip any remaining markdown fence artifacts
+        code = re.sub(r'^```\w*\s*', '', code)
+        code = re.sub(r'\s*```\s*$', '', code)
+
+        # Post-process the code to fix common issues
+        try:
+            from ..compilation.p_post_processor import PCodePostProcessor
+            processor = PCodePostProcessor()
+            result = processor.process(code, filename)
+            code = result.code
+            if result.fixes_applied:
+                logger.info(f"Post-processing applied {len(result.fixes_applied)} fix(es) to {filename}")
+                for fix in result.fixes_applied:
+                    logger.debug(f"  - {fix}")
+        except ImportError:
+            logger.debug("PCodePostProcessor not available, skipping post-processing")
+        except Exception as e:
+            logger.warning(f"Post-processing failed: {e}")
+
+        return filename, code

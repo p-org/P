@@ -236,6 +236,13 @@ def extract_machine_names_from_design_doc(design_doc: str) -> List[str]:
         bullet_pattern = r'[-*]\s*(\w+)\s*:'
         for match in re.finditer(bullet_pattern, components_section.group(1)):
             machine_names.add(match.group(1))
+
+        # Pattern 6: Numbered component lists
+        # 1. Proposer
+        # 2. Acceptor
+        numbered_pattern = r'^\s*\d+\.\s*([A-Z]\w+)\b'
+        for match in re.finditer(numbered_pattern, components_section.group(1), re.MULTILINE):
+            machine_names.add(match.group(1))
     
     # Filter and clean
     filtered = []

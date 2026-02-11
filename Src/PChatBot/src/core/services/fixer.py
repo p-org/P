@@ -192,7 +192,8 @@ class FixerService(BaseService):
         Returns:
             FixResult with fix details
         """
-        error_key = f"compile:{error.file_path}:{hash(error.message)}"
+        resolved_file_path = self._resolve_error_file_path(project_path, error.file_path)
+        error_key = f"compile:{resolved_file_path}:{hash(error.message)}"
         attempt = self._tracker.get_attempt_count(error_key) + 1
         
         self._status(f"Fixing compilation error (attempt {attempt}): {error.message[:50]}...")
@@ -208,18 +209,18 @@ class FixerService(BaseService):
         
         try:
             # Read the file with the error
-            file_content = self._compilation.read_file(error.file_path)
+            file_content = self._compilation.read_file(resolved_file_path)
             if file_content is None:
                 return FixResult(
                     success=False,
-                    error=f"Could not read file: {error.file_path}",
+                    error=f"Could not read file: {resolved_file_path}",
                 )
             
             # First try specialized fixers (faster, more reliable)
             specialized_fix = self._try_specialized_fix(error, file_content)
             if specialized_fix:
                 # Apply the fix
-                self._compilation.write_file(error.file_path, specialized_fix.fixed_code)
+                self._compilation.write_file(resolved_file_path, specialized_fix.fixed_code)
                 
                 # Verify by recompiling
                 compile_result = self._compilation.compile(project_path)
@@ -231,15 +232,15 @@ class FixerService(BaseService):
                     return FixResult(
                         success=True,
                         fixed=True,
-                        filename=Path(error.file_path).name,
-                        file_path=error.file_path,
+                        filename=Path(resolved_file_path).name,
+                        file_path=resolved_file_path,
                         original_code=file_content,
                         fixed_code=specialized_fix.fixed_code,
                         attempt_number=attempt,
                     )
                 else:
                     # Revert the fix and try LLM
-                    self._compilation.write_file(error.file_path, file_content)
+                    self._compilation.write_file(resolved_file_path, file_content)
                     logger.info("Specialized fix didn't resolve error, trying LLM")
             
             # Fall back to LLM-based fixing
@@ -263,7 +264,7 @@ class FixerService(BaseService):
             
             if filename and fixed_code:
                 # Write the fix
-                self._compilation.write_file(error.file_path, fixed_code)
+                self._compilation.write_file(resolved_file_path, fixed_code)
                 
                 # Verify by recompiling
                 compile_result = self._compilation.compile(project_path)
@@ -277,7 +278,7 @@ class FixerService(BaseService):
                         success=True,
                         fixed=True,
                         filename=filename,
-                        file_path=error.file_path,
+                        file_path=resolved_file_path,
                         original_code=file_content,
                         fixed_code=fixed_code,
                         attempt_number=attempt,
@@ -294,7 +295,7 @@ class FixerService(BaseService):
                         success=False,
                         fixed=False,
                         filename=filename,
-                        file_path=error.file_path,
+                        file_path=resolved_file_path,
                         original_code=file_content,
                         fixed_code=fixed_code,
                         attempt_number=attempt,
@@ -569,6 +570,30 @@ class FixerService(BaseService):
             suggested_fixes=suggested_fixes,
         )
     
+    @staticmethod
+    def _resolve_error_path(error: 'ParsedError', project_path: str) -> None:
+        """
+        Resolve a potentially-relative file_path inside a ParsedError to an
+        absolute path so downstream read/write calls succeed regardless of cwd.
+        """
+        from pathlib import Path as _Path
+
+        fp = _Path(error.file_path)
+        if fp.is_absolute() and fp.exists():
+            return
+        # Try relative to the project directory first (most common)
+        candidate = _Path(project_path) / error.file_path
+        if candidate.exists():
+            error.file_path = str(candidate)
+            return
+        # Try just the basename inside PSrc / PSpec / PTst
+        basename = fp.name
+        for sub in ('PSrc', 'PSpec', 'PTst'):
+            candidate = _Path(project_path) / sub / basename
+            if candidate.exists():
+                error.file_path = str(candidate)
+                return
+
     def fix_iteratively(
         self,
         project_path: str,
@@ -604,17 +629,23 @@ class FixerService(BaseService):
                 results["total_iterations"] = i
                 break
             
-            # Parse error
-            error = self._compilation.parse_error(compile_result.stdout)
+            # Parse error – try stdout first, then stderr as fallback
+            combined = compile_result.stdout or ""
+            if compile_result.stderr:
+                combined = combined + "\n" + compile_result.stderr
+            error = self._compilation.parse_error(combined)
             
             if error is None:
                 self._error("Could not parse compilation error")
                 results["iterations"].append({
                     "iteration": i + 1,
                     "error": "Could not parse error",
-                    "output": compile_result.stdout[:500],
+                    "output": combined[:500],
                 })
                 break
+            
+            # Resolve relative paths so read/write works
+            self._resolve_error_path(error, project_path)
             
             # Try to fix
             fix_result = self.fix_compilation_error(project_path, error)
@@ -640,6 +671,26 @@ class FixerService(BaseService):
     # =========================================================================
     # Private helper methods
     # =========================================================================
+
+    def _resolve_error_file_path(self, project_path: str, file_path: str) -> str:
+        """
+        Resolve compiler-reported file names to absolute project paths.
+        P compiler may emit either absolute paths or basename like 'Safety.p'.
+        """
+        candidate = Path(file_path)
+        if candidate.is_absolute() and candidate.exists():
+            return str(candidate)
+        if candidate.exists():
+            return str(candidate.resolve())
+
+        # Try common P project folders.
+        for folder in ("PSrc", "PSpec", "PTst"):
+            full_path = Path(project_path) / folder / file_path
+            if full_path.exists():
+                return str(full_path)
+
+        # Fallback to original string; callers will surface read/write errors.
+        return file_path
     
     def _build_compile_fix_messages(
         self,

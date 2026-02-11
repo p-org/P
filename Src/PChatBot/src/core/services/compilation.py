@@ -138,23 +138,8 @@ class CompilationService(BaseService):
         Returns:
             ParsedError if an error was found, None otherwise
         """
-        import re
-        
-        # Pattern for P compiler errors: filepath(line,col): error: message
-        error_pattern = r'([^(\n]+)\((\d+),\s*(\d+)\):\s*(error|warning):\s*(.+?)(?=\n[^\s]|\Z)'
-        
-        match = re.search(error_pattern, compilation_output, re.MULTILINE | re.DOTALL)
-        
-        if match:
-            return ParsedError(
-                file_path=match.group(1).strip(),
-                line_number=int(match.group(2)),
-                column_number=int(match.group(3)),
-                error_type=match.group(4),
-                message=match.group(5).strip(),
-            )
-        
-        return None
+        errors = self.get_all_errors(compilation_output)
+        return errors[0] if errors else None
     
     def get_all_errors(self, compilation_output: str) -> List[ParsedError]:
         """
@@ -167,20 +152,65 @@ class CompilationService(BaseService):
             List of ParsedError objects
         """
         import re
-        
-        errors = []
-        error_pattern = r'([^(\n]+)\((\d+),\s*(\d+)\):\s*(error|warning):\s*(.+?)(?=\n[^\s]|\Z)'
-        
-        for match in re.finditer(error_pattern, compilation_output, re.MULTILINE | re.DOTALL):
-            errors.append(ParsedError(
-                file_path=match.group(1).strip(),
-                line_number=int(match.group(2)),
-                column_number=int(match.group(3)),
-                error_type=match.group(4),
-                message=match.group(5).strip(),
-            ))
-        
-        return errors
+
+        errors: List[ParsedError] = []
+
+        # --- Pattern 1: Legacy C# style  file(line,col): error: message ---
+        legacy_pattern = r'([^(\n]+)\((\d+),\s*(\d+)\):\s*(error|warning):\s*(.+?)(?=\n[^\s]|\Z)'
+        for match in re.finditer(legacy_pattern, compilation_output, re.MULTILINE | re.DOTALL):
+            errors.append(
+                ParsedError(
+                    file_path=match.group(1).strip(),
+                    line_number=int(match.group(2)),
+                    column_number=int(match.group(3)),
+                    error_type=match.group(4),
+                    message=match.group(5).strip(),
+                )
+            )
+
+        # --- Pattern 2: [File.p] parse error: line X:Y message ---
+        parser_pattern = r'\[([^\]]+\.p)\]\s*(parse error|error):\s*line\s*(\d+):(\d+)\s*(.+)'
+        for match in re.finditer(parser_pattern, compilation_output, re.IGNORECASE | re.MULTILINE):
+            errors.append(
+                ParsedError(
+                    file_path=match.group(1).strip(),
+                    line_number=int(match.group(3)),
+                    column_number=int(match.group(4)),
+                    error_type=match.group(2).lower(),
+                    message=match.group(5).strip(),
+                )
+            )
+
+        # --- Pattern 3: [Error:] / [Parser Error:]  [filepath.p:line:col] message ---
+        # The P compiler sometimes emits a tag on one line and the location
+        # on the next, e.g.:
+        #   [Error:]
+        #   [generated_code/.../Client.p:29:24] got type: bool, expected: ProposedValue
+        bracket_pattern = (
+            r'\[(?:Error|Parser Error):\]\s*'
+            r'\[([^\]]+\.p):(\d+):(\d+)\]\s*(.+)'
+        )
+        for match in re.finditer(bracket_pattern, compilation_output, re.IGNORECASE | re.DOTALL):
+            errors.append(
+                ParsedError(
+                    file_path=match.group(1).strip(),
+                    line_number=int(match.group(2)),
+                    column_number=int(match.group(3)),
+                    error_type="error",
+                    message=match.group(4).strip(),
+                )
+            )
+
+        # Deduplicate while preserving order.
+        deduped: List[ParsedError] = []
+        seen = set()
+        for err in errors:
+            key = (err.file_path, err.line_number, err.column_number, err.message)
+            if key not in seen:
+                seen.add(key)
+                deduped.append(err)
+
+        return deduped
     
     def run_checker(
         self,
@@ -225,7 +255,24 @@ class CompilationService(BaseService):
                 else:
                     failed_tests.append(test)
             
-            all_passed = all(results.values()) if results else False
+            if not results:
+                # No test cases discovered – compilation succeeded but
+                # the test driver is missing 'test' declarations.
+                self._warning(
+                    "No test cases found. Ensure the PTst file declares "
+                    "tests, e.g.: test tcFoo [main=TestMachine]: "
+                    "assert Safety in { ... };"
+                )
+                return CheckerResult(
+                    success=False,
+                    error="No test cases found. The test driver may be missing 'test' declarations.",
+                    test_results=test_results,
+                    passed_tests=passed_tests,
+                    failed_tests=failed_tests,
+                    trace_logs=trace_logs,
+                )
+
+            all_passed = all(results.values())
             
             if all_passed:
                 self._status(f"All {len(passed_tests)} tests passed")
@@ -306,5 +353,3 @@ class CompilationService(BaseService):
         except Exception as e:
             logger.error(f"Could not write {file_path}: {e}")
             return False
-
-

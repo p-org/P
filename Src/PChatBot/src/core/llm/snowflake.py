@@ -30,15 +30,14 @@ class SnowflakeCortexProvider(LLMProvider):
     Configuration:
         api_key: Snowflake programmatic access token
         base_url: Cortex OpenAI endpoint URL
-        model: Default model name (default: 'claude-4-5-opus-high')
+        model: Default model name (default: 'claude-sonnet-4-5')
         timeout: Request timeout in seconds (default: 600)
     """
     
     AVAILABLE_MODELS = [
-        "claude-4-5-opus-high",
-        "claude-4-5-sonnet",
-        "claude-3-5-sonnet",
-        "claude-3-5-haiku",
+        "claude-opus-4-5",
+        "claude-sonnet-4-5",
+        "claude-haiku-4-5",
     ]
     
     def __init__(self, config: Dict[str, Any]):
@@ -53,7 +52,7 @@ class SnowflakeCortexProvider(LLMProvider):
         self._api_key = config["api_key"]
         self._base_url = config["base_url"].rstrip("/")
         self._timeout = config.get("timeout", 600.0)
-        self._default_model = config.get("model", "claude-4-5-opus-high")
+        self._default_model = config.get("model", "claude-sonnet-4-5")
         
         # Initialize OpenAI client lazily
         self._client = None
@@ -74,7 +73,7 @@ class SnowflakeCortexProvider(LLMProvider):
                     "OpenAI package not installed. Run: pip install openai"
                 )
         return self._client
-    
+
     def complete(
         self,
         messages: List[Message],

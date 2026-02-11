@@ -2,7 +2,7 @@
 
 from typing import Dict, Any, Optional, Callable
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def tool_metadata(
@@ -14,7 +14,7 @@ def tool_metadata(
     return {
         "tool": tool_name,
         "operation_id": str(uuid.uuid4()),
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "provider": provider_name,
         "model": model,
         "token_usage": token_usage or {},

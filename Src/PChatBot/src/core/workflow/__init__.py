@@ -47,11 +47,16 @@ from .engine import (
     WorkflowDefinition,
     WorkflowState,
 )
-from .factory import (
-    WorkflowFactory,
-    extract_machine_names_from_design_doc,
-    create_workflow_engine_from_config,
-)
+try:
+    from .factory import (
+        WorkflowFactory,
+        extract_machine_names_from_design_doc,
+        create_workflow_engine_from_config,
+    )
+    HAS_FACTORY = True
+except ImportError:
+    # Optional dependency path (e.g., yaml) may be unavailable in lightweight environments.
+    HAS_FACTORY = False
 
 __all__ = [
     # Steps
@@ -68,8 +73,11 @@ __all__ = [
     "WorkflowEngine",
     "WorkflowDefinition",
     "WorkflowState",
-    # Factory
-    "WorkflowFactory",
-    "extract_machine_names_from_design_doc",
-    "create_workflow_engine_from_config",
 ]
+
+if HAS_FACTORY:
+    __all__.extend([
+        "WorkflowFactory",
+        "extract_machine_names_from_design_doc",
+        "create_workflow_engine_from_config",
+    ])

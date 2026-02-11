@@ -3,6 +3,7 @@
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,8 @@ def _get_workflow_engine(get_services) -> tuple[WorkflowEngine, WorkflowFactory]
         emitter = EventEmitter()
         emitter.on_all(LoggingEventListener(verbose=True))
 
-        _workflow_engine = WorkflowEngine(emitter)
+        state_store_path = os.environ.get("PCHATBOT_WORKFLOW_STATE_FILE", ".pchatbot_workflows.json")
+        _workflow_engine = WorkflowEngine(emitter, state_store_path=state_store_path)
         _workflow_factory = WorkflowFactory(
             generation_service=services["generation"],
             compilation_service=services["compilation"],
@@ -233,9 +235,12 @@ def register_workflow_tools(mcp, get_services, with_metadata):
             for state in engine.get_active_workflows()
         ]
 
+        persistence = engine.get_persistence_status()
+
         payload = {
             "available_workflows": available,
-            "active_workflows": active
+            "active_workflows": active,
+            "persistence": persistence,
         }
         return with_metadata("list_workflows", payload)
 

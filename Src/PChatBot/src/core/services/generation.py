@@ -11,6 +11,7 @@ by providing relevant examples from the P program corpus.
 import os
 import re
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
@@ -502,6 +503,65 @@ class GenerationService(BaseService):
                 error=str(e),
             )
     
+    def generate_machines_parallel(
+        self,
+        machine_names: List[str],
+        design_doc: str,
+        project_path: str,
+        context_files: Optional[Dict[str, str]] = None,
+        save_to_disk: bool = True,
+        max_workers: int = 3,
+    ) -> Dict[str, GenerationResult]:
+        """
+        Generate multiple machines in parallel.
+
+        All machines receive the same context_files snapshot (types + any
+        previously generated machines).  Results are returned keyed by
+        machine name.
+
+        Args:
+            machine_names: List of machines to generate
+            design_doc: Design document content
+            project_path: Path to the P project
+            context_files: Shared context (types file, etc.)
+            save_to_disk: Whether to write files to disk
+            max_workers: Maximum concurrent LLM calls
+
+        Returns:
+            Dictionary mapping machine name → GenerationResult
+        """
+        results: Dict[str, GenerationResult] = {}
+
+        if len(machine_names) <= 1:
+            # No benefit from parallelism
+            for mn in machine_names:
+                results[mn] = self.generate_machine(
+                    mn, design_doc, project_path, context_files, save_to_disk=save_to_disk,
+                )
+            return results
+
+        self._status(f"Generating {len(machine_names)} machines in parallel (max_workers={max_workers})")
+        # Snapshot context so all threads see the same state
+        ctx_snapshot = dict(context_files) if context_files else {}
+
+        def _gen(name: str) -> tuple:
+            return name, self.generate_machine(
+                name, design_doc, project_path, ctx_snapshot, save_to_disk=save_to_disk,
+            )
+
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(_gen, mn): mn for mn in machine_names}
+            for future in as_completed(futures):
+                mn = futures[future]
+                try:
+                    _, result = future.result()
+                    results[mn] = result
+                except Exception as exc:
+                    logger.error(f"Parallel generation of {mn} failed: {exc}")
+                    results[mn] = GenerationResult(success=False, error=str(exc))
+
+        return results
+
     def save_p_file(
         self,
         file_path: str,

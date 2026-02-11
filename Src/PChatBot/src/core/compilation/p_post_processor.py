@@ -244,6 +244,36 @@ class PCodePostProcessor:
         
         return code
 
+    def validate_spec_events(self, spec_code: str, types_code: str, filename: str = "") -> List[str]:
+        """
+        Validate that all events in `spec ... observes` clauses are
+        actually defined in the types/events file.
+
+        Args:
+            spec_code: The spec file code
+            types_code: The Enums_Types_Events.p content
+            filename: For error messages
+
+        Returns:
+            List of warning strings for undefined events
+        """
+        # Extract defined events from types file
+        defined_events = set(re.findall(r'\bevent\s+(\w+)', types_code))
+
+        # Extract observed events from spec declarations
+        warnings = []
+        for match in re.finditer(r'\bspec\s+(\w+)\s+observes\s+([^{]+)\{', spec_code):
+            spec_name = match.group(1)
+            observes_str = match.group(2).strip().rstrip(',')
+            observed = [e.strip() for e in observes_str.split(',')]
+            for ev in observed:
+                if ev and ev not in defined_events:
+                    warnings.append(
+                        f"[{filename}] Spec '{spec_name}' observes undefined event '{ev}'. "
+                        f"Defined events: {sorted(defined_events)}"
+                    )
+        return warnings
+
     def _fix_bare_halt(self, code: str) -> str:
         """
         Fix bare `halt;` → `raise halt;`.

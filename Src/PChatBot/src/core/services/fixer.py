@@ -649,22 +649,41 @@ class FixerService(BaseService):
                 })
                 break
             
-            # Detect spiral: if the same core error repeats, stop early
+            # Detect spiral: if the same core error repeats, try incremental
+            # regeneration once before giving up.
             core_msg = error.message[:80]
             recent_errors.append(core_msg)
             if recent_errors.count(core_msg) >= SPIRAL_THRESHOLD:
-                self._warning(
-                    f"Spiral detected: same error '{core_msg}' seen "
-                    f"{SPIRAL_THRESHOLD} times. Stopping."
+                # Attempt incremental regeneration: ask the LLM to rewrite
+                # the failing file from scratch with the error as context.
+                regen_result = self._try_incremental_regeneration(
+                    project_path, error
                 )
-                results["iterations"].append({
-                    "iteration": i + 1,
-                    "error": error.message,
-                    "fixed": False,
-                    "needs_guidance": False,
-                    "spiral_detected": True,
-                })
-                break
+                if regen_result:
+                    self._status(f"Incremental regeneration applied for {error.file_path}")
+                    results["iterations"].append({
+                        "iteration": i + 1,
+                        "error": error.message,
+                        "fixed": False,
+                        "needs_guidance": False,
+                        "incremental_regen": True,
+                    })
+                    # Clear spiral counter so the next compile gets a fresh shot
+                    recent_errors.clear()
+                    continue
+                else:
+                    self._warning(
+                        f"Spiral detected: same error '{core_msg}' seen "
+                        f"{SPIRAL_THRESHOLD} times. Stopping."
+                    )
+                    results["iterations"].append({
+                        "iteration": i + 1,
+                        "error": error.message,
+                        "fixed": False,
+                        "needs_guidance": False,
+                        "spiral_detected": True,
+                    })
+                    break
             
             # Resolve relative paths so read/write works
             self._resolve_error_path(error, project_path)
@@ -690,6 +709,64 @@ class FixerService(BaseService):
         
         return results
     
+    def _try_incremental_regeneration(
+        self,
+        project_path: str,
+        error: 'ParsedError',
+    ) -> bool:
+        """
+        Attempt to regenerate just the failing file from scratch.
+
+        Reads all other project files as context, asks the LLM to rewrite
+        the broken file incorporating the error message, and writes it back.
+
+        Returns True if a new version was written, False otherwise.
+        """
+        try:
+            resolved = self._resolve_error_file_path(project_path, error.file_path)
+            old_code = self._compilation.read_file(resolved)
+            if old_code is None:
+                return False
+
+            all_files = self._compilation.get_project_files(project_path)
+            filename = Path(resolved).name
+
+            # Build context from all *other* files
+            context_parts = []
+            for rel_path, content in all_files.items():
+                if Path(rel_path).name != filename:
+                    context_parts.append(f"<{Path(rel_path).name}>\n{content}\n</{Path(rel_path).name}>")
+
+            system_prompt = self.resources.load_context("about_p.txt")
+            messages = [
+                Message(role=MessageRole.USER, content="\n".join(context_parts)),
+                Message(role=MessageRole.USER, content=(
+                    f"The file {filename} has a compilation error that could not be fixed "
+                    f"after multiple attempts:\n"
+                    f"  Error at line {error.line_number}: {error.message}\n\n"
+                    f"Current broken code:\n```\n{old_code}\n```\n\n"
+                    f"Please rewrite {filename} from scratch so it compiles correctly. "
+                    f"Use the types, events, and machines defined in the other project files above. "
+                    f"Return the complete file wrapped in <{filename}>...</{filename}> tags."
+                )),
+            ]
+
+            config = LLMConfig(max_tokens=4096)
+            response = self.llm.complete(messages, config, system_prompt)
+
+            # Extract code
+            import re as _re
+            match = _re.search(rf'<{_re.escape(filename)}>(.*?)</{_re.escape(filename)}>', response.content, _re.DOTALL)
+            if match:
+                new_code = match.group(1).strip()
+                self._compilation.write_file(resolved, new_code)
+                return True
+
+        except Exception as e:
+            logger.warning(f"Incremental regeneration failed: {e}")
+
+        return False
+
     # =========================================================================
     # Private helper methods
     # =========================================================================

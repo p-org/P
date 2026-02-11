@@ -257,6 +257,72 @@ def extract_machine_names_from_design_doc(design_doc: str) -> List[str]:
     return sorted(filtered)
 
 
+def validate_design_doc(design_doc: str) -> Dict[str, Any]:
+    """
+    Validate a design document for completeness and consistency.
+
+    Checks:
+    - Has required sections (title, components, interactions, scenarios)
+    - Scenarios reference components that exist
+    - Interactions reference valid source/target components
+
+    Returns:
+        Dictionary with 'valid' (bool), 'warnings' (list), 'errors' (list),
+        'components' (list), 'scenarios_count' (int)
+    """
+    result: Dict[str, Any] = {
+        "valid": True,
+        "warnings": [],
+        "errors": [],
+        "components": [],
+        "scenarios_count": 0,
+    }
+
+    # Check required sections
+    required_sections = {
+        "title": r'<title>(.*?)</title>',
+        "components": r'<components>(.*?)</components>',
+        "interactions": r'<interactions>(.*?)</interactions>',
+    }
+    for section, pattern in required_sections.items():
+        if not re.search(pattern, design_doc, re.DOTALL | re.IGNORECASE):
+            result["errors"].append(f"Missing required section: <{section}>")
+            result["valid"] = False
+
+    # Extract component names
+    components = extract_machine_names_from_design_doc(design_doc)
+    result["components"] = components
+    if not components:
+        result["errors"].append("No components/machines could be extracted from design doc")
+        result["valid"] = False
+
+    # Check for scenarios
+    scenarios_section = re.search(
+        r'<possible_scenarios>(.*?)</possible_scenarios>',
+        design_doc, re.DOTALL | re.IGNORECASE
+    )
+    if scenarios_section:
+        scenario_lines = [
+            l.strip() for l in scenarios_section.group(1).strip().split('\n')
+            if l.strip() and re.match(r'\d+\.', l.strip())
+        ]
+        result["scenarios_count"] = len(scenario_lines)
+        if not scenario_lines:
+            result["warnings"].append("No numbered scenarios found in <possible_scenarios>")
+    else:
+        result["warnings"].append("Missing <possible_scenarios> section — tests may not be generated")
+
+    # Check for global specifications
+    specs_section = re.search(
+        r'<global_specifications>(.*?)</global_specifications>',
+        design_doc, re.DOTALL | re.IGNORECASE
+    )
+    if not specs_section:
+        result["warnings"].append("Missing <global_specifications> — no safety/liveness specs will be generated")
+
+    return result
+
+
 def create_workflow_engine_from_config(
     config_path: str,
     generation_service: GenerationService,

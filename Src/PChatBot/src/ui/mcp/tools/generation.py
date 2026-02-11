@@ -268,7 +268,7 @@ Returns comprehensive results including all generated files and any issues found
             TypeConsistencyChecker,
             MachineConfigDetector
         )
-        from core.workflow.factory import extract_machine_names_from_design_doc
+        from core.workflow.factory import extract_machine_names_from_design_doc, validate_design_doc
 
         services = get_services()
         results = {
@@ -283,9 +283,18 @@ Returns comprehensive results including all generated files and any issues found
         }
 
         try:
+            # Validate design doc first
+            doc_validation = validate_design_doc(params.design_doc)
+            if not doc_validation["valid"]:
+                results["errors"].extend(doc_validation["errors"])
+                results["warnings"].extend(doc_validation["warnings"])
+                return with_metadata("generate_complete_project", results)
+            if doc_validation["warnings"]:
+                results["warnings"].extend(doc_validation["warnings"])
+
             machine_names = params.machine_names
             if not machine_names:
-                machine_names = extract_machine_names_from_design_doc(params.design_doc)
+                machine_names = doc_validation["components"] or extract_machine_names_from_design_doc(params.design_doc)
                 if not machine_names:
                     results["errors"].append("Could not extract machine names from design doc")
                     return with_metadata("generate_complete_project", results)
@@ -321,16 +330,18 @@ Returns comprehensive results including all generated files and any issues found
             config_detector = MachineConfigDetector()
             machine_dependencies = {}
 
-            for machine_name in machine_names:
-                machine_result = services["generation"].generate_machine(
-                    machine_name=machine_name,
-                    design_doc=params.design_doc,
-                    project_path=project_path,
-                    context_files=context_files,
-                    save_to_disk=True
-                )
+            # Generate all machines in parallel for speed
+            machine_results = services["generation"].generate_machines_parallel(
+                machine_names=machine_names,
+                design_doc=params.design_doc,
+                project_path=project_path,
+                context_files=context_files,
+                save_to_disk=True,
+            )
 
-                if machine_result.success:
+            for machine_name in machine_names:
+                machine_result = machine_results.get(machine_name)
+                if machine_result and machine_result.success:
                     results["generated_files"][f"{machine_name}.p"] = machine_result.file_path
                     context_files[f"{machine_name}.p"] = machine_result.code
 
@@ -341,7 +352,8 @@ Returns comprehensive results including all generated files and any issues found
                             f"{machine_name} has dependencies: {deps}. Ensure configuration events are sent."
                         )
                 else:
-                    results["errors"].append(f"Failed to generate {machine_name}: {machine_result.error}")
+                    err = machine_result.error if machine_result else "Generation returned no result"
+                    results["errors"].append(f"Failed to generate {machine_name}: {err}")
 
             if params.include_spec:
                 spec_result = services["generation"].generate_spec(
@@ -383,6 +395,18 @@ Returns comprehensive results including all generated files and any issues found
                             })
                     except Exception as e:
                         results["warnings"].append(f"Post-processing failed for {filename}: {e}")
+
+            # Validate spec events exist in types file
+            try:
+                if "Safety.p" in results["generated_files"] and types_result.code:
+                    spec_path = results["generated_files"]["Safety.p"]
+                    spec_code = Path(spec_path).read_text(encoding="utf-8")
+                    spec_warnings = processor.validate_spec_events(spec_code, types_result.code, "Safety.p")
+                    for w in spec_warnings:
+                        results["warnings"].append(w)
+                        logger.warning(w)
+            except Exception as e:
+                logger.debug(f"Spec event validation skipped: {e}")
 
             # Run type consistency check across all generated files
             try:

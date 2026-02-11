@@ -6,6 +6,10 @@
 # Cursor MCP settings (contains local paths)
 cursor-mcp-settings.json
 
+# Local caches and indexes
+.embedding_cache/
+.p_corpus/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -46,4 +50,3 @@ PCheckerOutput/
 
 # Test artifacts
 test_mcp_paxos.py
-

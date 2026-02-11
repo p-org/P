@@ -319,13 +319,15 @@ Returns comprehensive results including all generated files and any issues found
                 save_to_disk=True
             )
 
+            # Use actual filename from generation result (LLM picks the name)
+            types_filename = types_result.filename or "Enums_Types_Events.p"
             if types_result.success:
-                results["generated_files"]["Enums_Types_Events.p"] = types_result.file_path
+                results["generated_files"][types_filename] = types_result.file_path
             else:
                 results["errors"].append(f"Failed to generate types: {types_result.error}")
                 return with_metadata("generate_complete_project", results)
 
-            context_files = {"Enums_Types_Events.p": types_result.code}
+            context_files = {types_filename: types_result.code}
 
             config_detector = MachineConfigDetector()
             machine_dependencies = {}
@@ -342,8 +344,9 @@ Returns comprehensive results including all generated files and any issues found
             for machine_name in machine_names:
                 machine_result = machine_results.get(machine_name)
                 if machine_result and machine_result.success:
-                    results["generated_files"][f"{machine_name}.p"] = machine_result.file_path
-                    context_files[f"{machine_name}.p"] = machine_result.code
+                    mach_filename = machine_result.filename or f"{machine_name}.p"
+                    results["generated_files"][mach_filename] = machine_result.file_path
+                    context_files[mach_filename] = machine_result.code
 
                     deps = config_detector.detect_dependencies(machine_result.code)
                     if deps:
@@ -355,6 +358,7 @@ Returns comprehensive results including all generated files and any issues found
                     err = machine_result.error if machine_result else "Generation returned no result"
                     results["errors"].append(f"Failed to generate {machine_name}: {err}")
 
+            spec_filename = None
             if params.include_spec:
                 spec_result = services["generation"].generate_spec(
                     spec_name="Safety",
@@ -364,7 +368,8 @@ Returns comprehensive results including all generated files and any issues found
                     save_to_disk=True
                 )
                 if spec_result.success:
-                    results["generated_files"]["Safety.p"] = spec_result.file_path
+                    spec_filename = spec_result.filename or "Safety.p"
+                    results["generated_files"][spec_filename] = spec_result.file_path
                 else:
                     results["warnings"].append(f"Spec generation failed: {spec_result.error}")
 
@@ -377,7 +382,8 @@ Returns comprehensive results including all generated files and any issues found
                     save_to_disk=True
                 )
                 if test_result.success:
-                    results["generated_files"]["TestDriver.p"] = test_result.file_path
+                    test_filename = test_result.filename or "TestDriver.p"
+                    results["generated_files"][test_filename] = test_result.file_path
                 else:
                     results["warnings"].append(f"Test generation failed: {test_result.error}")
 
@@ -386,7 +392,8 @@ Returns comprehensive results including all generated files and any issues found
                 if filename.endswith(".p"):
                     try:
                         code = Path(file_path).read_text()
-                        processed = processor.process(code, filename)
+                        is_test = "PTst" in file_path
+                        processed = processor.process(code, filename, is_test_file=is_test)
                         if processed.fixes_applied:
                             Path(file_path).write_text(processed.code)
                             results["post_processing"].append({
@@ -398,10 +405,10 @@ Returns comprehensive results including all generated files and any issues found
 
             # Validate spec events exist in types file
             try:
-                if "Safety.p" in results["generated_files"] and types_result.code:
-                    spec_path = results["generated_files"]["Safety.p"]
+                if spec_filename and spec_filename in results["generated_files"] and types_result.code:
+                    spec_path = results["generated_files"][spec_filename]
                     spec_code = Path(spec_path).read_text(encoding="utf-8")
-                    spec_warnings = processor.validate_spec_events(spec_code, types_result.code, "Safety.p")
+                    spec_warnings = processor.validate_spec_events(spec_code, types_result.code, spec_filename)
                     for w in spec_warnings:
                         results["warnings"].append(w)
                         logger.warning(w)

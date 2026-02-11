@@ -89,7 +89,8 @@ class GenerateTypesEventsStep(WorkflowStep):
                 return StepResult.success(
                     output={
                         "types_events_code": result.code,
-                        "types_events_path": result.file_path
+                        "types_events_path": result.file_path,
+                        "types_events_filename": result.filename or "Enums_Types_Events.p",
                     },
                     artifacts={"types_events": result.code}
                 )
@@ -100,11 +101,16 @@ class GenerateTypesEventsStep(WorkflowStep):
             return StepResult.failure(str(e))
     
     def can_skip(self, context: Dict[str, Any]) -> bool:
+        # Skip if we already have types code in context or any .p file in PSrc
+        if context.get("types_events_code"):
+            return True
         project_path = context.get("project_path")
         if not project_path:
             return False
-        path = os.path.join(project_path, "PSrc", "Enums_Types_Events.p")
-        return os.path.exists(path)
+        psrc = os.path.join(project_path, "PSrc")
+        if os.path.isdir(psrc):
+            return any(f.endswith(".p") for f in os.listdir(psrc))
+        return False
 
 
 class GenerateMachineStep(WorkflowStep):
@@ -130,8 +136,10 @@ class GenerateMachineStep(WorkflowStep):
         
         # Collect context files from previous steps
         context_files = {}
+        # Use actual types filename from context, fallback to convention
+        types_filename = context.get("types_events_filename", "Enums_Types_Events.p")
         if "types_events_code" in context:
-            context_files["Enums_Types_Events.p"] = context["types_events_code"]
+            context_files[types_filename] = context["types_events_code"]
         
         # Add previously generated machines
         for key, value in context.items():
@@ -221,16 +229,17 @@ class GenerateSpecStep(WorkflowStep):
         """Collect P source files for context."""
         context_files = {}
         
-        # From context
+        # From context — use actual types filename
+        types_filename = context.get("types_events_filename", "Enums_Types_Events.p")
         if "types_events_code" in context:
-            context_files["Enums_Types_Events.p"] = context["types_events_code"]
+            context_files[types_filename] = context["types_events_code"]
         
         for key, value in context.items():
             if key.startswith("machine_code_") and value:
                 machine_file = key.replace("machine_code_", "") + ".p"
                 context_files[machine_file] = value
         
-        # From disk (if not in context)
+        # From disk (if not in context) — picks up whatever filenames exist
         psrc_dir = os.path.join(project_path, "PSrc")
         if os.path.exists(psrc_dir):
             for filename in os.listdir(psrc_dir):
@@ -301,10 +310,11 @@ class GenerateTestStep(WorkflowStep):
         context_files = {}
         
         # From context (generated in this workflow run)
+        types_filename = context.get("types_events_filename", "Enums_Types_Events.p")
         for key, value in context.items():
             if value and ("_code_" in key or key == "types_events_code"):
                 if key == "types_events_code":
-                    context_files["Enums_Types_Events.p"] = value
+                    context_files[types_filename] = value
                 elif key.startswith("machine_code_"):
                     context_files[key.replace("machine_code_", "") + ".p"] = value
                 elif key.startswith("spec_code_"):

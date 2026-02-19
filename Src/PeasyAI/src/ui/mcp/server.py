@@ -25,8 +25,22 @@ if str(SRC_ROOT) not in sys.path:
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from dotenv import load_dotenv
-load_dotenv(PROJECT_ROOT / ".env", override=True)
+# ============================================================================
+# CONFIGURATION: load from ~/.peasyai/settings.json (like ~/.claude/settings.json)
+# Env vars still win if already set; the settings file fills in the rest.
+# ============================================================================
+
+from core.config import apply_settings_to_env
+
+_peasyai_settings = apply_settings_to_env()
+
+# Legacy fallback: also read .env if it exists (lowest priority —
+# values are only set when not already provided by settings.json or env).
+try:
+    from dotenv import load_dotenv
+    load_dotenv(PROJECT_ROOT / ".env", override=False)
+except ImportError:
+    pass  # python-dotenv is optional when using ~/.peasyai/settings.json
 
 # ============================================================================
 # IMPORTS FROM PHASE 1 SERVICE LAYER

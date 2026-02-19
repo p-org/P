@@ -81,9 +81,23 @@ class ResourceLoader:
     
     def __init__(self, resources_path: Optional[Path] = None):
         if resources_path is None:
-            # Default to resources/ relative to project root
-            project_root = Path(__file__).parent.parent.parent.parent
-            resources_path = project_root / "resources"
+            # 1. Check PEASYAI_RESOURCES_DIR env var (set by pip-installed entry point)
+            env_resources = os.environ.get("PEASYAI_RESOURCES_DIR")
+            if env_resources and Path(env_resources).is_dir():
+                resources_path = Path(env_resources)
+            else:
+                # 2. Fall back to resources/ relative to project root (dev checkout)
+                project_root = Path(__file__).parent.parent.parent.parent
+                resources_path = project_root / "resources"
+
+            # 3. If still missing, try peasyai_resources/ in site-packages
+            if not resources_path.is_dir():
+                import site
+                for sp in (site.getsitepackages() if hasattr(site, "getsitepackages") else []):
+                    candidate = Path(sp) / "peasyai_resources"
+                    if candidate.is_dir():
+                        resources_path = candidate
+                        break
         
         self.resources_path = resources_path
         self._cache: Dict[str, str] = {}
@@ -183,5 +197,3 @@ class BaseService:
     def _warning(self, message: str):
         """Emit a warning message"""
         self._callbacks.warning(message)
-
-

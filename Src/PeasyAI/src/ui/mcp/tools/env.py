@@ -11,6 +11,8 @@ try:
 except ImportError:
     HAS_NEW_COMPILATION = False
 
+from core.config import SETTINGS_FILE, load_settings
+
 
 class ValidateEnvironmentParams(BaseModel):
     """Parameters for environment validation"""
@@ -28,6 +30,19 @@ def register_env_tools(mcp, with_metadata):
         issues: List[str] = []
         details: Dict[str, Any] = {}
 
+        # ── Check ~/.peasyai/settings.json ─────────────────────────────
+        details["config_file"] = str(SETTINGS_FILE)
+        details["config_file_exists"] = SETTINGS_FILE.exists()
+        if not SETTINGS_FILE.exists():
+            issues.append(
+                f"Config file not found at {SETTINGS_FILE}. "
+                "Create it with:  peasyai-mcp init"
+            )
+        else:
+            settings = load_settings()
+            details["configured_provider"] = settings.active_provider_name()
+
+        # ── Check P toolchain ──────────────────────────────────────────
         if HAS_NEW_COMPILATION:
             env_info = ensure_environment()
             details["p_compiler_path"] = env_info.p_compiler_path
@@ -45,6 +60,7 @@ def register_env_tools(mcp, with_metadata):
             if not dotnet_path:
                 issues.append("dotnet not found in PATH")
 
+        # ── Check LLM provider ─────────────────────────────────────────
         provider = None
         if os.environ.get("OPENAI_API_KEY") and os.environ.get("OPENAI_BASE_URL"):
             provider = "snowflake_cortex"
@@ -57,7 +73,10 @@ def register_env_tools(mcp, with_metadata):
 
         details["llm_provider_detected"] = provider
         if not provider:
-            issues.append("No LLM provider credentials detected in environment")
+            issues.append(
+                "No LLM provider credentials detected. "
+                "Configure them in ~/.peasyai/settings.json"
+            )
 
         payload = {
             "success": len(issues) == 0,

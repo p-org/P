@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# PeasyAI config (lives at ~/.peasyai/ — never in the repo)
+# This entry is a safety net in case someone copies it here.
+.peasyai/
+
 # Cursor MCP settings (contains local paths)
 cursor-mcp-settings.json
 

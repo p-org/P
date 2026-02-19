@@ -4,11 +4,7 @@
 .env.*.local
 
 # PeasyAI config (lives at ~/.peasyai/ — never in the repo)
-# This entry is a safety net in case someone copies it here.
 .peasyai/
-
-# Cursor MCP settings (contains local paths)
-cursor-mcp-settings.json
 
 # Local caches and indexes
 .embedding_cache/
@@ -48,9 +44,13 @@ dist/
 *.log
 logs/
 
-# Generated code output
+# Generated code / runtime output
 generated_code/
+generated_projects/
 PCheckerOutput/
+
+# Workflow runtime state
+.peasyai_workflows.json
 
 # Test artifacts
 test_mcp_paxos.py

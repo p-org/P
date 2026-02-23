@@ -47,7 +47,12 @@ class OpenAIEmbeddings(EmbeddingProvider):
     
     def _get_client(self):
         if self._client is None:
-            import httpx
+            try:
+                import httpx
+            except ImportError:
+                logger.warning("httpx not installed, using hash-based fallback embeddings")
+                return None
+            
             api_key = os.environ.get("OPENAI_API_KEY", "")
             base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
             

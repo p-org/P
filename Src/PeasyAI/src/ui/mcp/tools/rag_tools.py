@@ -20,7 +20,7 @@ class SearchExamplesParams(BaseModel):
     query: str = Field(..., description="Natural language query or code snippet to search for")
     category: Optional[str] = Field(
         default=None,
-        description="Filter by category: 'machine', 'spec', 'test', 'types'"
+        description="Filter by category: 'machine', 'spec', 'test', 'types', 'documentation', 'full_project'"
     )
     top_k: int = Field(default=5, description="Number of results to return")
 
@@ -258,7 +258,10 @@ Returns relevant examples from the P corpus."""
 
         try:
             rag = get_rag_service()
-            context = rag.get_protocol_examples(params.protocol_name)
+            context = rag.get_protocol_examples(
+                params.protocol_name,
+                top_k=params.top_k
+            )
 
             payload = {
                 "success": True,
@@ -288,11 +291,14 @@ Returns relevant examples from the P corpus."""
             rag = get_rag_service()
             stats = rag.get_stats()
 
+            by_category = stats.get("by_category", {})
+
             payload = {
                 "success": True,
                 "total_examples": stats["total_examples"],
                 "indexed": stats["indexed"],
-                "categories": ["machine", "spec", "test", "types"],
+                "categories": ["machine", "spec", "test", "types", "documentation", "full_project"],
+                "by_category": by_category,
                 "message": f"Corpus contains {stats['total_examples']} indexed P code examples"
             }
             return with_metadata("get_corpus_stats", payload)

@@ -30,7 +30,7 @@ def register_query_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="syntax_help",
-        description="Get syntax help and examples for P language constructs"
+        description="Get syntax help and examples for P language constructs. Provide a topic like 'state machines', 'events', 'types', 'enums', 'statements', 'specs', 'monitors', 'tests', 'modules', 'send', 'goto', 'raise', 'compiler', or 'errors'. Returns relevant documentation from the P language guides."
     )
     def syntax_help(params: SyntaxHelperParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] syntax_help: {params.topic}")
@@ -86,7 +86,7 @@ def register_query_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="list_project_files",
-        description="List all P files in a project organized by folder (PSrc, PSpec, PTst)"
+        description="List all P files (.p) in a project organized by folder (PSrc, PSpec, PTst). Useful for inspecting the structure of an existing or generated project before reading individual files with read_p_file."
     )
     def list_project_files(params: ListProjectFilesParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] list_project_files: {params.project_path}")
@@ -109,7 +109,7 @@ def register_query_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="read_p_file",
-        description="Read the contents of a P file"
+        description="Read the full contents of a P file. Use this to inspect generated code, review existing machines/specs/tests, or gather context_files content to pass into generate_machine, generate_spec, or generate_test."
     )
     def read_p_file(params: ReadPFileParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] read_p_file: {params.file_path}")

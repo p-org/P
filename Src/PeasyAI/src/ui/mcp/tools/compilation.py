@@ -33,7 +33,7 @@ def register_compilation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="p_compile",
-        description="Compile a P project and return compilation results"
+        description="Compile a P project and return compilation results. The project directory must contain a .pproj file. On failure, the response includes parsed errors with file, line, and message details. Use fix_compiler_error or fix_iteratively to resolve compilation errors."
     )
     def p_compile(params: PCompileParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] p_compile: {params.path}")
@@ -80,7 +80,7 @@ def register_compilation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="p_check",
-        description="Run PChecker on a P project to verify correctness via model checking"
+        description="Run PChecker on a compiled P project to verify correctness via model checking. The project must compile successfully first (use p_compile). Explores random schedules to find concurrency bugs like deadlocks, assertion failures, and unhandled events. On failure, use fix_checker_error or fix_buggy_program to diagnose and fix the bug."
     )
     def p_check(params: PCheckParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] p_check: {params.path}")

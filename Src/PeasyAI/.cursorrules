@@ -144,18 +144,32 @@ p check -tc TestCaseName
 
 ## MCP Tools Available
 
-When working with P code, you can use these tools:
+When working with P code, you have two approaches for project generation:
 
-1. **generate_project_structure** - Create project skeleton
-2. **generate_types_events** - Generate Enums_Types_Events.p
-3. **generate_machine** - Generate a state machine
-4. **generate_spec** - Generate specification monitor
-5. **generate_test** - Generate test file
-6. **p_compile** - Compile the project
-7. **p_check** - Run PChecker verification
-8. **fix_compiler_error** - Fix compilation errors
-9. **fix_checker_error** - Fix PChecker errors
-10. **syntax_helper** - Get syntax help
+### Recommended: Step-by-Step Generation (use this by default)
+
+Generate files one at a time so the user can review and approve each before proceeding. This produces higher quality results because errors are caught early and the user stays in control.
+
+1. **generate_project_structure** - STEP 1: Create project skeleton (PSrc, PSpec, PTst, .pproj)
+2. **generate_types_events** - STEP 2: Generate Enums_Types_Events.p (preview, then save with save_p_file)
+3. **generate_machine** - STEP 3: Generate each state machine one at a time (preview, then save with save_p_file). Pass previously saved files as context_files.
+4. **generate_spec** - STEP 4: Generate safety specification (preview, then save with save_p_file)
+5. **generate_test** - STEP 5: Generate test driver (preview, then save with save_p_file)
+6. **p_compile** - STEP 6: Compile the project
+7. **fix_compiler_error** / **fix_iteratively** - Fix any compilation errors
+8. **p_check** - STEP 7: Run PChecker verification
+9. **fix_checker_error** / **fix_buggy_program** - Fix any PChecker errors
+
+### One-Shot: Complete Project Generation (only when explicitly requested)
+
+Use **generate_complete_project** ONLY when the user explicitly asks for fully automated, one-shot, or hands-off generation. This runs all steps without human review.
+
+### Other Useful Tools
+
+- **save_p_file** - Save previewed code to disk after user approves
+- **syntax_helper** - Get P language syntax help
+- **search_p_examples** - Find similar P code examples
+- **list_project_files** / **read_p_file** - Inspect existing P projects
 
 ## Human-in-the-Loop Guidance
 
@@ -197,7 +211,3 @@ Use these MCP resources for reference:
 - `p://guides/events` - Event handling
 - `p://guides/specs` - Specification monitors
 - `p://examples/fewshot` - Code examples
-
-
-
-

@@ -77,19 +77,15 @@ def _get_workflow_engine(get_services) -> tuple[WorkflowEngine, WorkflowFactory]
 def register_workflow_tools(mcp, get_services, with_metadata):
     """Register workflow tools."""
 
-    @mcp.tool()
+    @mcp.tool(
+        name="run_workflow",
+        description="""Execute a predefined multi-step workflow. Available workflows:
+- compile_and_fix: Compile the project and automatically fix errors (requires project_path).
+- full_verification: Compile, fix compilation errors, run PChecker, and automatically fix any PChecker bugs found (requires project_path). IMPORTANT: Always use this workflow after generating P code to verify and fix correctness end-to-end. Do NOT manually edit files to fix PChecker errors — this workflow handles it automatically by reading trace files and applying AI-driven fixes.
+- quick_check: Run PChecker only on an already-compiled project (requires project_path).
+- full_generation: Generate a complete P project from a design doc (requires design_doc and project_path). NOTE: Prefer the step-by-step generation tools instead for better quality and user control. Only use full_generation when the user explicitly requests hands-off automated generation."""
+    )
     def run_workflow(params: RunWorkflowParams) -> Dict[str, Any]:
-        """
-        Execute a predefined workflow.
-
-        Available workflows:
-        - full_generation: Generate complete P project from design doc
-        - compile_and_fix: Compile and automatically fix errors
-        - full_verification: Compile, fix, and run PChecker
-        - quick_check: Run PChecker only
-
-        For full_generation, provide design_doc and optionally machine_names.
-        """
         engine, factory = _get_workflow_engine(get_services)
 
         context = {
@@ -152,14 +148,11 @@ def register_workflow_tools(mcp, get_services, with_metadata):
             }
             return with_metadata("run_workflow", payload)
 
-    @mcp.tool()
+    @mcp.tool(
+        name="resume_workflow",
+        description="Resume a paused workflow with user guidance. Call this after run_workflow returns paused=true and needs_guidance. Provide the workflow_id from the paused response and the user's guidance text."
+    )
     def resume_workflow(params: ResumeWorkflowParams) -> Dict[str, Any]:
-        """
-        Resume a paused workflow with user guidance.
-
-        Call this after a workflow has paused for human input.
-        Provide the workflow_id from the paused response and your guidance.
-        """
         engine, _ = _get_workflow_engine(get_services)
 
         try:
@@ -196,11 +189,11 @@ def register_workflow_tools(mcp, get_services, with_metadata):
             }
             return with_metadata("resume_workflow", payload)
 
-    @mcp.tool()
+    @mcp.tool(
+        name="list_workflows",
+        description="List available workflows and any active or paused workflows. Returns the set of workflow names you can pass to run_workflow, plus status of any in-flight workflows."
+    )
     def list_workflows(params: ListWorkflowsParams) -> Dict[str, Any]:
-        """
-        List available workflows and any active/paused workflows.
-        """
         engine, _ = _get_workflow_engine(get_services)
 
         available = [
@@ -216,7 +209,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
             },
             {
                 "name": "full_verification",
-                "description": "Compile, fix errors, and run PChecker",
+                "description": "Compile, fix compilation errors, run PChecker, and automatically fix any PChecker bugs (full end-to-end verification)",
                 "requires": ["project_path"]
             },
             {

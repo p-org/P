@@ -542,7 +542,12 @@ class FixCompilationErrorsStep(WorkflowStep):
 
 
 class RunCheckerStep(WorkflowStep):
-    """Step to run PChecker on the project."""
+    """Step to run PChecker on the project.
+    
+    Always returns success so that downstream fix steps can run.
+    Sets checker_success=False in output when bugs are found, along with
+    the checker output for the fixer to analyze.
+    """
     
     name = "run_checker"
     description = "Run PChecker to verify correctness"
@@ -573,8 +578,13 @@ class RunCheckerStep(WorkflowStep):
                     }
                 )
             else:
-                return StepResult.failure(
-                    f"PChecker found errors: {result.output or result.error}"
+                # Return success so the workflow continues to the fix step.
+                # checker_success=False signals that bugs were found.
+                return StepResult.success(
+                    output={
+                        "checker_success": False,
+                        "checker_output": result.output or result.error or ""
+                    }
                 )
                 
         except Exception as e:
@@ -586,7 +596,12 @@ class RunCheckerStep(WorkflowStep):
 
 
 class FixCheckerErrorsStep(WorkflowStep):
-    """Step to fix PChecker errors."""
+    """Step to fix PChecker errors.
+    
+    Reads the detailed trace file from PCheckerOutput/BugFinding/ for
+    accurate root-cause analysis, falling back to checker stdout if
+    no trace file is found.
+    """
     
     name = "fix_checker_errors"
     description = "Attempt to fix PChecker errors using AI"
@@ -603,13 +618,25 @@ class FixCheckerErrorsStep(WorkflowStep):
         if context.get("checker_success"):
             return StepResult.skipped("No checker errors to fix")
         
-        checker_output = context.get("checker_output", "")
         user_guidance = context.get("user_guidance")
+        
+        # Read the detailed trace file from PCheckerOutput/BugFinding/
+        # This contains the full execution trace needed for analysis,
+        # rather than just the PChecker stdout summary.
+        trace_log = self._read_latest_trace(project_path)
+        if not trace_log:
+            # Fall back to checker stdout if no trace file found
+            trace_log = context.get("checker_output", "")
+        
+        if not trace_log:
+            return StepResult.failure(
+                "No PChecker trace available. Cannot diagnose the bug."
+            )
         
         try:
             result = self.service.fix_checker_error(
                 project_path=project_path,
-                trace_log=checker_output,
+                trace_log=trace_log,
                 user_guidance=user_guidance
             )
             
@@ -617,19 +644,42 @@ class FixCheckerErrorsStep(WorkflowStep):
                 return StepResult.success(
                     output={
                         "checker_fix_applied": True,
+                        "checker_success": True,
                         "fix_description": result.fix_description
                     }
                 )
             elif result.needs_guidance:
                 return StepResult.needs_guidance(
                     result.guidance_questions or "Unable to fix checker errors automatically.",
-                    {"trace_log": checker_output}
+                    {"trace_log": trace_log}
                 )
             else:
                 return StepResult.failure(result.error or "Failed to fix checker errors")
                 
         except Exception as e:
             return StepResult.failure(str(e))
+    
+    def _read_latest_trace(self, project_path: str) -> Optional[str]:
+        """Read the latest PChecker trace file from PCheckerOutput/BugFinding/."""
+        bug_dir = os.path.join(project_path, "PCheckerOutput", "BugFinding")
+        if not os.path.isdir(bug_dir):
+            return None
+        
+        trace_files = sorted(
+            [f for f in os.listdir(bug_dir) if f.endswith(".txt")],
+            key=lambda f: os.path.getmtime(os.path.join(bug_dir, f)),
+            reverse=True
+        )
+        
+        if not trace_files:
+            return None
+        
+        trace_path = os.path.join(bug_dir, trace_files[0])
+        try:
+            with open(trace_path, "r") as f:
+                return f.read()
+        except Exception:
+            return None
     
     def can_skip(self, context: Dict[str, Any]) -> bool:
         return context.get("checker_success", False)

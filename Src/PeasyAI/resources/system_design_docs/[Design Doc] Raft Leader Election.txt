@@ -1,0 +1,91 @@
+<system_design_document>
+<title> Raft Leader Election </title>
+
+<introduction>
+The goal of this system is to model the leader election component of the Raft consensus protocol. In Raft, a cluster of servers elects a single leader which is responsible for managing the replicated log. If the leader fails, a new election is triggered. This models only the election mechanism, not log replication.
+
+Assumptions:
+1. Servers communicate via reliable message passing.
+2. Each server starts as a Follower.
+3. If a Follower does not hear from a leader within a timeout, it becomes a Candidate and starts an election.
+4. A Candidate requests votes from all other servers. A server grants its vote to the first valid candidate in a given term.
+5. A Candidate that receives votes from a majority becomes the Leader.
+6. If a Candidate discovers a higher term, it reverts to Follower.
+7. The Leader sends periodic heartbeats to maintain authority.
+
+</introduction>
+
+<components>
+
+1. Server
+* Can be in one of three roles: Follower, Candidate, or Leader.
+* As Follower: waits for heartbeats; starts election on timeout.
+* As Candidate: increments term, votes for self, sends RequestVote to all peers.
+* As Leader: sends periodic heartbeats (AppendEntries with no data) to all peers.
+* Maintains: currentTerm, votedFor, role, and references to all peer servers.
+
+2. Timer
+* A generic timer machine that sends eTimeOut after a configurable period.
+* Used for election timeouts (followers/candidates) and heartbeat intervals (leaders).
+
+</components>
+
+<interactions>
+
+1. eRequestVote
+* Source: Candidate Server
+* Target: All peer Servers
+* Payload: candidateId (machine), term (int)
+* Description: Candidate requests a vote from a peer.
+* Effects:
+    * If the receiver's term is less than or equal and it hasn't voted yet in this term, it grants its vote.
+    * If the receiver's term is higher, the candidate updates its term and reverts to follower.
+
+2. eVoteResponse
+* Source: Peer Server
+* Target: Candidate Server
+* Payload: term (int), voteGranted (bool)
+* Description: Server responds to a vote request.
+* Effects:
+    * If majority votes received, candidate becomes leader.
+    * If term in response is higher, candidate reverts to follower.
+
+3. eAppendEntries
+* Source: Leader Server
+* Target: Follower Server
+* Payload: leaderTerm (int), leaderId (machine)
+* Description: Leader heartbeat to maintain authority.
+* Effects:
+    * Follower resets its election timer.
+    * If leader's term >= follower's term, follower acknowledges the leader.
+    * If leader's term < follower's term, follower rejects (stale leader).
+
+4. eAppendEntriesResponse
+* Source: Follower Server
+* Target: Leader Server
+* Payload: term (int), success (bool)
+* Description: Follower acknowledges or rejects the heartbeat.
+
+5. eTimeOut
+* Source: Timer
+* Target: Server
+* Payload: none
+* Description: Timer expiration triggers election (for followers/candidates) or heartbeat sending (for leaders).
+
+</interactions>
+
+<global_specifications>
+
+1. At Most One Leader Per Term (safety property): In any given term, there must be at most one server in the Leader role.
+
+</global_specifications>
+
+<possible_scenarios>
+
+1. Three servers, one becomes leader after initial election with no contention.
+2. Five servers, leader crashes (stops heartbeating), a new leader is elected.
+3. Three servers with split vote — no majority in first round, re-election succeeds.
+
+</possible_scenarios>
+
+</system_design_document>

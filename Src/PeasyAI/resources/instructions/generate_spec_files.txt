@@ -6,5 +6,31 @@ CRITICAL RULES FOR SPEC MONITORS:
 3. Monitors can ONLY observe events and maintain internal state (variables, maps, sets). They assert properties based on observed event payloads.
 4. If you need to track per-machine state (e.g., per-consumer offsets), use a `map[machine, ...]` keyed by the machine reference from the event payload — NOT `this`.
 5. Each safety property from <global_specifications> should be a separate `spec` declaration.
+6. Every spec monitor MUST contain at least one `assert` statement. A spec that observes events but never asserts anything is useless — PChecker will not detect any bugs. If the property is "X must never happen", assert the negation: `assert !badCondition, "X happened";`.
+7. NEVER generate empty functions or functions with only comments. If an event handler doesn't need logic, simply don't observe that event.
+8. Only observe events that are actually defined in the Enums_Types_Events.p file. Do NOT observe events that don't exist.
+
+## Example of a CORRECT spec monitor:
+
+```
+spec MutualExclusion observes eLockGranted, eLockReleased {{
+    var lockHolders: map[int, machine];
+
+    start state Monitoring {{
+        on eLockGranted do (payload: tLockGranted) {{
+            assert !(payload.resourceId in lockHolders),
+                format("Resource {{0}} already held", payload.resourceId);
+            lockHolders[payload.resourceId] = payload.client;
+        }}
+        on eLockReleased do (payload: tLockReleased) {{
+            if (payload.resourceId in lockHolders) {{
+                lockHolders -= (payload.resourceId);
+            }}
+        }}
+    }}
+}}
+```
+
+Note: The spec uses event payloads to track state, asserts on every relevant transition, and never uses `this`/`send`/`new`.
 
 Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

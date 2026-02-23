@@ -46,6 +46,12 @@ class PErrorFixer:
         }
         # Additional pattern-based fixers for issues without categories
         self._pattern_fixers = [
+            # Single-field named tuples missing trailing comma — covers all variants:
+            #   "no viable alternative at input 'fieldName=value)'"
+            #   "missing Iden at ')'"
+            #   "no viable alternative at input 'funFoo(config:(field:type,)'"
+            (r"no viable alternative.*\w+\s*=\s*\w+\)'", self._fix_single_field_tuple),
+            (r"missing Iden at '\)'", self._fix_single_field_tuple),
             (r"no viable alternative.*'reason=\d+\)'", self._fix_single_field_tuple),
             (r"no viable alternative.*'reservationId=", self._fix_single_field_tuple),
             (r"no viable alternative.*testTest", self._fix_test_declaration),
@@ -328,36 +334,137 @@ class PErrorFixer:
             line_changes=[(error.line, problem_line, stripped + ';')]
         )
     
-    def _fix_single_field_tuple(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
-        """Fix single-field tuple missing trailing comma."""
-        # Find send statements with single-field payloads on the error line
+    def _fix_named_field_tuple(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
+        """
+        Fix named-field tuple construction on the error line.
+
+        The P compiler rejects ``(field = value, ...)`` in value position.
+        This converts every named-field assignment on the error line to
+        positional form: ``(value, ...)``.
+        """
         lines = code.split('\n')
-        error_line_idx = error.line - 1
-        
+        error_line_idx = error.line - 1 if error.line else 0
         if error_line_idx >= len(lines):
             return None
-        
+
         problem_line = lines[error_line_idx]
-        
-        # Pattern: send target, event, (field = value);
-        # Fix to: send target, event, (field = value,);
-        pattern = r'(\([^,()]+\s*=\s*[^,()]+)\)(\s*;)'
-        
-        match = re.search(pattern, problem_line)
-        if match:
-            # Add trailing comma before closing paren
-            fixed_line = re.sub(pattern, r'\1,)\2', problem_line)
-            lines[error_line_idx] = fixed_line
-            
-            return CodeFix(
-                file_path=error.file,
-                original_code=code,
-                fixed_code='\n'.join(lines),
-                description=f"Added trailing comma to single-field tuple at line {error.line}",
-                line_changes=[(error.line, problem_line, fixed_line)]
-            )
-        
-        return None
+
+        # Quick check: does the line even contain ``identifier = `` inside parens?
+        if not re.search(r'\(\s*\w+\s*=\s*', problem_line):
+            return None
+
+        def _strip_fields_in_parens(line: str) -> str:
+            """Replace all ``(field = val, ...)`` groups on a line."""
+            result = []
+            i = 0
+            while i < len(line):
+                # Look for opening paren followed by identifier =
+                m = re.search(r'\(\s*([a-zA-Z_]\w*)\s*=\s*', line[i:])
+                if not m:
+                    result.append(line[i:])
+                    break
+
+                open_pos = i + m.start()
+                result.append(line[i:open_pos])
+
+                # Find balanced close-paren
+                depth = 0
+                close_pos = -1
+                for j in range(open_pos, len(line)):
+                    if line[j] == '(':
+                        depth += 1
+                    elif line[j] == ')':
+                        depth -= 1
+                        if depth == 0:
+                            close_pos = j
+                            break
+
+                if close_pos == -1:
+                    result.append(line[open_pos:])
+                    break
+
+                inner = line[open_pos + 1:close_pos]
+                # Skip complex nested expressions
+                if '(' in inner or ')' in inner:
+                    result.append(line[open_pos:close_pos + 1])
+                    i = close_pos + 1
+                    continue
+
+                parts = [p.strip() for p in inner.split(',') if p.strip()]
+                named_count = sum(
+                    1 for p in parts if re.match(r'^[a-zA-Z_]\w*\s*=\s*', p)
+                )
+                if named_count >= 1 and named_count == len(parts):
+                    values = []
+                    for p in parts:
+                        fm = re.match(r'^[a-zA-Z_]\w*\s*=\s*(.+)$', p)
+                        values.append(fm.group(1).strip() if fm else p)
+                    trailing = ',' if inner.rstrip().endswith(',') else ''
+                    result.append(f"({', '.join(values)}{trailing})")
+                else:
+                    result.append(line[open_pos:close_pos + 1])
+
+                i = close_pos + 1
+
+            return ''.join(result)
+
+        fixed_line = _strip_fields_in_parens(problem_line)
+        if fixed_line == problem_line:
+            return None
+
+        lines[error_line_idx] = fixed_line
+        return CodeFix(
+            file_path=error.file,
+            original_code=code,
+            fixed_code='\n'.join(lines),
+            description=f"Converted named-field tuple to positional form at line {error.line}",
+            line_changes=[(error.line, problem_line, fixed_line)],
+        )
+
+    def _fix_single_field_tuple(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
+        """
+        Fix single-field tuple missing trailing comma on the error line.
+
+        Handles all contexts:
+          (field = value)   →  (field = value,)     value construction
+          (field: type)     →  (field: type,)        type annotation
+          ((field = value)) →  ((field = value,))    nested in new Machine((...))
+        """
+        lines = code.split('\n')
+        error_line_idx = error.line - 1
+
+        if error_line_idx >= len(lines):
+            return None
+
+        problem_line = lines[error_line_idx]
+
+        # Value context: (identifier = expr) without trailing comma
+        value_pat = r'\((\s*[a-zA-Z_]\w*\s*=\s*[^,()]+[^,\s])\s*\)'
+        # Type annotation context: (identifier: type) without trailing comma
+        type_pat = r'\((\s*[a-zA-Z_]\w*\s*:\s*[^,()]+[^,\s])\s*\)'
+
+        fixed_line = problem_line
+        changed = False
+
+        for pat in [value_pat, type_pat]:
+            m = re.search(pat, fixed_line)
+            if m:
+                inner = m.group(1)
+                if not inner.rstrip().endswith(',') and inner.count('=') <= 1 and inner.count(':') <= 1:
+                    fixed_line = re.sub(pat, r'(\1,)', fixed_line, count=1)
+                    changed = True
+
+        if not changed or fixed_line == problem_line:
+            return None
+
+        lines[error_line_idx] = fixed_line
+        return CodeFix(
+            file_path=error.file,
+            original_code=code,
+            fixed_code='\n'.join(lines),
+            description=f"Added trailing comma to single-field tuple at line {error.line}",
+            line_changes=[(error.line, problem_line, fixed_line)],
+        )
     
     def _fix_test_declaration(self, error: PCompilerError, code: str) -> Optional[CodeFix]:
         """Fix test declaration syntax."""

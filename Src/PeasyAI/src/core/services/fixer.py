@@ -67,6 +67,88 @@ class FixResult(ServiceResult):
     confidence: float = 0.0
 
 
+def build_checker_feedback(
+    check_result: Optional[Dict[str, Any]] = None,
+    fix_response: Optional[Dict[str, Any]] = None,
+) -> str:
+    """
+    Build a structured checker-bug report that can be injected into
+    generation context so the LLM avoids the same mistakes when
+    regenerating spec or test files.
+
+    Args:
+        check_result: The result from ``p_check`` (has ``failed_tests``,
+                      ``passed_tests``, ``error``).
+        fix_response: The response from ``fix_buggy_program`` (has
+                      ``analysis``, ``root_cause``, ``suggested_fixes``).
+
+    Returns:
+        A string wrapped in ``<checker_bug_report>`` tags.  Empty string
+        if there is no useful information to report.
+    """
+    analysis = (fix_response or {}).get("analysis")
+    check = check_result or {}
+    failed = check.get("failed_tests", [])
+    passed = check.get("passed_tests", [])
+    error = check.get("error", "")
+
+    if not analysis:
+        if not failed and not error:
+            return ""
+        parts = ["<checker_bug_report>"]
+        if failed:
+            parts.append(f"Failed tests: {', '.join(failed)}")
+        if error:
+            parts.append(f"Error: {error}")
+        parts.append(
+            "When regenerating, ensure that:\n"
+            "- The spec monitor correctly tracks the protocol invariant.\n"
+            "- The test driver creates machines in the right order and "
+            "passes the correct config payloads.\n"
+            "- Every state handles or ignores all events that can arrive."
+        )
+        parts.append("</checker_bug_report>")
+        return "\n".join(parts)
+
+    parts = ["<checker_bug_report>"]
+    parts.append("PChecker found a bug during model checking.")
+
+    cat = analysis.get("error_category", "unknown")
+    msg = analysis.get("error_message", "")
+    machine = analysis.get("machine", "")
+    state = analysis.get("state", "")
+    event = analysis.get("event", "")
+
+    parts.append(f"Category: {cat}")
+    if msg:
+        parts.append(f"Error: {msg}")
+    if machine:
+        parts.append(f"Machine: {machine}, State: {state}")
+    if event:
+        parts.append(f"Event: {event}")
+
+    root_cause = (fix_response or {}).get("root_cause", "")
+    if root_cause:
+        parts.append(f"Root cause: {root_cause}")
+
+    suggested = (fix_response or {}).get("suggested_fixes") or []
+    if suggested:
+        parts.append("Suggested fixes:")
+        for s in suggested[:5]:
+            parts.append(f"  - {s}")
+
+    if failed:
+        parts.append(f"Failed tests: {', '.join(failed)}")
+    if passed:
+        parts.append(f"Passed tests: {', '.join(passed)}")
+
+    parts.append(
+        "\nWhen regenerating this file, carefully avoid the bug described above."
+    )
+    parts.append("</checker_bug_report>")
+    return "\n".join(parts)
+
+
 class FixAttemptTracker:
     """
     Tracks fix attempts for human-in-the-loop fallback.
@@ -428,9 +510,9 @@ class FixerService(BaseService):
                     compile_result = self._compilation.compile(project_path)
                     
                     if compile_result.success:
-                        # Try checker with fewer schedules for quick verification
+                        # Re-check with enough schedules to catch intermittent bugs
                         checker_result = self._compilation.run_checker(
-                            project_path, schedules=20, timeout=30
+                            project_path, schedules=50, timeout=60
                         )
                         
                         if checker_result.success:
@@ -519,9 +601,9 @@ class FixerService(BaseService):
                 compile_result = self._compilation.compile(project_path)
                 
                 if compile_result.success:
-                    # Try checker
+                    # Re-check with enough schedules to catch intermittent bugs
                     checker_result = self._compilation.run_checker(
-                        project_path, schedules=20, timeout=30
+                        project_path, schedules=50, timeout=60
                     )
                     
                     if checker_result.success:
@@ -638,6 +720,45 @@ class FixerService(BaseService):
                 error.file_path = str(candidate)
                 return
 
+    @staticmethod
+    def _normalize_error_for_spiral(msg: str) -> str:
+        """
+        Collapse variations of the same root-cause error into a single key.
+
+        For example, these should all be treated as the same spiral:
+          - "no viable alternative at input 'totalRooms=5)'"
+          - "mismatched input '=' expecting ')'"
+          - "no viable alternative at input '(totalRooms:'"
+        All stem from using named-field tuple construction.
+
+        Similarly, "could not find spec machine 'X'" and
+        "could not find spec machine 'Y'" are the same class.
+        """
+        import re as _re
+
+        m = msg[:120]
+
+        # Named-field tuple errors
+        if _re.search(r"no viable alternative.*\w+\s*=", m):
+            return "NAMED_FIELD_TUPLE"
+        if _re.search(r"mismatched input '=' expecting", m):
+            return "NAMED_FIELD_TUPLE"
+        if _re.search(r"missing Iden at '\)'", m):
+            return "NAMED_FIELD_TUPLE"
+        if _re.search(r"no viable alternative.*\(\w+:", m):
+            return "NAMED_FIELD_TUPLE_PARAM"
+
+        # Undefined-reference errors (same class regardless of the name)
+        if _re.search(r"could not find (spec machine|interface|event|type)", m):
+            return "UNDEFINED_REF"
+
+        # Extraneous var (always var-declaration-order)
+        if "extraneous input 'var'" in m:
+            return "VAR_ORDER"
+
+        # Fallback: first 80 chars (original behaviour)
+        return m[:80]
+
     def fix_iteratively(
         self,
         project_path: str,
@@ -692,9 +813,12 @@ class FixerService(BaseService):
                 })
                 break
             
-            # Detect spiral: if the same core error repeats, try incremental
-            # regeneration once before giving up.
-            core_msg = error.message[:80]
+            # Detect spiral: if the same *root-cause* error repeats, try
+            # incremental regeneration once before giving up.
+            # Normalise the message so slight variations of the same underlying
+            # bug (e.g. "no viable alternative at input 'totalRooms=5)'" vs
+            # "mismatched input '=' expecting ')'") are treated as one.
+            core_msg = self._normalize_error_for_spiral(error.message)
             recent_errors.append(core_msg)
             if recent_errors.count(core_msg) >= SPIRAL_THRESHOLD:
                 # Attempt incremental regeneration: ask the LLM to rewrite
@@ -797,11 +921,12 @@ class FixerService(BaseService):
             config = LLMConfig(max_tokens=4096)
             response = self.llm.complete(messages, config, system_prompt)
 
-            # Extract code
-            import re as _re
-            match = _re.search(rf'<{_re.escape(filename)}>(.*?)</{_re.escape(filename)}>', response.content, _re.DOTALL)
-            if match:
-                new_code = match.group(1).strip()
+            # Extract code using the shared robust extractor
+            from ..compilation.p_code_utils import extract_p_code_from_response
+            _, new_code = extract_p_code_from_response(
+                response.content, expected_filename=filename
+            )
+            if new_code:
                 self._compilation.write_file(resolved, new_code)
                 return True
 

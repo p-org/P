@@ -1,0 +1,71 @@
+<system_design_document>
+<title> Client Server </title>
+
+<introduction>
+The goal of this system is to model a simple client-server interaction where clients send requests to a server and the server processes those requests and sends back responses. This is the most basic distributed system pattern.
+
+Assumptions:
+1. The server processes requests one at a time in the order they are received.
+2. Communication between clients and server is reliable.
+3. The server does not fail.
+4. Each client sends a fixed number of requests.
+
+</introduction>
+
+<components>
+
+1. Server
+* Receives requests from clients.
+* Processes each request and sends a response back to the requesting client.
+* Keeps count of the number of requests processed.
+
+2. Client
+* Sends requests to the server with a unique request identifier.
+* Waits for the server's response before sending the next request.
+* Keeps track of responses received.
+
+</components>
+
+<interactions>
+
+1. eRequest
+* Source: Client
+* Target: Server
+* Payload: source (the requesting client machine), requestId (int)
+* Description: Client sends a request to the server.
+* Effects:
+    * Server processes the request and prepares a response.
+
+2. eResponse
+* Source: Server
+* Target: Client
+* Payload: requestId (int), status (success/failure)
+* Description: Server sends a response back to the client after processing the request.
+* Effects:
+    * Client receives the response and may send the next request.
+
+3. eClientConfig
+* Source: Test driver
+* Target: Client
+* Payload: server (machine reference), numRequests (int)
+* Description: Configures the client with the server reference and number of requests to send.
+* Effects:
+    * Client stores the server reference and begins sending requests.
+
+</interactions>
+
+<global_specifications>
+
+1. Every Request Gets a Response (safety property): Every request sent by a client must eventually receive a matching response from the server. The server must not drop or duplicate responses.
+
+</global_specifications>
+
+<possible_scenarios>
+
+1. A single client sends multiple requests to the server sequentially.
+2. Multiple clients send requests to the same server concurrently.
+3. Three clients with different request counts interact with the server.
+
+</possible_scenarios>
+
+</system_design_document>

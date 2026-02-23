@@ -79,95 +79,224 @@ class PCodePostProcessor:
             warnings=self.warnings
         )
     
+    def _fix_named_field_tuple_construction(self, code: str) -> str:
+        """
+        Convert named-field tuple construction to positional form.
+
+        LLMs frequently generate ``(field1 = val1, field2 = val2)`` when
+        creating a value of a user-defined named-tuple type.  P requires
+        the *positional* form ``(val1, val2)`` — the field names are part
+        of the type definition, not the value constructor.
+
+        This fix targets the most common occurrences:
+          - send target, event, (field = value, ...);
+          - new Machine((field = value, ...));
+          - raise event, (field = value, ...);
+          - variable assignment:  x = (field = value, ...);
+          - function call argument:  fun(..., (field = value, ...));
+
+        Single-field named tuples ``(field = value,)`` → ``(value,)``
+        are handled too.
+        """
+        original = code
+
+        def _strip_field_names(tuple_inner: str) -> str:
+            """Strip ``field =`` prefixes from a comma-separated tuple body."""
+            parts = []
+            for part in tuple_inner.split(','):
+                part = part.strip()
+                if not part:
+                    continue
+                # Match  fieldName = expression
+                m = re.match(r'^([a-zA-Z_]\w*)\s*=\s*(.+)$', part)
+                if m:
+                    parts.append(m.group(2).strip())
+                else:
+                    parts.append(part)
+            return ', '.join(parts)
+
+        def _has_named_fields(inner: str) -> bool:
+            """Return True if the inner text looks like named-field assignments."""
+            parts = [p.strip() for p in inner.split(',') if p.strip()]
+            named = sum(1 for p in parts if re.match(r'^[a-zA-Z_]\w*\s*=\s*', p))
+            return named >= 1 and named == len(parts)
+
+        def _find_balanced_paren(text: str, open_pos: int) -> int:
+            """Return index of matching close-paren, or -1."""
+            depth = 0
+            for i in range(open_pos, len(text)):
+                if text[i] == '(':
+                    depth += 1
+                elif text[i] == ')':
+                    depth -= 1
+                    if depth == 0:
+                        return i
+            return -1
+
+        # We iterate through occurrences of ``(identifier = `` which is the
+        # telltale opening of a named-field construction.  We then extract the
+        # balanced content up to the matching ``)`` and convert.
+        result_parts: List[str] = []
+        pos = 0
+        fix_count = 0
+
+        named_field_open = re.compile(r'\(\s*[a-zA-Z_]\w*\s*=\s*')
+
+        while pos < len(code):
+            m = named_field_open.search(code, pos)
+            if not m:
+                result_parts.append(code[pos:])
+                break
+
+            open_pos = m.start()
+            close_pos = _find_balanced_paren(code, open_pos)
+            if close_pos == -1:
+                result_parts.append(code[pos:])
+                break
+
+            inner = code[open_pos + 1:close_pos]
+
+            # Skip if the inner text contains nested parens (complex expressions)
+            # that would make naive splitting unreliable.
+            if '(' in inner or ')' in inner:
+                result_parts.append(code[pos:close_pos + 1])
+                pos = close_pos + 1
+                continue
+
+            if _has_named_fields(inner):
+                stripped = _strip_field_names(inner)
+                trailing_comma = ',' if inner.rstrip().endswith(',') else ''
+                replacement = f"({stripped}{trailing_comma})"
+                result_parts.append(code[pos:open_pos])
+                result_parts.append(replacement)
+                fix_count += 1
+                pos = close_pos + 1
+            else:
+                result_parts.append(code[pos:close_pos + 1])
+                pos = close_pos + 1
+
+        code = ''.join(result_parts)
+
+        if fix_count > 0:
+            self.fixes_applied.append(
+                f"Converted {fix_count} named-field tuple construction(s) to positional form"
+            )
+
+        return code
+
     def _fix_variable_declaration_order(self, code: str) -> str:
         """
         Move variable declarations to the start of functions.
         
         In P, all var declarations must come before any statements in a function.
+        Uses brace-balanced extraction to handle nested blocks correctly.
         """
-        # Pattern to match function bodies
-        func_pattern = r'(fun\s+\w+\s*\([^)]*\)\s*(?::\s*\w+)?\s*\{)(.*?)(\})'
-        
-        def reorder_vars(match):
-            func_header = match.group(1)
-            func_body = match.group(2)
-            func_close = match.group(3)
-            
-            # Split into lines
-            lines = func_body.split('\n')
+        from .p_code_utils import iter_function_bodies
+
+        # Process functions from last to first so position offsets stay valid
+        replacements = []
+        for func_name, header, body, start_pos, close_pos in iter_function_bodies(code):
+            lines = body.split('\n')
             var_lines = []
             other_lines = []
-            
+
             for line in lines:
                 stripped = line.strip()
                 if stripped.startswith('var ') and ';' in stripped:
                     var_lines.append(line)
                 else:
                     other_lines.append(line)
-            
-            # Check if reordering is needed
-            if var_lines:
-                # Find first non-var, non-empty line
-                first_non_var_idx = -1
-                first_var_idx = -1
-                
-                for i, line in enumerate(lines):
-                    stripped = line.strip()
-                    if not stripped or stripped.startswith('//'):
-                        continue
-                    if stripped.startswith('var '):
-                        if first_var_idx == -1:
-                            first_var_idx = i
-                    else:
-                        if first_non_var_idx == -1:
-                            first_non_var_idx = i
-                            break
-                
-                # Only reorder if vars come after statements
-                if first_var_idx > first_non_var_idx and first_non_var_idx != -1:
-                    self.fixes_applied.append("Moved variable declarations to start of function")
-                    # Reconstruct with vars first
-                    new_body = '\n'.join(var_lines + other_lines)
-                    return func_header + new_body + func_close
-            
-            return match.group(0)
-        
-        return re.sub(func_pattern, reorder_vars, code, flags=re.DOTALL)
+
+            if not var_lines:
+                continue
+
+            first_non_var_idx = -1
+            first_var_idx = -1
+            for i, line in enumerate(lines):
+                stripped = line.strip()
+                if not stripped or stripped.startswith('//'):
+                    continue
+                if stripped.startswith('var '):
+                    if first_var_idx == -1:
+                        first_var_idx = i
+                else:
+                    if first_non_var_idx == -1:
+                        first_non_var_idx = i
+                        break
+
+            if first_var_idx > first_non_var_idx and first_non_var_idx != -1:
+                new_body = '\n'.join(var_lines + other_lines)
+                # Reconstruct: header + { + new_body + }
+                replacement = header + '{' + new_body + '}'
+                replacements.append((start_pos, close_pos + 1, replacement))
+
+        if replacements:
+            self.fixes_applied.append("Moved variable declarations to start of function")
+            # Apply from end to start to preserve positions
+            for start, end, repl in reversed(replacements):
+                code = code[:start] + repl + code[end:]
+
+        return code
     
     def _fix_single_field_tuples(self, code: str) -> str:
         """
-        Add trailing comma to single-field named tuples.
+        Add trailing comma to single-field named tuples in ALL contexts.
         
-        P requires: (field = value,) not (field = value)
+        P requires trailing comma for single-field tuples:
+          (field = value,)   not  (field = value)
+          (field: type,)     not  (field: type)
+        
+        Handles: send payloads, new Machine(...), raise, assignments,
+        and function parameter type annotations.
         """
-        # Pattern for single-field named tuple without trailing comma
-        # Match: (fieldName = value) where value doesn't end with comma
-        # But not: (fieldName = value,)
-        
-        # This is tricky - we need to find send statements with single-field payloads
         original = code
-        
-        # Pattern for send with single-field tuple payload
-        # send target, event, (field = value);
-        pattern = r'(send\s+[^,]+,\s*\w+,\s*\()(\w+\s*=\s*[^,)]+)(\)\s*;)'
-        
-        def add_trailing_comma(match):
-            prefix = match.group(1)
-            field_value = match.group(2).strip()
-            suffix = match.group(3)
-            
-            # Check if it's truly single-field (no comma in value)
-            if ',' not in field_value and not field_value.endswith(','):
-                self.fixes_applied.append(f"Added trailing comma to single-field tuple")
-                return f"{prefix}{field_value},{suffix}"
-            return match.group(0)
-        
-        code = re.sub(pattern, add_trailing_comma, code)
-        
-        # Also handle type annotations with single field tuples
-        # e.g., fun HandleX(payload: (reservationId: int))
-        # This is less common but can occur
-        
+        fix_count = 0
+
+        # --- Value context: (identifier = expression) without trailing comma ---
+        # Matches (word = stuff) where "stuff" has no comma and no nested parens.
+        # The value part [^,()=]+ excludes parens so double-paren contexts like
+        # new Machine((field = value)) are handled correctly (inner match only).
+        value_pattern = r'\((\s*[a-zA-Z_]\w*\s*=\s*[^,()=]+[^,\s()=])\s*\)'
+
+        def _add_comma_value(m):
+            inner = m.group(1)
+            if inner.rstrip().endswith(','):
+                return m.group(0)
+            if inner.count('=') > 1:
+                return m.group(0)
+            nonlocal fix_count
+            fix_count += 1
+            return f'({inner},)'
+
+        code = re.sub(value_pattern, _add_comma_value, code)
+
+        # --- Type annotation context: (identifier: type) without trailing comma ---
+        # Matches (word: type_expr) in function signatures and type definitions.
+        # type_expr can be: int, bool, machine, seq[X], map[X,Y], set[X], tFoo
+        type_pattern = r'\((\s*[a-zA-Z_]\w*\s*:\s*(?:seq|map|set)\s*\[[^\]]*\]\s*)\)'
+        code = re.sub(type_pattern, r'(\1,)', code)
+
+        # Simple types: (field: int), (field: machine), (field: tFoo)
+        simple_type_pattern = r'\((\s*[a-zA-Z_]\w*\s*:\s*(?:int|bool|float|string|machine|any|event|[a-zA-Z_]\w*)\s*)\)'
+
+        def _add_comma_type(m):
+            inner = m.group(1)
+            if inner.rstrip().endswith(','):
+                return m.group(0)
+            # Skip if there's more than one colon (multi-field)
+            if inner.count(':') > 1:
+                return m.group(0)
+            nonlocal fix_count
+            fix_count += 1
+            return f'({inner},)'
+
+        code = re.sub(simple_type_pattern, _add_comma_type, code)
+
+        if fix_count > 0:
+            self.fixes_applied.append(
+                f"Added trailing comma to {fix_count} single-field named tuple(s)"
+            )
+
         return code
     
     def _fix_enum_access_syntax(self, code: str) -> str:
@@ -381,29 +510,42 @@ class PCodePostProcessor:
         if not machine_names:
             return code
 
-        # In PTst files, any machine that creates other machines (has `new`)
-        # is a test entry point and needs a test declaration.
+        # In PTst files, machines that set up the system are test entry points.
+        # A scenario machine typically: creates other machines (``new``),
+        # sends config events (``send``), or is named with common scenario
+        # prefixes (Scenario*, TestSetup*, Driver*).
         candidate_machines: List[str] = []
 
         for name in machine_names:
             pattern = rf'\bmachine\s+{re.escape(name)}\s*\{{'
             match = re.search(pattern, code)
-            if match:
-                # Extract body by counting braces from the opening `{`
-                start = match.end() - 1
-                depth = 0
-                body_end = start
-                for ci in range(start, len(code)):
-                    if code[ci] == '{':
-                        depth += 1
-                    elif code[ci] == '}':
-                        depth -= 1
-                        if depth == 0:
-                            body_end = ci
-                            break
-                body = code[start:body_end]
-                if 'new ' in body:
-                    candidate_machines.append(name)
+            if not match:
+                continue
+            start = match.end() - 1
+            depth = 0
+            body_end = start
+            for ci in range(start, len(code)):
+                if code[ci] == '{':
+                    depth += 1
+                elif code[ci] == '}':
+                    depth -= 1
+                    if depth == 0:
+                        body_end = ci
+                        break
+            body = code[start:body_end]
+
+            is_scenario = (
+                'new ' in body
+                or 'send ' in body
+                or re.match(r'(?i)(Scenario|TestSetup|Driver|Setup|Test)', name)
+            )
+            if is_scenario:
+                candidate_machines.append(name)
+
+        # Fallback: if no candidates found via heuristic, treat ALL machines
+        # in the test file as potential scenario machines.
+        if not candidate_machines:
+            candidate_machines = list(machine_names)
 
         if not candidate_machines:
             self.warnings.append(

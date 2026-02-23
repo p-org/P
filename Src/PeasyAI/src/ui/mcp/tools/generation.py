@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class GenerateProjectParams(BaseModel):
-    """Parameters for full project generation"""
+    """Parameters for project structure creation (STEP 1)"""
     design_doc: str = Field(
         ...,
         description="The design document content describing the P program. "
@@ -60,6 +60,11 @@ class GenerateSpecParams(BaseModel):
         description="Number of candidate generations for ensemble selection (best-of-N). "
                     "Set to 1 to disable ensemble."
     )
+    checker_feedback: Optional[str] = Field(
+        default=None,
+        description="PChecker bug report from a previous failing run. "
+                    "If provided, injected as context so the LLM avoids the same bug."
+    )
 
 
 class GenerateTestParams(BaseModel):
@@ -75,6 +80,11 @@ class GenerateTestParams(BaseModel):
         default=3,
         description="Number of candidate generations for ensemble selection (best-of-N). "
                     "Set to 1 to disable ensemble."
+    )
+    checker_feedback: Optional[str] = Field(
+        default=None,
+        description="PChecker bug report from a previous failing run. "
+                    "If provided, injected as context so the LLM avoids the same bug."
     )
 
 
@@ -131,7 +141,7 @@ def register_generation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="generate_project_structure",
-        description="Create a P project skeleton with PSrc, PSpec, PTst folders and .pproj file"
+        description="STEP 1 of the recommended step-by-step workflow. Creates a P project skeleton with PSrc, PSpec, PTst folders and .pproj file. After this, use generate_types_events to define types and events."
     )
     def generate_project_structure(params: GenerateProjectParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] generate_project_structure: {params.project_name}")
@@ -153,7 +163,7 @@ def register_generation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="generate_types_events",
-        description="Generate types, enums, and events file (Enums_Types_Events.p) from a design document. Returns code for preview - use save_p_file to save."
+        description="STEP 2 of the recommended step-by-step workflow. Generates the types, enums, and events file (Enums_Types_Events.p) from the design document. Returns code for preview so the user can review it before saving with save_p_file. Run this after generate_project_structure."
     )
     def generate_types_events(params: GenerateTypesEventsParams) -> Dict[str, Any]:
         logger.info("[TOOL] generate_types_events (preview)")
@@ -179,7 +189,7 @@ def register_generation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="generate_machine",
-        description="Generate a single P state machine implementation using two-stage generation (structure first, then implementation). Returns code for preview - use save_p_file to save."
+        description="STEP 3 of the recommended step-by-step workflow. Generates a single P state machine implementation using two-stage generation (structure first, then implementation). Call once per machine in the design. Returns code for preview so the user can review it before saving with save_p_file. Pass previously generated files as context_files for cross-file consistency."
     )
     def generate_machine(params: GenerateMachineParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] generate_machine: {params.machine_name} (preview, ensemble={params.ensemble_size})")
@@ -218,10 +228,14 @@ def register_generation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="generate_spec",
-        description="Generate a P specification/monitor file. Returns code for preview - use save_p_file to save."
+        description="STEP 4 of the recommended step-by-step workflow. Generates a P safety specification/monitor file. Returns code for preview so the user can review it before saving with save_p_file. Run this after all machines have been generated, passing them as context_files."
     )
     def generate_spec(params: GenerateSpecParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] generate_spec: {params.spec_name} (preview, ensemble={params.ensemble_size})")
+
+        ctx = dict(params.context_files) if params.context_files else {}
+        if params.checker_feedback:
+            ctx["__checker_bug_report__"] = params.checker_feedback
 
         services = get_services()
         if params.ensemble_size > 1:
@@ -229,17 +243,17 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 spec_name=params.spec_name,
                 design_doc=params.design_doc,
                 project_path=params.project_path,
-                context_files=params.context_files,
+                context_files=ctx or None,
                 ensemble_size=params.ensemble_size,
-                save_to_disk=False  # Preview only
+                save_to_disk=False
             )
         else:
             result = services["generation"].generate_spec(
                 spec_name=params.spec_name,
                 design_doc=params.design_doc,
                 project_path=params.project_path,
-                context_files=params.context_files,
-                save_to_disk=False  # Preview only
+                context_files=ctx or None,
+                save_to_disk=False
             )
 
         payload = {
@@ -256,10 +270,14 @@ def register_generation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="generate_test",
-        description="Generate a P test file. Returns code for preview - use save_p_file to save."
+        description="STEP 5 of the recommended step-by-step workflow. Generates a P test driver file. Returns code for preview so the user can review it before saving with save_p_file. Run this after all machines and specs have been generated, passing them as context_files. After saving, use p_compile to compile and p_check to verify."
     )
     def generate_test(params: GenerateTestParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] generate_test: {params.test_name} (preview, ensemble={params.ensemble_size})")
+
+        ctx = dict(params.context_files) if params.context_files else {}
+        if params.checker_feedback:
+            ctx["__checker_bug_report__"] = params.checker_feedback
 
         services = get_services()
         if params.ensemble_size > 1:
@@ -267,17 +285,17 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 test_name=params.test_name,
                 design_doc=params.design_doc,
                 project_path=params.project_path,
-                context_files=params.context_files,
+                context_files=ctx or None,
                 ensemble_size=params.ensemble_size,
-                save_to_disk=False  # Preview only
+                save_to_disk=False
             )
         else:
             result = services["generation"].generate_test(
                 test_name=params.test_name,
                 design_doc=params.design_doc,
                 project_path=params.project_path,
-                context_files=params.context_files,
-                save_to_disk=False  # Preview only
+                context_files=ctx or None,
+                save_to_disk=False
             )
 
         payload = {
@@ -294,20 +312,13 @@ def register_generation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="generate_complete_project",
-        description="""Generate a complete P project in one call with automatic post-processing.
+        description="""ADVANCED: Generate an entire P project in a single autonomous call. This is a convenience shortcut that runs all generation steps without human review.
 
-This tool performs the following steps:
-1. Creates project structure (folders and .pproj file)
-2. Generates types/events file with all needed definitions
-3. Generates all machine implementations with proper context
-4. Optionally generates safety specification
-5. Generates test driver with correct syntax
-6. Applies post-processing to fix common issues (var order, tuple syntax)
-7. Compiles the project
-8. Optionally runs iterative fix if compilation fails
-9. Optionally runs PChecker
+IMPORTANT: Prefer the step-by-step tools (generate_project_structure, generate_types_events, generate_machine, generate_spec, generate_test) instead. The step-by-step approach lets the user review and approve each file before proceeding, resulting in higher quality code.
 
-Returns comprehensive results including all generated files and any issues found."""
+Only use this tool when the user EXPLICITLY asks for fully automated / one-shot / hands-off generation.
+
+Steps performed: create structure → generate types/events → generate machines → generate spec → generate test → post-process → compile → auto-fix → optionally run PChecker."""
     )
     def generate_complete_project(params: GenerateCompleteProjectParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] generate_complete_project: {params.project_name} (ensemble={params.ensemble_size})")
@@ -622,7 +633,7 @@ Returns comprehensive results including all generated files and any issues found
 
     @mcp.tool(
         name="save_p_file",
-        description="Save generated P code to a file. Use this after previewing code from generate_* tools and user approves."
+        description="Save generated P code to a file on disk. In the step-by-step workflow, call this after the user reviews and approves the code returned by generate_types_events, generate_machine, generate_spec, or generate_test. Provide the absolute file_path (from the generate tool's response) and the code content."
     )
     def save_p_file(params: SavePFileParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] save_p_file: {params.file_path}")

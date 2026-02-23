@@ -21,10 +21,19 @@ If this machine has a start-state entry function with a parameter, that paramete
 - Compute derived values (e.g., majoritySize = sizeof(acceptors) / 2 + 1).
 - If using the init-event pattern instead, the configuration handler function must similarly store all fields and then `goto` the first operational state.
 
+## CRITICAL — Tuple Construction:
+Named-tuple types use ``(field = value, ...)`` syntax. Always include ALL fields.
+  Given: type tConfig = (coordinator: machine, count: int);
+  CORRECT: new Machine((coordinator = coord, count = 3));
+  WRONG:   new Machine((coord, 3));  // anonymous tuple — type mismatch!
+  CORRECT single-field: send target, eMsg, (reqId = 42,);  // trailing comma required!
+  WRONG single-field:   send target, eMsg, (reqId = 42);   // missing trailing comma → PARSE ERROR
+
 ## Checklist before returning code:
 - Every state has handlers, defer, or ignore for EVERY event this machine could receive.
 - The start state entry correctly unpacks the constructor payload (if parameterized).
 - All `send` targets are machine-typed variables (never null/default).
 - No events, types, or enums are declared in this file.
+- Single-field named tuples ALWAYS have a trailing comma: ``(field = value,)``.
 
 Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

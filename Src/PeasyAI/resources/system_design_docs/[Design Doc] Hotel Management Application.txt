@@ -2,7 +2,7 @@
 <title> Hotel Management Application </title>
 
 <introduction>
-The goal of this system is to develop a hotel service booking application that enables the front desk to handle client requests, including room reservations, special requests, and cancellations. The application will maintain a centralized database to record room bookings and prevent double booking of rooms.
+The goal of this system is to develop a hotel service booking application that enables the Front Desk to handle client requests, including room reservations, special requests, and cancellations. The application will maintain a centralized database to record room bookings and prevent double booking of rooms.
 </introduction>
 
 <components>
@@ -16,7 +16,7 @@ The goal of this system is to develop a hotel service booking application that e
 * Makes room reservation requests.
 * Submits special requests (e.g., preferences for room placement).
 * Cancels room reservations.
-* Waits for responses from the front desk.
+* Waits for responses from the Front Desk.
 * May make additional requests based on responses received.
 
 </components>
@@ -29,8 +29,8 @@ The goal of this system is to develop a hotel service booking application that e
 * Payload: Client, Client id, Client name
 * Description: A client requests a room. If successful, the client is assigned a room. If unsuccessful, the client is informed of the failure.
 * Effects:
-    * If a room is available, the front desk assigns it to the client and provides the room number.
-    * If no rooms are available, the front desk informs the client of the inability to reserve a room.
+    * If a room is available, the Front Desk assigns it to the client and provides the room number.
+    * If no rooms are available, the Front Desk informs the client of the inability to reserve a room.
 
 2. CancellationRequest
 * Source: Client sending the request

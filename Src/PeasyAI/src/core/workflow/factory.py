@@ -156,10 +156,20 @@ class WorkflowFactory:
         schedules: int = 100,
         timeout: int = 60
     ) -> WorkflowDefinition:
-        """Create workflow for full compilation and verification."""
+        """Create workflow for full compilation, verification, and automatic bug fixing.
+        
+        Steps:
+        1. Compile the project
+        2. Fix any compilation errors (iteratively)
+        3. Run PChecker to find bugs
+        4. Automatically fix PChecker bugs using trace analysis
+        
+        The RunCheckerStep always propagates its output (even on failure) so that
+        FixCheckerErrorsStep can read the trace files and apply AI-driven fixes.
+        """
         return WorkflowDefinition(
             name="full_verification",
-            description="Compile, fix errors, and run PChecker",
+            description="Compile, fix errors, run PChecker, and automatically fix PChecker bugs",
             steps=[
                 CompileProjectStep(self.compilation_service),
                 FixCompilationErrorsStep(self.fixer_service),
@@ -185,78 +195,142 @@ class WorkflowFactory:
         )
 
 
-def extract_machine_names_from_design_doc(design_doc: str) -> List[str]:
-    """
-    Extract machine names from a design document.
-    
-    Looks for patterns like:
-    - <component>MachineName</component>
-    - **MachineName** machine
-    - The MachineName state machine
-    - machine MachineName
-    
-    Args:
-        design_doc: The design document content
-        
-    Returns:
-        List of extracted machine names
-    """
-    machine_names = set()
-    
-    # Pattern 1: XML-style component tags
-    xml_pattern = r'<component[^>]*>\s*(\w+)\s*</component>'
-    for match in re.finditer(xml_pattern, design_doc, re.IGNORECASE):
-        machine_names.add(match.group(1))
-    
-    # Pattern 2: Markdown bold with "machine" keyword
-    md_pattern = r'\*\*(\w+)\*\*\s+(?:state\s+)?machine'
-    for match in re.finditer(md_pattern, design_doc, re.IGNORECASE):
-        machine_names.add(match.group(1))
-    
-    # Pattern 3: "The X machine" or "X state machine"
-    prose_pattern = r'(?:the\s+)?(\w+)\s+(?:state\s+)?machine\b'
-    for match in re.finditer(prose_pattern, design_doc, re.IGNORECASE):
-        name = match.group(1)
-        # Filter out common words
-        if name.lower() not in ['a', 'the', 'this', 'each', 'every', 'state', 'new']:
-            machine_names.add(name)
-    
-    # Pattern 4: P syntax "machine X"
-    p_syntax_pattern = r'\bmachine\s+(\w+)\s*[{:]'
-    for match in re.finditer(p_syntax_pattern, design_doc):
-        machine_names.add(match.group(1))
-    
-    # Pattern 5: Components section with bullet points
-    # - Client: ...
-    # - Server: ...
-    components_section = re.search(
-        r'<components>(.*?)</components>',
-        design_doc,
-        re.DOTALL | re.IGNORECASE
-    )
-    if components_section:
-        bullet_pattern = r'[-*]\s*(\w+)\s*:'
-        for match in re.finditer(bullet_pattern, components_section.group(1)):
-            machine_names.add(match.group(1))
+def _to_pascal_case(name: str) -> str:
+    """Convert a multi-word name to PascalCase for P machine naming.
 
-        # Pattern 6: Numbered component lists
-        # 1. Proposer
-        # 2. Acceptor
-        numbered_pattern = r'^\s*\d+\.\s*([A-Z]\w+)\b'
-        for match in re.finditer(numbered_pattern, components_section.group(1), re.MULTILINE):
-            machine_names.add(match.group(1))
-    
-    # Filter and clean
-    filtered = []
-    for name in machine_names:
-        # Skip common non-machine words
-        if name.lower() in ['machine', 'state', 'event', 'type', 'spec', 'test', 'main']:
-            continue
-        # Should start with uppercase (P convention)
-        if name[0].isupper():
-            filtered.append(name)
-    
-    return sorted(filtered)
+    "Front Desk" -> "FrontDesk", "Lock Server" -> "LockServer",
+    "CoffeeMaker" -> "CoffeeMaker" (already single word, preserved).
+    """
+    words = name.strip().split()
+    if len(words) == 1:
+        return words[0]
+    return "".join(w[0].upper() + w[1:] for w in words if w)
+
+
+# ── LLM-based extraction (primary) ──────────────────────────────────
+
+_EXTRACT_PROMPT = """\
+You are given a design document for a P language state machine system.
+
+Your task: identify every component that should become a P `machine`.
+For each component, return a PascalCase name suitable as a P machine
+identifier (no spaces, no special characters).
+
+Rules:
+- Multi-word names become PascalCase: "Front Desk" -> "FrontDesk", "Lock Server" -> "LockServer"
+- Only include components that are active participants (state machines). Do NOT include:
+  - Abstract concepts (e.g., "Safety", "Specification")
+  - Data types or events
+  - Roles or states within a machine (e.g., "Follower", "Candidate" are roles of a Server, not separate machines)
+- Return ONLY a JSON array of strings, nothing else.
+
+Example output: ["Coordinator", "Participant", "Client", "Timer"]
+"""
+
+
+def _extract_names_with_llm(
+    design_doc: str,
+    llm_provider=None,
+) -> Optional[List[str]]:
+    """Use the LLM to extract machine names. Returns None on failure."""
+    import json as _json
+    try:
+        from ..llm import LLMConfig, Message, MessageRole
+
+        if llm_provider is None:
+            from ..llm import get_default_provider
+            llm_provider = get_default_provider()
+
+        messages = [
+            Message(role=MessageRole.USER, content=_EXTRACT_PROMPT),
+            Message(role=MessageRole.USER, content=f"Design document:\n{design_doc}"),
+        ]
+        config = LLMConfig(max_tokens=256)
+        response = llm_provider.complete(messages, config)
+        text = response.content.strip()
+
+        # Extract JSON array from the response (may be wrapped in markdown)
+        arr_match = re.search(r'\[.*\]', text, re.DOTALL)
+        if not arr_match:
+            return None
+        names = _json.loads(arr_match.group(0))
+        if not isinstance(names, list):
+            return None
+
+        # Sanitise: PascalCase, no empty strings, no duplicates
+        clean = []
+        seen: set = set()
+        for n in names:
+            if not isinstance(n, str) or not n:
+                continue
+            pc = _to_pascal_case(n)
+            if pc and pc not in seen and pc[0].isupper():
+                clean.append(pc)
+                seen.add(pc)
+        return sorted(clean) if clean else None
+
+    except Exception:
+        return None
+
+
+# ── Regex fallback (for offline / no-LLM environments) ──────────────
+
+def _extract_names_regex(design_doc: str) -> List[str]:
+    """Simple regex extraction from <components> section as fallback."""
+    names: set = set()
+
+    comp_section = re.search(
+        r'<components>(.*?)</components>', design_doc, re.DOTALL | re.IGNORECASE
+    )
+    if comp_section:
+        # Numbered list items: "1. Front Desk" or "1. CoffeeMaker"
+        for m in re.finditer(
+            r'^\s*\d+\.\s*(.+?)\s*$', comp_section.group(1), re.MULTILINE
+        ):
+            raw = m.group(1).strip()
+            if raw and raw[0].isupper() and len(raw) < 40:
+                names.add(_to_pascal_case(raw))
+
+    if not names:
+        # P syntax fallback: machine FooBar {
+        for m in re.finditer(r'\bmachine\s+(\w+)\s*[{:]', design_doc):
+            names.add(m.group(1))
+
+    stop = {
+        "machine", "state", "event", "type", "spec", "test", "main",
+        "source", "target", "payload", "description", "effects",
+    }
+    return sorted(n for n in names if n.lower() not in stop and n[0].isupper())
+
+
+# ── Public API ───────────────────────────────────────────────────────
+
+def extract_machine_names_from_design_doc(
+    design_doc: str,
+    llm_provider=None,
+) -> List[str]:
+    """
+    Extract P machine names from a design document.
+
+    Uses the LLM for robust understanding of natural language component
+    descriptions, with a regex fallback for offline environments.
+
+    Multi-word names are automatically converted to PascalCase
+    (e.g., "Front Desk" -> "FrontDesk").
+
+    Args:
+        design_doc: The design document content.
+        llm_provider: Optional LLM provider instance.  If not given,
+                      the function tries ``get_default_provider()``.
+
+    Returns:
+        Sorted list of unique PascalCase machine names.
+    """
+    llm_result = _extract_names_with_llm(design_doc, llm_provider=llm_provider)
+    if llm_result:
+        return llm_result
+
+    return _extract_names_regex(design_doc)
 
 
 def validate_design_doc(design_doc: str) -> Dict[str, Any]:

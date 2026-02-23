@@ -61,7 +61,7 @@ send acceptor1, eAcceptorConfig, (learners = learnerSeq,);
 - Build `seq[machine]` or `set[machine]` collections BEFORE passing them to dependent machines.
 - NEVER leave machine-typed variables uninitialized (default/null). Every machine reference must point to a created machine.
 - NEVER pass `this` (the scenario machine) as a protocol participant reference.
-- For each `new` call, verify the payload tuple field names and types match the machine's entry function parameter EXACTLY.
+- For each `new` call, verify the payload tuple field names and types match the machine's entry function parameter EXACTLY. Single-field tuples need a trailing comma: ``(field = value,)``.
 
 ## Complete Example
 
@@ -104,5 +104,13 @@ test tcBasicPaxos [main=Scenario1_BasicPaxos]:
     assert OnlyOneValueChosen in
     {{ Proposer, Acceptor, Learner, Client, Scenario1_BasicPaxos }};
 ```
+
+## Checklist before returning code:
+- Every scenario machine is matched by a `test` declaration.
+- Every `test` declaration includes `assert SpecName in` referencing the spec monitors from PSpec. Without `assert`, PChecker won't verify any properties.
+- All machines used in the scenario are listed inside the braces `{{ ... }}`.
+- No events, types, or machines from PSrc are redeclared.
+- Machine creation order respects dependencies.
+- Single-field named tuples have trailing commas: `(field = value,)`.
 
 Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

@@ -9,143 +9,109 @@ Assumptions: Our transaction commit system is simplified. To list a few:
 1. Our system allows multiple concurrent clients to issue transactions in parallel, but the coordinator serializes these transactions and services them one-by-one.
 2. Our system is not fault-tolerant to node failures, failure of either the coordinator or any of the participants will block the progress forever.
 3. Our system models assume reliable delivery of messages.
+4. The Timer machine is a pre-existing reusable module — do NOT re-implement it. Use CreateTimer(this), StartTimer(timer), and CancelTimer(timer) to interact with the timer.
 </introduction>
 
 <components>
-<source_components>
 
 1. Coordinator
-* Receives write and read transactions from the clients. 
+* Receives write and read transactions from the clients.
 * Processes transactions (write and read) from clients one by one in the order received.
+* Constructor takes: seq[machine] (the list of participant machines).
+* On initialization: creates a timer using CreateTimer(this), then sends eInformCoordinator to all participants with its own reference so participants know who the coordinator is.
 * On receiving a write transaction:
     * Sends prepare requests to all participants.
-    * Waits for prepare responses from all participants.
-    * Commits or aborts the transaction based on responses.
+    * Starts the timer and waits for prepare responses from all participants.
+    * Commits if all participants accepted, aborts if any rejected.
     * Times out and aborts if responses are not received in time.
 * On receiving a read transaction:
-    *  randomly selects a participant and forwards the read request to that participant.
+    * Randomly selects a participant using choose() and forwards the read request.
+* Must handle or defer all events in every state. In WaitForRequests: ignore stale ePrepareResp and eTimeOut. In WaitForPrepareResponses: defer eWriteTransReq and eReadTransReq.
 
 2. Participant
-* Waits for requests from the Coordinator.
-* Maintains a local key-value store, which is updated based on the transactions committed by the coordinator.
-* Processes prepare requests from the coordinator by either accepting or rejecting the transaction based on the associated transaction id.
+* Waits for eInformCoordinator from the Coordinator (blocks in Init state until informed).
+* Maintains a local key-value store (map[string, int]) updated when transactions are committed.
+* Maintains a pending transactions map (map[int, tTransaction]) to track prepare requests.
+* On ePrepareReq: non-deterministically accepts (using choose()) or rejects the transaction. Sends ePrepareResp back to coordinator.
+* On eCommitTrans: commits the transaction to the local store.
+* On eAbortTrans: removes the transaction from pending.
 
-3. Timer
-* Models the non-deterministic behavior of an OS timer.
-* Contains events eStartTimer, eCancelTimer, eTimeOut.
-* Contains functions or API's to interact with the OS Timer.
+3. Client
+* Receives: coordinator machine reference and number of transactions (int) via constructor.
+* Issues N non-deterministic write-transactions (with random key and value using choose()).
+* On success response: performs a read-transaction on the same key and asserts the value read matches what was written.
+* On failure response: moves on to the next transaction.
 
-</source_components>
-
-<test_components>
-
-1. Client
-* Implements the client of the two-phase-commit transaction service.
-* Issues N non-deterministic write-transactions.
-* If the transaction succeeds, then it performs a read-transaction on the same key and asserts that the value read is same as what was written by the write transaction.
-
-</test_components>
 </components>
 
 <interactions>
-A transaction consists of a key, value, and a unique transaction id.
 
 1. eWriteTransReq
-* Source: Client sending the request
+* Source: Client
 * Target: Coordinator
-* Payload: Client sending the transaction, transaction to be committed.
+* Payload: client (machine), trans (tTransaction with key, value, transId)
 * Description: Client sends a write transaction request to the coordinator.
-* Effects:
-    * If the transaction ID is reused, send a timeout response to the client.
-    * Otherwise:
-        * Broadcast prepare requests to all participants.
-        * Start a timer and wait for a prepare success or prepare failure response.
-    * If handling another write transaction, queue the request.
 
 2. eWriteTransResp
 * Source: Coordinator
 * Target: Client
-* Payload: Client sending the transaction, transaction to be committed.
+* Payload: transId (int), status (tTransStatus: SUCCESS or ERROR)
 * Description: Coordinator sends the result of the write transaction request back to the client.
-* Effects:
-    * On success, client sends a read request to the coordinator to verify the value.
 
 3. eReadTransReq
-* Source: Client sending the request
+* Source: Client
 * Target: Coordinator
-* Payload: Client, key string to read
+* Payload: client (machine), key (string)
 * Description: Client requests to read a specific key.
-* Effects:
-    * Coordinator selects a participant to handle the read request.
 
 4. eReadTransResp
 * Source: Participant
 * Target: Client
-* Payload: Key string, value corresponding to the key, read status (success/failure)
+* Payload: key (string), value (int), status (tTransStatus)
 * Description: Participant responds with the value read and status.
-* Effects:
-    * Client verifies that:
-        * the key received in the participant’s response is same as the key sent in the read request.
-        * the value received in the participant’s response is same as the value written by the client.
 
 5. ePrepareReq
 * Source: Coordinator
 * Target: Participant
-* Payload: Key string, value corresponding to the key, transaction ID
+* Payload: coordinator (machine), transId (int), key (string), value (int)
 * Description: Coordinator requests the participant to prepare for a transaction.
-* Effects:
-    * Participant adds the transaction to pending transactions if not already present.
-    * Sends SUCCESS if the key is absent from the data store or transaction ID is higher than the current, otherwise sends ERROR.
 
 6. ePrepareResp
 * Source: Participant
 * Target: Coordinator
-* Payload: Participant sending the response, transaction ID, and status of the prepare request for that transaction.
-* Description: Participant responds to the prepare request.
-* Effects:
-    * Coordinator checks if the response is for the current transaction, else ignores it.
-    * If status is successful and all responses are received, Coordinator instructs participants to commit the transaction.
-    * If status is not successful, Coordinator instructs participants to abort the transaction.
+* Payload: participant (machine), transId (int), status (tTransStatus)
+* Description: Participant responds to the prepare request with SUCCESS or ERROR.
 
 7. eCommitTrans
 * Source: Coordinator
 * Target: Participant
-* Payload: Current transaction ID.
+* Payload: transId (int)
 * Description: Coordinator requests the participant to commit a transaction.
-* Effects:
-    * Participant checks that commit transaction request is received for one of the pending transactions only.
-    * Participant commits the transaction and updates its key-value store.
 
 8. eAbortTrans
 * Source: Coordinator
 * Target: Participant
-* Payload: Current transaction ID.
+* Payload: transId (int)
 * Description: Coordinator requests the participant to abort a transaction.
-* Effects:
-    * Participant checks that abort transaction request is received for one of the pending transactions only.
-    * Participant removes the transaction from pending transactions.
 
 9. eInformCoordinator
 * Source: Coordinator
 * Target: Participant
-* Payload: Coordinator
-* Description: Coordinator informs the participant of its existence.
-* Effects:
-    * Participant starts waiting for requests.
+* Payload: coordinator (machine)
+* Description: Coordinator sends its own reference to the participant so the participant knows who to respond to. Sent during initialization after the coordinator is created.
 
 </interactions>
 
 <global_specifications>
 
-1. Atomicity (safety property): If a transaction is committed by the coordinator, then it was agreed on by all participants, and if the transaction is aborted, then at least one participant must have rejected the transaction.
-2. Progress (liveness property): Every transaction request from a client must be eventually responded to.
+1. Atomicity (safety property): If a transaction is committed by the coordinator (SUCCESS response sent to client), then all participants must have sent SUCCESS prepare responses. If the transaction is aborted (ERROR response), at least one participant rejected it or the timer expired.
 
 </global_specifications>
 
 <possible_scenarios>
 
-1. 3 participants, 1 coordinator, 1 client, and no failure.
-2. 3 participants, 1 coordinator, and 2 clients, and no failure.
+1. 3 participants, 1 coordinator, 1 client, no failure — test basic commit and abort paths.
+2. 3 participants, 1 coordinator, 2 clients — test concurrent transaction serialization.
 
 </possible_scenarios>
 

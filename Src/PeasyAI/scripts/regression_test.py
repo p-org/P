@@ -55,6 +55,7 @@ from src.ui.mcp.tools.fixing import (
     FixBuggyProgramParams,
 )
 from src.core.workflow.factory import extract_machine_names_from_design_doc
+from src.core.services.fixer import build_checker_feedback
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +141,7 @@ def run_protocol(
     design_doc: str,
     out_root: Path,
     project_name: str,
+    ensemble_size: int = 1,
 ) -> Dict[str, Any]:
     """Run full pipeline for one protocol. Returns structured result."""
     result: Dict[str, Any] = {
@@ -179,13 +181,24 @@ def run_protocol(
         return result
 
     # --- Generate machines ---
-    machine_names: List[str] = extract_machine_names_from_design_doc(design_doc)
+    # Use the LLM to extract machine names for robust handling of
+    # multi-word names, prose descriptions, etc.
+    services = mcp_server.get_services()
+    machine_names: List[str] = extract_machine_names_from_design_doc(
+        design_doc, llm_provider=services.get("llm_provider")
+    )
     context_files = {"Enums_Types_Events.p": types_resp["code"]}
     generated: Dict[str, Dict[str, Any]] = {"types": types_resp}
 
     for mn in machine_names:
         resp = tools["generate_machine"](
-            GenerateMachineParams(machine_name=mn, design_doc=design_doc, project_path=project_path, context_files=context_files)
+            GenerateMachineParams(
+                machine_name=mn,
+                design_doc=design_doc,
+                project_path=project_path,
+                context_files=context_files,
+                ensemble_size=ensemble_size,
+            )
         )
         generated[f"machine:{mn}"] = resp
         result["steps"].append({"name": f"generate_machine:{mn}", "success": resp.get("success")})
@@ -194,14 +207,26 @@ def run_protocol(
 
     # --- Generate spec ---
     spec_resp = tools["generate_spec"](
-        GenerateSpecParams(spec_name="Safety", design_doc=design_doc, project_path=project_path, context_files=context_files)
+        GenerateSpecParams(
+            spec_name="Safety",
+            design_doc=design_doc,
+            project_path=project_path,
+            context_files=context_files,
+            ensemble_size=ensemble_size,
+        )
     )
     generated["spec"] = spec_resp
     result["steps"].append({"name": "generate_spec", "success": spec_resp.get("success")})
 
     # --- Generate test ---
     test_resp = tools["generate_test"](
-        GenerateTestParams(test_name="TestDriver", design_doc=design_doc, project_path=project_path, context_files=context_files)
+        GenerateTestParams(
+            test_name="TestDriver",
+            design_doc=design_doc,
+            project_path=project_path,
+            context_files=context_files,
+            ensemble_size=ensemble_size,
+        )
     )
     generated["test"] = test_resp
     result["steps"].append({"name": "generate_test", "success": test_resp.get("success")})
@@ -240,10 +265,12 @@ def run_protocol(
     }
 
     # --- Auto-fix checker bugs (up to 2 rounds) ---
+    last_fix_bug_resp: Optional[Dict[str, Any]] = None
     for rnd in range(2):
         if check_resp.get("success") or not check_resp.get("failed_tests"):
             break
         fix_bug = tools["fix_buggy_program"](FixBuggyProgramParams(project_path=project_path))
+        last_fix_bug_resp = fix_bug
         result["checker_fixes"].append({"round": rnd + 1, "fixed": fix_bug.get("fixed")})
         if not fix_bug.get("fixed"):
             break
@@ -258,12 +285,265 @@ def run_protocol(
             "error": check_resp.get("error"),
         }
 
+    # Stash the trace analysis so the adaptive retry can feed it to regen
+    if last_fix_bug_resp and not check_resp.get("success"):
+        result["_checker_analysis"] = last_fix_bug_resp.get("analysis")
+        result["_checker_root_cause"] = last_fix_bug_resp.get("root_cause")
+        result["_checker_suggested_fixes"] = last_fix_bug_resp.get("suggested_fixes")
+
     result["success"] = bool(check_resp.get("success"))
     if not result["success"]:
         result["errors"].append("PChecker reported failing tests")
 
     result["timing"]["total_s"] = round(time.time() - t0, 1)
     return result
+
+
+def _read_project_context(project_path: str, tools: Dict[str, Any]) -> Dict[str, str]:
+    """Read all .p files from a project as context for targeted regeneration."""
+    from pathlib import Path as _P
+    ctx: Dict[str, str] = {}
+    for folder in ("PSrc", "PSpec", "PTst"):
+        folder_path = _P(project_path) / folder
+        if folder_path.exists():
+            for p_file in folder_path.glob("*.p"):
+                try:
+                    ctx[p_file.name] = p_file.read_text(encoding="utf-8")
+                except Exception:
+                    pass
+    return ctx
+
+
+def _diagnose_checker_failure(check_result: Dict[str, Any]) -> str:
+    """
+    Guess which artifact type is most likely responsible for a checker failure.
+
+    Returns one of: "spec", "test", "machine", or "unknown".
+
+    Heuristics (from most to least common root causes):
+    - "unhandled event" / "deadlock" → usually a machine missing defer/ignore
+    - "assertion" in trace → usually a spec with wrong invariant logic
+    - 0 tests discovered → test driver is broken
+    - all tests fail with no error context → try regenerating both spec and test
+    """
+    error_text = str(check_result.get("error", "")).lower()
+    failed = check_result.get("failed_tests", [])
+    passed = check_result.get("passed_tests", [])
+
+    if not failed and not passed:
+        return "test"
+
+    if "unhandled" in error_text or "deadlock" in error_text:
+        return "machine"
+
+    if "assert" in error_text:
+        return "spec"
+
+    # All tests fail, no passed tests → the whole spec + test combo is likely
+    # misconfigured. Regenerate both via "machine" culprit which triggers
+    # spec + test regen in the adaptive strategy.
+    if len(passed) == 0 and len(failed) > 0:
+        return "machine"
+
+    return "test"
+
+
+def _build_checker_hint(result: Dict[str, Any]) -> str:
+    """
+    Thin wrapper around ``build_checker_feedback`` from the core fixer
+    service.  Reconstructs the ``check_result`` and ``fix_response``
+    dicts from the stashed fields in *result*.
+    """
+    check_result = result.get("check")
+    fix_response: Optional[Dict[str, Any]] = None
+
+    analysis = result.get("_checker_analysis")
+    if analysis:
+        fix_response = {
+            "analysis": analysis,
+            "root_cause": result.get("_checker_root_cause", ""),
+            "suggested_fixes": result.get("_checker_suggested_fixes"),
+        }
+
+    return build_checker_feedback(
+        check_result=check_result,
+        fix_response=fix_response,
+    )
+
+
+def run_protocol_adaptive(
+    tools: Dict[str, Any],
+    design_doc: str,
+    out_root: Path,
+    project_name: str,
+) -> Dict[str, Any]:
+    """
+    Failure-type-aware adaptive strategy:
+
+    1. Fast pass: ensemble_size=1 for all files.
+    2. If checker fails, diagnose which artifact is likely broken and
+       regenerate only that file (spec/test/machine) with ensemble_size=3.
+    3. If compile fails entirely, regenerate the whole project with ensemble.
+    """
+    fast = run_protocol(tools, design_doc, out_root, project_name, ensemble_size=1)
+    fast["ensemble_used"] = 1
+
+    gen_ok = all(s.get("success") for s in fast.get("steps", []))
+    compile_ok = (
+        (fast.get("compile") or {}).get("success")
+        or (fast.get("compile_after_fix") or {}).get("success")
+    )
+    check_ok = (fast.get("check") or {}).get("success", False)
+
+    if gen_ok and compile_ok and check_ok:
+        fast["adaptive_retry"] = False
+        return fast
+
+    fast_score = score_protocol(fast)["total"]
+    fast["score"] = score_protocol(fast)
+
+    # ── If compilation completely failed, full regeneration with ensemble ──
+    if not compile_ok:
+        logger.info(f"[ADAPTIVE] {project_name}: compile failed, full regen with ensemble=3")
+        retry_root = out_root / f"{project_name}_full_retry"
+        retry_root.mkdir(parents=True, exist_ok=True)
+        robust = run_protocol(tools, design_doc, retry_root, project_name, ensemble_size=3)
+        robust["ensemble_used"] = 3
+        robust["adaptive_retry"] = "full_regen"
+        robust["prior_fast_score"] = fast_score
+        return robust
+
+    # ── Compiled OK but checker failed → targeted regeneration ────────────
+    if compile_ok and not check_ok:
+        check_result = fast.get("check") or {}
+        culprit = _diagnose_checker_failure(check_result)
+        logger.info(
+            f"[ADAPTIVE] {project_name}: checker failed, diagnosed culprit={culprit}, "
+            f"regenerating with ensemble=3"
+        )
+
+        project_path = None
+        for step in fast.get("steps", []):
+            if step.get("name") == "generate_project_structure":
+                break
+        # Recover project_path from generated_files
+        gen_files = fast.get("generated_files", [])
+        if gen_files:
+            from pathlib import Path as _P
+            first_file = _P(gen_files[0])
+            project_path = str(first_file.parent.parent)
+
+        if not project_path:
+            logger.info(f"[ADAPTIVE] {project_name}: could not find project_path, full regen")
+            retry_root = out_root / f"{project_name}_full_retry"
+            retry_root.mkdir(parents=True, exist_ok=True)
+            robust = run_protocol(tools, design_doc, retry_root, project_name, ensemble_size=3)
+            robust["ensemble_used"] = 3
+            robust["adaptive_retry"] = "full_regen_fallback"
+            robust["prior_fast_score"] = fast_score
+            return robust
+
+        # Read current project files as context
+        ctx = _read_project_context(project_path, tools)
+
+        # Build a checker-bug summary from the trace analysis so the LLM
+        # can avoid the same mistake during regeneration.
+        checker_hint = _build_checker_hint(fast)
+        if checker_hint:
+            logger.info(f"[ADAPTIVE] Injecting checker bug context ({len(checker_hint)} chars)")
+
+        regen_count = 0
+
+        if culprit == "spec":
+            logger.info(f"[ADAPTIVE] {project_name}: regenerating spec only")
+            spec_resp = tools["generate_spec"](
+                GenerateSpecParams(
+                    spec_name="Safety",
+                    design_doc=design_doc,
+                    project_path=project_path,
+                    context_files=ctx,
+                    ensemble_size=3,
+                    checker_feedback=checker_hint or None,
+                )
+            )
+            if spec_resp.get("success") and spec_resp.get("file_path") and spec_resp.get("code"):
+                tools["save_p_file"](SavePFileParams(file_path=spec_resp["file_path"], code=spec_resp["code"]))
+                regen_count += 1
+
+        elif culprit == "test":
+            logger.info(f"[ADAPTIVE] {project_name}: regenerating test only")
+            test_resp = tools["generate_test"](
+                GenerateTestParams(
+                    test_name="TestDriver",
+                    design_doc=design_doc,
+                    project_path=project_path,
+                    context_files=ctx,
+                    ensemble_size=3,
+                    checker_feedback=checker_hint or None,
+                )
+            )
+            if test_resp.get("success") and test_resp.get("file_path") and test_resp.get("code"):
+                tools["save_p_file"](SavePFileParams(file_path=test_resp["file_path"], code=test_resp["code"]))
+                regen_count += 1
+
+        elif culprit == "machine":
+            logger.info(f"[ADAPTIVE] {project_name}: regenerating spec + test (machine bugs often surface there)")
+            for regen_type, regen_params in [
+                ("spec", GenerateSpecParams(
+                    spec_name="Safety", design_doc=design_doc,
+                    project_path=project_path, context_files=ctx, ensemble_size=3,
+                    checker_feedback=checker_hint or None,
+                )),
+                ("test", GenerateTestParams(
+                    test_name="TestDriver", design_doc=design_doc,
+                    project_path=project_path, context_files=ctx, ensemble_size=3,
+                    checker_feedback=checker_hint or None,
+                )),
+            ]:
+                if regen_type == "spec":
+                    resp = tools["generate_spec"](regen_params)
+                else:
+                    resp = tools["generate_test"](regen_params)
+                if resp.get("success") and resp.get("file_path") and resp.get("code"):
+                    tools["save_p_file"](SavePFileParams(file_path=resp["file_path"], code=resp["code"]))
+                    regen_count += 1
+
+        # Recompile after targeted regen
+        if regen_count > 0:
+            compile_resp = tools["p_compile"](PCompileParams(path=project_path))
+            if not compile_resp.get("success"):
+                fix_resp = tools["fix_iteratively"](
+                    FixIterativelyParams(project_path=project_path, max_iterations=5)
+                )
+                compile_resp = tools["p_compile"](PCompileParams(path=project_path))
+
+            if compile_resp.get("success"):
+                check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90))
+
+                # One more fix_buggy_program attempt if still failing
+                if not check_resp.get("success") and check_resp.get("failed_tests"):
+                    fix_bug = tools["fix_buggy_program"](FixBuggyProgramParams(project_path=project_path))
+                    if fix_bug.get("fixed"):
+                        recomp = tools["p_compile"](PCompileParams(path=project_path))
+                        if recomp.get("success"):
+                            check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90))
+
+                fast["check"] = {
+                    "success": check_resp.get("success"),
+                    "failed_tests": check_resp.get("failed_tests", []),
+                    "passed_tests": check_resp.get("passed_tests", []),
+                    "error": check_resp.get("error"),
+                }
+                fast["success"] = bool(check_resp.get("success"))
+
+        fast["adaptive_retry"] = f"targeted_{culprit}"
+        fast["prior_fast_score"] = fast_score
+        fast["regen_count"] = regen_count
+        return fast
+
+    # Fallback: return the fast result as-is
+    fast["adaptive_retry"] = False
+    return fast
 
 
 # ============================================================================
@@ -413,6 +693,10 @@ def main() -> int:
         ("MessageBroker", docs_dir / "[Design Doc] Simple Message Broker.txt"),
         ("DistributedLock", docs_dir / "[Design Doc] Distributed Lock Server.txt"),
         ("HotelManagement", docs_dir / "[Design Doc] Hotel Management Application.txt"),
+        ("ClientServer", docs_dir / "[Design Doc] Client Server.txt"),
+        ("FailureDetector", docs_dir / "[Design Doc] Failure Detector.txt"),
+        ("EspressoMachine", docs_dir / "[Design Doc] Espresso Machine.txt"),
+        ("RaftLeaderElection", docs_dir / "[Design Doc] Raft Leader Election.txt"),
     ]
 
     if args.protocol:
@@ -444,7 +728,7 @@ def main() -> int:
                 attempt_out.mkdir(parents=True, exist_ok=True)
                 logger.info(f"[RETRY] {name} attempt {attempt} (previous score: {best_score})")
 
-            result = run_protocol(tools, design_doc, attempt_out, name)
+            result = run_protocol_adaptive(tools, design_doc, attempt_out, name)
             result["score"] = score_protocol(result)
             result["attempt"] = attempt
             current_score = result["score"]["total"]

@@ -1,6 +1,6 @@
 """Fixing-related MCP tools."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from pydantic import BaseModel, Field
 from pathlib import Path
 import logging
@@ -128,6 +128,122 @@ state {error.machine_state} {{
     return guidance
 
 
+def _try_llm_checker_fix(
+    services: Dict[str, Any],
+    project_path: str,
+    project_files: Dict[str, str],
+    trace_content: str,
+    analysis,
+    response: Dict[str, Any],
+) -> bool:
+    """
+    LLM-based fallback for checker errors the specialised fixer cannot handle.
+
+    Sends the trace excerpt + all project files to the LLM and asks it to
+    produce a fixed version of the most-likely-broken file.
+
+    Returns True if the fix compiled and passed PChecker, False otherwise.
+    """
+    try:
+        from core.llm.base import Message, MessageRole, LLMConfig
+
+        error = analysis.error
+        # Determine which file to ask the LLM to fix.
+        # Heuristic: assertion failures → spec file, others → the machine file.
+        target_file = None
+        target_content = None
+        from core.compilation import CheckerErrorCategory
+
+        if error.category == CheckerErrorCategory.ASSERTION_FAILURE:
+            for fname, content in project_files.items():
+                if "PSpec" in fname or "spec " in content:
+                    target_file = fname
+                    target_content = content
+                    break
+        if not target_file:
+            for fname, content in project_files.items():
+                if error.machine_type and f"machine {error.machine_type}" in content:
+                    target_file = fname
+                    target_content = content
+                    break
+        if not target_file:
+            return False
+
+        # Build context from other files
+        context_parts = []
+        for fname, content in project_files.items():
+            if fname != target_file:
+                short = content[:3000] if len(content) > 3000 else content
+                context_parts.append(f"<{Path(fname).name}>\n{short}\n</{Path(fname).name}>")
+
+        # Truncate trace to last 150 lines
+        trace_lines = trace_content.splitlines()
+        trace_excerpt = "\n".join(trace_lines[-150:]) if len(trace_lines) > 150 else trace_content
+
+        target_basename = Path(target_file).name
+        messages = [
+            Message(role=MessageRole.USER, content="\n".join(context_parts)),
+            Message(role=MessageRole.USER, content=(
+                f"The P project compiles but PChecker found a bug.\n\n"
+                f"Error category: {error.category.value}\n"
+                f"Error message: {error.message}\n"
+                f"Machine: {error.machine_type}, State: {error.machine_state}\n\n"
+                f"Trace excerpt (last 150 lines):\n```\n{trace_excerpt}\n```\n\n"
+                f"The file that most likely needs fixing is {target_basename}:\n"
+                f"```\n{target_content}\n```\n\n"
+                f"Please rewrite {target_basename} to fix this bug. "
+                f"Return the complete file in <{target_basename}>...</{target_basename}> tags."
+            )),
+        ]
+
+        import re as _re
+        provider = services["llm_provider"]
+        system_prompt = services["resources"].load_context("about_p.txt")
+        config = LLMConfig(max_tokens=4096)
+        llm_resp = provider.complete(messages, config, system_prompt)
+
+        from core.compilation.p_code_utils import extract_p_code_from_response
+        _, new_code = extract_p_code_from_response(
+            llm_resp.content, expected_filename=target_basename
+        )
+        if not new_code:
+            return False
+        backup = target_content
+
+        # Resolve the full path for writing
+        full_path = target_file
+        if not Path(full_path).is_absolute():
+            full_path = str(Path(project_path) / target_file)
+
+        services["compilation"].write_file(full_path, new_code)
+
+        compile_result = services["compilation"].compile(project_path)
+        if not compile_result.success:
+            services["compilation"].write_file(full_path, backup)
+            return False
+
+        check_result = services["compilation"].run_checker(
+            project_path, schedules=50, timeout=60
+        )
+        if check_result.success:
+            response["fixed"] = True
+            response["verification"] = "LLM-based fix verified - PChecker passed 50 schedules"
+            response["fix_applied"] = {
+                "description": f"LLM rewrote {target_basename} based on trace analysis",
+                "file": full_path,
+                "strategy": "llm_fallback",
+            }
+            logger.info(f"LLM checker fix succeeded for {target_basename}")
+            return True
+        else:
+            services["compilation"].write_file(full_path, backup)
+            return False
+
+    except Exception as e:
+        logger.warning(f"LLM checker fix fallback failed: {e}")
+        return False
+
+
 def _basic_trace_analysis(trace_content: str, project_path: str, services) -> Dict[str, Any]:
     """Basic trace analysis without specialized modules."""
     import re
@@ -167,10 +283,11 @@ def register_fixing_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="fix_compiler_error",
-        description="""Fix a P compiler error using AI.
+        description="""Fix a single P compiler error using AI. Provide the error message, file path, and optionally line/column numbers from the p_compile output.
 
-After 3 failed attempts, returns needs_guidance=true with questions for the user.
-If you receive needs_guidance, ask the user the questions and call again with user_guidance."""
+To fix all compilation errors at once, use fix_iteratively instead.
+
+After 3 failed attempts, returns needs_guidance=true with questions for the user. If you receive needs_guidance, ask the user the questions and call again with user_guidance."""
     )
     def fix_compiler_error(params: FixCompilerErrorParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] fix_compiler_error: {params.file_path}")
@@ -260,7 +377,7 @@ If you receive needs_guidance, ask the user the questions and call again with us
 
     @mcp.tool(
         name="fix_iteratively",
-        description="Iteratively fix compilation errors until success or max iterations reached"
+        description="Iteratively compile, detect errors, and fix them in a loop until the project compiles successfully or max_iterations is reached. This is the recommended way to fix multiple compilation errors at once — it automatically re-compiles after each fix to catch cascading issues. Use this instead of calling fix_compiler_error repeatedly."
     )
     def fix_iteratively(params: FixIterativelyParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] fix_iteratively: {params.project_path}")
@@ -275,24 +392,11 @@ If you receive needs_guidance, ask the user the questions and call again with us
 
     @mcp.tool(
         name="fix_buggy_program",
-        description="""Automatically fix a buggy P program based on PChecker trace analysis.
+        description="""Automatically diagnose and fix a buggy P program after a PChecker failure.
 
-This tool:
-1. Reads the latest PChecker trace from PCheckerOutput/BugFinding/
-2. Analyzes the trace to identify the bug type (null_target, unhandled_event, assertion, deadlock)
-3. Provides detailed root cause analysis
-4. Attempts to automatically fix the bug
-5. Verifies the fix by recompiling and re-running PChecker
+Use this after p_check returns a failure. It reads the latest PChecker trace from PCheckerOutput/BugFinding/, identifies the bug type (null_target, unhandled_event, assertion_failure, deadlock), provides root cause analysis, attempts an automatic fix, and verifies by recompiling and re-running PChecker.
 
-Use this after p_check returns a failure to automatically diagnose and fix the bug.
-
-Returns:
-- analysis: Detailed breakdown of the error (machine, state, event, category)
-- root_cause: Human-readable explanation of why the bug occurred
-- suggested_fixes: List of specific fixes to apply
-- fix_applied: Description of the fix that was applied (if auto-fix succeeded)
-- fixed: Whether the bug was successfully fixed
-- requires_manual_fix: If true, includes instructions for manual intervention"""
+If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidance and example code for manual intervention."""
     )
     def fix_buggy_program(params: FixBuggyProgramParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] fix_buggy_program: {params.project_path}")
@@ -321,28 +425,48 @@ Returns:
             }
             return with_metadata("fix_buggy_program", payload)
 
-        # Use the most recently modified BugFinding*/ directory
-        latest_bug_dir = bug_dirs[0]
-        trace_files = list(latest_bug_dir.glob("*_0_0.txt"))
+        # Collect traces from ALL BugFinding*/ directories (one per failing test).
+        # We pick the best trace to analyze — preferring the one whose error
+        # category is most actionable.
+        all_traces: List[Tuple[Path, str]] = []
+        for bug_dir in bug_dirs:
+            for tf in bug_dir.glob("*_0_0.txt"):
+                try:
+                    all_traces.append((tf, tf.read_text()))
+                except Exception:
+                    pass
 
-        if not trace_files:
+        if not all_traces:
             payload = {
                 "success": False,
-                "error": f"No trace files found in {latest_bug_dir.name}/. "
+                "error": f"No trace files found in BugFinding directories. "
                          "The program may have passed all tests.",
             }
             return with_metadata("fix_buggy_program", payload)
 
-        latest_trace = max(trace_files, key=lambda f: f.stat().st_mtime)
+        # Rank traces by error category actionability so we fix the most
+        # impactful bug first.  Order: unhandled_event > null_target >
+        # assertion_failure > deadlock > unknown.
+        import re as _trace_re
+        _PRIORITY = {"unhandled_event": 0, "null_target": 1, "assertion_failure": 2, "deadlock": 3}
 
-        try:
-            trace_content = latest_trace.read_text()
-        except Exception as e:
-            payload = {
-                "success": False,
-                "error": f"Could not read trace file: {e}",
-            }
-            return with_metadata("fix_buggy_program", payload)
+        def _trace_priority(content: str) -> int:
+            error_match = _trace_re.search(r'<ErrorLog>\s*(.+)', content)
+            if not error_match:
+                return 99
+            msg = error_match.group(1).lower()
+            if "cannot be handled" in msg or "unhandled" in msg:
+                return _PRIORITY["unhandled_event"]
+            if "null" in msg:
+                return _PRIORITY["null_target"]
+            if "assert" in msg:
+                return _PRIORITY["assertion_failure"]
+            if "deadlock" in msg:
+                return _PRIORITY["deadlock"]
+            return 99
+
+        all_traces.sort(key=lambda t: _trace_priority(t[1]))
+        latest_trace, trace_content = all_traces[0]
 
         services = get_services()
 
@@ -406,17 +530,14 @@ Returns:
                 logger.info(f"Attempting specialized fix ({specialized_fix.fix_strategy or 'auto'}): {specialized_fix.description}")
 
                 try:
-                    # Collect all backups for potential revert
                     backups = {}
 
-                    # Apply primary fix
                     backups[specialized_fix.file_path] = specialized_fix.original_code
                     services["compilation"].write_file(
                         specialized_fix.file_path,
                         specialized_fix.fixed_code
                     )
 
-                    # Apply additional patches for multi-file fixes
                     if specialized_fix.is_multi_file and specialized_fix.additional_patches:
                         for patch in specialized_fix.additional_patches:
                             backups[patch.file_path] = patch.original_code
@@ -440,31 +561,38 @@ Returns:
 
                     if compile_result.success:
                         check_result = services["compilation"].run_checker(
-                            str(project_path), schedules=20, timeout=30
+                            str(project_path), schedules=50, timeout=60
                         )
 
                         if check_result.success:
                             response["fixed"] = True
-                            response["verification"] = "Fix verified - PChecker passed 20 schedules"
+                            response["verification"] = "Fix verified - PChecker passed 50 schedules"
                         else:
                             response["fixed"] = False
                             response["verification"] = "Fix applied but bug persists"
-                            response["requires_manual_fix"] = True
+                            # Revert specialized fix, then try LLM fallback
+                            for file_path, original_code in backups.items():
+                                services["compilation"].write_file(file_path, original_code)
+                            response["fix_applied"]["reverted"] = True
                     else:
-                        # Revert ALL patches
                         for file_path, original_code in backups.items():
                             services["compilation"].write_file(file_path, original_code)
                         response["fix_applied"]["reverted"] = True
-                        response["requires_manual_fix"] = True
                         response["verification"] = f"Fix caused compilation error: {compile_result.stdout[:200]}"
 
                 except Exception as e:
                     logger.error(f"Error applying fix: {e}")
-                    response["requires_manual_fix"] = True
                     response["fix_error"] = str(e)
-            else:
-                response["requires_manual_fix"] = True
-                response["manual_fix_guidance"] = _get_manual_fix_guidance(analysis)
+
+            # --- LLM fallback: if specialized fix didn't work, ask the LLM ---
+            if not response.get("fixed"):
+                llm_fix_ok = _try_llm_checker_fix(
+                    services, str(project_path), project_files,
+                    trace_content, analysis, response,
+                )
+                if not llm_fix_ok:
+                    response["requires_manual_fix"] = True
+                    response["manual_fix_guidance"] = _get_manual_fix_guidance(analysis)
 
             return with_metadata("fix_buggy_program", response)
 

@@ -90,15 +90,84 @@ class GenerationService(BaseService):
                 logger.info(f"RAG enabled with {self._rag.get_stats()['total_examples']} examples")
             except Exception as e:
                 logger.warning(f"Failed to initialize RAG: {e}")
+        # Cache static modular contexts/instructions to avoid repeated disk reads and
+        # to support compact prompt assembly.
+        self._static_context_cache: Dict[str, str] = {}
+        # Soft caps to keep prompts concise and reduce LLM latency/cost.
+        self._guide_char_limit = 3500
+        self._context_file_char_limit = 9000
+        self._design_doc_char_limit = 7000
+        self._rag_context_char_limit = 7000
     
-    def _get_rag_context(self, context_type: str, description: str, design_doc: Optional[str] = None) -> str:
-        """Get RAG context for generation."""
+    _TIMER_TEMPLATE: Optional[str] = None
+
+    @classmethod
+    def _load_timer_template(cls) -> str:
+        """Load the Common_Timer template on first use."""
+        if cls._TIMER_TEMPLATE is None:
+            # __file__ = src/core/services/generation.py → 4 parents to reach PeasyAI/
+            timer_path = Path(__file__).resolve().parent.parent.parent.parent / "resources" / "rag_examples" / "Common_Timer" / "PSrc" / "Timer.p"
+            try:
+                cls._TIMER_TEMPLATE = timer_path.read_text(encoding="utf-8")
+            except Exception:
+                cls._TIMER_TEMPLATE = ""
+        return cls._TIMER_TEMPLATE
+
+    @staticmethod
+    def _needs_timer(design_doc: str, context_files: Optional[Dict[str, str]] = None) -> bool:
+        """Detect whether the protocol requires a Timer machine."""
+        text = (design_doc or "").lower()
+        if context_files:
+            text += " " + " ".join(c.lower() for c in context_files.values())
+        return any(kw in text for kw in [
+            "timer", "timeout", "heartbeat", "periodic", "etimeout",
+            "estarttimer", "ecanceltimer", "heartbeat interval",
+        ])
+
+    def _inject_timer_context(
+        self,
+        context_files: Optional[Dict[str, str]],
+        design_doc: str,
+    ) -> Dict[str, str]:
+        """
+        If the design doc uses timer/heartbeat patterns, inject the
+        Common_Timer reference as a context file so the LLM uses the
+        standard ``CreateTimer``/``StartTimer``/``CancelTimer`` API
+        instead of reinventing the Timer machine.
+        """
+        ctx = dict(context_files) if context_files else {}
+        if not self._needs_timer(design_doc, context_files):
+            return ctx
+        # Don't inject if there's already a Timer file
+        if any("timer" in k.lower() for k in ctx):
+            return ctx
+        template = self._load_timer_template()
+        if template:
+            ctx["__Timer_Reference__.p"] = (
+                "// REFERENCE: Standard Timer machine from the P tutorial.\n"
+                "// Use CreateTimer(this), StartTimer(timer), CancelTimer(timer)\n"
+                "// to interact with timers. Do NOT re-implement the Timer machine.\n"
+                "// The Timer module is composed via: module MyModule = (union {...}, Timer);\n\n"
+                + template
+            )
+        return ctx
+
+    def _get_rag_context(
+        self,
+        context_type: str,
+        description: str,
+        design_doc: Optional[str] = None,
+        context_files: Optional[Dict[str, str]] = None,
+    ) -> str:
+        """Get RAG context for generation, enriched by already-generated files."""
         if self._rag is None:
             return ""
         
         try:
             if context_type == "machine":
-                context = self._rag.get_machine_context(description, design_doc=design_doc)
+                context = self._rag.get_machine_context(
+                    description, design_doc=design_doc, context_files=context_files
+                )
             elif context_type == "spec":
                 context = self._rag.get_spec_context(description)
             elif context_type == "test":
@@ -304,7 +373,9 @@ class GenerationService(BaseService):
                 response = self.llm.complete(impl_messages, config, system_prompt)
             
             # Extract code — retry on extraction failure
-            filename, code = self._extract_p_code(response.content)
+            filename, code = self._extract_p_code(
+                response.content, expected_name=machine_name
+            )
 
             if not filename or not code:
                 for retry in range(self.MAX_GENERATION_RETRIES):
@@ -316,7 +387,9 @@ class GenerationService(BaseService):
                     )
                     config = LLMConfig(max_tokens=4096)
                     response = self.llm.complete(impl_messages, config, system_prompt)
-                    filename, code = self._extract_p_code(response.content)
+                    filename, code = self._extract_p_code(
+                        response.content, expected_name=machine_name
+                    )
                     if filename and code:
                         break
 
@@ -385,13 +458,17 @@ class GenerationService(BaseService):
             config = LLMConfig(max_tokens=4096)
             response = self.llm.complete(messages, config, system_prompt)
             
-            filename, code = self._extract_p_code(response.content)
+            filename, code = self._extract_p_code(
+                response.content, expected_name=spec_name
+            )
 
             if not filename or not code:
                 for retry in range(self.MAX_GENERATION_RETRIES):
                     self._warning(f"Code extraction failed for spec {spec_name}, retry {retry + 1}")
                     response = self.llm.complete(messages, config, system_prompt)
-                    filename, code = self._extract_p_code(response.content)
+                    filename, code = self._extract_p_code(
+                        response.content, expected_name=spec_name
+                    )
                     if filename and code:
                         break
 
@@ -459,13 +536,17 @@ class GenerationService(BaseService):
             config = LLMConfig(max_tokens=4096)
             response = self.llm.complete(messages, config, system_prompt)
             
-            filename, code = self._extract_p_code(response.content, is_test_file=True)
+            filename, code = self._extract_p_code(
+                response.content, is_test_file=True, expected_name=test_name
+            )
 
             if not filename or not code:
                 for retry in range(self.MAX_GENERATION_RETRIES):
                     self._warning(f"Code extraction failed for test {test_name}, retry {retry + 1}")
                     response = self.llm.complete(messages, config, system_prompt)
-                    filename, code = self._extract_p_code(response.content, is_test_file=True)
+                    filename, code = self._extract_p_code(
+                        response.content, is_test_file=True, expected_name=test_name
+                    )
                     if filename and code:
                         break
 
@@ -591,14 +672,29 @@ class GenerationService(BaseService):
         Returns:
             GenerationResult for the best candidate
         """
+        first = self.generate_machine(
+            machine_name, design_doc, project_path, context_files,
+            save_to_disk=save_to_disk,
+        )
         if ensemble_size <= 1:
-            return self.generate_machine(
-                machine_name, design_doc, project_path, context_files,
-                save_to_disk=save_to_disk,
-            )
+            return first
 
-        self._status(f"Generating {machine_name} with ensemble (n={ensemble_size})")
+        first_score = 0.0
+        should_escalate = not first.success or not first.code
+        if first.success and first.code:
+            first_score = self._score_p_candidate(first.code, machine_name, context_files, file_type="machine")
+            should_escalate = self._should_escalate_ensemble(first.code, first_score, "machine")
+
+        if not should_escalate:
+            self._status(f"Using first machine candidate for {machine_name} (score={first_score:.1f})")
+            return first
+
+        self._status(f"Escalating machine ensemble for {machine_name} (n={ensemble_size})")
         candidates: List[GenerationResult] = []
+        if first.success and first.code:
+            candidates.append(first)
+
+        additional = max(0, ensemble_size - 1)
 
         def _gen(_idx: int) -> GenerationResult:
             return self.generate_machine(
@@ -606,32 +702,39 @@ class GenerationService(BaseService):
                 save_to_disk=False,
             )
 
-        with ThreadPoolExecutor(max_workers=min(ensemble_size, 4)) as pool:
-            futures = [pool.submit(_gen, i) for i in range(ensemble_size)]
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result.success and result.code:
-                        candidates.append(result)
-                except Exception as e:
-                    logger.warning(f"Ensemble candidate for {machine_name} failed: {e}")
+        if additional > 0:
+            with ThreadPoolExecutor(max_workers=min(additional, 4)) as pool:
+                futures = [pool.submit(_gen, i) for i in range(additional)]
+                for future in as_completed(futures):
+                    try:
+                        result = future.result()
+                        if result.success and result.code:
+                            candidates.append(result)
+                    except Exception as e:
+                        logger.warning(f"Ensemble candidate for {machine_name} failed: {e}")
 
         if not candidates:
-            self._warning(f"All ensemble candidates failed for {machine_name}, falling back to single generation")
-            return self.generate_machine(
-                machine_name, design_doc, project_path, context_files,
-                save_to_disk=save_to_disk,
-            )
+            self._warning(f"All ensemble candidates failed for {machine_name}, returning first attempt")
+            return first
 
-        # Score and pick the best
-        best = max(
-            candidates,
-            key=lambda c: self._score_p_candidate(c.code, machine_name, context_files, file_type="machine"),
+        # Score with heuristic + optional compile-check bonus.
+        scored = []
+        for c in candidates:
+            s = self._score_p_candidate(c.code, machine_name, context_files, file_type="machine")
+            scored.append((c, s))
+
+        # Try compile-check for top candidates when we have the compilation
+        # service.  We only do this for machines (the most error-prone step)
+        # and limit to the top-3 by heuristic score to bound latency.
+        scored.sort(key=lambda t: t[1], reverse=True)
+        compile_checked = self._compile_check_candidates(
+            scored[:3], project_path, file_type="machine"
         )
-        self._status(
-            f"Selected best of {len(candidates)} candidates for {machine_name} "
-            f"(score={self._score_p_candidate(best.code, machine_name, context_files, file_type='machine'):.1f})"
-        )
+        if compile_checked:
+            scored = compile_checked
+
+        best, best_score = max(scored, key=lambda t: t[1])
+        self._status(f"Selected best of {len(candidates)} candidates for {machine_name} (score={best_score:.1f})")
 
         if save_to_disk and best.file_path:
             os.makedirs(os.path.dirname(best.file_path), exist_ok=True)
@@ -694,14 +797,29 @@ class GenerationService(BaseService):
         save_to_disk: bool = True,
     ) -> GenerationResult:
         """Generate a P specification with ensemble selection."""
+        first = self.generate_spec(
+            spec_name, design_doc, project_path, context_files,
+            save_to_disk=save_to_disk,
+        )
         if ensemble_size <= 1:
-            return self.generate_spec(
-                spec_name, design_doc, project_path, context_files,
-                save_to_disk=save_to_disk,
-            )
+            return first
 
-        self._status(f"Generating spec {spec_name} with ensemble (n={ensemble_size})")
+        first_score = 0.0
+        should_escalate = not first.success or not first.code
+        if first.success and first.code:
+            first_score = self._score_p_candidate(first.code, spec_name, context_files, file_type="spec")
+            should_escalate = self._should_escalate_ensemble(first.code, first_score, "spec")
+
+        if not should_escalate:
+            self._status(f"Using first spec candidate for {spec_name} (score={first_score:.1f})")
+            return first
+
+        self._status(f"Escalating spec ensemble for {spec_name} (n={ensemble_size})")
         candidates: List[GenerationResult] = []
+        if first.success and first.code:
+            candidates.append(first)
+
+        additional = max(0, ensemble_size - 1)
 
         def _gen(_idx: int) -> GenerationResult:
             return self.generate_spec(
@@ -709,28 +827,27 @@ class GenerationService(BaseService):
                 save_to_disk=False,
             )
 
-        with ThreadPoolExecutor(max_workers=min(ensemble_size, 4)) as pool:
-            futures = [pool.submit(_gen, i) for i in range(ensemble_size)]
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result.success and result.code:
-                        candidates.append(result)
-                except Exception as e:
-                    logger.warning(f"Ensemble candidate for spec {spec_name} failed: {e}")
+        if additional > 0:
+            with ThreadPoolExecutor(max_workers=min(additional, 4)) as pool:
+                futures = [pool.submit(_gen, i) for i in range(additional)]
+                for future in as_completed(futures):
+                    try:
+                        result = future.result()
+                        if result.success and result.code:
+                            candidates.append(result)
+                    except Exception as e:
+                        logger.warning(f"Ensemble candidate for spec {spec_name} failed: {e}")
 
         if not candidates:
-            self._warning(f"All ensemble candidates failed for spec {spec_name}, falling back")
-            return self.generate_spec(
-                spec_name, design_doc, project_path, context_files,
-                save_to_disk=save_to_disk,
-            )
+            self._warning(f"All ensemble candidates failed for spec {spec_name}, returning first attempt")
+            return first
 
         best = max(
             candidates,
             key=lambda c: self._score_p_candidate(c.code, spec_name, context_files, file_type="spec"),
         )
-        self._status(f"Selected best of {len(candidates)} candidates for spec {spec_name}")
+        best_score = self._score_p_candidate(best.code, spec_name, context_files, file_type="spec")
+        self._status(f"Selected best of {len(candidates)} candidates for spec {spec_name} (score={best_score:.1f})")
 
         if save_to_disk and best.file_path:
             os.makedirs(os.path.dirname(best.file_path), exist_ok=True)
@@ -749,14 +866,29 @@ class GenerationService(BaseService):
         save_to_disk: bool = True,
     ) -> GenerationResult:
         """Generate a P test file with ensemble selection."""
+        first = self.generate_test(
+            test_name, design_doc, project_path, context_files,
+            save_to_disk=save_to_disk,
+        )
         if ensemble_size <= 1:
-            return self.generate_test(
-                test_name, design_doc, project_path, context_files,
-                save_to_disk=save_to_disk,
-            )
+            return first
 
-        self._status(f"Generating test {test_name} with ensemble (n={ensemble_size})")
+        first_score = 0.0
+        should_escalate = not first.success or not first.code
+        if first.success and first.code:
+            first_score = self._score_p_candidate(first.code, test_name, context_files, file_type="test")
+            should_escalate = self._should_escalate_ensemble(first.code, first_score, "test")
+
+        if not should_escalate:
+            self._status(f"Using first test candidate for {test_name} (score={first_score:.1f})")
+            return first
+
+        self._status(f"Escalating test ensemble for {test_name} (n={ensemble_size})")
         candidates: List[GenerationResult] = []
+        if first.success and first.code:
+            candidates.append(first)
+
+        additional = max(0, ensemble_size - 1)
 
         def _gen(_idx: int) -> GenerationResult:
             return self.generate_test(
@@ -764,28 +896,27 @@ class GenerationService(BaseService):
                 save_to_disk=False,
             )
 
-        with ThreadPoolExecutor(max_workers=min(ensemble_size, 4)) as pool:
-            futures = [pool.submit(_gen, i) for i in range(ensemble_size)]
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    if result.success and result.code:
-                        candidates.append(result)
-                except Exception as e:
-                    logger.warning(f"Ensemble candidate for test {test_name} failed: {e}")
+        if additional > 0:
+            with ThreadPoolExecutor(max_workers=min(additional, 4)) as pool:
+                futures = [pool.submit(_gen, i) for i in range(additional)]
+                for future in as_completed(futures):
+                    try:
+                        result = future.result()
+                        if result.success and result.code:
+                            candidates.append(result)
+                    except Exception as e:
+                        logger.warning(f"Ensemble candidate for test {test_name} failed: {e}")
 
         if not candidates:
-            self._warning(f"All ensemble candidates failed for test {test_name}, falling back")
-            return self.generate_test(
-                test_name, design_doc, project_path, context_files,
-                save_to_disk=save_to_disk,
-            )
+            self._warning(f"All ensemble candidates failed for test {test_name}, returning first attempt")
+            return first
 
         best = max(
             candidates,
             key=lambda c: self._score_p_candidate(c.code, test_name, context_files, file_type="test"),
         )
-        self._status(f"Selected best of {len(candidates)} candidates for test {test_name}")
+        best_score = self._score_p_candidate(best.code, test_name, context_files, file_type="test")
+        self._status(f"Selected best of {len(candidates)} candidates for test {test_name} (score={best_score:.1f})")
 
         if save_to_disk and best.file_path:
             os.makedirs(os.path.dirname(best.file_path), exist_ok=True)
@@ -845,21 +976,15 @@ class GenerationService(BaseService):
         """
         Score a P code candidate for quality using static heuristics.
 
-        Higher scores indicate higher-quality candidates.  The scoring
-        rewards:
-        - Correct P constructs (machine, start state, spec, test)
-        - Use of ``defer`` / ``ignore`` (reduces PChecker unhandled-event bugs)
-        - Event coverage (references to events from the types file)
-        - Structural completeness (states, handlers, assertions)
-        - Balanced braces (basic syntax sanity)
+        Rewards correct structure and penalises common P syntax mistakes
+        that would cause compilation failures.
         """
         if not code:
             return 0.0
 
         score = 0.0
 
-        # ── Common scoring (all file types) ────────────────────────────
-        # Balanced braces
+        # ── Common scoring ────────────────────────────────────────────
         open_b = code.count("{")
         close_b = code.count("}")
         if open_b == close_b:
@@ -867,82 +992,206 @@ class GenerationService(BaseService):
         else:
             score -= abs(open_b - close_b) * 2
 
-        # Code completeness (line count, diminishing returns)
         lines = len(code.strip().split("\n"))
         score += min(lines * 0.1, 10)
 
-        # Event references from context
+        # Event references from context (capped to avoid runaway bonus)
         if context_files:
+            event_hits = 0
             for _fname, content in context_files.items():
                 for ev in re.findall(r"\bevent\s+(\w+)", content):
                     if ev in code:
-                        score += 2
+                        event_hits += 1
+            score += min(event_hits * 2, 16)
 
-        # ── Machine-specific scoring ───────────────────────────────────
+        # ── Penalty: common P syntax errors ──────────────────────────
+        # var x: int = 0;  (illegal inline init)
+        score -= len(re.findall(r"\bvar\s+\w+\s*:\s*\w+\s*=", code)) * 5
+        # Redeclared events/types in non-types files
+        if file_type != "types":
+            score -= len(re.findall(r"^\s*event\s+\w+", code, re.MULTILINE)) * 8
+            score -= len(re.findall(r"^\s*type\s+\w+\s*=", code, re.MULTILINE)) * 8
+
+        # ── Machine-specific scoring ──────────────────────────────────
         if file_type == "machine":
             if re.search(rf"\bmachine\s+{re.escape(name)}\b", code):
                 score += 10
             if re.search(r"\bstart\s+state\b", code):
                 score += 10
-            # States
             state_count = len(re.findall(r"\bstate\s+\w+\s*\{", code))
             score += min(state_count * 3, 15)
-            # Entry handlers
             score += min(len(re.findall(r"\bentry\b", code)) * 2, 10)
-            # on-event handlers
-            score += min(len(re.findall(r"\bon\s+\w+\s+(?:do|goto)\b", code)) * 2, 10)
-            # defer — VERY important for avoiding unhandled-event bugs
-            score += len(re.findall(r"\bdefer\b", code)) * 5
-            # ignore
-            score += len(re.findall(r"\bignore\b", code)) * 3
+            on_handlers = len(re.findall(r"\bon\s+\w+\s+(?:do|goto)\b", code))
+            score += min(on_handlers * 2, 10)
+            # defer/ignore — important but capped
+            score += min(len(re.findall(r"\bdefer\b", code)) * 4, 16)
+            score += min(len(re.findall(r"\bignore\b", code)) * 3, 12)
+            # Bonus for send statements (shows the machine actually communicates)
+            score += min(len(re.findall(r"\bsend\b", code)) * 1, 6)
 
-        # ── Spec-specific scoring ──────────────────────────────────────
+        # ── Spec-specific scoring ─────────────────────────────────────
         elif file_type == "spec":
             if re.search(r"\bspec\s+\w+\s+observes\b", code):
                 score += 15
-            score += len(re.findall(r"\bassert\b", code)) * 5
+            score += min(len(re.findall(r"\bassert\b", code)) * 5, 20)
             spec_count = len(re.findall(r"\bspec\s+\w+\b", code))
             score += min(spec_count * 5, 20)
+            # Penalty: spec using forbidden keywords
+            for kw in ["this", r"\bnew\s+\w+", r"\bsend\s+"]:
+                if re.search(kw, code):
+                    score -= 10
 
-        # ── Test-specific scoring ──────────────────────────────────────
+        # ── Test-specific scoring ─────────────────────────────────────
         elif file_type == "test":
             test_decl_count = len(re.findall(r"\btest\s+\w+\s*\[", code))
-            score += test_decl_count * 10
+            score += min(test_decl_count * 10, 30)
             if re.search(r"\bassert\s+\w+\s+in\b", code):
                 score += 10
-            score += len(re.findall(r"\bnew\s+\w+", code)) * 2
-            # Scenario machines
-            score += len(re.findall(r"\bmachine\s+Scenario\w*", code)) * 5
+            score += min(len(re.findall(r"\bnew\s+\w+", code)) * 2, 10)
+            score += min(len(re.findall(r"\bmachine\s+Scenario\w*", code)) * 5, 15)
+            # Bonus for proper sequence building: += (idx, value)
+            score += min(len(re.findall(r"\+=\s*\(", code)) * 2, 8)
 
         return score
+
+    def _should_escalate_ensemble(self, code: str, score: float, file_type: str) -> bool:
+        """Return True when candidate quality suggests running additional ensemble attempts."""
+        if not code:
+            return True
+
+        if file_type == "machine":
+            has_machine_decl = bool(re.search(r"\bmachine\s+\w+\b", code))
+            has_start_state = bool(re.search(r"\bstart\s+state\b", code))
+            return score < 42 or not has_machine_decl or not has_start_state
+
+        if file_type == "spec":
+            has_spec_observes = bool(re.search(r"\bspec\s+\w+\s+observes\b", code))
+            has_assert = bool(re.search(r"\bassert\b", code))
+            return score < 28 or not has_spec_observes or not has_assert
+
+        if file_type == "test":
+            has_test_decl = bool(re.search(r"\btest\s+\w+\s*\[", code))
+            has_new = bool(re.search(r"\bnew\s+", code))
+            return score < 24 or not has_test_decl or not has_new
+
+        return False
+
+    def _compile_check_candidates(
+        self,
+        scored_candidates: List[tuple],
+        project_path: str,
+        file_type: str = "machine",
+    ) -> Optional[List[tuple]]:
+        """
+        Attempt a compile-check on each candidate to add a strong signal.
+
+        Temporarily writes each candidate's code to its target file,
+        runs the P compiler, and adds a +50 bonus for candidates that
+        compile successfully. Restores the original file after each
+        check.
+
+        Returns the re-scored list, or None if the compilation service
+        is unavailable.
+        """
+        try:
+            from ..compilation import CompilationService as _CS
+        except ImportError:
+            return None
+
+        if not scored_candidates:
+            return None
+
+        # We need an existing file path to overwrite temporarily
+        first_result = scored_candidates[0][0]
+        target_path = first_result.file_path
+        if not target_path or not os.path.exists(os.path.dirname(target_path)):
+            return None
+
+        # Save the current file content (if any) for restoration
+        original_content = None
+        if os.path.exists(target_path):
+            try:
+                with open(target_path, "r") as f:
+                    original_content = f.read()
+            except Exception:
+                pass
+
+        COMPILE_BONUS = 50
+        re_scored = []
+
+        for candidate, heuristic_score in scored_candidates:
+            if not candidate.code:
+                re_scored.append((candidate, heuristic_score))
+                continue
+
+            try:
+                # Write candidate to disk
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                with open(target_path, "w") as f:
+                    f.write(candidate.code)
+
+                # Try compiling
+                from ..compilation import ensure_environment
+                env = ensure_environment()
+                if env.is_valid and env.p_compiler_path:
+                    import subprocess
+                    result = subprocess.run(
+                        [env.p_compiler_path, "compile"],
+                        cwd=project_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                    )
+                    if result.returncode == 0:
+                        logger.info(f"  Candidate compiles successfully (+{COMPILE_BONUS} bonus)")
+                        re_scored.append((candidate, heuristic_score + COMPILE_BONUS))
+                    else:
+                        re_scored.append((candidate, heuristic_score))
+                else:
+                    re_scored.append((candidate, heuristic_score))
+            except Exception as e:
+                logger.debug(f"  Compile check failed for candidate: {e}")
+                re_scored.append((candidate, heuristic_score))
+
+        # Restore original file
+        try:
+            if original_content is not None:
+                with open(target_path, "w") as f:
+                    f.write(original_content)
+            elif os.path.exists(target_path):
+                os.remove(target_path)
+        except Exception:
+            pass
+
+        return re_scored
 
     def _build_types_events_messages(self, design_doc: str) -> List[Message]:
         """Build messages for types/events generation"""
         messages = []
         
         # Add P basics
-        p_basics = self.resources.load_modular_context("p_basics.txt")
+        p_basics = self._load_static_modular_context("p_basics.txt")
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"Reference P Language Guide:\n{p_basics}"
+            content=f"Reference P Language Guide:\n{self._compact_text(p_basics, self._guide_char_limit)}"
         ))
         
         # Add specific guides
-        types_guide = self.resources.load_modular_context("p_types_guide.txt")
-        events_guide = self.resources.load_modular_context("p_events_guide.txt")
-        enums_guide = self.resources.load_modular_context("p_enums_guide.txt")
+        types_guide = self._load_static_modular_context("p_types_guide.txt")
+        events_guide = self._load_static_modular_context("p_events_guide.txt")
+        enums_guide = self._load_static_modular_context("p_enums_guide.txt")
         
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<types_guide>\n{types_guide}\n</types_guide>"
+            content=f"<types_guide>\n{self._compact_text(types_guide, self._guide_char_limit)}\n</types_guide>"
         ))
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<events_guide>\n{events_guide}\n</events_guide>"
+            content=f"<events_guide>\n{self._compact_text(events_guide, self._guide_char_limit)}\n</events_guide>"
         ))
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<enums_guide>\n{enums_guide}\n</enums_guide>"
+            content=f"<enums_guide>\n{self._compact_text(enums_guide, self._guide_char_limit)}\n</enums_guide>"
         ))
         
         # Add RAG context (similar type/event examples from corpus)
@@ -950,17 +1199,17 @@ class GenerationService(BaseService):
         if rag_context:
             messages.append(Message(
                 role=MessageRole.USER,
-                content=f"<similar_examples>\n{rag_context}\n</similar_examples>"
+                content=f"<similar_examples>\n{self._compact_text(rag_context, self._rag_context_char_limit)}\n</similar_examples>"
             ))
         
         # Add design doc
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"Design Document:\n{design_doc}"
+            content=f"Design Document:\n{self._compact_design_doc(design_doc)}"
         ))
         
         # Add instruction
-        instruction = self.resources.load_instruction("generate_enums_types_events.txt")
+        instruction = self._load_static_instruction("generate_enums_types_events.txt")
         messages.append(Message(
             role=MessageRole.USER,
             content=instruction
@@ -975,45 +1224,46 @@ class GenerationService(BaseService):
         context_files: Optional[Dict[str, str]],
     ) -> List[Message]:
         """Build messages for machine structure generation"""
+        # Auto-inject Timer template if the protocol uses timers
+        context_files = self._inject_timer_context(context_files, design_doc)
+
         messages = []
         
         # Add guides
-        p_basics = self.resources.load_modular_context("p_basics.txt")
-        machines_guide = self.resources.load_modular_context("p_machines_guide.txt")
+        p_basics = self._load_static_modular_context("p_basics.txt")
+        machines_guide = self._load_static_modular_context("p_machines_guide.txt")
         
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<p_basics>\n{p_basics}\n</p_basics>"
+            content=f"<p_basics>\n{self._compact_text(p_basics, self._guide_char_limit)}\n</p_basics>"
         ))
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<machines_guide>\n{machines_guide}\n</machines_guide>"
+            content=f"<machines_guide>\n{self._compact_text(machines_guide, self._guide_char_limit)}\n</machines_guide>"
         ))
         
-        # Add RAG context (similar examples from corpus)
-        rag_context = self._get_rag_context("machine", machine_name, design_doc)
+        # Add RAG context enriched with already-generated files
+        rag_context = self._get_rag_context(
+            "machine", machine_name, design_doc, context_files=context_files
+        )
         if rag_context:
             messages.append(Message(
                 role=MessageRole.USER,
-                content=f"<similar_examples>\n{rag_context}\n</similar_examples>"
+                content=f"<similar_examples>\n{self._compact_text(rag_context, self._rag_context_char_limit)}\n</similar_examples>"
             ))
         
         # Add context files
         if context_files:
-            for filename, content in context_files.items():
-                messages.append(Message(
-                    role=MessageRole.USER,
-                    content=f"<{filename}>\n{content}\n</{filename}>"
-                ))
+            messages.extend(self._compact_context_messages(context_files))
         
         # Add design doc
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"Design Document:\n{design_doc}"
+            content=f"Design Document:\n{self._compact_design_doc(design_doc)}"
         ))
         
         # Add instruction
-        instruction = self.resources.load_instruction("generate_machine_structure.txt")
+        instruction = self._load_static_instruction("generate_machine_structure.txt")
         messages.append(Message(
             role=MessageRole.USER,
             content=instruction.format(machineName=machine_name)
@@ -1029,42 +1279,40 @@ class GenerationService(BaseService):
         structure: Optional[str] = None,
     ) -> List[Message]:
         """Build messages for machine implementation"""
+        context_files = self._inject_timer_context(context_files, design_doc)
+
         messages = []
         
         # Add guides
-        p_basics = self.resources.load_modular_context("p_basics.txt")
-        machines_guide = self.resources.load_modular_context("p_machines_guide.txt")
-        statements_guide = self.resources.load_modular_context("p_statements_guide.txt")
+        p_basics = self._load_static_modular_context("p_basics.txt")
+        machines_guide = self._load_static_modular_context("p_machines_guide.txt")
+        statements_guide = self._load_static_modular_context("p_statements_guide.txt")
         
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<p_basics>\n{p_basics}\n</p_basics>"
+            content=f"<p_basics>\n{self._compact_text(p_basics, self._guide_char_limit)}\n</p_basics>"
         ))
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<machines_guide>\n{machines_guide}\n</machines_guide>"
+            content=f"<machines_guide>\n{self._compact_text(machines_guide, self._guide_char_limit)}\n</machines_guide>"
         ))
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<statements_guide>\n{statements_guide}\n</statements_guide>"
+            content=f"<statements_guide>\n{self._compact_text(statements_guide, self._guide_char_limit)}\n</statements_guide>"
         ))
         
         # Add context files
         if context_files:
-            for filename, content in context_files.items():
-                messages.append(Message(
-                    role=MessageRole.USER,
-                    content=f"<{filename}>\n{content}\n</{filename}>"
-                ))
+            messages.extend(self._compact_context_messages(context_files))
         
         # Add design doc
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"Design Document:\n{design_doc}"
+            content=f"Design Document:\n{self._compact_design_doc(design_doc)}"
         ))
         
         # Add instruction with optional structure
-        instruction = self.resources.load_instruction("generate_machine.txt")
+        instruction = self._load_static_instruction("generate_machine.txt")
         content = instruction.format(machineName=machine_name)
         
         if structure:
@@ -1087,34 +1335,38 @@ class GenerationService(BaseService):
         messages = []
         
         # Add guides
-        p_basics = self.resources.load_modular_context("p_basics.txt")
-        spec_guide = self.resources.load_modular_context("p_spec_monitors_guide.txt")
+        p_basics = self._load_static_modular_context("p_basics.txt")
+        spec_guide = self._load_static_modular_context("p_spec_monitors_guide.txt")
         
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<p_basics>\n{p_basics}\n</p_basics>"
+            content=f"<p_basics>\n{self._compact_text(p_basics, self._guide_char_limit)}\n</p_basics>"
         ))
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<spec_guide>\n{spec_guide}\n</spec_guide>"
+            content=f"<spec_guide>\n{self._compact_text(spec_guide, self._guide_char_limit)}\n</spec_guide>"
         ))
+        
+        # Add RAG context (similar spec examples from corpus)
+        rag_context = self._get_rag_context("spec", spec_name, design_doc)
+        if rag_context:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content=f"<similar_examples>\n{self._compact_text(rag_context, self._rag_context_char_limit)}\n</similar_examples>"
+            ))
         
         # Add context files
         if context_files:
-            for filename, content in context_files.items():
-                messages.append(Message(
-                    role=MessageRole.USER,
-                    content=f"<{filename}>\n{content}\n</{filename}>"
-                ))
+            messages.extend(self._compact_context_messages(context_files))
         
         # Add design doc
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"Design Document:\n{design_doc}"
+            content=f"Design Document:\n{self._compact_design_doc(design_doc)}"
         ))
         
         # Add instruction
-        instruction = self.resources.load_instruction("generate_spec_files.txt")
+        instruction = self._load_static_instruction("generate_spec_files.txt")
         messages.append(Message(
             role=MessageRole.USER,
             content=instruction.format(filename=spec_name)
@@ -1132,25 +1384,29 @@ class GenerationService(BaseService):
         messages = []
         
         # Add guides
-        p_basics = self.resources.load_modular_context("p_basics.txt")
-        test_guide = self.resources.load_modular_context("p_test_cases_guide.txt")
+        p_basics = self._load_static_modular_context("p_basics.txt")
+        test_guide = self._load_static_modular_context("p_test_cases_guide.txt")
         
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<p_basics>\n{p_basics}\n</p_basics>"
+            content=f"<p_basics>\n{self._compact_text(p_basics, self._guide_char_limit)}\n</p_basics>"
         ))
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"<test_guide>\n{test_guide}\n</test_guide>"
+            content=f"<test_guide>\n{self._compact_text(test_guide, self._guide_char_limit)}\n</test_guide>"
         ))
+        
+        # Add RAG context (similar test driver examples from corpus)
+        rag_context = self._get_rag_context("test", test_name, design_doc)
+        if rag_context:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content=f"<similar_examples>\n{self._compact_text(rag_context, self._rag_context_char_limit)}\n</similar_examples>"
+            ))
         
         # Add context files
         if context_files:
-            for filename, content in context_files.items():
-                messages.append(Message(
-                    role=MessageRole.USER,
-                    content=f"<{filename}>\n{content}\n</{filename}>"
-                ))
+            messages.extend(self._compact_context_messages(context_files))
         
         # Extract and inject machine wiring information so the LLM
         # knows the exact constructor signature for each machine.
@@ -1166,20 +1422,87 @@ class GenerationService(BaseService):
                     "</machine_wiring_reference>"
                 ),
             ))
+
+        spec_names = self._extract_spec_monitor_names(context_files)
+        if spec_names:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content=(
+                    "<spec_monitor_reference>\n"
+                    "The following spec monitors are defined in the PSpec files. "
+                    "Use EXACTLY these names in the `assert` clauses of test declarations.\n"
+                    + "\n".join(f"- {name}" for name in spec_names) + "\n"
+                    "</spec_monitor_reference>"
+                ),
+            ))
         
         # Add design doc
         messages.append(Message(
             role=MessageRole.USER,
-            content=f"Design Document:\n{design_doc}"
+            content=f"Design Document:\n{self._compact_design_doc(design_doc)}"
         ))
         
         # Add instruction
-        instruction = self.resources.load_instruction("generate_test_files.txt")
+        instruction = self._load_static_instruction("generate_test_files.txt")
         messages.append(Message(
             role=MessageRole.USER,
             content=instruction.format(filename=test_name)
         ))
         
+        return messages
+
+    def _load_static_modular_context(self, filename: str) -> str:
+        key = f"modular:{filename}"
+        if key not in self._static_context_cache:
+            self._static_context_cache[key] = self.resources.load_modular_context(filename)
+        return self._static_context_cache[key]
+
+    def _load_static_instruction(self, filename: str) -> str:
+        key = f"instruction:{filename}"
+        if key not in self._static_context_cache:
+            self._static_context_cache[key] = self.resources.load_instruction(filename)
+        return self._static_context_cache[key]
+
+    def _compact_text(self, text: str, limit: int) -> str:
+        if not text:
+            return ""
+        if len(text) <= limit:
+            return text
+        # Keep head + tail to preserve overview and concrete syntax examples.
+        head = int(limit * 0.75)
+        tail = limit - head
+        return text[:head] + "\n... (truncated for prompt efficiency) ...\n" + text[-tail:]
+
+    def _compact_design_doc(self, design_doc: str) -> str:
+        return self._compact_text(design_doc, self._design_doc_char_limit)
+
+    def _compact_context_messages(self, context_files: Dict[str, str]) -> List[Message]:
+        messages: List[Message] = []
+        # Prioritize critical files for correctness first.
+        priority = []
+        rest = []
+        for filename, content in context_files.items():
+            lname = filename.lower()
+            if "enums" in lname or "types" in lname or "event" in lname:
+                priority.append((filename, content))
+            elif "safety" in lname or "spec" in lname:
+                priority.append((filename, content))
+            else:
+                rest.append((filename, content))
+        ordered = priority + rest
+
+        budget = self._context_file_char_limit
+        for filename, content in ordered:
+            if budget <= 0:
+                break
+            chunk = self._compact_text(content, min(2500, budget))
+            budget -= len(chunk)
+            messages.append(
+                Message(
+                    role=MessageRole.USER,
+                    content=f"<{filename}>\n{chunk}\n</{filename}>",
+                )
+            )
         return messages
     
     @staticmethod
@@ -1215,16 +1538,11 @@ class GenerationService(BaseService):
                 continue
             machine_name = machine_match.group(1)
 
-            # Find start state
-            start_state_match = re.search(
-                r"start\s+state\s+(\w+)\s*\{(.*?)\n\s*\}",
-                code,
-                re.DOTALL,
-            )
-            if not start_state_match:
+            # Find start state (brace-balanced extraction)
+            from ..compilation.p_code_utils import extract_start_state
+            start_state_name, start_body = extract_start_state(code)
+            if not start_state_name or start_body is None:
                 continue
-            start_state_name = start_state_match.group(1)
-            start_body = start_state_match.group(2)
 
             # Pattern A: entry function with parameter (constructor payload)
             entry_match = re.search(r"\bentry\s+(\w+)\s*;", start_body)
@@ -1282,7 +1600,33 @@ class GenerationService(BaseService):
 
         return "\n".join(lines_out)
 
-    def _extract_p_code(self, response: str, is_test_file: bool = False) -> tuple:
+    @staticmethod
+    def _extract_spec_monitor_names(
+        context_files: Optional[Dict[str, str]],
+    ) -> List[str]:
+        """
+        Extract spec monitor names from context files (PSpec/*.p).
+
+        Returns a list of spec machine names (e.g. ["Safety", "OnlyOneValueChosen"])
+        that the test driver should reference in ``assert`` clauses.
+        """
+        if not context_files:
+            return []
+
+        names: List[str] = []
+        for filename, code in context_files.items():
+            if not filename.endswith(".p"):
+                continue
+            for m in re.finditer(r"\bspec\s+(\w+)\s+observes\b", code):
+                names.append(m.group(1))
+        return names
+
+    def _extract_p_code(
+        self,
+        response: str,
+        is_test_file: bool = False,
+        expected_name: Optional[str] = None,
+    ) -> tuple:
         """
         Extract P code from LLM response.
         
@@ -1297,60 +1641,21 @@ class GenerationService(BaseService):
             response: Raw LLM response text
             is_test_file: If True, this is a PTst file; the post-processor
                           will ensure test declarations exist.
+            expected_name: If provided, used as the fallback filename when
+                           the LLM response doesn't include one (e.g. the
+                           machine_name parameter from generate_machine).
         
         Returns:
             Tuple of (filename, code) or (None, None) if not found
         """
-        filename: Optional[str] = None
-        code: Optional[str] = None
+        from ..compilation.p_code_utils import extract_p_code_from_response
 
-        # Strategy 1: XML-style tags  <Filename.p>...</Filename.p>
-        xml_pattern = r'<(\w+\.p)>(.*?)</\1>'
-        match = re.search(xml_pattern, response, re.DOTALL)
-        if match:
-            filename = match.group(1)
-            code = match.group(2).strip()
-
-        # Strategy 2: Markdown code block with a filename hint on the first line
-        if not code:
-            md_pattern = r'```(?:p)?\s*\n\s*//\s*(\w+\.p)\s*\n(.*?)```'
-            match = re.search(md_pattern, response, re.DOTALL)
-            if match:
-                filename = match.group(1)
-                code = match.group(2).strip()
-
-        # Strategy 3: Bare markdown code block – derive filename from `machine` keyword
-        if not code:
-            md_bare = r'```(?:p)?\s*\n(.*?)```'
-            match = re.search(md_bare, response, re.DOTALL)
-            if match:
-                candidate = match.group(1).strip()
-                # Try to derive a filename from the first machine declaration
-                name_match = re.search(r'\bmachine\s+(\w+)', candidate)
-                if name_match:
-                    filename = f"{name_match.group(1)}.p"
-                    code = candidate
-
-        # Strategy 4: No fences at all – look for `machine Foo {` blocks
-        if not code:
-            machine_block = re.search(
-                r'(machine\s+\w+\s*\{.*)',
-                response,
-                re.DOTALL,
-            )
-            if machine_block:
-                candidate = machine_block.group(1).strip()
-                name_match = re.search(r'\bmachine\s+(\w+)', candidate)
-                if name_match:
-                    filename = f"{name_match.group(1)}.p"
-                    code = candidate
+        filename, code = extract_p_code_from_response(
+            response, expected_filename=expected_name
+        )
 
         if not filename or not code:
             return None, None
-
-        # Strip any remaining markdown fence artifacts
-        code = re.sub(r'^```\w*\s*', '', code)
-        code = re.sub(r'\s*```\s*$', '', code)
 
         # Post-process the code to fix common issues
         try:

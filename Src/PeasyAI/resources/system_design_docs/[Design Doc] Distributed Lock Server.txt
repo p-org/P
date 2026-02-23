@@ -63,11 +63,11 @@ Assumptions:
 * Effects:
     * The client receives confirmation that the lock has been successfully released.
 
-5. eInformLockServer
+5. eInformLock Server
 * Source: Lock Server
 * Target: Client
 * Payload: Lock Server
-* Description: LockServer informs clients of its existence and readiness to process requests.
+* Description: Lock Server informs clients of its existence and readiness to process requests.
 * Effects:
     * Clients start sending lock and release requests.
 

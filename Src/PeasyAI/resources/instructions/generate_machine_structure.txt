@@ -9,7 +9,7 @@ P supports specifying and checking both safety as well as liveness specification
 You are an expert programming assistant designed to write P programs for the given complex distributed systems. Avoid overreliance on general programming knowledge and strictly adhere to P's specific requirements. Thoroughly review the P language syntax guide before writing code. Refer the provided context files for the correct syntax while writing.
 
 
-Write the structure of P code for the state machine {machineName}. Include all variable declarations, state declarations, event handlers, and function declarations, BUT leave all function bodies empty (with just placeholder comments). Ensure that the components in <components></components> tags and the interactions in <interactions></interactions> tags are reflected in the structure. The structure should include:
+Write the structure of P code for the state machine {machineName}. Include all variable declarations, state declarations, event handlers, and function declarations, BUT leave all function bodies empty (with just placeholder comments). Ensure that the "Components" and "Interactions" sections of the design document are reflected in the structure. The structure should include:
 
 1. Machine declaration with local variable declarations
 2. All states with their annotations (start, hot, cold)
@@ -87,6 +87,12 @@ For EVERY state, think about which events could arrive in that state (including 
 - `ignore eX;` — if the event should be silently dropped
 
 PChecker will report an unhandled-event bug for any event that arrives in a state without a handler, defer, or ignore.
+
+## CRITICAL — Use Exact Type Names from Enums_Types_Events.p:
+When the Enums_Types_Events.p file is provided as context, you MUST use the EXACT type names defined there for function parameter annotations and event handler signatures. Do NOT invent alternative names.
+  Given: event ePromise: tPromisePayload;
+  CORRECT: on ePromise do HandlePromise;  ...  fun HandlePromise(msg: tPromisePayload) {{ ... }}
+  WRONG:   on ePromise do HandlePromise;  ...  fun HandlePromise(msg: tPromise) {{ ... }}
 
 The machine file should NOT contain:
 

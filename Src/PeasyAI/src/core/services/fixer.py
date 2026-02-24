@@ -13,6 +13,7 @@ Enhanced with:
 import re
 import json
 import logging
+import traceback
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
@@ -393,10 +394,11 @@ class FixerService(BaseService):
                 )
                 
         except Exception as e:
-            logger.error(f"Error fixing compilation error: {e}")
+            err_msg = f"{type(e).__name__}: {e}"
+            logger.error(f"Error fixing compilation error: {err_msg}\n{traceback.format_exc()}")
             return FixResult(
                 success=False,
-                error=str(e),
+                error=err_msg,
                 attempt_number=attempt,
             )
     
@@ -647,10 +649,11 @@ class FixerService(BaseService):
                 )
                 
         except Exception as e:
-            logger.error(f"Error fixing checker error: {e}")
+            err_msg = f"{type(e).__name__}: {e}"
+            logger.error(f"Error fixing checker error: {err_msg}\n{traceback.format_exc()}")
             return FixResult(
                 success=False,
-                error=str(e),
+                error=err_msg,
                 attempt_number=attempt,
                 analysis=analysis_dict,
                 root_cause=root_cause,

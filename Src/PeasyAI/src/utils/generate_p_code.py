@@ -12,6 +12,17 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
+def _safe_format(template: str, **kwargs) -> str:
+    """Format a template, falling back to manual replacement on unescaped braces."""
+    try:
+        return template.format(**kwargs)
+    except (KeyError, ValueError, IndexError):
+        result = template
+        for key, value in kwargs.items():
+            result = result.replace("{" + key + "}", str(value))
+        return result
+
+
 # File handler
 file_handler = logging.FileHandler(os.path.join(global_state.PROJECT_ROOT, "peasyai_debug.log"), mode='w')  # 'w' to overwrite
 file_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
@@ -233,7 +244,7 @@ def generate_machine_code(system_prompt, design_doc_content,machines_list, filen
     # Stage 1: Generate structure
     backend_status.write(f"  . . . Stage 1: Generating structure for {filename}.p")
     pipeline = prompting_pipeline.PromptingPipeline()
-    pipeline.add_system_prompt(read_instructions()['MACHINE_STRUCTURE'].format(machineName=filename))
+    pipeline.add_system_prompt(_safe_format(read_instructions()['MACHINE_STRUCTURE'], machineName=filename))
     pipeline.add_documents_inline(get_context_files()["MACHINE_STRUCTURE"], tag_surround)
     pipeline.add_user_msg("P_basics_file",[global_state.P_basics_path])
     pipeline.add_user_msg(f"This is the Design Document for which I want you to generate the code for : /n {design_doc_content}")
@@ -248,7 +259,7 @@ def generate_machine_code(system_prompt, design_doc_content,machines_list, filen
         machine_structure = match.group(1).strip()
         backend_status.write(f"  . . . Stage 2: Implementing function bodies for {filename}.p")
         # Format instruction text first, then combine with machine structure
-        instruction_text = read_instructions()[MACHINE].format(machineName=filename)
+        instruction_text = _safe_format(read_instructions()[MACHINE], machineName=filename)
         # Replace any curly braces in machine structure with escaped versions
         pipeline.add_user_msg(f"{instruction_text}\n\nHere is the starting structure:\n\n"+ machine_structure)
         pipeline.add_documents_inline(get_context_files()[dirname], tag_surround)
@@ -256,7 +267,7 @@ def generate_machine_code(system_prompt, design_doc_content,machines_list, filen
     else:
         # Fallback to single-stage
         backend_status.write(f"  . . . :red[Failed to extract structure for {filename}.p. Falling back to single-stage generation.]")
-        pipeline.add_user_msg(read_instructions()[MACHINE].format(machineName=filename))
+        pipeline.add_user_msg(_safe_format(read_instructions()[MACHINE], machineName=filename))
         pipeline.add_documents_inline(get_context_files()[dirname], tag_surround)
         response = pipeline.invoke_llm(global_state.model_id, candidates=1, heuristic='random')
 
@@ -363,13 +374,13 @@ def set_project_name_from_design_doc(userTextInput):
     userTextInput (str): The content of the design document as a string.
 
     Sets:
-    global_state.project_name (str): The project name extracted from the <title> tags, with spaces replaced by underscores.
+    global_state.project_name (str): The project name extracted from the top-level markdown heading, with spaces replaced by underscores.
     global_state.project_name_with_timestamp (str): The project name appended with a timestamp in the format 'YYYY_MM_DD_HH_MM_SS'.
     """
-    # Regular expression pattern to find content inside <title> tags
-    project_name_pattern = r'<title>(.*?)</title>'
+    # Extract title from top-level markdown heading (# Title)
+    project_name_pattern = r'^#\s+(.+?)\s*$'
 
-    match = re.search(project_name_pattern, userTextInput, re.IGNORECASE)
+    match = re.search(project_name_pattern, userTextInput, re.MULTILINE | re.IGNORECASE)
     if match:
         global_state.project_name = match.group(1).strip().replace(" ", "_")
     

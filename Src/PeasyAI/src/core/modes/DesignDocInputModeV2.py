@@ -152,8 +152,8 @@ class DesignDocInputModeV2:
             st.file_uploader(
                 "📄 Upload a design document (.txt)",
                 key="design_doc",
-                type=["txt"],
-                help="Upload a text file containing your P system design document."
+                type=["txt", "md"],
+                help="Upload a design document (.txt or .md) for your P system."
             )
             
             st.text_input(

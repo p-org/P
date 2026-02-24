@@ -1,18 +1,124 @@
 """Generation-related MCP tools."""
 
 from typing import Dict, Any, Optional, List
+from pathlib import Path
 from pydantic import BaseModel, Field
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+def _find_project_root(file_path: str) -> Optional[str]:
+    """
+    Walk up from file_path to find the P project root (directory containing .pproj).
+    Returns the project root path or None.
+    """
+    current = Path(file_path).parent
+    for _ in range(10):
+        if any(current.glob("*.pproj")):
+            return str(current)
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    return None
+
+
+def _review_generated_code(
+    code: str,
+    filename: str,
+    project_path: str,
+    is_test_file: bool = False,
+) -> Dict[str, Any]:
+    """
+    Run post-processing and cross-file consistency checks on generated code.
+
+    Returns a dict with:
+      - code: the (possibly fixed) code
+      - fixes_applied: list of auto-fixes that were applied
+      - warnings: list of issues that need manual attention
+    """
+    from core.compilation.p_post_processor import (
+        PCodePostProcessor,
+        TypeConsistencyChecker,
+        CrossFileReviewer,
+    )
+
+    processor = PCodePostProcessor()
+    result = processor.process(code, filename, is_test_file=is_test_file)
+    warnings = list(result.warnings)
+
+    try:
+        project_files: Dict[str, str] = {}
+        pp = Path(project_path)
+        for p_file in pp.rglob("*.p"):
+            rel = str(p_file.relative_to(pp))
+            project_files[rel] = p_file.read_text(encoding="utf-8")
+        project_files[filename] = result.code
+
+        type_checker = TypeConsistencyChecker()
+        for content in project_files.values():
+            type_checker.extract_definitions(content)
+        undef_types = type_checker.find_undefined_types(result.code)
+        undef_events = type_checker.find_undefined_events(result.code)
+        if undef_types:
+            warnings.append(f"Undefined types in {filename}: {undef_types}")
+        if undef_events:
+            warnings.append(f"Undefined events in {filename}: {undef_events}")
+
+        reviewer = CrossFileReviewer()
+
+        if is_test_file:
+            spec_names = reviewer.extract_spec_names(project_files)
+            if spec_names:
+                spec_issues = reviewer.validate_test_includes_specs(
+                    result.code, spec_names, filename
+                )
+                warnings.extend(spec_issues)
+
+            machine_configs = reviewer.extract_machine_config_types(project_files)
+            if machine_configs:
+                ctor_issues = reviewer.validate_constructor_patterns(
+                    result.code, machine_configs, filename
+                )
+                warnings.extend(ctor_issues)
+
+        types_code = ""
+        for rel, content in project_files.items():
+            if "Enums_Types_Events" in rel or "types" in rel.lower():
+                types_code = content
+                break
+        if types_code and "spec " in result.code:
+            spec_warnings = processor.validate_spec_events(
+                result.code, types_code, filename
+            )
+            warnings.extend(spec_warnings)
+
+        # Validate payload field names against type definitions
+        if types_code:
+            type_fields = reviewer.extract_type_field_names(types_code)
+            if type_fields:
+                field_issues = reviewer.validate_payload_field_names(
+                    result.code, type_fields, filename
+                )
+                warnings.extend(field_issues)
+
+    except Exception as e:
+        logger.debug(f"Cross-file review skipped: {e}")
+
+    return {
+        "code": result.code,
+        "fixes_applied": result.fixes_applied,
+        "warnings": warnings,
+    }
+
+
 class GenerateProjectParams(BaseModel):
     """Parameters for project structure creation (STEP 1)"""
     design_doc: str = Field(
         ...,
-        description="The design document content describing the P program. "
-                    "Should include <title>, <introduction>, <components>, and <interactions>."
+        description="The design document content describing the P program in markdown format. "
+                    "Should include headings: # Title, ## Introduction, ## Components, ## Interactions."
     )
     output_dir: str = Field(
         ...,
@@ -175,14 +281,23 @@ def register_generation_tools(mcp, get_services, with_metadata):
             save_to_disk=False  # Preview only
         )
 
+        review = {"fixes_applied": [], "warnings": []}
+        code = result.code
+        if result.success and code:
+            review = _review_generated_code(
+                code, result.filename or "Enums_Types_Events.p", params.project_path
+            )
+            code = review["code"]
+
         payload = {
             "success": result.success,
             "filename": result.filename,
             "file_path": result.file_path,
-            "code": result.code,
+            "code": code,
             "error": result.error,
             "token_usage": result.token_usage,
             "preview_only": True,
+            "review": review,
             "message": "Code generated for preview. Use save_p_file to save to disk." if result.success else result.error
         }
         return with_metadata("generate_types_events", payload, token_usage=result.token_usage)
@@ -214,14 +329,23 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 save_to_disk=False  # Preview only
             )
 
+        review = {"fixes_applied": [], "warnings": []}
+        code = result.code
+        if result.success and code:
+            review = _review_generated_code(
+                code, result.filename or f"{params.machine_name}.p", params.project_path
+            )
+            code = review["code"]
+
         payload = {
             "success": result.success,
             "filename": result.filename,
             "file_path": result.file_path,
-            "code": result.code,
+            "code": code,
             "error": result.error,
             "token_usage": result.token_usage,
             "preview_only": True,
+            "review": review,
             "message": "Code generated for preview. Use save_p_file to save to disk." if result.success else result.error
         }
         return with_metadata("generate_machine", payload, token_usage=result.token_usage)
@@ -256,14 +380,23 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 save_to_disk=False
             )
 
+        review = {"fixes_applied": [], "warnings": []}
+        code = result.code
+        if result.success and code:
+            review = _review_generated_code(
+                code, result.filename or f"{params.spec_name}.p", params.project_path
+            )
+            code = review["code"]
+
         payload = {
             "success": result.success,
             "filename": result.filename,
             "file_path": result.file_path,
-            "code": result.code,
+            "code": code,
             "error": result.error,
             "token_usage": result.token_usage,
             "preview_only": True,
+            "review": review,
             "message": "Code generated for preview. Use save_p_file to save to disk." if result.success else result.error
         }
         return with_metadata("generate_spec", payload, token_usage=result.token_usage)
@@ -298,14 +431,26 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 save_to_disk=False
             )
 
+        review = {"fixes_applied": [], "warnings": []}
+        code = result.code
+        if result.success and code:
+            review = _review_generated_code(
+                code,
+                result.filename or f"{params.test_name}.p",
+                params.project_path,
+                is_test_file=True,
+            )
+            code = review["code"]
+
         payload = {
             "success": result.success,
             "filename": result.filename,
             "file_path": result.file_path,
-            "code": result.code,
+            "code": code,
             "error": result.error,
             "token_usage": result.token_usage,
             "preview_only": True,
+            "review": review,
             "message": "Code generated for preview. Use save_p_file to save to disk." if result.success else result.error
         }
         return with_metadata("generate_test", payload, token_usage=result.token_usage)
@@ -626,14 +771,20 @@ Steps performed: create structure → generate types/events → generate machine
             results["message"] = "Project generated successfully" if results["success"] else "Project generated with errors"
 
         except Exception as e:
-            logger.error(f"Error in generate_complete_project: {e}")
-            results["errors"].append(str(e))
+            import traceback
+            err_msg = f"{type(e).__name__}: {e}"
+            logger.error(f"Error in generate_complete_project: {err_msg}\n{traceback.format_exc()}")
+            results["errors"].append(err_msg)
 
         return with_metadata("generate_complete_project", results)
 
     @mcp.tool(
         name="save_p_file",
-        description="Save generated P code to a file on disk. In the step-by-step workflow, call this after the user reviews and approves the code returned by generate_types_events, generate_machine, generate_spec, or generate_test. Provide the absolute file_path (from the generate tool's response) and the code content."
+        description="Save generated P code to a file on disk and run a proactive compilation check. "
+                    "In the step-by-step workflow, call this after the user reviews and approves the code "
+                    "returned by generate_types_events, generate_machine, generate_spec, or generate_test. "
+                    "Provide the absolute file_path (from the generate tool's response) and the code content. "
+                    "The response includes a 'compilation_check' field with any syntax errors found in this file."
     )
     def save_p_file(params: SavePFileParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] save_p_file: {params.file_path}")
@@ -644,11 +795,39 @@ Steps performed: create structure → generate types/events → generate machine
             code=params.code
         )
 
+        compilation_check = None
+        if result.success:
+            try:
+                project_path = _find_project_root(params.file_path)
+                if project_path:
+                    compile_result = services["compilation"].compile(project_path)
+                    if compile_result.success:
+                        compilation_check = {"success": True, "errors": []}
+                    else:
+                        raw_output = compile_result.stdout or compile_result.stderr or ""
+                        # Extract errors relevant to this file
+                        file_basename = Path(params.file_path).name
+                        file_errors = []
+                        all_errors = []
+                        for line in raw_output.splitlines():
+                            if "error" in line.lower() or "parse error" in line.lower():
+                                all_errors.append(line.strip())
+                                if file_basename in line:
+                                    file_errors.append(line.strip())
+                        compilation_check = {
+                            "success": False,
+                            "file_errors": file_errors,
+                            "all_errors": all_errors[:10],
+                        }
+            except Exception as e:
+                logger.debug(f"Proactive compilation check skipped: {e}")
+
         payload = {
             "success": result.success,
             "filename": result.filename,
             "file_path": result.file_path,
             "error": result.error,
+            "compilation_check": compilation_check,
             "message": f"Saved {result.filename} to disk" if result.success else result.error
         }
         return with_metadata("save_p_file", payload, token_usage=result.token_usage)

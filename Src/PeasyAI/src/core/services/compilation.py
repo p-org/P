@@ -7,6 +7,7 @@ This service is UI-agnostic.
 
 import subprocess
 import logging
+import traceback
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass, field
@@ -121,10 +122,11 @@ class CompilationService(BaseService):
                 return_code=-1,
             )
         except Exception as e:
-            logger.error(f"Compilation error: {e}")
+            err_msg = f"{type(e).__name__}: {e}"
+            logger.error(f"Compilation error: {err_msg}\n{traceback.format_exc()}")
             return CompilationResult(
                 success=False,
-                error=str(e),
+                error=err_msg,
                 return_code=-1,
             )
     
@@ -292,10 +294,11 @@ class CompilationService(BaseService):
             )
             
         except Exception as e:
-            logger.error(f"PChecker error: {e}")
+            err_msg = f"{type(e).__name__}: {e}"
+            logger.error(f"PChecker error: {err_msg}\n{traceback.format_exc()}")
             return CheckerResult(
                 success=False,
-                error=str(e),
+                error=err_msg,
             )
     
     def get_project_files(self, project_path: str) -> Dict[str, str]:

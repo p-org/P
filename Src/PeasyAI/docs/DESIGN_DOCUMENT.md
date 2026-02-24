@@ -630,8 +630,8 @@ class GenerateProjectInput(BaseModel):
     
     design_doc: str = Field(
         ...,
-        description="The design document describing the P program. Should include "
-                    "<title>, <introduction>, <components>, and <interactions> sections."
+        description="The design document describing the P program in markdown format. Should include "
+                    "headings: # Title, ## Introduction, ## Components, and ## Interactions."
     )
     
     output_dir: str = Field(
@@ -685,11 +685,11 @@ This tool will:
 5. Generate test drivers (if enabled)
 6. Compile and validate the project
 
-The design document should include:
-- <title>: Project name
-- <introduction>: System description
-- <components>: List of machines/components
-- <interactions>: Events and communication patterns
+The design document should be in markdown format with these headings:
+- `# Title`: Project name
+- `## Introduction`: System description
+- `## Components`: List of machines/components
+- `## Interactions`: Events and communication patterns
 """
     )
     def generate_project(params: GenerateProjectInput) -> GenerateProjectOutput:

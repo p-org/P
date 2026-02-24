@@ -71,7 +71,7 @@ class TestMCPContracts(unittest.TestCase):
 
         response = tools["generate_types_events"](
             GenerateTypesEventsParams(
-                design_doc="<title>T</title>",
+                design_doc="# T\n## Components\n## Interactions\n",
                 project_path="/tmp/Project",
             )
         )

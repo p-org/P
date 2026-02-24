@@ -2,7 +2,7 @@ Write P code for the {filename} file.
 
 CRITICAL REQUIREMENTS:
 
-1. For EACH scenario in <possible_scenarios>, create a dedicated scenario machine (e.g., Scenario1_XXX) with a start state that instantiates the system.
+1. For EACH scenario in the "Test Scenarios" section, create a dedicated scenario machine (e.g., Scenario1_XXX) with a start state that instantiates the system.
 2. For EACH scenario machine, you MUST write a `test` declaration. Without test declarations, PChecker cannot discover or run any tests. The format is:
    test tcScenarioName [main=ScenarioMachine]:
      assert SpecName1, SpecName2 in
@@ -67,7 +67,7 @@ send acceptor1, eAcceptorConfig, (learners = learnerSeq,);
 
 Given machines with these signatures:
 - Learner: `fun InitEntry()` — no config needed
-- Acceptor: `fun InitEntry(config: (learners: seq[machine],))` — needs learners
+- Acceptor: `fun InitEntry(config: (learners: seq[machine]))` — needs learners
 - Proposer: `fun InitEntry(config: (acceptors: seq[machine], learners: seq[machine], id: int))` — needs acceptors + learners
 - Client: `fun InitEntry(config: (proposer: machine, value: int))` — needs proposer
 

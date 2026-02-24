@@ -34,13 +34,16 @@ class DesignDocValidator:
     """
     Validates design documents before processing.
     
+    Expects markdown-formatted design docs with headings like
+    ``# Title``, ``## Components``, ``## Interactions``.
+    
     Checks for:
     - Required sections (title, components, interactions)
     - Minimum content length
     - Valid structure
     """
     
-    # Required sections in a design document
+    # Required markdown heading keywords (case-insensitive)
     REQUIRED_SECTIONS = [
         "title",
         "component",
@@ -79,20 +82,20 @@ class DesignDocValidator:
                 f"Maximum is {self.MAX_LENGTH} characters."
             )
         
-        # Check for required sections
+        # Check for required sections via markdown headings
         content_lower = content.lower()
         for section in self.REQUIRED_SECTIONS:
             if section not in content_lower:
                 warnings.append(
                     f"Design document may be missing '{section}' section. "
-                    f"Consider adding <{section}>...</{section}> tags."
+                    f"Consider adding a '## {section.title()}' heading."
                 )
         
         # Check for machine/component definitions
-        if not re.search(r"<component|machine|state\s+machine", content, re.IGNORECASE):
+        if not re.search(r"#{1,4}\s+\d*\.?\s*\w|machine|state\s+machine", content, re.IGNORECASE):
             warnings.append(
                 "No clear component/machine definitions found. "
-                "Consider using <component>MachineName</component> tags."
+                "Consider listing components under a '## Components' heading."
             )
         
         # Check for event definitions
@@ -110,7 +113,7 @@ class DesignDocValidator:
     
     def extract_metadata(self, content: str) -> dict:
         """
-        Extract metadata from a design document.
+        Extract metadata from a markdown design document.
         
         Args:
             content: The design document content
@@ -124,19 +127,20 @@ class DesignDocValidator:
             "events": [],
         }
         
-        # Extract title
-        title_match = re.search(r"<title>([^<]+)</title>", content, re.IGNORECASE)
+        # Extract title from top-level markdown heading
+        title_match = re.search(r"^#\s+(.+?)\s*$", content, re.MULTILINE)
         if title_match:
             metadata["title"] = title_match.group(1).strip()
         
-        # Extract components
-        component_pattern = r"<component[^>]*>([^<]+)</component>"
-        for match in re.finditer(component_pattern, content, re.IGNORECASE):
-            metadata["components"].append(match.group(1).strip())
-        
-        # Also look for bullet-point components
-        bullet_pattern = r"[-*]\s*(\w+)\s*(?:machine|component|:)"
+        # Extract components from numbered lists or sub-headings under ## Components
+        bullet_pattern = r"[-*]\s*(?:\*\*)?(\w[\w\s]*\w)(?:\*\*)?\s*(?:machine|component|:)"
         for match in re.finditer(bullet_pattern, content, re.IGNORECASE):
+            name = match.group(1).strip()
+            if name not in metadata["components"] and name[0].isupper():
+                metadata["components"].append(name)
+        
+        # Also look for #### N. MachineName sub-headings
+        for match in re.finditer(r"^#{3,4}\s+\d+\.\s+(.+?)\s*$", content, re.MULTILINE):
             name = match.group(1).strip()
             if name not in metadata["components"] and name[0].isupper():
                 metadata["components"].append(name)

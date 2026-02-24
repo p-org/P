@@ -347,21 +347,18 @@ class TestDesignDocValidator:
     def test_valid_design_doc(self):
         """Test validation of valid design document."""
         doc = """
-        <title>Test System</title>
-        
-        <introduction>
-        This is a test system with two components.
-        </introduction>
-        
-        <components>
-        - Client: Sends requests
-        - Server: Handles requests
-        </components>
-        
-        <interactions>
-        Client sends eRequest to Server.
-        Server responds with eResponse.
-        </interactions>
+# Test System
+
+## Introduction
+This is a test system with two components.
+
+## Components
+- Client: Sends requests
+- Server: Handles requests
+
+## Interactions
+Client sends eRequest to Server.
+Server responds with eResponse.
         """
         
         validator = DesignDocValidator()
@@ -395,9 +392,15 @@ class TestDesignDocValidator:
     def test_extract_metadata(self):
         """Test metadata extraction."""
         doc = """
-        <title>My System</title>
-        <component>Client</component>
-        <component>Server</component>
+# My System
+
+## Components
+
+#### 1. Client
+- **Role:** Sends requests
+
+#### 2. Server
+- **Role:** Handles requests
         """
         
         validator = DesignDocValidator()

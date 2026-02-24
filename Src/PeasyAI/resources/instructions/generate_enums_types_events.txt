@@ -1,1 +1,26 @@
-Write the enums, types, and events required for each of the state machines. If multiple state machines need the same enums, types, and event, write them only once. Do not write duplicate declarations. Return only the generated P code without any explanation attached. Return the P code enclosed in <Enums_Types_Events.p></Enums_Types_Events.p>.
+Write the enums, types, and events required for each of the state machines. If multiple state machines need the same enums, types, and events, write them only once. Do not write duplicate declarations.
+
+## CRITICAL SYNTAX RULES:
+
+1. **Type definitions do NOT use trailing commas**, even for single-field named tuples:
+   ```
+   type tLearnPayload = (learnedValue: int);              // CORRECT
+   type tAcceptorConfig = (learners: seq[machine]);        // CORRECT
+   type tProposePayload = (proposer: machine, num: int);   // CORRECT
+   ```
+   Note: Trailing commas are only used in VALUE expressions like `(field = value,)`, never in type definitions.
+
+2. **Use descriptive, unambiguous field names.** Each type's field names will be used throughout the codebase in payload construction and field access. Choose names that are specific to the type:
+   - GOOD: `(proposalNumber: int, acceptedValue: int)` — clear what each field means
+   - BAD: `(value: int)` — ambiguous, easily confused across types
+
+3. **Config types** for machine initialization should match the machine's dependencies exactly. Name them `t<MachineName>Config`:
+   ```
+   type tProposerConfig = (acceptors: seq[machine], learners: seq[machine], proposerId: int);
+   type tAcceptorConfig = (learners: seq[machine]);
+   type tLearnerConfig = (majoritySize: int);
+   ```
+
+4. **Do NOT declare config init events** (like eProposerInit, eAcceptorInit) unless the design explicitly uses the init-event pattern. Most machines use the constructor payload pattern where config is passed via `new Machine(config)`.
+
+Return only the generated P code without any explanation attached. Return the P code enclosed in <Enums_Types_Events.p></Enums_Types_Events.p>.

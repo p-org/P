@@ -688,15 +688,15 @@ def main() -> int:
     env = tools["validate_environment"](ValidateEnvironmentParams())
 
     all_runs = [
-        ("Paxos", docs_dir / "[Design Doc] Basic Paxos Protocol.txt"),
-        ("TwoPhaseCommit", docs_dir / "[Design Doc] Two Phase Commit.txt"),
-        ("MessageBroker", docs_dir / "[Design Doc] Simple Message Broker.txt"),
-        ("DistributedLock", docs_dir / "[Design Doc] Distributed Lock Server.txt"),
-        ("HotelManagement", docs_dir / "[Design Doc] Hotel Management Application.txt"),
-        ("ClientServer", docs_dir / "[Design Doc] Client Server.txt"),
-        ("FailureDetector", docs_dir / "[Design Doc] Failure Detector.txt"),
-        ("EspressoMachine", docs_dir / "[Design Doc] Espresso Machine.txt"),
-        ("RaftLeaderElection", docs_dir / "[Design Doc] Raft Leader Election.txt"),
+        ("Paxos", docs_dir / "[Design Doc] Basic Paxos Protocol.md"),
+        ("TwoPhaseCommit", docs_dir / "[Design Doc] Two Phase Commit.md"),
+        ("MessageBroker", docs_dir / "[Design Doc] Simple Message Broker.md"),
+        ("DistributedLock", docs_dir / "[Design Doc] Distributed Lock Server.md"),
+        ("HotelManagement", docs_dir / "[Design Doc] Hotel Management Application.md"),
+        ("ClientServer", docs_dir / "[Design Doc] Client Server.md"),
+        ("FailureDetector", docs_dir / "[Design Doc] Failure Detector.md"),
+        ("EspressoMachine", docs_dir / "[Design Doc] Espresso Machine.md"),
+        ("RaftLeaderElection", docs_dir / "[Design Doc] Raft Leader Election.md"),
     ]
 
     if args.protocol:

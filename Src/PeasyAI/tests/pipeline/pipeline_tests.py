@@ -23,7 +23,7 @@ SAVED_GLOBAL_STATE = None
 def test1(ddoc: str | None = None, out_dir: str | None = None):
     from core.modes.pipelines import old_pipeline_replicated
     project_root = Path(__file__).parent.parent.parent
-    ddoc = ddoc or str(project_root / "resources" / "p-model-benchmark" / "3_designdoc2pproj" / "1_lightswitch.txt")
+    ddoc = ddoc or str(project_root / "resources" / "p-model-benchmark" / "3_designdoc2pprojA" / "1_lightswitch.txt")
     out_dir = out_dir or str(project_root / ".tmp" / "pipeline-tests")
     old_pipeline_replicated(ddoc, out_dir=out_dir)
 
@@ -90,7 +90,7 @@ def test_taskgen_dd2psrc(benchmark_dir):
     return tasks
 
 def taskgen_dd2proj(design_docs_dir):
-    design_docs = glob(f"{design_docs_dir}/*.txt")
+    design_docs = glob(f"{design_docs_dir}/*.txt") + glob(f"{design_docs_dir}/*.md")
     tests = list(map(lambda dd: (Path(dd).stem, dd), design_docs))
     print(f"DETECTED TESTS: {tests}")
     return tests
@@ -342,9 +342,9 @@ def test_dd2proj_replicated(task, model=CLAUDE_3_7, temperature=1.0, n=1, heuris
     _, dd_path = task
     dd_content = file_utils.read_file(dd_path)
     
-    project_name_pattern = r'<title>(.*?)</title>'
+    project_name_pattern = r'^#\s+(.+?)\s*$'
 
-    match = re.search(project_name_pattern, dd_content, re.IGNORECASE)
+    match = re.search(project_name_pattern, dd_content, re.MULTILINE | re.IGNORECASE)
     if match:
         global_state.project_name = match.group(1).strip().replace(" ", "_")
     
@@ -960,9 +960,9 @@ def test_dd2proj_psrc(task, model=CLAUDE_3_7, temperature=1.0, n=1, heuristic='r
     _, dd_path, benchmark_dir = task
     dd_content = file_utils.read_file(dd_path)
     
-    project_name_pattern = r'<title>(.*?)</title>'
+    project_name_pattern = r'^#\s+(.+?)\s*$'
 
-    match = re.search(project_name_pattern, dd_content, re.IGNORECASE)
+    match = re.search(project_name_pattern, dd_content, re.MULTILINE | re.IGNORECASE)
     if match:
         global_state.project_name = match.group(1).strip().replace(" ", "_")
     
@@ -1124,7 +1124,8 @@ def oracle_dd2psrc_correctness(task, test_func_out, out_dir=None):
 
 # EXAMPLE TEST COMMAND:
 # python evaluate_peasyai.py --metric pass_at_k -k 1 -n 1 -t 1.0 --trials 2 --benchmark-dir resources/evaluation/p-model-benchmark/3_designdoc2pproj
-@pytest.mark.parametrize("task", [("1_lightswitch", "resources/p-model-benchmark/3_designdoc2pproj/1_lightswitch.txt")])
+@pytest.mark.parametrize("task", [("1_lightswitch", "resources/p-model-benchmark/3_designdoc2pprojA/1_lightswitch.txt")])
+@pytest.mark.skip(reason="Legacy module no longer exists")
 def test_dd2proj_legacy(task, model=CLAUDE_3_7, temperature=1.0, n=1, heuristic='random', max_tokens=100000, top_p=0.999, **kwargs):
         import legacy.utils.chat_utils as legacy_chat_utils
         from legacy.utils import global_variables
@@ -1582,7 +1583,7 @@ def test_singleshot_designdoc_to_pcode(doc_list):
     
     # Add design doc
     pipeline.add_text("Here is the design document to implement:")
-    designdoc_content = file_utils.read_file(project_root / "resources/p-model-benchmark/3_designdoc2pproj/1_lightswitch.txt")
+    designdoc_content = file_utils.read_file(project_root / "resources/p-model-benchmark/3_designdoc2pprojA/1_lightswitch.txt")
     pipeline.add_text(designdoc_content)
     
     # Add generation instruction

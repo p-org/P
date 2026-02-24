@@ -91,7 +91,7 @@ def get_services() -> Dict[str, Any]:
         provider = get_default_provider()
         logger.info(f"Using LLM provider: {provider.name}")
         
-        resource_loader = ResourceLoader(PROJECT_ROOT / "resources")
+        resource_loader = ResourceLoader()
         
         _services["llm_provider"] = provider
         _services["generation"] = GenerationService(

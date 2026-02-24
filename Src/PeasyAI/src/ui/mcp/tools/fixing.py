@@ -581,8 +581,9 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
                         response["verification"] = f"Fix caused compilation error: {compile_result.stdout[:200]}"
 
                 except Exception as e:
-                    logger.error(f"Error applying fix: {e}")
-                    response["fix_error"] = str(e)
+                    import traceback
+                    logger.error(f"Error applying fix: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+                    response["fix_error"] = f"{type(e).__name__}: {e}"
 
             # --- LLM fallback: if specialized fix didn't work, ask the LLM ---
             if not response.get("fixed"):
@@ -601,10 +602,12 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
             payload = _basic_trace_analysis(trace_content, str(project_path), services)
             return with_metadata("fix_buggy_program", payload)
         except Exception as e:
-            logger.error(f"Error in fix_buggy_program: {e}")
+            import traceback
+            err_msg = f"{type(e).__name__}: {e}"
+            logger.error(f"Error in fix_buggy_program: {err_msg}\n{traceback.format_exc()}")
             payload = {
                 "success": False,
-                "error": str(e),
+                "error": err_msg,
                 "trace_file": str(latest_trace),
             }
             return with_metadata("fix_buggy_program", payload)

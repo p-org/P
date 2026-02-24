@@ -50,7 +50,7 @@ Documentation = "https://p-org.github.io/P/"
 # ---------------------------------------------------------------------------
 [tool.hatch.build.targets.wheel]
 # The installable Python code lives under src/
-packages = ["src/core", "src/ui"]
+packages = ["src/core", "src/ui", "src/utils"]
 
 [tool.hatch.build.targets.wheel.sources]
 # Map src/core → core, src/ui → ui so import paths stay the same

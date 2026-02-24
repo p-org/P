@@ -65,6 +65,6 @@ class DesignDocInputMode:
     def display_page(self):
         self.messages.chat_message("assistant").write("Hello! I am an AI assistant dedicated to generating P code! Please upload a design document. ")
         with st.form('design_doc_form', clear_on_submit=True):
-            st.file_uploader("Upload a design document txt file!", key = 'design_doc', type=".txt", help = "For a template of the design document you would like to create, please download the template [here](https://drive.corp.amazon.com/documents/esthersu@/example_design_document.txt).")
+            st.file_uploader("Upload a design document (.txt or .md)!", key = 'design_doc', type=[".txt", ".md"], help = "Upload a design document in markdown format. See the DESIGN_DOC_TEMPLATE.md for the expected structure.")
             st.text_input("P Project Destination Path", key = "destination_path", help = "Destination folder path where the generated P project will be saved.")
             st.form_submit_button('Submit', on_click = self.design_doc_func)

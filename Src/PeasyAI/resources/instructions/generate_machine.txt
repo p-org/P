@@ -5,7 +5,7 @@ IMPLEMENTATION INSTRUCTIONS:
 For each function:
 1. Implement the body according to the intended behavior
 2. Use proper P statements and expressions (conditionals, loops, send statements, etc.)
-3. Ensure the implementation aligns with the components in <components></components> tags and interactions in <interactions></interactions> tags
+3. Ensure the implementation aligns with the "Components" and "Interactions" sections of the design document
 
 ## Key Rules:
 1. Never use `=` in variable declarations
@@ -29,11 +29,20 @@ Named-tuple types use ``(field = value, ...)`` syntax. Always include ALL fields
   CORRECT single-field: send target, eMsg, (reqId = 42,);  // trailing comma required!
   WRONG single-field:   send target, eMsg, (reqId = 42);   // missing trailing comma → PARSE ERROR
 
+## CRITICAL — Use Exact Type and Field Names from Enums_Types_Events.p:
+When the Enums_Types_Events.p file is provided as context, you MUST use the EXACT type names and field names defined there. Do NOT invent alternative names.
+  Given: type tPromisePayload = (proposer: machine, highestProposalSeen: int, acceptedValue: int);
+  CORRECT: fun HandlePromise(msg: tPromisePayload) {{ ... msg.highestProposalSeen ... msg.acceptedValue ... }}
+  WRONG:   fun HandlePromise(msg: tPromise) {{ ... msg.propNum ... msg.value ... }}
+The function parameter type annotation MUST match the event's payload type exactly as declared.
+
 ## Checklist before returning code:
 - Every state has handlers, defer, or ignore for EVERY event this machine could receive.
 - The start state entry correctly unpacks the constructor payload (if parameterized).
 - All `send` targets are machine-typed variables (never null/default).
 - No events, types, or enums are declared in this file.
-- Single-field named tuples ALWAYS have a trailing comma: ``(field = value,)``.
+- Single-field named tuple VALUES always have a trailing comma: ``(field = value,)``. But type annotations do NOT: ``fun Foo(x: tMyType)`` or ``fun Foo(x: (field: int))``.
+- All type names in function signatures match EXACTLY what is declared in Enums_Types_Events.p.
+- All field names in payload access (e.g., payload.fieldName) and construction (e.g., (fieldName = value,)) match EXACTLY what is declared in the type definition.
 
 Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

@@ -1,6 +1,17 @@
 from utils.module_utils import save_module_state, restore_module_state
 from utils import file_utils, global_state, log_utils, string_utils, regex_utils, compile_utils, checker_utils
 import re, os
+
+
+def _safe_format(template: str, **kwargs) -> str:
+    """Format a template, falling back to manual replacement on unescaped braces."""
+    try:
+        return template.format(**kwargs)
+    except (KeyError, ValueError, IndexError):
+        result = template
+        for key, value in kwargs.items():
+            result = result.replace("{" + key + "}", str(value))
+        return result
 from utils.project_structure_utils import setup_project_structure
 from core.pipelining.prompting_pipeline import PromptingPipeline
 from utils.constants import *
@@ -70,7 +81,7 @@ def create_proj_files(project_root):
 def generate_machine_code(model, pipeline, instructions, filename, dirname):
     """Generate machine code using either two-stage or single-stage process."""
     # Stage 1: Generate structure
-    pipeline.add_user_msg(instructions['MACHINE_STRUCTURE'].format(machineName=filename))
+    pipeline.add_user_msg(_safe_format(instructions['MACHINE_STRUCTURE'], machineName=filename))
     pipeline.add_documents_inline(get_context_files()["MACHINE_STRUCTURE"], string_utils.tag_surround)
 
     stage1_response = pipeline.invoke_llm(model, candidates=1, heuristic='random')    
@@ -82,7 +93,7 @@ def generate_machine_code(model, pipeline, instructions, filename, dirname):
         machine_structure = match.group(1).strip()
         print(f"  . . . Stage 2: Implementing function bodies for {filename}.p")
         
-        pipeline.add_user_msg(instructions[MACHINE].format(machineName=filename)+ "\n\nHere is the starting structure:\n\n" + machine_structure)
+        pipeline.add_user_msg(_safe_format(instructions[MACHINE], machineName=filename)+ "\n\nHere is the starting structure:\n\n" + machine_structure)
         pipeline.add_documents_inline(get_context_files()["MACHINE"], string_utils.tag_surround)
 
         response = pipeline.invoke_llm(model, candidates=1, heuristic='random')
@@ -90,7 +101,7 @@ def generate_machine_code(model, pipeline, instructions, filename, dirname):
     else:
         # Fallback to single-stage
         print(f"  . . . :red[Failed to extract structure for {filename}.p. Falling back to single-stage generation.]")
-        pipeline.add_user_msg(instructions[MACHINE].format(machineName=filename))
+        pipeline.add_user_msg(_safe_format(instructions[MACHINE], machineName=filename))
         pipeline.add_documents_inline(get_context_files()["MACHINE"], string_utils.tag_surround)
         response = pipeline.invoke_llm(model, candidates=1, heuristic='random')
         print(response)
@@ -117,9 +128,9 @@ def old_pipeline_replicated(task, model=CLAUDE_3_7, temperature=1.0, n=1, heuris
     dd_path = task
     dd_content = file_utils.read_file(dd_path)
     
-    project_name_pattern = r'<title>(.*?)</title>'
+    project_name_pattern = r'^#\s+(.+?)\s*$'
 
-    match = re.search(project_name_pattern, dd_content, re.IGNORECASE)
+    match = re.search(project_name_pattern, dd_content, re.MULTILINE | re.IGNORECASE)
     if match:
         global_state.project_name = match.group(1).strip().replace(" ", "_")
     

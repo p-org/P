@@ -5,7 +5,25 @@ from utils.chat_history import ChatHistory
 # Base paths
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RESOURCES_DIR = os.path.join(PROJECT_ROOT, "resources")
+
+def _resolve_resources_dir():
+    """Resolve the resources directory, handling both dev and installed layouts."""
+    # 1. Env var set by the pip-installed entry point
+    env_dir = os.environ.get("PEASYAI_RESOURCES_DIR")
+    if env_dir and os.path.isdir(env_dir):
+        return env_dir
+    # 2. Dev checkout: resources/ next to src/
+    dev_dir = os.path.join(PROJECT_ROOT, "resources")
+    if os.path.isdir(dev_dir):
+        return dev_dir
+    # 3. Installed wheel: peasyai_resources/ in site-packages
+    site_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "peasyai_resources")
+    site_dir = os.path.normpath(site_dir)
+    if os.path.isdir(site_dir):
+        return site_dir
+    return dev_dir
+
+RESOURCES_DIR = _resolve_resources_dir()
 
 # P Language Constants
 REGION = 'us-west-2'

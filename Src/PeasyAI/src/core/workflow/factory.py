@@ -275,30 +275,56 @@ def _extract_names_with_llm(
 
 # ── Regex fallback (for offline / no-LLM environments) ──────────────
 
+def _extract_section(text: str, section_name: str) -> Optional[str]:
+    """Extract a section from a design doc using markdown headings.
+
+    Matches ``# Section Name``, ``## Section Name``, etc. and returns
+    everything until the next heading of equal or higher level.
+    Underscores in *section_name* are treated as spaces so that
+    ``"test_scenarios"`` matches ``## Test Scenarios``.
+    """
+    heading_label = section_name.replace("_", " ")
+    md_match = re.search(
+        rf'^(#{1,3})\s+{re.escape(heading_label)}\s*$',
+        text, re.MULTILINE | re.IGNORECASE,
+    )
+    if md_match:
+        level = len(md_match.group(1))
+        rest = text[md_match.end():]
+        next_heading = re.search(rf'^#{{{1},{level}}}\s', rest, re.MULTILINE)
+        return rest[:next_heading.start()] if next_heading else rest
+
+    return None
+
+
+def _extract_title(text: str) -> Optional[str]:
+    """Extract the document title from a markdown ``# Title`` heading."""
+    m = re.search(r'^#\s+(.+?)\s*$', text, re.MULTILINE)
+    return m.group(1).strip() if m else None
+
+
 def _extract_names_regex(design_doc: str) -> List[str]:
-    """Simple regex extraction from <components> section as fallback."""
+    """Regex extraction from Components section as fallback (XML or markdown)."""
     names: set = set()
 
-    comp_section = re.search(
-        r'<components>(.*?)</components>', design_doc, re.DOTALL | re.IGNORECASE
-    )
-    if comp_section:
-        # Numbered list items: "1. Front Desk" or "1. CoffeeMaker"
+    comp_text = _extract_section(design_doc, "components")
+    if comp_text:
         for m in re.finditer(
-            r'^\s*\d+\.\s*(.+?)\s*$', comp_section.group(1), re.MULTILINE
+            r'^\s*(?:\d+\.|#{1,4})\s*(?:\d+\.\s*)?(.+?)\s*$',
+            comp_text, re.MULTILINE,
         ):
-            raw = m.group(1).strip()
+            raw = m.group(1).strip().strip('*').strip()
             if raw and raw[0].isupper() and len(raw) < 40:
                 names.add(_to_pascal_case(raw))
 
     if not names:
-        # P syntax fallback: machine FooBar {
         for m in re.finditer(r'\bmachine\s+(\w+)\s*[{:]', design_doc):
             names.add(m.group(1))
 
     stop = {
         "machine", "state", "event", "type", "spec", "test", "main",
         "source", "target", "payload", "description", "effects",
+        "source components", "test components", "role", "behavior",
     }
     return sorted(n for n in names if n.lower() not in stop and n[0].isupper())
 
@@ -337,10 +363,9 @@ def validate_design_doc(design_doc: str) -> Dict[str, Any]:
     """
     Validate a design document for completeness and consistency.
 
-    Checks:
-    - Has required sections (title, components, interactions, scenarios)
-    - Scenarios reference components that exist
-    - Interactions reference valid source/target components
+    Expects markdown-formatted design docs with headings:
+    ``# Title``, ``## Components``, ``## Interactions``,
+    ``## Specifications``, ``## Test Scenarios``.
 
     Returns:
         Dictionary with 'valid' (bool), 'warnings' (list), 'errors' (list),
@@ -355,14 +380,13 @@ def validate_design_doc(design_doc: str) -> Dict[str, Any]:
     }
 
     # Check required sections
-    required_sections = {
-        "title": r'<title>(.*?)</title>',
-        "components": r'<components>(.*?)</components>',
-        "interactions": r'<interactions>(.*?)</interactions>',
-    }
-    for section, pattern in required_sections.items():
-        if not re.search(pattern, design_doc, re.DOTALL | re.IGNORECASE):
-            result["errors"].append(f"Missing required section: <{section}>")
+    for section in ("title", "components", "interactions"):
+        if section == "title":
+            found = _extract_title(design_doc) is not None
+        else:
+            found = _extract_section(design_doc, section) is not None
+        if not found:
+            result["errors"].append(f"Missing required section: {section}")
             result["valid"] = False
 
     # Extract component names
@@ -373,28 +397,21 @@ def validate_design_doc(design_doc: str) -> Dict[str, Any]:
         result["valid"] = False
 
     # Check for scenarios
-    scenarios_section = re.search(
-        r'<possible_scenarios>(.*?)</possible_scenarios>',
-        design_doc, re.DOTALL | re.IGNORECASE
-    )
-    if scenarios_section:
+    scenarios_text = _extract_section(design_doc, "test scenarios")
+    if scenarios_text:
         scenario_lines = [
-            l.strip() for l in scenarios_section.group(1).strip().split('\n')
+            l.strip() for l in scenarios_text.strip().split('\n')
             if l.strip() and re.match(r'\d+\.', l.strip())
         ]
         result["scenarios_count"] = len(scenario_lines)
         if not scenario_lines:
-            result["warnings"].append("No numbered scenarios found in <possible_scenarios>")
+            result["warnings"].append("No numbered scenarios found in Test Scenarios section")
     else:
-        result["warnings"].append("Missing <possible_scenarios> section — tests may not be generated")
+        result["warnings"].append("Missing 'Test Scenarios' section — tests may not be generated")
 
-    # Check for global specifications
-    specs_section = re.search(
-        r'<global_specifications>(.*?)</global_specifications>',
-        design_doc, re.DOTALL | re.IGNORECASE
-    )
-    if not specs_section:
-        result["warnings"].append("Missing <global_specifications> — no safety/liveness specs will be generated")
+    # Check for specifications
+    if _extract_section(design_doc, "specifications") is None:
+        result["warnings"].append("Missing 'Specifications' — no safety/liveness specs will be generated")
 
     return result
 

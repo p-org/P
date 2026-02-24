@@ -11,6 +11,7 @@ by providing relevant examples from the P program corpus.
 import os
 import re
 import logging
+import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Any, Optional, List
@@ -72,7 +73,24 @@ class GenerationService(BaseService):
     """
 
     MAX_GENERATION_RETRIES = 2
-    
+
+    @staticmethod
+    def _format_error(e: Exception, context: str = "") -> str:
+        """Build a descriptive error string that includes the exception type.
+
+        ``str(e)`` alone can be nearly empty for some exception types (e.g.
+        ``KeyError(' ')`` renders as ``' '``).  This helper always includes the
+        class name so the caller and the end-user get a meaningful message.
+        The full traceback is logged at ERROR level for debugging.
+        """
+        type_name = type(e).__name__
+        detail = str(e).strip() or "(no detail)"
+        msg = f"{type_name}: {detail}"
+        if context:
+            msg = f"{context} — {msg}"
+        logger.error(f"{msg}\n{traceback.format_exc()}")
+        return msg
+
     def __init__(
         self,
         llm_provider: Optional[LLMProvider] = None,
@@ -218,10 +236,9 @@ class GenerationService(BaseService):
                 filename=project_name_with_timestamp,
             )
         except Exception as e:
-            logger.error(f"Error creating project structure: {e}")
             return GenerationResult(
                 success=False,
-                error=str(e),
+                error=self._format_error(e, "Error creating project structure"),
             )
     
     def generate_types_events(
@@ -294,10 +311,9 @@ class GenerationService(BaseService):
                 )
                 
         except Exception as e:
-            logger.error(f"Error generating types/events: {e}")
             return GenerationResult(
                 success=False,
-                error=str(e),
+                error=self._format_error(e, "Error generating types/events"),
             )
     
     def generate_machine(
@@ -422,10 +438,9 @@ class GenerationService(BaseService):
                 )
                 
         except Exception as e:
-            logger.error(f"Error generating machine {machine_name}: {e}")
             return GenerationResult(
                 success=False,
-                error=str(e),
+                error=self._format_error(e, f"Error generating machine {machine_name}"),
             )
     
     def generate_spec(
@@ -500,10 +515,9 @@ class GenerationService(BaseService):
                 )
                 
         except Exception as e:
-            logger.error(f"Error generating spec {spec_name}: {e}")
             return GenerationResult(
                 success=False,
-                error=str(e),
+                error=self._format_error(e, f"Error generating spec {spec_name}"),
             )
     
     def generate_test(
@@ -578,10 +592,9 @@ class GenerationService(BaseService):
                 )
                 
         except Exception as e:
-            logger.error(f"Error generating test {test_name}: {e}")
             return GenerationResult(
                 success=False,
-                error=str(e),
+                error=self._format_error(e, f"Error generating test {test_name}"),
             )
     
     def generate_machines_parallel(
@@ -638,8 +651,10 @@ class GenerationService(BaseService):
                     _, result = future.result()
                     results[mn] = result
                 except Exception as exc:
-                    logger.error(f"Parallel generation of {mn} failed: {exc}")
-                    results[mn] = GenerationResult(success=False, error=str(exc))
+                    results[mn] = GenerationResult(
+                        success=False,
+                        error=self._format_error(exc, f"Parallel generation of {mn} failed"),
+                    )
 
         return results
 
@@ -711,7 +726,7 @@ class GenerationService(BaseService):
                         if result.success and result.code:
                             candidates.append(result)
                     except Exception as e:
-                        logger.warning(f"Ensemble candidate for {machine_name} failed: {e}")
+                        logger.warning(f"Ensemble candidate for {machine_name} failed: {type(e).__name__}: {e}\n{traceback.format_exc()}")
 
         if not candidates:
             self._warning(f"All ensemble candidates failed for {machine_name}, returning first attempt")
@@ -836,7 +851,7 @@ class GenerationService(BaseService):
                         if result.success and result.code:
                             candidates.append(result)
                     except Exception as e:
-                        logger.warning(f"Ensemble candidate for spec {spec_name} failed: {e}")
+                        logger.warning(f"Ensemble candidate for spec {spec_name} failed: {type(e).__name__}: {e}\n{traceback.format_exc()}")
 
         if not candidates:
             self._warning(f"All ensemble candidates failed for spec {spec_name}, returning first attempt")
@@ -905,7 +920,7 @@ class GenerationService(BaseService):
                         if result.success and result.code:
                             candidates.append(result)
                     except Exception as e:
-                        logger.warning(f"Ensemble candidate for test {test_name} failed: {e}")
+                        logger.warning(f"Ensemble candidate for test {test_name} failed: {type(e).__name__}: {e}\n{traceback.format_exc()}")
 
         if not candidates:
             self._warning(f"All ensemble candidates failed for test {test_name}, returning first attempt")
@@ -956,10 +971,9 @@ class GenerationService(BaseService):
                 code=code,
             )
         except Exception as e:
-            logger.error(f"Error saving file {file_path}: {e}")
             return GenerationResult(
                 success=False,
-                error=str(e),
+                error=self._format_error(e, f"Error saving file {file_path}"),
             )
     
     # =========================================================================
@@ -1266,7 +1280,7 @@ class GenerationService(BaseService):
         instruction = self._load_static_instruction("generate_machine_structure.txt")
         messages.append(Message(
             role=MessageRole.USER,
-            content=instruction.format(machineName=machine_name)
+            content=self._safe_format(instruction, machineName=machine_name)
         ))
         
         return messages
@@ -1313,7 +1327,7 @@ class GenerationService(BaseService):
         
         # Add instruction with optional structure
         instruction = self._load_static_instruction("generate_machine.txt")
-        content = instruction.format(machineName=machine_name)
+        content = self._safe_format(instruction, machineName=machine_name)
         
         if structure:
             content += f"\n\nHere is the starting structure:\n\n{structure}"
@@ -1369,7 +1383,7 @@ class GenerationService(BaseService):
         instruction = self._load_static_instruction("generate_spec_files.txt")
         messages.append(Message(
             role=MessageRole.USER,
-            content=instruction.format(filename=spec_name)
+            content=self._safe_format(instruction, filename=spec_name)
         ))
         
         return messages
@@ -1446,7 +1460,7 @@ class GenerationService(BaseService):
         instruction = self._load_static_instruction("generate_test_files.txt")
         messages.append(Message(
             role=MessageRole.USER,
-            content=instruction.format(filename=test_name)
+            content=self._safe_format(instruction, filename=test_name)
         ))
         
         return messages
@@ -1462,6 +1476,24 @@ class GenerationService(BaseService):
         if key not in self._static_context_cache:
             self._static_context_cache[key] = self.resources.load_instruction(filename)
         return self._static_context_cache[key]
+
+    @staticmethod
+    def _safe_format(template: str, **kwargs) -> str:
+        """Format a template string, falling back to manual replacement if
+        ``str.format()`` fails due to unescaped braces in the template.
+
+        Instruction files often contain P code examples with literal ``{`` and
+        ``}`` characters.  If those aren't double-escaped (``{{`` / ``}}``),
+        ``str.format()`` raises ``KeyError`` or ``ValueError``.  This helper
+        catches that and performs simple keyword substitution instead.
+        """
+        try:
+            return template.format(**kwargs)
+        except (KeyError, ValueError, IndexError):
+            result = template
+            for key, value in kwargs.items():
+                result = result.replace("{" + key + "}", str(value))
+            return result
 
     def _compact_text(self, text: str, limit: int) -> str:
         if not text:

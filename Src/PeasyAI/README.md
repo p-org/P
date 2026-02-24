@@ -15,28 +15,65 @@ PeasyAI exposes an MCP (Model Context Protocol) server that works with **Cursor*
 
 ---
 
+## Quick Start
+
+> **Prerequisite:** Install Python ≥ 3.10, .NET SDK 8.0, Java ≥ 11, and the P compiler first.
+> See the [P installation guide](https://p-org.github.io/P/getstarted/install/) for details.
+
+```bash
+# 1. Install PeasyAI
+pip install https://github.com/p-org/P/releases/latest/download/peasyai_mcp-0.1.0-py3-none-any.whl
+
+# 2. Configure LLM credentials
+peasyai-mcp init          # creates ~/.peasyai/settings.json — edit with your keys
+
+# 3. Add to Cursor or Claude Code (pick one)
+#    Cursor:  add the snippet below to ~/.cursor/mcp.json
+#    Claude:  claude mcp add peasyai -- peasyai-mcp
+```
+
+---
+
 ## Installation
 
 ### Prerequisites
 
-| Dependency | Install |
-|------------|---------|
-| **Python ≥ 3.10** | [python.org](https://www.python.org/downloads/) |
-| **.NET SDK** | [dotnet.microsoft.com/download](https://dotnet.microsoft.com/download) |
-| **P compiler** | `dotnet tool install -g P` |
+PeasyAI relies on the P toolchain at runtime to compile and model-check your programs. Make sure the following are installed **before** using PeasyAI:
+
+| Dependency | Why it's needed | Install |
+|------------|-----------------|---------|
+| **Python ≥ 3.10** | Runs the PeasyAI MCP server | [python.org/downloads](https://www.python.org/downloads/) |
+| **.NET SDK, Java, and P compiler** | Compiles and model-checks P programs | [**Follow the P installation guide**](https://p-org.github.io/P/getstarted/install/) |
+
+> P requires a specific version of .NET SDK (8.0) and Java (≥ 11). The [P installation guide](https://p-org.github.io/P/getstarted/install/) has platform-specific instructions for macOS, Ubuntu, Amazon Linux, and Windows.
+
+Verify your setup:
+
+```bash
+python3 --version          # ≥ 3.10
+dotnet --list-sdks         # must show 8.0.*
+java -version              # ≥ 11
+p --version                # P compiler is on PATH
+```
 
 ### Install PeasyAI
 
-Install the latest release directly (no git clone required):
+Install the latest release directly — **no git clone required**:
 
 ```bash
 pip install https://github.com/p-org/P/releases/latest/download/peasyai_mcp-0.1.0-py3-none-any.whl
 ```
 
-> Check the [Releases page](https://github.com/p-org/P/releases) for the latest version URL.
+> Check the [Releases page](https://github.com/p-org/P/releases) for the latest version and URL.
+
+To upgrade to a newer release, run the same command with `--force-reinstall`:
+
+```bash
+pip install --force-reinstall https://github.com/p-org/P/releases/download/peasyai-v<VERSION>/peasyai_mcp-<VERSION>-py3-none-any.whl
+```
 
 <details>
-<summary><strong>Alternative: install from source</strong></summary>
+<summary><strong>Alternative: install from source (for development)</strong></summary>
 
 ```bash
 git clone https://github.com/p-org/P.git
@@ -46,7 +83,7 @@ pip install .
 
 </details>
 
-### Create your configuration
+### Configure
 
 ```bash
 peasyai-mcp init
@@ -243,7 +280,21 @@ The `peasy-ai-fix-compile-error` and `peasy-ai-fix-checker-error` tools try up t
 
 ---
 
-## Running the MCP Server Standalone
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `peasyai-mcp: command not found` | Make sure the pip install location is on your `PATH`. Try `python -m site --user-base` to find it, or use `pipx install` instead. |
+| `p: command not found` | Install the P compiler following the [P installation guide](https://p-org.github.io/P/getstarted/install/) and ensure `~/.dotnet/tools` is on your `PATH`. |
+| `dotnet: command not found` | Install .NET SDK 8.0 following the [P installation guide](https://p-org.github.io/P/getstarted/install/#step-1-install-net-core-sdk). |
+| MCP server not showing in Cursor | Restart Cursor after editing `~/.cursor/mcp.json`. Check the MCP panel for error messages. |
+| LLM calls failing | Run `peasyai-mcp config` to verify your credentials are loaded correctly. |
+
+---
+
+## Development
+
+### Running the MCP Server Standalone
 
 ```bash
 # Installed
@@ -254,7 +305,7 @@ cd Src/PeasyAI
 .venv/bin/python -m ui.mcp.entry
 ```
 
-## Streamlit Web App
+### Streamlit Web App
 
 ```bash
 cd Src/PeasyAI
@@ -262,10 +313,19 @@ pip install ".[streamlit]"
 streamlit run src/app.py
 ```
 
-## Running Tests
+### Running Tests
 
 ```bash
 cd Src/PeasyAI
 make test-contracts    # MCP contract tests
 make regression        # full regression suite
+```
+
+### Releasing a New Version
+
+Tag the commit and push — GitHub Actions will build the wheel and create a release:
+
+```bash
+git tag peasyai-v<VERSION>
+git push origin peasyai-v<VERSION>
 ```

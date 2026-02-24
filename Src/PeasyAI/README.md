@@ -27,14 +27,24 @@ PeasyAI exposes an MCP (Model Context Protocol) server that works with **Cursor*
 
 ### Install PeasyAI
 
+Install the latest release directly (no git clone required):
+
 ```bash
-# Clone the repository
+pip install https://github.com/p-org/P/releases/latest/download/peasyai_mcp-0.1.0-py3-none-any.whl
+```
+
+> Check the [Releases page](https://github.com/p-org/P/releases) for the latest version URL.
+
+<details>
+<summary><strong>Alternative: install from source</strong></summary>
+
+```bash
 git clone https://github.com/p-org/P.git
 cd P/Src/PeasyAI
-
-# Install the package
 pip install .
 ```
+
+</details>
 
 ### Create your configuration
 

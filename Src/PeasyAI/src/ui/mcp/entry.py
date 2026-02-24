@@ -98,7 +98,7 @@ def _cmd_init(args: argparse.Namespace) -> int:
     print("── Cursor (.cursor/mcp.json) ──────────────────────────────────")
     print(json.dumps({
         "mcpServers": {
-            "peasyai": {
+            "peasy-ai": {
                 "command": "peasyai-mcp",
                 "args": [],
             }
@@ -106,7 +106,7 @@ def _cmd_init(args: argparse.Namespace) -> int:
     }, indent=2))
     print()
     print("── Claude Code ────────────────────────────────────────────────")
-    print("  claude mcp add peasyai -- peasyai-mcp")
+    print("  claude mcp add peasy-ai -- peasyai-mcp")
     print()
     return 0
 

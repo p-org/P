@@ -32,11 +32,11 @@ def register_compilation_tools(mcp, get_services, with_metadata):
     """Register compilation tools."""
 
     @mcp.tool(
-        name="p_compile",
-        description="Compile a P project and return compilation results. The project directory must contain a .pproj file. On failure, the response includes parsed errors with file, line, and message details. Use fix_compiler_error or fix_iteratively to resolve compilation errors."
+        name="peasy-ai-compile",
+        description="Compile a P project and return compilation results. The project directory must contain a .pproj file. On failure, the response includes parsed errors with file, line, and message details. Use peasy-ai-fix-compile-error or peasy-ai-fix-all to resolve compilation errors."
     )
     def p_compile(params: PCompileParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] p_compile: {params.path}")
+        logger.info(f"[TOOL] peasy-ai-compile: {params.path}")
 
         services = get_services()
         result = services["compilation"].compile(params.path)
@@ -76,14 +76,14 @@ def register_compilation_tools(mcp, get_services, with_metadata):
             except Exception as e:
                 logger.debug(f"Error parsing compilation output: {e}")
 
-        return with_metadata("p_compile", response)
+        return with_metadata("peasy-ai-compile", response)
 
     @mcp.tool(
-        name="p_check",
-        description="Run PChecker on a compiled P project to verify correctness via model checking. The project must compile successfully first (use p_compile). Explores random schedules to find concurrency bugs like deadlocks, assertion failures, and unhandled events. On failure, use fix_checker_error or fix_buggy_program to diagnose and fix the bug."
+        name="peasy-ai-check",
+        description="Run PChecker on a compiled P project to verify correctness via model checking. The project must compile successfully first (use peasy-ai-compile). Explores random schedules to find concurrency bugs like deadlocks, assertion failures, and unhandled events. On failure, use peasy-ai-fix-checker-error or peasy-ai-fix-bug to diagnose and fix the bug."
     )
     def p_check(params: PCheckParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] p_check: {params.path}")
+        logger.info(f"[TOOL] peasy-ai-check: {params.path}")
 
         services = get_services()
         result = services["compilation"].run_checker(
@@ -99,6 +99,6 @@ def register_compilation_tools(mcp, get_services, with_metadata):
             "failed_tests": result.failed_tests,
             "error": result.error
         }
-        return with_metadata("p_check", payload)
+        return with_metadata("peasy-ai-check", payload)
 
     return {"p_compile": p_compile, "p_check": p_check}

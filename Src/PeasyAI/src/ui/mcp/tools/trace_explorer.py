@@ -20,7 +20,7 @@ def register_trace_tools(mcp, get_services, with_metadata):
     """Register trace exploration tools."""
 
     @mcp.tool(
-        name="explore_trace",
+        name="peasy-ai-explore-trace",
         description="Interactively explore a PChecker trace to understand execution flow"
     )
     def explore_trace(params: ExploreTraceParams) -> Dict[str, Any]:
@@ -69,7 +69,7 @@ def register_trace_tools(mcp, get_services, with_metadata):
         # If specific step requested
         if params.step is not None:
             if 0 <= params.step < len(steps):
-                return with_metadata("explore_trace", {
+                return with_metadata("peasy-ai-explore-trace", {
                     "success": True,
                     "total_steps": len(steps),
                     "current_step": params.step,
@@ -79,7 +79,7 @@ def register_trace_tools(mcp, get_services, with_metadata):
                 })
 
         # Return overview
-        return with_metadata("explore_trace", {
+        return with_metadata("peasy-ai-explore-trace", {
             "success": True,
             "total_steps": len(steps),
             "summary": {
@@ -92,7 +92,7 @@ def register_trace_tools(mcp, get_services, with_metadata):
         })
 
     @mcp.tool(
-        name="query_trace_state",
+        name="peasy-ai-query-trace",
         description="Query the state of machines at a specific point in the trace"
     )
     def query_trace_state(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -120,7 +120,7 @@ def register_trace_tools(mcp, get_services, with_metadata):
                     }
                 current_step += 1
 
-        return with_metadata("query_trace_state", {
+        return with_metadata("peasy-ai-query-trace", {
             "success": True,
             "step": target_step,
             "machine_states": machine_states,

@@ -193,16 +193,16 @@ PeasyAI is designed as a modular AI-assistance system with several key architect
 
 ### PeasyAI MCP Tools for P Development:
 When using the MCP server, these tools are available for P language development:
-- `generate_project_structure`: Create new P project skeleton
-- `generate_types_events`: Generate Enums_Types_Events.p file
-- `generate_machine`: Generate a state machine
-- `generate_spec`: Generate specification monitor
-- `generate_test`: Generate test file
-- `p_compile`: Compile the P project
-- `p_check`: Run PChecker verification
-- `fix_compiler_error`: Automatically fix compilation errors
-- `fix_checker_error`: Fix PChecker verification errors
-- `syntax_helper`: Get P language syntax help
+- `peasy-ai-create-project`: Create new P project skeleton
+- `peasy-ai-gen-types-events`: Generate Enums_Types_Events.p file
+- `peasy-ai-gen-machine`: Generate a state machine
+- `peasy-ai-gen-spec`: Generate specification monitor
+- `peasy-ai-gen-test`: Generate test file
+- `peasy-ai-compile`: Compile the P project
+- `peasy-ai-check`: Run PChecker verification
+- `peasy-ai-fix-compile-error`: Automatically fix compilation errors
+- `peasy-ai-fix-checker-error`: Fix PChecker verification errors
+- `peasy-ai-syntax-help`: Get P language syntax help
 
 ### Common PeasyAI Tasks:
 ```bash

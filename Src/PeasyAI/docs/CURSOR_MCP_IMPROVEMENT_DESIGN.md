@@ -226,8 +226,8 @@ For each tool:
 Scenarios:
 
 - `validate_environment` -> generate minimal project -> compile
-- compile failure -> `fix_compiler_error` -> compile pass
-- checker failure -> `fix_checker_error` -> checker re-run
+- compile failure -> `peasy-ai-fix-compile-error` -> compile pass
+- checker failure -> `peasy-ai-fix-checker-error` -> checker re-run
 
 Mock LLM and deterministic fixtures for CI stability.
 
@@ -333,7 +333,7 @@ Map common failures to:
 
 ## 9) Immediate next actions
 
-1. Add contract tests for `validate_environment`, `generate_*`, `p_compile`, `fix_*`, `run_workflow`.
+1. Add contract tests for `peasy-ai-validate-env`, `peasy-ai-gen-*`, `peasy-ai-compile`, `peasy-ai-fix-*`, `peasy-ai-run-workflow`.
 2. Implement `api_version` + standardized error fields in tool responses.
 3. Add workflow persistence for pause/resume.
 4. Update README tool list and examples to match current tool signatures.

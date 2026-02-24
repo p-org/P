@@ -152,33 +152,33 @@ Ensure `~/.aws/credentials` is configured, then set `"provider": "bedrock"`.
 
 | Category | Tool | Description |
 |----------|------|-------------|
-| **Generation** | `generate_project_structure` | Create P project skeleton (PSrc/, PSpec/, PTst/) |
-| | `generate_types_events` | Generate types, enums, and events file |
-| | `generate_machine` | Generate a single state machine (two-stage, ensemble) |
-| | `generate_spec` | Generate safety specification / monitor |
-| | `generate_test` | Generate test driver |
-| | `generate_complete_project` | One-shot full project generation |
-| | `save_p_file` | Save generated code to disk |
-| **Compilation** | `p_compile` | Compile a P project |
-| | `p_check` | Run PChecker model-checking verification |
-| **Fixing** | `fix_compiler_error` | Fix a single compilation error |
-| | `fix_checker_error` | Fix a PChecker error from trace analysis |
-| | `fix_iteratively` | Iteratively fix all compilation errors |
-| | `fix_buggy_program` | Auto-diagnose and fix PChecker failures |
-| **Workflows** | `run_workflow` | Execute a multi-step workflow (compile_and_fix, full_verification, etc.) |
-| | `resume_workflow` | Resume a paused workflow with user guidance |
-| | `list_workflows` | List available and active workflows |
-| **Query** | `syntax_help` | P language syntax help by topic |
-| | `list_project_files` | List all .p files in a project |
-| | `read_p_file` | Read contents of a P file |
-| **RAG** | `search_p_examples` | Search the P program database |
-| | `get_generation_context` | Get examples to improve generation quality |
-| | `index_p_examples` | Index your own P files into the corpus |
-| | `get_protocol_examples` | Get examples for common protocols (Paxos, Raft, …) |
-| | `get_corpus_stats` | Get corpus statistics |
-| **Trace** | `explore_trace` | Explore a PChecker execution trace |
-| | `query_trace_state` | Query machine state at a point in the trace |
-| **Environment** | `validate_environment` | Check P toolchain, LLM provider, and config |
+| **Generation** | `peasy-ai-create-project` | Create P project skeleton (PSrc/, PSpec/, PTst/) |
+| | `peasy-ai-gen-types-events` | Generate types, enums, and events file |
+| | `peasy-ai-gen-machine` | Generate a single state machine (two-stage, ensemble) |
+| | `peasy-ai-gen-spec` | Generate safety specification / monitor |
+| | `peasy-ai-gen-test` | Generate test driver |
+| | `peasy-ai-gen-full-project` | One-shot full project generation |
+| | `peasy-ai-save-file` | Save generated code to disk |
+| **Compilation** | `peasy-ai-compile` | Compile a P project |
+| | `peasy-ai-check` | Run PChecker model-checking verification |
+| **Fixing** | `peasy-ai-fix-compile-error` | Fix a single compilation error |
+| | `peasy-ai-fix-checker-error` | Fix a PChecker error from trace analysis |
+| | `peasy-ai-fix-all` | Iteratively fix all compilation errors |
+| | `peasy-ai-fix-bug` | Auto-diagnose and fix PChecker failures |
+| **Workflows** | `peasy-ai-run-workflow` | Execute a multi-step workflow (compile_and_fix, full_verification, etc.) |
+| | `peasy-ai-resume-workflow` | Resume a paused workflow with user guidance |
+| | `peasy-ai-list-workflows` | List available and active workflows |
+| **Query** | `peasy-ai-syntax-help` | P language syntax help by topic |
+| | `peasy-ai-list-files` | List all .p files in a project |
+| | `peasy-ai-read-file` | Read contents of a P file |
+| **RAG** | `peasy-ai-search-examples` | Search the P program database |
+| | `peasy-ai-get-context` | Get examples to improve generation quality |
+| | `peasy-ai-index-examples` | Index your own P files into the corpus |
+| | `peasy-ai-get-protocol-examples` | Get examples for common protocols (Paxos, Raft, …) |
+| | `peasy-ai-corpus-stats` | Get corpus statistics |
+| **Trace** | `peasy-ai-explore-trace` | Explore a PChecker execution trace |
+| | `peasy-ai-query-trace` | Query machine state at a point in the trace |
+| **Environment** | `peasy-ai-validate-env` | Check P toolchain, LLM provider, and config |
 
 ## MCP Resources (14)
 
@@ -205,30 +205,30 @@ Ensure `~/.aws/credentials` is configured, then set `"provider": "bedrock"`.
 
 The recommended step-by-step workflow for generating verified P code:
 
-1. **Create project** — `generate_project_structure(design_doc, output_dir)`
-2. **Generate types** — `generate_types_events(design_doc, project_path)` → review → `save_p_file`
-3. **Generate machines** — `generate_machine(name, design_doc, project_path)` for each → review → `save_p_file`
-4. **Generate spec** — `generate_spec("Safety", design_doc, project_path)` → review → `save_p_file`
-5. **Generate test** — `generate_test("TestDriver", design_doc, project_path)` → review → `save_p_file`
-6. **Compile** — `p_compile(project_path)`
-7. **Fix errors** — `fix_iteratively(project_path)` if compilation fails
-8. **Verify** — `p_check(project_path)` to run PChecker
-9. **Fix bugs** — `fix_buggy_program(project_path)` if PChecker finds issues
+1. **Create project** — `peasy-ai-create-project(design_doc, output_dir)`
+2. **Generate types** — `peasy-ai-gen-types-events(design_doc, project_path)` → review → `peasy-ai-save-file`
+3. **Generate machines** — `peasy-ai-gen-machine(name, design_doc, project_path)` for each → review → `peasy-ai-save-file`
+4. **Generate spec** — `peasy-ai-gen-spec("Safety", design_doc, project_path)` → review → `peasy-ai-save-file`
+5. **Generate test** — `peasy-ai-gen-test("TestDriver", design_doc, project_path)` → review → `peasy-ai-save-file`
+6. **Compile** — `peasy-ai-compile(project_path)`
+7. **Fix errors** — `peasy-ai-fix-all(project_path)` if compilation fails
+8. **Verify** — `peasy-ai-check(project_path)` to run PChecker
+9. **Fix bugs** — `peasy-ai-fix-bug(project_path)` if PChecker finds issues
 
-Or use **`run_workflow("full_verification", project_path)`** to automate steps 6–9.
+Or use **`peasy-ai-run-workflow("full_verification", project_path)`** to automate steps 6–9.
 
 ---
 
 ## Human-in-the-Loop Error Fixing
 
-The `fix_compiler_error` and `fix_checker_error` tools try up to 3 automated fixes. If all fail, they return `needs_guidance: true` with diagnostic questions. Call the tool again with `user_guidance` containing the user's hint:
+The `peasy-ai-fix-compile-error` and `peasy-ai-fix-checker-error` tools try up to 3 automated fixes. If all fail, they return `needs_guidance: true` with diagnostic questions. Call the tool again with `user_guidance` containing the user's hint:
 
 ```
-→ fix_compiler_error(...)             # attempt 1 — fails
-→ fix_compiler_error(...)             # attempt 2 — fails
-→ fix_compiler_error(...)             # attempt 3 — fails, returns needs_guidance=true
+→ peasy-ai-fix-compile-error(...)             # attempt 1 — fails
+→ peasy-ai-fix-compile-error(...)             # attempt 2 — fails
+→ peasy-ai-fix-compile-error(...)             # attempt 3 — fails, returns needs_guidance=true
 → Ask user for guidance
-→ fix_compiler_error(user_guidance="The type should be…")  # succeeds
+→ peasy-ai-fix-compile-error(user_guidance="The type should be…")  # succeeds
 ```
 
 ---

@@ -246,11 +246,11 @@ def register_generation_tools(mcp, get_services, with_metadata):
     """Register generation tools."""
 
     @mcp.tool(
-        name="generate_project_structure",
-        description="STEP 1 of the recommended step-by-step workflow. Creates a P project skeleton with PSrc, PSpec, PTst folders and .pproj file. After this, use generate_types_events to define types and events."
+        name="peasy-ai-create-project",
+        description="STEP 1 of the recommended step-by-step workflow. Creates a P project skeleton with PSrc, PSpec, PTst folders and .pproj file. After this, use peasy-ai-gen-types-events to define types and events."
     )
     def generate_project_structure(params: GenerateProjectParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_project_structure: {params.project_name}")
+        logger.info(f"[TOOL] peasy-ai-create-project: {params.project_name}")
 
         services = get_services()
         result = services["generation"].create_project_structure(
@@ -265,14 +265,14 @@ def register_generation_tools(mcp, get_services, with_metadata):
             "error": result.error,
             "message": f"Created P project at {result.file_path}" if result.success else result.error
         }
-        return with_metadata("generate_project_structure", payload, token_usage=result.token_usage)
+        return with_metadata("peasy-ai-create-project", payload, token_usage=result.token_usage)
 
     @mcp.tool(
-        name="generate_types_events",
-        description="STEP 2 of the recommended step-by-step workflow. Generates the types, enums, and events file (Enums_Types_Events.p) from the design document. Returns code for preview so the user can review it before saving with save_p_file. Run this after generate_project_structure."
+        name="peasy-ai-gen-types-events",
+        description="STEP 2 of the recommended step-by-step workflow. Generates the types, enums, and events file (Enums_Types_Events.p) from the design document. Returns code for preview so the user can review it before saving with peasy-ai-save-file. Run this after peasy-ai-create-project."
     )
     def generate_types_events(params: GenerateTypesEventsParams) -> Dict[str, Any]:
-        logger.info("[TOOL] generate_types_events (preview)")
+        logger.info("[TOOL] peasy-ai-gen-types-events (preview)")
 
         services = get_services()
         result = services["generation"].generate_types_events(
@@ -298,16 +298,16 @@ def register_generation_tools(mcp, get_services, with_metadata):
             "token_usage": result.token_usage,
             "preview_only": True,
             "review": review,
-            "message": "Code generated for preview. Use save_p_file to save to disk." if result.success else result.error
+            "message": "Code generated for preview. Use peasy-ai-save-file to save to disk." if result.success else result.error
         }
-        return with_metadata("generate_types_events", payload, token_usage=result.token_usage)
+        return with_metadata("peasy-ai-gen-types-events", payload, token_usage=result.token_usage)
 
     @mcp.tool(
-        name="generate_machine",
-        description="STEP 3 of the recommended step-by-step workflow. Generates a single P state machine implementation using two-stage generation (structure first, then implementation). Call once per machine in the design. Returns code for preview so the user can review it before saving with save_p_file. Pass previously generated files as context_files for cross-file consistency."
+        name="peasy-ai-gen-machine",
+        description="STEP 3 of the recommended step-by-step workflow. Generates a single P state machine implementation using two-stage generation (structure first, then implementation). Call once per machine in the design. Returns code for preview so the user can review it before saving with peasy-ai-save-file. Pass previously generated files as context_files for cross-file consistency."
     )
     def generate_machine(params: GenerateMachineParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_machine: {params.machine_name} (preview, ensemble={params.ensemble_size})")
+        logger.info(f"[TOOL] peasy-ai-gen-machine: {params.machine_name} (preview, ensemble={params.ensemble_size})")
 
         services = get_services()
         if params.ensemble_size > 1:
@@ -346,16 +346,16 @@ def register_generation_tools(mcp, get_services, with_metadata):
             "token_usage": result.token_usage,
             "preview_only": True,
             "review": review,
-            "message": "Code generated for preview. Use save_p_file to save to disk." if result.success else result.error
+            "message": "Code generated for preview. Use peasy-ai-save-file to save to disk." if result.success else result.error
         }
-        return with_metadata("generate_machine", payload, token_usage=result.token_usage)
+        return with_metadata("peasy-ai-gen-machine", payload, token_usage=result.token_usage)
 
     @mcp.tool(
-        name="generate_spec",
-        description="STEP 4 of the recommended step-by-step workflow. Generates a P safety specification/monitor file. Returns code for preview so the user can review it before saving with save_p_file. Run this after all machines have been generated, passing them as context_files."
+        name="peasy-ai-gen-spec",
+        description="STEP 4 of the recommended step-by-step workflow. Generates a P safety specification/monitor file. Returns code for preview so the user can review it before saving with peasy-ai-save-file. Run this after all machines have been generated, passing them as context_files."
     )
     def generate_spec(params: GenerateSpecParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_spec: {params.spec_name} (preview, ensemble={params.ensemble_size})")
+        logger.info(f"[TOOL] peasy-ai-gen-spec: {params.spec_name} (preview, ensemble={params.ensemble_size})")
 
         ctx = dict(params.context_files) if params.context_files else {}
         if params.checker_feedback:
@@ -397,16 +397,16 @@ def register_generation_tools(mcp, get_services, with_metadata):
             "token_usage": result.token_usage,
             "preview_only": True,
             "review": review,
-            "message": "Code generated for preview. Use save_p_file to save to disk." if result.success else result.error
+            "message": "Code generated for preview. Use peasy-ai-save-file to save to disk." if result.success else result.error
         }
-        return with_metadata("generate_spec", payload, token_usage=result.token_usage)
+        return with_metadata("peasy-ai-gen-spec", payload, token_usage=result.token_usage)
 
     @mcp.tool(
-        name="generate_test",
-        description="STEP 5 of the recommended step-by-step workflow. Generates a P test driver file. Returns code for preview so the user can review it before saving with save_p_file. Run this after all machines and specs have been generated, passing them as context_files. After saving, use p_compile to compile and p_check to verify."
+        name="peasy-ai-gen-test",
+        description="STEP 5 of the recommended step-by-step workflow. Generates a P test driver file. Returns code for preview so the user can review it before saving with peasy-ai-save-file. Run this after all machines and specs have been generated, passing them as context_files. After saving, use peasy-ai-compile to compile and peasy-ai-check to verify."
     )
     def generate_test(params: GenerateTestParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_test: {params.test_name} (preview, ensemble={params.ensemble_size})")
+        logger.info(f"[TOOL] peasy-ai-gen-test: {params.test_name} (preview, ensemble={params.ensemble_size})")
 
         ctx = dict(params.context_files) if params.context_files else {}
         if params.checker_feedback:
@@ -451,22 +451,22 @@ def register_generation_tools(mcp, get_services, with_metadata):
             "token_usage": result.token_usage,
             "preview_only": True,
             "review": review,
-            "message": "Code generated for preview. Use save_p_file to save to disk." if result.success else result.error
+            "message": "Code generated for preview. Use peasy-ai-save-file to save to disk." if result.success else result.error
         }
-        return with_metadata("generate_test", payload, token_usage=result.token_usage)
+        return with_metadata("peasy-ai-gen-test", payload, token_usage=result.token_usage)
 
     @mcp.tool(
-        name="generate_complete_project",
+        name="peasy-ai-gen-full-project",
         description="""ADVANCED: Generate an entire P project in a single autonomous call. This is a convenience shortcut that runs all generation steps without human review.
 
-IMPORTANT: Prefer the step-by-step tools (generate_project_structure, generate_types_events, generate_machine, generate_spec, generate_test) instead. The step-by-step approach lets the user review and approve each file before proceeding, resulting in higher quality code.
+IMPORTANT: Prefer the step-by-step tools (peasy-ai-create-project, peasy-ai-gen-types-events, peasy-ai-gen-machine, peasy-ai-gen-spec, peasy-ai-gen-test) instead. The step-by-step approach lets the user review and approve each file before proceeding, resulting in higher quality code.
 
 Only use this tool when the user EXPLICITLY asks for fully automated / one-shot / hands-off generation.
 
 Steps performed: create structure → generate types/events → generate machines → generate spec → generate test → post-process → compile → auto-fix → optionally run PChecker."""
     )
     def generate_complete_project(params: GenerateCompleteProjectParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] generate_complete_project: {params.project_name} (ensemble={params.ensemble_size})")
+        logger.info(f"[TOOL] peasy-ai-gen-full-project: {params.project_name} (ensemble={params.ensemble_size})")
 
         import os
         from pathlib import Path
@@ -497,7 +497,7 @@ Steps performed: create structure → generate types/events → generate machine
             if not doc_validation["valid"]:
                 results["errors"].extend(doc_validation["errors"])
                 results["warnings"].extend(doc_validation["warnings"])
-                return with_metadata("generate_complete_project", results)
+                return with_metadata("peasy-ai-gen-full-project", results)
             if doc_validation["warnings"]:
                 results["warnings"].extend(doc_validation["warnings"])
 
@@ -506,7 +506,7 @@ Steps performed: create structure → generate types/events → generate machine
                 machine_names = doc_validation["components"] or extract_machine_names_from_design_doc(params.design_doc)
                 if not machine_names:
                     results["errors"].append("Could not extract machine names from design doc")
-                    return with_metadata("generate_complete_project", results)
+                    return with_metadata("peasy-ai-gen-full-project", results)
 
             logger.info(f"Generating project with machines: {machine_names}")
 
@@ -517,7 +517,7 @@ Steps performed: create structure → generate types/events → generate machine
 
             if not struct_result.success:
                 results["errors"].append(f"Failed to create structure: {struct_result.error}")
-                return with_metadata("generate_complete_project", results)
+                return with_metadata("peasy-ai-gen-full-project", results)
 
             project_path = struct_result.file_path
             results["project_path"] = project_path
@@ -534,7 +534,7 @@ Steps performed: create structure → generate types/events → generate machine
                 results["generated_files"][types_filename] = types_result.file_path
             else:
                 results["errors"].append(f"Failed to generate types: {types_result.error}")
-                return with_metadata("generate_complete_project", results)
+                return with_metadata("peasy-ai-gen-full-project", results)
 
             context_files = {types_filename: types_result.code}
 
@@ -776,18 +776,18 @@ Steps performed: create structure → generate types/events → generate machine
             logger.error(f"Error in generate_complete_project: {err_msg}\n{traceback.format_exc()}")
             results["errors"].append(err_msg)
 
-        return with_metadata("generate_complete_project", results)
+        return with_metadata("peasy-ai-gen-full-project", results)
 
     @mcp.tool(
-        name="save_p_file",
+        name="peasy-ai-save-file",
         description="Save generated P code to a file on disk and run a proactive compilation check. "
                     "In the step-by-step workflow, call this after the user reviews and approves the code "
-                    "returned by generate_types_events, generate_machine, generate_spec, or generate_test. "
+                    "returned by peasy-ai-gen-types-events, peasy-ai-gen-machine, peasy-ai-gen-spec, or peasy-ai-gen-test. "
                     "Provide the absolute file_path (from the generate tool's response) and the code content. "
                     "The response includes a 'compilation_check' field with any syntax errors found in this file."
     )
     def save_p_file(params: SavePFileParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] save_p_file: {params.file_path}")
+        logger.info(f"[TOOL] peasy-ai-save-file: {params.file_path}")
 
         services = get_services()
         result = services["generation"].save_p_file(
@@ -830,7 +830,7 @@ Steps performed: create structure → generate types/events → generate machine
             "compilation_check": compilation_check,
             "message": f"Saved {result.filename} to disk" if result.success else result.error
         }
-        return with_metadata("save_p_file", payload, token_usage=result.token_usage)
+        return with_metadata("peasy-ai-save-file", payload, token_usage=result.token_usage)
 
     return {
         "generate_project_structure": generate_project_structure,

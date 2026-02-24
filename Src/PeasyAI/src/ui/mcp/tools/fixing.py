@@ -282,15 +282,15 @@ def register_fixing_tools(mcp, get_services, with_metadata):
     """Register fixing tools."""
 
     @mcp.tool(
-        name="fix_compiler_error",
-        description="""Fix a single P compiler error using AI. Provide the error message, file path, and optionally line/column numbers from the p_compile output.
+        name="peasy-ai-fix-compile-error",
+        description="""Fix a single P compiler error using AI. Provide the error message, file path, and optionally line/column numbers from the peasy-ai-compile output.
 
-To fix all compilation errors at once, use fix_iteratively instead.
+To fix all compilation errors at once, use peasy-ai-fix-all instead.
 
 After 3 failed attempts, returns needs_guidance=true with questions for the user. If you receive needs_guidance, ask the user the questions and call again with user_guidance."""
     )
     def fix_compiler_error(params: FixCompilerErrorParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] fix_compiler_error: {params.file_path}")
+        logger.info(f"[TOOL] peasy-ai-fix-compile-error: {params.file_path}")
 
         services = get_services()
 
@@ -320,10 +320,10 @@ After 3 failed attempts, returns needs_guidance=true with questions for the user
             response["needs_guidance"] = True
             response["guidance_request"] = result.guidance_request
 
-        return with_metadata("fix_compiler_error", response, token_usage=result.token_usage)
+        return with_metadata("peasy-ai-fix-compile-error", response, token_usage=result.token_usage)
 
     @mcp.tool(
-        name="fix_checker_error",
+        name="peasy-ai-fix-checker-error",
         description="""Fix a PChecker error using AI.
 
 Analyzes the execution trace and fixes state machine logic issues.
@@ -332,7 +332,7 @@ After 3 failed attempts, returns needs_guidance=true with questions for the user
 If you receive needs_guidance, ask the user the questions and call again with user_guidance."""
     )
     def fix_checker_error(params: FixCheckerErrorParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] fix_checker_error: {params.project_path}")
+        logger.info(f"[TOOL] peasy-ai-fix-checker-error: {params.project_path}")
 
         services = get_services()
         result = services["fixer"].fix_checker_error(
@@ -373,14 +373,14 @@ If you receive needs_guidance, ask the user the questions and call again with us
         if result.analysis and "vacuous_pass_warning" in result.analysis:
             response["vacuous_pass_warning"] = result.analysis["vacuous_pass_warning"]
 
-        return with_metadata("fix_checker_error", response, token_usage=result.token_usage)
+        return with_metadata("peasy-ai-fix-checker-error", response, token_usage=result.token_usage)
 
     @mcp.tool(
-        name="fix_iteratively",
-        description="Iteratively compile, detect errors, and fix them in a loop until the project compiles successfully or max_iterations is reached. This is the recommended way to fix multiple compilation errors at once — it automatically re-compiles after each fix to catch cascading issues. Use this instead of calling fix_compiler_error repeatedly."
+        name="peasy-ai-fix-all",
+        description="Iteratively compile, detect errors, and fix them in a loop until the project compiles successfully or max_iterations is reached. This is the recommended way to fix multiple compilation errors at once — it automatically re-compiles after each fix to catch cascading issues. Use this instead of calling peasy-ai-fix-compile-error repeatedly."
     )
     def fix_iteratively(params: FixIterativelyParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] fix_iteratively: {params.project_path}")
+        logger.info(f"[TOOL] peasy-ai-fix-all: {params.project_path}")
 
         services = get_services()
         result = services["fixer"].fix_iteratively(
@@ -388,18 +388,18 @@ If you receive needs_guidance, ask the user the questions and call again with us
             max_iterations=params.max_iterations
         )
 
-        return with_metadata("fix_iteratively", result)
+        return with_metadata("peasy-ai-fix-all", result)
 
     @mcp.tool(
-        name="fix_buggy_program",
+        name="peasy-ai-fix-bug",
         description="""Automatically diagnose and fix a buggy P program after a PChecker failure.
 
-Use this after p_check returns a failure. It reads the latest PChecker trace from PCheckerOutput/BugFinding/, identifies the bug type (null_target, unhandled_event, assertion_failure, deadlock), provides root cause analysis, attempts an automatic fix, and verifies by recompiling and re-running PChecker.
+Use this after peasy-ai-check returns a failure. It reads the latest PChecker trace from PCheckerOutput/BugFinding/, identifies the bug type (null_target, unhandled_event, assertion_failure, deadlock), provides root cause analysis, attempts an automatic fix, and verifies by recompiling and re-running PChecker.
 
 If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidance and example code for manual intervention."""
     )
     def fix_buggy_program(params: FixBuggyProgramParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] fix_buggy_program: {params.project_path}")
+        logger.info(f"[TOOL] peasy-ai-fix-bug: {params.project_path}")
 
         project_path = Path(params.project_path)
 
@@ -411,7 +411,7 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
                 "success": False,
                 "error": f"No PChecker output found at {checker_output}. Run p_check first.",
             }
-            return with_metadata("fix_buggy_program", payload)
+            return with_metadata("peasy-ai-fix-bug", payload)
 
         bug_dirs = sorted(
             [d for d in checker_output.glob("BugFinding*") if d.is_dir()],
@@ -423,7 +423,7 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
                 "success": False,
                 "error": "No BugFinding directories found. Run p_check first.",
             }
-            return with_metadata("fix_buggy_program", payload)
+            return with_metadata("peasy-ai-fix-bug", payload)
 
         # Collect traces from ALL BugFinding*/ directories (one per failing test).
         # We pick the best trace to analyze — preferring the one whose error
@@ -442,7 +442,7 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
                 "error": f"No trace files found in BugFinding directories. "
                          "The program may have passed all tests.",
             }
-            return with_metadata("fix_buggy_program", payload)
+            return with_metadata("peasy-ai-fix-bug", payload)
 
         # Rank traces by error category actionability so we fix the most
         # impactful bug first.  Order: unhandled_event > null_target >
@@ -595,12 +595,12 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
                     response["requires_manual_fix"] = True
                     response["manual_fix_guidance"] = _get_manual_fix_guidance(analysis)
 
-            return with_metadata("fix_buggy_program", response)
+            return with_metadata("peasy-ai-fix-bug", response)
 
         except ImportError as e:
             logger.warning(f"Checker analysis modules not available: {e}")
             payload = _basic_trace_analysis(trace_content, str(project_path), services)
-            return with_metadata("fix_buggy_program", payload)
+            return with_metadata("peasy-ai-fix-bug", payload)
         except Exception as e:
             import traceback
             err_msg = f"{type(e).__name__}: {e}"
@@ -610,7 +610,7 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
                 "error": err_msg,
                 "trace_file": str(latest_trace),
             }
-            return with_metadata("fix_buggy_program", payload)
+            return with_metadata("peasy-ai-fix-bug", payload)
 
     return {
         "fix_compiler_error": fix_compiler_error,

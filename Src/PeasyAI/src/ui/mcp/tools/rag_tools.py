@@ -66,7 +66,7 @@ def register_rag_tools(mcp, with_metadata):
     """Register RAG tools."""
 
     @mcp.tool(
-        name="search_p_examples",
+        name="peasy-ai-search-examples",
         description="""Search the P program database for similar examples.
 
 Use this to find real P code examples that match your needs:
@@ -82,9 +82,9 @@ Returns relevant P code examples with descriptions and similarity scores."""
                 "success": False,
                 "error": "RAG module not available. Install sentence-transformers for full functionality."
             }
-            return with_metadata("search_p_examples", payload)
+            return with_metadata("peasy-ai-search-examples", payload)
 
-        logger.info(f"[TOOL] search_p_examples: {params.query[:50]}...")
+        logger.info(f"[TOOL] peasy-ai-search-examples: {params.query[:50]}...")
 
         try:
             rag = get_rag_service()
@@ -115,14 +115,14 @@ Returns relevant P code examples with descriptions and similarity scores."""
                 "total_found": len(examples),
                 "corpus_size": rag.get_stats()["total_examples"]
             }
-            return with_metadata("search_p_examples", payload)
+            return with_metadata("peasy-ai-search-examples", payload)
         except Exception as e:
             logger.error(f"Search error: {e}")
             payload = {"success": False, "error": str(e)}
-            return with_metadata("search_p_examples", payload)
+            return with_metadata("peasy-ai-search-examples", payload)
 
     @mcp.tool(
-        name="get_generation_context",
+        name="peasy-ai-get-context",
         description="""Get contextual examples and hints for P code generation.
 
 Before generating P code, call this to get relevant examples that will improve generation quality:
@@ -139,9 +139,9 @@ Returns examples with code and syntax hints to use in your prompt."""
                 "success": False,
                 "error": "RAG module not available. Install sentence-transformers for full functionality."
             }
-            return with_metadata("get_generation_context", payload)
+            return with_metadata("peasy-ai-get-context", payload)
 
-        logger.info(f"[TOOL] get_generation_context: {params.context_type}")
+        logger.info(f"[TOOL] peasy-ai-get-context: {params.context_type}")
 
         try:
             rag = get_rag_service()
@@ -172,7 +172,7 @@ Returns examples with code and syntax hints to use in your prompt."""
                     "success": False,
                     "error": f"Unknown context type: {params.context_type}. Use: machine, spec, test, types"
                 }
-                return with_metadata("get_generation_context", payload)
+                return with_metadata("peasy-ai-get-context", payload)
 
             payload = {
                 "success": True,
@@ -182,14 +182,14 @@ Returns examples with code and syntax hints to use in your prompt."""
                 "documentation": context.documentation,
                 "prompt_section": context.to_prompt_section()
             }
-            return with_metadata("get_generation_context", payload)
+            return with_metadata("peasy-ai-get-context", payload)
         except Exception as e:
             logger.error(f"Context error: {e}")
             payload = {"success": False, "error": str(e)}
-            return with_metadata("get_generation_context", payload)
+            return with_metadata("peasy-ai-get-context", payload)
 
     @mcp.tool(
-        name="index_p_examples",
+        name="peasy-ai-index-examples",
         description="""Index P files into the examples database.
 
 Use this to add your own P programs to the searchable corpus:
@@ -197,7 +197,7 @@ Use this to add your own P programs to the searchable corpus:
 - Index an entire directory of P files
 - Index the official P tutorial examples
 
-Indexed examples can then be found via search_p_examples."""
+Indexed examples can then be found via peasy-ai-search-examples."""
     )
     def index_p_examples(params: IndexPFilesParams) -> Dict[str, Any]:
         if not HAS_RAG:
@@ -205,9 +205,9 @@ Indexed examples can then be found via search_p_examples."""
                 "success": False,
                 "error": "RAG module not available."
             }
-            return with_metadata("index_p_examples", payload)
+            return with_metadata("peasy-ai-index-examples", payload)
 
-        logger.info(f"[TOOL] index_p_examples: {params.path}")
+        logger.info(f"[TOOL] peasy-ai-index-examples: {params.path}")
 
         try:
             rag = get_rag_service()
@@ -215,7 +215,7 @@ Indexed examples can then be found via search_p_examples."""
 
             if not path.exists():
                 payload = {"success": False, "error": f"Path not found: {params.path}"}
-                return with_metadata("index_p_examples", payload)
+                return with_metadata("peasy-ai-index-examples", payload)
 
             if path.is_file():
                 count = rag.index_file(str(path))
@@ -228,14 +228,14 @@ Indexed examples can then be found via search_p_examples."""
                 "total_in_corpus": rag.get_stats()["total_examples"],
                 "message": f"Indexed {count} examples from {params.path}"
             }
-            return with_metadata("index_p_examples", payload)
+            return with_metadata("peasy-ai-index-examples", payload)
         except Exception as e:
             logger.error(f"Index error: {e}")
             payload = {"success": False, "error": str(e)}
-            return with_metadata("index_p_examples", payload)
+            return with_metadata("peasy-ai-index-examples", payload)
 
     @mcp.tool(
-        name="get_protocol_examples",
+        name="peasy-ai-get-protocol-examples",
         description="""Get P code examples for a specific distributed protocol.
 
 Use this when implementing common distributed systems protocols:
@@ -252,9 +252,9 @@ Returns relevant examples from the P corpus."""
                 "success": False,
                 "error": "RAG module not available."
             }
-            return with_metadata("get_protocol_examples", payload)
+            return with_metadata("peasy-ai-get-protocol-examples", payload)
 
-        logger.info(f"[TOOL] get_protocol_examples: {params.protocol_name}")
+        logger.info(f"[TOOL] peasy-ai-get-protocol-examples: {params.protocol_name}")
 
         try:
             rag = get_rag_service()
@@ -269,14 +269,14 @@ Returns relevant examples from the P corpus."""
                 "examples": context.examples,
                 "total_found": len(context.examples)
             }
-            return with_metadata("get_protocol_examples", payload)
+            return with_metadata("peasy-ai-get-protocol-examples", payload)
         except Exception as e:
             logger.error(f"Protocol examples error: {e}")
             payload = {"success": False, "error": str(e)}
-            return with_metadata("get_protocol_examples", payload)
+            return with_metadata("peasy-ai-get-protocol-examples", payload)
 
     @mcp.tool(
-        name="get_corpus_stats",
+        name="peasy-ai-corpus-stats",
         description="Get statistics about the P program corpus (number of indexed examples, etc.)"
     )
     def get_corpus_stats(params: GetCorpusStatsParams) -> Dict[str, Any]:
@@ -285,7 +285,7 @@ Returns relevant examples from the P corpus."""
                 "success": False,
                 "error": "RAG module not available."
             }
-            return with_metadata("get_corpus_stats", payload)
+            return with_metadata("peasy-ai-corpus-stats", payload)
 
         try:
             rag = get_rag_service()
@@ -301,10 +301,10 @@ Returns relevant examples from the P corpus."""
                 "by_category": by_category,
                 "message": f"Corpus contains {stats['total_examples']} indexed P code examples"
             }
-            return with_metadata("get_corpus_stats", payload)
+            return with_metadata("peasy-ai-corpus-stats", payload)
         except Exception as e:
             payload = {"success": False, "error": str(e)}
-            return with_metadata("get_corpus_stats", payload)
+            return with_metadata("peasy-ai-corpus-stats", payload)
 
     return {
         "search_p_examples": search_p_examples,

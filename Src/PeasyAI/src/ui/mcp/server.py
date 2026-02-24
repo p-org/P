@@ -61,7 +61,7 @@ except ImportError:
 # MCP SERVER SETUP
 # ============================================================================
 
-mcp = FastMCP("PeasyAI")
+mcp = FastMCP("peasy-ai")
 
 logging.basicConfig(
     level=logging.INFO,

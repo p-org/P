@@ -78,7 +78,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
     """Register workflow tools."""
 
     @mcp.tool(
-        name="run_workflow",
+        name="peasy-ai-run-workflow",
         description="""Execute a predefined multi-step workflow. Available workflows:
 - compile_and_fix: Compile the project and automatically fix errors (requires project_path).
 - full_verification: Compile, fix compilation errors, run PChecker, and automatically fix any PChecker bugs found (requires project_path). IMPORTANT: Always use this workflow after generating P code to verify and fix correctness end-to-end. Do NOT manually edit files to fix PChecker errors — this workflow handles it automatically by reading trace files and applying AI-driven fixes.
@@ -101,7 +101,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
                     "success": False,
                     "error": "design_doc is required for full_generation workflow"
                 }
-                return with_metadata("run_workflow", payload)
+                return with_metadata("peasy-ai-run-workflow", payload)
 
             machine_names = params.machine_names
             if not machine_names:
@@ -111,7 +111,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
                         "success": False,
                         "error": "Could not extract machine names from design_doc. Please provide machine_names explicitly."
                     }
-                    return with_metadata("run_workflow", payload)
+                    return with_metadata("peasy-ai-run-workflow", payload)
 
             workflow = factory.create_full_generation_workflow(
                 machine_names=machine_names,
@@ -130,7 +130,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
                     "guidance_needed": result.get("guidance_context"),
                     "message": "Workflow paused - human guidance needed"
                 }
-                return with_metadata("run_workflow", payload)
+                return with_metadata("peasy-ai-run-workflow", payload)
 
             payload = {
                 "success": result.get("success", False),
@@ -138,7 +138,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
                 "skipped_steps": result.get("skipped_steps", []),
                 "errors": result.get("errors", [])
             }
-            return with_metadata("run_workflow", payload)
+            return with_metadata("peasy-ai-run-workflow", payload)
 
         except Exception as e:
             logger.error(f"Workflow execution failed: {e}")
@@ -146,11 +146,11 @@ def register_workflow_tools(mcp, get_services, with_metadata):
                 "success": False,
                 "error": str(e)
             }
-            return with_metadata("run_workflow", payload)
+            return with_metadata("peasy-ai-run-workflow", payload)
 
     @mcp.tool(
-        name="resume_workflow",
-        description="Resume a paused workflow with user guidance. Call this after run_workflow returns paused=true and needs_guidance. Provide the workflow_id from the paused response and the user's guidance text."
+        name="peasy-ai-resume-workflow",
+        description="Resume a paused workflow with user guidance. Call this after peasy-ai-run-workflow returns paused=true and needs_guidance. Provide the workflow_id from the paused response and the user's guidance text."
     )
     def resume_workflow(params: ResumeWorkflowParams) -> Dict[str, Any]:
         engine, _ = _get_workflow_engine(get_services)
@@ -166,32 +166,32 @@ def register_workflow_tools(mcp, get_services, with_metadata):
                     "guidance_needed": result.get("guidance_context"),
                     "message": "Workflow still needs guidance"
                 }
-                return with_metadata("resume_workflow", payload)
+                return with_metadata("peasy-ai-resume-workflow", payload)
 
             payload = {
                 "success": result.get("success", False),
                 "completed_steps": result.get("completed_steps", []),
                 "errors": result.get("errors", [])
             }
-            return with_metadata("resume_workflow", payload)
+            return with_metadata("peasy-ai-resume-workflow", payload)
 
         except ValueError as e:
             payload = {
                 "success": False,
                 "error": str(e)
             }
-            return with_metadata("resume_workflow", payload)
+            return with_metadata("peasy-ai-resume-workflow", payload)
         except Exception as e:
             logger.error(f"Workflow resume failed: {e}")
             payload = {
                 "success": False,
                 "error": str(e)
             }
-            return with_metadata("resume_workflow", payload)
+            return with_metadata("peasy-ai-resume-workflow", payload)
 
     @mcp.tool(
-        name="list_workflows",
-        description="List available workflows and any active or paused workflows. Returns the set of workflow names you can pass to run_workflow, plus status of any in-flight workflows."
+        name="peasy-ai-list-workflows",
+        description="List available workflows and any active or paused workflows. Returns the set of workflow names you can pass to peasy-ai-run-workflow, plus status of any in-flight workflows."
     )
     def list_workflows(params: ListWorkflowsParams) -> Dict[str, Any]:
         engine, _ = _get_workflow_engine(get_services)
@@ -237,7 +237,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
             "active_workflows": active,
             "persistence": persistence,
         }
-        return with_metadata("list_workflows", payload)
+        return with_metadata("peasy-ai-list-workflows", payload)
 
     return {
         "run_workflow": run_workflow,

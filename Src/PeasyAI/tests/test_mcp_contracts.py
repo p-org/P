@@ -103,7 +103,7 @@ class TestMCPContracts(unittest.TestCase):
         self.assertTrue(response["success"])
         self.assertEqual(response["api_version"], "1.0")
         self.assertFalse(response["retryable"])
-        self.assertEqual(response["metadata"]["tool"], "p_compile")
+        self.assertEqual(response["metadata"]["tool"], "peasy-ai-compile")
 
 
 if __name__ == "__main__":

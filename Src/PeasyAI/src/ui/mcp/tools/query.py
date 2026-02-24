@@ -29,11 +29,11 @@ def register_query_tools(mcp, get_services, with_metadata):
     """Register query tools."""
 
     @mcp.tool(
-        name="syntax_help",
+        name="peasy-ai-syntax-help",
         description="Get syntax help and examples for P language constructs. Provide a topic like 'state machines', 'events', 'types', 'enums', 'statements', 'specs', 'monitors', 'tests', 'modules', 'send', 'goto', 'raise', 'compiler', or 'errors'. Returns relevant documentation from the P language guides."
     )
     def syntax_help(params: SyntaxHelperParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] syntax_help: {params.topic}")
+        logger.info(f"[TOOL] peasy-ai-syntax-help: {params.topic}")
 
         services = get_services()
         resources = services["resources"]
@@ -82,14 +82,14 @@ def register_query_tools(mcp, get_services, with_metadata):
             "content": "\n\n".join(content_parts),
             "files_referenced": matching_files[:3]
         }
-        return with_metadata("syntax_help", payload)
+        return with_metadata("peasy-ai-syntax-help", payload)
 
     @mcp.tool(
-        name="list_project_files",
-        description="List all P files (.p) in a project organized by folder (PSrc, PSpec, PTst). Useful for inspecting the structure of an existing or generated project before reading individual files with read_p_file."
+        name="peasy-ai-list-files",
+        description="List all P files (.p) in a project organized by folder (PSrc, PSpec, PTst). Useful for inspecting the structure of an existing or generated project before reading individual files with peasy-ai-read-file."
     )
     def list_project_files(params: ListProjectFilesParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] list_project_files: {params.project_path}")
+        logger.info(f"[TOOL] peasy-ai-list-files: {params.project_path}")
 
         services = get_services()
         files = services["compilation"].get_project_files(params.project_path)
@@ -105,14 +105,14 @@ def register_query_tools(mcp, get_services, with_metadata):
             "files": organized,
             "total_files": len(files)
         }
-        return with_metadata("list_project_files", payload)
+        return with_metadata("peasy-ai-list-files", payload)
 
     @mcp.tool(
-        name="read_p_file",
-        description="Read the full contents of a P file. Use this to inspect generated code, review existing machines/specs/tests, or gather context_files content to pass into generate_machine, generate_spec, or generate_test."
+        name="peasy-ai-read-file",
+        description="Read the full contents of a P file. Use this to inspect generated code, review existing machines/specs/tests, or gather context_files content to pass into peasy-ai-gen-machine, peasy-ai-gen-spec, or peasy-ai-gen-test."
     )
     def read_p_file(params: ReadPFileParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] read_p_file: {params.file_path}")
+        logger.info(f"[TOOL] peasy-ai-read-file: {params.file_path}")
 
         services = get_services()
         content = services["compilation"].read_file(params.file_path)
@@ -124,13 +124,13 @@ def register_query_tools(mcp, get_services, with_metadata):
                 "content": content,
                 "lines": len(content.splitlines())
             }
-            return with_metadata("read_p_file", payload)
+            return with_metadata("peasy-ai-read-file", payload)
 
         payload = {
             "success": False,
             "error": f"Could not read file: {params.file_path}"
         }
-        return with_metadata("read_p_file", payload)
+        return with_metadata("peasy-ai-read-file", payload)
 
     return {
         "syntax_help": syntax_help,

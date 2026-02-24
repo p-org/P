@@ -23,7 +23,7 @@ def register_env_tools(mcp, with_metadata):
     """Register environment validation tools."""
 
     @mcp.tool(
-        name="validate_environment",
+        name="peasy-ai-validate-env",
         description="Validate local P toolchain and LLM provider environment."
     )
     def validate_environment(params: ValidateEnvironmentParams) -> Dict[str, Any]:
@@ -84,6 +84,6 @@ def register_env_tools(mcp, with_metadata):
             "details": details,
             "message": "Environment valid" if len(issues) == 0 else "Environment issues detected",
         }
-        return with_metadata("validate_environment", payload)
+        return with_metadata("peasy-ai-validate-env", payload)
 
     return validate_environment

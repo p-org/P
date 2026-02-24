@@ -577,36 +577,36 @@ The MCP server integrates with Cursor IDE using a **human-in-the-loop** workflow
 - Iterative refinement workflow
 
 **Tools Supporting Preview Mode:**
-- `generate_types_events` - Returns code for preview
-- `generate_machine` - Returns code for preview
-- `generate_spec` - Returns code for preview
-- `generate_test` - Returns code for preview
-- `save_p_file` - Saves approved code to disk
+- `peasy-ai-gen-types-events` - Returns code for preview
+- `peasy-ai-gen-machine` - Returns code for preview
+- `peasy-ai-gen-spec` - Returns code for preview
+- `peasy-ai-gen-test` - Returns code for preview
+- `peasy-ai-save-file` - Saves approved code to disk
 
 ### 6.1 Tool Categories
 
 ```
-MCP Tools
+MCP Tools (peasy-ai-* prefix)
 ├── Generation Tools
-│   ├── generate_project       # Create new P project from design doc
-│   ├── generate_types_events  # Generate shared types/events file
-│   ├── generate_machine       # Generate a single machine
-│   ├── generate_spec          # Generate specification/monitor
-│   └── generate_test          # Generate test driver
+│   ├── peasy-ai-create-project       # Create new P project from design doc
+│   ├── peasy-ai-gen-types-events     # Generate shared types/events file
+│   ├── peasy-ai-gen-machine          # Generate a single machine
+│   ├── peasy-ai-gen-spec             # Generate specification/monitor
+│   └── peasy-ai-gen-test             # Generate test driver
 │
 ├── Compilation Tools
-│   ├── p_compile              # Compile P project
-│   ├── p_check                # Run PChecker
-│   └── p_build                # Full build (compile + check)
+│   ├── peasy-ai-compile              # Compile P project
+│   ├── peasy-ai-check                # Run PChecker
+│   └── (removed p_build)
 │
 ├── Fixing Tools
-│   ├── fix_compiler_error     # Fix compilation error
-│   ├── fix_checker_error      # Fix checker error
-│   └── analyze_error          # Analyze error without fixing
+│   ├── peasy-ai-fix-compile-error    # Fix compilation error
+│   ├── peasy-ai-fix-checker-error    # Fix checker error
+│   └── peasy-ai-fix-bug             # Auto-diagnose and fix PChecker failures
 │
 ├── Query Tools
-│   ├── syntax_help            # Get P syntax help
-│   ├── explain_code           # Explain P code
+│   ├── peasy-ai-syntax-help          # Get P syntax help
+│   ├── explain_code                   # Explain P code
 │   └── suggest_fix            # Suggest fix without applying
 │
 └── Project Tools
@@ -1089,7 +1089,7 @@ When a tool returns `needs_guidance: true`, the Cursor agent should:
 
 ```python
 # Example re-call with guidance
-fix_compiler_error({
+peasy-ai-fix-compile-error({
     "project_path": "/path/to/project",
     "error_message": "...",
     "file_path": "/path/to/Proposer.p",
@@ -1270,7 +1270,7 @@ src/core/pipelining/
 - [x] Add comprehensive MCP resources (14 resources)
 - [x] Server verified to start and register all tools (14 tools)
 - [x] **Preview-then-save workflow** - Generation tools return code without auto-saving
-- [x] **`save_p_file` tool** - Saves approved code to disk
+- [x] **`peasy-ai-save-file` tool** - Saves approved code to disk
 - [x] **Cursor IDE integration tested** - Files open in editor for user review
 - [x] **Human-in-the-loop workflow verified** - User can approve/reject each file
 - [ ] Document MCP setup
@@ -1438,13 +1438,13 @@ User: Add a delete operation
 
 Cursor Agent: I'll add a delete operation to the existing project.
 
-[Calls generate_machine with existing context]
-[Calls p_compile]
+[Calls peasy-ai-gen-machine with existing context]
+[Calls peasy-ai-compile]
 
 PeasyAI: Updated KVStore.p with eDelete event handling
 Compilation: FAILED - undefined event 'eDelete'
 
-[Calls fix_compiler_error]
+[Calls peasy-ai-fix-compile-error]
 
 PeasyAI: Added 'event eDelete: tDeleteReq;' to Enums_Types_Events.p
 Compilation: SUCCESS

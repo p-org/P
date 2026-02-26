@@ -21,8 +21,8 @@ PeasyAI exposes an MCP (Model Context Protocol) server that works with **Cursor*
 > See the [P installation guide](https://p-org.github.io/P/getstarted/install/) for details.
 
 ```bash
-# 1. Install PeasyAI
-pip install https://github.com/p-org/P/releases/latest/download/peasyai_mcp-0.1.0-py3-none-any.whl
+# 1. Install PeasyAI from the latest GitHub release
+pip install https://github.com/p-org/P/releases/download/peasyai-v0.2.0/peasyai_mcp-0.2.0-py3-none-any.whl
 
 # 2. Configure LLM credentials
 peasyai-mcp init          # creates ~/.peasyai/settings.json — edit with your keys
@@ -58,15 +58,15 @@ p --version                # P compiler is on PATH
 
 ### Install PeasyAI
 
-Install the latest release directly — **no git clone required**:
+Install the latest release directly from GitHub — **no git clone required**:
 
 ```bash
-pip install https://github.com/p-org/P/releases/latest/download/peasyai_mcp-0.1.0-py3-none-any.whl
+pip install https://github.com/p-org/P/releases/download/peasyai-v0.2.0/peasyai_mcp-0.2.0-py3-none-any.whl
 ```
 
-> Check the [Releases page](https://github.com/p-org/P/releases) for the latest version and URL.
+> Check the [Releases page](https://github.com/p-org/P/releases) for the latest version.
 
-To upgrade to a newer release, run the same command with `--force-reinstall`:
+To upgrade to a newer release:
 
 ```bash
 pip install --force-reinstall https://github.com/p-org/P/releases/download/peasyai-v<VERSION>/peasyai_mcp-<VERSION>-py3-none-any.whl
@@ -78,7 +78,7 @@ pip install --force-reinstall https://github.com/p-org/P/releases/download/peasy
 ```bash
 git clone https://github.com/p-org/P.git
 cd P/Src/PeasyAI
-pip install .
+pip install -e ".[dev]"       # editable install — local changes take effect immediately
 ```
 
 </details>

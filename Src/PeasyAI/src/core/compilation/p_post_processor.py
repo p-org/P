@@ -56,10 +56,13 @@ class PCodePostProcessor:
         original_code = code
         
         # Apply fixes in order
+        code = self._fix_trailing_comma_in_params(code)
         code = self._fix_variable_declaration_order(code)
         code = self._fix_single_field_tuples(code)
+        code = self._fix_named_field_tuple_construction(code)
         code = self._fix_enum_access_syntax(code)
         code = self._fix_test_declaration_syntax(code)
+        code = self._fix_test_declaration_union_syntax(code)
         code = self._fix_missing_semicolons(code)
         code = self._fix_entry_function_syntax(code)
         code = self._fix_bare_halt(code)
@@ -79,6 +82,37 @@ class PCodePostProcessor:
             warnings=self.warnings
         )
     
+    def _fix_trailing_comma_in_params(self, code: str) -> str:
+        """
+        Remove trailing commas from function, entry, and handler parameter lists.
+
+        LLMs frequently generate ``fun Foo(param: Type,)`` but P requires
+        ``fun Foo(param: Type)``.  Same for ``entry (param: Type,)`` and
+        ``on eEvent do (param: Type,)``.
+
+        Only targets single-parameter lists (the most common case).  Multi-param
+        trailing commas are also fixed.
+        """
+        # fun Name(... ,)  →  fun Name(...)
+        # entry (... ,)    →  entry (...)
+        # on eX do (... ,) →  on eX do (...)
+        pattern = re.compile(
+            r'(\b(?:fun\s+\w+|entry|on\s+\w+\s+do)\s*\([^)]*?)'  # up to last content
+            r',(\s*\))'                                             # trailing comma before )
+        )
+        fix_count = 0
+        while pattern.search(code):
+            code = pattern.sub(r'\1\2', code)
+            fix_count += 1
+            if fix_count > 50:
+                break
+
+        if fix_count > 0:
+            self.fixes_applied.append(
+                f"Removed trailing comma from {fix_count} parameter list(s)"
+            )
+        return code
+
     def _fix_named_field_tuple_construction(self, code: str) -> str:
         """
         Convert named-field tuple construction to positional form.
@@ -316,6 +350,53 @@ class PCodePostProcessor:
         # Only fix actual syntax errors if any are detected.
         return code
     
+    def _fix_test_declaration_union_syntax(self, code: str) -> str:
+        """
+        Fix ``(union { ... })`` in test declarations to ``{ ... }``.
+
+        LLMs frequently generate:
+          test tc [main=M]: assert S in (union { A, B, C });
+        But P requires:
+          test tc [main=M]: assert S in { A, B, C };
+
+        Also handles the variant without ``assert ... in``:
+          test tc [main=M]: (union { A, B });  →  test tc [main=M]: { A, B };
+        """
+        # Pattern: (union { ... }) → { ... }
+        # This can appear anywhere in a test declaration line
+        pattern = re.compile(r'\(\s*union\s*(\{[^}]*\})\s*\)')
+        matches = pattern.findall(code)
+        if matches:
+            code = pattern.sub(r'\1', code)
+            self.fixes_applied.append(
+                f"Fixed {len(matches)} test declaration(s): (union {{...}}) → {{...}}"
+            )
+
+        # Also fix missing semicolons at end of test declarations.
+        # test tc [main=M]: assert S in { ... }  (no semicolon)
+        # → test tc [main=M]: assert S in { ... };
+        # Uses DOTALL so \s and [^}] can span newlines (multi-line decls).
+        test_no_semi = re.compile(
+            r'(test\s+\w+\s*\[main=\w+\]\s*:\s*'  # test header
+            r'(?:assert\s+[\w,\s]+\s+in\s*)?'       # optional assert ... in
+            r'\{[^}]*\})'                            # { machine list }
+            r'(?!\s*;)'                              # NOT followed by ;
+            r'(\s*(?:\n|$))',                         # end of line
+            re.DOTALL,
+        )
+        semi_count = 0
+        def _add_semi(m):
+            nonlocal semi_count
+            semi_count += 1
+            return m.group(1) + ';' + m.group(2)
+        code = test_no_semi.sub(_add_semi, code)
+        if semi_count > 0:
+            self.fixes_applied.append(
+                f"Added missing semicolon to {semi_count} test declaration(s)"
+            )
+
+        return code
+
     def _fix_missing_semicolons(self, code: str) -> str:
         """
         Add missing semicolons after statements.
@@ -353,36 +434,6 @@ class PCodePostProcessor:
             self.fixes_applied.append("Fixed entry function syntax: removed ()")
         
         return code
-
-    def validate_spec_events(self, spec_code: str, types_code: str, filename: str = "") -> List[str]:
-        """
-        Validate that all events in `spec ... observes` clauses are
-        actually defined in the types/events file.
-
-        Args:
-            spec_code: The spec file code
-            types_code: The Enums_Types_Events.p content
-            filename: For error messages
-
-        Returns:
-            List of warning strings for undefined events
-        """
-        # Extract defined events from types file
-        defined_events = set(re.findall(r'\bevent\s+(\w+)', types_code))
-
-        # Extract observed events from spec declarations
-        warnings = []
-        for match in re.finditer(r'\bspec\s+(\w+)\s+observes\s+([^{]+)\{', spec_code):
-            spec_name = match.group(1)
-            observes_str = match.group(2).strip().rstrip(',')
-            observed = [e.strip() for e in observes_str.split(',')]
-            for ev in observed:
-                if ev and ev not in defined_events:
-                    warnings.append(
-                        f"[{filename}] Spec '{spec_name}' observes undefined event '{ev}'. "
-                        f"Defined events: {sorted(defined_events)}"
-                    )
-        return warnings
 
     def _fix_bare_halt(self, code: str) -> str:
         """
@@ -561,380 +612,7 @@ class PCodePostProcessor:
         return code + appended
 
 
-class TypeConsistencyChecker:
-    """
-    Check and fix type consistency across P files.
-    """
-    
-    def __init__(self):
-        self.defined_types: set = set()
-        self.defined_events: set = set()
-        self.defined_machines: set = set()
-    
-    def extract_definitions(self, code: str) -> None:
-        """Extract type, event, and machine definitions from code."""
-        # Extract types
-        type_pattern = r'type\s+(\w+)\s*='
-        self.defined_types.update(re.findall(type_pattern, code))
-        
-        # Extract enums
-        enum_pattern = r'enum\s+(\w+)\s*\{'
-        self.defined_types.update(re.findall(enum_pattern, code))
-        
-        # Extract events
-        event_pattern = r'event\s+(\w+)'
-        self.defined_events.update(re.findall(event_pattern, code))
-        
-        # Extract machines
-        machine_pattern = r'machine\s+(\w+)\s*\{'
-        self.defined_machines.update(re.findall(machine_pattern, code))
-    
-    def find_undefined_types(self, code: str) -> List[str]:
-        """Find types used but not defined."""
-        # Pattern for type usage
-        # var x: TypeName
-        # map[Type1, Type2]
-        # seq[Type]
-        # (field: Type)
-        
-        used_types = set()
-        
-        # var declarations
-        var_pattern = r'var\s+\w+\s*:\s*(\w+)'
-        used_types.update(re.findall(var_pattern, code))
-        
-        # Map types
-        map_pattern = r'map\[(\w+),\s*(\w+)\]'
-        for match in re.finditer(map_pattern, code):
-            used_types.add(match.group(1))
-            used_types.add(match.group(2))
-        
-        # Seq types
-        seq_pattern = r'seq\[(\w+)\]'
-        used_types.update(re.findall(seq_pattern, code))
-        
-        # Set types
-        set_pattern = r'set\[(\w+)\]'
-        used_types.update(re.findall(set_pattern, code))
-        
-        # Filter out built-in types (including collection types)
-        builtin_types = {
-            'int', 'bool', 'string', 'machine', 'any', 'float', 'event',
-            'seq', 'map', 'set',
-        }
-        used_types -= builtin_types
-        used_types -= self.defined_machines  # Machine names are valid types
-        
-        undefined = used_types - self.defined_types
-        return list(undefined)
-    
-    def find_undefined_events(self, code: str) -> List[str]:
-        """Find events used but not defined."""
-        used_events = set()
-        
-        # send target, eEventName, ...
-        # Use a stricter pattern: after the comma, match an identifier that
-        # is NOT followed by '=' (which would indicate a named-tuple field).
-        send_pattern = r'send\s+[^,]+,\s*(\w+)\s*(?:,|;)'
-        used_events.update(re.findall(send_pattern, code))
-        
-        # raise eEventName
-        raise_pattern = r'raise\s+(\w+)'
-        used_events.update(re.findall(raise_pattern, code))
-        
-        # on eEventName (do|goto|ignore|defer)
-        on_pattern = r'on\s+(\w+)\s+(?:do|goto)\b'
-        used_events.update(re.findall(on_pattern, code))
-        
-        # ignore eEventName; and defer eEventName;
-        ignore_defer_pattern = r'(?:ignore|defer)\s+(\w+)\s*[;,]'
-        used_events.update(re.findall(ignore_defer_pattern, code))
-        
-        # announce eEventName
-        announce_pattern = r'announce\s+(\w+)\s*,'
-        used_events.update(re.findall(announce_pattern, code))
-        
-        # Filter out P keywords that can appear in these positions
-        p_keywords = {'halt', 'null', 'default'}
-        used_events -= p_keywords
-        
-        undefined = used_events - self.defined_events
-        return list(undefined)
-    
-    def generate_missing_type_stubs(self, undefined_types: List[str]) -> str:
-        """Generate stub definitions for missing types."""
-        stubs = []
-        for type_name in undefined_types:
-            # Generate a simple tuple type as placeholder
-            stubs.append(f"// TODO: Define type {type_name}")
-            stubs.append(f"type {type_name} = (placeholder: int);")
-            stubs.append("")
-        return '\n'.join(stubs)
-
-
-class CrossFileReviewer:
-    """
-    Semantic review of generated P code for consistency issues that
-    the compiler won't catch but will cause PChecker failures or
-    incorrect verification.
-    """
-
-    def validate_test_includes_specs(
-        self, test_code: str, spec_names: List[str], filename: str = ""
-    ) -> List[str]:
-        """
-        Check that test declarations include `assert SpecName in` for
-        every spec monitor defined in the project.  Without this, PChecker
-        runs the test but never checks the safety property.
-
-        Returns list of warning/issue strings.
-        """
-        issues: List[str] = []
-        test_decls = re.findall(
-            r'test\s+(\w+)\s*\[main=\w+\]\s*:\s*(.*?);',
-            test_code,
-            re.DOTALL,
-        )
-        if not test_decls:
-            return issues
-
-        for test_name, body in test_decls:
-            for spec in spec_names:
-                pattern = rf'\bassert\s+{re.escape(spec)}\s+in\b'
-                if not re.search(pattern, body):
-                    issues.append(
-                        f"[{filename}] Test '{test_name}' does not assert spec "
-                        f"'{spec}'. Add 'assert {spec} in' to the test declaration "
-                        f"so PChecker verifies the safety property."
-                    )
-        return issues
-
-    def validate_constructor_patterns(
-        self,
-        code: str,
-        machine_configs: Dict[str, str],
-        filename: str = "",
-    ) -> List[str]:
-        """
-        Check that `new MachineName(...)` calls pass a config argument
-        when the machine's start-state entry handler expects one.
-
-        Args:
-            code: The code to check (typically a test file).
-            machine_configs: Mapping of machine name -> config type name
-                             extracted from start-state entry signatures.
-            filename: For error messages.
-
-        Returns list of issue strings.
-        """
-        issues: List[str] = []
-        for m_name, config_type in machine_configs.items():
-            bare_new = re.findall(
-                rf'\bnew\s+{re.escape(m_name)}\s*\(\s*\)',
-                code,
-            )
-            if bare_new:
-                issues.append(
-                    f"[{filename}] 'new {m_name}()' is called without a config "
-                    f"argument, but {m_name}'s start-state entry expects "
-                    f"'{config_type}'. Use 'new {m_name}(configValue)' instead."
-                )
-        return issues
-
-    def extract_machine_config_types(self, project_files: Dict[str, str]) -> Dict[str, str]:
-        """
-        Scan all project files and extract machine -> config type mappings
-        by looking at start-state entry handler signatures.
-
-        Returns dict like {"Proposer": "tProposerConfig", "Acceptor": "tAcceptorConfig"}.
-        """
-        configs: Dict[str, str] = {}
-        for _path, code in project_files.items():
-            for m in re.finditer(r'\bmachine\s+(\w+)\s*\{', code):
-                machine_name = m.group(1)
-                body_start = m.end() - 1
-                depth = 0
-                body_end = body_start
-                for ci in range(body_start, len(code)):
-                    if code[ci] == '{':
-                        depth += 1
-                    elif code[ci] == '}':
-                        depth -= 1
-                        if depth == 0:
-                            body_end = ci
-                            break
-                body = code[body_start:body_end + 1]
-
-                start_entry = re.search(
-                    r'start\s+state\s+\w+\s*\{[^}]*entry\s+(\w+)',
-                    body,
-                )
-                if not start_entry:
-                    continue
-                entry_fn = start_entry.group(1)
-
-                sig = re.search(
-                    rf'\bfun\s+{re.escape(entry_fn)}\s*\(\s*\w+\s*:\s*(\w+)',
-                    body,
-                )
-                if sig:
-                    configs[machine_name] = sig.group(1)
-        return configs
-
-    def extract_spec_names(self, project_files: Dict[str, str]) -> List[str]:
-        """Extract all spec monitor names from project files."""
-        specs: List[str] = []
-        for _path, code in project_files.items():
-            specs.extend(re.findall(r'\bspec\s+(\w+)\s+observes\b', code))
-        return specs
-
-    def validate_payload_field_names(
-        self,
-        code: str,
-        type_definitions: Dict[str, List[str]],
-        filename: str = "",
-    ) -> List[str]:
-        """
-        Check that named-tuple field accesses (payload.fieldName) and
-        named-tuple constructions (fieldName = value) use field names
-        that actually exist in the corresponding type definition.
-
-        Args:
-            code: The P code to check.
-            type_definitions: Mapping of type name -> list of field names,
-                              extracted from Enums_Types_Events.p.
-            filename: For error messages.
-
-        Returns list of warning strings.
-        """
-        issues: List[str] = []
-
-        # Build reverse map: event name -> payload type name
-        # from patterns like: event eFoo: tFooPayload;
-        event_to_type: Dict[str, str] = {}
-        for m in re.finditer(r'\bevent\s+(\w+)\s*:\s*(\w+)\s*;', code):
-            event_to_type[m.group(1)] = m.group(2)
-
-        # Check field accesses: variable.fieldName where variable's type
-        # is a known named-tuple type. We look for function parameters
-        # annotated with a type name and then check field accesses on them.
-        for func_match in re.finditer(
-            r'\bfun\s+\w+\s*\((\w+)\s*:\s*(\w+)', code
-        ):
-            param_name = func_match.group(1)
-            param_type = func_match.group(2)
-            if param_type not in type_definitions:
-                continue
-            valid_fields = set(type_definitions[param_type])
-            # Find all field accesses on this parameter
-            access_pattern = rf'\b{re.escape(param_name)}\.(\w+)\b'
-            for access in re.finditer(access_pattern, code):
-                field = access.group(1)
-                if field not in valid_fields:
-                    issues.append(
-                        f"[{filename}] '{param_name}.{field}' — field '{field}' "
-                        f"not found in type '{param_type}'. "
-                        f"Valid fields: {sorted(valid_fields)}"
-                    )
-
-        return issues
-
-    @staticmethod
-    def extract_type_field_names(types_code: str) -> Dict[str, List[str]]:
-        """
-        Parse Enums_Types_Events.p and extract field names for each named-tuple type.
-
-        Returns dict like {"tProposePayload": ["proposer", "proposalNumber", "proposedValue"]}.
-        """
-        result: Dict[str, List[str]] = {}
-        for m in re.finditer(
-            r'\btype\s+(\w+)\s*=\s*\(([^)]+)\)\s*;', types_code
-        ):
-            type_name = m.group(1)
-            fields_str = m.group(2)
-            fields = []
-            for field_match in re.finditer(r'(\w+)\s*:', fields_str):
-                fields.append(field_match.group(1))
-            if fields:
-                result[type_name] = fields
-        return result
-
-
-class MachineConfigDetector:
-    """
-    Detect when machines need configuration events.
-    """
-    
-    def detect_dependencies(self, machine_code: str) -> List[Tuple[str, str]]:
-        """
-        Detect machine fields that reference other machines.
-        
-        Returns list of (field_name, machine_type) tuples.
-        """
-        dependencies = []
-        
-        # Pattern: var fieldName: MachineName;
-        # Where MachineName starts with uppercase (P convention)
-        pattern = r'var\s+(\w+)\s*:\s*([A-Z]\w*)\s*;'
-        
-        for match in re.finditer(pattern, machine_code):
-            field_name = match.group(1)
-            machine_type = match.group(2)
-            
-            # Skip built-in types that look like machine names
-            if machine_type not in {'Int', 'Bool', 'String', 'Machine', 'Any'}:
-                dependencies.append((field_name, machine_type))
-        
-        return dependencies
-    
-    def generate_config_event(self, machine_name: str, dependencies: List[Tuple[str, str]]) -> str:
-        """Generate configuration event and handler for a machine."""
-        if not dependencies:
-            return ""
-        
-        # Generate event type
-        fields = ', '.join(f"{name}: {mtype}" for name, mtype in dependencies)
-        event_name = f"eConfig{machine_name}"
-        
-        code_lines = [
-            f"// Configuration event for {machine_name}",
-            f"event {event_name}: ({fields},);",
-            ""
-        ]
-        
-        return '\n'.join(code_lines)
-    
-    def generate_config_handler(self, machine_name: str, dependencies: List[Tuple[str, str]]) -> str:
-        """Generate configuration handler code."""
-        if not dependencies:
-            return ""
-        
-        event_name = f"eConfig{machine_name}"
-        
-        lines = [
-            f"  fun Configure(config: ({', '.join(f'{name}: {mtype}' for name, mtype in dependencies)},)) {{",
-        ]
-        
-        for field_name, _ in dependencies:
-            lines.append(f"    {field_name} = config.{field_name};")
-        
-        lines.append("  }")
-        
-        return '\n'.join(lines)
-
-
 def post_process_file(code: str, filename: str = "") -> PostProcessResult:
     """Convenience function to post-process a single file."""
     processor = PCodePostProcessor()
     return processor.process(code, filename)
-
-
-def check_type_consistency(types_code: str, machine_code: str) -> Dict[str, List[str]]:
-    """Check type consistency between types file and machine code."""
-    checker = TypeConsistencyChecker()
-    checker.extract_definitions(types_code)
-    
-    return {
-        "undefined_types": checker.find_undefined_types(machine_code),
-        "undefined_events": checker.find_undefined_events(machine_code)
-    }

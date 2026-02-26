@@ -218,6 +218,19 @@ def run_protocol(
     generated["spec"] = spec_resp
     result["steps"].append({"name": "generate_spec", "success": spec_resp.get("success")})
 
+    # --- Apply spec fixes (LLM review may have corrected the spec) ---
+    spec_fixes = spec_resp.get("spec_fixes") or {}
+    for sf_filename, sf_code in spec_fixes.items():
+        for key, payload in generated.items():
+            if payload.get("filename") == sf_filename or (payload.get("file_path") or "").endswith(sf_filename):
+                payload["code"] = sf_code
+                break
+        # Update context_files so test generation sees the corrected spec
+        context_files[sf_filename] = sf_code
+    # Also ensure the spec itself is in context_files for the test generator
+    if spec_resp.get("success") and spec_resp.get("filename") and spec_resp.get("code"):
+        context_files[spec_resp["filename"]] = spec_resp["code"]
+
     # --- Generate test ---
     test_resp = tools["generate_test"](
         GenerateTestParams(
@@ -230,6 +243,29 @@ def run_protocol(
     )
     generated["test"] = test_resp
     result["steps"].append({"name": "generate_test", "success": test_resp.get("success")})
+
+    # --- Apply wiring fixes (LLM review may have modified other files) ---
+    wiring_fixes = test_resp.get("wiring_fixes") or {}
+    for wf_filename, wf_code in wiring_fixes.items():
+        # Determine the correct subdirectory for the fixed file
+        if "Enums" in wf_filename or "Types" in wf_filename:
+            wf_path = os.path.join(project_path, "PSrc", wf_filename)
+        elif "Spec" in wf_filename or "Safety" in wf_filename:
+            wf_path = os.path.join(project_path, "PSpec", wf_filename)
+        else:
+            wf_path = os.path.join(project_path, "PSrc", wf_filename)
+        # Update the generated dict so the corrected code gets saved
+        for key, payload in generated.items():
+            if payload.get("filename") == wf_filename or (payload.get("file_path") or "").endswith(wf_filename):
+                payload["code"] = wf_code
+                break
+        else:
+            # File not in generated dict — save it directly
+            generated[f"wiring_fix:{wf_filename}"] = {
+                "success": True, "file_path": wf_path, "code": wf_code, "filename": wf_filename,
+            }
+        # Also update context_files so subsequent operations see the fix
+        context_files[wf_filename] = wf_code
 
     # --- Save all files ---
     for _, payload in generated.items():
@@ -256,7 +292,7 @@ def run_protocol(
         return result
 
     # --- PChecker ---
-    check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90))
+    check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90, max_steps=10000))
     result["check"] = {
         "success": check_resp.get("success"),
         "failed_tests": check_resp.get("failed_tests", []),
@@ -277,7 +313,7 @@ def run_protocol(
         recomp = tools["p_compile"](PCompileParams(path=project_path))
         if not recomp.get("success"):
             break
-        check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90))
+        check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90, max_steps=10000))
         result["check"] = {
             "success": check_resp.get("success"),
             "failed_tests": check_resp.get("failed_tests", []),
@@ -518,7 +554,7 @@ def run_protocol_adaptive(
                 compile_resp = tools["p_compile"](PCompileParams(path=project_path))
 
             if compile_resp.get("success"):
-                check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90))
+                check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90, max_steps=10000))
 
                 # One more fix_buggy_program attempt if still failing
                 if not check_resp.get("success") and check_resp.get("failed_tests"):
@@ -526,7 +562,7 @@ def run_protocol_adaptive(
                     if fix_bug.get("fixed"):
                         recomp = tools["p_compile"](PCompileParams(path=project_path))
                         if recomp.get("success"):
-                            check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90))
+                            check_resp = tools["p_check"](PCheckParams(path=project_path, schedules=100, timeout=90, max_steps=10000))
 
                 fast["check"] = {
                     "success": check_resp.get("success"),
@@ -672,6 +708,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="PeasyAI MCP Regression Tests")
     parser.add_argument("--save-baseline", action="store_true", help="Save results as new baseline")
     parser.add_argument("--protocol", type=str, help="Run a single protocol by name")
+    parser.add_argument("--protocols", type=str, help="Comma-separated list of protocols to run")
     parser.add_argument("--no-compare", action="store_true", help="Skip baseline comparison")
     args = parser.parse_args()
 
@@ -703,6 +740,12 @@ def main() -> int:
         all_runs = [(n, p) for n, p in all_runs if n == args.protocol]
         if not all_runs:
             print(f"Unknown protocol: {args.protocol}")
+            return 1
+    elif args.protocols:
+        names = {s.strip() for s in args.protocols.split(",")}
+        all_runs = [(n, p) for n, p in all_runs if n in names]
+        if not all_runs:
+            print(f"No matching protocols for: {args.protocols}")
             return 1
 
     report: Dict[str, Any] = {

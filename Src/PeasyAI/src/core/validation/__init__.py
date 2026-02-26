@@ -1,11 +1,16 @@
 """
 Validation Pipeline for PeasyAI.
 
-This module provides validation utilities for:
-- Input validation (design documents, file paths)
-- Output validation (generated P code)
-- P language syntax validation
-- Code post-processing and cleanup
+Two-stage validation:
+  Stage 1 — PCodePostProcessor: deterministic auto-fixes for common LLM mistakes.
+  Stage 2 — Validator chain: structured checks with severity levels and auto-fix support.
+
+Usage::
+
+    from core.validation import validate_p_code
+
+    result = validate_p_code(code, project_path="/path/to/project")
+    print(result.summary())
 """
 
 from .validators import (
@@ -14,19 +19,28 @@ from .validators import (
     IssueSeverity,
     Validator,
     SyntaxValidator,
+    InlineInitValidator,
+    VarDeclarationOrderValidator,
+    CollectionOpsValidator,
     TypeDeclarationValidator,
     EventDeclarationValidator,
     MachineStructureValidator,
+    SpecObservesConsistencyValidator,
+    DuplicateDeclarationValidator,
+    SpecForbiddenKeywordValidator,
+    TestFileValidator,
+    PayloadFieldValidator,
+    NamedTupleConstructionValidator,
 )
-from .pipeline import ValidationPipeline
+from .pipeline import (
+    ValidationPipeline,
+    PipelineResult,
+    validate_p_code,
+    create_default_pipeline,
+)
 from .input_validators import (
     DesignDocValidator,
     ProjectPathValidator,
-)
-from .p_code_validator import (
-    PCodePostProcessor,
-    PCodeValidator,
-    process_and_validate,
 )
 
 __all__ = [
@@ -34,20 +48,28 @@ __all__ = [
     "ValidationResult",
     "ValidationIssue",
     "IssueSeverity",
+    "PipelineResult",
     # Base
     "Validator",
     # Code validators
     "SyntaxValidator",
+    "InlineInitValidator",
+    "VarDeclarationOrderValidator",
+    "CollectionOpsValidator",
     "TypeDeclarationValidator",
     "EventDeclarationValidator",
     "MachineStructureValidator",
+    "SpecObservesConsistencyValidator",
+    "DuplicateDeclarationValidator",
+    "SpecForbiddenKeywordValidator",
+    "TestFileValidator",
+    "PayloadFieldValidator",
+    "NamedTupleConstructionValidator",
     # Pipeline
     "ValidationPipeline",
+    "validate_p_code",
+    "create_default_pipeline",
     # Input validators
     "DesignDocValidator",
     "ProjectPathValidator",
-    # P code post-processing
-    "PCodePostProcessor",
-    "PCodeValidator",
-    "process_and_validate",
 ]

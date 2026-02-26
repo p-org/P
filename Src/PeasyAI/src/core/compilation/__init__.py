@@ -49,10 +49,7 @@ from .checker_fixers import (
 from .p_post_processor import (
     PCodePostProcessor,
     PostProcessResult,
-    TypeConsistencyChecker,
-    MachineConfigDetector,
     post_process_file,
-    check_type_consistency,
 )
 
 __all__ = [
@@ -90,8 +87,5 @@ __all__ = [
     # Post-processing
     "PCodePostProcessor",
     "PostProcessResult",
-    "TypeConsistencyChecker",
-    "MachineConfigDetector",
     "post_process_file",
-    "check_type_consistency",
 ]

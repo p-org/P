@@ -146,6 +146,39 @@ def iter_function_bodies(code: str):
             yield func_name, header, body, func_start, close_pos
 
 
+def iter_all_code_blocks(code: str):
+    """
+    Yield ``(block_name, header, body, start_pos, end_pos)`` for every
+    code block where variable declarations must appear first:
+
+    - ``fun Name(...) { ... }``
+    - ``entry { ... }``  and  ``entry (param: Type) { ... }``
+    - ``on eEvent do { ... }``  and  ``on eEvent do (param: Type) { ... }``
+
+    This is a superset of :func:`iter_function_bodies`.
+    """
+    yield from iter_function_bodies(code)
+
+    # entry { ... }  or  entry (param: Type) { ... }
+    for match in re.finditer(r'\bentry\s*(?:\([^)]*\)\s*)?\{', code):
+        block_start = match.start()
+        open_pos = match.end() - 1
+        header = code[block_start:open_pos]
+        body, close_pos = extract_block_body(code, open_pos)
+        if close_pos != -1:
+            yield "entry", header, body, block_start, close_pos
+
+    # on eEvent do { ... }  or  on eEvent do (param: Type) { ... }
+    for match in re.finditer(r'\bon\s+(\w+)\s+do\s*(?:\([^)]*\)\s*)?\{', code):
+        handler_name = f"on_{match.group(1)}"
+        block_start = match.start()
+        open_pos = match.end() - 1
+        header = code[block_start:open_pos]
+        body, close_pos = extract_block_body(code, open_pos)
+        if close_pos != -1:
+            yield handler_name, header, body, block_start, close_pos
+
+
 # ── LLM response code extraction ────────────────────────────────────
 
 def extract_p_code_from_response(

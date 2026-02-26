@@ -9,7 +9,7 @@ The goal of this system is to model an eventually perfect failure detector using
 2. The failure detector uses periodic heartbeat timeouts to detect failures.
 3. The failure detector may temporarily suspect a live node (unreliable detection) but will eventually be accurate for permanently failed nodes.
 4. Communication is reliable between live nodes.
-5. The Timer machine is a pre-existing reusable module — do NOT re-implement it. Use CreateTimer(this), StartTimer(timer), and CancelTimer(timer).
+5. A Timer machine models non-deterministic OS timer behavior. It provides helper functions: CreateTimer(client), StartTimer(timer), CancelTimer(timer). The Timer sends eTimeOut to its client when it fires.
 
 ## Components
 
@@ -41,9 +41,26 @@ The goal of this system is to model an eventually perfect failure detector using
     - Periodically sends heartbeats to the failure detector.
     - Can be instructed to crash (stop sending heartbeats) to simulate failure.
 
+#### 3. Timer
+- **Role:** Models non-deterministic OS timer behavior for periodic timeouts.
+- **States:** Init, WaitForTimerRequests, TimerStarted
+- **Local state:**
+    - `client`: the machine that created this timer (receives eTimeOut)
+    - `numDelays`: counter tracking how many times the timer has delayed (bounded)
+- **Initialization:** Created with a reference to the client machine via `CreateTimer(client)`.
+- **Behavior:**
+    - Waits for eStartTimer, then non-deterministically fires eTimeOut to the client.
+    - The timer bounds the number of delays (e.g., max 3) so it is guaranteed to eventually fire. This is required for liveness properties. After `numDelays >= 3`, the timer must fire unconditionally.
+    - Supports eCancelTimer to cancel a pending timeout.
+    - Uses eDelayedTimeOut internally to model non-deterministic delay.
+- **Helper functions (declared at file scope, outside the machine):**
+    - `fun CreateTimer(client: machine) : Timer` — creates a new Timer for the given client
+    - `fun StartTimer(timer: Timer)` — sends eStartTimer to the timer
+    - `fun CancelTimer(timer: Timer)` — sends eCancelTimer to the timer
+
 ### Test Components
 
-#### 3. Client
+#### 4. Client
 - **Role:** Registers with the failure detector to receive failure notifications.
 - **Local state:**
     - `failureDetector`: reference to the failure detector
@@ -91,13 +108,37 @@ The goal of this system is to model an eventually perfect failure detector using
     - **Payload:** the client's reference
     - **Description:** Client registers to receive failure notifications.
 
+6. **eStartTimer**
+    - **Source:** Any machine (via StartTimer helper)
+    - **Target:** Timer
+    - **Payload:** none
+    - **Description:** Starts the timer. The Timer will eventually send eTimeOut to its client.
+
+7. **eCancelTimer**
+    - **Source:** Any machine (via CancelTimer helper)
+    - **Target:** Timer
+    - **Payload:** none
+    - **Description:** Cancels a pending timer.
+
+8. **eDelayedTimeOut**
+    - **Source:** Timer (internal)
+    - **Target:** Timer (self)
+    - **Payload:** none
+    - **Description:** Internal event used by Timer to model non-deterministic delay.
+
 ## Specifications
 
-1. **ReliableDetection** (safety property):
-   If a node receives an eCrash and stops sending eHeartbeat messages, the failure detector must eventually issue an eNodeSuspected for that node and never remove it from the suspected set thereafter.
+1. **ReliableDetection** (liveness property):
+   If a node crashes (receives eCrash and stops sending eHeartbeat), the failure detector must **eventually** suspect that node (issue eNodeSuspected).
+
+   This is a liveness property — it asserts that something good eventually happens. In P, express this using a **hot state** in the spec monitor:
+   - When a node crashes, transition to a **hot** state.
+   - A hot state means "the system must eventually leave this state" — PChecker will flag it as a liveness violation if the system stays in a hot state forever.
+   - When the crashed node is suspected (eNodeSuspected received for that node), transition back to a cold (normal) state.
+   - The spec must observe: eCrash, eHeartbeat, eNodeSuspected.
+   - The spec must NOT observe eTimeOut. The eTimeOut event is shared by all Timer instances (Node timers and the FD timer), so the spec cannot distinguish which timer fired. Observing eTimeOut would cause the spec to incorrectly process Node timer events as FD timeout rounds.
 
 ## Test Scenarios
 
 1. 3 nodes, 1 failure detector, 1 client — one node crashes and is detected.
-2. 3 nodes, 1 failure detector, 1 client — all nodes remain alive, no false suspicions after stabilization.
-3. 3 nodes, 1 failure detector, 1 client — two nodes crash at different times, both are eventually detected.
+2. 3 nodes, 1 failure detector, 1 client — two nodes crash at different times, both are eventually detected.

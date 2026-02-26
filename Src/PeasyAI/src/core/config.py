@@ -111,7 +111,7 @@ class PeasyAISettings:
                 env["OPENAI_API_KEY"] = pc.api_key
             if pc.base_url:
                 env["OPENAI_BASE_URL"] = pc.base_url
-            model = self.llm.model or pc.model or "claude-sonnet-4-5"
+            model = self.llm.model or pc.model or "claude-opus-4-6"
             env["OPENAI_MODEL_NAME"] = model
 
         elif name in ("anthropic", "anthropic_direct"):

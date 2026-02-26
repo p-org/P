@@ -94,6 +94,9 @@ When the Enums_Types_Events.p file is provided as context, you MUST use the EXAC
   CORRECT: on ePromise do HandlePromise;  ...  fun HandlePromise(msg: tPromisePayload) {{ ... }}
   WRONG:   on ePromise do HandlePromise;  ...  fun HandlePromise(msg: tPromise) {{ ... }}
 
+## File-scope helper functions:
+If the design document specifies helper functions for this machine (e.g., CreateTimer, StartTimer), include their declarations (with empty bodies) AFTER the machine's closing brace. These are convenience wrappers declared at file scope.
+
 The machine file should NOT contain:
 
 1. Specification monitors (spec keyword)

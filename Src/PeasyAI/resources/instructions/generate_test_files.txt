@@ -105,6 +105,55 @@ test tcBasicPaxos [main=Scenario1_BasicPaxos]:
     {{ Proposer, Acceptor, Learner, Client, Scenario1_BasicPaxos }};
 ```
 
+## CRITICAL — Resolving Circular Dependencies in Machine Wiring
+
+Sometimes there is a circular dependency: Machine A's constructor needs a reference to Machine B, and Machine B's constructor needs a collection of Machine A instances. You MUST resolve this correctly.
+
+Strategy: break the cycle by using an initialization event for one side.
+
+Example — FailureDetector needs a `seq[Node]`, but each Node needs the FD reference:
+```
+// Step 1: Create nodes WITHOUT the FD reference (they'll get it via an init event)
+node1 = new Node();
+node2 = new Node();
+nodes += (0, node1);
+nodes += (1, node2);
+
+// Step 2: Create the FD with the node list
+fd = new FailureDetector((nodes = nodes,));
+
+// Step 3: Send the FD reference to each node via an init event
+send node1, eNodeInit, (failureDetector = fd,);
+send node2, eNodeInit, (failureDetector = fd,);
+```
+
+Alternative: if the Node machine accepts its config via constructor payload and has no circular dependency, simply create machines in the right order:
+```
+// If FD doesn't need node references at construction time:
+fd = new FailureDetector();
+node1 = new Node((failureDetector = fd,));
+node2 = new Node((failureDetector = fd,));
+```
+
+The key rule: every machine reference passed in a constructor or event payload must point to an already-created machine that will correctly handle the events sent to it.
+
+## CRITICAL — Named Tuple Construction
+
+When a machine's entry function expects a named-tuple type like ``tConfig = (field1: T1, field2: T2)``, you MUST construct it with named fields:
+```
+CORRECT: new Machine((field1 = val1, field2 = val2));
+WRONG:   new Machine((val1, val2));          // anonymous tuple — type mismatch!
+WRONG:   new Machine(val1);                  // bare value — type mismatch!
+```
+For single-field types, include a trailing comma: ``new Machine((field = value,));``
+
+Similarly for ``send``: if ``event eFoo: tPayload;`` and ``type tPayload = (bar: int);``, then:
+```
+CORRECT: send target, eFoo, (bar = 42,);
+WRONG:   send target, eFoo, (42);            // anonymous — type mismatch!
+WRONG:   send target, eFoo, (this);          // bare value — type mismatch!
+```
+
 ## Checklist before returning code:
 - Every scenario machine is matched by a `test` declaration.
 - Every `test` declaration includes `assert SpecName in` referencing the spec monitors from PSpec. Without `assert`, PChecker won't verify any properties.
@@ -112,5 +161,7 @@ test tcBasicPaxos [main=Scenario1_BasicPaxos]:
 - No events, types, or machines from PSrc are redeclared.
 - Machine creation order respects dependencies.
 - Single-field named tuples have trailing commas: `(field = value,)`.
+- Every machine reference in a constructor payload points to a real, already-created machine that handles the expected events.
+- Every `new Machine(...)` and `send ..., eEvent, ...` uses named tuple syntax matching the type definition.
 
 Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

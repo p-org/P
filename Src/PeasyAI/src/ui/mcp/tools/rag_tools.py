@@ -48,18 +48,6 @@ class IndexPFilesParams(BaseModel):
     )
 
 
-class GetProtocolExamplesParams(BaseModel):
-    """Parameters for getting protocol examples"""
-    protocol_name: str = Field(
-        ...,
-        description="Name of the protocol (e.g., 'paxos', 'two-phase commit', 'raft')"
-    )
-    top_k: int = Field(default=5, description="Number of examples to return")
-
-
-class GetCorpusStatsParams(BaseModel):
-    """Parameters for getting corpus statistics"""
-    pass
 
 
 def register_rag_tools(mcp, with_metadata):
@@ -72,9 +60,11 @@ def register_rag_tools(mcp, with_metadata):
 Use this to find real P code examples that match your needs:
 - Search by concept: "distributed lock protocol"
 - Search by pattern: "state machine with deferred events"
+- Search by protocol: "paxos", "two-phase commit", "raft", "failure detector"
 - Search by code: paste a code snippet to find similar code
 
-Returns relevant P code examples with descriptions and similarity scores."""
+Filter results by category: 'machine', 'spec', 'test', 'types', 'documentation', 'full_project'.
+Returns relevant P code examples with descriptions, similarity scores, and corpus size."""
     )
     def search_p_examples(params: SearchExamplesParams) -> Dict[str, Any]:
         if not HAS_RAG:
@@ -234,82 +224,8 @@ Indexed examples can then be found via peasy-ai-search-examples."""
             payload = {"success": False, "error": str(e)}
             return with_metadata("peasy-ai-index-examples", payload)
 
-    @mcp.tool(
-        name="peasy-ai-get-protocol-examples",
-        description="""Get P code examples for a specific distributed protocol.
-
-Use this when implementing common distributed systems protocols:
-- "paxos" - consensus protocol
-- "two-phase commit" - distributed transaction
-- "raft" - consensus/leader election
-- "failure detector" - detecting node failures
-
-Returns relevant examples from the P corpus."""
-    )
-    def get_protocol_examples(params: GetProtocolExamplesParams) -> Dict[str, Any]:
-        if not HAS_RAG:
-            payload = {
-                "success": False,
-                "error": "RAG module not available."
-            }
-            return with_metadata("peasy-ai-get-protocol-examples", payload)
-
-        logger.info(f"[TOOL] peasy-ai-get-protocol-examples: {params.protocol_name}")
-
-        try:
-            rag = get_rag_service()
-            context = rag.get_protocol_examples(
-                params.protocol_name,
-                top_k=params.top_k
-            )
-
-            payload = {
-                "success": True,
-                "protocol": params.protocol_name,
-                "examples": context.examples,
-                "total_found": len(context.examples)
-            }
-            return with_metadata("peasy-ai-get-protocol-examples", payload)
-        except Exception as e:
-            logger.error(f"Protocol examples error: {e}")
-            payload = {"success": False, "error": str(e)}
-            return with_metadata("peasy-ai-get-protocol-examples", payload)
-
-    @mcp.tool(
-        name="peasy-ai-corpus-stats",
-        description="Get statistics about the P program corpus (number of indexed examples, etc.)"
-    )
-    def get_corpus_stats(params: GetCorpusStatsParams) -> Dict[str, Any]:
-        if not HAS_RAG:
-            payload = {
-                "success": False,
-                "error": "RAG module not available."
-            }
-            return with_metadata("peasy-ai-corpus-stats", payload)
-
-        try:
-            rag = get_rag_service()
-            stats = rag.get_stats()
-
-            by_category = stats.get("by_category", {})
-
-            payload = {
-                "success": True,
-                "total_examples": stats["total_examples"],
-                "indexed": stats["indexed"],
-                "categories": ["machine", "spec", "test", "types", "documentation", "full_project"],
-                "by_category": by_category,
-                "message": f"Corpus contains {stats['total_examples']} indexed P code examples"
-            }
-            return with_metadata("peasy-ai-corpus-stats", payload)
-        except Exception as e:
-            payload = {"success": False, "error": str(e)}
-            return with_metadata("peasy-ai-corpus-stats", payload)
-
     return {
         "search_p_examples": search_p_examples,
         "get_generation_context": get_generation_context,
         "index_p_examples": index_p_examples,
-        "get_protocol_examples": get_protocol_examples,
-        "get_corpus_stats": get_corpus_stats,
     }

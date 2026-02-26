@@ -6,6 +6,7 @@ compilation, and verification. These steps use the service layer (GenerationServ
 CompilationService, FixerService) to perform their work.
 """
 
+import logging
 import os
 from typing import Any, Dict, List, Optional
 
@@ -13,6 +14,41 @@ from .steps import WorkflowStep, StepResult, StepStatus
 from ..services.generation import GenerationService, GenerationResult
 from ..services.compilation import CompilationService, CompilationResult
 from ..services.fixer import FixerService
+
+logger = logging.getLogger(__name__)
+
+
+def _run_validation_pipeline(
+    code: str,
+    filename: str,
+    project_path: str,
+    is_test_file: bool = False,
+) -> str:
+    """Run the ValidationPipeline on generated code and return the fixed code.
+
+    This is the single place where post-processing + structured validation
+    happens for the workflow path.  The MCP tool path has its own equivalent
+    call in ``_review_generated_code()`` (tools/generation.py).
+    """
+    try:
+        from ..validation.pipeline import ValidationPipeline
+
+        pipeline = ValidationPipeline(include_test_validators=is_test_file)
+        result = pipeline.validate(
+            code,
+            filename=filename,
+            project_path=project_path,
+            is_test_file=is_test_file,
+        )
+        if result.fixes_applied:
+            logger.info(
+                f"Validation pipeline applied {len(result.fixes_applied)} "
+                f"fix(es) to {filename}"
+            )
+        return result.fixed_code
+    except Exception as e:
+        logger.warning(f"Validation pipeline failed for {filename}: {e}")
+        return code
 
 
 class CreateProjectStructureStep(WorkflowStep):
@@ -86,13 +122,17 @@ class GenerateTypesEventsStep(WorkflowStep):
             )
             
             if result.success:
+                filename = result.filename or "Enums_Types_Events.p"
+                code = _run_validation_pipeline(
+                    result.code, filename, project_path
+                )
                 return StepResult.success(
                     output={
-                        "types_events_code": result.code,
+                        "types_events_code": code,
                         "types_events_path": result.file_path,
-                        "types_events_filename": result.filename or "Enums_Types_Events.p",
+                        "types_events_filename": filename,
                     },
-                    artifacts={"types_events": result.code}
+                    artifacts={"types_events": code}
                 )
             else:
                 return StepResult.failure(result.error or "Failed to generate types/events")
@@ -169,12 +209,16 @@ class GenerateMachineStep(WorkflowStep):
                 )
             
             if result.success:
+                filename = result.filename or f"{self.machine_name}.p"
+                code = _run_validation_pipeline(
+                    result.code, filename, project_path
+                )
                 return StepResult.success(
                     output={
-                        f"machine_code_{self.machine_name}": result.code,
+                        f"machine_code_{self.machine_name}": code,
                         f"machine_path_{self.machine_name}": result.file_path
                     },
-                    artifacts={f"machine_{self.machine_name}": result.code}
+                    artifacts={f"machine_{self.machine_name}": code}
                 )
             else:
                 return StepResult.failure(result.error or f"Failed to generate {self.machine_name}")
@@ -236,12 +280,16 @@ class GenerateSpecStep(WorkflowStep):
                 )
             
             if result.success:
+                filename = result.filename or f"{self.spec_name}.p"
+                code = _run_validation_pipeline(
+                    result.code, filename, project_path
+                )
                 return StepResult.success(
                     output={
-                        f"spec_code_{self.spec_name}": result.code,
+                        f"spec_code_{self.spec_name}": code,
                         f"spec_path_{self.spec_name}": result.file_path
                     },
-                    artifacts={f"spec_{self.spec_name}": result.code}
+                    artifacts={f"spec_{self.spec_name}": code}
                 )
             else:
                 return StepResult.failure(result.error or f"Failed to generate {self.spec_name}")
@@ -328,12 +376,17 @@ class GenerateTestStep(WorkflowStep):
                 )
             
             if result.success:
+                filename = result.filename or f"{self.test_name}.p"
+                code = _run_validation_pipeline(
+                    result.code, filename, project_path,
+                    is_test_file=True,
+                )
                 return StepResult.success(
                     output={
-                        f"test_code_{self.test_name}": result.code,
+                        f"test_code_{self.test_name}": code,
                         f"test_path_{self.test_name}": result.file_path
                     },
-                    artifacts={f"test_{self.test_name}": result.code}
+                    artifacts={f"test_{self.test_name}": code}
                 )
             else:
                 return StepResult.failure(result.error or f"Failed to generate {self.test_name}")
@@ -473,13 +526,13 @@ class CompileProjectStep(WorkflowStep):
                 return StepResult.success(
                     output={
                         "compilation_success": True,
-                        "compilation_output": result.output
+                        "compilation_output": result.stdout
                     }
                 )
             else:
-                # Store errors for potential fixing
+                error_output = result.stderr or result.stdout or "Unknown compilation error"
                 return StepResult.failure(
-                    f"Compilation failed with {len(result.errors)} error(s): {result.errors[0] if result.errors else 'Unknown'}"
+                    f"Compilation failed: {error_output[:500]}"
                 )
                 
         except Exception as e:
@@ -509,29 +562,25 @@ class FixCompilationErrorsStep(WorkflowStep):
         if context.get("compilation_success"):
             return StepResult.skipped("No compilation errors to fix")
         
-        user_guidance = context.get("user_guidance")
-        
         try:
             result = self.service.fix_iteratively(
                 project_path=project_path,
                 max_iterations=10,
-                user_guidance=user_guidance
             )
             
-            if result.success:
+            if result.get("success"):
                 return StepResult.success(
                     output={
                         "compilation_success": True,
-                        "fixes_applied": result.fixes_applied
+                        "fixes_applied": result.get("iterations", [])
                     }
                 )
-            elif result.needs_guidance:
-                return StepResult.needs_guidance(
-                    result.guidance_questions or "Unable to fix errors automatically. Please provide guidance.",
-                    {"last_error": result.error}
-                )
             else:
-                return StepResult.failure(result.error or "Failed to fix compilation errors")
+                iterations = result.get("iterations", [])
+                last_error = iterations[-1].get("error", "Unknown") if iterations else "Unknown"
+                return StepResult.failure(
+                    f"Failed to fix compilation errors after {result.get('total_iterations', 0)} iterations: {last_error}"
+                )
                 
         except Exception as e:
             return StepResult.failure(str(e))
@@ -570,11 +619,16 @@ class RunCheckerStep(WorkflowStep):
                 timeout=self.timeout
             )
             
+            summary = (
+                f"Passed: {result.passed_tests}, Failed: {result.failed_tests}"
+                if result.test_results else ""
+            )
+            
             if result.success:
                 return StepResult.success(
                     output={
                         "checker_success": True,
-                        "checker_output": result.output
+                        "checker_output": summary
                     }
                 )
             else:
@@ -583,7 +637,7 @@ class RunCheckerStep(WorkflowStep):
                 return StepResult.success(
                     output={
                         "checker_success": False,
-                        "checker_output": result.output or result.error or ""
+                        "checker_output": result.error or summary or ""
                     }
                 )
                 
@@ -591,8 +645,8 @@ class RunCheckerStep(WorkflowStep):
             return StepResult.failure(str(e))
     
     def can_skip(self, context: Dict[str, Any]) -> bool:
-        # Skip if compilation failed
-        return not context.get("compilation_success", False)
+        # Skip only if compilation explicitly failed (not if key is absent)
+        return context.get("compilation_success") is False
 
 
 class FixCheckerErrorsStep(WorkflowStep):
@@ -640,17 +694,20 @@ class FixCheckerErrorsStep(WorkflowStep):
                 user_guidance=user_guidance
             )
             
-            if result.success:
+            if result.fixed:
                 return StepResult.success(
                     output={
                         "checker_fix_applied": True,
                         "checker_success": True,
-                        "fix_description": result.fix_description
+                        "fix_file": result.file_path,
                     }
                 )
             elif result.needs_guidance:
+                guidance_msg = "Unable to fix checker errors automatically."
+                if result.guidance_request:
+                    guidance_msg = result.guidance_request.get("message", guidance_msg)
                 return StepResult.needs_guidance(
-                    result.guidance_questions or "Unable to fix checker errors automatically.",
+                    guidance_msg,
                     {"trace_log": trace_log}
                 )
             else:

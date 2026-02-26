@@ -1,6 +1,5 @@
 import os
 from datetime import datetime, timezone
-from utils.chat_history import ChatHistory
 
 # Base paths
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -143,7 +142,19 @@ specific_errors_list_path = os.path.join(RESOURCES_DIR, "compile_analysis", "err
 # user mode vs admin mode
 current_mode = "admin"
 
-chat_history = ChatHistory()
+class _LazyChatHistory:
+    """Defers ChatHistory import so non-Streamlit callers never touch streamlit."""
+
+    _instance = None
+
+    def __getattr__(self, name):
+        if _LazyChatHistory._instance is None:
+            from utils.chat_history import ChatHistory
+            _LazyChatHistory._instance = ChatHistory()
+        return getattr(_LazyChatHistory._instance, name)
+
+
+chat_history = _LazyChatHistory()
 
 # Flag to track if we've already attempted a restart
 has_restarted = False

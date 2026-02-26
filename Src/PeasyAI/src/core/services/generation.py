@@ -149,23 +149,37 @@ class GenerationService(BaseService):
     ) -> Dict[str, str]:
         """
         If the design doc uses timer/heartbeat patterns, inject the
-        Common_Timer reference as a context file so the LLM uses the
-        standard ``CreateTimer``/``StartTimer``/``CancelTimer`` API
-        instead of reinventing the Timer machine.
+        canonical Timer machine as a reference example so the LLM
+        follows the standard ``CreateTimer``/``StartTimer``/``CancelTimer``
+        API when generating the Timer machine.
+
+        The Timer will be generated as a normal machine (like any other)
+        by the LLM.  This context just shows the expected pattern.
         """
         ctx = dict(context_files) if context_files else {}
         if not self._needs_timer(design_doc, context_files):
             return ctx
-        # Don't inject if there's already a Timer file
+        # Skip if a Timer file is already in context (already generated)
         if any("timer" in k.lower() for k in ctx):
             return ctx
         template = self._load_timer_template()
         if template:
-            ctx["__Timer_Reference__.p"] = (
-                "// REFERENCE: Standard Timer machine from the P tutorial.\n"
-                "// Use CreateTimer(this), StartTimer(timer), CancelTimer(timer)\n"
-                "// to interact with timers. Do NOT re-implement the Timer machine.\n"
-                "// The Timer module is composed via: module MyModule = (union {...}, Timer);\n\n"
+            ctx["__Timer_Reference_Example__"] = (
+                "// REFERENCE EXAMPLE: This is the standard Timer machine pattern.\n"
+                "// When generating Timer.p, follow this structure and API.\n"
+                "// NOTE: The Timer events (eStartTimer, eCancelTimer, eTimeOut,\n"
+                "//   eDelayedTimeOut) should be declared in Enums_Types_Events.p,\n"
+                "//   NOT in Timer.p.  Timer.p should only contain the machine\n"
+                "//   declaration and the helper functions.\n"
+                "// IMPORTANT: The Timer bounds the number of delays (numDelays)\n"
+                "//   so it is GUARANTEED to eventually fire.  This is required\n"
+                "//   for liveness properties.  After numDelays >= 3, the timer\n"
+                "//   fires unconditionally.\n"
+                "// Helper functions (declared at file scope, outside the machine):\n"
+                "//   fun CreateTimer(client: machine) : Timer — creates a new Timer\n"
+                "//   fun StartTimer(timer: Timer) — sends eStartTimer\n"
+                "//   fun CancelTimer(timer: Timer) — sends eCancelTimer\n"
+                "// The Timer sends eTimeOut to its client when it fires.\n\n"
                 + template
             )
         return ctx
@@ -596,7 +610,158 @@ class GenerationService(BaseService):
                 success=False,
                 error=self._format_error(e, f"Error generating test {test_name}"),
             )
-    
+
+    # ── LLM-based wiring review ─────────────────────────────────────
+
+    def review_test_wiring(
+        self,
+        test_code: str,
+        design_doc: str,
+        context_files: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, str]:
+        """
+        Use the LLM to review a generated test driver for initialization
+        correctness: dependency ordering, circular dependency resolution,
+        empty-collection pitfalls, and named-tuple construction.
+
+        Returns a dict of ``filename -> fixed_code`` for every file that
+        the review changed.  If the test is already correct the dict
+        contains only the original test file (unchanged).
+        """
+        self._status("Reviewing test wiring with LLM…")
+
+        instruction = self._load_static_instruction("review_test_wiring.txt")
+        messages: List[Message] = []
+
+        # Provide all context files so the reviewer can see machine signatures
+        if context_files:
+            messages.extend(self._compact_context_messages(context_files))
+
+        # Provide the wiring summary as a quick reference
+        wiring_info = self._extract_machine_wiring_info(context_files)
+        if wiring_info:
+            messages.append(Message(
+                role=MessageRole.USER,
+                content=(
+                    "<machine_wiring_reference>\n"
+                    f"{wiring_info}\n"
+                    "</machine_wiring_reference>"
+                ),
+            ))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=f"<design_document>\n{self._compact_design_doc(design_doc)}\n</design_document>",
+        ))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=f"<test_driver_to_review>\n{test_code}\n</test_driver_to_review>",
+        ))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=instruction,
+        ))
+
+        system_prompt = (
+            "You are an expert P language reviewer. "
+            "Focus exclusively on machine initialization and wiring correctness."
+        )
+        config = LLMConfig(max_tokens=4096)
+        try:
+            response = self.llm.complete(messages, config, system_prompt)
+        except Exception as e:
+            logger.warning(f"Wiring review LLM call failed: {e}")
+            return {}
+
+        return self._parse_wiring_review_response(response.content)
+
+    @staticmethod
+    def _parse_wiring_review_response(content: str) -> Dict[str, str]:
+        """Extract ``<fixed_files>`` blocks from the wiring-review response."""
+        fixed: Dict[str, str] = {}
+
+        # Look for <fixed_files> wrapper
+        ff_match = re.search(
+            r"<fixed_files>(.*?)</fixed_files>", content, re.DOTALL
+        )
+        if not ff_match:
+            return fixed
+
+        inner = ff_match.group(1)
+
+        # Extract each <Filename.p>...</Filename.p> block
+        for m in re.finditer(
+            r"<(\w+\.p)>(.*?)</\1>", inner, re.DOTALL
+        ):
+            filename = m.group(1)
+            code = m.group(2).strip()
+            if code:
+                fixed[filename] = code
+
+        return fixed
+
+    # ── LLM-based spec review ───────────────────────────────────────
+
+    def review_spec_correctness(
+        self,
+        spec_code: str,
+        design_doc: str,
+        context_files: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, str]:
+        """
+        Use the LLM to review a generated spec monitor for semantic
+        correctness against the design document's safety properties.
+
+        Checks:
+        - observes clause completeness (all relevant events included)
+        - correct event-to-machine tracking via payloads
+        - assertion logic matches the stated safety property
+        - no forbidden keywords (this/new/send/…)
+        - payload type names match Enums_Types_Events.p
+
+        Returns a dict of ``filename -> fixed_code`` for every file the
+        review changed.  If the spec is already correct the dict contains
+        only the original spec file (unchanged).
+        """
+        self._status("Reviewing spec correctness with LLM…")
+
+        instruction = self._load_static_instruction("review_spec_correctness.txt")
+        messages: List[Message] = []
+
+        if context_files:
+            messages.extend(self._compact_context_messages(context_files))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=f"<design_document>\n{self._compact_design_doc(design_doc)}\n</design_document>",
+        ))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=f"<spec_to_review>\n{spec_code}\n</spec_to_review>",
+        ))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=instruction,
+        ))
+
+        system_prompt = (
+            "You are an expert P language reviewer. "
+            "Focus exclusively on spec monitor correctness: "
+            "observes completeness, assertion logic, and payload usage."
+        )
+        config = LLMConfig(max_tokens=4096)
+        try:
+            response = self.llm.complete(messages, config, system_prompt)
+        except Exception as e:
+            logger.warning(f"Spec review LLM call failed: {e}")
+            return {}
+
+        return self._parse_wiring_review_response(response.content)
+
     def generate_machines_parallel(
         self,
         machine_names: List[str],
@@ -1667,12 +1832,14 @@ class GenerationService(BaseService):
         2. Markdown code block with filename comment  (```p // filename.p ...)
         3. Markdown code block (```p ... ```) using first `machine` name
         
-        Also post-processes the code to fix common issues.
+        Note: post-processing and validation are handled by the
+        ValidationPipeline (see core.validation.pipeline), not here.
+        Callers should run the pipeline on the returned code.
         
         Args:
             response: Raw LLM response text
-            is_test_file: If True, this is a PTst file; the post-processor
-                          will ensure test declarations exist.
+            is_test_file: If True, this is a PTst file (unused here but
+                          kept for API compatibility).
             expected_name: If provided, used as the fallback filename when
                            the LLM response doesn't include one (e.g. the
                            machine_name parameter from generate_machine).
@@ -1688,20 +1855,5 @@ class GenerationService(BaseService):
 
         if not filename or not code:
             return None, None
-
-        # Post-process the code to fix common issues
-        try:
-            from ..compilation.p_post_processor import PCodePostProcessor
-            processor = PCodePostProcessor()
-            result = processor.process(code, filename, is_test_file=is_test_file)
-            code = result.code
-            if result.fixes_applied:
-                logger.info(f"Post-processing applied {len(result.fixes_applied)} fix(es) to {filename}")
-                for fix in result.fixes_applied:
-                    logger.debug(f"  - {fix}")
-        except ImportError:
-            logger.debug("PCodePostProcessor not available, skipping post-processing")
-        except Exception as e:
-            logger.warning(f"Post-processing failed: {e}")
 
         return filename, code

@@ -222,8 +222,9 @@ class CompilationService(BaseService):
         self,
         project_path: str,
         schedules: int = 100,
-        timeout: int = 60,
+        timeout: Optional[int] = None,
         test_name: Optional[str] = None,
+        max_steps: int = 10000,
     ) -> CheckerResult:
         """
         Run PChecker on a P project.
@@ -231,8 +232,9 @@ class CompilationService(BaseService):
         Args:
             project_path: Path to the P project
             schedules: Number of schedules to explore
-            timeout: Timeout in seconds
+            timeout: Timeout in seconds per test (None = no timeout, rely on schedule count)
             test_name: Optional specific test to run
+            max_steps: Maximum steps per schedule before PChecker moves on
             
         Returns:
             CheckerResult with test results
@@ -247,6 +249,7 @@ class CompilationService(BaseService):
                 project_path,
                 schedules=schedules,
                 timeout=timeout,
+                max_steps=max_steps,
             )
             
             # Build results

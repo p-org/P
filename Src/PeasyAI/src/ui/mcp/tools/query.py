@@ -15,16 +15,6 @@ class SyntaxHelperParams(BaseModel):
     )
 
 
-class ListProjectFilesParams(BaseModel):
-    """Parameters for listing project files"""
-    project_path: str = Field(..., description="Absolute path to the P project")
-
-
-class ReadPFileParams(BaseModel):
-    """Parameters for reading a P file"""
-    file_path: str = Field(..., description="Absolute path to the P file")
-
-
 def register_query_tools(mcp, get_services, with_metadata):
     """Register query tools."""
 
@@ -84,56 +74,6 @@ def register_query_tools(mcp, get_services, with_metadata):
         }
         return with_metadata("peasy-ai-syntax-help", payload)
 
-    @mcp.tool(
-        name="peasy-ai-list-files",
-        description="List all P files (.p) in a project organized by folder (PSrc, PSpec, PTst). Useful for inspecting the structure of an existing or generated project before reading individual files with peasy-ai-read-file."
-    )
-    def list_project_files(params: ListProjectFilesParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] peasy-ai-list-files: {params.project_path}")
-
-        services = get_services()
-        files = services["compilation"].get_project_files(params.project_path)
-
-        organized = {"PSrc": [], "PSpec": [], "PTst": []}
-        for filepath in files.keys():
-            folder = filepath.split("/")[0] if "/" in filepath else "other"
-            if folder in organized:
-                organized[folder].append(filepath)
-
-        payload = {
-            "project_path": params.project_path,
-            "files": organized,
-            "total_files": len(files)
-        }
-        return with_metadata("peasy-ai-list-files", payload)
-
-    @mcp.tool(
-        name="peasy-ai-read-file",
-        description="Read the full contents of a P file. Use this to inspect generated code, review existing machines/specs/tests, or gather context_files content to pass into peasy-ai-gen-machine, peasy-ai-gen-spec, or peasy-ai-gen-test."
-    )
-    def read_p_file(params: ReadPFileParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] peasy-ai-read-file: {params.file_path}")
-
-        services = get_services()
-        content = services["compilation"].read_file(params.file_path)
-
-        if content is not None:
-            payload = {
-                "success": True,
-                "file_path": params.file_path,
-                "content": content,
-                "lines": len(content.splitlines())
-            }
-            return with_metadata("peasy-ai-read-file", payload)
-
-        payload = {
-            "success": False,
-            "error": f"Could not read file: {params.file_path}"
-        }
-        return with_metadata("peasy-ai-read-file", payload)
-
     return {
         "syntax_help": syntax_help,
-        "list_project_files": list_project_files,
-        "read_p_file": read_p_file,
     }

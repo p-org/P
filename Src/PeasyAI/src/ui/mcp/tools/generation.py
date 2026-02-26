@@ -1,11 +1,68 @@
 """Generation-related MCP tools."""
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 from pydantic import BaseModel, Field
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def _build_generation_payload(
+    tool_name: str,
+    result,
+    review: Dict[str, Any],
+    code: Optional[str],
+    with_metadata,
+    *,
+    extra: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Build a standardized MCP response payload for generation tools.
+
+    Surfaces validation severity (is_valid, error_count, warning_count) at
+    the top level so the calling agent can decide whether to save the file
+    or request regeneration.
+    """
+    errors: List[str] = review.get("errors", [])
+    warnings: List[str] = review.get("warnings", [])
+    is_valid: bool = review.get("is_valid", True)
+
+    if not result.success:
+        message = result.error or f"{tool_name} failed"
+    elif errors:
+        message = (
+            f"Code generated with {len(errors)} validation error(s) "
+            f"that will likely cause compilation failure. "
+            f"Review the 'review.errors' field and consider regenerating."
+        )
+    elif warnings:
+        message = (
+            "Code generated for preview with warnings. "
+            "Use peasy-ai-save-file to save to disk."
+        )
+    else:
+        message = (
+            "Code generated for preview. "
+            "Use peasy-ai-save-file to save to disk."
+        )
+
+    payload: Dict[str, Any] = {
+        "success": result.success,
+        "filename": result.filename,
+        "file_path": result.file_path,
+        "code": code,
+        "error": result.error,
+        "token_usage": result.token_usage,
+        "preview_only": True,
+        "is_valid": is_valid,
+        "error_count": len(errors),
+        "warning_count": len(warnings),
+        "review": review,
+        "message": message,
+    }
+    if extra:
+        payload.update(extra)
+    return with_metadata(tool_name, payload, token_usage=result.token_usage)
 
 
 def _find_project_root(file_path: str) -> Optional[str]:
@@ -29,88 +86,46 @@ def _review_generated_code(
     filename: str,
     project_path: str,
     is_test_file: bool = False,
+    context_files: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
-    Run post-processing and cross-file consistency checks on generated code.
+    Run the unified validation pipeline on generated code.
+
+    Stage 1 — deterministic auto-fixes (PCodePostProcessor).
+    Stage 2 — structured validators (syntax, types, events, specs, duplicates, …).
+
+    Args:
+        context_files: Previously generated files (filename -> code) that
+            haven't been saved to disk yet.  Merged with any on-disk project
+            files so cross-file validators (e.g. NamedTupleConstructionValidator)
+            can resolve type definitions from earlier generation steps.
 
     Returns a dict with:
       - code: the (possibly fixed) code
       - fixes_applied: list of auto-fixes that were applied
       - warnings: list of issues that need manual attention
+      - errors: list of issues that will likely cause compilation failure
+      - is_valid: whether the code passed all error-level checks
+      - validators_run: names of validators that ran
     """
-    from core.compilation.p_post_processor import (
-        PCodePostProcessor,
-        TypeConsistencyChecker,
-        CrossFileReviewer,
+    from core.validation.pipeline import ValidationPipeline
+
+    pipeline = ValidationPipeline(include_test_validators=is_test_file)
+
+    # Build merged context: on-disk files + in-memory context_files.
+    # In-memory files take precedence (they may be newer than what's on disk).
+    merged_context: Optional[Dict[str, str]] = None
+    if context_files:
+        merged_context = dict(context_files)
+
+    result = pipeline.validate(
+        code,
+        context=merged_context,
+        filename=filename,
+        project_path=project_path,
+        is_test_file=is_test_file,
     )
-
-    processor = PCodePostProcessor()
-    result = processor.process(code, filename, is_test_file=is_test_file)
-    warnings = list(result.warnings)
-
-    try:
-        project_files: Dict[str, str] = {}
-        pp = Path(project_path)
-        for p_file in pp.rglob("*.p"):
-            rel = str(p_file.relative_to(pp))
-            project_files[rel] = p_file.read_text(encoding="utf-8")
-        project_files[filename] = result.code
-
-        type_checker = TypeConsistencyChecker()
-        for content in project_files.values():
-            type_checker.extract_definitions(content)
-        undef_types = type_checker.find_undefined_types(result.code)
-        undef_events = type_checker.find_undefined_events(result.code)
-        if undef_types:
-            warnings.append(f"Undefined types in {filename}: {undef_types}")
-        if undef_events:
-            warnings.append(f"Undefined events in {filename}: {undef_events}")
-
-        reviewer = CrossFileReviewer()
-
-        if is_test_file:
-            spec_names = reviewer.extract_spec_names(project_files)
-            if spec_names:
-                spec_issues = reviewer.validate_test_includes_specs(
-                    result.code, spec_names, filename
-                )
-                warnings.extend(spec_issues)
-
-            machine_configs = reviewer.extract_machine_config_types(project_files)
-            if machine_configs:
-                ctor_issues = reviewer.validate_constructor_patterns(
-                    result.code, machine_configs, filename
-                )
-                warnings.extend(ctor_issues)
-
-        types_code = ""
-        for rel, content in project_files.items():
-            if "Enums_Types_Events" in rel or "types" in rel.lower():
-                types_code = content
-                break
-        if types_code and "spec " in result.code:
-            spec_warnings = processor.validate_spec_events(
-                result.code, types_code, filename
-            )
-            warnings.extend(spec_warnings)
-
-        # Validate payload field names against type definitions
-        if types_code:
-            type_fields = reviewer.extract_type_field_names(types_code)
-            if type_fields:
-                field_issues = reviewer.validate_payload_field_names(
-                    result.code, type_fields, filename
-                )
-                warnings.extend(field_issues)
-
-    except Exception as e:
-        logger.debug(f"Cross-file review skipped: {e}")
-
-    return {
-        "code": result.code,
-        "fixes_applied": result.fixes_applied,
-        "warnings": warnings,
-    }
+    return result.to_review_dict()
 
 
 class GenerateProjectParams(BaseModel):
@@ -194,48 +209,6 @@ class GenerateTestParams(BaseModel):
     )
 
 
-class GenerateCompleteProjectParams(BaseModel):
-    """Parameters for complete project generation"""
-    design_doc: str = Field(
-        ...,
-        description="The design document describing the P program"
-    )
-    output_dir: str = Field(
-        ...,
-        description="Absolute path to directory where project will be created"
-    )
-    project_name: str = Field(
-        default="PProject",
-        description="Name of the P project"
-    )
-    machine_names: Optional[List[str]] = Field(
-        default=None,
-        description="List of machine names (auto-extracted if not provided)"
-    )
-    include_spec: bool = Field(
-        default=True,
-        description="Whether to generate safety specification"
-    )
-    include_test: bool = Field(
-        default=True,
-        description="Whether to generate test driver"
-    )
-    auto_fix: bool = Field(
-        default=True,
-        description="Automatically fix compilation errors"
-    )
-    run_checker: bool = Field(
-        default=False,
-        description="Run PChecker after successful compilation"
-    )
-    ensemble_size: int = Field(
-        default=3,
-        description="Number of candidate generations per file for ensemble selection. "
-                    "Higher values (e.g. 3) produce more reliable code by picking the "
-                    "best candidate, at the cost of more LLM calls."
-    )
-
-
 class SavePFileParams(BaseModel):
     """Parameters for saving a P file"""
     file_path: str = Field(..., description="Absolute path where to save the file")
@@ -281,7 +254,7 @@ def register_generation_tools(mcp, get_services, with_metadata):
             save_to_disk=False  # Preview only
         )
 
-        review = {"fixes_applied": [], "warnings": []}
+        review: Dict[str, Any] = {"fixes_applied": [], "warnings": [], "errors": [], "is_valid": True}
         code = result.code
         if result.success and code:
             review = _review_generated_code(
@@ -289,18 +262,9 @@ def register_generation_tools(mcp, get_services, with_metadata):
             )
             code = review["code"]
 
-        payload = {
-            "success": result.success,
-            "filename": result.filename,
-            "file_path": result.file_path,
-            "code": code,
-            "error": result.error,
-            "token_usage": result.token_usage,
-            "preview_only": True,
-            "review": review,
-            "message": "Code generated for preview. Use peasy-ai-save-file to save to disk." if result.success else result.error
-        }
-        return with_metadata("peasy-ai-gen-types-events", payload, token_usage=result.token_usage)
+        return _build_generation_payload(
+            "peasy-ai-gen-types-events", result, review, code, with_metadata
+        )
 
     @mcp.tool(
         name="peasy-ai-gen-machine",
@@ -329,26 +293,18 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 save_to_disk=False  # Preview only
             )
 
-        review = {"fixes_applied": [], "warnings": []}
+        review: Dict[str, Any] = {"fixes_applied": [], "warnings": [], "errors": [], "is_valid": True}
         code = result.code
         if result.success and code:
             review = _review_generated_code(
-                code, result.filename or f"{params.machine_name}.p", params.project_path
+                code, result.filename or f"{params.machine_name}.p", params.project_path,
+                context_files=params.context_files,
             )
             code = review["code"]
 
-        payload = {
-            "success": result.success,
-            "filename": result.filename,
-            "file_path": result.file_path,
-            "code": code,
-            "error": result.error,
-            "token_usage": result.token_usage,
-            "preview_only": True,
-            "review": review,
-            "message": "Code generated for preview. Use peasy-ai-save-file to save to disk." if result.success else result.error
-        }
-        return with_metadata("peasy-ai-gen-machine", payload, token_usage=result.token_usage)
+        return _build_generation_payload(
+            "peasy-ai-gen-machine", result, review, code, with_metadata
+        )
 
     @mcp.tool(
         name="peasy-ai-gen-spec",
@@ -380,26 +336,45 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 save_to_disk=False
             )
 
-        review = {"fixes_applied": [], "warnings": []}
+        review: Dict[str, Any] = {"fixes_applied": [], "warnings": [], "errors": [], "is_valid": True}
         code = result.code
+        spec_fixes: Dict[str, str] = {}
         if result.success and code:
+            # Stage A: regex/structural validation
             review = _review_generated_code(
-                code, result.filename or f"{params.spec_name}.p", params.project_path
+                code, result.filename or f"{params.spec_name}.p", params.project_path,
+                context_files=params.context_files,
             )
             code = review["code"]
 
-        payload = {
-            "success": result.success,
-            "filename": result.filename,
-            "file_path": result.file_path,
-            "code": code,
-            "error": result.error,
-            "token_usage": result.token_usage,
-            "preview_only": True,
-            "review": review,
-            "message": "Code generated for preview. Use peasy-ai-save-file to save to disk." if result.success else result.error
-        }
-        return with_metadata("peasy-ai-gen-spec", payload, token_usage=result.token_usage)
+            # Stage B: LLM-based spec correctness review (observes
+            # completeness, assertion logic, payload usage).
+            try:
+                spec_fixes = services["generation"].review_spec_correctness(
+                    spec_code=code,
+                    design_doc=params.design_doc,
+                    context_files=params.context_files,
+                )
+                spec_filename = result.filename or f"{params.spec_name}.p"
+                # Try to find the fixed spec under its actual filename
+                for candidate in [spec_filename, "Specification.p", "Spec.p", "Safety.p"]:
+                    if candidate in spec_fixes:
+                        code = spec_fixes.pop(candidate)
+                        review["fixes_applied"].append(
+                            "[SpecReview] LLM corrected spec monitor logic"
+                        )
+                        break
+            except Exception as e:
+                logger.warning(f"Spec review skipped: {e}")
+
+        extra: Dict[str, Any] = {}
+        if spec_fixes:
+            extra["spec_fixes"] = spec_fixes
+
+        return _build_generation_payload(
+            "peasy-ai-gen-spec", result, review, code, with_metadata,
+            extra=extra,
+        )
 
     @mcp.tool(
         name="peasy-ai-gen-test",
@@ -431,352 +406,50 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 save_to_disk=False
             )
 
-        review = {"fixes_applied": [], "warnings": []}
+        review: Dict[str, Any] = {"fixes_applied": [], "warnings": [], "errors": [], "is_valid": True}
         code = result.code
+        wiring_fixes: Dict[str, str] = {}
         if result.success and code:
+            # Stage A: regex/structural validation
             review = _review_generated_code(
                 code,
                 result.filename or f"{params.test_name}.p",
                 params.project_path,
                 is_test_file=True,
+                context_files=params.context_files,
             )
             code = review["code"]
 
-        payload = {
-            "success": result.success,
-            "filename": result.filename,
-            "file_path": result.file_path,
-            "code": code,
-            "error": result.error,
-            "token_usage": result.token_usage,
-            "preview_only": True,
-            "review": review,
-            "message": "Code generated for preview. Use peasy-ai-save-file to save to disk." if result.success else result.error
-        }
-        return with_metadata("peasy-ai-gen-test", payload, token_usage=result.token_usage)
+            # Stage B: LLM-based wiring review (initialization order,
+            # circular dependencies, empty collections).
+            try:
+                wiring_fixes = services["generation"].review_test_wiring(
+                    test_code=code,
+                    design_doc=params.design_doc,
+                    context_files=params.context_files,
+                )
+                test_filename = result.filename or f"{params.test_name}.p"
+                if test_filename in wiring_fixes:
+                    code = wiring_fixes.pop(test_filename)
+                    review["fixes_applied"].append(
+                        "[WiringReview] LLM rewired machine initialization"
+                    )
+                elif "TestDriver.p" in wiring_fixes:
+                    code = wiring_fixes.pop("TestDriver.p")
+                    review["fixes_applied"].append(
+                        "[WiringReview] LLM rewired machine initialization"
+                    )
+            except Exception as e:
+                logger.warning(f"Wiring review skipped: {e}")
 
-    @mcp.tool(
-        name="peasy-ai-gen-full-project",
-        description="""ADVANCED: Generate an entire P project in a single autonomous call. This is a convenience shortcut that runs all generation steps without human review.
+        extra: Dict[str, Any] = {}
+        if wiring_fixes:
+            extra["wiring_fixes"] = wiring_fixes
 
-IMPORTANT: Prefer the step-by-step tools (peasy-ai-create-project, peasy-ai-gen-types-events, peasy-ai-gen-machine, peasy-ai-gen-spec, peasy-ai-gen-test) instead. The step-by-step approach lets the user review and approve each file before proceeding, resulting in higher quality code.
-
-Only use this tool when the user EXPLICITLY asks for fully automated / one-shot / hands-off generation.
-
-Steps performed: create structure → generate types/events → generate machines → generate spec → generate test → post-process → compile → auto-fix → optionally run PChecker."""
-    )
-    def generate_complete_project(params: GenerateCompleteProjectParams) -> Dict[str, Any]:
-        logger.info(f"[TOOL] peasy-ai-gen-full-project: {params.project_name} (ensemble={params.ensemble_size})")
-
-        import os
-        from pathlib import Path
-        from core.compilation.p_post_processor import (
-            PCodePostProcessor,
-            TypeConsistencyChecker,
-            MachineConfigDetector
+        return _build_generation_payload(
+            "peasy-ai-gen-test", result, review, code, with_metadata,
+            extra=extra,
         )
-        from core.workflow.factory import extract_machine_names_from_design_doc, validate_design_doc
-
-        services = get_services()
-        use_ensemble = params.ensemble_size > 1
-        results = {
-            "success": False,
-            "project_path": None,
-            "generated_files": {},
-            "post_processing": [],
-            "compilation": None,
-            "checker": None,
-            "errors": [],
-            "warnings": [],
-            "ensemble_size": params.ensemble_size,
-        }
-
-        try:
-            # Validate design doc first
-            doc_validation = validate_design_doc(params.design_doc)
-            if not doc_validation["valid"]:
-                results["errors"].extend(doc_validation["errors"])
-                results["warnings"].extend(doc_validation["warnings"])
-                return with_metadata("peasy-ai-gen-full-project", results)
-            if doc_validation["warnings"]:
-                results["warnings"].extend(doc_validation["warnings"])
-
-            machine_names = params.machine_names
-            if not machine_names:
-                machine_names = doc_validation["components"] or extract_machine_names_from_design_doc(params.design_doc)
-                if not machine_names:
-                    results["errors"].append("Could not extract machine names from design doc")
-                    return with_metadata("peasy-ai-gen-full-project", results)
-
-            logger.info(f"Generating project with machines: {machine_names}")
-
-            struct_result = services["generation"].create_project_structure(
-                output_dir=params.output_dir,
-                project_name=params.project_name
-            )
-
-            if not struct_result.success:
-                results["errors"].append(f"Failed to create structure: {struct_result.error}")
-                return with_metadata("peasy-ai-gen-full-project", results)
-
-            project_path = struct_result.file_path
-            results["project_path"] = project_path
-
-            types_result = services["generation"].generate_types_events(
-                design_doc=params.design_doc,
-                project_path=project_path,
-                save_to_disk=True
-            )
-
-            # Use actual filename from generation result (LLM picks the name)
-            types_filename = types_result.filename or "Enums_Types_Events.p"
-            if types_result.success:
-                results["generated_files"][types_filename] = types_result.file_path
-            else:
-                results["errors"].append(f"Failed to generate types: {types_result.error}")
-                return with_metadata("peasy-ai-gen-full-project", results)
-
-            context_files = {types_filename: types_result.code}
-
-            config_detector = MachineConfigDetector()
-            machine_dependencies = {}
-
-            # ── Machine generation: ensemble or parallel ───────────────
-            if use_ensemble:
-                # Ensemble: sequential machines, N candidates each, best-of-N selection.
-                # Each machine sees code from previously generated machines.
-                machine_results = services["generation"].generate_machines_ensemble(
-                    machine_names=machine_names,
-                    design_doc=params.design_doc,
-                    project_path=project_path,
-                    context_files=context_files,
-                    ensemble_size=params.ensemble_size,
-                    save_to_disk=True,
-                )
-            else:
-                # Non-ensemble: parallel generation for speed
-                machine_results = services["generation"].generate_machines_parallel(
-                    machine_names=machine_names,
-                    design_doc=params.design_doc,
-                    project_path=project_path,
-                    context_files=context_files,
-                    save_to_disk=True,
-                )
-
-            for machine_name in machine_names:
-                machine_result = machine_results.get(machine_name)
-                if machine_result and machine_result.success:
-                    mach_filename = machine_result.filename or f"{machine_name}.p"
-                    results["generated_files"][mach_filename] = machine_result.file_path
-                    context_files[mach_filename] = machine_result.code
-
-                    deps = config_detector.detect_dependencies(machine_result.code)
-                    if deps:
-                        machine_dependencies[machine_name] = deps
-                        results["warnings"].append(
-                            f"{machine_name} has dependencies: {deps}. Ensure configuration events are sent."
-                        )
-                else:
-                    err = machine_result.error if machine_result else "Generation returned no result"
-                    results["errors"].append(f"Failed to generate {machine_name}: {err}")
-
-            # ── Spec generation: ensemble or single ────────────────────
-            spec_filename = None
-            if params.include_spec:
-                if use_ensemble:
-                    spec_result = services["generation"].generate_spec_ensemble(
-                        spec_name="Safety",
-                        design_doc=params.design_doc,
-                        project_path=project_path,
-                        context_files=context_files,
-                        ensemble_size=params.ensemble_size,
-                        save_to_disk=True,
-                    )
-                else:
-                    spec_result = services["generation"].generate_spec(
-                        spec_name="Safety",
-                        design_doc=params.design_doc,
-                        project_path=project_path,
-                        context_files=context_files,
-                        save_to_disk=True
-                    )
-                if spec_result.success:
-                    spec_filename = spec_result.filename or "Safety.p"
-                    results["generated_files"][spec_filename] = spec_result.file_path
-                    context_files[spec_filename] = spec_result.code
-                else:
-                    results["warnings"].append(f"Spec generation failed: {spec_result.error}")
-
-            # ── Test generation: ensemble or single ────────────────────
-            if params.include_test:
-                if use_ensemble:
-                    test_result = services["generation"].generate_test_ensemble(
-                        test_name="TestDriver",
-                        design_doc=params.design_doc,
-                        project_path=project_path,
-                        context_files=context_files,
-                        ensemble_size=params.ensemble_size,
-                        save_to_disk=True,
-                    )
-                else:
-                    test_result = services["generation"].generate_test(
-                        test_name="TestDriver",
-                        design_doc=params.design_doc,
-                        project_path=project_path,
-                        context_files=context_files,
-                        save_to_disk=True
-                    )
-                if test_result.success:
-                    test_filename = test_result.filename or "TestDriver.p"
-                    results["generated_files"][test_filename] = test_result.file_path
-                else:
-                    results["warnings"].append(f"Test generation failed: {test_result.error}")
-
-            # ── Post-processing ────────────────────────────────────────
-            processor = PCodePostProcessor()
-            for filename, file_path in results["generated_files"].items():
-                if filename.endswith(".p"):
-                    try:
-                        code = Path(file_path).read_text()
-                        is_test = "PTst" in file_path
-                        processed = processor.process(code, filename, is_test_file=is_test)
-                        if processed.fixes_applied:
-                            Path(file_path).write_text(processed.code)
-                            results["post_processing"].append({
-                                "file": filename,
-                                "fixes": processed.fixes_applied
-                            })
-                    except Exception as e:
-                        results["warnings"].append(f"Post-processing failed for {filename}: {e}")
-
-            # Validate spec events exist in types file
-            try:
-                if spec_filename and spec_filename in results["generated_files"] and types_result.code:
-                    spec_path = results["generated_files"][spec_filename]
-                    spec_code = Path(spec_path).read_text(encoding="utf-8")
-                    spec_warnings = processor.validate_spec_events(spec_code, types_result.code, spec_filename)
-                    for w in spec_warnings:
-                        results["warnings"].append(w)
-                        logger.warning(w)
-            except Exception as e:
-                logger.debug(f"Spec event validation skipped: {e}")
-
-            # Run type consistency check across all generated files
-            try:
-                type_checker = TypeConsistencyChecker()
-                project_files = services["compilation"].get_project_files(project_path)
-                for _, content in project_files.items():
-                    type_checker.extract_definitions(content)
-                all_issues = []
-                for rel_path, content in project_files.items():
-                    undef_types = type_checker.find_undefined_types(content)
-                    undef_events = type_checker.find_undefined_events(content)
-                    if undef_types:
-                        all_issues.append(f"{rel_path}: undefined types {undef_types}")
-                    if undef_events:
-                        all_issues.append(f"{rel_path}: undefined events {undef_events}")
-                if all_issues:
-                    results["warnings"].append(f"Type consistency issues: {'; '.join(all_issues)}")
-            except Exception as e:
-                logger.debug(f"Type consistency check skipped: {e}")
-
-            # ── Compilation ────────────────────────────────────────────
-            compile_result = services["compilation"].compile(project_path)
-            results["compilation"] = {
-                "success": compile_result.success,
-                "output": compile_result.stdout[:500] if compile_result.stdout else "",
-                "error": compile_result.error
-            }
-
-            if not compile_result.success and params.auto_fix:
-                fix_results = services["fixer"].fix_iteratively(
-                    project_path=project_path,
-                    max_iterations=5
-                )
-                results["compilation"]["fix_results"] = fix_results
-
-                # Re-check compilation status after iterative fix
-                recompile = services["compilation"].compile(project_path)
-                results["compilation"]["success"] = recompile.success
-                if recompile.success:
-                    results["compilation"]["output"] = recompile.stdout[:500] if recompile.stdout else ""
-                    results["compilation"]["error"] = None
-
-            # ── PChecker + auto-fix loop ───────────────────────────────
-            if params.run_checker and results["compilation"]["success"]:
-                MAX_CHECKER_FIX_ROUNDS = 2
-                checker_result = services["compilation"].run_checker(
-                    project_path=project_path,
-                    schedules=100,
-                    timeout=60
-                )
-                results["checker"] = {
-                    "success": checker_result.success,
-                    "test_results": checker_result.test_results,
-                    "passed_tests": checker_result.passed_tests,
-                    "failed_tests": checker_result.failed_tests,
-                }
-
-                checker_fix_round = 0
-                while (
-                    not checker_result.success
-                    and checker_result.failed_tests
-                    and checker_fix_round < MAX_CHECKER_FIX_ROUNDS
-                ):
-                    checker_fix_round += 1
-                    logger.info(f"[CHECKER-FIX] Round {checker_fix_round}: attempting auto-fix")
-
-                    # Try to fix using trace logs from the failed test
-                    fixed_any = False
-                    for failed_test in checker_result.failed_tests:
-                        trace = checker_result.trace_logs.get(failed_test, "")
-                        if trace:
-                            fix_result = services["fixer"].fix_checker_error(
-                                project_path=project_path,
-                                trace_log=trace,
-                                error_category=None,
-                            )
-                            if fix_result.fixed:
-                                fixed_any = True
-                                break
-
-                    if not fixed_any:
-                        logger.info("[CHECKER-FIX] No fix applied, stopping")
-                        break
-
-                    # Recompile after fix
-                    recompile = services["compilation"].compile(project_path)
-                    if not recompile.success:
-                        results["warnings"].append(
-                            f"Recompilation failed after checker fix round {checker_fix_round}"
-                        )
-                        break
-
-                    # Re-run PChecker
-                    checker_result = services["compilation"].run_checker(
-                        project_path=project_path,
-                        schedules=100,
-                        timeout=60
-                    )
-                    results["checker"] = {
-                        "success": checker_result.success,
-                        "test_results": checker_result.test_results,
-                        "passed_tests": checker_result.passed_tests,
-                        "failed_tests": checker_result.failed_tests,
-                    }
-
-            results["success"] = results["compilation"]["success"]
-            if params.run_checker and results.get("checker"):
-                results["success"] = results["success"] and results["checker"]["success"]
-            results["message"] = "Project generated successfully" if results["success"] else "Project generated with errors"
-
-        except Exception as e:
-            import traceback
-            err_msg = f"{type(e).__name__}: {e}"
-            logger.error(f"Error in generate_complete_project: {err_msg}\n{traceback.format_exc()}")
-            results["errors"].append(err_msg)
-
-        return with_metadata("peasy-ai-gen-full-project", results)
 
     @mcp.tool(
         name="peasy-ai-save-file",
@@ -838,6 +511,5 @@ Steps performed: create structure → generate types/events → generate machine
         "generate_machine": generate_machine,
         "generate_spec": generate_spec,
         "generate_test": generate_test,
-        "generate_complete_project": generate_complete_project,
         "save_p_file": save_p_file,
     }

@@ -30,11 +30,13 @@ class SnowflakeCortexProvider(LLMProvider):
     Configuration:
         api_key: Snowflake programmatic access token
         base_url: Cortex OpenAI endpoint URL
-        model: Default model name (default: 'claude-sonnet-4-5')
+        model: Default model name (default: 'claude-opus-4-6')
         timeout: Request timeout in seconds (default: 600)
     """
     
     AVAILABLE_MODELS = [
+        "claude-opus-4-6",
+        "claude-sonnet-4-6",
         "claude-opus-4-5",
         "claude-sonnet-4-5",
         "claude-haiku-4-5",
@@ -52,7 +54,7 @@ class SnowflakeCortexProvider(LLMProvider):
         self._api_key = config["api_key"]
         self._base_url = config["base_url"].rstrip("/")
         self._timeout = config.get("timeout", 600.0)
-        self._default_model = config.get("model", "claude-sonnet-4-5")
+        self._default_model = config.get("model", "claude-opus-4-6")
         
         # Initialize OpenAI client lazily
         self._client = None

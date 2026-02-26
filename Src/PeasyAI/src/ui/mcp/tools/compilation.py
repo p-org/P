@@ -26,6 +26,7 @@ class PCheckParams(BaseModel):
     path: str = Field(..., description="Absolute path to the P project directory")
     schedules: int = Field(default=100, description="Number of schedules to explore")
     timeout: int = Field(default=60, description="Timeout in seconds")
+    max_steps: int = Field(default=10000, description="Maximum steps per schedule before moving on")
 
 
 def register_compilation_tools(mcp, get_services, with_metadata):
@@ -89,7 +90,8 @@ def register_compilation_tools(mcp, get_services, with_metadata):
         result = services["compilation"].run_checker(
             project_path=params.path,
             schedules=params.schedules,
-            timeout=params.timeout
+            timeout=params.timeout,
+            max_steps=params.max_steps,
         )
 
         payload = {

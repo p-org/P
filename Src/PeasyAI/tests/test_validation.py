@@ -22,6 +22,7 @@ from core.validation import (
     DesignDocValidator,
     ProjectPathValidator,
     IssueSeverity,
+    NamedTupleConstructionValidator,
 )
 
 
@@ -174,7 +175,7 @@ class TestEventDeclarationValidator:
         machine TestMachine {
             start state Init {
                 entry {
-                    send eUndeclared, this;
+                    raise eUndeclared;
                 }
             }
         }
@@ -261,7 +262,7 @@ class TestMachineStructureValidator:
         result = validator.validate(code)
         
         assert not result.is_valid
-        assert any("no states" in issue.message.lower() for issue in result.errors)
+        assert any("start state" in issue.message.lower() for issue in result.errors)
     
     def test_non_machine_file(self):
         """Test that non-machine files pass validation."""
@@ -298,7 +299,7 @@ class TestValidationPipeline:
         pipeline = ValidationPipeline()
         result = pipeline.validate(code)
         
-        assert len(result.validators_run) == 4
+        assert len(result.validators_run) >= 4
         assert "SyntaxValidator" in result.validators_run
         assert "TypeDeclarationValidator" in result.validators_run
         assert "EventDeclarationValidator" in result.validators_run
@@ -455,6 +456,303 @@ class TestProjectPathValidator:
         result = validator.validate_output_path(str(output_path))
         
         assert result.is_valid
+
+
+class TestNamedTupleConstructionValidator:
+    """Tests for NamedTupleConstructionValidator."""
+
+    def test_correct_new_with_named_tuple(self):
+        """Correct named-tuple constructor should pass."""
+        code = """
+        machine Client {
+            start state Init {
+                entry InitEntry;
+            }
+            fun InitEntry(config: tClientConfig) {
+                goto Active;
+            }
+            state Active { }
+        }
+        machine TestScenario {
+            start state Init {
+                entry {
+                    var c: machine;
+                    c = new Client((server = this,));
+                }
+            }
+        }
+        """
+        context = {
+            "types.p": "type tClientConfig = (server: machine);"
+        }
+        validator = NamedTupleConstructionValidator()
+        result = validator.validate(code, context)
+        assert result.is_valid
+        assert not result.errors
+
+    def test_bare_value_in_new(self):
+        """Bare value instead of named tuple should be flagged as ERROR."""
+        code = """
+        machine FailureDetector {
+            start state Init {
+                entry InitEntry;
+            }
+            fun InitEntry(config: tFDConfig) {
+                goto Monitoring;
+            }
+            state Monitoring { }
+        }
+        machine TestScenario {
+            start state Init {
+                entry {
+                    var nodes: seq[machine];
+                    var fd: machine;
+                    fd = new FailureDetector(nodes);
+                }
+            }
+        }
+        """
+        context = {
+            "types.p": "type tFDConfig = (nodes: seq[machine]);"
+        }
+        validator = NamedTupleConstructionValidator()
+        result = validator.validate(code, context)
+        assert not result.is_valid
+        assert any("bare value" in i.message for i in result.errors)
+
+    def test_wrong_field_name_in_new(self):
+        """Wrong field name should produce a warning."""
+        code = """
+        machine Node {
+            start state Init {
+                entry InitEntry;
+            }
+            fun InitEntry(config: tNodeConfig) {
+                goto Alive;
+            }
+            state Alive { }
+        }
+        machine TestScenario {
+            start state Init {
+                entry {
+                    var fd: machine;
+                    var n: machine;
+                    n = new Node((detector = fd,));
+                }
+            }
+        }
+        """
+        context = {
+            "types.p": "type tNodeConfig = (failureDetector: machine);"
+        }
+        validator = NamedTupleConstructionValidator()
+        result = validator.validate(code, context)
+        assert any("missing field" in i.message for i in result.warnings)
+        assert any("unexpected field" in i.message for i in result.warnings)
+
+    def test_bare_value_in_send(self):
+        """Bare value in send payload should be flagged."""
+        code = """
+        machine Sender {
+            start state Init {
+                entry {
+                    var target: machine;
+                    send target, eRegister, (this);
+                }
+            }
+        }
+        """
+        context = {
+            "types.p": (
+                "type tRegPayload = (client: machine);\n"
+                "event eRegister: tRegPayload;"
+            )
+        }
+        validator = NamedTupleConstructionValidator()
+        result = validator.validate(code, context)
+        assert not result.is_valid
+        assert any("bare value" in i.message for i in result.errors)
+
+    def test_correct_send_with_named_tuple(self):
+        """Correct named-tuple send should pass."""
+        code = """
+        machine Sender {
+            start state Init {
+                entry {
+                    var target: machine;
+                    send target, eRegister, (client = this,);
+                }
+            }
+        }
+        """
+        context = {
+            "types.p": (
+                "type tRegPayload = (client: machine);\n"
+                "event eRegister: tRegPayload;"
+            )
+        }
+        validator = NamedTupleConstructionValidator()
+        result = validator.validate(code, context)
+        assert result.is_valid
+
+    def test_no_config_type_skipped(self):
+        """Machines without a typed entry param should be skipped."""
+        code = """
+        machine Simple {
+            start state Init {
+                entry { }
+            }
+        }
+        machine Test {
+            start state Init {
+                entry {
+                    var s: machine;
+                    s = new Simple();
+                }
+            }
+        }
+        """
+        validator = NamedTupleConstructionValidator()
+        result = validator.validate(code)
+        assert result.is_valid
+
+    def test_inline_entry_param(self):
+        """Machines with inline entry (param: Type) should be detected."""
+        code = """
+        machine Worker {
+            start state Init {
+                entry (config: tWorkerConfig) {
+                    goto Working;
+                }
+            }
+            state Working { }
+        }
+        machine Test {
+            start state Init {
+                entry {
+                    var w: machine;
+                    w = new Worker(42);
+                }
+            }
+        }
+        """
+        context = {
+            "types.p": "type tWorkerConfig = (id: int);"
+        }
+        validator = NamedTupleConstructionValidator()
+        result = validator.validate(code, context)
+        assert not result.is_valid
+        assert any("bare value" in i.message for i in result.errors)
+
+
+class TestPostProcessorTrailingComma:
+    """Tests for trailing comma removal in parameter lists."""
+
+    def _process(self, code):
+        from core.compilation.p_post_processor import PCodePostProcessor
+        proc = PCodePostProcessor()
+        return proc.process(code)
+
+    def test_fun_trailing_comma(self):
+        code = "fun InitEntry(config: tConfig,) {\n    goto Active;\n}"
+        result = self._process(code)
+        assert ",)" not in result.code
+        assert "config: tConfig)" in result.code
+        assert len(result.fixes_applied) > 0
+
+    def test_entry_trailing_comma(self):
+        code = "entry (payload: tPayload,) {\n    goto Active;\n}"
+        result = self._process(code)
+        assert ",)" not in result.code
+        assert "payload: tPayload)" in result.code
+
+    def test_on_do_trailing_comma(self):
+        code = "on eRequest do (req: tRequest,) {\n    goto Active;\n}"
+        result = self._process(code)
+        assert ",)" not in result.code
+        assert "req: tRequest)" in result.code
+
+    def test_no_false_positive_on_tuple_values(self):
+        """Trailing comma in tuple values should NOT be removed."""
+        code = "send target, eEvent, (value,);"
+        result = self._process(code)
+        assert "(value,)" in result.code
+
+    def test_multi_param_trailing_comma(self):
+        code = "fun Foo(a: int, b: string,) {\n    return;\n}"
+        result = self._process(code)
+        assert ",)" not in result.code
+        assert "b: string)" in result.code
+
+    def test_no_trailing_comma_untouched(self):
+        code = "fun Bar(x: int) {\n    return;\n}"
+        result = self._process(code)
+        assert "x: int)" in result.code
+        assert not any("trailing comma" in f.lower() for f in result.fixes_applied)
+
+
+class TestPostProcessorTestDeclUnion:
+    """Tests for (union { ... }) fix in test declarations."""
+
+    def _process(self, code):
+        from core.compilation.p_post_processor import PCodePostProcessor
+        proc = PCodePostProcessor()
+        return proc.process(code, is_test_file=True)
+
+    def test_union_syntax_removed(self):
+        code = (
+            'test tcBasic [main=TestDriver]:\n'
+            '    assert Safety in\n'
+            '    (union { Server, Client, TestDriver });'
+        )
+        result = self._process(code)
+        assert "(union" not in result.code
+        assert "{ Server, Client, TestDriver }" in result.code
+        assert len(result.fixes_applied) > 0
+
+    def test_union_without_assert(self):
+        code = 'test tcBasic [main=TestDriver]: (union { Server, Client });'
+        result = self._process(code)
+        assert "(union" not in result.code
+        assert "{ Server, Client }" in result.code
+
+    def test_missing_semicolon_added(self):
+        code = (
+            'test tcBasic [main=TestDriver]:\n'
+            '    assert Safety in\n'
+            '    { Server, Client, TestDriver }\n'
+        )
+        result = self._process(code)
+        assert "TestDriver };" in result.code
+
+    def test_existing_semicolon_untouched(self):
+        code = (
+            'test tcBasic [main=TestDriver]:\n'
+            '    assert Safety in\n'
+            '    { Server, Client, TestDriver };\n'
+        )
+        result = self._process(code)
+        assert result.code.count("};") == 0 or result.code.count(";") == code.count(";")
+
+    def test_multiple_test_decls(self):
+        code = (
+            'test tc1 [main=D1]: assert S in (union { A, B, D1 });\n'
+            'test tc2 [main=D2]: assert S in (union { A, C, D2 });\n'
+        )
+        result = self._process(code)
+        assert "(union" not in result.code
+        assert "{ A, B, D1 }" in result.code
+        assert "{ A, C, D2 }" in result.code
+
+    def test_multiline_missing_semicolon(self):
+        """Multi-line test declaration missing semicolon should be fixed."""
+        code = (
+            'test tcBasic [main=Scenario1]:\n'
+            '    assert Safety, Liveness in\n'
+            '    { Server, Client, Scenario1 }\n'
+        )
+        result = self._process(code)
+        assert "Scenario1 };" in result.code
 
 
 if __name__ == "__main__":

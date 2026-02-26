@@ -11,8 +11,8 @@ event eTimeOut;
 event eDelayedTimeOut;
 
 machine Timer {
-  // user/client of the timer
   var client: machine;
+  var numDelays: int;
 
   start state Init {
     entry (_client : machine) {
@@ -22,18 +22,22 @@ machine Timer {
   }
 
   state WaitForTimerRequests {
-    on eStartTimer goto TimerStarted;
+    on eStartTimer goto TimerStarted with {
+      numDelays = 0;
+    };
 
     ignore eCancelTimer, eDelayedTimeOut;
   }
 
   state TimerStarted {
     entry {
-      // Only fire the timer with a chance of 1/10 to avoid livelocks
-      if(choose(10) == 0) {
+      // Bound the number of delays so the timer is guaranteed to
+      // eventually fire (required for liveness properties).
+      if (numDelays >= 3 || choose(10) == 0) {
         send client, eTimeOut;
         goto WaitForTimerRequests;
       } else {
+        numDelays = numDelays + 1;
         send this, eDelayedTimeOut;
       }
     }

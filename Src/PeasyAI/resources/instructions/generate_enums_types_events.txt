@@ -23,4 +23,23 @@ Write the enums, types, and events required for each of the state machines. If m
 
 4. **Do NOT declare config init events** (like eProposerInit, eAcceptorInit) unless the design explicitly uses the init-event pattern. Most machines use the constructor payload pattern where config is passed via `new Machine(config)`.
 
+5. **Named tuple construction must match the type definition exactly.** Every ``type`` you define here will be used in ``new Machine(...)`` and ``send ..., eEvent, ...`` call sites throughout the project. The field names you choose become the API contract:
+   ```
+   // Given this type definition:
+   type tNodeConfig = (failureDetector: machine);
+   // ALL construction sites MUST use the exact field name:
+   new Node((failureDetector = fd,));          // CORRECT
+   new Node((fd,));                            // WRONG — anonymous tuple
+   new Node(fd);                               // WRONG — bare value
+   ```
+   Choose field names carefully — they cannot be changed later without updating every call site.
+
+6. **Event payload types define the send-site contract.** When you declare ``event eFoo: tBarPayload;``, every ``send target, eFoo, ...`` in the project must construct a ``tBarPayload`` with named fields:
+   ```
+   // Given: event eNodeSuspected: tNodeSuspectedPayload;
+   //        type tNodeSuspectedPayload = (suspectedNode: machine);
+   send client, eNodeSuspected, (suspectedNode = node,);   // CORRECT
+   send client, eNodeSuspected, (node);                     // WRONG
+   ```
+
 Return only the generated P code without any explanation attached. Return the P code enclosed in <Enums_Types_Events.p></Enums_Types_Events.p>.

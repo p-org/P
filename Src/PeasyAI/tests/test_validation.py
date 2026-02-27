@@ -755,5 +755,91 @@ class TestPostProcessorTestDeclUnion:
         assert "Scenario1 };" in result.code
 
 
+class TestDocumentationReviewParser:
+    """Tests for the LLM documentation review response parser."""
+
+    def test_parse_valid_response(self):
+        from core.services.generation import GenerationService
+        original = "machine Coordinator {\n    start state Init {}\n}\n"
+        response = (
+            "Some analysis text.\n\n"
+            "<documented_code>\n"
+            "// Coordinator for the Two Phase Commit protocol\n"
+            "machine Coordinator {\n"
+            "    start state Init {}\n"
+            "}\n"
+            "</documented_code>"
+        )
+        result = GenerationService._parse_documentation_review_response(response, original)
+        assert result is not None
+        assert "// Coordinator for the Two Phase Commit protocol" in result
+        assert "machine Coordinator" in result
+
+    def test_parse_missing_tags(self):
+        from core.services.generation import GenerationService
+        original = "machine Coordinator {\n    start state Init {}\n}\n"
+        response = "Here is the code with comments:\nmachine Coordinator {\n    start state Init {}\n}\n"
+        result = GenerationService._parse_documentation_review_response(response, original)
+        assert result is None
+
+    def test_parse_empty_documented_code(self):
+        from core.services.generation import GenerationService
+        original = "machine Coordinator {\n    start state Init {}\n}\n"
+        response = "<documented_code>\n</documented_code>"
+        result = GenerationService._parse_documentation_review_response(response, original)
+        assert result is None
+
+    def test_parse_rejects_dropped_declarations(self):
+        from core.services.generation import GenerationService
+        original = "machine Coordinator {\n    start state Init {}\n}\n"
+        response = (
+            "<documented_code>\n"
+            "// Only comments, no machine declaration\n"
+            "// The coordinator handles transactions\n"
+            "</documented_code>"
+        )
+        result = GenerationService._parse_documentation_review_response(response, original)
+        assert result is None
+
+    def test_parse_accepts_matching_declarations(self):
+        from core.services.generation import GenerationService
+        original = (
+            "machine Coordinator {\n    start state Init {}\n}\n"
+            "machine Participant {\n    start state Init {}\n}\n"
+        )
+        response = (
+            "<documented_code>\n"
+            "// Coordinator orchestrates 2PC\n"
+            "machine Coordinator {\n    start state Init {}\n}\n"
+            "// Participant votes on transactions\n"
+            "machine Participant {\n    start state Init {}\n}\n"
+            "</documented_code>"
+        )
+        result = GenerationService._parse_documentation_review_response(response, original)
+        assert result is not None
+        assert "machine Coordinator" in result
+        assert "machine Participant" in result
+
+    def test_parse_spec_declarations_preserved(self):
+        from core.services.generation import GenerationService
+        original = "spec Atomicity observes eCommit {\n    start state Init {}\n}\n"
+        response = (
+            "<documented_code>\n"
+            "// Atomicity: ensures all-or-nothing commit semantics\n"
+            "spec Atomicity observes eCommit {\n    start state Init {}\n}\n"
+            "</documented_code>"
+        )
+        result = GenerationService._parse_documentation_review_response(response, original)
+        assert result is not None
+        assert "spec Atomicity" in result
+
+    def test_post_processor_no_design_doc_param(self):
+        """Verify PCodePostProcessor.process() no longer accepts design_doc."""
+        from core.compilation.p_post_processor import PCodePostProcessor
+        import inspect
+        sig = inspect.signature(PCodePostProcessor.process)
+        assert "design_doc" not in sig.parameters
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

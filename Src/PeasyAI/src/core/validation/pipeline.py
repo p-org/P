@@ -198,7 +198,8 @@ class ValidationPipeline:
                 from ..compilation.p_post_processor import PCodePostProcessor
                 processor = PCodePostProcessor()
                 pp_result = processor.process(
-                    current_code, filename, is_test_file=is_test_file
+                    current_code, filename,
+                    is_test_file=is_test_file,
                 )
                 current_code = pp_result.code
                 fixes_applied.extend(pp_result.fixes_applied)

@@ -341,6 +341,21 @@ Located in `GenerationService.review_spec_correctness()` (`Src/PeasyAI/src/core/
 
 The review can fix the spec file and, rarely, other files (e.g., types/events). Fixed files are returned in the `spec_fixes` field of the MCP response.
 
+#### Stage 5 — LLM Code Documentation Review (all files)
+
+For all generated files, an LLM-based review step adds insightful documentation comments. Unlike the previous regex-based approach (which copied text verbatim from the design doc), this step asks the LLM to write contextual comments that explain:
+
+- **Why** the code is structured the way it is (not just what it does)
+- What **invariants** are maintained by each machine/spec
+- What **protocol step** each event handler implements
+- What each **variable** tracks and why it's needed
+- What **safety property** each assertion checks
+- Non-obvious **design decisions** and tradeoffs
+
+Located in `GenerationService.review_code_documentation()` (`Src/PeasyAI/src/core/services/generation.py`), using the prompt `Src/PeasyAI/resources/instructions/review_code_documentation.txt`.
+
+The response parser (`_parse_documentation_review_response`) validates that the LLM didn't drop any machine/spec declarations from the code. If the LLM call fails or the response is malformed, the original code is returned unchanged.
+
 #### Pipeline Data Flow
 
 The `ValidationPipeline` is the **single place** where post-processing and validation happen. Both the MCP tool path and the workflow step path call it. `GenerationService._extract_p_code()` does NOT run any post-processing — it only extracts code from LLM responses.
@@ -382,14 +397,21 @@ LLM generates code
               │
               ▼
 ┌─────────────────────────────┐
+│ Stage 5: LLM Doc Review     │  all files — adds insightful documentation comments
+│  (services/generation.py)    │  explains invariants, protocol steps, design rationale
+│  review_code_documentation() │  prompt: review_code_documentation.txt
+└─────────────┬───────────────┘
+              │
+              ▼
+┌─────────────────────────────┐
 │ PipelineResult + fixes       │  is_valid, fixed_code, issues[], fixes_applied[]
 │  .to_review_dict()           │  + wiring_fixes / spec_fixes for cross-file changes
 └─────────────────────────────┘
 ```
 
 Two call sites invoke the pipeline:
-- **MCP tools**: `_review_generated_code()` in `tools/generation.py` — returns `to_review_dict()` for the MCP response. For test files, `review_test_wiring()` runs as Stage 3. For spec files, `review_spec_correctness()` runs as Stage 4.
-- **Workflow steps**: `_run_validation_pipeline()` in `workflow/p_steps.py` — returns the fixed code string
+- **MCP tools**: `_review_generated_code()` in `tools/generation.py` — returns `to_review_dict()` for the MCP response. For test files, `review_test_wiring()` runs as Stage 3. For spec files, `review_spec_correctness()` runs as Stage 4. For all files, `review_code_documentation()` runs as Stage 5.
+- **Workflow steps**: `_run_validation_pipeline()` in `workflow/p_steps.py` — returns the fixed code string. `_run_documentation_review()` runs Stage 5 afterward.
 
 #### MCP Response Severity
 

@@ -51,6 +51,30 @@ def _run_validation_pipeline(
         return code
 
 
+def _run_documentation_review(
+    service: 'GenerationService',
+    code: str,
+    design_doc: str,
+    context_files: Optional[Dict[str, str]] = None,
+) -> str:
+    """Run LLM-based documentation review and return the documented code.
+
+    Falls back to the original code if the LLM call fails.
+    """
+    try:
+        documented = service.review_code_documentation(
+            code=code,
+            design_doc=design_doc,
+            context_files=context_files,
+        )
+        if documented:
+            logger.info("Documentation review added comments")
+            return documented
+    except Exception as e:
+        logger.warning(f"Documentation review failed: {e}")
+    return code
+
+
 class CreateProjectStructureStep(WorkflowStep):
     """Step to create P project directory structure."""
     
@@ -124,7 +148,11 @@ class GenerateTypesEventsStep(WorkflowStep):
             if result.success:
                 filename = result.filename or "Enums_Types_Events.p"
                 code = _run_validation_pipeline(
-                    result.code, filename, project_path
+                    result.code, filename, project_path,
+                )
+                code = _run_documentation_review(
+                    self.service, code, design_doc,
+                    context_files=context.get("context_files"),
                 )
                 return StepResult.success(
                     output={
@@ -211,7 +239,11 @@ class GenerateMachineStep(WorkflowStep):
             if result.success:
                 filename = result.filename or f"{self.machine_name}.p"
                 code = _run_validation_pipeline(
-                    result.code, filename, project_path
+                    result.code, filename, project_path,
+                )
+                code = _run_documentation_review(
+                    self.service, code, design_doc,
+                    context_files=context_files,
                 )
                 return StepResult.success(
                     output={
@@ -282,7 +314,11 @@ class GenerateSpecStep(WorkflowStep):
             if result.success:
                 filename = result.filename or f"{self.spec_name}.p"
                 code = _run_validation_pipeline(
-                    result.code, filename, project_path
+                    result.code, filename, project_path,
+                )
+                code = _run_documentation_review(
+                    self.service, code, design_doc,
+                    context_files=context_files,
                 )
                 return StepResult.success(
                     output={
@@ -380,6 +416,10 @@ class GenerateTestStep(WorkflowStep):
                 code = _run_validation_pipeline(
                     result.code, filename, project_path,
                     is_test_file=True,
+                )
+                code = _run_documentation_review(
+                    self.service, code, design_doc,
+                    context_files=context_files,
                 )
                 return StepResult.success(
                     output={

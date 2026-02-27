@@ -112,8 +112,6 @@ def _review_generated_code(
 
     pipeline = ValidationPipeline(include_test_validators=is_test_file)
 
-    # Build merged context: on-disk files + in-memory context_files.
-    # In-memory files take precedence (they may be newer than what's on disk).
     merged_context: Optional[Dict[str, str]] = None
     if context_files:
         merged_context = dict(context_files)
@@ -258,9 +256,23 @@ def register_generation_tools(mcp, get_services, with_metadata):
         code = result.code
         if result.success and code:
             review = _review_generated_code(
-                code, result.filename or "Enums_Types_Events.p", params.project_path
+                code, result.filename or "Enums_Types_Events.p", params.project_path,
             )
             code = review["code"]
+
+            try:
+                documented = services["generation"].review_code_documentation(
+                    code=code,
+                    design_doc=params.design_doc,
+                    context_files=params.context_files,
+                )
+                if documented:
+                    code = documented
+                    review["fixes_applied"].append(
+                        "[DocReview] LLM added documentation comments"
+                    )
+            except Exception as e:
+                logger.warning(f"Documentation review skipped: {e}")
 
         return _build_generation_payload(
             "peasy-ai-gen-types-events", result, review, code, with_metadata
@@ -301,6 +313,20 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 context_files=params.context_files,
             )
             code = review["code"]
+
+            try:
+                documented = services["generation"].review_code_documentation(
+                    code=code,
+                    design_doc=params.design_doc,
+                    context_files=params.context_files,
+                )
+                if documented:
+                    code = documented
+                    review["fixes_applied"].append(
+                        "[DocReview] LLM added documentation comments"
+                    )
+            except Exception as e:
+                logger.warning(f"Documentation review skipped: {e}")
 
         return _build_generation_payload(
             "peasy-ai-gen-machine", result, review, code, with_metadata
@@ -366,6 +392,21 @@ def register_generation_tools(mcp, get_services, with_metadata):
                         break
             except Exception as e:
                 logger.warning(f"Spec review skipped: {e}")
+
+            # Stage C: LLM-based documentation comments
+            try:
+                documented = services["generation"].review_code_documentation(
+                    code=code,
+                    design_doc=params.design_doc,
+                    context_files=params.context_files,
+                )
+                if documented:
+                    code = documented
+                    review["fixes_applied"].append(
+                        "[DocReview] LLM added documentation comments"
+                    )
+            except Exception as e:
+                logger.warning(f"Documentation review skipped: {e}")
 
         extra: Dict[str, Any] = {}
         if spec_fixes:
@@ -441,6 +482,21 @@ def register_generation_tools(mcp, get_services, with_metadata):
                     )
             except Exception as e:
                 logger.warning(f"Wiring review skipped: {e}")
+
+            # Stage C: LLM-based documentation comments
+            try:
+                documented = services["generation"].review_code_documentation(
+                    code=code,
+                    design_doc=params.design_doc,
+                    context_files=params.context_files,
+                )
+                if documented:
+                    code = documented
+                    review["fixes_applied"].append(
+                        "[DocReview] LLM added documentation comments"
+                    )
+            except Exception as e:
+                logger.warning(f"Documentation review skipped: {e}")
 
         extra: Dict[str, Any] = {}
         if wiring_fixes:

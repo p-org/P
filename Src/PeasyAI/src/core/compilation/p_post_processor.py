@@ -7,7 +7,7 @@ This reduces the need for iterative fixing and improves code generation quality.
 
 import re
 import logging
-from typing import List, Tuple, Dict, Optional
+from typing import List, Optional
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,12 @@ class PCodePostProcessor:
         self.fixes_applied: List[str] = []
         self.warnings: List[str] = []
     
-    def process(self, code: str, filename: str = "", is_test_file: bool = False) -> PostProcessResult:
+    def process(
+        self,
+        code: str,
+        filename: str = "",
+        is_test_file: bool = False,
+    ) -> PostProcessResult:
         """
         Process P code and fix common issues.
         
@@ -72,7 +77,7 @@ class PCodePostProcessor:
         if is_test_file:
             code = self._warn_timer_wired_to_this(code, filename)
             code = self._ensure_test_declarations(code, filename)
-        
+
         if code != original_code:
             logger.info(f"Post-processing applied {len(self.fixes_applied)} fix(es) to {filename or 'code'}")
         
@@ -81,7 +86,9 @@ class PCodePostProcessor:
             fixes_applied=self.fixes_applied,
             warnings=self.warnings
         )
-    
+
+    # ── Syntax fixes ──────────────────────────────────────────────────
+
     def _fix_trailing_comma_in_params(self, code: str) -> str:
         """
         Remove trailing commas from function, entry, and handler parameter lists.

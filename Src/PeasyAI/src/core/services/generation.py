@@ -762,6 +762,91 @@ class GenerationService(BaseService):
 
         return self._parse_wiring_review_response(response.content)
 
+    # ── LLM-based code documentation review ─────────────────────────
+
+    def review_code_documentation(
+        self,
+        code: str,
+        design_doc: str,
+        context_files: Optional[Dict[str, str]] = None,
+    ) -> Optional[str]:
+        """
+        Use the LLM to add insightful documentation comments to generated P code.
+
+        Unlike regex-based approaches that copy text verbatim from the design
+        doc, this asks the LLM to write contextual comments explaining *why*
+        the code is structured the way it is, what invariants are maintained,
+        and what protocol steps are being implemented.
+
+        Returns the documented code string, or None if the LLM call fails.
+        """
+        self._status("Adding documentation comments via LLM…")
+
+        instruction = self._load_static_instruction("review_code_documentation.txt")
+        messages: List[Message] = []
+
+        if context_files:
+            messages.extend(self._compact_context_messages(context_files))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=f"<design_document>\n{self._compact_design_doc(design_doc)}\n</design_document>",
+        ))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=f"<code_to_document>\n{code}\n</code_to_document>",
+        ))
+
+        messages.append(Message(
+            role=MessageRole.USER,
+            content=instruction,
+        ))
+
+        system_prompt = (
+            "You are an expert P language developer adding documentation "
+            "comments to generated code. Write comments that explain the "
+            "reasoning, invariants, and protocol semantics — not comments "
+            "that merely restate what the code does."
+        )
+        config = LLMConfig(max_tokens=8192)
+        try:
+            response = self.llm.complete(messages, config, system_prompt)
+        except Exception as e:
+            logger.warning(f"Documentation review LLM call failed: {e}")
+            return None
+
+        return self._parse_documentation_review_response(response.content, code)
+
+    @staticmethod
+    def _parse_documentation_review_response(
+        content: str, original_code: str
+    ) -> Optional[str]:
+        """Extract documented code from the LLM response."""
+        match = re.search(
+            r"<documented_code>(.*?)</documented_code>", content, re.DOTALL
+        )
+        if not match:
+            logger.warning("Documentation review response missing <documented_code> tags")
+            return None
+
+        documented = match.group(1).strip()
+        if not documented:
+            return None
+
+        # Sanity check: the documented code should contain the same machine/spec
+        # declarations as the original (the LLM should not have changed the code)
+        orig_machines = set(re.findall(r'\b(?:machine|spec)\s+(\w+)', original_code))
+        doc_machines = set(re.findall(r'\b(?:machine|spec)\s+(\w+)', documented))
+        if orig_machines and not orig_machines.issubset(doc_machines):
+            logger.warning(
+                f"Documentation review dropped declarations: "
+                f"expected {orig_machines}, got {doc_machines}"
+            )
+            return None
+
+        return documented
+
     def generate_machines_parallel(
         self,
         machine_names: List[str],

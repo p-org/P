@@ -1,6 +1,11 @@
 from utils.module_utils import save_module_state, restore_module_state
-from utils import file_utils, global_state, log_utils, string_utils, regex_utils, compile_utils, checker_utils
-import re, os
+from utils import file_utils, global_state, log_utils, string_utils, regex_utils, checker_utils, compile_utils
+from utils.project_structure_utils import setup_project_structure
+from core.services.compilation import CompilationService
+from core.pipelining.prompting_pipeline import PromptingPipeline
+from utils.constants import *
+from utils.generate_p_code import extract_filenames, extract_validate_and_log_Pcode
+import re, os, json
 
 
 def _safe_format(template: str, **kwargs) -> str:
@@ -12,44 +17,45 @@ def _safe_format(template: str, **kwargs) -> str:
         for key, value in kwargs.items():
             result = result.replace("{" + key + "}", str(value))
         return result
-from utils.project_structure_utils import setup_project_structure
-from core.pipelining.prompting_pipeline import PromptingPipeline
-from utils.constants import *
-from utils.generate_p_code import extract_filenames, extract_validate_and_log_Pcode
-from core.pipelining import examples as pipeline_examples
-import json
-import subprocess
 
 def compiler_analysis(model_id, pipeline, all_responses, num_of_iterations, ctx_pruning=None):
     max_iterations = num_of_iterations
     recent_project_path = file_utils.get_recent_project_path()
 
-    compilation_success, compilation_result = compile_utils.compile_Pcode(recent_project_path)
+    compilation_service = CompilationService()
+    compile_result = compilation_service.compile(recent_project_path)
+    compilation_success = compile_result.success
+    compilation_output = compile_result.stdout or compile_result.stderr or ""
+
     if compilation_success:
         print(f":white_check_mark: :green[Compilation succeeded in {max_iterations - num_of_iterations} iterations.]")
         print(f"Compilation succeeded in {max_iterations - num_of_iterations} iterations.")
         return
-    
-    P_filenames_dict = regex_utils.get_all_P_files(compilation_result)
+
+    P_filenames_dict = regex_utils.get_all_P_files(compilation_output)
     while (not compilation_success and num_of_iterations > 0):
-        file_name, line_number, column_number = compile_utils.parse_compile_error(compilation_result)
+        # Parse errors using CompilationService
+        errors = compilation_service.get_all_errors(compilation_output)
+        if not errors:
+            break
+        error = errors[0]
+        file_name = os.path.basename(error.file_path)
+        line_number = error.line_number
+        column_number = error.column_number
+
         print(f". . . :red[[Iteration #{(max_iterations - num_of_iterations)}] Compilation failed in {file_name} at line {line_number}:{column_number}. Fixing the error...]")
-        # 1. Obtain the error message's information. 
-        custom_msg, file_path, file_contents = compile_utils.get_correction_instruction(P_filenames_dict, compilation_result)
-        
+
+        # Get file path and contents
+        file_path = P_filenames_dict.get(file_name, error.file_path)
+        file_contents = file_utils.read_file(file_path) if os.path.exists(file_path) else ""
+
+        # Build correction instruction
+        custom_msg = f"Fix the following compilation error in {file_name} at line {line_number}, column {column_number}:\n{error.message}"
+
         # Continue the conversation to fix compiler errors
-        # Apply context pruning before fixing errors
-        # if ctx_pruning:
-        #     original_messages = messages.copy()
-        #     messages = ctx_pruning.prune_context(messages, file_name)
-        #     ctx_pruning.log_context_metrics(original_messages, messages, MockStatus())
-            
         pipeline.add_user_msg(custom_msg)
         response = pipeline.invoke_llm(model_id, candidates=1, heuristic='random')
         print(f". . . . . . Compiling the fixed code...")
-        # Get token usage from response
-        # token_usage = response["current_tokens"]
-        # backend_status.write(f". . . . . . Token usage - Stage: Input {token_usage['inputTokens']}, Output {token_usage['outputTokens']} | Cumulative: Input {globals.model_metrics['inputTokens']}, Output {globals.model_metrics['outputTokens']}")
         log_filename, Pcode = extract_validate_and_log_Pcode(response, "", "", logging_enabled=False)
         if log_filename is not None and Pcode is not None:
             log_utils.log_Pcode_to_file(Pcode, file_path)
@@ -58,15 +64,13 @@ def compiler_analysis(model_id, pipeline, all_responses, num_of_iterations, ctx_
 
         # Log the diff
         log_utils.log_code_diff(file_contents, response, "After fixing the P code")
-        compilation_success, compilation_result = compile_utils.compile_Pcode(recent_project_path)
-        print("============================DEBUG NOW ===========")
-        print(f"COMPILATION RESULT : {compilation_result}")
-        print(f"COMPILATION STATUS : {compilation_success}")    
-    if compilation_success: 
+        compile_result = compilation_service.compile(recent_project_path)
+        compilation_success = compile_result.success
+        compilation_output = compile_result.stdout or compile_result.stderr or ""
+    if compilation_success:
         print(f":green[Compilation succeeded in {max_iterations - num_of_iterations} iterations.]")
-        # backend_status.write(f":green[Total compilation token usage - Input: {globals.model_metrics['inputTokens']} tokens, Output: {globals.model_metrics['outputTokens']} tokens]")
         print(f"Compilation succeeded in {max_iterations - num_of_iterations} iterations.")
-    
+
     global_state.compile_iterations += (max_iterations - num_of_iterations)
 
     global_state.compile_success = compilation_success

@@ -1,7 +1,5 @@
 import streamlit as st
-# from utils.global_state import chat_history
 from core.modes.DesignDocInputModeV2 import DesignDocInputModeV2Wrapper
-# from app_modes.InteractiveMode import InteractiveMode
 from ui.stlit.SideNav import SideNav
 from core.modes.pchecker_mode import PCheckerMode
 
@@ -52,8 +50,6 @@ def display_page():
             DesignDocInputModeV2Wrapper()
         elif st.session_state['p_easyai_state'] == "PCheckerMode":
             PCheckerMode()
-        elif st.session_state['p_easyai_state'] == "InteractiveMode":
-            InteractiveMode()
         else:
             display_home_page()                
     
@@ -65,7 +61,6 @@ def display_home_page():
     st.write("Hi! I'm an AI Assistant trained on writing P Code. What would you like me to do today?")
     st.button("Generate P Code from a design doc", on_click=change_app_state, args = ["DesignDocInputMode"])
     st.button("Run PChecker on P project", on_click=change_app_state, args=["PCheckerMode"])
-    st.button("P Code Interactive", on_click=change_app_state, args = ["InteractiveMode"])
 
 
 def main():

@@ -24,34 +24,6 @@ def read_file(file_path):
         raise e
     
 
-def read_file_line(file_path, line_number):
-    """
-    Reads a single line of a file in the local directory.
-
-    Parameters:
-    file_path (str): The path of the file to be read.
-    line_number (int): The line number of the file we want to read
-
-    Returns:
-    str: The content of the single line from the file.
-    """
-    try:
-        file_path = os.path.join(os.getcwd(), file_path)
-        with open(file_path, 'r') as file:
-            lines = file.readlines()
-            if line_number <= len(lines):
-                specific_line = lines[line_number - 1]  # Convert to 0-based index
-                return specific_line  # Use strip() to remove any leading/trailing whitespace
-            else:
-                raise ValueError(f"Error: The file only has {len(lines)} lines.")
-    except FileNotFoundError:
-        return f"Error: The file '{file_path}' was not found."
-    except IOError as e:
-        return f"Error: An IOError occurred while reading the file '{file_path}'. Details: {e}"
-    except Exception as e:
-        return e
-    
-
 def write_file(file_path, content):
     """
     Writes content to a file, creating the directory and file if they do not exist.
@@ -249,77 +221,6 @@ def map_p_file_to_path(p_files):
     for file in p_files:
         mapped_files[os.path.basename(file)] = file
     return mapped_files
-
-
-def generate_file_name_for_dup(file_list, file_name):
-    """
-    Generates a new file name if there are duplicates in the logs directory
-    Parameters:
-    file_list (list): The path to the directory to list contents of.
-    file_name (str): The name of the project that may be a a duplicate of another project.
-    
-    Returns: 
-    new_name (str): The same file_name or a different one with a number attached to it
-    """
-    new_name = file_name
-    num_iterations = 1
-    while new_name in file_list:
-        new_name = file_name + " (" + str(num_iterations) + ")"
-        num_iterations = num_iterations + 1
-    return new_name
-
-
-def extract_timestamp(directory_path):
-    """
-    Extract the timestamp (creation time) of the directory.
-    Parameters: 
-    directory_path (str): The path of a directory 
-
-    Returns: The time the directory was created. 
-    """
-    return os.stat(directory_path).st_ctime
-
-
-
-def get_modules_file(p_files):
-    """
-    Finds the first P file in the provided dictionary that ends with 'Modules.p'.
-
-    Parameters:
-    p_files (dict): Dictionary of P file paths.
-
-    Returns:
-    module_file_name (str): The file path that ends with 'Modules.p', or None if no such file is found.
-    """
-    try:
-        module_file_name = None
-        for f in p_files:
-            if f.endswith("Modules.p"):
-                module_file_name = f
-        if not module_file_name:
-            for f in p_files:
-                curr_path = p_files[f]
-                if "PSrc" in curr_path:
-                    file_contents = read_file(curr_path)
-                    if "module" in file_contents:
-                        module_file_name = f
-        return module_file_name
-    except:
-        raise ValueError("An error occured: No modules were created in the P project. Please try again.")
-
-def get_last_file(error_msg):
-    """
-    Extracts the last file name from the error message.
-
-    Parameters:
-    error_msg (str): The error message to parse.
-
-    Returns: str: The last file name found in the error message.
-    """
-    dup_file_regex = r'[\s\S]+ [\s\S]+\/([\s\S]+.p)'
-    match = re.search(dup_file_regex, error_msg)
-    logger.info(match.group())
-    return match.group(1)
 
 
 def get_all_files(file_path, filter_ext=None):

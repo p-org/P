@@ -5,6 +5,16 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 import logging
 
+from core.security import (
+    validate_project_path,
+    validate_file_write_path,
+    PathSecurityError,
+    sanitize_error,
+    check_input_size,
+    MAX_DESIGN_DOC_BYTES,
+    MAX_CODE_BYTES,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -126,6 +136,23 @@ def _review_generated_code(
     return result.to_review_dict()
 
 
+def _validate_generation_inputs(
+    tool_name: str,
+    with_metadata,
+    project_path: Optional[str] = None,
+    design_doc: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Validate common generation tool inputs. Returns an error payload or None."""
+    try:
+        if project_path:
+            validate_project_path(project_path)
+        if design_doc:
+            check_input_size(design_doc, "design_doc", MAX_DESIGN_DOC_BYTES)
+    except (PathSecurityError, ValueError) as e:
+        return with_metadata(tool_name, {"success": False, "error": str(e)})
+    return None
+
+
 class GenerateProjectParams(BaseModel):
     """Parameters for project structure creation (STEP 1)"""
     design_doc: str = Field(
@@ -145,14 +172,14 @@ class GenerateProjectParams(BaseModel):
 
 class GenerateTypesEventsParams(BaseModel):
     """Parameters for types/events generation"""
-    design_doc: str = Field(..., description="The design document content")
+    design_doc: str = Field(..., description="The design document content", max_length=500_000)
     project_path: str = Field(..., description="Absolute path to the P project root")
 
 
 class GenerateMachineParams(BaseModel):
     """Parameters for machine generation"""
     machine_name: str = Field(..., description="Name of the machine to generate")
-    design_doc: str = Field(..., description="The design document content")
+    design_doc: str = Field(..., description="The design document content", max_length=500_000)
     project_path: str = Field(..., description="Absolute path to the P project root")
     context_files: Optional[Dict[str, str]] = Field(
         default=None,
@@ -168,7 +195,7 @@ class GenerateMachineParams(BaseModel):
 class GenerateSpecParams(BaseModel):
     """Parameters for specification generation"""
     spec_name: str = Field(..., description="Name of the specification file to generate")
-    design_doc: str = Field(..., description="The design document content")
+    design_doc: str = Field(..., description="The design document content", max_length=500_000)
     project_path: str = Field(..., description="Absolute path to the P project root")
     context_files: Optional[Dict[str, str]] = Field(
         default=None,
@@ -189,7 +216,7 @@ class GenerateSpecParams(BaseModel):
 class GenerateTestParams(BaseModel):
     """Parameters for test generation"""
     test_name: str = Field(..., description="Name of the test file to generate")
-    design_doc: str = Field(..., description="The design document content")
+    design_doc: str = Field(..., description="The design document content", max_length=500_000)
     project_path: str = Field(..., description="Absolute path to the P project root")
     context_files: Optional[Dict[str, str]] = Field(
         default=None,
@@ -210,7 +237,7 @@ class GenerateTestParams(BaseModel):
 class SavePFileParams(BaseModel):
     """Parameters for saving a P file"""
     file_path: str = Field(..., description="Absolute path where to save the file")
-    code: str = Field(..., description="The P code content to save")
+    code: str = Field(..., description="The P code content to save", max_length=200_000)
 
 
 def register_generation_tools(mcp, get_services, with_metadata):
@@ -244,6 +271,13 @@ def register_generation_tools(mcp, get_services, with_metadata):
     )
     def generate_types_events(params: GenerateTypesEventsParams) -> Dict[str, Any]:
         logger.info("[TOOL] peasy-ai-gen-types-events (preview)")
+
+        err = _validate_generation_inputs(
+            "peasy-ai-gen-types-events", with_metadata,
+            project_path=params.project_path, design_doc=params.design_doc,
+        )
+        if err:
+            return err
 
         services = get_services()
         result = services["generation"].generate_types_events(
@@ -284,6 +318,13 @@ def register_generation_tools(mcp, get_services, with_metadata):
     )
     def generate_machine(params: GenerateMachineParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-gen-machine: {params.machine_name} (preview, ensemble={params.ensemble_size})")
+
+        err = _validate_generation_inputs(
+            "peasy-ai-gen-machine", with_metadata,
+            project_path=params.project_path, design_doc=params.design_doc,
+        )
+        if err:
+            return err
 
         services = get_services()
         if params.ensemble_size > 1:
@@ -338,6 +379,13 @@ def register_generation_tools(mcp, get_services, with_metadata):
     )
     def generate_spec(params: GenerateSpecParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-gen-spec: {params.spec_name} (preview, ensemble={params.ensemble_size})")
+
+        err = _validate_generation_inputs(
+            "peasy-ai-gen-spec", with_metadata,
+            project_path=params.project_path, design_doc=params.design_doc,
+        )
+        if err:
+            return err
 
         ctx = dict(params.context_files) if params.context_files else {}
         if params.checker_feedback:
@@ -423,6 +471,13 @@ def register_generation_tools(mcp, get_services, with_metadata):
     )
     def generate_test(params: GenerateTestParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-gen-test: {params.test_name} (preview, ensemble={params.ensemble_size})")
+
+        err = _validate_generation_inputs(
+            "peasy-ai-gen-test", with_metadata,
+            project_path=params.project_path, design_doc=params.design_doc,
+        )
+        if err:
+            return err
 
         ctx = dict(params.context_files) if params.context_files else {}
         if params.checker_feedback:
@@ -517,6 +572,29 @@ def register_generation_tools(mcp, get_services, with_metadata):
     )
     def save_p_file(params: SavePFileParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-save-file: {params.file_path}")
+
+        project_root = _find_project_root(params.file_path)
+        if project_root:
+            try:
+                validate_file_write_path(params.file_path, project_root)
+            except PathSecurityError as e:
+                return with_metadata("peasy-ai-save-file", {
+                    "success": False, "error": str(e),
+                })
+        else:
+            resolved = Path(params.file_path).resolve()
+            if resolved.suffix not in {".p", ".pproj"}:
+                return with_metadata("peasy-ai-save-file", {
+                    "success": False,
+                    "error": f"Only .p files can be saved; got '{resolved.suffix}'",
+                })
+
+        try:
+            check_input_size(params.code, "code", MAX_CODE_BYTES)
+        except ValueError as e:
+            return with_metadata("peasy-ai-save-file", {
+                "success": False, "error": str(e),
+            })
 
         services = get_services()
         result = services["generation"].save_p_file(

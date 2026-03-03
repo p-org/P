@@ -4,6 +4,8 @@ from typing import Dict, Any
 from pydantic import BaseModel, Field
 import logging
 
+from core.security import validate_project_path, PathSecurityError, sanitize_error
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -39,8 +41,15 @@ def register_compilation_tools(mcp, get_services, with_metadata):
     def p_compile(params: PCompileParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-compile: {params.path}")
 
+        try:
+            validated = validate_project_path(params.path)
+        except PathSecurityError as e:
+            return with_metadata("peasy-ai-compile", {
+                "success": False, "error": str(e), "return_code": -1,
+            })
+
         services = get_services()
-        result = services["compilation"].compile(params.path)
+        result = services["compilation"].compile(str(validated))
 
         response = {
             "success": result.success,
@@ -86,9 +95,16 @@ def register_compilation_tools(mcp, get_services, with_metadata):
     def p_check(params: PCheckParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-check: {params.path}")
 
+        try:
+            validated = validate_project_path(params.path)
+        except PathSecurityError as e:
+            return with_metadata("peasy-ai-check", {
+                "success": False, "error": str(e),
+            })
+
         services = get_services()
         result = services["compilation"].run_checker(
-            project_path=params.path,
+            project_path=str(validated),
             schedules=params.schedules,
             timeout=params.timeout,
             max_steps=params.max_steps,

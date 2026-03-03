@@ -5,6 +5,13 @@ from pydantic import BaseModel, Field
 import logging
 import os
 
+from core.security import (
+    validate_project_path,
+    PathSecurityError,
+    check_input_size,
+    MAX_DESIGN_DOC_BYTES,
+)
+
 logger = logging.getLogger(__name__)
 
 from core.workflow import (
@@ -86,6 +93,15 @@ def register_workflow_tools(mcp, get_services, with_metadata):
 - full_generation: Generate a complete P project from a design doc (requires design_doc and project_path). NOTE: Prefer the step-by-step generation tools instead for better quality and user control. Only use full_generation when the user explicitly requests hands-off automated generation."""
     )
     def run_workflow(params: RunWorkflowParams) -> Dict[str, Any]:
+        try:
+            validate_project_path(params.project_path)
+            if params.design_doc:
+                check_input_size(params.design_doc, "design_doc", MAX_DESIGN_DOC_BYTES)
+        except (PathSecurityError, ValueError) as e:
+            return with_metadata("peasy-ai-run-workflow", {
+                "success": False, "error": str(e),
+            })
+
         engine, factory = _get_workflow_engine(get_services)
 
         context = {
@@ -144,7 +160,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
             logger.error(f"Workflow execution failed: {e}")
             payload = {
                 "success": False,
-                "error": str(e)
+                "error": f"Workflow failed: {type(e).__name__}",
             }
             return with_metadata("peasy-ai-run-workflow", payload)
 
@@ -185,7 +201,7 @@ def register_workflow_tools(mcp, get_services, with_metadata):
             logger.error(f"Workflow resume failed: {e}")
             payload = {
                 "success": False,
-                "error": str(e)
+                "error": f"Workflow resume failed: {type(e).__name__}",
             }
             return with_metadata("peasy-ai-resume-workflow", payload)
 

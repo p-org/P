@@ -253,19 +253,25 @@ class PCodePostProcessor:
 
             first_non_var_idx = -1
             first_var_idx = -1
+            last_var_idx = -1
             for i, line in enumerate(lines):
                 stripped = line.strip()
                 if not stripped or stripped.startswith('//'):
                     continue
-                if stripped.startswith('var '):
+                if stripped.startswith('var ') and ';' in stripped:
                     if first_var_idx == -1:
                         first_var_idx = i
+                    last_var_idx = i
                 else:
                     if first_non_var_idx == -1:
                         first_non_var_idx = i
-                        break
 
-            if first_var_idx > first_non_var_idx and first_non_var_idx != -1:
+            needs_reorder = (
+                first_var_idx != -1
+                and first_non_var_idx != -1
+                and (first_var_idx > first_non_var_idx or last_var_idx > first_non_var_idx)
+            )
+            if needs_reorder:
                 new_body = '\n'.join(var_lines + other_lines)
                 # Reconstruct: header + { + new_body + }
                 replacement = header + '{' + new_body + '}'

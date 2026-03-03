@@ -2,6 +2,7 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -53,7 +54,11 @@ class TestMCPContracts(unittest.TestCase):
         self.assertGreater(len(response["next_actions"]), 0)
         self.assertEqual(response["metadata"]["tool"], "demo_tool")
 
-    def test_generation_tool_contract_shape(self):
+    @patch("ui.mcp.tools.generation.validate_project_path")
+    def test_generation_tool_contract_shape(self, mock_validate):
+        # Mock path validation to return the path as-is
+        mock_validate.return_value = Path("/tmp/Project")
+
         mcp = DummyMCP()
 
         mock_result = SimpleNamespace(
@@ -84,7 +89,11 @@ class TestMCPContracts(unittest.TestCase):
         self.assertIn("metadata", response)
 
 
-    def test_compilation_tool_contract_shape(self):
+    @patch("ui.mcp.tools.compilation.validate_project_path")
+    def test_compilation_tool_contract_shape(self, mock_validate):
+        # Mock path validation to return the path as-is
+        mock_validate.return_value = Path("/tmp/Project")
+
         mcp = DummyMCP()
         compile_result = SimpleNamespace(
             success=True,

@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 from pathlib import Path
 import logging
 
+from core.security import PathSecurityError, validate_project_path
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -108,7 +110,7 @@ Returns relevant P code examples with descriptions, similarity scores, and corpu
             return with_metadata("peasy-ai-search-examples", payload)
         except Exception as e:
             logger.error(f"Search error: {e}")
-            payload = {"success": False, "error": str(e)}
+            payload = {"success": False, "error": f"Search failed: {type(e).__name__}"}
             return with_metadata("peasy-ai-search-examples", payload)
 
     @mcp.tool(
@@ -175,7 +177,7 @@ Returns examples with code and syntax hints to use in your prompt."""
             return with_metadata("peasy-ai-get-context", payload)
         except Exception as e:
             logger.error(f"Context error: {e}")
-            payload = {"success": False, "error": str(e)}
+            payload = {"success": False, "error": f"Context lookup failed: {type(e).__name__}"}
             return with_metadata("peasy-ai-get-context", payload)
 
     @mcp.tool(
@@ -201,10 +203,17 @@ Indexed examples can then be found via peasy-ai-search-examples."""
 
         try:
             rag = get_rag_service()
-            path = Path(params.path)
+            path = Path(params.path).resolve()
+
+            # Validate path to prevent path traversal attacks
+            try:
+                validate_project_path(str(path))
+            except PathSecurityError as e:
+                payload = {"success": False, "error": str(e)}
+                return with_metadata("peasy-ai-index-examples", payload)
 
             if not path.exists():
-                payload = {"success": False, "error": f"Path not found: {params.path}"}
+                payload = {"success": False, "error": f"Path not found: {path.name}"}
                 return with_metadata("peasy-ai-index-examples", payload)
 
             if path.is_file():
@@ -221,7 +230,7 @@ Indexed examples can then be found via peasy-ai-search-examples."""
             return with_metadata("peasy-ai-index-examples", payload)
         except Exception as e:
             logger.error(f"Index error: {e}")
-            payload = {"success": False, "error": str(e)}
+            payload = {"success": False, "error": f"Indexing failed: {type(e).__name__}"}
             return with_metadata("peasy-ai-index-examples", payload)
 
     return {

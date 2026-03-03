@@ -18,7 +18,7 @@ class TestSnowflakeModelSelection(unittest.TestCase):
                 "base_url": "https://snowflake.invalid/v1",
             }
         )
-        self.assertEqual(provider.default_model, "claude-sonnet-4-5")
+        self.assertEqual(provider.default_model, "claude-opus-4-6")
 
     def test_explicit_config_model_overrides_default(self):
         provider = SnowflakeCortexProvider(

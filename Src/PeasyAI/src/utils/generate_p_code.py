@@ -4,8 +4,10 @@ import traceback
 import re
 from botocore.exceptions import ClientError
 import os
-from utils import file_utils, regex_utils, log_utils, compile_utils, global_state
+from utils import file_utils, regex_utils, log_utils, global_state
 from core.pipelining import prompting_pipeline
+from core.compilation.p_post_processor import PCodePostProcessor
+from core.services.compilation import CompilationService
 import json
 
 logger = logging.getLogger(__name__)
@@ -233,12 +235,6 @@ def tag_surround(tagname, contents):
     return f"<{os.path.basename(tagname)}>\n{contents}\n</{os.path.basename(tagname)}>"
 
 
-def log_token_usage(token_usage, backend_status):
-    """Log token usage metrics to the backend status."""
-    backend_status.write(f"Token usage - Stage: Input {token_usage['inputTokens']}, Output {token_usage['outputTokens']} | "
-                         f"Cumulative: Input {global_state.model_metrics['inputTokens']}, Output {global_state.model_metrics['outputTokens']}")
-
-
 def generate_machine_code(system_prompt, design_doc_content,machines_list, filename, backend_status, dirname, all_responses):
     """Generate machine code using either two-stage or single-stage process."""
     # Stage 1: Generate structure
@@ -342,8 +338,10 @@ def extract_validate_and_log_Pcode(llm_response, parent_dirname, dirname, loggin
     
     filename, Pcode = parse_llm_response_with_code(llm_response)
     if filename and Pcode:
-        # Run manual syntax validation
-        Pcode = compile_utils.run_manual_syntax_validation(Pcode)
+        # Run post-processing to fix common LLM mistakes
+        post_processor = PCodePostProcessor()
+        result = post_processor.process(Pcode)
+        Pcode = result.code
 
         # Log validated P code
         if logging_enabled:
@@ -479,7 +477,12 @@ def get_latest_context(all_responses, machines_list):
 def compiler_analysis(system_prompt,all_responses,machines_list, num_of_iterations, backend_status, ctx_pruning=None):
     max_iterations = num_of_iterations
     recent_project_path = file_utils.get_recent_project_path()
-    compilation_success, compilation_result = compile_utils.compile_Pcode(recent_project_path)
+
+    compilation_service = CompilationService()
+    compile_result = compilation_service.compile(recent_project_path)
+    compilation_success = compile_result.success
+    compilation_result = compile_result.stdout or compile_result.stderr or ""
+
     if compilation_success:
         backend_status.write(f":white_check_mark: :green[Compilation succeeded in {max_iterations - num_of_iterations} iterations.]")
         logger.info(f"Compilation succeeded in {max_iterations - num_of_iterations} iterations.")
@@ -487,11 +490,26 @@ def compiler_analysis(system_prompt,all_responses,machines_list, num_of_iteratio
 
     P_filenames_dict = regex_utils.get_all_P_files(compilation_result)
     while (not compilation_success and num_of_iterations > 0):
-        file_name, line_number, column_number = compile_utils.parse_compile_error(compilation_result)
+        # Parse error from compilation output
+        errors = compilation_service.get_all_errors(compilation_result)
+        if not errors:
+            break
+        error = errors[0]
+        file_name = os.path.basename(error.file_path)
+        line_number = error.line_number
+        column_number = error.column_number
+        error_message = error.message
+
         current_iteration = max_iterations - num_of_iterations
         backend_status.write(f". . . :red[[Iteration #{current_iteration}] Compilation failed in {file_name} at line {line_number}:{column_number}. Fixing the error...]")
-        #  Obtain the error message's information.
-        custom_msg, file_path, file_contents = compile_utils.get_correction_instruction(P_filenames_dict, compilation_result)
+
+        # Get file path and contents
+        file_path = P_filenames_dict.get(file_name, error.file_path)
+        file_contents = file_utils.read_file(file_path) if os.path.exists(file_path) else ""
+
+        # Build correction instruction
+        custom_msg = f"Fix the following compilation error in {file_name} at line {line_number}, column {column_number}:\n{error_message}"
+
         # Get latest context with most up-to-date file versions
         latest_context = get_latest_context(all_responses, machines_list)
         # Get the required specific filename from llm to fix the issue
@@ -525,7 +543,7 @@ def compiler_analysis(system_prompt,all_responses,machines_list, num_of_iteratio
 
             4. Current file contents:
             {file_contents}
-            
+
             5. Additional Context : {additional_context}
 
             """)
@@ -541,9 +559,11 @@ def compiler_analysis(system_prompt,all_responses,machines_list, num_of_iteratio
 
         # Log the diff
         log_utils.log_code_diff(file_contents, response, "After fixing the P code")
-        compilation_success, compilation_result = compile_utils.compile_Pcode(recent_project_path)
+        compile_result = compilation_service.compile(recent_project_path)
+        compilation_success = compile_result.success
+        compilation_result = compile_result.stdout or compile_result.stderr or ""
 
-    if compilation_success: 
+    if compilation_success:
         backend_status.write(f":green[Compilation succeeded in {max_iterations - num_of_iterations} iterations.]")
         logger.info(f"Compilation succeeded in {max_iterations - num_of_iterations} iterations.")
     global_state.compile_iterations += (max_iterations - num_of_iterations)

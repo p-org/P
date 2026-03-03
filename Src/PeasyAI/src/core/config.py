@@ -165,6 +165,18 @@ def load_settings(path: Optional[Path] = None) -> PeasyAISettings:
         )
         return PeasyAISettings()
 
+    # Warn if the file is world-readable (contains API keys)
+    try:
+        mode = path.stat().st_mode & 0o777
+        if mode & 0o044:
+            logger.warning(
+                "Settings file %s is readable by group/others (mode %o). "
+                "Consider running: chmod 600 %s",
+                path, mode, path,
+            )
+    except OSError:
+        pass
+
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
@@ -233,6 +245,10 @@ def init_settings() -> Path:
     Returns the path to the created file.
     """
     PEASYAI_HOME.mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(str(PEASYAI_HOME), 0o700)
+    except OSError:
+        pass
 
     template = {
         "$schema": "https://raw.githubusercontent.com/p-org/P/main/Src/PeasyAI/.peasyai-schema.json",
@@ -273,6 +289,10 @@ def init_settings() -> Path:
         json.dumps(template, indent=2) + "\n",
         encoding="utf-8",
     )
+    try:
+        os.chmod(str(SETTINGS_FILE), 0o600)
+    except OSError:
+        pass
     logger.info("Created starter settings at %s", SETTINGS_FILE)
     return SETTINGS_FILE
 

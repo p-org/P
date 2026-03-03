@@ -38,16 +38,6 @@ def move_recent_to_archive():
         file_utils.move_dir_contents(globals.recent_dir_path, globals.archive_base_dir_path)
 
 
-def create_pproj_file(parent_dirname):
-    """
-    Creates a .pproj file with the parent_dirname name in the specified directory.
-    """
-    pproj_content = file_utils.read_file(globals.pproj_template_path).format(project_name=globals.project_name_with_timestamp)
-    parent_dir = globals.custom_dir_path or globals.recent_dir_path
-    file_path = os.path.join(parent_dir, parent_dirname, f"{parent_dirname}.pproj")
-    file_utils.write_file(file_path, pproj_content)
-
-
 def log_llmresponse(llmresponse):
     """
     Logs the LLM response to a file within the logs directory.

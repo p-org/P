@@ -6,6 +6,16 @@ from pathlib import Path
 import logging
 
 from core.services.compilation import ParsedError
+from core.security import (
+    validate_project_path,
+    validate_file_read_path,
+    PathSecurityError,
+    sanitize_error,
+    check_input_size,
+    MAX_ERROR_MESSAGE_BYTES,
+    MAX_TRACE_LOG_BYTES,
+    MAX_USER_GUIDANCE_BYTES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -13,27 +23,29 @@ logger = logging.getLogger(__name__)
 class FixCompilerErrorParams(BaseModel):
     """Parameters for fixing compilation errors"""
     project_path: str = Field(..., description="Absolute path to the P project")
-    error_message: str = Field(..., description="The compiler error message")
+    error_message: str = Field(..., description="The compiler error message", max_length=10_000)
     file_path: str = Field(..., description="Path to the file with the error")
     line_number: int = Field(default=0, description="Line number of the error")
     column_number: int = Field(default=0, description="Column number of the error")
     user_guidance: Optional[str] = Field(
         default=None,
-        description="User guidance after failed attempts (provide when needs_guidance was returned)"
+        description="User guidance after failed attempts (provide when needs_guidance was returned)",
+        max_length=50_000,
     )
 
 
 class FixCheckerErrorParams(BaseModel):
     """Parameters for fixing PChecker errors"""
     project_path: str = Field(..., description="Absolute path to the P project")
-    trace_log: str = Field(..., description="The PChecker trace log showing the error")
+    trace_log: str = Field(..., description="The PChecker trace log showing the error", max_length=1_000_000)
     error_category: Optional[str] = Field(
         default=None,
         description="Category of the error (e.g., 'assertion_failure', 'deadlock')"
     )
     user_guidance: Optional[str] = Field(
         default=None,
-        description="User guidance after failed attempts"
+        description="User guidance after failed attempts",
+        max_length=50_000,
     )
 
 
@@ -292,6 +304,17 @@ After 3 failed attempts, returns needs_guidance=true with questions for the user
     def fix_compiler_error(params: FixCompilerErrorParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-fix-compile-error: {params.file_path}")
 
+        try:
+            validate_project_path(params.project_path)
+            validate_file_read_path(params.file_path, params.project_path)
+            check_input_size(params.error_message, "error_message", MAX_ERROR_MESSAGE_BYTES)
+            if params.user_guidance:
+                check_input_size(params.user_guidance, "user_guidance", MAX_USER_GUIDANCE_BYTES)
+        except (PathSecurityError, ValueError) as e:
+            return with_metadata("peasy-ai-fix-compile-error", {
+                "success": False, "error": str(e),
+            })
+
         services = get_services()
 
         error = ParsedError(
@@ -333,6 +356,16 @@ If you receive needs_guidance, ask the user the questions and call again with us
     )
     def fix_checker_error(params: FixCheckerErrorParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-fix-checker-error: {params.project_path}")
+
+        try:
+            validate_project_path(params.project_path)
+            check_input_size(params.trace_log, "trace_log", MAX_TRACE_LOG_BYTES)
+            if params.user_guidance:
+                check_input_size(params.user_guidance, "user_guidance", MAX_USER_GUIDANCE_BYTES)
+        except (PathSecurityError, ValueError) as e:
+            return with_metadata("peasy-ai-fix-checker-error", {
+                "success": False, "error": str(e),
+            })
 
         services = get_services()
         result = services["fixer"].fix_checker_error(
@@ -382,6 +415,13 @@ If you receive needs_guidance, ask the user the questions and call again with us
     def fix_iteratively(params: FixIterativelyParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-fix-all: {params.project_path}")
 
+        try:
+            validate_project_path(params.project_path)
+        except PathSecurityError as e:
+            return with_metadata("peasy-ai-fix-all", {
+                "success": False, "error": str(e),
+            })
+
         services = get_services()
         result = services["fixer"].fix_iteratively(
             project_path=params.project_path,
@@ -400,6 +440,13 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
     )
     def fix_buggy_program(params: FixBuggyProgramParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-fix-bug: {params.project_path}")
+
+        try:
+            validate_project_path(params.project_path)
+        except PathSecurityError as e:
+            return with_metadata("peasy-ai-fix-bug", {
+                "success": False, "error": str(e),
+            })
 
         project_path = Path(params.project_path)
 
@@ -583,7 +630,7 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
                 except Exception as e:
                     import traceback
                     logger.error(f"Error applying fix: {type(e).__name__}: {e}\n{traceback.format_exc()}")
-                    response["fix_error"] = f"{type(e).__name__}: {e}"
+                    response["fix_error"] = sanitize_error(e, "fix_buggy_program")
 
             # --- LLM fallback: if specialized fix didn't work, ask the LLM ---
             if not response.get("fixed"):
@@ -603,12 +650,10 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
             return with_metadata("peasy-ai-fix-bug", payload)
         except Exception as e:
             import traceback
-            err_msg = f"{type(e).__name__}: {e}"
-            logger.error(f"Error in fix_buggy_program: {err_msg}\n{traceback.format_exc()}")
+            logger.error(f"Error in fix_buggy_program: {e}\n{traceback.format_exc()}")
             payload = {
                 "success": False,
-                "error": err_msg,
-                "trace_file": str(latest_trace),
+                "error": sanitize_error(e, "fix_buggy_program"),
             }
             return with_metadata("peasy-ai-fix-bug", payload)
 

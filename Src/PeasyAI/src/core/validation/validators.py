@@ -261,19 +261,25 @@ class VarDeclarationOrderValidator(Validator):
 
             first_non_var = -1
             first_var = -1
+            last_var = -1
             for i, line in enumerate(lines):
                 stripped = line.strip()
                 if not stripped or stripped.startswith("//"):
                     continue
-                if stripped.startswith("var "):
+                if stripped.startswith("var ") and ";" in stripped:
                     if first_var == -1:
                         first_var = i
+                    last_var = i
                 else:
                     if first_non_var == -1:
                         first_non_var = i
-                        break
 
-            if first_var > first_non_var and first_non_var != -1:
+            needs_reorder = (
+                first_var != -1
+                and first_non_var != -1
+                and (first_var > first_non_var or last_var > first_non_var)
+            )
+            if needs_reorder:
                 new_body = "\n".join(var_lines + other_lines)
                 replacement = header + "{" + new_body + "}"
                 replacements.append((start_pos, close_pos + 1, replacement))

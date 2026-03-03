@@ -105,8 +105,7 @@ class SnowflakeCortexProvider(LLMProvider):
                 "content": msg.get_full_content()
             })
         
-        # Cap max tokens to avoid issues
-        max_tokens = min(cfg.max_tokens, 8192)
+        max_tokens = min(cfg.max_tokens, 20000)
         
         logger.info(f"Snowflake Cortex request: model={model}, messages={len(formatted_messages)}")
         start_time = time.time()

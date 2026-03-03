@@ -771,23 +771,25 @@ class TestDocumentationReviewParser:
             "</documented_code>"
         )
         result = GenerationService._parse_documentation_review_response(response, original)
-        assert result is not None
-        assert "// Coordinator for the Two Phase Commit protocol" in result
-        assert "machine Coordinator" in result
+        assert result["status"] == "success"
+        assert "// Coordinator for the Two Phase Commit protocol" in result["code"]
+        assert "machine Coordinator" in result["code"]
 
     def test_parse_missing_tags(self):
         from core.services.generation import GenerationService
         original = "machine Coordinator {\n    start state Init {}\n}\n"
         response = "Here is the code with comments:\nmachine Coordinator {\n    start state Init {}\n}\n"
         result = GenerationService._parse_documentation_review_response(response, original)
-        assert result is None
+        assert result["status"] == "parse_error"
+        assert result["code"] == original
 
     def test_parse_empty_documented_code(self):
         from core.services.generation import GenerationService
         original = "machine Coordinator {\n    start state Init {}\n}\n"
         response = "<documented_code>\n</documented_code>"
         result = GenerationService._parse_documentation_review_response(response, original)
-        assert result is None
+        assert result["status"] == "parse_error"
+        assert result["code"] == original
 
     def test_parse_rejects_dropped_declarations(self):
         from core.services.generation import GenerationService
@@ -799,7 +801,8 @@ class TestDocumentationReviewParser:
             "</documented_code>"
         )
         result = GenerationService._parse_documentation_review_response(response, original)
-        assert result is None
+        assert result["status"] == "declarations_dropped"
+        assert result["code"] == original
 
     def test_parse_accepts_matching_declarations(self):
         from core.services.generation import GenerationService
@@ -816,9 +819,9 @@ class TestDocumentationReviewParser:
             "</documented_code>"
         )
         result = GenerationService._parse_documentation_review_response(response, original)
-        assert result is not None
-        assert "machine Coordinator" in result
-        assert "machine Participant" in result
+        assert result["status"] == "success"
+        assert "machine Coordinator" in result["code"]
+        assert "machine Participant" in result["code"]
 
     def test_parse_spec_declarations_preserved(self):
         from core.services.generation import GenerationService
@@ -830,8 +833,35 @@ class TestDocumentationReviewParser:
             "</documented_code>"
         )
         result = GenerationService._parse_documentation_review_response(response, original)
-        assert result is not None
-        assert "spec Atomicity" in result
+        assert result["status"] == "success"
+        assert "spec Atomicity" in result["code"]
+
+    def test_parse_truncated_response(self):
+        from core.services.generation import GenerationService
+        original = "machine Coordinator {\n    start state Init {}\n}\n"
+        response = (
+            "<documented_code>\n"
+            "// Coordinator for 2PC\n"
+            "machine Coordinator {\n"
+            "    start state Init {}\n"
+            "}\n"
+        )
+        result = GenerationService._parse_documentation_review_response(
+            response, original, finish_reason="length"
+        )
+        assert result["status"] == "truncated"
+        assert result["code"] == original
+        assert "truncated" in result["reason"].lower()
+
+    def test_parse_truncated_before_open_tag(self):
+        from core.services.generation import GenerationService
+        original = "machine Coordinator {\n    start state Init {}\n}\n"
+        response = "Here is the documented code with insightful comments explaining"
+        result = GenerationService._parse_documentation_review_response(
+            response, original, finish_reason="length"
+        )
+        assert result["status"] == "truncated"
+        assert result["code"] == original
 
     def test_post_processor_no_design_doc_param(self):
         """Verify PCodePostProcessor.process() no longer accepts design_doc."""

@@ -62,14 +62,19 @@ def _run_documentation_review(
     Falls back to the original code if the LLM call fails.
     """
     try:
-        documented = service.review_code_documentation(
+        result = service.review_code_documentation(
             code=code,
             design_doc=design_doc,
             context_files=context_files,
         )
-        if documented:
+        if result["status"] == "success":
             logger.info("Documentation review added comments")
-            return documented
+            return result["code"]
+        else:
+            logger.warning(
+                f"Documentation review did not succeed: "
+                f"status={result['status']}, reason={result.get('reason')}"
+            )
     except Exception as e:
         logger.warning(f"Documentation review failed: {e}")
     return code

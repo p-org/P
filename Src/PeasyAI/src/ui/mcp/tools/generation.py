@@ -136,6 +136,42 @@ def _review_generated_code(
     return result.to_review_dict()
 
 
+def _run_doc_review(
+    services,
+    code: str,
+    design_doc: str,
+    context_files: Optional[Dict[str, str]],
+    review: Dict[str, Any],
+) -> tuple:
+    """Run the LLM documentation review and update the review dict.
+
+    Returns (code, doc_review_status) where doc_review_status is a dict
+    with 'status' and 'reason' fields surfaced in the MCP response.
+    """
+    try:
+        result = services["generation"].review_code_documentation(
+            code=code,
+            design_doc=design_doc,
+            context_files=context_files,
+        )
+        if result["status"] == "success":
+            code = result["code"]
+            review["fixes_applied"].append(
+                "[DocReview] LLM added documentation comments"
+            )
+        else:
+            logger.warning(
+                f"Documentation review did not succeed: "
+                f"status={result['status']}, reason={result.get('reason')}"
+            )
+        doc_status = {"status": result["status"], "reason": result.get("reason")}
+    except Exception as e:
+        reason = f"Unexpected error: {e}"
+        logger.warning(f"Documentation review skipped: {reason}")
+        doc_status = {"status": "error", "reason": reason}
+    return code, doc_status
+
+
 def _validate_generation_inputs(
     tool_name: str,
     with_metadata,
@@ -174,6 +210,10 @@ class GenerateTypesEventsParams(BaseModel):
     """Parameters for types/events generation"""
     design_doc: str = Field(..., description="The design document content", max_length=500_000)
     project_path: str = Field(..., description="Absolute path to the P project root")
+    context_files: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Additional context files (filename -> content)"
+    )
 
 
 class GenerateMachineParams(BaseModel):
@@ -288,28 +328,20 @@ def register_generation_tools(mcp, get_services, with_metadata):
 
         review: Dict[str, Any] = {"fixes_applied": [], "warnings": [], "errors": [], "is_valid": True}
         code = result.code
+        doc_review_status: Optional[Dict[str, Any]] = None
         if result.success and code:
             review = _review_generated_code(
                 code, result.filename or "Enums_Types_Events.p", params.project_path,
             )
             code = review["code"]
 
-            try:
-                documented = services["generation"].review_code_documentation(
-                    code=code,
-                    design_doc=params.design_doc,
-                    context_files=params.context_files,
-                )
-                if documented:
-                    code = documented
-                    review["fixes_applied"].append(
-                        "[DocReview] LLM added documentation comments"
-                    )
-            except Exception as e:
-                logger.warning(f"Documentation review skipped: {e}")
+            code, doc_review_status = _run_doc_review(
+                services, code, params.design_doc, params.context_files, review,
+            )
 
         return _build_generation_payload(
-            "peasy-ai-gen-types-events", result, review, code, with_metadata
+            "peasy-ai-gen-types-events", result, review, code, with_metadata,
+            extra={"doc_review_status": doc_review_status} if doc_review_status else None,
         )
 
     @mcp.tool(
@@ -348,6 +380,7 @@ def register_generation_tools(mcp, get_services, with_metadata):
 
         review: Dict[str, Any] = {"fixes_applied": [], "warnings": [], "errors": [], "is_valid": True}
         code = result.code
+        doc_review_status: Optional[Dict[str, Any]] = None
         if result.success and code:
             review = _review_generated_code(
                 code, result.filename or f"{params.machine_name}.p", params.project_path,
@@ -355,22 +388,13 @@ def register_generation_tools(mcp, get_services, with_metadata):
             )
             code = review["code"]
 
-            try:
-                documented = services["generation"].review_code_documentation(
-                    code=code,
-                    design_doc=params.design_doc,
-                    context_files=params.context_files,
-                )
-                if documented:
-                    code = documented
-                    review["fixes_applied"].append(
-                        "[DocReview] LLM added documentation comments"
-                    )
-            except Exception as e:
-                logger.warning(f"Documentation review skipped: {e}")
+            code, doc_review_status = _run_doc_review(
+                services, code, params.design_doc, params.context_files, review,
+            )
 
         return _build_generation_payload(
-            "peasy-ai-gen-machine", result, review, code, with_metadata
+            "peasy-ai-gen-machine", result, review, code, with_metadata,
+            extra={"doc_review_status": doc_review_status} if doc_review_status else None,
         )
 
     @mcp.tool(
@@ -413,6 +437,7 @@ def register_generation_tools(mcp, get_services, with_metadata):
         review: Dict[str, Any] = {"fixes_applied": [], "warnings": [], "errors": [], "is_valid": True}
         code = result.code
         spec_fixes: Dict[str, str] = {}
+        doc_review_status: Optional[Dict[str, Any]] = None
         if result.success and code:
             # Stage A: regex/structural validation
             review = _review_generated_code(
@@ -430,7 +455,6 @@ def register_generation_tools(mcp, get_services, with_metadata):
                     context_files=params.context_files,
                 )
                 spec_filename = result.filename or f"{params.spec_name}.p"
-                # Try to find the fixed spec under its actual filename
                 for candidate in [spec_filename, "Specification.p", "Spec.p", "Safety.p"]:
                     if candidate in spec_fixes:
                         code = spec_fixes.pop(candidate)
@@ -442,23 +466,15 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 logger.warning(f"Spec review skipped: {e}")
 
             # Stage C: LLM-based documentation comments
-            try:
-                documented = services["generation"].review_code_documentation(
-                    code=code,
-                    design_doc=params.design_doc,
-                    context_files=params.context_files,
-                )
-                if documented:
-                    code = documented
-                    review["fixes_applied"].append(
-                        "[DocReview] LLM added documentation comments"
-                    )
-            except Exception as e:
-                logger.warning(f"Documentation review skipped: {e}")
+            code, doc_review_status = _run_doc_review(
+                services, code, params.design_doc, params.context_files, review,
+            )
 
         extra: Dict[str, Any] = {}
         if spec_fixes:
             extra["spec_fixes"] = spec_fixes
+        if doc_review_status:
+            extra["doc_review_status"] = doc_review_status
 
         return _build_generation_payload(
             "peasy-ai-gen-spec", result, review, code, with_metadata,
@@ -505,6 +521,7 @@ def register_generation_tools(mcp, get_services, with_metadata):
         review: Dict[str, Any] = {"fixes_applied": [], "warnings": [], "errors": [], "is_valid": True}
         code = result.code
         wiring_fixes: Dict[str, str] = {}
+        doc_review_status: Optional[Dict[str, Any]] = None
         if result.success and code:
             # Stage A: regex/structural validation
             review = _review_generated_code(
@@ -539,23 +556,15 @@ def register_generation_tools(mcp, get_services, with_metadata):
                 logger.warning(f"Wiring review skipped: {e}")
 
             # Stage C: LLM-based documentation comments
-            try:
-                documented = services["generation"].review_code_documentation(
-                    code=code,
-                    design_doc=params.design_doc,
-                    context_files=params.context_files,
-                )
-                if documented:
-                    code = documented
-                    review["fixes_applied"].append(
-                        "[DocReview] LLM added documentation comments"
-                    )
-            except Exception as e:
-                logger.warning(f"Documentation review skipped: {e}")
+            code, doc_review_status = _run_doc_review(
+                services, code, params.design_doc, params.context_files, review,
+            )
 
         extra: Dict[str, Any] = {}
         if wiring_fixes:
             extra["wiring_fixes"] = wiring_fixes
+        if doc_review_status:
+            extra["doc_review_status"] = doc_review_status
 
         return _build_generation_payload(
             "peasy-ai-gen-test", result, review, code, with_metadata,

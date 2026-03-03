@@ -769,7 +769,7 @@ class GenerationService(BaseService):
         code: str,
         design_doc: str,
         context_files: Optional[Dict[str, str]] = None,
-    ) -> Optional[str]:
+    ) -> Dict[str, Any]:
         """
         Use the LLM to add insightful documentation comments to generated P code.
 
@@ -778,7 +778,10 @@ class GenerationService(BaseService):
         the code is structured the way it is, what invariants are maintained,
         and what protocol steps are being implemented.
 
-        Returns the documented code string, or None if the LLM call fails.
+        Returns a dict with:
+          - status: "success" | "llm_error" | "truncated" | "parse_error" | "declarations_dropped"
+          - code: the documented code string (original code if review failed)
+          - reason: human-readable explanation when status != "success"
         """
         self._status("Adding documentation comments via LLM…")
 
@@ -809,43 +812,83 @@ class GenerationService(BaseService):
             "reasoning, invariants, and protocol semantics — not comments "
             "that merely restate what the code does."
         )
-        config = LLMConfig(max_tokens=8192)
-        try:
-            response = self.llm.complete(messages, config, system_prompt)
-        except Exception as e:
-            logger.warning(f"Documentation review LLM call failed: {e}")
-            return None
 
-        return self._parse_documentation_review_response(response.content, code)
+        max_tokens = 16384
+        max_attempts = 2
+        for attempt in range(1, max_attempts + 1):
+            config = LLMConfig(max_tokens=max_tokens)
+            try:
+                response = self.llm.complete(messages, config, system_prompt)
+            except Exception as e:
+                reason = f"LLM call failed: {e}"
+                logger.warning(f"Documentation review {reason}")
+                return {"status": "llm_error", "code": code, "reason": reason}
+
+            if response.finish_reason == "length" and attempt < max_attempts:
+                logger.warning(
+                    f"Documentation review truncated on attempt {attempt} "
+                    f"(max_tokens={max_tokens}). Retrying with higher limit."
+                )
+                max_tokens = min(max_tokens * 2, 20000)
+                continue
+
+            result = self._parse_documentation_review_response(
+                response.content, code, response.finish_reason
+            )
+            return result
+
+        return {"status": "truncated", "code": code,
+                "reason": f"Response still truncated after {max_attempts} attempts"}
 
     @staticmethod
     def _parse_documentation_review_response(
-        content: str, original_code: str
-    ) -> Optional[str]:
-        """Extract documented code from the LLM response."""
+        content: str, original_code: str, finish_reason: str = "stop"
+    ) -> Dict[str, Any]:
+        """Extract documented code from the LLM response.
+
+        Returns a dict with status, code, and reason.
+        """
+        if finish_reason == "length":
+            # Check if we got a partial <documented_code> block we can salvage
+            open_tag = content.find("<documented_code>")
+            if open_tag == -1:
+                return {
+                    "status": "truncated",
+                    "code": original_code,
+                    "reason": "Response truncated (finish_reason=length) "
+                              "before <documented_code> tag",
+                }
+
         match = re.search(
             r"<documented_code>(.*?)</documented_code>", content, re.DOTALL
         )
         if not match:
-            logger.warning("Documentation review response missing <documented_code> tags")
-            return None
+            reason = (
+                "Response truncated before closing </documented_code> tag"
+                if finish_reason == "length"
+                else "Response missing <documented_code> tags"
+            )
+            logger.warning(f"Documentation review: {reason}")
+            return {"status": "truncated" if finish_reason == "length" else "parse_error",
+                    "code": original_code, "reason": reason}
 
         documented = match.group(1).strip()
         if not documented:
-            return None
+            return {"status": "parse_error", "code": original_code,
+                    "reason": "Empty <documented_code> block"}
 
-        # Sanity check: the documented code should contain the same machine/spec
-        # declarations as the original (the LLM should not have changed the code)
         orig_machines = set(re.findall(r'\b(?:machine|spec)\s+(\w+)', original_code))
         doc_machines = set(re.findall(r'\b(?:machine|spec)\s+(\w+)', documented))
         if orig_machines and not orig_machines.issubset(doc_machines):
-            logger.warning(
-                f"Documentation review dropped declarations: "
-                f"expected {orig_machines}, got {doc_machines}"
+            reason = (
+                f"LLM dropped declarations: expected {orig_machines}, "
+                f"got {doc_machines}"
             )
-            return None
+            logger.warning(f"Documentation review: {reason}")
+            return {"status": "declarations_dropped", "code": original_code,
+                    "reason": reason}
 
-        return documented
+        return {"status": "success", "code": documented, "reason": None}
 
     def generate_machines_parallel(
         self,

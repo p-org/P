@@ -1,1 +1,0 @@
-Coordinator, Participant, Timer, Client

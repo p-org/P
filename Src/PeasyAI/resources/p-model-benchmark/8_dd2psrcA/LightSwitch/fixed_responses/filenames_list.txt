@@ -1,3 +1,0 @@
-PSrc: Switch.p, Light.p, LightControlModules.p
-PSpec: Specs.p
-PTst: TestDriver.p, TestScript.p

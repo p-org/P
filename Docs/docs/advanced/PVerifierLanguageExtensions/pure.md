@@ -1,3 +1,5 @@
+## Pure Functions
+
 ??? note "P Pure Function Declaration Grammar"
 
     ```

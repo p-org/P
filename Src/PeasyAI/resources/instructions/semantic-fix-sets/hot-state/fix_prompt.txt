@@ -1,0 +1,17 @@
+Based on your previous analysis and fix recommendations, generate the fixed P code only for files that require changes.
+For each file that needs fixing:
+1. Apply the recommended fixes
+2. Identify and apply any necessary consequential changes required to maintain the functionality
+3. Ensure the complete fixed code is valid
+
+Here is the original p code of all p files in the project. The code for each file is enclosed in its filename xml tags:
+{p_code}
+
+Your recommended fixes:
+{fix_description}
+
+Please
+1. Fix the error in the necessary file
+2. Identify ALL other files that would need modifications as a result of this change
+3. Provide complete updated versions of each affected file
+4. Enclose each modified file in XML tags using the filename as the tag name. Don't generate any additional response or text.

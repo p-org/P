@@ -1,0 +1,13 @@
+{
+    "extraneous input 'var' expecting {'announce', 'assert', 'break', 'continue', 'foreach', 'goto', 'if', 'new', 'print', 'raise', 'receive', 'return', 'send', 'while', '{', '}', ';', Iden}": "Variable declaration is not placed correctly. Place it at the start of the machine body or the function body, depending on the need.",
+    "extraneous input 'defer' expecting {'announce', 'assert', 'break', 'continue', 'foreach', 'goto', 'if', 'new', 'print', 'raise', 'receive', 'return', 'send', 'var', 'while', '{', '}', ';', Iden}": "Defer statement should be written in a state. Do not write it in a function.",
+    "extraneous input 'goto' expecting {'defer', 'entry', 'exit', 'ignore', 'on', '}'}": "Goto statement should always be written within a function body.",
+    "functions at entry or exit and do or goto transitions cannot take more than 1 parameter, provided function expects 3 parameters": "If you need to pass multiple values into a named function at entry or do or goto transitions, package them into a SINGLE parameter using a named tuple or a use a previously declared type.",
+    "mismatched input '(' expecting ';'": "Correct the syntax. If you are trying to access functions contained inside other machines, you should not do it.",
+    "mismatched input 'with' expecting {';', ','}": "Goto statement with payload is written incorrectly.",
+    "mismatched input 'entry' expecting Iden": "Entry is a reserved keyword. Do not use it for naming a variable.",
+    "mismatched input 'state' expecting {'any', 'bool', 'event', 'float', 'int', 'machine', 'map', 'set', 'string', 'seq', 'data', '(', Iden}": "State is a reserved keyword. You cannot have variables of type state.",
+    "missing ')' at 'is'": "is keyword is not supported in P. Use == or != for comparison.",
+    "could not find function 'distinct'": "distinct function is not supported in P.",
+    "no viable alternative at input '(all(": "all function is not supported in P."
+}

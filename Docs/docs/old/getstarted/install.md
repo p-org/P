@@ -1,3 +1,6 @@
+!!! warning "Deprecated: P 1.x Documentation"
+    This page documents P version 1.x and is no longer maintained. For the current installation guide, see [Installing P](../../getstarted/install.md).
+
 # Installing P
 
 P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with its required dependencies.

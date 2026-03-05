@@ -1,3 +1,5 @@
+## Lemmas and Proofs
+
 # Lemmas and Proof Scripts
 
 Lemmas and proof scripts go hand in hand in the P Verifier. Lemmas allow you to decompose specifications and proof scripts allow you to relate lemmas to write larger proofs.
@@ -89,6 +91,8 @@ Where `targetN` are the names of lemmas or invariants to verify, and `helper` is
         prove default using lemma1, lemma2;  // Verify using both lemmas
     }
     ```
+
+---
 
 ### Benefits of Proof Scripts
 

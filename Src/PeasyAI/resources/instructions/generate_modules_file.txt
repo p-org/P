@@ -1,0 +1,1 @@
+Write P code for the {filename} file. Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

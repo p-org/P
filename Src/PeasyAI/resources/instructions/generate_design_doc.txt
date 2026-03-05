@@ -1,0 +1,8 @@
+Please generate a design document in markdown format for the provided P code.
+Here are the instructions on the content that must be included in each section of the design document:
+1. Title: Use a top-level markdown heading (`# Title`) with the title of the system modeled in the given P code
+2. Introduction (`## Introduction`): Brief overview of the system described in the P code, followed by a numbered list of assumptions
+3. Components (`## Components`): Split into `### Source Components` and `### Test Components`. For each component or actor, include a brief description of what the component represents, its states, local state (variable names with plain English descriptions, no types), initialization (described in plain English — what information the machine needs to start and how it receives it, without code or type annotations), and a bulleted list of behaviors
+4. Interactions (`## Interactions`): For each event being passed between components/machines, include a numbered entry with Source, Target, Payload (described in plain English, no code or type annotations), Description, and Effects
+5. Specifications (`## Specifications`): For each specification, include the property name, whether it is a safety or liveness property, and a precise English statement that naturally references the relevant events by name
+6. Test Scenarios (`## Test Scenarios`): Include a numbered list of concrete test scenarios with specific machine counts and expected outcomes

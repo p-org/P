@@ -1,0 +1,10 @@
+<!-- P Project file for BasicPaxos -->
+<Project>
+<ProjectName>BasicPaxos</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

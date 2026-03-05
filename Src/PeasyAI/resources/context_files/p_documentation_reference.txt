@@ -1,0 +1,275 @@
+P Language Documentation Reference
+===================================
+
+This file consolidates key patterns, idioms, and reference material from the
+official P documentation for use by the RAG system. It supplements the modular
+guide files (p_machines_guide.txt, p_types_guide.txt, etc.) with tutorial-level
+patterns and protocol idioms.
+
+================================================================================
+SECTION 1: Common P Programming Patterns
+================================================================================
+
+<pattern_client_server>
+Client-Server Pattern:
+- Server creates a Database or backend machine in its start state.
+- Clients are created by the test driver and receive a reference to the server.
+- Clients send requests with a source=this field so the server can respond.
+- Server processes request and sends response back to req.source.
+
+Example flow:
+  TestDriver creates BankServer -> BankServer creates Database
+  TestDriver creates Client(serv=server, accountId=id, balance=bal)
+  Client sends eWithDrawReq(source=this, accountId=..., amount=..., rId=...)
+  BankServer handles eWithDrawReq, queries Database, sends eWithDrawResp back
+</pattern_client_server>
+
+<pattern_request_response>
+Request-Response with Blocking Receive:
+Global helper functions can encapsulate send+receive pairs:
+
+fun ReadBankBalance(database: Database, accountId: int) : int {
+    var currentBalance: int;
+    send database, eReadQuery, (accountId = accountId,);
+    receive {
+        case eReadQueryResp: (resp: (accountId: int, balance: int)) {
+            currentBalance = resp.balance;
+        }
+    }
+    return currentBalance;
+}
+</pattern_request_response>
+
+<pattern_nondeterministic_testing>
+Nondeterministic Testing:
+- Use choose(N) to generate random integers [0, N)
+- Use $ for nondeterministic boolean choice
+- PChecker explores all possible schedules
+- Use choose() in test drivers to vary system configurations
+
+Example:
+  fun HasBeans() : bool { return $; }
+  fun RandomAmount() : int { return choose(100) + 1; }
+  SetupSystem(choose(3) + 2);  // 2 to 4 clients
+</pattern_nondeterministic_testing>
+
+<pattern_monitor_initialization>
+Monitor Initialization via Announce:
+Spec monitors may need initial state (e.g., initial balances).
+Use a dedicated event + announce in the test driver BEFORE creating clients.
+
+  event eSpec_Init: map[int, int];
+
+  // In test driver:
+  announce eSpec_Init, initBalances;
+  // Then create clients that start sending requests
+
+  // In spec:
+  spec MySafety observes eSpec_Init, eRequest, eResponse {
+      var state: map[int, int];
+      start state Init {
+          on eSpec_Init goto Active with InitState;
+      }
+      fun InitState(init: map[int, int]) { state = init; }
+      // ...
+  }
+</pattern_monitor_initialization>
+
+<pattern_failure_injection>
+Failure Injection Pattern:
+- FailureInjector machine nondeterministically sends halt events to machines
+- Used to test system resilience under node failures
+- Typically created by the test driver
+
+Example:
+  machine FailureInjector {
+      var nodes: seq[machine];
+      start state InjectFailures {
+          entry {
+              // nondeterministically fail some nodes
+              send nodes[choose(sizeof(nodes))], halt;
+          }
+      }
+  }
+</pattern_failure_injection>
+
+<pattern_timer>
+Timer Pattern:
+Timer machines simulate timeouts in the system.
+Create a Timer, send eStartTimer, and handle eTimeOut or eCancelTimerSuccess.
+
+  machine Timer {
+      var target: machine;
+      start state WaitForTimerRequests {
+          entry (creator: machine) { target = creator; }
+          on eStartTimer goto TimerStarted;
+          ignore eCancelTimer, eDelayedTimeOut;
+      }
+      state TimerStarted {
+          defer eStartTimer;
+          on eCancelTimer goto WaitForTimerRequests with CancelTimer;
+          on eDelayedTimeOut goto WaitForTimerRequests with TimeoutHandler;
+          entry StartTimerEntry;
+      }
+      // ...
+  }
+</pattern_timer>
+
+<pattern_broadcast>
+Broadcast to All Machines:
+Iterate over a collection of machine references and send to each:
+
+  var participants: seq[machine];
+  var i: int;
+  i = 0;
+  while (i < sizeof(participants)) {
+      send participants[i], ePrepare, (coordinator = this, transId = tid);
+      i = i + 1;
+  }
+</pattern_broadcast>
+
+<pattern_quorum>
+Quorum / Majority Pattern:
+Track votes in a set, check if majority reached:
+
+  var votes: set[machine];
+  votes += (sender);
+  if (sizeof(votes) > sizeof(allNodes) / 2) {
+      // quorum reached
+      goto Committed;
+  }
+</pattern_quorum>
+
+================================================================================
+SECTION 2: P Project Organization
+================================================================================
+
+<project_structure>
+A P project has three main folders:
+
+PSrc/ - Source machines, types, events, enums, modules
+  - Enums_Types_Events.p (or split per-component)
+  - MachineName.p (one file per machine or logical group)
+  - Modules.p (module definitions)
+
+PSpec/ - Safety and liveness specifications
+  - Safety.p (spec machines)
+
+PTst/ - Test drivers and test scripts
+  - TestDriver.p (test driver machines with setup logic)
+  - TestScript.p (test case declarations referencing drivers)
+
+Project file: ProjectName.pproj
+</project_structure>
+
+<naming_conventions>
+Naming Conventions:
+- Types: tCamelCase (tRequest, tWithDrawResp)
+- Events: eCamelCase (eRequest, eWithDrawResp, eTimeout)
+- Machines: PascalCase (BankServer, Client, Coordinator)
+- Enums: tCamelCase for type name, UPPER_SNAKE for values
+  enum tStatus { SUCCESS, FAILURE, TIMEOUT }
+- Specs: PascalCase (BankBalanceIsAlwaysCorrect, GuaranteedProgress)
+- States: PascalCase (Init, WaitForRequests, Processing)
+- Functions: PascalCase (HandleRequest, AfterResponse)
+- Modules: camelCase (clientModule, serverModule)
+</naming_conventions>
+
+================================================================================
+SECTION 3: Common Compilation Pitfalls
+================================================================================
+
+<pitfalls>
+1. Variable declaration with initialization:
+   WRONG: var x: int = 5;
+   RIGHT: var x: int; x = 5;
+
+2. Sequence append:
+   WRONG: mySeq += (value);
+   RIGHT: mySeq += (sizeof(mySeq), value);
+
+3. Single-field named tuple:
+   WRONG: (field = value)
+   RIGHT: (field = value,)  // trailing comma required
+
+4. Negated collection membership:
+   WRONG: !x in mySet  or  x !in mySet  or  x not in mySet
+   RIGHT: !(x in mySet)
+
+5. Inline event payload types:
+   WRONG: event eMsg: (x: int, y: string);
+   RIGHT: type tMsg = (x: int, y: string); event eMsg: tMsg;
+
+6. Entry function parameters in specs:
+   WRONG: spec S observes e { start state Init { entry (p: int) { ... } } }
+   RIGHT: spec S observes e { start state Init { entry { ... } } }
+
+7. Duplicate declarations across files:
+   Events, types, enums must be declared exactly once across all files.
+
+8. Variable declarations after statements:
+   WRONG: fun F() { doSomething(); var x: int; }
+   RIGHT: fun F() { var x: int; doSomething(); }
+
+9. Foreach iteration variable:
+   WRONG: foreach(x in collection) { ... }  // x not declared
+   RIGHT: var x: int; foreach(x in collection) { ... }  // x declared at top
+
+10. Integer increment:
+    WRONG: i += 1;
+    RIGHT: i = i + 1;  // compound assignment only for collections
+
+11. Switch/case:
+    WRONG: switch(x) { case 1: ... }
+    RIGHT: if (x == 1) { ... } else if (x == 2) { ... }
+
+12. Self reference:
+    WRONG: self or this.field
+    RIGHT: this (only for passing machine reference, NOT for field access)
+
+13. Accessing other machine's functions:
+    WRONG: otherMachine.someFunction()
+    RIGHT: send otherMachine, eRequestEvent, payload;  // communicate via events
+</pitfalls>
+
+================================================================================
+SECTION 4: Protocol-Specific Patterns
+================================================================================
+
+<two_phase_commit>
+Two-Phase Commit:
+- Coordinator sends ePrepare to all Participants
+- Participants respond with eVoteYes or eVoteNo
+- If all vote yes: Coordinator sends eGlobalCommit
+- If any vote no: Coordinator sends eGlobalAbort
+- Safety: atomicity (all commit or all abort)
+- Test driver creates Coordinator and Participants
+</two_phase_commit>
+
+<paxos>
+Paxos Consensus:
+- Proposer sends ePrepare(ballot) to Acceptors
+- Acceptors respond with ePromise or eReject
+- If majority promise: Proposer sends eAccept(ballot, value)
+- Acceptors respond with eAccepted
+- If majority accept: value is chosen, notify Learners
+- Safety: only one value can be chosen
+</paxos>
+
+<raft>
+Raft Consensus:
+- Leader election via randomized timeouts
+- Leader sends eAppendEntries heartbeats
+- Followers respond with eAppendEntriesResponse
+- Leader replicates log entries to followers
+- Committed when majority have replicated
+- Safety: one leader per term, log matching
+</raft>
+
+<leader_election>
+Leader Election (Ring):
+- Nodes arranged in a ring, each knows its successor
+- Each node sends its ID around the ring
+- Forward higher IDs, drop lower IDs
+- Node that receives its own ID becomes leader
+</leader_election>

@@ -1,0 +1,16 @@
+flask
+botocore
+boto3
+flask_socketio
+streamlit
+pytest
+mcp[cli]>=1.10.1
+fastmcp>=0.4.0
+matplotlib
+sentence-transformers
+whatthepatch
+st-diff-viewer
+streamlit_scrollable_textbox
+anthropic>=0.30.0
+openai>=1.0.0
+python-dotenv

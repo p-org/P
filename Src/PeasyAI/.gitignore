@@ -1,0 +1,56 @@
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+
+# PeasyAI config (lives at ~/.peasyai/ — never in the repo)
+.peasyai/
+
+# Local caches and indexes
+.embedding_cache/
+.p_corpus/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Build
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Logs
+*.log
+logs/
+
+# Generated code / runtime output
+generated_code/
+generated_projects/
+PCheckerOutput/
+
+# Workflow runtime state
+.peasyai_workflows.json
+
+# Test artifacts
+test_mcp_paxos.py

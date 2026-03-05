@@ -1,0 +1,61 @@
+Using the provided P state machine structure as a starting point, implement all function bodies for the machine {machineName}. DO NOT change any of the structure, including variable declarations, state declarations, event handlers, or function signatures. Focus ONLY on implementing the body of each function.
+
+IMPLEMENTATION INSTRUCTIONS:
+
+For each function:
+1. Implement the body according to the intended behavior
+2. Use proper P statements and expressions (conditionals, loops, send statements, etc.)
+3. Ensure the implementation aligns with the "Components" and "Interactions" sections of the design document
+
+## Key Rules:
+1. Never use `=` in variable declarations
+2. Declare: `var name: type;`
+3. Initialize later: `name = value;` (in functions/entry blocks)
+4. P provides defaults - explicit initialization often unnecessary
+5. EVERY event that can be received by this machine in a given state MUST be handled in that state. If an event is not relevant in a state, add `ignore eEventName;` to that state. If it should be processed later, add `defer eEventName;`. PChecker will flag unhandled events as bugs.
+6. Think about which events could arrive late or out-of-order. For example, if a machine transitions from PhaseA to PhaseB, events from PhaseA may still be in the queue — add `ignore` for those stale events in PhaseB.
+
+## Initialization:
+If this machine has a start-state entry function with a parameter, that parameter carries the machine's constructor config (e.g., references to other machines, IDs, sizes). The implementation MUST:
+- Store every field from the config payload into the corresponding local variable.
+- Compute derived values (e.g., majoritySize = sizeof(acceptors) / 2 + 1).
+- If using the init-event pattern instead, the configuration handler function must similarly store all fields and then `goto` the first operational state.
+
+## CRITICAL — Tuple Construction:
+Named-tuple types use ``(field = value, ...)`` syntax. Always include ALL fields.
+  Given: type tConfig = (coordinator: machine, count: int);
+  CORRECT: new Machine((coordinator = coord, count = 3));
+  WRONG:   new Machine((coord, 3));  // anonymous tuple — type mismatch!
+  CORRECT single-field: send target, eMsg, (reqId = 42,);  // trailing comma required!
+  WRONG single-field:   send target, eMsg, (reqId = 42);   // missing trailing comma → PARSE ERROR
+
+## CRITICAL — Use Exact Type and Field Names from Enums_Types_Events.p:
+When the Enums_Types_Events.p file is provided as context, you MUST use the EXACT type names and field names defined there. Do NOT invent alternative names.
+  Given: type tPromisePayload = (proposer: machine, highestProposalSeen: int, acceptedValue: int);
+  CORRECT: fun HandlePromise(msg: tPromisePayload) {{ ... msg.highestProposalSeen ... msg.acceptedValue ... }}
+  WRONG:   fun HandlePromise(msg: tPromise) {{ ... msg.propNum ... msg.value ... }}
+The function parameter type annotation MUST match the event's payload type exactly as declared.
+
+## File-scope helper functions:
+Some machines provide convenience helper functions declared OUTSIDE the machine body (at file scope). For example, a Timer machine may provide:
+```
+fun CreateTimer(client: machine) : Timer {{
+  return new Timer(client);
+}}
+fun StartTimer(timer: Timer) {{
+  send timer, eStartTimer;
+}}
+```
+If the design document specifies helper functions for this machine, include them after the machine's closing brace.
+
+## Checklist before returning code:
+- Every state has handlers, defer, or ignore for EVERY event this machine could receive.
+- The start state entry correctly unpacks the constructor payload (if parameterized).
+- All `send` targets are machine-typed variables (never null/default).
+- No events, types, or enums are declared in this file.
+- Single-field named tuple VALUES always have a trailing comma: ``(field = value,)``. But type annotations do NOT: ``fun Foo(x: tMyType)`` or ``fun Foo(x: (field: int))``.
+- All type names in function signatures match EXACTLY what is declared in Enums_Types_Events.p.
+- All field names in payload access (e.g., payload.fieldName) and construction (e.g., (fieldName = value,)) match EXACTLY what is declared in the type definition.
+- If the design doc specifies file-scope helper functions, they are included after the machine body.
+
+Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

@@ -1,0 +1,107 @@
+You are reviewing a P specification monitor file for correctness against the design document's safety properties.
+
+You are given:
+1. The generated spec monitor code.
+2. All machine source files (showing events each machine sends/handles).
+3. The Enums_Types_Events.p file (showing all events and their payload types).
+4. The design document (showing the intended safety properties).
+
+Your job is to check the following and return a FIXED version of the spec file:
+
+## CHECK 1: Observes Clause Completeness
+The spec must observe ALL events it needs to verify the safety property.
+
+Think step-by-step:
+- Read the safety property from the design document.
+- Identify which events carry information relevant to that property.
+- Verify the `observes` clause includes all of them.
+
+Example — "If a node crashes, it must eventually be suspected":
+- Needs `eCrash` (to know which node crashed)
+- Needs `eNodeSuspected` (to know which node was suspected)
+- Needs `eHeartbeat` (to know a crashed node stopped sending heartbeats)
+
+BAD: `spec ReliableDetection observes eNodeSuspected { ... }`
+GOOD: `spec ReliableDetection observes eCrash, eHeartbeat, eNodeSuspected { ... }`
+
+## CHECK 2: Correct Event-to-Machine Tracking
+The spec must correctly track which machine an event refers to. Events carry payload with machine references — the spec must use the payload to identify the specific machine.
+
+BAD (tracks nothing specific):
+```
+on eCrash do {
+    crashCount = crashCount + 1;
+}
+```
+
+GOOD (tracks which machine crashed):
+```
+on eCrash goto CrashHandling with HandleCrash;
+```
+But wait — `eCrash` has no payload in many designs. If `eCrash` is sent to a specific node, the spec sees the event but doesn't know WHICH node received it. In that case, the spec needs a different strategy.
+
+KEY INSIGHT: Spec monitors observe events globally. `on eCrash do ...` fires for EVERY `eCrash` event in the system. If `eCrash` has no payload, the spec cannot know which machine was the target. The spec must use other observable events (like the absence of heartbeats from a specific node) to infer crashes.
+
+If an event has a payload (e.g., `event eNodeSuspected: tNodeSuspectedPayload;` with `type tNodeSuspectedPayload = (suspectedNode: machine);`), the handler MUST accept the payload parameter and use it:
+
+BAD:
+```
+on eNodeSuspected do {
+    suspectedCount = suspectedCount + 1;
+}
+```
+
+GOOD:
+```
+on eNodeSuspected do (payload: tNodeSuspectedPayload) {
+    suspectedNodes += (payload.suspectedNode);
+}
+```
+
+## CHECK 3: Assertion Logic Matches the Safety Property
+The assertions must actually verify what the design document says. Read the property carefully and check that the assert conditions are correct.
+
+Example property: "If a node crashes, it must eventually be suspected"
+- This means: after eCrash for node X, eventually eNodeSuspected for node X should fire.
+- The spec should track crashed nodes and suspected nodes, and assert consistency.
+
+BAD assertion (checks something unrelated):
+```
+assert !(node in heartbeatAfterSuspicion),
+    "Node sent heartbeat after suspicion";
+```
+
+GOOD assertion (checks the actual property):
+```
+// Track that a crashed node was indeed suspected
+on eNodeSuspected do (payload: tNodeSuspectedPayload) {
+    if (payload.suspectedNode in crashedNodes) {
+        detectedCrashes += (payload.suspectedNode);
+    }
+}
+```
+
+## CHECK 4: No Forbidden Keywords
+Spec monitors CANNOT use: `this`, `new`, `send`, `announce`, `receive`, `$`, `$$`, `pop`.
+These are illegal in monitors and will cause compilation errors.
+
+## CHECK 5: Payload Type Names Match Exactly
+All event handler parameter types must match the types declared in Enums_Types_Events.p exactly.
+
+## RESPONSE FORMAT
+
+Return your response in this exact format:
+
+<analysis>
+Brief description of what was wrong and how you fixed it.
+List each issue found as a bullet point.
+</analysis>
+
+<fixed_files>
+<Specification.p>
+... fixed spec code ...
+</Specification.p>
+</fixed_files>
+
+Use the ACTUAL filename of the spec file (e.g., Safety.p, Spec.p, Specification.p).
+Only include files that changed. If the spec is already correct, return it unchanged.

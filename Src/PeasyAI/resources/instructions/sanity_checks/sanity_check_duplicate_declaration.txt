@@ -1,0 +1,26 @@
+You are tasked with checking P language code files for DUPLICATE DECLARATIONS compliance. Follow these steps:
+
+DUPLICATE DECLARATION CHECK:
+- Scan across ALL files for duplicate declarations
+- Check for duplicate spec/monitor names across PSpec files
+- Common error: Same spec declared in multiple files
+- Check for duplicate:
+  * Event declarations
+  * Type definitions
+  * Machine names
+  * Function names
+  * Spec/Monitor names
+
+CORRECTION PROCESS:
+1. Scan the entire file and compare with Enums_Types_Events.p
+2. Identify all duplicate declarations
+3. Create a list of required changes for duplicates only
+4. Make changes by either:
+   - Removing duplicate declarations
+   - Renaming conflicting declarations
+   - Moving declarations to appropriate files
+5. Ensure no functionality is lost during duplicate removal
+
+OUTPUT FORMAT:
+Return only the corrected P code with duplicate declaration fixes applied.
+Return the P code enclosed in XML tags where the tag name is the filename.

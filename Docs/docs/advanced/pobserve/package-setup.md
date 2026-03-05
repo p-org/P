@@ -1,3 +1,5 @@
+## Setting Up the PObserve Package
+
 # Setting Up a PObserve Package with Gradle
 
 This guide walks you through setting up a PObserve package using Gradle. You'll learn how to create an empty Gradle project with the proper structure, configure the build for your intended usage (JUnit integration or PObserve CLI).
@@ -56,6 +58,8 @@ YourPObserveProject/
 ## [Step 3] Configure Gradle Build
 
 Configure your `build.gradle.kts` file with the base configuration and add the specific components you need to integrate with different pobserve modes as you need:
+
+---
 
 ### Base Configuration
 
@@ -123,6 +127,8 @@ group = "your.group.id"
 version = "1.0.0"
 ```
 
+---
+
 ### Additional Configuration for PObserve JUnit Integration
 
 If you want to use your package to run pobserve with unit tests, add these components to your `build.gradle.kts`:
@@ -156,6 +162,8 @@ publishing {
 
 !!! info ""
     Publishing your PObserve package to Maven Local repository allows you to import the parser and spec components in your system implementation's unit tests. Alternatively, you can publish them to your custom Maven repository and import from there to run PObserve in your unit tests."
+
+---
 
 ### Additional Configuration for PObserve CLI Usage
 

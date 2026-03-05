@@ -1,0 +1,13 @@
+{
+    "could not find state": "Goto should be followed by a state name.",
+    "could not find foreach iterator variable": "Could not find foreach iterator variable '{name}'.",
+    "could not find variable, enum element, or event": "Could not find '{name}'. Declare it. If it is already declared, check if it is being used correctly.",
+    "could not find event": "Could not find event '{name}'. Declare it in the file Enums_Types_Events.p.",
+    "could not find enum, typedef, event set, machine, or interface": "Could not find '{name}'. Declare it.",
+    "expected: namedtuple": "You cannot access variables contained inside other machines. Correct the code.",
+    "no viable alternative at input '(union'": "Modules cannot be declared or used in the file TestDriver.p.",
+    "invalid composition operation. bound interfaces after composition are not disjoint": "You cannot union a module with modules that it already contains through previous unions.",
+    "mismatched input '.+' expecting {<EOF>, 'enum', 'event', 'eventset', 'machine', 'interface', 'fun', 'spec', 'type', 'module', 'implementation', 'test'}": "Variable declaration is written incorrectly. And variables cannot be declared outside a machine.",
+    "extraneous input '.+' expecting {<EOF>, 'enum', 'event', 'eventset', 'machine', 'interface', 'fun', 'spec', 'type', 'module', 'implementation', 'test'}": "Variable declaration is not placed correctly.",
+    "mismatched input '.+' expecting '\\)'": "Incorrect syntax. Strictly follow the P language syntax here."
+}

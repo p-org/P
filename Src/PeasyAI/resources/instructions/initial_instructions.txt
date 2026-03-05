@@ -1,0 +1,4 @@
+Here is the system description: 
+{userText}
+
+For the given system, list the names of all the P state machines required. Only return the comma-seperated list without any additional text.

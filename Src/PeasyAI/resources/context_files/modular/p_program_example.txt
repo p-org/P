@@ -1,0 +1,1233 @@
+
+Here is an example of a P program:
+<P_program_example_guide>
+<system_description>
+System:
+Consider a client-server application where clients interact with a bank to withdraw money from their accounts.
+The bank consists of two components:
+1. a bank server that services withdraw requests from the client, and
+2. a backend database that is used to store the account balance information for each client.
+Multiple clients can concurrently send withdraw requests to the bank. 
+On receiving a withdraw request, the bank server reads the current bank balance for the client. 
+If the withdraw request is allowed, then the server performs the withdrawal, updates the account balance, and responds back to the client with the new account balance.
+
+Correctness Specification:
+The bank must maintain the invariant that each account must have at least 10 dollars as its balance.
+If a withdrawal request takes the account balance below 10, then the withdrawal request must be rejected by the bank.
+The correctness property that we would like to check is that in the presence of concurrent client withdrawal requests, the bank always responds with the correct bank balance for each client, and a withdraw request always succeeds if there is enough balance in the account (i.e., at least 10).
+</system_description>
+
+<P_project_description>
+The ClientServer folder contains the source code for the ClientServer project.
+<models>
+The P models (PSrc) for the ClientServer example consist of four files:
+1. Client.p: Implements the Client state machine that has a set of local variables used to store the local-state of the state machine.
+2. Server.p: Implements the BankServer and the backend Database state machines.
+3. AbstractBankServer.p: Implements the AbstractBankServer state machine that provides a simplified abstraction that unifies the BankServer and Database machines.
+4. ClientServerModules.p: Declares the P modules corresponding to each component in the system.
+</models>
+
+<specifications>
+The P Specifications (PSpec) for the ClientServer project are implemented in the BankBalanceCorrect.p file. 
+
+We define two specifications:
+1. BankBalanceIsAlwaysCorrect (safety property): 
+The BankBalanceIsAlwaysCorrect specification checks the global invariant that the account-balance communicated to the client by the bank is always correct and the bank never removes more money from the account than that withdrawn by the client.
+Also, if the bank denies a withdraw request, then it is only because the withdrawal would reduce the account balance to below 10.
+
+2. GuaranteedWithDrawProgress (liveness property): 
+The GuaranteedWithDrawProgress specification checks the liveness (or progress) property that all withdraw requests submitted by the client are eventually responded.
+
+The two properties BankBalanceIsAlwaysCorrect and GuaranteedWithDrawProgress together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
+</specifications>
+
+<test_scenarios>
+The test scenarios folder for ClientServer (PTst) consists of two files: TestDriver.p and TestScript.p.
+</test_scenarios>
+</P_project_description>
+
+<P_project_code>
+Here is the folder PSrc:
+<PSrc>
+Here is the file Client.p:
+<Client.p>
+/* User Defined Types */
+
+// payload type associated with the eWithDrawReq, where `source`: client sending the withdraw request,
+// `accountId`: account to withdraw from, `amount`: amount to withdraw, and 
+// `rId`: unique request Id associated with each request.
+type tWithDrawReq = (source: Client, accountId: int, amount: int, rId:int);
+
+// payload type associated with the eWithDrawResp, where `status`: response status (below),
+// `accountId`: account withdrawn from, `balance`: bank balance after withdrawal, and
+// `rId`: request id for which this is the response.
+type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int, rId: int);
+
+// enum representing the response status for the withdraw request
+enum tWithDrawRespStatus {
+  WITHDRAW_SUCCESS,
+  WITHDRAW_ERROR
+}
+
+// event: withdraw request (from client to bank server)
+event eWithDrawReq : tWithDrawReq;
+// event: withdraw response (from bank server to client)
+event eWithDrawResp: tWithDrawResp;
+
+
+machine Client
+{
+  var server : BankServer;
+  var accountId: int;
+  var nextReqId : int;
+  var numOfWithdrawOps: int;
+  var currentBalance: int;
+
+  /*************************************************************
+  Init state is the start state of the machine where the machine starts executions on being created.
+  The entry function of the Init state initializes the local variables based on the parameters received 
+  on creation and jumps to the WithdrawMoney state.
+  *************************************************************/
+  start state Init {
+    entry Init_Entry;
+  }
+
+  /*************************************************************
+  In the WithdrawMoney state, the state machine checks if there is enough money in the account. 
+  If the balance is greater than 10, then it issues a random withdraw request to the bank by sending the eWithDrawReq event, otherwise, it jumps to the NoMoneyToWithDraw state.
+  After sending a withdraw request, the machine waits for the eWithDrawResp event. 
+  On receiving the eWithDrawResp event, the machine executes the corresponding event handler that confirms if the bank response is as expected and if there is still money in the account 
+  and then jumps back to the WithdrawMoney state. Note that each time we (re-)enter a state (through a transition or goto statement), its entry function is executed.
+  *************************************************************/
+  state WithdrawMoney {
+    entry WithdrawMoney_Entry;
+
+    on eWithDrawResp do AfterWithDrawResp;
+  }
+
+  fun AfterWithDrawResp(resp: tWithDrawResp) {
+    // bank always ensures that a client has atleast 10 dollars in the account
+    assert resp.balance >= 10, "Bank balance must be greater than 10!!";
+    if(resp.status == WITHDRAW_SUCCESS) // withdraw succeeded
+    {
+      print format ("Withdrawal with rId = {0} succeeded, new account balance = {1}", resp.rId, resp.balance);
+      currentBalance = resp.balance;
+    }
+    else // withdraw failed
+    {
+      // if withdraw failed then the account balance must remain the same
+      assert currentBalance == resp.balance,
+        format ("Withdraw failed BUT the account balance changed! client thinks: {0}, bank balance: {1}", currentBalance, resp.balance);
+      print format ("Withdrawal with rId = {0} failed, account balance = {1}", resp.rId, resp.balance);
+    }
+
+    if(currentBalance > 10)
+    {
+      print format ("Still have account balance = {0}, lets try and withdraw more", currentBalance);
+      goto WithdrawMoney;
+    }
+  }
+
+  fun Init_Entry(input : (serv : BankServer, accountId: int, balance : int)) {
+    server = input.serv;
+    currentBalance =  input.balance;
+    accountId = input.accountId;
+    // hacky: we would like request id's to be unique across all requests from clients
+    nextReqId = accountId*100 + 1; // each client has a unique account id
+    goto WithdrawMoney;
+  }
+
+  fun WithdrawMoney_Entry() {
+    // If current balance is <= 10 then we need more deposits before any more withdrawal
+    if(currentBalance <= 10)
+      goto NoMoneyToWithDraw;
+
+    // send withdraw request to the bank for a random amount between (1 to current balance + 1)
+    send server, eWithDrawReq, (source = this, accountId = accountId, amount = WithdrawAmount(), rId = nextReqId);
+    nextReqId = nextReqId + 1;
+  }
+
+  // function that returns a random integer between (1 to current balance + 1)
+  fun WithdrawAmount() : int {
+    return choose(currentBalance) + 1;
+  }
+
+  state NoMoneyToWithDraw {
+    entry NoMoneyToWithDrawEntry;
+  }
+
+  fun NoMoneyToWithDrawEntry() {
+    // if I am here then the amount of money in my account should be exactly 10
+    assert currentBalance == 10, "Hmm, I still have money that I can withdraw but I have reached NoMoneyToWithDraw state!";
+    print format ("No Money to withdraw, waiting for more deposits!");
+  }
+}
+</Client.p>
+
+Here is the file Server.p:
+<Server.p>
+// payload type associated with eUpdateQuery
+type tUpdateQuery = (accountId: int, balance: int);
+
+// payload type associated with eReadQuery
+type tReadQuery = (accountId: int);
+
+// payload type associated with eReadQueryResp
+type tReadQueryResp = (accountId: int, balance: int);
+
+/** Events used to communicate between the bank server and the backend database **/
+// event: send update the database, i.e. the `balance` associated with the `accountId`
+event eUpdateQuery: tUpdateQuery;
+// event: send a read request for the `accountId`.
+event eReadQuery: tReadQuery;
+// event: send a response (`balance`) corresponding to the read request for an `accountId`
+event eReadQueryResp: tReadQueryResp;
+
+/*************************************************************
+The BankServer machine uses a database machine as a service to store the bank balance for all its clients.
+On receiving an eWithDrawReq (withdraw requests) from a client, it reads the current balance for the account,
+if there is enough money in the account then it updates the new balance in the database after withdrawal
+and sends a response back to the client.
+*************************************************************/
+machine BankServer
+{
+  var database: Database;
+
+  start state Init {
+    entry Init_Entry;
+  }
+
+  state WaitForWithdrawRequests {
+    on eWithDrawReq do AfterWithDrawReq;
+  }
+
+  fun Init_Entry(initialBalance: map[int, int]) {
+    database = new Database((server = this, initialBalance = initialBalance));
+    goto WaitForWithdrawRequests;
+  }
+
+  fun AfterWithDrawReq(wReq: tWithDrawReq) {
+    var currentBalance: int;
+    var response: tWithDrawResp;
+
+    // read the current account balance from the database
+    currentBalance = ReadBankBalance(database, wReq.accountId);
+    // if there is enough money in account after withdrawal
+    if(currentBalance - wReq.amount >= 10)
+    {
+      UpdateBankBalance(database, wReq.accountId, currentBalance - wReq.amount);
+      response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = currentBalance - wReq.amount, rId = wReq.rId);
+    }
+    else // not enough money after withdraw
+    {
+      response = (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = currentBalance, rId = wReq.rId);
+    }
+
+    // send response to the client
+    send wReq.source, eWithDrawResp, response;
+  }
+
+}
+
+/***************************************************************
+The Database machine acts as a helper service for the Bank server and stores the bank balance for
+each account. There are two API's or functions to interact with the Database:
+ReadBankBalance and UpdateBankBalance.
+****************************************************************/
+machine Database
+{
+  var server: BankServer;
+  var balance: map[int, int];
+  start state Init {
+    entry Init_Entry;
+
+    on eUpdateQuery do AfterUpdateQuery;
+
+    on eReadQuery do AfterReadQuery;
+  }
+
+  fun Init_Entry(input: (server : BankServer, initialBalance: map[int, int])) {
+    server = input.server;
+    balance = input.initialBalance;
+  }
+
+  fun AfterUpdateQuery(query: (accountId: int, balance: int)) {
+    assert query.accountId in balance, "Invalid accountId received in the update query!";
+    balance[query.accountId] = query.balance;
+  }
+
+  fun AfterReadQuery(query: (accountId: int)) {
+    assert query.accountId in balance, "Invalid accountId received in the read query!";
+    send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
+  }
+
+}
+
+/***************************************************************
+Global functions
+****************************************************************/
+// Function to read the bank balance corresponding to the accountId
+fun ReadBankBalance(database: Database, accountId: int) : int {
+    var currentBalance: int;
+    send database, eReadQuery, (accountId = accountId,);
+    receive {
+      case eReadQueryResp: (resp: (accountId: int, balance: int)) {
+        currentBalance = resp.balance;
+      }
+    }
+    return currentBalance;
+}
+
+// Function to update the account balance for the account Id
+fun UpdateBankBalance(database: Database, accId: int, bal: int)
+{
+  send database, eUpdateQuery, (accountId = accId, balance = bal);
+}
+</Server.p>
+
+Here is the file AbstractBankServer.p:
+<AbstractBankServer.p>
+/*********************************************************
+The AbstractBankServer provides an abstract implementation of the BankServer where it abstract away
+the interaction between the BankServer and Database.
+The AbstractBankServer machine is used to demonstrate how one can replace a complex component in P
+with its abstraction that hides a lot of its internal complexity.
+In this case, instead of storing the balance in a separate database the abstraction store the information
+locally and abstracts away the complexity of bank server interaction with the database.
+For the client, it still exposes the same interface/behavior. Hence, when checking the correctness
+of the client it doesnt matter whether we use BankServer or the AbstractBankServer
+**********************************************************/
+
+machine AbstractBankServer
+{
+  // account balance: map from account-id to balance
+  var balance: map[int, int];
+  start state WaitForWithdrawRequests {
+    entry WaitForWithdrawRequests_Entry;
+
+    on eWithDrawReq do AfterWithDrawReq;
+  }
+
+  fun WaitForWithdrawRequests_Entry(init_balance: map[int, int]) {
+    balance = init_balance;
+  }
+
+  fun AfterWithDrawReq(wReq: tWithDrawReq) {
+    assert wReq.accountId in balance, "Invalid accountId received in the withdraw request!";
+    if(balance[wReq.accountId] - wReq.amount >= 10)
+    {
+      balance[wReq.accountId] = balance[wReq.accountId] - wReq.amount;
+      send wReq.source, eWithDrawResp,
+        (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = balance[wReq.accountId], rId = wReq.rId);
+    }
+    else
+    {
+      send wReq.source, eWithDrawResp,
+        (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = balance[wReq.accountId], rId = wReq.rId);
+    }
+  }
+
+}
+</AbstractBankServer.p>
+
+Here is the file ClientServerModules.p:
+<ClientServerModules.p>
+// Client module
+module Client = { Client };
+
+// Bank module
+module Bank = { BankServer, Database };
+
+// Abstract Bank Server module
+module AbstractBank = { AbstractBankServer -> BankServer };
+</ClientServerModules.p>
+</PSrc>
+
+Here is the folder PSpec:
+<PSpec>
+Here is the file BankBalanceCorrect.p:
+<BankBalanceCorrect.p>
+/*****************************************************
+This file defines two P specifications
+
+BankBalanceIsAlwaysCorrect (safety property):
+BankBalanceIsAlwaysCorrect checks the global invariant that the account-balance communicated
+to the client by the bank is always correct and the bank never removes more money from the account
+than that withdrawn by the client! Also, if the bank denies a withdraw request then it is only because
+the withdrawal would reduce the account balance to below 10.
+
+GuaranteedWithDrawProgress (liveness property):
+GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests
+submitted by the client are eventually responded.
+
+Note: stating that "BankBalanceIsAlwaysCorrect checks that if the bank denies a withdraw request
+then the request would reduce the balance to below 10 (< 10)" is equivalent to state that "if there is enough money in the account - at least 10 (>= 10), then the request must not error".
+Hence, the two properties BankBalanceIsAlwaysCorrect and GuaranteedWithDrawProgress together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
+*****************************************************/
+
+// event: initialize the monitor with the initial account balances for all clients when the system starts
+event eSpec_BankBalanceIsAlwaysCorrect_Init: map[int, int];
+
+/****************************************************
+BankBalanceIsAlwaysCorrect checks the global invariant that the account balance communicated
+to the client by the bank is always correct and there is no error on the banks side with the
+implementation of the withdraw logic.
+
+For checking this property the spec machine observes the withdraw request (eWithDrawReq) and response (eWithDrawResp).
+- On receiving the eWithDrawReq, it adds the request in the pending-withdraws-map so that on receiving a
+response for this withdraw we can assert that the amount of money deducted from the account is same as
+what was requested by the client.
+
+- On receiving the eWithDrawResp, we look up the corresponding withdraw request and check that: the
+new account balance is correct and if the withdraw failed it is because the withdraw will make the account
+balance go below 10 dollars which is against the bank policies!
+****************************************************/
+spec BankBalanceIsAlwaysCorrect observes eWithDrawReq,  eWithDrawResp, eSpec_BankBalanceIsAlwaysCorrect_Init {
+  // keep track of the bank balance for each client: map from accountId to bank balance.
+  var bankBalance: map[int, int];
+  // keep track of the pending withdraw requests that have not been responded yet.
+  // map from reqId -> withdraw request
+  var pendingWithDraws: map[int, tWithDrawReq];
+
+  start state Init {
+    on eSpec_BankBalanceIsAlwaysCorrect_Init goto WaitForWithDrawReqAndResp with Spec_BankBalanceIsAlwaysCorrect_Init;
+  }
+
+  state WaitForWithDrawReqAndResp {
+    on eWithDrawReq do AftereWithDrawReq;
+
+    on eWithDrawResp do AfterWithDrawReq;
+  }
+
+  fun Spec_BankBalanceIsAlwaysCorrect_Init(balance: map[int, int]) {
+    bankBalance = balance;
+  }
+
+  fun AfterWithDrawReq(req: tWithDrawReq) {
+    assert req.accountId in bankBalance,
+      format ("Unknown accountId {0} in the withdraw request. Valid accountIds = {1}", req.accountId, keys(bankBalance));
+    pendingWithDraws[req.rId] = req;
+
+  }
+
+  fun AfterWithDrawResp(resp: tWithDrawResp) {
+    assert resp.accountId in bankBalance,
+        format ("Unknown accountId {0} in the withdraw response!", resp.accountId);
+    assert resp.rId in pendingWithDraws,
+      format ("Unknown rId {0} in the withdraw response!", resp.rId);
+    assert resp.balance >= 10,
+      "Bank balance in all accounts must always be greater than or equal to 10!!";
+
+    if(resp.status == WITHDRAW_SUCCESS)
+    {
+      assert resp.balance == bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount,
+        format ("Bank balance for the account {0} is {1} and not the expected value {2}, Bank is lying!",
+          resp.accountId, resp.balance, bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount);
+      // update the new account balance
+      bankBalance[resp.accountId] = resp.balance;
+    }
+    else
+    {
+      // bank can only reject a request if it will drop the balance below 10
+      assert bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount < 10,
+        format ("Bank must accept the withdraw request for {0}, bank balance is {1}!",
+          pendingWithDraws[resp.rId].amount, bankBalance[resp.accountId]);
+      // if withdraw failed then the account balance must remain the same
+      assert bankBalance[resp.accountId] == resp.balance,
+        format ("Withdraw failed BUT the account balance changed! actual: {0}, bank said: {1}",
+          bankBalance[resp.accountId], resp.balance);
+    }
+
+  }
+
+}
+
+/**************************************************************************
+GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests
+submitted by the client are eventually responded.
+***************************************************************************/
+spec GuaranteedWithDrawProgress observes eWithDrawReq, eWithDrawResp {
+  // keep track of the pending withdraw requests
+  var pendingWDReqs: set[int];
+
+  start state NopendingRequests {
+    on eWithDrawReq goto PendingReqs with AfterWithDrawReq;
+  }
+
+  hot state PendingReqs {
+    on eWithDrawResp do AfterWithDrawResp;
+
+    on eWithDrawReq goto PendingReqs with AfterWithDrawRespPendingReqs;
+  }
+
+  fun AfterWithDrawReq(req: tWithDrawReq) {
+    pendingWDReqs += (req.rId);
+  }
+
+  fun AfterWithDrawResp(resp: tWithDrawResp) {
+    assert resp.rId in pendingWDReqs, format ("unexpected rId: {0} received, expected one of {1}", resp.rId, pendingWDReqs);
+    pendingWDReqs -= (resp.rId);
+    if(sizeof(pendingWDReqs) == 0) // all requests have been responded
+      goto NopendingRequests;
+  }
+
+  fun AfterWithDrawRespPendingReqs(req: tWithDrawReq) {
+    pendingWDReqs += (req.rId);
+  }
+
+}
+</BankBalanceCorrect.p>
+</PSpec>
+
+Here is the folder PTst:
+<PTst>
+Here is the file TestDriver.p:
+<TestDriver.p>
+/*************************************************************
+Machines TestWithSingleClient and TestWithMultipleClients are simple test driver machines 
+that configure the system to be checked by the P checker for different scenarios.
+In this case, test the ClientServer system by first randomly initializing the accounts map and 
+then checking it with either one Client or with multiple Clients (between 2 and 4).
+*************************************************************/
+
+// Test driver that checks the system with a single Client.
+machine TestWithSingleClient
+{
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    // singe client
+    SetupClientServerSystem(1);
+  }
+}
+
+// Test driver that checks the system with multiple Clients.
+machine TestWithMultipleClients
+{
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    // multiple clients between (2, 4)
+    SetupClientServerSystem(choose(3) + 2);
+  }
+}
+
+// creates a random map from accountId's to account balance of size `numAccounts`
+fun CreateRandomInitialAccounts(numAccounts: int) : map[int, int]
+{
+  var i: int;
+  var bankBalance: map[int, int];
+  while(i < numAccounts) {
+    bankBalance[i] = choose(100) + 10; // min 10 in the account
+    i = i + 1;
+  }
+  return bankBalance;
+}
+
+/*************************************************************
+Function SetupClientServerSystem takes as input the number of clients to be created and 
+configures the ClientServer system by creating the Client and BankServer machines.
+The function also announce the event eSpec_BankBalanceIsAlwaysCorrect_Init to initialize the monitors with initial balance for all accounts.
+*************************************************************/
+// setup the client server system with one bank server and `numClients` clients.
+fun SetupClientServerSystem(numClients: int)
+{
+  var i: int;
+  var server: BankServer;
+  var accountIds: seq[int];
+  var initAccBalance: map[int, int];
+
+  // randomly initialize the account balance for all clients
+  initAccBalance = CreateRandomInitialAccounts(numClients);
+  // create bank server with the init account balance
+  server = new BankServer(initAccBalance);
+
+  // before client starts sending any messages make sure we
+  // initialize the monitors or specifications
+  announce eSpec_BankBalanceIsAlwaysCorrect_Init, initAccBalance;
+
+  accountIds = keys(initAccBalance);
+
+  // create the clients
+  while(i < sizeof(accountIds)) {
+    new Client((serv = server, accountId = accountIds[i], balance = initAccBalance[accountIds[i]]));
+    i = i + 1;
+  }
+}
+</TestDriver.p>
+
+Here is the file Testscript.p:
+<Testscript.p>
+/* This file contains three different model checking scenarios */
+
+// assert the properties for the single client and single server scenario
+test tcSingleClient [main=TestWithSingleClient]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, Bank, { TestWithSingleClient });
+
+// assert the properties for the two clients and single server scenario
+test tcMultipleClients [main=TestWithMultipleClients]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, Bank, { TestWithMultipleClients });
+
+// assert the properties for the single client and single server scenario but with abstract server
+ test tcAbstractServer [main=TestWithSingleClient]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, AbstractBank, { TestWithSingleClient });
+
+</Testscript.p>
+</PTst>
+</P_project_code>
+
+</P_program_example_guide>
+
+
+Here is another example of a P program:
+<P_program_example_guide>
+<system_description>
+System:
+Consider an espresso coffee machine as a reactive system that must respond correctly to various user inputs. The user interacts with the coffee machine through its control panel.
+The espresso machine consists of two parts: the front-end control panel and the backend coffee maker that actually makes the coffee.
+The control panel presents an interface to the user to perform operations like reset the machine, turn the steamer on and off, request an espresso, and clear the grounds by opening the container. 
+The control panel interprets these inputs from the user and sends appropriate commands to the coffee maker.
+
+Correctness Specification:
+By default, the P checker tests whether any event that is received in a state has a handler defined for it, otherwise, it would result in an unhandled event exception.
+If the P checker fails to find a bug, then it implies that the system model can handle any sequence of events generated by the given environment.
+In our coffee machine context, it implies that the coffee machine control panel can appropriately handle any sequence of inputs (button presses) by the user.
+We would also like to check that the coffee machine moves through a desired sequence of states, i.e., WarmUp -> Ready -> GrindBeans -> MakeCoffee -> Ready.
+</system_description>
+
+<P_project_description>
+The EspressoMachine folder contains the source code for the EspressoMachine project.
+<models>
+The P models (PSrc) for the EspressoMachine example consist of three files:
+1. CoffeeMakerControlPanel.p: Implements the CoffeeMakerControlPanel state machine.
+Basically, the control panel starts in the initial state and kicks off by warming up the coffee maker. After warming is successful, it moves to the ready state where it can either make coffee or start the steamer. 
+When asked to make coffee, it first grinds the beans and then brews coffee. In any of these states, if there is an error due to. e.g, no water or no beans, the control panel informs the user of the error and moves to the error state waiting for the user to reset the machine.
+2. CoffeeMaker.p: Implements the CoffeeMaker state machine.
+3. EspressoMachineModules.p: Declares the P module corresponding to EspressoMachine.
+</models>
+
+<specifications>
+The P Specification (PSpec) for the EspressoMachine project is implemented in Safety.p file.
+
+We define a safety specification, EspressoMachineModesOfOperation that observes the internal state of the EspressoMachine through the events that are announced as the system moves through different states and asserts that it always moves through the desired sequence of states.
+Steady operation: WarmUp -> Ready -> GrindBeans -> MakeCoffee -> Ready.
+If an error occurs in any of the states above then the EspressoMachine stays in the error state until it is reset and after which it returns to the Warmup state.
+</specifications>
+
+<test_scenarios>
+The test scenarios folder for EspressoMachine (PTst) consists of three files: TestDriver.p, TestScript.p, and Users.p.
+The Users.p declares two machines:
+1. SaneUser machine that uses the EspressoMachine with care, pressing the buttons in the right order, and cleaning up the grounds after the coffee is made, and
+2. CrazyUser machine who has never used an espresso machine before, gets too excited, and starts pushing random buttons on the control panel.
+</test_scenarios>
+</P_project_description>
+
+<P_project_code>
+Here is the folder PSrc:
+<PSrc>
+Here is the file CoffeeMakerControlPanel.p:
+<CoffeeMakerControlPanel.p>
+/* Events used by the user to interact with the control panel of the Coffee Machine */
+// event: make espresso button pressed
+event eEspressoButtonPressed;
+// event: steamer button turned off
+event eSteamerButtonOff;
+// event: steamer button turned on
+event eSteamerButtonOn;
+// event: door opened to empty grounds
+event eOpenGroundsDoor;
+// event: door closed after emptying grounds
+event eCloseGroundsDoor;
+// event: reset coffee maker button pressed
+event eResetCoffeeMaker;
+//event: error message from panel to the user
+event eCoffeeMakerError: tCoffeeMakerState;
+//event: coffee machine is ready
+event eCoffeeMakerReady;
+// event: coffee machine user
+event eCoffeeMachineUser: machine;
+
+// enum to represent the state of the coffee maker
+enum tCoffeeMakerState {
+  NotWarmedUp,
+  Ready,
+  NoBeansError,
+  NoWaterError
+}
+
+/*
+CoffeeMakerControlPanel acts as the interface between the CoffeeMaker and User.
+It converts the inputs from the user to appropriate inputs to the CoffeeMaker and sends responses to the user.
+It transitions from one state to another based on the events received from the User and the CoffeeMaker machine. 
+In all the states, it appropriately handles different events that can be received, including ignoring or deferring them if they are stale events.
+*/
+machine CoffeeMakerControlPanel
+{
+  var coffeeMaker: EspressoCoffeeMaker;
+  var coffeeMakerState: tCoffeeMakerState;
+  var currentUser: machine;
+
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    coffeeMakerState = NotWarmedUp;
+    coffeeMaker = new EspressoCoffeeMaker(this);
+    WaitForUser();
+    goto WarmUpCoffeeMaker;
+  }
+
+  // block until a user shows up
+  fun WaitForUser() {
+      receive {
+          case eCoffeeMachineUser: (user: machine) {
+              currentUser = user;
+          }
+      }
+  }
+
+  state WarmUpCoffeeMaker {
+    entry WarmUpCoffeeMaker_Entry;
+
+    on eWarmUpCompleted goto CoffeeMakerReady;
+
+    // grounds door is opened or closed will handle it later after the coffee maker has warmed up
+    defer eOpenGroundsDoor, eCloseGroundsDoor;
+    // ignore these inputs from users until the maker has warmed up.
+    ignore eEspressoButtonPressed, eSteamerButtonOff, eSteamerButtonOn, eResetCoffeeMaker;
+    // ignore these errors and responses as they could be from previous state
+    ignore eNoBeansError, eNoWaterError, eGrindBeansCompleted;
+  }
+
+  fun WarmUpCoffeeMaker_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eInWarmUpState;
+
+    BeginHeatingCoffeeMaker();
+  }
+
+  state CoffeeMakerReady {
+    entry CoffeeMakerReady_Entry;
+
+    on eOpenGroundsDoor goto CoffeeMakerDoorOpened;
+    on eEspressoButtonPressed goto CoffeeMakerRunGrind;
+    on eSteamerButtonOn goto CoffeeMakerRunSteam;
+
+    // ignore these out of order commands, these must have happened because of an error
+    // from user or sensor
+    ignore eSteamerButtonOff, eCloseGroundsDoor;
+
+    // ignore commands and errors as they are from previous state
+    ignore eWarmUpCompleted, eResetCoffeeMaker, eNoBeansError, eNoWaterError;
+  }
+
+  fun CoffeeMakerReady_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eInReadyState;
+
+    coffeeMakerState = Ready;
+    send currentUser, eCoffeeMakerReady;
+  }
+
+  state CoffeeMakerRunGrind {
+    entry CoffeeMakerRunGrind_Entry;
+
+    on eNoBeansError goto EncounteredError with AfterNoBeansError;
+
+    on eNoWaterError goto EncounteredError with AfterNoWaterError;
+
+    on eGrindBeansCompleted goto CoffeeMakerRunEspresso;
+
+    defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
+
+    // Can't make steam while we are making espresso
+    ignore eSteamerButtonOn, eSteamerButtonOff;
+
+    // ignore commands that are old or cannot be handled right now
+    ignore eWarmUpCompleted, eResetCoffeeMaker;
+  }
+
+  fun CoffeeMakerRunGrind_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eInBeansGrindingState;
+
+    GrindBeans();
+  }
+
+  fun AfterNoBeansError() {
+    coffeeMakerState = NoBeansError;
+    print "No beans to grind! Please refill beans and reset the machine!";
+  }
+
+  fun AfterNoWaterError() {
+    coffeeMakerState = NoWaterError;
+    print "No Water! Please refill water and reset the machine!";
+  }
+
+  state CoffeeMakerRunEspresso {
+    entry CoffeeMakerRunEspresso_Entry;
+
+    on eEspressoCompleted goto CoffeeMakerReady with AfterEspressoCompleted;
+
+    on eNoWaterError goto EncounteredError with AfterNoWaterError;
+
+    // the user commands will be handled next after finishing this espresso
+    defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
+
+    // Can't make steam while we are making espresso
+    ignore eSteamerButtonOn, eSteamerButtonOff;
+
+    // ignore old commands and cannot reset when making coffee
+    ignore eWarmUpCompleted, eResetCoffeeMaker;
+  }
+
+  fun CoffeeMakerRunEspresso_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eInCoffeeBrewingState;
+
+    StartEspresso();
+  }
+
+  fun AfterEspressoCompleted() {
+    send currentUser, eEspressoCompleted;
+  }
+
+  state CoffeeMakerRunSteam {
+    entry StartSteamer;
+
+    on eSteamerButtonOff goto CoffeeMakerReady with StopSteamer;
+
+    on eNoWaterError goto EncounteredError with AfterNoWaterError;
+
+    // user might have cleaned grounds while steaming
+    defer eOpenGroundsDoor, eCloseGroundsDoor;
+
+    // can't make espresso while we are making steam
+    ignore eEspressoButtonPressed, eSteamerButtonOn;
+  }
+
+  state CoffeeMakerDoorOpened {
+    on eCloseGroundsDoor do AfterCloseGroundsDoor;
+
+    // grounds door is open cannot handle these requests just ignore them
+    ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
+  }
+
+  fun AfterCloseGroundsDoor() {
+    assert coffeeMakerState != NotWarmedUp;
+    assert coffeeMakerState == Ready;
+    goto CoffeeMakerReady;
+  }
+
+  state EncounteredError {
+    entry EncounteredError_Entry;
+
+    on eResetCoffeeMaker goto WarmUpCoffeeMaker with AfterResetCoffeeMaker;
+
+    // error, ignore these requests until reset.
+    ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff,
+        eOpenGroundsDoor, eCloseGroundsDoor, eWarmUpCompleted, eEspressoCompleted, eGrindBeansCompleted;
+
+    // ignore other simultaneous errors
+    ignore eNoBeansError, eNoWaterError;
+  }
+
+  fun EncounteredError_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eErrorHappened;
+
+    // send the error message to the client
+    send currentUser, eCoffeeMakerError, coffeeMakerState;
+  }
+
+  fun AfterResetCoffeeMaker() {
+    // inform the specification about current state of the coffee maker
+    announce eResetPerformed;
+  }
+
+  fun BeginHeatingCoffeeMaker() {
+    // send an event to maker to start warming
+    send coffeeMaker, eWarmUpReq;
+  }
+
+  fun StartSteamer() {
+    // send an event to maker to start steaming
+    send coffeeMaker, eStartSteamerReq;
+  }
+
+  fun StopSteamer() {
+    // send an event to maker to stop steaming
+    send coffeeMaker, eStopSteamerReq;
+  }
+
+  fun GrindBeans() {
+    // send an event to maker to grind beans
+    send coffeeMaker, eGrindBeansReq;
+  }
+
+  fun StartEspresso() {
+    // send an event to maker to start espresso
+    send coffeeMaker, eStartEspressoReq;
+  }
+}
+</CoffeeMakerControlPanel.p>
+
+Here is the file CoffeeMaker.p:
+<CoffeeMaker.p>
+/* Requests or operations from the controller to coffee maker */
+
+// event: warmup request when the coffee maker starts or resets
+event eWarmUpReq;
+// event: grind beans request before making coffee
+event eGrindBeansReq;
+// event: start brewing coffee
+event eStartEspressoReq;
+// event start steamer
+event eStartSteamerReq;
+// event: stop steamer
+event eStopSteamerReq;
+
+/* Responses from the coffee maker to the controller */
+// event: completed grinding beans
+event eGrindBeansCompleted;
+// event: completed brewing and pouring coffee
+event eEspressoCompleted;
+// event: warmed up the machine and ready to make coffee
+event eWarmUpCompleted;
+
+/* Error messages from the coffee maker to control panel or controller*/
+// event: no water for coffee, refill water!
+event eNoWaterError;
+// event: no beans for coffee, refill beans!
+event eNoBeansError;
+// event: the heater to warm the machine is broken!
+event eWarmerError;
+
+/*****************************************************
+EspressoCoffeeMaker receives requests from the control panel of the coffee machine and
+based on its state e.g., whether heater is working, or it has beans and water, the maker responds
+back to the controller if the operation succeeded or errored.
+*****************************************************/
+machine EspressoCoffeeMaker
+{
+  // control panel of the coffee machine that sends inputs to the coffee maker
+  var controller: CoffeeMakerControlPanel;
+
+  start state WaitForRequests {
+    entry WaitForRequests_Entry;
+
+    on eWarmUpReq do AftereWithDrawReq;
+
+    on eGrindBeansReq do AfterGrindBeansReq;
+
+    on eStartEspressoReq do AfterStartEspressoReq;
+
+    on eStartSteamerReq do AfterStartSteamerReq;
+
+    on eStopSteamerReq do AfterStopSteamerReq;
+  }
+
+  fun WaitForRequests_Entry(_controller: CoffeeMakerControlPanel) {
+    controller = _controller;
+  }
+
+  fun AfterWarmUpReq() {
+    send controller, eWarmUpCompleted;
+  }
+
+  fun AfterGrindBeansReq() {
+    if (!HasBeans()) {
+      send controller, eNoBeansError;
+    } else {
+      send controller, eGrindBeansCompleted;
+    }
+  }
+
+  fun AfterStartEspressoReq() {
+    if (!HasWater()) {
+      send controller, eNoWaterError;
+    } else {
+      send controller, eEspressoCompleted;
+    }
+  }
+
+  fun AfterStartSteamerReq() {
+    if (!HasWater()) {
+      send controller, eNoWaterError;
+    }
+  }
+
+  fun AfterStopSteamerReq() {
+    /* do nothing, steamer stopped */
+  }
+
+  // nondeterministic functions to trigger different behaviors
+  fun HasBeans() : bool { return $; }
+  fun HasWater() : bool { return $; }
+}
+</CoffeeMaker.p>
+
+Here is the file EspressoMachineModules.p:
+<EspressoMachineModules.p>
+module EspressoMachine = { CoffeeMakerControlPanel, EspressoCoffeeMaker };
+</EspressoMachineModules.p>
+</PSrc>
+
+Here is the folder PSpec:
+<PSpec>
+Here is the file Safety.p:
+<Safety.p>
+/* Events used to inform monitor about the internal state of the CoffeeMaker */
+event eInWarmUpState;
+event eInReadyState;
+event eInBeansGrindingState;
+event eInCoffeeBrewingState;
+event eErrorHappened;
+event eResetPerformed;
+
+/*********************************************
+We would like to ensure that the coffee maker moves through the expected modes of operation. 
+We want to make sure that the coffee maker always transitions through the following sequence of states:
+Steady operation:
+  WarmUp -> Ready -> GrindBeans -> MakeCoffee -> Ready
+With Error:
+If an error occurs in any of the states above, then the Coffee machine stays in the error state until
+it is reset and after which it returns to the Warmup state.
+
+The EspressoMachineModesOfOperation spec machine observes events and ensures that the system moves through the states defined by the monitor. 
+Note that if the system allows (has execution as) a sequence of events that are not accepted by the monitor (i.e., the monitor throws an unhandled event exception), then the system does not satisfy the desired specification. 
+Hence, this monitor can be thought of accepting only those behaviors of the system that follow the sequence of states modelled by the spec machine. 
+For example, if the system moves from Ready to CoffeeMaking state directly without Grinding, then the monitor will raise an ALARM!
+**********************************************/
+spec EspressoMachineModesOfOperation
+observes eInWarmUpState, eInReadyState, eInBeansGrindingState, eInCoffeeBrewingState, eErrorHappened, eResetPerformed
+{
+  start state StartUp {
+    on eInWarmUpState goto WarmUp;
+  }
+
+  state WarmUp {
+    on eErrorHappened goto Error;
+    on eInReadyState goto Ready;
+  }
+
+  state Ready {
+    ignore eInReadyState;
+    on eInBeansGrindingState goto BeanGrinding;
+    on eErrorHappened goto Error;
+  }
+
+  state BeanGrinding {
+    on eInCoffeeBrewingState goto MakingCoffee;
+    on eErrorHappened goto Error;
+  }
+
+  state MakingCoffee {
+    on eInReadyState goto Ready;
+    on eErrorHappened goto Error;
+  }
+
+  state Error {
+    on eResetPerformed goto StartUp;
+    ignore eErrorHappened;
+  }
+}
+</Safety.p>
+</PSpec>
+
+Here is the folder PTst:
+<PTst>
+Here is the file TestDriver.p:
+<TestDriver.p>
+machine TestWithSaneUser
+{
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    // create a sane user
+    new SaneUser(new CoffeeMakerControlPanel());
+  }
+}
+
+machine TestWithCrazyUser
+{
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    // create a crazy user
+    new CrazyUser((coffeeMaker = new CoffeeMakerControlPanel(), nOps = 5));
+  }
+}
+</TestDriver.p>
+
+Here is the file Testscript.p:
+<Testscript.p>
+// there are two test cases defined in the EspressoMachine project.
+test tcSaneUserUsingCoffeeMachine [main=TestWithSaneUser]:
+  assert EspressoMachineModesOfOperation in (union { TestWithSaneUser }, EspressoMachine, Users);
+
+test tcCrazyUserUsingCoffeeMachine [main=TestWithCrazyUser]:
+  assert EspressoMachineModesOfOperation in (union { TestWithCrazyUser }, EspressoMachine, Users);
+</Testscript.p>
+
+Here is the file Users.p:
+<Users.p>
+/*
+A SaneUser who knows how to use the CoffeeMaker
+*/
+machine SaneUser {
+  var coffeeMakerPanel: CoffeeMakerControlPanel;
+  var cups: int;
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry(coffeeMaker: CoffeeMakerControlPanel) {
+    coffeeMakerPanel = coffeeMaker;
+    // inform control panel that I am the user
+    send coffeeMakerPanel, eCoffeeMachineUser, this;
+    // want to make 2 cups of espresso
+    cups = 2;
+
+    goto LetsMakeCoffee;
+  }
+
+  state LetsMakeCoffee {
+    entry LetsMakeCoffee_Entry;
+  }
+
+  fun LetsMakeCoffee_Entry() {
+    while (cups > 0)
+    {
+      // lets wait for coffee maker to be ready
+      WaitForCoffeeMakerToBeReady();
+
+      // press Espresso button
+      PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_PressEspressoButton);
+
+      // check the status of the machine
+      receive {
+        case eEspressoCompleted: {
+          // lets make the next coffee
+          cups = cups - 1;
+        }
+        case eCoffeeMakerError: (status: tCoffeeMakerState){
+
+          // lets fill the beans or water and reset the machine
+          // and go back to making espresso
+          PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_PressResetButton);
+        }
+      }
+    }
+
+    // I am a good user so I will clear the coffee grounds before leaving.
+    PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_ClearGrounds);
+
+    // am done, let me exit
+    raise halt;
+  }
+}
+
+enum tCoffeeMakerOperations {
+  CM_PressEspressoButton,
+  CM_PressSteamerButton,
+  CM_PressResetButton,
+  CM_ClearGrounds
+}
+
+/*
+A crazy user who gets excited by looking at a coffee machine and starts stress testing the machine
+by pressing all sorts of random button and opening/closing doors
+*/
+// TODO: We do not support global constants currently, they can be encoded using global functions.
+
+machine CrazyUser {
+  var coffeeMakerPanel: CoffeeMakerControlPanel;
+  var numOperations: int;
+  start state StartPressingButtons {
+    entry StartPressingButtons_Entry;
+
+    // I will ignore all the responses from the coffee maker
+    ignore eCoffeeMakerError, eEspressoCompleted, eCoffeeMakerReady;
+  }
+
+  fun StartPressingButtons_Entry(config: (coffeeMaker: CoffeeMakerControlPanel, nOps: int)) {
+    var pickedOps: tCoffeeMakerOperations;
+
+    numOperations = config.nOps;
+    coffeeMakerPanel = config.coffeeMaker;
+
+    // inform control panel that I am the user
+    send coffeeMakerPanel, eCoffeeMachineUser, this;
+
+    while(numOperations > 0)
+    {
+      pickedOps = PickRandomOperationToPerform();
+      PerformOperationOnCoffeeMaker(coffeeMakerPanel, pickedOps);
+      numOperations = numOperations - 1;
+    }
+  }
+
+  // Pick a random enum value (hacky work around)
+  // Currently, the choose operation does not support choose over enum value
+  fun PickRandomOperationToPerform() : tCoffeeMakerOperations {
+    var op_i: int;
+    op_i =  choose(3);
+    if(op_i == 0)
+      return CM_PressEspressoButton;
+    else if(op_i == 1)
+      return CM_PressSteamerButton;
+    else if(op_i == 2)
+      return CM_PressResetButton;
+    else
+      return CM_ClearGrounds;
+  }
+}
+
+/* Function to perform an operation on the CoffeeMaker */
+fun PerformOperationOnCoffeeMaker(coffeeMakerCP: CoffeeMakerControlPanel, CM_Ops: tCoffeeMakerOperations)
+{
+  if(CM_Ops == CM_PressEspressoButton) {
+    send coffeeMakerCP, eEspressoButtonPressed;
+  }
+  else if(CM_Ops == CM_PressSteamerButton) {
+    send coffeeMakerCP, eSteamerButtonOn;
+    // wait for some time and then release the button
+    send coffeeMakerCP, eSteamerButtonOff;
+  }
+  else if(CM_Ops == CM_ClearGrounds)
+  {
+    send coffeeMakerCP, eOpenGroundsDoor;
+    // empty ground and close the door
+    send coffeeMakerCP, eCloseGroundsDoor;
+  }
+  else if(CM_Ops == CM_PressResetButton)
+  {
+    send coffeeMakerCP, eResetCoffeeMaker;
+  }
+}
+
+fun WaitForCoffeeMakerToBeReady() {
+  receive {
+    case eCoffeeMakerReady: {}
+    case eCoffeeMakerError: (status: tCoffeeMakerState){ raise halt; }
+  }
+}
+module Users = { SaneUser, CrazyUser };
+</Users.p>
+</PTst>
+</P_project_code>
+
+</P_program_example_guide>

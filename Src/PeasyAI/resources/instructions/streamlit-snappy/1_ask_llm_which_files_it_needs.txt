@@ -1,0 +1,8 @@
+I need your help to solve a bug in my p project. 
+Here is the error trace:
+{error_trace}
+
+Here are the files in this project:
+{file_list}
+
+Which files do you need to accurately diagnose this issue? Place each file on a new line.

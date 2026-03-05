@@ -38,7 +38,7 @@ p --version                # P compiler is on PATH
 Install the latest release directly from GitHub:
 
 ```bash
-pip install https://github.com/p-org/P/releases/download/peasyai-v0.2.0/peasyai_mcp-0.2.0-py3-none-any.whl
+pip install https://github.com/p-org/P/releases/download/peasyai-v1.0.0/peasyai_mcp-1.0.0-py3-none-any.whl
 ```
 
 !!! tip "Check the [Releases page](https://github.com/p-org/P/releases) for the latest version."

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "peasyai-mcp"
-version = "0.1.0"
+version = "1.0.0"
 description = "PeasyAI – MCP server for P language code generation, compilation, and verification"
 readme = "README.md"
 license = { text = "MIT" }
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["mcp", "p-language", "formal-verification", "code-generation", "model-checking"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
     "Topic :: Software Development :: Code Generators",
     "Topic :: Software Development :: Testing",

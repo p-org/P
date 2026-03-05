@@ -1,3 +1,5 @@
+## Lock Server with PObserve CLI
+
 # Running PObserve CLI on Lock Server Example
 
 This page demonstrates how to use PObserve CLI to verify system correctness using a lock server as an example.

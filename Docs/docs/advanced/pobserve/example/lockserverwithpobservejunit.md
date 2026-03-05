@@ -1,3 +1,5 @@
+## Lock Server with PObserve JUnit
+
 # Running PObserve Java Unit Test on Lock Server Example
 
 This page demonstrates how to use PObserve with Java JUnit tests to verify system correctness in real-time during test execution using a lock server as an example.

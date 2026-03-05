@@ -1,4 +1,4 @@
-# Introduction to Formal Verification in P
+## Introduction to Formal Verification in P
 
 This tutorial describes the formal verification features of P through an example. We assume that the reader has P installed along with the verification dependencies (i,e., UCLID5 and Z3). Installation instructions are available [here](install-pverifier.md).
 
@@ -6,7 +6,9 @@ When using P for formal verification, our goal is to show that no execution of a
 
 To get a sense of these differences, and to cover the new features in P for verification, we will verify a simplified 2PC protocol. The P tutorial already describes a 2PC protocol, but we will make some different modeling choices that will make the verification process easier. In particular, we will follow the modeling decisions made by [Zhang et al.](https://www.usenix.org/system/files/osdi24-zhang-nuda.pdf) in their running example.
 
-## 2PC Model
+---
+
+## :material-state-machine:{ .lg } 2PC Model
 
 The 2PC protocol consists of two types of machines: coordinator and participant. There is a single coordinator, who receives requests from the outside world, and a set of participants, that must agree on whether to accept or reject the request. If any participant wants to reject the request, they must all agree to reject the request; if all participants want to accept the request, then they must all agree to accept the request. The job of the coordinator is to mediate this agreement.
 To accomplish this, the system executes the following steps:
@@ -129,7 +131,9 @@ on eAbort do {goto Rejected;}
 
 We use a function called "preference" to decide whether to vote yes or no on a transaction. We also use a function, "coordinator," to get the address of the coordinator machine.
 
-## Pure Functions
+---
+
+## :material-function:{ .lg } Pure Functions
 
 The 2PC model described above uses three special functions, `participants`, `coordinator`, and `preference`, that capture the set of participants, the coordinator in charge, and the preference of individual participants for the given request. In this simple system, there is always one coordinator and a fixed set of participants, but we want the proof to work for any function that satisfies those conditions. In P, we can use the new concept of "pure" functions to model this (what SMT-LIB calls functions). Specifically, we can declare the three special functions as follows.
 
@@ -141,7 +145,9 @@ pure preference(m: machine) : bool;
 
 The participants function is a pure function with no body that takes no argument and returns a set of machines. The coordinator function is similar but only returns a single machine. The preference function, which also has no body, takes a machine and returns a preference. We call these functions "pure" because they can have no side-effects and behave like mathematical functions (e.g., calling the same pure function twice with the same arguments must give the same result). When pure functions do not have bodies, they are like foreign functions that we can guarantee don't have side-effects. When pure functions do have bodies, the bodies must be side-effect-free expressions.
 
-## Initialization Conditions
+---
+
+## :material-cog-outline:{ .lg } Initialization Conditions
 
 We want our model to capture many different system configurations (e.g., number of participants) but not all configurations are valid. For example, we want to constrain the `participants` function to only point to participant machines. Initialization conditions let us constrain the kinds of systems that we consider. You can think of these as constraints that P test harnesses have to satisfy to be considered valid.
 
@@ -160,13 +166,17 @@ init-condition forall (c: Coordinator) :: c.yesVotes == default(set[machine]);
 
 When we write a proof of correctness later in this tutorial, we will be restricting the systems that we consider to those that satisfy the initialization conditions listed above.
 
-## Quantifiers and Machine Types
+---
+
+## :material-code-braces:{ .lg } Quantifiers and Machine Types
 
 Our initialization conditions contain two new P features: the `init` keyword, and quantified expressions (`forall` and `exists`). Even more interesting, one quantifier above is over a machine subtype (`coordinator`). 
 
 In P, the only way to dereference a machine variable inside of a specification (like the `init-condition`s above) is by specifically quantifying over that machine type. In other words, `forall (c: Coordinator) :: c.yesVotes == default(set[machine])` is legal but `forall (c: machine) :: c.yesVotes == default(set[machine])` is not, even though they might appear to be similar. The reason for this is that selecting (using the `.` operator) on an incorrect subtype (e.g., trying to get `yesVotes` from a participant machine) is undefined. Undefined behavior in formal verification can lead to surprising results that can be really hard to debug, so in P we syntactically disallow this kind of undefined behavior altogether.
 
-## P's Builtin Specifications And Our First Proof Attempt
+---
+
+## :material-shield-check:{ .lg } P's Builtin Specifications And Our First Proof Attempt
 
 Using the code described above, and by setting the target to `PVerifier` in the `.pproj` file, you can now run the verification engine for the first time (execute `p compile`). This run will result in a large list of failures, containing items like `❌  Failed to verify that Coordinator never receives eVoteReq in Init`. These failures represent P's builtin requirements that all events are handled. They also give us a glimpse into how verification by induction works.
 
@@ -176,7 +186,9 @@ When we ran our verification engine it reported that it failed to prove that all
 
 The verification engine is unable to prove these properties not because the system is incorrect, but rather because it needs help from the user to complete it's proof: it needs the user to define the _good_ states. More formally, it needs the user to define an inductive invariant that implies that no builtin P specification is violated.
 
-## Invariants And Our First Proof
+---
+
+## :material-check-decagram:{ .lg } Invariants And Our First Proof
 
 Users can provide invariants to P using the `invariant` keyword. The goal is to find a set of invariants whose conjunction is inductive and implies the desired property. For now, the desired property is that no builtin P specification is violated.
 
@@ -248,7 +260,9 @@ After adding similar loop invariants to all three loops in the model, we can re-
 
 Notice that our initial model uses `ignore` statements that we did not describe when introducing the model. If we remove these statements, the verification engine will not be able to prove that no builtin P specification is violated. In some cases, that is because the ignore statements are necessary. For example, it is possible for the coordinator to receive a "yes" or "no" vote when it is in the `Aborted` state. The `ignore` keyword lets us tell the verifier that we have thought of these cases.
 
-## Invariant Groups, Proof Scripts, and Proof Caching
+---
+
+## :material-check-decagram:{ .lg } Invariant Groups, Proof Scripts, and Proof Caching
 
 When writing larger proofs, it will become useful to group invariants into lemmas, and then to tell the verifier how to use these lemmas for its proof checking. This helps the user organize their proofs; it helps the verifier construct smaller, more stable queries; and it helps avoid checking the same queries over and over, through caching.
 
@@ -299,7 +313,9 @@ This proof script has two steps. First it says that we need to prove that the le
 
 Notice that the first time you run this verification it will take much longer than the second time. That is because the proof is cached and the solver is not executed the second time. If we don't change our model or our lemma, these queries will never be executed again.
 
-## First 2PC Specification and Proof
+---
+
+## :material-shield-check:{ .lg } First 2PC Specification and Proof
 
 Proving that the builtin P specifications are satisfied is all well and good, but it isn't exactly the most interesting property. Zhang et al. provide a more exciting specification that we can verify ("2PC-Safety"). Translated into P, their specification looks like the following invariant.
 
@@ -368,7 +384,9 @@ Showing that the verification passes. Notice that if you remove any of the invar
 ❓ Failed to verify invariant kondo: a6 at PSrc/System.p:27:12 
 ```
 
-## Recap and Next Steps
+---
+
+## :material-flag-checkered:{ .lg } Recap and Next Steps
 
 In this tutorial, we formally verified a simplified 2PC protocol in P. The full, final code for the verification is available [here](https://github.com/p-org/P/tree/dev_p3.0/pverifier/Tutorial/Advanced/2_TwoPhaseCommitVerification/Single/PSrc/System.p).
 

@@ -1,3 +1,5 @@
+## Writing a Log Parser
+
 # PObserve: Log Parser
 ## What is a PObserve Log Parser?
 In order to use PObserve, a *log parser* is an essential component that converts system-generated log lines to PObserve events which are later consumed by a PObserve monitor. The log parser takes a log line (text or JSON) as input and converts it into a PObserveEvent object.

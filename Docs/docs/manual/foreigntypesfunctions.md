@@ -75,7 +75,7 @@ p compile
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
     Restored P/Tutorial/PriorityQueue/PGenerated/CSharp/PriorityQueue.csproj (in 392 ms).
-    PriorityQueue -> P/Tutorial/PriorityQueue/PGenerated/CSharp/net6.0/PriorityQueue.dll
+    PriorityQueue -> P/Tutorial/PriorityQueue/PGenerated/CSharp/net8.0/PriorityQueue.dll
 
     Build succeeded.
     0 Warning(s)
@@ -101,8 +101,8 @@ p check -v
     $ p check -v
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/PriorityQueue/PGenerated/CSharp/net6.0/PriorityQueue.dll
-    .. Checking P/Tutorial/PriorityQueue/PGenerated/CSharp/net6.0/PriorityQueue.dll
+    .. Found a P compiled file: P/Tutorial/PriorityQueue/PGenerated/CSharp/net8.0/PriorityQueue.dll
+    .. Checking P/Tutorial/PriorityQueue/PGenerated/CSharp/net8.0/PriorityQueue.dll
     .. Test case :: tcCheckPriorityQueue
     ... Checker is using 'random' strategy (seed:1636311106).
     ..... Schedule #1

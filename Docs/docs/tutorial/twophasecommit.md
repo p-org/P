@@ -1,3 +1,5 @@
+## Example 2: Two Phase Commit
+
 ??? note "How to use this example"
 
     We assume that you have cloned the P repository locally.
@@ -5,7 +7,7 @@
     git clone https://github.com/p-org/P.git
     ```
 
-    The recommended way to work through this example is to open the [P/Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simultaneously read the description for each example and browse the P program in IntelliJ.
+    The recommended way to work through this example is to open the [P/Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in [Peasy IDE](../getstarted/PeasyIDE.md) (VS Code extension) or your preferred editor side-by-side with a browser, so you can simultaneously read the description for each example and browse the P program.
 
     To know more about the P language primitives used in this example, please look them up in the [language manual](../manualoutline.md).
 
@@ -14,7 +16,7 @@ Now that we understand the basic features of the P language, let's look at the m
 
 **System:** We use a simplified version of the [classic two phase commit protocol](https://s2.smu.edu/~mhd/8330f11/p133-gray.pdf) to model a transaction commit service. The two phase commit protocol uses a coordinator to gain consensus for any transaction spanning across multiple participants. A transaction in our case is simply a `write` operation for a key-value data store where the data store is replicated across multiple participants. More concretely, a `write` transaction must be committed by the coordinator only if it's accepted by all the participant replicas, and must be aborted if any one of the participant replicas rejects the `write` request.
 
-![Placeholder](twophasecommit.png){ align=center }
+![Two-phase commit protocol diagram](twophasecommit.png){ align=center }
 
 A two phase commit protocol consists of two phases :laughing: (figure above). On receiving a write transaction, the coordinator starts the first phase in which it sends a `prepare` request to all the participants and waits for a `prepare success` or `prepare failure` response. On receiving prepare responses from all the participants, the coordinator moves to the second phase where it sends a `commit` or `abort` message to the participants and also responds back to the client.
 
@@ -22,12 +24,16 @@ A two phase commit protocol consists of two phases :laughing: (figure above). On
 
 **Correctness Specification:** We would like our transaction commit service to provide atomicity guarantees for each transaction. That is, if the service responds to the client that a transaction was committed then that transaction must have been committed by each of its participants; and, if a transaction is aborted then at least one of the participants must have rejected it. We would also like to check that under the assumptions above (no node failures and reliable network), each transaction request is eventually responded by the transaction commit service.
 
-### P Project
+---
+
+### :material-folder-outline:{ .lg } P Project
 
 The [2_TwoPhaseCommit](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit) folder contains the source code for the [TwoPhaseCommit](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/TwoPhaseCommit.pproj) project.
 Please feel free to read details about the recommended [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).
 
-### Models
+---
+
+### :material-state-machine:{ .lg } Models
 
 The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit/PSrc)) for the TwoPhaseCommit example consists of three files:
 
@@ -53,7 +59,9 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseC
 
 - [TwoPhaseCommitModules.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSrc/TwoPhaseCommitModules.p): Declares the P module corresponding to the two phase commit system.
 
-### Timer and Failure Injector
+---
+
+### :material-timer-alert:{ .lg } Timer and Failure Injector
 
 Our two phase commit project depends on two other components:
 
@@ -61,7 +69,9 @@ Our two phase commit project depends on two other components:
 
 - **Failure Injector:** P allows programmers to explicitly model different types of failures in the system. The [`FailureInjector`](https://github.com/p-org/P/tree/master/Tutorial/Common/FailureInjector) project demonstrates how to model node failures in P using the `halt` event. The [`FailureInjector` machine](https://github.com/p-org/P/blob/master/Tutorial/Common/FailureInjector/PSrc/FailureInjector.p) nondeterministically picks a node and sends a `eShutDown` event. On receiving an `eShutDown` event, the corresponding node must `halt` to destroy itself. To know more about the special `halt` event, please check the manual: [halt event](../manual/expressions.md#primitive).
 
-### Specifications
+---
+
+### :material-shield-check:{ .lg } Specifications
 
 The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSpec)) for the TwoPhaseCommit example are implemented in the [Atomicity.p](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PSpec/Atomicity.p) file. We define two specifications:
 
@@ -72,7 +82,9 @@ The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/2_
 !!! info "Weaker Property"
     Note that we have asserted a weaker property than what is required for Atomicity. Ideally, we would like to check that if a transaction is committed by the coordinator then it was committed-locally by all participants, and if the transaction is aborted then at least one participant must have rejected the transaction and all the participants aborted the transaction. We leave implementing this stronger property as an exercise problem, which you can revisit after finishing the other problems in the tutorials.
 
-### Test Scenarios
+---
+
+### :material-test-tube:{ .lg } Test Scenarios
 
 The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios. TestScripts are collections of test cases that are automatically run by the P checker.
 
@@ -119,9 +131,11 @@ The test scenarios folder for TwoPhaseCommit ([PTst](https://github.com/p-org/P/
 ??? tip "[Expand]: Let's walk through Client.p"
     The `Client` machine implements the client of the two-phase-commit transaction service. Each client issues N non-deterministic write-transactions, if the transaction succeeds then it performs a read-transaction on the same key and asserts that the value read is same as what was written by the write transaction.
 
-    - ([L60](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/Client.p#L60)) &rarr; Declares a foreign function in P. Foreign functions are functions that are declared in P but implemented in the external foreign language. Please read the example in [P foreign interface](../manual/foriegntypesfunctions.md) to know more about this functionality. In this example, the `ChooseRandomTransaction` function could have been very easily written in P itself but it's implemented as foreign function just to demonstrate that P supports this functionality.
+    - ([L60](https://github.com/p-org/P/blob/master/Tutorial/2_TwoPhaseCommit/PTst/Client.p#L60)) &rarr; Declares a foreign function in P. Foreign functions are functions that are declared in P but implemented in the external foreign language. Please read the example in [P foreign interface](../manual/foreigntypesfunctions.md) to know more about this functionality. In this example, the `ChooseRandomTransaction` function could have been very easily written in P itself but it's implemented as foreign function just to demonstrate that P supports this functionality.
 
-### Compiling TwoPhaseCommit
+---
+
+### :material-cog-play:{ .lg } Compiling
 
 Navigate to the [2_TwoPhaseCommit](https://github.com/p-org/P/tree/master/Tutorial/2_TwoPhaseCommit) folder and run the following command to compile the TwoPhaseCommit project:
 
@@ -161,7 +175,7 @@ p compile
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
     Restored P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/TwoPhaseCommit.csproj (in 92 ms).
-    TwoPhaseCommit -> P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
+    TwoPhaseCommit -> P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net8.0/TwoPhaseCommit.dll
 
     Build succeeded.
     0 Warning(s)
@@ -174,7 +188,9 @@ p compile
     ~~ [PTool]: Thanks for using P! ~~
     ```
 
-### Checking TwoPhaseCommit
+---
+
+### :material-shield-check-outline:{ .lg } Checking
 
 You can get the list of test cases defined in the TwoPhaseCommit project by running the P Checker:
 
@@ -188,8 +204,8 @@ p check
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
-    .. Checking P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net6.0/TwoPhaseCommit.dll
+    .. Found a P compiled file: P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net8.0/TwoPhaseCommit.dll
+    .. Checking P/Tutorial/2_TwoPhaseCommit/PGenerated/CSharp/net8.0/TwoPhaseCommit.dll
     Error: We found '10' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClientNoFailure
@@ -252,11 +268,13 @@ Check the parameterized generated `tcParametricTests` test cases for 1000 schedu
 p check -tc tcParametricTests -s 1000
 ```
 
-### Exercise Problem
+---
+
+### :material-pencil:{ .lg } Exercise Problem
 
 - [Problem 1] Based on the hint above, try and fix the concurrency bug in the `Client` state machine and run the test cases again!
 
 - [Problem 2] A really interesting exploratory problem would be to try and combine the two phase commit protocol with the failure detector system to overcome the progress issue faced by the two phase commit protocol in the presence of node failures. Can you really do that? Let's have a discussion and build a variant of the protocol to tolerate failures?
 
 !!! summary "What did we learn through this example?"
-    We dived deeper into: (1) modeling non-determinism in distributed systems, in particular, time-outs; (2) writing complex safety properties like atomicity of transactions in P; and finally, (3) modeling node failures in P using a failure injector state machine. We will also show how P allows invoking foreign code from the P programs. More details in [P foreign interface](../manual/foriegntypesfunctions.md).
+    We dived deeper into: (1) modeling non-determinism in distributed systems, in particular, time-outs; (2) writing complex safety properties like atomicity of transactions in P; and finally, (3) modeling node failures in P using a failure injector state machine. We will also show how P allows invoking foreign code from the P programs. More details in [P foreign interface](../manual/foreigntypesfunctions.md).

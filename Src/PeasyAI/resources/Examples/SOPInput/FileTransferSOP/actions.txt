@@ -1,0 +1,44 @@
+openConnection:
+  * description: Opens the connection of a server with given server id
+  * payload:
+    - server_id: int
+  * returns:
+    - status: string [failed, success]
+
+closeConnection:
+  * description: Closes the connection of a server with given id
+  * payload:
+    - server_id: int
+  * returns:
+    - status:
+
+listFiles:
+  * description: Returns list of files available on the source server
+  * payload:
+    - server_id: int
+  * returns:
+    - files: seq[string]
+
+copyFile:
+  * description: Copies the files from the source server with source_server_id to target server with target_server_id
+  * payload:
+    - source_server_id: int
+    - target_server_id: int
+    - file: string
+  * returns:
+    - status: string [failed, success]
+
+deleteFile:
+  * description: Deletes the file from the given server_id
+  * payload:
+    - server_id: int
+    - file: string
+  * returns:
+    - status: string [failed, success]
+
+closeConnectionOnFailure:
+  * description: Closes the connection of a server with given id because of a failure
+  * payload:
+    - server_id: int
+  * returns:
+    - status:

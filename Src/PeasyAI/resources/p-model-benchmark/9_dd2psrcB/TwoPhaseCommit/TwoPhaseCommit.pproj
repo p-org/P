@@ -1,0 +1,13 @@
+<!-- P project file for the Two Phase Commit example -->
+<Project>
+<ProjectName>TwoPhaseCommit</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+	<PFile>./PSpec/</PFile>
+	<PFile>./PTst/</PFile>
+	<PFile>./PForeign/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+<!-- Add the dependencies for the FailureInjector machine -->
+<IncludeProject>/Users/ahmayun/Desktop/pchatbot/src/P-Chatbot/resources/p-model-benchmark/Common/FailureInjector/FailureInjector.pproj</IncludeProject>
+</Project>

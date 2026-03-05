@@ -1,0 +1,25 @@
+Here is the standard operating procedure (SOP) of how to proceed with the investigation:
+Step 1: 
+    * Instruction: Start the investigation. Run the action findStatus to find the status and move on to next step
+    * Action: findStatus
+Step 2: 
+    * Instruction:
+        - If the status is Aborted, finish the investigation with "the query was aborted." as the cause
+        - If the status is not aborted, then move on to next step.
+Step 3: 
+    * Instruction:
+        - If the status is Failed, then run the action findErrorMessage to find why the query failed. Once you get the response from findErrorMessage, finish the investigation with errorMessage from response as the cause.
+        - If the status is not Failed, then move to next step.
+    * Action: findErrorMessage
+Step 4: 
+    * Instruction:
+        - If the status is Canceled, finish the investigation with "the query was externally terminated and that you don't have enough information about it to debug it. Please rerun the query." as the cause.
+        - If the status is not canceled, move to next step
+Step 5: 
+    * Instruction:
+        - If the status is Finished, that means query ran successfully and we need to debug why it is slow. Run the action findExecutionTime to first verify if query is indeed slow and move on to the next step.
+    * Action: findExecutionTime
+Step 6: 
+    * Instruction:
+        - If the execution time of query is < 60 units, that means it is not slow. Finish the investigation with "query is not slow" as the cause
+        - If the execution time of query is >= 60, then nothing you found could explain the slowness of query. Finish investigation with "Could not find anything that explains the query slowness. Ask the user to run the query again so you can re-run the investigation." as the cause. 

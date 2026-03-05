@@ -1,0 +1,49 @@
+Here is the standard operating procedure (SOP) of how to proceed with the File Transfer:
+
+Step 1:
+    * Instruction: Every transfer process starts with an open connection. Run the action openConnection with both target and source server ids to open the connections, and move to the next step
+    * Action: openConnection
+
+Step 2:
+    * Instruction:
+        - If the status is failed, then run closeConnectionOnFailure with both source and target server ids to close the connections.
+        - If the status is success, then move to next step
+    * Action : closeConnectionOnFailure
+
+Step 3:
+    * Instruction: List all the files from the source server and move to the next step
+    * Action: listFiles
+
+Step 4:
+    * Instruction: For each file in the list from Step 3, execute Steps 5-9 sequentially
+
+Step 5:
+    * Instruction: Copy the current file from source to target server, run action copyFile and move to next step
+    * Action: copyFile
+
+Step 6:
+    * Instruction:
+        - If the status is failed, then run closeConnectionOnFailure on source and target server server ids to close the connections.
+        - If the status is success, then move to next step
+    * Action: closeConnectionOnFailure
+
+Step 7:
+    * Instruction: Delete the current file that got copied from the source server. Run action eDeleteFile and move to next step
+    * Action: eDeleteFile
+
+Step 8:
+    * Instruction:
+        - If the status is failed, then run closeConnectionOnFailure on source and target server
+        - If the status is success, then move to next step
+    * Action : closeConnectionOnFailure
+
+Step 9:
+    * Instruction:
+        - If all files from Step 3 have been successfully copied to target and deleted from source, proceed to next step
+        - If any files remain to be copied, return to Step 4
+
+Step 8:
+    * Instruction:
+        -  The files are successfully are copied from source server to target server and deleted from the source server. Run the action eCloseConnection with both source and target server ids to close the connections.
+    * Action: eCloseConnection
+

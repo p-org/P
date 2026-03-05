@@ -1,0 +1,2 @@
+// Create a minimal machine that represents a traffic light. Should contain a string currentColor to store the name of the current color. Should contain three states Stop, Caution, and Go. The light starts in the Stop state. Each state just changes the currentColor variable to the appropriate color.
+// Only write code, no commentary.

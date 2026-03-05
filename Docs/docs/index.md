@@ -18,14 +18,79 @@
 
 ---
 
-!!! danger "The Challenge"
-    Distributed systems are notoriously hard to get right. Programming these systems is challenging because of the need to reason about correctness in the presence of myriad possible interleaving of messages and failures. Unsurprisingly, it is common for service teams to uncover correctness bugs after deployment. **Formal methods can play an important role in addressing this challenge!**
+P is a state machine based programming language for formally modeling and specifying complex distributed systems. P allows programmers to model their system design as a collection of communicating state machines and provides automated reasoning backends to check that the system satisfies the desired correctness specifications.
 
-!!! abstract "P Overview"
-    P is a state machine based programming language for formally modeling and specifying complex distributed systems. P allows programmers to model their system design as a collection of communicating state machines. P supports several backend analysis engines (based on automated reasoning techniques like model checking and symbolic execution) to check that the distributed system modeled in P satisfies the desired correctness specifications.
+![P framework toolchain overview](toolchain.jpg){ align=center }
+
+---
+
+## :material-new-box:{ .lg } What's New
+
+<div class="grid cards" markdown>
+
+-   :material-robot-outline:{ .lg .middle } **PeasyAI — AI-Assisted P Development**
+
+    ---
+
+    Generate P state machines, specifications, and test drivers from design documents using AI. Integrates with **Cursor** and **Claude Code** via MCP with 27 tools, ensemble generation, auto-fix pipeline, and 1,200+ RAG examples.
+
+    [:octicons-arrow-right-24: Get started with PeasyAI](getstarted/peasyai.md)
+
+-   :material-monitor-eye:{ .lg .middle } **PObserve — Runtime Monitoring**
+
+    ---
+
+    Validate that your **production system conforms to its formal P specifications** by checking service logs against P monitors — bridging the gap between design-time verification and runtime behavior, without additional instrumentation.
+
+    [:octicons-arrow-right-24: Learn about PObserve](advanced/pobserve/pobserve.md)
+
+</div>
+
+---
+
+## :material-shield-check:{ .lg } The P Framework
+
+<div class="grid cards" markdown>
+
+-   :material-file-document-edit-outline:{ .lg .middle } **P Language**
+
+    ---
+
+    Model distributed systems as communicating state machines. Specify safety and liveness properties. A programming language — not a mathematical notation.
+
+-   :material-robot-outline:{ .lg .middle } **PeasyAI**
+
+    ---
+
+    AI-powered code generation from design documents. Generates types, machines, specs, and tests with auto-fix and human-in-the-loop support.
+
+-   :material-shield-check-outline:{ .lg .middle } **P-Checker**
+
+    ---
+
+    Systematically explore interleavings of messages and failures to find deep bugs. Reproducible error traces for debugging. Additional backends: PEx, PVerifier.
+
+-   :material-monitor-eye:{ .lg .middle } **PObserve**
+
+    ---
+
+    Validate service logs against P specifications in testing and production. Ensure implementation conforms to the verified design.
+
+</div>
+
+[:octicons-arrow-right-24: Learn more about the P framework](whatisP.md)
+
+---
+
+## :material-aws:{ .lg } Impact at AWS
+
+Using P, developers model their system designs as communicating state machines — a mental model familiar to developers who build systems based on microservices and service-oriented architectures. Teams across AWS that build some of its flagship products — from storage (Amazon S3, EBS), to databases (Amazon DynamoDB, MemoryDB, Aurora), to compute (EC2, IoT) — have been using P to reason about the correctness of their system designs.
+
+!!! abstract "Further Reading"
+    :material-file-document: [**Systems Correctness Practices at Amazon Web Services**](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/) — _Marc Brooker and Ankush Desai_, Communications of the ACM, 2025.
 
 ??? question "Why formal methods? How is AWS using P?"
-    The following re:Invent 2023 talk answers this question, provides an overview of P, and its impact inside AWS:
+    The following re:Invent 2023 talk provides an overview of P and its impact inside AWS:
 
     <div align="center">
           <a href="https://www.youtube.com/watch?v=FdXZXnkMDxs">
@@ -37,18 +102,7 @@
 
 ---
 
-## Impact at AWS
-
-Using P, developers model their system designs as communicating state machines — a mental model familiar to developers who build systems based on microservices and service-oriented architectures (SOAs). Teams across AWS that build some of its flagship products — from storage (Amazon S3, EBS), to databases (Amazon DynamoDB, MemoryDB, Aurora), to compute (EC2, IoT) — have been using P to reason about the correctness of their system designs.
-
-For example, Amazon S3 used P to formally reason about the core distributed protocols involved in its strong consistency launch. P is also being used for programming safe robotics systems in Academia and was first used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone.
-
-!!! abstract "Further Reading"
-    :material-file-document: [**Systems Correctness Practices at Amazon Web Services**](https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/) — _Marc Brooker and Ankush Desai_, Communications of the ACM, 2025.
-
-## Experience and Lessons Learned
-
-In our experience of using P inside AWS, Academia, and Microsoft, we have observed that P has helped developers in three critical ways:
+## :material-lightbulb-on:{ .lg } Experience and Lessons Learned
 
 <div class="grid cards" markdown>
 

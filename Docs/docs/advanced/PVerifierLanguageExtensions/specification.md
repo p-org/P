@@ -1,3 +1,5 @@
+## Specifications
+
 # Specifications
 
 The P verifier adds three kinds of specifications: global invariants, loop invariants, and function contracts. We cover each type in its own subsection below.
@@ -82,6 +84,8 @@ P provides special predicates for specifying message state:
 
 - `inflight e`: True if message `e` has been sent but not yet received
 - `sent e`: True if message `e` has been sent (regardless of whether it has been received)
+
+---
 
 ### Quantifiers
 

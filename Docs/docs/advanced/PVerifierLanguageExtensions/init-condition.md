@@ -1,3 +1,5 @@
+## Init Conditions
+
 # Initialization Conditions
 
 Initialization conditions let us constrain the kinds of systems that we consider for formal verification. You can think of these as constraints that P test harnesses have to satisfy to be considered valid.

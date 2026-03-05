@@ -1,11 +1,16 @@
-!!! info "If you want to use older P version 1.x.x, please use the installation steps [here](../old/getstarted/install.md)"
+## Installing P
 
-P is built to be cross-platform and can be used on MacOS, Linux, and Windows. We provide a step-by-step guide for installing P along with the required dependencies.
+!!! info "Looking for P 1.x?"
+    If you want to use older P version 1.x.x, please use the installation steps [here](../old/getstarted/install.md).
 
-!!! success ""
-    After each step, please use the troubleshooting check to ensure that each installation step succeeded.
+P is built to be **cross-platform** and can be used on MacOS, Linux, and Windows. Follow the steps below to install P along with the required dependencies.
 
-### [Step 1] Install .Net Core SDK
+!!! success "Verify each step"
+    After each step, use the troubleshooting check to ensure the installation succeeded.
+
+---
+
+### :material-numeric-1-circle:{ .lg } Install .NET SDK
 The P compiler is implemented in C# and hence the tool chain requires `dotnet`.
 P currently uses the specific version of [.Net SDK 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
 
@@ -72,7 +77,9 @@ P currently uses the specific version of [.Net SDK 8.0](https://dotnet.microsoft
 
 
 
-### [Step 2] Install Java Runtime
+---
+
+### :material-numeric-2-circle:{ .lg } Install Java Runtime
 
 The P compiler also requires Java (`java` version 11 or higher).
 
@@ -112,94 +119,11 @@ The P compiler also requires Java (`java` version 11 or higher).
     If you get `java` command not found error, mostly likely, you need to add the path to `java` in your `PATH`.
 
 
-[//]: # (### [Step 3] Install Maven)
+---
 
-[//]: # ()
-[//]: # (For compiling the generated Java code, the P compiler using Maven &#40;`mvn` version 3.3 or higher&#41;.)
+### :material-numeric-3-circle:{ .lg } Install P Tool
 
-[//]: # ()
-[//]: # (=== "MacOS")
-
-[//]: # ()
-[//]: # (    Installing Maven on MacOS using Homebrew &#40;[details]&#40;https://mkyong.com/maven/install-maven-on-mac-osx/&#41;&#41;)
-
-[//]: # ()
-[//]: # (    ```)
-
-[//]: # (    brew install maven)
-
-[//]: # (    ```)
-
-[//]: # ()
-[//]: # (    Dont have Homebrew? Directly use [installer]&#40;https://maven.apache.org/install.html&#41;. )
-
-[//]: # ()
-[//]: # (=== "Ubuntu")
-
-[//]: # ()
-[//]: # (    Installing Maven on Ubuntu &#40;[details]&#40;https://phoenixnap.com/kb/install-maven-on-ubuntu&#41;&#41;)
-
-[//]: # (    )
-[//]: # (    ```)
-
-[//]: # (    sudo apt install maven)
-
-[//]: # (    ```)
-
-[//]: # ()
-[//]: # (=== "Amazon Linux")
-
-[//]: # ()
-[//]: # (    Visit the [Maven releases]&#40;http://maven.apache.org/download.cgi&#41; page and install any Maven 3.3+ release.)
-
-[//]: # ()
-[//]: # (    Steps for installing Maven 3.8.7 on Amazon Linux &#40;you can use any version of Maven 3.3+&#41;:)
-
-[//]: # ()
-[//]: # (    ```)
-
-[//]: # (    wget https://dlcdn.apache.org/maven/maven-3/3.8.7/binaries/apache-maven-3.8.7-bin.tar.gz)
-
-[//]: # (    tar xfv apache-maven-3.8.7-bin.tar.gz)
-
-[//]: # (    ```)
-
-[//]: # (    )
-[//]: # (    You might do this in your home directory, yielding a folder like `` /home/$USER/apache-maven-3.8.7 ``)
-
-[//]: # (    )
-[//]: # (    Next, install the software into your environment by adding it to your path, and by defining Maven's environment variables:)
-
-[//]: # (    )
-[//]: # (    ```)
-
-[//]: # (    export M2_HOME=/home/$USER/apache-maven-3.8.7)
-
-[//]: # (    export M2=$M2_HOME/bin)
-
-[//]: # (    export PATH=$M2:$PATH)
-
-[//]: # (    ```)
-
-[//]: # ()
-[//]: # (=== "Windows")
-
-[//]: # ()
-[//]: # (    Installing Maven on Windows &#40;[details]&#40;https://maven.apache.org/install.html&#41;&#41;)
-
-[//]: # ()
-[//]: # (??? hint "Troubleshoot: Confirm that Maven is correctly installed on your machine.")
-
-[//]: # ()
-[//]: # (    `mvn -version`)
-
-[//]: # ()
-[//]: # (    If you get `mvn` command not found error, mostly likely, you need to add the path to `$M2_HOME/bin` in your `PATH`.)
-
-
-### [Step 3] Install P tool
-
-Finally, let's install the P tool as a `dotnet tool` using the following command:
+Finally, install the P tool as a `dotnet tool`:
 
 ```shell
 dotnet tool install --global P
@@ -222,13 +146,14 @@ dotnet tool install --global P
     dotnet tool update --global P
     ```
 
-### [Step 4] Recommended IDE (Optional)
+---
 
-- For developing P programs, we recommend using [Peasy](https://marketplace.visualstudio.com/items?itemName=PLanguage.peasy-extension).
+### :material-numeric-4-circle:{ .lg } Recommended IDE (Optional)
 
-- For debugging generated C# code, we recommend using [Rider](https://www.jetbrains.com/rider/) for Mac/Linux or [Visual Studio 2019](https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio) for Windows.
+| Purpose | Recommended Tool |
+|---------|-----------------|
+| Developing P programs | [**Peasy**](https://marketplace.visualstudio.com/items?itemName=PLanguage.peasy-extension) (VS Code extension) |
+| AI-assisted P development | [**PeasyAI**](peasyai.md) (Cursor / Claude Code) |
 
-- For debugging generated Java code, we recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/)
-
-!!! note ""
+!!! success ""
     Great :smile:! You are all set to compile and check your first P program :mortar_board:!

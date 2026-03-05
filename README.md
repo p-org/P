@@ -44,9 +44,9 @@ In our experience of using P inside AWS, Academia, and Microsoft. We have observ
 
 ## Let the fun begin!
 
-You can find most of the information about the P framework on: **[http://p-org.github.io/P/](http://p-org.github.io/P/)**.
+You can find most of the information about the P framework on: **[https://p-org.github.io/P/](https://p-org.github.io/P/)**.
 
-[What is P?](http://p-org.github.io/P/whatisP/), [Getting Started](http://p-org.github.io/P/getstarted/install/), [Tutorials](http://p-org.github.io/P/tutsoutline/), [Case Studies](http://p-org.github.io/P/casestudies/) and related [Research Publications](http://p-org.github.io/P/publications/).
+[What is P?](https://p-org.github.io/P/whatisP/), [Getting Started](https://p-org.github.io/P/getstarted/install/), [PeasyAI](https://p-org.github.io/P/getstarted/peasyai/), [Tutorials](https://p-org.github.io/P/tutsoutline/), [Case Studies](https://p-org.github.io/P/casestudies/) and related [Research Publications](https://p-org.github.io/P/publications/).
 If you have any further questions, please feel free to create an [issue](https://github.com/p-org/P/issues), ask on
 [discussions](https://github.com/p-org/P/discussions), or [email us](mailto:ankushdesai@gmail.com)
 

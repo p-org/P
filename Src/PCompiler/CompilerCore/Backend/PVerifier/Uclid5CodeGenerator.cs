@@ -1927,7 +1927,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
                         if (generateSanityChecks) {
                             EmitLine($"\tinvariant {InvariantPrefix}Unique_Actions(); // Failed to ensure unique action IDs at {GetLocation(fstmt)}");
-                            EmitLine($"\tinvariant{InvariantPrefix}Increasing_Action_Count(); // Failed to ensure increasing action IDs at {GetLocation(fstmt)}");
+                            EmitLine($"\tinvariant {InvariantPrefix}Increasing_Action_Count(); // Failed to ensure increasing action IDs at {GetLocation(fstmt)}");
                             EmitLine($"\tinvariant {InvariantPrefix}Received_Subset_Sent(); // Failed to ensure that received is a subset of sent at {GetLocation(fstmt)}");
                         }
                         // ensure uniqueness for the new ones too

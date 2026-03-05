@@ -1,3 +1,6 @@
+!!! warning "Deprecated: P 1.x Documentation"
+    This page documents P version 1.x and is no longer maintained. For the current guide, see [Debugging Error Traces](../../advanced/debuggingerror.md).
+
 As described in the [using P compiler and checker](../getstarted/usingP.md) section, running the following command for the ClientServer example finds an error.
 
 ```

@@ -1,3 +1,5 @@
+## Example 1: Client Server
+
 ??? note "How to use this example"
 
     We assume that you have cloned the P repository locally.
@@ -5,24 +7,28 @@
     git clone https://github.com/p-org/P.git
     ```
 
-    The recommended way to work through this example is to open the [P/Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simultaneously read the description for each example and browse the P program.
+    The recommended way to work through this example is to open the [P/Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in [Peasy IDE](../getstarted/PeasyIDE.md) (VS Code extension) or your preferred editor side-by-side with a browser, so you can simultaneously read the description for each example and browse the P program.
 
     To know more about P language primitives used in the example, please look them up in the [language manual](../manualoutline.md).
 
 **System:** We consider a client-server application where clients interact with a bank to withdraw money from their accounts.
 
-![Placeholder](clientserver.png){ align=center }
+![Client-server state machine diagram](clientserver.png){ align=center }
 
 The bank consists of two components: (1) a bank server that services withdraw requests from the client; and (2) a backend database which is used to store the account balance information for each client.
 Multiple clients can concurrently send withdraw requests to the bank. On receiving a withdraw request, the bank server reads the current bank balance for the client and if the withdraw request is allowed then performs the withdrawal, updates the account balance, and responds back to the client with the new account balance.
 
 **Correctness Specification:** The bank must maintain the invariant that each account must have at least 10 dollars as its balance. If a withdraw request takes the account balance below 10 then the withdraw request must be rejected by the bank. The correctness property that we would like to check is that in the presence of concurrent client withdraw requests the bank always responds with the correct bank balance for each client and a withdraw request always succeeds if there is enough balance in the account (that is, at least 10).
 
-### P Project
+---
+
+### :material-folder-outline:{ .lg } P Project
 
 The [1_ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) folder contains the source code for the [ClientServer](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj) project. Please feel free to read details about the recommended [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).
 
-### Models
+---
+
+### :material-state-machine:{ .lg } Models
 
 The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer/PSrc)) for the ClientServer example consist of four files:
 
@@ -63,7 +69,9 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/1_ClientSer
     - ([L1 - L5](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p#L1-L5)) &rarr; Declares the `Client` and `Bank` modules. A module in P is a collection of state machines that together implement that module or component. A system model in P is then a composition or union of modules. The `Client` module consists of a single machine `Client` and the `Bank` module is implemented by machines `BankServer` and `Database` together (manual: [P module system](../manual/modulesystem.md)).
     - ([L7 - L8](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSrc/ClientServerModules.p#L7-L8)) &rarr; The `AbstractBank` module uses the `binding` feature in P modules to bind the `BankServer` machine to the `AbstractBankServer` machine. Basically, what this implies is that whenever `AbstractBank` module is used the creation of the `BankServer` machine will result in creation of `AbstractBankServer`, replacing the implementation with its abstraction (manual: [primitive modules](../manual/modulesystem.md#primitive-module)).
 
-### Specifications
+---
+
+### :material-shield-check:{ .lg } Specifications
 
 The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec)) for the ClientServer example are implemented in the [BankBalanceCorrect.p](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p) file. We define two specifications:
 
@@ -79,7 +87,9 @@ The P Specifications ([PSpec](https://github.com/p-org/P/blob/master/Tutorial/1_
     - ([L92 - L115](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PSpec/BankBalanceCorrect.p#L92-L115)) &rarr; Declares the `GuaranteedWithDrawProgress` liveness spec machine that observes the events `eWithDrawReq` and `eWithDrawResp` to assert the required liveness property that every request is eventually responded by the Bank.
     - To understand the semantics of the P spec machines, please read manual: [p monitors](../manual/monitors.md).
 
-### Test Scenarios
+---
+
+### :material-test-tube:{ .lg } Test Scenarios
 
 The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios. TestScripts are collections of test cases that are automatically run by the P checker.
 
@@ -96,7 +106,9 @@ The test scenarios folder for ClientServer ([PTst](https://github.com/p-org/P/tr
     - ([L4 - L16](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/PTst/Testscript.p#L4-L16)) &rarr; Declares three test cases each checking a different scenario and system. The system under test is the `union` of the modules representing each component in the system (manual: [P module system](../manual/modulesystem.md#union-module)). The `assert` module constructor is used to attach monitors or specifications to be checked on the modules (manual: [assert](../manual/modulesystem.md#assert-monitors-module)).
     - In the `tcAbstractServer` test case, instead of composing with the Bank module, we use the AbstractBank module. Hence, in the composed system, whenever the creation of a BankServer machine is invoked the binding will instead create an AbstractBankServer machine.
 
-### Parameterized Tests
+---
+
+### :material-tune:{ .lg } Parameterized Tests
 
 The ClientServer tutorial demonstrates P's parameterized testing capabilities that allow systematic exploration of different system configurations. These tests enable checking the system with varying numbers of clients to validate scalability and concurrent access patterns.
 
@@ -110,7 +122,9 @@ The ClientServer tutorial demonstrates P's parameterized testing capabilities th
     - This parameterized approach allows verification of the bank's correctness properties under different concurrency levels, ensuring that the `BankBalanceIsAlwaysCorrect` and `GuaranteedWithDrawProgress` specifications hold regardless of client count.
     - The test cases generated are: `tcParameterizedMultipleClients___nClients_2`, `tcParameterizedMultipleClients___nClients_3`, and `tcParameterizedMultipleClients___nClients_4`, each testing the system with the corresponding number of clients.
 
-### Compiling ClientServer
+---
+
+### :material-cog-play:{ .lg } Compiling
 
 Navigate to the [1_ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) folder and run the following command to compile the ClientServer project:
 
@@ -143,7 +157,7 @@ p compile
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
     Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 102 ms).
-    ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
+    ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
 
     Build succeeded.
     0 Warning(s)
@@ -156,7 +170,9 @@ p compile
     ~~ [PTool]: Thanks for using P! ~~
     ```
 
-### Checking ClientServer
+---
+
+### :material-shield-check-outline:{ .lg } Checking
 
 You can get the list of test cases defined in the ClientServer project by running the P Checker:
 
@@ -170,8 +186,8 @@ p check
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
+    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
     Error: We found '6' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClient
@@ -213,7 +229,9 @@ p check -tc tcAbstractServer -s 1000
 !!! danger "Error"
     `tcAbstractServer` triggers an error in the AbstractBankServer state machine. Please use the [guide](../advanced/debuggingerror.md) to explore how to debug an error trace generated by the P Checker.
 
-### Exercise Problem
+---
+
+### :material-pencil:{ .lg } Exercise Problem
 
 - [Problem 1] Fix the bug in AbstractBankServer state machine and run the P Checker again on the test case to ensure that there are no more bugs in the models.
 - [Problem 2] Extend the ClientServer example with support for depositing money into the bank. This would require implementing events `eDepositReq` and `eDepositResp` which are used to interact between the client and server machine. The Client machine should be updated to deposit money into the account when the balance is low, the BankServer machine implementation would have to be updated to support depositing money into the bank account and finally safety and liveness specifications needs to be updated take disposit events into account. After implementing the deposit feature, run the test-cases again to check if the system still satisfies the desired specifications.

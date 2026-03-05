@@ -10,14 +10,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Install pip
-        run: python3 -m pip install --upgrade pip setuptools wheel
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: Docs/requirements.txt
       - name: Install MkDocs
-        run: |
-          pip install mkdocs
-          pip install mkdocs-macros-plugin
-          pip install mkdocs-material
+        run: pip install -r Docs/requirements.txt
       - name: MkDocs build
         working-directory: ./Docs
         run: mkdocs build

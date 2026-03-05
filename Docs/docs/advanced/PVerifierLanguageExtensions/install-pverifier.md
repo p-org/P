@@ -1,9 +1,13 @@
+## Installing PVerifier
+
 # Install Instructions for Amazon Linux
 
 PVerifier requires several dependencies to be installed. Follow the steps below to set up your environment.
 
 !!! success ""
     After each step, please use the troubleshooting check to ensure that each installation step succeeded.
+
+---
 
 ### [Step 1] Install Java 11
 
@@ -20,6 +24,8 @@ sudo yum install java-11-amazon-corretto-devel maven
 
     If you get `java` command not found error, most likely, you need to add the path to `java` in your `PATH`.
 
+---
+
 ### [Step 2] Install SBT
 
 ```sh
@@ -35,6 +41,8 @@ sudo yum install sbt
     ```
 
     If you get `sbt` command not found error, most likely, you need to add the path to `sbt` in your `PATH`.
+
+---
 
 ### [Step 3] Install .NET 8.0
 
@@ -59,6 +67,8 @@ The purpose of copying the .NET distribution into `/usr/share/dotnet` is to make
 ```sh
 export DOTNET_ROOT=$HOME/.dotnet
 ```
+
+---
 
 ### [Step 4] Install Z3
 
@@ -103,6 +113,8 @@ Note:
 
     to install gcc10-gcc and gcc10-g++ and replace the string `gcc` with `gcc10-` in `config.mk`.
 
+---
+
 ### [Step 5] Install UCLID5
 
 ```sh
@@ -129,6 +141,8 @@ Note:
     ```
 
     If you get `uclid` command not found error, most likely, you need to add the path to `uclid` in your `PATH`.
+
+---
 
 ### [Step 6] Install PVerifier
 

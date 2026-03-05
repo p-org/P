@@ -48,7 +48,7 @@ P named function declarations without any function body are referred to as forei
 
 `name` is the name of the named function, `funParamList` is the optional function parameters, and `returnType` is the optional return type of the function.
 
-To know more about the foreign interface and functions, please look at the [PriorityQueue example](https://p-org.github.io/P/manual/foriegntypesfunctions/).
+To know more about the foreign interface and functions, please look at the [PriorityQueue example](https://p-org.github.io/P/manual/foreigntypesfunctions/).
 
 ### Function Body
 

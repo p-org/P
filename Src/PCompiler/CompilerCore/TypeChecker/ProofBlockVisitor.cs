@@ -60,7 +60,7 @@ namespace Plang.Compiler.TypeChecker
             var proofCmd = (ProofCommand)nodesToDeclarations.Get(context);
             var temporaryFunction = new Function(proofCmd.Name, context);
             temporaryFunction.Scope = CurrentScope.MakeChildScope();
-            var exprVisitor = new ExprVisitor(temporaryFunction, Handler);
+            var exprVisitor = new ExprVisitor(temporaryFunction, Handler, isPVerifier: true);
             List<IPExpr> premises = [];
             List<IPExpr> goals = [];
             List<IPExpr> excepts = context._excludes.Select(exprVisitor.Visit).ToList();

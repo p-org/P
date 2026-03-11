@@ -15,19 +15,22 @@ namespace Plang.Compiler.TypeChecker
     {
         private readonly ITranslationErrorHandler handler;
         private readonly Function method;
+        private readonly bool isPVerifier;
         private Scope table;
 
-        public ExprVisitor(Function method, ITranslationErrorHandler handler)
+        public ExprVisitor(Function method, ITranslationErrorHandler handler, bool isPVerifier = false)
         {
             table = method.Scope;
             this.method = method;
             this.handler = handler;
+            this.isPVerifier = isPVerifier;
         }
         
-        public ExprVisitor(Scope scope, ITranslationErrorHandler handler)
+        public ExprVisitor(Scope scope, ITranslationErrorHandler handler, bool isPVerifier = false)
         {
             table = scope;
             this.handler = handler;
+            this.isPVerifier = isPVerifier;
         }
 
         public override IPExpr VisitPrimitiveExpr(PParser.PrimitiveExprContext context)
@@ -65,7 +68,7 @@ namespace Plang.Compiler.TypeChecker
 
                     return new NamedTupleAccessExpr(context, subExpr, entry);
                 
-                case PermissionType {Origin: Machine} permission:
+                case PermissionType {Origin: Machine} permission when isPVerifier:
                     var machine = (Machine) permission.Origin;
                     
                     if (!machine.LookupEntry(fieldName, out var field))
@@ -74,7 +77,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                     return new MachineAccessExpr(context, machine, subExpr, field);
                 
-                case PermissionType {Origin: Interface} permission:
+                case PermissionType {Origin: Interface} permission when isPVerifier:
                     var pname = permission.Origin.Name;
                    
                     if (!table.Lookup(pname, out Machine m))
@@ -88,7 +91,7 @@ namespace Plang.Compiler.TypeChecker
                     }
                     return new MachineAccessExpr(context, m, subExpr, mfield);
                 
-                case PermissionType {Origin: NamedEventSet} permission:
+                case PermissionType {Origin: NamedEventSet} permission when isPVerifier:
 
                     var pevents = ((NamedEventSet)permission.Origin).Events.ToList();
 
@@ -107,7 +110,7 @@ namespace Plang.Compiler.TypeChecker
                     
                     throw handler.MissingEventField(context.field, pevents.First());
                 
-                case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Machine):
+                case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Machine) && isPVerifier:
                     Machine spec;
 
                     switch (subExpr)

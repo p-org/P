@@ -184,7 +184,7 @@ namespace Plang.Compiler.TypeChecker
 
         private static IPExpr PopulateExpr(Function func, ParserRuleContext ctx, PLanguageType type, ITranslationErrorHandler handler)
         {
-            var exprVisitor = new ExprVisitor(func, handler);
+            var exprVisitor = new ExprVisitor(func, handler, isPVerifier: true);
             var body = exprVisitor.Visit(ctx);
             if (!type.IsSameTypeAs(body.Type))
             {

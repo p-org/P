@@ -26,7 +26,7 @@ namespace Plang.Compiler.TypeChecker
             this.machine = machine;
             this.method = method;
             table = method.Scope;
-            exprVisitor = new ExprVisitor(method, config.Handler);
+            exprVisitor = new ExprVisitor(method, config.Handler, config.OutputLanguages.Contains(CompilerOutput.PVerifier));
         }
 
         public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)

@@ -1,0 +1,110 @@
+Distributed systems are notoriously hard to get right (i.e., guaranteeing correctness) as the programmer needs to reason about numerous control paths resulting from the myriad interleaving of events (or messages or failures). Unsurprisingly, programmers can easily introduce subtle errors when designing these systems. Moreover, it is extremely difficult to test distributed systems, as most control paths remain untested, and serious bugs lie dormant for months or even years after deployment.
+
+The P programming framework takes several steps towards addressing these challenges by providing a unified framework for modeling, specifying, implementing, testing, and verifying complex distributed systems.
+
+P provides a high-level state machine based programming language to formally model and specify distributed systems. The syntactic sugar of state machines allows programmers to capture their system design (or protocol logic) as communicating state machines, which is how programmers generally think about their system's design. 
+
+P supports specifying and checking both safety as well as liveness specifications (global invariants). Programmers can easily write different scenarios under which they would like to check that the system satisfies the desired correctness specification. The P module system enables programmers to model their system modularly and perform compositional testing to scale the analysis to large distributed systems.
+
+You are an expert programming assistant designed to write P programs for the given complex distributed systems. Avoid overreliance on general programming knowledge and strictly adhere to P's specific requirements. Thoroughly review the P language syntax guide before writing code. Refer the provided context files for the correct syntax while writing.
+
+
+Write the structure of P code for the state machine {machineName}. Include all variable declarations, state declarations, event handlers, and function declarations, BUT leave all function bodies empty (with just placeholder comments). Ensure that the "Components" and "Interactions" sections of the design document are reflected in the structure. The structure should include:
+
+1. Machine declaration with local variable declarations
+2. All states with their annotations (start, hot, cold)
+3. Entry and exit function references within states
+4. Event handlers (on-do and on-goto statements)
+5. Defer and ignore statements
+6. Function declarations with proper parameters and return types, but EMPTY bodies, do add COMMENTS for future stages of code generation.
+
+## CRITICAL: Machine Configuration / Initialization
+
+If this machine depends on references to other machines (e.g., a list of acceptors, a server reference, learner machines) or any configuration, it MUST receive them through one of these two patterns:
+
+### Pattern A — Constructor payload (preferred when all deps are known at creation time)
+
+The start state entry function receives configuration directly from the `new` call:
+
+```
+machine ExampleServer {{
+    var workers: seq[machine];
+    var serverId: int;
+
+    start state Init {{
+        entry InitEntry;       // receives config from new ExampleServer(config)
+        on eRequest goto Serving;
+    }}
+
+    fun InitEntry(config: (workers: seq[machine], id: int)) {{
+        workers = config.workers;
+        serverId = config.id;
+    }}
+    ...
+}}
+```
+Test driver creates it as: `new ExampleServer((workers = workerList, id = 1));`
+
+### Pattern B — Initialization event (when config arrives after creation)
+
+The machine blocks in its start state waiting for a configuration event, then transitions to its core logic:
+
+```
+machine ExampleWorker {{
+    var coordinator: machine;
+
+    start state WaitForConfig {{
+        on eWorkerConfig goto Ready with Configure;
+        defer eTask;     // defer work events until configured
+    }}
+
+    state Ready {{
+        on eTask do HandleTask;
+    }}
+
+    fun Configure(config: tWorkerConfig) {{
+        coordinator = config.coordinator;
+    }}
+    ...
+}}
+```
+Test driver creates and configures it as:
+```
+worker1 = new ExampleWorker();
+send worker1, eWorkerConfig, (coordinator = coord,);
+```
+
+### Rules
+- Pick ONE pattern per machine and be consistent.
+- Do NOT use ad-hoc event names like eStart or eInit that carry no typed payload. If using Pattern B, define a proper typed config event with a named-tuple payload in Enums_Types_Events.p.
+- If a machine has no external dependencies, its entry function can take no parameters.
+
+## Event Handling Completeness
+
+For EVERY state, think about which events could arrive in that state (including events from prior states still in the queue) and add:
+- `on eX do Handler;` — if the event should be processed
+- `defer eX;` — if the event should be queued for a later state
+- `ignore eX;` — if the event should be silently dropped
+
+PChecker will report an unhandled-event bug for any event that arrives in a state without a handler, defer, or ignore.
+
+## CRITICAL — Use Exact Type Names from Enums_Types_Events.p:
+When the Enums_Types_Events.p file is provided as context, you MUST use the EXACT type names defined there for function parameter annotations and event handler signatures. Do NOT invent alternative names.
+  Given: event ePromise: tPromisePayload;
+  CORRECT: on ePromise do HandlePromise;  ...  fun HandlePromise(msg: tPromisePayload) {{ ... }}
+  WRONG:   on ePromise do HandlePromise;  ...  fun HandlePromise(msg: tPromise) {{ ... }}
+
+## File-scope helper functions:
+If the design document specifies helper functions for this machine (e.g., CreateTimer, StartTimer), include their declarations (with empty bodies) AFTER the machine's closing brace. These are convenience wrappers declared at file scope.
+
+The machine file should NOT contain:
+
+1. Specification monitors (spec keyword)
+2. Test modules (module keyword with assert)
+3. Test cases (test keyword)
+4. Test setup functions
+5. Monitor specifications with observes keyword
+6. Any code that uses: spec, test, assert, observes keywords
+7. DO NOT declare events, types, or enums in the machine file - these will be provided separately as context.
+
+Return only the generated P structure code without any explanation attached. Return the P code enclosed in XML tags where the tag name is "structure".

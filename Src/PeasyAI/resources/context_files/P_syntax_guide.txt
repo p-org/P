@@ -1,0 +1,3015 @@
+Here is the P language syntax document you should reference when writing a P program:
+<guide>
+A P program consists of a collection of following top-level declarations:
+1. Enums
+2. User Defined Types
+3. Events
+4. State Machines
+5. Specification Monitors
+6. Global Functions
+7. Module System
+
+Here is the list of all words reserved by the P language. These words have a special meaning and purpose, and they cannot be used as identifiers for variables, enums, types, events, machines, function parameters, etc.:
+<reserved_keywords>
+var, type, enum, event, on, do, goto, data, send, announce, receive, case, raise, machine, state, hot, cold, start, spec, module, test, main, fun, observes, entry, exit, with, union, foreach, else, while, return, break, continue, ignore, defer, assert, print, new, sizeof, keys, values, choose, format, if, halt, this, as, to, in, default, Interface, true, false, int, bool, float, string, seq, map, set, any
+</reserved_keywords>
+
+Here is the P enums guide:
+<P_enums_guide>
+1. Enum values in P are considered as global constants and must have unique name.
+2. Enums by default are given integer values starting from 0 (if no values are assigned to the elements).
+3. Enums in P can be coerced to int.
+4. If an enum is used in a user defined type declaration, the enum identifier cannot be a reserved keyword listed in the <reserved_keywords></reserved_keywords> tags.
+
+Syntax:: enum enumName { enumElemList | numberedEnumElemList }
+
+Here is an example of how enum declaration without values:
+<enum_declaration_example>
+// enum representing the response status for the withdraw request
+enum tWithDrawRespStatus { WITHDRAW_SUCCESS, WITHDRAW_ERROR }
+
+// User Defined Type
+type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int, rId: int);
+</enum_declaration_example>
+
+Here is an example of enum declaration with values:
+<enum_declaration_with_values_example>
+enum tResponseStatus { ERROR = 500, SUCCESS = 200, TIMEOUT = 400; }
+
+// usage of enums
+var status: tResponseStatus;
+status = ERROR;
+
+// you can coerce an enum to int
+assert (ERROR to int) == 500;
+</enum_declaration_with_values_example>
+</P_enums_guide>
+
+Here is the P types guide:
+<P_types_guide>
+P Supports the following data types:
+1. Primitive: int, bool, float, string, machine, and event.
+2. Record: tuple and named tuple.
+3. Collection: map, seq, and set.
+4. User Defined: These are user defined types that are constructed using any of the P types listed above.
+5. Universal Supertypes: any and data.
+
+Here are the syntactical details of each of these data types:
+
+<about_primitive_types>
+Here is an example of how primitive data types are declared:
+<primitive_type_example>
+// some function body in the P program
+{
+    var i: int;
+    var j: float;
+    var k: string;
+    var l: bool;
+
+    i = 10; 
+    j = 10.0; 
+    k = "Failure!!";
+    l = (i == (j to int));
+}
+</primitive_type_example>
+</about_primitive_types>
+
+<about_record>
+1. The fields of a tuple can be accessed by using the . operation followed by the field index.
+2. Named tuples are similar to tuples with each field having an associated name. 
+3. The fields of a named tuple can be accessed by using the . operation followed by the field name.
+
+Here is an example of a tuple:
+<tuple_example>
+// tuple with three fields
+var tupleEx: (int, bool, int);
+
+// constructing a value of tuple type.
+tupleEx = (20, false, 21);
+
+// accessing the first and third element of the tupleEx
+tupleEx.0 = tupleEx.0 + tupleEx.2;
+</tuple_example>
+
+Here is an example of a named tuple:
+<named_tuple_example>
+// named tuple with three fields
+var namedTupleEx: (x1: int, x2: bool, x3: int);
+
+// constructing a value of named tuple type.
+namedTupleEx = (x1 = 20, x2 = false, x3 = 21);
+
+// accessing the first and third element of the namedTupleEx
+namedTupleEx.x1 = namedTupleEx.x1 + namedTupleEx.x3;
+</named_tuple_example>
+
+<create_tuple_value>
+A tuple value can be created using the following expressions:
+Syntax:: (rvalue,) for a single field tuple value, or (rvalue (, rvalue)+) for tuple with multiple fields.
+
+Here is an example of creating tuple value:
+<creating_tuple_value_example>
+// tuple value of type (int,)
+(10,)
+
+// tuple value of type (string, (string, string))
+("Hello", ("World", "!"))
+
+// assume x: int and y: string
+// tuple value of type (int, string)
+(x, y)
+</creating_tuple_value_example>
+</tuple_value_create>
+
+<create_named_tuple_value>
+A named tuple value can be created using the following syntax:
+Syntax:: (iden = rvalue,) for a single field named tuple value, or (iden = rvalue (, iden = rvalue)+) for a named tuple with multiple fields.
+A trailing comma is required after the value assignment in a single field named tuple.
+
+Here is an example of creating a single field named tuple value:
+<creating_single_field_named_tuple_value_example>
+// named tuple value of type (reqId: int, )
+(reqId = 10,)
+</creating_single_field_named_tuple_value_example>
+
+Here is an incorrect example of creating a single field named tuple value:
+<creating_single_field_named_tuple_value_incorrect_example>
+(reqId = 10) // Missing comma
+</creating_single_field_named_tuple_value_incorrect_example>
+
+Here is an example of creating a named tuple with multiple fields:
+<creating_named_tuple_with_multiple_fields_example>
+// assume x: int and y: string
+// named tuple value of type (val:int, str:string)
+(val = x, str = y)
+
+// named tuple value of type (h: string, (w: string, a: string))
+(h = "Hello", (w = "World", a = "!"))
+</creating_named_tuple_with_multiple_fields_example>
+
+Here is an incorrect example of creating a named tuple with multiple fields:
+<creating_named_tuple_with_multiple_fields_incorrect_example>
+// assume x: int and y: string
+(x, y)
+<creating_named_tuple_with_multiple_fields_incorrect_example>
+</create_named_tuple_value>
+</about_record>
+
+<about_collection_types>
+P supports three collection types:
+1. map[K, V] represents a map type with keys of type K and values of type V.
+2. seq[T] represents a sequence type with elements of type T.
+3. set[T] represents a set type with elements of type T.
+
+<about_indexing_into_collection>
+Here is the syntax to index into collections to access its elements:
+Syntax:: expr_c[expr_i]
+1. If expr_c is a value of sequence type, then expr_i must be an integer expression and expr_c[expr_i] represents the element at index expr_i.
+2. If expr_c is a value of set type, then expr_i must be an integer expression and expr_c[expr_i] represents the element at index expr_i but note that for a set there is no guarantee for the order in which elements are stored in the set.
+3. If expr_c is a value of map type, then expr_i represents the key to look up and expr_c[expr_i] represents the value for the key expr_i.
+</about_indexing_into_collection>
+
+<about_foreach_statement>
+foreach statement can be used to iterate over a collection in P.
+Syntax:: foreach (iden in expr)
+Declare iden at the top of the function body in EACH function. Type of iden must be same as the elements type in the collection.
+
+1. iden is the name of the variable that stores the element from the collection during iterations. 
+2. expr represents the collection over which we want to iterate.
+3. One can mutate the collection represented by expr when iterating over it as the foreach statement enumerates over a clone of the collection.
+
+Here is an example of foreach over a sequence:
+<foreach_over_sequence_example>
+var sq : seq[string];
+var str : string; // str is declared
+
+foreach(str in sq) {
+  print str; 
+}
+</foreach_over_sequence_example>
+
+Here is an INCORRECT example of foreach over a sequence:
+<foreach_over_sequence_incorrect_example>
+var sq : seq[string];
+// Missing declaration of str
+foreach(str in sq) {
+  print str; 
+}
+</foreach_over_sequence_incorrect_example>
+
+Here is an example of foreach over a set:
+<foreach_over_set_example>
+var ints: set[int];
+var iter, sum: int;
+// iterate over a set of integers
+foreach(iter in ints)
+{
+  sum = sum + iter;
+}
+</foreach_over_set_example>
+
+Here is an example of foreach over a map:
+<foreach_over_map_example>
+var intsM: map[int, int];
+var key: int;
+foreach(key in keys(intsM))
+{
+  intsM[key] = intsM[key] + delta;
+}
+</foreach_over_map_example>
+
+Here is an example of mutating a collection with foreach:
+<foreach_mutating_collection_example>
+var ints: set[int];
+var i: int;
+foreach(i in ints)
+{
+  ints -= (i);
+}
+assert sizeof(ints) == 0;
+</foreach_mutating_collection_example>
+</about_foreach_statement>
+
+<about_insert_into_collection>
+Here are the details on how to add an element into a sequence:
+<about_insert_into_sequence>
+1. For a sequence sq, the value of index i should be between 0 <= i <= sizeof(sq).
+2. Index i = 0 inserts x at the start of sq and i = sizeof(sq) appends x at the end of sq.
+3. To insert an element in an empty sequence, reference the details given in <about_initialize_sequence></about_initialize_sequence> tags.
+Syntax:: lvalue += (expr, rvalue);
+expr is the index of the sequence and rvalue is the value to be inserted. Round brackets are important.
+
+Here is an example of inserting an element into a sequence:
+<insert_into_sequence_example>
+type Task = (description: string, assignedTo: string, dueDate: int);
+
+machine TaskManager {
+  var allTasks: seq[Task];
+
+  start state Idle {
+    entry Idle_Entry;
+  }
+
+  fun Idle_Entry() {
+    // Initialize the sequence to be empty
+    allTasks = default(seq[Task]);
+  }
+
+  // Function to add a new task to the sequence
+  fun AddTask(task: Task) {
+    allTasks += (sizeof(allTasks), task);
+  }
+}
+</insert_into_sequence_example>
+
+Here is an incorrect example of inserting an element in a sequence:
+<insert_into_sequence_incorrect_example>
+var sq : seq[T];
+var x: int;
+// round brackets should contain a pair of values
+sq += (x);
+</insert_into_sequence_incorrect_example>
+</about_insert_into_sequence>
+
+<about_insert_in_map>
+Here is the syntax to add or insert an element in a map:
+Syntax: lvalue += (expr, rvalue);
+lvalue is a value of map in P. expr is the key to be inserted and rvalue is its corresponding value.
+round brackets surrounding rvalue are important.
+
+Here is an example of inserting an element into a map:
+<insert_into_map_example>
+var mp : map[K,V];
+var x: K, y: V;
+
+// adds (x, y) into the map
+mp += (x, y);
+
+// adds (x, y) into the map, if key x already exists then updates its value to y.
+mp[x] = y;
+</insert_into_map_example>
+</about_insert_in_map>
+
+<about_insert_in_set>
+Here is the syntax to add or insert an element in a set:
+Syntax:: lvalue += (rvalue);
+lvalue is a value of set in P. round brackets surrounding rvalue are important.
+
+Here is an example of inserting an element into a set:
+<insert_into_set_example>
+var st : set[T];
+var x: T;
+
+// adds x into the set st
+// x is surrounded by round brackets
+st += (x);
+</insert_into_set_example>
+
+Here is an incorrect example of inserting an element into a set:
+<insert_into_set_incorrect_example>
+var st : set[T];
+var x: T;
+
+// Missing round brackets surrounding x
+st += x;
+</insert_into_set_incorrect_example>
+</about_insert_in_set>
+</about_insert_into_collection>
+
+<about_default_value_of_collection>
+1. The default feature in P can be used to obtain the default value of a collection.
+2. P variables on declaration are automatically initialized to their default values.
+
+Syntax:: default(type)
+type is any P type and default(type) represents the default value for the type
+
+Here is an example of initializing an empty sequence:
+<default_value_of_sequence>
+var sq : seq[int];
+// by default a seq type is initialized to an empty seq
+assert sizeof(sq) == 0;
+
+// set the variable to an empty seq
+sq = default(seq[int]);
+</default_value_of_sequence>
+
+Here is an example of initializing an empty map:
+<default_value_of_map>
+var myMap: map[int, int];
+
+// by default a map type is initialized to an empty map
+assert sizeof(myMap) == 0;
+
+// set the variable to an empty map
+myMap = default(map[int, int]);
+</default_value_of_map>
+
+<default_value_of_set>
+var s : set[int];
+// by default a set type is initialized to an empty set
+assert sizeof(s) == 0;
+
+// set the variable to an empty set
+s = default(set[int]);
+</default_value_of_set>
+</about_default_value_of_collection>
+
+<about_initialize_collection>
+In P language, a collection when declared is automatically initialized by default to empty collection. Do NOT set it to empty again.
+
+<about_initialize_sequence>
+In P, a sequence when declared is initialized by default to empty sequence. Do NOT set the sequence to empty again.
+
+Here is an example of initializing a non-empty sequence:
+<initialize_sequence_example>
+var mySeq: seq[int];
+var i: int;
+var numOfIterations: int;
+
+i = 0;
+numOfIterations = 5;
+
+// initialize mySeq
+while(index < numOfIterations) {
+  mySeq += (sizeof(mySeq), i);  // Append i to the end of mySeq
+  i = i + 1;
+}
+
+// At this point, mySeq contains [0, 1, 2, 3, 4]
+</initialize_sequence_example>
+</about_initialize_sequence>
+
+<about_initialize_map>
+In P, a map when declared is initialized by default to empty map. Do NOT set the map to empty again.
+
+Here is an example of how to initialize a non-empty map:
+<initialize_map_example>
+var bankBalance: map[int, int];
+var i: int;
+while(i < 6) {
+  bankBalance[i] = choose(100) + 10;
+  i = i + 1;
+}
+</initialize_map_example>
+</about_initialize_map>
+
+<about_initialize_set>
+In P, a set when declared is initialized by default to empty set. Do NOT set the set to empty again.
+
+Here is an example of how to initialize a non-empty set:
+<initialize_set_example>
+var participants: set[Participant];
+var i : int;
+var num: int;
+
+num = 7;
+while (i < num) {
+  participants += (new Participant());
+  i = i + 1;
+}
+</about_initialize_set>
+</about_initialize_collection>
+
+<about_remove_from_collection>
+Remove statement is used to remove an element from a collection.
+Syntax:: lvalue -= rvalue;
+
+<about_remove_from_sequence>
+For a sequence sq, the value of index i above should be between 0 <= i <= sizeof(sq) - 1.
+
+Here is an example of removing an element at an index from a sequence:
+<remove_from_sequence_example>
+var sq : seq[T];
+var i : int;
+
+// i is the index in sq, NOT an element of sq
+sq -= (i);
+</remove_from_sequence_example>
+
+Here is an incorrect example of removing an element at an index from a sequence:
+<remove_from_sequence_incorrect_example>
+var sq : seq[T];
+var i : int;
+
+// Missing round brackets surrounding i
+sq -= i;
+</remove_from_sequence_incorrect_example>
+</about_remove_from_sequence>
+
+<about_remove_from_map>
+Here is an example of removing an element from a map:
+<remove_from_map_example>
+var mp : map[K,V];
+var x: K;
+
+// Removes the element (x, _) from the map i.e., removes the element with key x from mp
+mp -= (x);
+</remove_from_map_example>
+</about_remove_from_map>
+
+<about_remove_from_set>
+Here is an example of removing an element from a set:
+<remove_from_set_example>
+var st : set[T];
+var x: T;
+
+// removes x from the set st
+st -= (x);
+</remove_from_set_example>
+
+Here is an INCORRECT example of removing an element from a set:
+<remove_from_set_incorrect_example>
+var st : set[T];
+var x: T;
+
+// Missing round brackets surrounding x
+st -= x;
+</remove_from_set_incorrect_example>
+</about_remove_from_set>
+</about_remove_from_collection>
+
+<about_operations_on_collections>
+P supports four operations on collection types:
+1. sizeof
+2. keys
+3. values
+4. in (to check containment)
+
+<about_sizeof_expression>
+Syntax:: sizeof(expr)
+expr is a value of type set, seq or map, returns an integer value representing the size or length of the collection.
+
+Here is an example of sizeof:
+<sizeof_example>
+var sq: seq[int];
+while (i < sizeof(sq)) {
+    i = i + 1;
+}
+</sizeof_example>
+</about_sizeof_expression>
+
+<about_keys_of_map>
+keys function is used to get access to a sequence of all the keys in map and then operate over it.
+Syntax:: keys(expr)
+1. expr must be a map value
+2. If expr: map[K, V], then keys(expr) returns a sequence (of type seq[K]) of all keys in the map.
+
+Here is an example of keys function:
+<get_keys_example>
+var iter: int;
+foreach(iter in keys(mapI))
+{
+    assert iter in mapI, "Key should be in the map";
+    mapI[iter] = 0;
+}
+</get_keys_example>
+</about_keys_of_map>
+
+<about_values_of_map>
+values function is used to get access to a sequence of all the values in map and then operate over it.
+Syntax:: values(expr)
+1. expr must be a map value
+2. If expr: map[K, V], then values(expr) returns a sequence (of type seq[V]) of all values in the map.
+
+Here is an example of values function:
+<get_values_of_map_example>
+var iter: int;
+var rooms: map[int, tRoomInfo];
+foreach(iter in values(rooms))
+{
+    assert iter == 0, "All values must be zero!";
+}
+</get_values_of_map_example>
+</about_values_of_map>
+
+<about_in_expression>
+1. P provides the in operation to check if an element (or key in the case of a map) belongs to a collection.
+2. The in expression evaluates to true if the collection contains the element and false otherwise.
+3. !in is NOT supported in P.
+4. 'not in' is NOT supported in P.
+
+Syntax:: expr_e in expr_c
+expr_e is the element (or key in the case of map) and expr_c is the collection value.
+
+Here is an example of checking whether an element is contained in a collection:
+<in_expression_example>
+var sq: seq[tRequest];
+var mp: map[int, tRequest];
+var rr: tRequest; 
+var i: int;
+if(rr in sq && rr in values(mp) && i in mp) { 
+  // do something 
+}
+if (!(rr in sq)) {
+  // do something else
+}
+</in_expression_example>
+</about_in_expression>
+
+</about_operations_on_collections>
+</about_collection_types>
+
+<about_user_defined_types>
+1. P supports assigning names to types i.e., creating typedef.
+2. NOTE that these typedefs are simply assigning names to P types and does not effect the sub-typing relation.
+3. User defined types are assigned values using named tuples as detailed in <create_named_tuple_value></create_named_tuple_value> tags.
+
+Syntax:: type typeName = typedef;
+typeName should not be named as any of the reserved keywords listed in the <reserved_keywords></reserved_keywords> tags.
+
+Here is an example of declaring a user defined type:
+<declare_user_defined_type_example>
+// defining a type tLookUpRequest
+type tLookUpRequest = (client: machine, requestId: int, key: string);
+
+// defining a type tLookUpRequestX
+type tLookUpRequestX = (client: machine, requestId: int, key: string);
+
+// Note that the types tLookUpRequest and tLookUpRequestX are same, the compiler does not distinguish between the two types.
+</declare_user_defined_type_example>
+
+Here is another example of declaring a user defined type:
+<declare_user_defined_type_another_example>
+enum tTransStatus { SUCCESS, ERROR, TIMEOUT }
+
+// defining a type tWriteTransResp
+type tWriteTransResp = (transId: int, status: tTransStatus);
+
+</declare_user_defined_type_another_example>
+
+Here is an example of assigning value to a user defined type:
+<assigning_value_to_user_defined_type_example>
+var resp: tWriteTransResp;
+// named tuple
+resp = (transId = trans.transId, status = TIMEOUT);
+</assigning_value_to_user_defined_type_example>
+</about_user_defined_types>
+
+<about_universal_types>
+1. any type in P is the supertype of all types. Also, note that in P, seq[any] is a super type of seq[int] and similarly for other collection types.
+2. data type in P is the supertype of all types in P that do not have a machine type embedded in it. 
+3. For example, data is a supertype of (key: string, value: int) but not (key: string, client: machine).
+</about_universal_types>
+
+<about_default_value_for_a_type>
+1. The default feature in P can be used to obtain the default value of any P type.
+2. P variables on declaration are automatically initialized to their default values.
+
+Syntax:: default(type)
+type is any P type and default(type) represents the default value for the type
+
+Here is an example of default value:
+<default_value_initialization_example>
+type tRequest = (client: machine, requestId: int);
+
+// somewhere inside a function
+x = default(tRequest);
+
+assert x.client == default(machine);
+</default_value_initialization_example>
+
+Here's a table of P Types and their corresponding default values:
+<table>
+  <row>
+    <PType>P Types</PType>
+    <DefaultValue>Default Value</DefaultValue>
+  </row>
+  <row>
+    <PType>int</PType>
+    <DefaultValue>0</DefaultValue>
+  </row>
+  <row>
+    <PType>float</PType>
+    <DefaultValue>0.0</DefaultValue>
+  </row>
+  <row>
+    <PType>bool</PType>
+    <DefaultValue>false</DefaultValue>
+  </row>
+  <row>
+    <PType>string</PType>
+    <DefaultValue>""</DefaultValue>
+  </row>
+</table>
+</about_default_value_for_a_type>
+</P_types_guide>
+
+Here is the P events guide:
+<P_events_guide>
+1. A P program is a collection of state machines communicating with each other by exchanging events.
+2. An event in P has two parts: an event name and a payload value (optional) that can be sent along with the event.
+3. Event name in P should be unique and different from Enum and Type names.
+4. There should EXIST a user defined type for EACH event payload and that declared type should be used in the event declaration. 
+5. IMPORTANT: Declaring events with named tuple payloads is INCORRECT.
+
+When declaring P events with payloads, always follow this EXACT syntax:
+First, declare a user defined type for the payload as detailed in the <about_user_defined_types></about_user_defined_types> tags:
+type payloadTypeName = ((fieldName: typeName)*);
+Then, declare the event using the declared payload type payloadTypeName:
+event eventName: payloadTypeName;
+
+Here is a correct example of events:
+<events_example>
+// declarations of events with no payloads
+event ePing;
+event ePong;
+
+// declaration of events that have payloads
+type tRequest = (client: machine, requestId: int, key: string);
+// eRequest event with payload of user defined type tRequest
+event eRequest: tRequest;
+
+type tWriteTransResp = (transId: int, status: tTransStatus);
+// eWriteTransResp event with payload of user defined type tWriteTransResp
+event eWriteTransResp : tWriteTransResp;
+</events_example>
+</P_events_guide>
+
+Here is the P functions guide:
+<P_functions_guide>
+<about_named_functions>
+1. Named functions can either be declared inside a state machine or globally as a top-level declaration. 
+2. The named functions declared within a state machine are local to that machine and hence can access the local variables of the machine. 
+3. Global named functions are shared across state machines.
+4. Named functions at entry or exit and do or goto transitions CANNOT take more than 1 parameter. 
+5. Named functions at exit CANNOT have a parameter.
+6. If you need to pass multiple values into a named function at entry or exit and do or goto transitions, package them into a SINGLE parameter using a named tuple or a custom type.
+7. Do NOT use reserved keywords listed in the <reserved_keywords></reserved_keywords> tags to name a parameter.
+
+Syntax:: fun name (funParamList?) (: returnType)? functionBody
+name is the name of the named function, funParamList is the optional function parameters, and returnType is the optional return type of the function.
+
+<about_function_body>
+Here are the P syntax rules to follow when writing any function body:
+1. Function body in P is a sequence of variable declarations followed by a sequence of statements. Syntax:: { varDecl* statement* }. 
+2. Declare ALL local variables at the beginning of the function body before any other statements.
+3. Do NOT combine variable declaration with variable initialization or variable assignment in the same line. 
+4. To initialize/assign a variable to a value, you can do it in a separate statement after ALL variables in the function body are declared.
+5. If a function has a returnType, the function should necessarily return a value using the return statement described in <about_return_statement></about_return_statement> tags.
+
+Here is a correct example of function body:
+<function_body_correct_example>
+var availableServer: machine;
+var i: int;
+availableServer = ChooseAvailableServer();
+i = 0;
+// other statements
+<<function_body_correct_example>
+
+Here is an incorrect example of a function body:
+<function_body_incorrect_example>
+// Do not combine variable declaration and initialization
+var availableServer: machine = ChooseAvailableServer();
+// other statements
+<function_body_incorrect_example>
+</about_function_body>
+
+Here is an example of named function:
+<named_function_example>
+  fun BroadcastToAllParticipants(message: event, payload: any)
+  {
+    // function body is a sequence of variable declarations followed by a sequence of statements
+    var isComplete: bool;
+    var i: int;
+
+    isComplete = true;
+    i = 1;
+    while (i < sizeof(participants)) {
+      send participants[i], message, payload;
+      i = i + 1;
+    }
+  }
+</named_function_example>
+
+Here is an example of a named function at entry or do or goto transitions:
+<named_function_at_entry_or_do_or_goto_example>
+fun UpdateBankBalance(query: (database: Database, accId: int, bal: int)) {
+  // Function to update the account balance for the account Id
+}
+</named_function_at_entry_or_do_or_goto_example>
+
+Here is an example of an incorrect named function at entry or exit and do or goto transitions:
+<named_function_at_entry_or_do_or_goto_incorrect_example>
+// function has more than 1 parameter, which is incorrect
+fun UpdateBankBalance(database: Database, accId: int, bal: int) {
+  // Function to update the account balance for the account Id
+}
+</named_function_at_entry_or_do_or_goto_incorrect_example>
+</about_named_functions>
+
+<about_function_call>
+1. Function calls in P are similar to any other imperative programming languages.
+2. Note that the parameters passed to the functions and the return values are pass-by-value!
+3. Note that . operation CANNOT be used to make function calls.
+Syntax:: iden (rvalue?);
+
+Here is an example of a function call:
+<function_call_example>
+x = Foo();
+Bar(10, "haha");
+</function_call_example>
+</about_function_call>
+</P_functions_guide>
+
+Here is the P expressions guide:
+<P_expressions_guide>
+<about_primitive_expressions>
+There are three unique primitive expressions in P:
+1. $
+2. halt
+3. this
+
+<about_$_expression>
+$ represents a nondeterministic boolean choice. It is a short hand for choose() which randomly returns a boolean value.
+</about_$_expression>
+
+<about_halt_expression>
+1. halt is a special event in P used for destroying an instance of a P machine.
+2. The semantics of an halt event is that whenever a P machine throws an unhandled event exception because of a halt event then the machine is automatically destroyed or halted and all events sent to that machine instance there after are equivalent to being dropped to ether.
+3. There are two ways of using the halt event:
+(a) self-halt by doing raise halt; raising a halt event which is not handled in the state machine will lead to that machine being halted or
+(b) by sending the halt event to a machine, and that machine on dequeueing halt, would halt itself.
+</about_halt_expression>
+
+<about_this_expression>
+1. this represents the self machine reference of the current machine.
+2. It can be used to send self reference to other machines in the program so that they can send messages to this machine.
+3. this should NOT be used to access variables in a machine.
+
+Here is an example of this expression in P language:
+<this_expression_example>
+database = new Database((server = this, initialBalance = initialBalance));
+</this_expression_example>
+</about_this_expression>
+</about_primitive_expressions>
+
+<about_formatted_string>
+P allows creating formatted strings.
+Syntax:: format ( formatString (, rvalueList)? )
+formatString is the format string and rvalueList is a comma separated list of arguments for the formatted string.
+`formatString` should have numbers inside the curly braces `{}`, corresponding to the positions of the arguments in the `rvalueList`.
+
+Here is an example of a formatted string:
+<formatted_string_example>
+var hw, h, w: string;
+var tup: (string, int);
+
+h = "Hello"; w = "World";
+tup = ("tup value", 100);
+hw = format("{0} {1}, and {2} is {3}!", h, w, tup.0, tup.1);
+// hw value is "Hello World, and tup value is 100!"
+
+print format("{0} {1}, and {2} is {3}!", h, w, tup.0, tup.1);
+// prints "Hello World, and tup value is 100!"
+</formatted_string_example>
+</about_formatted_string>
+
+<about_negation_and_not>
+P supports two unary operations:
+1. - on integers and floats values (i.e., negation) and 
+2. ! on boolean values (i.e., logical not). 
+3. !in is NOT supported in P.
+
+Here is an example that shows an incorrect usage of the logical not operation with the in expression:
+<incorrect_use_of_logical_not_operation_example>
+assert resp.roomNum !in roomAssignments, "Room double booked!";
+</incorrect_use_of_logical_not_operation_example>
+
+Here is an example that shows the correct way of using the logical not operation with the in expression:
+<correct_use_of_logical_not_operation_example>
+assert !(resp.roomNum in roomAssignments), "Room double booked!";
+</correct_use_of_logical_not_operation_example>
+</about_negation_and_not>
+
+<about_arithmetic>
+P supports the following arithmetic binary operations on integers or floats:
+1. + (i.e., addition)
+2. - (i.e., subtraction)
+3. * (i.e., multiplication)
+4. % (i.e., modulo)
+5. / (i.e., division)
+</about_arithmetic>
+
+<about_comparison>
+P supports the following comparison binary operations on integers or floats:
+1. < (i.e., less-than)
+2. <= (i.e., less-than-equal)
+3. > (i.e., greater-than)
+4. >= (i.e., greater-than-equal)
+</about_comparison>
+
+<about_equality_operator>
+P supports the “==” operator, also known as the equality operator.
+The operator will return “true” if both the operands are equal. 
+However, it should not be confused with the “=” operator. “=” works as an assignment operator.
+<about_equality_operator>
+
+<about_cast>
+1. P supports two super types any and data, as described in the <about_universal></about_universal> tags.
+2. To cast values from these supertypes to the actual types, P supports the as cast expression.
+Syntax:: expr as T
+expr expression is cast to type T and if the cast is not valid, then it leads to dynamic type-cast error.
+
+Here is an example of cast expression:
+<cast_expression_example>
+type tRecord = (key: int, val: any);
+
+// inside machine
+var st: set[tRecord];
+var x: any;
+var x_i: string;
+var st_i: set[(key: int, val: string)];
+
+x_i = x as string;
+st += ((key = 1, val = "hello"));
+st_i = st as set[(key: int, val: string)];
+</cast_expression_example>
+</about_cast>
+
+<about_coerce>
+P supports coercing of any value of type float to int and also any enum element to int.
+Syntax:: expr to T
+expr expression is coerced to type T. ONLY coercing of type float to int and also any enum element to int is supported.
+
+Here is an example of coerce:
+<coerce_example>
+enum Status { ERROR = 101, SUCCESS = 102 }
+
+// inside machine body
+var x_f : float;
+var x_i: int;
+
+x_f = 101.0;
+x_i = x_f to int;
+assert x_i == ERROR to int;
+</coerce_example>
+</about_coerce>
+
+<about_choose>
+P provides the choose primitive to model data nondeterminism in P programs.
+
+Syntax:: choose() or choose(expr)
+expr should either be a int value or a collection.
+1. For choose(x), when x is an integer, choose(x) returns a random value between 0 to x (excluding x).
+2. When x is a collection, then choose(x) returns a random element from the collection.
+3. Performing a choose over an empty collection leads to an error. Also, choose from a map value returns a random key from the map.
+4. NOTE that the maximum number of choices allowed in a choose(expr) is 10,000. Performing a choose with an int value greater than 10000 or over a collection with more than 10000 elements leads to an error.
+5. Another use case of choose() could be to model nondeterministic behavior within the system itself where the system can randomly choose to timeout or fail or drop messages.
+
+Here is an example of choose:
+<choose_example>
+choose() // returns true or false, is equivalent to $
+choose(10) // returns an integer x, 0 <= x < 10
+choose(x) // if x is set or seq then returns a value from that collection
+
+choose(10001) // throws a compile-time error
+choose(x)     // throws a runtime error if x is of integer type and has value greater than 10000
+choose(x)     // throws a runtime error if x is of seq/set/map type and has size greater than 10000 elements
+</choose_example>
+</about_choose>
+</P_expressions_guide>
+
+
+Here is the P statements guide:
+<P_statements_guide>
+
+Here is the detailed description of various P statements:
+<about_assert_statement>
+P allows writing local assertions using the assert statement.
+Syntax:: assert expr (, expr)?
+The assert statement must have a boolean expression followed by an optional string message that is printed in the error trace.
+1. If the condition inside the assert statement evaluates to True, the program continues its execution as usual, without any interruption.
+2. If the condition inside the assert statement evaluates to False, the optional message is printed and the program exits
+
+Here is an example of assert statement that asserts that the requestId is always greater than 1 and is in the set of all requests:
+<assert_example>
+assert (requestId > 1) && (requestId in allRequestsSet);
+</assert_example>
+
+Here is an example of assert statement with error message:
+<assert_example_with_error_message>
+assert x >= 0, "Expected x to be always positive";
+</assert_example_with_error_message>
+
+Here is an example of assert with formatted error message:
+assert (requestId in allRequestsSet),
+format ("requestId {0} is not in the requests set = {1}", requestId, allRequestsSet);
+</assert_example_with_formatted_error_message>
+</about_assert_statement>
+
+<about_print_statement>
+Print statements can be used for writing or printing log messages into the error traces (especially for debugging purposes).
+Syntax:: print expr;
+The print statement must have an expression of type string.
+
+Here is an example of print statement that prints "Hello World!" in the execution trace log:
+<print_example>
+print "Hello World!";
+</print_example>
+
+Here is an example of print statement that prints formatted string message "Hello World to You!!" in the execution trace log:
+<print_formatted_string_message>
+x = "You";
+print format("Hello World to {0}!!", x);
+</print_formatted_string_message>
+</about_print_statement>
+
+<about_while_statement>
+While statement in P is just like while loops in other popular programming languages like C, C# or Java.
+Syntax:: while (expr) statement
+expr is the conditional boolean expression and statement could be any P statement.
+
+Here is an example of while loop:
+<while_example>
+i = 0;
+while (i < 10)
+{
+  i = i + 1;
+}
+</while_example>
+
+Here is an example of while loop iterating over collection:
+<while_iterating_over_collection_example>
+i = 0;
+while (i < sizeof(s))
+{
+    print s[i];
+    i = i + 1;
+}
+</while_iterating_over_collection_example>
+</about_while_statement>
+
+<about_if_then_else_statement>
+IfThenElse statement in P is just like conditional if statements in other popular programming languages like C, C# or Java.
+Syntax:: if(expr) statement (else statement)?
+expr is the conditional boolean expression and statement could be any P statement. The else block is optional.
+
+<if_statement_example>
+if(x > 10) {
+    x = x + 20;
+}
+</if_statement_example>
+
+<if_else_statement_example>
+if(x > 10)
+{
+    x = 0;
+}
+else
+{
+    x = x + 1;
+}
+</if_else_statement_example>
+</about_if_then_else_statement>
+
+<about_break_and_continue_statement>
+break and continue statements in P are just like in other popular programming languages like C, C# or Java to break out of the while loop or to continue to the next iteration of the loop respectively.
+<break_example>
+while(true) {
+    if(x == 10)
+        break;
+    x = x + 1;
+}
+</break_example>
+
+<continue_example>
+while(true) {
+    if(x == 10) // skip the loop when x is 10
+        continue;
+}
+</continue_example>
+</about_break_and_continue_statement>
+
+<about_return_statement>
+1. return statement in P can be used to return (or return a value) from any function.
+2. return statement is written in the function body.
+3. If a function has a returnType, the function should necessarily contain a return statement in the function body.
+
+Here is an example of return statement:
+<return_example>
+fun IncrementX() {
+    if(x > MAX_INT)
+        return;
+    x = x + 1;
+}
+</return_example>
+
+Here is an example of return value statement:
+<return_value_example>
+fun Max(x: int, y: int) : int{
+if(x > y)
+    return x;
+else
+    return y;
+}
+</return_value_example>
+</about_return_statement>
+
+<about_assignment>
+P has value semantics or copy-by-value semantics and does not support any notion of references.
+
+Syntax:: leftvalue = rightvalue;
+1. Note that because of value semantics, assignment in P copies the value of the rightvalue into leftvalue.
+2. leftvalue could be any variable, a tuple field access, or an element in a collection. 
+3. rightvalue could be any expression that evaluates to the same type as lvalue.
+4. In P language syntax, variable assignment CANNOT be combined with variable declaration.
+5. Compound assignment operators (+=, -=) are NOT supported for primitive type variables.
+
+Here is an example of assignment:
+<assignment_example>
+var a: seq[string];
+var b: seq[string];
+b += (0, "b");
+a = b; // copy value
+a += (1, "a");
+print a; // will print ["b", "a"]
+print b; // will print ["b"]
+</assignment_example>
+
+Here is another example of assignment:
+<another_assignment_example>
+a = 10; 
+s[i] = 20; 
+tup1.a = "x";
+tup2.0 = 10; 
+t = foo();
+</another_assignment_example>
+
+Here is an INCORRECT example of assignment:
+<assignment_incorrect_example>
+var i: int;
+var requestId = 5;  // Direct assignment without variable declaration is incorrect
+var availableServer: machine = ChooseAvailableServer(); // Incorrect to combine declaration and assignment
+i += 1; // operator += not supported for int
+<assignment_incorrect_example>
+</about_assignment>
+
+<about_new_statement>
+New statement is used to create an instance of a machine in P.
+Syntax:: new iden (rvalue?);
+
+Here is an example that uses new to create a dynamic instance of a Client machine
+new Client();
+</new_example>
+</about_new_statement>
+
+<about_raise_statement>
+1. The statement raise e, v; terminates the evaluation of the function raising an event e with payload v.
+2. The control of the state machine jumps to end of the function and the state machine immediately handles the raised event.
+
+Syntax:: raise expr (, rvalue)?;
+rvalue should be same as the payloadType of expr and should STRICTLY be a NAMED TUPLE as detailed in <create_named_tuple_value></create_named_tuple_value> tags.
+
+Here is an example of raise event:
+<raise_event_example>
+fun handleRequest(req: tRequest)
+{
+    // ohh, this is a Add request and I have a event handler for it
+    if(req.type == "Add")
+      raise eAddOperation; // terminates function
+    
+    assert req.type != "Add"; // valid
+}
+
+state HandleRequest {
+  on eAddOperation do AddOperation;
+}
+</raise_event_example>
+</about_raise_statement>
+
+<about_send_statement>
+1. Send statement is one of the most important statements in P as it is used to send messages to other state machines.
+2. Send takes as argument a triple send t, e, v, where t is a reference to the target state machine, e is the event sent and v is the associated payload.
+3. Sends in P are asynchronous and non-blocking. Statement send t, e, v enqueues the event e with payload v into the target machine t's message buffer.
+4. Within EACH machine where you write the send statement, declare variable for the target machine t with the same type as the target machine. If the type for target machine does not exist, declare t as a machine.
+5. t should ALWAYS be a machine and v should ALWAYS be of the same type as the payload type defined for the event e. Do NOT use nested named tuples as the payload v when the payload type is a single field named tuple.
+
+Syntax:: send lvalue, expr (, rvalue)?;
+lvalue should STRICTLY be of the same type as the target machine t.
+rvalue should STRICTLY be of the same type as the payload type defined for the event. Do NOT use nested named tuples as the payload when the payload type is a single field named tuple.
+
+Here is an example of send event with no payload:
+<send_event_example>
+machine BankServer {
+  // inside machine
+}
+
+machine Database {
+    // BankServer is a state machine
+    var server: BankServer;
+    
+    fun AfterReadQuery(query: (accountId: int)) {
+      assert query.accountId in balance, "Invalid accountId received in the read query!";
+      send server, eReadQueryResp;
+    }
+}
+</send_event_example>
+
+Here is an example of send event with payload:
+<send_event_with_payload_example>
+var server: BankServer;
+send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
+</send_event_with_payload_example>
+
+Here is an INCORRECT example of send event with payload:
+<send_event_with_payload_incorrect_example>
+// Missing names in the tuple
+send server, eReadQueryResp, (query.accountId, balance[query.accountId]);
+</send_event_with_payload_incorrect_example>
+</about_send_statement>
+
+<about_announce_statement>
+1. Announce is used to publish messages to specification monitors in P.
+2. Each monitor observes a set of events and whenever a machine sends an event that is in the observes set of a monitor then it is synchronously delivered to the monitor. Announce can be used to publish an event to all the monitors that are observing that event.
+3. Announce only delivers events to specification monitors (not state machines) and hence has no side effect on the system behavior.
+Syntax:: annouce eventName (, rvalue)?;
+rvalue should STRICTLY be of the same type as the payload type defined for the event. Do NOT use nested named tuples as the payload when the payload type is a single field named tuple.
+
+Here is an example of announce event with payload:
+<announce_event_example>
+// Consider a specification monitor that continuously observes eStateUpdate event to keep track of the system state and then asserts a required property when the system converges.
+spec CheckConvergedState observes eStateUpdate, eSystemConverged {
+  // something inside spec
+}
+
+//announce statement can be used to inform the monitor when the system has converged and that we should assert the global specification.
+announce eSystemConverged, payload;
+</announce_event_example>
+</about_announce_statement>
+
+<about_goto_statement>
+1. Goto statement can be used to jump to a particular state. 
+2. On executing a goto, the state machine exits the current state (terminating the execution of the current function) and enters the target state.
+3. Goto statement should ALWAYS be written WITHIN a function body.
+4. The optional payload accompanying the goto statement becomes the input parameter to the function at entry of the target state.
+Syntax:: goto stateName (, rvalue)?;
+
+Here is an example of goto:
+<goto_example>
+start state Init {
+  on eProcessRequest goto SendPingsToAllNodes;
+}
+
+state SendPingsToAllNodes { 
+  // do something 
+}
+
+state {
+  on eFailure, eCancelled goto Done;
+}
+
+state Done {
+  // do something
+}
+</goto_example>
+
+Here is an example of goto with payload:
+<goto_with_payload_example>
+state ServiceRequests {
+  fun processRequest(req: tRequest) {
+    // process request with some logic
+    lastReqId = req.Id;
+    goto WaitForRequests, lastReqId;
+  }
+}
+
+state WaitForRequests {
+    entry AfterRequest_Entry;
+}
+
+fun AfterRequest_Entry(lastReqId: int) {
+  // do something 
+}
+</goto_with_payload_example>
+</about_goto_statement>
+
+<about_receive_statement>
+1. Receive statements in P are used to perform blocking await/receive for a set of events inside a function.
+2. Each receive statement can block or wait on a set of events, all other events are automatically deferred by the state machine.
+3. On receiving an event that the receive is blocking on (case blocks), the state machine unblocks, executes the corresponding case-handler and resumes executing the next statement after receive.
+
+Syntax::
+receive { recvCase+ }
+/* case block inside a receive statement */
+recvCase : case eventList : anonFunction
+
+Here is an example of receive awaiting a single event:
+<receive_awaiting_single_event_example>
+fun AcquireLock(lock: machine)
+{
+    send lock, eAcquireLock;
+    receive {
+        case eLockGranted: (result: tResponse) { /* case handler */ }
+    }
+    print "Lock Acquired!"
+    // Note that when executing the AcquireLock function the state machine blocks at the receive statement, it automatically defers all the events except the eLockGranted event. 
+    // On receiving the eLockGranted, the case-handler is executed and then the print statement.
+}
+</receive_awaiting_single_event_example>
+
+Here is an example of receive awaiting multiple events:
+<receive_awaiting_multiple_events_example>
+fun WaitForTime(timer: Timer, time: int)
+{
+    var success: bool;
+    send timer, eStartTimer, time;
+    receive {
+        case eTimeOut: { success = true; }
+        case eStartTimerFailed: { success = false; }
+    }
+    if (success) print "Successfully waited!"
+    // Note that when executing the WaitForTime function the state machine blocks at the receive statement, it automatically defers all the events except the eTimeOut and eStartTimerFailed events.
+}
+</receive_awaiting_multiple_events_example>
+</about_receive_statement>
+
+<additional_instructions>
+1. Switch case statements are NOT supported in P. Instead, use IfThenElse statements as described in <about_if_then_else_statement></about_if_then_else_statement> tags.
+2. Usage of 'with' keyword is VALID ONLY in the syntax of event handlers as described in <about_event_handler_with_goto></about_event_handler_with_goto> tags.
+3. 'const' keyword is NOT supported in P. Constants in P are defined as described in <about_variables_in_machine></about_variables_in_machine> tags.
+4. 'is' operator is NOT supported in the P language.
+5. 'self' keyword is NOT supported in the P language.
+6. values() or indexOf() functions are NOT supported in P. Do not use library functions from other programming languages.
+7. to string is NOT supported in P.
+
+Here is a non-exhaustive list of the P syntax rules that you should strictly adhere to when writing P code:
+1. Variable declaration and assignment must be done in separate statements.
+2. All variables in a function body must be declared at the top before any other statements.
+3. The `foreach` loop must declare the iteration variable at the top of the function body.
+4. Do not use 'self' or 'this' for accessing variables inside a machine. 
+5. Named function at entry CANNOT take more than 1 parameter, as described in <about_functions_in_machine></about_functions_in_machine> tags.
+6. Exit functions cannot have parameters.
+7. The target machine in a `send` statement must be a variable of the same type as the target machine.
+8. The logical not operator `!` must be used with parentheses: `!(expr in expr)`.
+9. '!in' and 'not in' are not supported for collection membership checks.
+10. Default values for types are obtained using 'default(type)' syntax.
+11. Collections are initialized to empty by default and should not be reassigned to default values.
+12. Initializing non-empty collections requires specific syntax (e.g., `seq += (index, value)`, `map[key] = value`).
+13. The `ignore` statement must list the event names: `ignore eventList;`.
+14. Formatted strings use a specific syntax: `format("formatString {0} {1}", arg1, arg2)`.
+15. Creating a single field named tuple requires a trailing comma after the value assignment, as described in <create_named_tuple_value><create_named_tuple_value> tags.
+16. User defined types are assigned values using named tuples as detailed in <create_named_tuple_value></create_named_tuple_value> tags.
+17. Do NOT access functions contained inside of other machines.
+18. Entry functions in spec machines CANNOT take any parameter.
+19. $, $$, this, new, send, announce, receive, and pop are not allowed in monitor.
+</additional_instructions>
+</P_statements_guide>
+
+Here is the P state machine guide:
+<P_state_machine_guide>
+A P program is a collection of concurrently executing state machines that communicate with each other by sending events (or messages) asynchronously.
+
+Here is a summary of the important semantic details of P State Machine:
+1. Each P state machine has an unbounded FIFO buffer associated with it.
+2. Sends are asynchronous, i.e., executing a send operation send t,e,v; adds event e with payload value v into the FIFO buffer of the target machine t.
+3. Variables and functions declared within a machine are local, i.e., they are accessible ONLY from within that machine.
+4. Each state in a machine has an entry and an exit function associated with it. The entry function gets executed when the machine enters that state, and similarly, the exit function gets executed when the machine exits that state on an outgoing transition.
+5. After executing the entry function, a machine tries to dequeue an event from its input buffer or blocks if the buffer is empty. Upon dequeuing an event from its input queue, a machine executes the attached event handler which might transition the machine to a different state.
+
+Do NOT leave a machine empty.
+Do NOT explicitly initialize a machine to null.
+Do NOT access functions contained inside of other machines.
+<about_variables_in_machine>
+A machine can define a set of local variables that are accessible only from within that machine.
+Syntax:: var iden: type;
+iden is the name of the variable and type is the variable datatype.
+
+Here is an example of variable:
+<variable_example>
+type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int, rId: int);
+// some function body in the P program
+{
+    // all variables declared at the top of the function body
+    var currentBalance: int;
+    var response: tWithDrawResp;
+
+    // variables are assigned a value in separate statements after all variables are declared
+    currentBalance = ReadBankBalance(database, wReq.accountId);
+    if(currentBalance - wReq.amount >= 10) {
+      response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = currentBalance - wReq.amount, rId = wReq.rId);
+    }
+}
+</variable_example>
+
+Within EACH machine x where other machines are referenced, declare variables for the other machines with the same type as those machines.
+<reference_other_machines_example>
+machine RWLBSharedObject {
+  // LBSharedObject machine declared
+  var sharedObj: LBSharedObject;
+}
+
+machine LBSharedObject {
+  // RWLBSharedObject machine declared
+  var currHolder: RWLBSharedObject;
+  // inside machine
+}
+<reference_other_machines_example>
+</about_variables_in_machine>
+
+<about_functions_in_machine>
+1. A machine can have a set of local named functions that are accessible only from within that machine.
+2. It is INVALID to access named functions from other machines.
+3. If a named function uses any variable declared WITHIN a machine, it should ALWAYS be written WITHIN the machine. NEVER write it outside the machine.
+4. Named functions at entry or exit and do or goto transitions are written OUTSIDE the state. NEVER write them inside a state.
+5. Named functions at entry or exit and do or goto transitions CANNOT take more than 1 parameter. These functions SHOULD have a single named tuple parameter.
+6. Named functions at exit CANNOT have input parameters.
+7. If you need to pass multiple values into a named function at entry or exit and do or goto transitions, package them into a SINGLE parameter using a named tuple or a custom type.
+8. Refer the P syntax rules to write a named function from the <P_functions_guide></P_functions_guide> tags.
+
+Here is an example of an incorrect function call:
+<incorrect_function_call_in_machine_example>
+machine EspressoCoffeeMaker{
+  fun HasWater() : bool { 
+    return $; 
+  }
+}
+machine CoffeeMakerControlPanel {
+  var currentUser: EspressoCoffeeMaker;
+  fun WaitForUser() : bool {
+    // Incorrect syntax. HasWater() cannot be accessed outside of EspressoCoffeeMaker machine 
+    return currentUser.HasWater();
+  }
+}
+</incorrect_function_call_in_machine_example>
+</about_functions_in_machine>
+
+<about_state_in_machine>
+A state can be declared in a machine with a name and a stateBody.
+Syntax:: start? (hot | cold)? state name { stateBody* }
+1. A single state in each machine should be marked as the start state to identify this state as the starting state on machine creation.
+2. A machine should contain at least the start state.
+3. Each state in the machine SHOULD have a UNIQUE name.
+4. ONLY a state declared inside a P Monitor can be marked as hot or cold.
+</about_state_in_machine>
+
+<about_state_body_in_machine>
+1. The state body for a state defines its entry/exit functions and attached event handlers supported by that state. 
+2. Additionally, the state body can mark certain events as deferred or ignored in the state.
+
+Here are details about the constituents of a state body:
+<about_entry_function>
+1. The entry function gets executed when a machine enters that state. 
+2. If the corresponding state is marked as the start state, the entry function gets executed at machine creation.
+3. Defining the entry function for a state is optional.
+4. The entry function MUST be a named function defined separately.
+Syntax:: entry funName;
+
+Here is an example of entry function:
+<entry_function_example>
+state CoffeeMakerRunSteam {
+  entry StartSteamer;
+}
+
+fun StartSteamer() {
+  // send an event to maker to start steaming
+  send coffeeMaker, eStartSteamerReq;
+}
+</entry_function_example>
+
+Here is an incorrect example of entry function:
+<entry_function_incorrect_example>
+// entry should NOT be written as anonymous function as follows:
+entry {
+  // send an event to maker to start steaming
+  send coffeeMaker, eStartSteamerReq;
+}
+<entry_function_incorrect_example>
+</about_entry_function>
+
+<about_exit_function>
+1. The exit function gets executed when a machine exits that state to transition to another state.
+2. Defining the exit function for a state is optional.
+3. The exit function must be a named function defined separately.
+Syntax:: exit funName;
+
+Here is an example of exit function:
+<exit_function_example>
+state EncounteredError {
+  exit PrintExitingState;
+}
+
+fun PrintExitingState {
+  print format ("Exiting state");
+}
+</exit_function_example>
+
+Here is an incorrect example of exit function:
+<exit_function_incorrect_example>
+// exit function should NOT be anonymous function
+exit {
+  print format ("Exiting state");
+}
+<exit_function_incorrect_example>
+</about_exit_function>
+
+<about_event_handler>
+1. An event handler defined for event E in state S describes what statements are executed when a machine dequeues event E in state S.
+2. An event handler is ALWAYS defined WITHIN a state where you expect the corresponding event to be handled. It is NOT ALLOWED to define event handlers OUTSIDE of any state in the state machine.
+3. An event handler is NOT a named function.
+Syntax:: on eNameList do funName;
+eNameList should STRICTLY contain only one or more event names.
+The parameter of funName should STRICTLY be same as the payloadType of eName.
+
+Here is an example of event handler:
+<event_handler_example>
+event eRead: machine;
+
+state WaitForRelease {
+  on eRead do SendReadResponse;
+}
+
+fun SendReadResponse(client: machine) {
+  // do something
+}
+
+state WaitForResponse {
+  on eFailure, eCancel do printResponse;
+}
+
+fun printResponse() {
+  // do something
+}
+</event_handler_example>
+
+Here is an incorrect example of event handler:
+<event_handler_incorrect_example>
+event eRead: machine;
+
+on eRead do {
+  // do something
+}
+</event_handler_incorrect_example>
+</about_event_handler>
+
+<about_event_handler_with_goto>
+An event handler can be further combined with a goto statement. After the attached event handler statements are executed, the machine transitions to the goto state.
+Syntax:: on eNameList goto stateName (; | with funName;)
+The parameter of funName should be same as the payloadType of eName.
+
+Here is an example of an event handler with goto:
+<event_handler_with_goto_example>
+on eWarmUpCompleted goto CoffeeMakerReady;
+</event_handler_with_goto_example>
+
+Here is an example of an event handler combined with goto and function:
+<event_handler_with_goto_and_function_example>
+event eTimeOut: tTransStatus;
+
+state WaitForPrepareResponses {
+  on eTimeOut goto WaitForTransactions with DoGlobalAbort;
+}
+
+state WaitForTransactions {
+  // when in this state it is fine to drop these messages as
+	// they are from the previous transaction
+	ignore ePrepareResp, eTimeOut;
+}
+
+fun DoGlobalAbort(respStatus: tTransStatus) {
+  // ask all participants to abort and fail the transaction
+}
+</event_handler_with_goto_and_function_example>
+</about_event_handler_with_goto>
+
+<about_defer_statement>
+1. An event can be deferred in a state. 
+2. Defer basically defers the dequeue of the event E in state S until the machine transitions to a state that does not defer the event E.
+3. The position of the event E that is deferred in state S does not change the FIFO buffer of the machine.
+4. NOTE that whenever a machine encounters a dequeue event, the machine goes over its unbounded FIFO buffer from the front and removes the first event that is not deferred in its current state, keeping rest of the buffer unchanged.
+5. Defer statement should be written in a state. Do not write it in a function.
+
+Here is the syntax of defer statement:
+Syntax:: defer eventList;
+
+Here is an example of defer statement:
+<defer_statement_example>
+start state Init {
+  defer eDefer;
+}
+<defer_statement_example>
+</about_defer_statement>
+
+<about_ignore_statement>
+1. An event E can be ignored in a state, which basically drops the event E.
+2. When ignoring an event, always follow this EXACT syntax:
+Syntax:: ignore eventList;
+3. Writing ignore as 'on eventList ignore;' is NOT supported in P.
+
+Here is an example of ignore statement:
+<ignore_statement_example>
+state WaitForTimerRequests {
+  ignore eCancelTimer, eDelayedTimeOut;
+}
+
+state ResetAndStartAgain {
+  ignore ePong;
+}
+<ignore_statement_example>
+
+Here is an incorrect example of ignore statement:
+<ignore_statement_incorrect_example>
+on eSteamerButtonOff ignore;
+</ignore_statement_incorrect_example>
+</about_ignore_statement>
+
+</about_state_body_in_machine>
+</P_state_machine_guide>
+
+
+Here is the P specification monitors guide:
+<P_specification_monitors_guide>
+P specification monitors or spec machines are used to write the safety and liveness specifications the system must satisfy for correctness.
+
+Syntactically, machines and spec machines in P are very similar in terms of the state machine structure. But, they have some key differences:
+1. spec machines in P are observer machines (imagine runtime monitors); they observe a set of events in the execution of the system and, based on these observed events (may keep track of local states), assert the desired global safety and liveness specifications.
+2. Since spec machines are observer machines, they cannot have any side effects on the system behavior and hence, spec machines cannot perform send, receive, new, and annouce.
+3. spec machines are global machines; in other words, there is only a single instance of each monitor created at the start of the execution of the system.
+4. Since dynamic creation of monitors is not supported, spec machines cannot use this expression described in <about_this_expression></about_this_expression> tags.
+5. spec machines are synchronously composed with the system that is monitored. The way this is achieved is: each time there is a send or announce of an event during the execution of a system, all the monitors or specifications that are observing that event are executed synchronously at that point.
+6. Another way to imagine this is: just before send or annouce of an event, we deliver this event to all the monitors that are observing the event and synchronously execute the monitors at that point.
+7. spec machines can have hot and cold annotations on their states to model liveness specifications.
+8. $, $$, this, new, send, announce, receive, and pop are NOT allowed in monitors.
+9. Entry functions in spec machines CANNOT take any parameter.
+
+Syntax: spec iden observes eventsList statemachineBody;
+iden is the name of the spec machine, 
+eventsList is the comma separated list of events observed by the spec machine, and 
+statemachineBody is the implementation of the specification and its grammar is similar to the grammar in the <about_state_body_in_machine><about_state_body_in_machine> tags.
+
+<safety_specification>
+Here is a specification that checks a very simple global invariant that all eRequest events that are being sent by clients in the system have a globally monotonically increasing rId:
+<safety_specification_example>
+/*******************************************************************
+ReqIdsAreMonotonicallyIncreasing observes the eRequest event and
+checks that the payload (Id) associated with the requests sent
+by all concurrent clients in the system is always globally
+monotonically increasing by 1
+*******************************************************************/
+spec ReqIdsAreMonotonicallyIncreasing observes eRequest {
+    // keep track of the Id in the previous request
+    var previousId : int;
+    start state Init {
+        on eRequest do AfterRequest;
+    }
+
+    fun CheckIfReqIdsAreMonotonicallyIncreasing(req: tRequest) {
+      assert req.rId > previousId, format ("Request Ids not monotonically increasing, got {0}, previously seen Id was {1}", req.rId, previousId);
+      previousId = req.rId;
+    }
+}
+</safety_specification_example>
+</safety_specification>
+
+<liveness_specification>
+1. hot annotation can be used on states to mark them as intermediate or error states.
+2. The key idea is that the system satisfies a liveness specification if, at the end of the execution, the monitor is not in a hot state.
+3. Properties like 'eventually something holds' or 'every event X is eventually followed by Y' or 'eventually the system enters a convergence state' can be specified by marking the intermediate state as hot states and the checker checks that all the executions of the system eventually end in a non-hot state.
+4. If there exists an execution that fails to come out of a hot state eventually, then it is flagged as a potential liveness violation.
+
+Here is a specification that checks the global liveness property that every event eRequest is eventually followed by a corresponding successful eResponse event:
+<liveness_specification_example>
+/**************************************************************************
+GuaranteedProgress observes the eRequest and eResponse events;
+it asserts that every request is always responded by a successful response.
+***************************************************************************/
+spec GuaranteedProgress observes eRequest, eResponse {
+    // keep track of the pending requests
+    var pendingReqs: set[int];
+    start state NopendingRequests {
+        on eRequest goto PendingReqs with AddPendingRequest;
+    }
+
+    hot state PendingReqs {
+      on eResponse do AfterResponse;
+      on eRequest goto PendingReqs with AddPendingRequest;
+    }
+
+    fun AddPendingRequest(req: tRequest) {
+      pendingReqs += (req.rId);
+    }
+
+    fun AfterResponse(resp: tResponse) {
+      assert resp.rId in pendingReqs, format ("unexpected rId: {0} received, expected one of {1}", resp.rId, pendingReqs);
+      if(resp.status == SUCCESS)
+      {
+        pendingReqs -= (resp.rId);
+        if(sizeof(pendingReqs) == 0) // requests already responded
+        goto NopendingRequests;
+      }
+    }
+}
+</liveness_specification_example>
+</liveness_specification>
+</P_specification_monitors_guide>
+
+
+Here is the P module systems guide:
+<P_module_systems_guide>
+1. The P module system allows programmers to decompose their complex system into modules to implement and test the system compositionally.
+2. In its simplest form, a module in P is a collection of state machines.
+3. The P module system allows constructing larger modules by composing or unioning modules together.
+4. Hence, a distributed system under test which is a composition of multiple components can be constructed by composing (or unioning) modules corresponding to those components.
+5. You cannot union a module with modules that it already contains through previous unions.
+
+There are four types of modules:
+1. Named module
+2. Primitive module
+3. Union module
+4. Assert Monitors module
+
+Here are the details of each of these modules:
+<about_named_module>
+A named module declaration simply assigns a name to a module expression.
+Syntax: module mName = modExpr;
+mName is the assiged name for the module and modExpr is any of the Primitive, Union, or Assert Monitors modules.
+
+Here is an example of a named module:
+<named_module_example>
+// assigns the name serverModule to a primitive module consisting of machines Server and Timer.
+module serverModule = { Server, Timer };
+</named_module_example>
+</about_named_module>
+
+<about_primitive_module>
+A primitive module is a (annonymous) collection of state machines.
+Syntax: { bindExpr (, bindExpr)* }
+bindExpr is a binding expression which could either be
+1. the name of a machine iden, or
+2. a mapping mName -> replaceName that maps a machine mName to a machine name replaceName that we want to replace.
+
+The binding enforces that whenever a machine replaceName is created in the module, it leads to the creation of machine mName.
+In most cases, a primitive module is simply a list of state machines that together implement that component.
+
+Here is an example of a primitive module:
+<primitive_module_example>
+// Let's say there are three machines in the P program: Client, Server, and Timer
+
+// client is a primitive module consisting of the Client machine and the server module is a primitive module consisting of machines Server and Timer.
+module client = { Client };
+module server = { Server, Timer };
+</primitive_module_example>
+
+Here is an example of a primitive module with bindings:
+<primitive_module_with_bindings_example>
+// Let's say there are four machines in the P program: Client, Server, AbstractServer and Timer
+module client = { Client };
+module server = { Server, Timer };
+
+// module serverAbs represents a primitive module consisting of machines AbstractServer and Timer machines, with the difference that wherever the serverAbs module is used, the creation of machine Server will in turn lead to creation of the AbstractServer machine.
+module serverAbs = { AbstractServer -> Server, Timer };
+</primitive_module_with_bindings_example>
+</about_primitive_module>
+
+<about_union_module>
+1. P supports unioning multiple modules together to create larger, more complex modules.
+2. The union of two modules is simply a creation of a new module which is a union of the machines of the component modules.
+3. You cannot union a module with modules that it already contains through previous unions.
+
+Syntax:: union modExpr (, modExpr)+
+modExpr is any P module.
+
+Here is an example of a union module:
+<union_module_example>
+// system is a module which is a union of the modules client and server.
+module system = (union client, server);
+
+// systemAbs is a module which is a union of the module client and the serverAbs where the Client machine interacts with the AbstractServer machine instead of the Server machine in the system module.
+module systemAbs = (union client, serverAbs);
+</union_module_example>
+</about_union_module>
+
+<about_assert_monitors_module>
+1. P allows attaching monitors (or specifications) to modules.
+2. When attaching monitors to a module, the events observed by the monitors must be sent by some machine in the module.
+3. The way to think about assert monitors module is that: attaching these monitors to the module asserts (during P checker exploration) that each execution of the module satisfies the global properties specified by the monitors.
+
+Syntax: assert idenList in modExpr
+idenList is a comma separated list of monitor (spec machine) names that are being asserted on the executions of the module modExpr.
+
+Here is an example of assert monitors module:
+<assert_monitors_module_example>
+// module asserts that the executions of the module TwoPhaseCommit satisfy the properties specified by the monitors AtomicitySpec and EventualResponse.
+assert AtomicitySpec, EventualResponse in TwoPhaseCommit
+</assert_monitors_module_example>
+</about_assert_monitors_module>
+
+</P_module_systems_guide>
+
+
+Here is the P test cases guide:
+<P_test_cases_guide>
+1. P Test cases are used to define different finite scenarios under which we would like to check the correctness of the module (or system) under test.
+2. More concretely, the system module to be tested is unioned with different environment modules (or test harnesses/drivers) to check its correctness for different inputs scenarios generated by the environment modules.
+3. Here is the syntax for test case declaration:
+Syntax:: test tName [main=mName] : module_under_test ;
+tName is the name of the test case, mName is the name of the main machine where the execution of the system starts, and module_under_test is the module to be tested.
+
+<properties_checked_for_test_case>
+For each testcase, the P checker by default asserts that for each execution of the system (i.e., module_under_test):
+1. there are no unhandled event exceptions
+2. all local assertions in the program hold
+3. there are no deadlocks, and finally
+4. based on the specification monitors that are attached to the module, the safety and liveness properties asserted by the monitors always hold.
+</properties_checked_for_test_case>
+</P_test_cases_guide>
+
+Here is the structure of a P program guide:
+<P_program_structure_guide>
+<about_specification>
+A specification says what the system should do (correctness properties). 
+</about_specification>
+
+<about_model>
+A model captures the details of how the system does it. 
+</about_model>
+
+<about_model_checking_scenario>
+A model checking scenario provides the finite non-deterministic test-harness or environment under which the model checker should check that the system model satisfies its specifications.
+</about_model_checking_scenario>
+
+<about_P_program_structure>
+A P program is typically divided into three folders:
+1. PSrc: contains all the state machines representing the implementation (model) of the system or protocol to be verified or tested. Additionally, it contains a P modules file.
+2. PSpec: contains all the specifications representing the correctness properties that the system must satisfy.
+3. PTst: contains all the environment or test harness state machines that model the non-deterministic scenarios under which we want to check that the system model in PSrc satisfies the specifications in PSpec. P allows writing different model checking scenarios as test-cases.
+The PTst folder has two files:
+1. TestDriver.p: TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios.
+2. TestScript.p: TestScripts are collections of test cases that are automatically run by the P checker. P allows programmers to write different test cases. 
+Each test case is checked separately and can use a different test driver. Using different test drivers triggers different behaviors in the system under test, as it implies different system configurations and input generators.
+
+</about_P_program_structure>
+</P_program_structure_guide>
+
+Here is an example of a P program:
+<P_program_example_guide>
+<system_description>
+System:
+Consider a client-server application where clients interact with a bank to withdraw money from their accounts.
+The bank consists of two components:
+1. a bank server that services withdraw requests from the client, and
+2. a backend database that is used to store the account balance information for each client.
+Multiple clients can concurrently send withdraw requests to the bank. 
+On receiving a withdraw request, the bank server reads the current bank balance for the client. 
+If the withdraw request is allowed, then the server performs the withdrawal, updates the account balance, and responds back to the client with the new account balance.
+
+Correctness Specification:
+The bank must maintain the invariant that each account must have at least 10 dollars as its balance.
+If a withdrawal request takes the account balance below 10, then the withdrawal request must be rejected by the bank.
+The correctness property that we would like to check is that in the presence of concurrent client withdrawal requests, the bank always responds with the correct bank balance for each client, and a withdraw request always succeeds if there is enough balance in the account (i.e., at least 10).
+</system_description>
+
+<P_project_description>
+The ClientServer folder contains the source code for the ClientServer project.
+<models>
+The P models (PSrc) for the ClientServer example consist of four files:
+1. Client.p: Implements the Client state machine that has a set of local variables used to store the local-state of the state machine.
+2. Server.p: Implements the BankServer and the backend Database state machines.
+3. AbstractBankServer.p: Implements the AbstractBankServer state machine that provides a simplified abstraction that unifies the BankServer and Database machines.
+4. ClientServerModules.p: Declares the P modules corresponding to each component in the system.
+</models>
+
+<specifications>
+The P Specifications (PSpec) for the ClientServer project are implemented in the BankBalanceCorrect.p file. 
+
+We define two specifications:
+1. BankBalanceIsAlwaysCorrect (safety property): 
+The BankBalanceIsAlwaysCorrect specification checks the global invariant that the account-balance communicated to the client by the bank is always correct and the bank never removes more money from the account than that withdrawn by the client.
+Also, if the bank denies a withdraw request, then it is only because the withdrawal would reduce the account balance to below 10.
+
+2. GuaranteedWithDrawProgress (liveness property): 
+The GuaranteedWithDrawProgress specification checks the liveness (or progress) property that all withdraw requests submitted by the client are eventually responded.
+
+The two properties BankBalanceIsAlwaysCorrect and GuaranteedWithDrawProgress together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
+</specifications>
+
+<test_scenarios>
+The test scenarios folder for ClientServer (PTst) consists of two files: TestDriver.p and TestScript.p.
+</test_scenarios>
+</P_project_description>
+
+<P_project_code>
+Here is the folder PSrc:
+<PSrc>
+Here is the file Client.p:
+<Client.p>
+/* User Defined Types */
+
+// payload type associated with the eWithDrawReq, where `source`: client sending the withdraw request,
+// `accountId`: account to withdraw from, `amount`: amount to withdraw, and 
+// `rId`: unique request Id associated with each request.
+type tWithDrawReq = (source: Client, accountId: int, amount: int, rId:int);
+
+// payload type associated with the eWithDrawResp, where `status`: response status (below),
+// `accountId`: account withdrawn from, `balance`: bank balance after withdrawal, and
+// `rId`: request id for which this is the response.
+type tWithDrawResp = (status: tWithDrawRespStatus, accountId: int, balance: int, rId: int);
+
+// enum representing the response status for the withdraw request
+enum tWithDrawRespStatus {
+  WITHDRAW_SUCCESS,
+  WITHDRAW_ERROR
+}
+
+// event: withdraw request (from client to bank server)
+event eWithDrawReq : tWithDrawReq;
+// event: withdraw response (from bank server to client)
+event eWithDrawResp: tWithDrawResp;
+
+
+machine Client
+{
+  var server : BankServer;
+  var accountId: int;
+  var nextReqId : int;
+  var numOfWithdrawOps: int;
+  var currentBalance: int;
+
+  /*************************************************************
+  Init state is the start state of the machine where the machine starts executions on being created.
+  The entry function of the Init state initializes the local variables based on the parameters received 
+  on creation and jumps to the WithdrawMoney state.
+  *************************************************************/
+  start state Init {
+    entry Init_Entry;
+  }
+
+  /*************************************************************
+  In the WithdrawMoney state, the state machine checks if there is enough money in the account. 
+  If the balance is greater than 10, then it issues a random withdraw request to the bank by sending the eWithDrawReq event, otherwise, it jumps to the NoMoneyToWithDraw state.
+  After sending a withdraw request, the machine waits for the eWithDrawResp event. 
+  On receiving the eWithDrawResp event, the machine executes the corresponding event handler that confirms if the bank response is as expected and if there is still money in the account 
+  and then jumps back to the WithdrawMoney state. Note that each time we (re-)enter a state (through a transition or goto statement), its entry function is executed.
+  *************************************************************/
+  state WithdrawMoney {
+    entry WithdrawMoney_Entry;
+
+    on eWithDrawResp do AfterWithDrawResp;
+  }
+
+  fun AfterWithDrawResp(resp: tWithDrawResp) {
+    // bank always ensures that a client has atleast 10 dollars in the account
+    assert resp.balance >= 10, "Bank balance must be greater than 10!!";
+    if(resp.status == WITHDRAW_SUCCESS) // withdraw succeeded
+    {
+      print format ("Withdrawal with rId = {0} succeeded, new account balance = {1}", resp.rId, resp.balance);
+      currentBalance = resp.balance;
+    }
+    else // withdraw failed
+    {
+      // if withdraw failed then the account balance must remain the same
+      assert currentBalance == resp.balance,
+        format ("Withdraw failed BUT the account balance changed! client thinks: {0}, bank balance: {1}", currentBalance, resp.balance);
+      print format ("Withdrawal with rId = {0} failed, account balance = {1}", resp.rId, resp.balance);
+    }
+
+    if(currentBalance > 10)
+    {
+      print format ("Still have account balance = {0}, lets try and withdraw more", currentBalance);
+      goto WithdrawMoney;
+    }
+  }
+
+  fun Init_Entry(input : (serv : BankServer, accountId: int, balance : int)) {
+    server = input.serv;
+    currentBalance =  input.balance;
+    accountId = input.accountId;
+    // hacky: we would like request id's to be unique across all requests from clients
+    nextReqId = accountId*100 + 1; // each client has a unique account id
+    goto WithdrawMoney;
+  }
+
+  fun WithdrawMoney_Entry() {
+    // If current balance is <= 10 then we need more deposits before any more withdrawal
+    if(currentBalance <= 10)
+      goto NoMoneyToWithDraw;
+
+    // send withdraw request to the bank for a random amount between (1 to current balance + 1)
+    send server, eWithDrawReq, (source = this, accountId = accountId, amount = WithdrawAmount(), rId = nextReqId);
+    nextReqId = nextReqId + 1;
+  }
+
+  // function that returns a random integer between (1 to current balance + 1)
+  fun WithdrawAmount() : int {
+    return choose(currentBalance) + 1;
+  }
+
+  state NoMoneyToWithDraw {
+    entry NoMoneyToWithDrawEntry;
+  }
+
+  fun NoMoneyToWithDrawEntry() {
+    // if I am here then the amount of money in my account should be exactly 10
+    assert currentBalance == 10, "Hmm, I still have money that I can withdraw but I have reached NoMoneyToWithDraw state!";
+    print format ("No Money to withdraw, waiting for more deposits!");
+  }
+}
+</Client.p>
+
+Here is the file Server.p:
+<Server.p>
+// payload type associated with eUpdateQuery
+type tUpdateQuery = (accountId: int, balance: int);
+
+// payload type associated with eReadQuery
+type tReadQuery = (accountId: int);
+
+// payload type associated with eReadQueryResp
+type tReadQueryResp = (accountId: int, balance: int);
+
+/** Events used to communicate between the bank server and the backend database **/
+// event: send update the database, i.e. the `balance` associated with the `accountId`
+event eUpdateQuery: tUpdateQuery;
+// event: send a read request for the `accountId`.
+event eReadQuery: tReadQuery;
+// event: send a response (`balance`) corresponding to the read request for an `accountId`
+event eReadQueryResp: tReadQueryResp;
+
+/*************************************************************
+The BankServer machine uses a database machine as a service to store the bank balance for all its clients.
+On receiving an eWithDrawReq (withdraw requests) from a client, it reads the current balance for the account,
+if there is enough money in the account then it updates the new balance in the database after withdrawal
+and sends a response back to the client.
+*************************************************************/
+machine BankServer
+{
+  var database: Database;
+
+  start state Init {
+    entry Init_Entry;
+  }
+
+  state WaitForWithdrawRequests {
+    on eWithDrawReq do AfterWithDrawReq;
+  }
+
+  fun Init_Entry(initialBalance: map[int, int]) {
+    database = new Database((server = this, initialBalance = initialBalance));
+    goto WaitForWithdrawRequests;
+  }
+
+  fun AfterWithDrawReq(wReq: tWithDrawReq) {
+    var currentBalance: int;
+    var response: tWithDrawResp;
+
+    // read the current account balance from the database
+    currentBalance = ReadBankBalance(database, wReq.accountId);
+    // if there is enough money in account after withdrawal
+    if(currentBalance - wReq.amount >= 10)
+    {
+      UpdateBankBalance(database, wReq.accountId, currentBalance - wReq.amount);
+      response = (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = currentBalance - wReq.amount, rId = wReq.rId);
+    }
+    else // not enough money after withdraw
+    {
+      response = (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = currentBalance, rId = wReq.rId);
+    }
+
+    // send response to the client
+    send wReq.source, eWithDrawResp, response;
+  }
+
+}
+
+/***************************************************************
+The Database machine acts as a helper service for the Bank server and stores the bank balance for
+each account. There are two API's or functions to interact with the Database:
+ReadBankBalance and UpdateBankBalance.
+****************************************************************/
+machine Database
+{
+  var server: BankServer;
+  var balance: map[int, int];
+  start state Init {
+    entry Init_Entry;
+
+    on eUpdateQuery do AfterUpdateQuery;
+
+    on eReadQuery do AfterReadQuery;
+  }
+
+  fun Init_Entry(input: (server : BankServer, initialBalance: map[int, int])) {
+    server = input.server;
+    balance = input.initialBalance;
+  }
+
+  fun AfterUpdateQuery(query: (accountId: int, balance: int)) {
+    assert query.accountId in balance, "Invalid accountId received in the update query!";
+    balance[query.accountId] = query.balance;
+  }
+
+  fun AfterReadQuery(query: (accountId: int)) {
+    assert query.accountId in balance, "Invalid accountId received in the read query!";
+    send server, eReadQueryResp, (accountId = query.accountId, balance = balance[query.accountId]);
+  }
+
+}
+
+/***************************************************************
+Global functions
+****************************************************************/
+// Function to read the bank balance corresponding to the accountId
+fun ReadBankBalance(database: Database, accountId: int) : int {
+    var currentBalance: int;
+    send database, eReadQuery, (accountId = accountId,);
+    receive {
+      case eReadQueryResp: (resp: (accountId: int, balance: int)) {
+        currentBalance = resp.balance;
+      }
+    }
+    return currentBalance;
+}
+
+// Function to update the account balance for the account Id
+fun UpdateBankBalance(database: Database, accId: int, bal: int)
+{
+  send database, eUpdateQuery, (accountId = accId, balance = bal);
+}
+</Server.p>
+
+Here is the file AbstractBankServer.p:
+<AbstractBankServer.p>
+/*********************************************************
+The AbstractBankServer provides an abstract implementation of the BankServer where it abstract away
+the interaction between the BankServer and Database.
+The AbstractBankServer machine is used to demonstrate how one can replace a complex component in P
+with its abstraction that hides a lot of its internal complexity.
+In this case, instead of storing the balance in a separate database the abstraction store the information
+locally and abstracts away the complexity of bank server interaction with the database.
+For the client, it still exposes the same interface/behavior. Hence, when checking the correctness
+of the client it doesnt matter whether we use BankServer or the AbstractBankServer
+**********************************************************/
+
+machine AbstractBankServer
+{
+  // account balance: map from account-id to balance
+  var balance: map[int, int];
+  start state WaitForWithdrawRequests {
+    entry WaitForWithdrawRequests_Entry;
+
+    on eWithDrawReq do AfterWithDrawReq;
+  }
+
+  fun WaitForWithdrawRequests_Entry(init_balance: map[int, int]) {
+    balance = init_balance;
+  }
+
+  fun AfterWithDrawReq(wReq: tWithDrawReq) {
+    assert wReq.accountId in balance, "Invalid accountId received in the withdraw request!";
+    if(balance[wReq.accountId] - wReq.amount >= 10)
+    {
+      balance[wReq.accountId] = balance[wReq.accountId] - wReq.amount;
+      send wReq.source, eWithDrawResp,
+        (status = WITHDRAW_SUCCESS, accountId = wReq.accountId, balance = balance[wReq.accountId], rId = wReq.rId);
+    }
+    else
+    {
+      send wReq.source, eWithDrawResp,
+        (status = WITHDRAW_ERROR, accountId = wReq.accountId, balance = balance[wReq.accountId], rId = wReq.rId);
+    }
+  }
+
+}
+</AbstractBankServer.p>
+
+Here is the file ClientServerModules.p:
+<ClientServerModules.p>
+// Client module
+module Client = { Client };
+
+// Bank module
+module Bank = { BankServer, Database };
+
+// Abstract Bank Server module
+module AbstractBank = { AbstractBankServer -> BankServer };
+</ClientServerModules.p>
+</PSrc>
+
+Here is the folder PSpec:
+<PSpec>
+Here is the file BankBalanceCorrect.p:
+<BankBalanceCorrect.p>
+/*****************************************************
+This file defines two P specifications
+
+BankBalanceIsAlwaysCorrect (safety property):
+BankBalanceIsAlwaysCorrect checks the global invariant that the account-balance communicated
+to the client by the bank is always correct and the bank never removes more money from the account
+than that withdrawn by the client! Also, if the bank denies a withdraw request then it is only because
+the withdrawal would reduce the account balance to below 10.
+
+GuaranteedWithDrawProgress (liveness property):
+GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests
+submitted by the client are eventually responded.
+
+Note: stating that "BankBalanceIsAlwaysCorrect checks that if the bank denies a withdraw request
+then the request would reduce the balance to below 10 (< 10)" is equivalent to state that "if there is enough money in the account - at least 10 (>= 10), then the request must not error".
+Hence, the two properties BankBalanceIsAlwaysCorrect and GuaranteedWithDrawProgress together ensure that every withdraw request if allowed will eventually succeed and the bank cannot block correct withdrawal requests.
+*****************************************************/
+
+// event: initialize the monitor with the initial account balances for all clients when the system starts
+event eSpec_BankBalanceIsAlwaysCorrect_Init: map[int, int];
+
+/****************************************************
+BankBalanceIsAlwaysCorrect checks the global invariant that the account balance communicated
+to the client by the bank is always correct and there is no error on the banks side with the
+implementation of the withdraw logic.
+
+For checking this property the spec machine observes the withdraw request (eWithDrawReq) and response (eWithDrawResp).
+- On receiving the eWithDrawReq, it adds the request in the pending-withdraws-map so that on receiving a
+response for this withdraw we can assert that the amount of money deducted from the account is same as
+what was requested by the client.
+
+- On receiving the eWithDrawResp, we look up the corresponding withdraw request and check that: the
+new account balance is correct and if the withdraw failed it is because the withdraw will make the account
+balance go below 10 dollars which is against the bank policies!
+****************************************************/
+spec BankBalanceIsAlwaysCorrect observes eWithDrawReq,  eWithDrawResp, eSpec_BankBalanceIsAlwaysCorrect_Init {
+  // keep track of the bank balance for each client: map from accountId to bank balance.
+  var bankBalance: map[int, int];
+  // keep track of the pending withdraw requests that have not been responded yet.
+  // map from reqId -> withdraw request
+  var pendingWithDraws: map[int, tWithDrawReq];
+
+  start state Init {
+    on eSpec_BankBalanceIsAlwaysCorrect_Init goto WaitForWithDrawReqAndResp with Spec_BankBalanceIsAlwaysCorrect_Init;
+  }
+
+  state WaitForWithDrawReqAndResp {
+    on eWithDrawReq do AftereWithDrawReq;
+
+    on eWithDrawResp do AfterWithDrawReq;
+  }
+
+  fun Spec_BankBalanceIsAlwaysCorrect_Init(balance: map[int, int]) {
+    bankBalance = balance;
+  }
+
+  fun AfterWithDrawReq(req: tWithDrawReq) {
+    assert req.accountId in bankBalance,
+      format ("Unknown accountId {0} in the withdraw request. Valid accountIds = {1}", req.accountId, keys(bankBalance));
+    pendingWithDraws[req.rId] = req;
+
+  }
+
+  fun AfterWithDrawResp(resp: tWithDrawResp) {
+    assert resp.accountId in bankBalance,
+        format ("Unknown accountId {0} in the withdraw response!", resp.accountId);
+    assert resp.rId in pendingWithDraws,
+      format ("Unknown rId {0} in the withdraw response!", resp.rId);
+    assert resp.balance >= 10,
+      "Bank balance in all accounts must always be greater than or equal to 10!!";
+
+    if(resp.status == WITHDRAW_SUCCESS)
+    {
+      assert resp.balance == bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount,
+        format ("Bank balance for the account {0} is {1} and not the expected value {2}, Bank is lying!",
+          resp.accountId, resp.balance, bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount);
+      // update the new account balance
+      bankBalance[resp.accountId] = resp.balance;
+    }
+    else
+    {
+      // bank can only reject a request if it will drop the balance below 10
+      assert bankBalance[resp.accountId] - pendingWithDraws[resp.rId].amount < 10,
+        format ("Bank must accept the withdraw request for {0}, bank balance is {1}!",
+          pendingWithDraws[resp.rId].amount, bankBalance[resp.accountId]);
+      // if withdraw failed then the account balance must remain the same
+      assert bankBalance[resp.accountId] == resp.balance,
+        format ("Withdraw failed BUT the account balance changed! actual: {0}, bank said: {1}",
+          bankBalance[resp.accountId], resp.balance);
+    }
+
+  }
+
+}
+
+/**************************************************************************
+GuaranteedWithDrawProgress checks the liveness (or progress) property that all withdraw requests
+submitted by the client are eventually responded.
+***************************************************************************/
+spec GuaranteedWithDrawProgress observes eWithDrawReq, eWithDrawResp {
+  // keep track of the pending withdraw requests
+  var pendingWDReqs: set[int];
+
+  start state NopendingRequests {
+    on eWithDrawReq goto PendingReqs with AfterWithDrawReq;
+  }
+
+  hot state PendingReqs {
+    on eWithDrawResp do AfterWithDrawResp;
+
+    on eWithDrawReq goto PendingReqs with AfterWithDrawRespPendingReqs;
+  }
+
+  fun AfterWithDrawReq(req: tWithDrawReq) {
+    pendingWDReqs += (req.rId);
+  }
+
+  fun AfterWithDrawResp(resp: tWithDrawResp) {
+    assert resp.rId in pendingWDReqs, format ("unexpected rId: {0} received, expected one of {1}", resp.rId, pendingWDReqs);
+    pendingWDReqs -= (resp.rId);
+    if(sizeof(pendingWDReqs) == 0) // all requests have been responded
+      goto NopendingRequests;
+  }
+
+  fun AfterWithDrawRespPendingReqs(req: tWithDrawReq) {
+    pendingWDReqs += (req.rId);
+  }
+
+}
+</BankBalanceCorrect.p>
+</PSpec>
+
+Here is the folder PTst:
+<PTst>
+Here is the file TestDriver.p:
+<TestDriver.p>
+/*************************************************************
+Machines TestWithSingleClient and TestWithMultipleClients are simple test driver machines 
+that configure the system to be checked by the P checker for different scenarios.
+In this case, test the ClientServer system by first randomly initializing the accounts map and 
+then checking it with either one Client or with multiple Clients (between 2 and 4).
+*************************************************************/
+
+// Test driver that checks the system with a single Client.
+machine TestWithSingleClient
+{
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    // singe client
+    SetupClientServerSystem(1);
+  }
+}
+
+// Test driver that checks the system with multiple Clients.
+machine TestWithMultipleClients
+{
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    // multiple clients between (2, 4)
+    SetupClientServerSystem(choose(3) + 2);
+  }
+}
+
+// creates a random map from accountId's to account balance of size `numAccounts`
+fun CreateRandomInitialAccounts(numAccounts: int) : map[int, int]
+{
+  var i: int;
+  var bankBalance: map[int, int];
+  while(i < numAccounts) {
+    bankBalance[i] = choose(100) + 10; // min 10 in the account
+    i = i + 1;
+  }
+  return bankBalance;
+}
+
+/*************************************************************
+Function SetupClientServerSystem takes as input the number of clients to be created and 
+configures the ClientServer system by creating the Client and BankServer machines.
+The function also announce the event eSpec_BankBalanceIsAlwaysCorrect_Init to initialize the monitors with initial balance for all accounts.
+*************************************************************/
+// setup the client server system with one bank server and `numClients` clients.
+fun SetupClientServerSystem(numClients: int)
+{
+  var i: int;
+  var server: BankServer;
+  var accountIds: seq[int];
+  var initAccBalance: map[int, int];
+
+  // randomly initialize the account balance for all clients
+  initAccBalance = CreateRandomInitialAccounts(numClients);
+  // create bank server with the init account balance
+  server = new BankServer(initAccBalance);
+
+  // before client starts sending any messages make sure we
+  // initialize the monitors or specifications
+  announce eSpec_BankBalanceIsAlwaysCorrect_Init, initAccBalance;
+
+  accountIds = keys(initAccBalance);
+
+  // create the clients
+  while(i < sizeof(accountIds)) {
+    new Client((serv = server, accountId = accountIds[i], balance = initAccBalance[accountIds[i]]));
+    i = i + 1;
+  }
+}
+</TestDriver.p>
+
+Here is the file Testscript.p:
+<Testscript.p>
+/* This file contains three different model checking scenarios */
+
+// assert the properties for the single client and single server scenario
+test tcSingleClient [main=TestWithSingleClient]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, Bank, { TestWithSingleClient });
+
+// assert the properties for the two clients and single server scenario
+test tcMultipleClients [main=TestWithMultipleClients]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, Bank, { TestWithMultipleClients });
+
+// assert the properties for the single client and single server scenario but with abstract server
+ test tcAbstractServer [main=TestWithSingleClient]:
+  assert BankBalanceIsAlwaysCorrect, GuaranteedWithDrawProgress in
+  (union Client, AbstractBank, { TestWithSingleClient });
+
+</Testscript.p>
+</PTst>
+</P_project_code>
+
+</P_program_example_guide>
+
+
+Here is another example of a P program:
+<P_program_example_guide>
+<system_description>
+System:
+Consider an espresso coffee machine as a reactive system that must respond correctly to various user inputs. The user interacts with the coffee machine through its control panel.
+The espresso machine consists of two parts: the front-end control panel and the backend coffee maker that actually makes the coffee.
+The control panel presents an interface to the user to perform operations like reset the machine, turn the steamer on and off, request an espresso, and clear the grounds by opening the container. 
+The control panel interprets these inputs from the user and sends appropriate commands to the coffee maker.
+
+Correctness Specification:
+By default, the P checker tests whether any event that is received in a state has a handler defined for it, otherwise, it would result in an unhandled event exception.
+If the P checker fails to find a bug, then it implies that the system model can handle any sequence of events generated by the given environment.
+In our coffee machine context, it implies that the coffee machine control panel can appropriately handle any sequence of inputs (button presses) by the user.
+We would also like to check that the coffee machine moves through a desired sequence of states, i.e., WarmUp -> Ready -> GrindBeans -> MakeCoffee -> Ready.
+</system_description>
+
+<P_project_description>
+The EspressoMachine folder contains the source code for the EspressoMachine project.
+<models>
+The P models (PSrc) for the EspressoMachine example consist of three files:
+1. CoffeeMakerControlPanel.p: Implements the CoffeeMakerControlPanel state machine.
+Basically, the control panel starts in the initial state and kicks off by warming up the coffee maker. After warming is successful, it moves to the ready state where it can either make coffee or start the steamer. 
+When asked to make coffee, it first grinds the beans and then brews coffee. In any of these states, if there is an error due to. e.g, no water or no beans, the control panel informs the user of the error and moves to the error state waiting for the user to reset the machine.
+2. CoffeeMaker.p: Implements the CoffeeMaker state machine.
+3. EspressoMachineModules.p: Declares the P module corresponding to EspressoMachine.
+</models>
+
+<specifications>
+The P Specification (PSpec) for the EspressoMachine project is implemented in Safety.p file.
+
+We define a safety specification, EspressoMachineModesOfOperation that observes the internal state of the EspressoMachine through the events that are announced as the system moves through different states and asserts that it always moves through the desired sequence of states.
+Steady operation: WarmUp -> Ready -> GrindBeans -> MakeCoffee -> Ready.
+If an error occurs in any of the states above then the EspressoMachine stays in the error state until it is reset and after which it returns to the Warmup state.
+</specifications>
+
+<test_scenarios>
+The test scenarios folder for EspressoMachine (PTst) consists of three files: TestDriver.p, TestScript.p, and Users.p.
+The Users.p declares two machines:
+1. SaneUser machine that uses the EspressoMachine with care, pressing the buttons in the right order, and cleaning up the grounds after the coffee is made, and
+2. CrazyUser machine who has never used an espresso machine before, gets too excited, and starts pushing random buttons on the control panel.
+</test_scenarios>
+</P_project_description>
+
+<P_project_code>
+Here is the folder PSrc:
+<PSrc>
+Here is the file CoffeeMakerControlPanel.p:
+<CoffeeMakerControlPanel.p>
+/* Events used by the user to interact with the control panel of the Coffee Machine */
+// event: make espresso button pressed
+event eEspressoButtonPressed;
+// event: steamer button turned off
+event eSteamerButtonOff;
+// event: steamer button turned on
+event eSteamerButtonOn;
+// event: door opened to empty grounds
+event eOpenGroundsDoor;
+// event: door closed after emptying grounds
+event eCloseGroundsDoor;
+// event: reset coffee maker button pressed
+event eResetCoffeeMaker;
+//event: error message from panel to the user
+event eCoffeeMakerError: tCoffeeMakerState;
+//event: coffee machine is ready
+event eCoffeeMakerReady;
+// event: coffee machine user
+event eCoffeeMachineUser: machine;
+
+// enum to represent the state of the coffee maker
+enum tCoffeeMakerState {
+  NotWarmedUp,
+  Ready,
+  NoBeansError,
+  NoWaterError
+}
+
+/*
+CoffeeMakerControlPanel acts as the interface between the CoffeeMaker and User.
+It converts the inputs from the user to appropriate inputs to the CoffeeMaker and sends responses to the user.
+It transitions from one state to another based on the events received from the User and the CoffeeMaker machine. 
+In all the states, it appropriately handles different events that can be received, including ignoring or deferring them if they are stale events.
+*/
+machine CoffeeMakerControlPanel
+{
+  var coffeeMaker: EspressoCoffeeMaker;
+  var coffeeMakerState: tCoffeeMakerState;
+  var currentUser: machine;
+
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    coffeeMakerState = NotWarmedUp;
+    coffeeMaker = new EspressoCoffeeMaker(this);
+    WaitForUser();
+    goto WarmUpCoffeeMaker;
+  }
+
+  // block until a user shows up
+  fun WaitForUser() {
+      receive {
+          case eCoffeeMachineUser: (user: machine) {
+              currentUser = user;
+          }
+      }
+  }
+
+  state WarmUpCoffeeMaker {
+    entry WarmUpCoffeeMaker_Entry;
+
+    on eWarmUpCompleted goto CoffeeMakerReady;
+
+    // grounds door is opened or closed will handle it later after the coffee maker has warmed up
+    defer eOpenGroundsDoor, eCloseGroundsDoor;
+    // ignore these inputs from users until the maker has warmed up.
+    ignore eEspressoButtonPressed, eSteamerButtonOff, eSteamerButtonOn, eResetCoffeeMaker;
+    // ignore these errors and responses as they could be from previous state
+    ignore eNoBeansError, eNoWaterError, eGrindBeansCompleted;
+  }
+
+  fun WarmUpCoffeeMaker_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eInWarmUpState;
+
+    BeginHeatingCoffeeMaker();
+  }
+
+  state CoffeeMakerReady {
+    entry CoffeeMakerReady_Entry;
+
+    on eOpenGroundsDoor goto CoffeeMakerDoorOpened;
+    on eEspressoButtonPressed goto CoffeeMakerRunGrind;
+    on eSteamerButtonOn goto CoffeeMakerRunSteam;
+
+    // ignore these out of order commands, these must have happened because of an error
+    // from user or sensor
+    ignore eSteamerButtonOff, eCloseGroundsDoor;
+
+    // ignore commands and errors as they are from previous state
+    ignore eWarmUpCompleted, eResetCoffeeMaker, eNoBeansError, eNoWaterError;
+  }
+
+  fun CoffeeMakerReady_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eInReadyState;
+
+    coffeeMakerState = Ready;
+    send currentUser, eCoffeeMakerReady;
+  }
+
+  state CoffeeMakerRunGrind {
+    entry CoffeeMakerRunGrind_Entry;
+
+    on eNoBeansError goto EncounteredError with AfterNoBeansError;
+
+    on eNoWaterError goto EncounteredError with AfterNoWaterError;
+
+    on eGrindBeansCompleted goto CoffeeMakerRunEspresso;
+
+    defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
+
+    // Can't make steam while we are making espresso
+    ignore eSteamerButtonOn, eSteamerButtonOff;
+
+    // ignore commands that are old or cannot be handled right now
+    ignore eWarmUpCompleted, eResetCoffeeMaker;
+  }
+
+  fun CoffeeMakerRunGrind_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eInBeansGrindingState;
+
+    GrindBeans();
+  }
+
+  fun AfterNoBeansError() {
+    coffeeMakerState = NoBeansError;
+    print "No beans to grind! Please refill beans and reset the machine!";
+  }
+
+  fun AfterNoWaterError() {
+    coffeeMakerState = NoWaterError;
+    print "No Water! Please refill water and reset the machine!";
+  }
+
+  state CoffeeMakerRunEspresso {
+    entry CoffeeMakerRunEspresso_Entry;
+
+    on eEspressoCompleted goto CoffeeMakerReady with AfterEspressoCompleted;
+
+    on eNoWaterError goto EncounteredError with AfterNoWaterError;
+
+    // the user commands will be handled next after finishing this espresso
+    defer eOpenGroundsDoor, eCloseGroundsDoor, eEspressoButtonPressed;
+
+    // Can't make steam while we are making espresso
+    ignore eSteamerButtonOn, eSteamerButtonOff;
+
+    // ignore old commands and cannot reset when making coffee
+    ignore eWarmUpCompleted, eResetCoffeeMaker;
+  }
+
+  fun CoffeeMakerRunEspresso_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eInCoffeeBrewingState;
+
+    StartEspresso();
+  }
+
+  fun AfterEspressoCompleted() {
+    send currentUser, eEspressoCompleted;
+  }
+
+  state CoffeeMakerRunSteam {
+    entry StartSteamer;
+
+    on eSteamerButtonOff goto CoffeeMakerReady with StopSteamer;
+
+    on eNoWaterError goto EncounteredError with AfterNoWaterError;
+
+    // user might have cleaned grounds while steaming
+    defer eOpenGroundsDoor, eCloseGroundsDoor;
+
+    // can't make espresso while we are making steam
+    ignore eEspressoButtonPressed, eSteamerButtonOn;
+  }
+
+  state CoffeeMakerDoorOpened {
+    on eCloseGroundsDoor do AfterCloseGroundsDoor;
+
+    // grounds door is open cannot handle these requests just ignore them
+    ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
+  }
+
+  fun AfterCloseGroundsDoor() {
+    assert coffeeMakerState != NotWarmedUp;
+    assert coffeeMakerState == Ready;
+    goto CoffeeMakerReady;
+  }
+
+  state EncounteredError {
+    entry EncounteredError_Entry;
+
+    on eResetCoffeeMaker goto WarmUpCoffeeMaker with AfterResetCoffeeMaker;
+
+    // error, ignore these requests until reset.
+    ignore eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff,
+        eOpenGroundsDoor, eCloseGroundsDoor, eWarmUpCompleted, eEspressoCompleted, eGrindBeansCompleted;
+
+    // ignore other simultaneous errors
+    ignore eNoBeansError, eNoWaterError;
+  }
+
+  fun EncounteredError_Entry() {
+    // inform the specification about current state of the coffee maker
+    announce eErrorHappened;
+
+    // send the error message to the client
+    send currentUser, eCoffeeMakerError, coffeeMakerState;
+  }
+
+  fun AfterResetCoffeeMaker() {
+    // inform the specification about current state of the coffee maker
+    announce eResetPerformed;
+  }
+
+  fun BeginHeatingCoffeeMaker() {
+    // send an event to maker to start warming
+    send coffeeMaker, eWarmUpReq;
+  }
+
+  fun StartSteamer() {
+    // send an event to maker to start steaming
+    send coffeeMaker, eStartSteamerReq;
+  }
+
+  fun StopSteamer() {
+    // send an event to maker to stop steaming
+    send coffeeMaker, eStopSteamerReq;
+  }
+
+  fun GrindBeans() {
+    // send an event to maker to grind beans
+    send coffeeMaker, eGrindBeansReq;
+  }
+
+  fun StartEspresso() {
+    // send an event to maker to start espresso
+    send coffeeMaker, eStartEspressoReq;
+  }
+}
+</CoffeeMakerControlPanel.p>
+
+Here is the file CoffeeMaker.p:
+<CoffeeMaker.p>
+/* Requests or operations from the controller to coffee maker */
+
+// event: warmup request when the coffee maker starts or resets
+event eWarmUpReq;
+// event: grind beans request before making coffee
+event eGrindBeansReq;
+// event: start brewing coffee
+event eStartEspressoReq;
+// event start steamer
+event eStartSteamerReq;
+// event: stop steamer
+event eStopSteamerReq;
+
+/* Responses from the coffee maker to the controller */
+// event: completed grinding beans
+event eGrindBeansCompleted;
+// event: completed brewing and pouring coffee
+event eEspressoCompleted;
+// event: warmed up the machine and ready to make coffee
+event eWarmUpCompleted;
+
+/* Error messages from the coffee maker to control panel or controller*/
+// event: no water for coffee, refill water!
+event eNoWaterError;
+// event: no beans for coffee, refill beans!
+event eNoBeansError;
+// event: the heater to warm the machine is broken!
+event eWarmerError;
+
+/*****************************************************
+EspressoCoffeeMaker receives requests from the control panel of the coffee machine and
+based on its state e.g., whether heater is working, or it has beans and water, the maker responds
+back to the controller if the operation succeeded or errored.
+*****************************************************/
+machine EspressoCoffeeMaker
+{
+  // control panel of the coffee machine that sends inputs to the coffee maker
+  var controller: CoffeeMakerControlPanel;
+
+  start state WaitForRequests {
+    entry WaitForRequests_Entry;
+
+    on eWarmUpReq do AftereWithDrawReq;
+
+    on eGrindBeansReq do AfterGrindBeansReq;
+
+    on eStartEspressoReq do AfterStartEspressoReq;
+
+    on eStartSteamerReq do AfterStartSteamerReq;
+
+    on eStopSteamerReq do AfterStopSteamerReq;
+  }
+
+  fun WaitForRequests_Entry(_controller: CoffeeMakerControlPanel) {
+    controller = _controller;
+  }
+
+  fun AfterWarmUpReq() {
+    send controller, eWarmUpCompleted;
+  }
+
+  fun AfterGrindBeansReq() {
+    if (!HasBeans()) {
+      send controller, eNoBeansError;
+    } else {
+      send controller, eGrindBeansCompleted;
+    }
+  }
+
+  fun AfterStartEspressoReq() {
+    if (!HasWater()) {
+      send controller, eNoWaterError;
+    } else {
+      send controller, eEspressoCompleted;
+    }
+  }
+
+  fun AfterStartSteamerReq() {
+    if (!HasWater()) {
+      send controller, eNoWaterError;
+    }
+  }
+
+  fun AfterStopSteamerReq() {
+    /* do nothing, steamer stopped */
+  }
+
+  // nondeterministic functions to trigger different behaviors
+  fun HasBeans() : bool { return $; }
+  fun HasWater() : bool { return $; }
+}
+</CoffeeMaker.p>
+
+Here is the file EspressoMachineModules.p:
+<EspressoMachineModules.p>
+module EspressoMachine = { CoffeeMakerControlPanel, EspressoCoffeeMaker };
+</EspressoMachineModules.p>
+</PSrc>
+
+Here is the folder PSpec:
+<PSpec>
+Here is the file Safety.p:
+<Safety.p>
+/* Events used to inform monitor about the internal state of the CoffeeMaker */
+event eInWarmUpState;
+event eInReadyState;
+event eInBeansGrindingState;
+event eInCoffeeBrewingState;
+event eErrorHappened;
+event eResetPerformed;
+
+/*********************************************
+We would like to ensure that the coffee maker moves through the expected modes of operation. 
+We want to make sure that the coffee maker always transitions through the following sequence of states:
+Steady operation:
+  WarmUp -> Ready -> GrindBeans -> MakeCoffee -> Ready
+With Error:
+If an error occurs in any of the states above, then the Coffee machine stays in the error state until
+it is reset and after which it returns to the Warmup state.
+
+The EspressoMachineModesOfOperation spec machine observes events and ensures that the system moves through the states defined by the monitor. 
+Note that if the system allows (has execution as) a sequence of events that are not accepted by the monitor (i.e., the monitor throws an unhandled event exception), then the system does not satisfy the desired specification. 
+Hence, this monitor can be thought of accepting only those behaviors of the system that follow the sequence of states modelled by the spec machine. 
+For example, if the system moves from Ready to CoffeeMaking state directly without Grinding, then the monitor will raise an ALARM!
+**********************************************/
+spec EspressoMachineModesOfOperation
+observes eInWarmUpState, eInReadyState, eInBeansGrindingState, eInCoffeeBrewingState, eErrorHappened, eResetPerformed
+{
+  start state StartUp {
+    on eInWarmUpState goto WarmUp;
+  }
+
+  state WarmUp {
+    on eErrorHappened goto Error;
+    on eInReadyState goto Ready;
+  }
+
+  state Ready {
+    ignore eInReadyState;
+    on eInBeansGrindingState goto BeanGrinding;
+    on eErrorHappened goto Error;
+  }
+
+  state BeanGrinding {
+    on eInCoffeeBrewingState goto MakingCoffee;
+    on eErrorHappened goto Error;
+  }
+
+  state MakingCoffee {
+    on eInReadyState goto Ready;
+    on eErrorHappened goto Error;
+  }
+
+  state Error {
+    on eResetPerformed goto StartUp;
+    ignore eErrorHappened;
+  }
+}
+</Safety.p>
+</PSpec>
+
+Here is the folder PTst:
+<PTst>
+Here is the file TestDriver.p:
+<TestDriver.p>
+machine TestWithSaneUser
+{
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    // create a sane user
+    new SaneUser(new CoffeeMakerControlPanel());
+  }
+}
+
+machine TestWithCrazyUser
+{
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry() {
+    // create a crazy user
+    new CrazyUser((coffeeMaker = new CoffeeMakerControlPanel(), nOps = 5));
+  }
+}
+</TestDriver.p>
+
+Here is the file Testscript.p:
+<Testscript.p>
+// there are two test cases defined in the EspressoMachine project.
+test tcSaneUserUsingCoffeeMachine [main=TestWithSaneUser]:
+  assert EspressoMachineModesOfOperation in (union { TestWithSaneUser }, EspressoMachine, Users);
+
+test tcCrazyUserUsingCoffeeMachine [main=TestWithCrazyUser]:
+  assert EspressoMachineModesOfOperation in (union { TestWithCrazyUser }, EspressoMachine, Users);
+</Testscript.p>
+
+Here is the file Users.p:
+<Users.p>
+/*
+A SaneUser who knows how to use the CoffeeMaker
+*/
+machine SaneUser {
+  var coffeeMakerPanel: CoffeeMakerControlPanel;
+  var cups: int;
+  start state Init {
+    entry Init_Entry;
+  }
+
+  fun Init_Entry(coffeeMaker: CoffeeMakerControlPanel) {
+    coffeeMakerPanel = coffeeMaker;
+    // inform control panel that I am the user
+    send coffeeMakerPanel, eCoffeeMachineUser, this;
+    // want to make 2 cups of espresso
+    cups = 2;
+
+    goto LetsMakeCoffee;
+  }
+
+  state LetsMakeCoffee {
+    entry LetsMakeCoffee_Entry;
+  }
+
+  fun LetsMakeCoffee_Entry() {
+    while (cups > 0)
+    {
+      // lets wait for coffee maker to be ready
+      WaitForCoffeeMakerToBeReady();
+
+      // press Espresso button
+      PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_PressEspressoButton);
+
+      // check the status of the machine
+      receive {
+        case eEspressoCompleted: {
+          // lets make the next coffee
+          cups = cups - 1;
+        }
+        case eCoffeeMakerError: (status: tCoffeeMakerState){
+
+          // lets fill the beans or water and reset the machine
+          // and go back to making espresso
+          PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_PressResetButton);
+        }
+      }
+    }
+
+    // I am a good user so I will clear the coffee grounds before leaving.
+    PerformOperationOnCoffeeMaker(coffeeMakerPanel, CM_ClearGrounds);
+
+    // am done, let me exit
+    raise halt;
+  }
+}
+
+enum tCoffeeMakerOperations {
+  CM_PressEspressoButton,
+  CM_PressSteamerButton,
+  CM_PressResetButton,
+  CM_ClearGrounds
+}
+
+/*
+A crazy user who gets excited by looking at a coffee machine and starts stress testing the machine
+by pressing all sorts of random button and opening/closing doors
+*/
+// TODO: We do not support global constants currently, they can be encoded using global functions.
+
+machine CrazyUser {
+  var coffeeMakerPanel: CoffeeMakerControlPanel;
+  var numOperations: int;
+  start state StartPressingButtons {
+    entry StartPressingButtons_Entry;
+
+    // I will ignore all the responses from the coffee maker
+    ignore eCoffeeMakerError, eEspressoCompleted, eCoffeeMakerReady;
+  }
+
+  fun StartPressingButtons_Entry(config: (coffeeMaker: CoffeeMakerControlPanel, nOps: int)) {
+    var pickedOps: tCoffeeMakerOperations;
+
+    numOperations = config.nOps;
+    coffeeMakerPanel = config.coffeeMaker;
+
+    // inform control panel that I am the user
+    send coffeeMakerPanel, eCoffeeMachineUser, this;
+
+    while(numOperations > 0)
+    {
+      pickedOps = PickRandomOperationToPerform();
+      PerformOperationOnCoffeeMaker(coffeeMakerPanel, pickedOps);
+      numOperations = numOperations - 1;
+    }
+  }
+
+  // Pick a random enum value (hacky work around)
+  // Currently, the choose operation does not support choose over enum value
+  fun PickRandomOperationToPerform() : tCoffeeMakerOperations {
+    var op_i: int;
+    op_i =  choose(3);
+    if(op_i == 0)
+      return CM_PressEspressoButton;
+    else if(op_i == 1)
+      return CM_PressSteamerButton;
+    else if(op_i == 2)
+      return CM_PressResetButton;
+    else
+      return CM_ClearGrounds;
+  }
+}
+
+/* Function to perform an operation on the CoffeeMaker */
+fun PerformOperationOnCoffeeMaker(coffeeMakerCP: CoffeeMakerControlPanel, CM_Ops: tCoffeeMakerOperations)
+{
+  if(CM_Ops == CM_PressEspressoButton) {
+    send coffeeMakerCP, eEspressoButtonPressed;
+  }
+  else if(CM_Ops == CM_PressSteamerButton) {
+    send coffeeMakerCP, eSteamerButtonOn;
+    // wait for some time and then release the button
+    send coffeeMakerCP, eSteamerButtonOff;
+  }
+  else if(CM_Ops == CM_ClearGrounds)
+  {
+    send coffeeMakerCP, eOpenGroundsDoor;
+    // empty ground and close the door
+    send coffeeMakerCP, eCloseGroundsDoor;
+  }
+  else if(CM_Ops == CM_PressResetButton)
+  {
+    send coffeeMakerCP, eResetCoffeeMaker;
+  }
+}
+
+fun WaitForCoffeeMakerToBeReady() {
+  receive {
+    case eCoffeeMakerReady: {}
+    case eCoffeeMakerError: (status: tCoffeeMakerState){ raise halt; }
+  }
+}
+module Users = { SaneUser, CrazyUser };
+</Users.p>
+</PTst>
+</P_project_code>
+
+</P_program_example_guide>
+</guide>

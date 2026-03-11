@@ -1,3 +1,6 @@
+!!! warning "Deprecated: P 1.x Documentation"
+    This page documents P version 1.x and is no longer maintained. For the current guide, see [Using P Compiler and Checker](../../getstarted/usingP.md).
+
 # Using P Compiler and Checker
 
 !!! check ""
@@ -104,7 +107,7 @@ There are two ways of compiling a P program:
         ```
 
     ??? info "P Project File Details"
-        The P compiler does not support advanced project management features like separate compilation and dependency analysis (_coming soon_).
+        The P compiler does not support advanced project management features like separate compilation and dependency analysis.
         The current project file interface is a simple mechanism to provide all the required inputs to the compiler in an XML format ([ClientServer.pproj](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj)).
         ``` xml
         <!-- P Project file for the Client Server example -->

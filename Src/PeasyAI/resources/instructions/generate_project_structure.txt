@@ -1,0 +1,13 @@
+Create the project directory structure for the P project named {project_name}. 
+
+1. Create the three main directories:
+   - PSrc: Source code for P state machines
+   - PSpec: Specification monitors
+   - PTst: Test cases
+
+2. Create a .pproj file in the project root directory with proper XML configuration:
+   - ProjectName: {project_name}
+   - InputFiles: References to PSrc, PSpec, and PTst directories
+   - OutputDir: Directory for generated code (PGenerated)
+
+Create all necessary directories and the .pproj file according to P language project standards.

@@ -1,0 +1,89 @@
+findStatus:
+  * description: Returns the status of the query with given id
+  * payload:
+    - query_id: int
+  * returns:
+    - status: string [aborted, failed, canceled, success]
+
+findErrorMessage:
+  * description: Returns the error message of a failed query with given id
+  * payload:
+    - query_id: int
+  * returns:
+    - error_message: string
+
+findExecutionTime:
+  * description: Returns the total time running in the service class
+  * payload:
+    - query_id: int
+  * returns:
+    - execution_time: float
+
+compareQueryPlan:
+  * description: Returns whether the slow and fast query are the same
+  * payload:
+    - query_id: int
+  * returns:
+    - has_same_plan: bool
+
+getReturnedRows:
+  * description: Returns the number of rows returned by slow and fast query
+  * payload:
+    - query_id: int
+  * returns:
+    - slow_query_row_count: int
+    - fast_query_row_count: int
+
+getTotalSpilledBlocks:
+  * description: Returns total blocks spilled by slow and fast query
+  * payload:
+    - query_id: int
+  * returns:
+    - fast_query_blocks_spilled: int
+    - slow_query_blocks_spilled: int
+
+compareTotalSkewness:
+  * description: Returns whether the total skewness of slow and fast queries are similar
+  * payload:
+    - query_id: int
+  * returns:
+    - has_similar_skewness: bool
+
+getQueueTimes:
+  * description: Returns the queue time for slow and fast query
+  * payload:
+    - query_id: int
+  * returns:
+    - slow_query_queue_time: int
+    - fast_query_queue_time: int
+
+getCompileTimes:
+  * description: Returns total compile time for slow and fast query
+  * payload:
+    - query_id: int
+  * returns:
+    - slow_query_compile_time: float
+    - fast_query_compile_time: float
+
+getPlanningTimes:
+  * description: Returns the total time spent on planning for slow and fast query
+  * payload:
+    - query_id: int
+  * returns:
+    - slow_query_planning_time: float
+    - fast_query_planning_time: float
+
+getLockWaitTimes:
+  * description: Returns total time spent for slow and fast query on waiting for relation lock
+  * payload:
+    - query_id: int
+  * returns:
+    - slow_query_lock_wait_time: float
+    - fast_query_lock_wait_time: float
+
+finish:
+    * description: Finishes the investigation
+    * payload:
+      - query_id: int
+    * returns:
+    

@@ -1,3 +1,4 @@
+## Example 4: Failure Detector
 
 Energized with the Coffee :coffee:, let's get back to modeling distributed systems. After the two phase commit protocol, the next protocol that we will jump to is a simple broadcast-based failure detector!
 
@@ -10,21 +11,25 @@ By this point in the tutorial, we have gotten familiar with the P language and m
     git clone https://github.com/p-org/P.git
     ```
 
-    The recommended way to work through this example is to open the [P/Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in IntelliJ side-by-side a browser using which you can simultaneously read the description for each example and browse the P program in IntelliJ.
+    The recommended way to work through this example is to open the [P/Tutorial](https://github.com/p-org/P/tree/master/Tutorial) folder in [Peasy IDE](../getstarted/PeasyIDE.md) (VS Code extension) or your preferred editor side-by-side with a browser, so you can simultaneously read the description for each example and browse the P program.
 
     To know more about P language primitives used in the example, please look them up in the [language manual](../manualoutline.md).
 
 **System:** We consider a simple failure detector that basically broadcasts ping messages to all the nodes in the system and uses a timer to wait for pong responses from all nodes. If a node does not respond with a pong message after multiple attempts (either because of network failure or node failure), the failure detector marks the node as down and notifies the clients about the nodes that are potentially down. We use this example to show how to model network message loss in P and discuss how to model other types of network behaviours.
 
-![Placeholder](failuredetector.png){ align=center }
+![Failure detector state machine diagram](failuredetector.png){ align=center }
 
 **Correctness Specification:** We would like to check - using a liveness specification - that if the failure injector shuts down a particular node then the failure detector always eventually detects the node failure and notifies the client.
 
-### P Project
+---
+
+### :material-folder-outline:{ .lg } P Project
 
 The [4_FailureDetector](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector) folder contains the source code for the [FailureDetector](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/FailureDetector.pproj) project. Please feel free to read details about the recommended [P program structure](../advanced/structureOfPProgram.md) and [P project file](../advanced/PProject.md).
 
-### Models
+---
+
+### :material-state-machine:{ .lg } Models
 
 The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector/PSrc)) for the FailureDetector example consist of four files:
 
@@ -53,7 +58,9 @@ The P models ([PSrc](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDe
 
 
 
-### Specifications
+---
+
+### :material-shield-check:{ .lg } Specifications
 
 The P Specification ([PSpec](https://github.com/p-org/P/tree/master/Tutorial/4_FailureDetector/PSpec)) for the FailureDetector is implemented in [ReliableFailureDetector.p](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSpec/ReliableFailureDetector.p). We define a simple `ReliableFailureDetector` liveness specification to assert that all nodes that have been shutdown
 by the failure injector will eventually be detected by the failure detector as failed nodes.
@@ -62,7 +69,9 @@ by the failure injector will eventually be detected by the failure detector as f
     - ([L6 - L57](https://github.com/p-org/P/blob/master/Tutorial/4_FailureDetector/PSpec/ReliableFailureDetector.p#L6-L57)) &rarr; Declares the `ReliableFailureDetector` liveness monitor. `ReliableFailureDetector` spec machine basically maintains two sets `nodesDownDetected` (nodes that are detected as down by the detector) and `nodesShutdownAndNotDetected` (nodes that are shutdown by the failure injector but not yet detected). `ReliableFailureDetector` monitor observes the `eNotifyNodesDown` and `eShutDown` events to update these maps and move between the `hot` state (unstable state) and non-hot states. The system is in a hot state if there are nodes that are shutdown but not yet detected by the failure detector. The system violates a liveness specification if any of its execution paths terminates in a hot state.
     - To understand the semantics of the P spec machines and the details about liveness monitors, please read the manual: [p monitors](../manual/monitors.md).
 
-### Test Scenarios
+---
+
+### :material-test-tube:{ .lg } Test Scenarios
 
 The test scenarios folder in P has two parts: TestDrivers and TestScripts. TestDrivers are collections of state machines that implement the test harnesses (or environment state machines) for different test scenarios. TestScripts are collections of test cases that are automatically run by the P checker.
 
@@ -89,7 +98,9 @@ The test scenarios folder for FailureDetector ([PTst](https://github.com/p-org/P
         - Uses `assume` to ensure clients don't outnumber nodes for better monitoring distribution
         - Tests each valid configuration with the `ReliableFailureDetector` specification
 
-### Compiling FailureDetector
+---
+
+### :material-cog-play:{ .lg } Compiling
 
 Run the following command to compile the FailureDetector project:
 
@@ -128,7 +139,7 @@ p compile
     MSBuild version 17.3.1+2badb37d1 for .NET
     Determining projects to restore...
     Restored P/Tutorial/4_FailureDetector/PGenerated/CSharp/FailureDetector.csproj (in 93 ms).
-    FailureDetector -> P/Tutorial/4_FailureDetector/PGenerated/CSharp/net6.0/FailureDetector.dll
+    FailureDetector -> P/Tutorial/4_FailureDetector/PGenerated/CSharp/net8.0/FailureDetector.dll
 
     Build succeeded.
     0 Warning(s)
@@ -141,7 +152,9 @@ p compile
     ~~ [PTool]: Thanks for using P! ~~
     ```
 
-### Checking FailureDetector
+---
+
+### :material-shield-check-outline:{ .lg } Checking
 
 You can get the list of test cases defined in the FailureDetector project by running the P Checker:
 
@@ -181,11 +194,15 @@ Check the `tcTest_FailureDetector` test case for 10,000 schedules:
 p check -tc tcTest_FailureDetector -s 10000
 ```
 
-### Discussion: Modeling Message Reordering
+---
+
+### :material-chat-processing:{ .lg } Discussion: Modeling Message Reordering
 
 (to be added soon)
 
-### Exercise Problem
+---
+
+### :material-pencil:{ .lg } Exercise Problem
 
 !!! success "What did we learn through this example?"
     In this example, we saw how to use data nondeterminism to model message loss and unreliable sends. We also discussed how to model other types of network nondeterminism.

@@ -1,0 +1,5 @@
+Please describe the given P code. 
+Here are the instructions on how to write the description:
+1. In Overview section, provide a brief high level overview of what the code is trying to document
+2. In Breakdown section, breakdown the key logic of the code into multiple blocks. For each block, include the code snippet followed by an elaborate explanation of the snippet.
+3. Give short descriptions for event and type declarations. Elaborate more on the event handlers and function logic within the state machines

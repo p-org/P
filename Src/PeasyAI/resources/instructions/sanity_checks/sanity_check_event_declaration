@@ -1,0 +1,26 @@
+You are tasked with checking P language code files for EVENT DECLARATIONS compliance. Follow these steps:
+
+EVENT DECLARATIONS CHECK:
+- Analyze Enums_Types_Events.p to understand existing declarations
+- Cross-reference with machine names to understand the system structure
+- Scan the target file for event declarations and usage
+- Module definitions: Only reference existing/declared machines in module lists
+- DO NOT DEFINE ANY NEW MACHINES OR SPECS OR TESTS IN modules
+- Verify that every event used is either:
+  * Declared in Enums_Types_Events.p, or in any other available files in the context or
+  * Properly declared within the current file
+- Check for duplicate declarations against Enums_Types_Events.p
+- If an event is used but not declared anywhere, add its declaration to the current file
+
+CORRECTION PROCESS:
+1. Scan the entire file to identify event declaration issues
+2. Create a list of required changes for events only
+3. Make changes ensuring:
+   - All events are properly declared before use
+   - No duplicate declarations exist
+   - Module definitions only reference existing machines
+4. Verify all event references have corresponding declarations
+
+OUTPUT FORMAT:
+Return only the corrected P code with event declaration fixes applied.
+Return the P code enclosed in XML tags where the tag name is the filename.

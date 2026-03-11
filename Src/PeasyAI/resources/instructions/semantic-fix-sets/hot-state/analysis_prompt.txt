@@ -1,0 +1,34 @@
+### LIVENESS ERROR TRACE
+When running {tool} on a P project, the following hot state liveness violation was reported. This means that the system entered a state marked as "hot" (i.e., it must eventually be exited), but no progress was made out of that state by the end of execution. The error trace and context are below:
+
+{additional_error_info}
+{error_trace}
+
+### RELEVANT CODE
+Below is the P project code. Each `.p` file is wrapped in XML tags labeled by filename.
+
+{p_code}
+
+### ANALYSIS REQUEST
+You are to analyze the liveness issue and provide a structured response as described below.
+
+#### SPECIFIC ANALYSIS STEPS:
+
+- Locate the hot state in the state machine definition and identify which machine owns it
+- Trace backwards: What sequence of events should lead OUT of this hot state?
+- Check event generation: Are the required exit events being sent by other machines?
+- Verify event delivery: Can the events reach the target machine (proper addressing)?
+- Examine state transitions: Are there guards/conditions blocking valid transitions?
+- Look for crashed machines: Did any machine terminate due to UnhandledEventException?
+- Check initialization order: Are machines initialized with all required dependencies?
+- Consider message timing: Could late-arriving messages be causing issues?
+
+
+#### OUTPUT FORMAT:
+Please generate the following outputs based on the analysis:
+
+1. A clear explanation of what is causing the hot state to remain active. Mention which machine is stuck, what it was waiting for, and what is missing. Reference specific evidence from the trace. Enclose this in an `<error_understanding>` XML tag.
+
+2. The single most recommended fix with detailed rationale. Explain exactly what code changes are needed and why this will resolve the liveness issue. Consider the common patterns from distributed systems debugging. Enclose this in a `<fix_description>` XML tag.
+
+3. Based on the fix, list the minimal set of `.p` files that need to be modified (filenames only, comma-separated). Enclose this in a `<files_to_fix>` XML tag.

@@ -1,0 +1,98 @@
+<system_design_document>
+<title> Basic Paxos Protocol </title>
+
+<introduction>
+Paxos is designed to achieve consensus among a group of participants (referred to as proposers, acceptors, and learners) in a distributed system, even in the presence of failures.
+Basic Paxos Protocol is a system that implements a simplified version of Paxos, focusing on its core functionality while maintaining the algorithm's essential safety and liveness properties. The protocol ensures that multiple participants agree on a single value, which is crucial for consistency in distributed systems.
+
+Assumptions:
+1. Basic Paxos Protocol models a basic version of Paxos, focusing on single-value consensus without optimizations like multi-Paxos.
+2. The system assumes reliable delivery of messages, though participants may fail or recover. 
+3. The system does not consider network partitions or Byzantine failures.
+
+</introduction>
+
+<components>
+
+1. Proposer
+The Proposer initiates the proposal of values to reach consensus in the system. It is responsible for generating proposals with unique proposal numbers to ensure the ordering of proposals across the distributed system. When attempting to reach consensus, the Proposer sends these proposals to a majority of acceptors and waits for their responses before proceeding with the next phase of the protocol.
+
+2. Acceptor
+The Acceptor participates in the voting process for proposals within the Paxos protocol. Each Acceptor maintains two key pieces of state: the highest proposal number it has seen so far and the value associated with the highest proposal it has accepted. When receiving a proposal, the Acceptor responds with either a promise not to accept any lower-numbered proposals or an acceptance of the current proposal, depending on its current state and the proposal number received.
+
+3. Learner
+The learner is responsible for receiving and recording the final agreed-upon value once consensus is reached. It collects accepted proposals from acceptors and determines the chosen value after a majority of acceptors have accepted the same proposal. While learners do not influence the consensus process, they play a crucial role in ensuring that the agreed-upon value is known and acted upon.
+
+4. Client
+The Client acts as the initiator of the consensus process within the Paxos protocol. The Client primarily interacts with the Proposer component to start the consensus process, passing the value on which consensus should be reached.
+
+</components>
+
+<interactions>
+
+1. ePropose
+* Description: Proposer sends a proposal to acceptors for consideration.
+* Source: Proposer
+* Target: Acceptors
+* Parameters: Proposer, Proposal number, proposed value
+* Effects:
+    * Acceptor checks if the proposal number is higher than any previously seen proposal number.
+    * If higher, the acceptor promises not to accept any lower-numbered proposals and may accept the proposal.
+
+2. ePromise
+* Description: Acceptor sends a promise to the proposer, agreeing not to accept proposals with lower numbers.
+* Source: Acceptor
+* Target: Proposer
+* Parameters: Proposer, Highest proposal number seen, any previously accepted value
+* Effects:
+    * Proposer may proceed with the proposal if a majority of acceptors send promises.
+
+3. eAcceptRequest
+* Description: Proposer requests acceptors to accept the proposal.
+* Source: Proposer
+* Target: Acceptors
+* Parameters: Proposer, Proposal number, proposed value
+* Effects:
+    * Acceptor accepts the proposal if it has not already promised a higher-numbered proposal.
+    * Acceptor sends an acceptance notification to the proposer and learners.
+
+4. eAccepted
+* Description: Acceptor notifies learners that it has accepted a proposal.
+* Source: Acceptor
+* Target: Learners
+* Parameters: Learner, Proposal number, accepted value
+* Effects:
+    * Learners collect accepted proposals.
+    * Once a majority of acceptors have accepted the same proposal, learners conclude that consensus has been reached.
+
+5. eLearn
+* Description: Learner announces the final value agreed upon by the majority of acceptors.
+* Source: Learner
+* Target: All components
+* Parameters: All components, final agreed-upon value
+* Effects:
+    * All components update their state to reflect the chosen value.
+
+</interactions>
+
+<global_specifications>
+
+1. Safety: The protocol ensures that at most one value is chosen, and once a value is chosen, it cannot be changed. All learners will eventually agree on the same value, maintaining consistency across the system.
+2. Liveness: If a majority of participants are operational and can communicate, the protocol will eventually reach consensus. The system ensures progress under normal conditions, allowing proposers to make progress as long as they can interact with a majority of acceptors.
+
+</global_specifications>
+
+<test_scenarios>
+
+* Scenario 1: Normal Operation
+Test whether the Paxos protocol can reach consensus under normal operating conditions. The system should successfully process a proposal through all phases of the protocol with 3 acceptors, 1 proposer, and 1 learner with no failures. The protocol should reach consensus on the proposed value with a minimal number of message exchanges, validating the basic functionality of the system.
+
+* Scenario 2: Proposer Failure
+Test whether the system maintains liveness when a proposer fails during protocol execution. With 5 acceptors, 2 proposers, and 1 learner, one proposer should be made to fail at various points in the protocol. The system should demonstrate resilience by still reaching consensus through the remaining functional proposer, ensuring that the protocol can progress despite partial failures.
+
+* Scenario 3: Acceptor Failures (Minority)
+Test whether the system maintains liveness when a minority of acceptors fail. With 5 acceptors, 1 proposer, and 1 learner, 2 acceptors should be made to fail at various points in the protocol. The system should demonstrate that consensus can still be reached with the remaining 3 acceptors, confirming that the protocol can progress as long as a majority of acceptors remain operational.
+
+</test_scenarios>
+
+</system_design_document>

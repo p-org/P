@@ -1,0 +1,39 @@
+Here is the original p code of all p files in the project. The code for each file is enclosed in its filename xml tags:
+{p_code}
+
+Based on the following analysis and fix recommendations, generate the fixed P code only for files that require changes.
+{fix_description}
+
+Output guide:
+1. Fix the error in the necessary file
+2. Identify ALL other files that would need modifications as a result of this change
+3. ONLY provide patches for the files in the unified diff format. Here is an example of a patch:
+
+```
+--- transaction.p	2025-08-05 10:30:45.000000000 -0700
++++ transaction.p	2025-08-06 14:22:18.000000000 -0700
+@@ -1,6 +1,7 @@ 
+ event WithdrawRequest: (accountId: int, amount: int, reqId: int);
+-event WithdrawResponse: (success: bool, reqId: int);
++event WithdrawResponse: (success: bool, reqId: int, newBalance: int);
+ 
+ type TransactionRecord = (id: int, amount: int, timestamp: int);
++type AccountInfo = (balance: int, isActive: bool, lastAccess: int);
+ 
+ fun ValidateAmount(amount: int) : bool
+
+--- server.p	2025-08-05 10:30:45.000000000 -0700
++++ server.p	2025-08-06 14:22:18.000000000 -0700
+@@ -3,7 +3,8 @@
+ machine BankServer
+ {{
+   var accounts: map[int, int];
+-  var totalFunds: int;
++  var totalFunds: int;
++  var transactionLog: seq[TransactionRecord];
+ 
+   start state Ready {{
+     on WithdrawRequest do (payload: WithdrawReq) {{
+```
+
+4. Respond ONLY in unified diff format, no talking.

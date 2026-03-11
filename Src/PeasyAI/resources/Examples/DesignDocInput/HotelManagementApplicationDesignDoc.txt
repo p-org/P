@@ -1,0 +1,95 @@
+# Hotel Management Application
+
+## Introduction
+The Hotel Management Application is designed to streamline front desk operations that enables the front desk staff to handle client requests, including room reservations, special requests, and cancellations. The application will maintain a centralized database to record room bookings and prevent double booking of rooms. This system will enforce proper authorization controls to ensure clients can only manage their own reservations, while also allowing guests to make their own bookings through the platform. The easy-to-use interface and backend systems work together to create a dependable solution that improves both staff productivity and guest experience.
+
+## Components
+
+### 1. Front Desk
+The front desk is the main point of contact for hotel guests. They handle room bookings, special requests, and cancellations while ensuring smooth communication with guests. The Hotel Management Application helps front desk staff manage these tasks easily and efficiently.
+
+* Managing Client Requests: The Front desk handles room reservations for walk-in clients, capturing guest details, check-in/check-out dates, and payment status. Special requests such as airport pickups, extra beds, early check-ins, or late check-outs are processed and assigned to the appropriate departments, with the system tracking the status of each request. Additionally, the front desk can update or cancel reservations according to hotel policies, with real-time updates to the database.
+* Additional Operations: Front desk staff can manually process client requests based on availability and maintain communication with clients to provide timely updates and responses regarding their requests and bookings.
+
+### 2. Client
+The client interacts with the system to manage their stay by making room reservation requests, submitting special requests such as preferences for room types or additional services, and canceling reservations when necessary. After submitting requests, the client waits for responses and updates from the front desk regarding the status of their bookings and any special requests.
+
+### 3. Database
+The Database is the core of the application, ensuring that all critical information, such as reservations, client details, and room availability, is stored securely. It maintains real-time updates and integrity across the system.Key data stored includes client information like name, contact details, and stay history; room data such as room number, type, and availability status; and reservations, which track check-in/check-out dates, payment status, and validate inputs like check-in and check-out date order. The database also captures special requests, client preferences, assigned staff, and cancellation/modification logs, including the date, time, and refund status of any changes. The database prevents double bookings by updating room status in real time and stores client preferences for future stays. It logs all interactions for audit and reporting purposes and ensures data security with restricted access and role-based permissions.
+
+## Interactions
+
+### 1. RoomReservationRequest
+* Description: A client requests a room. If successful, the client is assigned a room. If unsuccessful, the client is informed of the failure.
+* Source: Client sending the request
+* Target: Front Desk
+* Parameters: Client, Client id, Client name
+* Effects:
+    * If a room is available, the front desk assigns it to the client and provides the room number.
+    * If no rooms are available, the front desk informs the client of the inability to reserve a room.
+
+### 2. CancellationRequest
+* Description: A client requests to cancel their reservation. The request is processed if the client's name matches the reservation for the given room. If it does not match, the request is rejected.
+* Source: Client sending the request
+* Target: Front Desk
+* Parameters: Client, Client id, Client name, room number
+* Effects:
+    * If the client's name matches the reservation, the room is freed up, and the client is notified of successful cancellation.
+    * If the client's name does not match the reservation, the cancellation is rejected, and the client is informed.
+
+### 3. SpecialRequest
+* Description: A client with an existing reservation submits a special request. The request is recorded if the client is staying in the room mentioned. Otherwise, the request is discarded.
+* Source: Client sending the request
+* Target: Front Desk
+* Parameters: Client, Client id, Client name, room number, and special request details
+* Effects:
+    * If the client's name matches the reservation for the specified room, the request is noted, and the client is informed of its successful recording.
+    * If the client's name does not match the reservation, the request is discarded, and the client is informed.
+
+## Global Specifications
+
+### 1. Single Room Assigned
+Each room within the hotel can be assigned to only one client at a time. The system enforces exclusive room allocation to prevent double bookings, and the reservation system will implement validation checks that verify room availability before confirming any booking.
+
+### 2. Unique Client Identification
+All client IDs within the system are unique and follow a standardized format. This ensures accurate tracking of guest information, reservation history, and preferences. The system automatically generates unique identifiers for new clients and validates existing IDs during the check-in process.
+
+### 3. Fixed Room Capacity
+The total number of rooms in the hotel inventory is fixed and cannot be modified through the application interface. Room configurations, including type and capacity, are established during system setup and require administrative authorization to change.
+
+### 4. Special Request Handling Guidelines
+Special requests from guests are tracked and fulfilled separately from the room assignment process. These requests do not alter the fundamental room allocation but are linked to the reservation for staff reference.
+
+### 5. Reservation Integrity
+Existing confirmed room reservations remain unaffected by new reservation requests. Only proper cancellation or modification procedures can alter existing reservations.
+
+### 6. Cancellation Processing Requirement
+All cancellation requests must be fully processed and completed in the system before the affected rooms become available for new reservations.
+
+### 7. Check-in and Check-out Date Validation Protocol
+The system validates all reservation dates to ensure logical consistency. Check-out dates must always be after check-in dates, and the system prevents bookings with invalid date ranges and for past dates.
+
+## Testing Requirements
+The following test scenarios must be implemented to validate system functionality:
+
+### Scenario 1: Multiple Room Reservation Attempt
+* Description: Test if a client can reserve multiple rooms simultaneously
+* Expected Behavior: System should prevent multiple room reservations by a single client
+* Error Handling: Display appropriate error message when attempt is made
+
+### Scenario 2: Unauthorized Cancellation Attempt
+* Description: Test if a client can cancel another client's reservation
+* Expected Behavior: System should restrict cancellation to the reservation owner only
+* Error Handling: Provide clear error message for unauthorized cancellation attempts
+
+### Scenario 3: Room Request or Cancellation for Unassigned Room
+* Description: Test if a client can manage a room they're not assigned to
+* Expected Behavior: System should prevent actions on unassigned rooms
+* Error Handling: Block unauthorized attempts with appropriate feedback
+
+### Scenario 4: Front Desk Handling Multiple Clients
+* Description: Test concurrent management of multiple clients
+* Expected Behavior: System should maintain data integrity during simultaneous operations
+* Performance Criteria: Define acceptable response times and data consistency expectations
+
+

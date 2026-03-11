@@ -1,3 +1,5 @@
+## PObserve CLI Integration
+
 # PObserve CLI
 
 The PObserve CLI tool enables you to verify formal specifications against service or test logs on your local machine. It's ideal for processing smaller sets of logs (a few GBs).

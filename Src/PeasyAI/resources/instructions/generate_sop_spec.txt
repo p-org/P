@@ -1,0 +1,19 @@
+Carefully read the following standard operating procedure (SOP) and ensure you understand the correct order of actions performed to complete the task.
+
+<standard_operating_procedure>
+{sop_content}
+</standard_operating_procedure>
+
+Now, review the following list of the actions. Pay attention to the input and output of each action, as they are essential for determining the next action to take
+<action_types>
+{actions_content}
+</action_types>
+
+
+Now, carefully considering the instructions in standard operating procedure and action types, generate only one P specification that ensures that the actions are performed in the correct order.
+- Start by generating the necessary types for payloads and return types of actions
+- Generate events for the actions listed in the <action_types></action_types> tags
+- Add necessary assertions to validate all the decision points in this SOP
+- Add assertions to catch if the system performs any action that deviates from the order given in this SOP
+
+Generate only P specification code and return the P code enclosed in XML tags where the tag name is the filename. P tests and P source implementation are not needed. Verify that the generated code strictly follows all the P syntax rules before considering it final. 

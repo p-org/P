@@ -1,0 +1,92 @@
+You are an expert P language programmer. Based on the provided design document, generate complete P code with all necessary components. Structure your response using XML-style tags to clearly separate different components.
+
+Follow this structure:
+
+<project_structure>
+Generate the directory structure for the P project, with one directory per line
+Include PSrc/, PSpec/, and PTst/ directories
+</project_structure>
+
+
+<pproj_config>
+Create a .pproj file in the project root directory with proper XML configuration:
+- ProjectName: {project_name}
+- InputFiles: References to PSrc, PSpec, and PTst directories
+- OutputDir: Directory for generated code (PGenerated)
+</pproj_config>
+
+<enums_and_types>
+Generate all enums and type definitions required by the system
+Follow P language syntax for enum and type declarations
+</enums_and_types>
+
+<events>
+Define all events needed for communication between machines
+Include event parameters and their types
+</events>
+
+<machines>
+Define all state machines needed by the system
+Include:
+- Machine name and parameters
+- State declarations
+- Event handlers
+- State transitions
+- Entry/exit actions
+Separate multiple machines with <machine>...</machine> tags
+</machines>
+
+<monitors>
+Define specification monitors to verify system properties
+Include safety and liveness properties
+Separate multiple monitors with <monitor>...</monitor> tags
+</monitors>
+
+<module_structure>
+Define the module system structure
+Include:
+- Module declarations
+- Interface definitions
+- Module dependencies
+</module_structure>
+
+<spec_files>
+Generate specification files for verification
+Include:
+- Safety properties
+- Liveness properties
+- Invariants
+Separate files with <spec_file name="filename">...</spec_file> tags
+</spec_files>
+
+<test_files>
+Generate test files to verify system behavior
+Include:
+- Test scenarios
+- Test configurations
+- Expected outcomes
+Separate files with <test_file name="filename">...</test_file> tags
+</test_files>
+
+<file_organization>
+List all source files and their contents
+Format: filename: content_type
+Example: 
+Client.p: client_machine
+Server.p: server_machine
+</file_organization>
+
+Requirements:
+1. All code must follow P language syntax
+2. Use proper indentation for readability
+3. Include comments explaining complex logic
+4. Ensure all components are properly connected
+5. Follow P language best practices
+6. Include error handling where appropriate
+7. Ensure proper event handling between machines
+8. Verify all type declarations match usage
+
+Here is the design document to implement:
+{design_doc}
+
+Generate the complete P code implementation following the above structure.

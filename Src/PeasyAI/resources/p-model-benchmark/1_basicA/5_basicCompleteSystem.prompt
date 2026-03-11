@@ -1,0 +1,74 @@
+// Create the system specified by the following design doc string.
+// You don't need to write code to run it. Just create the system.
+// Only write code, no commentary.
+
+/*
+# Light Switch Control System
+
+## Introduction
+The Light Switch Control System is a basic implementation demonstrating state machine interactions between switches and lights. The system allows multiple switches to control lights, with each switch being associated with a specific light. The system maintains state consistency and provides feedback about the current status of lights through console output.
+
+## Components
+
+### 1. Switch Machine
+The Switch machine serves as the controller interface for a light. It maintains:
+* A reference to its associated light
+* A unique switch ID
+* The expected state of the light
+* Status string for output messages
+
+Key responsibilities:
+* Sending toggle requests to its associated light
+* Processing status responses from the light
+* Displaying the current state of the light
+
+### 2. Light Machine
+The Light machine represents a controllable light with binary states (On/Off). It maintains:
+* Current state (isOn boolean)
+* State transitions between On and Off
+
+Key responsibilities:
+* Processing toggle requests from switches
+* Maintaining its current state
+* Sending status responses back to the requesting switch
+
+## Events
+
+### 1. eToggleReq
+* Description: Request to toggle a light's state
+* Type: tToggleReq (source: Switch, switchId: int)
+* Source: Switch machine
+* Target: Light machine
+* Effects: Triggers state transition in the target light
+
+### 2. eStatusResp
+* Description: Response indicating the new state of a light
+* Type: tStatusResp (switchId: int, isOn: bool)
+* Source: Light machine
+* Target: Switch machine that initiated the toggle
+* Effects: Updates the switch's display of the light's status
+
+## State Machines
+
+### 1. Switch States
+* Init: Initial state for setup and initialization
+* ReadyToToggle: Main operational state for sending toggle requests
+
+### 2. Light States
+* Off: Light is turned off
+* On: Light is turned on
+
+## Global Specifications
+
+### 1. One-to-One Mapping
+Each Switch instance is associated with exactly one Light instance through initialization parameters.
+
+### 2. State Consistency
+The system maintains consistency between the physical state of the light and its representation in the system through the status response mechanism.
+
+### 3. Unique Identification
+Each switch has a unique identifier to distinguish it in the system and its associated status messages.
+
+### 4. Atomic State Transitions
+Light state transitions are atomic - the light can only be in either the On or Off state, with no intermediate states possible.
+*/

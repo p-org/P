@@ -1,14 +1,16 @@
-!!! info "If you are using an older P version 1.x.x, please find the usage guide [here](../old/getstarted/usingP.md)"
+## Using P Compiler and Checker
 
-!!! check ""
+!!! info "Looking for P 1.x?"
+    If you are using an older P version 1.x.x, please find the usage guide [here](../old/getstarted/usingP.md).
+
+!!! check "Prerequisites"
     Before moving forward, we assume that you have successfully installed
     [P](install.md) and the [Peasy extension](PeasyIDE.md) :metal:.
 
-We introduce the P language syntax and semantics in details in the
+We introduce the P language syntax and semantics in detail in the
 [Tutorials](../tutsoutline.md) and [Language Manual](../manualoutline.md). In this
 section, we provide an overview of the steps involved in compiling and checking a P program
 using the [client server](../tutorial/clientserver.md) example in Tutorials.
-
 
 ??? info "Get the Client Server Example Locally"
     We will use the [ClientServer](https://github.com/p-org/P/tree/master/Tutorial/1_ClientServer) example from Tutorial folder in P repository to describe the process of compiling and checking a P program. Please clone the P repo and navigate to the
@@ -25,7 +27,9 @@ using the [client server](../tutorial/clientserver.md) example in Tutorials.
 
 
 
-### Compiling a P program
+---
+
+### :material-cog-play:{ .lg } Compiling a P Program
 
 There are two ways of compiling a P program:
 
@@ -95,7 +99,7 @@ There are two ways of compiling a P program:
         MSBuild version 17.3.1+2badb37d1 for .NET
         Determining projects to restore...
         Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 102 ms).
-        ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
+        ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
 
         Build succeeded.
         0 Warning(s)
@@ -113,7 +117,7 @@ There are two ways of compiling a P program:
     If you are running `p compile` from outside the P project directory, use the `-pp <path to *.pproj>` option instead.
 
     ??? info "P Project File Details"
-        The P compiler does not support advanced project management features like separate compilation and dependency analysis (_coming soon_).
+        The P compiler does not support advanced project management features like separate compilation and dependency analysis.
         The current project file interface is a simple mechanism to provide all the required inputs to the compiler in an XML format ([ClientServer.pproj](https://github.com/p-org/P/blob/master/Tutorial/1_ClientServer/ClientServer.pproj)).
         ``` xml
         <!-- P Project file for the Client Server example -->
@@ -156,7 +160,7 @@ There are two ways of compiling a P program:
         MSBuild version 17.3.1+2badb37d1 for .NET
         Determining projects to restore...
         Restored P/Tutorial/1_ClientServer/PGenerated/CSharp/ClientServer.csproj (in 115 ms).
-        ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
+        ClientServer -> P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
 
         Build succeeded.
         0 Warning(s)
@@ -169,7 +173,9 @@ There are two ways of compiling a P program:
         ~~ [PTool]: Thanks for using P! ~~
         ```
 
-### Checking a P program
+---
+
+### :material-shield-check:{ .lg } Checking a P Program
 
 Compiling the ClientServer program generates a `ClientServer.dll`, this `dll` is
 the C# representation of the P program. The P Checker takes as input this `dll` and
@@ -189,8 +195,8 @@ p check
     $ p check
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
+    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
     Error: We found '3' test cases. Please provide a more precise name of the test case you wish to check using (--testcase | -tc).
     Possible options are:
     tcSingleClient
@@ -221,8 +227,8 @@ p check -tc tcSingleClient -s 100
     $ p check -tc tcSingleClient -s 100
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
+    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
     .. Test case :: tcSingleClient
     ... Checker is using 'random' strategy (seed:2510398613).
     ..... Schedule #1
@@ -269,8 +275,8 @@ p check -tc tcAbstractServer -s 100
     $ p check -tc tcAbstractServer -s 100
 
     .. Searching for a P compiled file locally in the current folder
-    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
-    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net6.0/ClientServer.dll
+    .. Found a P compiled file: P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
+    .. Checking P/Tutorial/1_ClientServer/PGenerated/CSharp/net8.0/ClientServer.dll
     .. Test case :: tcAbstractServer
     ... Checker is using 'random' strategy (seed:490949683).
     ..... Schedule #1

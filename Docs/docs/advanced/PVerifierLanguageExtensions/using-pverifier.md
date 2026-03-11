@@ -1,3 +1,5 @@
+## Using PVerifier
+
 !!! check ""
     Before moving forward, we assume that you have successfully installed
     the [PVerifier](install-pverifier.md).
@@ -16,6 +18,8 @@ In this section, we provide an overview of the steps involved in verifying a P p
     ```shell
     cd <P cloned folder>/Tutorial/2_TwoPhaseCommit
     ```
+
+---
 
 ### Verifying a P program
 

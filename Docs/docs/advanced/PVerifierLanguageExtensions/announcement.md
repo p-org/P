@@ -1,3 +1,5 @@
+## PVerifier: Formal Proofs for P Programs
+
 # Announcing the New Verification Backend for P
 
 We are excited to announce the release of a new verification backend as part of the 3.0 release of the P programming language! This backend, which we call the P Verifier, allows you to prove that your systems behave correctly under all possible scenarios. The P Verifier is based on Mora et al. ([OOPSLA '23](https://dl.acm.org/doi/10.1145/3622876)) and uses UCLID5 (Polgreen et al., [CAV '22](https://dl.acm.org/doi/10.1007/978-3-031-13185-1_27)).
@@ -8,11 +10,15 @@ The new verification backend allows users to **prove** that their system design 
 
 Formal verification is important to AWS’s software correctness program (Brooker and Desai, [Queue '25](https://doi.org/10.1145/3712057)). Several formal tools have had successful applications within AWS in their respective domains. The new verification backend in P gives users the benefits of correctness proofs for the domain of distributed systems design, all while preserving the existing benefits of systematic testing.
 
+---
+
 ## Getting Started and Tutorial
 
 To start using the P Verifier, you must install P along with the verification dependencies (UCLID5 and an SMT solver like Z3). Detailed installation instructions are available [here](install-pverifier.md); simple usage instructions are available [here](using-pverifier.md).
 
 To help you get acquainted with the new verification features, we have prepared a comprehensive tutorial that walks you through the formal verification of a simplified two-phase commit (2PC) protocol. This tutorial covers the key concepts and steps of using the verification backend. You can find the tutorial [here](twophasecommitverification.md).
+
+---
 
 ## Industrial Application Inside Amazon Web Services
 

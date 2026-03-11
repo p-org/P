@@ -1,0 +1,1541 @@
+{
+  "timestamp": "2026-02-23T16:01:03.978589",
+  "output_root": "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103",
+  "environment": {
+    "success": true,
+    "issues": [],
+    "details": {
+      "config_file": "/Users/adesai/.peasyai/settings.json",
+      "config_file_exists": true,
+      "configured_provider": "snowflake",
+      "p_compiler_path": "/Users/adesai/.dotnet/tools/p",
+      "dotnet_path": "/usr/local/share/dotnet/dotnet",
+      "toolchain_issues": [],
+      "llm_provider_detected": "snowflake_cortex"
+    },
+    "message": "Environment valid",
+    "api_version": "1.0",
+    "error_category": null,
+    "retryable": false,
+    "next_actions": [],
+    "metadata": {
+      "tool": "validate_environment",
+      "operation_id": "ca718425-ff39-4b40-91ee-a58284b6437d",
+      "timestamp": "2026-02-24T00:01:03.978111Z",
+      "provider": null,
+      "model": null,
+      "token_usage": {}
+    }
+  },
+  "protocols": [
+    {
+      "project_name": "Paxos",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Acceptor",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Learner",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Proposer",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/Paxos_full_retry/Paxos_2026_02_23_16_03_37/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/Paxos_full_retry/Paxos_2026_02_23_16_03_37/PSrc/Acceptor.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/Paxos_full_retry/Paxos_2026_02_23_16_03_37/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/Paxos_full_retry/Paxos_2026_02_23_16_03_37/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/Paxos_full_retry/Paxos_2026_02_23_16_03_37/PSrc/Learner.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/Paxos_full_retry/Paxos_2026_02_23_16_03_37/PSrc/Proposer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/Paxos_full_retry/Paxos_2026_02_23_16_03_37/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "no viable alternative at input 'funInitEntry(config:tProposerInit,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "no viable alternative at input 'funInitEntry(config:tAcceptorInit,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 4,
+            "error": "no viable alternative at input 'funInitEntry(config:tClientInit,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          },
+          {
+            "iteration": 5,
+            "error": "no viable alternative at input 'value=valueToPropose)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 6,
+            "error": "no viable alternative at input 'funInitEntry(config:tClientInit,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 7,
+            "error": "no viable alternative at input 'funInitEntry(config:tLearnerInit,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 8,
+            "error": "no viable alternative at input 'funCheckSingleValueChosen(payload:tLearnPayload,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          }
+        ],
+        "success": false,
+        "total_iterations": 8,
+        "api_version": "1.0",
+        "error_category": "internal",
+        "retryable": true,
+        "next_actions": [
+          "Retry the operation or inspect the error details."
+        ],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "fe3a9f94-6dd5-48f6-a108-8d70a4dc6089",
+          "timestamp": "2026-02-24T00:06:07.066484Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": false,
+        "failed_tests": [
+          "tcBasicPaxos",
+          "tcTwoProposers",
+          "tcNetworkPartition"
+        ],
+        "passed_tests": [],
+        "error": null
+      },
+      "checker_fixes": [
+        {
+          "round": 1,
+          "fixed": false
+        }
+      ],
+      "errors": [
+        "PChecker reported failing tests"
+      ],
+      "timing": {
+        "total_s": 151.5
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "_checker_analysis": {
+        "error_category": "unknown",
+        "error_message": "<ErrorLog> Exception 'System.ArgumentException' was thrown in Learner(2) (state 'Learning', action '_HandleAccepted'): An item with the same key has already been added. Key: 2001",
+        "machine": null,
+        "machine_type": null,
+        "state": null,
+        "event": null,
+        "target_field": null,
+        "execution_steps": 120,
+        "machines_involved": {
+          "Scenario3_NetworkPartition": [
+            "Init"
+          ],
+          "Learner": [
+            "Init",
+            "Learning"
+          ],
+          "Acceptor": [
+            "Init",
+            "Ready"
+          ],
+          "Proposer": [
+            "Init",
+            "ProposalPhase"
+          ],
+          "Client": [
+            "Init",
+            "WaitingForConsensus"
+          ]
+        },
+        "last_actions": [
+          "'Proposer(9)' in state 'ProposalPhase' sent event 'eAcceptRequest with payload (<proposer:Proposer(9), proposalNumber:2001, value:200, >)' to 'Acceptor(4)'.",
+          "'Acceptor(3)' in state 'Ready' sent event 'eAccepted with payload (<proposalNumber:2001, value:200, >)' to 'Learner(2)'.",
+          "'Learner(2)' dequeued event 'eAccepted with payload (<proposalNumber:2001, value:200, >)' in state 'Learning'.",
+          "'Acceptor(4)' dequeued event 'eAcceptRequest with payload (<proposer:Proposer(9), proposalNumber:2001, value:200, >)' in state 'Ready'.",
+          "'Acceptor(4)' in state 'Ready' sent event 'eAccepted with payload (<proposalNumber:2001, value:200, >)' to 'Learner(2)'.",
+          "'Proposer(8)' in state 'ProposalPhase' sent event 'eAcceptRequest with payload (<proposer:Proposer(8), proposalNumber:1001, value:200, >)' to 'Acceptor(6)'.",
+          "'Proposer(9)' in state 'ProposalPhase' sent event 'eAcceptRequest with payload (<proposer:Proposer(9), proposalNumber:2001, value:200, >)' to 'Acceptor(5)'.",
+          "'Acceptor(6)' dequeued event 'eAcceptRequest with payload (<proposer:Proposer(8), proposalNumber:1001, value:200, >)' in state 'Ready'.",
+          "'Acceptor(5)' dequeued event 'eAcceptRequest with payload (<proposer:Proposer(8), proposalNumber:1001, value:200, >)' in state 'Ready'.",
+          "'Learner(2)' dequeued event 'eAccepted with payload (<proposalNumber:2001, value:200, >)' in state 'Learning'."
+        ],
+        "is_test_driver_bug": false,
+        "requires_new_event": false,
+        "requires_multi_file_fix": false
+      },
+      "_checker_root_cause": null,
+      "_checker_suggested_fixes": [],
+      "ensemble_used": 3,
+      "adaptive_retry": "full_regen",
+      "prior_fast_score": 20,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 0
+        },
+        "total": 50,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "TwoPhaseCommit",
+      "success": true,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Coordinator",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Participant",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/TwoPhaseCommit_retry2/TwoPhaseCommit_full_retry/TwoPhaseCommit_2026_02_23_16_14_10/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/TwoPhaseCommit_retry2/TwoPhaseCommit_full_retry/TwoPhaseCommit_2026_02_23_16_14_10/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/TwoPhaseCommit_retry2/TwoPhaseCommit_full_retry/TwoPhaseCommit_2026_02_23_16_14_10/PSrc/Coordinator.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/TwoPhaseCommit_retry2/TwoPhaseCommit_full_retry/TwoPhaseCommit_2026_02_23_16_14_10/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/TwoPhaseCommit_retry2/TwoPhaseCommit_full_retry/TwoPhaseCommit_2026_02_23_16_14_10/PSrc/Participant.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/TwoPhaseCommit_retry2/TwoPhaseCommit_full_retry/TwoPhaseCommit_2026_02_23_16_14_10/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "no viable alternative at input 'funInitEntry(config:seq[machine],)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "no viable alternative at input 'funHandleWriteTransResp(resp:tWriteTransResp,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 4,
+            "error": "no viable alternative at input 'funHandleInformCoordinator(msg:tInformCoordinator,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          },
+          {
+            "iteration": 5,
+            "error": "no viable alternative at input 'funHandlePrepareResp(resp:tPrepareResp,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 6,
+            "error": "could not find function 'CreateTimer'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 7,
+            "error": "Module not closed. test module is not closed with respect to created interfaces; interface Timer is created but not implemented inside the module",
+            "fixed": true,
+            "needs_guidance": false
+          }
+        ],
+        "success": true,
+        "total_iterations": 7,
+        "api_version": "1.0",
+        "error_category": null,
+        "retryable": false,
+        "next_actions": [],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "8a28ec14-dd09-45be-95a8-a9dbb5766b02",
+          "timestamp": "2026-02-24T00:16:42.011920Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": true,
+        "failed_tests": [],
+        "passed_tests": [
+          "tcBasicCommit",
+          "tcMultipleClients"
+        ],
+        "error": null
+      },
+      "checker_fixes": [],
+      "errors": [],
+      "timing": {
+        "total_s": 153.6
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "ensemble_used": 3,
+      "adaptive_retry": "full_regen",
+      "prior_fast_score": 20,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 25
+        },
+        "total": 75,
+        "max": 100
+      },
+      "attempt": 2,
+      "retries_used": 1
+    },
+    {
+      "project_name": "MessageBroker",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Broker",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Consumer",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Producer",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/MessageBroker_2026_02_23_16_16_44/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/MessageBroker_2026_02_23_16_16_44/PSrc/Broker.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/MessageBroker_2026_02_23_16_16_44/PSrc/Consumer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/MessageBroker_2026_02_23_16_16_44/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/MessageBroker_2026_02_23_16_16_44/PSrc/Producer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/MessageBroker_2026_02_23_16_16_44/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funHandlePublishAck(ack:tPublishAck,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "no viable alternative at input 'funInitEntry(config:(batchSize:int,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 4,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 5,
+            "error": "no viable alternative at input 'funProcessingEntry(response:tPollResp,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          },
+          {
+            "iteration": 6,
+            "error": "no viable alternative at input 'consumer=this)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 7,
+            "error": "got type: tPollResp, expected: (consumer:machine,response:tPollResp)",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 8,
+            "error": "could not find foreach iterator variable 'c'",
+            "fixed": true,
+            "needs_guidance": false
+          }
+        ],
+        "success": false,
+        "total_iterations": 8,
+        "api_version": "1.0",
+        "error_category": "internal",
+        "retryable": true,
+        "next_actions": [
+          "Retry the operation or inspect the error details."
+        ],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "d77a6dcb-b45a-4a94-938a-daae9d03053c",
+          "timestamp": "2026-02-24T00:19:06.703775Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": false,
+        "failed_tests": [
+          "tcOneProducerTwoConsumers"
+        ],
+        "passed_tests": [
+          "tcOneProducerOneConsumer",
+          "tcTwoProducersOneConsumer"
+        ],
+        "error": null
+      },
+      "checker_fixes": [
+        {
+          "round": 1,
+          "fixed": false
+        }
+      ],
+      "errors": [
+        "PChecker reported failing tests"
+      ],
+      "timing": {
+        "total_s": 144.2
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "_checker_analysis": {
+        "error_category": "unknown",
+        "error_message": "<ErrorLog> Assertion Failed: PSpec/Safety.p:107:13 NoMessageLoss violated: offset 0 delivered multiple times",
+        "machine": null,
+        "machine_type": null,
+        "state": null,
+        "event": null,
+        "target_field": null,
+        "execution_steps": 133,
+        "machines_involved": {
+          "Scenario3_OneProducerTwoConsumers": [
+            "Init"
+          ],
+          "Broker": [
+            "Init",
+            "Ready"
+          ],
+          "Producer": [
+            "Init",
+            "Publishing",
+            "Done"
+          ],
+          "Consumer": [
+            "Init",
+            "Registering",
+            "Polling",
+            "Processing"
+          ]
+        },
+        "last_actions": [
+          "Producer(3) is transitioning from state 'Publishing' to state 'PImplementation.Producer.Done'.",
+          "Producer(3) exits state 'Publishing'.",
+          "Producer(3) enters state 'Done'.",
+          "'Broker(2)' dequeued event 'eCommitOffset with payload (<consumer:Consumer(4), offset:3, >)' in state 'Ready'.",
+          "'Broker(2)' in state 'Ready' sent event 'eCommitOffsetAck' to 'Consumer(4)'.",
+          "'Consumer(4)' dequeued event 'eCommitOffsetAck' in state 'Processing'.",
+          "Consumer(4) is transitioning from state 'Processing' to state 'PImplementation.Consumer.Polling'.",
+          "Consumer(4) exits state 'Processing'.",
+          "Consumer(4) enters state 'Polling'.",
+          "'Broker(2)' dequeued event 'ePoll with payload (<consumer:Consumer(5), offset:0, >)' in state 'Ready'."
+        ],
+        "is_test_driver_bug": false,
+        "requires_new_event": false,
+        "requires_multi_file_fix": false
+      },
+      "_checker_root_cause": null,
+      "_checker_suggested_fixes": [],
+      "ensemble_used": 1,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 0
+        },
+        "total": 50,
+        "max": 100
+      },
+      "adaptive_retry": "targeted_test",
+      "prior_fast_score": 50,
+      "regen_count": 1,
+      "attempt": 1
+    },
+    {
+      "project_name": "DistributedLock",
+      "success": true,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:LockServer",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/DistributedLock_2026_02_23_16_19_17/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/DistributedLock_2026_02_23_16_19_17/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/DistributedLock_2026_02_23_16_19_17/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/DistributedLock_2026_02_23_16_19_17/PSrc/LockServer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/DistributedLock_2026_02_23_16_19_17/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funHandleLockResponse(resp:tLockResponse,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "no viable alternative at input 'funHandleFirstLockRequest(req:tLockRequest,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "extraneous input ',' expecting ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 4,
+            "error": "Module not closed. test module is not closed with respect to created interfaces; interface Client is created but not implemented inside the module",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 5,
+            "error": "missing '=' at '{'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 6,
+            "error": "missing Iden at ')'",
+            "fixed": true,
+            "needs_guidance": false
+          }
+        ],
+        "success": true,
+        "total_iterations": 6,
+        "api_version": "1.0",
+        "error_category": null,
+        "retryable": false,
+        "next_actions": [],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "93d6c41c-f61d-437d-a78a-6eb2d4afe7db",
+          "timestamp": "2026-02-24T00:21:02.245863Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": true,
+        "failed_tests": [],
+        "passed_tests": [
+          "tc1MultipleClientsSameResource",
+          "tc2MultipleClientsDifferentResources"
+        ],
+        "error": null
+      },
+      "checker_fixes": [],
+      "errors": [],
+      "timing": {
+        "total_s": 106.6
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "ensemble_used": 1,
+      "adaptive_retry": false,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 25
+        },
+        "total": 75,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "HotelManagement",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:FrontDesk",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/HotelManagement_2026_02_23_16_21_03/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/HotelManagement_2026_02_23_16_21_03/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/HotelManagement_2026_02_23_16_21_03/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/HotelManagement_2026_02_23_16_21_03/PSrc/FrontDesk.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/HotelManagement_2026_02_23_16_21_03/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funInitEntry(config:(numRooms:int,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "no viable alternative at input 'funHandleRoomReservationRequest(request:tRoomReservationRequest,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 4,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 5,
+            "error": "no viable alternative at input 'funHandleReservationResponse(response:tRoomReservationResponse,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          },
+          {
+            "iteration": 6,
+            "error": "extraneous input ',' expecting ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 7,
+            "error": "extraneous input 'var' expecting {'announce', 'assert', 'break', 'continue', 'foreach', 'goto', 'if', 'new', 'print', 'raise', 'receive', 'return', 'send', 'while', 'assume', '{', '}', ';', Iden}",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 8,
+            "error": "got type: (numRooms:int), expected: int",
+            "fixed": true,
+            "needs_guidance": false
+          }
+        ],
+        "success": false,
+        "total_iterations": 8,
+        "api_version": "1.0",
+        "error_category": "internal",
+        "retryable": true,
+        "next_actions": [
+          "Retry the operation or inspect the error details."
+        ],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "c2c3a546-3de9-425c-a568-80ea093f4c5f",
+          "timestamp": "2026-02-24T00:23:30.581539Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": false,
+        "failed_tests": [
+          "tcScenario1_TwoClientsSuccess",
+          "tcScenario2_ReservationFailure",
+          "tcScenario3_ReserveCancelReserve",
+          "tcScenario4_InvalidCancellation"
+        ],
+        "passed_tests": [],
+        "error": null
+      },
+      "checker_fixes": [
+        {
+          "round": 1,
+          "fixed": false
+        }
+      ],
+      "errors": [
+        "PChecker reported failing tests"
+      ],
+      "timing": {
+        "total_s": 148.6
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "_checker_analysis": {
+        "error_category": "unknown",
+        "error_message": "<ErrorLog> Exception 'System.ArgumentException' was thrown in FrontDesk(2) (state 'Ready', action '_HandleSpecialRequest'): An item with the same key has already been added. Key: 0",
+        "machine": null,
+        "machine_type": null,
+        "state": null,
+        "event": null,
+        "target_field": null,
+        "execution_steps": 56,
+        "machines_involved": {
+          "Scenario4_InvalidCancellation": [
+            "Init"
+          ],
+          "FrontDesk": [
+            "Init",
+            "Ready"
+          ],
+          "Client": [
+            "Init",
+            "WaitingForReservationResponse",
+            "DecideNextAction",
+            "WaitingForSpecialResponse"
+          ]
+        },
+        "last_actions": [
+          "'Client(3)' dequeued event 'eSpecialResponse with payload (<clientId:1, status:0, >)' in state 'WaitingForSpecialResponse'.",
+          "Client(3) is transitioning from state 'WaitingForSpecialResponse' to state 'PImplementation.Client.DecideNextAction'.",
+          "Client(3) exits state 'WaitingForSpecialResponse'.",
+          "Client(3) enters state 'DecideNextAction'.",
+          "Client(4) enters state 'Init'.",
+          "'Client(3)' in state 'DecideNextAction' sent event 'eSpecialRequest with payload (<client:Client(3), clientId:1, clientName:\"Frank\", roomNumber:0, requestDetails:\"Special request details\", >)' to 'FrontDesk(2)'.",
+          "Client(3) is transitioning from state 'DecideNextAction' to state 'PImplementation.Client.WaitingForSpecialResponse'.",
+          "Client(3) exits state 'DecideNextAction'.",
+          "Client(3) enters state 'WaitingForSpecialResponse'.",
+          "'FrontDesk(2)' dequeued event 'eSpecialRequest with payload (<client:Client(3), clientId:1, clientName:\"Frank\", roomNumber:0, requestDetails:\"Special request details\", >)' in state 'Ready'."
+        ],
+        "is_test_driver_bug": false,
+        "requires_new_event": false,
+        "requires_multi_file_fix": false
+      },
+      "_checker_root_cause": null,
+      "_checker_suggested_fixes": [],
+      "ensemble_used": 1,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 0
+        },
+        "total": 50,
+        "max": 100
+      },
+      "adaptive_retry": "targeted_machine",
+      "prior_fast_score": 50,
+      "regen_count": 2,
+      "attempt": 1
+    },
+    {
+      "project_name": "ClientServer",
+      "success": true,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Server",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/ClientServer_2026_02_23_16_24_01/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/ClientServer_2026_02_23_16_24_01/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/ClientServer_2026_02_23_16_24_01/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/ClientServer_2026_02_23_16_24_01/PSrc/Server.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/ClientServer_2026_02_23_16_24_01/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funHandleRequest(req:tRequest,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "no viable alternative at input 'funHandleResponse(resp:tResponse,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "no viable alternative at input 'funTrackRequest(req:tRequest,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          }
+        ],
+        "success": true,
+        "total_iterations": 3,
+        "api_version": "1.0",
+        "error_category": null,
+        "retryable": false,
+        "next_actions": [],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "f46eeb76-6075-49c2-b7cf-7594dd605dd6",
+          "timestamp": "2026-02-24T00:24:51.134750Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": true,
+        "failed_tests": [],
+        "passed_tests": [
+          "tcSingleClient",
+          "tcMultipleClients",
+          "tcDifferentRequestCounts"
+        ],
+        "error": null
+      },
+      "checker_fixes": [],
+      "errors": [],
+      "timing": {
+        "total_s": 51.4
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "ensemble_used": 1,
+      "adaptive_retry": false,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 25
+        },
+        "total": 75,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "FailureDetector",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Client",
+          "success": true
+        },
+        {
+          "name": "generate_machine:FailureDetector",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Node",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/FailureDetector_full_retry/FailureDetector_2026_02_23_16_26_35/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/FailureDetector_full_retry/FailureDetector_2026_02_23_16_26_35/PSrc/Client.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/FailureDetector_full_retry/FailureDetector_2026_02_23_16_26_35/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/FailureDetector_full_retry/FailureDetector_2026_02_23_16_26_35/PSrc/FailureDetector.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/FailureDetector_full_retry/FailureDetector_2026_02_23_16_26_35/PSrc/Node.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/FailureDetector_full_retry/FailureDetector_2026_02_23_16_26_35/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          },
+          {
+            "iteration": 4,
+            "error": "no viable alternative at input 'funInitEntry(fd:machine,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 5,
+            "error": "no viable alternative at input 'funInitEntry(payload:tMonitorNodes,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 6,
+            "error": "no viable alternative at input 'funInitEntry(fd:machine,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          },
+          {
+            "iteration": 7,
+            "error": "no viable alternative at input 'funHandleCrash(payload:tCrashNode,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 8,
+            "error": "could not find function 'CreateTimer'",
+            "fixed": false,
+            "needs_guidance": false
+          }
+        ],
+        "success": false,
+        "total_iterations": 8,
+        "api_version": "1.0",
+        "error_category": "internal",
+        "retryable": true,
+        "next_actions": [
+          "Retry the operation or inspect the error details."
+        ],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "65621d04-b887-4c7d-b2bb-274406367d0d",
+          "timestamp": "2026-02-24T00:32:51.904883Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": null,
+      "checker_fixes": [],
+      "errors": [
+        "Compilation failed after fix attempts"
+      ],
+      "timing": {
+        "total_s": 376.3
+      },
+      "compile_after_fix": {
+        "success": false,
+        "error": null
+      },
+      "ensemble_used": 3,
+      "adaptive_retry": "full_regen",
+      "prior_fast_score": 20,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 0,
+          "tests_discovered": 0,
+          "all_tests_pass": 0
+        },
+        "total": 20,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "EspressoMachine",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:CoffeeMaker",
+          "success": true
+        },
+        {
+          "name": "generate_machine:CoffeeMakerControlPanel",
+          "success": true
+        },
+        {
+          "name": "generate_machine:User",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/EspressoMachine_full_retry/EspressoMachine_2026_02_23_16_41_22/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/EspressoMachine_full_retry/EspressoMachine_2026_02_23_16_41_22/PSrc/CoffeeMaker.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/EspressoMachine_full_retry/EspressoMachine_2026_02_23_16_41_22/PSrc/CoffeeMakerControlPanel.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/EspressoMachine_full_retry/EspressoMachine_2026_02_23_16_41_22/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/EspressoMachine_full_retry/EspressoMachine_2026_02_23_16_41_22/PSrc/User.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/EspressoMachine_full_retry/EspressoMachine_2026_02_23_16_41_22/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funInitEntry(config:tUserInit,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "no viable alternative at input 'funInitEntry(config:tCoffeeMakerInit,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 4,
+            "error": "no viable alternative at input 'funHandleError(error:tErrorMessage,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          },
+          {
+            "iteration": 5,
+            "error": "no viable alternative at input 'funHandleError(error:tErrorMessage,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 6,
+            "error": "Method StartNewCoffee is used as a transition function, but might change state here.",
+            "fixed": true,
+            "needs_guidance": false
+          }
+        ],
+        "success": true,
+        "total_iterations": 6,
+        "api_version": "1.0",
+        "error_category": null,
+        "retryable": false,
+        "next_actions": [],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "0fc604bb-1474-4480-bcc4-46a64802bcb7",
+          "timestamp": "2026-02-24T00:43:07.283054Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": false,
+        "failed_tests": [
+          "tcSingleUserSuccess",
+          "tcEmptyWaterRefill",
+          "tcTwoUsersSequential"
+        ],
+        "passed_tests": [],
+        "error": null
+      },
+      "checker_fixes": [
+        {
+          "round": 1,
+          "fixed": false
+        }
+      ],
+      "errors": [
+        "PChecker reported failing tests"
+      ],
+      "timing": {
+        "total_s": 106.3
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "_checker_analysis": {
+        "error_category": "unknown",
+        "error_message": "<ErrorLog> Assertion Failed: PSpec/Safety.p:17:9 Coffee maker accepted eMakeCoffee while already busy processing a coffee",
+        "machine": null,
+        "machine_type": null,
+        "state": null,
+        "event": null,
+        "target_field": null,
+        "execution_steps": 36,
+        "machines_involved": {
+          "Scenario3_TwoUsersSequential": [
+            "Init"
+          ],
+          "CoffeeMakerControlPanel": [
+            "Init",
+            "Ready"
+          ],
+          "CoffeeMaker": [
+            "Init",
+            "Idle"
+          ],
+          "User": [
+            "Init",
+            "Active"
+          ]
+        },
+        "last_actions": [
+          "CoffeeMaker(3) enters state 'Init'.",
+          "CoffeeMaker(3) is transitioning from state 'Init' to state 'PImplementation.CoffeeMaker.Idle'.",
+          "CoffeeMaker(3) exits state 'Init'.",
+          "CoffeeMaker(3) enters state 'Idle'.",
+          "User(4) enters state 'Init'.",
+          "User(4) is transitioning from state 'Init' to state 'PImplementation.User.Active'.",
+          "User(4) exits state 'Init'.",
+          "User(4) enters state 'Active'.",
+          "'User(4)' in state 'Active' sent event 'eMakeCoffee' to 'CoffeeMakerControlPanel(2)'.",
+          "'CoffeeMakerControlPanel(2)' dequeued event 'eMakeCoffee' in state 'Ready'."
+        ],
+        "is_test_driver_bug": false,
+        "requires_new_event": false,
+        "requires_multi_file_fix": false
+      },
+      "_checker_root_cause": null,
+      "_checker_suggested_fixes": [],
+      "ensemble_used": 3,
+      "adaptive_retry": "full_regen",
+      "prior_fast_score": 20,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 0
+        },
+        "total": 50,
+        "max": 100
+      },
+      "attempt": 1
+    },
+    {
+      "project_name": "RaftLeaderElection",
+      "success": false,
+      "steps": [
+        {
+          "name": "generate_project_structure",
+          "success": true
+        },
+        {
+          "name": "generate_types_events",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Server",
+          "success": true
+        },
+        {
+          "name": "generate_machine:TestDriver",
+          "success": true
+        },
+        {
+          "name": "generate_machine:Timer",
+          "success": true
+        },
+        {
+          "name": "generate_spec",
+          "success": true
+        },
+        {
+          "name": "generate_test",
+          "success": true
+        }
+      ],
+      "generated_files": [
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/RaftLeaderElection_2026_02_23_16_43_08/PSpec/Safety.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/RaftLeaderElection_2026_02_23_16_43_08/PSrc/Enums_Types_Events.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/RaftLeaderElection_2026_02_23_16_43_08/PSrc/Server.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/RaftLeaderElection_2026_02_23_16_43_08/PSrc/TestDriver.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/RaftLeaderElection_2026_02_23_16_43_08/PSrc/Timer.p",
+        "/Users/adesai/workspace/public/P/Src/PeasyAI/generated_code/regression/20260223_160103/RaftLeaderElection_2026_02_23_16_43_08/PTst/TestDriver.p"
+      ],
+      "compile": {
+        "success": false,
+        "error": null
+      },
+      "fix": {
+        "iterations": [
+          {
+            "iteration": 1,
+            "error": "no viable alternative at input 'funInitEntry(owner:machine,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 2,
+            "error": "missing Iden at ')'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 3,
+            "error": "no viable alternative at input 'funInitEntry(config:tServerConfig,)'",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 4,
+            "error": "no viable alternative at input 'funHandleVoteResponse(payload:tVoteResponsePayload,)'",
+            "fixed": false,
+            "needs_guidance": false,
+            "incremental_regen": true
+          },
+          {
+            "iteration": 5,
+            "error": "got type: null, expected: tServerConfig",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 6,
+            "error": "got type: machine, expected: Timer",
+            "fixed": false,
+            "needs_guidance": false
+          },
+          {
+            "iteration": 7,
+            "error": "got type: null, expected: tServerConfig",
+            "fixed": true,
+            "needs_guidance": false
+          }
+        ],
+        "success": true,
+        "total_iterations": 7,
+        "api_version": "1.0",
+        "error_category": null,
+        "retryable": false,
+        "next_actions": [],
+        "metadata": {
+          "tool": "fix_iteratively",
+          "operation_id": "8ccefe4c-842c-45bf-b08c-a01d1063770d",
+          "timestamp": "2026-02-24T00:45:42.927014Z",
+          "provider": "snowflake_cortex",
+          "model": "claude-sonnet-4-5",
+          "token_usage": {}
+        }
+      },
+      "check": {
+        "success": false,
+        "failed_tests": [
+          "tcBasicElection",
+          "tcLeaderFailure",
+          "tcSplitVote"
+        ],
+        "passed_tests": [],
+        "error": null
+      },
+      "checker_fixes": [
+        {
+          "round": 1,
+          "fixed": false
+        }
+      ],
+      "errors": [
+        "PChecker reported failing tests"
+      ],
+      "timing": {
+        "total_s": 355.8
+      },
+      "compile_after_fix": {
+        "success": true,
+        "error": null
+      },
+      "_checker_analysis": {
+        "error_category": "null_target",
+        "error_message": "<ErrorLog> Target in send cannot be null. Machine Server(5) trying to send event eRequestVote to null target in state Candidate.",
+        "machine": "Server(5)",
+        "machine_type": "Server",
+        "state": "Candidate",
+        "event": "eRequestVote",
+        "target_field": null,
+        "execution_steps": 129,
+        "machines_involved": {
+          "Scenario3_SplitVote": [
+            "Init"
+          ],
+          "Server": [
+            "Init",
+            "Follower",
+            "Candidate"
+          ],
+          "Timer": [
+            "Init",
+            "WaitForTimerRequests",
+            "TimerStarted"
+          ]
+        },
+        "last_actions": [
+          "Timer(10) enters state 'Init'.",
+          "Timer(10) is transitioning from state 'Init' to state 'PImplementation.Timer.WaitForTimerRequests'.",
+          "Timer(10) exits state 'Init'.",
+          "Timer(10) enters state 'WaitForTimerRequests'.",
+          "'Server(5)' dequeued event 'eTimeOut' in state 'Follower'.",
+          "Server(5) is transitioning from state 'Follower' to state 'PImplementation.Server.Candidate'.",
+          "Server(5) exits state 'Follower'.",
+          "'Server(5)' in state 'Follower' sent event 'eCancelTimer' to 'Timer(7)'.",
+          "Server(5) enters state 'Candidate'.",
+          "'Server(5)' in state 'Candidate' sent event 'eRequestVote with payload (<candidate:Server(5), term:1, >)' to 'Server(2)'."
+        ],
+        "is_test_driver_bug": false,
+        "requires_new_event": false,
+        "requires_multi_file_fix": false
+      },
+      "_checker_root_cause": "Machine 'Server' tried to send event 'eRequestVote' to a null machine reference in state 'Candidate'. This typically means a machine field was not initialized before use.",
+      "_checker_suggested_fixes": [],
+      "ensemble_used": 1,
+      "score": {
+        "scores": {
+          "generation_all_ok": 20,
+          "compile_first_try": 0,
+          "compile_after_fix": 15,
+          "tests_discovered": 15,
+          "all_tests_pass": 0
+        },
+        "total": 50,
+        "max": 100
+      },
+      "adaptive_retry": "targeted_machine",
+      "prior_fast_score": 50,
+      "regen_count": 2,
+      "attempt": 1
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+You are reviewing a P test driver file for correctness of machine wiring and initialization.
+
+You are given:
+1. The generated test driver code.
+2. All machine source files (showing each machine's constructor signature).
+3. The Enums_Types_Events.p file (showing all types and events).
+
+Your job is to check ONLY the following and return a FIXED version of the test driver:
+
+## CHECK 1: Dependency Order
+Every `new Machine(config)` call must happen AFTER all machines referenced in `config` have been created.
+
+BAD:
+```
+fd = new FailureDetector((nodes = nodeSet,));  // nodeSet is empty here!
+node1 = new Node((failureDetector = fd,));
+nodeSet += (node1);
+```
+
+GOOD:
+```
+node1 = new Node((failureDetector = fd,));
+nodeSet += (node1);
+fd = new FailureDetector((nodes = nodeSet,));  // nodeSet has node1
+```
+
+## CHECK 2: Circular Dependencies Must Be Resolved
+If Machine A's constructor needs Machine B, and Machine B's constructor needs Machine A, one side MUST use the init-event pattern to break the cycle.
+
+BAD (circular — impossible to satisfy both constructors):
+```
+fd = new FailureDetector((nodes = nodeSet,));  // needs nodes
+node1 = new Node((failureDetector = fd,));     // needs fd
+// But fd was created with empty nodeSet!
+```
+
+GOOD (break cycle with init-event):
+```
+// Create FD first with empty nodes (it will get them via registration)
+fd = new FailureDetector();
+// Create nodes with FD reference
+node1 = new Node((failureDetector = fd,));
+nodeSet += (node1);
+// Send nodes to FD via init event
+send fd, eFDInit, (nodes = nodeSet,);
+```
+
+ALTERNATIVE GOOD (if the machine supports it — create nodes first, then FD):
+```
+// If Node can be created without FD and configured later:
+node1 = new Node();
+nodeSet += (node1);
+fd = new FailureDetector((nodes = nodeSet,));
+send node1, eNodeInit, (failureDetector = fd,);
+```
+
+When resolving a circular dependency:
+- Look at which machine's constructor is SIMPLER (fewer fields, or has fields that are easier to provide later).
+- Break the cycle on that side by removing the problematic field from its constructor config type and adding an init event instead.
+- You MUST also update the machine's code to handle the init event if it doesn't already.
+- If the machine already handles an init event pattern (start state waits for a config event), use that.
+
+## CHECK 3: No Empty Collections Passed as Config
+If a machine's constructor expects `set[machine]` or `seq[machine]`, the collection MUST contain the actual machines, not be empty or default.
+
+BAD:
+```
+fdConfig = (nodes = default(set[machine]),);
+fd = new FailureDetector(fdConfig);
+```
+
+GOOD:
+```
+nodeSet += (node1);
+nodeSet += (node2);
+fd = new FailureDetector((nodes = nodeSet,));
+```
+
+## CHECK 4: Named Tuple Construction
+Every `new Machine(...)` and `send ..., eEvent, ...` must use named tuple syntax matching the type definition exactly.
+
+## RESPONSE FORMAT
+
+If the test driver is correct, return it unchanged.
+
+If there are issues, return the FIXED test driver code. If fixing requires changes to machine files (e.g., adding an init event handler), also return those changed files.
+
+Return your response in this exact format:
+
+<analysis>
+Brief description of what was wrong and how you fixed it.
+</analysis>
+
+<fixed_files>
+<TestDriver.p>
+... fixed test driver code ...
+</TestDriver.p>
+<Enums_Types_Events.p>
+... only if you needed to add new init events ...
+</Enums_Types_Events.p>
+<MachineName.p>
+... only if you needed to add init event handlers ...
+</MachineName.p>
+</fixed_files>
+
+Only include files that changed. If nothing changed, include only the original TestDriver.p.

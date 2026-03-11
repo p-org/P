@@ -1,5 +1,5 @@
 site_name: "P"
-site_url: http://p-org.github.io/P/
+site_url: https://p-org.github.io/P/
 site_description: "P: Modular and Safe Programming of Distributed Systems"
 site_author: "Ankush Desai"
 
@@ -11,9 +11,18 @@ theme:
   language: en
   name: material
   palette:
-    scheme: default
-    primary: black
-    accent: deep orange
+    - scheme: default
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   logo: ./icon.png
   favicon: ./icon.png
   icon:
@@ -46,12 +55,12 @@ theme:
     - content.tabs.link
     - toc.follow
 
-# This should be renamed to nav for mkdocs 1.0+
 nav:
   - Home: index.md
   - What is P?: whatisP.md
   - Getting Started:
       - Installing P: getstarted/install.md
+      - PeasyAI - AI for P: getstarted/peasyai.md
       - Peasy - IDE for P: getstarted/PeasyIDE.md
       - Using P Compiler and Checker: getstarted/usingP.md
 
@@ -61,27 +70,27 @@ nav:
       - Two Phase Commit: tutorial/twophasecommit.md
       - Espresso Machine: tutorial/espressomachine.md
       - Failure Detector: tutorial/failuredetector.md
-      # - Paxos Made Simple: tutorial/paxos.md
+      - Single Decree Paxos: tutorial/paxos.md
       - Timer, Failure, and Shared Memory: tutorial/common.md
-  - Advanced User Guide:
+  - Advanced:
       - P Semantics: advanced/psemantics.md
-      - Importance of Liveness Specifications: advanced/importanceliveness.md
-      - Structure of a P Program: advanced/structureOfPProgram.md
-      - P Project File: advanced/PProject.md
-      - Debugging Error Traces (counter examples): advanced/debuggingerror.md
-      - PObserve: 
+      - Liveness Specifications: advanced/importanceliveness.md
+      - Program Structure: advanced/structureOfPProgram.md
+      - Project File: advanced/PProject.md
+      - Debugging Error Traces: advanced/debuggingerror.md
+      - PEx (Exhaustive Checking): advanced/pex.md
+      - "PObserve: Runtime Monitoring":
         - Overview: advanced/pobserve/pobserve.md
         - Getting Started: advanced/pobserve/gettingstarted.md
-        - Setting Up PObserve Package: advanced/pobserve/package-setup.md
+        - Package Setup: advanced/pobserve/package-setup.md
         - Writing a Log Parser: advanced/pobserve/logparser.md
-        - PObserve Java Unit Test: advanced/pobserve/pobservejunit.md
-        - PObserve CLI: advanced/pobserve/pobservecli.md
-        - "[Example] Lock Server":
+        - JUnit Integration: advanced/pobserve/pobservejunit.md
+        - CLI Integration: advanced/pobserve/pobservecli.md
+        - "Example: Lock Server":
           - Overview: advanced/pobserve/example/lockserver.md
-          - Running with PObserve JUnit: advanced/pobserve/example/lockserverwithpobservejunit.md
-          - Running with PObserve CLI: advanced/pobserve/example/lockserverwithpobservecli.md
-      - PExhaustive Mode: advanced/pex.md
-      - PVerifier:
+          - With PObserve JUnit: advanced/pobserve/example/lockserverwithpobservejunit.md
+          - With PObserve CLI: advanced/pobserve/example/lockserverwithpobservecli.md
+      - "PVerifier: Formal Proofs":
         - Announcement: advanced/PVerifierLanguageExtensions/announcement.md
         - Outline: advanced/PVerifierLanguageExtensions/outline.md
         - Installation: advanced/PVerifierLanguageExtensions/install-pverifier.md
@@ -90,7 +99,7 @@ nav:
         - Init Conditions: advanced/PVerifierLanguageExtensions/init-condition.md
         - Specifications: advanced/PVerifierLanguageExtensions/specification.md
         - Lemmas and Proofs: advanced/PVerifierLanguageExtensions/proof.md
-        - Two Phase Commit Verification: advanced/PVerifierLanguageExtensions/twophasecommitverification.md
+        - "Example: Two Phase Commit": advanced/PVerifierLanguageExtensions/twophasecommitverification.md
   - Language Manual:
       - P Program (Outline): manualoutline.md
       - P DataTypes: manual/datatypes.md
@@ -102,22 +111,21 @@ nav:
       - P Statements: manual/statements.md
       - P Module System: manual/modulesystem.md
       - P Test cases: manual/testcases.md
-      - P Foreign Interface: manual/foriegntypesfunctions.md
+      - P Foreign Interface: manual/foreigntypesfunctions.md
   - Case Studies: casestudies.md
-  - Videos: videos.md
-  - Publications: publications.md
-  - Contributing to P:
+  - Publications:
+      - Papers: publications.md
+      - Videos: videos.md
+  - Contributing:
       - Building from Source: getstarted/build.md
 
 markdown_extensions:
   - attr_list
   - md_in_html
-  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.snippets
   - admonition
-  - pymdownx.tabbed
   - pymdownx.details
   - pymdownx.highlight
   - pymdownx.critic
@@ -128,8 +136,8 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - footnotes
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 
 plugins:
@@ -148,4 +156,4 @@ extra:
     provider: google
     property: G-0WWG87T6BN
 
-copyright: Copyright &copy; 2023 P Developers
+copyright: Copyright &copy; 2026 P Developers

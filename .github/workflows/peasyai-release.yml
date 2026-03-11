@@ -1,0 +1,73 @@
+name: PeasyAI Release
+
+on:
+  push:
+    tags:
+      - "peasyai-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build wheel & attach to GitHub Release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Src/PeasyAI
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: python -m pip install --upgrade pip build
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/peasyai-v}"
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Set version in pyproject.toml
+        run: |
+          sed -i "s/^version = .*/version = \"${{ steps.version.outputs.version }}\"/" pyproject.toml
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Run tests
+        run: |
+          python -m pip install -r requirements.txt
+          make test
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "PeasyAI v${{ steps.version.outputs.version }}"
+          body: |
+            ## PeasyAI v${{ steps.version.outputs.version }}
+
+            ### Install
+
+            ```bash
+            pip install https://github.com/${{ github.repository }}/releases/download/peasyai-v${{ steps.version.outputs.version }}/peasyai_mcp-${{ steps.version.outputs.version }}-py3-none-any.whl
+            ```
+
+            Then configure:
+
+            ```bash
+            peasyai-mcp init        # creates ~/.peasyai/settings.json
+            peasyai-mcp config      # verify setup
+            ```
+
+            See the [README](https://github.com/${{ github.repository }}/blob/main/Src/PeasyAI/README.md) for full setup instructions.
+          files: |
+            Src/PeasyAI/dist/*.whl
+            Src/PeasyAI/dist/*.tar.gz
+          fail_on_unmatched_files: true

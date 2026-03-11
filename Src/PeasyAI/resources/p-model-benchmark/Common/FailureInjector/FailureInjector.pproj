@@ -1,0 +1,8 @@
+<!-- P Project file for the Failure Injector Module-->
+<Project>
+<ProjectName>FailureInjector</ProjectName>
+<InputFiles>
+	<PFile>./PSrc/</PFile>
+</InputFiles>
+<OutputDir>./PGenerated/</OutputDir>
+</Project>

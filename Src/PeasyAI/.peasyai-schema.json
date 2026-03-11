@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PeasyAI Settings",
+  "description": "Configuration for the PeasyAI MCP server. Stored at ~/.peasyai/settings.json",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "llm": {
+      "type": "object",
+      "description": "LLM provider configuration",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "description": "Active LLM provider",
+          "enum": ["snowflake", "anthropic", "bedrock"],
+          "default": "bedrock"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model name override (uses provider default if omitted)"
+        },
+        "timeout": {
+          "type": "number",
+          "description": "Request timeout in seconds",
+          "default": 600
+        },
+        "providers": {
+          "type": "object",
+          "description": "Per-provider credentials and settings",
+          "properties": {
+            "snowflake": {
+              "type": "object",
+              "properties": {
+                "api_key": { "type": "string", "description": "Snowflake programmatic access token" },
+                "base_url": { "type": "string", "description": "Snowflake Cortex OpenAI-compatible endpoint" }
+              }
+            },
+            "anthropic": {
+              "type": "object",
+              "properties": {
+                "api_key": { "type": "string", "description": "Anthropic API key" },
+                "model": { "type": "string", "description": "Anthropic model name", "default": "claude-3-5-sonnet-20241022" },
+                "base_url": { "type": "string", "description": "Optional custom base URL" }
+              }
+            },
+            "bedrock": {
+              "type": "object",
+              "properties": {
+                "region": { "type": "string", "description": "AWS region", "default": "us-west-2" },
+                "model_id": { "type": "string", "description": "Bedrock model ID", "default": "anthropic.claude-3-5-sonnet-20241022-v2:0" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "p_compiler": {
+      "type": "object",
+      "description": "P compiler paths (auto-detected if omitted)",
+      "properties": {
+        "path": { "type": ["string", "null"], "description": "Path to P compiler binary" },
+        "dotnet_path": { "type": ["string", "null"], "description": "Path to dotnet SDK" }
+      }
+    },
+    "generation": {
+      "type": "object",
+      "description": "Code generation defaults",
+      "properties": {
+        "ensemble_size": { "type": "integer", "description": "Number of candidates for best-of-N selection", "default": 3 },
+        "output_dir": { "type": "string", "description": "Default output directory for generated projects", "default": "./PGenerated" }
+      }
+    }
+  }
+}
+

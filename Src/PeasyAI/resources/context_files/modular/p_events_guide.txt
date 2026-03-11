@@ -1,0 +1,30 @@
+Here is the P events guide:
+<P_events_guide>
+1. A P program is a collection of state machines communicating with each other by exchanging events.
+2. An event in P has two parts: an event name and a payload value (optional) that can be sent along with the event.
+3. Event name in P should be unique and different from Enum and Type names.
+4. There should EXIST a user defined type for EACH event payload and that declared type should be used in the event declaration. 
+5. IMPORTANT: Declaring events with named tuple payloads is INCORRECT.
+
+When declaring P events with payloads, always follow this EXACT syntax:
+First, declare a user defined type for the payload:
+type payloadTypeName = ((fieldName: typeName)*);
+Then, declare the event using the declared payload type payloadTypeName:
+event eventName: payloadTypeName;
+
+Here is a correct example of events:
+<events_example>
+// declarations of events with no payloads
+event ePing;
+event ePong;
+
+// declaration of events that have payloads
+type tRequest = (client: machine, requestId: int, key: string);
+// eRequest event with payload of user defined type tRequest
+event eRequest: tRequest;
+
+type tWriteTransResp = (transId: int, status: tTransStatus);
+// eWriteTransResp event with payload of user defined type tWriteTransResp
+event eWriteTransResp : tWriteTransResp;
+</events_example>
+</P_events_guide>

@@ -1,0 +1,65 @@
+You are adding documentation comments to a generated P program file.
+
+You are given:
+1. The generated P code (already syntactically correct).
+2. The design document that describes the system being modeled.
+3. Other project files for cross-reference context.
+
+Your job is to add insightful `//` comments that help a developer understand and maintain the code long-term. Do NOT just copy text from the design document — the developer can read the design doc themselves. Instead, explain the *why* behind the code: what invariant is being maintained, what protocol step is being executed, what the tricky parts are.
+
+## COMMENT GUIDELINES
+
+### File Header
+Add a 2-4 line header at the top of the file:
+- Name the system and file's role (e.g., "Coordinator for the Two Phase Commit protocol")
+- One sentence summarizing the key responsibility or invariant this file maintains
+
+### Machine / Spec Declarations
+Above each `machine` or `spec` declaration, add a brief block comment (3-6 lines) explaining:
+- What role this component plays in the protocol
+- What key invariant or safety property it maintains or contributes to
+- Any non-obvious design decisions (e.g., "serializes concurrent requests to avoid conflicting prepares")
+
+### State Declarations
+Above each `state` declaration, add 1-2 lines explaining:
+- What phase of the protocol this state represents
+- What the machine is waiting for or doing in this state
+- Any deferred/ignored events and WHY they are deferred/ignored (not just that they are)
+
+### Variable Declarations
+Add inline comments on `var` declarations explaining:
+- What the variable tracks and WHY it's needed (not just restating the type)
+- For collections: what the keys/values represent in protocol terms
+
+### Event Handlers (`on ... do`)
+Above each event handler, add 1-2 lines explaining:
+- What protocol step this handler implements
+- What the expected outcome is (e.g., "accumulates votes; triggers commit/abort decision when all received")
+- Any non-obvious logic (e.g., "uses choose() to model non-deterministic participant failure")
+
+### Send Statements
+For important `send` statements (especially those that drive protocol transitions), add a brief inline or above-line comment explaining:
+- What protocol action this message represents
+- Why it's sent at this point
+
+### Assertions
+Above `assert` statements, explain:
+- What safety property is being checked
+- Under what conditions it could be violated
+
+### DO NOT
+- Do NOT add comments that just restate the code (e.g., `// send prepare request` above `send p, ePrepareReq`)
+- Do NOT add comments on every single line — focus on non-obvious logic
+- Do NOT change any code — only add `//` comments
+- Do NOT add comments inside type/event declaration files (Enums_Types_Events.p) beyond the file header — the type names and field names are self-documenting
+- Do NOT remove any existing comments
+
+## RESPONSE FORMAT
+
+Return the complete file with comments added, wrapped in the following format:
+
+<documented_code>
+... the full P code with comments added ...
+</documented_code>
+
+Return ONLY the documented code. Do not include analysis or explanation outside the tags.

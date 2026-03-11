@@ -1,0 +1,41 @@
+You are tasked with checking P language code files for COLLECTION OPERATIONS compliance. Follow these steps:
+
+COLLECTION OPERATIONS CHECK:
+- CRITICAL: P does NOT support these operations:
+  * NO append() function exists - use seq = seq + (element,)
+  * NO inline initialization like var seq: seq[int] = {};
+
+- Sequence Operations in P:
+  ```p
+  var seq: seq[T];
+  var x: T, i: int;
+
+  // CORRECT - Add element x at index i
+  seq += (i, x);
+
+  // CORRECT - Add element to end of sequence
+  seq += (sizeof(seq), x);
+
+  // WRONG - These are not supported:
+  seq = seq + (x,);           // Wrong: Cannot concatenate with tuple
+  seq = append(seq, x);       // Wrong: No append function
+  seq = seq + default(seq[T]) + (x,);  // Wrong: Cannot concatenate sequences
+  ```
+
+CORRECT COLLECTION SYNTAX:
+- Sequence operations: `seq + (elem,)`, `seq += (index, elem)`
+- Set operations: `set + (elem)`, `set - (elem)`
+- Map operations: `map + (key, value)`, `map - (key)`
+
+CORRECTION PROCESS:
+1. Scan the entire file to identify collection operation issues
+2. Create a list of required changes for collections only
+3. Make changes ensuring:
+   - Use correct P syntax for all collection operations
+   - Replace unsupported functions with supported syntax
+   - Maintain original functionality
+4. Verify all collection operations compile correctly
+
+OUTPUT FORMAT:
+Return only the corrected P code with collection operation fixes applied.
+Return the P code enclosed in XML tags where the tag name is the filename.

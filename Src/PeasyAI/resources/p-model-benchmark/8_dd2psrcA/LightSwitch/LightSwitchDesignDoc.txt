@@ -1,0 +1,68 @@
+<system_design_document>
+<title> Light Control System </title>
+
+<introduction>
+The Light Control System enables users to control multiple lights through dedicated switches. Each switch is paired with a specific light, allowing users to turn lights on and off while maintaining accurate status information about each light's current state. The system ensures reliable control and feedback for multiple light-switch pairs operating simultaneously.
+</introduction>
+
+<components>
+
+1. Switch
+* Controls a single designated light
+* Has a unique identifier
+* Flips the current state of the light to ON/OFF
+* Key responsibilities:
+    * Sending requests to flip its light's state
+    * Tracking the current state of the light
+
+2. Light
+* Can be either On or Off
+* Responds to toggle requests from a switch
+* Informs the switch of its state after being toggled
+* Can be controlled by multiple different switches
+* Key responsibilities:
+    * Changing its state when requested
+    * Informing its switch about state changes
+    * Maintaining its current state
+
+</components>
+
+<interactions>
+
+1. Toggle Request
+* Source: Switch making the request
+* Target: Associated light
+* Description: Request to change a light's state from On to Off or Off to On
+* Effects:
+    * The light changes its state
+    * The switch receives confirmation of the change
+
+2. Status Update
+* Source: Light that changed state
+* Target: Switch that requested the change
+* Description: Informs the switch of the light's new state
+* Effects:
+    * The switch updates its display of the light's status
+    * Users can see the current state of the light
+
+</interactions>
+
+<global_specifications>
+
+1. Each switch controls exactly one light.
+2. Each switch has a unique identifier to avoid confusion.
+3. Lights can only be in one of two states: On or Off.
+4. The system always maintains accurate information about each light's state.
+5. Multiple switch-light pairs can operate independently.
+
+</global_specifications>
+
+<possible_scenarios>
+
+1. A user toggles a light that is currently off, turning it on.
+2. A user toggles a light that is currently on, turning it off.
+3. Multiple users operate different switches for the same light at the same time.
+
+</possible_scenarios>
+
+</system_design_document>

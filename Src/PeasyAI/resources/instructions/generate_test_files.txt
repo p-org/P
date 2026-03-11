@@ -1,0 +1,167 @@
+Write P code for the {filename} file.
+
+CRITICAL REQUIREMENTS:
+
+1. For EACH scenario in the "Test Scenarios" section, create a dedicated scenario machine (e.g., Scenario1_XXX) with a start state that instantiates the system.
+2. For EACH scenario machine, you MUST write a `test` declaration. Without test declarations, PChecker cannot discover or run any tests. The format is:
+   test tcScenarioName [main=ScenarioMachine]:
+     assert SpecName1, SpecName2 in
+     {{ MachineA, MachineB, ..., ScenarioMachine }};
+   Use the spec/monitor names from the PSpec files in the assert clause. List ALL machines that participate in the scenario inside the braces.
+3. The test driver file MUST contain BOTH the scenario machines AND the test declarations. Do NOT put them in separate files.
+4. Do NOT re-declare or re-define machines that already exist in PSrc. Only define NEW scenario-driver machines here.
+5. You MUST only use events that are already defined in Enums_Types_Events.p. Do NOT invent new events.
+6. Scenario machines must be SIMPLE launchers. They create all system components in the correct order and then stop. They should NOT handle any protocol events (no `on eXxx` handlers).
+
+## CRITICAL: Machine Wiring — Read the Machine Entry Signatures
+
+Look at every machine file provided as context. Each machine's start state has an entry function. That entry function's parameter defines EXACTLY what the machine expects when created. You MUST match it.
+
+There are two initialization patterns used by the machines:
+
+### Pattern A: Constructor payload — machine expects config via `new Machine(payload)`
+If a machine's start-state entry function has a parameter, you MUST pass a matching named-tuple payload when creating it with `new`.
+
+Example — if Proposer.p has:
+```
+start state Init {{
+    entry InitEntry;
+    ...
+}}
+fun InitEntry(config: (acceptors: seq[machine], learners: seq[machine], id: int)) {{
+    ...
+}}
+```
+Then the test driver MUST create it as:
+```
+proposer = new Proposer((acceptors = acceptorSeq, learners = learnerSeq, id = 1));
+```
+
+### Pattern B: Initialization event — machine blocks on a config event
+If a machine's start state waits for an event (e.g., `on eAcceptorConfig goto Ready with Configure;`), you MUST send that event after creating the machine.
+
+Example — if Acceptor.p has:
+```
+start state WaitForConfig {{
+    on eAcceptorConfig goto Ready with Configure;
+    defer ePropose, eAcceptRequest;
+}}
+fun Configure(config: tAcceptorConfig) {{
+    ...
+}}
+```
+Then the test driver MUST do:
+```
+acceptor1 = new Acceptor();
+send acceptor1, eAcceptorConfig, (learners = learnerSeq,);
+```
+
+### Wiring Rules
+- Create machines in DEPENDENCY ORDER: machines with no dependencies first (e.g., Learner), then machines that reference them (e.g., Acceptor needs learners), then machines that reference those (e.g., Proposer needs acceptors).
+- Build `seq[machine]` or `set[machine]` collections BEFORE passing them to dependent machines.
+- NEVER leave machine-typed variables uninitialized (default/null). Every machine reference must point to a created machine.
+- NEVER pass `this` (the scenario machine) as a protocol participant reference.
+- For each `new` call, verify the payload tuple field names and types match the machine's entry function parameter EXACTLY. Single-field tuples need a trailing comma: ``(field = value,)``.
+
+## Complete Example
+
+Given machines with these signatures:
+- Learner: `fun InitEntry()` — no config needed
+- Acceptor: `fun InitEntry(config: (learners: seq[machine]))` — needs learners
+- Proposer: `fun InitEntry(config: (acceptors: seq[machine], learners: seq[machine], id: int))` — needs acceptors + learners
+- Client: `fun InitEntry(config: (proposer: machine, value: int))` — needs proposer
+
+The scenario machine must be:
+```
+machine Scenario1_BasicPaxos {{
+    start state Init {{
+        entry {{
+            var learner1: machine;
+            var acceptors: seq[machine];
+            var learners: seq[machine];
+            var proposer: machine;
+            var client: machine;
+
+            // 1. Create machines with no dependencies
+            learner1 = new Learner();
+            learners += (0, learner1);
+
+            // 2. Create machines that depend on step 1
+            acceptors += (0, new Acceptor((learners = learners,)));
+            acceptors += (1, new Acceptor((learners = learners,)));
+            acceptors += (2, new Acceptor((learners = learners,)));
+
+            // 3. Create machines that depend on steps 1-2
+            proposer = new Proposer((acceptors = acceptors, learners = learners, id = 1));
+
+            // 4. Create clients that depend on proposer
+            client = new Client((proposer = proposer, value = 42));
+        }}
+    }}
+}}
+
+test tcBasicPaxos [main=Scenario1_BasicPaxos]:
+    assert OnlyOneValueChosen in
+    {{ Proposer, Acceptor, Learner, Client, Scenario1_BasicPaxos }};
+```
+
+## CRITICAL — Resolving Circular Dependencies in Machine Wiring
+
+Sometimes there is a circular dependency: Machine A's constructor needs a reference to Machine B, and Machine B's constructor needs a collection of Machine A instances. You MUST resolve this correctly.
+
+Strategy: break the cycle by using an initialization event for one side.
+
+Example — FailureDetector needs a `seq[Node]`, but each Node needs the FD reference:
+```
+// Step 1: Create nodes WITHOUT the FD reference (they'll get it via an init event)
+node1 = new Node();
+node2 = new Node();
+nodes += (0, node1);
+nodes += (1, node2);
+
+// Step 2: Create the FD with the node list
+fd = new FailureDetector((nodes = nodes,));
+
+// Step 3: Send the FD reference to each node via an init event
+send node1, eNodeInit, (failureDetector = fd,);
+send node2, eNodeInit, (failureDetector = fd,);
+```
+
+Alternative: if the Node machine accepts its config via constructor payload and has no circular dependency, simply create machines in the right order:
+```
+// If FD doesn't need node references at construction time:
+fd = new FailureDetector();
+node1 = new Node((failureDetector = fd,));
+node2 = new Node((failureDetector = fd,));
+```
+
+The key rule: every machine reference passed in a constructor or event payload must point to an already-created machine that will correctly handle the events sent to it.
+
+## CRITICAL — Named Tuple Construction
+
+When a machine's entry function expects a named-tuple type like ``tConfig = (field1: T1, field2: T2)``, you MUST construct it with named fields:
+```
+CORRECT: new Machine((field1 = val1, field2 = val2));
+WRONG:   new Machine((val1, val2));          // anonymous tuple — type mismatch!
+WRONG:   new Machine(val1);                  // bare value — type mismatch!
+```
+For single-field types, include a trailing comma: ``new Machine((field = value,));``
+
+Similarly for ``send``: if ``event eFoo: tPayload;`` and ``type tPayload = (bar: int);``, then:
+```
+CORRECT: send target, eFoo, (bar = 42,);
+WRONG:   send target, eFoo, (42);            // anonymous — type mismatch!
+WRONG:   send target, eFoo, (this);          // bare value — type mismatch!
+```
+
+## Checklist before returning code:
+- Every scenario machine is matched by a `test` declaration.
+- Every `test` declaration includes `assert SpecName in` referencing the spec monitors from PSpec. Without `assert`, PChecker won't verify any properties.
+- All machines used in the scenario are listed inside the braces `{{ ... }}`.
+- No events, types, or machines from PSrc are redeclared.
+- Machine creation order respects dependencies.
+- Single-field named tuples have trailing commas: `(field = value,)`.
+- Every machine reference in a constructor payload points to a real, already-created machine that handles the expected events.
+- Every `new Machine(...)` and `send ..., eEvent, ...` uses named tuple syntax matching the type definition.
+
+Verify that the generated code strictly follows all the P syntax rules before considering it final. Return only the generated P code without any explanation attached. Return the P code enclosed in XML tags where the tag name is the filename.

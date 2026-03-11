@@ -185,7 +185,7 @@ P allows programmers to define (or implement) types in the external languages. W
 `tName` is the name of the foreign type.
 
 Note that foreign types are disjoint from all other types in P. They are subtype of the `any` type.
-Details about how to define/implement foreign types in P is described [here](foriegntypesfunctions.md).
+Details about how to define/implement foreign types in P is described [here](foreigntypesfunctions.md).
 
 ### User Defined
 

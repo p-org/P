@@ -35,6 +35,7 @@ namespace Plang.Compiler.Backend.Java {
         /// <exception cref="Exception"></exception>
         protected override void GenerateCodeImpl()
         {
+            WriteLine(Constants.GeneratedAnnotation);
             WriteLine($"public class {Constants.MachineNamespaceName} {{");
             WriteLine($"private static Logger logger = Logger.getLogger({Constants.MachineNamespaceName}.class.getName());");
             if (debug) {

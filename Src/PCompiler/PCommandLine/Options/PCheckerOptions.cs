@@ -94,7 +94,7 @@ namespace Plang.Options
             {
                 var result = Parser.ParseArguments(args);
                 // if there are no --pproj or --pfiles arguments, then search for a pproj file locally and load it
-                FindLocalPProject(result);
+                ProjectFileLocator.FindLocalPProject(result);
 
                 // load pproj file first
                 UpdateConfigurationWithPProjectFile(configuration, result);
@@ -131,32 +131,6 @@ namespace Plang.Options
 
             return configuration;
         }
-
-        private static void FindLocalPProject(List<CommandLineArgument> result)
-        {
-            // CommandLineOutput.WriteInfo(".. Searching for a P project file *.pproj locally in the current folder");
-            var filtered =
-                from file in Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pproj")
-                let info = new FileInfo(file)
-                where (((info.Attributes & FileAttributes.Hidden) ==0)& ((info.Attributes & FileAttributes.System)==0))
-                select file;
-            var files = filtered.ToArray();
-            if (files.Length == 0)
-            {
-                // CommandLineOutput.WriteInfo(
-                //     $".. No P project file *.pproj found in the current folder: {Directory.GetCurrentDirectory()}");
-            }
-            else
-            {
-                var commandlineArg = new CommandLineArgument();
-                commandlineArg.Value = files.First();
-                commandlineArg.LongName = "pproj";
-                commandlineArg.ShortName = "pp";
-                // CommandLineOutput.WriteInfo($".. Found P project file: {commandlineArg.Value}");
-                result.Add(commandlineArg);
-            }
-        }
-
 
         /// <summary>
         /// Updates the checker configuration with the specified P project file.

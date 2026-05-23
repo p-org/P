@@ -3,16 +3,11 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
-    public class FloatLiteralExpr : IStaticTerm<double>
+    public class FloatLiteralExpr : PrimitiveLiteralExpr<double>
     {
         public FloatLiteralExpr(ParserRuleContext sourceLocation, double value)
+            : base(sourceLocation, value, PrimitiveType.Float)
         {
-            Value = value;
-            SourceLocation = sourceLocation;
         }
-
-        public double Value { get; }
-        public ParserRuleContext SourceLocation { get; }
-        public PLanguageType Type { get; } = PrimitiveType.Float;
     }
 }

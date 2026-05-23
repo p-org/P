@@ -3,26 +3,16 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
-    public class IntLiteralExpr : IStaticTerm<int>
+    public class IntLiteralExpr : PrimitiveLiteralExpr<int>
     {
         public IntLiteralExpr(ParserRuleContext sourceLocation, int value)
+            : base(sourceLocation, value, PrimitiveType.Int)
         {
-            SourceLocation = sourceLocation;
-            Value = value;
         }
 
         public IntLiteralExpr(int value)
+            : this(ParserRuleContext.EmptyContext, value)
         {
-            Value = value;
-        }
-
-        public int Value { get; }
-
-        public ParserRuleContext SourceLocation { get; }
-        public PLanguageType Type { get; } = PrimitiveType.Int;
-        public override string ToString()
-        {
-            return this.Value.ToString();
         }
     }
 }

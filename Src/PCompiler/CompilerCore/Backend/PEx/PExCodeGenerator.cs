@@ -1864,49 +1864,40 @@ internal class PExCodeGenerator : ICodeGenerator
         context.Write(output, ")");
     }
 
-    private string BinOpToStr(BinOpType binOpType)
-    {
-        switch (binOpType)
+    // PEx method names for unary/binary ops. Eq/Neq are handled at the call site
+    // (they go through PValue.equals); Then/Iff are not legal in code generation.
+    private static readonly IReadOnlyDictionary<BinOpType, string> BinOpStrings =
+        new Dictionary<BinOpType, string>
         {
-            case BinOpType.Add:
-                return "add";
-            case BinOpType.Sub:
-                return "sub";
-            case BinOpType.Mul:
-                return "mul";
-            case BinOpType.Div:
-                return "div";
-            case BinOpType.Mod:
-                return "mod";
-            case BinOpType.Lt:
-                return "lt";
-            case BinOpType.Le:
-                return "le";
-            case BinOpType.Gt:
-                return "gt";
-            case BinOpType.Ge:
-                return "ge";
-            case BinOpType.And:
-                return "and";
-            case BinOpType.Or:
-                return "or";
-            default:
-                throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
-        }
-    }
+            [BinOpType.Add] = "add",
+            [BinOpType.Sub] = "sub",
+            [BinOpType.Mul] = "mul",
+            [BinOpType.Div] = "div",
+            [BinOpType.Mod] = "mod",
+            [BinOpType.Lt] = "lt",
+            [BinOpType.Le] = "le",
+            [BinOpType.Gt] = "gt",
+            [BinOpType.Ge] = "ge",
+            [BinOpType.And] = "and",
+            [BinOpType.Or] = "or",
+        };
 
-    private static string UnOpToStr(UnaryOpType operation)
-    {
-        switch (operation)
+    private static readonly IReadOnlyDictionary<UnaryOpType, string> UnOpStrings =
+        new Dictionary<UnaryOpType, string>
         {
-            case UnaryOpType.Negate:
-                return "negate";
-            case UnaryOpType.Not:
-                return "not";
-            default:
-                throw new ArgumentOutOfRangeException(nameof(operation));
-        }
-    }
+            [UnaryOpType.Negate] = "negate",
+            [UnaryOpType.Not] = "not",
+        };
+
+    private string BinOpToStr(BinOpType binOpType) =>
+        BinOpStrings.TryGetValue(binOpType, out var s)
+            ? s
+            : throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
+
+    private static string UnOpToStr(UnaryOpType operation) =>
+        UnOpStrings.TryGetValue(operation, out var s)
+            ? s
+            : throw new ArgumentOutOfRangeException(nameof(operation));
 
     private string GetForeignType(PLanguageType type)
     {

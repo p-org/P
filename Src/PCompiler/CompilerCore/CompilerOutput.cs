@@ -4,7 +4,6 @@ namespace Plang.Compiler
     {   
         PChecker,
         PObserve,
-        Stately,
         PEx,
         PVerifier
     }

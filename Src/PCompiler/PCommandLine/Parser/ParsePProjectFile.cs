@@ -231,15 +231,12 @@ namespace Plang.Parser
                         case "pobserve":
                             outputLanguages.Add(CompilerOutput.PObserve);
                             break;
-                        case "stately":
-                            outputLanguages.Add(CompilerOutput.Stately);
-                            break;
                         case "pverifier":
                             outputLanguages.Add(CompilerOutput.PVerifier);
                             break;
                         default:
                             throw new CommandlineParsingError(
-                                $"Expected PChecker, PObserve, Stately, PVerifier, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                                $"Expected PChecker, PObserve, PVerifier, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
                     }
                 }
             }

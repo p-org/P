@@ -15,7 +15,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.CSharp
 {
-    public class PCheckerCodeGenerator : ICodeGenerator
+    internal class PCheckerCodeGenerator : ExpressionGenerator<CompilationContext>, ICodeGenerator
     {
 
         /// <summary>
@@ -1239,327 +1239,359 @@ namespace Plang.Compiler.Backend.CSharp
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
-        private void WriteExpr(CompilationContext context, StringWriter output, IPExpr pExpr)
+        protected override void WriteCloneExpr(CompilationContext context, StringWriter output, CloneExpr cloneExpr)
         {
-#pragma warning disable CCN0002 // Non exhaustive patterns in switch block
-            switch (pExpr)
+            WriteClone(context, output, cloneExpr.Term);
+        }
+
+        protected override void WriteBinOpExpr(CompilationContext context, StringWriter output, BinOpExpr binOpExpr)
+        {
+            //handle eq and noteq differently
+            if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
             {
-                case CloneExpr cloneExpr:
-                    WriteClone(context, output, cloneExpr.Term);
-                    break;
+                var negate = binOpExpr.Operation == BinOpType.Neq ? "!" : "";
+                context.Write(output, $"({negate}PValues.SafeEquals(");
+                if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                {
+                    context.Write(output, "PValues.Box((long) ");
+                    WriteExpr(context, output, binOpExpr.Lhs);
+                    context.Write(output, "),");
+                }
+                else
+                {
+                    WriteExpr(context, output, binOpExpr.Lhs);
+                    context.Write(output, ",");
+                }
 
-                case BinOpExpr binOpExpr:
-                    //handle eq and noteq differently
-                    if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
-                    {
-                        var negate = binOpExpr.Operation == BinOpType.Neq ? "!" : "";
-                        context.Write(output, $"({negate}PValues.SafeEquals(");
-                        if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
-                        {
-                            context.Write(output, "PValues.Box((long) ");
-                            WriteExpr(context, output, binOpExpr.Lhs);
-                            context.Write(output, "),");
-                        }
-                        else
-                        {
-                            WriteExpr(context, output, binOpExpr.Lhs);
-                            context.Write(output, ",");
-                        }
-
-                        if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
-                        {
-                            context.Write(output, "PValues.Box((long) ");
-                            WriteExpr(context, output, binOpExpr.Rhs);
-                            context.Write(output, ")");
-                        }
-                        else
-                        {
-                            WriteExpr(context, output, binOpExpr.Rhs);
-                        }
-
-                        context.Write(output, "))");
-                    }
-                    else
-                    {
-                        context.Write(output, "(");
-                        if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
-                        {
-                            context.Write(output, "(long)");
-                        }
-
-                        WriteExpr(context, output, binOpExpr.Lhs);
-                        context.Write(output, $") {BinOpToStr(binOpExpr.Operation)} (");
-                        if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
-                        {
-                            context.Write(output, "(long)");
-                        }
-
-                        WriteExpr(context, output, binOpExpr.Rhs);
-                        context.Write(output, ")");
-                    }
-
-                    break;
-
-                case BoolLiteralExpr boolLiteralExpr:
-                    context.Write(output, $"((PBool){(boolLiteralExpr.Value ? "true" : "false")})");
-                    break;
-
-                case CastExpr castExpr:
-                    context.Write(output, $"(({GetCSharpType(castExpr.Type)})");
-                    WriteExpr(context, output, castExpr.SubExpr);
+                if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                {
+                    context.Write(output, "PValues.Box((long) ");
+                    WriteExpr(context, output, binOpExpr.Rhs);
                     context.Write(output, ")");
-                    break;
+                }
+                else
+                {
+                    WriteExpr(context, output, binOpExpr.Rhs);
+                }
 
-                case CoerceExpr coerceExpr:
-                    switch (coerceExpr.Type.Canonicalize())
-                    {
-                        case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
-                        case PrimitiveType oldType1 when oldType1.IsSameTypeAs(PrimitiveType.Int):
-                            context.Write(output, "(");
-                            WriteExpr(context, output, coerceExpr.SubExpr);
-                            context.Write(output, ")");
-                            break;
+                context.Write(output, "))");
+            }
+            else
+            {
+                context.Write(output, "(");
+                if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                {
+                    context.Write(output, "(long)");
+                }
 
-                        case PermissionType _:
-                            context.Write(output, "(PInterfaces.IsCoercionAllowed(");
-                            WriteExpr(context, output, coerceExpr.SubExpr);
-                            context.Write(output, ", ");
-                            context.Write(output, $"\"I_{coerceExpr.NewType.CanonicalRepresentation}\") ?");
-                            context.Write(output, "new PMachineValue(");
-                            context.Write(output, "(");
-                            WriteExpr(context, output, coerceExpr.SubExpr);
-                            context.Write(output, ").Id, ");
-                            context.Write(output,
-                                $"PInterfaces.GetPermissions(\"I_{coerceExpr.NewType.CanonicalRepresentation}\")) : null)");
-                            break;
+                WriteExpr(context, output, binOpExpr.Lhs);
+                context.Write(output, $") {BinOpToStr(binOpExpr.Operation)} (");
+                if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                {
+                    context.Write(output, "(long)");
+                }
 
-                        default:
-                            throw new ArgumentOutOfRangeException(
-                                @"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
-                    }
+                WriteExpr(context, output, binOpExpr.Rhs);
+                context.Write(output, ")");
+            }
+        }
 
-                    break;
+        protected override void WriteBoolLiteralExpr(CompilationContext context, StringWriter output, BoolLiteralExpr boolLiteralExpr)
+        {
+            context.Write(output, $"((PBool){(boolLiteralExpr.Value ? "true" : "false")})");
+        }
 
-                case ChooseExpr chooseExpr:
-                    if (chooseExpr.SubExpr == null)
-                    {
-                        context.Write(output, "((PBool)currentMachine.RandomBoolean())");
-                    }
-                    else
-                    {
-                        context.Write(output, $"(({GetCSharpType(chooseExpr.Type)})currentMachine.TryRandom(");
-                        WriteExpr(context, output, chooseExpr.SubExpr);
-                        context.Write(output, "))");
-                    }
-                    break;
+        protected override void WriteCastExpr(CompilationContext context, StringWriter output, CastExpr castExpr)
+        {
+            context.Write(output, $"(({GetCSharpType(castExpr.Type)})");
+            WriteExpr(context, output, castExpr.SubExpr);
+            context.Write(output, ")");
+        }
 
-                case ContainsExpr containsExpr:
-                    var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
-                    var isSeq = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Sequence);
-                    var castOp = isMap ? "(PMap)"
-                        : isSeq ? "(PSeq)"
-                        : "(PSet)";
-                    context.Write(output, "((PBool)(");
-                    context.Write(output, $"({castOp}");
-                    WriteExpr(context, output, containsExpr.Collection);
-                    if (isMap)
-                    {
-                        context.Write(output, ").ContainsKey(");
-                    }
-                    else
-                    {
-                        context.Write(output, ").Contains(");
-                    }
-
-                    WriteExpr(context, output, containsExpr.Item);
-                    context.Write(output, ")))");
-                    break;
-
-                case CtorExpr ctorExpr:
-                    context.Write(output,
-                        $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
-                    context.Write(output, "currentMachine");
-                    if (ctorExpr.Arguments.Any())
-                    {
-                        context.Write(output, ", ");
-                        if (ctorExpr.Arguments.Count > 1)
-                        {
-                            //create tuple from rvaluelist
-                            context.Write(output, "new PTuple(");
-                            var septor = "";
-                            foreach (var ctorExprArgument in ctorExpr.Arguments)
-                            {
-                                context.Write(output, septor);
-                                WriteExpr(context, output, ctorExprArgument);
-                                septor = ",";
-                            }
-
-                            context.Write(output, ")");
-                        }
-                        else
-                        {
-                            WriteExpr(context, output, ctorExpr.Arguments.First());
-                        }
-                    }
-
-                    context.Write(output, ")");
-                    break;
-
-                case DefaultExpr defaultExpr:
-                    context.Write(output, GetDefaultValue(defaultExpr.Type));
-                    break;
-
-                case EnumElemRefExpr enumElemRefExpr:
-                    var enumElem = enumElemRefExpr.Value;
-                    context.Write(output, $"(PEnum.Get(\"{context.Names.GetNameForDecl(enumElem)}\"))");
-                    break;
-
-                case EventRefExpr eventRefExpr:
-                    var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
-                    switch (eventName)
-                    {
-                        case "Halt":
-                            context.Write(output, "new PHalt()");
-                            break;
-
-                        case "DefaultEvent":
-                            context.Write(output, "DefaultEvent.Instance");
-                            break;
-
-                        default:
-                            var payloadExpr = GetDefaultValue(eventRefExpr.Value.PayloadType);
-                            context.Write(output, $"new {eventName}({payloadExpr})");
-                            break;
-                    }
-
-                    break;
-
-                case FairNondetExpr _:
-                    context.Write(output, "((PBool)currentMachine.RandomBoolean())");
-                    break;
-
-                case FloatLiteralExpr floatLiteralExpr:
-                    context.Write(output, $"((PFloat){floatLiteralExpr.Value})");
-                    break;
-
-                case FunCallExpr funCallExpr:
-                    var isStatic = funCallExpr.Function.Owner == null;
-                    var awaitMethod = funCallExpr.Function.CanReceive ? "await " : "";
-                    var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
-                    context.Write(output,
-                        $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");
-                    var separator = "";
-
-                    foreach (var param in funCallExpr.Arguments)
-                    {
-                        context.Write(output, separator);
-                        WriteExpr(context, output, param);
-                        separator = ", ";
-                    }
-
-                    if (isStatic)
-                    {
-                        context.Write(output, separator + "currentMachine");
-                    }
-
-                    context.Write(output, ")");
-                    break;
-
-                case IntLiteralExpr intLiteralExpr:
-                    context.Write(output, $"((PInt)({intLiteralExpr.Value}))");
-                    break;
-
-                case KeysExpr keysExpr:
+        protected override void WriteCoerceExpr(CompilationContext context, StringWriter output, CoerceExpr coerceExpr)
+        {
+            switch (coerceExpr.Type.Canonicalize())
+            {
+                case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
+                case PrimitiveType oldType1 when oldType1.IsSameTypeAs(PrimitiveType.Int):
                     context.Write(output, "(");
-                    WriteExpr(context, output, keysExpr.Expr);
-                    context.Write(output, ").CloneKeys()");
-                    break;
-
-                case NamedTupleExpr namedTupleExpr:
-                    var fieldNamesArray = string.Join(",",
-                        ((NamedTupleType)namedTupleExpr.Type).Names.Select(n => $"\"{n}\""));
-                    fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
-                    context.Write(output, $"(new {GetCSharpType(namedTupleExpr.Type)}({fieldNamesArray}, ");
-                    for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
-                    {
-                        if (i > 0)
-                        {
-                            context.Write(output, ", ");
-                        }
-
-                        WriteExpr(context, output, namedTupleExpr.TupleFields[i]);
-                    }
-
-                    context.Write(output, "))");
-                    break;
-
-                case NondetExpr _:
-                    context.Write(output, "((PBool)currentMachine.RandomBoolean())");
-                    break;
-
-                case NullLiteralExpr _:
-                    context.Write(output, "null");
-                    break;
-
-                case SizeofExpr sizeofExpr:
-                    context.Write(output, "((PInt)(");
-                    WriteExpr(context, output, sizeofExpr.Expr);
-                    context.Write(output, ").Count)");
-                    break;
-
-                case StringExpr stringExpr:
-                    context.Write(output, "((PString) String.Format(");
-                    context.Write(output, $"\"{stringExpr.BaseString}\"");
-                    foreach (var arg in stringExpr.Args)
-                    {
-                        context.Write(output, ",");
-                        WriteExpr(context, output, arg);
-                    }
-                    context.Write(output, "))");
-                    break;
-
-                case ThisRefExpr _:
-                    context.Write(output, "currentMachine.self");
-                    break;
-
-                case UnaryOpExpr unaryOpExpr:
-                    context.Write(output, $"{UnOpToStr(unaryOpExpr.Operation)}(");
-                    WriteExpr(context, output, unaryOpExpr.SubExpr);
+                    WriteExpr(context, output, coerceExpr.SubExpr);
                     context.Write(output, ")");
                     break;
 
-                case UnnamedTupleExpr unnamedTupleExpr:
-                    context.Write(output, $"new {GetCSharpType(unnamedTupleExpr.Type)}(");
-                    var sep = "";
-                    foreach (var field in unnamedTupleExpr.TupleFields)
-                    {
-                        context.Write(output, sep);
-                        WriteExpr(context, output, field);
-                        sep = ", ";
-                    }
-
-                    context.Write(output, ")");
-                    break;
-
-                case ValuesExpr valuesExpr:
+                case PermissionType _:
+                    context.Write(output, "(PInterfaces.IsCoercionAllowed(");
+                    WriteExpr(context, output, coerceExpr.SubExpr);
+                    context.Write(output, ", ");
+                    context.Write(output, $"\"I_{coerceExpr.NewType.CanonicalRepresentation}\") ?");
+                    context.Write(output, "new PMachineValue(");
                     context.Write(output, "(");
-                    WriteExpr(context, output, valuesExpr.Expr);
-                    context.Write(output, ").CloneValues()");
-                    break;
-
-                case MapAccessExpr _:
-                case SetAccessExpr _:
-                case NamedTupleAccessExpr _:
-                case SeqAccessExpr _:
-                case TupleAccessExpr _:
-                case VariableAccessExpr _:
-                    WriteLValue(context, output, pExpr);
+                    WriteExpr(context, output, coerceExpr.SubExpr);
+                    context.Write(output, ").Id, ");
+                    context.Write(output,
+                        $"PInterfaces.GetPermissions(\"I_{coerceExpr.NewType.CanonicalRepresentation}\")) : null)");
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(pExpr), $"type was {pExpr?.GetType().FullName}");
+                    throw new ArgumentOutOfRangeException(
+                        @"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
             }
-#pragma warning restore CCN0002 // Non exhaustive patterns in switch block
+        }
+
+        protected override void WriteChooseExpr(CompilationContext context, StringWriter output, ChooseExpr chooseExpr)
+        {
+            if (chooseExpr.SubExpr == null)
+            {
+                context.Write(output, "((PBool)currentMachine.RandomBoolean())");
+            }
+            else
+            {
+                context.Write(output, $"(({GetCSharpType(chooseExpr.Type)})currentMachine.TryRandom(");
+                WriteExpr(context, output, chooseExpr.SubExpr);
+                context.Write(output, "))");
+            }
+        }
+
+        protected override void WriteContainsExpr(CompilationContext context, StringWriter output, ContainsExpr containsExpr)
+        {
+            var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
+            var isSeq = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Sequence);
+            var castOp = isMap ? "(PMap)"
+                : isSeq ? "(PSeq)"
+                : "(PSet)";
+            context.Write(output, "((PBool)(");
+            context.Write(output, $"({castOp}");
+            WriteExpr(context, output, containsExpr.Collection);
+            if (isMap)
+            {
+                context.Write(output, ").ContainsKey(");
+            }
+            else
+            {
+                context.Write(output, ").Contains(");
+            }
+
+            WriteExpr(context, output, containsExpr.Item);
+            context.Write(output, ")))");
+        }
+
+        protected override void WriteCtorExpr(CompilationContext context, StringWriter output, CtorExpr ctorExpr)
+        {
+            context.Write(output,
+                $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
+            context.Write(output, "currentMachine");
+            if (ctorExpr.Arguments.Any())
+            {
+                context.Write(output, ", ");
+                if (ctorExpr.Arguments.Count > 1)
+                {
+                    //create tuple from rvaluelist
+                    context.Write(output, "new PTuple(");
+                    var septor = "";
+                    foreach (var ctorExprArgument in ctorExpr.Arguments)
+                    {
+                        context.Write(output, septor);
+                        WriteExpr(context, output, ctorExprArgument);
+                        septor = ",";
+                    }
+
+                    context.Write(output, ")");
+                }
+                else
+                {
+                    WriteExpr(context, output, ctorExpr.Arguments.First());
+                }
+            }
+
+            context.Write(output, ")");
+        }
+
+        protected override void WriteDefaultExpr(CompilationContext context, StringWriter output, DefaultExpr defaultExpr)
+        {
+            context.Write(output, GetDefaultValue(defaultExpr.Type));
+        }
+
+        protected override void WriteEnumElemRefExpr(CompilationContext context, StringWriter output, EnumElemRefExpr enumElemRefExpr)
+        {
+            var enumElem = enumElemRefExpr.Value;
+            context.Write(output, $"(PEnum.Get(\"{context.Names.GetNameForDecl(enumElem)}\"))");
+        }
+
+        protected override void WriteEventRefExpr(CompilationContext context, StringWriter output, EventRefExpr eventRefExpr)
+        {
+            var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
+            switch (eventName)
+            {
+                case "Halt":
+                    context.Write(output, "new PHalt()");
+                    break;
+
+                case "DefaultEvent":
+                    context.Write(output, "DefaultEvent.Instance");
+                    break;
+
+                default:
+                    var payloadExpr = GetDefaultValue(eventRefExpr.Value.PayloadType);
+                    context.Write(output, $"new {eventName}({payloadExpr})");
+                    break;
+            }
+        }
+
+        protected override void WriteFairNondetExpr(CompilationContext context, StringWriter output, FairNondetExpr expr)
+        {
+            context.Write(output, "((PBool)currentMachine.RandomBoolean())");
+        }
+
+        protected override void WriteFloatLiteralExpr(CompilationContext context, StringWriter output, FloatLiteralExpr floatLiteralExpr)
+        {
+            context.Write(output, $"((PFloat){floatLiteralExpr.Value})");
+        }
+
+        protected override void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr funCallExpr)
+        {
+            var isStatic = funCallExpr.Function.Owner == null;
+            var awaitMethod = funCallExpr.Function.CanReceive ? "await " : "";
+            var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
+            context.Write(output,
+                $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");
+            var separator = "";
+
+            foreach (var param in funCallExpr.Arguments)
+            {
+                context.Write(output, separator);
+                WriteExpr(context, output, param);
+                separator = ", ";
+            }
+
+            if (isStatic)
+            {
+                context.Write(output, separator + "currentMachine");
+            }
+
+            context.Write(output, ")");
+        }
+
+        protected override void WriteIntLiteralExpr(CompilationContext context, StringWriter output, IntLiteralExpr intLiteralExpr)
+        {
+            context.Write(output, $"((PInt)({intLiteralExpr.Value}))");
+        }
+
+        protected override void WriteKeysExpr(CompilationContext context, StringWriter output, KeysExpr keysExpr)
+        {
+            context.Write(output, "(");
+            WriteExpr(context, output, keysExpr.Expr);
+            context.Write(output, ").CloneKeys()");
+        }
+
+        protected override void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr namedTupleExpr)
+        {
+            var fieldNamesArray = string.Join(",",
+                ((NamedTupleType)namedTupleExpr.Type).Names.Select(n => $"\"{n}\""));
+            fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
+            context.Write(output, $"(new {GetCSharpType(namedTupleExpr.Type)}({fieldNamesArray}, ");
+            for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
+            {
+                if (i > 0)
+                {
+                    context.Write(output, ", ");
+                }
+
+                WriteExpr(context, output, namedTupleExpr.TupleFields[i]);
+            }
+
+            context.Write(output, "))");
+        }
+
+        protected override void WriteNondetExpr(CompilationContext context, StringWriter output, NondetExpr expr)
+        {
+            context.Write(output, "((PBool)currentMachine.RandomBoolean())");
+        }
+
+        protected override void WriteNullLiteralExpr(CompilationContext context, StringWriter output, NullLiteralExpr expr)
+        {
+            context.Write(output, "null");
+        }
+
+        protected override void WriteSizeofExpr(CompilationContext context, StringWriter output, SizeofExpr sizeofExpr)
+        {
+            context.Write(output, "((PInt)(");
+            WriteExpr(context, output, sizeofExpr.Expr);
+            context.Write(output, ").Count)");
+        }
+
+        protected override void WriteStringExpr(CompilationContext context, StringWriter output, StringExpr stringExpr)
+        {
+            context.Write(output, "((PString) String.Format(");
+            context.Write(output, $"\"{stringExpr.BaseString}\"");
+            foreach (var arg in stringExpr.Args)
+            {
+                context.Write(output, ",");
+                WriteExpr(context, output, arg);
+            }
+            context.Write(output, "))");
+        }
+
+        protected override void WriteThisRefExpr(CompilationContext context, StringWriter output, ThisRefExpr expr)
+        {
+            context.Write(output, "currentMachine.self");
+        }
+
+        protected override void WriteUnaryOpExpr(CompilationContext context, StringWriter output, UnaryOpExpr unaryOpExpr)
+        {
+            context.Write(output, $"{UnOpToStr(unaryOpExpr.Operation)}(");
+            WriteExpr(context, output, unaryOpExpr.SubExpr);
+            context.Write(output, ")");
+        }
+
+        protected override void WriteUnnamedTupleExpr(CompilationContext context, StringWriter output, UnnamedTupleExpr unnamedTupleExpr)
+        {
+            context.Write(output, $"new {GetCSharpType(unnamedTupleExpr.Type)}(");
+            var sep = "";
+            foreach (var field in unnamedTupleExpr.TupleFields)
+            {
+                context.Write(output, sep);
+                WriteExpr(context, output, field);
+                sep = ", ";
+            }
+
+            context.Write(output, ")");
+        }
+
+        protected override void WriteValuesExpr(CompilationContext context, StringWriter output, ValuesExpr valuesExpr)
+        {
+            context.Write(output, "(");
+            WriteExpr(context, output, valuesExpr.Expr);
+            context.Write(output, ").CloneValues()");
+        }
+
+        protected override void WriteMapAccessExpr(CompilationContext context, StringWriter output, MapAccessExpr expr)
+        {
+            WriteLValue(context, output, expr);
+        }
+
+        protected override void WriteSetAccessExpr(CompilationContext context, StringWriter output, SetAccessExpr expr)
+        {
+            WriteLValue(context, output, expr);
+        }
+
+        protected override void WriteNamedTupleAccessExpr(CompilationContext context, StringWriter output, NamedTupleAccessExpr expr)
+        {
+            WriteLValue(context, output, expr);
+        }
+
+        protected override void WriteSeqAccessExpr(CompilationContext context, StringWriter output, SeqAccessExpr expr)
+        {
+            WriteLValue(context, output, expr);
+        }
+
+        protected override void WriteTupleAccessExpr(CompilationContext context, StringWriter output, TupleAccessExpr expr)
+        {
+            WriteLValue(context, output, expr);
+        }
+
+        protected override void WriteVariableAccessExpr(CompilationContext context, StringWriter output, VariableAccessExpr expr)
+        {
+            WriteLValue(context, output, expr);
         }
 
         private void WriteClone(CompilationContext context, StringWriter output, IExprTerm cloneExprTerm)

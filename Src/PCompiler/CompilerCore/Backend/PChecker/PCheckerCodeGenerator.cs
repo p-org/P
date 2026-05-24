@@ -1691,61 +1691,39 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        private static string UnOpToStr(UnaryOpType operation)
-        {
-            switch (operation)
+        // C# operator strings for unary/binary ops. Eq/Neq are handled at the call site
+        // (they need null-safe equality); Then/Iff are not legal in code generation.
+        private static readonly IReadOnlyDictionary<UnaryOpType, string> UnOpStrings =
+            new Dictionary<UnaryOpType, string>
             {
-                case UnaryOpType.Negate:
-                    return "-";
+                [UnaryOpType.Negate] = "-",
+                [UnaryOpType.Not] = "!",
+            };
 
-                case UnaryOpType.Not:
-                    return "!";
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
-            }
-        }
-
-        private static string BinOpToStr(BinOpType binOpType)
-        {
-            switch (binOpType)
+        private static readonly IReadOnlyDictionary<BinOpType, string> BinOpStrings =
+            new Dictionary<BinOpType, string>
             {
-                case BinOpType.Add:
-                    return "+";
+                [BinOpType.Add] = "+",
+                [BinOpType.Sub] = "-",
+                [BinOpType.Mul] = "*",
+                [BinOpType.Div] = "/",
+                [BinOpType.Mod] = "%",
+                [BinOpType.Lt] = "<",
+                [BinOpType.Le] = "<=",
+                [BinOpType.Gt] = ">",
+                [BinOpType.Ge] = ">=",
+                [BinOpType.And] = "&&",
+                [BinOpType.Or] = "||",
+            };
 
-                case BinOpType.Sub:
-                    return "-";
+        private static string UnOpToStr(UnaryOpType operation) =>
+            UnOpStrings.TryGetValue(operation, out var s)
+                ? s
+                : throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
 
-                case BinOpType.Mul:
-                    return "*";
-
-                case BinOpType.Div:
-                    return "/";
-
-                case BinOpType.Mod:
-                    return "%";
-
-                case BinOpType.Lt:
-                    return "<";
-
-                case BinOpType.Le:
-                    return "<=";
-
-                case BinOpType.Gt:
-                    return ">";
-
-                case BinOpType.Ge:
-                    return ">=";
-
-                case BinOpType.And:
-                    return "&&";
-
-                case BinOpType.Or:
-                    return "||";
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
-            }
-        }
+        private static string BinOpToStr(BinOpType binOpType) =>
+            BinOpStrings.TryGetValue(binOpType, out var s)
+                ? s
+                : throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
     }
 }

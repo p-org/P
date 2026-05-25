@@ -37,7 +37,9 @@ namespace Plang.Compiler
             PObservePackageName = $"{ProjectName}.pobserve";
             ProjectRootPath = new DirectoryInfo(Directory.GetCurrentDirectory());
             LocationResolver = new DefaultLocationResolver();
-            Handler = new DefaultTranslationErrorHandler(LocationResolver);
+            ContinueOnError = ReadContinueOnErrorEnvVar();
+            Diagnostics = new DefaultDiagnosticCollector(ContinueOnError);
+            Handler = new DefaultTranslationErrorHandler(LocationResolver, Diagnostics);
             OutputLanguages = new List<CompilerOutput>{CompilerOutput.PChecker};
             Backend = null;
             ProjectDependencies = new List<string>();
@@ -46,6 +48,19 @@ namespace Plang.Compiler
             CheckOnly = null;
             TargetProofBlocks = new List<string>();
             Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
+        }
+
+        /// <summary>
+        /// Reads the <c>P_COMPILER_COLLECT_ERRORS</c> environment variable.
+        /// Any non-empty value other than "0"/"false" (case-insensitive)
+        /// enables collecting mode. Defaults to false (strict, throw-on-first).
+        /// </summary>
+        private static bool ReadContinueOnErrorEnvVar()
+        {
+            var raw = Environment.GetEnvironmentVariable("P_COMPILER_COLLECT_ERRORS");
+            if (string.IsNullOrWhiteSpace(raw)) return false;
+            return !raw.Equals("0", StringComparison.OrdinalIgnoreCase)
+                   && !raw.Equals("false", StringComparison.OrdinalIgnoreCase);
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="CompilerConfiguration"/> class with specific settings.
@@ -87,12 +102,26 @@ namespace Plang.Compiler
             PObservePackageName = pObservePackageName ?? $"{ProjectName}.pobserve";
             ProjectRootPath = projectRoot;
             LocationResolver = new DefaultLocationResolver();
-            Handler = new DefaultTranslationErrorHandler(LocationResolver);
+            ContinueOnError = ReadContinueOnErrorEnvVar();
+            Diagnostics = new DefaultDiagnosticCollector(ContinueOnError);
+            Handler = new DefaultTranslationErrorHandler(LocationResolver, Diagnostics);
             OutputLanguages = outputLanguages;
             Backend = null;
             ProjectDependencies = projectDependencies ?? new List<string>();
             Debug = debug;
         }
+
+        /// <summary>
+        /// See <see cref="ICompilerConfiguration.ContinueOnError"/>. Wired from
+        /// <c>P_COMPILER_COLLECT_ERRORS</c> at construction. Phase 1 wiring only.
+        /// </summary>
+        public bool ContinueOnError { get; set; }
+
+        /// <summary>
+        /// See <see cref="ICompilerConfiguration.Diagnostics"/>. Same instance
+        /// as <c>Handler.Diagnostics</c>.
+        /// </summary>
+        public IDiagnosticCollector Diagnostics { get; set; }
 
         /// <summary>
         /// Gets or sets the compiler output handler.
@@ -186,6 +215,8 @@ namespace Plang.Compiler
             OutputLanguages = parsedConfig.OutputLanguages;
             ProjectRootPath = parsedConfig.ProjectRootPath;
             Debug = parsedConfig.Debug;
+            ContinueOnError = parsedConfig.ContinueOnError;
+            Diagnostics = parsedConfig.Diagnostics;
         }
     }
 }

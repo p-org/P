@@ -16,9 +16,17 @@ namespace Plang.Compiler
         private readonly ILocationResolver locationResolver;
 
         public DefaultTranslationErrorHandler(ILocationResolver locationResolver)
+            : this(locationResolver, new DefaultDiagnosticCollector())
+        {
+        }
+
+        public DefaultTranslationErrorHandler(ILocationResolver locationResolver, IDiagnosticCollector diagnostics)
         {
             this.locationResolver = locationResolver;
+            Diagnostics = diagnostics ?? new DefaultDiagnosticCollector();
         }
+
+        public IDiagnosticCollector Diagnostics { get; }
 
         public Exception DuplicateStartState(
             ParserRuleContext location,

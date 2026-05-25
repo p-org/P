@@ -11,6 +11,16 @@ namespace Plang.Compiler
 {
     public interface ITranslationErrorHandler
     {
+        /// <summary>
+        /// Collector shared with <see cref="ICompilerConfiguration.Diagnostics"/>.
+        /// Exposed here so visitors that hold only a handler reference (e.g.
+        /// <c>ExprVisitor</c>) can report diagnostics without constructor
+        /// changes. Phase 2 will use this as
+        /// <c>handler.Diagnostics.Report(handler.X(...))</c> in place of
+        /// <c>throw handler.X(...)</c>.
+        /// </summary>
+        IDiagnosticCollector Diagnostics { get; }
+
         Exception DuplicateStartState(
             ParserRuleContext location,
             State duplicateStart,

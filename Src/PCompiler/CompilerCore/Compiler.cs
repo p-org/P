@@ -50,7 +50,23 @@ namespace Plang.Compiler
             }
             catch (TranslationException e)
             {
+                // Strict mode (ContinueOnError == false) or an exception that
+                // wasn't routed through IDiagnosticCollector. Flush any errors
+                // that *were* collected too, so we don't swallow them when both
+                // paths fire.
                 job.Output.WriteError("[Error:]\n" + e.Message);
+                FlushCollectedDiagnostics(job);
+                Environment.ExitCode = 1;
+                return Environment.ExitCode;
+            }
+
+            // Collecting mode: AnalyzeCompilationUnit returned, but the
+            // collector may hold errors that suppressed throws. Phase 1 has no
+            // visitor that reports through the collector, so this branch is
+            // dormant in practice; it's wired so Phase 2 / 3 light it up.
+            if (job.Diagnostics != null && job.Diagnostics.HasErrors)
+            {
+                FlushCollectedDiagnostics(job);
                 Environment.ExitCode = 1;
                 return Environment.ExitCode;
             }
@@ -244,6 +260,20 @@ namespace Plang.Compiler
                 string msg, RecognitionException e)
             {
                 throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
+            }
+        }
+
+        /// <summary>
+        /// Print every diagnostic the collector accumulated. No-op if the
+        /// collector is in strict mode (it never holds anything) or has none.
+        /// Same formatting as the top-level catch so output looks uniform.
+        /// </summary>
+        private static void FlushCollectedDiagnostics(ICompilerConfiguration job)
+        {
+            if (job.Diagnostics == null || !job.Diagnostics.HasErrors) return;
+            foreach (var diag in job.Diagnostics.Diagnostics)
+            {
+                job.Output.WriteError("[Error:]\n" + diag.Message);
             }
         }
 

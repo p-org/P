@@ -67,6 +67,15 @@ namespace Plang.Parser
             {
                 Error.ReportAndExit($"<Error parsing project file>:\n {ex.Message}");
             }
+            catch (System.Xml.XmlException xe)
+            {
+                // Malformed .pproj XML is a user error, not an internal compiler bug.
+                Error.ReportAndExit($"<Error parsing project file>:\n malformed XML: {xe.Message}");
+            }
+            catch (IOException ioe)
+            {
+                Error.ReportAndExit($"<Error parsing project file>:\n {ioe.Message}");
+            }
             catch (Exception other)
             {
                 Error.ReportAndExit($"<Internal Error>:\n {other.Message}\n <Please report to the P team or create a issue on GitHub, Thanks!>");
@@ -94,6 +103,15 @@ namespace Plang.Parser
             catch (CommandlineParsingError ex)
             {
                 Error.ReportAndExit($"<Error parsing project file>:\n {ex.Message}");
+            }
+            catch (System.Xml.XmlException xe)
+            {
+                // Malformed .pproj XML is a user error, not an internal compiler bug.
+                Error.ReportAndExit($"<Error parsing project file>:\n malformed XML: {xe.Message}");
+            }
+            catch (IOException ioe)
+            {
+                Error.ReportAndExit($"<Error parsing project file>:\n {ioe.Message}");
             }
             catch (Exception other)
             {
@@ -188,8 +206,9 @@ namespace Plang.Parser
         private DirectoryInfo GetOutputDirectory(FileInfo fullPathName)
         {
             var projectXml = XElement.Load(fullPathName.FullName);
-            if (projectXml.Elements("OutputDir").Any())
-                return Directory.CreateDirectory(projectXml.Element("OutputDir")?.Value);
+            var outputDir = projectXml.Element("OutputDir")?.Value;
+            if (!string.IsNullOrWhiteSpace(outputDir))
+                return Directory.CreateDirectory(outputDir);
             return new DirectoryInfo(Directory.GetCurrentDirectory());
         }
 
@@ -201,8 +220,9 @@ namespace Plang.Parser
         private string GetOutputDirectoryName(FileInfo fullPathName)
         {
             var projectXml = XElement.Load(fullPathName.FullName);
-            if (projectXml.Elements("OutputDir").Any())
-                return projectXml.Element("OutputDir")?.Value;
+            var outputDir = projectXml.Element("OutputDir")?.Value;
+            if (!string.IsNullOrWhiteSpace(outputDir))
+                return outputDir;
             return Directory.GetCurrentDirectory();
         }
 
@@ -236,7 +256,7 @@ namespace Plang.Parser
                             break;
                         default:
                             throw new CommandlineParsingError(
-                                $"Expected PChecker, PObserve, PVerifier, or Symbolic as target, received {projectXml.Element("Target")?.Value}");
+                                $"Expected PChecker, PEx, PObserve, or PVerifier as target, received {projectXml.Element("Target")?.Value}");
                     }
                 }
             }

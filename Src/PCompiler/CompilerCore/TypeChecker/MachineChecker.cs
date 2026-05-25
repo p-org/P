@@ -27,8 +27,10 @@ namespace Plang.Compiler.TypeChecker
         {
             var startState = FindStartState(machine, handler);
             machine.PayloadType = GetStatePayload(startState);
-            gScope.Get(machine.Name, out Interface @interface);
-            @interface.PayloadType = machine.PayloadType;
+            if (gScope.Get(machine.Name, out Interface @interface))
+            {
+                @interface.PayloadType = machine.PayloadType;
+            }
         }
 
         private static void ValidateSpecObservesList(ITranslationErrorHandler handler, Machine machine, ICompilerConfiguration job)

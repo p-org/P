@@ -40,6 +40,13 @@ namespace Plang.Compiler
                 Environment.ExitCode = 1;
                 return Environment.ExitCode;
             }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // A missing/locked/unreadable input .p file should be a clean error, not a crash.
+                job.Output.WriteError("[Parser Error:]\n" + e.Message);
+                Environment.ExitCode = 1;
+                return Environment.ExitCode;
+            }
 
             job.Output.WriteInfo("Type checking ...");
             // Run type checker and produce AST

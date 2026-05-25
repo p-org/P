@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -1491,7 +1492,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteFloatLiteralExpr(CompilationContext context, StringWriter output, FloatLiteralExpr floatLiteralExpr)
         {
-            context.Write(output, $"((PFloat){floatLiteralExpr.Value})");
+            context.Write(output, $"((PFloat){floatLiteralExpr.Value.ToString(CultureInfo.InvariantCulture)})");
         }
 
         public void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr funCallExpr)

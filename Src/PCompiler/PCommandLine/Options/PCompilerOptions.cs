@@ -11,6 +11,37 @@ namespace Plang.Options
     internal sealed class PCompilerOptions
     {
         /// <summary>
+        /// The accepted values for <c>--mode</c>. This is both the parser's allowed-values
+        /// list and the exhaustive input domain of <see cref="ParseCompilerMode"/>; the two
+        /// must stay in sync (a mode that is allowed but unmapped would crash at runtime).
+        /// </summary>
+        internal static readonly string[] CompilerModes =
+            { "bugfinding", "pchecker", "pex", "pobserve", "verification", "pverifier" };
+
+        /// <summary>
+        /// Maps a <c>--mode</c> value to its target backend. Throws if the mode is not one
+        /// of <see cref="CompilerModes"/>.
+        /// </summary>
+        internal static CompilerOutput ParseCompilerMode(string mode)
+        {
+            switch (mode.ToLowerInvariant())
+            {
+                case "bugfinding":
+                case "pchecker":
+                    return CompilerOutput.PChecker;
+                case "pex":
+                    return CompilerOutput.PEx;
+                case "pobserve":
+                    return CompilerOutput.PObserve;
+                case "verification":
+                case "pverifier":
+                    return CompilerOutput.PVerifier;
+                default:
+                    throw new Exception($"Unexpected mode: '{mode}'");
+            }
+        }
+
+        /// <summary>
         /// The command line parser to use.
         /// </summary>
         private readonly CommandLineArgumentParser Parser;
@@ -38,8 +69,8 @@ namespace Plang.Options
             pfilesGroup.AddArgument("projname", "pn", "Project name for the compiled output");
             pfilesGroup.AddArgument("outdir", "o", "Dump output to directory (absolute or relative path)");
 
-            var modes = Parser.AddArgument("mode", "md", "Compilation mode to use. Can be bugfinding, pex, or pobserve. If this option is not passed, bugfinding mode is used as default");
-            modes.AllowedValues = new List<string>() { "bugfinding", "pex", "pobserve", "verification", "coverage" };
+            var modes = Parser.AddArgument("mode", "md", "Compilation mode to use. Can be bugfinding (alias pchecker), pex, pobserve, or verification (alias pverifier). If this option is not passed, bugfinding mode is used as default");
+            modes.AllowedValues = CompilerModes.ToList();
 
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
 
@@ -147,21 +178,10 @@ namespace Plang.Options
                     compilerConfiguration.Parallelism = (int)option.Value;
                     break;
                 case "mode":
-                    compilerConfiguration.OutputLanguages = new List<CompilerOutput>();
-                    switch (((string)option.Value).ToLowerInvariant())
+                    compilerConfiguration.OutputLanguages = new List<CompilerOutput>
                     {
-                        case "pchecker":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PChecker);
-                            break;
-                        case "pex":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PEx);
-                            break;
-                        case "pobserve":
-                            compilerConfiguration.OutputLanguages.Add(CompilerOutput.PObserve);
-                            break;
-                        default:
-                            throw new Exception($"Unexpected mode: '{option.Value}'");
-                    }
+                        ParseCompilerMode((string)option.Value)
+                    };
                     break;
                 case "pobserve-package":
                     compilerConfiguration.PObservePackageName = (string)option.Value;

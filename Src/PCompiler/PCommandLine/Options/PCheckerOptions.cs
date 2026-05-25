@@ -14,6 +14,30 @@ namespace Plang.Options
     public sealed class PCheckerOptions
     {
         /// <summary>
+        /// The accepted values for <c>--mode</c>. Both the parser's allowed-values list and
+        /// the exhaustive input domain of <see cref="ParseCheckerMode"/>; the two must stay
+        /// in sync (an allowed-but-unmapped mode would be rejected at runtime).
+        /// </summary>
+        internal static readonly string[] CheckerModes = { "bugfinding", "pex" };
+
+        /// <summary>
+        /// Maps a <c>--mode</c> value to its <see cref="CheckerMode"/>. Throws if the mode is
+        /// not one of <see cref="CheckerModes"/>.
+        /// </summary>
+        internal static CheckerMode ParseCheckerMode(string mode)
+        {
+            switch (mode.ToLowerInvariant())
+            {
+                case "bugfinding":
+                    return CheckerMode.BugFinding;
+                case "pex":
+                    return CheckerMode.PEx;
+                default:
+                    throw new Exception($"Invalid checker mode '{mode}'.");
+            }
+        }
+
+        /// <summary>
         /// The command line parser to use.
         /// </summary>
         private readonly CommandLineArgumentParser Parser;
@@ -31,7 +55,7 @@ namespace Plang.Options
             basicOptions.AddPositionalArgument("path", "Path to the compiled file to check for correctness (*.dll)."+
                                                        " If this option is not passed, the compiler searches for a *.dll file in the current folder").IsRequired = false;
             var modes = basicOptions.AddArgument("mode", "md", "Checker mode to use. Can be bugfinding or pex. If this option is not passed, bugfinding mode is used as default");
-            modes.AllowedValues = new List<string>() { "bugfinding", "pex", "pobserve"};
+            modes.AllowedValues = CheckerModes.ToList();
             basicOptions.AddArgument("testcase", "tc", "Test case to explore");
             // basicOptions.AddArgument("smoke-testing", "tsmoke",
             //     "Smoke test the program by running the checker on all the test cases", typeof(bool));
@@ -181,18 +205,7 @@ namespace Plang.Options
                     checkerConfiguration.AssemblyToBeAnalyzed = (string)option.Value;
                     break;
                 case "mode":
-                    switch ((string)option.Value)
-                    {
-                        case "bugfinding":
-                            checkerConfiguration.Mode = CheckerMode.BugFinding;
-                            break;
-                        case "pex":
-                            checkerConfiguration.Mode = CheckerMode.PEx;
-                            break;
-                        default:
-                            Error.CheckerReportAndExit($"Invalid checker mode '{option.Value}'.");
-                            break;
-                    }
+                    checkerConfiguration.Mode = ParseCheckerMode((string)option.Value);
                     break;
                 case "testcase":
                     checkerConfiguration.TestCaseName = (string)option.Value;

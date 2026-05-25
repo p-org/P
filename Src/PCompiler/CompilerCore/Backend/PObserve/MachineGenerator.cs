@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Plang.Compiler.Backend.ASTExt;
 using Plang.Compiler.TypeChecker.AST;
@@ -11,7 +12,8 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.Java {
 
-    internal class MachineGenerator : JavaSourceGenerator
+    internal class MachineGenerator : JavaSourceGenerator, IExpressionEmitter<CompilationContext>,
+        IStatementEmitter<CompilationContext, object>
     {
 
         private Machine _currentMachine; // Some generated code is machine-dependent, so stash the current machine here.
@@ -375,195 +377,228 @@ namespace Plang.Compiler.Backend.Java {
             WriteLine($".withExit(this::{fname})");
         }
 
+        // 1-arg convenience wrapper used throughout this generator; routes to the shared
+        // IStatementEmitter dispatch. PObserve threads no per-statement state, so TFrame is
+        // unused (object/null) and every handler returns false.
         private void WriteStmt(IPStmt stmt)
         {
-            TypeManager.JType t;
+            this.WriteStmt(Context, Source.Stream, null, stmt);
+        }
 
-            switch (stmt)
+        public bool WriteAddStmt(CompilationContext context, StringWriter output, object frame, AddStmt addStmt)
+        {
+            var t = Types.JavaTypeFor(addStmt.Variable.Type);
+            WriteExpr(addStmt.Variable);
+            Write($".{t.MutatorMethodName}(");
+            // If mutating a sequence, cast the value to int so that it calls the
+            // expected set method
+            if (PLanguageType.TypeIsOfKind(addStmt.Variable.Type, TypeKind.Sequence))
             {
-                case AddStmt addStmt:
-                    t = Types.JavaTypeFor(addStmt.Variable.Type);
-                    WriteExpr(addStmt.Variable);
-                    Write($".{t.MutatorMethodName}(");
-                    // If mutating a sequence, cast the value to int so that it calls the
-                    // expected set method
-                    if (PLanguageType.TypeIsOfKind(addStmt.Variable.Type, TypeKind.Sequence))
-                    {
-                        Write("(int)");
-                    }
-                    WriteExpr(addStmt.Value);
-                    WriteLine(");");
-                    break;
-
-                case AssertStmt assertStmt:
-                    Write($"{Constants.TryAssertMethodName}(");
-                    WriteExpr(assertStmt.Assertion);
-                    Write(", ");
-                    WriteExpr(assertStmt.Message);
-                    WriteLine(");");
-                    break;
-
-                case AssignStmt assignStmt:
-                    WriteAssignStatement(assignStmt);
-                    break;
-
-                case BreakStmt _:
-                    WriteLine("break;");
-                    break;
-
-                case CompoundStmt compoundStmt:
-                    WriteLine("{");
-                    foreach (var s in compoundStmt.Statements)
-                    {
-                        WriteStmt(s);
-                    }
-                    WriteLine("}");
-                    break;
-
-                case ContinueStmt _:
-                    WriteLine("continue;");
-                    break;
-
-                case CtorStmt _:
-                    goto default;
-
-                case FunCallStmt funCallStmt:
-                    WriteFunctionCallExpr(funCallStmt.Function, funCallStmt.ArgsList);
-                    WriteLine(";");
-                    break;
-
-                case GotoStmt gotoStmt:
-                    Write($"gotoState({Names.IdentForState(gotoStmt.State)}");
-                    if (gotoStmt.Payload != null)
-                    {
-                        Write(", ");
-                        WriteExpr(gotoStmt.Payload);
-                    }
-                    WriteLine(");");
-                    WriteLine("return;");
-                    break;
-
-                case IfStmt ifStmt:
-                    Write("if (");
-                    WriteExpr(ifStmt.Condition);
-                    Write(") ");
-
-                    if (ifStmt.ThenBranch.Statements.Count == 0)
-                    {
-                        WriteLine("{");
-                        WriteLine("}");
-                    }
-                    else
-                    {
-                        WriteStmt(ifStmt.ThenBranch);
-                    }
-
-                    if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Count > 0)
-                    {
-                        WriteLine("else");
-                        WriteStmt(ifStmt.ElseBranch);
-                    }
-                    break;
-
-
-                case InsertStmt insertStmt:
-                    t = Types.JavaTypeFor(insertStmt.Variable.Type);
-                    WriteExpr(insertStmt.Variable);
-                    if (PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Sequence))
-                    {
-                        Write($".{t.InsertMethodName}((int)(");
-                    }
-                    else
-                    {
-                        Write($".{t.InsertMethodName}((");
-                    }
-                    WriteExpr(insertStmt.Index);
-                    Write("), ");
-                    WriteExpr(insertStmt.Value);
-                    WriteLine(");");
-                    break;
-
-                case MoveAssignStmt moveAssignStmt:
-                    WriteMoveAssignStatement(moveAssignStmt);
-                    break;
-
-                case NoStmt _:
-                    break;
-
-                case PrintStmt printStmt:
-                    Write("logger.info(");
-                    WriteExpr(printStmt.Message);
-                    WriteLine(");");
-                    break;
-
-                case RaiseStmt raiseStmt:
-                    Write($"{Constants.TryRaiseEventMethodName}(new ");
-                    WriteExpr(raiseStmt.Event);
-                    Write("(");
-                    foreach (var (sep, expr) in raiseStmt.Payload.WithPrefixSep(", "))
-                    {
-                        Write(sep);
-                        WriteExpr(expr);
-                    }
-                    Write(")");
-                    WriteLine(");");
-                    break;
-
-                case ReceiveStmt _:
-                    goto default;
-
-                case RemoveStmt removeStmt:
-                    t = Types.JavaTypeFor(removeStmt.Variable.Type);
-                    WriteExpr(removeStmt.Variable);
-                    Write($".{t.RemoveMethodName}(");
-                    // If removing from a sequence, cast the value to int so that it calls the
-                    // expected remove-by-index method
-                    if (PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence))
-                    {
-                        Write("(int)");
-                    }
-                    WriteExpr(removeStmt.Value);
-                    WriteLine(");");
-                    break;
-
-                case ReturnStmt returnStmt:
-                    Write("return ");
-                    if (returnStmt.ReturnValue != null)
-                    {
-                        WriteExpr(returnStmt.ReturnValue);
-                    }
-                    WriteLine(";");
-                    break;
-
-                case SendStmt _:
-                    goto default;
-
-                case ForeachStmt foreachStmt:
-                {
-                    var varname = Names.GetNameForDecl(foreachStmt.Item);
-                    t = Types.JavaTypeFor(foreachStmt.Item.Type);
-
-                    Write($"for ({t.TypeName} {varname} : ");
-                    WriteExpr(foreachStmt.IterCollection);
-                    Write(") ");
-                    WriteStmt(foreachStmt.Body);
-                    break;
-                }
-                case WhileStmt whileStmt:
-                    Write("while (");
-                    WriteExpr(whileStmt.Condition);
-                    Write(") ");
-                    WriteStmt(whileStmt.Body);
-                    break;
-
-                case AnnounceStmt _:
-                    goto default;
-
-                default:
-                    WriteLine($"// TODO: {stmt}");
-                    return;
-                //throw new NotImplementedException(stmt.GetType().ToString());
+                Write("(int)");
             }
+            WriteExpr(addStmt.Value);
+            WriteLine(");");
+            return false;
+        }
+
+        public bool WriteAssertStmt(CompilationContext context, StringWriter output, object frame, AssertStmt assertStmt)
+        {
+            Write($"{Constants.TryAssertMethodName}(");
+            WriteExpr(assertStmt.Assertion);
+            Write(", ");
+            WriteExpr(assertStmt.Message);
+            WriteLine(");");
+            return false;
+        }
+
+        public bool WriteAssignStmt(CompilationContext context, StringWriter output, object frame, AssignStmt assignStmt)
+        {
+            WriteAssignStatement(assignStmt);
+            return false;
+        }
+
+        public bool WriteBreakStmt(CompilationContext context, StringWriter output, object frame, BreakStmt breakStmt)
+        {
+            WriteLine("break;");
+            return false;
+        }
+
+        public bool WriteCompoundStmt(CompilationContext context, StringWriter output, object frame, CompoundStmt compoundStmt)
+        {
+            WriteLine("{");
+            foreach (var s in compoundStmt.Statements)
+            {
+                WriteStmt(s);
+            }
+            WriteLine("}");
+            return false;
+        }
+
+        public bool WriteContinueStmt(CompilationContext context, StringWriter output, object frame, ContinueStmt continueStmt)
+        {
+            WriteLine("continue;");
+            return false;
+        }
+
+        public bool WriteFunCallStmt(CompilationContext context, StringWriter output, object frame, FunCallStmt funCallStmt)
+        {
+            WriteFunctionCallExpr(funCallStmt.Function, funCallStmt.ArgsList);
+            WriteLine(";");
+            return false;
+        }
+
+        public bool WriteGotoStmt(CompilationContext context, StringWriter output, object frame, GotoStmt gotoStmt)
+        {
+            Write($"gotoState({Names.IdentForState(gotoStmt.State)}");
+            if (gotoStmt.Payload != null)
+            {
+                Write(", ");
+                WriteExpr(gotoStmt.Payload);
+            }
+            WriteLine(");");
+            WriteLine("return;");
+            return false;
+        }
+
+        public bool WriteIfStmt(CompilationContext context, StringWriter output, object frame, IfStmt ifStmt)
+        {
+            Write("if (");
+            WriteExpr(ifStmt.Condition);
+            Write(") ");
+
+            if (ifStmt.ThenBranch.Statements.Count == 0)
+            {
+                WriteLine("{");
+                WriteLine("}");
+            }
+            else
+            {
+                WriteStmt(ifStmt.ThenBranch);
+            }
+
+            if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Count > 0)
+            {
+                WriteLine("else");
+                WriteStmt(ifStmt.ElseBranch);
+            }
+            return false;
+        }
+
+        public bool WriteInsertStmt(CompilationContext context, StringWriter output, object frame, InsertStmt insertStmt)
+        {
+            var t = Types.JavaTypeFor(insertStmt.Variable.Type);
+            WriteExpr(insertStmt.Variable);
+            if (PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Sequence))
+            {
+                Write($".{t.InsertMethodName}((int)(");
+            }
+            else
+            {
+                Write($".{t.InsertMethodName}((");
+            }
+            WriteExpr(insertStmt.Index);
+            Write("), ");
+            WriteExpr(insertStmt.Value);
+            WriteLine(");");
+            return false;
+        }
+
+        public bool WriteMoveAssignStmt(CompilationContext context, StringWriter output, object frame, MoveAssignStmt moveAssignStmt)
+        {
+            WriteMoveAssignStatement(moveAssignStmt);
+            return false;
+        }
+
+        public bool WriteNoStmt(CompilationContext context, StringWriter output, object frame, NoStmt noStmt)
+        {
+            return false;
+        }
+
+        public bool WritePrintStmt(CompilationContext context, StringWriter output, object frame, PrintStmt printStmt)
+        {
+            Write("logger.info(");
+            WriteExpr(printStmt.Message);
+            WriteLine(");");
+            return false;
+        }
+
+        public bool WriteRaiseStmt(CompilationContext context, StringWriter output, object frame, RaiseStmt raiseStmt)
+        {
+            Write($"{Constants.TryRaiseEventMethodName}(new ");
+            WriteExpr(raiseStmt.Event);
+            Write("(");
+            foreach (var (sep, expr) in raiseStmt.Payload.WithPrefixSep(", "))
+            {
+                Write(sep);
+                WriteExpr(expr);
+            }
+            Write(")");
+            WriteLine(");");
+            return false;
+        }
+
+        public bool WriteRemoveStmt(CompilationContext context, StringWriter output, object frame, RemoveStmt removeStmt)
+        {
+            var t = Types.JavaTypeFor(removeStmt.Variable.Type);
+            WriteExpr(removeStmt.Variable);
+            Write($".{t.RemoveMethodName}(");
+            // If removing from a sequence, cast the value to int so that it calls the
+            // expected remove-by-index method
+            if (PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence))
+            {
+                Write("(int)");
+            }
+            WriteExpr(removeStmt.Value);
+            WriteLine(");");
+            return false;
+        }
+
+        public bool WriteReturnStmt(CompilationContext context, StringWriter output, object frame, ReturnStmt returnStmt)
+        {
+            Write("return ");
+            if (returnStmt.ReturnValue != null)
+            {
+                WriteExpr(returnStmt.ReturnValue);
+            }
+            WriteLine(";");
+            return false;
+        }
+
+        public bool WriteForeachStmt(CompilationContext context, StringWriter output, object frame, ForeachStmt foreachStmt)
+        {
+            var varname = Names.GetNameForDecl(foreachStmt.Item);
+            var t = Types.JavaTypeFor(foreachStmt.Item.Type);
+
+            Write($"for ({t.TypeName} {varname} : ");
+            WriteExpr(foreachStmt.IterCollection);
+            Write(") ");
+            WriteStmt(foreachStmt.Body);
+            return false;
+        }
+
+        public bool WriteWhileStmt(CompilationContext context, StringWriter output, object frame, WhileStmt whileStmt)
+        {
+            Write("while (");
+            WriteExpr(whileStmt.Condition);
+            Write(") ");
+            WriteStmt(whileStmt.Body);
+            return false;
+        }
+
+        // The following statement kinds cannot appear in P specification monitors (the only
+        // thing PObserve generates code for); preserve the prior behavior of emitting a TODO
+        // marker rather than failing.
+        public bool WriteCtorStmt(CompilationContext context, StringWriter output, object frame, CtorStmt stmt) => WriteUnsupportedStmt(stmt);
+        public bool WriteReceiveStmt(CompilationContext context, StringWriter output, object frame, ReceiveStmt stmt) => WriteUnsupportedStmt(stmt);
+        public bool WriteSendStmt(CompilationContext context, StringWriter output, object frame, SendStmt stmt) => WriteUnsupportedStmt(stmt);
+        public bool WriteAnnounceStmt(CompilationContext context, StringWriter output, object frame, AnnounceStmt stmt) => WriteUnsupportedStmt(stmt);
+        public bool WriteAssumeStmt(CompilationContext context, StringWriter output, object frame, AssumeStmt stmt) => WriteUnsupportedStmt(stmt);
+        public bool WriteSwapAssignStmt(CompilationContext context, StringWriter output, object frame, SwapAssignStmt stmt) => WriteUnsupportedStmt(stmt);
+
+        private bool WriteUnsupportedStmt(IPStmt stmt)
+        {
+            WriteLine($"// TODO: {stmt}");
+            return false;
         }
 
         private void WriteAssignStatement(AssignStmt assignStmt)
@@ -681,190 +716,206 @@ namespace Plang.Compiler.Backend.Java {
             Write($")");
         }
 
+        // 1-arg convenience wrapper used throughout this generator; routes to the shared
+        // IExpressionEmitter dispatch, which calls back into the per-node methods below.
+        // PObserve writes into its own Source.Stream, so the per-node methods ignore the
+        // (context, output) the interface threads through and keep using the instance
+        // Write/Types/helpers.
         private void WriteExpr(IPExpr expr)
         {
-            TypeManager.JType t;
+            this.WriteExpr(Context, Source.Stream, expr);
+        }
 
-            switch (expr)
+        public void WriteBinOpExpr(CompilationContext context, StringWriter output, BinOpExpr binOpExpr)
+        {
+            WriteBinOp(binOpExpr.Lhs, binOpExpr.Operation, binOpExpr.Rhs);
+        }
+
+        public void WriteBoolLiteralExpr(CompilationContext context, StringWriter output, BoolLiteralExpr ble)
+        {
+            Write($"({TypeManager.JType.JBool.ToJavaLiteral(ble.Value)})");
+        }
+
+        public void WriteCastExpr(CompilationContext context, StringWriter output, CastExpr ce)
+        {
+            var t = Types.JavaTypeFor(ce.Type);
+            Write($"(");
+            Write($"({t.TypeName})");
+            WriteExpr(ce.SubExpr);
+            Write($")");
+        }
+
+        public void WriteCloneExpr(CompilationContext context, StringWriter output, CloneExpr ce)
+        {
+            var t = Types.JavaTypeFor(ce.Type);
+            WriteClone(t, () => WriteExpr(ce.Term));
+        }
+
+        public void WriteContainsExpr(CompilationContext context, StringWriter output, ContainsExpr ce)
+        {
+            var t = Types.JavaTypeFor(ce.Collection.Type);
+            WriteExpr(ce.Collection);
+            Write($".{t.ContainsMethodName}(");
+            WriteExpr(ce.Item);
+            Write(")");
+        }
+
+        public void WriteDefaultExpr(CompilationContext context, StringWriter output, DefaultExpr de)
+        {
+            var t = Types.JavaTypeFor(de.Type);
+            Write(t.DefaultValue);
+        }
+
+        public void WriteEnumElemRefExpr(CompilationContext context, StringWriter output, EnumElemRefExpr ee)
+        {
+            var typeName = ee.Value.ParentEnum.Name;
+            var valueName = ee.Value.Name;
+            Write($"{Constants.TypesNamespaceName}.{typeName}.{valueName}");
+        }
+
+        public void WriteFloatLiteralExpr(CompilationContext context, StringWriter output, FloatLiteralExpr fe)
+        {
+            Write(TypeManager.JType.JFloat.ToJavaLiteral(fe.Value));
+        }
+
+        public void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr fe)
+        {
+            WriteFunctionCallExpr(fe.Function, fe.Arguments);
+        }
+
+        public void WriteIntLiteralExpr(CompilationContext context, StringWriter output, IntLiteralExpr ie)
+        {
+            Write(TypeManager.JType.JInt.ToJavaLiteral(ie.Value));
+        }
+
+        public void WriteKeysExpr(CompilationContext context, StringWriter output, KeysExpr ke)
+        {
+            var t = Types.JavaTypeFor(ke.Expr.Type);
+            if (!(t is TypeManager.JType.JMap mt))
             {
-                case BinOpExpr binOpExpr:
-                    WriteBinOp(binOpExpr.Lhs, binOpExpr.Operation, binOpExpr.Rhs);
-                    break;
-                case BoolLiteralExpr ble:
-                    Write($"({TypeManager.JType.JBool.ToJavaLiteral(ble.Value)})");
-                    break;
-                case CastExpr ce:
-                {
-                    t = Types.JavaTypeFor(ce.Type);
-                    Write($"(");
-                    Write($"({t.TypeName})");
-                    WriteExpr(ce.SubExpr);
-                    Write($")");
-                    break;
-                }
-                case ChooseExpr _:
-                    goto default; //TODO
-                case CloneExpr ce:
-                    t = Types.JavaTypeFor(ce.Type);
-                    WriteClone(t, () => WriteExpr(ce.Term));
-                    break;
-                case CoerceExpr _:
-                    goto default; //TODO
-                case ContainsExpr ce:
-                {
-                    t = Types.JavaTypeFor(ce.Collection.Type);
-                    WriteExpr(ce.Collection);
-                    Write($".{t.ContainsMethodName}(");
-                    WriteExpr(ce.Item);
-                    Write(")");
-                    break;
-                }
-                case CtorExpr _:
-                    goto default;
-                case DefaultExpr de:
-                    t = Types.JavaTypeFor(de.Type);
-                    Write(t.DefaultValue);
-                    break;
-                case EnumElemRefExpr ee:
-                    var typeName = ee.Value.ParentEnum.Name;
-                    var valueName = ee.Value.Name;
-                    Write($"{Constants.TypesNamespaceName}.{typeName}.{valueName}");
-                    break;
-                case EventRefExpr _:
-                    goto default; //TODO
-                case FairNondetExpr _:
-                    goto default;
-                case FloatLiteralExpr fe:
-                    Write(TypeManager.JType.JFloat.ToJavaLiteral(fe.Value));
-                    break;
-                case FunCallExpr fe:
-                    WriteFunctionCallExpr(fe.Function, fe.Arguments);
-                    break;
-                case IntLiteralExpr ie:
-                    Write(TypeManager.JType.JInt.ToJavaLiteral(ie.Value));
-                    break;
-                case KeysExpr ke:
-                {
-                    t = Types.JavaTypeFor(ke.Expr.Type);
-                    if (!(t is TypeManager.JType.JMap mt))
-                    {
-                        throw new Exception($"Got an unexpected {t.TypeName} rather than a Map");
-                    }
+                throw new Exception($"Got an unexpected {t.TypeName} rather than a Map");
+            }
 
-                    // Note: P key sets are in fact sequences, so get the j.l.Set() and then
-                    // construct a new List from that collection.
-                    Write($"new {mt.KeyCollectionType}(");
-                    WriteExpr(ke.Expr);
-                    Write($".{mt.KeysMethodName}()");
-                    Write(")");
-                    break;
+            // Note: P key sets are in fact sequences, so get the j.l.Set() and then
+            // construct a new List from that collection.
+            Write($"new {mt.KeyCollectionType}(");
+            WriteExpr(ke.Expr);
+            Write($".{mt.KeysMethodName}()");
+            Write(")");
+        }
+
+        public void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr te)
+        {
+            var t = Types.JavaTypeFor(te.Type);
+            Write($"new {t.TypeName}(");
+            foreach (var (sep, field) in te.TupleFields.WithPrefixSep(", "))
+            {
+                Write(sep);
+                WriteExpr(field);
+            }
+            Write(")");
+        }
+
+        public void WriteNullLiteralExpr(CompilationContext context, StringWriter output, NullLiteralExpr expr)
+        {
+            Write("null");
+        }
+
+        public void WriteSizeofExpr(CompilationContext context, StringWriter output, SizeofExpr se)
+        {
+            WriteExpr(se.Expr);
+            Write(".size()");
+        }
+
+        public void WriteStringExpr(CompilationContext context, StringWriter output, StringExpr se)
+        {
+            var fmtLit = TypeManager.JType.JString.ToJavaLiteral(se.BaseString);
+            if (se.Args.Count == 0)
+            {
+                Write(fmtLit);
+            }
+            else
+            {
+                Write($"java.text.MessageFormat.format({fmtLit}");
+                foreach (var arg in se.Args)
+                {
+                    Write(", ");
+                    WriteExpr(arg);
                 }
 
-                case NamedTupleExpr te:
-                {
-                    t = Types.JavaTypeFor(te.Type);
-                    Write($"new {t.TypeName}(");
-                    foreach (var (sep, field) in te.TupleFields.WithPrefixSep(", "))
-                    {
-                        Write(sep);
-                        WriteExpr(field);
-                    }
-                    Write(")");
-                    break;
-                }
-                case NondetExpr _:
-                    goto default; // TODO
-                case NullLiteralExpr _:
-                    Write("null");
-                    break;
-                case SizeofExpr se:
-                    WriteExpr(se.Expr);
-                    Write(".size()");
-                    break;
-                case StringExpr se:
-                {
-                    var fmtLit = TypeManager.JType.JString.ToJavaLiteral(se.BaseString);
-                    if (se.Args.Count == 0)
-                    {
-                        Write(fmtLit);
-                    }
-                    else
-                    {
-                        Write($"java.text.MessageFormat.format({fmtLit}");
-                        foreach (var arg in se.Args)
-                        {
-                            Write(", ");
-                            WriteExpr(arg);
-                        }
-
-                        Write(")");
-                    }
-
-                    break;
-                }
-                case ThisRefExpr _:
-                    Write("this");
-                    break;
-                case UnaryOpExpr ue:
-                    switch (ue.Operation)
-                    {
-                        case UnaryOpType.Negate:
-                            Write("-");
-                            break;
-                        case UnaryOpType.Not:
-                            Write("!");
-                            break;
-
-                    }
-                    Write("(");
-                    WriteExpr(ue.SubExpr);
-                    Write(")");
-                    break;
-                case UnnamedTupleExpr te:
-                {
-                    t = Types.JavaTypeFor(te.Type);
-                    Write($"new {t.TypeName}(");
-                    foreach (var (sep, field) in te.TupleFields.WithPrefixSep(", "))
-                    {
-                        Write(sep);
-                        WriteExpr(field);
-                    }
-                    Write(")");
-                    break;
-                }
-                case ValuesExpr ve:
-                {
-                    t = Types.JavaTypeFor(ve.Expr.Type);
-                    if (!(t is TypeManager.JType.JMap mt))
-                    {
-                        throw new Exception($"Got an unexpected {t.TypeName} rather than a Map");
-                    }
-
-                    // Note: P key sets are in fact sequences, so get the j.l.Set() and then
-                    // construct a new List from that collection.
-                    Write($"new {mt.ValueCollectionType}(");
-                    WriteExpr(ve.Expr);
-                    Write($".{mt.ValuesMethodName}()");
-                    Write(")");
-                    break;
-                }
-
-                case VariableAccessExpr variableAccessExpr:
-                    Write(Names.GetNameForDecl(variableAccessExpr.Variable));
-                    break;
-
-                case MapAccessExpr _:
-                case NamedTupleAccessExpr _:
-                case SetAccessExpr _:
-                case SeqAccessExpr _:
-                case TupleAccessExpr _:
-                    WriteStructureAccess(expr);
-                    break;
-
-                default:
-                    throw new NotImplementedException(expr.ToString());
+                Write(")");
             }
         }
+
+        public void WriteThisRefExpr(CompilationContext context, StringWriter output, ThisRefExpr expr)
+        {
+            Write("this");
+        }
+
+        public void WriteUnaryOpExpr(CompilationContext context, StringWriter output, UnaryOpExpr ue)
+        {
+            switch (ue.Operation)
+            {
+                case UnaryOpType.Negate:
+                    Write("-");
+                    break;
+                case UnaryOpType.Not:
+                    Write("!");
+                    break;
+
+            }
+            Write("(");
+            WriteExpr(ue.SubExpr);
+            Write(")");
+        }
+
+        public void WriteUnnamedTupleExpr(CompilationContext context, StringWriter output, UnnamedTupleExpr te)
+        {
+            var t = Types.JavaTypeFor(te.Type);
+            Write($"new {t.TypeName}(");
+            foreach (var (sep, field) in te.TupleFields.WithPrefixSep(", "))
+            {
+                Write(sep);
+                WriteExpr(field);
+            }
+            Write(")");
+        }
+
+        public void WriteValuesExpr(CompilationContext context, StringWriter output, ValuesExpr ve)
+        {
+            var t = Types.JavaTypeFor(ve.Expr.Type);
+            if (!(t is TypeManager.JType.JMap mt))
+            {
+                throw new Exception($"Got an unexpected {t.TypeName} rather than a Map");
+            }
+
+            // Note: P key sets are in fact sequences, so get the j.l.Set() and then
+            // construct a new List from that collection.
+            Write($"new {mt.ValueCollectionType}(");
+            WriteExpr(ve.Expr);
+            Write($".{mt.ValuesMethodName}()");
+            Write(")");
+        }
+
+        public void WriteVariableAccessExpr(CompilationContext context, StringWriter output, VariableAccessExpr variableAccessExpr)
+        {
+            Write(Names.GetNameForDecl(variableAccessExpr.Variable));
+        }
+
+        public void WriteMapAccessExpr(CompilationContext context, StringWriter output, MapAccessExpr expr) => WriteStructureAccess(expr);
+        public void WriteNamedTupleAccessExpr(CompilationContext context, StringWriter output, NamedTupleAccessExpr expr) => WriteStructureAccess(expr);
+        public void WriteSetAccessExpr(CompilationContext context, StringWriter output, SetAccessExpr expr) => WriteStructureAccess(expr);
+        public void WriteSeqAccessExpr(CompilationContext context, StringWriter output, SeqAccessExpr expr) => WriteStructureAccess(expr);
+        public void WriteTupleAccessExpr(CompilationContext context, StringWriter output, TupleAccessExpr expr) => WriteStructureAccess(expr);
+
+        // The following node kinds cannot appear in P specification monitors, which are the
+        // only thing PObserve generates code for, so they are intentionally unsupported.
+        public void WriteChooseExpr(CompilationContext context, StringWriter output, ChooseExpr expr) => throw new NotImplementedException(expr.ToString());
+        public void WriteCoerceExpr(CompilationContext context, StringWriter output, CoerceExpr expr) => throw new NotImplementedException(expr.ToString());
+        public void WriteCtorExpr(CompilationContext context, StringWriter output, CtorExpr expr) => throw new NotImplementedException(expr.ToString());
+        public void WriteEventRefExpr(CompilationContext context, StringWriter output, EventRefExpr expr) => throw new NotImplementedException(expr.ToString());
+        public void WriteNondetExpr(CompilationContext context, StringWriter output, NondetExpr expr) => throw new NotImplementedException(expr.ToString());
+        public void WriteFairNondetExpr(CompilationContext context, StringWriter output, FairNondetExpr expr) => throw new NotImplementedException(expr.ToString());
 
         private void WriteBinOp(IPExpr left, BinOpType op, IPExpr right)
         {

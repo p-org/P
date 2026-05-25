@@ -15,7 +15,22 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PEx;
 
-internal class PExCodeGenerator : ICodeGenerator
+// Per-statement state PEx threads through emission: the enclosing function and the
+// current control-flow context. Carried as the IStatementEmitter frame.
+internal readonly struct PExStmtFrame
+{
+    public readonly Function Function;
+    public readonly PExCodeGenerator.ControlFlowContext FlowContext;
+
+    public PExStmtFrame(Function function, PExCodeGenerator.ControlFlowContext flowContext)
+    {
+        Function = function;
+        FlowContext = flowContext;
+    }
+}
+
+internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<CompilationContext>,
+    IStatementEmitter<CompilationContext, PExStmtFrame>
 {
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
     {
@@ -151,7 +166,7 @@ internal class PExCodeGenerator : ICodeGenerator
         {
             var varName = GetGlobalParamAndLocalVariableName(v);
             context.Write(output, $"  {varName} = ");
-            WriteExpr(context, output, value);
+            this.WriteExpr(context, output, value);
             context.WriteLine(output, $";");
         }
         context.WriteLine(output, "}");
@@ -684,349 +699,403 @@ internal class PExCodeGenerator : ICodeGenerator
         }
     }
 
+    // Thin wrapper keeping PEx's existing call shape (function + flow context + bool
+    // "exited" result). It handles the cases that are not part of the shared statement
+    // contract — call-in-assignment lowering and PEx's own ReceiveSplitStmt — and otherwise
+    // routes to the shared IStatementEmitter dispatch with a frame carrying (function, flow).
     private bool WriteStmt(Function function, CompilationContext context, StringWriter output,
         ControlFlowContext flowContext, IPStmt stmt)
     {
-        var exited = false;
-
         if (TryGetCallInAssignment(stmt) is { } callExpr)
         {
             WriteFunCallStmt(context, output, callExpr.Function, callExpr.Arguments, (stmt as AssignStmt)?.Location);
             return false;
         }
 
-        switch (stmt)
+        if (stmt is ReceiveSplitStmt splitStmt)
         {
-            case AssignStmt assignStmt:
-                Debug.Assert(assignStmt.Value != null);
-                Debug.Assert(assignStmt.Location != null);
-                CheckIsSupportedAssignment(assignStmt.Value.Type, assignStmt.Location.Type);
+            return WriteReceiveSplitStmt(context, output, splitStmt);
+        }
 
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    assignStmt.Location,
-                    false,
-                    locationTemp =>
-                    {
-                        var expr = UnnestCloneExpr(assignStmt.Value);
-                        if (expr is NullLiteralExpr)
-                        {
-                            context.WriteLine(output, $"{locationTemp} = {GetDefaultValue(assignStmt.Location.Type)};");
-                        }
-                        else
-                        {
-                            context.Write(output, $"{locationTemp} = ({GetPExType(assignStmt.Location.Type)}) ");
-                            WriteExpr(context, output, expr);
-                            context.WriteLine(output, ";");
-                        }
-                    }
-                );
+        return this.WriteStmt(context, output, new PExStmtFrame(function, flowContext), stmt);
+    }
 
-                break;
+    private bool WriteReceiveSplitStmt(CompilationContext context, StringWriter output, ReceiveSplitStmt splitStmt)
+    {
+        var continuation = splitStmt.Cont;
+        context.WriteLine(output,
+            $"PContinuation {context.GetContinuationName(continuation)} = getContinuation(\"{context.GetContinuationName(continuation)}\");");
+        foreach (var local in continuation.LocalParameters)
+            context.WriteLine(output,
+                $"{context.GetContinuationName(continuation)}.setVar(\"{continuation.StoreForLocal[local].Name}\", {CompilationContext.GetVar(local.Name)});");
+        context.WriteLine(output,
+            $"{CompilationContext.CurrentMachine}.blockUntil(\"{context.GetContinuationName(continuation)}\");");
+        context.Write(output, "return;");
+        return true;
+    }
 
-            case MoveAssignStmt moveStmt:
-                CheckIsSupportedAssignment(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type);
+    public bool WriteAssignStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AssignStmt assignStmt)
+    {
+        Debug.Assert(assignStmt.Value != null);
+        Debug.Assert(assignStmt.Location != null);
+        CheckIsSupportedAssignment(assignStmt.Value.Type, assignStmt.Location.Type);
 
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    moveStmt.ToLocation,
-                    false,
-                    locationTemp =>
-                    {
-                        context.Write(output, $"{locationTemp} = ({GetPExType(moveStmt.ToLocation.Type)}) ");
-                        WriteExpr(context, output,
-                            new VariableAccessExpr(moveStmt.FromVariable.SourceLocation, moveStmt.FromVariable));
-                        context.WriteLine(output, ";");
-                    }
-                );
-
-                break;
-
-            case AssertStmt assertStmt:
-                context.Write(output, "Assert.fromModel((");
-                WriteExpr(context, output, assertStmt.Assertion);
-                context.Write(output, ").getValue(), ");
-                WriteExpr(context, output, assertStmt.Message);
-                context.Write(output, ");");
-                break;
-
-            case ReturnStmt returnStmt:
-                if (!(returnStmt.ReturnValue is null))
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            assignStmt.Location,
+            false,
+            locationTemp =>
+            {
+                var expr = UnnestCloneExpr(assignStmt.Value);
+                if (expr is NullLiteralExpr)
                 {
-                    context.Write(output, $"{CompilationContext.ReturnValue} = ");
-                    context.Write(output, $"({GetPExType(context.ReturnType)}) ");
-                    WriteExpr(context, output, returnStmt.ReturnValue);
+                    context.WriteLine(output, $"{locationTemp} = {GetDefaultValue(assignStmt.Location.Type)};");
+                }
+                else
+                {
+                    context.Write(output, $"{locationTemp} = ({GetPExType(assignStmt.Location.Type)}) ");
+                    this.WriteExpr(context, output, expr);
                     context.WriteLine(output, ";");
-                    context.Write(output, $"return {CompilationContext.ReturnValue};");
                 }
-                else
-                {
-                    context.Write(output, "return;");
-                }
+            }
+        );
 
-                exited = true;
-                break;
+        return false;
+    }
 
-            case GotoStmt gotoStmt:
-                context.Write(output,
-                    $"{CompilationContext.CurrentMachine}.gotoState({context.GetNameForDecl(gotoStmt.State)}");
-                if (gotoStmt.Payload == null)
-                {
-                    context.Write(output, ", null");
-                }
-                else
-                {
-                    context.Write(output, ", ");
-                    WriteExpr(context, output, gotoStmt.Payload);
-                }
+    public bool WriteMoveAssignStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, MoveAssignStmt moveStmt)
+    {
+        CheckIsSupportedAssignment(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type);
 
-                context.WriteLine(output, ");");
-
-                if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-                    context.WriteLine(output, "return;");
-                else
-                    context.WriteLine(output, "return null;");
-                exited = true;
-                break;
-
-            case RaiseStmt raiseStmt:
-                // TODO: Add type checking for the payload!
-                context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
-
-                context.Write(output, $"{CompilationContext.CurrentMachine}.raiseEvent(");
-                WriteExpr(context, output, raiseStmt.Event);
-                if (raiseStmt.Payload.Count > 0)
-                {
-                    // TODO: Determine how multi-payload raise statements are supposed to work
-                    Debug.Assert(raiseStmt.Payload.Count == 1);
-                    context.Write(output, ", ");
-                    WriteExpr(context, output, raiseStmt.Payload[0]);
-                }
-
-                context.WriteLine(output, ");");
-
-                if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-                    context.WriteLine(output, "return;");
-                else
-                    context.WriteLine(output, "return null;");
-                exited = true;
-                break;
-
-            case PrintStmt printStmt:
-                context.Write(output, $"{CompilationContext.SchedulerVar}.getLogger().logModel(");
-                WriteExpr(context, output, printStmt.Message);
-                context.WriteLine(output, ".toString());");
-                break;
-
-            case BreakStmt _:
-                context.WriteLine(output, "break;");
-                break;
-
-            case ContinueStmt _:
-                context.WriteLine(output, "continue;");
-                break;
-
-            case CompoundStmt compoundStmt:
-                foreach (var subStmt in compoundStmt.Statements)
-                {
-                    exited |= WriteStmt(function, context, output, flowContext, subStmt);
-                    context.WriteLine(output);
-
-                    if (exited) break;
-                }
-
-                break;
-
-            case WhileStmt whileStmt:
-                if (!(whileStmt.Condition is BoolLiteralExpr) && ((BoolLiteralExpr)whileStmt.Condition).Value)
-                    throw new ArgumentOutOfRangeException(
-                        "While statement condition should always be transformed to constant 'true' during IR simplification.");
-
-                var loopContext = flowContext.FreshLoopContext(context);
-
-                /* Loop body */
-                context.WriteLine(output, "while (true) {");
-                exited = WriteStmt(function, context, output, loopContext, whileStmt.Body);
-                context.WriteLine(output, "}");
-
-                break;
-
-            case IfStmt ifStmt:
-                /* Prologue */
-
-                var condTemp = context.FreshTempVar();
-                Debug.Assert(ifStmt.Condition.Type.IsSameTypeAs(PrimitiveType.Bool));
-                context.Write(output, $"{GetPExType(PrimitiveType.Bool)} {condTemp} = ");
-                WriteExpr(context, output, ifStmt.Condition);
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            moveStmt.ToLocation,
+            false,
+            locationTemp =>
+            {
+                context.Write(output, $"{locationTemp} = ({GetPExType(moveStmt.ToLocation.Type)}) ");
+                this.WriteExpr(context, output,
+                    new VariableAccessExpr(moveStmt.FromVariable.SourceLocation, moveStmt.FromVariable));
                 context.WriteLine(output, ";");
-
-                var thenContext = flowContext.FreshBranchSubContext(context);
-                var elseContext = flowContext.FreshBranchSubContext(context);
-
-                /* Body */
-
-                context.WriteLine(output, $"if ({condTemp}.getValue()) {{");
-                context.WriteLine(output, "// 'then' branch");
-                exited = WriteStmt(function, context, output, thenContext, ifStmt.ThenBranch);
-                context.WriteLine(output, "}");
-
-                if (!(ifStmt.ElseBranch is null))
-                {
-                    context.WriteLine(output, "else {");
-                    context.WriteLine(output, "// 'else' branch");
-                    exited &= WriteStmt(function, context, output, elseContext, ifStmt.ElseBranch);
-                    context.WriteLine(output, "}");
-                }
-
-                break;
-
-            case FunCallStmt funCallStmt:
-                WriteFunCallStmt(context, output, funCallStmt.Function, funCallStmt.ArgsList);
-                break;
-
-            case CtorStmt ctorStmt:
-                WriteCtorExpr(context, output, ctorStmt.Interface, ctorStmt.Arguments);
-                context.WriteLine(output, ";");
-                break;
-
-            case SendStmt sendStmt:
-                context.Write(output, $"{CompilationContext.CurrentMachine}.sendEvent(");
-                WriteExpr(context, output, sendStmt.MachineExpr);
-                context.Write(output, ", ");
-                WriteExpr(context, output, sendStmt.Evt);
-                context.Write(output, ", ");
-                if (sendStmt.Arguments.Count == 0)
-                    context.Write(output, "null");
-                else if (sendStmt.Arguments.Count == 1)
-                    WriteExpr(context, output, sendStmt.Arguments[0]);
-                else
-                    throw new NotImplementedException(
-                        "Send statements with more than one payload argument are not supported");
-                context.WriteLine(output, ");");
-                break;
-
-            case InsertStmt insertStmt:
-            {
-                var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
-                var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
-                PLanguageType keyType = null;
-                PLanguageType elementType;
-                if (isMap)
-                {
-                    keyType = ((MapType)insertStmt.Variable.Type.Canonicalize()).KeyType;
-                    elementType = ((MapType)insertStmt.Variable.Type.Canonicalize()).ValueType;
-                }
-                else if (isSet)
-                {
-                    elementType = ((SetType)insertStmt.Variable.Type.Canonicalize()).ElementType;
-                }
-                else
-                {
-                    elementType = ((SequenceType)insertStmt.Variable.Type.Canonicalize()).ElementType;
-                }
-
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    insertStmt.Variable,
-                    true,
-                    structureTemp =>
-                    {
-                        context.Write(output, $"{structureTemp} = ");
-                        context.Write(output, $"(({GetPExType(insertStmt.Variable.Type)}) ");
-                        WriteExpr(context, output, insertStmt.Variable);
-                        context.Write(output, ").add(");
-
-                        WriteExpr(context, output, insertStmt.Index);
-                        context.Write(output, ", ");
-                        WriteExpr(context, output, insertStmt.Value);
-
-                        context.WriteLine(output, ");");
-                    }
-                );
-
-                break;
             }
+        );
 
-            case AddStmt addStmt:
-            {
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    addStmt.Variable,
-                    true,
-                    structureTemp =>
-                    {
-                        context.Write(output, $"{structureTemp} = ");
-                        context.Write(output, $"(({GetPExType(addStmt.Variable.Type)}) ");
-                        WriteExpr(context, output, addStmt.Variable);
-                        context.Write(output, ").add(");
-                        WriteExpr(context, output, addStmt.Value);
-                        context.WriteLine(output, ");");
-                    }
-                );
+        return false;
+    }
 
-                break;
-            }
+    public bool WriteAssertStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AssertStmt assertStmt)
+    {
+        context.Write(output, "Assert.fromModel((");
+        this.WriteExpr(context, output, assertStmt.Assertion);
+        context.Write(output, ").getValue(), ");
+        this.WriteExpr(context, output, assertStmt.Message);
+        context.Write(output, ");");
+        return false;
+    }
 
-            case RemoveStmt removeStmt:
-            {
-                var isMap = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map);
-                var isSet = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Set);
+    public bool WriteReturnStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ReturnStmt returnStmt)
+    {
+        if (!(returnStmt.ReturnValue is null))
+        {
+            context.Write(output, $"{CompilationContext.ReturnValue} = ");
+            context.Write(output, $"({GetPExType(context.ReturnType)}) ");
+            this.WriteExpr(context, output, returnStmt.ReturnValue);
+            context.WriteLine(output, ";");
+            context.Write(output, $"return {CompilationContext.ReturnValue};");
+        }
+        else
+        {
+            context.Write(output, "return;");
+        }
 
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    removeStmt.Variable,
-                    true,
-                    structureTemp =>
-                    {
-                        context.Write(output, $"{structureTemp} = ");
-                        context.Write(output, $"(({GetPExType(removeStmt.Variable.Type)}) ");
-                        WriteExpr(context, output, removeStmt.Variable);
+        return true;
+    }
 
-                        if (isMap || isSet)
-                            context.Write(output, ").remove(");
-                        else
-                            context.Write(output, ").removeAt(");
+    public bool WriteGotoStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, GotoStmt gotoStmt)
+    {
+        var function = frame.Function;
+        context.Write(output,
+            $"{CompilationContext.CurrentMachine}.gotoState({context.GetNameForDecl(gotoStmt.State)}");
+        if (gotoStmt.Payload == null)
+        {
+            context.Write(output, ", null");
+        }
+        else
+        {
+            context.Write(output, ", ");
+            this.WriteExpr(context, output, gotoStmt.Payload);
+        }
 
-                        WriteExpr(context, output, removeStmt.Value);
-                        context.WriteLine(output, ");");
-                    }
-                );
-                break;
-            }
-            case AnnounceStmt announceStmt:
-                context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
-                WriteExpr(context, output, announceStmt.Event);
-                context.Write(output, ", ");
-                if (announceStmt.Payload == null)
-                    context.Write(output, "null");
-                else
-                    WriteExpr(context, output, announceStmt.Payload);
-                context.WriteLine(output, ");");
-                break;
-            case ReceiveSplitStmt splitStmt:
-                var continuation = splitStmt.Cont;
-                context.WriteLine(output,
-                    $"PContinuation {context.GetContinuationName(continuation)} = getContinuation(\"{context.GetContinuationName(continuation)}\");");
-                foreach (var local in continuation.LocalParameters)
-                    context.WriteLine(output,
-                        $"{context.GetContinuationName(continuation)}.setVar(\"{continuation.StoreForLocal[local].Name}\", {CompilationContext.GetVar(local.Name)});");
-                context.WriteLine(output,
-                    $"{CompilationContext.CurrentMachine}.blockUntil(\"{context.GetContinuationName(continuation)}\");");
-                context.Write(output, "return;");
-                exited = true;
-                break;
-            default:
-                throw new NotImplementedException(
-                    $"Statement type '{stmt.GetType().Name}' is not supported, found in {function.Name}");
+        context.WriteLine(output, ");");
+
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            context.WriteLine(output, "return;");
+        else
+            context.WriteLine(output, "return null;");
+        return true;
+    }
+
+    public bool WriteRaiseStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, RaiseStmt raiseStmt)
+    {
+        var function = frame.Function;
+        // TODO: Add type checking for the payload!
+        context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
+
+        context.Write(output, $"{CompilationContext.CurrentMachine}.raiseEvent(");
+        this.WriteExpr(context, output, raiseStmt.Event);
+        if (raiseStmt.Payload.Count > 0)
+        {
+            // TODO: Determine how multi-payload raise statements are supposed to work
+            Debug.Assert(raiseStmt.Payload.Count == 1);
+            context.Write(output, ", ");
+            this.WriteExpr(context, output, raiseStmt.Payload[0]);
+        }
+
+        context.WriteLine(output, ");");
+
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            context.WriteLine(output, "return;");
+        else
+            context.WriteLine(output, "return null;");
+        return true;
+    }
+
+    public bool WritePrintStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, PrintStmt printStmt)
+    {
+        context.Write(output, $"{CompilationContext.SchedulerVar}.getLogger().logModel(");
+        this.WriteExpr(context, output, printStmt.Message);
+        context.WriteLine(output, ".toString());");
+        return false;
+    }
+
+    public bool WriteBreakStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, BreakStmt stmt)
+    {
+        context.WriteLine(output, "break;");
+        return false;
+    }
+
+    public bool WriteContinueStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ContinueStmt stmt)
+    {
+        context.WriteLine(output, "continue;");
+        return false;
+    }
+
+    public bool WriteCompoundStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, CompoundStmt compoundStmt)
+    {
+        var function = frame.Function;
+        var flowContext = frame.FlowContext;
+        var exited = false;
+        foreach (var subStmt in compoundStmt.Statements)
+        {
+            exited |= WriteStmt(function, context, output, flowContext, subStmt);
+            context.WriteLine(output);
+
+            if (exited) break;
         }
 
         return exited;
     }
+
+    public bool WriteWhileStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, WhileStmt whileStmt)
+    {
+        var function = frame.Function;
+        var flowContext = frame.FlowContext;
+        if (!(whileStmt.Condition is BoolLiteralExpr ble) || !ble.Value)
+            throw new ArgumentOutOfRangeException(
+                "While statement condition should always be transformed to constant 'true' during IR simplification.");
+
+        var loopContext = flowContext.FreshLoopContext(context);
+
+        /* Loop body */
+        context.WriteLine(output, "while (true) {");
+        var exited = WriteStmt(function, context, output, loopContext, whileStmt.Body);
+        context.WriteLine(output, "}");
+
+        return exited;
+    }
+
+    public bool WriteIfStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, IfStmt ifStmt)
+    {
+        var function = frame.Function;
+        var flowContext = frame.FlowContext;
+        /* Prologue */
+
+        var condTemp = context.FreshTempVar();
+        Debug.Assert(ifStmt.Condition.Type.IsSameTypeAs(PrimitiveType.Bool));
+        context.Write(output, $"{GetPExType(PrimitiveType.Bool)} {condTemp} = ");
+        this.WriteExpr(context, output, ifStmt.Condition);
+        context.WriteLine(output, ";");
+
+        var thenContext = flowContext.FreshBranchSubContext(context);
+        var elseContext = flowContext.FreshBranchSubContext(context);
+
+        /* Body */
+
+        context.WriteLine(output, $"if ({condTemp}.getValue()) {{");
+        context.WriteLine(output, "// 'then' branch");
+        var exited = WriteStmt(function, context, output, thenContext, ifStmt.ThenBranch);
+        context.WriteLine(output, "}");
+
+        if (!(ifStmt.ElseBranch is null))
+        {
+            context.WriteLine(output, "else {");
+            context.WriteLine(output, "// 'else' branch");
+            exited &= WriteStmt(function, context, output, elseContext, ifStmt.ElseBranch);
+            context.WriteLine(output, "}");
+        }
+
+        return exited;
+    }
+
+    public bool WriteFunCallStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, FunCallStmt funCallStmt)
+    {
+        WriteFunCallStmt(context, output, funCallStmt.Function, funCallStmt.ArgsList);
+        return false;
+    }
+
+    public bool WriteCtorStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, CtorStmt ctorStmt)
+    {
+        WriteCtorExpr(context, output, ctorStmt.Interface, ctorStmt.Arguments);
+        context.WriteLine(output, ";");
+        return false;
+    }
+
+    public bool WriteSendStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, SendStmt sendStmt)
+    {
+        context.Write(output, $"{CompilationContext.CurrentMachine}.sendEvent(");
+        this.WriteExpr(context, output, sendStmt.MachineExpr);
+        context.Write(output, ", ");
+        this.WriteExpr(context, output, sendStmt.Evt);
+        context.Write(output, ", ");
+        if (sendStmt.Arguments.Count == 0)
+            context.Write(output, "null");
+        else if (sendStmt.Arguments.Count == 1)
+            this.WriteExpr(context, output, sendStmt.Arguments[0]);
+        else
+            throw new NotImplementedException(
+                "Send statements with more than one payload argument are not supported");
+        context.WriteLine(output, ");");
+        return false;
+    }
+
+    public bool WriteInsertStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, InsertStmt insertStmt)
+    {
+        var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
+        var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
+        PLanguageType keyType = null;
+        PLanguageType elementType;
+        if (isMap)
+        {
+            keyType = ((MapType)insertStmt.Variable.Type.Canonicalize()).KeyType;
+            elementType = ((MapType)insertStmt.Variable.Type.Canonicalize()).ValueType;
+        }
+        else if (isSet)
+        {
+            elementType = ((SetType)insertStmt.Variable.Type.Canonicalize()).ElementType;
+        }
+        else
+        {
+            elementType = ((SequenceType)insertStmt.Variable.Type.Canonicalize()).ElementType;
+        }
+
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            insertStmt.Variable,
+            true,
+            structureTemp =>
+            {
+                context.Write(output, $"{structureTemp} = ");
+                context.Write(output, $"(({GetPExType(insertStmt.Variable.Type)}) ");
+                this.WriteExpr(context, output, insertStmt.Variable);
+                context.Write(output, ").add(");
+
+                this.WriteExpr(context, output, insertStmt.Index);
+                context.Write(output, ", ");
+                this.WriteExpr(context, output, insertStmt.Value);
+
+                context.WriteLine(output, ");");
+            }
+        );
+
+        return false;
+    }
+
+    public bool WriteAddStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AddStmt addStmt)
+    {
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            addStmt.Variable,
+            true,
+            structureTemp =>
+            {
+                context.Write(output, $"{structureTemp} = ");
+                context.Write(output, $"(({GetPExType(addStmt.Variable.Type)}) ");
+                this.WriteExpr(context, output, addStmt.Variable);
+                context.Write(output, ").add(");
+                this.WriteExpr(context, output, addStmt.Value);
+                context.WriteLine(output, ");");
+            }
+        );
+
+        return false;
+    }
+
+    public bool WriteRemoveStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, RemoveStmt removeStmt)
+    {
+        var isMap = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map);
+        var isSet = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Set);
+
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            removeStmt.Variable,
+            true,
+            structureTemp =>
+            {
+                context.Write(output, $"{structureTemp} = ");
+                context.Write(output, $"(({GetPExType(removeStmt.Variable.Type)}) ");
+                this.WriteExpr(context, output, removeStmt.Variable);
+
+                if (isMap || isSet)
+                    context.Write(output, ").remove(");
+                else
+                    context.Write(output, ").removeAt(");
+
+                this.WriteExpr(context, output, removeStmt.Value);
+                context.WriteLine(output, ");");
+            }
+        );
+        return false;
+    }
+
+    public bool WriteAnnounceStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AnnounceStmt announceStmt)
+    {
+        context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
+        this.WriteExpr(context, output, announceStmt.Event);
+        context.Write(output, ", ");
+        if (announceStmt.Payload == null)
+            context.Write(output, "null");
+        else
+            this.WriteExpr(context, output, announceStmt.Payload);
+        context.WriteLine(output, ");");
+        return false;
+    }
+
+    // The following statement kinds never reach PEx: its IR lowering replaces foreach with
+    // while, drops no-ops, and splits receives into ReceiveSplitStmt (handled above).
+    public bool WriteForeachStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ForeachStmt stmt) => throw UnsupportedStmt(stmt, frame);
+    public bool WriteNoStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, NoStmt stmt) => throw UnsupportedStmt(stmt, frame);
+    public bool WriteReceiveStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ReceiveStmt stmt) => throw UnsupportedStmt(stmt, frame);
+    public bool WriteAssumeStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AssumeStmt stmt) => throw UnsupportedStmt(stmt, frame);
+    public bool WriteSwapAssignStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, SwapAssignStmt stmt) => throw UnsupportedStmt(stmt, frame);
+
+    private static NotImplementedException UnsupportedStmt(IPStmt stmt, PExStmtFrame frame) =>
+        new NotImplementedException(
+            $"Statement type '{stmt.GetType().Name}' is not supported, found in {frame.Function.Name}");
 
     private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)
     {
@@ -1219,7 +1288,7 @@ internal class PExCodeGenerator : ICodeGenerator
         {
             var param = args.ElementAt(i);
             context.Write(output, ", ");
-            WriteExpr(context, output, param);
+            this.WriteExpr(context, output, param);
         }
 
         context.WriteLine(output, ");");
@@ -1259,7 +1328,7 @@ internal class PExCodeGenerator : ICodeGenerator
         {
             var param = args.ElementAt(i);
             context.Write(output, ", ");
-            WriteExpr(context, output, param);
+            this.WriteExpr(context, output, param);
         }
 
         context.WriteLine(output, ");");
@@ -1302,7 +1371,7 @@ internal class PExCodeGenerator : ICodeGenerator
                         var indexTemp = context.FreshTempVar();
 
                         context.Write(output, $"{GetPExType(indexType)} {indexTemp} = ");
-                        WriteExpr(context, output, indexExpr);
+                        this.WriteExpr(context, output, indexExpr);
                         context.WriteLine(output, ";");
 
                         context.Write(output, $"{GetPExType(elementType)} {elementTemp}");
@@ -1415,7 +1484,7 @@ internal class PExCodeGenerator : ICodeGenerator
                         var indexTemp = context.FreshTempVar();
 
                         context.Write(output, $"{GetPExType(PrimitiveType.Int)} {indexTemp} = ");
-                        WriteExpr(context, output, seqAccessExpr.IndexExpr);
+                        this.WriteExpr(context, output, seqAccessExpr.IndexExpr);
                         context.WriteLine(output, ";");
 
                         context.Write(output, $"{GetPExType(elementType)} {elementTemp}");
@@ -1451,7 +1520,7 @@ internal class PExCodeGenerator : ICodeGenerator
                         var indexTemp = context.FreshTempVar();
 
                         context.Write(output, $"{GetPExType(PrimitiveType.Int)} {indexTemp} = ");
-                        WriteExpr(context, output, setAccessExpr.IndexExpr);
+                        this.WriteExpr(context, output, setAccessExpr.IndexExpr);
                         context.WriteLine(output, ";");
 
                         context.Write(output, $"{GetPExType(elementType)} {elementTemp}");
@@ -1534,304 +1603,347 @@ internal class PExCodeGenerator : ICodeGenerator
         return sb.ToString();
     }
 
-    private void WriteExpr(CompilationContext context, StringWriter output, IPExpr expr)
+    public void WriteCloneExpr(CompilationContext context, StringWriter output, CloneExpr cloneExpr)
     {
-        PLanguageType elementType;
-        switch (expr)
+        this.WriteExpr(context, output, cloneExpr.Term);
+    }
+
+    public void WriteUnaryOpExpr(CompilationContext context, StringWriter output, UnaryOpExpr unaryOpExpr)
+    {
+        context.Write(output, "(");
+        this.WriteExpr(context, output, unaryOpExpr.SubExpr);
+        context.Write(output, $").{UnOpToStr(unaryOpExpr.Operation)}()");
+    }
+
+    public void WriteBinOpExpr(CompilationContext context, StringWriter output, BinOpExpr binOpExpr)
+    {
+        var isEquality = binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq;
+
+        if (isEquality)
         {
-            case CloneExpr cloneExpr:
-                WriteExpr(context, output, cloneExpr.Term);
-                break;
-            case UnaryOpExpr unaryOpExpr:
+            context.Write(output, "new PBool(PValue.");
+            if (binOpExpr.Operation == BinOpType.Eq)
+                context.Write(output, "isEqual(");
+            else
+                context.Write(output, "notEqual(");
+            this.WriteExpr(context, output, binOpExpr.Lhs);
+            context.Write(output, ", ");
+            this.WriteExpr(context, output, binOpExpr.Rhs);
+            context.Write(output, ")");
+            context.Write(output, ")");
+        }
+        else
+        {
+            var isPrimitive = binOpExpr.Lhs.Type.Canonicalize() is PrimitiveType &&
+                              binOpExpr.Rhs.Type.Canonicalize() is PrimitiveType;
+            if (!isPrimitive)
+            {
+                var str = $"lhs type: {binOpExpr.Lhs}, rhs type: {binOpExpr.Rhs}";
+                throw new NotImplementedException(
+                    "Binary operations are currently only supported between primitive types and enums | " +
+                    str);
+            }
+
+            context.Write(output, "(");
+            this.WriteExpr(context, output, binOpExpr.Lhs);
+            context.Write(output, $").{BinOpToStr(binOpExpr.Operation)}(");
+            if (binOpExpr.Rhs is NullLiteralExpr)
+                context.Write(output, $"{GetDefaultValue(binOpExpr.Lhs.Type)}");
+            else
+                this.WriteExpr(context, output, binOpExpr.Rhs);
+            context.Write(output, ")");
+        }
+    }
+
+    public void WriteBoolLiteralExpr(CompilationContext context, StringWriter output, BoolLiteralExpr boolLiteralExpr)
+    {
+        var unguarded = $"new {GetPExType(PrimitiveType.Bool)}" + $"({boolLiteralExpr.Value})".ToLower();
+        context.Write(output, unguarded);
+    }
+
+    public void WriteCastExpr(CompilationContext context, StringWriter output, CastExpr castExpr)
+    {
+        if (castExpr.SubExpr is NullLiteralExpr)
+            context.Write(output, GetDefaultValue(castExpr.Type));
+        else
+            this.WriteExpr(context, output, castExpr.SubExpr);
+    }
+
+    public void WriteCoerceExpr(CompilationContext context, StringWriter output, CoerceExpr coerceExpr)
+    {
+        switch (coerceExpr.Type.Canonicalize())
+        {
+            case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
                 context.Write(output, "(");
-                WriteExpr(context, output, unaryOpExpr.SubExpr);
-                context.Write(output, $").{UnOpToStr(unaryOpExpr.Operation)}()");
+                this.WriteExpr(context, output, coerceExpr.SubExpr);
+                context.Write(output, ").toFloat()");
                 break;
-            case BinOpExpr binOpExpr:
-                var isEquality = binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq;
-
-                if (isEquality)
-                {
-                    context.Write(output, "new PBool(PValue.");
-                    if (binOpExpr.Operation == BinOpType.Eq)
-                        context.Write(output, "isEqual(");
-                    else
-                        context.Write(output, "notEqual(");
-                    WriteExpr(context, output, binOpExpr.Lhs);
-                    context.Write(output, ", ");
-                    WriteExpr(context, output, binOpExpr.Rhs);
-                    context.Write(output, ")");
-                    context.Write(output, ")");
-                }
-                else
-                {
-                    var isPrimitive = binOpExpr.Lhs.Type.Canonicalize() is PrimitiveType &&
-                                      binOpExpr.Rhs.Type.Canonicalize() is PrimitiveType;
-                    if (!isPrimitive)
-                    {
-                        var str = $"lhs type: {binOpExpr.Lhs}, rhs type: {binOpExpr.Rhs}";
-                        throw new NotImplementedException(
-                            "Binary operations are currently only supported between primitive types and enums | " +
-                            str);
-                    }
-
-                    context.Write(output, "(");
-                    WriteExpr(context, output, binOpExpr.Lhs);
-                    context.Write(output, $").{BinOpToStr(binOpExpr.Operation)}(");
-                    if (binOpExpr.Rhs is NullLiteralExpr)
-                        context.Write(output, $"{GetDefaultValue(binOpExpr.Lhs.Type)}");
-                    else
-                        WriteExpr(context, output, binOpExpr.Rhs);
-                    context.Write(output, ")");
-                }
-
-                break;
-            case BoolLiteralExpr boolLiteralExpr:
-            {
-                var unguarded = $"new {GetPExType(PrimitiveType.Bool)}" + $"({boolLiteralExpr.Value})".ToLower();
-                context.Write(output, unguarded);
-                break;
-            }
-            case CastExpr castExpr:
-                if (castExpr.SubExpr is NullLiteralExpr)
-                    context.Write(output, GetDefaultValue(castExpr.Type));
-                else
-                    WriteExpr(context, output, castExpr.SubExpr);
-                break;
-            case CoerceExpr coerceExpr:
-                switch (coerceExpr.Type.Canonicalize())
-                {
-                    case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
-                        context.Write(output, "(");
-                        WriteExpr(context, output, coerceExpr.SubExpr);
-                        context.Write(output, ").toFloat()");
-                        break;
-                    case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Int):
-                        context.Write(output, "(");
-                        WriteExpr(context, output, coerceExpr.SubExpr);
-                        context.Write(output, ").toInt()");
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(
-                            @"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
-                }
-
-                break;
-            case DefaultExpr defaultExpr:
-                context.Write(output, GetDefaultValue(defaultExpr.Type));
-                break;
-            case FloatLiteralExpr floatLiteralExpr:
-            {
-                var unguarded = $"new {GetPExType(PrimitiveType.Float)}({floatLiteralExpr.Value}f)";
-                context.Write(output, unguarded);
-                break;
-            }
-            case IntLiteralExpr intLiteralExpr:
-            {
-                var unguarded = $"new {GetPExType(PrimitiveType.Int)}({intLiteralExpr.Value})";
-                context.Write(output, unguarded);
-                break;
-            }
-            case KeysExpr keyExpr:
-                WriteExpr(context, output, keyExpr.Expr);
-                context.Write(output, ".getKeys()");
-                break;
-            case ValuesExpr valuesExpr:
-                WriteExpr(context, output, valuesExpr.Expr);
-                context.Write(output, ".getValues()");
-                break;
-            case MapAccessExpr mapAccessExpr:
-                context.Write(output, $"(({GetPExType(mapAccessExpr.MapExpr.Type)})");
-                WriteExpr(context, output, mapAccessExpr.MapExpr);
-                context.Write(output, ").get(");
-                WriteExpr(context, output, mapAccessExpr.IndexExpr);
-                context.Write(output, ")");
-                break;
-            case SeqAccessExpr seqAccessExpr:
-                context.Write(output, $"(({GetPExType(seqAccessExpr.SeqExpr.Type)})");
-                WriteExpr(context, output, seqAccessExpr.SeqExpr);
-                context.Write(output, ").get(");
-                WriteExpr(context, output, seqAccessExpr.IndexExpr);
-                context.Write(output, ")");
-                break;
-            case SetAccessExpr setAccessExpr:
-                context.Write(output, $"(({GetPExType(setAccessExpr.SetExpr.Type)})");
-                WriteExpr(context, output, setAccessExpr.SetExpr);
-                context.Write(output, ").get(");
-                WriteExpr(context, output, setAccessExpr.IndexExpr);
-                context.Write(output, ")");
-                break;
-            case NamedTupleAccessExpr namedTupleAccessExpr:
-                context.Write(output, $"(({GetPExType(namedTupleAccessExpr.Type)})(");
-                context.Write(output, $"(({GetPExType(namedTupleAccessExpr.SubExpr.Type)})");
-                WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
-                context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\")))");
-                break;
-            case ThisRefExpr _:
-                context.Write(output, "new PMachineValue(this)");
-                break;
-            case TupleAccessExpr tupleAccessExpr:
-                context.Write(output, $"({GetPExType(tupleAccessExpr.Type)})(");
-                var tupleType = tupleAccessExpr.SubExpr.Type.Canonicalize() as TupleType;
-                context.Write(output, $"(({GetPExType(tupleAccessExpr.SubExpr.Type)})");
-                WriteExpr(context, output, tupleAccessExpr.SubExpr);
-                context.Write(output, $").getField({tupleAccessExpr.FieldNo}))");
-                break;
-            case NamedTupleExpr namedTupleExpr:
-                context.WriteLine(output, "new PNamedTuple(");
-                var fields = (namedTupleExpr.Type.Canonicalize() as NamedTupleType).Fields;
-                var nttype = namedTupleExpr.Type as NamedTupleType;
-
-                context.Write(output, "List.of(");
-                for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
-                {
-                    context.Write(output, $"\"{fields[i].Name}\"");
-                    if (i + 1 != namedTupleExpr.TupleFields.Count)
-                        context.Write(output, ", ");
-                }
-
-                context.WriteLine(output, "), ");
-
-                context.Write(output, "Arrays.asList(");
-                if (namedTupleExpr.TupleFields.Count == 1) context.Write(output, "(PValue<?>) ");
-                for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
-                {
-                    var field = namedTupleExpr.TupleFields[i];
-                    var castExpr = new CastExpr(field.SourceLocation, field, nttype.Types[i]);
-                    WriteExpr(context, output, castExpr);
-                    if (i + 1 != namedTupleExpr.TupleFields.Count)
-                        context.Write(output, ", ");
-                }
-
-                context.WriteLine(output, ")");
-
-                context.WriteLine(output, ")");
-                break;
-            case UnnamedTupleExpr unnamedTupleExpr:
-                context.Write(output, "new PTuple(");
-                var ttype = (TupleType)unnamedTupleExpr.Type;
-                for (var i = 0; i < unnamedTupleExpr.TupleFields.Count; i++)
-                {
-                    var castExpr = new CastExpr(unnamedTupleExpr.SourceLocation, unnamedTupleExpr.TupleFields[i],
-                        ttype.Types[i]);
-                    WriteExpr(context, output, castExpr);
-                    if (i + 1 != unnamedTupleExpr.TupleFields.Count)
-                        context.Write(output, ", ");
-                }
-
-                context.Write(output, ")");
-                break;
-            case EnumElemRefExpr enumElemRefExpr:
-            {
-                var unguarded =
-                    $"new {GetPExType(enumElemRefExpr.Type)}(\"{enumElemRefExpr.Type.OriginalRepresentation}\", \"{enumElemRefExpr.Value.Name}\", {enumElemRefExpr.Value.Value})";
-                context.Write(output, unguarded);
-                break;
-            }
-            case EventRefExpr eventRefExpr:
-            {
-                var unguarded = $"new {GetPExType(PrimitiveType.Event)}({context.GetNameForDecl(eventRefExpr.Value)})";
-                context.Write(output, unguarded);
-                break;
-            }
-            case VariableAccessExpr variableAccessExpr:
-                context.Write(output, $"{GetGlobalParamAndLocalVariableName(variableAccessExpr.Variable)}");
-                break;
-            case FunCallExpr _:
-                throw new InvalidOperationException(
-                    "Compilation of call expressions should be handled as part of assignment statements");
-            case ContainsExpr containsExpr:
-                var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
-                var isSet = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Set);
-                if (isMap)
-                    elementType = ((MapType)containsExpr.Collection.Type.Canonicalize()).KeyType;
-                else if (isSet)
-                    elementType = ((SetType)containsExpr.Collection.Type.Canonicalize()).ElementType;
-                else
-                    elementType = ((SequenceType)containsExpr.Collection.Type.Canonicalize()).ElementType;
-
-                WriteExpr(context, output, containsExpr.Collection);
-                context.Write(output, ".contains(");
-                WriteExpr(context, output, containsExpr.Item);
-                context.Write(output, ")");
-                break;
-            case CtorExpr ctorExpr:
-                WriteCtorExpr(context, output, ctorExpr.Interface, ctorExpr.Arguments);
-                break;
-            case NondetExpr _:
-            case FairNondetExpr _:
-            {
-                var loc = $"\"{context.LocationResolver.GetLocation(expr.SourceLocation).ToString()
-                    .Replace(@"\", @"\\")}\"";
-                context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomBool({loc})");
-                break;
-            }
-            case ChooseExpr chooseExpr:
-            {
-                var loc = $"\"{context.LocationResolver.GetLocation(chooseExpr.SourceLocation).ToString()
-                    .Replace(@"\", @"\\")}\"";
-
-                if (chooseExpr.SubExpr == null)
-                {
-                    context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomBool({loc})");
-                    return;
-                }
-
-                switch (chooseExpr.SubExpr.Type.Canonicalize())
-                {
-                    case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                        context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomInt({loc}, ");
-                        WriteExpr(context, output, chooseExpr.SubExpr);
-                        context.Write(output, ")");
-                        break;
-                    case SequenceType sequenceType:
-                        context.Write(output,
-                            $"({GetPExType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
-                        WriteExpr(context, output, chooseExpr.SubExpr);
-                        context.Write(output, ")");
-                        break;
-                    case SetType setType:
-                        context.Write(output,
-                            $"({GetPExType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
-                        WriteExpr(context, output, chooseExpr.SubExpr);
-                        context.Write(output, ")");
-                        break;
-                    case MapType mapType:
-                        context.Write(output,
-                            $"({GetPExType(mapType.KeyType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
-                        WriteExpr(context, output, chooseExpr.SubExpr);
-                        context.Write(output, ")");
-                        break;
-                    default:
-                        throw new NotImplementedException(
-                            $"Cannot handle choose on expressions of type {chooseExpr.SubExpr.Type}.");
-                }
-
-                break;
-            }
-            case SizeofExpr sizeOfExpr:
-                WriteExpr(context, output, sizeOfExpr.Expr);
-                context.Write(output, ".size()");
-                break;
-            case StringExpr stringExpr:
-                var baseString = stringExpr.BaseString;
-                if (stringExpr.Args.Count != 0) baseString = TransformPrintMessage(baseString);
-                context.Write(output, $"new {GetPExType(PrimitiveType.String)}(\"{baseString}\"");
-                foreach (var arg in stringExpr.Args)
-                {
-                    context.Write(output, ", ");
-                    WriteExpr(context, output, arg);
-                }
-
-                context.Write(output, ")");
-                break;
-            case NullLiteralExpr _:
-                context.Write(output, "null");
+            case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Int):
+                context.Write(output, "(");
+                this.WriteExpr(context, output, coerceExpr.SubExpr);
+                context.Write(output, ").toInt()");
                 break;
             default:
-                context.Write(output, $"/* Skipping expr '{expr.GetType().Name}' */");
-                break;
+                throw new ArgumentOutOfRangeException(
+                    @"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
         }
+    }
+
+    public void WriteDefaultExpr(CompilationContext context, StringWriter output, DefaultExpr defaultExpr)
+    {
+        context.Write(output, GetDefaultValue(defaultExpr.Type));
+    }
+
+    public void WriteFloatLiteralExpr(CompilationContext context, StringWriter output, FloatLiteralExpr floatLiteralExpr)
+    {
+        var unguarded = $"new {GetPExType(PrimitiveType.Float)}({floatLiteralExpr.Value}f)";
+        context.Write(output, unguarded);
+    }
+
+    public void WriteIntLiteralExpr(CompilationContext context, StringWriter output, IntLiteralExpr intLiteralExpr)
+    {
+        var unguarded = $"new {GetPExType(PrimitiveType.Int)}({intLiteralExpr.Value})";
+        context.Write(output, unguarded);
+    }
+
+    public void WriteKeysExpr(CompilationContext context, StringWriter output, KeysExpr keyExpr)
+    {
+        this.WriteExpr(context, output, keyExpr.Expr);
+        context.Write(output, ".getKeys()");
+    }
+
+    public void WriteValuesExpr(CompilationContext context, StringWriter output, ValuesExpr valuesExpr)
+    {
+        this.WriteExpr(context, output, valuesExpr.Expr);
+        context.Write(output, ".getValues()");
+    }
+
+    public void WriteMapAccessExpr(CompilationContext context, StringWriter output, MapAccessExpr mapAccessExpr)
+    {
+        context.Write(output, $"(({GetPExType(mapAccessExpr.MapExpr.Type)})");
+        this.WriteExpr(context, output, mapAccessExpr.MapExpr);
+        context.Write(output, ").get(");
+        this.WriteExpr(context, output, mapAccessExpr.IndexExpr);
+        context.Write(output, ")");
+    }
+
+    public void WriteSeqAccessExpr(CompilationContext context, StringWriter output, SeqAccessExpr seqAccessExpr)
+    {
+        context.Write(output, $"(({GetPExType(seqAccessExpr.SeqExpr.Type)})");
+        this.WriteExpr(context, output, seqAccessExpr.SeqExpr);
+        context.Write(output, ").get(");
+        this.WriteExpr(context, output, seqAccessExpr.IndexExpr);
+        context.Write(output, ")");
+    }
+
+    public void WriteSetAccessExpr(CompilationContext context, StringWriter output, SetAccessExpr setAccessExpr)
+    {
+        context.Write(output, $"(({GetPExType(setAccessExpr.SetExpr.Type)})");
+        this.WriteExpr(context, output, setAccessExpr.SetExpr);
+        context.Write(output, ").get(");
+        this.WriteExpr(context, output, setAccessExpr.IndexExpr);
+        context.Write(output, ")");
+    }
+
+    public void WriteNamedTupleAccessExpr(CompilationContext context, StringWriter output, NamedTupleAccessExpr namedTupleAccessExpr)
+    {
+        context.Write(output, $"(({GetPExType(namedTupleAccessExpr.Type)})(");
+        context.Write(output, $"(({GetPExType(namedTupleAccessExpr.SubExpr.Type)})");
+        this.WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
+        context.Write(output, $").getField(\"{namedTupleAccessExpr.FieldName}\")))");
+    }
+
+    public void WriteThisRefExpr(CompilationContext context, StringWriter output, ThisRefExpr expr)
+    {
+        context.Write(output, "new PMachineValue(this)");
+    }
+
+    public void WriteTupleAccessExpr(CompilationContext context, StringWriter output, TupleAccessExpr tupleAccessExpr)
+    {
+        context.Write(output, $"({GetPExType(tupleAccessExpr.Type)})(");
+        var tupleType = tupleAccessExpr.SubExpr.Type.Canonicalize() as TupleType;
+        context.Write(output, $"(({GetPExType(tupleAccessExpr.SubExpr.Type)})");
+        this.WriteExpr(context, output, tupleAccessExpr.SubExpr);
+        context.Write(output, $").getField({tupleAccessExpr.FieldNo}))");
+    }
+
+    public void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr namedTupleExpr)
+    {
+        context.WriteLine(output, "new PNamedTuple(");
+        var fields = (namedTupleExpr.Type.Canonicalize() as NamedTupleType).Fields;
+        var nttype = namedTupleExpr.Type as NamedTupleType;
+
+        context.Write(output, "List.of(");
+        for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
+        {
+            context.Write(output, $"\"{fields[i].Name}\"");
+            if (i + 1 != namedTupleExpr.TupleFields.Count)
+                context.Write(output, ", ");
+        }
+
+        context.WriteLine(output, "), ");
+
+        context.Write(output, "Arrays.asList(");
+        if (namedTupleExpr.TupleFields.Count == 1) context.Write(output, "(PValue<?>) ");
+        for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
+        {
+            var field = namedTupleExpr.TupleFields[i];
+            var castExpr = new CastExpr(field.SourceLocation, field, nttype.Types[i]);
+            this.WriteExpr(context, output, castExpr);
+            if (i + 1 != namedTupleExpr.TupleFields.Count)
+                context.Write(output, ", ");
+        }
+
+        context.WriteLine(output, ")");
+
+        context.WriteLine(output, ")");
+    }
+
+    public void WriteUnnamedTupleExpr(CompilationContext context, StringWriter output, UnnamedTupleExpr unnamedTupleExpr)
+    {
+        context.Write(output, "new PTuple(");
+        var ttype = (TupleType)unnamedTupleExpr.Type;
+        for (var i = 0; i < unnamedTupleExpr.TupleFields.Count; i++)
+        {
+            var castExpr = new CastExpr(unnamedTupleExpr.SourceLocation, unnamedTupleExpr.TupleFields[i],
+                ttype.Types[i]);
+            this.WriteExpr(context, output, castExpr);
+            if (i + 1 != unnamedTupleExpr.TupleFields.Count)
+                context.Write(output, ", ");
+        }
+
+        context.Write(output, ")");
+    }
+
+    public void WriteEnumElemRefExpr(CompilationContext context, StringWriter output, EnumElemRefExpr enumElemRefExpr)
+    {
+        var unguarded =
+            $"new {GetPExType(enumElemRefExpr.Type)}(\"{enumElemRefExpr.Type.OriginalRepresentation}\", \"{enumElemRefExpr.Value.Name}\", {enumElemRefExpr.Value.Value})";
+        context.Write(output, unguarded);
+    }
+
+    public void WriteEventRefExpr(CompilationContext context, StringWriter output, EventRefExpr eventRefExpr)
+    {
+        var unguarded = $"new {GetPExType(PrimitiveType.Event)}({context.GetNameForDecl(eventRefExpr.Value)})";
+        context.Write(output, unguarded);
+    }
+
+    public void WriteVariableAccessExpr(CompilationContext context, StringWriter output, VariableAccessExpr variableAccessExpr)
+    {
+        context.Write(output, $"{GetGlobalParamAndLocalVariableName(variableAccessExpr.Variable)}");
+    }
+
+    public void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr expr)
+    {
+        throw new InvalidOperationException(
+            "Compilation of call expressions should be handled as part of assignment statements");
+    }
+
+    public void WriteContainsExpr(CompilationContext context, StringWriter output, ContainsExpr containsExpr)
+    {
+        PLanguageType elementType;
+        var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
+        var isSet = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Set);
+        if (isMap)
+            elementType = ((MapType)containsExpr.Collection.Type.Canonicalize()).KeyType;
+        else if (isSet)
+            elementType = ((SetType)containsExpr.Collection.Type.Canonicalize()).ElementType;
+        else
+            elementType = ((SequenceType)containsExpr.Collection.Type.Canonicalize()).ElementType;
+
+        this.WriteExpr(context, output, containsExpr.Collection);
+        context.Write(output, ".contains(");
+        this.WriteExpr(context, output, containsExpr.Item);
+        context.Write(output, ")");
+    }
+
+    public void WriteCtorExpr(CompilationContext context, StringWriter output, CtorExpr ctorExpr)
+    {
+        WriteCtorExpr(context, output, ctorExpr.Interface, ctorExpr.Arguments);
+    }
+
+    public void WriteNondetExpr(CompilationContext context, StringWriter output, NondetExpr expr)
+    {
+        WriteRandomBool(context, output, expr);
+    }
+
+    public void WriteFairNondetExpr(CompilationContext context, StringWriter output, FairNondetExpr expr)
+    {
+        WriteRandomBool(context, output, expr);
+    }
+
+    private void WriteRandomBool(CompilationContext context, StringWriter output, IPExpr expr)
+    {
+        var loc = $"\"{context.LocationResolver.GetLocation(expr.SourceLocation).ToString()
+            .Replace(@"\", @"\\")}\"";
+        context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomBool({loc})");
+    }
+
+    public void WriteChooseExpr(CompilationContext context, StringWriter output, ChooseExpr chooseExpr)
+    {
+        var loc = $"\"{context.LocationResolver.GetLocation(chooseExpr.SourceLocation).ToString()
+            .Replace(@"\", @"\\")}\"";
+
+        if (chooseExpr.SubExpr == null)
+        {
+            context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomBool({loc})");
+            return;
+        }
+
+        switch (chooseExpr.SubExpr.Type.Canonicalize())
+        {
+            case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
+                context.Write(output, $"{CompilationContext.SchedulerVar}.getRandomInt({loc}, ");
+                this.WriteExpr(context, output, chooseExpr.SubExpr);
+                context.Write(output, ")");
+                break;
+            case SequenceType sequenceType:
+                context.Write(output,
+                    $"({GetPExType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
+                this.WriteExpr(context, output, chooseExpr.SubExpr);
+                context.Write(output, ")");
+                break;
+            case SetType setType:
+                context.Write(output,
+                    $"({GetPExType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
+                this.WriteExpr(context, output, chooseExpr.SubExpr);
+                context.Write(output, ")");
+                break;
+            case MapType mapType:
+                context.Write(output,
+                    $"({GetPExType(mapType.KeyType)}) {CompilationContext.SchedulerVar}.getRandomEntry({loc}, ");
+                this.WriteExpr(context, output, chooseExpr.SubExpr);
+                context.Write(output, ")");
+                break;
+            default:
+                throw new NotImplementedException(
+                    $"Cannot handle choose on expressions of type {chooseExpr.SubExpr.Type}.");
+        }
+    }
+
+    public void WriteSizeofExpr(CompilationContext context, StringWriter output, SizeofExpr sizeOfExpr)
+    {
+        this.WriteExpr(context, output, sizeOfExpr.Expr);
+        context.Write(output, ".size()");
+    }
+
+    public void WriteStringExpr(CompilationContext context, StringWriter output, StringExpr stringExpr)
+    {
+        var baseString = stringExpr.BaseString;
+        if (stringExpr.Args.Count != 0) baseString = TransformPrintMessage(baseString);
+        context.Write(output, $"new {GetPExType(PrimitiveType.String)}(\"{baseString}\"");
+        foreach (var arg in stringExpr.Args)
+        {
+            context.Write(output, ", ");
+            this.WriteExpr(context, output, arg);
+        }
+
+        context.Write(output, ")");
+    }
+
+    public void WriteNullLiteralExpr(CompilationContext context, StringWriter output, NullLiteralExpr expr)
+    {
+        context.Write(output, "null");
     }
 
     private void WriteCtorExpr(CompilationContext context, StringWriter output, Interface ctorInterface,
@@ -1847,14 +1959,14 @@ internal class PExCodeGenerator : ICodeGenerator
         {
             Debug.Assert(ctorArguments.Count == 1);
             context.Write(output, ", ");
-            WriteExpr(context, output, ctorArguments[0]);
+            this.WriteExpr(context, output, ctorArguments[0]);
         }
         else if (ctorArguments.Count > 1)
         {
             context.Write(output, ", new PTuple (");
             for (var i = 0; i < ctorArguments.Count; i++)
             {
-                WriteExpr(context, output, ctorArguments[i]);
+                this.WriteExpr(context, output, ctorArguments[i]);
                 if (i != ctorArguments.Count - 1) context.Write(output, ", ");
             }
 

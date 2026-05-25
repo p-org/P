@@ -36,6 +36,7 @@ namespace Plang.Compiler.Backend
         bool WriteAnnounceStmt(TContext context, StringWriter output, TFrame frame, AnnounceStmt stmt);
         bool WriteAssertStmt(TContext context, StringWriter output, TFrame frame, AssertStmt stmt);
         bool WriteAssignStmt(TContext context, StringWriter output, TFrame frame, AssignStmt stmt);
+        bool WriteAssumeStmt(TContext context, StringWriter output, TFrame frame, AssumeStmt stmt);
         bool WriteBreakStmt(TContext context, StringWriter output, TFrame frame, BreakStmt stmt);
         bool WriteCompoundStmt(TContext context, StringWriter output, TFrame frame, CompoundStmt stmt);
         bool WriteContinueStmt(TContext context, StringWriter output, TFrame frame, ContinueStmt stmt);
@@ -53,6 +54,7 @@ namespace Plang.Compiler.Backend
         bool WriteRemoveStmt(TContext context, StringWriter output, TFrame frame, RemoveStmt stmt);
         bool WriteReturnStmt(TContext context, StringWriter output, TFrame frame, ReturnStmt stmt);
         bool WriteSendStmt(TContext context, StringWriter output, TFrame frame, SendStmt stmt);
+        bool WriteSwapAssignStmt(TContext context, StringWriter output, TFrame frame, SwapAssignStmt stmt);
         bool WriteWhileStmt(TContext context, StringWriter output, TFrame frame, WhileStmt stmt);
     }
 
@@ -74,6 +76,7 @@ namespace Plang.Compiler.Backend
                 case AnnounceStmt s: return emitter.WriteAnnounceStmt(context, output, frame, s);
                 case AssertStmt s: return emitter.WriteAssertStmt(context, output, frame, s);
                 case AssignStmt s: return emitter.WriteAssignStmt(context, output, frame, s);
+                case AssumeStmt s: return emitter.WriteAssumeStmt(context, output, frame, s);
                 case BreakStmt s: return emitter.WriteBreakStmt(context, output, frame, s);
                 case CompoundStmt s: return emitter.WriteCompoundStmt(context, output, frame, s);
                 case ContinueStmt s: return emitter.WriteContinueStmt(context, output, frame, s);
@@ -91,6 +94,7 @@ namespace Plang.Compiler.Backend
                 case RemoveStmt s: return emitter.WriteRemoveStmt(context, output, frame, s);
                 case ReturnStmt s: return emitter.WriteReturnStmt(context, output, frame, s);
                 case SendStmt s: return emitter.WriteSendStmt(context, output, frame, s);
+                case SwapAssignStmt s: return emitter.WriteSwapAssignStmt(context, output, frame, s);
                 case WhileStmt s: return emitter.WriteWhileStmt(context, output, frame, s);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(stmt), $"type was {stmt?.GetType().FullName}");

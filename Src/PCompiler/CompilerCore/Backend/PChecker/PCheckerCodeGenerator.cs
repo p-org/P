@@ -1225,6 +1225,15 @@ namespace Plang.Compiler.Backend.CSharp
             return false;
         }
 
+        // assume and swap-assign do not reach the PChecker backend; match the prior
+        // switch default (which threw) so the behavior is unchanged.
+        public bool WriteAssumeStmt(CompilationContext context, StringWriter output, Function function, AssumeStmt stmt) =>
+            throw new ArgumentOutOfRangeException(nameof(stmt));
+
+        public bool WriteSwapAssignStmt(CompilationContext context, StringWriter output, Function function, SwapAssignStmt stmt) =>
+            throw new ArgumentOutOfRangeException(nameof(stmt));
+
+
         private void WriteLValue(CompilationContext context, StringWriter output, IPExpr lvalue)
         {
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block

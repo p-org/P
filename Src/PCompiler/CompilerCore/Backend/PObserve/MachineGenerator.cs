@@ -592,6 +592,8 @@ namespace Plang.Compiler.Backend.Java {
         public bool WriteReceiveStmt(CompilationContext context, StringWriter output, object frame, ReceiveStmt stmt) => WriteUnsupportedStmt(stmt);
         public bool WriteSendStmt(CompilationContext context, StringWriter output, object frame, SendStmt stmt) => WriteUnsupportedStmt(stmt);
         public bool WriteAnnounceStmt(CompilationContext context, StringWriter output, object frame, AnnounceStmt stmt) => WriteUnsupportedStmt(stmt);
+        public bool WriteAssumeStmt(CompilationContext context, StringWriter output, object frame, AssumeStmt stmt) => WriteUnsupportedStmt(stmt);
+        public bool WriteSwapAssignStmt(CompilationContext context, StringWriter output, object frame, SwapAssignStmt stmt) => WriteUnsupportedStmt(stmt);
 
         private bool WriteUnsupportedStmt(IPStmt stmt)
         {

@@ -902,7 +902,7 @@ internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<Compilation
     {
         var function = frame.Function;
         var flowContext = frame.FlowContext;
-        if (!(whileStmt.Condition is BoolLiteralExpr) && ((BoolLiteralExpr)whileStmt.Condition).Value)
+        if (!(whileStmt.Condition is BoolLiteralExpr ble) || !ble.Value)
             throw new ArgumentOutOfRangeException(
                 "While statement condition should always be transformed to constant 'true' during IR simplification.");
 
@@ -1090,6 +1090,8 @@ internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<Compilation
     public bool WriteForeachStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ForeachStmt stmt) => throw UnsupportedStmt(stmt, frame);
     public bool WriteNoStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, NoStmt stmt) => throw UnsupportedStmt(stmt, frame);
     public bool WriteReceiveStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ReceiveStmt stmt) => throw UnsupportedStmt(stmt, frame);
+    public bool WriteAssumeStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AssumeStmt stmt) => throw UnsupportedStmt(stmt, frame);
+    public bool WriteSwapAssignStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, SwapAssignStmt stmt) => throw UnsupportedStmt(stmt, frame);
 
     private static NotImplementedException UnsupportedStmt(IPStmt stmt, PExStmtFrame frame) =>
         new NotImplementedException(

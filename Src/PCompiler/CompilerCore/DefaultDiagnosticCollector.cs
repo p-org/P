@@ -18,7 +18,11 @@ namespace Plang.Compiler
 
         public bool ContinueOnError { get; }
 
-        public IReadOnlyList<Exception> Diagnostics => diagnostics;
+        // AsReadOnly returns a live ReadOnlyCollection<T> wrapper: callers can
+        // still observe new diagnostics as they're added, but mutating methods
+        // throw NotSupportedException even if a caller downcasts. This
+        // preserves the invariant that only Report() can change the list.
+        public IReadOnlyList<Exception> Diagnostics => diagnostics.AsReadOnly();
 
         public bool HasErrors => diagnostics.Count > 0;
 

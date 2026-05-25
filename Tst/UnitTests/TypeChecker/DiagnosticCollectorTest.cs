@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Antlr4.Runtime;
 using NUnit.Framework;
 using Plang.Compiler;
@@ -60,15 +61,29 @@ public class DiagnosticCollectorTest
     [Test]
     public void ErrorType_IsAssignableFromEverything_SuppressesCascade()
     {
-        // The cascade-suppression contract: ErrorType claims compatibility
-        // with every other type, so downstream IsAssignableFrom/IsSameTypeAs
-        // checks transparently pass and don't emit new diagnostics.
+        // ErrorType claims compatibility on its own IsAssignableFrom override
+        // (covers the asymmetric LHS-is-error case).
         Assert.IsTrue(ErrorType.Instance.IsAssignableFrom(PrimitiveType.Int));
         Assert.IsTrue(ErrorType.Instance.IsAssignableFrom(PrimitiveType.Bool));
         Assert.IsTrue(ErrorType.Instance.IsAssignableFrom(PrimitiveType.String));
-        Assert.IsTrue(ErrorType.Instance.IsSameTypeAs(PrimitiveType.Int));
-        // And it Canonicalize()s to itself (no infinite recursion).
+        // And Canonicalize()s to itself (no infinite recursion).
         Assert.AreSame(ErrorType.Instance, ErrorType.Instance.Canonicalize());
+    }
+
+    [Test]
+    public void IsSameTypeAs_IsSymmetricForErrorType()
+    {
+        // Symmetric cascade suppression: PLanguageType.IsSameTypeAs has an
+        // explicit short-circuit that fires regardless of which side holds
+        // the sentinel. The naive IsAssignableFrom-and-IsAssignableFrom
+        // composition would only handle one direction (since e.g.
+        // PrimitiveType.Int.IsAssignableFrom(ErrorType) returns false), so
+        // this test guards against regressions in that base-class short-circuit.
+        Assert.IsTrue(ErrorType.Instance.IsSameTypeAs(PrimitiveType.Int));
+        Assert.IsTrue(PrimitiveType.Int.IsSameTypeAs(ErrorType.Instance));
+        Assert.IsTrue(ErrorType.Instance.IsSameTypeAs(PrimitiveType.Bool));
+        Assert.IsTrue(PrimitiveType.Bool.IsSameTypeAs(ErrorType.Instance));
+        Assert.IsTrue(ErrorType.Instance.IsSameTypeAs(ErrorType.Instance));
     }
 
     [Test]
@@ -100,5 +115,38 @@ public class DiagnosticCollectorTest
         Assert.IsNotNull(config.Diagnostics);
         Assert.IsNotNull(config.Handler.Diagnostics);
         Assert.AreSame(config.Diagnostics, config.Handler.Diagnostics);
+    }
+
+    [Test]
+    public void Handler_TwoArgCtor_ThrowsOnNullCollector()
+    {
+        // Guards the shared-instance invariant: silently substituting a fresh
+        // collector here would mean ICompilerConfiguration.Diagnostics and
+        // Handler.Diagnostics end up as different instances, and visitors
+        // reaching the handler-side collector would never have their reports
+        // surfaced by Compiler.cs's flush pass.
+        Assert.Throws<ArgumentNullException>(
+            () => new DefaultTranslationErrorHandler(new DefaultLocationResolver(), null));
+    }
+
+    [Test]
+    public void Diagnostics_IsReadOnlyWrapper_DowncastMutationFails()
+    {
+        // Even though the property type is IReadOnlyList, the returned wrapper
+        // must reject mutation if a caller downcasts. Otherwise the collector's
+        // ordering / HasErrors guarantees can be violated externally.
+        var collector = new DefaultDiagnosticCollector(continueOnError: true);
+        collector.Report(new TranslationException("first"));
+
+        var diagnostics = collector.Diagnostics;
+        if (diagnostics is IList<Exception> mutable)
+        {
+            // ReadOnlyCollection<T> implements IList<T> but throws on mutators.
+            Assert.Throws<NotSupportedException>(
+                () => mutable.Add(new TranslationException("snuck-in")));
+            Assert.Throws<NotSupportedException>(() => mutable.Clear());
+        }
+        // Either way, the underlying state stayed at 1.
+        Assert.AreEqual(1, collector.Diagnostics.Count);
     }
 }

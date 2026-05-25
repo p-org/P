@@ -35,6 +35,16 @@ namespace Plang.Compiler.TypeChecker.Types
 
         public bool IsSameTypeAs(PLanguageType otherType)
         {
+            // ErrorType short-circuit: an error sentinel on either side compares
+            // equal to anything. This makes cascade-suppression symmetric — see
+            // ErrorType's class doc for the rationale. Without this, an
+            // expression like `int x; x == undeclaredVar` would still emit a
+            // spurious "incomparable types" diagnostic because
+            // `int.IsAssignableFrom(ErrorType)` (the second arm of the AND
+            // below) returns false on the existing type-specific overrides.
+            // No existing caller can produce an ErrorType, so this branch is
+            // dormant until Phase 2 starts substituting the sentinel.
+            if (this is ErrorType || otherType is ErrorType) return true;
             return IsAssignableFrom(otherType) && otherType.IsAssignableFrom(this);
         }
 

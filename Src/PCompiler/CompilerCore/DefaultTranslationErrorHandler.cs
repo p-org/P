@@ -20,10 +20,14 @@ namespace Plang.Compiler
         {
         }
 
+        // Throws on null so we never silently break the invariant that
+        // ICompilerConfiguration.Diagnostics and Handler.Diagnostics are the
+        // SAME instance. Callers that want a default collector should use the
+        // 1-arg overload above.
         public DefaultTranslationErrorHandler(ILocationResolver locationResolver, IDiagnosticCollector diagnostics)
         {
             this.locationResolver = locationResolver;
-            Diagnostics = diagnostics ?? new DefaultDiagnosticCollector();
+            Diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
         }
 
         public IDiagnosticCollector Diagnostics { get; }

@@ -8,10 +8,24 @@ namespace Plang.Compiler.TypeChecker.Types
     /// Sentinel type produced when type-checking fails for an expression.
     /// In collecting mode (see <see cref="IDiagnosticCollector"/>), an
     /// originating visitor reports the diagnostic and returns a value whose
-    /// <c>Type</c> is <see cref="Instance"/>. Downstream type checks treat
+    /// <c>Type</c> is <see cref="Instance"/>. Downstream checks then treat
     /// <see cref="ErrorType"/> as compatible with everything, which suppresses
     /// cascading errors: e.g. <c>undeclaredVar + 1</c> should produce one
     /// "undeclared" diagnostic, not also an "incompatible operand types" one.
+    ///
+    /// Cascade suppression has two pieces:
+    ///   - This class overrides <see cref="IsAssignableFrom"/> to return true
+    ///     for any other type. That covers the asymmetric case where the
+    ///     sentinel is on the LHS of an assignability check.
+    ///   - <see cref="PLanguageType.IsSameTypeAs"/> short-circuits when either
+    ///     operand is an <see cref="ErrorType"/>. That covers symmetric
+    ///     equality checks regardless of operand order, since not every
+    ///     existing type's <c>IsAssignableFrom</c> override knows about the
+    ///     sentinel.
+    ///   - Phase 2 will additionally add a <c>CheckAssignable</c> helper in
+    ///     <c>TypeCheckingUtils</c> that visitors use in place of inline
+    ///     <c>IsAssignableFrom</c> calls, to cover the remaining asymmetric
+    ///     sites where <c>ErrorType</c> appears on the RHS.
     ///
     /// Phase 1 introduces the sentinel; no visitor produces it yet. Phase 2
     /// converts the ~111 throw sites in ExprVisitor/StatementVisitor to record-

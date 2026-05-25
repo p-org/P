@@ -391,11 +391,6 @@ internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<Compilation
                 var cont = (Continuation)method;
                 context.WriteLine(output, $"register_{context.GetContinuationName(cont)}();");
             }
-
-            if (method is WhileFunction)
-            {
-                context.WriteLine(output, $"register_{context.GetNameForDecl(method)}();");
-            }
         }
 
         context.WriteLine(output, "}");
@@ -600,39 +595,6 @@ internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<Compilation
         var functionName = context.GetNameForDecl(function);
 
 
-        if (function is WhileFunction)
-        {
-            context.WriteLine(output, $"class {functionName}_object extends PLoopObject {{");
-            foreach (var local in function.ParentFunction.LocalVariables)
-            {
-                context.WriteLine(output,
-                    $"public {GetPExType(local.Type)} {local.Name};");
-            }
-            
-            context.WriteLine(output);
-            context.WriteLine(output,$"public {functionName}_object() {{");
-            context.WriteLine(output,"clear();");
-            context.WriteLine(output, "}");
-            
-            context.WriteLine(output);
-            context.WriteLine(output,$"public void clear() {{");
-            foreach (var local in function.ParentFunction.LocalVariables)
-            {
-                context.WriteLine(output,
-                    $"{local.Name} = {GetDefaultValue(local.Type)};");
-            }
-            context.WriteLine(output, "}");
-
-            context.WriteLine(output, "}");
-            context.WriteLine(output);
-            
-            context.Write(output, $"void register_{functionName}() ");
-            context.WriteLine(output, "{");
-            context.WriteLine(output, $"registerLoop(\"{functionName}\", new {functionName}_object());");
-            context.WriteLine(output, "}");
-            context.WriteLine(output);
-        }
-
         context.WriteLine(output, $"{staticKeyword}{returnType} ");
 
         context.Write(output, functionName);
@@ -670,12 +632,7 @@ internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<Compilation
             context.WriteLine(output,
                 $"{GetPExType(function.Signature.ReturnType)} {CompilationContext.ReturnValue} = {GetDefaultValue(function.Signature.ReturnType)};");
 
-        var exited = false;
-        if (function is WhileFunction)
-            /* Loop body */
-            exited = WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
-        else
-            exited = WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
+        var exited = WriteStmt(function, context, output, ControlFlowContext.FreshFuncContext(context), function.Body);
         if (!exited)
             if (function.Signature.ReturnType != null && !function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                 context.Write(output, $"return {CompilationContext.ReturnValue};");

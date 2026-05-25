@@ -265,208 +265,86 @@ namespace Plang.Compiler.TypeChecker
 
         #region Overloaded lookup methods
 
-        public bool Lookup(string name, out EnumElem tree)
+        /// <summary>Tries to read a declaration of type <typeparamref name="T"/> from a single scope.</summary>
+        private delegate bool TryGet<T>(Scope scope, string name, out T result);
+
+        /// <summary>
+        /// Walks this scope and its ancestors, returning the first declaration the supplied
+        /// <paramref name="get"/> finds. The per-scope read is one of the overloaded
+        /// <c>Get</c> methods; this shared walk replaces what used to be ~18 identical loops.
+        /// </summary>
+        private bool LookupInParentChain<T>(string name, out T result, TryGet<T> get) where T : class
         {
-            var current = this;
-            while (current != null)
+            for (var current = this; current != null; current = current.Parent)
             {
-                if (current.Get(name, out tree))
+                if (get(current, name, out result))
                 {
                     return true;
                 }
-
-                current = current.Parent;
             }
 
-            tree = null;
+            result = null;
             return false;
+        }
+
+        public bool Lookup(string name, out EnumElem tree)
+        {
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out EnumElem t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out PEnum tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out PEnum t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out Event tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Event t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out NamedEventSet tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out NamedEventSet t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out Function tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Function t) => s.Get(n, out t));
         }
         
         public bool Lookup(string name, out Invariant tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Invariant t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out InvariantGroup tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out InvariantGroup t) => s.Get(n, out t));
         }
         
         public bool Lookup(string name, out Axiom tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Axiom t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out ProofCommand tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out ProofCommand t) => s.Get(n, out t));
         }
         
         public bool Lookup(string name, out Pure tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Pure t) => s.Get(n, out t));
         }
         
         public bool Lookup(string name, out Interface tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Interface t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out Machine tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Machine t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out State tree)
@@ -498,104 +376,32 @@ namespace Plang.Compiler.TypeChecker
 
         public bool Lookup(string name, out TypeDef tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out TypeDef t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out Variable tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Variable t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out SafetyTest tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out SafetyTest t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out RefinementTest tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out RefinementTest t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out Implementation tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out Implementation t) => s.Get(n, out t));
         }
 
         public bool Lookup(string name, out NamedModule tree)
         {
-            var current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
+            return LookupInParentChain(name, out tree, static (Scope s, string n, out NamedModule t) => s.Get(n, out t));
         }
 
         #endregion Overloaded lookup methods

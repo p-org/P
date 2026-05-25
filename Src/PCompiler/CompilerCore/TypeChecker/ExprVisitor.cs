@@ -258,7 +258,6 @@ namespace Plang.Compiler.TypeChecker
             {
                 // Check the arguments
                 var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-                ISet<Variable> linearVariables = new System.Collections.Generic.HashSet<Variable>();
 
                 if (function.Signature.Parameters.Count != arguments.Length)
                 {
@@ -283,7 +282,6 @@ namespace Plang.Compiler.TypeChecker
             {
                 // Check the arguments
                 var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-                ISet<Variable> linearVariables = new System.Collections.Generic.HashSet<Variable>();
 
                 if (pure.Signature.Parameters.Count != arguments.Length)
                 {

@@ -15,7 +15,8 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.CSharp
 {
-    internal class PCheckerCodeGenerator : ICodeGenerator, IExpressionEmitter<CompilationContext>
+    internal class PCheckerCodeGenerator : ICodeGenerator, IExpressionEmitter<CompilationContext>,
+        IStatementEmitter<CompilationContext, Function>
     {
 
         /// <summary>
@@ -833,358 +834,395 @@ namespace Plang.Compiler.Backend.CSharp
 
             foreach (var bodyStatement in function.Body.Statements)
             {
-                WriteStmt(context: context, output: output, function: function, stmt: bodyStatement);
+                this.WriteStmt(context, output, function, bodyStatement);
             }
 
             context.WriteLine(output, "}");
         }
 
-        private void WriteStmt(CompilationContext context, StringWriter output, Function function, IPStmt stmt)
+        // PChecker emits statements without tracking control-flow exit, so every handler
+        // returns false. The (context, output, function) state is threaded via the
+        // IStatementEmitter frame (here the enclosing Function).
+        public bool WriteAnnounceStmt(CompilationContext context, StringWriter output, Function function, AnnounceStmt announceStmt)
         {
-            switch (stmt)
+            context.Write(output, "currentMachine.Announce((Event)");
+            this.WriteExpr(context, output, announceStmt.Event);
+            if (announceStmt.Payload != null)
             {
-                case AnnounceStmt announceStmt:
-                    context.Write(output, "currentMachine.Announce((Event)");
-                    this.WriteExpr(context, output, announceStmt.Event);
-                    if (announceStmt.Payload != null)
-                    {
-                        context.Write(output, ", ");
-                        this.WriteExpr(context, output, announceStmt.Payload);
-                    }
+                context.Write(output, ", ");
+                this.WriteExpr(context, output, announceStmt.Payload);
+            }
 
-                    context.WriteLine(output, ");");
-                    break;
+            context.WriteLine(output, ");");
+            return false;
+        }
 
-                case AssertStmt assertStmt:
-                    context.Write(output, "currentMachine.Assert(");
-                    this.WriteExpr(context, output, assertStmt.Assertion);
-                    context.Write(output, ",");
-                    context.Write(output, "\"Assertion Failed: \" + ");
-                    this.WriteExpr(context, output, assertStmt.Message);
-                    context.WriteLine(output, ");");
-                    //last statement
-                    if (FunctionValidator.SurelyReturns(assertStmt))
-                    {
-                        context.WriteLine(output, "throw new PUnreachableCodeException();");
-                    }
+        public bool WriteAssertStmt(CompilationContext context, StringWriter output, Function function, AssertStmt assertStmt)
+        {
+            context.Write(output, "currentMachine.Assert(");
+            this.WriteExpr(context, output, assertStmt.Assertion);
+            context.Write(output, ",");
+            context.Write(output, "\"Assertion Failed: \" + ");
+            this.WriteExpr(context, output, assertStmt.Message);
+            context.WriteLine(output, ");");
+            //last statement
+            if (FunctionValidator.SurelyReturns(assertStmt))
+            {
+                context.WriteLine(output, "throw new PUnreachableCodeException();");
+            }
 
-                    break;
+            return false;
+        }
 
-                case AssignStmt assignStmt:
-                    var needCtorAdapter = !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
-                                          && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
-                                          && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
-                    WriteLValue(context, output, assignStmt.Location);
-                    context.Write(output, $" = ({GetCSharpType(assignStmt.Location.Type, true)})(");
-                    if (needCtorAdapter)
-                    {
-                        context.Write(output, $"new {GetCSharpType(assignStmt.Location.Type)}(");
-                    }
+        public bool WriteAssignStmt(CompilationContext context, StringWriter output, Function function, AssignStmt assignStmt)
+        {
+            var needCtorAdapter = !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
+                                  && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
+                                  && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
+            WriteLValue(context, output, assignStmt.Location);
+            context.Write(output, $" = ({GetCSharpType(assignStmt.Location.Type, true)})(");
+            if (needCtorAdapter)
+            {
+                context.Write(output, $"new {GetCSharpType(assignStmt.Location.Type)}(");
+            }
 
-                    this.WriteExpr(context, output, assignStmt.Value);
-                    if (needCtorAdapter)
-                    {
-                        if (assignStmt.Location.Type.Canonicalize() is SequenceType seqType)
-                        {
-                            context.Write(output, $".Cast<{GetCSharpType(seqType.ElementType)}>()");
-                        }
-
-                        context.Write(output, ")");
-                    }
-
-                    context.WriteLine(output, ");");
-                    break;
-
-                case CompoundStmt compoundStmt:
-                    context.WriteLine(output, "{");
-                    foreach (var subStmt in compoundStmt.Statements)
-                    {
-                        WriteStmt(context, output, function, subStmt);
-                    }
-
-                    context.WriteLine(output, "}");
-                    break;
-
-                case CtorStmt ctorStmt:
-                    context.Write(output,
-                        $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
-                    context.Write(output, "currentMachine");
-                    if (ctorStmt.Arguments.Any())
-                    {
-                        context.Write(output, ", ");
-                        if (ctorStmt.Arguments.Count > 1)
-                        {
-                            //create tuple from rvaluelist
-                            context.Write(output, "new PTuple(");
-                            var septor = "";
-                            foreach (var ctorExprArgument in ctorStmt.Arguments)
-                            {
-                                context.Write(output, septor);
-                                this.WriteExpr(context, output, ctorExprArgument);
-                                septor = ",";
-                            }
-
-                            context.Write(output, ")");
-                        }
-                        else
-                        {
-                            this.WriteExpr(context, output, ctorStmt.Arguments.First());
-                        }
-                    }
-
-                    context.WriteLine(output, ");");
-                    break;
-
-                case FunCallStmt funCallStmt:
-                    var isStatic = funCallStmt.Function.Owner == null;
-                    var awaitMethod = funCallStmt.Function.CanReceive ? "await " : "";
-                    var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
-                    context.Write(output,
-                        $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
-                    var separator = "";
-
-                    foreach (var param in funCallStmt.ArgsList)
-                    {
-                        context.Write(output, separator);
-                        this.WriteExpr(context, output, param);
-                        separator = ", ";
-                    }
-
-                    if (isStatic)
-                    {
-                        context.Write(output, separator + "currentMachine");
-                    }
-
-                    context.WriteLine(output, ");");
-                    break;
-
-                case GotoStmt gotoStmt:
-                    //last statement
-                    context.Write(output, $"currentMachine.RaiseGotoStateEvent<{context.Names.GetNameForDecl(gotoStmt.State)}>(");
-                    if (gotoStmt.Payload != null)
-                    {
-                        this.WriteExpr(context, output, gotoStmt.Payload);
-                    }
-
-                    context.WriteLine(output, ");");
-                    context.WriteLine(output, "return;");
-                    break;
-
-                case IfStmt ifStmt:
-                    context.Write(output, "if (");
-                    this.WriteExpr(context, output, ifStmt.Condition);
-                    context.WriteLine(output, ")");
-                    WriteStmt(context, output, function, ifStmt.ThenBranch);
-                    if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Any())
-                    {
-                        context.WriteLine(output, "else");
-                        WriteStmt(context, output, function, ifStmt.ElseBranch);
-                    }
-
-                    break;
-
-                case AddStmt addStmt:
-                    context.Write(output, "((PSet)");
-                    this.WriteExpr(context, output, addStmt.Variable);
-                    context.Write(output, ").Add(");
-                    this.WriteExpr(context, output, addStmt.Value);
-                    context.WriteLine(output, ");");
-                    break;
-
-                case InsertStmt insertStmt:
-                    var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
-                    var castOp = isMap ? "(PMap)" : "(PSeq)";
-                    context.Write(output, $"({castOp}");
-                    this.WriteExpr(context, output, insertStmt.Variable);
-                    if (isMap)
-                    {
-                        context.Write(output, ").Add(");
-                    }
-                    else
-                    {
-                        context.Write(output, ").Insert(");
-                    }
-
-                    this.WriteExpr(context, output, insertStmt.Index);
-                    context.Write(output, ", ");
-                    this.WriteExpr(context, output, insertStmt.Value);
-                    context.WriteLine(output, ");");
-                    break;
-
-                case MoveAssignStmt moveAssignStmt:
-                    var upCast = "";
-                    if (!moveAssignStmt.FromVariable.Type.IsSameTypeAs(moveAssignStmt.ToLocation.Type))
-                    {
-                        upCast = $"({GetCSharpType(moveAssignStmt.ToLocation.Type)})";
-                        if (PLanguageType.TypeIsOfKind(moveAssignStmt.FromVariable.Type, TypeKind.Enum))
-                        {
-                            upCast = $"{upCast}(long)";
-                        }
-                    }
-
-                    WriteLValue(context, output, moveAssignStmt.ToLocation);
-                    context.WriteLine(output,
-                        $" = {upCast}{context.Names.GetNameForDecl(moveAssignStmt.FromVariable)};");
-                    break;
-
-                case NoStmt _:
-                    break;
-
-                case PrintStmt printStmt:
-                    context.Write(output, "currentMachine.LogLine(\"\" + ");
-                    this.WriteExpr(context, output, printStmt.Message);
-                    context.WriteLine(output, ");");
-                    break;
-
-                case RaiseStmt raiseStmt:
-                    //last statement
-                    if (raiseStmt.Payload.Any())
-                    {
-                        this.WriteExpr(context, output, raiseStmt.Event);
-                        context.Write(output, ".Payload = ");
-                        this.WriteExpr(context, output, raiseStmt.Payload.First());
-                        context.WriteLine(output, ";");
-                    }
-                    context.Write(output, "currentMachine.RaiseEvent(");
-                    this.WriteExpr(context, output, raiseStmt.Event);
-                    context.WriteLine(output, ");");
-                    context.WriteLine(output, "return;");
-                    break;
-
-                case ReceiveStmt receiveStmt:
-                    var eventName = context.Names.GetTemporaryName("recvEvent");
-                    var eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt))
-                        .ToHashSet();
-                    eventTypeNames.Add("PHalt"); // halt as a special case for receive
-                    var recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
-                    context.WriteLine(output, $"var {eventName} = await currentMachine.ReceiveEventAsync({recvArgs});");
-                    context.WriteLine(output, $"switch ({eventName}) {{");
-                    // add halt as a special case if doesnt exist
-                    if (receiveStmt.Cases.All(kv => kv.Key.Name != "PHalt"))
-                    {
-                        context.WriteLine(output,"case PHalt _hv: { currentMachine.RaiseEvent(_hv); break;} ");
-
-                    }
-
-                    foreach (var (key, value) in receiveStmt.Cases)
-                    {
-                        var caseName = context.Names.GetTemporaryName("evt");
-                        context.WriteLine(output, $"case {context.Names.GetNameForDecl(key)} {caseName}: {{");
-                        if (value.Signature.Parameters.FirstOrDefault() is { } caseArg)
-                        {
-                            context.WriteLine(output,
-                                $"{GetCSharpType(caseArg.Type)} {context.Names.GetNameForDecl(caseArg)} = ({GetCSharpType(caseArg.Type)})({caseName}.Payload);");
-                        }
-
-                        foreach (var local in value.LocalVariables)
-                        {
-                            var type = local.Type;
-                            context.WriteLine(output,
-                                $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
-                        }
-
-                        foreach (var caseStmt in value.Body.Statements)
-                        {
-                            WriteStmt(context, output, function, caseStmt);
-                        }
-
-                        context.WriteLine(output, "} break;");
-                    }
-
-                    context.WriteLine(output, "}");
-                    break;
-
-                case RemoveStmt removeStmt:
+            this.WriteExpr(context, output, assignStmt.Value);
+            if (needCtorAdapter)
+            {
+                if (assignStmt.Location.Type.Canonicalize() is SequenceType seqType)
                 {
-                    var castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map)
-                        ? "(PMap)"
-                        : PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence)
-                            ? "(PSeq)"
-                            : "(PSet)";
-                    context.Write(output, $"({castOperation}");
-                    switch (removeStmt.Variable.Type.Canonicalize())
-                    {
-                        case MapType _:
-                            this.WriteExpr(context, output, removeStmt.Variable);
-                            context.Write(output, ").Remove(");
-                            this.WriteExpr(context, output, removeStmt.Value);
-                            context.WriteLine(output, ");");
-                            break;
-
-                        case SequenceType _:
-                            this.WriteExpr(context, output, removeStmt.Variable);
-                            context.Write(output, ").RemoveAt(");
-                            this.WriteExpr(context, output, removeStmt.Value);
-                            context.WriteLine(output, ");");
-                            break;
-
-                        case SetType _:
-                            this.WriteExpr(context, output, removeStmt.Variable);
-                            context.Write(output, ").Remove(");
-                            this.WriteExpr(context, output, removeStmt.Value);
-                            context.WriteLine(output, ");");
-                            break;
-
-                        default:
-                            throw new ArgumentOutOfRangeException(
-                                $"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
-                    }
-                    break;
+                    context.Write(output, $".Cast<{GetCSharpType(seqType.ElementType)}>()");
                 }
 
-                case ReturnStmt returnStmt:
-                    context.Write(output, "return ");
-                    if (returnStmt.ReturnValue != null)
+                context.Write(output, ")");
+            }
+
+            context.WriteLine(output, ");");
+            return false;
+        }
+
+        public bool WriteCompoundStmt(CompilationContext context, StringWriter output, Function function, CompoundStmt compoundStmt)
+        {
+            context.WriteLine(output, "{");
+            foreach (var subStmt in compoundStmt.Statements)
+            {
+                this.WriteStmt(context, output, function, subStmt);
+            }
+
+            context.WriteLine(output, "}");
+            return false;
+        }
+
+        public bool WriteCtorStmt(CompilationContext context, StringWriter output, Function function, CtorStmt ctorStmt)
+        {
+            context.Write(output,
+                $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
+            context.Write(output, "currentMachine");
+            if (ctorStmt.Arguments.Any())
+            {
+                context.Write(output, ", ");
+                if (ctorStmt.Arguments.Count > 1)
+                {
+                    //create tuple from rvaluelist
+                    context.Write(output, "new PTuple(");
+                    var septor = "";
+                    foreach (var ctorExprArgument in ctorStmt.Arguments)
                     {
-                        this.WriteExpr(context, output, returnStmt.ReturnValue);
+                        context.Write(output, septor);
+                        this.WriteExpr(context, output, ctorExprArgument);
+                        septor = ",";
                     }
-                    context.WriteLine(output, ";");
-                    break;
 
-                case BreakStmt breakStmt:
-                    context.WriteLine(output, "break;");
-                    break;
+                    context.Write(output, ")");
+                }
+                else
+                {
+                    this.WriteExpr(context, output, ctorStmt.Arguments.First());
+                }
+            }
 
-                case ContinueStmt continueStmt:
-                    context.WriteLine(output, "continue;");
-                    break;
+            context.WriteLine(output, ");");
+            return false;
+        }
 
-                case SendStmt sendStmt:
-                    if (sendStmt.Arguments.Any())
-                    {
-                        this.WriteExpr(context, output, sendStmt.Evt);
-                        context.Write(output, ".Payload = ");
-                        this.WriteExpr(context, output, sendStmt.Arguments.First());
-                        context.WriteLine(output, ";");
-                    }
-                    context.Write(output, "currentMachine.SendEvent(");
-                    this.WriteExpr(context, output, sendStmt.MachineExpr);
-                    context.Write(output, ", (Event)");
-                    this.WriteExpr(context, output, sendStmt.Evt);
+        public bool WriteFunCallStmt(CompilationContext context, StringWriter output, Function function, FunCallStmt funCallStmt)
+        {
+            var isStatic = funCallStmt.Function.Owner == null;
+            var awaitMethod = funCallStmt.Function.CanReceive ? "await " : "";
+            var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
+            context.Write(output,
+                $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
+            var separator = "";
 
+            foreach (var param in funCallStmt.ArgsList)
+            {
+                context.Write(output, separator);
+                this.WriteExpr(context, output, param);
+                separator = ", ";
+            }
+
+            if (isStatic)
+            {
+                context.Write(output, separator + "currentMachine");
+            }
+
+            context.WriteLine(output, ");");
+            return false;
+        }
+
+        public bool WriteGotoStmt(CompilationContext context, StringWriter output, Function function, GotoStmt gotoStmt)
+        {
+            //last statement
+            context.Write(output, $"currentMachine.RaiseGotoStateEvent<{context.Names.GetNameForDecl(gotoStmt.State)}>(");
+            if (gotoStmt.Payload != null)
+            {
+                this.WriteExpr(context, output, gotoStmt.Payload);
+            }
+
+            context.WriteLine(output, ");");
+            context.WriteLine(output, "return;");
+            return false;
+        }
+
+        public bool WriteIfStmt(CompilationContext context, StringWriter output, Function function, IfStmt ifStmt)
+        {
+            context.Write(output, "if (");
+            this.WriteExpr(context, output, ifStmt.Condition);
+            context.WriteLine(output, ")");
+            this.WriteStmt(context, output, function, ifStmt.ThenBranch);
+            if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Any())
+            {
+                context.WriteLine(output, "else");
+                this.WriteStmt(context, output, function, ifStmt.ElseBranch);
+            }
+
+            return false;
+        }
+
+        public bool WriteAddStmt(CompilationContext context, StringWriter output, Function function, AddStmt addStmt)
+        {
+            context.Write(output, "((PSet)");
+            this.WriteExpr(context, output, addStmt.Variable);
+            context.Write(output, ").Add(");
+            this.WriteExpr(context, output, addStmt.Value);
+            context.WriteLine(output, ");");
+            return false;
+        }
+
+        public bool WriteInsertStmt(CompilationContext context, StringWriter output, Function function, InsertStmt insertStmt)
+        {
+            var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
+            var castOp = isMap ? "(PMap)" : "(PSeq)";
+            context.Write(output, $"({castOp}");
+            this.WriteExpr(context, output, insertStmt.Variable);
+            if (isMap)
+            {
+                context.Write(output, ").Add(");
+            }
+            else
+            {
+                context.Write(output, ").Insert(");
+            }
+
+            this.WriteExpr(context, output, insertStmt.Index);
+            context.Write(output, ", ");
+            this.WriteExpr(context, output, insertStmt.Value);
+            context.WriteLine(output, ");");
+            return false;
+        }
+
+        public bool WriteMoveAssignStmt(CompilationContext context, StringWriter output, Function function, MoveAssignStmt moveAssignStmt)
+        {
+            var upCast = "";
+            if (!moveAssignStmt.FromVariable.Type.IsSameTypeAs(moveAssignStmt.ToLocation.Type))
+            {
+                upCast = $"({GetCSharpType(moveAssignStmt.ToLocation.Type)})";
+                if (PLanguageType.TypeIsOfKind(moveAssignStmt.FromVariable.Type, TypeKind.Enum))
+                {
+                    upCast = $"{upCast}(long)";
+                }
+            }
+
+            WriteLValue(context, output, moveAssignStmt.ToLocation);
+            context.WriteLine(output,
+                $" = {upCast}{context.Names.GetNameForDecl(moveAssignStmt.FromVariable)};");
+            return false;
+        }
+
+        public bool WriteNoStmt(CompilationContext context, StringWriter output, Function function, NoStmt noStmt)
+        {
+            return false;
+        }
+
+        public bool WritePrintStmt(CompilationContext context, StringWriter output, Function function, PrintStmt printStmt)
+        {
+            context.Write(output, "currentMachine.LogLine(\"\" + ");
+            this.WriteExpr(context, output, printStmt.Message);
+            context.WriteLine(output, ");");
+            return false;
+        }
+
+        public bool WriteRaiseStmt(CompilationContext context, StringWriter output, Function function, RaiseStmt raiseStmt)
+        {
+            //last statement
+            if (raiseStmt.Payload.Any())
+            {
+                this.WriteExpr(context, output, raiseStmt.Event);
+                context.Write(output, ".Payload = ");
+                this.WriteExpr(context, output, raiseStmt.Payload.First());
+                context.WriteLine(output, ";");
+            }
+            context.Write(output, "currentMachine.RaiseEvent(");
+            this.WriteExpr(context, output, raiseStmt.Event);
+            context.WriteLine(output, ");");
+            context.WriteLine(output, "return;");
+            return false;
+        }
+
+        public bool WriteReceiveStmt(CompilationContext context, StringWriter output, Function function, ReceiveStmt receiveStmt)
+        {
+            var eventName = context.Names.GetTemporaryName("recvEvent");
+            var eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt))
+                .ToHashSet();
+            eventTypeNames.Add("PHalt"); // halt as a special case for receive
+            var recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
+            context.WriteLine(output, $"var {eventName} = await currentMachine.ReceiveEventAsync({recvArgs});");
+            context.WriteLine(output, $"switch ({eventName}) {{");
+            // add halt as a special case if doesnt exist
+            if (receiveStmt.Cases.All(kv => kv.Key.Name != "PHalt"))
+            {
+                context.WriteLine(output,"case PHalt _hv: { currentMachine.RaiseEvent(_hv); break;} ");
+
+            }
+
+            foreach (var (key, value) in receiveStmt.Cases)
+            {
+                var caseName = context.Names.GetTemporaryName("evt");
+                context.WriteLine(output, $"case {context.Names.GetNameForDecl(key)} {caseName}: {{");
+                if (value.Signature.Parameters.FirstOrDefault() is { } caseArg)
+                {
+                    context.WriteLine(output,
+                        $"{GetCSharpType(caseArg.Type)} {context.Names.GetNameForDecl(caseArg)} = ({GetCSharpType(caseArg.Type)})({caseName}.Payload);");
+                }
+
+                foreach (var local in value.LocalVariables)
+                {
+                    var type = local.Type;
+                    context.WriteLine(output,
+                        $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
+                }
+
+                foreach (var caseStmt in value.Body.Statements)
+                {
+                    this.WriteStmt(context, output, function, caseStmt);
+                }
+
+                context.WriteLine(output, "} break;");
+            }
+
+            context.WriteLine(output, "}");
+            return false;
+        }
+
+        public bool WriteRemoveStmt(CompilationContext context, StringWriter output, Function function, RemoveStmt removeStmt)
+        {
+            var castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map)
+                ? "(PMap)"
+                : PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Sequence)
+                    ? "(PSeq)"
+                    : "(PSet)";
+            context.Write(output, $"({castOperation}");
+            switch (removeStmt.Variable.Type.Canonicalize())
+            {
+                case MapType _:
+                    this.WriteExpr(context, output, removeStmt.Variable);
+                    context.Write(output, ").Remove(");
+                    this.WriteExpr(context, output, removeStmt.Value);
                     context.WriteLine(output, ");");
                     break;
 
-                case ForeachStmt foreachStmt:
-                    var tempVarName = $"__temp_{context.Names.GetNameForDecl(foreachStmt.Item)}";
-                    context.Write(output, $"foreach (var {tempVarName} in ");
-                    this.WriteExpr(context, output, foreachStmt.IterCollection);
-                    context.WriteLine(output, ") {");
-                    context.WriteLine(output, $"{context.Names.GetNameForDecl(foreachStmt.Item)} = ({GetCSharpType(foreachStmt.Item.Type)}) {tempVarName};");
-                    WriteStmt(context, output, function, foreachStmt.Body);
-                    context.WriteLine(output, "}");
+                case SequenceType _:
+                    this.WriteExpr(context, output, removeStmt.Variable);
+                    context.Write(output, ").RemoveAt(");
+                    this.WriteExpr(context, output, removeStmt.Value);
+                    context.WriteLine(output, ");");
                     break;
 
-                case WhileStmt whileStmt:
-                    context.Write(output, "while (");
-                    this.WriteExpr(context, output, whileStmt.Condition);
-                    context.WriteLine(output, ")");
-                    WriteStmt(context, output, function, whileStmt.Body);
+                case SetType _:
+                    this.WriteExpr(context, output, removeStmt.Variable);
+                    context.Write(output, ").Remove(");
+                    this.WriteExpr(context, output, removeStmt.Value);
+                    context.WriteLine(output, ");");
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(stmt));
+                    throw new ArgumentOutOfRangeException(
+                        $"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
             }
+
+            return false;
+        }
+
+        public bool WriteReturnStmt(CompilationContext context, StringWriter output, Function function, ReturnStmt returnStmt)
+        {
+            context.Write(output, "return ");
+            if (returnStmt.ReturnValue != null)
+            {
+                this.WriteExpr(context, output, returnStmt.ReturnValue);
+            }
+            context.WriteLine(output, ";");
+            return false;
+        }
+
+        public bool WriteBreakStmt(CompilationContext context, StringWriter output, Function function, BreakStmt breakStmt)
+        {
+            context.WriteLine(output, "break;");
+            return false;
+        }
+
+        public bool WriteContinueStmt(CompilationContext context, StringWriter output, Function function, ContinueStmt continueStmt)
+        {
+            context.WriteLine(output, "continue;");
+            return false;
+        }
+
+        public bool WriteSendStmt(CompilationContext context, StringWriter output, Function function, SendStmt sendStmt)
+        {
+            if (sendStmt.Arguments.Any())
+            {
+                this.WriteExpr(context, output, sendStmt.Evt);
+                context.Write(output, ".Payload = ");
+                this.WriteExpr(context, output, sendStmt.Arguments.First());
+                context.WriteLine(output, ";");
+            }
+            context.Write(output, "currentMachine.SendEvent(");
+            this.WriteExpr(context, output, sendStmt.MachineExpr);
+            context.Write(output, ", (Event)");
+            this.WriteExpr(context, output, sendStmt.Evt);
+
+            context.WriteLine(output, ");");
+            return false;
+        }
+
+        public bool WriteForeachStmt(CompilationContext context, StringWriter output, Function function, ForeachStmt foreachStmt)
+        {
+            var tempVarName = $"__temp_{context.Names.GetNameForDecl(foreachStmt.Item)}";
+            context.Write(output, $"foreach (var {tempVarName} in ");
+            this.WriteExpr(context, output, foreachStmt.IterCollection);
+            context.WriteLine(output, ") {");
+            context.WriteLine(output, $"{context.Names.GetNameForDecl(foreachStmt.Item)} = ({GetCSharpType(foreachStmt.Item.Type)}) {tempVarName};");
+            this.WriteStmt(context, output, function, foreachStmt.Body);
+            context.WriteLine(output, "}");
+            return false;
+        }
+
+        public bool WriteWhileStmt(CompilationContext context, StringWriter output, Function function, WhileStmt whileStmt)
+        {
+            context.Write(output, "while (");
+            this.WriteExpr(context, output, whileStmt.Condition);
+            context.WriteLine(output, ")");
+            this.WriteStmt(context, output, function, whileStmt.Body);
+            return false;
         }
 
         private void WriteLValue(CompilationContext context, StringWriter output, IPExpr lvalue)

@@ -15,7 +15,22 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.PEx;
 
-internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<CompilationContext>
+// Per-statement state PEx threads through emission: the enclosing function and the
+// current control-flow context. Carried as the IStatementEmitter frame.
+internal readonly struct PExStmtFrame
+{
+    public readonly Function Function;
+    public readonly PExCodeGenerator.ControlFlowContext FlowContext;
+
+    public PExStmtFrame(Function function, PExCodeGenerator.ControlFlowContext flowContext)
+    {
+        Function = function;
+        FlowContext = flowContext;
+    }
+}
+
+internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<CompilationContext>,
+    IStatementEmitter<CompilationContext, PExStmtFrame>
 {
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
     {
@@ -684,349 +699,401 @@ internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<Compilation
         }
     }
 
+    // Thin wrapper keeping PEx's existing call shape (function + flow context + bool
+    // "exited" result). It handles the cases that are not part of the shared statement
+    // contract — call-in-assignment lowering and PEx's own ReceiveSplitStmt — and otherwise
+    // routes to the shared IStatementEmitter dispatch with a frame carrying (function, flow).
     private bool WriteStmt(Function function, CompilationContext context, StringWriter output,
         ControlFlowContext flowContext, IPStmt stmt)
     {
-        var exited = false;
-
         if (TryGetCallInAssignment(stmt) is { } callExpr)
         {
             WriteFunCallStmt(context, output, callExpr.Function, callExpr.Arguments, (stmt as AssignStmt)?.Location);
             return false;
         }
 
-        switch (stmt)
+        if (stmt is ReceiveSplitStmt splitStmt)
         {
-            case AssignStmt assignStmt:
-                Debug.Assert(assignStmt.Value != null);
-                Debug.Assert(assignStmt.Location != null);
-                CheckIsSupportedAssignment(assignStmt.Value.Type, assignStmt.Location.Type);
+            return WriteReceiveSplitStmt(context, output, splitStmt);
+        }
 
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    assignStmt.Location,
-                    false,
-                    locationTemp =>
-                    {
-                        var expr = UnnestCloneExpr(assignStmt.Value);
-                        if (expr is NullLiteralExpr)
-                        {
-                            context.WriteLine(output, $"{locationTemp} = {GetDefaultValue(assignStmt.Location.Type)};");
-                        }
-                        else
-                        {
-                            context.Write(output, $"{locationTemp} = ({GetPExType(assignStmt.Location.Type)}) ");
-                            this.WriteExpr(context, output, expr);
-                            context.WriteLine(output, ";");
-                        }
-                    }
-                );
+        return this.WriteStmt(context, output, new PExStmtFrame(function, flowContext), stmt);
+    }
 
-                break;
+    private bool WriteReceiveSplitStmt(CompilationContext context, StringWriter output, ReceiveSplitStmt splitStmt)
+    {
+        var continuation = splitStmt.Cont;
+        context.WriteLine(output,
+            $"PContinuation {context.GetContinuationName(continuation)} = getContinuation(\"{context.GetContinuationName(continuation)}\");");
+        foreach (var local in continuation.LocalParameters)
+            context.WriteLine(output,
+                $"{context.GetContinuationName(continuation)}.setVar(\"{continuation.StoreForLocal[local].Name}\", {CompilationContext.GetVar(local.Name)});");
+        context.WriteLine(output,
+            $"{CompilationContext.CurrentMachine}.blockUntil(\"{context.GetContinuationName(continuation)}\");");
+        context.Write(output, "return;");
+        return true;
+    }
 
-            case MoveAssignStmt moveStmt:
-                CheckIsSupportedAssignment(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type);
+    public bool WriteAssignStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AssignStmt assignStmt)
+    {
+        Debug.Assert(assignStmt.Value != null);
+        Debug.Assert(assignStmt.Location != null);
+        CheckIsSupportedAssignment(assignStmt.Value.Type, assignStmt.Location.Type);
 
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    moveStmt.ToLocation,
-                    false,
-                    locationTemp =>
-                    {
-                        context.Write(output, $"{locationTemp} = ({GetPExType(moveStmt.ToLocation.Type)}) ");
-                        this.WriteExpr(context, output,
-                            new VariableAccessExpr(moveStmt.FromVariable.SourceLocation, moveStmt.FromVariable));
-                        context.WriteLine(output, ";");
-                    }
-                );
-
-                break;
-
-            case AssertStmt assertStmt:
-                context.Write(output, "Assert.fromModel((");
-                this.WriteExpr(context, output, assertStmt.Assertion);
-                context.Write(output, ").getValue(), ");
-                this.WriteExpr(context, output, assertStmt.Message);
-                context.Write(output, ");");
-                break;
-
-            case ReturnStmt returnStmt:
-                if (!(returnStmt.ReturnValue is null))
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            assignStmt.Location,
+            false,
+            locationTemp =>
+            {
+                var expr = UnnestCloneExpr(assignStmt.Value);
+                if (expr is NullLiteralExpr)
                 {
-                    context.Write(output, $"{CompilationContext.ReturnValue} = ");
-                    context.Write(output, $"({GetPExType(context.ReturnType)}) ");
-                    this.WriteExpr(context, output, returnStmt.ReturnValue);
+                    context.WriteLine(output, $"{locationTemp} = {GetDefaultValue(assignStmt.Location.Type)};");
+                }
+                else
+                {
+                    context.Write(output, $"{locationTemp} = ({GetPExType(assignStmt.Location.Type)}) ");
+                    this.WriteExpr(context, output, expr);
                     context.WriteLine(output, ";");
-                    context.Write(output, $"return {CompilationContext.ReturnValue};");
                 }
-                else
-                {
-                    context.Write(output, "return;");
-                }
+            }
+        );
 
-                exited = true;
-                break;
+        return false;
+    }
 
-            case GotoStmt gotoStmt:
-                context.Write(output,
-                    $"{CompilationContext.CurrentMachine}.gotoState({context.GetNameForDecl(gotoStmt.State)}");
-                if (gotoStmt.Payload == null)
-                {
-                    context.Write(output, ", null");
-                }
-                else
-                {
-                    context.Write(output, ", ");
-                    this.WriteExpr(context, output, gotoStmt.Payload);
-                }
+    public bool WriteMoveAssignStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, MoveAssignStmt moveStmt)
+    {
+        CheckIsSupportedAssignment(moveStmt.FromVariable.Type, moveStmt.ToLocation.Type);
 
-                context.WriteLine(output, ");");
-
-                if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-                    context.WriteLine(output, "return;");
-                else
-                    context.WriteLine(output, "return null;");
-                exited = true;
-                break;
-
-            case RaiseStmt raiseStmt:
-                // TODO: Add type checking for the payload!
-                context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
-
-                context.Write(output, $"{CompilationContext.CurrentMachine}.raiseEvent(");
-                this.WriteExpr(context, output, raiseStmt.Event);
-                if (raiseStmt.Payload.Count > 0)
-                {
-                    // TODO: Determine how multi-payload raise statements are supposed to work
-                    Debug.Assert(raiseStmt.Payload.Count == 1);
-                    context.Write(output, ", ");
-                    this.WriteExpr(context, output, raiseStmt.Payload[0]);
-                }
-
-                context.WriteLine(output, ");");
-
-                if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
-                    context.WriteLine(output, "return;");
-                else
-                    context.WriteLine(output, "return null;");
-                exited = true;
-                break;
-
-            case PrintStmt printStmt:
-                context.Write(output, $"{CompilationContext.SchedulerVar}.getLogger().logModel(");
-                this.WriteExpr(context, output, printStmt.Message);
-                context.WriteLine(output, ".toString());");
-                break;
-
-            case BreakStmt _:
-                context.WriteLine(output, "break;");
-                break;
-
-            case ContinueStmt _:
-                context.WriteLine(output, "continue;");
-                break;
-
-            case CompoundStmt compoundStmt:
-                foreach (var subStmt in compoundStmt.Statements)
-                {
-                    exited |= WriteStmt(function, context, output, flowContext, subStmt);
-                    context.WriteLine(output);
-
-                    if (exited) break;
-                }
-
-                break;
-
-            case WhileStmt whileStmt:
-                if (!(whileStmt.Condition is BoolLiteralExpr) && ((BoolLiteralExpr)whileStmt.Condition).Value)
-                    throw new ArgumentOutOfRangeException(
-                        "While statement condition should always be transformed to constant 'true' during IR simplification.");
-
-                var loopContext = flowContext.FreshLoopContext(context);
-
-                /* Loop body */
-                context.WriteLine(output, "while (true) {");
-                exited = WriteStmt(function, context, output, loopContext, whileStmt.Body);
-                context.WriteLine(output, "}");
-
-                break;
-
-            case IfStmt ifStmt:
-                /* Prologue */
-
-                var condTemp = context.FreshTempVar();
-                Debug.Assert(ifStmt.Condition.Type.IsSameTypeAs(PrimitiveType.Bool));
-                context.Write(output, $"{GetPExType(PrimitiveType.Bool)} {condTemp} = ");
-                this.WriteExpr(context, output, ifStmt.Condition);
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            moveStmt.ToLocation,
+            false,
+            locationTemp =>
+            {
+                context.Write(output, $"{locationTemp} = ({GetPExType(moveStmt.ToLocation.Type)}) ");
+                this.WriteExpr(context, output,
+                    new VariableAccessExpr(moveStmt.FromVariable.SourceLocation, moveStmt.FromVariable));
                 context.WriteLine(output, ";");
-
-                var thenContext = flowContext.FreshBranchSubContext(context);
-                var elseContext = flowContext.FreshBranchSubContext(context);
-
-                /* Body */
-
-                context.WriteLine(output, $"if ({condTemp}.getValue()) {{");
-                context.WriteLine(output, "// 'then' branch");
-                exited = WriteStmt(function, context, output, thenContext, ifStmt.ThenBranch);
-                context.WriteLine(output, "}");
-
-                if (!(ifStmt.ElseBranch is null))
-                {
-                    context.WriteLine(output, "else {");
-                    context.WriteLine(output, "// 'else' branch");
-                    exited &= WriteStmt(function, context, output, elseContext, ifStmt.ElseBranch);
-                    context.WriteLine(output, "}");
-                }
-
-                break;
-
-            case FunCallStmt funCallStmt:
-                WriteFunCallStmt(context, output, funCallStmt.Function, funCallStmt.ArgsList);
-                break;
-
-            case CtorStmt ctorStmt:
-                WriteCtorExpr(context, output, ctorStmt.Interface, ctorStmt.Arguments);
-                context.WriteLine(output, ";");
-                break;
-
-            case SendStmt sendStmt:
-                context.Write(output, $"{CompilationContext.CurrentMachine}.sendEvent(");
-                this.WriteExpr(context, output, sendStmt.MachineExpr);
-                context.Write(output, ", ");
-                this.WriteExpr(context, output, sendStmt.Evt);
-                context.Write(output, ", ");
-                if (sendStmt.Arguments.Count == 0)
-                    context.Write(output, "null");
-                else if (sendStmt.Arguments.Count == 1)
-                    this.WriteExpr(context, output, sendStmt.Arguments[0]);
-                else
-                    throw new NotImplementedException(
-                        "Send statements with more than one payload argument are not supported");
-                context.WriteLine(output, ");");
-                break;
-
-            case InsertStmt insertStmt:
-            {
-                var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
-                var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
-                PLanguageType keyType = null;
-                PLanguageType elementType;
-                if (isMap)
-                {
-                    keyType = ((MapType)insertStmt.Variable.Type.Canonicalize()).KeyType;
-                    elementType = ((MapType)insertStmt.Variable.Type.Canonicalize()).ValueType;
-                }
-                else if (isSet)
-                {
-                    elementType = ((SetType)insertStmt.Variable.Type.Canonicalize()).ElementType;
-                }
-                else
-                {
-                    elementType = ((SequenceType)insertStmt.Variable.Type.Canonicalize()).ElementType;
-                }
-
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    insertStmt.Variable,
-                    true,
-                    structureTemp =>
-                    {
-                        context.Write(output, $"{structureTemp} = ");
-                        context.Write(output, $"(({GetPExType(insertStmt.Variable.Type)}) ");
-                        this.WriteExpr(context, output, insertStmt.Variable);
-                        context.Write(output, ").add(");
-
-                        this.WriteExpr(context, output, insertStmt.Index);
-                        context.Write(output, ", ");
-                        this.WriteExpr(context, output, insertStmt.Value);
-
-                        context.WriteLine(output, ");");
-                    }
-                );
-
-                break;
             }
+        );
 
-            case AddStmt addStmt:
-            {
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    addStmt.Variable,
-                    true,
-                    structureTemp =>
-                    {
-                        context.Write(output, $"{structureTemp} = ");
-                        context.Write(output, $"(({GetPExType(addStmt.Variable.Type)}) ");
-                        this.WriteExpr(context, output, addStmt.Variable);
-                        context.Write(output, ").add(");
-                        this.WriteExpr(context, output, addStmt.Value);
-                        context.WriteLine(output, ");");
-                    }
-                );
+        return false;
+    }
 
-                break;
-            }
+    public bool WriteAssertStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AssertStmt assertStmt)
+    {
+        context.Write(output, "Assert.fromModel((");
+        this.WriteExpr(context, output, assertStmt.Assertion);
+        context.Write(output, ").getValue(), ");
+        this.WriteExpr(context, output, assertStmt.Message);
+        context.Write(output, ");");
+        return false;
+    }
 
-            case RemoveStmt removeStmt:
-            {
-                var isMap = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map);
-                var isSet = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Set);
+    public bool WriteReturnStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ReturnStmt returnStmt)
+    {
+        if (!(returnStmt.ReturnValue is null))
+        {
+            context.Write(output, $"{CompilationContext.ReturnValue} = ");
+            context.Write(output, $"({GetPExType(context.ReturnType)}) ");
+            this.WriteExpr(context, output, returnStmt.ReturnValue);
+            context.WriteLine(output, ";");
+            context.Write(output, $"return {CompilationContext.ReturnValue};");
+        }
+        else
+        {
+            context.Write(output, "return;");
+        }
 
-                WriteWithLValueMutationContext(
-                    context,
-                    output,
-                    removeStmt.Variable,
-                    true,
-                    structureTemp =>
-                    {
-                        context.Write(output, $"{structureTemp} = ");
-                        context.Write(output, $"(({GetPExType(removeStmt.Variable.Type)}) ");
-                        this.WriteExpr(context, output, removeStmt.Variable);
+        return true;
+    }
 
-                        if (isMap || isSet)
-                            context.Write(output, ").remove(");
-                        else
-                            context.Write(output, ").removeAt(");
+    public bool WriteGotoStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, GotoStmt gotoStmt)
+    {
+        var function = frame.Function;
+        context.Write(output,
+            $"{CompilationContext.CurrentMachine}.gotoState({context.GetNameForDecl(gotoStmt.State)}");
+        if (gotoStmt.Payload == null)
+        {
+            context.Write(output, ", null");
+        }
+        else
+        {
+            context.Write(output, ", ");
+            this.WriteExpr(context, output, gotoStmt.Payload);
+        }
 
-                        this.WriteExpr(context, output, removeStmt.Value);
-                        context.WriteLine(output, ");");
-                    }
-                );
-                break;
-            }
-            case AnnounceStmt announceStmt:
-                context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
-                this.WriteExpr(context, output, announceStmt.Event);
-                context.Write(output, ", ");
-                if (announceStmt.Payload == null)
-                    context.Write(output, "null");
-                else
-                    this.WriteExpr(context, output, announceStmt.Payload);
-                context.WriteLine(output, ");");
-                break;
-            case ReceiveSplitStmt splitStmt:
-                var continuation = splitStmt.Cont;
-                context.WriteLine(output,
-                    $"PContinuation {context.GetContinuationName(continuation)} = getContinuation(\"{context.GetContinuationName(continuation)}\");");
-                foreach (var local in continuation.LocalParameters)
-                    context.WriteLine(output,
-                        $"{context.GetContinuationName(continuation)}.setVar(\"{continuation.StoreForLocal[local].Name}\", {CompilationContext.GetVar(local.Name)});");
-                context.WriteLine(output,
-                    $"{CompilationContext.CurrentMachine}.blockUntil(\"{context.GetContinuationName(continuation)}\");");
-                context.Write(output, "return;");
-                exited = true;
-                break;
-            default:
-                throw new NotImplementedException(
-                    $"Statement type '{stmt.GetType().Name}' is not supported, found in {function.Name}");
+        context.WriteLine(output, ");");
+
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            context.WriteLine(output, "return;");
+        else
+            context.WriteLine(output, "return null;");
+        return true;
+    }
+
+    public bool WriteRaiseStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, RaiseStmt raiseStmt)
+    {
+        var function = frame.Function;
+        // TODO: Add type checking for the payload!
+        context.WriteLine(output, "// NOTE (TODO): We currently perform no typechecking on the payload!");
+
+        context.Write(output, $"{CompilationContext.CurrentMachine}.raiseEvent(");
+        this.WriteExpr(context, output, raiseStmt.Event);
+        if (raiseStmt.Payload.Count > 0)
+        {
+            // TODO: Determine how multi-payload raise statements are supposed to work
+            Debug.Assert(raiseStmt.Payload.Count == 1);
+            context.Write(output, ", ");
+            this.WriteExpr(context, output, raiseStmt.Payload[0]);
+        }
+
+        context.WriteLine(output, ");");
+
+        if (function.Signature.ReturnType == null || function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            context.WriteLine(output, "return;");
+        else
+            context.WriteLine(output, "return null;");
+        return true;
+    }
+
+    public bool WritePrintStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, PrintStmt printStmt)
+    {
+        context.Write(output, $"{CompilationContext.SchedulerVar}.getLogger().logModel(");
+        this.WriteExpr(context, output, printStmt.Message);
+        context.WriteLine(output, ".toString());");
+        return false;
+    }
+
+    public bool WriteBreakStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, BreakStmt stmt)
+    {
+        context.WriteLine(output, "break;");
+        return false;
+    }
+
+    public bool WriteContinueStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ContinueStmt stmt)
+    {
+        context.WriteLine(output, "continue;");
+        return false;
+    }
+
+    public bool WriteCompoundStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, CompoundStmt compoundStmt)
+    {
+        var function = frame.Function;
+        var flowContext = frame.FlowContext;
+        var exited = false;
+        foreach (var subStmt in compoundStmt.Statements)
+        {
+            exited |= WriteStmt(function, context, output, flowContext, subStmt);
+            context.WriteLine(output);
+
+            if (exited) break;
         }
 
         return exited;
     }
+
+    public bool WriteWhileStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, WhileStmt whileStmt)
+    {
+        var function = frame.Function;
+        var flowContext = frame.FlowContext;
+        if (!(whileStmt.Condition is BoolLiteralExpr) && ((BoolLiteralExpr)whileStmt.Condition).Value)
+            throw new ArgumentOutOfRangeException(
+                "While statement condition should always be transformed to constant 'true' during IR simplification.");
+
+        var loopContext = flowContext.FreshLoopContext(context);
+
+        /* Loop body */
+        context.WriteLine(output, "while (true) {");
+        var exited = WriteStmt(function, context, output, loopContext, whileStmt.Body);
+        context.WriteLine(output, "}");
+
+        return exited;
+    }
+
+    public bool WriteIfStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, IfStmt ifStmt)
+    {
+        var function = frame.Function;
+        var flowContext = frame.FlowContext;
+        /* Prologue */
+
+        var condTemp = context.FreshTempVar();
+        Debug.Assert(ifStmt.Condition.Type.IsSameTypeAs(PrimitiveType.Bool));
+        context.Write(output, $"{GetPExType(PrimitiveType.Bool)} {condTemp} = ");
+        this.WriteExpr(context, output, ifStmt.Condition);
+        context.WriteLine(output, ";");
+
+        var thenContext = flowContext.FreshBranchSubContext(context);
+        var elseContext = flowContext.FreshBranchSubContext(context);
+
+        /* Body */
+
+        context.WriteLine(output, $"if ({condTemp}.getValue()) {{");
+        context.WriteLine(output, "// 'then' branch");
+        var exited = WriteStmt(function, context, output, thenContext, ifStmt.ThenBranch);
+        context.WriteLine(output, "}");
+
+        if (!(ifStmt.ElseBranch is null))
+        {
+            context.WriteLine(output, "else {");
+            context.WriteLine(output, "// 'else' branch");
+            exited &= WriteStmt(function, context, output, elseContext, ifStmt.ElseBranch);
+            context.WriteLine(output, "}");
+        }
+
+        return exited;
+    }
+
+    public bool WriteFunCallStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, FunCallStmt funCallStmt)
+    {
+        WriteFunCallStmt(context, output, funCallStmt.Function, funCallStmt.ArgsList);
+        return false;
+    }
+
+    public bool WriteCtorStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, CtorStmt ctorStmt)
+    {
+        WriteCtorExpr(context, output, ctorStmt.Interface, ctorStmt.Arguments);
+        context.WriteLine(output, ";");
+        return false;
+    }
+
+    public bool WriteSendStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, SendStmt sendStmt)
+    {
+        context.Write(output, $"{CompilationContext.CurrentMachine}.sendEvent(");
+        this.WriteExpr(context, output, sendStmt.MachineExpr);
+        context.Write(output, ", ");
+        this.WriteExpr(context, output, sendStmt.Evt);
+        context.Write(output, ", ");
+        if (sendStmt.Arguments.Count == 0)
+            context.Write(output, "null");
+        else if (sendStmt.Arguments.Count == 1)
+            this.WriteExpr(context, output, sendStmt.Arguments[0]);
+        else
+            throw new NotImplementedException(
+                "Send statements with more than one payload argument are not supported");
+        context.WriteLine(output, ");");
+        return false;
+    }
+
+    public bool WriteInsertStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, InsertStmt insertStmt)
+    {
+        var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
+        var isSet = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Set);
+        PLanguageType keyType = null;
+        PLanguageType elementType;
+        if (isMap)
+        {
+            keyType = ((MapType)insertStmt.Variable.Type.Canonicalize()).KeyType;
+            elementType = ((MapType)insertStmt.Variable.Type.Canonicalize()).ValueType;
+        }
+        else if (isSet)
+        {
+            elementType = ((SetType)insertStmt.Variable.Type.Canonicalize()).ElementType;
+        }
+        else
+        {
+            elementType = ((SequenceType)insertStmt.Variable.Type.Canonicalize()).ElementType;
+        }
+
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            insertStmt.Variable,
+            true,
+            structureTemp =>
+            {
+                context.Write(output, $"{structureTemp} = ");
+                context.Write(output, $"(({GetPExType(insertStmt.Variable.Type)}) ");
+                this.WriteExpr(context, output, insertStmt.Variable);
+                context.Write(output, ").add(");
+
+                this.WriteExpr(context, output, insertStmt.Index);
+                context.Write(output, ", ");
+                this.WriteExpr(context, output, insertStmt.Value);
+
+                context.WriteLine(output, ");");
+            }
+        );
+
+        return false;
+    }
+
+    public bool WriteAddStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AddStmt addStmt)
+    {
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            addStmt.Variable,
+            true,
+            structureTemp =>
+            {
+                context.Write(output, $"{structureTemp} = ");
+                context.Write(output, $"(({GetPExType(addStmt.Variable.Type)}) ");
+                this.WriteExpr(context, output, addStmt.Variable);
+                context.Write(output, ").add(");
+                this.WriteExpr(context, output, addStmt.Value);
+                context.WriteLine(output, ");");
+            }
+        );
+
+        return false;
+    }
+
+    public bool WriteRemoveStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, RemoveStmt removeStmt)
+    {
+        var isMap = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map);
+        var isSet = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Set);
+
+        WriteWithLValueMutationContext(
+            context,
+            output,
+            removeStmt.Variable,
+            true,
+            structureTemp =>
+            {
+                context.Write(output, $"{structureTemp} = ");
+                context.Write(output, $"(({GetPExType(removeStmt.Variable.Type)}) ");
+                this.WriteExpr(context, output, removeStmt.Variable);
+
+                if (isMap || isSet)
+                    context.Write(output, ").remove(");
+                else
+                    context.Write(output, ").removeAt(");
+
+                this.WriteExpr(context, output, removeStmt.Value);
+                context.WriteLine(output, ");");
+            }
+        );
+        return false;
+    }
+
+    public bool WriteAnnounceStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, AnnounceStmt announceStmt)
+    {
+        context.Write(output, $"{CompilationContext.SchedulerVar}.announce(");
+        this.WriteExpr(context, output, announceStmt.Event);
+        context.Write(output, ", ");
+        if (announceStmt.Payload == null)
+            context.Write(output, "null");
+        else
+            this.WriteExpr(context, output, announceStmt.Payload);
+        context.WriteLine(output, ");");
+        return false;
+    }
+
+    // The following statement kinds never reach PEx: its IR lowering replaces foreach with
+    // while, drops no-ops, and splits receives into ReceiveSplitStmt (handled above).
+    public bool WriteForeachStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ForeachStmt stmt) => throw UnsupportedStmt(stmt, frame);
+    public bool WriteNoStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, NoStmt stmt) => throw UnsupportedStmt(stmt, frame);
+    public bool WriteReceiveStmt(CompilationContext context, StringWriter output, PExStmtFrame frame, ReceiveStmt stmt) => throw UnsupportedStmt(stmt, frame);
+
+    private static NotImplementedException UnsupportedStmt(IPStmt stmt, PExStmtFrame frame) =>
+        new NotImplementedException(
+            $"Statement type '{stmt.GetType().Name}' is not supported, found in {frame.Function.Name}");
 
     private void WriteContinuation(CompilationContext context, StringWriter output, Continuation continuation)
     {

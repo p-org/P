@@ -585,15 +585,22 @@ namespace Plang.Compiler.Backend.Java {
             return false;
         }
 
-        // The following statement kinds cannot appear in P specification monitors (the only
-        // thing PObserve generates code for); preserve the prior behavior of emitting a TODO
-        // marker rather than failing.
-        public bool WriteCtorStmt(CompilationContext context, StringWriter output, object frame, CtorStmt stmt) => WriteUnsupportedStmt(stmt);
-        public bool WriteReceiveStmt(CompilationContext context, StringWriter output, object frame, ReceiveStmt stmt) => WriteUnsupportedStmt(stmt);
-        public bool WriteSendStmt(CompilationContext context, StringWriter output, object frame, SendStmt stmt) => WriteUnsupportedStmt(stmt);
-        public bool WriteAnnounceStmt(CompilationContext context, StringWriter output, object frame, AnnounceStmt stmt) => WriteUnsupportedStmt(stmt);
+        // new/send/announce/receive are rejected in spec monitors by the type checker
+        // (StatementVisitor/ExprVisitor throw IllegalMonitorOperation), so PObserve - which
+        // only generates monitors - can never reach these. Throw to surface any invariant
+        // violation instead of emitting silently-wrong code.
+        public bool WriteCtorStmt(CompilationContext context, StringWriter output, object frame, CtorStmt stmt) => throw MonitorIllegal(stmt);
+        public bool WriteReceiveStmt(CompilationContext context, StringWriter output, object frame, ReceiveStmt stmt) => throw MonitorIllegal(stmt);
+        public bool WriteSendStmt(CompilationContext context, StringWriter output, object frame, SendStmt stmt) => throw MonitorIllegal(stmt);
+        public bool WriteAnnounceStmt(CompilationContext context, StringWriter output, object frame, AnnounceStmt stmt) => throw MonitorIllegal(stmt);
+
+        // assume/swap-assign are not (yet) modeled by PObserve; keep the prior TODO marker.
         public bool WriteAssumeStmt(CompilationContext context, StringWriter output, object frame, AssumeStmt stmt) => WriteUnsupportedStmt(stmt);
         public bool WriteSwapAssignStmt(CompilationContext context, StringWriter output, object frame, SwapAssignStmt stmt) => WriteUnsupportedStmt(stmt);
+
+        private static NotImplementedException MonitorIllegal(IPStmt stmt) =>
+            new NotImplementedException(
+                $"{stmt.GetType().Name} is illegal in a spec monitor and is rejected by the type checker; PObserve should never emit it.");
 
         private bool WriteUnsupportedStmt(IPStmt stmt)
         {

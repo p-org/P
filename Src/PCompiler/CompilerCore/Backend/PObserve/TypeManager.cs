@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using Plang.Compiler.TypeChecker.AST;
 using Plang.Compiler.TypeChecker.AST.Expressions;
@@ -157,7 +158,7 @@ namespace Plang.Compiler.Backend.Java
 
                 internal static string ToJavaLiteral(double d)
                 {
-                    return d + "f";
+                    return d.ToString(CultureInfo.InvariantCulture) + "f";
                 }
             }
 

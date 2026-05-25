@@ -22,6 +22,9 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="UnitTests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\PChecker\CheckerCore\CheckerCore.csproj" />
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
     <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />

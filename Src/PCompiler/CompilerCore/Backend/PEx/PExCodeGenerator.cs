@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -1696,7 +1697,7 @@ internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<Compilation
 
     public void WriteFloatLiteralExpr(CompilationContext context, StringWriter output, FloatLiteralExpr floatLiteralExpr)
     {
-        var unguarded = $"new {GetPExType(PrimitiveType.Float)}({floatLiteralExpr.Value}f)";
+        var unguarded = $"new {GetPExType(PrimitiveType.Float)}({floatLiteralExpr.Value.ToString(CultureInfo.InvariantCulture)}f)";
         context.Write(output, unguarded);
     }
 

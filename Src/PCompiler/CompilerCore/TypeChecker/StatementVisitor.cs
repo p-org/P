@@ -240,7 +240,7 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
         {
             var condition = exprVisitor.Visit(context.expr());
-            if (!Equals(condition.Type, PrimitiveType.Bool))
+            if (!PrimitiveType.Bool.IsSameTypeAs(condition.Type))
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
@@ -291,7 +291,7 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
         {
             var condition = exprVisitor.Visit(context.expr());
-            if (!Equals(condition.Type, PrimitiveType.Bool))
+            if (!PrimitiveType.Bool.IsSameTypeAs(condition.Type))
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }

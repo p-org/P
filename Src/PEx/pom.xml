@@ -82,17 +82,17 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.20.0</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.20.0</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.20.0</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>backport-util-concurrent</groupId>
@@ -275,6 +275,9 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <log4j2.configurationFile>${project.basedir}/src/main/resources/log4j2.xml</log4j2.configurationFile>
+        <!-- All log4j modules must share one version; keep them on a single property so
+             a dependency bump can't leave api/core/slf4j-impl mismatched (see #959). -->
+        <log4j.version>2.25.4</log4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <revision>0.4.0</revision>
     </properties>

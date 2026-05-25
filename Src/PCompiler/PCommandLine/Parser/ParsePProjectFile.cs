@@ -220,8 +220,9 @@ namespace Plang.Parser
         private string GetOutputDirectoryName(FileInfo fullPathName)
         {
             var projectXml = XElement.Load(fullPathName.FullName);
-            if (projectXml.Elements("OutputDir").Any())
-                return projectXml.Element("OutputDir")?.Value;
+            var outputDir = projectXml.Element("OutputDir")?.Value;
+            if (!string.IsNullOrWhiteSpace(outputDir))
+                return outputDir;
             return Directory.GetCurrentDirectory();
         }
 

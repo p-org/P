@@ -15,7 +15,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend.CSharp
 {
-    internal class PCheckerCodeGenerator : ExpressionGenerator<CompilationContext>, ICodeGenerator
+    internal class PCheckerCodeGenerator : ICodeGenerator, IExpressionEmitter<CompilationContext>
     {
 
         /// <summary>
@@ -428,7 +428,7 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 var varName = GetGlobalParamAndLocalVariableName(context, v);
                 context.Write(output, $"  {varName} = ");
-                WriteExpr(context, output, value);
+                this.WriteExpr(context, output, value);
                 context.WriteLine(output, $";");
             }
             context.WriteLine(output, "}");
@@ -845,11 +845,11 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 case AnnounceStmt announceStmt:
                     context.Write(output, "currentMachine.Announce((Event)");
-                    WriteExpr(context, output, announceStmt.Event);
+                    this.WriteExpr(context, output, announceStmt.Event);
                     if (announceStmt.Payload != null)
                     {
                         context.Write(output, ", ");
-                        WriteExpr(context, output, announceStmt.Payload);
+                        this.WriteExpr(context, output, announceStmt.Payload);
                     }
 
                     context.WriteLine(output, ");");
@@ -857,10 +857,10 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case AssertStmt assertStmt:
                     context.Write(output, "currentMachine.Assert(");
-                    WriteExpr(context, output, assertStmt.Assertion);
+                    this.WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ",");
                     context.Write(output, "\"Assertion Failed: \" + ");
-                    WriteExpr(context, output, assertStmt.Message);
+                    this.WriteExpr(context, output, assertStmt.Message);
                     context.WriteLine(output, ");");
                     //last statement
                     if (FunctionValidator.SurelyReturns(assertStmt))
@@ -881,7 +881,7 @@ namespace Plang.Compiler.Backend.CSharp
                         context.Write(output, $"new {GetCSharpType(assignStmt.Location.Type)}(");
                     }
 
-                    WriteExpr(context, output, assignStmt.Value);
+                    this.WriteExpr(context, output, assignStmt.Value);
                     if (needCtorAdapter)
                     {
                         if (assignStmt.Location.Type.Canonicalize() is SequenceType seqType)
@@ -920,7 +920,7 @@ namespace Plang.Compiler.Backend.CSharp
                             foreach (var ctorExprArgument in ctorStmt.Arguments)
                             {
                                 context.Write(output, septor);
-                                WriteExpr(context, output, ctorExprArgument);
+                                this.WriteExpr(context, output, ctorExprArgument);
                                 septor = ",";
                             }
 
@@ -928,7 +928,7 @@ namespace Plang.Compiler.Backend.CSharp
                         }
                         else
                         {
-                            WriteExpr(context, output, ctorStmt.Arguments.First());
+                            this.WriteExpr(context, output, ctorStmt.Arguments.First());
                         }
                     }
 
@@ -946,7 +946,7 @@ namespace Plang.Compiler.Backend.CSharp
                     foreach (var param in funCallStmt.ArgsList)
                     {
                         context.Write(output, separator);
-                        WriteExpr(context, output, param);
+                        this.WriteExpr(context, output, param);
                         separator = ", ";
                     }
 
@@ -963,7 +963,7 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, $"currentMachine.RaiseGotoStateEvent<{context.Names.GetNameForDecl(gotoStmt.State)}>(");
                     if (gotoStmt.Payload != null)
                     {
-                        WriteExpr(context, output, gotoStmt.Payload);
+                        this.WriteExpr(context, output, gotoStmt.Payload);
                     }
 
                     context.WriteLine(output, ");");
@@ -972,7 +972,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case IfStmt ifStmt:
                     context.Write(output, "if (");
-                    WriteExpr(context, output, ifStmt.Condition);
+                    this.WriteExpr(context, output, ifStmt.Condition);
                     context.WriteLine(output, ")");
                     WriteStmt(context, output, function, ifStmt.ThenBranch);
                     if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Any())
@@ -985,9 +985,9 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case AddStmt addStmt:
                     context.Write(output, "((PSet)");
-                    WriteExpr(context, output, addStmt.Variable);
+                    this.WriteExpr(context, output, addStmt.Variable);
                     context.Write(output, ").Add(");
-                    WriteExpr(context, output, addStmt.Value);
+                    this.WriteExpr(context, output, addStmt.Value);
                     context.WriteLine(output, ");");
                     break;
 
@@ -995,7 +995,7 @@ namespace Plang.Compiler.Backend.CSharp
                     var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
                     var castOp = isMap ? "(PMap)" : "(PSeq)";
                     context.Write(output, $"({castOp}");
-                    WriteExpr(context, output, insertStmt.Variable);
+                    this.WriteExpr(context, output, insertStmt.Variable);
                     if (isMap)
                     {
                         context.Write(output, ").Add(");
@@ -1005,9 +1005,9 @@ namespace Plang.Compiler.Backend.CSharp
                         context.Write(output, ").Insert(");
                     }
 
-                    WriteExpr(context, output, insertStmt.Index);
+                    this.WriteExpr(context, output, insertStmt.Index);
                     context.Write(output, ", ");
-                    WriteExpr(context, output, insertStmt.Value);
+                    this.WriteExpr(context, output, insertStmt.Value);
                     context.WriteLine(output, ");");
                     break;
 
@@ -1032,7 +1032,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case PrintStmt printStmt:
                     context.Write(output, "currentMachine.LogLine(\"\" + ");
-                    WriteExpr(context, output, printStmt.Message);
+                    this.WriteExpr(context, output, printStmt.Message);
                     context.WriteLine(output, ");");
                     break;
 
@@ -1040,13 +1040,13 @@ namespace Plang.Compiler.Backend.CSharp
                     //last statement
                     if (raiseStmt.Payload.Any())
                     {
-                        WriteExpr(context, output, raiseStmt.Event);
+                        this.WriteExpr(context, output, raiseStmt.Event);
                         context.Write(output, ".Payload = ");
-                        WriteExpr(context, output, raiseStmt.Payload.First());
+                        this.WriteExpr(context, output, raiseStmt.Payload.First());
                         context.WriteLine(output, ";");
                     }
                     context.Write(output, "currentMachine.RaiseEvent(");
-                    WriteExpr(context, output, raiseStmt.Event);
+                    this.WriteExpr(context, output, raiseStmt.Event);
                     context.WriteLine(output, ");");
                     context.WriteLine(output, "return;");
                     break;
@@ -1105,23 +1105,23 @@ namespace Plang.Compiler.Backend.CSharp
                     switch (removeStmt.Variable.Type.Canonicalize())
                     {
                         case MapType _:
-                            WriteExpr(context, output, removeStmt.Variable);
+                            this.WriteExpr(context, output, removeStmt.Variable);
                             context.Write(output, ").Remove(");
-                            WriteExpr(context, output, removeStmt.Value);
+                            this.WriteExpr(context, output, removeStmt.Value);
                             context.WriteLine(output, ");");
                             break;
 
                         case SequenceType _:
-                            WriteExpr(context, output, removeStmt.Variable);
+                            this.WriteExpr(context, output, removeStmt.Variable);
                             context.Write(output, ").RemoveAt(");
-                            WriteExpr(context, output, removeStmt.Value);
+                            this.WriteExpr(context, output, removeStmt.Value);
                             context.WriteLine(output, ");");
                             break;
 
                         case SetType _:
-                            WriteExpr(context, output, removeStmt.Variable);
+                            this.WriteExpr(context, output, removeStmt.Variable);
                             context.Write(output, ").Remove(");
-                            WriteExpr(context, output, removeStmt.Value);
+                            this.WriteExpr(context, output, removeStmt.Value);
                             context.WriteLine(output, ");");
                             break;
 
@@ -1136,7 +1136,7 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, "return ");
                     if (returnStmt.ReturnValue != null)
                     {
-                        WriteExpr(context, output, returnStmt.ReturnValue);
+                        this.WriteExpr(context, output, returnStmt.ReturnValue);
                     }
                     context.WriteLine(output, ";");
                     break;
@@ -1152,15 +1152,15 @@ namespace Plang.Compiler.Backend.CSharp
                 case SendStmt sendStmt:
                     if (sendStmt.Arguments.Any())
                     {
-                        WriteExpr(context, output, sendStmt.Evt);
+                        this.WriteExpr(context, output, sendStmt.Evt);
                         context.Write(output, ".Payload = ");
-                        WriteExpr(context, output, sendStmt.Arguments.First());
+                        this.WriteExpr(context, output, sendStmt.Arguments.First());
                         context.WriteLine(output, ";");
                     }
                     context.Write(output, "currentMachine.SendEvent(");
-                    WriteExpr(context, output, sendStmt.MachineExpr);
+                    this.WriteExpr(context, output, sendStmt.MachineExpr);
                     context.Write(output, ", (Event)");
-                    WriteExpr(context, output, sendStmt.Evt);
+                    this.WriteExpr(context, output, sendStmt.Evt);
 
                     context.WriteLine(output, ");");
                     break;
@@ -1168,7 +1168,7 @@ namespace Plang.Compiler.Backend.CSharp
                 case ForeachStmt foreachStmt:
                     var tempVarName = $"__temp_{context.Names.GetNameForDecl(foreachStmt.Item)}";
                     context.Write(output, $"foreach (var {tempVarName} in ");
-                    WriteExpr(context, output, foreachStmt.IterCollection);
+                    this.WriteExpr(context, output, foreachStmt.IterCollection);
                     context.WriteLine(output, ") {");
                     context.WriteLine(output, $"{context.Names.GetNameForDecl(foreachStmt.Item)} = ({GetCSharpType(foreachStmt.Item.Type)}) {tempVarName};");
                     WriteStmt(context, output, function, foreachStmt.Body);
@@ -1177,7 +1177,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
-                    WriteExpr(context, output, whileStmt.Condition);
+                    this.WriteExpr(context, output, whileStmt.Condition);
                     context.WriteLine(output, ")");
                     WriteStmt(context, output, function, whileStmt.Body);
                     break;
@@ -1196,7 +1196,7 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, "((PMap)");
                     WriteLValue(context, output, mapAccessExpr.MapExpr);
                     context.Write(output, ")[");
-                    WriteExpr(context, output, mapAccessExpr.IndexExpr);
+                    this.WriteExpr(context, output, mapAccessExpr.IndexExpr);
                     context.Write(output, "]");
                     break;
 
@@ -1204,13 +1204,13 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, "((PSet)");
                     WriteLValue(context, output, setAccessExpr.SetExpr);
                     context.Write(output, ")[");
-                    WriteExpr(context, output, setAccessExpr.IndexExpr);
+                    this.WriteExpr(context, output, setAccessExpr.IndexExpr);
                     context.Write(output, "]");
                     break;
 
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, "((PNamedTuple)");
-                    WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
+                    this.WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
                     context.Write(output, $")[\"{namedTupleAccessExpr.FieldName}\"]");
                     break;
 
@@ -1218,13 +1218,13 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, "((PSeq)");
                     WriteLValue(context, output, seqAccessExpr.SeqExpr);
                     context.Write(output, ")[");
-                    WriteExpr(context, output, seqAccessExpr.IndexExpr);
+                    this.WriteExpr(context, output, seqAccessExpr.IndexExpr);
                     context.Write(output, "]");
                     break;
 
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, "((PTuple)");
-                    WriteExpr(context, output, tupleAccessExpr.SubExpr);
+                    this.WriteExpr(context, output, tupleAccessExpr.SubExpr);
                     context.Write(output, $")[{tupleAccessExpr.FieldNo}]");
                     break;
 
@@ -1239,12 +1239,12 @@ namespace Plang.Compiler.Backend.CSharp
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
-        protected override void WriteCloneExpr(CompilationContext context, StringWriter output, CloneExpr cloneExpr)
+        public void WriteCloneExpr(CompilationContext context, StringWriter output, CloneExpr cloneExpr)
         {
             WriteClone(context, output, cloneExpr.Term);
         }
 
-        protected override void WriteBinOpExpr(CompilationContext context, StringWriter output, BinOpExpr binOpExpr)
+        public void WriteBinOpExpr(CompilationContext context, StringWriter output, BinOpExpr binOpExpr)
         {
             //handle eq and noteq differently
             if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
@@ -1254,24 +1254,24 @@ namespace Plang.Compiler.Backend.CSharp
                 if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
                 {
                     context.Write(output, "PValues.Box((long) ");
-                    WriteExpr(context, output, binOpExpr.Lhs);
+                    this.WriteExpr(context, output, binOpExpr.Lhs);
                     context.Write(output, "),");
                 }
                 else
                 {
-                    WriteExpr(context, output, binOpExpr.Lhs);
+                    this.WriteExpr(context, output, binOpExpr.Lhs);
                     context.Write(output, ",");
                 }
 
                 if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
                 {
                     context.Write(output, "PValues.Box((long) ");
-                    WriteExpr(context, output, binOpExpr.Rhs);
+                    this.WriteExpr(context, output, binOpExpr.Rhs);
                     context.Write(output, ")");
                 }
                 else
                 {
-                    WriteExpr(context, output, binOpExpr.Rhs);
+                    this.WriteExpr(context, output, binOpExpr.Rhs);
                 }
 
                 context.Write(output, "))");
@@ -1284,49 +1284,49 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, "(long)");
                 }
 
-                WriteExpr(context, output, binOpExpr.Lhs);
+                this.WriteExpr(context, output, binOpExpr.Lhs);
                 context.Write(output, $") {BinOpToStr(binOpExpr.Operation)} (");
                 if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
                 {
                     context.Write(output, "(long)");
                 }
 
-                WriteExpr(context, output, binOpExpr.Rhs);
+                this.WriteExpr(context, output, binOpExpr.Rhs);
                 context.Write(output, ")");
             }
         }
 
-        protected override void WriteBoolLiteralExpr(CompilationContext context, StringWriter output, BoolLiteralExpr boolLiteralExpr)
+        public void WriteBoolLiteralExpr(CompilationContext context, StringWriter output, BoolLiteralExpr boolLiteralExpr)
         {
             context.Write(output, $"((PBool){(boolLiteralExpr.Value ? "true" : "false")})");
         }
 
-        protected override void WriteCastExpr(CompilationContext context, StringWriter output, CastExpr castExpr)
+        public void WriteCastExpr(CompilationContext context, StringWriter output, CastExpr castExpr)
         {
             context.Write(output, $"(({GetCSharpType(castExpr.Type)})");
-            WriteExpr(context, output, castExpr.SubExpr);
+            this.WriteExpr(context, output, castExpr.SubExpr);
             context.Write(output, ")");
         }
 
-        protected override void WriteCoerceExpr(CompilationContext context, StringWriter output, CoerceExpr coerceExpr)
+        public void WriteCoerceExpr(CompilationContext context, StringWriter output, CoerceExpr coerceExpr)
         {
             switch (coerceExpr.Type.Canonicalize())
             {
                 case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
                 case PrimitiveType oldType1 when oldType1.IsSameTypeAs(PrimitiveType.Int):
                     context.Write(output, "(");
-                    WriteExpr(context, output, coerceExpr.SubExpr);
+                    this.WriteExpr(context, output, coerceExpr.SubExpr);
                     context.Write(output, ")");
                     break;
 
                 case PermissionType _:
                     context.Write(output, "(PInterfaces.IsCoercionAllowed(");
-                    WriteExpr(context, output, coerceExpr.SubExpr);
+                    this.WriteExpr(context, output, coerceExpr.SubExpr);
                     context.Write(output, ", ");
                     context.Write(output, $"\"I_{coerceExpr.NewType.CanonicalRepresentation}\") ?");
                     context.Write(output, "new PMachineValue(");
                     context.Write(output, "(");
-                    WriteExpr(context, output, coerceExpr.SubExpr);
+                    this.WriteExpr(context, output, coerceExpr.SubExpr);
                     context.Write(output, ").Id, ");
                     context.Write(output,
                         $"PInterfaces.GetPermissions(\"I_{coerceExpr.NewType.CanonicalRepresentation}\")) : null)");
@@ -1338,7 +1338,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        protected override void WriteChooseExpr(CompilationContext context, StringWriter output, ChooseExpr chooseExpr)
+        public void WriteChooseExpr(CompilationContext context, StringWriter output, ChooseExpr chooseExpr)
         {
             if (chooseExpr.SubExpr == null)
             {
@@ -1347,12 +1347,12 @@ namespace Plang.Compiler.Backend.CSharp
             else
             {
                 context.Write(output, $"(({GetCSharpType(chooseExpr.Type)})currentMachine.TryRandom(");
-                WriteExpr(context, output, chooseExpr.SubExpr);
+                this.WriteExpr(context, output, chooseExpr.SubExpr);
                 context.Write(output, "))");
             }
         }
 
-        protected override void WriteContainsExpr(CompilationContext context, StringWriter output, ContainsExpr containsExpr)
+        public void WriteContainsExpr(CompilationContext context, StringWriter output, ContainsExpr containsExpr)
         {
             var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
             var isSeq = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Sequence);
@@ -1361,7 +1361,7 @@ namespace Plang.Compiler.Backend.CSharp
                 : "(PSet)";
             context.Write(output, "((PBool)(");
             context.Write(output, $"({castOp}");
-            WriteExpr(context, output, containsExpr.Collection);
+            this.WriteExpr(context, output, containsExpr.Collection);
             if (isMap)
             {
                 context.Write(output, ").ContainsKey(");
@@ -1371,11 +1371,11 @@ namespace Plang.Compiler.Backend.CSharp
                 context.Write(output, ").Contains(");
             }
 
-            WriteExpr(context, output, containsExpr.Item);
+            this.WriteExpr(context, output, containsExpr.Item);
             context.Write(output, ")))");
         }
 
-        protected override void WriteCtorExpr(CompilationContext context, StringWriter output, CtorExpr ctorExpr)
+        public void WriteCtorExpr(CompilationContext context, StringWriter output, CtorExpr ctorExpr)
         {
             context.Write(output,
                 $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
@@ -1391,7 +1391,7 @@ namespace Plang.Compiler.Backend.CSharp
                     foreach (var ctorExprArgument in ctorExpr.Arguments)
                     {
                         context.Write(output, septor);
-                        WriteExpr(context, output, ctorExprArgument);
+                        this.WriteExpr(context, output, ctorExprArgument);
                         septor = ",";
                     }
 
@@ -1399,25 +1399,25 @@ namespace Plang.Compiler.Backend.CSharp
                 }
                 else
                 {
-                    WriteExpr(context, output, ctorExpr.Arguments.First());
+                    this.WriteExpr(context, output, ctorExpr.Arguments.First());
                 }
             }
 
             context.Write(output, ")");
         }
 
-        protected override void WriteDefaultExpr(CompilationContext context, StringWriter output, DefaultExpr defaultExpr)
+        public void WriteDefaultExpr(CompilationContext context, StringWriter output, DefaultExpr defaultExpr)
         {
             context.Write(output, GetDefaultValue(defaultExpr.Type));
         }
 
-        protected override void WriteEnumElemRefExpr(CompilationContext context, StringWriter output, EnumElemRefExpr enumElemRefExpr)
+        public void WriteEnumElemRefExpr(CompilationContext context, StringWriter output, EnumElemRefExpr enumElemRefExpr)
         {
             var enumElem = enumElemRefExpr.Value;
             context.Write(output, $"(PEnum.Get(\"{context.Names.GetNameForDecl(enumElem)}\"))");
         }
 
-        protected override void WriteEventRefExpr(CompilationContext context, StringWriter output, EventRefExpr eventRefExpr)
+        public void WriteEventRefExpr(CompilationContext context, StringWriter output, EventRefExpr eventRefExpr)
         {
             var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
             switch (eventName)
@@ -1437,17 +1437,17 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        protected override void WriteFairNondetExpr(CompilationContext context, StringWriter output, FairNondetExpr expr)
+        public void WriteFairNondetExpr(CompilationContext context, StringWriter output, FairNondetExpr expr)
         {
             context.Write(output, "((PBool)currentMachine.RandomBoolean())");
         }
 
-        protected override void WriteFloatLiteralExpr(CompilationContext context, StringWriter output, FloatLiteralExpr floatLiteralExpr)
+        public void WriteFloatLiteralExpr(CompilationContext context, StringWriter output, FloatLiteralExpr floatLiteralExpr)
         {
             context.Write(output, $"((PFloat){floatLiteralExpr.Value})");
         }
 
-        protected override void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr funCallExpr)
+        public void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr funCallExpr)
         {
             var isStatic = funCallExpr.Function.Owner == null;
             var awaitMethod = funCallExpr.Function.CanReceive ? "await " : "";
@@ -1459,7 +1459,7 @@ namespace Plang.Compiler.Backend.CSharp
             foreach (var param in funCallExpr.Arguments)
             {
                 context.Write(output, separator);
-                WriteExpr(context, output, param);
+                this.WriteExpr(context, output, param);
                 separator = ", ";
             }
 
@@ -1471,19 +1471,19 @@ namespace Plang.Compiler.Backend.CSharp
             context.Write(output, ")");
         }
 
-        protected override void WriteIntLiteralExpr(CompilationContext context, StringWriter output, IntLiteralExpr intLiteralExpr)
+        public void WriteIntLiteralExpr(CompilationContext context, StringWriter output, IntLiteralExpr intLiteralExpr)
         {
             context.Write(output, $"((PInt)({intLiteralExpr.Value}))");
         }
 
-        protected override void WriteKeysExpr(CompilationContext context, StringWriter output, KeysExpr keysExpr)
+        public void WriteKeysExpr(CompilationContext context, StringWriter output, KeysExpr keysExpr)
         {
             context.Write(output, "(");
-            WriteExpr(context, output, keysExpr.Expr);
+            this.WriteExpr(context, output, keysExpr.Expr);
             context.Write(output, ").CloneKeys()");
         }
 
-        protected override void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr namedTupleExpr)
+        public void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr namedTupleExpr)
         {
             var fieldNamesArray = string.Join(",",
                 ((NamedTupleType)namedTupleExpr.Type).Names.Select(n => $"\"{n}\""));
@@ -1496,100 +1496,100 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, ", ");
                 }
 
-                WriteExpr(context, output, namedTupleExpr.TupleFields[i]);
+                this.WriteExpr(context, output, namedTupleExpr.TupleFields[i]);
             }
 
             context.Write(output, "))");
         }
 
-        protected override void WriteNondetExpr(CompilationContext context, StringWriter output, NondetExpr expr)
+        public void WriteNondetExpr(CompilationContext context, StringWriter output, NondetExpr expr)
         {
             context.Write(output, "((PBool)currentMachine.RandomBoolean())");
         }
 
-        protected override void WriteNullLiteralExpr(CompilationContext context, StringWriter output, NullLiteralExpr expr)
+        public void WriteNullLiteralExpr(CompilationContext context, StringWriter output, NullLiteralExpr expr)
         {
             context.Write(output, "null");
         }
 
-        protected override void WriteSizeofExpr(CompilationContext context, StringWriter output, SizeofExpr sizeofExpr)
+        public void WriteSizeofExpr(CompilationContext context, StringWriter output, SizeofExpr sizeofExpr)
         {
             context.Write(output, "((PInt)(");
-            WriteExpr(context, output, sizeofExpr.Expr);
+            this.WriteExpr(context, output, sizeofExpr.Expr);
             context.Write(output, ").Count)");
         }
 
-        protected override void WriteStringExpr(CompilationContext context, StringWriter output, StringExpr stringExpr)
+        public void WriteStringExpr(CompilationContext context, StringWriter output, StringExpr stringExpr)
         {
             context.Write(output, "((PString) String.Format(");
             context.Write(output, $"\"{stringExpr.BaseString}\"");
             foreach (var arg in stringExpr.Args)
             {
                 context.Write(output, ",");
-                WriteExpr(context, output, arg);
+                this.WriteExpr(context, output, arg);
             }
             context.Write(output, "))");
         }
 
-        protected override void WriteThisRefExpr(CompilationContext context, StringWriter output, ThisRefExpr expr)
+        public void WriteThisRefExpr(CompilationContext context, StringWriter output, ThisRefExpr expr)
         {
             context.Write(output, "currentMachine.self");
         }
 
-        protected override void WriteUnaryOpExpr(CompilationContext context, StringWriter output, UnaryOpExpr unaryOpExpr)
+        public void WriteUnaryOpExpr(CompilationContext context, StringWriter output, UnaryOpExpr unaryOpExpr)
         {
             context.Write(output, $"{UnOpToStr(unaryOpExpr.Operation)}(");
-            WriteExpr(context, output, unaryOpExpr.SubExpr);
+            this.WriteExpr(context, output, unaryOpExpr.SubExpr);
             context.Write(output, ")");
         }
 
-        protected override void WriteUnnamedTupleExpr(CompilationContext context, StringWriter output, UnnamedTupleExpr unnamedTupleExpr)
+        public void WriteUnnamedTupleExpr(CompilationContext context, StringWriter output, UnnamedTupleExpr unnamedTupleExpr)
         {
             context.Write(output, $"new {GetCSharpType(unnamedTupleExpr.Type)}(");
             var sep = "";
             foreach (var field in unnamedTupleExpr.TupleFields)
             {
                 context.Write(output, sep);
-                WriteExpr(context, output, field);
+                this.WriteExpr(context, output, field);
                 sep = ", ";
             }
 
             context.Write(output, ")");
         }
 
-        protected override void WriteValuesExpr(CompilationContext context, StringWriter output, ValuesExpr valuesExpr)
+        public void WriteValuesExpr(CompilationContext context, StringWriter output, ValuesExpr valuesExpr)
         {
             context.Write(output, "(");
-            WriteExpr(context, output, valuesExpr.Expr);
+            this.WriteExpr(context, output, valuesExpr.Expr);
             context.Write(output, ").CloneValues()");
         }
 
-        protected override void WriteMapAccessExpr(CompilationContext context, StringWriter output, MapAccessExpr expr)
+        public void WriteMapAccessExpr(CompilationContext context, StringWriter output, MapAccessExpr expr)
         {
             WriteLValue(context, output, expr);
         }
 
-        protected override void WriteSetAccessExpr(CompilationContext context, StringWriter output, SetAccessExpr expr)
+        public void WriteSetAccessExpr(CompilationContext context, StringWriter output, SetAccessExpr expr)
         {
             WriteLValue(context, output, expr);
         }
 
-        protected override void WriteNamedTupleAccessExpr(CompilationContext context, StringWriter output, NamedTupleAccessExpr expr)
+        public void WriteNamedTupleAccessExpr(CompilationContext context, StringWriter output, NamedTupleAccessExpr expr)
         {
             WriteLValue(context, output, expr);
         }
 
-        protected override void WriteSeqAccessExpr(CompilationContext context, StringWriter output, SeqAccessExpr expr)
+        public void WriteSeqAccessExpr(CompilationContext context, StringWriter output, SeqAccessExpr expr)
         {
             WriteLValue(context, output, expr);
         }
 
-        protected override void WriteTupleAccessExpr(CompilationContext context, StringWriter output, TupleAccessExpr expr)
+        public void WriteTupleAccessExpr(CompilationContext context, StringWriter output, TupleAccessExpr expr)
         {
             WriteLValue(context, output, expr);
         }
 
-        protected override void WriteVariableAccessExpr(CompilationContext context, StringWriter output, VariableAccessExpr expr)
+        public void WriteVariableAccessExpr(CompilationContext context, StringWriter output, VariableAccessExpr expr)
         {
             WriteLValue(context, output, expr);
         }
@@ -1598,7 +1598,7 @@ namespace Plang.Compiler.Backend.CSharp
         {
             if (!(cloneExprTerm is IVariableRef variableRef))
             {
-                WriteExpr(context, output, cloneExprTerm);
+                this.WriteExpr(context, output, cloneExprTerm);
                 return;
             }
 

@@ -14,6 +14,7 @@ namespace Plang.Compiler.Backend.Java
 
         internal NameManager Names => _context.Names;
         internal TypeManager Types => _context.Types;
+        internal CompilationContext Context => _context;
         internal String PackageName => $"{Job.PObservePackageName}";
 
         /// <summary>

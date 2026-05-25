@@ -149,4 +149,60 @@ public class DiagnosticCollectorTest
         // Either way, the underlying state stayed at 1.
         Assert.AreEqual(1, collector.Diagnostics.Count);
     }
+
+    [Test]
+    public void Diagnostics_IsLiveView_NotSnapshot()
+    {
+        // The ReadOnlyCollection<T> wrapper from List.AsReadOnly() is a live
+        // view of the underlying list: callers holding a reference see items
+        // appended after the property read. Compiler.cs's flush pass at end
+        // of type-checking depends on this — it reads Diagnostics once and
+        // iterates, expecting to see everything reported up to that point.
+        // A future "defensive copy" change here would silently lose late
+        // diagnostics, so guard explicitly.
+        var collector = new DefaultDiagnosticCollector(continueOnError: true);
+        var liveView = collector.Diagnostics;
+        Assert.AreEqual(0, liveView.Count);
+
+        collector.Report(new TranslationException("late arrival"));
+
+        Assert.AreEqual(1, liveView.Count);
+        Assert.AreEqual("late arrival", liveView[0].Message);
+    }
+
+    // Env var parsing — see CompilerConfiguration.ReadContinueOnErrorEnvVar.
+    // Tested via the public ContinueOnError property after construction so we
+    // don't have to mark the private helper internal. Each case saves and
+    // restores the var to keep test isolation.
+    [TestCase("1", true)]
+    [TestCase("true", true)]
+    [TestCase("True", true)]
+    [TestCase("TRUE", true)]
+    [TestCase("yes", true)]            // any non-"0"/"false" non-empty value wins
+    [TestCase("anything-else", true)]
+    [TestCase("0", false)]
+    [TestCase("false", false)]
+    [TestCase("False", false)]
+    [TestCase("FALSE", false)]
+    [TestCase("", false)]              // empty string treated as unset
+    [TestCase("   ", false)]           // whitespace-only treated as unset
+    [TestCase(null, false)]            // unset
+    public void ContinueOnError_ReadsEnvVar(string envValue, bool expected)
+    {
+        const string envName = "P_COMPILER_COLLECT_ERRORS";
+        var saved = Environment.GetEnvironmentVariable(envName);
+        try
+        {
+            Environment.SetEnvironmentVariable(envName, envValue);
+            var config = new CompilerConfiguration();
+            Assert.AreEqual(expected, config.ContinueOnError,
+                $"P_COMPILER_COLLECT_ERRORS={envValue ?? "(unset)"}");
+            // The collector's mode must agree with the config's flag.
+            Assert.AreEqual(expected, config.Diagnostics.ContinueOnError);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(envName, saved);
+        }
+    }
 }

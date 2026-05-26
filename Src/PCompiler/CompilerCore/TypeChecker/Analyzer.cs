@@ -153,6 +153,17 @@ namespace Plang.Compiler.TypeChecker
                 InferMachineCreates.Populate(machine, handler);
             }
 
+            // Phase 2 robustness gate: passes 8-10 ("RequiresClean" in the
+            // Phase 3 classification) assume a fully-typed AST and contain
+            // hard casts in ModuleSystemDeclarations / ModuleSystemTypeChecker
+            // that ErrorExpr/ErrorType would trip with InvalidCastException
+            // in collecting mode. Skipping them when diagnostics have already
+            // been collected is safe: Compiler.cs's HasErrors flush at the
+            // end of compilation surfaces what we have, and the module-system
+            // diagnostics on a partial AST would be misleading anyway. Phase 3
+            // will replace this single gate with per-pass tolerance classification.
+            if (handler.Diagnostics.HasErrors) return globalScope;
+
             // Step 8: Fill the module expressions
             ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
 

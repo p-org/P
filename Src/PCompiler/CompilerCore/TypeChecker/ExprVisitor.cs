@@ -423,12 +423,25 @@ namespace Plang.Compiler.TypeChecker
             {
                 // we have the "new" annotation so the bound must be a single thing and it must be an event
                 handler.Diagnostics.Report(handler.InternalError(context, new ArgumentException($"Difference quantifiers must have exactly one bound variable", nameof(context))));
+                // Still visit the body so internal errors surface in collecting mode.
+                Visit(context.body);
                 table = oldTable;
                 return new ErrorExpr(context);
             }
 
             if (diff)
             {
+                // Bail silently if the bound's type itself failed to resolve
+                // (TypeResolver may have already reported MissingDeclaration on
+                // an undeclared bound type). Without this guard the switch
+                // below emits a spurious "expected Event" diagnostic for the
+                // same root cause.
+                if (bound[0].Type is ErrorType)
+                {
+                    Visit(context.body);
+                    table = oldTable;
+                    return new ErrorExpr(context);
+                }
                 switch (bound[0].Type.Canonicalize())
                 {
                     case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Event):
@@ -437,6 +450,8 @@ namespace Plang.Compiler.TypeChecker
                         break;
                     default:
                         handler.Diagnostics.Report(handler.TypeMismatch(context.bound, bound[0].Type, PrimitiveType.Event));
+                        // Visit body for nested-error coverage.
+                        Visit(context.body);
                         table = oldTable;
                         return new ErrorExpr(context);
                 }

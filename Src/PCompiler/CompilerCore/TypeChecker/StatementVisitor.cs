@@ -554,11 +554,22 @@ namespace Plang.Compiler.TypeChecker
             if (machine?.IsSpec == true)
             {
                 handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine));
-                // Surface errors inside each handler body even though the
-                // receive itself is illegal on a spec machine. Mirrors what
-                // Send/Announce/Raise do for their child expressions.
+                // Surface ALL nested errors even though the receive itself is
+                // illegal on a spec machine: handler body errors (mirrors what
+                // Send/Announce/Raise do for child expressions) AND undeclared
+                // event references in the event lists (Copilot's first round
+                // covered the bodies; multi-agent audit caught that event-id
+                // lookups were still being skipped).
                 foreach (var caseContext in context.recvCase())
                 {
+                    foreach (var eventIdContext in caseContext.eventList().eventId())
+                    {
+                        if (!table.Lookup(eventIdContext.GetText(), out Event _))
+                        {
+                            handler.Diagnostics.Report(handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText()));
+                        }
+                    }
+
                     var recvHandler = new Function(caseContext.anonEventHandler())
                     {
                         Scope = table.MakeChildScope(),

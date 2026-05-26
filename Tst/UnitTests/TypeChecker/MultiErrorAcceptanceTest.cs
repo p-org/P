@@ -10,60 +10,99 @@ using UnitTests.Core;
 namespace UnitTests.TypeChecker;
 
 /// <summary>
-/// Phase 2 acceptance test: a P file with multiple independent errors must
-/// surface ALL of them in collecting mode, with no spurious cascade
-/// diagnostics. Pins the strict / collecting error counts on a curated
-/// input.
+/// Phase 2 acceptance tests with **pinned error counts**. Each `.p` file
+/// under <c>RegressionTests/Feature3Exprs/StaticError/</c> listed below
+/// is curated to exercise a specific cascade-suppression rule, and the
+/// strict / collecting counts are hard-coded so a regression to either
+/// the throw-site conversion or the cascade rules fires a clear failure.
 ///
-/// If this test fails after a change to ExprVisitor / StatementVisitor /
-/// the TypeCheckingUtils helpers, the most likely cause is one of:
-///   - A throw site was added without record-and-continue conversion
-///     (collecting count regressed to strict count).
-///   - A cascade-suppression check was loosened, letting one upstream
-///     error generate downstream "incompatible type" noise (collecting
-///     count exceeds the expected).
-///   - A new sentinel propagation path was missed (collecting count is
-///     between expected and strict; some errors got swallowed).
+/// **When a count change is intentional, update the row AND add a comment
+/// at the top of the corresponding `.p` file explaining what changed.**
 ///
-/// When expected counts change intentionally, update the constants below
-/// AND add a comment in MultipleErrors.p explaining what changed.
+/// Diagnostic guidance when a test here fails:
+///   - Strict count grew: a Report(...) was missed in some throw site, OR
+///     a child visitor was reordered to visit something earlier.
+///   - Collecting count shrank: a recovery path is swallowing diagnostics
+///     (likely an early-return that skips a sibling sub-tree).
+///   - Collecting count grew: a cascade-suppression rule was loosened,
+///     letting one upstream error generate downstream "incompatible type"
+///     noise.
 /// </summary>
 [TestFixture]
 public class MultiErrorAcceptanceTest
 {
-    // See MultipleErrors.p for the 4 independent errors this test asserts.
-    private const int ExpectedStrictErrorCount = 1;
-    private const int ExpectedCollectingErrorCount = 4;
-
-    private static string FindMultipleErrorsFile()
+    /// <summary>
+    /// Pinned-count test cases. Format: (relative path under Tst/,
+    /// strict-mode count, collecting-mode count, comment).
+    /// </summary>
+    private static IEnumerable<TestCaseData> PinnedCases()
     {
-        return Path.Combine(
-            Constants.TestDirectory,
-            "RegressionTests", "Feature3Exprs", "StaticError",
-            "MultipleErrors", "MultipleErrors.p");
+        yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/MultipleErrors/MultipleErrors.p",
+            1, 4,
+            "4 sibling statements, each one independent error")
+            .SetName("MultipleErrors (4 sibling stmts)");
+
+        yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/NestedExprErrors/NestedExprErrors.p",
+            1, 2,
+            "single expression, 2 nested missing-declarations. Validates combiner rule — " +
+            "`undeclaredA.foo + undeclaredB.bar * \"str\"` must NOT produce extra " +
+            "'incompatible operand' cascades on `+` or `*`, because cascade suppression " +
+            "makes those parents propagate ErrorType silently.")
+            .SetName("NestedExprErrors (combiner rule)");
+
+        yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/ForeachInvariantError/ForeachInvariantError.p",
+            1, 2,
+            "Loop invariant error + body error when iterator is declared. " +
+            "Validates that VisitForeachStmt's happy path visits both the body AND each " +
+            "invariant for nested-error coverage.")
+            .SetName("ForeachInvariantError (happy-path branch)");
+
+        yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/SpecReceiveBodyError/SpecReceiveBodyError.p",
+            1, 3,
+            "Receive on spec machine: IllegalMonitorOperation + undeclared event + body " +
+            "type mismatch. Validates the multi-agent-audit fix that added event-id lookups " +
+            "to the spec-machine recovery (Copilot's first fix only added handler bodies).")
+            .SetName("SpecReceiveBodyError (spec recovery)");
     }
 
     [Test]
-    public void StrictMode_ReportsExactlyOneErrorOnMultiErrorFile()
+    [TestCaseSource(nameof(PinnedCases))]
+    public void StrictMode_PinnedErrorCount(string relPath, int expectedStrict, int expectedCollecting, string description)
     {
-        var (exitCode, _, errorCount) = CompileFile(FindMultipleErrorsFile(), continueOnError: false);
-        Assert.AreEqual(1, exitCode, "strict mode must exit with code 1 on a static error");
+        // expectedCollecting is read implicitly via the test parameters; the
+        // collecting-mode assertion is in the parallel test below.
+        _ = expectedCollecting;
+        _ = description;
+        var pFile = Path.Combine(Constants.TestDirectory, relPath);
+        var (exitCode, stderr, errorCount) = CompileFile(pFile, continueOnError: false);
+        Assert.AreEqual(1, exitCode,
+            $"Strict mode must exit 1 on {relPath}. Stderr:\n{stderr}");
         Assert.AreEqual(
-            ExpectedStrictErrorCount, errorCount,
-            $"Strict mode is expected to report exactly {ExpectedStrictErrorCount} error (it aborts on the " +
-            "first throw). Phase 2 must not change this behavior in the default mode.");
-    }
-
-    [Test]
-    public void CollectingMode_ReportsAllIndependentErrors()
-    {
-        var (exitCode, stderr, errorCount) = CompileFile(FindMultipleErrorsFile(), continueOnError: true);
-        Assert.AreEqual(1, exitCode, "collecting mode must still exit with code 1 when errors are present");
-        Assert.AreEqual(
-            ExpectedCollectingErrorCount, errorCount,
-            $"Collecting mode is expected to report exactly {ExpectedCollectingErrorCount} errors with no " +
-            "spurious cascade diagnostics. See the test's class doc for how to diagnose a count change.\n" +
+            expectedStrict, errorCount,
+            $"Strict mode is expected to report exactly {expectedStrict} error on {relPath} " +
+            $"(strict aborts on first throw). Phase 2 must not change strict-mode behavior.\n" +
             $"Captured stderr:\n{stderr}");
+    }
+
+    [Test]
+    [TestCaseSource(nameof(PinnedCases))]
+    public void CollectingMode_PinnedErrorCount(string relPath, int expectedStrict, int expectedCollecting, string description)
+    {
+        _ = expectedStrict;
+        _ = description;
+        var pFile = Path.Combine(Constants.TestDirectory, relPath);
+        var (exitCode, stderr, errorCount) = CompileFile(pFile, continueOnError: true);
+        Assert.AreEqual(1, exitCode,
+            $"Collecting mode must still exit 1 when errors are present in {relPath}.\n{stderr}");
+        Assert.AreEqual(
+            expectedCollecting, errorCount,
+            $"Collecting mode is expected to report exactly {expectedCollecting} errors on " +
+            $"{relPath} with no spurious cascade diagnostics. See the test's class doc for " +
+            $"how to diagnose a count change.\nCaptured stderr:\n{stderr}");
     }
 
     /// <summary>

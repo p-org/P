@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Statements;
@@ -22,6 +23,20 @@ namespace Plang.Compiler.TypeChecker
             Contract.Requires(fun.Body == null);
             var visitor = new FunctionBodyVisitor(config, fun.Owner, fun);
             visitor.Visit(fun.SourceLocation);
+
+            // Invariant: a non-foreign Function must have a non-null Body, since
+            // Function.IsForeign is defined as `Body == null`. In collecting mode
+            // an inner visit may report-and-recover without throwing, but if a
+            // sub-step (e.g. TypeResolver.ResolveType on a bad var decl) bailed
+            // without ever reaching `method.Body = ...` below at line VisitFunctionBody,
+            // the function would be silently misclassified as foreign and
+            // ControlFlowChecker / capability checks would skip it. Backfill an
+            // empty CompoundStmt as a fail-safe — Compiler.cs's HasErrors gate
+            // ensures this never reaches the IR transformer or backends.
+            if (fun.Body == null && !fun.Role.HasFlag(FunctionRole.Foreign))
+            {
+                fun.Body = new CompoundStmt(fun.SourceLocation, new List<IPStmt>());
+            }
         }
 
         public override object VisitAnonEventHandler(PParser.AnonEventHandlerContext context)

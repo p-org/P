@@ -72,8 +72,13 @@ namespace Plang.Compiler.TypeChecker
             // validate against. Per-argument ErrorType is handled below by
             // CheckAssignable's own short-circuit, so independent diagnostics
             // like arity mismatches still fire even when one argument errored
-            // upstream.
-            if (payloadType is ErrorType) return;
+            // upstream. Accept null as ErrorType: pass 2a (MachineChecker) may
+            // leave a PayloadType null when an event/interface declaration
+            // itself errored — once Phase 3 starts running passes 4+ on a
+            // partial AST, treating null as "already-errored" gives the same
+            // cascade suppression as ErrorType without requiring every upstream
+            // producer to wire an ErrorType sentinel.
+            if (payloadType is null || payloadType is ErrorType) return;
 
             if (arguments.Count == 0)
             {

@@ -5,10 +5,10 @@
 
 [![NuGet](https://img.shields.io/nuget/v/p.svg)](https://www.nuget.org/packages/P/)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/p-org/P/master/LICENSE.txt)
-![GitHub Action (CI on Windows)](https://github.com/p-org/P/workflows/CI%20on%20Windows/badge.svg)
-![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg)
-![GitHub Action (CI on MacOS)](https://github.com/p-org/P/workflows/CI%20on%20MacOS/badge.svg)
-[![Tutorials](https://github.com/p-org/P/actions/workflows/tutorials.yml/badge.svg)](https://github.com/p-org/P/actions/workflows/tutorials.yml)
+![GitHub Action (CI on Windows)](https://github.com/p-org/P/workflows/CI%20on%20Windows/badge.svg?branch=master)
+![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg?branch=master)
+![GitHub Action (CI on MacOS)](https://github.com/p-org/P/workflows/CI%20on%20MacOS/badge.svg?branch=master)
+[![Tutorials](https://github.com/p-org/P/actions/workflows/tutorials.yml/badge.svg?branch=master)](https://github.com/p-org/P/actions/workflows/tutorials.yml?query=branch%3Amaster)
 
 ---
 

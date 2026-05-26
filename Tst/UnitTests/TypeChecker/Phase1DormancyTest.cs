@@ -137,7 +137,13 @@ public class Phase1DormancyTest
             scratchDir,
             new List<CompilerOutput> { CompilerOutput.PChecker },
             inputFiles,
-            Path.GetFileNameWithoutExtension(inputFiles.First()));
+            Path.GetFileNameWithoutExtension(inputFiles.First()),
+            // PChecker backend has a dotnet-build compilation stage that
+            // dereferences ProjectRootPath. Mirror PCheckerRunner.cs by
+            // passing the scratch directory as the project root, otherwise
+            // valid programs NRE at PCheckerCodeGenerator.Compile during the
+            // second stage of Compiler.Compile.
+            projectRoot: scratchDir);
 
         // Override after construction. The order matters: collector first,
         // then handler (which holds a reference to the collector), then

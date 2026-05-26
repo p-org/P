@@ -88,7 +88,12 @@ public class MultiErrorAcceptanceTest
             scratchDir,
             new List<CompilerOutput> { CompilerOutput.PChecker },
             new List<string> { pFile },
-            Path.GetFileNameWithoutExtension(pFile));
+            Path.GetFileNameWithoutExtension(pFile),
+            // See Phase1DormancyTest for why projectRoot must be non-null —
+            // PCheckerCodeGenerator.Compile NREs otherwise. Multi-error
+            // tests stop at type-check (HasErrors is set, Compiler.cs
+            // returns early before backend), so this is defence in depth.
+            projectRoot: scratchDir);
 
         config.Diagnostics = new DefaultDiagnosticCollector(continueOnError);
         config.Handler = new DefaultTranslationErrorHandler(config.LocationResolver, config.Diagnostics);

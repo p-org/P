@@ -1,0 +1,162 @@
+==== FFIStubs.txt ====
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% P <-> Java Foreign Function Interface Stubs
+% 
+% This file was auto-generated on <DATE>
+% 
+% Please separate each generated class into its own .java file (detailed throughout the file), filling
+% in the body of each function definition as necessary for your project's business logic.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Please place and complete the following class in PForeign/PObserveGlobalForeign.java :
+
+package Golden.pobserve;
+
+import prt.exceptions.*;
+
+public class PObserveGlobal {
+}
+
+
+==== PEvents.java ====
+package Golden.pobserve;
+
+/***************************************************************************
+ * This file was auto-generated on <DATE>
+ * Please do not edit manually!
+ **************************************************************************/
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.logging.*;
+
+public class PEvents {
+    public static class eReq extends pobserve.runtime.events.PEvent<Long> implements Serializable {
+        public eReq(long p) { this.payload = p; }
+        private long payload; 
+        public Long getPayload() { return payload; }
+        
+        @Override
+        public String toString() { return "eReq[" + payload + "]"; }
+    } // eReq
+    
+}
+
+==== PMachines.java ====
+package Golden.pobserve;
+
+/***************************************************************************
+ * This file was auto-generated on <DATE>
+ * Please do not edit manually!
+ **************************************************************************/
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.logging.*;
+
+public class PMachines {
+    private static Logger logger = Logger.getLogger(PMachines.class.getName());
+    static { logger.setLevel(Level.OFF); };
+    // StateMachine GoldenMachine elided 
+    public static class GoldenMonitor extends pobserve.runtime.Monitor<GoldenMonitor.PrtStates> implements Serializable {
+        
+        public static class Supplier implements java.util.function.Supplier<GoldenMonitor>, Serializable {
+            public GoldenMonitor get() {
+                GoldenMonitor ret = new GoldenMonitor();
+                ret.ready();
+                return ret;
+            }
+        }
+        
+        private long total = 0L;
+        public long get_total() { return this.total; };
+        
+        
+        public enum PrtStates {
+            Counting
+        }
+        
+        public GoldenMonitor() {
+            super();
+            addState(pobserve.runtime.State.keyedOn(PrtStates.Counting)
+                .isInitialState(true)
+                .withEvent(PEvents.eReq.class, this::Anon)
+                .build());
+        } // constructor
+        
+        public void reInitializeMonitor() {
+            registerState(pobserve.runtime.State.keyedOn(PrtStates.Counting)
+                .isInitialState(true)
+                .withEvent(PEvents.eReq.class, this::Anon)
+                .build());
+        }
+        
+        public java.util.List<Class<? extends pobserve.runtime.events.PEvent<?>>> getEventTypes() {
+            return java.util.Arrays.asList(PEvents.eReq.class);
+        }
+        
+        private void Anon(long n) {
+            long TMP_tmp0;
+            boolean TMP_tmp1;
+            String TMP_tmp2;
+            String TMP_tmp3;
+            String TMP_tmp4;
+            
+            TMP_tmp0 = total + n;
+            total = TMP_tmp0;
+            TMP_tmp1 = total >= 0L;
+            if (TMP_tmp1) {
+            }
+            else
+            {
+                TMP_tmp2 = "golden.p:37:13";
+                TMP_tmp3 = "total must stay non-negative";
+                TMP_tmp4 = java.text.MessageFormat.format("{0} {1}", TMP_tmp2, TMP_tmp3);
+                tryAssert(TMP_tmp1, TMP_tmp4);
+            }
+        }
+        
+        public String toString() {
+            StringBuilder sb = new StringBuilder("GoldenMonitor");
+            sb.append("[");
+            sb.append("total=" + total);
+            sb.append("]");
+            return sb.toString();
+        } // toString()
+        
+        public boolean deepEquals(GoldenMonitor other) {
+            return (true
+                && this.total == other.total
+            );
+        } // deepEquals()
+        
+        public boolean equals(Object other) {
+            return (this.getClass() == other.getClass()) && this.deepEquals((GoldenMonitor)other);
+        } // equals()
+        
+        public int hashCode() {
+            return Objects.hash(total);
+        } // hashCode()
+        
+    } // GoldenMonitor monitor definition
+}
+
+==== PTypes.java ====
+package Golden.pobserve;
+
+/***************************************************************************
+ * This file was auto-generated on <DATE>
+ * Please do not edit manually!
+ **************************************************************************/
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.logging.*;
+
+public class PTypes {
+}

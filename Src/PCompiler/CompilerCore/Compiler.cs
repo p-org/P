@@ -141,6 +141,36 @@ namespace Plang.Compiler
             return Environment.ExitCode;
         }
 
+        /// <summary>
+        /// Test seam: runs the front-end (parse + type-check + IR lowering) and the single
+        /// configured backend's code generation, returning the generated files in memory.
+        /// Unlike <see cref="Compile"/> it writes nothing to disk and never invokes a backend's
+        /// external build stage, so tests can snapshot generated code cheaply and deterministically.
+        /// The job must have exactly one output language.
+        /// </summary>
+        internal IReadOnlyList<CompiledFile> GenerateCodeInMemory(ICompilerConfiguration job)
+        {
+            var trees = job.InputPFiles.Select(file =>
+            {
+                var tree = Parse(job, new FileInfo(file));
+                job.LocationResolver.RegisterRoot(tree, new FileInfo(file));
+                return tree;
+            }).ToArray();
+
+            var scope = Analyzer.AnalyzeCompilationUnit(job, trees);
+
+            if (!job.OutputLanguages.Contains(CompilerOutput.PVerifier))
+            {
+                foreach (var fun in scope.GetAllMethods())
+                {
+                    IRTransformer.SimplifyMethod(fun);
+                }
+            }
+
+            var backend = TargetLanguage.GetCodeGenerator(job.OutputLanguages.Single());
+            return backend.GenerateCode(job, scope).ToList();
+        }
+
         private static PParser.ProgramContext Parse(ICompilerConfiguration job, FileInfo inputFile)
         {
             var fileText = File.ReadAllText(inputFile.FullName);

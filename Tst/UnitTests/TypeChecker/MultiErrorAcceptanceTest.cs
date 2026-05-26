@@ -63,6 +63,16 @@ public class MultiErrorAcceptanceTest
             .SetName("ForeachBodyErrors (body visit)");
 
         yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/MultiMachineErrors/MultiMachineErrors.p",
+            1, 3,
+            "Phase 3 per-machine isolation: 3 machines, one error each (bool->int, " +
+            "missing decl, int+string). Validates that TolerantStep wrappers around " +
+            "pass 2a / pass 3 in Analyzer.cs catch a TranslationException on one machine " +
+            "and continue to siblings. A regression here (count back to 1) means " +
+            "TolerantStep stopped re-Reporting or stopped iterating after a throw.")
+            .SetName("MultiMachineErrors (Phase 3 isolation)");
+
+        yield return new TestCaseData(
             "RegressionTests/Feature3Exprs/StaticError/SpecReceiveBodyError/SpecReceiveBodyError.p",
             1, 3,
             "Receive on spec machine: IllegalMonitorOperation + undeclared event + body " +

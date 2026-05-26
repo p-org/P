@@ -34,7 +34,14 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                          sourceNode is PParser.NoParamAnonEventHandlerContext ||
                          sourceNode is PParser.ReceiveStmtContext ||
                          sourceNode is PParser.WhileStmtContext ||
-                         sourceNode is PParser.ForeachStmtContext);
+                         sourceNode is PParser.ForeachStmtContext ||
+                         // PVerifier builds throwaway Functions to host a scope when
+                         // type-checking the expression bodies of these declarations.
+                         sourceNode is PParser.PureDeclContext ||
+                         sourceNode is PParser.InvariantDeclContext ||
+                         sourceNode is PParser.AxiomDeclContext ||
+                         sourceNode is PParser.AssumeOnStartDeclContext ||
+                         sourceNode is PParser.ProveUsingCmdContext);
             Name = name;
             SourceLocation = sourceNode;
             CanCreate = false;

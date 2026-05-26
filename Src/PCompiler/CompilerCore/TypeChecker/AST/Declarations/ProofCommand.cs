@@ -8,7 +8,9 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
     {
         public ProofCommand(string name, ParserRuleContext sourceNode)
         {
-            Debug.Assert(sourceNode is PParser.ProofItemContext);
+            // sourceNode is null for the synthetic "default"/"full" proof commands the
+            // PVerifier backend generates when a project declares no proof blocks.
+            Debug.Assert(sourceNode == null || sourceNode is PParser.ProofItemContext);
             SourceLocation = sourceNode;
             Name = name;
         }

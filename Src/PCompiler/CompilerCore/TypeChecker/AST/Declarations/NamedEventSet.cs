@@ -84,7 +84,10 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
                          sourceNode is PParser.InterfaceDeclContext ||
                          sourceNode is PParser.ImplMachineDeclContext ||
                          sourceNode is PParser.SpecMachineDeclContext ||
-                         sourceNode is PParser.StateDeclContext);
+                         sourceNode is PParser.StateDeclContext ||
+                         // A bare event name used as a type resolves to a singleton
+                         // permission set sourced at the event's declaration.
+                         sourceNode is PParser.EventDeclContext);
             Name = name;
             SourceLocation = sourceNode;
         }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Plang.Compiler;
@@ -29,6 +30,16 @@ namespace UnitTests
         [TestCase(CompilerOutput.PObserve)]
         public void GeneratedCodeMatchesSnapshot(CompilerOutput backend)
         {
+            // Snapshots are byte-exact and are generated/maintained on the Linux toolchain
+            // (the Ubuntu CI job is the canonical drift gate). Generated code carries
+            // unavoidable platform-specific noise on other OSes (line endings, embedded
+            // source-path separators), so only assert on Linux rather than chase normalization
+            // for every platform.
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Assert.Ignore("Golden snapshots are pinned to the Linux toolchain.");
+            }
+
             var inputFile = Path.Combine(GoldenDir, "Input", "golden.p");
             var job = new CompilerConfiguration(
                 new DiscardOutput(),

@@ -268,9 +268,15 @@ namespace Plang.Compiler.TypeChecker
             if (!table.Lookup(varName, out Variable var))
             {
                 handler.Diagnostics.Report(handler.MissingDeclaration(context.item, "foreach iterator variable", varName));
-                // Still visit children so their internal errors surface.
+                // Still visit children so their internal errors surface in
+                // collecting mode — including the loop invariants, which can
+                // hold their own type errors independent of the missing var.
                 exprVisitor.Visit(context.collection);
                 Visit(context.statement());
+                foreach (var inv in context._invariants)
+                {
+                    exprVisitor.Visit(inv);
+                }
                 return new NoStmt(context);
             }
             var collection = exprVisitor.Visit(context.collection);
@@ -548,6 +554,27 @@ namespace Plang.Compiler.TypeChecker
             if (machine?.IsSpec == true)
             {
                 handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine));
+                // Surface errors inside each handler body even though the
+                // receive itself is illegal on a spec machine. Mirrors what
+                // Send/Announce/Raise do for their child expressions.
+                foreach (var caseContext in context.recvCase())
+                {
+                    var recvHandler = new Function(caseContext.anonEventHandler())
+                    {
+                        Scope = table.MakeChildScope(),
+                        Owner = method.Owner,
+                        ParentFunction = method,
+                        Role = FunctionRole.ReceiveHandler
+                    };
+                    var param = caseContext.anonEventHandler().funParam();
+                    if (param != null)
+                    {
+                        var paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
+                        paramVar.Type = TypeResolver.ResolveType(param.type(), recvHandler.Scope, handler);
+                        recvHandler.Signature.Parameters.Add(paramVar);
+                    }
+                    FunctionBodyVisitor.PopulateMethod(config, recvHandler);
+                }
                 return new NoStmt(context);
             }
 

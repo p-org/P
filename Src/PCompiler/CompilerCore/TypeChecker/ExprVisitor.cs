@@ -459,7 +459,23 @@ namespace Plang.Compiler.TypeChecker
             var instance = Visit(context.instance);
             string name = context.kind.GetText();
 
-            if (table.Lookup(name, out Machine m))
+            // Resolve the kind identifier first so a missing-declaration error
+            // is still reported even when the instance errored upstream. Only
+            // bail to ErrorExpr after the lookup has had its chance to fire.
+            var hasKind = table.Lookup(name, out Machine m)
+                          || table.Lookup(name, out Event _)
+                          || table.Lookup(name, out State _);
+            if (!hasKind)
+            {
+                handler.Diagnostics.Report(handler.MissingDeclaration(context, "machine, event, or state", name));
+                return new ErrorExpr(context);
+            }
+
+            // Propagate ErrorType: if the instance failed upstream, don't
+            // construct a bool-typed TestExpr (which would mask the cascade).
+            if (instance.Type is ErrorType) return new ErrorExpr(context);
+
+            if (table.Lookup(name, out m))
             {
                 return new TestExpr(context, instance, m);
             }
@@ -479,7 +495,7 @@ namespace Plang.Compiler.TypeChecker
                 return new TestExpr(context, instance, s);
             }
 
-            handler.Diagnostics.Report(handler.MissingDeclaration(context, "machine, event, or state", name));
+            // Unreachable: hasKind above guarantees at least one lookup succeeds.
             return new ErrorExpr(context);
         }
 
@@ -517,6 +533,8 @@ namespace Plang.Compiler.TypeChecker
         {
             var instance = Visit(context.instance);
             var target = Visit(context.target);
+            // Propagate cascade suppression from either operand.
+            if (instance.Type is ErrorType || target.Type is ErrorType) return new ErrorExpr(context);
 
             // TODO: type check to make sure instance is an event and machine is a machine
             return new TargetsExpr(context, instance, target);
@@ -525,6 +543,7 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitFlyingExpr(PParser.FlyingExprContext context)
         {
             var instance = Visit(context.instance);
+            if (instance.Type is ErrorType) return new ErrorExpr(context);
 
             // TODO: type check to make sure instance is an event
             return new FlyingExpr(context, instance);
@@ -533,6 +552,7 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitSentExpr(PParser.SentExprContext context)
         {
             var instance = Visit(context.instance);
+            if (instance.Type is ErrorType) return new ErrorExpr(context);
 
             // TODO: type check to make sure instance is an event
             return new SentExpr(context, instance);

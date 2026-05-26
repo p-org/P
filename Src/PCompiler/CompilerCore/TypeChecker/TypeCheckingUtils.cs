@@ -68,9 +68,12 @@ namespace Plang.Compiler.TypeChecker
             PLanguageType payloadType,
             IReadOnlyList<IPExpr> arguments)
         {
-            // If any argument failed to type-check, an upstream diagnostic was
-            // already reported. Skip payload validation to avoid cascade noise.
-            if (arguments.Any(a => a.Type is ErrorType) || payloadType is ErrorType) return;
+            // If the payload type itself failed to resolve there's nothing to
+            // validate against. Per-argument ErrorType is handled below by
+            // CheckAssignable's own short-circuit, so independent diagnostics
+            // like arity mismatches still fire even when one argument errored
+            // upstream.
+            if (payloadType is ErrorType) return;
 
             if (arguments.Count == 0)
             {
@@ -85,6 +88,13 @@ namespace Plang.Compiler.TypeChecker
             }
             else if (payloadType.Canonicalize() is TupleType tuple)
             {
+                // Arity check fires regardless of whether any argument has
+                // ErrorType — a count mismatch is independent of per-arg type.
+                if (tuple.Types.Count != arguments.Count)
+                {
+                    handler.Diagnostics.Report(handler.IncorrectArgumentCount(context, arguments.Count, tuple.Types.Count));
+                    return;
+                }
                 foreach (var pair in tuple.Types.Zip(arguments, Tuple.Create))
                 {
                     CheckArgument(handler, context, pair.Item1, pair.Item2);

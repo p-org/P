@@ -31,6 +31,12 @@ namespace UnitTests
             // Only produced by ParamVisitor for param/config values; never reaches backend
             // codegen (no backend has ever handled it).
             "SeqLiteralExpr",
+            // Phase 1 multi-error-typecheck sentinel. Produced by recovery in collecting mode
+            // (Phase 2+); never reaches a backend because Compiler.cs aborts before
+            // IRTransformer / GenerateCode when job.Diagnostics.HasErrors. ErrorExpr also
+            // deliberately does not implement IExprTerm so any accidental leak fails loudly
+            // at a cast site rather than silently emitting garbage. See ErrorExpr's class doc.
+            "ErrorExpr",
         };
 
         // Statement kinds outside the shared IStatementEmitter contract.

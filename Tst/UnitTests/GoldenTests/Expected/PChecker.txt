@@ -1,0 +1,175 @@
+==== Golden.cs ====
+using PChecker;
+using PChecker.Runtime;
+using PChecker.Runtime.StateMachines;
+using PChecker.Runtime.Events;
+using PChecker.Runtime.Exceptions;
+using PChecker.Runtime.Logging;
+using PChecker.Runtime.Values;
+using PChecker.Runtime.Specifications;
+using Monitor = PChecker.Runtime.Specifications.Monitor;
+using System;
+using PChecker.SystematicTesting;
+using System.Runtime;
+using System.Collections.Generic;
+using System.Linq;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+#pragma warning disable 162, 219, 414, 1998
+namespace PImplementation
+{
+}
+namespace PImplementation
+{
+    public static class GlobalConfig
+    {
+    }
+}
+namespace PImplementation
+{
+    internal partial class eReq : Event
+    {
+        public eReq() : base() {}
+        public eReq (PInt payload): base(payload){ }
+        public override IPValue Clone() { return new eReq();}
+    }
+}
+namespace PImplementation
+{
+    internal partial class eResp : Event
+    {
+        public eResp() : base() {}
+        public eResp (PInt payload): base(payload){ }
+        public override IPValue Clone() { return new eResp();}
+    }
+}
+namespace PImplementation
+{
+    internal partial class GoldenMachine : StateMachine
+    {
+        private PInt count = ((PInt)0);
+        private PSeq log = new PSeq();
+        public class ConstructorEvent : Event{public ConstructorEvent(IPValue val) : base(val) { }}
+        
+        protected override Event GetConstructorEvent(IPValue value) { return new ConstructorEvent((IPValue)value); }
+        public GoldenMachine() {
+            this.sends.Add(nameof(eReq));
+            this.sends.Add(nameof(eResp));
+            this.sends.Add(nameof(PHalt));
+            this.receives.Add(nameof(eReq));
+            this.receives.Add(nameof(eResp));
+            this.receives.Add(nameof(PHalt));
+        }
+        
+        public void Anon(Event currentMachine_dequeuedEvent)
+        {
+            GoldenMachine currentMachine = this;
+            count = (PInt)(((PInt)(0)));
+            currentMachine.RaiseGotoStateEvent<Serving>();
+            return;
+        }
+        public void Anon_1(Event currentMachine_dequeuedEvent)
+        {
+            GoldenMachine currentMachine = this;
+            PInt n = (PInt)(gotoPayload ?? ((Event)currentMachine_dequeuedEvent).Payload);
+            this.gotoPayload = null;
+            PInt TMP_tmp0 = ((PInt)0);
+            PInt TMP_tmp1 = ((PInt)0);
+            PInt TMP_tmp2 = ((PInt)0);
+            PBool TMP_tmp3 = ((PBool)false);
+            PInt TMP_tmp4 = ((PInt)0);
+            PString TMP_tmp5 = ((PString)"");
+            TMP_tmp0 = (PInt)((count) + (n));
+            count = TMP_tmp0;
+            TMP_tmp1 = (PInt)(((PInt)(log).Count));
+            TMP_tmp2 = (PInt)(((PInt)((IPValue)n)?.Clone()));
+            ((PSeq)log).Insert(TMP_tmp1, TMP_tmp2);
+            TMP_tmp3 = (PBool)((count) > (((PInt)(10))));
+            if (TMP_tmp3)
+            {
+                count = (PInt)(((PInt)(0)));
+            }
+            else
+            {
+                TMP_tmp4 = (PInt)(((PInt)((IPValue)count)?.Clone()));
+                TMP_tmp5 = (PString)(((PString) String.Format("count={0}",TMP_tmp4)));
+                currentMachine.LogLine("" + TMP_tmp5);
+            }
+        }
+        [Start]
+        [OnEntry(nameof(Anon))]
+        class Init : State
+        {
+        }
+        [OnEventDoAction(typeof(eReq), nameof(Anon_1))]
+        class Serving : State
+        {
+        }
+    }
+}
+namespace PImplementation
+{
+    internal partial class GoldenMonitor : Monitor
+    {
+        private PInt total = ((PInt)0);
+        static GoldenMonitor() {
+            observes.Add(nameof(eReq));
+        }
+        
+        public void Anon_2(Event currentMachine_dequeuedEvent)
+        {
+            GoldenMonitor currentMachine = this;
+            PInt n_1 = (PInt)(gotoPayload ?? ((Event)currentMachine_dequeuedEvent).Payload);
+            this.gotoPayload = null;
+            PInt TMP_tmp0_1 = ((PInt)0);
+            PBool TMP_tmp1_1 = ((PBool)false);
+            PString TMP_tmp2_1 = ((PString)"");
+            PString TMP_tmp3_1 = ((PString)"");
+            PString TMP_tmp4_1 = ((PString)"");
+            TMP_tmp0_1 = (PInt)((total) + (n_1));
+            total = TMP_tmp0_1;
+            TMP_tmp1_1 = (PBool)((total) >= (((PInt)(0))));
+            if (TMP_tmp1_1)
+            {
+            }
+            else
+            {
+                TMP_tmp2_1 = (PString)(((PString) String.Format("golden.p:37:13")));
+                TMP_tmp3_1 = (PString)(((PString) String.Format("total must stay non-negative")));
+                TMP_tmp4_1 = (PString)(((PString) String.Format("{0} {1}",TMP_tmp2_1,TMP_tmp3_1)));
+                currentMachine.Assert(TMP_tmp1_1,"Assertion Failed: " + TMP_tmp4_1);
+            }
+        }
+        [Start]
+        [OnEventDoAction(typeof(eReq), nameof(Anon_2))]
+        class Counting : State
+        {
+        }
+    }
+}
+namespace PImplementation
+{
+    public class I_GoldenMachine : PMachineValue {
+        public I_GoldenMachine (StateMachineId machine, List<string> permissions) : base(machine, permissions) { }
+    }
+    
+    public partial class PHelper {
+        public static void InitializeInterfaces() {
+            PInterfaces.Clear();
+            PInterfaces.AddInterface(nameof(I_GoldenMachine), nameof(eReq), nameof(eResp), nameof(PHalt));
+        }
+    }
+    
+}
+namespace PImplementation
+{
+    public partial class PHelper {
+        public static void InitializeEnums() {
+            PEnum.Clear();
+        }
+    }
+    
+}
+#pragma warning restore 162, 219, 414

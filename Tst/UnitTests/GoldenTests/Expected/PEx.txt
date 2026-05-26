@@ -1,0 +1,236 @@
+==== GoldenPModel.java ====
+package pex.model;
+
+import pex.runtime.*;
+import pex.runtime.logger.*;
+import pex.runtime.machine.*;
+import pex.runtime.machine.buffer.*;
+import pex.runtime.machine.eventhandlers.*;
+import pex.runtime.machine.events.*;
+import pex.values.*;
+import pex.utils.*;
+import pex.utils.misc.*;
+import pex.utils.serialize.*;
+import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.text.MessageFormat;
+import lombok.Generated;
+
+public class GoldenPModel implements PModel {
+    
+    
+    
+    @Generated
+    public static class GlobalConfig
+    {
+    }
+    
+    public static Event _null = new Event("_null");
+    public static Event _halt = new Event("_halt");
+    public static Event eReq = new Event("eReq");
+    public static Event eResp = new Event("eResp");
+    // Skipping Interface 'GoldenMachine'
+
+    public static class GoldenMachine extends PMachine {
+        
+        static State Init = new State("Init", "GoldenMachine", StateTemperature.Warm) {
+            @Generated
+            @Override
+            public void entry(PMachine machine, PValue<?> payload) {
+                super.entry(machine, payload);
+                ((GoldenMachine)machine).Init_entry(machine);
+            }
+        };
+        static State Serving = new State("Serving", "GoldenMachine", StateTemperature.Warm) {
+        };
+        public PInt var_count = new PInt(0);
+        public PSeq var_log = new PSeq();
+        
+        public GoldenMachine(int id) {
+            super("GoldenMachine", id, Init, Init
+                , Serving
+                
+            );
+            Init.registerHandlers(
+            );
+            Serving.registerHandlers(
+                new EventHandler(eReq) {
+                    @Override public void handleEvent(PMachine machine, PValue<?> payload) {
+                        ((GoldenMachine)machine).Serving_eReq(machine, (PInt) payload);
+                    }
+                });
+        }
+        
+        void 
+        Init_entry(
+            PMachine currentMachine
+        ) {
+            PInt temp_var_0;
+            temp_var_0 = (PInt) new PInt(0);
+            var_count = temp_var_0;
+            
+            currentMachine.gotoState(Serving, null);
+            return;
+            
+        }
+        
+        void 
+        Serving_eReq(
+            PMachine currentMachine,
+            PInt var_n
+        ) {
+            PInt var_$tmp0 =
+                new PInt(0);
+            
+            PInt var_$tmp1 =
+                new PInt(0);
+            
+            PInt var_$tmp2 =
+                new PInt(0);
+            
+            PBool var_$tmp3 =
+                new PBool(false);
+            
+            PInt var_$tmp4 =
+                new PInt(0);
+            
+            PString var_$tmp5 =
+                new PString("");
+            
+            PInt temp_var_1;
+            temp_var_1 = (PInt) (var_count).add(var_n);
+            var_$tmp0 = temp_var_1;
+            
+            PInt temp_var_2;
+            temp_var_2 = (PInt) var_$tmp0;
+            var_count = temp_var_2;
+            
+            PInt temp_var_3;
+            temp_var_3 = (PInt) var_log.size();
+            var_$tmp1 = temp_var_3;
+            
+            PInt temp_var_4;
+            temp_var_4 = (PInt) var_n;
+            var_$tmp2 = temp_var_4;
+            
+            PSeq temp_var_5 = (PSeq) var_log;    
+            temp_var_5 = ((PSeq) var_log).add(var_$tmp1, var_$tmp2);
+            var_log = temp_var_5;
+            
+            PBool temp_var_6;
+            temp_var_6 = (PBool) (var_count).gt(new PInt(10));
+            var_$tmp3 = temp_var_6;
+            
+            PBool temp_var_7 = var_$tmp3;
+            if (temp_var_7.getValue()) {
+                // 'then' branch
+                PInt temp_var_8;
+                temp_var_8 = (PInt) new PInt(0);
+                var_count = temp_var_8;
+                
+            }
+            else {
+                // 'else' branch
+                PInt temp_var_9;
+                temp_var_9 = (PInt) var_count;
+                var_$tmp4 = temp_var_9;
+                
+                PString temp_var_10;
+                temp_var_10 = (PString) new PString("count={0}", var_$tmp4);
+                var_$tmp5 = temp_var_10;
+                
+                PExGlobal.getScheduler().getLogger().logModel(var_$tmp5.toString());
+                
+            }
+            
+        }
+        
+    }
+    
+    public static class GoldenMonitor extends PMonitor {
+        
+        static State Counting = new State("Counting", "GoldenMonitor", StateTemperature.Warm) {
+        };
+        public PInt var_total = new PInt(0);
+        
+        public GoldenMonitor(int id) {
+            super("GoldenMonitor", id, Counting, Counting
+                
+            );
+            Counting.registerHandlers(
+                new EventHandler(eReq) {
+                    @Override public void handleEvent(PMachine machine, PValue<?> payload) {
+                        ((GoldenMonitor)machine).Counting_eReq(machine, (PInt) payload);
+                    }
+                });
+        }
+        
+        void 
+        Counting_eReq(
+            PMachine currentMachine,
+            PInt var_n
+        ) {
+            PInt var_$tmp0 =
+                new PInt(0);
+            
+            PBool var_$tmp1 =
+                new PBool(false);
+            
+            PString var_$tmp2 =
+                new PString("");
+            
+            PString var_$tmp3 =
+                new PString("");
+            
+            PString var_$tmp4 =
+                new PString("");
+            
+            PInt temp_var_11;
+            temp_var_11 = (PInt) (var_total).add(var_n);
+            var_$tmp0 = temp_var_11;
+            
+            PInt temp_var_12;
+            temp_var_12 = (PInt) var_$tmp0;
+            var_total = temp_var_12;
+            
+            PBool temp_var_13;
+            temp_var_13 = (PBool) (var_total).ge(new PInt(0));
+            var_$tmp1 = temp_var_13;
+            
+            PBool temp_var_14 = var_$tmp1;
+            if (temp_var_14.getValue()) {
+                // 'then' branch
+            }
+            else {
+                // 'else' branch
+                PString temp_var_15;
+                temp_var_15 = (PString) new PString("golden.p:37:13");
+                var_$tmp2 = temp_var_15;
+                
+                PString temp_var_16;
+                temp_var_16 = (PString) new PString("total must stay non-negative");
+                var_$tmp3 = temp_var_16;
+                
+                PString temp_var_17;
+                temp_var_17 = (PString) new PString("{0} {1}", var_$tmp2, var_$tmp3);
+                var_$tmp4 = temp_var_17;
+                
+                Assert.fromModel((var_$tmp1).getValue(), var_$tmp4);
+            }
+            
+        }
+        
+    }
+    
+    PTestDriver testDriver = null;
+    @Generated
+    public PTestDriver getTestDriver() { return testDriver; }
+    @Generated
+    public void setTestDriver(PTestDriver input) { testDriver = input; }
+    
+}

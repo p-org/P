@@ -953,9 +953,14 @@ namespace Plang.Compiler.TypeChecker
                 if (names.Contains(entryName))
                 {
                     handler.Diagnostics.Report(handler.DuplicateNamedTupleEntry(context._names[i], entryName));
-                    // Continue building the tuple type so dependent checks still
-                    // run; downstream code inspects field types, not names.
-                    entries[i] = new NamedTupleEntry { Name = entryName, FieldNo = i, Type = fields[i].Type };
+                    // Mangle the name with a unique suffix so downstream
+                    // NamedTupleType construction (which builds a Dictionary
+                    // keyed by entry name) doesn't throw on the collision.
+                    // The user already has the duplicate diagnostic; mangling
+                    // just keeps the AST well-formed for any subsequent checks.
+                    var mangled = $"{entryName}$dup${i}";
+                    names.Add(mangled);
+                    entries[i] = new NamedTupleEntry { Name = mangled, FieldNo = i, Type = fields[i].Type };
                     continue;
                 }
 

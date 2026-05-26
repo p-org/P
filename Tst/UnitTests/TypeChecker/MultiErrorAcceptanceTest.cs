@@ -101,7 +101,8 @@ public class MultiErrorAcceptanceTest
         }
         catch (Exception e)
         {
-            stderrWriter.WriteLine($"[Test harness caught uncaught exception:] {e.Message}");
+            stderrWriter.WriteLine($"[Test harness caught uncaught {e.GetType().Name}:] {e.Message}");
+            stderrWriter.WriteLine(e.StackTrace);
             exitCode = -1;
         }
 

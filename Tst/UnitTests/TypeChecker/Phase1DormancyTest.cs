@@ -154,7 +154,11 @@ public class Phase1DormancyTest
         }
         catch (Exception e)
         {
-            stderrWriter.WriteLine($"[Test harness caught uncaught exception:] {e.Message}");
+            // Print full stack trace so a regression in the compiler that
+            // escapes its own try/catch points at the responsible visitor /
+            // backend pass, not just the message.
+            stderrWriter.WriteLine($"[Test harness caught uncaught {e.GetType().Name}:] {e.Message}");
+            stderrWriter.WriteLine(e.StackTrace);
             exitCode = -1;
         }
 

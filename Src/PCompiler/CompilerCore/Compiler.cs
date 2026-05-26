@@ -143,13 +143,22 @@ namespace Plang.Compiler
 
         /// <summary>
         /// Test seam: runs the front-end (parse + type-check + IR lowering) and the single
-        /// configured backend's code generation, returning the generated files in memory.
-        /// Unlike <see cref="Compile"/> it writes nothing to disk and never invokes a backend's
-        /// external build stage, so tests can snapshot generated code cheaply and deterministically.
-        /// The job must have exactly one output language.
+        /// configured backend's code generation, returning the generated files in memory rather
+        /// than writing them to the output directory. It never invokes a backend's external build
+        /// stage (<see cref="ICodeGenerator.Compile"/>), so tests can snapshot generated code
+        /// cheaply and deterministically. Note that a backend's <c>GenerateCode</c> may still emit
+        /// incidental scaffolding to disk (e.g. PObserve writes a pom.xml under the output
+        /// directory). The job must have exactly one output language.
         /// </summary>
         internal IReadOnlyList<CompiledFile> GenerateCodeInMemory(ICompilerConfiguration job)
         {
+            if (job.OutputLanguages.Count != 1)
+            {
+                throw new ArgumentException(
+                    $"{nameof(GenerateCodeInMemory)} requires exactly one output language, got {job.OutputLanguages.Count}.",
+                    nameof(job));
+            }
+
             var trees = job.InputPFiles.Select(file =>
             {
                 var tree = Parse(job, new FileInfo(file));

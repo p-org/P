@@ -41,18 +41,32 @@ namespace UnitTests
             }
 
             var inputFile = Path.Combine(GoldenDir, "Input", "golden.p");
-            var job = new CompilerConfiguration(
-                new DiscardOutput(),
-                new DirectoryInfo(Path.GetTempPath()),
-                new[] { backend },
-                new[] { inputFile },
-                "Golden");
 
-            var files = new Compiler().GenerateCodeInMemory(job);
-            var actual = Normalize(string.Join(
-                "\n",
-                files.OrderBy(f => f.FileName, StringComparer.Ordinal)
-                    .Select(f => $"==== {f.FileName} ====\n{f.Contents}")));
+            // Some backends (e.g. PObserve) write incidental scaffolding such as pom.xml during
+            // GenerateCode, so give each test run an isolated output directory and clean it up.
+            var outputDir = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), $"GoldenCodegen_{backend}_{Guid.NewGuid():N}"));
+
+            string actual;
+            try
+            {
+                var job = new CompilerConfiguration(
+                    new DiscardOutput(),
+                    outputDir,
+                    new[] { backend },
+                    new[] { inputFile },
+                    "Golden");
+
+                var files = new Compiler().GenerateCodeInMemory(job);
+                actual = Normalize(string.Join(
+                    "\n",
+                    files.OrderBy(f => f.FileName, StringComparer.Ordinal)
+                        .Select(f => $"==== {f.FileName} ====\n{f.Contents}")));
+            }
+            finally
+            {
+                try { outputDir.Delete(recursive: true); } catch (IOException) { }
+            }
 
             var snapshotPath = Path.Combine(GoldenDir, "Expected", $"{backend}.txt");
 
@@ -79,7 +93,9 @@ namespace UnitTests
             s = Regex.Replace(s, @"auto-generated on .*", "auto-generated on <DATE>");
             // Embedded source locations (e.g. in assert messages) carry a path that depends on
             // the output directory / checkout location; keep the stable line:col, drop the path.
-            s = Regex.Replace(s, @"[^""\s]*golden\.p:", "golden.p:");
+            // These locations sit inside string literals, so match any non-quote prefix - this
+            // also tolerates paths containing spaces (common on Windows user profiles).
+            s = Regex.Replace(s, @"[^""]*golden\.p:", "golden.p:");
             return s;
         }
 

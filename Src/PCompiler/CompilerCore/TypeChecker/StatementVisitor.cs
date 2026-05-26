@@ -10,6 +10,26 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
+    /// <summary>
+    /// Visits statement parse nodes and produces typed <see cref="IPStmt"/> AST.
+    ///
+    /// Multi-error type checking (Phase 2): every error site reports through
+    /// <c>handler.Diagnostics</c> and either continues (when the statement can
+    /// still be built from what we have) or returns <see cref="NoStmt"/> as a
+    /// placeholder. In strict mode (default), Report re-throws so behavior is
+    /// unchanged. See ExprVisitor's class doc for the full cascade-suppression
+    /// strategy and how <see cref="ErrorExpr"/> propagates from sub-expressions.
+    ///
+    /// Recovery conventions:
+    ///   - Type mismatch on a sub-expression (e.g. non-bool condition) →
+    ///     Report and continue building the statement; downstream code uses
+    ///     the typed expression as-is.
+    ///   - Missing declaration (variable, interface, event, function, state) →
+    ///     Report and return <see cref="NoStmt"/>. Without the resolved decl
+    ///     there's nothing meaningful to construct.
+    ///   - Sub-expression already errored (Type is ErrorType) → skip the
+    ///     compatibility check that would have produced a redundant diagnostic.
+    /// </summary>
     public class StatementVisitor : PParserBaseVisitor<IPStmt>
     {
         private readonly ExprVisitor exprVisitor;
@@ -44,17 +64,17 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
         {
             var assertion = exprVisitor.Visit(context.assertion);
-            if (!PrimitiveType.Bool.IsSameTypeAs(assertion.Type))
+            if (assertion.Type is not ErrorType && !PrimitiveType.Bool.IsSameTypeAs(assertion.Type))
             {
-                throw handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool);
+                handler.Diagnostics.Report(handler.TypeMismatch(context.assertion, assertion.Type, PrimitiveType.Bool));
             }
             IPExpr assertMessage = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context).ToString().Replace(@"\", @"\\")}",new List<IPExpr>());
             if (context.message != null)
             {
                 var message = exprVisitor.Visit(context.message);
-                if (!message.Type.IsSameTypeAs(PrimitiveType.String))
+                if (message.Type is not ErrorType && !message.Type.IsSameTypeAs(PrimitiveType.String))
                 {
-                    throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
+                    handler.Diagnostics.Report(handler.TypeMismatch(context.message, message.Type, PrimitiveType.String));
                 }
 
                 assertMessage = new StringExpr(message.SourceLocation, "{0} {1}",new List<IPExpr>() {assertMessage,
@@ -63,22 +83,22 @@ namespace Plang.Compiler.TypeChecker
 
             return new AssertStmt(context, assertion, assertMessage);
         }
-        
-        
+
+
         public override IPStmt VisitAssumeStmt(PParser.AssumeStmtContext context)
         {
             var assumption = exprVisitor.Visit(context.assumption);
-            if (!PrimitiveType.Bool.IsSameTypeAs(assumption.Type))
+            if (assumption.Type is not ErrorType && !PrimitiveType.Bool.IsSameTypeAs(assumption.Type))
             {
-                throw handler.TypeMismatch(context.assumption, assumption.Type, PrimitiveType.Bool);
+                handler.Diagnostics.Report(handler.TypeMismatch(context.assumption, assumption.Type, PrimitiveType.Bool));
             }
             IPExpr assertMessage = new StringExpr(context, @$"{config.LocationResolver.GetLocation(context).ToString().Replace(@"\", @"\\")}",new List<IPExpr>());
             if (context.message != null)
             {
                 var message = exprVisitor.Visit(context.message);
-                if (!message.Type.IsSameTypeAs(PrimitiveType.String))
+                if (message.Type is not ErrorType && !message.Type.IsSameTypeAs(PrimitiveType.String))
                 {
-                    throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
+                    handler.Diagnostics.Report(handler.TypeMismatch(context.message, message.Type, PrimitiveType.String));
                 }
 
                 assertMessage = new StringExpr(message.SourceLocation, "{0} {1}",new List<IPExpr>() {assertMessage,
@@ -91,9 +111,9 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
         {
             var message = exprVisitor.Visit(context.message);
-            if (!message.Type.IsSameTypeAs(PrimitiveType.String))
+            if (message.Type is not ErrorType && !message.Type.IsSameTypeAs(PrimitiveType.String))
             {
-                throw handler.TypeMismatch(context.message, message.Type, PrimitiveType.String);
+                handler.Diagnostics.Report(handler.TypeMismatch(context.message, message.Type, PrimitiveType.String));
             }
             return new PrintStmt(context, message);
         }
@@ -102,10 +122,9 @@ namespace Plang.Compiler.TypeChecker
         {
             var returnValue = context.expr() == null ? null : exprVisitor.Visit(context.expr());
             var returnType = returnValue?.Type ?? PrimitiveType.Null;
-            if (!method.Signature.ReturnType.IsAssignableFrom(returnType))
-            {
-                throw handler.TypeMismatch(context, returnType, method.Signature.ReturnType);
-            }
+            // CheckAssignable suppresses if returnType is ErrorType (upstream
+            // expression error already reported).
+            TypeCheckingUtils.CheckAssignable(handler, context, method.Signature.ReturnType, returnType);
 
             return new ReturnStmt(context, returnValue);
         }
@@ -125,11 +144,9 @@ namespace Plang.Compiler.TypeChecker
             var variable = exprVisitor.Visit(context.lvalue());
             var value = exprVisitor.Visit(context.rvalue());
 
-            // If this is a value assignment, we just need subtyping
-            if (!variable.Type.IsAssignableFrom(value.Type))
-            {
-                throw handler.TypeMismatch(context.rvalue(), value.Type, variable.Type);
-            }
+            // If this is a value assignment, we just need subtyping. Helper
+            // suppresses when either side has ErrorType (lvalue rule).
+            TypeCheckingUtils.CheckAssignable(handler, context.rvalue(), variable.Type, value);
 
             return new AssignStmt(context, variable, value);
         }
@@ -139,9 +156,12 @@ namespace Plang.Compiler.TypeChecker
             var variable = exprVisitor.Visit(context.lvalue());
             var value = exprVisitor.Visit(context.rvalue());
 
-
-            // Check subtyping
-            var valueType = value.Type;
+            // If the lvalue already errored, downstream container-shape check
+            // can't say anything useful; emit one statement and bail.
+            if (variable.Type is ErrorType)
+            {
+                return new AddStmt(context, variable, value);
+            }
 
             PLanguageType expectedValueType;
 
@@ -152,11 +172,11 @@ namespace Plang.Compiler.TypeChecker
                     break;
 
                 default:
-                    throw handler.TypeMismatch(variable, TypeKind.Set);
+                    handler.Diagnostics.Report(handler.TypeMismatch(variable, TypeKind.Set));
+                    return new AddStmt(context, variable, value);
             }
 
-            if (!expectedValueType.IsAssignableFrom(valueType))
-                throw handler.TypeMismatch(context.rvalue(), valueType, expectedValueType);
+            TypeCheckingUtils.CheckAssignable(handler, context.rvalue(), expectedValueType, value);
 
             return new AddStmt(context, variable, value);
         }
@@ -167,9 +187,10 @@ namespace Plang.Compiler.TypeChecker
             var index = exprVisitor.Visit(context.expr());
             var value = exprVisitor.Visit(context.rvalue());
 
-            // Check subtyping
-            var keyType = index.Type;
-            var valueType = value.Type;
+            if (variable.Type is ErrorType)
+            {
+                return new InsertStmt(context, variable, index, value);
+            }
 
             PLanguageType expectedKeyType;
             PLanguageType expectedValueType;
@@ -187,18 +208,12 @@ namespace Plang.Compiler.TypeChecker
                     break;
 
                 default:
-                    throw handler.TypeMismatch(variable, TypeKind.Sequence, TypeKind.Map);
+                    handler.Diagnostics.Report(handler.TypeMismatch(variable, TypeKind.Sequence, TypeKind.Map));
+                    return new InsertStmt(context, variable, index, value);
             }
 
-            if (!expectedKeyType.IsAssignableFrom(keyType))
-            {
-                throw handler.TypeMismatch(context.rvalue(), keyType, expectedKeyType);
-            }
-
-            if (!expectedValueType.IsAssignableFrom(valueType))
-            {
-                throw handler.TypeMismatch(context.rvalue(), valueType, expectedValueType);
-            }
+            TypeCheckingUtils.CheckAssignable(handler, context.rvalue(), expectedKeyType, index);
+            TypeCheckingUtils.CheckAssignable(handler, context.rvalue(), expectedValueType, value);
 
             return new InsertStmt(context, variable, index, value);
         }
@@ -208,30 +223,28 @@ namespace Plang.Compiler.TypeChecker
             var variable = exprVisitor.Visit(context.lvalue());
             var value = exprVisitor.Visit(context.expr());
 
+            if (variable.Type is ErrorType)
+            {
+                return new RemoveStmt(context, variable, value);
+            }
+
             if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Sequence))
             {
-                if (!PrimitiveType.Int.IsAssignableFrom(value.Type))
-                {
-                    throw handler.TypeMismatch(context.expr(), value.Type, PrimitiveType.Int);
-                }
+                TypeCheckingUtils.CheckAssignable(handler, context.expr(), PrimitiveType.Int, value);
             }
             else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Map))
             {
                 var map = (MapType)variable.Type.Canonicalize();
-                if (!map.KeyType.IsAssignableFrom(value.Type))
-                {
-                    throw handler.TypeMismatch(context.expr(), value.Type, map.KeyType);
-                }
+                TypeCheckingUtils.CheckAssignable(handler, context.expr(), map.KeyType, value);
             }
             else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Set))
             {
                 var set = (SetType)variable.Type.Canonicalize();
-                if (!set.ElementType.IsAssignableFrom(value.Type))
-                    throw handler.TypeMismatch(context.expr(), value.Type, set.ElementType);
+                TypeCheckingUtils.CheckAssignable(handler, context.expr(), set.ElementType, value);
             }
             else
             {
-                throw handler.TypeMismatch(variable, TypeKind.Sequence, TypeKind.Map);
+                handler.Diagnostics.Report(handler.TypeMismatch(variable, TypeKind.Sequence, TypeKind.Map));
             }
 
             return new RemoveStmt(context, variable, value);
@@ -240,9 +253,9 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
         {
             var condition = exprVisitor.Visit(context.expr());
-            if (!PrimitiveType.Bool.IsSameTypeAs(condition.Type))
+            if (condition.Type is not ErrorType && !PrimitiveType.Bool.IsSameTypeAs(condition.Type))
             {
-                throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
+                handler.Diagnostics.Report(handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool));
             }
 
             var body = Visit(context.statement());
@@ -254,46 +267,56 @@ namespace Plang.Compiler.TypeChecker
             var varName = context.item.GetText();
             if (!table.Lookup(varName, out Variable var))
             {
-                throw handler.MissingDeclaration(context.item, "foreach iterator variable", varName);
+                handler.Diagnostics.Report(handler.MissingDeclaration(context.item, "foreach iterator variable", varName));
+                // Still visit children so their internal errors surface.
+                exprVisitor.Visit(context.collection);
+                Visit(context.statement());
+                return new NoStmt(context);
             }
             var collection = exprVisitor.Visit(context.collection);
 
-            // make sure that foreach is applied to either sequence or set type
-
-            // Check subtyping
-            var itemType = var.Type;
-
             PLanguageType expectedItemType;
-
-            switch (collection.Type.Canonicalize())
+            if (collection.Type is ErrorType)
             {
-                case SetType setType:
-                    expectedItemType = setType.ElementType;
-                    break;
-                case SequenceType seqType:
-                    expectedItemType = seqType.ElementType;
-                    break;
-                default:
-                    throw handler.TypeMismatch(collection, TypeKind.Set, TypeKind.Sequence);
+                expectedItemType = ErrorType.Instance;
+            }
+            else
+            {
+                switch (collection.Type.Canonicalize())
+                {
+                    case SetType setType:
+                        expectedItemType = setType.ElementType;
+                        break;
+                    case SequenceType seqType:
+                        expectedItemType = seqType.ElementType;
+                        break;
+                    default:
+                        handler.Diagnostics.Report(handler.TypeMismatch(collection, TypeKind.Set, TypeKind.Sequence));
+                        expectedItemType = ErrorType.Instance;
+                        break;
+                }
             }
 
-            if (!expectedItemType.IsSameTypeAs(itemType)
-                || !expectedItemType.IsAssignableFrom(itemType))
-                throw handler.TypeMismatch(context.item, itemType, expectedItemType);
+            var itemType = var.Type;
+            if (expectedItemType is not ErrorType && itemType is not ErrorType
+                && (!expectedItemType.IsSameTypeAs(itemType) || !expectedItemType.IsAssignableFrom(itemType)))
+            {
+                handler.Diagnostics.Report(handler.TypeMismatch(context.item, itemType, expectedItemType));
+            }
 
             var body = Visit(context.statement());
 
             var invs = context._invariants.Select(exprVisitor.Visit).ToList();
-            
+
             return new ForeachStmt(context, var, collection, body, invs);
         }
-        
+
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
         {
             var condition = exprVisitor.Visit(context.expr());
-            if (!PrimitiveType.Bool.IsSameTypeAs(condition.Type))
+            if (condition.Type is not ErrorType && !PrimitiveType.Bool.IsSameTypeAs(condition.Type))
             {
-                throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
+                handler.Diagnostics.Report(handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool));
             }
 
             var thenBody = Visit(context.thenBranch);
@@ -304,12 +327,15 @@ namespace Plang.Compiler.TypeChecker
         public override IPStmt VisitCtorStmt(PParser.CtorStmtContext context)
         {
             var interfaceName = context.iden().GetText();
+            // Always visit arguments so their internal errors surface.
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+
             if (!table.Lookup(interfaceName, out Interface targetInterface))
             {
-                throw handler.MissingDeclaration(context.iden(), "interface", interfaceName);
+                handler.Diagnostics.Report(handler.MissingDeclaration(context.iden(), "interface", interfaceName));
+                return new NoStmt(context);
             }
 
-            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetInterface.PayloadType, args);
             method.CanCreate = true;
             return new CtorStmt(context, targetInterface, args);
@@ -321,14 +347,16 @@ namespace Plang.Compiler.TypeChecker
             var argsList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             if (!table.Lookup(funName, out Function fun))
             {
-                throw handler.MissingDeclaration(context.fun, "function or function prototype", funName);
+                handler.Diagnostics.Report(handler.MissingDeclaration(context.fun, "function or function prototype", funName));
+                return new NoStmt(context);
             }
 
             if (fun.Signature.Parameters.Count != argsList.Count)
             {
-                throw handler.IncorrectArgumentCount((ParserRuleContext)context.rvalueList() ?? context,
+                handler.Diagnostics.Report(handler.IncorrectArgumentCount((ParserRuleContext)context.rvalueList() ?? context,
                     argsList.Count,
-                    fun.Signature.Parameters.Count);
+                    fun.Signature.Parameters.Count));
+                return new FunCallStmt(context, fun, argsList);
             }
 
             foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
@@ -344,18 +372,28 @@ namespace Plang.Compiler.TypeChecker
         {
             if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                throw handler.RaiseEventInNonVoidFunction(context);
+                handler.Diagnostics.Report(handler.RaiseEventInNonVoidFunction(context));
+                // Still visit children to surface their errors.
+                exprVisitor.Visit(context.expr());
+                TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+                return new NoStmt(context);
             }
 
             var evtExpr = exprVisitor.Visit(context.expr());
-            if (IsDefinitelyNullEvent(evtExpr))
+            if (evtExpr.Type is ErrorType)
             {
-                throw handler.EmittedNullEvent(evtExpr);
+                method.CanRaiseEvent = true;
+                TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+                return new RaiseStmt(context, evtExpr, Array.Empty<IPExpr>());
             }
 
-            if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
+            if (IsDefinitelyNullEvent(evtExpr))
             {
-                throw handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event);
+                handler.Diagnostics.Report(handler.EmittedNullEvent(evtExpr));
+            }
+            else if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
+            {
+                handler.Diagnostics.Report(handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event));
             }
 
             method.CanRaiseEvent = true;
@@ -373,24 +411,31 @@ namespace Plang.Compiler.TypeChecker
         {
             if (machine?.IsSpec == true)
             {
-                throw handler.IllegalMonitorOperation(context, context.SEND().Symbol, machine);
+                handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.SEND().Symbol, machine));
+                // Still visit children to surface their errors.
+                exprVisitor.Visit(context.machine);
+                exprVisitor.Visit(context.@event);
+                TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+                return new NoStmt(context);
             }
 
             var machineExpr = exprVisitor.Visit(context.machine);
-            if (!PrimitiveType.Machine.IsAssignableFrom(machineExpr.Type))
+            if (machineExpr.Type is not ErrorType && !PrimitiveType.Machine.IsAssignableFrom(machineExpr.Type))
             {
-                throw handler.TypeMismatch(context.machine, machineExpr.Type, PrimitiveType.Machine);
+                handler.Diagnostics.Report(handler.TypeMismatch(context.machine, machineExpr.Type, PrimitiveType.Machine));
             }
 
             var evtExpr = exprVisitor.Visit(context.@event);
-            if (IsDefinitelyNullEvent(evtExpr))
+            if (evtExpr.Type is not ErrorType)
             {
-                throw handler.EmittedNullEvent(evtExpr);
-            }
-
-            if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
-            {
-                throw handler.TypeMismatch(context.@event, evtExpr.Type, PrimitiveType.Event);
+                if (IsDefinitelyNullEvent(evtExpr))
+                {
+                    handler.Diagnostics.Report(handler.EmittedNullEvent(evtExpr));
+                }
+                else if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
+                {
+                    handler.Diagnostics.Report(handler.TypeMismatch(context.@event, evtExpr.Type, PrimitiveType.Event));
+                }
             }
 
             var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
@@ -414,18 +459,23 @@ namespace Plang.Compiler.TypeChecker
         {
             if (machine?.IsSpec == true)
             {
-                throw handler.IllegalMonitorOperation(context, context.ANNOUNCE().Symbol, machine);
+                handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.ANNOUNCE().Symbol, machine));
+                exprVisitor.Visit(context.expr());
+                TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+                return new NoStmt(context);
             }
 
             var evtExpr = exprVisitor.Visit(context.expr());
-            if (IsDefinitelyNullEvent(evtExpr))
+            if (evtExpr.Type is not ErrorType)
             {
-                throw handler.EmittedNullEvent(evtExpr);
-            }
-
-            if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
-            {
-                throw handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event);
+                if (IsDefinitelyNullEvent(evtExpr))
+                {
+                    handler.Diagnostics.Report(handler.EmittedNullEvent(evtExpr));
+                }
+                else if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
+                {
+                    handler.Diagnostics.Report(handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event));
+                }
             }
 
             method.CanSend = true;
@@ -444,7 +494,9 @@ namespace Plang.Compiler.TypeChecker
         {
             if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                throw handler.ChangeStateInNonVoidFunction(context);
+                handler.Diagnostics.Report(handler.ChangeStateInNonVoidFunction(context));
+                TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+                return new NoStmt(context);
             }
 
             var stateNameContext = context.stateName();
@@ -454,7 +506,9 @@ namespace Plang.Compiler.TypeChecker
             var state = current?.GetState(stateName);
             if (state == null)
             {
-                throw handler.MissingDeclaration(stateNameContext.state, "state", stateName);
+                handler.Diagnostics.Report(handler.MissingDeclaration(stateNameContext.state, "state", stateName));
+                TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+                return new NoStmt(context);
             }
 
             var expectedType =
@@ -464,7 +518,8 @@ namespace Plang.Compiler.TypeChecker
             var expectedArgs = state.Entry?.Signature.Parameters.Count() ?? 0;
             if (rvaluesList.Length != expectedArgs)
             {
-                throw handler.IncorrectArgumentCount(context, rvaluesList.Length, expectedArgs);
+                handler.Diagnostics.Report(handler.IncorrectArgumentCount(context, rvaluesList.Length, expectedArgs));
+                return new GotoStmt(context, state, null);
             }
 
             IPExpr payload;
@@ -482,10 +537,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             var payloadType = payload?.Type ?? PrimitiveType.Null;
-            if (!expectedType.IsAssignableFrom(payloadType))
-            {
-                throw handler.TypeMismatch(context, payloadType, expectedType);
-            }
+            TypeCheckingUtils.CheckAssignable(handler, context, expectedType, payloadType);
 
             method.CanChangeState = true;
             return new GotoStmt(context, state, payload);
@@ -495,7 +547,8 @@ namespace Plang.Compiler.TypeChecker
         {
             if (machine?.IsSpec == true)
             {
-                throw handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine);
+                handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine));
+                return new NoStmt(context);
             }
 
             var cases = new Dictionary<Event, Function>();
@@ -526,40 +579,42 @@ namespace Plang.Compiler.TypeChecker
 
                     if (!table.Lookup(eventIdContext.GetText(), out Event pEvent))
                     {
-                        throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
+                        handler.Diagnostics.Report(handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText()));
+                        continue;
                     }
 
                     if (cases.ContainsKey(pEvent))
                     {
-                        throw handler.DuplicateReceiveCase(eventIdContext, pEvent);
+                        handler.Diagnostics.Report(handler.DuplicateReceiveCase(eventIdContext, pEvent));
+                        continue;
                     }
 
                     var expectedType =
                         recvHandler.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
-                    if (!expectedType.IsAssignableFrom(pEvent.PayloadType))
-                    {
-                        throw handler.TypeMismatch(caseContext.anonEventHandler(), expectedType,
-                            pEvent.PayloadType);
-                    }
+                    TypeCheckingUtils.CheckAssignable(handler, caseContext.anonEventHandler(), expectedType, pEvent.PayloadType);
 
                     if (recvHandler.CanChangeState)
                     {
                         if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                         {
-                            throw handler.ChangeStateInNonVoidFunction(context);
+                            handler.Diagnostics.Report(handler.ChangeStateInNonVoidFunction(context));
                         }
-
-                        method.CanChangeState = true;
+                        else
+                        {
+                            method.CanChangeState = true;
+                        }
                     }
 
                     if (recvHandler.CanRaiseEvent)
                     {
                         if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
                         {
-                            throw handler.RaiseEventInNonVoidFunction(context);
+                            handler.Diagnostics.Report(handler.RaiseEventInNonVoidFunction(context));
                         }
-
-                        method.CanRaiseEvent = true;
+                        else
+                        {
+                            method.CanRaiseEvent = true;
+                        }
                     }
 
                     foreach (var callee in recvHandler.Callees)

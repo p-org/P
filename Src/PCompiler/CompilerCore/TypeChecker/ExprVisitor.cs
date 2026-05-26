@@ -11,6 +11,26 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker
 {
+    /// <summary>
+    /// Visits expression parse nodes and produces typed <see cref="IPExpr"/> AST.
+    ///
+    /// Multi-error type checking (Phase 2): every error site reports through
+    /// <c>handler.Diagnostics</c> and returns an <see cref="ErrorExpr"/>
+    /// instead of throwing. In strict mode (default), Report re-throws so
+    /// behavior is unchanged. In collecting mode, ErrorExpr propagates up the
+    /// expression tree and cascade-suppression rules in
+    /// <see cref="TypeCheckingUtils.CheckAssignable"/> stop one upstream error
+    /// from generating a chain of downstream "incompatible type" diagnostics.
+    ///
+    /// Conventions adopted per visit method:
+    ///   1. Visit children first.
+    ///   2. If any child's <c>Type</c> is <see cref="ErrorType"/>, return
+    ///      <c>new ErrorExpr(context)</c> without further checks.
+    ///   3. Each original `throw handler.X(...)` becomes
+    ///      `Report(handler.X(...)); return new ErrorExpr(context);` — and
+    ///      remaining type-compatibility checks route through
+    ///      <see cref="TypeCheckingUtils.CheckAssignable"/>.
+    /// </summary>
     public class ExprVisitor : PParserBaseVisitor<IPExpr>
     {
         private readonly ITranslationErrorHandler handler;
@@ -25,7 +45,7 @@ namespace Plang.Compiler.TypeChecker
             this.handler = handler;
             this.isPVerifier = isPVerifier;
         }
-        
+
         public ExprVisitor(Scope scope, ITranslationErrorHandler handler, bool isPVerifier = false)
         {
             table = scope;
@@ -56,6 +76,8 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitNamedTupleAccessExpr(PParser.NamedTupleAccessExprContext context)
         {
             IPExpr subExpr = Visit(context.expr());
+            if (subExpr.Type is ErrorType) return new ErrorExpr(context);
+
             var fieldName = context.field.GetText();
 
             switch (subExpr.Type.Canonicalize())
@@ -63,34 +85,38 @@ namespace Plang.Compiler.TypeChecker
                 case NamedTupleType tuple:
                     if (!tuple.LookupEntry(fieldName, out var entry))
                     {
-                        throw handler.MissingNamedTupleEntry(context.field, tuple);
+                        handler.Diagnostics.Report(handler.MissingNamedTupleEntry(context.field, tuple));
+                        return new ErrorExpr(context);
                     }
 
                     return new NamedTupleAccessExpr(context, subExpr, entry);
-                
+
                 case PermissionType {Origin: Machine} permission when isPVerifier:
                     var machine = (Machine) permission.Origin;
-                    
+
                     if (!machine.LookupEntry(fieldName, out var field))
                     {
-                        throw handler.MissingMachineField(context.field, machine);
+                        handler.Diagnostics.Report(handler.MissingMachineField(context.field, machine));
+                        return new ErrorExpr(context);
                     }
                     return new MachineAccessExpr(context, machine, subExpr, field);
-                
+
                 case PermissionType {Origin: Interface} permission when isPVerifier:
                     var pname = permission.Origin.Name;
-                   
+
                     if (!table.Lookup(pname, out Machine m))
                     {
-                        throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+                        handler.Diagnostics.Report(handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]));
+                        return new ErrorExpr(context);
                     }
-                    
+
                     if (!m.LookupEntry(fieldName, out var mfield))
                     {
-                        throw handler.MissingMachineField(context.field, m);
+                        handler.Diagnostics.Report(handler.MissingMachineField(context.field, m));
+                        return new ErrorExpr(context);
                     }
                     return new MachineAccessExpr(context, m, subExpr, mfield);
-                
+
                 case PermissionType {Origin: NamedEventSet} permission when isPVerifier:
 
                     var pevents = ((NamedEventSet)permission.Origin).Events.ToList();
@@ -107,9 +133,10 @@ namespace Plang.Compiler.TypeChecker
                                 break;
                         }
                     }
-                    
-                    throw handler.MissingEventField(context.field, pevents.First());
-                
+
+                    handler.Diagnostics.Report(handler.MissingEventField(context.field, pevents.First()));
+                    return new ErrorExpr(context);
+
                 case PrimitiveType pt when pt.IsSameTypeAs(PrimitiveType.Machine) && isPVerifier:
                     Machine spec;
 
@@ -119,32 +146,39 @@ namespace Plang.Compiler.TypeChecker
                             spec = specRefExpr.Value;
                             break;
                         default:
-                            throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+                            handler.Diagnostics.Report(handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]));
+                            return new ErrorExpr(context);
                     }
-                    
+
                     if (!spec.LookupEntry(fieldName, out var sfield))
                     {
-                        throw handler.MissingMachineField(context.field, spec);
+                        handler.Diagnostics.Report(handler.MissingMachineField(context.field, spec));
+                        return new ErrorExpr(context);
                     }
                     return new SpecAccessExpr(context, spec, subExpr, sfield);
-                
+
                 default:
-                    throw handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]);
+                    handler.Diagnostics.Report(handler.TypeMismatch(subExpr, [TypeKind.NamedTuple, TypeKind.Base]));
+                    return new ErrorExpr(context);
             }
         }
 
         public override IPExpr VisitTupleAccessExpr(PParser.TupleAccessExprContext context)
         {
             var subExpr = Visit(context.expr());
+            if (subExpr.Type is ErrorType) return new ErrorExpr(context);
+
             var fieldNo = int.Parse(context.field.GetText());
             if (!(subExpr.Type.Canonicalize() is TupleType tuple))
             {
-                throw handler.TypeMismatch(subExpr, TypeKind.Tuple, TypeKind.NamedTuple);
+                handler.Diagnostics.Report(handler.TypeMismatch(subExpr, TypeKind.Tuple, TypeKind.NamedTuple));
+                return new ErrorExpr(context);
             }
 
             if (fieldNo >= tuple.Types.Count)
             {
-                throw handler.OutOfBoundsTupleAccess(context.field, tuple);
+                handler.Diagnostics.Report(handler.OutOfBoundsTupleAccess(context.field, tuple));
+                return new ErrorExpr(context);
             }
 
             return new TupleAccessExpr(context, subExpr, fieldNo, tuple.Types[fieldNo]);
@@ -154,34 +188,39 @@ namespace Plang.Compiler.TypeChecker
         {
             var seqOrMap = Visit(context.seq);
             var indexExpr = Visit(context.index);
+            // Combiner rule: if either operand carries an upstream error, the
+            // result is also ErrorType and we don't add a new diagnostic.
+            if (seqOrMap.Type is ErrorType || indexExpr.Type is ErrorType) return new ErrorExpr(context);
+
             switch (seqOrMap.Type.Canonicalize())
             {
                 case SequenceType seqType:
-                    if (!PrimitiveType.Int.IsAssignableFrom(indexExpr.Type))
+                    if (!TypeCheckingUtils.CheckAssignable(handler, context.index, PrimitiveType.Int, indexExpr))
                     {
-                        throw handler.TypeMismatch(context.index, indexExpr.Type, PrimitiveType.Int);
+                        return new ErrorExpr(context);
                     }
 
                     return new SeqAccessExpr(context, seqOrMap, indexExpr, seqType.ElementType);
 
                 case MapType mapType:
-                    if (!mapType.KeyType.IsAssignableFrom(indexExpr.Type))
+                    if (!TypeCheckingUtils.CheckAssignable(handler, context.index, mapType.KeyType, indexExpr))
                     {
-                        throw handler.TypeMismatch(context.index, indexExpr.Type, mapType.KeyType);
+                        return new ErrorExpr(context);
                     }
 
                     return new MapAccessExpr(context, seqOrMap, indexExpr, mapType.ValueType);
 
                 case SetType setType:
-                    if (!PrimitiveType.Int.IsAssignableFrom(indexExpr.Type))
+                    if (!TypeCheckingUtils.CheckAssignable(handler, context.index, PrimitiveType.Int, indexExpr))
                     {
-                        throw handler.TypeMismatch(context.index, indexExpr.Type, PrimitiveType.Int);
+                        return new ErrorExpr(context);
                     }
 
                     return new SetAccessExpr(context, seqOrMap, indexExpr, setType.ElementType);
             }
 
-            throw handler.TypeMismatch(seqOrMap, TypeKind.Sequence, TypeKind.Map);
+            handler.Diagnostics.Report(handler.TypeMismatch(seqOrMap, TypeKind.Sequence, TypeKind.Map));
+            return new ErrorExpr(context);
         }
 
         public override IPExpr VisitKeywordExpr(PParser.KeywordExprContext context)
@@ -191,9 +230,11 @@ namespace Plang.Compiler.TypeChecker
                 case "keys":
                 {
                     var expr = Visit(context.expr());
+                    if (expr.Type is ErrorType) return new ErrorExpr(context);
                     if (!(expr.Type.Canonicalize() is MapType mapType))
                     {
-                        throw handler.TypeMismatch(expr, TypeKind.Map);
+                        handler.Diagnostics.Report(handler.TypeMismatch(expr, TypeKind.Map));
+                        return new ErrorExpr(context);
                     }
 
                     return new KeysExpr(context, expr, new SequenceType(mapType.KeyType));
@@ -201,9 +242,11 @@ namespace Plang.Compiler.TypeChecker
                 case "values":
                 {
                     var expr = Visit(context.expr());
+                    if (expr.Type is ErrorType) return new ErrorExpr(context);
                     if (!(expr.Type.Canonicalize() is MapType mapType))
                     {
-                        throw handler.TypeMismatch(expr, TypeKind.Map);
+                        handler.Diagnostics.Report(handler.TypeMismatch(expr, TypeKind.Map));
+                        return new ErrorExpr(context);
                     }
 
                     return new ValuesExpr(context, expr, new SequenceType(mapType.ValueType));
@@ -211,10 +254,14 @@ namespace Plang.Compiler.TypeChecker
                 case "sizeof":
                 {
                     var expr = Visit(context.expr());
+                    if (expr.Type is ErrorType) return new ErrorExpr(context);
                     if (!(expr.Type.Canonicalize() is SequenceType)
                         && !(expr.Type.Canonicalize() is MapType)
                         && !(expr.Type.Canonicalize() is SetType))
-                        throw handler.TypeMismatch(expr, TypeKind.Map, TypeKind.Sequence, TypeKind.Set);
+                    {
+                        handler.Diagnostics.Report(handler.TypeMismatch(expr, TypeKind.Map, TypeKind.Sequence, TypeKind.Set));
+                        return new ErrorExpr(context);
+                    }
                     return new SizeofExpr(context, expr);
                 }
                 case "default":
@@ -224,8 +271,9 @@ namespace Plang.Compiler.TypeChecker
                 }
                 default:
                 {
-                    throw handler.InternalError(context,
-                        new ArgumentException($"Unknown keyword expression {context.fun.Text}", nameof(context)));
+                    handler.Diagnostics.Report(handler.InternalError(context,
+                        new ArgumentException($"Unknown keyword expression {context.fun.Text}", nameof(context))));
+                    return new ErrorExpr(context);
                 }
             }
         }
@@ -233,17 +281,22 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitCtorExpr(PParser.CtorExprContext context)
         {
             var interfaceName = context.interfaceName.GetText();
+            // Always visit the argument list so internal arg errors surface,
+            // even if the interface itself is unknown.
+            var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
+
             if (!table.Lookup(interfaceName, out Interface @interface))
             {
-                throw handler.MissingDeclaration(context.interfaceName, "interface", interfaceName);
+                handler.Diagnostics.Report(handler.MissingDeclaration(context.interfaceName, "interface", interfaceName));
+                return new ErrorExpr(context);
             }
 
             if (method.Owner?.IsSpec == true)
             {
-                throw handler.IllegalMonitorOperation(context, context.NEW().Symbol, method.Owner);
+                handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.NEW().Symbol, method.Owner));
+                return new ErrorExpr(context);
             }
 
-            var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, @interface.PayloadType, arguments);
 
             method.CanCreate = true;
@@ -254,25 +307,25 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitFunCallExpr(PParser.FunCallExprContext context)
         {
             var funName = context.fun.GetText();
+            // Visit arguments first so their internal errors surface regardless
+            // of whether the callee resolves. Argument errors do not block
+            // dispatch — we still try to bind a function/pure with the args we
+            // got, treating ErrorExpr args as compatible with anything.
+            var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
+
             if (table.Lookup(funName, out Function function))
             {
-                // Check the arguments
-                var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-
                 if (function.Signature.Parameters.Count != arguments.Length)
                 {
-                    throw handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count);
+                    handler.Diagnostics.Report(handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count));
+                    return new ErrorExpr(context);
                 }
 
                 for (var i = 0; i < arguments.Length; i++)
                 {
                     var argument = arguments[i];
                     var paramType = function.Signature.Parameters[i].Type;
-                    if (!paramType.IsAssignableFrom(argument.Type))
-                    {
-                        throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
-                    }
-
+                    TypeCheckingUtils.CheckAssignable(handler, context.rvalueList().rvalue(i), paramType, argument);
                 }
 
                 method.AddCallee(function);
@@ -280,18 +333,18 @@ namespace Plang.Compiler.TypeChecker
             }
             if (table.Lookup(funName, out Pure pure))
             {
-                // Check the arguments
-                var arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-
                 if (pure.Signature.Parameters.Count != arguments.Length)
                 {
-                    throw handler.IncorrectArgumentCount(context, arguments.Length, pure.Signature.Parameters.Count);
+                    handler.Diagnostics.Report(handler.IncorrectArgumentCount(context, arguments.Length, pure.Signature.Parameters.Count));
+                    return new ErrorExpr(context);
                 }
 
                 for (var i = 0; i < arguments.Length; i++)
                 {
                     var argument = arguments[i];
                     var paramType = pure.Signature.Parameters[i].Type;
+                    // Suppress cascade if the arg already errored upstream.
+                    if (argument.Type is ErrorType) continue;
                     if (!paramType.IsAssignableFrom(argument.Type))
                     {
                         switch (paramType)
@@ -304,31 +357,33 @@ namespace Plang.Compiler.TypeChecker
                                 }
                                 break;
                         }
-                        throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
+                        handler.Diagnostics.Report(handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType));
                     }
-
                 }
-                
+
                 return new PureCallExpr(context, pure, arguments);
             }
-            
-            throw handler.MissingDeclaration(context.fun, "function", funName);
 
+            handler.Diagnostics.Report(handler.MissingDeclaration(context.fun, "function", funName));
+            return new ErrorExpr(context);
         }
 
         public override IPExpr VisitUnaryExpr(PParser.UnaryExprContext context)
         {
             var subExpr = Visit(context.expr());
+            if (subExpr.Type is ErrorType) return new ErrorExpr(context);
+
             switch (context.op.Text)
             {
                 case "-":
                     if (!PrimitiveType.Int.IsAssignableFrom(subExpr.Type) &&
                         !PrimitiveType.Float.IsAssignableFrom(subExpr.Type))
                     {
-                        throw handler.TypeMismatch(context.expr(),
+                        handler.Diagnostics.Report(handler.TypeMismatch(context.expr(),
                             subExpr.Type,
                             PrimitiveType.Int,
-                            PrimitiveType.Float);
+                            PrimitiveType.Float));
+                        return new ErrorExpr(context);
                     }
 
                     return new UnaryOpExpr(context, UnaryOpType.Negate, subExpr);
@@ -336,14 +391,16 @@ namespace Plang.Compiler.TypeChecker
                 case "!":
                     if (!PrimitiveType.Bool.IsAssignableFrom(subExpr.Type))
                     {
-                        throw handler.TypeMismatch(context.expr(), subExpr.Type, PrimitiveType.Bool);
+                        handler.Diagnostics.Report(handler.TypeMismatch(context.expr(), subExpr.Type, PrimitiveType.Bool));
+                        return new ErrorExpr(context);
                     }
 
                     return new UnaryOpExpr(context, UnaryOpType.Not, subExpr);
 
                 default:
-                    throw handler.InternalError(context,
-                        new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context)));
+                    handler.Diagnostics.Report(handler.InternalError(context,
+                        new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context))));
+                    return new ErrorExpr(context);
             }
         }
 
@@ -365,7 +422,9 @@ namespace Plang.Compiler.TypeChecker
             if (diff && bound.ToList().Count != 1)
             {
                 // we have the "new" annotation so the bound must be a single thing and it must be an event
-                throw handler.InternalError(context, new ArgumentException($"Difference quantifiers must have exactly one bound variable", nameof(context)));
+                handler.Diagnostics.Report(handler.InternalError(context, new ArgumentException($"Difference quantifiers must have exactly one bound variable", nameof(context))));
+                table = oldTable;
+                return new ErrorExpr(context);
             }
 
             if (diff)
@@ -377,10 +436,12 @@ namespace Plang.Compiler.TypeChecker
                     case PermissionType {Origin: NamedEventSet} _:
                         break;
                     default:
-                        throw handler.TypeMismatch(context.bound, bound[0].Type, PrimitiveType.Event);
+                        handler.Diagnostics.Report(handler.TypeMismatch(context.bound, bound[0].Type, PrimitiveType.Event));
+                        table = oldTable;
+                        return new ErrorExpr(context);
                 }
             }
-            
+
             var body = Visit(context.body);
 
             table = oldTable;
@@ -389,7 +450,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 return new QuantExpr(context, QuantType.Forall, bound.ToList(), body, diff);
             }
-            
+
             return new QuantExpr(context, QuantType.Exists, bound.ToList(), body, diff);
         }
 
@@ -397,23 +458,29 @@ namespace Plang.Compiler.TypeChecker
         {
             var instance = Visit(context.instance);
             string name = context.kind.GetText();
-            
+
             if (table.Lookup(name, out Machine m))
             {
                 return new TestExpr(context, instance, m);
             }
-            
+
             if (table.Lookup(name, out Event e))
             {
                 return new TestExpr(context, instance, e);
             }
-            
+
+            // Phase 2 + PR #963 reconciled: use the narrowed state lookup
+            // (TryResolveStateForInstance, from #963) so a same-named state
+            // from an unrelated machine can't be bound silently, AND on miss
+            // use Report+ErrorExpr recovery (Phase 2) so collecting mode
+            // continues to gather independent errors.
             if (TryResolveStateForInstance(instance, name, out State s))
             {
                 return new TestExpr(context, instance, s);
             }
 
-            throw handler.MissingDeclaration(context, "machine, event, or state", name);
+            handler.Diagnostics.Report(handler.MissingDeclaration(context, "machine, event, or state", name));
+            return new ErrorExpr(context);
         }
 
         // Resolves the state for an `x is &lt;State&gt;` test. State names are only unique within a
@@ -445,37 +512,41 @@ namespace Plang.Compiler.TypeChecker
 
             return table.Lookup(name, out state);
         }
-        
+
         public override IPExpr VisitTargetsExpr(PParser.TargetsExprContext context)
         {
             var instance = Visit(context.instance);
             var target = Visit(context.target);
-            
+
             // TODO: type check to make sure instance is an event and machine is a machine
             return new TargetsExpr(context, instance, target);
         }
-        
+
         public override IPExpr VisitFlyingExpr(PParser.FlyingExprContext context)
         {
             var instance = Visit(context.instance);
-            
+
             // TODO: type check to make sure instance is an event
             return new FlyingExpr(context, instance);
         }
-        
+
         public override IPExpr VisitSentExpr(PParser.SentExprContext context)
         {
             var instance = Visit(context.instance);
-            
+
             // TODO: type check to make sure instance is an event
             return new SentExpr(context, instance);
         }
-        
+
         public override IPExpr VisitBinExpr(PParser.BinExprContext context)
         {
             var lhs = Visit(context.lhs);
             var rhs = Visit(context.rhs);
             var op = context.op.Text;
+            // Combiner rule: a single guard at the top of VisitBinExpr handles
+            // *all* 14 throws inside the switch, since any binary operation on
+            // an upstream-errored operand cannot meaningfully type-check.
+            if (lhs.Type is ErrorType || rhs.Type is ErrorType) return new ErrorExpr(context);
 
             var arithCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
@@ -516,7 +587,8 @@ namespace Plang.Compiler.TypeChecker
                     {
                         return arithCtors[op](lhs, rhs);
                     }
-                    throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
+                    handler.Diagnostics.Report(handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type));
+                    return new ErrorExpr(context);
                 case "*":
                 case "/":
                 case "-":
@@ -533,7 +605,8 @@ namespace Plang.Compiler.TypeChecker
                     {
                         return arithCtors[op](lhs, rhs);
                     }
-                    throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
+                    handler.Diagnostics.Report(handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type));
+                    return new ErrorExpr(context);
                 case "%":
                     if (PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
                         PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
@@ -542,33 +615,35 @@ namespace Plang.Compiler.TypeChecker
                     {
                         return arithCtors[op](lhs, rhs);
                     }
-                    throw handler.IncomparableTypes(context, lhs.Type, rhs.Type);
+                    handler.Diagnostics.Report(handler.IncomparableTypes(context, lhs.Type, rhs.Type));
+                    return new ErrorExpr(context);
                 case "in":
                     var rhsType = rhs.Type.Canonicalize();
                     if (rhsType is MapType rhsMap)
                     {
-                        if (!rhsMap.KeyType.IsAssignableFrom(lhs.Type))
+                        if (!TypeCheckingUtils.CheckAssignable(handler, context.lhs, rhsMap.KeyType, lhs))
                         {
-                            throw handler.TypeMismatch(context.lhs, lhs.Type, rhsMap.KeyType);
+                            return new ErrorExpr(context);
                         }
                     }
                     else if (rhsType is SequenceType rhsSeq)
                     {
-                        if (!rhsSeq.ElementType.IsAssignableFrom(lhs.Type))
+                        if (!TypeCheckingUtils.CheckAssignable(handler, context.lhs, rhsSeq.ElementType, lhs))
                         {
-                            throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSeq.ElementType);
+                            return new ErrorExpr(context);
                         }
                     }
                     else if (rhsType is SetType rhsSet)
                     {
-                        if (!rhsSet.ElementType.IsAssignableFrom(lhs.Type))
+                        if (!TypeCheckingUtils.CheckAssignable(handler, context.lhs, rhsSet.ElementType, lhs))
                         {
-                            throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSet.ElementType);
+                            return new ErrorExpr(context);
                         }
                     }
                     else
                     {
-                        throw handler.TypeMismatch(rhs, TypeKind.Map, TypeKind.Sequence);
+                        handler.Diagnostics.Report(handler.TypeMismatch(rhs, TypeKind.Map, TypeKind.Sequence));
+                        return new ErrorExpr(context);
                     }
                     return new ContainsExpr(context, lhs, rhs);
 
@@ -576,30 +651,32 @@ namespace Plang.Compiler.TypeChecker
                 case "!=":
                     if (!lhs.Type.IsAssignableFrom(rhs.Type) && !rhs.Type.IsAssignableFrom(lhs.Type))
                     {
-                        throw handler.IncomparableTypes(context, lhs.Type, rhs.Type);
+                        handler.Diagnostics.Report(handler.IncomparableTypes(context, lhs.Type, rhs.Type));
+                        return new ErrorExpr(context);
                     }
 
                     return compCtors[op](lhs, rhs);
 
                 case "&&":
-                case "||": 
+                case "||":
                 case "==>":
                 case "<==>":
-                    if (!PrimitiveType.Bool.IsAssignableFrom(lhs.Type))
+                    if (!TypeCheckingUtils.CheckAssignable(handler, context.lhs, PrimitiveType.Bool, lhs))
                     {
-                        throw handler.TypeMismatch(context.lhs, lhs.Type, PrimitiveType.Bool);
+                        return new ErrorExpr(context);
                     }
 
-                    if (!PrimitiveType.Bool.IsAssignableFrom(rhs.Type))
+                    if (!TypeCheckingUtils.CheckAssignable(handler, context.rhs, PrimitiveType.Bool, rhs))
                     {
-                        throw handler.TypeMismatch(context.rhs, rhs.Type, PrimitiveType.Bool);
+                        return new ErrorExpr(context);
                     }
 
                     return logicCtors[op](lhs, rhs);
 
                 default:
-                    throw handler.InternalError(context,
-                        new ArgumentException($"unknown binary operation {op}", nameof(context)));
+                    handler.Diagnostics.Report(handler.InternalError(context,
+                        new ArgumentException($"unknown binary operation {op}", nameof(context))));
+                    return new ErrorExpr(context);
             }
         }
 
@@ -613,6 +690,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             var subExpr = Visit(context.expr());
+            if (subExpr.Type is ErrorType) return new ErrorExpr(context);
             var subExprType = subExpr.Type;
 
             switch (subExprType.Canonicalize())
@@ -629,12 +707,16 @@ namespace Plang.Compiler.TypeChecker
                 case PrimitiveType primType when primType.IsSameTypeAs(PrimitiveType.Int):
                 {
                     if (subExpr is IntLiteralExpr subExprAsInt && subExprAsInt.Value > 10000)
-                        throw handler.IllegalChooseSubExprValue(context, subExprAsInt.Value);
+                    {
+                        handler.Diagnostics.Report(handler.IllegalChooseSubExprValue(context, subExprAsInt.Value));
+                        return new ErrorExpr(context);
+                    }
                     return new ChooseExpr(context, subExpr, PrimitiveType.Int);
                 }
 
                 default:
-                    throw handler.IllegalChooseSubExprType(context, subExprType);
+                    handler.Diagnostics.Report(handler.IllegalChooseSubExprType(context, subExprType));
+                    return new ErrorExpr(context);
             }
 
         }
@@ -642,13 +724,19 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitCastExpr(PParser.CastExprContext context)
         {
             var subExpr = Visit(context.expr());
+            // If the sub-expression already errored, still resolve the target
+            // type so a malformed type expression also gets a chance to report,
+            // but bail before any compatibility check.
             var oldType = subExpr.Type;
             var newType = TypeResolver.ResolveType(context.type(), table, handler);
+            if (oldType is ErrorType || newType is ErrorType) return new ErrorExpr(context);
+
             if (context.cast.Text.Equals("as"))
             {
                 if (!newType.IsAssignableFrom(oldType) && !oldType.IsAssignableFrom(newType))
                 {
-                    throw handler.IncomparableTypes(context, oldType, newType);
+                    handler.Diagnostics.Report(handler.IncomparableTypes(context, oldType, newType));
+                    return new ErrorExpr(context);
                 }
 
                 return new CastExpr(context, subExpr, newType);
@@ -659,7 +747,8 @@ namespace Plang.Compiler.TypeChecker
                 if (!(newType is PermissionType || newType.IsSameTypeAs(PrimitiveType.Int) ||
                       newType.IsSameTypeAs(PrimitiveType.Float)))
                 {
-                    throw handler.IllegalTypeInCoerceExpr(context);
+                    handler.Diagnostics.Report(handler.IllegalTypeInCoerceExpr(context));
+                    return new ErrorExpr(context);
                 }
 
                 if (oldType.IsSameTypeAs(PrimitiveType.Int))
@@ -718,7 +807,8 @@ namespace Plang.Compiler.TypeChecker
                             if (newType.AllowedPermissions.Value.Any(x => !oldType.AllowedPermissions.Value.Contains(x))
                                )
                             {
-                                throw handler.IllegalInterfaceCoerce(context, oldType, newType);
+                                handler.Diagnostics.Report(handler.IllegalInterfaceCoerce(context, oldType, newType));
+                                return new ErrorExpr(context);
                             }
 
                             return new CoerceExpr(context, subExpr, newType);
@@ -726,10 +816,12 @@ namespace Plang.Compiler.TypeChecker
                     }
                 }
 
-                throw handler.IncomparableTypes(context, oldType, newType);
+                handler.Diagnostics.Report(handler.IncomparableTypes(context, oldType, newType));
+                return new ErrorExpr(context);
             }
 
-            throw handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context), "invalid cast"));
+            handler.Diagnostics.Report(handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context), "invalid cast")));
+            return new ErrorExpr(context);
         }
 
         public override IPExpr VisitPrimitive(PParser.PrimitiveContext context)
@@ -767,9 +859,8 @@ namespace Plang.Compiler.TypeChecker
                     return new InvariantGroupRefExpr(invGroup, context);
                 }
 
-                throw handler.MissingDeclaration(context.iden(), "variable, enum element, spec machine, or event", symbolName);
-                
-                throw handler.MissingDeclaration(context.iden(), "variable, enum element, or event", symbolName);
+                handler.Diagnostics.Report(handler.MissingDeclaration(context.iden(), "variable, enum element, spec machine, or event", symbolName));
+                return new ErrorExpr(context);
             }
 
             if (context.floatLiteral() != null)
@@ -796,7 +887,8 @@ namespace Plang.Compiler.TypeChecker
             {
                 if (method.Owner?.IsSpec == true)
                 {
-                    throw handler.IllegalMonitorOperation(context, context.NONDET().Symbol, method.Owner);
+                    handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.NONDET().Symbol, method.Owner));
+                    return new ErrorExpr(context);
                 }
 
                 method.IsNondeterministic = true;
@@ -807,7 +899,8 @@ namespace Plang.Compiler.TypeChecker
             {
                 if (method.Owner?.IsSpec == true)
                 {
-                    throw handler.IllegalMonitorOperation(context, context.FAIRNONDET().Symbol, method.Owner);
+                    handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.FAIRNONDET().Symbol, method.Owner));
+                    return new ErrorExpr(context);
                 }
 
                 method.IsNondeterministic = true;
@@ -825,18 +918,21 @@ namespace Plang.Compiler.TypeChecker
             {
                 if (method.Owner == null)
                 {
-                    throw handler.MisplacedThis(context);
+                    handler.Diagnostics.Report(handler.MisplacedThis(context));
+                    return new ErrorExpr(context);
                 }
 
                 if (method.Owner.IsSpec)
                 {
-                    throw handler.IllegalMonitorOperation(context, context.THIS().Symbol, method.Owner);
+                    handler.Diagnostics.Report(handler.IllegalMonitorOperation(context, context.THIS().Symbol, method.Owner));
+                    return new ErrorExpr(context);
                 }
 
                 return new ThisRefExpr(context, method.Owner);
             }
 
-            throw handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context), "unknown primitive"));
+            handler.Diagnostics.Report(handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context), "unknown primitive")));
+            return new ErrorExpr(context);
         }
 
         public override IPExpr VisitUnnamedTupleBody(PParser.UnnamedTupleBodyContext context)
@@ -856,7 +952,11 @@ namespace Plang.Compiler.TypeChecker
                 var entryName = context._names[i].GetText();
                 if (names.Contains(entryName))
                 {
-                    throw handler.DuplicateNamedTupleEntry(context._names[i], entryName);
+                    handler.Diagnostics.Report(handler.DuplicateNamedTupleEntry(context._names[i], entryName));
+                    // Continue building the tuple type so dependent checks still
+                    // run; downstream code inspects field types, not names.
+                    entries[i] = new NamedTupleEntry { Name = entryName, FieldNo = i, Type = fields[i].Type };
+                    continue;
                 }
 
                 names.Add(entryName);
@@ -888,16 +988,19 @@ namespace Plang.Compiler.TypeChecker
             var baseString = context.StringLiteral().GetText();
             baseString = baseString.Substring(1, baseString.Length - 2); // strip beginning / end double quote
             var numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(baseString);
+            // Visit args regardless of format validity so their internal errors surface.
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToList();
+
             if (numNecessaryArgs == -1)
             {
-                throw handler.InvalidStringExprFormat(context, context.StringLiteral().Symbol);
+                handler.Diagnostics.Report(handler.InvalidStringExprFormat(context, context.StringLiteral().Symbol));
+                return new ErrorExpr(context);
             }
-
-            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToList();
 
             if (args.Count != numNecessaryArgs)
             {
-                throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);
+                handler.Diagnostics.Report(handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs));
+                return new ErrorExpr(context);
             }
 
             return new StringExpr(context, baseString, args);
@@ -913,7 +1016,8 @@ namespace Plang.Compiler.TypeChecker
             var varName = context.name.GetText();
             if (!table.LookupLvalue(handler, varName, context, out Variable variable))
             {
-                throw handler.MissingDeclaration(context, "variable", varName);
+                handler.Diagnostics.Report(handler.MissingDeclaration(context, "variable", varName));
+                return new ErrorExpr(context);
             }
 
             return new VariableAccessExpr(context, variable);
@@ -922,15 +1026,19 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitNamedTupleLvalue(PParser.NamedTupleLvalueContext context)
         {
             var lvalue = Visit(context.lvalue());
+            if (lvalue.Type is ErrorType) return new ErrorExpr(context);
+
             if (!(lvalue.Type.Canonicalize() is NamedTupleType type))
             {
-                throw handler.TypeMismatch(lvalue, TypeKind.NamedTuple);
+                handler.Diagnostics.Report(handler.TypeMismatch(lvalue, TypeKind.NamedTuple));
+                return new ErrorExpr(context);
             }
 
             var field = context.field.GetText();
             if (!type.LookupEntry(field, out var entry))
             {
-                throw handler.MissingNamedTupleEntry(context.field, type);
+                handler.Diagnostics.Report(handler.MissingNamedTupleEntry(context.field, type));
+                return new ErrorExpr(context);
             }
 
             return new NamedTupleAccessExpr(context, lvalue, entry);
@@ -939,15 +1047,19 @@ namespace Plang.Compiler.TypeChecker
         public override IPExpr VisitTupleLvalue(PParser.TupleLvalueContext context)
         {
             var lvalue = Visit(context.lvalue());
+            if (lvalue.Type is ErrorType) return new ErrorExpr(context);
+
             if (!(lvalue.Type.Canonicalize() is TupleType type))
             {
-                throw handler.TypeMismatch(lvalue, TypeKind.Tuple);
+                handler.Diagnostics.Report(handler.TypeMismatch(lvalue, TypeKind.Tuple));
+                return new ErrorExpr(context);
             }
 
             var field = int.Parse(context.@int().GetText());
             if (field >= type.Types.Count)
             {
-                throw handler.OutOfBoundsTupleAccess(context.@int(), type);
+                handler.Diagnostics.Report(handler.OutOfBoundsTupleAccess(context.@int(), type));
+                return new ErrorExpr(context);
             }
 
             return new TupleAccessExpr(context, lvalue, field, type.Types[field]);
@@ -957,27 +1069,30 @@ namespace Plang.Compiler.TypeChecker
         {
             var lvalue = Visit(context.lvalue());
             var index = Visit(context.expr());
+            if (lvalue.Type is ErrorType || index.Type is ErrorType) return new ErrorExpr(context);
+
             var indexType = index.Type;
             switch (lvalue.Type.Canonicalize())
             {
                 case MapType mapType:
-                    if (!mapType.KeyType.IsAssignableFrom(indexType))
+                    if (!TypeCheckingUtils.CheckAssignable(handler, context.expr(), mapType.KeyType, index))
                     {
-                        throw handler.TypeMismatch(context.expr(), indexType, mapType.KeyType);
+                        return new ErrorExpr(context);
                     }
 
                     return new MapAccessExpr(context, lvalue, index, mapType.ValueType);
 
                 case SequenceType seqType:
-                    if (!PrimitiveType.Int.IsAssignableFrom(indexType))
+                    if (!TypeCheckingUtils.CheckAssignable(handler, context.expr(), PrimitiveType.Int, index))
                     {
-                        throw handler.TypeMismatch(context.expr(), indexType, PrimitiveType.Int);
+                        return new ErrorExpr(context);
                     }
 
                     return new SeqAccessExpr(context, lvalue, index, seqType.ElementType);
 
                 default:
-                    throw handler.TypeMismatch(lvalue, TypeKind.Sequence, TypeKind.Map);
+                    handler.Diagnostics.Report(handler.TypeMismatch(lvalue, TypeKind.Sequence, TypeKind.Map));
+                    return new ErrorExpr(context);
             }
         }
     }

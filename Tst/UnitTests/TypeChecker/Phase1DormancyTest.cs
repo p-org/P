@@ -10,94 +10,127 @@ using UnitTests.Core;
 namespace UnitTests.TypeChecker;
 
 /// <summary>
-/// Phase 1 dormancy regression suite. For every leaf <c>Correct/</c> and
+/// Strict-vs-collecting consistency suite. For every leaf <c>Correct/</c> or
 /// <c>StaticError/</c> test directory under <c>RegressionTests/</c>, compile
-/// the inputs twice — once in strict mode (today's behavior, default) and
-/// once in collecting mode (<c>ContinueOnError = true</c>) — and assert the
-/// exit code and the entire error-stream output match.
+/// twice — once strict (today's behavior, default) and once collecting
+/// (<c>ContinueOnError = true</c>) — and assert mode-appropriate invariants.
 ///
-/// Phase 1 promises the collector flag is dormant: no visitor reports through
-/// it yet, so flipping the flag must produce bit-identical user-visible
-/// output. This fixture turns that promise into an enforceable invariant.
+/// Phase 1 had a single fixture asserting bit-identical stderr in both modes,
+/// since no visitor reported through the collector. Phase 2 lights up the
+/// collector in ExprVisitor + StatementVisitor, so collecting mode can now
+/// report MORE errors per file when independent issues exist. The fixture is
+/// split accordingly:
 ///
-/// When Phase 2 starts converting throw sites to record-and-continue, this
-/// fixture WILL begin failing — which is the correct signal. At that point
-/// the fixture should either be deleted (if the dormancy promise is being
-/// retired) or split so the StaticError subset tolerates more errors per file
-/// while the Correct subset still demands identical output.
+///   - <see cref="StrictAndCollectingAgreeOnValidPrograms"/> covers
+///     <c>Correct/</c> only — valid programs must produce no diagnostics in
+///     either mode, so identical stderr remains the right invariant.
+///   - <see cref="CollectingReportsAtLeastAsManyErrorsAsStrict"/> covers
+///     <c>StaticError/</c> only — strict aborts on the first error;
+///     collecting accumulates. We assert exit code parity (both fail) and
+///     that collecting's error count is &gt;= strict's count, which holds
+///     by construction unless the collector also suppresses errors that
+///     strict would surface (a regression we want to catch).
 /// </summary>
 [TestFixture]
 public class Phase1DormancyTest
 {
-    /// <summary>
-    /// Source of test cases. Reuses the existing TestCaseLoader so we
-    /// automatically pick up any new <c>Correct/</c> or <c>StaticError/</c>
-    /// directory added under the discovered feature folders. No need to
-    /// hand-maintain a list.
-    /// </summary>
-    private static IEnumerable<TestCaseData> DiscoverInputs()
+    private static IEnumerable<TestCaseData> DiscoverCorrectInputs()
     {
         return TestCaseLoader.FindTestCasesInDirectory(
             Constants.TestDirectory,
-            new[] { "Correct", "StaticError" });
+            new[] { "Correct" });
     }
 
-    [TestCaseSource(nameof(DiscoverInputs))]
+    private static IEnumerable<TestCaseData> DiscoverStaticErrorInputs()
+    {
+        return TestCaseLoader.FindTestCasesInDirectory(
+            Constants.TestDirectory,
+            new[] { "StaticError" });
+    }
+
+    [TestCaseSource(nameof(DiscoverCorrectInputs))]
     [Category("Phase1Dormancy")]
-    public void StrictAndCollectingModesAgree(DirectoryInfo testDir)
+    public void StrictAndCollectingAgreeOnValidPrograms(DirectoryInfo testDir)
     {
         var inputFiles = testDir.GetFiles("*.p").Select(f => f.FullName).ToList();
         if (inputFiles.Count == 0)
         {
-            // Some sub-directories in the regression tree don't contain .p
-            // files directly (e.g. dependency holders). Nothing to compare.
             Assert.Ignore("no .p files in directory");
             return;
         }
 
-        var rootScratch = Path.Combine(
-            Constants.ScratchParentDirectory,
-            "Phase1Dormancy",
-            testDir.FullName.GetHashCode().ToString("X8"));
-        var scratchStrict = Directory.CreateDirectory(Path.Combine(rootScratch, "strict"));
-        var scratchCollecting = Directory.CreateDirectory(Path.Combine(rootScratch, "collecting"));
+        var (codeStrict, stderrStrict, _) = RunOnce(inputFiles, "valid_strict", testDir, continueOnError: false);
+        var (codeCollecting, stderrCollecting, _) = RunOnce(inputFiles, "valid_collecting", testDir, continueOnError: true);
 
-        var (codeStrict, stderrStrict) = RunOnce(inputFiles, scratchStrict, continueOnError: false);
-        var (codeCollecting, stderrCollecting) = RunOnce(inputFiles, scratchCollecting, continueOnError: true);
+        // Both modes must succeed on a valid program. If either mode errors,
+        // we have a regression — strict had a bug that collecting reproduces,
+        // or collecting introduced a spurious diagnostic that strict avoids.
+        Assert.AreEqual(0, codeStrict,
+            $"Strict mode unexpectedly failed on valid program {testDir.FullName}:\n{stderrStrict}");
+        Assert.AreEqual(0, codeCollecting,
+            $"Collecting mode unexpectedly failed on valid program {testDir.FullName}:\n{stderrCollecting}");
 
-        // Exit code is the primary contract: strict and collecting modes must
-        // succeed or fail in lockstep until Phase 2 lights up the flag.
-        Assert.AreEqual(
-            codeStrict, codeCollecting,
-            $"Exit code differs for {testDir.FullName}.\n" +
-            $"  strict     = {codeStrict}\n" +
-            $"  collecting = {codeCollecting}\n" +
-            $"  stderr (strict)     = {stderrStrict}\n" +
-            $"  stderr (collecting) = {stderrCollecting}");
-
-        // Error stream must match verbatim. If a visitor accidentally starts
-        // reporting through the collector, output ordering or wording will
-        // diverge here even if the exit code happens to agree.
+        // And the diagnostic streams must be empty (or identical, since both
+        // should be empty). This catches a spurious warning that only one mode
+        // emits.
         Assert.AreEqual(
             stderrStrict, stderrCollecting,
-            $"Error output differs for {testDir.FullName} — a visitor may be " +
-            "reporting through the collector when it shouldn't be.");
+            $"Diagnostic output differs on valid program {testDir.FullName}:\n" +
+            $"  strict:     {stderrStrict}\n" +
+            $"  collecting: {stderrCollecting}");
+    }
+
+    [TestCaseSource(nameof(DiscoverStaticErrorInputs))]
+    [Category("Phase1Dormancy")]
+    public void CollectingReportsAtLeastAsManyErrorsAsStrict(DirectoryInfo testDir)
+    {
+        var inputFiles = testDir.GetFiles("*.p").Select(f => f.FullName).ToList();
+        if (inputFiles.Count == 0)
+        {
+            Assert.Ignore("no .p files in directory");
+            return;
+        }
+
+        var (codeStrict, stderrStrict, errorsStrict) = RunOnce(inputFiles, "err_strict", testDir, continueOnError: false);
+        var (codeCollecting, stderrCollecting, errorsCollecting) = RunOnce(inputFiles, "err_collecting", testDir, continueOnError: true);
+
+        // Both modes must fail (the existing StaticErrorValidator asserts
+        // exit code == 1; preserve that contract on both sides).
+        Assert.AreEqual(1, codeStrict,
+            $"Strict mode unexpectedly succeeded on {testDir.FullName}:\n{stderrStrict}");
+        Assert.AreEqual(1, codeCollecting,
+            $"Collecting mode unexpectedly succeeded on {testDir.FullName}:\n{stderrCollecting}");
+
+        // Collecting must surface at least as many errors as strict. The
+        // converse — collecting silently suppressing a strict error — would
+        // be a cascade-suppression bug; this is the most important invariant
+        // this fixture guards.
+        Assert.GreaterOrEqual(
+            errorsCollecting, errorsStrict,
+            $"Collecting mode reported fewer errors than strict on {testDir.FullName}: " +
+            $"strict={errorsStrict}, collecting={errorsCollecting}.\n" +
+            $"  stderr (strict):\n{stderrStrict}\n" +
+            $"  stderr (collecting):\n{stderrCollecting}");
     }
 
     /// <summary>
     /// Run the compiler against <paramref name="inputFiles"/> with the
-    /// requested mode and capture exit code + stderr. Builds the
-    /// <see cref="CompilerConfiguration"/> directly so we can flip
-    /// <see cref="CompilerConfiguration.ContinueOnError"/> without touching
-    /// the <c>P_COMPILER_COLLECT_ERRORS</c> env var (which would leak
-    /// between parallel test fixtures).
+    /// requested mode and capture exit code + stderr + a coarse error count
+    /// (number of "[Error:" / "[Parser Error:" markers in stderr, which is
+    /// how Compiler.cs prefixes every diagnostic it emits).
     /// </summary>
-    private static (int exitCode, string stderr) RunOnce(
-        IList<string> inputFiles, DirectoryInfo scratchDir, bool continueOnError)
+    private static (int exitCode, string stderr, int errorCount) RunOnce(
+        IList<string> inputFiles, string scratchTag, DirectoryInfo testDir, bool continueOnError)
     {
         var stdoutWriter = new StringWriter();
         var stderrWriter = new StringWriter();
         var output = new CapturingOutput(stdoutWriter, stderrWriter);
+
+        var scratchDir = Directory.CreateDirectory(Path.Combine(
+            Constants.ScratchParentDirectory,
+            "Phase1Dormancy",
+            scratchTag,
+            testDir.FullName.GetHashCode().ToString("X8")));
 
         var config = new CompilerConfiguration(
             output,
@@ -108,7 +141,8 @@ public class Phase1DormancyTest
 
         // Override after construction. The order matters: collector first,
         // then handler (which holds a reference to the collector), then
-        // the flag itself.
+        // the flag itself. This bypasses the env var so parallel test
+        // fixtures don't interfere.
         config.Diagnostics = new DefaultDiagnosticCollector(continueOnError);
         config.Handler = new DefaultTranslationErrorHandler(config.LocationResolver, config.Diagnostics);
         config.ContinueOnError = continueOnError;
@@ -120,23 +154,36 @@ public class Phase1DormancyTest
         }
         catch (Exception e)
         {
-            // CompileOnlyRunner converts uncaught exceptions to a test failure;
-            // we capture them as a synthetic stderr line + sentinel exit code
-            // so the two runs can still be compared. If one mode crashes and
-            // the other doesn't, the assertion will fire with the diff.
             stderrWriter.WriteLine($"[Test harness caught uncaught exception:] {e.Message}");
             exitCode = -1;
         }
 
-        return (exitCode, stderrWriter.ToString());
+        var stderr = stderrWriter.ToString();
+        // Count error markers. Compiler.cs writes "[Error:]" and
+        // "[Parser Error:]" preceding each diagnostic; counting markers gives
+        // a reliable error count without parsing severity from text.
+        var errorCount = CountOccurrences(stderr, "[Error:]") + CountOccurrences(stderr, "[Parser Error:]");
+        return (exitCode, stderr, errorCount);
+    }
+
+    private static int CountOccurrences(string haystack, string needle)
+    {
+        if (string.IsNullOrEmpty(needle)) return 0;
+        var count = 0;
+        var idx = 0;
+        while ((idx = haystack.IndexOf(needle, idx, StringComparison.Ordinal)) != -1)
+        {
+            count++;
+            idx += needle.Length;
+        }
+        return count;
     }
 
     /// <summary>
     /// Minimal <see cref="ICompilerOutput"/> that splits messages into the
     /// captured stdout / stderr writers based on severity. Generated files
     /// are intentionally dropped: the fixture only cares about the
-    /// diagnostic stream, and including generated code would add noise
-    /// without strengthening the dormancy assertion.
+    /// diagnostic stream.
     /// </summary>
     private sealed class CapturingOutput : ICompilerOutput
     {

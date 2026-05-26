@@ -408,12 +408,33 @@ namespace Plang.Compiler.TypeChecker
                 return new TestExpr(context, instance, e);
             }
             
-            if (table.Lookup(name, out State s))
+            if (TryResolveStateForInstance(instance, name, out State s))
             {
                 return new TestExpr(context, instance, s);
             }
-            
+
             throw handler.MissingDeclaration(context, "machine, event, or state", name);
+        }
+
+        // Resolves the state for an `x is &lt;State&gt;` test. State names are only unique within a
+        // machine, so the bare cross-machine Scope.Lookup(out State) could return a same-named
+        // state from an unrelated machine. When the instance's static type identifies a specific
+        // machine, look the state up within that machine first; otherwise fall back to the global
+        // lookup (preserving prior behavior, so no previously-accepted program starts failing).
+        private bool TryResolveStateForInstance(IPExpr instance, string name, out State state)
+        {
+            var owner = instance switch
+            {
+                SpecRefExpr specRef => specRef.Value,
+                _ => (instance.Type.Canonicalize() as PermissionType)?.Origin as Machine,
+            };
+
+            if (owner != null && owner.Scope.Get(name, out state))
+            {
+                return true;
+            }
+
+            return table.Lookup(name, out state);
         }
         
         public override IPExpr VisitTargetsExpr(PParser.TargetsExprContext context)

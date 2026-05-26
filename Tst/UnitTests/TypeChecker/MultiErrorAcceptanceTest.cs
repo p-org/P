@@ -53,12 +53,14 @@ public class MultiErrorAcceptanceTest
             .SetName("NestedExprErrors (combiner rule)");
 
         yield return new TestCaseData(
-            "RegressionTests/Feature3Exprs/StaticError/ForeachInvariantError/ForeachInvariantError.p",
+            "RegressionTests/Feature3Exprs/StaticError/ForeachBodyErrors/ForeachBodyErrors.p",
             1, 2,
-            "Loop invariant error + body error when iterator is declared. " +
-            "Validates that VisitForeachStmt's happy path visits both the body AND each " +
-            "invariant for nested-error coverage.")
-            .SetName("ForeachInvariantError (happy-path branch)");
+            "Foreach with two independent body errors when iterator is declared. " +
+            "Validates that VisitForeachStmt's happy path actually visits the body " +
+            "(not just iterator/collection) and that body errors surface independently. " +
+            "Note: the audit-flagged invariant-visiting fix is also in StatementVisitor " +
+            "but is PVerifier-only syntax — covered by a separate PVerifier test suite.")
+            .SetName("ForeachBodyErrors (body visit)");
 
         yield return new TestCaseData(
             "RegressionTests/Feature3Exprs/StaticError/SpecReceiveBodyError/SpecReceiveBodyError.p",

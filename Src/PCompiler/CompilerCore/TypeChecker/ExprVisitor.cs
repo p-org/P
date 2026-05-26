@@ -419,8 +419,14 @@ namespace Plang.Compiler.TypeChecker
         // Resolves the state for an `x is &lt;State&gt;` test. State names are only unique within a
         // machine, so the bare cross-machine Scope.Lookup(out State) could return a same-named
         // state from an unrelated machine. When the instance's static type identifies a specific
-        // machine, look the state up within that machine first; otherwise fall back to the global
-        // lookup (preserving prior behavior, so no previously-accepted program starts failing).
+        // machine, look the state up within THAT machine — and only that machine. Falling back
+        // to the global lookup when the owner is statically known would re-introduce exactly
+        // the cross-machine collision this fix exists to prevent (e.g. `myA is S2` where `myA`
+        // is a MachineA reference but S2 lives in MachineB).
+        //
+        // The cross-machine global lookup remains the fallback only for the genuinely-untyped
+        // case — when no `Machine` owner can be derived from the instance's static type, e.g.
+        // an `any`-typed lvalue or a non-machine PermissionType.
         private bool TryResolveStateForInstance(IPExpr instance, string name, out State state)
         {
             var owner = instance switch
@@ -429,9 +435,12 @@ namespace Plang.Compiler.TypeChecker
                 _ => (instance.Type.Canonicalize() as PermissionType)?.Origin as Machine,
             };
 
-            if (owner != null && owner.Scope.Get(name, out state))
+            if (owner != null)
             {
-                return true;
+                // Statically known owner: the state must belong to this machine.
+                // If it doesn't, return false so the caller emits MissingDeclaration —
+                // do NOT consult the global table.
+                return owner.Scope.Get(name, out state);
             }
 
             return table.Lookup(name, out state);

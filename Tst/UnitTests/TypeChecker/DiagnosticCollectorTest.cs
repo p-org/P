@@ -174,6 +174,12 @@ public class DiagnosticCollectorTest
     // Tested via the public ContinueOnError property after construction so we
     // don't have to mark the private helper internal. Each case saves and
     // restores the var to keep test isolation.
+    // [NonParallelizable] because this test mutates a process-global env var
+    // (Environment.SetEnvironmentVariable). Any parallel test that constructs
+    // a CompilerConfiguration would read the temporarily-set value and run
+    // in the wrong mode — silently masking real strict-mode regressions.
+    // NUnit runs tests in different fixtures in parallel by default; this
+    // attribute forces sequential execution for THIS test.
     [TestCase("1", true)]
     [TestCase("true", true)]
     [TestCase("True", true)]
@@ -187,6 +193,7 @@ public class DiagnosticCollectorTest
     [TestCase("", false)]              // empty string treated as unset
     [TestCase("   ", false)]           // whitespace-only treated as unset
     [TestCase(null, false)]            // unset
+    [NonParallelizable]
     public void ContinueOnError_ReadsEnvVar(string envValue, bool expected)
     {
         const string envName = "P_COMPILER_COLLECT_ERRORS";

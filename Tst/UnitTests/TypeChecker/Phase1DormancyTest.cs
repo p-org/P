@@ -158,35 +158,49 @@ public class Phase1DormancyTest
         {
             exitCode = new Compiler().Compile(config);
         }
-        catch (Exception e)
+        catch (TranslationException e)
         {
-            // Print full stack trace so a regression in the compiler that
-            // escapes its own try/catch points at the responsible visitor /
-            // backend pass, not just the message.
-            stderrWriter.WriteLine($"[Test harness caught uncaught {e.GetType().Name}:] {e.Message}");
+            // ONLY catch TranslationException — NREs and other unexpected
+            // runtime exceptions must propagate so they surface as bugs to
+            // fix, not get silently folded into "exit -1 with stderr noise".
+            // Phase 2's MultiAgent audit specifically called out catch(Exception)
+            // as masking real bugs (e.g., two parallel NREs in this test would
+            // produce identical stderr and pass the equality check green).
+            stderrWriter.WriteLine($"[Test harness caught uncaught TranslationException:] {e.Message}");
             stderrWriter.WriteLine(e.StackTrace);
             exitCode = -1;
         }
 
         var stderr = stderrWriter.ToString();
-        // Count error markers. Compiler.cs writes "[Error:]" and
-        // "[Parser Error:]" preceding each diagnostic; counting markers gives
-        // a reliable error count without parsing severity from text.
-        var errorCount = CountOccurrences(stderr, "[Error:]") + CountOccurrences(stderr, "[Parser Error:]");
+        var errorCount = CountErrorMarkers(stderr);
         return (exitCode, stderr, errorCount);
     }
 
-    private static int CountOccurrences(string haystack, string needle)
+    /// <summary>
+    /// Count every diagnostic marker Compiler.cs emits on stderr. Originally
+    /// just "[Error:]" and "[Parser Error:]" — but Compiler.cs also emits
+    /// "[NotSupportedError:]", "[NotImplementedError:]" and per-backend
+    /// "[X Compiling Generated Code:]" markers. A counter that misses these
+    /// silently treats a regression-that-throws-NotSupportedException as
+    /// "zero errors", masking real failures (we already hit this once on
+    /// the PVerifier `invariant` keyword in ForeachInvariantError.p).
+    ///
+    /// Matches the canonical `[<anything>Error<anything>:]` shape Compiler.cs
+    /// uses for diagnostics on stderr, plus the explicit "Compiling Generated
+    /// Code" marker. Tracks unique offsets so overlapping matches don't
+    /// double-count.
+    /// </summary>
+    private static int CountErrorMarkers(string stderr)
     {
-        if (string.IsNullOrEmpty(needle)) return 0;
-        var count = 0;
-        var idx = 0;
-        while ((idx = haystack.IndexOf(needle, idx, StringComparison.Ordinal)) != -1)
-        {
-            count++;
-            idx += needle.Length;
-        }
-        return count;
+        if (string.IsNullOrEmpty(stderr)) return 0;
+        // Match "[<text>Error:]" (case-sensitive) — covers [Error:], [Parser Error:],
+        // [NotSupportedError:], [NotImplementedError:], [Test harness caught
+        // uncaught TranslationException:] (the harness's own emission when a
+        // truly-uncaught throw escapes Compile). Also match the per-backend
+        // generated-code marker.
+        var errorPattern = new System.Text.RegularExpressions.Regex(@"\[[^\]]*Error[^\]]*:\]");
+        var compilePattern = new System.Text.RegularExpressions.Regex(@"\[\S+ Compiling Generated Code:\]");
+        return errorPattern.Matches(stderr).Count + compilePattern.Matches(stderr).Count;
     }
 
     /// <summary>

@@ -212,7 +212,11 @@ namespace Plang.Compiler.TypeChecker
                     return new InsertStmt(context, variable, index, value);
             }
 
-            TypeCheckingUtils.CheckAssignable(handler, context.rvalue(), expectedKeyType, index);
+            // The key/index lives in context.expr() (the second sub-expression
+            // of `insert lvalue[index] = value`), NOT context.rvalue(). Using
+            // rvalue() pointed every key-type diagnostic at the VALUE token —
+            // a stale bug Copilot caught when reviewing Phase 2.
+            TypeCheckingUtils.CheckAssignable(handler, context.expr(), expectedKeyType, index);
             TypeCheckingUtils.CheckAssignable(handler, context.rvalue(), expectedValueType, value);
 
             return new InsertStmt(context, variable, index, value);

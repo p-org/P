@@ -1,9 +1,16 @@
-// Phase 3 acceptance test for per-machine error isolation.
+// Phase 3 acceptance test for per-machine error isolation across function
+// body type-checking (pass 3).
 //
-// Three independent machines, each with one error. Validates that
-// Analyzer.cs's TolerantStep wrappers around pass 2a (MachineChecker) and
-// pass 3 (FunctionBodyVisitor) report errors from EACH machine without one
-// bad machine clobbering the diagnostics of its siblings.
+// Three independent machines, each with one error in its entry handler.
+// Validates that Phase 2's Report-and-continue path (in ExprVisitor /
+// StatementVisitor) PLUS Phase 3's TolerantStep wrapper around pass 3
+// (FunctionBodyVisitor + FunctionValidator) lets errors from EACH machine
+// surface without one bad machine clobbering its siblings' diagnostics.
+//
+// Note: pass 2a (MachineChecker.Validate) is NOT exercised by this file —
+// each machine has a valid start state, payload type, etc. A separate test
+// would be needed to validate per-machine isolation across pass 2a throws
+// (e.g. one machine with MissingStartState + another with a body error).
 //
 // Errors (collecting mode):
 //   1. MachineA: `x = true`            — bool assigned to int

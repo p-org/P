@@ -65,12 +65,15 @@ public class MultiErrorAcceptanceTest
         yield return new TestCaseData(
             "RegressionTests/Feature3Exprs/StaticError/MultiMachineErrors/MultiMachineErrors.p",
             1, 3,
-            "Phase 3 per-machine isolation: 3 machines, one error each (bool->int, " +
-            "missing decl, int+string). Validates that TolerantStep wrappers around " +
-            "pass 2a / pass 3 in Analyzer.cs catch a TranslationException on one machine " +
-            "and continue to siblings. A regression here (count back to 1) means " +
-            "TolerantStep stopped re-Reporting or stopped iterating after a throw.")
-            .SetName("MultiMachineErrors (Phase 3 isolation)");
+            "Phase 3 per-machine isolation during pass 3 (function body checking): " +
+            "3 machines, one entry-handler error each (bool->int, missing decl, " +
+            "int+string). Validates Phase 2's Report-and-continue path within each " +
+            "machine PLUS Phase 3's TolerantStep wrapper around pass 3 keeping " +
+            "machines independent. A regression here (count back to 1) means one " +
+            "machine's error blocked Phase 2/3 from reaching the next machine. " +
+            "Note: pass 2a (MachineChecker) isn't exercised by this file — see " +
+            "the file's header comment.")
+            .SetName("MultiMachineErrors (Phase 3 per-machine pass-3)");
 
         yield return new TestCaseData(
             "RegressionTests/Feature3Exprs/StaticError/MultiFunctionPerMachine/MultiFunctionPerMachine.p",

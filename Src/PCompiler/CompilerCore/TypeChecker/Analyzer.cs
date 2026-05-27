@@ -235,17 +235,32 @@ namespace Plang.Compiler.TypeChecker
         }
 
         /// <summary>
-        /// Run a single analysis step (per-machine, per-function, per-item)
-        /// under cascade-suppression rules. In strict mode (default), any
-        /// TranslationException propagates as before — the <c>when</c> filter
-        /// is false so the catch doesn't fire. In collecting mode, the
-        /// exception is captured into the diagnostic collector and the loop
-        /// continues with the next item, so one bad machine / function /
-        /// invariant doesn't suppress siblings' diagnostics.
+        /// Run a single pass step (per-machine, per-function, per-item) with
+        /// optional collecting-mode tolerance. Used by BOTH gathering passes
+        /// (2a, 2b, 3, 3b) and analysis passes (7) — the helper itself doesn't
+        /// implement the gathering→analysis classification, that lives at the
+        /// call sites and the HasErrors gate above.
+        ///
+        /// Behavior:
+        ///   - Strict mode (ContinueOnError == false): any TranslationException
+        ///     propagates as before — the <c>when</c> filter is false so the
+        ///     catch never fires. Bit-for-bit preserves pre-Phase 3 semantics.
+        ///   - Collecting mode (ContinueOnError == true): catches
+        ///     TranslationException, Reports it into the diagnostic collector,
+        ///     and returns. The enclosing foreach moves on to the next item, so
+        ///     one bad machine / function / invariant doesn't suppress siblings'
+        ///     diagnostics.
+        ///
+        /// This is NOT cascade suppression. Cascade suppression (in the sense
+        /// of "child error makes parent silently ErrorType") lives in
+        /// <see cref="TypeCheckingUtils.CheckAssignable"/> and the ErrorType
+        /// short-circuit on <see cref="PLanguageType.IsSameTypeAs"/>. This helper
+        /// is the per-pass-item analog: same goal (let more errors surface in
+        /// one compile), different mechanism.
         ///
         /// Only TranslationException is caught: NREs and other unexpected
-        /// runtime exceptions still propagate so they surface as bugs to fix
-        /// rather than being silently swallowed.
+        /// runtime exceptions still propagate so they surface as bugs rather
+        /// than being silently swallowed.
         /// </summary>
         private static void TolerantStep(ITranslationErrorHandler handler, Action body)
         {

@@ -75,7 +75,7 @@ namespace Plang.Compiler
         public Exception UndeclaredGlobalParam(ParserRuleContext location, string name)
         {
             return IssueError(location,
-                $"'global param {name}' is not undeclared");
+                $"global param '{name}' is undeclared");
         }
         
         public Exception ModifyGlobalParam(ParserRuleContext location, IPDecl existing)
@@ -233,7 +233,7 @@ namespace Plang.Compiler
 
         public Exception MissingStartState(Machine machine)
         {
-            return IssueError(machine.SourceLocation, $"Value {machine.Name} has no start state");
+            return IssueError(machine.SourceLocation, $"machine {machine.Name} has no start state");
         }
 
         public Exception ChangedStateMidTransition(ParserRuleContext location, Function method)

@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 
 namespace Plang.Compiler
@@ -11,7 +10,13 @@ namespace Plang.Compiler
 
         public override string ToString()
         {
-            return File == null ? throw new ArgumentException() : $"{Path.GetRelativePath(Directory.GetCurrentDirectory(),File.FullName)}:{Line}:{Column}";
+            // File can be null when a diagnostic is synthesized from a location
+            // without a backing source file (e.g. EmptyContext, internal errors).
+            // Throwing ArgumentException here would partial-flush the user's
+            // collected diagnostics with a confusing stack trace mid-loop —
+            // fall back to a clear sentinel instead.
+            if (File == null) return $"<no source>:{Line}:{Column}";
+            return $"{Path.GetRelativePath(Directory.GetCurrentDirectory(), File.FullName)}:{Line}:{Column}";
         }
     }
 }

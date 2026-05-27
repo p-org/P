@@ -176,31 +176,36 @@ public class Phase1DormancyTest
         return (exitCode, stderr, errorCount);
     }
 
-    /// <summary>
-    /// Count every diagnostic marker Compiler.cs emits on stderr. Originally
-    /// just "[Error:]" and "[Parser Error:]" — but Compiler.cs also emits
-    /// "[NotSupportedError:]", "[NotImplementedError:]" and per-backend
-    /// "[X Compiling Generated Code:]" markers. A counter that misses these
-    /// silently treats a regression-that-throws-NotSupportedException as
-    /// "zero errors", masking real failures (we already hit this once on
-    /// the PVerifier `invariant` keyword in ForeachInvariantError.p).
-    ///
-    /// Matches the canonical `[<anything>Error<anything>:]` shape Compiler.cs
-    /// uses for diagnostics on stderr, plus the explicit "Compiling Generated
-    /// Code" marker. Tracks unique offsets so overlapping matches don't
-    /// double-count.
-    /// </summary>
+    // Cached compiled regexes (multi-agent perf finding): called ~1k+ times
+    // per suite run (one per dir × two modes). RegexOptions.Compiled gets
+    // JIT'd once and reused; the previous `new Regex(...)` per call paid
+    // ~50-200µs per compile.
+    //
+    // Pattern intent: match every diagnostic marker Compiler.cs emits on
+    // stderr — originally just `[Error:]` and `[Parser Error:]`, but
+    // Compiler.cs also emits `[NotSupportedError:]`, `[NotImplementedError:]`,
+    // and per-backend `[X Compiling Generated Code:]`. A counter that misses
+    // these silently treats a regression-that-throws-NotSupportedException
+    // as "zero errors" (we already hit this once on the PVerifier `invariant`
+    // keyword in ForeachInvariantError.p). NOTE: the harness's own marker
+    // `[Test harness caught uncaught TranslationException:]` is intentionally
+    // substring-free of "Error" so it does NOT match — keeps test-exception
+    // output from inflating pinned counts.
+    private static readonly System.Text.RegularExpressions.Regex ErrorMarkerPattern =
+        new System.Text.RegularExpressions.Regex(
+            @"\[[^\]]*Error[^\]]*:\]",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static readonly System.Text.RegularExpressions.Regex GenCodeMarkerPattern =
+        new System.Text.RegularExpressions.Regex(
+            @"\[\S+ Compiling Generated Code:\]",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
     private static int CountErrorMarkers(string stderr)
     {
         if (string.IsNullOrEmpty(stderr)) return 0;
-        // Match "[<text>Error:]" (case-sensitive) — covers [Error:], [Parser Error:],
-        // [NotSupportedError:], [NotImplementedError:], [Test harness caught
-        // uncaught TranslationException:] (the harness's own emission when a
-        // truly-uncaught throw escapes Compile). Also match the per-backend
-        // generated-code marker.
-        var errorPattern = new System.Text.RegularExpressions.Regex(@"\[[^\]]*Error[^\]]*:\]");
-        var compilePattern = new System.Text.RegularExpressions.Regex(@"\[\S+ Compiling Generated Code:\]");
-        return errorPattern.Matches(stderr).Count + compilePattern.Matches(stderr).Count;
+        return ErrorMarkerPattern.Matches(stderr).Count
+             + GenCodeMarkerPattern.Matches(stderr).Count;
     }
 
     /// <summary>

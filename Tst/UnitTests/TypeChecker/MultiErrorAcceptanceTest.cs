@@ -207,19 +207,24 @@ public class MultiErrorAcceptanceTest
         return (exitCode, stderr, errorCount);
     }
 
-    /// <summary>
-    /// See <c>Phase1DormancyTest.CountErrorMarkers</c> for the rationale —
-    /// matches all `[<text>Error<text>:]` markers Compiler.cs emits, plus
-    /// the per-backend generated-code marker. Originally counted only
-    /// `[Error:]`/`[Parser Error:]`, which silently treated
-    /// `NotSupportedException`-driven failures as "zero errors".
-    /// </summary>
+    // Cached compiled regexes — see Phase1DormancyTest.cs for the rationale
+    // (multi-agent perf finding). Same patterns as Phase1DormancyTest but
+    // duplicated locally so this fixture can evolve independently.
+    private static readonly System.Text.RegularExpressions.Regex ErrorMarkerPattern =
+        new System.Text.RegularExpressions.Regex(
+            @"\[[^\]]*Error[^\]]*:\]",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static readonly System.Text.RegularExpressions.Regex GenCodeMarkerPattern =
+        new System.Text.RegularExpressions.Regex(
+            @"\[\S+ Compiling Generated Code:\]",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
     private static int CountErrorMarkers(string stderr)
     {
         if (string.IsNullOrEmpty(stderr)) return 0;
-        var errorPattern = new System.Text.RegularExpressions.Regex(@"\[[^\]]*Error[^\]]*:\]");
-        var compilePattern = new System.Text.RegularExpressions.Regex(@"\[\S+ Compiling Generated Code:\]");
-        return errorPattern.Matches(stderr).Count + compilePattern.Matches(stderr).Count;
+        return ErrorMarkerPattern.Matches(stderr).Count
+             + GenCodeMarkerPattern.Matches(stderr).Count;
     }
 
     private sealed class CapturingOutput : ICompilerOutput

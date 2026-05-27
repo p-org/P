@@ -477,9 +477,15 @@ namespace Plang.Compiler.TypeChecker
             // Resolve the kind identifier first so a missing-declaration error
             // is still reported even when the instance errored upstream. Only
             // bail to ErrorExpr after the lookup has had its chance to fire.
+            //
+            // The State branch uses TryResolveStateForInstance (PR #963) — NOT
+            // the bare table.Lookup — so that a same-named state from an
+            // unrelated machine doesn't satisfy `hasKind` and then silently
+            // fall through to the "unreachable" branch below (it really WOULD
+            // become reachable in that case, masking the missing-decl).
             var hasKind = table.Lookup(name, out Machine m)
                           || table.Lookup(name, out Event _)
-                          || table.Lookup(name, out State _);
+                          || TryResolveStateForInstance(instance, name, out State _);
             if (!hasKind)
             {
                 handler.Diagnostics.Report(handler.MissingDeclaration(context, "machine, event, or state", name));

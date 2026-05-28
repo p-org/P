@@ -1442,12 +1442,17 @@ class GenerationService(BaseService):
                 env = ensure_environment()
                 if env.is_valid and env.p_compiler_path:
                     import subprocess
+                    # Default to collecting-mode compilation (see
+                    # core/services/compilation.py for full rationale).
+                    subprocess_env = os.environ.copy()
+                    subprocess_env.setdefault("P_COMPILER_COLLECT_ERRORS", "1")
                     result = subprocess.run(
                         [env.p_compiler_path, "compile"],
                         cwd=project_path,
                         capture_output=True,
                         text=True,
                         timeout=30,
+                        env=subprocess_env,
                     )
                     if result.returncode == 0:
                         logger.info(f"  Candidate compiles successfully (+{COMPILE_BONUS} bonus)")

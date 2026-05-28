@@ -36,7 +36,16 @@ def try_compile(ppath, captured_streams_output_dir):
     flags = ['-pf', ppath, "-o", str(p.parent)] if p.is_file() else []
 
     final_cmd_arr = ['p', 'compile', *flags]
-    result = subprocess.run(final_cmd_arr, capture_output=True, cwd=ppath if not p.is_file() else None)
+    # Default to collecting-mode compilation (see compilation.py for full rationale).
+    # setdefault preserves an explicit user override.
+    env = os.environ.copy()
+    env.setdefault("P_COMPILER_COLLECT_ERRORS", "1")
+    result = subprocess.run(
+        final_cmd_arr,
+        capture_output=True,
+        cwd=ppath if not p.is_file() else None,
+        env=env,
+    )
 
     out_dir = f"{captured_streams_output_dir}/compile"
     os.makedirs(out_dir, exist_ok=True)

@@ -5,6 +5,7 @@ Handles P project compilation and PChecker execution.
 This service is UI-agnostic.
 """
 
+import os
 import subprocess
 import logging
 import traceback
@@ -85,13 +86,20 @@ class CompilationService(BaseService):
                     return_code=-1,
                 )
             
-            # Run P compiler
+            # Run P compiler. Default to collecting-mode (`P_COMPILER_COLLECT_ERRORS=1`)
+            # so a project with N independent type errors produces all N diagnostics
+            # in one compile, letting PeasyAI's fix loop converge in N/k iterations
+            # instead of N. setdefault preserves an explicit user override (set the
+            # env var to "0" or "false" in the parent shell to keep strict mode).
+            env = os.environ.copy()
+            env.setdefault("P_COMPILER_COLLECT_ERRORS", "1")
             result = subprocess.run(
                 ['p', 'compile'],
                 capture_output=True,
                 cwd=project_path,
                 text=True,
                 timeout=300,  # 5 minute timeout
+                env=env,
             )
             
             # Check for success

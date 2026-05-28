@@ -13,11 +13,11 @@ namespace Plang.Compiler.TypeChecker.AST.Expressions
     /// transformer's post-typecheck passes are constrained to <c>IExprTerm</c>,
     /// so an <see cref="ErrorExpr"/> that accidentally leaks past type-checking
     /// will trip a clear cast failure rather than silently corrupting downstream
-    /// code generation. The <see cref="Compiler"/> top-level guards this by
-    /// skipping IR transformation when the diagnostic collector
-    /// <c>HasErrors</c>.
+    /// code generation. <c>Compiler.Compile</c> guards this by skipping IR
+    /// transformation when <c>handler.Diagnostics.HasErrors</c>.
     ///
-    /// Phase 1 introduces this class; no visitor produces it yet.
+    /// Produced by <c>ExprVisitor</c>/<c>StatementVisitor</c> whenever a node
+    /// fails type-checking in collecting mode.
     /// </summary>
     public sealed class ErrorExpr : IPExpr
     {

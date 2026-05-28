@@ -13,7 +13,7 @@ namespace Plang.Compiler.TypeChecker.Types
     /// cascading errors: e.g. <c>undeclaredVar + 1</c> should produce one
     /// "undeclared" diagnostic, not also an "incompatible operand types" one.
     ///
-    /// Cascade suppression has two pieces:
+    /// Cascade suppression has three pieces working together:
     ///   - This class overrides <see cref="IsAssignableFrom"/> to return true
     ///     for any other type. That covers the asymmetric case where the
     ///     sentinel is on the LHS of an assignability check.
@@ -22,18 +22,18 @@ namespace Plang.Compiler.TypeChecker.Types
     ///     equality checks regardless of operand order, since not every
     ///     existing type's <c>IsAssignableFrom</c> override knows about the
     ///     sentinel.
-    ///   - Phase 2 will additionally add a <c>CheckAssignable</c> helper in
-    ///     <c>TypeCheckingUtils</c> that visitors use in place of inline
-    ///     <c>IsAssignableFrom</c> calls, to cover the remaining asymmetric
-    ///     sites where <c>ErrorType</c> appears on the RHS.
+    ///   - <c>TypeCheckingUtils.CheckAssignable</c> is the cascade-aware
+    ///     helper visitors use in place of inline <c>IsAssignableFrom</c>
+    ///     calls; it auto-suppresses when either side is <see cref="ErrorType"/>.
     ///
-    /// Phase 1 introduces the sentinel; no visitor produces it yet. Phase 2
-    /// converts the ~111 throw sites in ExprVisitor/StatementVisitor to record-
-    /// and-continue, where this type does its job.
+    /// Produced by <c>ExprVisitor</c>/<c>StatementVisitor</c> whenever a node
+    /// fails type-checking in collecting mode (see
+    /// <see cref="IDiagnosticCollector"/>).
     ///
     /// Invariant: <see cref="ErrorType"/> instances must never reach the IR
-    /// transformer or backend code generators. <see cref="Compiler"/> guards
-    /// this by skipping post-typecheck stages when <c>HasErrors</c>.
+    /// transformer or backend code generators. <c>Compiler.Compile</c> guards
+    /// this by skipping post-typecheck stages when
+    /// <c>handler.Diagnostics.HasErrors</c>.
     /// </summary>
     public sealed class ErrorType : PLanguageType
     {

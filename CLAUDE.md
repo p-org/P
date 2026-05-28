@@ -93,7 +93,79 @@ p compile --mode pex
 
 # Run model checking with PEx backend
 p check --mode pex
+
+# Multi-error compilation — report ALL type errors in one pass
+# instead of aborting on the first. Default is strict (one error,
+# exit 1). Errors are sorted by source location.
+P_COMPILER_COLLECT_ERRORS=1 p compile
 ```
+
+## Multi-Error Type Checking (Compiler)
+
+The C# compiler under `Src/PCompiler/CompilerCore/` supports a **collecting
+mode** that gathers diagnostics through `IDiagnosticCollector` instead of
+throwing on the first error. Opt in via the `P_COMPILER_COLLECT_ERRORS=1`
+environment variable. Default (strict) mode is bit-for-bit identical to
+pre-3.0 behavior for valid programs and same exit code on invalid programs.
+
+### Architecture
+
+- **`IDiagnosticCollector` / `DefaultDiagnosticCollector`** — strict mode
+  rethrows immediately; collecting mode appends to a list, returns, and the
+  collector is flushed at end of compilation via
+  `Compiler.FlushCollectedDiagnostics`.
+- **`ErrorType` (singleton sentinel) / `ErrorExpr`** — substituted for
+  failed-to-type-check expressions in collecting mode. `ErrorType` claims
+  compatibility with every other type so downstream compatibility checks
+  cascade-suppress (one root-cause error doesn't generate a chain of
+  "incompatible operand" diagnostics).
+- **`PLanguageType.IsSameTypeAs`** has a symmetric short-circuit when either
+  side is `ErrorType`.
+- **`TypeCheckingUtils.CheckAssignable`** is the cascade-aware compatibility
+  check helper; visitors should route compatibility checks through this
+  helper rather than calling `IsAssignableFrom` directly.
+- **`Analyzer.TolerantStep`** is the per-pass-item analog: it wraps each
+  iteration in `try { body() } catch (TranslationException) when (collecting)`
+  so one bad machine/function doesn't clobber siblings' diagnostics.
+
+### When adding a new throw site in a visitor
+
+Follow the convention in `ExprVisitor.cs`'s class doc:
+
+1. **Visit children first** — so their internal errors surface even if the
+   parent lookup fails.
+2. **Short-circuit on `ErrorType`** — `if (subExpr.Type is ErrorType) return new ErrorExpr(context);`
+   at the top of each method after visiting children.
+3. **Convert each `throw handler.X(...)` to**:
+   ```csharp
+   handler.Diagnostics.Report(handler.X(...));
+   return new ErrorExpr(context);  // or new NoStmt(context) for statements
+   ```
+4. **Route compatibility checks through `CheckAssignable`** — it auto-suppresses
+   when either side is `ErrorType`.
+
+For statements that can't be reconstructed (missing variable/interface/function/state/event), return `new NoStmt(context)` instead of an `ErrorExpr`-bearing statement.
+
+### When adding a new analyzer pass
+
+If it iterates per-machine, per-function, or per-item:
+
+```csharp
+foreach (var thing in scope.Things)
+{
+    TolerantStep(handler, () => DoStuffWith(thing));
+}
+```
+
+This way, one bad item doesn't abort the pass for siblings in collecting mode. The `when (ContinueOnError)` filter on `TolerantStep`'s catch preserves strict-mode bit-for-bit. Place the new pass behind the existing `if (handler.Diagnostics.HasErrors) return globalScope;` gate in `Analyzer.cs` if it assumes a fully-typed AST (most "analysis" passes — propagations, capability checks, module-system passes).
+
+### Test fixtures
+
+- **`Tst/UnitTests/TypeChecker/DiagnosticCollectorTest.cs`** — collector contract + env-var parsing
+- **`Tst/UnitTests/TypeChecker/Phase1DormancyTest.cs`** — iterates every Correct/StaticError dir; asserts both modes succeed on Correct/ and that collecting count ≥ strict count on StaticError/
+- **`Tst/UnitTests/TypeChecker/MultiErrorAcceptanceTest.cs`** — `[TestCaseSource]` with pinned strict/collecting counts on curated multi-error files under `Tst/RegressionTests/Feature3Exprs/StaticError/`
+
+When adding a new pinned test, add a row to `MultiErrorAcceptanceTest.PinnedCases()` with the file path, expected strict count, expected collecting count, and a one-paragraph description of which cascade rule or recovery path it exercises.
 
 ### Working with PeasyAI
 

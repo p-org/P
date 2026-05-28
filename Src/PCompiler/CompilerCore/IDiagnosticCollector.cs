@@ -12,16 +12,32 @@ namespace Plang.Compiler
     ///     the historical "fail on first error" behavior. The compiler unwinds
     ///     to the top-level catch in <c>Compiler.cs</c>.
     ///   - Collecting (<see cref="ContinueOnError"/> == true):
-    ///     <see cref="Report"/> appends the diagnostic and returns. Callers are
-    ///     responsible for substituting a recovery value (e.g.
-    ///     <c>ErrorType.Instance</c> or <c>new ErrorExpr(ctx)</c>) so downstream
-    ///     visitors can continue without NREs. The compiler flushes the full
-    ///     list after type-checking completes and exits with a non-zero code
-    ///     if any errors were collected.
+    ///     <see cref="Report"/> appends the diagnostic and returns. Callers
+    ///     substitute a recovery value (e.g. <see cref="Plang.Compiler.TypeChecker.Types.ErrorType"/>.Instance or
+    ///     <c>new ErrorExpr(ctx)</c>) so downstream visitors continue without
+    ///     NREs. The compiler flushes the full list (sorted by source location)
+    ///     after type-checking completes and exits with a non-zero code if any
+    ///     errors were collected.
     ///
-    /// Phase 1 wiring only — no visitor currently calls <see cref="Report"/>.
-    /// Existing <c>throw handler.X(...)</c> sites remain unchanged. Phase 2
-    /// will convert them to <c>handler.Diagnostics.Report(handler.X(...))</c>.
+    /// Lifecycle:
+    /// <list type="bullet">
+    ///   <item><c>CompilerConfiguration.ReadContinueOnErrorEnvVar</c> seeds
+    ///     <see cref="ContinueOnError"/> from the
+    ///     <c>P_COMPILER_COLLECT_ERRORS</c> environment variable.</item>
+    ///   <item>Visitors (<c>ExprVisitor</c>, <c>StatementVisitor</c>) report
+    ///     through <c>handler.Diagnostics.Report(handler.X(...))</c>.</item>
+    ///   <item><c>Analyzer.TolerantStep</c> wraps each gathering-pass iteration
+    ///     so a TranslationException on one machine/function doesn't clobber
+    ///     siblings' diagnostics.</item>
+    ///   <item><c>Compiler.FlushCollectedDiagnostics</c> sorts by
+    ///     <c>(file, line, column)</c> and emits each diagnostic with
+    ///     <c>[Error:]</c> prefix to stderr.</item>
+    /// </list>
+    ///
+    /// The contract is exercised by
+    /// <c>Tst/UnitTests/TypeChecker/DiagnosticCollectorTest.cs</c>,
+    /// <c>Tst/UnitTests/TypeChecker/Phase1DormancyTest.cs</c>, and
+    /// <c>Tst/UnitTests/TypeChecker/MultiErrorAcceptanceTest.cs</c>.
     /// </summary>
     public interface IDiagnosticCollector
     {

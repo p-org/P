@@ -59,6 +59,23 @@ Validate that production systems conform to their formal P specifications.
 
 👉 [Learn about PObserve](https://p-org.github.io/P/advanced/pobserve/pobserve/)
 
+### Multi-Error Compilation
+
+Set `P_COMPILER_COLLECT_ERRORS=1` to make `p compile` report ALL type errors
+in one pass instead of aborting on the first. Errors are sorted by source
+location with cascade-suppression so root causes surface without downstream
+noise.
+
+```bash
+$ P_COMPILER_COLLECT_ERRORS=1 p compile
+[Error:] [bad.p:6:4] got type: bool, expected: int
+[Error:] [bad.p:8:13] could not find variable 'undeclaredVar'
+[Error:] [bad.p:9:16] incompatible binary operands int and string
+```
+
+Particularly useful with AI fix loops (PeasyAI, Cursor) and large refactors —
+fix N errors per LLM round-trip instead of N round-trips per N errors.
+
 ## The P Framework
 
 | Component | Description |

@@ -18,87 +18,125 @@ namespace Plang.Compiler.TypeChecker
 
             // Step 1: Build the global scope of declarations
             var globalScope = BuildGlobalScope(config, programUnits);
-            
-            // Step 2a: Validate machine specifications
+
+            // Phase 3 — Tolerant passes (gathering phase). Each iteration is
+            // wrapped in TolerantStep so a TranslationException on one item
+            // (machine, function, invariant, ...) reports and continues to the
+            // next instead of clobbering siblings. In strict mode the catch's
+            // `when (ContinueOnError)` filter is false, so the original
+            // throw-and-abort semantics are bit-for-bit preserved.
+
+            // Step 2a: Validate machine specifications — per-machine isolation.
             foreach (var machine in globalScope.Machines)
             {
-                
-                MachineChecker.Validate(handler, machine, config, globalScope);
+                TolerantStep(handler,
+                    () => MachineChecker.Validate(handler, machine, config, globalScope));
             }
 
-            // Step 3: Fill function bodies
+            // Step 3: Fill function bodies — per-function isolation.
             var allFunctions = globalScope.GetAllMethods().ToList();
             foreach (var machineFunction in allFunctions)
             {
-                FunctionBodyVisitor.PopulateMethod(config, machineFunction);
-                FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
+                TolerantStep(handler, () =>
+                {
+                    FunctionBodyVisitor.PopulateMethod(config, machineFunction);
+                    FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
+                });
             }
 
-            // Step 3b: for PVerifier, fill in body of Invariants, Axioms, Init conditions and Pure functions and functions with pre/post conditions
+            // Step 3b: for PVerifier, fill in body of Invariants, Axioms, Init
+            // conditions and Pure functions and functions with pre/post
+            // conditions — per-item isolation across all five subgroups.
             foreach (var inv in globalScope.Invariants)
             {
-                var ctx = (PParser.InvariantDeclContext)inv.SourceLocation;
-                var temporaryFunction = new Function(inv.Name, inv.SourceLocation)
+                TolerantStep(handler, () =>
                 {
-                    Scope = globalScope
-                };
-                inv.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler);
+                    var ctx = (PParser.InvariantDeclContext)inv.SourceLocation;
+                    var temporaryFunction = new Function(inv.Name, inv.SourceLocation)
+                    {
+                        Scope = globalScope
+                    };
+                    inv.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler);
+                });
             }
 
             foreach (var axiom in globalScope.Axioms)
             {
-                var ctx = (PParser.AxiomDeclContext) axiom.SourceLocation;
-                var temporaryFunction = new Function(axiom.Name, axiom.SourceLocation)
+                TolerantStep(handler, () =>
                 {
-                    Scope = globalScope
-                };
-                axiom.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler);
+                    var ctx = (PParser.AxiomDeclContext)axiom.SourceLocation;
+                    var temporaryFunction = new Function(axiom.Name, axiom.SourceLocation)
+                    {
+                        Scope = globalScope
+                    };
+                    axiom.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler);
+                });
             }
 
             foreach (var initCond in globalScope.AssumeOnStarts)
             {
-                var ctx = (PParser.AssumeOnStartDeclContext)initCond.SourceLocation;
-                var temporaryFunction = new Function(initCond.Name, initCond.SourceLocation)
+                TolerantStep(handler, () =>
                 {
-                    Scope = globalScope
-                };
-                initCond.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler); 
+                    var ctx = (PParser.AssumeOnStartDeclContext)initCond.SourceLocation;
+                    var temporaryFunction = new Function(initCond.Name, initCond.SourceLocation)
+                    {
+                        Scope = globalScope
+                    };
+                    initCond.Body = PopulateExpr(temporaryFunction, ctx.body, PrimitiveType.Bool, handler);
+                });
             }
 
             foreach (var pure in globalScope.Pures)
             {
-                var temporaryFunction = new Function(pure.Name, pure.SourceLocation)
+                TolerantStep(handler, () =>
                 {
-                    Scope = pure.Scope
-                };
-                var context = (PParser.PureDeclContext) pure.SourceLocation;
-                if (context.body is not null)
-                {
-                    pure.Body = PopulateExpr(temporaryFunction, context.body, pure.Signature.ReturnType, handler);
-                }
+                    var temporaryFunction = new Function(pure.Name, pure.SourceLocation)
+                    {
+                        Scope = pure.Scope
+                    };
+                    var context = (PParser.PureDeclContext)pure.SourceLocation;
+                    if (context.body is not null)
+                    {
+                        pure.Body = PopulateExpr(temporaryFunction, context.body, pure.Signature.ReturnType, handler);
+                    }
+                });
             }
 
             foreach (var func in allFunctions.Where(func => func.Role.HasFlag(FunctionRole.Foreign)))
             {
-                // populate pre/post conditions
-                var ctx = (PParser.ForeignFunDeclContext)func.SourceLocation;
-                foreach (var req in ctx._requires)
+                TolerantStep(handler, () =>
                 {
-                    var preExpr = PopulateExpr(func, req, PrimitiveType.Bool, handler);
-                    func.AddRequire(preExpr);
-                }
-                foreach (var post in ctx._ensures)
-                {
-                    var postExpr = PopulateExpr(func, post, PrimitiveType.Bool, handler);
-                    func.AddEnsure(postExpr);
-                }
+                    // populate pre/post conditions
+                    var ctx = (PParser.ForeignFunDeclContext)func.SourceLocation;
+                    foreach (var req in ctx._requires)
+                    {
+                        var preExpr = PopulateExpr(func, req, PrimitiveType.Bool, handler);
+                        func.AddRequire(preExpr);
+                    }
+                    foreach (var post in ctx._ensures)
+                    {
+                        var postExpr = PopulateExpr(func, post, PrimitiveType.Bool, handler);
+                        func.AddEnsure(postExpr);
+                    }
+                });
             }
 
-            // Step 2b: Validate no static handlers
+            // Step 2b: Validate no static handlers — per-machine isolation.
             foreach (var machine in globalScope.Machines)
             {
-                MachineChecker.ValidateNoStaticHandlers(handler, machine);
+                TolerantStep(handler,
+                    () => MachineChecker.ValidateNoStaticHandlers(handler, machine));
             }
+
+            // Phase 3 gathering→analysis boundary. Everything above is
+            // "Tolerant" (per-item try/catch, errors collected); everything
+            // below is "RequiresClean" — assumes a fully-typed AST. If any
+            // gathering pass collected an error, skip the analysis passes
+            // entirely. Compiler.cs's flush at the end of compilation will
+            // surface what we have. The duplicate gate before pass 8 (further
+            // below) remains as defense-in-depth for the case where a future
+            // analysis pass converts its throws to Diagnostics.Report.
+            if (handler.Diagnostics.HasErrors) return globalScope;
 
             // Step 4: Propagate purity properties
             ApplyPropagations(allFunctions,
@@ -147,10 +185,13 @@ namespace Plang.Compiler.TypeChecker
             // Step 6: Check control flow well-formedness
             ControlFlowChecker.AnalyzeMethods(handler, allFunctions);
 
-            // Step 7: Infer the creates set for each machine.
+            // Step 7: Infer the creates set for each machine — per-machine
+            // isolation. Gated by the HasErrors check above so the partial-AST
+            // risk is low, but per-machine try/catch is cheap insurance.
             foreach (var machine in globalScope.Machines)
             {
-                InferMachineCreates.Populate(machine, handler);
+                TolerantStep(handler,
+                    () => InferMachineCreates.Populate(machine, handler));
             }
 
             // Phase 2 robustness gate: passes 8-10 ("RequiresClean" in the
@@ -191,6 +232,46 @@ namespace Plang.Compiler.TypeChecker
             }
 
             return globalScope;
+        }
+
+        /// <summary>
+        /// Run a single pass step (per-machine, per-function, per-item) with
+        /// optional collecting-mode tolerance. Used by BOTH gathering passes
+        /// (2a, 2b, 3, 3b) and analysis passes (7) — the helper itself doesn't
+        /// implement the gathering→analysis classification, that lives at the
+        /// call sites and the HasErrors gate above.
+        ///
+        /// Behavior:
+        ///   - Strict mode (ContinueOnError == false): any TranslationException
+        ///     propagates as before — the <c>when</c> filter is false so the
+        ///     catch never fires. Bit-for-bit preserves pre-Phase 3 semantics.
+        ///   - Collecting mode (ContinueOnError == true): catches
+        ///     TranslationException, Reports it into the diagnostic collector,
+        ///     and returns. The enclosing foreach moves on to the next item, so
+        ///     one bad machine / function / invariant doesn't suppress siblings'
+        ///     diagnostics.
+        ///
+        /// This is NOT cascade suppression. Cascade suppression (in the sense
+        /// of "child error makes parent silently ErrorType") lives in
+        /// <see cref="TypeCheckingUtils.CheckAssignable"/> and the ErrorType
+        /// short-circuit on <see cref="PLanguageType.IsSameTypeAs"/>. This helper
+        /// is the per-pass-item analog: same goal (let more errors surface in
+        /// one compile), different mechanism.
+        ///
+        /// Only TranslationException is caught: NREs and other unexpected
+        /// runtime exceptions still propagate so they surface as bugs rather
+        /// than being silently swallowed.
+        /// </summary>
+        private static void TolerantStep(ITranslationErrorHandler handler, Action body)
+        {
+            try
+            {
+                body();
+            }
+            catch (TranslationException e) when (handler.Diagnostics.ContinueOnError)
+            {
+                handler.Diagnostics.Report(e);
+            }
         }
 
         private static IPExpr PopulateExpr(Function func, ParserRuleContext ctx, PLanguageType type, ITranslationErrorHandler handler)

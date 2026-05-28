@@ -63,6 +63,55 @@ public class MultiErrorAcceptanceTest
             .SetName("ForeachBodyErrors (body visit)");
 
         yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/MultiMachineErrors/MultiMachineErrors.p",
+            1, 3,
+            "Phase 3 per-machine isolation during pass 3 (function body checking): " +
+            "3 machines, one entry-handler error each (bool->int, missing decl, " +
+            "int+string). Validates Phase 2's Report-and-continue path within each " +
+            "machine PLUS Phase 3's TolerantStep wrapper around pass 3 keeping " +
+            "machines independent. A regression here (count back to 1) means one " +
+            "machine's error blocked Phase 2/3 from reaching the next machine. " +
+            "Note: pass 2a (MachineChecker) isn't exercised by this file — see " +
+            "the file's header comment.")
+            .SetName("MultiMachineErrors (Phase 3 per-machine pass-3)");
+
+        yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/MultiFunctionPerMachine/MultiFunctionPerMachine.p",
+            1, 3,
+            "Phase 3 per-FUNCTION isolation (distinct from MultiMachineErrors): 3 " +
+            "functions in ONE machine, one error each. Catches a regression where " +
+            "Phase 3's per-function TolerantStep wrapper around pass 3 stops iterating " +
+            "after the first failing function.")
+            .SetName("MultiFunctionPerMachine (Phase 3 per-fn)");
+
+        yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/CtorArgErrors/CtorArgErrors.p",
+            1, 3,
+            "VisitCtorExpr's arg-pre-visit recovery: when the interface is unknown, " +
+            "constructor arguments are still visited so internal arg errors surface. " +
+            "A regression where args are NOT visited would drop collecting to 1 " +
+            "(just the missing-interface diagnostic).")
+            .SetName("CtorArgErrors (args before lookup)");
+
+        yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/FunCallArgErrors/FunCallArgErrors.p",
+            1, 4,
+            "VisitFunCallExpr Function branch: 2 separate calls combining argument " +
+            "errors (missing decl) with call-shape errors (arity in stmt 1, type " +
+            "mismatch in stmt 2). Validates cascade-suppression of arg[0] error " +
+            "while arg[1] mismatch still surfaces independently.")
+            .SetName("FunCallArgErrors (Function branch)");
+
+        yield return new TestCaseData(
+            "RegressionTests/Feature3Exprs/StaticError/GotoRecoveryErrors/GotoRecoveryErrors.p",
+            1, 4,
+            "VisitGotoStmt's two recovery paths (missing state + arity mismatch) " +
+            "each visit the rvalueList after reporting the goto-level error, so " +
+            "internal arg errors surface. A regression where rvalueList visits " +
+            "are skipped would drop collecting to 2.")
+            .SetName("GotoRecoveryErrors (rvalue visit)");
+
+        yield return new TestCaseData(
             "RegressionTests/Feature3Exprs/StaticError/SpecReceiveBodyError/SpecReceiveBodyError.p",
             1, 3,
             "Receive on spec machine: IllegalMonitorOperation + undeclared event + body " +
@@ -145,29 +194,40 @@ public class MultiErrorAcceptanceTest
         {
             exitCode = new Compiler().Compile(config);
         }
-        catch (Exception e)
+        catch (TranslationException e)
         {
-            stderrWriter.WriteLine($"[Test harness caught uncaught {e.GetType().Name}:] {e.Message}");
+            // Catch ONLY TranslationException — NREs and other unexpected
+            // runtime exceptions propagate so they surface as bugs, not get
+            // folded silently into a count of 0. See Phase1DormancyTest for
+            // the longer rationale (multi-agent audit finding).
+            stderrWriter.WriteLine($"[Test harness caught uncaught TranslationException:] {e.Message}");
             stderrWriter.WriteLine(e.StackTrace);
             exitCode = -1;
         }
 
         var stderr = stderrWriter.ToString();
-        var errorCount = CountOccurrences(stderr, "[Error:]") + CountOccurrences(stderr, "[Parser Error:]");
+        var errorCount = CountErrorMarkers(stderr);
         return (exitCode, stderr, errorCount);
     }
 
-    private static int CountOccurrences(string haystack, string needle)
+    // Cached compiled regexes — see Phase1DormancyTest.cs for the rationale
+    // (multi-agent perf finding). Same patterns as Phase1DormancyTest but
+    // duplicated locally so this fixture can evolve independently.
+    private static readonly System.Text.RegularExpressions.Regex ErrorMarkerPattern =
+        new System.Text.RegularExpressions.Regex(
+            @"\[[^\]]*Error[^\]]*:\]",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static readonly System.Text.RegularExpressions.Regex GenCodeMarkerPattern =
+        new System.Text.RegularExpressions.Regex(
+            @"\[\S+ Compiling Generated Code:\]",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static int CountErrorMarkers(string stderr)
     {
-        if (string.IsNullOrEmpty(needle)) return 0;
-        var count = 0;
-        var idx = 0;
-        while ((idx = haystack.IndexOf(needle, idx, StringComparison.Ordinal)) != -1)
-        {
-            count++;
-            idx += needle.Length;
-        }
-        return count;
+        if (string.IsNullOrEmpty(stderr)) return 0;
+        return ErrorMarkerPattern.Matches(stderr).Count
+             + GenCodeMarkerPattern.Matches(stderr).Count;
     }
 
     private sealed class CapturingOutput : ICompilerOutput

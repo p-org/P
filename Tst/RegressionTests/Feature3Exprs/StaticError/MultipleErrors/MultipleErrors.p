@@ -8,7 +8,14 @@
 //                         NOT also report "wrong assignment type" — that
 //                         would be a cascade leak from ErrorType)
 //   - x + "hello"      → mismatched binary operands           (error 3)
-//   - send this, E, t  → arg count mismatch (E has no payload, gets 3)
+//   - send this, E, (1,2,3) → payload TYPE mismatch (E has no payload type,
+//                        but the call passes a 3-tuple). Note: `(1,2,3)`
+//                        parses as a single unnamed-tuple argument, so this
+//                        fires TypeMismatch (tuple→null) via
+//                        ValidatePayloadTypes' single-arg CheckArgument
+//                        branch, NOT IncorrectArgumentCount. The count
+//                        is still 1 either way — the comment is precise
+//                        about the MECHANISM, not just the outcome.
 //                        (error 4)
 //
 // Behavior contracts:

@@ -313,14 +313,47 @@ namespace Plang.Compiler
         /// Print every diagnostic the collector accumulated. No-op if the
         /// collector is in strict mode (it never holds anything) or has none.
         /// Same formatting as the top-level catch so output looks uniform.
+        ///
+        /// Diagnostics are sorted by source location (file, line, column)
+        /// before flushing. The collector's insertion order is visitor-
+        /// traversal order — fine for one error, but with multi-error
+        /// collecting mode the user expects to see diagnostics in source
+        /// reading order (top-to-bottom of each file) so IDE jump-to-line
+        /// flows match natural review. Diagnostics without a parseable
+        /// location prefix sort last and are stable-ordered among themselves.
         /// </summary>
         private static void FlushCollectedDiagnostics(ICompilerConfiguration job)
         {
             if (job.Diagnostics == null || !job.Diagnostics.HasErrors) return;
-            foreach (var diag in job.Diagnostics.Diagnostics)
+            var sorted = job.Diagnostics.Diagnostics
+                .Select((diag, idx) => (diag, idx, key: ParseLocationPrefix(diag.Message)))
+                .OrderBy(t => t.key.file ?? "￿", StringComparer.Ordinal)
+                .ThenBy(t => t.key.line)
+                .ThenBy(t => t.key.col)
+                .ThenBy(t => t.idx); // stable tiebreaker preserves insertion order
+            foreach (var (diag, _, _) in sorted)
             {
                 job.Output.WriteError("[Error:]\n" + diag.Message);
             }
+        }
+
+        // Cached regex for parsing the `[file:line:col]` prefix that
+        // DefaultTranslationErrorHandler.IssueError emits ahead of every
+        // diagnostic message. Used for source-order sorting in
+        // FlushCollectedDiagnostics.
+        private static readonly System.Text.RegularExpressions.Regex LocationPrefixPattern =
+            new System.Text.RegularExpressions.Regex(
+                @"^\[(?<file>[^\]:]+):(?<line>\d+):(?<col>\d+)\]",
+                System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        private static (string file, int line, int col) ParseLocationPrefix(string message)
+        {
+            if (string.IsNullOrEmpty(message)) return (null, 0, 0);
+            var m = LocationPrefixPattern.Match(message);
+            if (!m.Success) return (null, 0, 0);
+            return (m.Groups["file"].Value,
+                    int.Parse(m.Groups["line"].Value),
+                    int.Parse(m.Groups["col"].Value));
         }
 
         public static Process NonBlockingRun(string activeDirectory, string exeName, params string[] argumentList)

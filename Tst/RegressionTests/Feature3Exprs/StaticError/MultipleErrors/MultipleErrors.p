@@ -22,7 +22,7 @@
 //   - Strict mode (default): exit 1 after the first error is reported.
 //     Identical to the historical behavior — this file is no different
 //     from any other single-error StaticError test in this mode.
-//   - Collecting mode (P_COMPILER_COLLECT_ERRORS=1): exit 1 after
+//   - Default (collecting): exit 1 after
 //     reporting all 4 independent errors. The Phase1DormancyTest
 //     fixture asserts `collecting_count >= strict_count`, which holds
 //     trivially with strict=1; the stronger acceptance check lives in

@@ -26,13 +26,12 @@ namespace Plang.Compiler
         int Parallelism { get; }
 
         /// <summary>
-        /// When true, the type checker collects diagnostics and continues
-        /// instead of throwing on the first error. See <see cref="IDiagnosticCollector"/>
-        /// for the contract. Driven by env var <c>P_COMPILER_COLLECT_ERRORS</c>
-        /// (any non-empty / non-"0" value enables it).
-        ///
-        /// Phase 1: scaffolding only. No visitor currently reports through the
-        /// collector, so flipping this flag has no observable effect yet.
+        /// When true (the default), the type checker collects diagnostics and
+        /// continues instead of throwing on the first error. See
+        /// <see cref="IDiagnosticCollector"/> for the contract.
+        /// Users opt OUT of collecting via the CLI flag
+        /// <c>--strict-errors</c> / <c>-se</c>, which restores the legacy
+        /// abort-on-first behavior.
         /// </summary>
         bool ContinueOnError { get; }
 

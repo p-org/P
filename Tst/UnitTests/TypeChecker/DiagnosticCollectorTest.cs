@@ -170,46 +170,21 @@ public class DiagnosticCollectorTest
         Assert.AreEqual("late arrival", liveView[0].Message);
     }
 
-    // Env var parsing — see CompilerConfiguration.ReadContinueOnErrorEnvVar.
-    // Tested via the public ContinueOnError property after construction so we
-    // don't have to mark the private helper internal. Each case saves and
-    // restores the var to keep test isolation.
-    // [NonParallelizable] because this test mutates a process-global env var
-    // (Environment.SetEnvironmentVariable). Any parallel test that constructs
-    // a CompilerConfiguration would read the temporarily-set value and run
-    // in the wrong mode — silently masking real strict-mode regressions.
-    // NUnit runs tests in different fixtures in parallel by default; this
-    // attribute forces sequential execution for THIS test.
-    [TestCase("1", true)]
-    [TestCase("true", true)]
-    [TestCase("True", true)]
-    [TestCase("TRUE", true)]
-    [TestCase("yes", true)]            // any non-"0"/"false" non-empty value wins
-    [TestCase("anything-else", true)]
-    [TestCase("0", false)]
-    [TestCase("false", false)]
-    [TestCase("False", false)]
-    [TestCase("FALSE", false)]
-    [TestCase("", false)]              // empty string treated as unset
-    [TestCase("   ", false)]           // whitespace-only treated as unset
-    [TestCase(null, false)]            // unset
-    [NonParallelizable]
-    public void ContinueOnError_ReadsEnvVar(string envValue, bool expected)
+    [Test]
+    public void CompilerConfiguration_DefaultsToCollectingMode()
     {
-        const string envName = "P_COMPILER_COLLECT_ERRORS";
-        var saved = Environment.GetEnvironmentVariable(envName);
-        try
-        {
-            Environment.SetEnvironmentVariable(envName, envValue);
-            var config = new CompilerConfiguration();
-            Assert.AreEqual(expected, config.ContinueOnError,
-                $"P_COMPILER_COLLECT_ERRORS={envValue ?? "(unset)"}");
-            // The collector's mode must agree with the config's flag.
-            Assert.AreEqual(expected, config.Diagnostics.ContinueOnError);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(envName, saved);
-        }
+        // P 3.0+ contract: collecting mode is the default. Users opt out via
+        // the `--strict-errors` CLI flag, which PCompilerOptions flips after
+        // construction. If this test fails, the default has regressed — check
+        // the parameterless CompilerConfiguration constructor.
+        var config = new CompilerConfiguration();
+        Assert.IsTrue(config.ContinueOnError,
+            "CompilerConfiguration() must default ContinueOnError to true (collecting mode)");
+        Assert.IsNotNull(config.Diagnostics);
+        Assert.IsTrue(config.Diagnostics.ContinueOnError,
+            "The collector's mode must agree with the config's flag at construction");
+        // Handler.Diagnostics must be the same instance as config.Diagnostics
+        // (invariant guarded by DefaultTranslationErrorHandler's null-throw).
+        Assert.AreSame(config.Diagnostics, config.Handler.Diagnostics);
     }
 }

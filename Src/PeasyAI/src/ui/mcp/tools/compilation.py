@@ -36,7 +36,7 @@ def register_compilation_tools(mcp, get_services, with_metadata):
 
     @mcp.tool(
         name="peasy-ai-compile",
-        description="Compile a P project and return compilation results. The project directory must contain a .pproj file. On failure, the response includes parsed errors with file, line, and message details. Use peasy-ai-fix-compile-error or peasy-ai-fix-all to resolve compilation errors. Tip: set P_COMPILER_COLLECT_ERRORS=1 in the project environment to receive ALL type errors in a single response (compiler 3.0+) — lets fix-all converge in fewer iterations."
+        description="Compile a P project and return compilation results. The project directory must contain a .pproj file. On failure, the response includes ALL parsed errors with file, line, and message details (P compiler 3.0+ defaults to multi-error mode). Use peasy-ai-fix-compile-error or peasy-ai-fix-all to resolve compilation errors."
     )
     def p_compile(params: PCompileParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-compile: {params.path}")

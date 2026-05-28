@@ -94,31 +94,28 @@ p compile --mode pex
 # Run model checking with PEx backend
 p check --mode pex
 
-# Multi-error compilation — report ALL type errors in one pass
-# instead of aborting on the first. Default is strict (one error,
-# exit 1). Errors are sorted by source location.
-P_COMPILER_COLLECT_ERRORS=1 p compile
+# By default, `p compile` reports ALL type errors in one pass.
+# Use --strict-errors / -se to restore the legacy abort-on-first behavior.
+p compile --strict-errors
 ```
 
 ## Multi-Error Type Checking (Compiler)
 
-The C# compiler under `Src/PCompiler/CompilerCore/` supports a **collecting
-mode** that gathers diagnostics through `IDiagnosticCollector` instead of
-throwing on the first error. Opt in via the `P_COMPILER_COLLECT_ERRORS=1`
-environment variable. Default (strict) mode is bit-for-bit identical to
-pre-3.0 behavior for valid programs and same exit code on invalid programs.
+The C# compiler under `Src/PCompiler/CompilerCore/` reports all type errors
+in one pass by default (P 3.0+). Diagnostics flow through
+`IDiagnosticCollector` and are flushed (sorted by source location) at end of
+compilation. Users opt out via `--strict-errors` (`-se`), which restores the
+legacy abort-on-first behavior.
 
 ### Architecture
 
 - **`IDiagnosticCollector` / `DefaultDiagnosticCollector`** — strict mode
-  rethrows immediately; collecting mode appends to a list, returns, and the
-  collector is flushed at end of compilation via
-  `Compiler.FlushCollectedDiagnostics`.
+  rethrows immediately; collecting mode (default) appends to a list. The
+  collector is flushed via `Compiler.FlushCollectedDiagnostics` at end of
+  compilation.
 - **`ErrorType` (singleton sentinel) / `ErrorExpr`** — substituted for
-  failed-to-type-check expressions in collecting mode. `ErrorType` claims
-  compatibility with every other type so downstream compatibility checks
-  cascade-suppress (one root-cause error doesn't generate a chain of
-  "incompatible operand" diagnostics).
+  failed-to-type-check expressions. `ErrorType` claims compatibility with
+  every other type so downstream compatibility checks cascade-suppress.
 - **`PLanguageType.IsSameTypeAs`** has a symmetric short-circuit when either
   side is `ErrorType`.
 - **`TypeCheckingUtils.CheckAssignable`** is the cascade-aware compatibility
@@ -134,7 +131,8 @@ Follow the convention in `ExprVisitor.cs`'s class doc:
 
 1. **Visit children first** — so their internal errors surface even if the
    parent lookup fails.
-2. **Short-circuit on `ErrorType`** — `if (subExpr.Type is ErrorType) return new ErrorExpr(context);`
+2. **Short-circuit on `ErrorType`** —
+   `if (subExpr.Type is ErrorType) return new ErrorExpr(context);`
    at the top of each method after visiting children.
 3. **Convert each `throw handler.X(...)` to**:
    ```csharp
@@ -161,7 +159,7 @@ This way, one bad item doesn't abort the pass for siblings in collecting mode. T
 
 ### Test fixtures
 
-- **`Tst/UnitTests/TypeChecker/DiagnosticCollectorTest.cs`** — collector contract + env-var parsing
+- **`Tst/UnitTests/TypeChecker/DiagnosticCollectorTest.cs`** — collector contract + default mode verification
 - **`Tst/UnitTests/TypeChecker/Phase1DormancyTest.cs`** — iterates every Correct/StaticError dir; asserts both modes succeed on Correct/ and that collecting count ≥ strict count on StaticError/
 - **`Tst/UnitTests/TypeChecker/MultiErrorAcceptanceTest.cs`** — `[TestCaseSource]` with pinned strict/collecting counts on curated multi-error files under `Tst/RegressionTests/Feature3Exprs/StaticError/`
 

@@ -37,7 +37,11 @@ namespace Plang.Compiler
             PObservePackageName = $"{ProjectName}.pobserve";
             ProjectRootPath = new DirectoryInfo(Directory.GetCurrentDirectory());
             LocationResolver = new DefaultLocationResolver();
-            ContinueOnError = ReadContinueOnErrorEnvVar();
+            // Collecting mode is the default — report all type errors in one
+            // pass instead of aborting on the first. Users opt OUT via the
+            // `--strict-errors` (`-se`) CLI flag, which the PCompilerOptions
+            // parser flips to false.
+            ContinueOnError = true;
             Diagnostics = new DefaultDiagnosticCollector(ContinueOnError);
             Handler = new DefaultTranslationErrorHandler(LocationResolver, Diagnostics);
             OutputLanguages = new List<CompilerOutput>{CompilerOutput.PChecker};
@@ -48,19 +52,6 @@ namespace Plang.Compiler
             CheckOnly = null;
             TargetProofBlocks = new List<string>();
             Parallelism = Math.Max(Environment.ProcessorCount / 2, 1);
-        }
-
-        /// <summary>
-        /// Reads the <c>P_COMPILER_COLLECT_ERRORS</c> environment variable.
-        /// Any non-empty value other than "0"/"false" (case-insensitive)
-        /// enables collecting mode. Defaults to false (strict, throw-on-first).
-        /// </summary>
-        private static bool ReadContinueOnErrorEnvVar()
-        {
-            var raw = Environment.GetEnvironmentVariable("P_COMPILER_COLLECT_ERRORS");
-            if (string.IsNullOrWhiteSpace(raw)) return false;
-            return !raw.Equals("0", StringComparison.OrdinalIgnoreCase)
-                   && !raw.Equals("false", StringComparison.OrdinalIgnoreCase);
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="CompilerConfiguration"/> class with specific settings.
@@ -102,7 +93,8 @@ namespace Plang.Compiler
             PObservePackageName = pObservePackageName ?? $"{ProjectName}.pobserve";
             ProjectRootPath = projectRoot;
             LocationResolver = new DefaultLocationResolver();
-            ContinueOnError = ReadContinueOnErrorEnvVar();
+            // See parameterless ctor for collecting-mode rationale.
+            ContinueOnError = true;
             Diagnostics = new DefaultDiagnosticCollector(ContinueOnError);
             Handler = new DefaultTranslationErrorHandler(LocationResolver, Diagnostics);
             OutputLanguages = outputLanguages;
@@ -112,8 +104,9 @@ namespace Plang.Compiler
         }
 
         /// <summary>
-        /// See <see cref="ICompilerConfiguration.ContinueOnError"/>. Wired from
-        /// <c>P_COMPILER_COLLECT_ERRORS</c> at construction. Phase 1 wiring only.
+        /// See <see cref="ICompilerConfiguration.ContinueOnError"/>. Defaults
+        /// to true (collecting mode). Flipped to false by the CLI flag
+        /// <c>--strict-errors</c> / <c>-se</c> in <c>PCompilerOptions</c>.
         /// </summary>
         public bool ContinueOnError { get; set; }
 

@@ -75,6 +75,11 @@ namespace Plang.Options
             Parser.AddArgument("pobserve-package", "po", "PObserve package name").IsHidden = true;
 
             Parser.AddArgument("debug", "d", "Enable debug logs", typeof(bool)).IsHidden = true;
+
+            Parser.AddArgument("strict-errors", "se",
+                "Abort on the first type error (legacy P 2.x behavior). " +
+                "By default, the compiler reports all type errors in one pass.",
+                typeof(bool));
             
             var pvGroup = Parser.GetOrCreateGroup("pverifier", "PVerifier options");
             pvGroup.AddArgument("timeout", "t", "Set SMT solver timeout in seconds", typeof(int)).IsHidden = true;
@@ -167,6 +172,17 @@ namespace Plang.Options
                     break;
                 case "debug":
                     compilerConfiguration.Debug = true;
+                    break;
+                case "strict-errors":
+                    // Opt out of collecting mode. Replaces the parameterless
+                    // ctor's default (true) — and reconstructs the collector +
+                    // handler so the strict-mode collector throws on first
+                    // Report rather than appending. Order matters: collector
+                    // first, then handler (which holds a reference to it).
+                    compilerConfiguration.ContinueOnError = false;
+                    compilerConfiguration.Diagnostics = new DefaultDiagnosticCollector(continueOnError: false);
+                    compilerConfiguration.Handler = new DefaultTranslationErrorHandler(
+                        compilerConfiguration.LocationResolver, compilerConfiguration.Diagnostics);
                     break;
                 case "timeout":
                     compilerConfiguration.Timeout = (int)option.Value;

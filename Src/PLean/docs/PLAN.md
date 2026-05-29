@@ -328,5 +328,6 @@ Phases 2–3 then have a concrete target to elaborate into.
   [`Src/PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs)
 - P parser grammar (verification syntax):
   [`Src/PCompiler/CompilerCore/Parser/PParser.g4`](../../PCompiler/CompilerCore/Parser/PParser.g4)
-- velvet (reference for shallow-embedded Lean DSL on Loom): `~/Downloads/velvet`
-- Loom (verification backend): `~/Downloads/loom`
+- velvet (reference for shallow-embedded Lean DSL on Loom):
+  https://github.com/verse-lab/velvet
+- Loom (verification backend): https://github.com/verse-lab/loom

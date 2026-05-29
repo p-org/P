@@ -404,8 +404,10 @@ Phase 1.
   most cross-file env extensions are `SimplePersistentEnvExtension`. The
   velvet survey confirms that for *transparent* cross-file aggregation,
   persistent is the right flavor (it has an `addImportedFn` callback that
-  unions imported maps; see velvet's `velvetObligations` in
-  `~/Downloads/velvet/.lake/packages/Loom/CaseStudies/Extension.lean:39-47`).
+  unions imported maps; see velvet's `velvetObligations`, which lives in
+  Loom's `CaseStudies/Extension.lean` —
+  https://github.com/verse-lab/velvet,
+  https://github.com/verse-lab/loom).
   We follow velvet here, not Veil — Veil works around this with its
   `#gen_spec` finalization step, which we don't need.
 - **Re-opening a `pmodule` after `import`.** When `Server.lean` opens
@@ -454,10 +456,13 @@ need to change.
 ## References
 
 - Veil module / `#gen_spec` pattern (closest precedent):
-  `~/Downloads/veil/Veil/DSL/Internals/StateExtensions.lean`,
-  `~/Downloads/veil/Veil/DSL/Specification/Syntax.lean`,
-  `~/Downloads/veil/Examples/Test/Composition.lean`
+  https://github.com/verse-lab/veil — see
+  `Veil/DSL/Internals/StateExtensions.lean`,
+  `Veil/DSL/Specification/Syntax.lean`, and
+  `Examples/Test/Composition.lean`.
 - velvet persistent-extension pattern (the merge-on-import callback):
-  `~/Downloads/velvet/.lake/packages/Loom/CaseStudies/Extension.lean:39-47`
+  https://github.com/verse-lab/velvet, with the relevant code in
+  Loom's `CaseStudies/Extension.lean`
+  (https://github.com/verse-lab/loom).
 - P parser grammar (the surface we are mirroring):
   [`PParser.g4`](../../PCompiler/CompilerCore/Parser/PParser.g4)

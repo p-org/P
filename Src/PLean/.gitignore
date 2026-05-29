@@ -1,0 +1,13 @@
+# Lake build artefacts and downloaded packages.
+.lake/
+
+# Compiled Lean artefacts that may appear at the project root.
+*.olean
+*.olean.lock
+*.olean.trace
+*.ilean
+*.c.o
+*.bc
+
+# OS / editor cruft.
+.DS_Store

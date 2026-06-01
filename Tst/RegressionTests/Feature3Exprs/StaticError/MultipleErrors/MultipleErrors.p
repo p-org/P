@@ -18,15 +18,18 @@
 //                        about the MECHANISM, not just the outcome.
 //                        (error 4)
 //
-// Behavior contracts:
-//   - Strict mode (default): exit 1 after the first error is reported.
-//     Identical to the historical behavior — this file is no different
-//     from any other single-error StaticError test in this mode.
-//   - Default (collecting): exit 1 after
-//     reporting all 4 independent errors. The Phase1DormancyTest
-//     fixture asserts `collecting_count >= strict_count`, which holds
-//     trivially with strict=1; the stronger acceptance check lives in
-//     MultiErrorAcceptanceTest.cs.
+// Behavior contracts (P 3.0+):
+//   - Default (collecting): exit 1 after reporting all 4 independent
+//     errors. This is the new default; what the user sees when running
+//     `p compile` on this file.
+//   - Strict mode (opt-out via `--strict-errors` / `-se`): exit 1 after
+//     the first error is reported. Identical to the historical pre-3.0
+//     behavior — in this mode this file is no different from any other
+//     single-error StaticError test.
+//   The Phase1DormancyTest fixture asserts
+//   `collecting_count >= strict_count`, which holds trivially with
+//   strict=1; the stronger acceptance check lives in
+//   MultiErrorAcceptanceTest.cs.
 
 event E;
 

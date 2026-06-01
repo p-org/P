@@ -44,7 +44,10 @@ namespace Plang.Options
         /// <summary>
         /// The command line parser to use.
         /// </summary>
-        private readonly CommandLineArgumentParser Parser;
+        // Internal so unit tests can inspect registered arguments (e.g. verify
+        // `--strict-errors` and its `-se` short alias exist) without going
+        // through the full Parse() pipeline.
+        internal readonly CommandLineArgumentParser Parser;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PCompilerOptions"/> class.
@@ -158,8 +161,11 @@ namespace Plang.Options
 
         /// <summary>
         /// Updates the checkerConfiguration with the specified parsed argument.
+        /// Internal so unit tests can verify per-flag behavior in isolation
+        /// without invoking the full Parse pipeline (which depends on file
+        /// existence checks and would Environment.Exit on bad input).
         /// </summary>
-        private static void UpdateConfigurationWithParsedArgument(CompilerConfiguration compilerConfiguration, CommandLineArgument option)
+        internal static void UpdateConfigurationWithParsedArgument(CompilerConfiguration compilerConfiguration, CommandLineArgument option)
         {
             switch (option.LongName)
             {

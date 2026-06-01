@@ -410,7 +410,7 @@ If you receive needs_guidance, ask the user the questions and call again with us
 
     @mcp.tool(
         name="peasy-ai-fix-all",
-        description="Iteratively compile, detect errors, and fix them in a loop until the project compiles successfully or max_iterations is reached. This is the recommended way to fix multiple compilation errors at once — it automatically re-compiles after each fix to catch cascading issues. With P compiler 3.0+ (multi-error mode is default), each compile reports all current errors so the loop converges in O(N/k) iterations instead of O(N). Use this instead of calling peasy-ai-fix-compile-error repeatedly."
+        description="Iteratively compile, detect errors, and fix them in a loop until the project compiles successfully or max_iterations is reached. This is the recommended way to fix multiple compilation errors at once — it automatically re-compiles after each fix to catch cascading issues. With P compiler 3.0+ (multi-error mode is default), each compile reports all current errors in one batch; the loop currently fixes the first one per iteration but still benefits because compile output covers the whole file at once. Use this instead of calling peasy-ai-fix-compile-error repeatedly."
     )
     def fix_iteratively(params: FixIterativelyParams) -> Dict[str, Any]:
         logger.info(f"[TOOL] peasy-ai-fix-all: {params.project_path}")

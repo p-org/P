@@ -21,9 +21,10 @@ namespace Plang.Compiler
     ///
     /// Lifecycle:
     /// <list type="bullet">
-    ///   <item><c>CompilerConfiguration.ReadContinueOnErrorEnvVar</c> seeds
-    ///     <see cref="ContinueOnError"/> from the
-    ///     <c>P_COMPILER_COLLECT_ERRORS</c> environment variable.</item>
+    ///   <item><c>CompilerConfiguration</c> defaults <see cref="ContinueOnError"/>
+    ///     to true (collecting mode). Users opt out via the
+    ///     <c>--strict-errors</c> / <c>-se</c> CLI flag handled by
+    ///     <c>PCompilerOptions</c>.</item>
     ///   <item>Visitors (<c>ExprVisitor</c>, <c>StatementVisitor</c>) report
     ///     through <c>handler.Diagnostics.Report(handler.X(...))</c>.</item>
     ///   <item><c>Analyzer.TolerantStep</c> wraps each gathering-pass iteration

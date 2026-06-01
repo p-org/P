@@ -91,9 +91,11 @@ structure PStateDecl where
 structure PMachineDecl where
   name      : Name
   leanName  : Name
-  /-- Events the machine may receive. Empty array = unconstrained. -/
+  /-- Events the machine receives — derived from the events handled across
+      its states (the union of each state's `handles`). -/
   receives  : Array Name
-  /-- Events the machine may send. Empty array = unconstrained. -/
+  /-- Events the machine sends — derived by scanning handler bodies for
+      `send` statements naming a bare-identifier event. -/
   sends     : Array Name
   states    : Array PStateDecl
   /-- True iff this is a `spec` machine. Spec machines are flattened into

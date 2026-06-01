@@ -149,6 +149,33 @@ private def collectStateMetadata (sname : Name) (isStart : Bool) (ref : Syntax)
     | _ => throwErrorAt it "unrecognised state body item"
   return decl
 
+/-- Recursively collect the event names appearing in `send` statements
+    anywhere within a syntax tree. Used to derive a machine's `sends` set
+    from its handler bodies. Only bare-identifier events are collected;
+    qualified or computed event expressions are skipped (they're rare and
+    `#pwf` validates short names anyway). The event term sits at child
+    index 3 of every send node (`send <target> , <ev> ...`). -/
+private partial def collectSentEvents (stx : Syntax) : Array Name := Id.run do
+  let mut acc : Array Name := #[]
+  let k := stx.getKind
+  if k == ``pSendNamed || k == ``pSendPayload || k == ``pSendNoPayload then
+    let evStx := stx[3]
+    if evStx.isIdent then
+      acc := acc.push evStx.getId
+  for arg in stx.getArgs do
+    acc := acc ++ collectSentEvents arg
+  return acc
+
+/-- Order-preserving dedup. -/
+private def dedupNames (xs : Array Name) : Array Name := Id.run do
+  let mut seen : NameSet := {}
+  let mut out : Array Name := #[]
+  for x in xs do
+    if !seen.contains x then
+      seen := seen.insert x
+      out := out.push x
+  return out
+
 /-- Walk the machine body, building per-state metadata and validating
     invariants (no nested machines, exactly one start state, no duplicates).
     Returns the populated states list and the raw body items (for replay). -/
@@ -183,12 +210,16 @@ def elabPMachineDecl : CommandElab := fun stx => do
   let modCtx ← requireLocalPModuleCtx "machine"
   let mname := name.getId
   let (states, body) ← collectMachineMetadata mname (items.map (·.raw))
+  -- Derive `receives` = union of events handled across states;
+  -- `sends` = events named in `send` statements anywhere in the body.
+  let receives := dedupNames (states.flatMap (·.handles))
+  let sends := dedupNames (body.flatMap collectSentEvents)
   let leanName := modCtx.name ++ mname
   addMachine
     { name      := mname
       leanName  := leanName
-      receives  := #[]
-      sends     := #[]
+      receives  := receives
+      sends     := sends
       states    := states
       isSpec    := false
       observed  := #[]
@@ -205,12 +236,14 @@ def elabPSpecDecl : CommandElab := fun stx => do
   let obs := stx[4].getSepArgs.map (·.getId)
   let itemsStx := stx[7].getArgs
   let (states, body) ← collectMachineMetadata mname itemsStx
+  let receives := dedupNames (states.flatMap (·.handles))
+  let sends := dedupNames (body.flatMap collectSentEvents)
   let leanName := modCtx.name ++ mname
   addMachine
     { name      := mname
       leanName  := leanName
-      receives  := #[]
-      sends     := #[]
+      receives  := receives
+      sends     := sends
       states    := states
       isSpec    := true
       observed  := obs

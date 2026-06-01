@@ -135,6 +135,11 @@ _Phase 0 complete. Phase 1 (Semantic core) is the next chunk of work._
   - PingPong demo rewritten to follow the Tutorial pattern: each side
     holds a `var` reference to the other, populated via a typed
     `entry (input : ...)` payload, sends use the local var.
+  - Machine `receives` / `sends` are *derived*, not user-specified:
+    `receives` = union of events handled across states; `sends` =
+    events named in `send` statements (collected by walking the body
+    Syntax at registration time). `#print_pmodule` shows the real sets
+    (e.g., `machine Server receives [ePing] sends [ePong]`).
 - **Surface keyword summary** (post-Phase 0):
   - From P verbatim: `event`, `eventset`, `enum`, `type`, `machine`,
     `spec`, `state`, `entry`, `on`, `goto`, `var`, `send`, `raise`,

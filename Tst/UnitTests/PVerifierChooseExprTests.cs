@@ -27,12 +27,18 @@ namespace UnitTests
                 new NamedTupleEntry { Name = "a", FieldNo = 0, Type = PrimitiveType.Int },
                 new NamedTupleEntry { Name = "b", FieldNo = 1, Type = PrimitiveType.Int }
             });
-            var choose = new ChooseExpr(ParserRuleContext.EmptyContext, new IntLiteralExpr(10), PrimitiveType.Int);
-            var tuple = new NamedTupleExpr(ParserRuleContext.EmptyContext, new IPExpr[] { choose, choose }, tupleType);
+            var chooseExpr = new ChooseExpr(
+                ParserRuleContext.EmptyContext,
+                new IntLiteralExpr(ParserRuleContext.EmptyContext, 10),
+                PrimitiveType.Int);
+            var tupleWithNestedChoose = new NamedTupleExpr(
+                ParserRuleContext.EmptyContext,
+                new IPExpr[] { chooseExpr, chooseExpr },
+                tupleType);
 
             var exprToString = typeof(PVerifierCodeGenerator)
                 .GetMethod("ExprToString", BindingFlags.NonPublic | BindingFlags.Instance)!;
-            var rendered = (string)exprToString.Invoke(generator, new object[] { tuple })!;
+            var rendered = (string)exprToString.Invoke(generator, new object[] { tupleWithNestedChoose })!;
 
             StringAssert.Contains("PChoose_integer(10)", rendered);
             Assert.That(chooseSet, Has.Count.EqualTo(1));

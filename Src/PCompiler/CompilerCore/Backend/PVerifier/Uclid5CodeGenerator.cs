@@ -1662,21 +1662,22 @@ public class PVerifierCodeGenerator : ICodeGenerator
         foreach (var choosePt in _chooseToDeclare)
         {
             var proc = GetChooseName(choosePt);
-            var inpType = TypeToString(choosePt);
+            var inputType = TypeToString(choosePt);
             switch (choosePt)
             {
                 case MapType mapType:
-                    EmitLine($"function {proc}(inp: {inpType}) : {TypeToString(mapType.KeyType)};");
-                    EmitLine(
-                        $"axiom forall (inp: {inpType}) :: {OptionIsSome(mapType.ValueType, $"inp[{proc}(inp)]")};");
+                    var chosenMapKey = $"{proc}(inp)";
+                    var mapChoiceInDomain = OptionIsSome(mapType.ValueType, $"inp[{chosenMapKey}]");
+                    EmitLine($"function {proc}(inp: {inputType}) : {TypeToString(mapType.KeyType)};");
+                    EmitLine($"axiom forall (inp: {inputType}) :: {mapChoiceInDomain};");
                     break;
                 case SetType setType:
-                    EmitLine($"function {proc}(inp: {inpType}) : {TypeToString(setType.ElementType)};");
-                    EmitLine($"axiom forall (inp: {inpType}) :: inp[{proc}(inp)];");
+                    EmitLine($"function {proc}(inp: {inputType}) : {TypeToString(setType.ElementType)};");
+                    EmitLine($"axiom forall (inp: {inputType}) :: inp[{proc}(inp)];");
                     break;
                 case PrimitiveType pt when pt.Equals(PrimitiveType.Int):
-                    EmitLine($"function {proc}(inp: {inpType}) : {TypeToString(pt)};");
-                    EmitLine($"axiom forall (inp: {inpType}) :: 0 <= {proc}(inp) && {proc}(inp) <= inp;");
+                    EmitLine($"function {proc}(inp: {inputType}) : {TypeToString(pt)};");
+                    EmitLine($"axiom forall (inp: {inputType}) :: 0 <= {proc}(inp) && {proc}(inp) <= inp;");
                     break;
                 default:
                     throw new NotSupportedException(

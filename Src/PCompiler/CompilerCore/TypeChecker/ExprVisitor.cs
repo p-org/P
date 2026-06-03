@@ -900,7 +900,7 @@ namespace Plang.Compiler.TypeChecker
                     return new InvariantGroupRefExpr(invGroup, context);
                 }
 
-                handler.Diagnostics.Report(handler.MissingDeclaration(context.iden(), "variable, enum element, spec machine, or event", symbolName));
+                handler.Diagnostics.Report(handler.MissingDeclaration(context.iden(), "name", symbolName));
                 return new ErrorExpr(context);
             }
 

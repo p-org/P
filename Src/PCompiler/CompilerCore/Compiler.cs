@@ -30,20 +30,20 @@ namespace Plang.Compiler
             }
             catch (TranslationException e)
             {
-                job.Output.WriteError("[Parser Error:]\n" + e.Message);
+                job.Output.WriteError("[Parser Error:] " + e.Message);
                 Environment.ExitCode = 1;
                 return Environment.ExitCode;
             }
             catch (NotSupportedException e)
             {
-                job.Output.WriteError("[NotSupportedError:]\n" + e.Message);
+                job.Output.WriteError("[NotSupportedError:] " + e.Message);
                 Environment.ExitCode = 1;
                 return Environment.ExitCode;
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
                 // A missing/locked/unreadable input .p file should be a clean error, not a crash.
-                job.Output.WriteError("[Parser Error:]\n" + e.Message);
+                job.Output.WriteError("[Parser Error:] " + e.Message);
                 Environment.ExitCode = 1;
                 return Environment.ExitCode;
             }
@@ -61,7 +61,7 @@ namespace Plang.Compiler
                 // wasn't routed through IDiagnosticCollector. Flush any errors
                 // that *were* collected too, so we don't swallow them when both
                 // paths fire.
-                job.Output.WriteError("[Error:]\n" + e.Message);
+                job.Output.WriteError("[Error:] " + e.Message);
                 FlushCollectedDiagnostics(job);
                 Environment.ExitCode = 1;
                 return Environment.ExitCode;
@@ -113,7 +113,7 @@ namespace Plang.Compiler
                 }
                 catch (NotImplementedException e)
                 {
-                    job.Output.WriteError("[NotImplementedError:]\n" + e.Message);
+                    job.Output.WriteError("[NotImplementedError:] " + e.Message);
                     Environment.ExitCode = 1;
                     return Environment.ExitCode;
                 }
@@ -138,8 +138,8 @@ namespace Plang.Compiler
                     }
                     catch (TranslationException e)
                     {
-                        job.Output.WriteError($"[{entry} Compiling Generated Code:]\n" + e.Message);
-                        job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue]\n" + e.Message);
+                        job.Output.WriteError($"[{entry} Compiling Generated Code:] " + e.Message);
+                        job.Output.WriteError("[THIS SHOULD NOT HAVE HAPPENED, please report it to the P team or create a GitHub issue] " + e.Message);
                         Environment.ExitCode = 2;
                         return Environment.ExitCode;
                     }
@@ -331,9 +331,12 @@ namespace Plang.Compiler
                 .ThenBy(t => t.key.line)
                 .ThenBy(t => t.key.col)
                 .ThenBy(t => t.idx); // stable tiebreaker preserves insertion order
+            var first = true;
             foreach (var (diag, _, _) in sorted)
             {
-                job.Output.WriteError("[Error:]\n" + diag.Message);
+                if (!first) job.Output.WriteError("");
+                first = false;
+                job.Output.WriteError("[Error:] " + diag.Message);
             }
         }
 

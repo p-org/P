@@ -8,7 +8,7 @@ P is a state machine based programming language for formally modeling and specif
 
 ## Project Architecture
 
-The P framework consists of four main components organized in `Src/`:
+The P framework consists of five main components organized in `Src/`:
 
 - **PCompiler** (`Src/PCompiler/`): The P language compiler that parses P programs and generates target code
   - `CompilerCore/`: Core compilation logic and AST handling
@@ -19,6 +19,13 @@ The P framework consists of four main components organized in `Src/`:
   - `CoverageReportMerger/`: Tool for merging coverage reports
 
 - **PEx** (`Src/PEx/`): Java-based execution engine that provides symbolic execution capabilities
+
+- **PObserve** (`Src/PObserve/`): Runtime monitoring that validates service logs against P specification monitors, bridging design-time verification with production behavior
+  - `PObserve/`: Core runtime monitor that replays log events through P spec machines
+  - `PObserveCommons/`: Shared utilities/types between the monitor and consumers
+  - `PObserveJavaUnitTest/`: Java unit tests for the monitor
+  - `PObserveRegressionTesting/`: End-to-end regression suite that exercises monitors against recorded log corpora
+  - `Examples/`: Reference integrations showing how to wire service logs into a P monitor
 
 - **PeasyAI** (`Src/PeasyAI/`): AI-powered system for P language development assistance
   - `src/core/`: Core logic including different interaction modes

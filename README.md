@@ -68,8 +68,10 @@ noise:
 ```
 $ p compile
 [Error:] [bad.p:6:4] got type: bool, expected: int
-[Error:] [bad.p:8:13] could not find variable 'undeclaredVar'
-[Error:] [bad.p:9:16] incompatible binary operands int and string
+
+[Error:] [bad.p:8:13] could not find name 'undeclaredVar'
+
+[Error:] [bad.p:9:16] operator '+' requires both operands to be int or both float; got int and string
 ```
 
 Use `--strict-errors` (or `-se`) to restore the legacy abort-on-first

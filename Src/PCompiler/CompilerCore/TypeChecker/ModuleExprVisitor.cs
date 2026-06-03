@@ -233,7 +233,7 @@ namespace Plang.Compiler.TypeChecker
             {
                 if (!globalScope.Get(monName.GetText(), out Machine monitor))
                 {
-                    throw handler.MissingDeclaration(monName, "spec machine", monName.GetText());
+                    throw handler.MissingDeclaration(monName, "spec monitor", monName.GetText());
                 }
 
                 if (!monitor.IsSpec)

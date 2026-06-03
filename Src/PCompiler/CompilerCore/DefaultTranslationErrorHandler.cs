@@ -69,19 +69,19 @@ namespace Plang.Compiler
         public Exception RedeclareGlobalParam(ParserRuleContext location, IPDecl duplicate, IPDecl existing)
         {
             return IssueError(location,
-                $"'{duplicate.Name}' redeclares a global param '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
+                $"'{duplicate.Name}' redeclares global param '{existing.Name}' (originally declared at {locationResolver.GetLocation(existing.SourceLocation)})");
         }
-        
+
         public Exception UndeclaredGlobalParam(ParserRuleContext location, string name)
         {
             return IssueError(location,
-                $"global param '{name}' is undeclared");
+                $"undeclared global param '{name}'");
         }
-        
+
         public Exception ModifyGlobalParam(ParserRuleContext location, IPDecl existing)
         {
             return IssueError(location,
-                $"try to modify a global param '{existing.Name}' at {locationResolver.GetLocation(existing.SourceLocation)}");
+                $"cannot modify global param '{existing.Name}' (declared at {locationResolver.GetLocation(existing.SourceLocation)})");
         }
 
         public Exception InvalidTwise(ParserRuleContext location, IPDecl testDecl, string errMsg)
@@ -93,7 +93,7 @@ namespace Plang.Compiler
         public Exception CyclicProof(ParserRuleContext location, ProofCommand cmd)
         {
             return IssueError(location,
-                $"Proof commands form a cycle at {locationResolver.GetLocation(cmd.SourceLocation)}");
+                $"proof commands form a cycle (starting at {locationResolver.GetLocation(cmd.SourceLocation)})");
         }
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)
         {
@@ -118,7 +118,7 @@ namespace Plang.Compiler
 
         public Exception IllegalTypeInCoerceExpr(ParserRuleContext location)
         {
-            return IssueError(location, "expected an interface or int or float type");
+            return IssueError(location, "coerce expects an interface, int, or float type");
         }
 
         public Exception NoMainOrTestCase(string message)
@@ -131,25 +131,35 @@ namespace Plang.Compiler
             var outlierEvent =
                 newType.AllowedPermissions.Value.First(x => !oldType.AllowedPermissions.Value.Contains(x));
             return IssueError(context,
-                $"illegal Coerce, {oldType.OriginalRepresentation} permissions is not a superset of {newType.OriginalRepresentation} (e.g., event {outlierEvent.Name})");
+                $"illegal coerce: permissions of '{oldType.OriginalRepresentation}' are not a superset of '{newType.OriginalRepresentation}' (e.g., event '{outlierEvent.Name}')");
         }
 
         public Exception StaticFunctionNotAllowedAsHandler(ParserRuleContext funName, string name)
         {
             return IssueError(funName,
-                $"global functions or foreign functions are not directly allowed as handlers, {name}");
+                $"function '{name}' cannot be used as a handler: global and foreign functions are not allowed as handlers");
         }
 
         public Exception TypeMismatch(ParserRuleContext location, PLanguageType actual, params PLanguageType[] expected)
         {
             return IssueError(location,
-                $"got type: {actual.OriginalRepresentation}, expected: {string.Join("; ", expected.Select(t => t.OriginalRepresentation))}");
+                $"got type: {FormatType(actual)}, expected: {string.Join("; ", expected.Select(FormatType))}");
         }
 
         public Exception TypeMismatch(IPExpr expr, params TypeKind[] expected)
         {
             return IssueError(expr.SourceLocation,
-                $"got type: {expr.Type.OriginalRepresentation}, expected: {string.Join(", ", expected.Select(e => e.Name))}");
+                $"got type: {FormatType(expr.Type)}, expected: {string.Join(", ", expected.Select(e => e.Name))}");
+        }
+
+        // PrimitiveType.Null's OriginalRepresentation is the literal "null", which
+        // shows up in diagnostics like `expected: null` when an event has no
+        // payload or a function returns no value. Readers commonly misread that
+        // as the null literal; "(no value)" describes the actual semantics.
+        private static string FormatType(PLanguageType t)
+        {
+            var rep = t.OriginalRepresentation;
+            return rep == "null" ? "(no value)" : rep;
         }
 
         public Exception MissingNamedTupleEntry(PParser.IdenContext location,
@@ -162,12 +172,12 @@ namespace Plang.Compiler
         public Exception MissingMachineField(PParser.IdenContext location, Machine machine)
         {
             return IssueError(location,
-                $"machine {machine.Name} has no '{location.GetText()}' field");
+                $"machine '{machine.Name}' has no field '{location.GetText()}'");
         }
         public Exception MissingEventField(PParser.IdenContext location, Event pevent)
         {
             return IssueError(location,
-                $"machine {pevent.Name} payload has no '{location.GetText()}' field");
+                $"payload of event '{pevent.Name}' has no field '{location.GetText()}'");
         }
 
         public Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple)
@@ -184,7 +194,7 @@ namespace Plang.Compiler
 
         public Exception MisplacedThis(PParser.PrimitiveContext location)
         {
-            return IssueError(location, location.THIS().Symbol, "keyword THIS used outside machine");
+            return IssueError(location, location.THIS().Symbol, "keyword 'this' used outside a machine");
         }
 
         public Exception BinOpTypeMismatch(
@@ -194,13 +204,13 @@ namespace Plang.Compiler
         {
             return IssueError(location,
                 location.op,
-                $"expected either both float or both int; got {lhsType.OriginalRepresentation} and {rhsType.OriginalRepresentation}");
+                $"operator '{location.op.Text}' requires both operands to be int or both float; got {lhsType.OriginalRepresentation} and {rhsType.OriginalRepresentation}");
         }
 
         public Exception MoreThanOneParameterForHandlers(ParserRuleContext sourceLocation, int count)
         {
             return IssueError(sourceLocation,
-                $"functions at entry or exit and do or goto transitions cannot take more than 1 parameter, provided function expects {count} parameters");
+                $"entry, exit, do, and goto handlers take at most 1 parameter; function expects {count}");
         }
 
         public Exception ParseFailure(FileInfo file, string message)
@@ -211,19 +221,19 @@ namespace Plang.Compiler
         public Exception IllegalChooseSubExprType(PParser.ChooseExprContext context, PLanguageType subExprType)
         {
             return IssueError(context,
-                $"choose expects a parameter of type int (max value) or a collection type (seq, set, or map) got a parameter of type {subExprType}");
+                $"'choose' expects int (max value) or a collection (seq, set, or map); got type {subExprType}");
         }
 
         public Exception IllegalChooseSubExprValue(PParser.ChooseExprContext context, int numChoices)
         {
             return IssueError(context,
-                $"choose expects a parameter with at most 10000 choices, got {numChoices} choices instead.");
+                $"'choose' expects at most 10000 choices; got {numChoices}");
         }
 
         public Exception IllegalFunctionUsedInSpecMachine(Function function, Machine callerOwner)
         {
             return IssueError(function.SourceLocation,
-                $"Method {DeclarationName(function)} is non-deterministic or has side-effects (new or send or receive or announce), hence cannot be used in spec machine {DeclarationName(callerOwner)}.");
+                $"function '{DeclarationName(function)}' is non-deterministic or has side effects (new/send/receive/announce); cannot be called from spec monitor '{DeclarationName(callerOwner)}'");
         }
 
         public Exception EmittedNullEvent(IPExpr evtExpr)
@@ -233,153 +243,153 @@ namespace Plang.Compiler
 
         public Exception MissingStartState(Machine machine)
         {
-            return IssueError(machine.SourceLocation, $"machine {machine.Name} has no start state");
+            return IssueError(machine.SourceLocation, $"machine '{machine.Name}' has no start state");
         }
 
         public Exception ChangedStateMidTransition(ParserRuleContext location, Function method)
         {
             return IssueError(location,
-                $"Method {DeclarationName(method)} is used as a transition function, but might change state here.");
+                $"function '{DeclarationName(method)}' is used as a transition handler but might change state here");
         }
 
         public Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol)
         {
             return IssueError(context,
                 symbol,
-                "Print format placeholders must contain only digits. Escape braces by doubling them.");
+                "print format placeholders must contain only digits; escape braces by doubling them");
         }
 
         public Exception InvalidStringExprFormat(PParser.FormatedStringContext context, IToken symbol)
         {
             return IssueError(context,
                 symbol,
-                "String expr format placeholders must contain only digits. Escape braces by doubling them.");
+                "string format placeholders must contain only digits; escape braces by doubling them");
         }
 
         public Exception InvalidBindExpr(ParserRuleContext location, string message)
         {
-            return IssueError(location, $"invalid bind operation. {message}");
+            return IssueError(location, $"invalid bind: {message}");
         }
 
         public Exception NotClosed(ParserRuleContext sourceLocation, string message)
         {
-            return IssueError(sourceLocation, $"Module not closed. {message}");
+            return IssueError(sourceLocation, $"module not closed: {message}");
         }
 
         public Exception NoMain(ParserRuleContext sourceLocation, string message)
         {
-            return IssueError(sourceLocation, $"Illegal main machine. {message}");
+            return IssueError(sourceLocation, $"illegal main machine: {message}");
         }
 
         public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, Event illegalEvent)
         {
             return IssueError(location,
-                $"invalid assert operation. event {illegalEvent.Name} in observes set of {monitor.Name} is not in the sends set of the module");
+                $"invalid assert: event '{illegalEvent.Name}' in observes set of '{monitor.Name}' is not in the sends set of the module");
         }
 
         public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor)
         {
             return IssueError(location,
-                $"invalid assert operation. monitor {monitor.Name} already attached in the module");
+                $"invalid assert: spec monitor '{monitor.Name}' is already attached in the module");
         }
 
         public Exception InvalidHideEventExpr(ParserRuleContext location, string message)
         {
-            return IssueError(location, $"invalid hide event operation. {message}");
+            return IssueError(location, $"invalid hide event: {message}");
         }
 
         public Exception InvalidHideInterfaceExpr(ParserRuleContext location, string message)
         {
-            return IssueError(location, $"invalid hide interface operation. {message}");
+            return IssueError(location, $"invalid hide interface: {message}");
         }
 
         public Exception InvalidRenameExpr(ParserRuleContext location, string message)
         {
-            return IssueError(location, $"invalid rename operation. {message}");
+            return IssueError(location, $"invalid rename: {message}");
         }
 
         public Exception InvalidCompositionExpr(ParserRuleContext location, string message)
         {
-            return IssueError(location, $"invalid composition operation. {message}");
+            return IssueError(location, $"invalid composition: {message}");
         }
 
         public Exception InternalError(ParserRuleContext location, Exception inner)
         {
-            return IssueError(location, "[Internal Error]: " + inner.Message);
+            return IssueError(location, "internal compiler error (please report): " + inner.Message);
         }
 
         public Exception TwoStartStates(Machine machine, State state)
         {
             return IssueError(machine.SourceLocation,
-                $"machine {machine.Name} has two start states, {machine.StartState.Name} and {state.Name}.");
+                $"machine '{machine.Name}' has two start states: '{machine.StartState.Name}' and '{state.Name}'");
         }
 
         public Exception ValueOutOfRange(ParserRuleContext location, string type)
         {
-            return IssueError(location, $"value not in range for {type}.");
+            return IssueError(location, $"value is out of range for type '{type}'");
         }
 
         public Exception NullTransitionInMonitor(ParserRuleContext location, Machine monitor)
         {
-            return IssueError(location, $"cannot transition on null event in monitor {monitor.Name}");
+            return IssueError(location, $"cannot transition on null event in spec monitor '{monitor.Name}'");
         }
 
         public Exception IllegalMonitorOperation(ParserRuleContext location, IToken operation, Machine monitor)
         {
             return IssueError(location, operation,
-                $"{monitor.Name}: $, $$, this, new, send, announce, receive, and pop are not allowed in monitors");
+                $"'$', '$$', 'this', 'new', 'send', 'announce', 'receive', and 'pop' are not allowed in spec monitor '{monitor.Name}'");
         }
 
         public Exception DeferredEventInMonitor(ParserRuleContext location, Machine monitor)
         {
-            return IssueError(location, $"{monitor.Name}: Cannot defer events in monitors.");
+            return IssueError(location, $"events cannot be deferred in spec monitor '{monitor.Name}'");
         }
 
         public Exception NotAllPathsReturn(Function function)
         {
             return IssueError(function.Body.SourceLocation,
-                $"not all paths in function {DeclarationName(function)} return a value!");
+                $"not all paths in function '{DeclarationName(function)}' return a value");
         }
 
         public Exception ExpectedMonitor(ParserRuleContext location, Machine machine)
         {
-            return IssueError(location, $"expected a specification machine, but got {machine.Name}");
+            return IssueError(location, $"expected a spec monitor; got '{machine.Name}'");
         }
 
         public Exception RaiseEventInNonVoidFunction(ParserRuleContext context)
         {
-            return IssueError(context, "raising an event only allowed in functions that do not return a value.");
+            return IssueError(context, "'raise' is only allowed in functions that do not return a value");
         }
 
         public Exception ChangeStateInNonVoidFunction(ParserRuleContext context)
         {
-            return IssueError(context, "changing a state only allowed in functions that do not return a value.");
+            return IssueError(context, "state changes are only allowed in functions that do not return a value");
         }
 
         public Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation)
         {
-            return IssueError(argSourceLocation, "Print is a pure statement and so does not require linear arguments.");
+            return IssueError(argSourceLocation, "'print' is a pure statement and does not accept linear arguments");
         }
 
         public Exception StringAssignStmtLinearArgument(ParserRuleContext argSourceLocation)
         {
-            return IssueError(argSourceLocation, "String interpolation does not support linear arguments.");
+            return IssueError(argSourceLocation, "string interpolation does not support linear arguments");
         }
 
         public Exception DuplicateReceiveCase(ParserRuleContext location, Event pEvent)
         {
-            return IssueError(location, $"Event {pEvent.Name} appears twice in receive statement argument list");
+            return IssueError(location, $"event '{pEvent.Name}' appears twice in receive statement");
         }
 
         public Exception BareLoopControlFlow(string stmtName, ParserRuleContext context)
         {
-            return IssueError(context, $"Loop control flow statement '{stmtName}' cannot appear outside a loop body");
+            return IssueError(context, $"'{stmtName}' cannot appear outside a loop body");
         }
 
         public Exception ExitFunctionCannotTakeParameters(ParserRuleContext sourceLocation, int count)
         {
             return IssueError(sourceLocation,
-                $"Exit functions cannot have input parameters, the provided function expects {count} parameters");
+                $"exit handlers cannot take parameters; function expects {count}");
         }
 
         private Exception IssueError(ParserRuleContext location, string message)
@@ -400,12 +410,12 @@ namespace Plang.Compiler
         public string SpecObservesSetIncompleteWarning(ParserRuleContext ctx, Event ev, Machine machine)
         {
             return
-                $"[!Warning!]\n[{locationResolver.GetLocation(ctx, ctx.start)}] Event {ev.Name} is not in the observes list of the spec machine {machine.Name}. The event-handler is never triggered as the event is not observed by the spec.\n[!Warning!]";
+                $"[Warning:] [{locationResolver.GetLocation(ctx, ctx.start)}] event '{ev.Name}' is not in the observes list of spec monitor '{machine.Name}'; the handler will never be triggered";
         }
 
         public Exception DuplicateBindings(ParserRuleContext ctx, Interface @interface)
         {
-            return IssueError(ctx, $"Interface or machine {@interface.Name} is mentioned or bounded multiple times in the module");
+            return IssueError(ctx, $"interface or machine '{@interface.Name}' is mentioned or bound multiple times in the module");
         }
     }
 }

@@ -357,7 +357,7 @@ namespace Plang.Compiler.TypeChecker
             var argsList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             if (!table.Lookup(funName, out Function fun))
             {
-                handler.Diagnostics.Report(handler.MissingDeclaration(context.fun, "function or function prototype", funName));
+                handler.Diagnostics.Report(handler.MissingDeclaration(context.fun, "function", funName));
                 return new NoStmt(context);
             }
 

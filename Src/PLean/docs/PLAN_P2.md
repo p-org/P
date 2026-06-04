@@ -99,19 +99,91 @@ Numbering continues so `D8` here is `D8` in any cross-reference.
    Phase 0). The `send` macro continues to ascribe its named-tuple
    literal to this abbrev.
 
-3. **D10 — Machine-name-as-type stays an `abbrev` for `MachineRef`.**
-   In the surface a user writes `var server : Server` (Server being
-   another machine). For Phase 2 we keep
-   `abbrev <MachineName> := MachineRef` — the machine union is
-   reflected in `Sig.S`/`Sig.F`, not in a per-machine refined type.
-   A future phase could refine to `MachineRef`-with-tag if cross-
-   machine type confusion becomes a real bug.
+3. **D10 — Machine names become *distinct* types, each a single-field
+   wrapper around `MachineRef`.** *Revised from the initial draft of
+   this plan; the original "abbrev `<MachineName> := MachineRef`"
+   loses the type distinction we need for spec-side quantification.*
 
-4. **D11 — Handler defs go from `Stub.PM` to `PM <Mod>.Sig`.** That
-   is the *single* repointing that makes the surface verifiable. The
-   `(this : MachineRef)` first-parameter convention is unchanged
-   (M1 already uses it). The handler-name scheme
+   Specifications that come in Phase 3 (and the temporal user
+   invariants we already write today) will want to quantify over
+   *just* the refs of one machine kind:
+
+   ```p
+   -- "every server eventually receives a client's ping"
+   ∀ s : Server, ∃ p, sent p ∧ p targets s ∧ p is ePing
+   ```
+
+   With `abbrev Server := MachineRef`, the bound variable `s` ranges
+   over *every* machine ref in the system — Server, Client, future
+   spec machines, every user-defined kind. The invariant doesn't say
+   what the user means.
+
+   The fix: emit a single-field wrapper per machine, plus a coercion
+   to `MachineRef` so existing primitives (`send`, `goto`, …) still
+   accept it transparently:
+
+   ```lean
+   -- emitted by `#gen_module` for each machine `Server { ... }`:
+   structure Server where
+     ref : MachineRef
+     deriving DecidableEq, Inhabited
+
+   instance : Coe Server MachineRef := ⟨Server.ref⟩
+   ```
+
+   Each machine kind is now a *definitionally distinct* Lean type
+   (so Lean's elaborator rejects `var c : Client` initialised with a
+   `Server`-typed value), but transparently usable wherever
+   `MachineRef` is expected (so `send server, ev, …` continues to
+   compile when `server : Server`).
+
+   Phase 3's obligation generator can then synthesise quantification
+   restricted to the right machine kind — `∀ s : Server, …` binds
+   exactly the server refs.
+
+   *Veil's analogue:* `type node` declares a fresh sort + `Nonempty`
+   instance and invariants quantify `∀ L1 L2 : node, …`. PLean's
+   wrapper-struct version is the same idea with a concrete carrier
+   (so we don't need `axiom`s and can `#eval`-test).
+
+   *Alternative considered:* `opaque Server : NonemptyType` + an
+   axiomatic `Server.toRef : Server → MachineRef`. Mirrors the
+   existing PLean foreign-sort pattern but introduces `axiom`s for
+   no benefit over the structure form. Rejected.
+
+   *Tracked risk:* `R13 — Coe semantics across primitives` (see
+   below). Lean's coercion may not fire through every macro form;
+   we may need explicit `(server.ref)` projections in some emission
+   sites.
+
+4. **D11 — Handler defs go from `Stub.PM` to `PM <Mod>.Sig`, with a
+   *typed* `this`.** That is the *single* repointing that makes the
+   surface verifiable. M1's `(this : MachineRef)` convention shifts
+   slightly per D10: the handler for state `S` of machine `M` takes
+   `(this : M)` (the wrapper struct), not `(this : MachineRef)`. The
+   `Coe M MachineRef` instance from D10 means handler-body call sites
+   that pass `this` to a primitive (`send this, …`) keep compiling
+   without change. The handler-name scheme
    `<machine>.<state>.<event>_handler` is unchanged.
+
+   Concretely, M1's
+
+   ```lean
+   def Server.Idle.ePing_handler
+       (this : MachineRef) (replyTo : MachineRef) (lbl : Lbl) : M' Unit
+   ```
+
+   becomes (under Phase 2 surface emission)
+
+   ```lean
+   def Server.Idle.ePing_handler
+       (this : Server) (replyTo : MachineRef) (lbl : Lbl) : M' Unit
+   ```
+
+   The `replyTo` parameter type comes from the event payload — it
+   stays `MachineRef` for now (Phase 2 doesn't try to type the
+   `replyTo` field of `ePing`'s payload as `Client`; that's a
+   refinement-of-payload-types extension, post-v1).
 
 5. **D12 — `var x : T` becomes a real machine field, not a Lean
    section variable.** Phase 0 emits `variable (x : T)` so handler
@@ -122,8 +194,15 @@ Numbering continues so `D8` here is `D8` in any cross-reference.
      `<MachineName>.Fields`;
    - `<MachineName>.Fields` is a `structure` synthesised by
      `#gen_module`, contributing to `Sig.F`;
-   - `var`-reads compile to `(machineState this).fields.x`;
-   - `var`-assignments compile to a `modify`-style state update.
+   - `var`-reads compile to `(machineState this.ref).fields.x`
+     (the `.ref` projection follows from `this`'s typed wrapper, D10);
+   - `var`-assignments compile to a `modify`-style state update on
+     `machines this.ref`.
+
+   When the field is itself a *machine* (`var server : Server`), the
+   type stored in `Fields` is the wrapper struct. Storing typed
+   refs is the whole point of D10: a future spec like `∀ c : Client,
+   c.server = (some-fixed-Server-ref)` becomes statable.
 
    This is the substantive change of Phase 2 — it's what makes a
    handler body actually *do* something.
@@ -240,21 +319,36 @@ notation in a Lean `Prop` and checks it elaborates.
 are built. After all `event`/`type`/`enum`/`machine` decls are
 collected, emit (in order):
 
-1. `<Mod>.E` — an `inductive` whose ctors are the events. Each
+1. **Per-machine wrapper types (D10).** For each machine declared
+   in the module, emit:
+
+   ```lean
+   structure <MachineName> where ref : MachineRef
+     deriving DecidableEq, Inhabited
+   instance : Coe <MachineName> MachineRef := ⟨<MachineName>.ref⟩
+   ```
+
+   These come *first* because subsequent steps reference them: the
+   `Fields` records may store machine wrappers as field types; the
+   handler defs use the wrapper as `this`'s type.
+
+2. `<Mod>.E` — an `inductive` whose ctors are the events. Each
    ctor's payload type is the event's `payloadTy` (single `Unit`-
    carrying ctor for events without payload).
-2. `<Mod>.S` — `inductive` over states across all machines (PVerifier
+3. `<Mod>.S` — `inductive` over states across all machines (PVerifier
    pattern). Ctor names are `<MachineName>_<StateName>` to avoid
    collision when two machines share state names.
-3. `<Mod>.Fields` — a structure with one field per `var x : T`,
-   prefixed by machine name (e.g. `Server_client`).
-4. `<Mod>.G := Unit` (Phase 2 leaves goto payloads trivial; the
+4. `<Mod>.Fields` — a structure with one field per `var x : T`,
+   prefixed by machine name (e.g. `Server_client`). When `T` is
+   another machine name, the field type is the wrapper struct from
+   step 1, so machine-typed fields carry their kind.
+5. `<Mod>.G := Unit` (Phase 2 leaves goto payloads trivial; the
    surface doesn't expose a way to declare goto-payload types yet
    anyway).
-5. `abbrev <Mod>.Sig : ProgramSig := { E := E, G := G, S := S, F := Fields }`.
-6. `abbrev <Mod>.PM' (α : Type) := PM Sig α` — the per-program
+6. `abbrev <Mod>.Sig : ProgramSig := { E := E, G := G, S := S, F := Fields }`.
+7. `abbrev <Mod>.PM' (α : Type) := PM Sig α` — the per-program
    monad alias.
-7. `abbrev <Mod>.GS := GlobalState Sig`.
+8. `abbrev <Mod>.GS := GlobalState Sig`.
 
 These mirror the Phase-1 hand-written ones in `HandPingPong.lean`
 lines 30–61 verbatim, just under a synthesised name.
@@ -299,11 +393,11 @@ Concretely:
 
 | Old emission | New emission |
 |---|---|
-| `Stub.send target ev payload` | `send (P := <Mod>.Sig) target ev` (payload is a *named* `Sig.E` ctor application) |
-| `Stub.raise ev payload` | `raise (P := <Mod>.Sig) this ev` |
-| `Stub.goto stTag payload` | `goto (P := <Mod>.Sig) this <state-ctor> .unit` |
-| `Stub.new tag args` | `newMachine (P := <Mod>.Sig) this <tag>` |
-| `Stub.announce ev p` | `announce (P := <Mod>.Sig) this ev` |
+| `Stub.send target ev payload` | `send (P := <Mod>.Sig) (target : MachineRef) ev` (payload is a *named* `Sig.E` ctor application; `target` is coerced to `MachineRef` via D10's `Coe`) |
+| `Stub.raise ev payload` | `raise (P := <Mod>.Sig) this.ref ev` |
+| `Stub.goto stTag payload` | `goto (P := <Mod>.Sig) this.ref <state-ctor> .unit` |
+| `Stub.new tag args` | `newMachine (P := <Mod>.Sig) this.ref <tag>` |
+| `Stub.announce ev p` | `announce (P := <Mod>.Sig) this.ref ev` |
 | `let _ := lhs; let _ := rhs; pure ()` (assignment) | A real `modify`/state update via `<Mod>.GS.fields.<machine>_<field>` |
 
 The `<Mod>.Sig` is in scope because the handler def is elaborated
@@ -332,22 +426,25 @@ This is where the Phase-0 stubs were truly empty. Two parts:
 `variable`) compiles to:
 
 ```lean
-(← (get : StateT <Mod>.GS DivM <Mod>.GS)).machines this
+(← (get : StateT <Mod>.GS DivM <Mod>.GS)).machines this.ref
   |>.fields.<MachineName>_client
 ```
 
 Lean's `do`-notation lift handles the `←`. The chain projects out
-the per-machine `Fields` slice and then the named field.
+the per-machine `Fields` slice and then the named field. The
+`this.ref` projection unwraps the `<MachineName>` wrapper struct
+(D10) — `s.machines` is keyed by `MachineRef`, not by the typed
+wrapper.
 
 **5b. Assignments.** `client = expr` becomes:
 
 ```lean
 do
   let s ← (get : ...)
-  let curr := s.machines this
+  let curr := s.machines this.ref
   let newFields := { curr.fields with <MachineName>_client := expr }
   let newMachineState := { curr with fields := newFields }
-  set (s.updateMachine this newMachineState)
+  set (s.updateMachine this.ref newMachineState)
 ```
 
 This is verbose enough to warrant a `_root_.PLean.writeField` helper
@@ -370,8 +467,12 @@ The current emission is `Stub.goto (Name.hash str) ()`. New
 emission:
 
 ```lean
-goto (P := <Mod>.Sig) this <Mod>.S.<MachineName>_<StateName> GotoP.unit
+goto (P := <Mod>.Sig) this.ref <Mod>.S.<MachineName>_<StateName> GotoP.unit
 ```
+
+(`this.ref` because `Primitives.goto` is keyed on `MachineRef`, not
+the typed wrapper. Coercion would also work but the explicit `.ref`
+keeps the emitted code readable.)
 
 The state ctor lookup is mechanical — `Sig.S` is a single inductive
 with ctor `<MachineName>_<StateName>` per (machine, state) pair, and
@@ -473,6 +574,11 @@ Concretely, after Phase 2:
   (no regression).
 - `Tests/Bootstrap/*` and `Tests/Semantics/*` still build (Phase-0
   and Phase-1 regressions).
+- A small standalone test confirms machine types are *distinct*
+  (`PingPong.Server` and `PingPong.Client` are not the same type;
+  `#check (fun (s : Server) => (s : Client))` fails to elaborate)
+  and quantifiable (`∀ s : Server, True` parses and elaborates).
+  This is the D10 acceptance test.
 - STATUS.md: Phase 2 → ☑, M2 ☑, decision log entries for D8–D17
   added.
 
@@ -538,6 +644,37 @@ Inherits PLAN_P1's residual list. New risks specific to Phase 2:
   hits, fix them before deletion. *Mitigation:* the grep + the
   full Examples/Tests build during step 7.
 
+- **R13 — `Coe <MachineName> MachineRef` doesn't fire through every
+  emission site.** D10's typed-machine wrapper relies on Lean's
+  coercion machinery to keep primitives (`send`, `goto`, …) calling
+  with `MachineRef`. Coercions are tried at *application* sites, but
+  some Phase-2 macro emissions construct intermediate terms (e.g.,
+  the synthesised `Label.target` field of an event ctor's payload)
+  where Lean may not insert the `Coe`. *Mitigation:* the emission
+  table in step 4 explicitly threads `.ref` projections rather than
+  trusting `Coe`. Reserve `Coe` for *user* code (where the user
+  writes `send server, ev, …` and we want it to compile without
+  requiring `.ref`); use explicit projections in macro-emitted
+  source so we don't depend on coercion timing. Test in
+  `Tests/Surface/MachineTyping.lean` — round-trip a handler body
+  with both forms and confirm both elaborate.
+
+- **R14 — Spec-side machine quantification (Phase 3 preview).** The
+  whole point of D10's typed wrappers is that a Phase-3 invariant
+  like `∀ s : Server, …` quantifies over the Server kind. But the
+  *image* of `Server.ref : Server → MachineRef` is the set of refs
+  the system has actually allocated as Servers — we have no machine
+  fact saying so, just a runtime invariant the dispatcher would
+  maintain. For Phase 2 this isn't a problem (we don't generate
+  invariants yet); flag it for Phase 3 when the obligation
+  generator must decide whether `∀ s : Server` ranges over (a) the
+  whole `Server` type (every `Server.mk r` for any `r : MachineRef`),
+  or (b) just refs that are actually present in `s.machines` with
+  kind Server (the intended reading). The likely fix is a
+  `validRef : Server → GlobalState Sig → Prop` predicate that
+  obligation generation conjoins into the quantifier guard. **No
+  Phase-2 work needed; just don't paint into a corner.**
+
 ---
 
 ## Hand-off to Phase 3
@@ -548,6 +685,10 @@ By end of Phase 2:
   `<Mod>.Sig`/`<Mod>.PM'`/`<Mod>.GS` machinery, the
   `#derive_lifted_wp` lemmas, and handler defs that type-check at
   the real `PM`.
+- Each machine name is a *distinct* Lean type (D10), so Phase 3 can
+  generate quantifiers like `∀ s : Server, …` that bind only over
+  the right machine kind. R14 flags the question of how to
+  restrict that quantifier to *allocated* refs — Phase 3 settles it.
 - M2 hand-writes the `theorem …_correct := by wpgen <;> ...` lemmas
   per handler.
 - `#pverify` checks "well-formed + handler-defs type-check"; it

@@ -7,13 +7,15 @@ This is the executable counterpart of M1's triples — confirming the
 primitives compute the buffer/counter updates we proved them to
 preserve.
 
-Mirrors Cashmere's `#eval (prog args).run.run.run initState` idiom
-(Loom's `CaseStudies/Cashmere/Cashmere.lean:152`), adapted for our
-two-transformer stack.
+Mirrors Cashmere's `#eval (prog args).run.run.run initState` idiom,
+adapted for our two-transformer stack: the `.run.run.run` chain
+unwraps `NonDetT → StateT → DivM`; the final `DivM` value is
+destructured via `DivM.run` (`Inhabited`-defaulted on divergence,
+which the terminating test programs never trigger).
 
-NB: the `.run.run.run` chain unwraps `NonDetT → StateT → DivM`. The
-final `DivM` value is destructured manually below so we can `decide`
-its `.res _` constructor.
+The test bodies use plain `--` comments (rather than `/-- … -/`
+docstrings) because Lean's linter rightly flags docstrings on
+anonymous `example` declarations.
 -/
 import PLean.Semantics.Monad
 import PLean.Semantics.Primitives
@@ -56,20 +58,20 @@ def runPM {α : Type} [Inhabited α]
 
 /-! ## Tests -/
 
-/-- `pure` is the identity on state. -/
+-- `pure` is the identity on state.
 example :
     let (_, s') := runPM (pure () : M' Unit) init0
     s'.actionCount = 0 := by
   decide
 
-/-- `send` enqueues exactly one label and bumps the counter. -/
+-- `send` enqueues exactly one label and bumps the counter.
 example :
     let (_, s') := runPM (send (P := Sig) 1 Ev.ePing) init0
     s'.actionCount = 1 ∧
     s'.sent { target := 1, action := .event Ev.ePing, actionCount := 0 } = true := by
   decide
 
-/-- Two consecutive `send`s yield two distinct counters. -/
+-- Two consecutive `send`s yield two distinct counters.
 example :
     let prog : M' Unit := do
       send (P := Sig) 1 Ev.ePing
@@ -78,8 +80,8 @@ example :
     s'.actionCount = 2 := by
   decide
 
-/-- `markReceived` updates `received` without touching `sent` or the
-counter. -/
+-- `markReceived` updates `received` without touching `sent` or the
+-- counter.
 example :
     let lbl : Sig.Label := { target := 0, action := .event Ev.ePing, actionCount := 7 }
     let (_, s') := runPM (markReceived (P := Sig) lbl) init0

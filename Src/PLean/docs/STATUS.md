@@ -29,17 +29,25 @@ rather than narrating.
 
 ## Active Work
 
-_Phase 1 complete. Phase 2 (Registry + minimal surface) is next: repoint
-the `Surface/Stmt.lean` macros from `PLean.Stub` onto the real
-`PLean.send`/`goto`/etc., have `#gen_module` synthesise per-program
-`EventOrGoto`/`MachineState` unions and emit `#derive_lifted_wp` for
-the `get`/`set` operations on the concrete `GlobalState P`._
+_Phase 1 complete (commit `dbd3bb03b`, branch `dev/p-lean`, in sync
+with origin). Phase 2 (Registry + minimal surface) is next._
 
-**Phase 2 entry point** — re-express the Phase-1 hand-written ping-pong
-([`HandPingPong.lean`](../Tests/Semantics/HandPingPong.lean)) in PLean
-surface syntax and verify M2 (the surface-syntax variant verifies via
-the same triple shapes M1 proved). The hand-written file is the
-elaboration target the macros must produce.
+**Phase 2 entry point** — detailed plan in [`PLAN_P2.md`](PLAN_P2.md).
+The bridge work that takes the Phase-0 surface macros (which still
+elaborate onto `PLean.Stub.PM := Id`) and repoints them onto Phase-1's
+real `PM := NonDetT (StateT (GlobalState P) DivM)`. Highlights:
+- `#gen_module M` synthesises per-program union types
+  (`<Mod>.E`/`<Mod>.S`/`<Mod>.Fields`/`<Mod>.Sig`) from the registry
+  (D8) and emits `#derive_lifted_wp` for the concrete `get`/`set`
+  (D14) — both currently hand-written in `HandPingPong.lean`.
+- `Surface/Stmt.lean` macros target real `PM` primitives (D11);
+  `var x = expr` becomes a real machine-state field write (D12);
+  `goto S` becomes a real transition (D13).
+- `≺` notation lands in `Surface/Notation.lean` (D16).
+- `Internal/Stub.lean` is **retired** at end of Phase 2 (D15).
+- **M2 exit milestone**: the four-file Phase-0 PingPong demo, with
+  the temporal user invariant added, *verifies* via `wpgen` + raw
+  Loom primitives — proofs match the M1 shape modulo naming.
 
 **Current surface keyword truth** (authoritative; the per-file syntax
 decls are the source):
@@ -473,9 +481,9 @@ don't rewrite history.
 
 ---
 
-_Last updated: 2026-06-04 (Phase 1 closed; M1 reached. Real `PM` over
-Loom + `≺`-based temporal invariant proved end-to-end on hand-written
-ping-pong. SMT round-trip via cvc5 confirmed.)_
+_Last updated: 2026-06-04 (Phase 1 closed; PLAN_P2.md drafted. Phase 2
+ahead: bridge surface macros onto real PM, synthesise per-program
+unions in `#gen_module`, retire `Stub.lean`, target M2.)_
 
 ## Document Index
 - [`PLAN.md`](PLAN.md) — overall implementation plan (all phases). NOTE: its
@@ -483,4 +491,7 @@ ping-pong. SMT round-trip via cvc5 confirmed.)_
   PLAN_P1's Decisions D1/D3.
 - [`PLAN_P0.md`](PLAN_P0.md) — detailed Phase 0 (Bootstrap) plan
 - [`PLAN_P1.md`](PLAN_P1.md) — detailed Phase 1 (Semantic core) plan
+- [`PLAN_P2.md`](PLAN_P2.md) — detailed Phase 2 (Registry + minimal surface)
+  plan — repoints the Phase-0 macro path onto Phase-1's real `PM`,
+  retires `Stub.lean`, target M2
 - `STATUS.md` (this file) — living tracker

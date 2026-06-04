@@ -13,9 +13,11 @@ unwraps `NonDetT → StateT → DivM`; the final `DivM` value is
 destructured via `DivM.run` (`Inhabited`-defaulted on divergence,
 which the terminating test programs never trigger).
 
-The test bodies use plain `--` comments (rather than `/-- … -/`
-docstrings) because Lean's linter rightly flags docstrings on
-anonymous `example` declarations.
+Tests are `theorem`s (not `example`s) because `decide`'s reflection
+step generates auxiliary `match_*` constants and needs a stable
+declaration name to attach them to. `example`s would compile but
+the IDE-side `nativeDecide` path complains about the missing
+`_example.match_*` constants.
 -/
 import PLean.Semantics.Monad
 import PLean.Semantics.Primitives
@@ -58,33 +60,31 @@ def runPM {α : Type} [Inhabited α]
 
 /-! ## Tests -/
 
--- `pure` is the identity on state.
-example :
-    let (_, s') := runPM (pure () : M' Unit) init0
-    s'.actionCount = 0 := by
+/-- `pure` is the identity on state. -/
+theorem pure_preserves_state :
+    (runPM (pure () : M' Unit) init0).snd.actionCount = 0 := by
   decide
 
--- `send` enqueues exactly one label and bumps the counter.
-example :
-    let (_, s') := runPM (send (P := Sig) 1 Ev.ePing) init0
+/-- `send` enqueues exactly one label and bumps the counter. -/
+theorem send_enqueues_one :
+    let s' := (runPM (send (P := Sig) 1 Ev.ePing) init0).snd
     s'.actionCount = 1 ∧
     s'.sent { target := 1, action := .event Ev.ePing, actionCount := 0 } = true := by
   decide
 
--- Two consecutive `send`s yield two distinct counters.
-example :
+/-- Two consecutive `send`s yield two distinct counters. -/
+theorem send_send_increments_twice :
     let prog : M' Unit := do
       send (P := Sig) 1 Ev.ePing
       send (P := Sig) 1 Ev.ePong
-    let (_, s') := runPM prog init0
-    s'.actionCount = 2 := by
+    (runPM prog init0).snd.actionCount = 2 := by
   decide
 
--- `markReceived` updates `received` without touching `sent` or the
--- counter.
-example :
+/-- `markReceived` updates `received` without touching `sent` or the
+counter. -/
+theorem markReceived_only_touches_received :
     let lbl : Sig.Label := { target := 0, action := .event Ev.ePing, actionCount := 7 }
-    let (_, s') := runPM (markReceived (P := Sig) lbl) init0
+    let s' := (runPM (markReceived (P := Sig) lbl) init0).snd
     s'.received lbl = true ∧ s'.actionCount = 0 := by
   decide
 

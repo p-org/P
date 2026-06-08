@@ -22,32 +22,32 @@ triples discharge automatically the same way M1's did.
 ## What Phase 1 left in place
 
 ### The real semantic core (used)
-- `PLean.Semantics.{Label, GlobalState, Monad, Primitives, Predicates,
-  Default}` — fully built, parameterised over `ProgramSig`.
-- `Tests/Semantics/HandPingPong.lean` — M1, the elaboration target
+- `PLean.Semantics.{`[`Label`](../PLean/Semantics/Label.lean)`, `[`GlobalState`](../PLean/Semantics/GlobalState.lean)`, `[`Monad`](../PLean/Semantics/Monad.lean)`, `[`Primitives`](../PLean/Semantics/Primitives.lean)`, `[`Predicates`](../PLean/Semantics/Predicates.lean)`,
+  `[`Default`](../PLean/Semantics/Default.lean)`}` — fully built, parameterised over [`ProgramSig`](../PLean/Semantics/GlobalState.lean#L31).
+- [`Tests/Semantics/HandPingPong.lean`](../Tests/Semantics/HandPingPong.lean) — M1, the elaboration target
   Phase 2 must reproduce from surface syntax.
 
 ### The Phase-0 macro path (still elaborating onto stubs)
-- `Surface/Module.lean` — `pmodule M ... end M` works (cross-file
+- [`Surface/Module.lean`](../PLean/Surface/Module.lean) — [`pmodule M`](../PLean/Surface/Module.lean#L31) ... end M works (cross-file
   aggregation, registry).
-- `Surface/Types.lean` — `type N` (foreign), `type N = …` (alias),
+- [`Surface/Types.lean`](../PLean/Surface/Types.lean) — `type N` (foreign), `type N = …` (alias),
   `type N = (f : T, …)` (named-tuple struct), `enum N { … }`. Already
   defers materialisation to `#gen_module`.
-- `Surface/Events.lean` — `event ev : T` registers metadata; at
+- [`Surface/Events.lean`](../PLean/Surface/Events.lean) — `event ev : T` registers metadata; at
   `#gen_module`-time emits `def ev : EventTag := <hash>` and
   `abbrev ev_payload : Type := T`. **`EventTag := Nat`** today —
   Phase 2 must replace this with a typed event-union projection.
-- `Surface/Machine.lean` — `machine M { var x : T; state S { … } }`.
+- [`Surface/Machine.lean`](../PLean/Surface/Machine.lean) — `machine M { var x : T; state S { … } }`.
   Body `Syntax` saved verbatim; `#gen_module` replays it inside the
   pmodule namespace, opens `namespace M`, and emits handler defs of
   shape `def Idle.ePing_handler (this : Stub.MachineRef) (req : T) :
   Stub.PM Unit := do …`.
-- `Surface/Stmt.lean` — statement macros emit
+- [`Surface/Stmt.lean`](../PLean/Surface/Stmt.lean) — statement macros emit
   `PLean.Stub.{send, raise, goto, new, announce}` calls. **Every one
   of these targets the stub.**
-- `Surface/Verify.lean` — `invariant`, `paxiom`, `init-holds`,
+- [`Surface/Verify.lean`](../PLean/Surface/Verify.lean) — `invariant`, `paxiom`, `init-holds`,
   `function`, `pinstance`. All defer to `#gen_module`.
-- `Commands/{PWf, PVerify, PrintModule}.lean` — structural validation;
+- `Commands/{`[`PWf`](../PLean/Commands/PWf.lean)`, `[`PVerify`](../PLean/Commands/PVerify.lean)`, `[`PrintModule`](../PLean/Commands/PrintModule.lean)`}.lean` — structural validation;
   no obligation generation yet.
 
 ### The gap (concretely)
@@ -213,7 +213,7 @@ Numbering continues so `D8` here is `D8` in any cross-reference.
 
 7. **D14 — `#gen_module` emits `#derive_lifted_wp` for the
    per-program `get`/`set`.** The hand-written M1 has these on
-   lines 79–85 of `HandPingPong.lean`; Phase 2 emits them
+   [lines 79–85 of `HandPingPong.lean`](../Tests/Semantics/HandPingPong.lean#L79-L85); Phase 2 emits them
    automatically once `<Mod>.Sig` exists. Required so `wpgen` can
    step through handler bodies.
 
@@ -247,12 +247,12 @@ concerned):
 
 | Need from Phase 1 | Where it lives |
 |---|---|
-| `PM`, `PProp`, `ProgramSig` | `Semantics/Monad.lean` |
-| `Label`, `EventOrGoto`, `MachineState` | `Semantics/Label.lean` |
-| `GlobalState`, update helpers | `Semantics/GlobalState.lean` |
-| `send`/`goto`/`raise`/`announce`/`markReceived` | `Semantics/Primitives.lean` |
-| `inflight`/`sent`/`isEvent?`/`targets?`/`stateOf`/`precedes` | `Semantics/Predicates.lean` |
-| `DefaultInvariants` | `Semantics/Default.lean` |
+| [`PM`](../PLean/Semantics/Monad.lean#L38), [`PProp`](../PLean/Semantics/Monad.lean#L42), [`ProgramSig`](../PLean/Semantics/GlobalState.lean#L31) | [`Semantics/Monad.lean`](../PLean/Semantics/Monad.lean) |
+| [`Label`](../PLean/Semantics/Label.lean#L68), [`EventOrGoto`](../PLean/Semantics/Label.lean#L50), [`MachineState`](../PLean/Semantics/Label.lean#L80) | [`Semantics/Label.lean`](../PLean/Semantics/Label.lean) |
+| [`GlobalState`](../PLean/Semantics/GlobalState.lean#L57), update helpers | [`Semantics/GlobalState.lean`](../PLean/Semantics/GlobalState.lean) |
+| [`send`](../PLean/Semantics/Primitives.lean#L35)/[`goto`](../PLean/Semantics/Primitives.lean#L48)/[`raise`](../PLean/Semantics/Primitives.lean#L42)/[`announce`](../PLean/Semantics/Primitives.lean#L59)/[`markReceived`](../PLean/Semantics/Primitives.lean#L67) | [`Semantics/Primitives.lean`](../PLean/Semantics/Primitives.lean) |
+| [`inflight`](../PLean/Semantics/Predicates.lean#L25)/[`sent`](../PLean/Semantics/Predicates.lean#L29)/`isEvent?`/[`targets?`](../PLean/Semantics/Predicates.lean#L49)/[`stateOf`](../PLean/Semantics/Predicates.lean#L56)/[`precedes`](../PLean/Semantics/Predicates.lean#L71) | [`Semantics/Predicates.lean`](../PLean/Semantics/Predicates.lean) |
+| [`DefaultInvariants`](../PLean/Semantics/Default.lean#L53) | [`Semantics/Default.lean`](../PLean/Semantics/Default.lean) |
 
 Everything Phase 1 promised. Phase 2 imports these, doesn't modify
 them.
@@ -264,18 +264,18 @@ them.
 ```
 Src/PLean/PLean/
   Surface/
-    Notation.lean          # NEW: `≺`, `is`, `targets`, `inflight`, `sent` notations
-    Stmt.lean              # MODIFIED: macros target real PM (D11/D12)
-    Machine.lean           # MODIFIED: emit machine state record + handler defs
-    Events.lean            # MODIFIED: emit event union contributors
+    [Notation.lean](../PLean/Surface/Notation.lean)          # NEW: `≺`, `is`, `targets`, `inflight`, `sent` notations
+    [Stmt.lean](../PLean/Surface/Stmt.lean)              # MODIFIED: macros target real PM (D11/D12)
+    [Machine.lean](../PLean/Surface/Machine.lean)           # MODIFIED: emit machine state record + handler defs
+    [Events.lean](../PLean/Surface/Events.lean)            # MODIFIED: emit event union contributors
     (Module/Types/Verify.lean — unchanged from Phase 0)
 
   Commands/
-    GenModule.lean         # NEW (was nested in Machine.lean): the heavy
+    [GenModule.lean](../PLean/Commands/GenModule.lean)         # NEW (was nested in Machine.lean): the heavy
                            #   lifter — synthesises Sig from registry, emits
                            #   the union types, emits #derive_lifted_wp,
                            #   emits handler defs over real PM
-    PVerify.lean           # MODIFIED: add "handler defs exist + type-check"
+    [PVerify.lean](../PLean/Commands/PVerify.lean)           # MODIFIED: add "handler defs exist + type-check"
                            #   structural check (D17)
     (PWf/PrintModule.lean — unchanged)
 
@@ -283,11 +283,11 @@ Src/PLean/PLean/
     Stub.lean              # DELETED at end of Phase 2 (D15)
 
 Src/PLean/Tests/Surface/
-  Phase2PingPong.lean      # NEW: M2 — surface-syntax ping-pong with the
+  [Phase2PingPong.lean](../Tests/Surface/Phase2PingPong.lean)      # NEW: M2 — surface-syntax ping-pong with the
                            #   four handler triples discharged via wpgen +
                            #   raw Loom primitives, mirroring HandPingPong.lean
                            #   shape exactly
-  Combinators.lean         # NEW: `.run`-based regression that the surface-
+  [Combinators.lean](../Tests/Surface/Combinators.lean)         # NEW: `.run`-based regression that the surface-
                            #   emitted handlers compute the right buffer
                            #   deltas (mirrors Tests/Semantics/Combinators)
 ```
@@ -300,11 +300,11 @@ The order minimises rework: each step preserves a green build, with
 the stub-vs-real bridge introduced incrementally.
 
 ### 1. **`≺` notation + accessor desugaring** — small, isolated, low risk
-*(`Surface/Notation.lean`, ~½ day)*
+*([`Surface/Notation.lean`](../PLean/Surface/Notation.lean), ~½ day)*
 
-Add `notation:50 a " ≺ " b => PLean.precedes a b` and the
+Add `notation:50 a " ≺ " b => `[`PLean.precedes`](../PLean/Semantics/Predicates.lean#L71)` a b` and the
 `a is e` / `a targets m` / `inflight a` notations as front-end sugar
-for the predicates already defined in `Semantics/Predicates.lean`.
+for the predicates already defined in [`Semantics/Predicates.lean`](../PLean/Semantics/Predicates.lean).
 No registry changes. Confirms the predicates' API works through
 Lean's notation system before we depend on it in M2.
 
@@ -312,7 +312,7 @@ Exit: a tiny test in `Tests/Surface/Notation.lean` that uses each
 notation in a Lean `Prop` and checks it elaborates.
 
 ### 2. **`Sig` synthesis from registry** — the load-bearing step
-*(new `Commands/GenModule.lean` extracted from `Surface/Machine.lean`,
+*(new [`Commands/GenModule.lean`](../PLean/Commands/GenModule.lean) extracted from [`Surface/Machine.lean`](../PLean/Surface/Machine.lean),
 ~1 day)*
 
 `#gen_module M` becomes the place where the per-program union types
@@ -350,8 +350,8 @@ collected, emit (in order):
    monad alias.
 8. `abbrev <Mod>.GS := GlobalState Sig`.
 
-These mirror the Phase-1 hand-written ones in `HandPingPong.lean`
-lines 30–61 verbatim, just under a synthesised name.
+These mirror the Phase-1 hand-written ones in [`HandPingPong.lean`
+lines 30–61](../Tests/Semantics/HandPingPong.lean#L30-L61) verbatim, just under a synthesised name.
 
 > **Implementation note:** `#gen_module` is currently inside
 > `Surface/Machine.lean`. Extract to its own file before adding this
@@ -361,7 +361,7 @@ Exit: `#gen_module PingPong` followed by `#check @PingPong.Sig` and
 `#check @PingPong.PM' Unit` resolve.
 
 ### 3. **`#derive_lifted_wp` emission for `get`/`set`** — small follow-up
-*(`Commands/GenModule.lean`, ~½ day)*
+*([`Commands/GenModule.lean`](../PLean/Commands/GenModule.lean#L249), ~½ day)*
 
 After step 2, `<Mod>.GS` exists. Append two
 `#derive_lifted_wp` calls per pmodule:
@@ -416,7 +416,7 @@ shape. Handler defs now have type `PM PingPong.Sig Unit`, not
 `Stub.PM Unit` — verify with `#check`.
 
 ### 5. **`var`-reads and assignments become real state updates** — D12
-*(`Surface/Machine.lean` materialisation + `Surface/Stmt.lean`
+*([`Surface/Machine.lean`](../PLean/Surface/Machine.lean) materialisation + [`Surface/Stmt.lean`](../PLean/Surface/Stmt.lean)
 assignment macro, ~1 day)*
 
 This is where the Phase-0 stubs were truly empty. Two parts:
@@ -461,7 +461,7 @@ Exit: a hand-test where `Server.Idle.entry`'s body
 with a `.run`-style trace and a triple proof.
 
 ### 6. **`goto S` → real transition** — D13
-*(`Surface/Stmt.lean`, ~½ day)*
+*([`Surface/Stmt.lean`](../PLean/Surface/Stmt.lean#L137-L148), ~½ day)*
 
 The current emission is `Stub.goto (Name.hash str) ()`. New
 emission:
@@ -470,7 +470,7 @@ emission:
 goto (P := <Mod>.Sig) this.ref <Mod>.S.<MachineName>_<StateName> GotoP.unit
 ```
 
-(`this.ref` because `Primitives.goto` is keyed on `MachineRef`, not
+(`this.ref` because [`Primitives.goto`](../PLean/Semantics/Primitives.lean#L48) is keyed on `MachineRef`, not
 the typed wrapper. Coercion would also work but the explicit `.ref`
 keeps the emitted code readable.)
 
@@ -479,7 +479,7 @@ with ctor `<MachineName>_<StateName>` per (machine, state) pair, and
 the emitter knows both names from the lexical context.
 
 Exit: a state transition compiles, and `goto` updates
-`currentState`/`stage` per `Primitives.goto`.
+`currentState`/`stage` per [`Primitives.goto`](../PLean/Semantics/Primitives.lean#L48).
 
 ### 7. **`Stub.lean` retirement** — D15
 *(~½ day)*
@@ -501,7 +501,7 @@ This is the "we don't need stubs anymore" milestone.
 ### 8. **Phase-0 PingPong demo verifies — M2** — the exit milestone
 *(`Tests/Surface/Phase2PingPong.lean`, ~1-2 days)*
 
-Take the existing `Examples/PingPong/{Events,Server,Client,Top}.lean`
+Take the existing `Examples/PingPong/{`[`Events`](../Examples/PingPong/Events.lean)`,`[`Server`](../Examples/PingPong/Server.lean)`,`[`Client`](../Examples/PingPong/Client.lean)`,`[`Top`](../Examples/PingPong/Top.lean)`}.lean`
 files (or copies under `Tests/Surface/`), add the temporal user
 invariant via `≺`, then *prove* the four handler triples by:
 
@@ -530,8 +530,8 @@ Exit: M2 ☑ in STATUS.md.
 ### 9. **Combinator regression for the surface** — non-blocker, runs
 parallel to 8 *(~½ day)*
 
-`Tests/Surface/Combinators.lean` mirrors the Phase-1
-`Tests/Semantics/Combinators.lean` but exercises *surface-emitted*
+[`Tests/Surface/Combinators.lean`](../Tests/Surface/Combinators.lean) mirrors the Phase-1
+[`Tests/Semantics/Combinators.lean`](../Tests/Semantics/Combinators.lean) but exercises *surface-emitted*
 handler defs. Confirms the surface's `var x = expr` actually mutates
 state by `.run`-evaluating it. The Phase-1 file became regression for
 the primitives; this becomes regression for the surface.
@@ -602,7 +602,7 @@ Inherits PLAN_P1's residual list. New risks specific to Phase 2:
   `PM'`/`GS` aliases → `#derive_lifted_wp` → handler defs. Get the
   order wrong and the synthesised inductive is unfindable when a
   handler tries to reference its ctor. *Mitigation:* enforce the
-  order in `Commands/GenModule.lean` with a clearly-numbered
+  order in [`Commands/GenModule.lean`](../PLean/Commands/GenModule.lean) with a clearly-numbered
   emission pipeline and a comment matching this list.
 
 - **R9 — Cross-file `Sig` consistency.** A `pmodule M` may span
@@ -729,8 +729,8 @@ flagship.
 - [`Surface/Stmt.lean`](../PLean/Surface/Stmt.lean) — macros to
   repoint
 - [`Surface/Machine.lean`](../PLean/Surface/Machine.lean) —
-  `#gen_module` materialisation (extract to `Commands/GenModule.lean`)
-- [`Internal/Stub.lean`](../PLean/Internal/Stub.lean) — to be
+  `#gen_module` materialisation (extract to [`Commands/GenModule.lean`](../PLean/Commands/GenModule.lean))
+- `Internal/Stub.lean` — to be
   deleted at end of Phase 2
 
 **Loom dependency** (vendored under the build tree; cited by module

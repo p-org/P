@@ -47,10 +47,14 @@ structure LocalPModuleCtx where
   machines   : NameMap PMachineDecl  := {}
   machineOrder : Array Name          := #[]
   invariants : NameMap PInvariantDecl := {}
+  invariantOrder : Array Name         := #[]
   axioms     : NameMap PAxiomDecl    := {}
   instances  : NameMap PInstanceDecl := {}
   inits      : Array PInitDecl       := #[]
   pures      : NameMap PPureDecl     := {}
+  lemmas     : NameMap PLemmaDecl    := {}
+  lemmaOrder : Array Name            := #[]
+  proofs     : Array PProofDecl      := #[]
   deriving Inhabited
 
 /-- Cross-file registry: merged fragments keyed on module name. -/
@@ -90,10 +94,14 @@ private def mergeCtx (a b : LocalPModuleCtx) : LocalPModuleCtx :=
     machines     := b.machines.foldl   (fun m k v => m.insert k v) a.machines
     machineOrder := mergeOrder a.machineOrder b.machineOrder
     invariants   := b.invariants.foldl (fun m k v => m.insert k v) a.invariants
+    invariantOrder := mergeOrder a.invariantOrder b.invariantOrder
     axioms       := b.axioms.foldl     (fun m k v => m.insert k v) a.axioms
     instances    := b.instances.foldl  (fun m k v => m.insert k v) a.instances
     inits        := a.inits ++ b.inits
     pures        := b.pures.foldl      (fun m k v => m.insert k v) a.pures
+    lemmas       := b.lemmas.foldl     (fun m k v => m.insert k v) a.lemmas
+    lemmaOrder   := mergeOrder a.lemmaOrder b.lemmaOrder
+    proofs       := a.proofs ++ b.proofs
   }
 
 /-- Persistent registry of completed module fragments. Imports from
@@ -202,7 +210,9 @@ def addMachine (d : PMachineDecl) : CommandElabM Unit := do
 def addInvariant (d : PInvariantDecl) : CommandElabM Unit := do
   let ctx ← requireLocalPModuleCtx "invariant"
   errIfDuplicate "invariant" ctx.invariants d.name d.ref
-  commit { ctx with invariants := ctx.invariants.insert d.name d }
+  commit { ctx with
+    invariants := ctx.invariants.insert d.name d
+    invariantOrder := ctx.invariantOrder.push d.name }
 
 def addAxiom (d : PAxiomDecl) : CommandElabM Unit := do
   let ctx ← requireLocalPModuleCtx "axiom"
@@ -222,5 +232,24 @@ def addPure (d : PPureDecl) : CommandElabM Unit := do
   let ctx ← requireLocalPModuleCtx "pure"
   errIfDuplicate "pure" ctx.pures d.name d.ref
   commit { ctx with pures := ctx.pures.insert d.name d }
+
+def addLemma (d : PLemmaDecl) : CommandElabM Unit := do
+  let kind := if d.isTheorem then "Theorem" else "Lemma"
+  let ctx ← requireLocalPModuleCtx kind
+  -- REVIEW_P3 §4.7: `default` is reserved for the `prove default;`
+  -- sentinel. A user-named `Lemma default { ... }` would silently be
+  -- shadowed by the sentinel during obligation generation; reject it
+  -- at registration time with a clear message instead.
+  if d.name == `default then
+    withRef d.ref <|
+      throwError s!"`{kind}` name 'default' is reserved for the sanity-invariant sentinel used by `prove default;`"
+  errIfDuplicate kind ctx.lemmas d.name d.ref
+  commit { ctx with
+    lemmas     := ctx.lemmas.insert d.name d
+    lemmaOrder := ctx.lemmaOrder.push d.name }
+
+def addProof (d : PProofDecl) : CommandElabM Unit := do
+  let ctx ← requireLocalPModuleCtx "Proof"
+  commit { ctx with proofs := ctx.proofs.push d }
 
 end PLean

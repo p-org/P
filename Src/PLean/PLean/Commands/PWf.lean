@@ -59,7 +59,7 @@ def runPWf (ctx : LocalPModuleCtx) : Array PWfDiag := Id.run do
         ({} : NameSet)
           |>.insert `Nat |>.insert `Int |>.insert `Bool
           |>.insert `String |>.insert `Unit
-          |>.insert `PLean.Stub.MachineRef
+          |>.insert `PLean.MachineRef
           |>.insert `MachineRef
       if !typeNames.contains pTy && !leanBuiltins.contains pTy then
         diags := diags.push

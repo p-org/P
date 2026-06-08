@@ -44,14 +44,15 @@ def raise (this : MachineRef) (ev : P.E) : PM P Unit :=
 
 /-- `goto stateTag gotoPayload`: enqueue a goto label addressed to the
 running machine, bump the counter, and update the machine's
-`currentState`/`stage`. Mirrors PVerifier's `GotoStmt` branch. -/
+`currentState`/`stage`. Preserves the machine's `kind` field (D20).
+Mirrors PVerifier's `GotoStmt` branch. -/
 def goto (this : MachineRef) (newState : P.S) (gotoArg : P.G) : PM P Unit := do
   let s ← (get : StateT (GlobalState P) DivM (GlobalState P))
   let lbl : P.Label :=
     { target := this, action := .goto gotoArg, actionCount := s.actionCount }
   let curr := s.machines this
   let nextMachine : P.MachineState :=
-    { stage := true, currentState := newState, fields := curr.fields }
+    { stage := true, currentState := newState, fields := curr.fields, kind := curr.kind }
   set (((s.addSent lbl).bumpActionCount).updateMachine this nextMachine)
 
 /-- `announce ev`: broadcast variant of `send`. Phase-4 spec-machine

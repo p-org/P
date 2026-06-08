@@ -87,7 +87,7 @@ The composing instances all ship in the **`Loom`** library (not CaseStudies):
   stack is therefore:
 
   ```lean
-  abbrev PM (α : Type) := NonDetT (StateT GlobalState DivM) α    -- assertion lattice: GlobalState → Prop
+  abbrev [PM](../PLean/Semantics/Monad.lean#L38-L39) (α : Type) := NonDetT (StateT GlobalState DivM) α    -- assertion lattice: GlobalState → Prop
   ```
 
   (We drop Cashmere's `ExceptT String` layer — P-handler safety verification
@@ -141,7 +141,7 @@ triple to a VC, then `loom_solver`-equivalent (`grind` by default; the
 which needs **no external solver binary**). PLean's own `loom_solve`-equivalent
 tactic — a thin wrapper mirroring the `loom_solve` elaborator in
 `CaseStudies/Tactic.lean`, built from the Loom-lib primitives above — lands in
-[`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean) in **Phase 3**, where it was
+`Verify/Tactic.lean` in **Phase 3**, where it was
 always scheduled. The fallback option (add `CaseStudies` as a dependency target
 and `import CaseStudies.Tactic` wholesale) is rejected for v1: that code pulls
 in ProofWidgets panels and is example-grade, not a stable API.
@@ -168,7 +168,7 @@ top-level `P_ActionCount : integer`
 The Lean encoding folds `actionCount` into the record:
 
 ```lean
-structure GlobalState where
+structure [GlobalState](../PLean/Semantics/GlobalState.lean#L57-L68) where
   sent        : Label → Bool          -- mirrors [Label]boolean
   received    : Label → Bool
   machines    : MachineRef → MachineState
@@ -186,7 +186,7 @@ structure GlobalState where
 ### Label / EventOrGoto (mirror [`:757-766`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L757-L766))
 
 ```lean
-structure Label where
+structure [Label](../PLean/Semantics/Label.lean#L68-L72) where
   target      : MachineRef
   action      : EventOrGoto
   actionCount : Nat            -- the global counter at creation time
@@ -210,11 +210,11 @@ exists, so Phase 1 just defines the `def` and Phase 2 adds notation.
 ### Default invariants (mirror [`:1189-1201`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L1189-L1201))
 
 ```lean
-def UniqueActions    (s : GlobalState) : Prop :=
+def [UniqueActions](../PLean/Semantics/Default.lean#L23-L26)    (s : GlobalState) : Prop :=
   ∀ a b, a ≠ b → s.sent a → s.sent b → a.actionCount ≠ b.actionCount
-def IncreasingCount  (s : GlobalState) : Prop :=
+def [IncreasingCount](../PLean/Semantics/Default.lean#L36-L37)  (s : GlobalState) : Prop :=
   ∀ a, s.sent a → a.actionCount < s.actionCount
-def ReceivedSubsetSent (s : GlobalState) : Prop :=
+def [ReceivedSubsetSent](../PLean/Semantics/Default.lean#L46-L47) (s : GlobalState) : Prop :=
   ∀ a, s.received a → s.sent a
 ```
 
@@ -243,7 +243,7 @@ it from the registry for every `(M, S, ev)`.
 
 ## Confirmed design decisions (Phase 1)
 
-1. **D1 — Monad stack: `PM := NonDetT (StateT GlobalState DivM)`** (NonDetT
+1. **D1 — Monad stack: [`PM := NonDetT (StateT GlobalState DivM)`](../PLean/Semantics/Monad.lean#L38-L39)** (NonDetT
    outermost). Deviates from PLAN.md's inner-NonDetT order; justified by
    Cashmere being the only surviving reference and by Loom's loop/lift
    machinery assuming NonDetT on top. Confirmed empirically in Task 1.
@@ -251,13 +251,13 @@ it from the registry for every `(M, S, ev)`.
 3. **D3 — PLean discharges triples with raw Loom primitives in Phase 1; builds
    its own `loom_solve`-equivalent in Phase 3.** `loom_solve` itself is
    CaseStudies-only and not depended upon.
-4. **D4 — `sent`/`received : Label → Bool`** (matches PVerifier `[Label]boolean`).
+4. **D4 — [`sent`/`received : Label → Bool`](../PLean/Semantics/GlobalState.lean#L57-L68)** (matches PVerifier `[Label]boolean`).
 5. **D5 — v1 verification mode: partial-correctness + demonic choice.** Required
    to bring the `scoped` `MAlgOrdered` instances into scope; demonic = safety
    over all schedules. Baked into the semantics facade via `open` (+ the
    `set_option loom.semantics.*` equivalents documented inline).
 6. **D6 — `≺` via `actionCount`** (unchanged from PLAN.md; the field already
-   exists on `Label`, so no state-shape change).
+   exists on [`Label`](../PLean/Semantics/Label.lean#L50-L54), so no state-shape change).
 7. **D7 — Keep `Stub.PM := Id` and the macro path untouched in Phase 1.** M1 is
    hand-written with no macros (matching PLAN.md's "First Deliverable"). The
    real `PM` is introduced alongside the stub under `Semantics/`. Repointing the
@@ -280,21 +280,21 @@ macro path (D7). Layout follows PLAN.md's "Module Layout."
 ```
 Src/PLean/PLean/
   Semantics/
-    Label.lean         # Label, EventOrGoto, MachineState; payloadOf/actionCount accessors
-    GlobalState.lean   # GlobalState record (sent/received/machines/actionCount)
-    Monad.lean         # PM := NonDetT (StateT GlobalState DivM); PProp := GlobalState→Prop;
+    [Label.lean](../PLean/Semantics/Label.lean)         # Label, EventOrGoto, MachineState; payloadOf/actionCount accessors
+    [GlobalState.lean](../PLean/Semantics/GlobalState.lean)   # GlobalState record (sent/received/machines/actionCount)
+    [Monad.lean](../PLean/Semantics/Monad.lean)         # PM := NonDetT (StateT GlobalState DivM); PProp := GlobalState→Prop;
                         #   re-exports MAlgOrdered/MAlgLift; bakes `open PartialCorrectness
                         #   DemonicChoice` so triples elaborate without ceremony (D5)
-    Primitives.lean    # send/raise/goto/announce/newMachine as PM combinators
-    Predicates.lean    # inflight, sent, received, `is`, `targets`, stateOf, ≺
-    Default.lean       # UniqueActions, IncreasingCount, ReceivedSubsetSent
+    [Primitives.lean](../PLean/Semantics/Primitives.lean)    # send/raise/goto/announce/newMachine as PM combinators
+    [Predicates.lean](../PLean/Semantics/Predicates.lean)    # inflight, sent, received, `is`, `targets`, stateOf, ≺
+    [Default.lean](../PLean/Semantics/Default.lean)       # UniqueActions, IncreasingCount, ReceivedSubsetSent
 
   (Verify/Tactic.lean is Phase 3 — NOT built here; M1 uses raw wpgen+grind)
 
 Src/PLean/Tests/Semantics/
-  StackSpike.lean      # Task 1: #synth the instances, prove a trivial triple
-  HandPingPong.lean    # M1: hand-written 2-state ping-pong, 4 handler triples
-  Combinators.lean     # PM unit tests via .run (cf. Cashmere's #eval ....run.run)
+  [StackSpike.lean](../Tests/Semantics/StackSpike.lean)      # Task 1: #synth the instances, prove a trivial triple
+  [HandPingPong.lean](../Tests/Semantics/HandPingPong.lean)    # M1: hand-written 2-state ping-pong, 4 handler triples
+  [Combinators.lean](../Tests/Semantics/Combinators.lean)     # PM unit tests via .run (cf. Cashmere's #eval ....run.run)
 ```
 
 `Stub.lean` is **not** deleted in Phase 1. It is retired in Phase 2 when the
@@ -307,7 +307,7 @@ surface macros move onto the real `PM`.
 Tasks are sequenced so the highest-risk, lowest-cost confirmation (the stack
 spike) gates everything else.
 
-1. **Stack spike — the de-risk gate** (`Tests/Semantics/StackSpike.lean`, ~½ day).
+1. **Stack spike — the de-risk gate** ([`Tests/Semantics/StackSpike.lean`](../Tests/Semantics/StackSpike.lean), ~½ day).
    Define `PM := NonDetT (StateT GlobalState DivM)` over a *throwaway* 2-field
    `GlobalState`. Then, after `open PartialCorrectness DemonicChoice`:
    - `#synth Monad PM`, `#synth LawfulMonad PM`,
@@ -318,37 +318,37 @@ spike) gates everything else.
      record which synthesizes + proves. Lock D1 on the evidence.
    Exit: a green file + a one-line note in STATUS confirming the layer order.
 
-2. **Label / EventOrGoto / MachineState** (`Semantics/Label.lean`). Mirror
+2. **Label / EventOrGoto / MachineState** ([`Semantics/Label.lean`](../PLean/Semantics/Label.lean)). Mirror
    PVerifier 757-766 / 645-649. For Phase 1, `EventOrGoto` and the payload type
    may be *specialized to the ping-pong events* (concrete `inductive`), with a
    `/- Phase 2 generalizes to the per-program union -/` marker. Define
    `payloadOf`, `actionCount` accessors.
 
-3. **GlobalState** (`Semantics/GlobalState.lean`). The record from "GlobalState"
+3. **GlobalState** ([`Semantics/GlobalState.lean`](../PLean/Semantics/GlobalState.lean)). The record from "GlobalState"
    above. Add `Inhabited`/`Nonempty` (NonDetT's CCPO machinery wants inhabited
    carriers).
 
-4. **PM monad + facade** (`Semantics/Monad.lean`). `abbrev PM`, `abbrev PProp :=
+4. **PM monad + facade** ([`Semantics/Monad.lean`](../PLean/Semantics/Monad.lean)). `abbrev PM`, `abbrev PProp :=
    GlobalState → Prop`, the `open PartialCorrectness DemonicChoice`, and any
    `export`/`attribute` needed so downstream files get the instances. This is
    the file that "replaces the stub" conceptually, though `Stub.lean` physically
    remains for the macro path (D7).
 
-5. **Primitives** (`Semantics/Primitives.lean`). `send`/`goto`/`raise`/
+5. **Primitives** ([`Semantics/Primitives.lean`](../PLean/Semantics/Primitives.lean)). `send`/`goto`/`raise`/
    `announce`/`newMachine` per PVerifier 1967-1999, as `modify`-style `PM`
    combinators. Unit-test each with `.run` against a concrete start state
    (Cashmere shows the idiom: `#eval (prog args).run.run.run initState`).
 
-6. **Predicates** (`Semantics/Predicates.lean`). `inflight`, `sent`, `received`,
+6. **Predicates** ([`Semantics/Predicates.lean`](../PLean/Semantics/Predicates.lean)). `inflight`, `sent`, `received`,
    `lbl is ev`, `lbl targets m`, `stateOf m`, and `≺`. Names mirror P surface
    keywords ([`PLexer.g4:72`](../../PCompiler/CompilerCore/Parser/PLexer.g4#L72)),
    not C# AST names. `is`/`targets`/`≺` are pure `Label` predicates;
    `inflight`/`sent`/`stateOf` are `GlobalState → Prop`.
 
-7. **Default invariants** (`Semantics/Default.lean`). The three from
+7. **Default invariants** ([`Semantics/Default.lean`](../PLean/Semantics/Default.lean)). The three from
    PVerifier 1189-1201, verbatim.
 
-8. **M1 — hand-written ping-pong proof** (`Tests/Semantics/HandPingPong.lean`).
+8. **M1 — hand-written ping-pong proof** ([`Tests/Semantics/HandPingPong.lean`](../Tests/Semantics/HandPingPong.lean)).
    A single 2-state machine (states `Idle`, `Active`) with four defs
    (`Idle_entry`, `Idle_ePing`, `Active_entry`, `Active_ePong`), the user
    invariant **"every `ePong` is in response to a prior `ePing`"** stated with
@@ -357,7 +357,7 @@ spike) gates everything else.
    Discharge each via `wpgen` then `grind` (the default `loom_solver`); escalate
    to `loom_smt [...]` only if `grind` stalls.
 
-9. **Combinator + triple regression tests** (`Tests/Semantics/Combinators.lean`).
+9. **Combinator + triple regression tests** ([`Tests/Semantics/Combinators.lean`](../Tests/Semantics/Combinators.lean)).
    `.run`-based unit tests for the primitives + the M1 triples kept as
    regressions. Wire into the `Tests` lean_lib so `lake build` exercises them.
 
@@ -375,13 +375,13 @@ spike) gates everything else.
 
 From [`PLAN.md` § "First Deliverable"](PLAN.md#first-deliverable-15-weeks-end-of-phase-1):
 
-- `Semantics/{Label,GlobalState,Monad,Primitives,Predicates,Default}.lean` build
+- [`Semantics/{Label,GlobalState,Monad,Primitives,Predicates,Default}.lean`](../PLean/Semantics) build
   with `lake build`.
-- `Tests/Semantics/HandPingPong.lean` defines `GlobalState`, `PM`, the
+- [`Tests/Semantics/HandPingPong.lean`](../Tests/Semantics/HandPingPong.lean) defines `GlobalState`, `PM`, the
   primitives, the three default invariants, the four handler defs, and the
   temporal user invariant — and **all four handler triples discharge** (via
   `wpgen` + `grind`, no `sorry`).
-- `Tests/Semantics/Combinators.lean` `.run`-evaluates the primitives to the
+- [`Tests/Semantics/Combinators.lean`](../Tests/Semantics/Combinators.lean) `.run`-evaluates the primitives to the
   expected `GlobalState` deltas (sent grows, actionCount increments).
 - The Phase-0 PingPong demo and `Tests/Bootstrap/*` **still build** (D7 — the
   stub macro path is untouched).
@@ -423,7 +423,7 @@ Updated from PLAN.md "Risks" with Phase-0's findings folded in.
 - **R6 — Stmt-macro repointing (NEW, low).** Deferred to Phase 2 by D7. The risk
   is only that the real `send` signature (typed payload, `MachineRef` target)
   differs from `Stub.send`'s polymorphic-target stub
-  ([`Stub.lean:29`](../PLean/Internal/Stub.lean#L29)); Phase 2 must reconcile the
+  (`Stub.lean:29`); Phase 2 must reconcile the
   surface at that point. No Phase-1 impact.
 - **R7 — `noncomputable` instances (NEW, low).** Loom's `MAlgOrdered`/`wp`
   instances for `NonDetT` are `noncomputable` (the scoped `MAlgOrdered (NonDetT m) l`

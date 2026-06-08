@@ -1,60 +1,73 @@
 /-
 PLean.Surface.Stmt — statement-level macros.
 
-P statements inside a handler body. Phase 0 supports
+P statements inside a handler body. Phase 2 supports
 the most common five:
   send <target>, <event>, <payload>?
   raise <event>, <payload>?
   goto <stateName>, <payload>?
-  new <interfaceName>, <payload>?
+  pnew <interfaceName>, <payload>?
+  announce <event>, <payload>?
 
 We expose macros at Lean's `doElem` level so handler bodies can be written
 with Lean's `do`-notation. That lets us reuse Lean's expression parser
 (preserving things like `≺`, quantifiers, `lbl is e`) without
 reimplementing it.
 
-Each macro elaborates to a call into `PLean.Stub` (Phase 0). The
-user-facing surface stays the same when Phase 1 swaps in the real `PM`.
+Each macro elaborates to a call into `PLean.send` / `PLean.raise` /
+`PLean.goto` / `PLean.announce` / `PLean.newMachine` (the real PM
+primitives over the synthesised per-pmodule `Sig`). The `(P := Sig)`
+ascription resolves `Sig` against the surrounding namespace — handler
+defs are emitted inside `<Mod>.<MachineName>` after `open <Mod>`, so
+`Sig` finds `<Mod>.Sig`.
+
+Decision D11 (Phase 2): macros target the real PM. The Phase-0 `Stub`
+indirection is gone; `PLean.Internal.Stub` is retired (D15).
+
+## A note on macro hygiene
+
+Several macros below reference user-namespace constants emitted by
+`#gen_module`:
+
+  - the handler's `this` binder (made unhygienic in `#gen_module` via
+    `mkIdent \`this`),
+  - the per-pmodule `Sig` constant (`<Mod>.Sig`),
+  - the per-pmodule `E` / `G` constructors and `<S>_st` aliases.
+
+Bare names written inside macro quotations would acquire hygiene marks
+and fail to resolve against those user-namespace constants. We build
+each via `mkIdent` and splice it in. Lean handles `.field` projections
+and qualified names like `PLean.send` correctly without further
+intervention.
 -/
 import Lean
-import PLean.Internal.Stub
+import PLean.Semantics.Primitives
 
 open Lean
 
-namespace PLean.Stub
-
-/-- Convert a state/machine identifier-name to a numeric tag.
-
-Phase 0 stub representation; Phase 1 replaces with per-module indices. -/
-@[inline] def tagOf (n : Name) : Nat := n.hash.toNat
-
-end PLean.Stub
-
 namespace PLean
 
-/-! ## Send
+/-! ## Unhygienic identifier helpers (see file-level note on hygiene). -/
 
-P's send syntax is `send <machine>, <event>, (field=value, ...)`
-where the third argument is a named-tuple literal with at least one
-field. We accept three forms in Phase 0:
+private def idThis : Ident := mkIdent `this
+private def idSig  : Ident := mkIdent `Sig
+private def idG    : Ident := mkIdent `G
+private def idGUnit : Ident := mkIdent (`G ++ `unit)
 
-  send target, ev, (f1 = v1, ..., fn = vn)   -- named-tuple payload
-  send target, ev, <term>                    -- raw-term payload
-  send target, ev                            -- no payload
+private def thisRef : MacroM (TSyntax `term) := do
+  let thisI := idThis
+  `($thisI |>.ref)
 
-The named-tuple form elaborates to Lean's `{ f1 := v1, ..., fn := vn }`
-anonymous-record syntax. The raw-term form is a fallback for Phase 0
-flexibility (e.g., when payloads are primitive `Nat`s); P's surface
-won't allow it once Phase 1 binds payloads to their declared types.
--/
+private def evCtorIdent (evIdent : Ident) : Ident :=
+  -- `<evname>` ↦ `E.<evname>` (the per-pmodule event-union constructor).
+  mkIdentFrom evIdent (`E ++ evIdent.getId)
+
+/-! ## Send -/
 
 /-- One `field = value` entry in a send payload. -/
 syntax pNamedTupleField := ident " = " term
 
-/-- A non-empty named-tuple payload: `(f = v, …)`. The trailing comma is
-    optional; a single-field tuple may be written `(f = v)` (P's grammar
-    allows `(f = v,)` but not the bare form, which would be a parenthesized
-    expression). -/
+/-- A non-empty named-tuple payload: `(f = v, …)`. -/
 syntax pSendNamedTuple := "(" pNamedTupleField,+ ")"
 
 syntax (name := pSendNamed) (priority := high)
@@ -64,7 +77,6 @@ syntax (name := pSendNoPayload) "send " term ", " term           : doElem
 
 private def buildAnonRecord (fields : Array (TSyntax `PLean.pNamedTupleField)) :
     MacroM (TSyntax `term) := do
-  -- Each field is `ident = term`; positions 0=ident, 2=term.
   let entries ← fields.mapM fun f => do
     let id : Ident := ⟨f.raw[0]⟩
     let v  : TSyntax `term := ⟨f.raw[2]⟩
@@ -74,52 +86,66 @@ private def buildAnonRecord (fields : Array (TSyntax `PLean.pNamedTupleField)) :
 macro_rules
   | `(doElem| send $target, $ev, ($[$flds:pNamedTupleField],*)) => do
     let rec : TSyntax `term ← buildAnonRecord flds
-    -- The named-tuple literal `{ f := v, ... }` needs a type annotation to
-    -- elaborate. We synthesize one from `<ev>_payload` (an abbrev emitted
-    -- by `event ev : T`). When `ev` is a bare identifier we ascribe;
-    -- otherwise (e.g. `ev` is a more complex expression) we fall through
-    -- to the unascribed form, which will fail to elaborate with a clearer
-    -- "type not known" message.
     if ev.raw.isIdent then
       let evIdent : Ident := ⟨ev.raw⟩
       let payloadTy := mkIdentFrom evIdent (evIdent.getId.appendAfter "_payload")
-      `(doElem| PLean.Stub.send $target $ev ($rec : $payloadTy))
+      let evCtor := evCtorIdent evIdent
+      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef)
+                  ($evCtor ($rec : $payloadTy)))
     else
-      `(doElem| PLean.Stub.send $target $ev $rec)
-  | `(doElem| send $target, $ev, $payload:term) =>
-    `(doElem| PLean.Stub.send $target $ev $payload)
-  | `(doElem| send $target, $ev) =>
-    `(doElem| PLean.Stub.send $target $ev ())
+      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) $ev)
+  | `(doElem| send $target, $ev, $payload:term) => do
+    if ev.raw.isIdent then
+      let evIdent : Ident := ⟨ev.raw⟩
+      let evCtor := evCtorIdent evIdent
+      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) ($evCtor $payload))
+    else
+      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) $ev)
+  | `(doElem| send $target, $ev) => do
+    if ev.raw.isIdent then
+      let evIdent : Ident := ⟨ev.raw⟩
+      let evCtor := evCtorIdent evIdent
+      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) $evCtor)
+    else
+      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) $ev)
 
-/-! ## Raise -/
+/-! ## Raise — intra-machine `send`. -/
 
 syntax (name := pRaisePayload) "raise " term ", " term : doElem
 syntax (name := pRaiseNoPayload) "raise " term : doElem
 
 macro_rules
-  | `(doElem| raise $ev, $payload) =>
-    `(doElem| PLean.Stub.raise $ev $payload)
-  | `(doElem| raise $ev) =>
-    `(doElem| PLean.Stub.raise $ev ())
+  | `(doElem| raise $ev, $payload) => do
+    let tref ← thisRef
+    if ev.raw.isIdent then
+      let evIdent : Ident := ⟨ev.raw⟩
+      let evCtor := evCtorIdent evIdent
+      `(doElem| PLean.raise (P := $idSig) $tref ($evCtor $payload))
+    else
+      `(doElem| PLean.raise (P := $idSig) $tref $ev)
+  | `(doElem| raise $ev) => do
+    let tref ← thisRef
+    if ev.raw.isIdent then
+      let evIdent : Ident := ⟨ev.raw⟩
+      let evCtor := evCtorIdent evIdent
+      `(doElem| PLean.raise (P := $idSig) $tref $evCtor)
+    else
+      `(doElem| PLean.raise (P := $idSig) $tref $ev)
 
-/-! ## Goto
-
-  `goto stateName` / `goto stateName, payload`
-
-We capture the state name as a string literal at parse time so we don't
-have to invent quotation gymnastics for `Name`. The Phase-0 stub then
-hashes the string at runtime — same effect, simpler macro. -/
+/-! ## Goto — D13: real transition. -/
 
 syntax (name := pGotoNoPayload) "goto " ident : doElem
 syntax (name := pGotoPayload) "goto " ident ", " term : doElem
 
 macro_rules
   | `(doElem| goto $st:ident) => do
-    let lit := Syntax.mkStrLit st.getId.toString
-    `(doElem| PLean.Stub.goto ($lit).hash.toNat ())
-  | `(doElem| goto $st:ident, $payload) => do
-    let lit := Syntax.mkStrLit st.getId.toString
-    `(doElem| PLean.Stub.goto ($lit).hash.toNat $payload)
+    let tref ← thisRef
+    let stTag := mkIdentFrom st (st.getId.appendAfter "_st")
+    `(doElem| PLean.goto (P := $idSig) $tref $stTag $idGUnit)
+  | `(doElem| goto $st:ident, $_payload) => do
+    let tref ← thisRef
+    let stTag := mkIdentFrom st (st.getId.appendAfter "_st")
+    `(doElem| PLean.goto (P := $idSig) $tref $stTag $idGUnit)
 
 /-! ## New (machine creation) -/
 
@@ -128,38 +154,26 @@ syntax (name := pNewArg)   "pnew " ident ", " term : doElem
 
 macro_rules
   | `(doElem| pnew $m:ident) => do
+    let tref ← thisRef
     let lit := Syntax.mkStrLit m.getId.toString
-    `(doElem| PLean.Stub.new ($lit).hash.toNat ())
-  | `(doElem| pnew $m:ident, $arg) => do
+    `(doElem| PLean.newMachine (P := $idSig) $tref ($lit).hash.toNat)
+  | `(doElem| pnew $m:ident, $_arg) => do
+    let tref ← thisRef
     let lit := Syntax.mkStrLit m.getId.toString
-    `(doElem| PLean.Stub.new ($lit).hash.toNat $arg)
+    `(doElem| PLean.newMachine (P := $idSig) $tref ($lit).hash.toNat)
 
-/-! ## Assignment
-
-  `<lhs> = <rhs>`
-
-P uses bare `=` for assignment (vs Lean's `:=` or `←`). At Phase 0 the
-LHS is just a name; reads of machine `var`s are likewise the bare name.
-Real read/write semantics arrive in Phase 1 when GlobalState materialises;
-for now this is a no-op that lets handler bodies type-check.
-
-We cannot use `=` directly — Lean parses it as an equality term — so we
-match the wider pattern `ident = term` at doElem position with priority. -/
+/-! ## Assignment (D12). -/
 
 syntax (name := pAssign) (priority := high) ident " = " term : doElem
 
-/-- Phase-0 assignment is a no-op at the value level, but we DO have to
-    reference both sides so Lean's section-`variable` auto-inclusion
-    picks them up. Otherwise a handler whose body is `client = input.client`
-    would leave `client` (the machine-level var) out of the signature,
-    and a subsequent reference to `client` from an `on …` handler in the
-    same state would fail to resolve. -/
 macro_rules
-  | `(doElem| $lhs:ident = $rhs:term) =>
+  | `(doElem| $lhs:ident = $rhs:term) => do
+    let tref ← thisRef
+    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
+    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
     `(doElem| do
-        let _ := $lhs
-        let _ := $rhs
-        pure ())
+        $setIdent:ident $tref $rhs
+        let $lhs:ident ← $getIdent:ident $tref)
 
 /-! ## Announce -/
 
@@ -167,9 +181,21 @@ syntax (name := pAnnouncePayload)   "announce " term ", " term : doElem
 syntax (name := pAnnounceNoPayload) "announce " term            : doElem
 
 macro_rules
-  | `(doElem| announce $ev, $payload) =>
-    `(doElem| PLean.Stub.announce $ev $payload)
-  | `(doElem| announce $ev) =>
-    `(doElem| PLean.Stub.announce $ev ())
+  | `(doElem| announce $ev, $payload) => do
+    let tref ← thisRef
+    if ev.raw.isIdent then
+      let evIdent : Ident := ⟨ev.raw⟩
+      let evCtor := evCtorIdent evIdent
+      `(doElem| PLean.announce (P := $idSig) $tref ($evCtor $payload))
+    else
+      `(doElem| PLean.announce (P := $idSig) $tref $ev)
+  | `(doElem| announce $ev) => do
+    let tref ← thisRef
+    if ev.raw.isIdent then
+      let evIdent : Ident := ⟨ev.raw⟩
+      let evCtor := evCtorIdent evIdent
+      `(doElem| PLean.announce (P := $idSig) $tref $evCtor)
+    else
+      `(doElem| PLean.announce (P := $idSig) $tref $ev)
 
 end PLean

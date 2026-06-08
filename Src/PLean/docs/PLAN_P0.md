@@ -214,7 +214,7 @@ in particular `localSpecCtx` / `globalSpecCtx`):
 ```lean
 -- Per-file scratch space, populated as we elaborate inside `pmodule M ... end M`.
 -- Cleared on `end M`; not persistent across imports.
-structure LocalPModuleCtx where
+structure [`LocalPModuleCtx`](../PLean/Internal/Registry.lean#L40-L54) where
   name           : Name              -- module name
   -- types: uninterpreted (no body) and interpreted (alias / enum) live in
   -- the same map; the decl kind discriminates so #pwf can reject illegal
@@ -236,7 +236,7 @@ structure LocalPModuleCtx where
 abbrev GlobalPModuleCtx := Std.HashMap Name LocalPModuleCtx
 ```
 
-- `localPModuleCtx : SimpleScopedEnvExtension LocalPModuleCtx` — set on
+- [`localPModuleCtx`](../PLean/Internal/Registry.lean#L60-L61) `: SimpleScopedEnvExtension LocalPModuleCtx` — set on
   `pmodule M`, cleared on `end M`. Holds the fragment currently being
   elaborated.
 - `globalPModuleCtx : SimplePersistentEnvExtension (Name × LocalPModuleCtx) GlobalPModuleCtx`
@@ -268,32 +268,32 @@ Src/PLean/
 
   PLean/
     Internal/
-      Decls.lean                         # data records: PEventDecl, PMachineDecl, ...
-      Registry.lean                      # local + global env extensions
+      [`Decls.lean`](../PLean/Internal/Decls.lean)                         # data records: [`PEventDecl`](../PLean/Internal/Decls.lean#L53-L64), [`PMachineDecl`](../PLean/Internal/Decls.lean#L91-L112), ...
+      [`Registry.lean`](../PLean/Internal/Registry.lean)                      # local + global env extensions
       Elab.lean                          # shared elaboration helpers (name resolution,
                                          #   reading current pmodule, error helpers)
       Stub.lean                          # PLean.Stub.PM := Id; stub send/raise/goto/new
 
     Surface/
-      Module.lean                        # `pmodule`, `end` commands
-      Types.lean                         # `type` (foreign sort + alias), `enum`
-      Events.lean                        # `event`, `eventset`
-      Machine.lean                       # `machine`, `state`, `entry`,
+      [`Module.lean`](../PLean/Surface/Module.lean)                        # `pmodule`, `end` commands
+      [`Types.lean`](../PLean/Surface/Types.lean)                         # `type` (foreign sort + alias), `enum`
+      [`Events.lean`](../PLean/Surface/Events.lean)                        # `event`, `eventset`
+      [`Machine.lean`](../PLean/Surface/Machine.lean)                       # `machine`, `state`, `entry`,
                                          #   `on _ do/goto`, `spec`
-      Stmt.lean                          # statement-position macros
+      [`Stmt.lean`](../PLean/Surface/Stmt.lean)                          # statement-position macros
                                          #   (parse + elaborate to Stub combinators)
-      Verify.lean                        # `invariant`, `axiom`, `init`, `pure`,
+      [`Verify.lean`](../PLean/Surface/Verify.lean)                         # `invariant`, `axiom`, `init`, `pure`,
                                          #   `instance` (axiom-bundle instantiation
                                          #   à la Veil's `instantiate`)
                                          #   — parse + register; no proof generation
 
     Commands/
-      PWf.lean                           # `#pwf M`: well-formedness check
+      [`PWf.lean`](../PLean/Commands/PWf.lean)                           # `#pwf M`: well-formedness check
                                          #   (always available; lives past Phase 0)
-      PVerify.lean                       # `#pverify M`: end-to-end pipeline.
+      [`PVerify.lean`](../PLean/Commands/PVerify.lean)                       # `#pverify M`: end-to-end pipeline.
                                          #   Phase 0: implies #pwf.
                                          #   Phase 3+: also generates obligations.
-      PrintModule.lean                   # `#print_pmodule M`: dump registered fragment
+      [`PrintModule.lean`](../PLean/Commands/PrintModule.lean)                   # `#print_pmodule M`: dump registered fragment
 
   Examples/PingPong/                     # the three-file demo above
     Events.lean
@@ -303,17 +303,17 @@ Src/PLean/
 
   Tests/
     Bootstrap/
-      SingleFile.lean                    # one-file pmodule, end-to-end registration
-      MultiFile/                         # three-file aggregation test mirroring PingPong
-        Events.lean
-        Machine.lean
-        Top.lean
-      Errors.lean                        # `#guard_msgs` for: duplicate events,
+      [`SingleFile.lean`](../Tests/Bootstrap/SingleFile.lean)                    # one-file pmodule, end-to-end registration
+      [`MultiFile/`](../Tests/Bootstrap/MultiFile)                         # three-file aggregation test mirroring PingPong
+        [`Events.lean`](../Tests/Bootstrap/MultiFile/Events.lean)
+        [`Machine.lean`](../Tests/Bootstrap/MultiFile/Machine.lean)
+        [`Top.lean`](../Tests/Bootstrap/MultiFile/Top.lean)
+      [`Errors.lean`](../Tests/Bootstrap/Errors.lean)                        # `#guard_msgs` for: duplicate events,
                                          #   undeclared event in `on...do`,
                                          #   `end` mismatched name, etc.
 ```
 
-The `Internal/Decls.lean` records exist purely to (1) detect name conflicts
+The [`Internal/Decls.lean`](../PLean/Internal/Decls.lean) records exist purely to (1) detect name conflicts
 during elaboration and (2) drive the Phase 3 obligation generator. No
 `inductive PProgram`.
 
@@ -325,29 +325,29 @@ during elaboration and (2) drive the Phase 3 obligation generator. No
    `PLean.Stub.PM α := Id α` and stub combinators
    `send`, `raise`, `goto`, `new`, `assign` as no-ops in `Id`. Just enough
    for surface-syntax macros to elaborate.
-3. **Internal scaffolding** — `Internal/Decls.lean` + `Internal/Registry.lean`.
+3. **Internal scaffolding** — [`Internal/Decls.lean`](../PLean/Internal/Decls.lean) + [`Internal/Registry.lean`](../PLean/Internal/Registry.lean).
    Env extensions only; no commands yet. Add a unit test that manually
    `set`s an extension and reads it back to confirm persistence behavior.
-4. **`pmodule` / `end` commands** — `Surface/Module.lean`. Open a Lean
+4. **`pmodule` / `end` commands** — [`Surface/Module.lean`](../PLean/Surface/Module.lean). Open a Lean
    namespace, set `localPModuleCtx`, restore from `globalPModuleCtx` if the
    module was previously declared. Verify multiple `pmodule M` blocks in one
    file behave correctly (rare but should not crash).
-5. **Type declarations** — `Surface/Types.lean`. `type N` (foreign /
+5. **Type declarations** — [`Surface/Types.lean`](../PLean/Surface/Types.lean). `type N` (foreign /
    uninterpreted sort: emit `opaque N : Type` + an `Inhabited` axiom),
    `type N = …` (interpreted alias: emit `def N := …`), `enum N { … }`
    (emit `inductive N`). Each path registers metadata in the local context;
    the decl-kind discriminator in `PTypeDecl` lets later passes tell them
    apart (e.g., `#pwf` rejects literal construction of an uninterpreted
    sort).
-6. **Event declarations** — `Surface/Events.lean`. `event`, `eventset`.
-7. **Machine declarations** — `Surface/Machine.lean`.
+6. **Event declarations** — [`Surface/Events.lean`](../PLean/Surface/Events.lean). `event`, `eventset`.
+7. **Machine declarations** — [`Surface/Machine.lean`](../PLean/Surface/Machine.lean).
    `machine` / `state` / `entry` / `on…do` / `on…goto`. Macros parse and
    register; handler bodies become stub `PM` defs (`do return ()`) until
    Phase 1.
-8. **Statement parsing** — `Surface/Stmt.lean`. Recognize
+8. **Statement parsing** — [`Surface/Stmt.lean`](../PLean/Surface/Stmt.lean). Recognize
    `send` / `raise` / `goto` / `assign` at statement position. Emit them as
    calls into `PLean.Stub` combinators.
-9. **Verification declarations (parse-only)** — `Surface/Verify.lean`.
+9. **Verification declarations (parse-only)** — [`Surface/Verify.lean`](../PLean/Surface/Verify.lean).
    `invariant` / `axiom` / `init` / `pure` / `instance`. Register metadata;
    no proofs. Notes on the two assumption-style forms:
    - `axiom <name> : <prop>;` — single proposition, may quantify over
@@ -358,18 +358,18 @@ during elaboration and (2) drive the Phase 3 obligation generator. No
      to `variable [<name> : <Class> <T>]`, gated on
      `localPModuleCtx.isSome` so it doesn't intercept Lean's builtin
      `instance` outside a `pmodule`.
-10. **`#pwf` well-formedness validator** — `Commands/PWf.lean`. Walk the
+10. **[`#pwf`](../PLean/Commands/PWf.lean#L114) well-formedness validator** — [`Commands/PWf.lean`](../PLean/Commands/PWf.lean). Walk the
     registered module and emit errors for unresolved names, duplicate
     declarations, or use-before-declare. This is the gating success signal
     for Phase 0 and lives forever as a fast subset check.
-11. **`#pverify` shell** — `Commands/PVerify.lean`. In Phase 0, simply
+11. **[`#pverify`](../PLean/Commands/PVerify.lean#L54) shell** — [`Commands/PVerify.lean`](../PLean/Commands/PVerify.lean). In Phase 0, simply
     delegates to `#pwf`. The Phase-3 expansion (obligation generation,
     `loom_solve`) lands as a separate change without touching `#pwf`.
-12. **`#print_pmodule`** — `Commands/PrintModule.lean`. Pretty-print the
+12. **[`#print_pmodule`](../PLean/Commands/PrintModule.lean#L68) ** — [`Commands/PrintModule.lean`](../PLean/Commands/PrintModule.lean). Pretty-print the
     registered metadata. Crucial for debugging the registry without running
     anything.
-13. **Multi-file demo + tests** — `Examples/PingPong/` and
-    `Tests/Bootstrap/`. Three-file aggregation verifies that `import` brings
+13. **Multi-file demo + tests** — [`Examples/PingPong/`](../Examples/PingPong) and
+    [`Tests/Bootstrap/`](../Tests/Bootstrap). Three-file aggregation verifies that `import` brings
     event decls into a downstream `pmodule` block. Tests must include:
     - one example exercising an uninterpreted sort + single-proposition
       `axiom`;
@@ -390,7 +390,7 @@ The three-file PingPong demo:
   and instances all aggregated under one module,
 - `#pwf PingPong` reports no errors,
 - `#pverify PingPong` succeeds (in Phase 0, this is equivalent to `#pwf`),
-- a deliberately broken variant in `Tests/Bootstrap/Errors.lean` (e.g.,
+- a deliberately broken variant in [`Tests/Bootstrap/Errors.lean`](../Tests/Bootstrap/Errors.lean) (e.g.,
   `on eMissing do …`) produces a localized `#pwf` error pointing to the
   offending line.
 
@@ -410,7 +410,7 @@ Phase 1.
   https://github.com/verse-lab/loom).
   We follow velvet here, not Veil — Veil works around this with its
   `#gen_spec` finalization step, which we don't need.
-- **Re-opening a `pmodule` after `import`.** When `Server.lean` opens
+- **Re-opening a [`pmodule`](../PLean/Surface/Module.lean#L31) after `import`.** When `Server.lean` opens
   `pmodule PingPong`, we must restore the local context from the global
   registry **before** any declarations in `Server.lean`'s `pmodule` block
   can see them. Sequence: parse `pmodule M` → look up `globalPModuleCtx[M]`

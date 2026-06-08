@@ -36,17 +36,13 @@ Mirrors PVerifier's `InFlight` macro (`Uclid5CodeGenerator.cs:600-602`):
 /-! ## Label predicates (act on `Label` directly, no `GlobalState`)
 
 These match the P-surface meaning literally. The user writes
-`lbl is ePing`, `lbl targets m`; we expose the underlying functions so
-those notations (Phase 2) desugar to plain function applications. -/
-
-/-- Test that a label's action is the event with payload `e`.
+`lbl targets m`; the `lbl is <ev>` form is per-event and is emitted
+by `Commands/GenModule.lean` as `is_<ev>` (a tag-only check, not a
+payload-equality check — which is what P semantics specifies).
 
 Equivalent to PVerifier's `LabelAdtIsE`/`EventOrGotoAdtIsE`
-(`Uclid5CodeGenerator.cs:884-896`), modulo the user's choice of how the
-event union encodes its tag. The full `=` is over the payload too,
-which is what most invariants want. -/
-@[inline] def Label.isEvent? (lbl : P.Label) (e : P.E) : Prop :=
-  lbl.action = .event e
+(`Uclid5CodeGenerator.cs:884-896`), modulo the user's choice of how
+the event union encodes its tag — PVerifier checks the tag only. -/
 
 /-- Test that a label is delivered to a particular machine. Mirrors
 PVerifier's `TargetsExpr` (`Uclid5CodeGenerator.cs:2051-2052`). -/

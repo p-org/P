@@ -42,9 +42,10 @@ We therefore split machine handling into two phases:
      save the entire body as raw `Syntax` in `PMachineDecl.body`. We do
      NOT elaborate handler defs yet.
 
-  2. **Materialisation** (`#gen_module M`): with every machine registered,
-     emit `abbrev MName := MachineRef` for each one (so cross-references
-     resolve), then replay the saved bodies as Lean defs.
+  2. **Materialisation** (`#gen_module M`, in `Commands/GenModule.lean`):
+     with every machine registered, synthesise per-pmodule union types
+     and machine wrappers, then replay the saved bodies as Lean defs over
+     the real `PM`.
 
 `#pwf` and `#pverify` require finalisation; they error if the module has
 machines whose `body` is non-empty (i.e., not yet replayed).
@@ -52,11 +53,7 @@ machines whose `body` is non-empty (i.e., not yet replayed).
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Internal.Stub
 import PLean.Surface.Stmt
-import PLean.Surface.Types
-import PLean.Surface.Events
-import PLean.Surface.Verify
 
 open Lean Elab Command
 
@@ -249,163 +246,5 @@ def elabPSpecDecl : CommandElab := fun stx => do
       observed  := obs
       body      := body
       ref       := stx }
-
-/-! ## Materialisation phase
-
-`#gen_module M` finalises a module by:
-  1. Emitting `abbrev <m> := MachineRef` for every registered machine
-     under the open `pmodule` namespace, so cross-machine type references
-     in `var` and handler bodies resolve.
-  2. For each machine, opening a sub-namespace and replaying the saved
-     body items as actual Lean defs.
-  3. Marking the machine as materialised (`body := #[]`) in the registry
-     so `#gen_module M` is idempotent and `#pwf`/`#pverify` can check
-     "is this module finalised?" by inspecting `body.isEmpty` for every
-     machine.
-
-The module's pmodule namespace must already be CLOSED before
-`#gen_module M` runs (the user writes `end M` then `#gen_module M`).
-This is so the `abbrev` and `namespace` commands here open the same
-namespace cleanly.
--/
-
-/-- Naming scheme for handler defs. The machine namespace is open at
-    emission time, so we drop the machine prefix; the resulting Lean
-    constant lives at `<pmodule>.<machine>.<state>.<kind>[ _handler]`. -/
-private def handlerName (_mname sname : Name) (kind : Name) (suffix : Bool) : Ident :=
-  let base := sname ++ kind
-  mkIdent (if suffix then base.appendAfter "_handler" else base)
-
-/-- Every handler def takes `this : MachineRef` as an explicit first
-    parameter. We make it explicit (rather than a section `variable`)
-    because Lean's `variable` doesn't reliably flow through
-    `elabCommand`-level command sequences.
-
-    Macro hygiene: writing `(this : ...)` directly inside a quotation
-    would generate an *internally-scoped* `this` that doesn't match the
-    user's source `this`. We construct the binder using `mkIdent` so the
-    name is unhygienic and resolves against the user's references. -/
-private def materialiseStateBodyItem (mname sname : Name) (item : Syntax) :
-    CommandElabM Unit := do
-  let thisIdent := mkIdent `this
-  match item with
-  | `(pStateBodyItem| entry { $body:doSeq }) =>
-    let defName := handlerName mname sname `entry (suffix := false)
-    elabCommand (← `(
-      def $defName ($thisIdent : PLean.Stub.MachineRef) : PLean.Stub.PM Unit := do $body
-    ))
-  | `(pStateBodyItem| entry ( $param:ident : $ty:term ) { $body:doSeq }) =>
-    let defName := handlerName mname sname `entry (suffix := false)
-    elabCommand (← `(
-      def $defName ($thisIdent : PLean.Stub.MachineRef) ($param : $ty) : PLean.Stub.PM Unit := do $body
-    ))
-  | `(pStateBodyItem| on $ev:ident ( $param:ident : $ty:term ) { $body:doSeq }) =>
-    let defName := handlerName mname sname ev.getId (suffix := true)
-    elabCommand (← `(
-      def $defName ($thisIdent : PLean.Stub.MachineRef) ($param : $ty) : PLean.Stub.PM Unit := do $body
-    ))
-  | `(pStateBodyItem| on $ev:ident { $body:doSeq }) =>
-    let defName := handlerName mname sname ev.getId (suffix := true)
-    elabCommand (← `(
-      def $defName ($thisIdent : PLean.Stub.MachineRef) : PLean.Stub.PM Unit := do $body
-    ))
-  | `(pStateBodyItem| on $_:ident goto $_:ident) =>
-    -- Pure transitions emit no def; they're a registry-only artefact.
-    pure ()
-  | _ => throwErrorAt item "unrecognised state body item (during materialisation)"
-
-private def materialiseMachineBody (mname : Name) (items : Array Syntax) :
-    CommandElabM Unit := do
-  for it in items do
-    match it with
-    | `(pMachineBodyItem| var $vname:ident : $vty:term) =>
-      -- Emit `variable (vname : vty)` so subsequent handler defs see it
-      -- as a free parameter.
-      elabCommand (← `(variable ($vname : $vty)))
-    | `(pMachineBodyItem| start state $sid:ident { $sitems:pStateBodyItem* }) =>
-      let sname := sid.getId
-      for sit in sitems do materialiseStateBodyItem mname sname sit
-    | `(pMachineBodyItem| state $sid:ident { $sitems:pStateBodyItem* }) =>
-      let sname := sid.getId
-      for sit in sitems do materialiseStateBodyItem mname sname sit
-    | _ => throwErrorAt it "unrecognised machine body item (during materialisation)"
-
-syntax (name := pGenModule) "#gen_module " ident : command
-
-@[command_elab pGenModule]
-def elabPGenModule : CommandElab := fun stx => do
-  let `(#gen_module $name:ident) := stx
-    | throwUnsupportedSyntax
-  let modName := name.getId
-  match ← getPModule? modName with
-  | none =>
-    throwError "no `pmodule {modName}` is registered (did you import the file that declares it?)"
-  | some ctx =>
-    -- Open the pmodule namespace so all materialised aliases / structures /
-    -- handler defs live under <Mod>...
-    elabCommand (← `(namespace $name))
-    -- Step 1: emit type-alias forwards for every machine (registration
-    -- order). This makes `var server : Server` resolve in another
-    -- machine, and lets type aliases reference machine names.
-    for mname in ctx.machineOrder do
-      let some m := ctx.machines.find? mname | continue
-      if m.body.isEmpty then continue
-      let mid := mkIdent m.name
-      elabCommand (← `(abbrev $mid : Type := PLean.Stub.MachineRef))
-    -- Step 2: materialise every type/enum in REGISTRATION ORDER.
-    -- Crucial for named-tuple types referencing earlier-declared enums:
-    -- if `enum E` was registered before `type T = (... : E)`, we want to
-    -- materialise E first so that the structure-typed T sees E in scope.
-    -- NameMap iteration is alphabetical, which would silently break this.
-    for tname in ctx.typeOrder do
-      let some t := ctx.types.find? tname | continue
-      materialiseType t
-    -- Step 3: materialise every event in registration order. Payload-type
-    -- abbrevs depend on materialised types from step 2.
-    for ename in ctx.eventOrder do
-      let some e := ctx.events.find? ename | continue
-      materialiseEvent e
-    -- Step 4: replay each machine body inside its own sub-namespace.
-    -- Each handler def takes `this : MachineRef` as an explicit first
-    -- parameter (injected in `materialiseStateBodyItem`). We `open` the
-    -- parent module namespace inside each machine so that handler bodies
-    -- can reference module-level types/events with their short names.
-    for mname in ctx.machineOrder do
-      let some m := ctx.machines.find? mname | continue
-      if m.body.isEmpty then continue
-      let mid := mkIdent m.name
-      elabCommand (← `(namespace $mid))
-      elabCommand (← `(open $name:ident))
-      materialiseMachineBody m.name m.body
-      elabCommand (← `(end $mid))
-    -- Step 5: materialise verification declarations. They may reference
-    -- machine vars and event payloads, so they go after machine bodies.
-    for (_, d) in ctx.invariants.toList do materialiseInvariant d
-    for (_, d) in ctx.axioms.toList do     materialiseAxiom d
-    for d in ctx.inits do                  materialiseInit d
-    for (_, d) in ctx.pures.toList do      materialisePure d
-    for (_, d) in ctx.instances.toList do  materialiseInstance d
-    elabCommand (← `(end $name))
-    -- Step 6: mark everything as materialised.
-    let machines' := ctx.machines.foldl (init := ({} : NameMap PMachineDecl))
-      fun acc n d => acc.insert n { d with body := #[] }
-    let types'    := ctx.types.foldl (init := ({} : NameMap PTypeDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let events'   := ctx.events.foldl (init := ({} : NameMap PEventDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let invs'     := ctx.invariants.foldl (init := ({} : NameMap PInvariantDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let axs'      := ctx.axioms.foldl (init := ({} : NameMap PAxiomDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let pures'    := ctx.pures.foldl (init := ({} : NameMap PPureDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let insts'    := ctx.instances.foldl (init := ({} : NameMap PInstanceDecl))
-      fun acc n d => acc.insert n { d with defStx := none }
-    let inits'    := ctx.inits.map fun d => { d with defStx := none }
-    setPModule
-      { ctx with
-        machines := machines', types := types', events := events'
-        invariants := invs', axioms := axs', pures := pures'
-        instances := insts', inits := inits' }
 
 end PLean

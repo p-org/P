@@ -20,9 +20,27 @@ program-specific unions look like.
 
 namespace PLean
 
-/-- Reference to a machine instance. Phase 1 uses a single global name
-space; per-machine refinements (e.g., `MachineRef Server`) can be added
-in Phase 2 once the registry knows the union shape. -/
+/-- Reference to a machine instance, as a flat global numeric handle.
+
+The runtime carrier stays untyped on purpose: `GlobalState.machines :
+MachineRef → MachineState` is a single map, the buffer's `Label.target`
+is a single field, and primitives (`send`/`goto`/...) take a single
+`MachineRef` regardless of the addressee's machine kind. This mirrors
+PVerifier's `MachineRef` ([Uclid5CodeGenerator.cs:594-606]).
+
+Per-machine *static* refinements live one level up. Phase 2's
+`#gen_module` emits a wrapper struct per machine (decision D10):
+```
+structure Server where ref : MachineRef
+  deriving Inhabited, DecidableEq
+instance : Coe Server MachineRef := ⟨fun s => s.ref⟩
+```
+Handlers take `(this : Server)` rather than `(this : MachineRef)`, so
+elaborator-level type-checking distinguishes the kinds (`var c : Client
+:= some_server` is rejected) while the underlying state map and buffer
+stay flat. Spec invariants in Phase 3 will quantify `∀ s : Server, …`
+over the wrapper, restricting the bound variable to that kind without
+needing a refined `MachineRef`. -/
 abbrev MachineRef : Type := Nat
 
 /-- A label's action is either an event with its payload, or a goto with
@@ -56,7 +74,10 @@ structure Label (E : Type) (G : Type) where
 /-- One machine instance's runtime state. `stage` is PVerifier's entry
 flag (`true` = entry handler is the next thing to run). `currentState`
 is the program-state-tag enum (provided by the user program); `fields`
-holds the machine's `var` block, also user-provided.
+holds the machine's `var` block, also user-provided. `kind` is a
+per-pmodule index identifying which `MKind` constructor this machine
+belongs to (0 reserved for "unset"; real machine kinds are ≥ 1; see
+PLAN_P3 D20 / R20).
 
 Mirrors `MachineStateAdt` at `Uclid5CodeGenerator.cs:614-619`. -/
 structure MachineState (S : Type) (F : Type) where
@@ -66,6 +87,11 @@ structure MachineState (S : Type) (F : Type) where
   currentState : S
   /-- Machine's local state (its `var` block), as a record. -/
   fields       : F
+  /-- Per-pmodule kind index. 0 = uninitialised; real machine kinds are
+      ≥ 1, mapped onto ctors of the synthesised `<Mod>.MKind`. The
+      default keeps existing constructors (M1, M2 hand-written) compiling
+      without modification. -/
+  kind         : Nat := 0
   deriving Inhabited, Repr
 
 /-! ## Accessors mirroring PVerifier's UCLID5 helpers -/

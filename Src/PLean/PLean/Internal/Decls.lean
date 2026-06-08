@@ -155,4 +155,46 @@ structure PPureDecl where
   ref       : Syntax
   deriving Inhabited
 
+/-- A `Lemma` or `Theorem` block — a named bundle of invariants. The
+    distinction between `Lemma` and `Theorem` is purely declarative; both
+    materialise to the same registry record (with `isTheorem` discriminating
+    for diagnostics). PLAN_P3 D19. -/
+structure PLemmaDecl where
+  name       : Name
+  /-- True iff declared with `Theorem`, false for `Lemma`. -/
+  isTheorem  : Bool
+  /-- Names of the per-invariant declarations this lemma owns, in the
+      order they were declared. Each name is *also* registered as a
+      free-standing `PInvariantDecl` so cross-references via
+      `prove ... using ...` can resolve to the individual prop. -/
+  invariants : Array Name
+  /-- Saved declaration `Syntax` for replay at `#gen_module` time. -/
+  defStx     : Option Syntax := none
+  ref        : Syntax
+  deriving Inhabited
+
+/-- One `prove` directive inside a `Proof` block. Either targets a named
+    lemma (`prove <name>`) or the special `default` sanity invariants
+    (`prove default`). -/
+structure PProveDirective where
+  /-- Target lemma name, or `default` (a sentinel). -/
+  target : Name
+  /-- True iff `target == default` (the sanity-invariants sentinel). -/
+  isDefault : Bool
+  /-- Names of lemmas to assume (`using <l1>, <l2>`). Each must itself be
+      a previously-`prove`d lemma name. -/
+  usingLemmas : Array Name := #[]
+  ref   : Syntax
+  deriving Inhabited
+
+/-- A `Proof <name>?` block — list of `prove` directives. The optional
+    name is just a tag for diagnostics; multiple `Proof` blocks accumulate. -/
+structure PProofDecl where
+  /-- Optional tag (debug only). Empty Name (`Name.anonymous`) when the
+      `Proof` block was anonymous. -/
+  name       : Name
+  directives : Array PProveDirective
+  ref        : Syntax
+  deriving Inhabited
+
 end PLean

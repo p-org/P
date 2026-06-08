@@ -17,7 +17,6 @@ type. Eventsets are pure metadata — they need no Lean def either way.
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Internal.Stub
 
 open Lean Elab Command
 
@@ -31,11 +30,6 @@ syntax (name := pEventTyped) "event " ident " : " term : command
 
 /-- `eventset esName = { e1, e2, ... }` — named set of events. -/
 syntax (name := pEventSet) "eventset " ident " = " "{" ident,* "}" : command
-
-private def hashEventTag (n : Name) : Nat :=
-  -- Phase 0: a tag is just the hash of the unqualified event name.
-  -- Phase 1 replaces with the real per-module index scheme.
-  n.hash.toNat
 
 @[command_elab pEventNoPayload]
 def elabPEventNoPayload : CommandElab := fun stx => do
@@ -86,15 +80,14 @@ def materialiseEvent (d : PEventDecl) : CommandElabM Unit := do
   match d.defStx with
   | none => pure ()
   | some stx =>
-    let tag := hashEventTag d.name
-    let tagSyn := Syntax.mkNumLit (toString tag)
-    let evId := mkIdent d.name
-    elabCommand (← `(def $evId : PLean.Stub.EventTag := $tagSyn))
-    -- For typed events, also emit the payload-type abbrev that the
-    -- `send` macro reads to ascribe named-tuple literals. The abbrev
-    -- name uses an underscore (`<ev>_payload`) rather than a dot
+    -- For typed events, emit the payload-type abbrev that the `send`
+    -- macro reads to ascribe named-tuple literals. The abbrev name uses
+    -- an underscore (`<ev>_payload`) rather than a dot
     -- (`<ev>.payload`) so it doesn't shadow / get confused with field
-    -- accessors on the event-tag def.
+    -- accessors. Phase 2 no longer emits a numeric event-tag def: the
+    -- per-pmodule event union `<Mod>.E` is the source of truth, and
+    -- `<ev>` resolves to the union constructor `<Mod>.E.<ev>` in
+    -- handler bodies.
     match stx with
     | `(event $_:ident : $payloadTy:term) =>
       let payloadAbbrev := mkIdent (d.name.appendAfter "_payload")

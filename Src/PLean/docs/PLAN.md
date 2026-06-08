@@ -22,7 +22,7 @@ strategy.
 3. **One Hoare triple per handler.** Mirroring PVerifier's UCLID5 strategy
    ([`Uclid5CodeGenerator.cs:1432-1591`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L1432-L1591)),
    each `(Machine, State, Event)` handler gets a single Lean lemma asserting
-   `triple (Inv ∧ guard) handler (fun _ => Inv)`. The `pverify` command walks
+   `triple (Inv ∧ guard) handler (fun _ => Inv)`. The [`pverify`](../PLean/Commands/PVerify.lean#L54-L75) command walks
    the registry and synthesizes these lemmas.
 
 4. **Registry, not AST.** The only "AST-like" thing we keep is a small Lean
@@ -59,7 +59,7 @@ namespace PServer
 end PServer
 ```
 
-`pverify` then synthesizes (per handler):
+[`pverify`](../PLean/Commands/PVerify.lean#L54-L75) then synthesizes (per handler):
 
 ```lean
 @[loomSpec] lemma Server_Idle_ePing_obligation
@@ -138,51 +138,58 @@ Src/PLean/
       record matching `Uclid5CodeGenerator.cs:594-606` shape
 - [ ] [`Semantics/Label.lean`](../PLean/Semantics/Label.lean): `Label`, `EventOrGoto`
 - [ ] [`Semantics/Monad.lean`](../PLean/Semantics/Monad.lean):
-      `PM α := StateT GlobalState (NonDetT DivM) α`; derive `MAlgOrdered` by composition
+      [`PM α := StateT GlobalState (NonDetT DivM) α`](../PLean/Semantics/Monad.lean#L37-L39); derive `MAlgOrdered` by composition
 - [ ] [`Semantics/Primitives.lean`](../PLean/Semantics/Primitives.lean):
-      `send`, `raise`, `goto`, `new`, `announce` updating `GlobalState` exactly as
+      [`send`](../PLean/Semantics/Primitives.lean#L35-L40), [`raise`](../PLean/Semantics/Primitives.lean#L42-L43), [`goto`](../PLean/Semantics/Primitives.lean#L48-L55), `new`, [`announce`](../PLean/Semantics/Primitives.lean#L59-L60) updating `GlobalState` exactly as
       `Uclid5CodeGenerator.cs:1981-1999`
 - [ ] [`Semantics/Predicates.lean`](../PLean/Semantics/Predicates.lean):
-      `inflight`, `sent`, `is`, `targets`
+      [`inflight`](../PLean/Semantics/Predicates.lean#L25-L26), [`sent`](../PLean/Semantics/Predicates.lean#L29-L30), `is`, [`targets`](../PLean/Semantics/Predicates.lean#L49-L50)
       (names match the P surface keywords from
       [`PLexer.g4:72`](../../PCompiler/CompilerCore/Parser/PLexer.g4#L72) —
       not C# AST node names like `FlyingExpr`)
 - [ ] [`Semantics/Default.lean`](../PLean/Semantics/Default.lean):
-      three sanity invariants
+      three sanity invariants ([`UniqueActions`](../PLean/Semantics/Default.lean#L23-L26), [`IncreasingCount`](../PLean/Semantics/Default.lean#L36-L37), [`ReceivedSubsetSent`](../PLean/Semantics/Default.lean#L46-L47))
 - [ ] **Exit criterion**: hand-write a 2-state ping-pong machine purely as Lean
       defs (no surface syntax), state a user invariant, prove all four handler
       triples via `loom_solve`
 
-### Phase 2 — Registry + minimal surface (≈1 week)
-- [ ] [`Surface/Registry.lean`](../PLean/Surface/Registry.lean): env extension
-- [ ] [`Surface/Events.lean`](../PLean/Surface/Events.lean):
+### Phase 2 — Registry + minimal surface (≈1 week) ✓
+- [x] `Surface/Registry.lean`: env extension
+- [x] [`Surface/Events.lean`](../PLean/Surface/Events.lean):
       `event`, `eventset`, `enum`, `type`, `interface` commands
-- [ ] [`Surface/Machine.lean`](../PLean/Surface/Machine.lean):
+- [x] [`Surface/Machine.lean`](../PLean/Surface/Machine.lean):
       `machine`, `state`, `entry`, `on…do`, `on…goto`
-- [ ] [`Surface/Stmt.lean`](../PLean/Surface/Stmt.lean):
-      statement macros for `send`, `raise`, `goto`, `assign`
-- [ ] **Exit criterion**: rewrite the Phase-1 ping-pong example in surface
-      syntax; still verifies
+- [x] [`Surface/Stmt.lean`](../PLean/Surface/Stmt.lean):
+      statement macros for [`send`](../PLean/Surface/Stmt.lean#L73-L86), [`raise`](../PLean/Surface/Stmt.lean#L114-L115), `goto`, `assign`
+- [x] [`Commands/GenModule.lean`](../PLean/Commands/GenModule.lean):
+      synthesises per-pmodule `Sig`/`PM'`/`GS`, emits
+      `#derive_lifted_wp` for `get`/`set`, replays handler bodies
+      onto the real PM
+- [x] [`Surface/Notation.lean`](../PLean/Surface/Notation.lean):
+      [`≺`](../PLean/Surface/Notation.lean#L31-L32), [`is`](../PLean/Surface/Notation.lean#L43-L54), [`targets`](../PLean/Surface/Notation.lean#L56-L58) notations
+- [x] **Exit criterion (M2)**: surface-syntax ping-pong verifies in
+      [`Tests/Surface/Phase2PingPong.lean`](../Tests/Surface/Phase2PingPong.lean) via `wpgen` + raw Loom
+      primitives. `Internal/Stub.lean` deleted.
 
 ### Phase 3 — Verification declarations (≈4 days)
 - [ ] [`Surface/Verify.lean`](../PLean/Surface/Verify.lean):
       `invariant`, `axiom`, `init`, `pure`, `lemma`/`theorem` groups
-- [ ] [`Surface/Proof.lean`](../PLean/Surface/Proof.lean):
+- [ ] `Surface/Proof.lean`:
       `proof { prove G using P except E; }`, `prove_correct`
-- [ ] [`Verify/Obligation.lean`](../PLean/Verify/Obligation.lean):
+- [ ] `Verify/Obligation.lean`:
       walk registry → synthesize per-handler `@[loomSpec]` lemmas
-- [ ] [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean): `pverify` tactic
-- [ ] [`Verify/Sanity.lean`](../PLean/Verify/Sanity.lean): default obligations
+- [ ] `Verify/Tactic.lean`: `pverify` tactic
+- [ ] `Verify/Sanity.lean`: default obligations
 
 ### Phase 4 — Spec machines (≈3–4 days)
 - [ ] Flatten spec machines to global vars + handler procedures
       (mirrors [`Uclid5CodeGenerator.cs:980-1088`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L980-L1088))
-- [ ] Hook spec handlers at every `send` of an observed event
+- [ ] Hook spec handlers at every [`send`](../PLean/Semantics/Primitives.lean#L35-L40) of an observed event
 
 ### Phase 5 — Remaining surface (≈1 week)
 - [ ] Quantifier notations
 - [ ] `foreach … invariant …`
-- [ ] [`Surface/ForeignFun.lean`](../PLean/Surface/ForeignFun.lean):
+- [ ] `Surface/ForeignFun.lean`:
       `pure` (with body → `def`, without → `opaque`), foreign-fun
       `requires`/`ensures`, `param`
 - [ ] Polish error messages
@@ -204,7 +211,7 @@ Src/PLean/
 
 PVerifier today can only state safety properties over the *current* state
 ([`Uclid5CodeGenerator.cs:594-606`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L594-L606)
-— `GlobalState` exposes `sent` / `received` as sets of labels but exposes
+— [`GlobalState`](../PLean/Semantics/GlobalState.lean#L57-L68) exposes [`sent`](../PLean/Semantics/Predicates.lean#L29-L30) / [`received`](../PLean/Semantics/Predicates.lean#L33-L34) as sets of labels but exposes
 no ordering between them). State-based existence claims like
 "some `ePing` was sent and some `ePong` was sent" are already expressible:
 
@@ -221,7 +228,7 @@ PVerifier.
 
 **The missing primitive: `≺ : Label → Label → Prop`.** A single binary
 precedence operator on events ("`a ≺ b`" reads "`a` was sent before `b`").
-With `≺` plus the existing `is`/`sent`/`inflight`/quantifiers, the
+With `≺` plus the existing `is`/[`sent`](../PLean/Semantics/Predicates.lean#L29-L30)/[`inflight`](../PLean/Semantics/Predicates.lean#L25-L26)/quantifiers, the
 PingPong invariant becomes genuinely temporal:
 
 ```p
@@ -237,19 +244,19 @@ adding *one* binary operator, not a temporal logic.
 **The encoding problem.** State-based verification needs a state-resident
 witness. There are two plausible implementations of `≺`; we pick one
 before Phase 3 obligation generation solidifies. Both are invisible to
-the user — they only differ in `GlobalState` shape and SMT performance.
+the user — they only differ in [`GlobalState`](../PLean/Semantics/GlobalState.lean#L57-L68) shape and SMT performance.
 
-1. **`≺` from `actionCount` (recommended).** PVerifier already increments
+1. **`≺` from [`actionCount`](../PLean/Semantics/GlobalState.lean#L65-L68) (recommended).** PVerifier already increments
    a global
    [`actionCount`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L768-L771)
-   on every `send`/`goto` and stores it on each `Label`
+   on every [`send`](../PLean/Semantics/Primitives.lean#L35-L40)/[`goto`](../PLean/Semantics/Primitives.lean#L48-L55) and stores it on each [`Label`](../PLean/Semantics/Label.lean#L68-L72)
    ([`Uclid5CodeGenerator.cs:760-792`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L760-L792)).
    Define `a ≺ b := a.actionCount < b.actionCount`. Cost: zero — this
    reuses machinery that already ships in PVerifier. SMT sees a plain
    integer comparison and stays in linear arithmetic.
 
 2. **`≺` from event history.** Add a ghost field
-   `eventHistory : List Label` to `GlobalState`, append on every `send`,
+   `eventHistory : List Label` to [`GlobalState`](../PLean/Semantics/GlobalState.lean#L57-L68), append on every [`send`](../PLean/Semantics/Primitives.lean#L35-L40),
    and define `a ≺ b := indexOf a < indexOf b` in the history. More
    general — allows reasoning about repeated occurrences of the same
    label — but SMT now sees an unbounded list, which `loom_solve` may
@@ -257,21 +264,21 @@ the user — they only differ in `GlobalState` shape and SMT performance.
 
 **Recommended sequencing.**
 - **Phase 1**: commit to encoding (1). It's a strict superset of what
-  PVerifier already does and bakes nothing new into `GlobalState` —
-  `actionCount` is already there. Define `≺` as a Lean `def` over Labels.
+  PVerifier already does and bakes nothing new into [`GlobalState`](../PLean/Semantics/GlobalState.lean#L57-L68) —
+  [`actionCount`](../PLean/Semantics/GlobalState.lean#L65-L68) is already there. Define `≺` as a Lean [`def`](../PLean/Semantics/Predicates.lean#L69-L72) over Labels.
 - **Phase 2** (surface): declare the notation
   `notation:50 a " ≺ " b => a.actionCount < b.actionCount` in
   [`Surface/Notation.lean`](../PLean/Surface/Notation.lean), and register
   the `\prec` input shortcut. ASCII fallback: `<<` if users prefer (TBD).
 - **Phase 3** (verification): no new obligation-generator work — `≺`
-  reduces to integer comparison, which `loom_solve` already handles.
+  reduces to integer comparison, which [`loom_solve`](../.lake/packages/Loom/CaseStudies/Tactic.lean) already handles.
 
 **Out of scope for v1** (track as forward-looking in
 [`STATUS.md`](STATUS.md) "Anticipated" risks):
 - Full LTL (`prev`, `since`, `eventually`, `always`) — these would
   desugar to quantifications over `actionCount`, but the macro
   surface and decision procedures are non-trivial. Reconsider if v1
-  examples turn out to need more than `≺`.
+  examples turn out to need more than [`≺`](../PLean/Surface/Notation.lean#L31-L32).
 - Liveness ("every request eventually gets a response") needs fairness
   assumptions — not in scope.
 - Refinement (`test … refines …` from
@@ -291,7 +298,7 @@ the user — they only differ in `GlobalState` shape and SMT performance.
   ([`Uclid5CodeGenerator.cs:1347`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L1347),
   [`:1386`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L1386))
   — UCLID5 sees the fully-inlined body, no specs needed. PLean should do the
-  same for v1: `pverify` unfolds helper defs before calling `loom_solve`. Only
+  same for v1: [`pverify`](../PLean/Commands/PVerify.lean#L54-L75) unfolds helper defs before calling `loom_solve`. Only
   if we later want compositional helper verification (foreign `fun` with
   `requires`/`ensures`, or summarised pure functions) do we need
   `@[loomSpec]`-driven ordering. Phase 3 for the unfolding decision; ordering
@@ -313,11 +320,11 @@ the user — they only differ in `GlobalState` shape and SMT performance.
 ## First Deliverable (≈1.5 weeks, end of Phase 1)
 
 A single hand-written Lean file with no macros that:
-- defines `GlobalState`, `PM`, `send`, the three default invariants
+- defines [`GlobalState`](../PLean/Semantics/GlobalState.lean#L57-L68), [`PM`](../PLean/Semantics/Monad.lean#L37-L39), [`send`](../PLean/Semantics/Primitives.lean#L35-L40), the three default invariants
 - hand-codes a 2-state ping-pong machine as a Lean record + four defs
   (Idle_entry, Idle_ePing, Active_entry, Active_ePong)
 - states the safety invariant "every ePong is in response to a sent ePing"
-- proves all four handler triples via `loom_solve`
+- proves all four handler triples via `loom_solve` (M1 lives in [`Tests/Semantics/HandPingPong.lean`](../Tests/Semantics/HandPingPong.lean))
 
 This validates the whole pipeline before any macro work. The macros in
 Phases 2–3 then have a concrete target to elaborate into.

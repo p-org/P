@@ -129,9 +129,13 @@ def materialiseType (d : PTypeDecl) : CommandElabM Unit := do
           let fid : TSyntax `ident := ⟨f.raw[0]⟩
           let fty : TSyntax `term  := ⟨f.raw[2]⟩
           `(Lean.Parser.Command.structSimpleBinder| $fid:ident : $fty)
+        -- Derive DecidableEq alongside Inhabited so the per-pmodule
+        -- event union can derive DecidableEq when an event has a
+        -- named-tuple payload.
         elabCommand (← `(
           structure $id where
             $[$fieldStxs]*
+            deriving Inhabited, DecidableEq
         ))
       | `(type $id:ident = $rhs:term) =>
         elabCommand (← `(abbrev $id : Type := $rhs))

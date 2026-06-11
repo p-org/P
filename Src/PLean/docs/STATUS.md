@@ -81,28 +81,25 @@ _**Current closure rates (post-fix, honest):**_
   legitimately fail without manual proofs or additional invariants)._
 - _All other tests close 100% via SMT or `@[pverifyProof]`._
 
-_Headline tests (all green at HEAD; 1007 jobs):_
+_Headline tests (all green at HEAD, 985 jobs; commit `101a36148`):_
 - _[`Phase3PingPong.lean`](../Tests/Surface/Phase3PingPong.lean) —
-  trivial-handler discharge via the auto path (`2 obligations from
-  1 prove-directives, 2 proved by SMT, 0 user-proved, 0 failed`)._
+  trivial-handler auto-discharge._
 - _[`PVerifyManualProof.lean`](../Tests/Surface/PVerifyManualProof.lean) —
-  end-to-end demo of `@[pverifyProof]` registering a manual proof._
+  end-to-end `@[pverifyProof]` workflow._
 - _[`PVerifyProofRegistry.lean`](../Tests/Surface/PVerifyProofRegistry.lean) —
-  pins both paths side-by-side: without `@[pverifyProof]` the auto
-  path runs; with it, `#pverify` reports `(M proved by SMT, K
-  user-proved, J failed)` with `K ≥ 1`._
+  auto vs. manual paths side-by-side._
+- _[`PVerifyConditional.lean`](../Tests/Surface/PVerifyConditional.lean) —
+  `if cond then … else …` with and without an inner `send`._
+- _[`SoundnessRegression.lean`](../Tests/Surface/SoundnessRegression.lean) —
+  pins (a) `name : GS → Prop` shape, (b) false invariant fails,
+  (c) inner-`∀ s` shadowing rejected._
 
-_M3 acceptance (the three Tutorial/Advanced benchmarks)
-is **partially** unblocked: the auto path now closes trivial-handler
-obligations and `prove default;` is auto-emitted per (M, S, ev) so
-no manual `prove default;` is needed. Hard handlers
-(DistributedLock's `eGrant` / `eAccept` with conditional + state
-update + send) still defeat the auto path because `loom_smt` chokes
-on `GlobalState`-shaped goals (the
-"higher-order input" caveat in
-[`Tests/Semantics/SmtRoundtrip.lean`](../Tests/Semantics/SmtRoundtrip.lean)
-header). Those obligations are the user's `@[pverifyProof]` work,
-which the architecture now supports._
+_M3 acceptance: the SMT-discharge pipeline closes every obligation
+that's actually inductive. The DistributedLock and LockServer ports
+omit some of the original P source's invariants (e.g.
+`not_held_after_release`, `transfer_to_higher`), so their `prove
+safety` obligations correctly fail SMT and need either the missing
+invariants or `@[pverifyProof]` manual proofs._
 
 ### Session 2026-06-09 (afternoon) — Phase-3 architectural pivot landed
 
@@ -1354,6 +1351,17 @@ The obligation generator's pre/post both used `safety s` — but `safety s` redu
 
 ### 2026-06-10 (final) — SMT prep recipe extended: `WithName` strip + `dsimp only` + per-conjunct unfolds → DistributedLock 4/4 + LockServer 15/15
 
+> ⚠ **Superseded by the 2026-06-10 (final-final-fix) entry above.** The
+> "DistributedLock 4/4 + LockServer 15/15" closure rate this entry
+> reports was an artifact of the soundness bug fixed below: invariants
+> were being materialised as closed `Prop`s, so the bundle predicate
+> dropped its state argument and obligations reduced to tautologies.
+> Post-fix, the honest closure rates are DistributedLock 2/4 +
+> LockServer 2/15 (the rest are genuine inductiveness gaps in the
+> ports). The mechanical SMT-prep changes this entry describes are
+> still in tree and load-bearing; only the closure-rate claim is
+> superseded.
+
 The Veil-recipe entry below got `pverify_smt_close` working on default-invariant goals, but the M3 benchmarks still failed at `#pverify`-time on the conditional-bearing `eGrant` / `eAccept` handlers and the `using`-chained safety obligations. Two missing simp steps in `pverify_step_wp` and a re-ordered `pverify_smt_prep` close the gap:
 
 - **`pverify_step_wp` extension** ([`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean)). After Loom's `wpgen + loomLogicSimp/loomWpSimp/loomWPGenRewrite + GlobalState updates`, the goal still carried Loom's `WithName α n = α` wrappers from `if_pos`/`if_neg` branches and `(⨅ (_ : P), Q) s` infimum-over-Prop residuals. Added three `simp only` calls — `[WithName.mk', WithName.erase, typeWithName.erase]`, `[iInf_apply, iInf_Prop_eq, iSup_apply, iSup_Prop_eq]`, `[if_true, if_false]` — that mirror Loom's own `loom_goals_intro` simp set verbatim. After this, the post-`pverify_step_wp` goal contains no Loom-specific machinery.
@@ -1370,8 +1378,6 @@ The Veil-recipe entry below got `pverify_smt_close` working on default-invariant
   | `Phase3DistributedLock` | 1/4 SMT | **4/4 SMT** ✓ |
   | `Phase3LockServer` | 7/15 SMT | **15/15 SMT** ✓ |
   | `PVerifyConditionalProbeSend` (eGrant + send) | 0/1 | **1/1 SMT** ✓ |
-  | `PVerifySmtProbe` Probe 2 (`UniqueActions` after `addSent`) | "Higher-order input?" | proven |
-  | `PVerifySmtProbe` Probe 3 (manual destructure baseline) | "Higher-order input?" | proven |
   | All other tests (Phase2PingPong, Phase3PingPong, ObligationShape, etc.) | unchanged | unchanged ✓ |
 
   Total Phase-3 obligations across 11 `#pverify` calls: **34/34 closed**. Two of the 34 are deliberately user-proved via `@[pverifyProof]` to exercise the manual-proof workflow (`PVerifyManualProof.lean`, `PVerifyProofRegistry.lean`). The benchmark files dropped their `set_option pverify.failOnIncomplete false` workaround.
@@ -1381,7 +1387,7 @@ The Veil-recipe entry below got `pverify_smt_close` working on default-invariant
   2. The Loom-specific `WithName` / `iInf_apply` cleanup that Veil doesn't need (Veil's DSL doesn't go through Loom's WPGen).
   3. The per-conjunct unfolds that surface the Bool/Nat content of `DefaultInvariants`.
 
-- **Pinned regression check.** [`Tests/Semantics/SmtVeilRecipe.lean`](../Tests/Semantics/SmtVeilRecipe.lean) keeps the synthetic `DefaultInvariants`-preservation probes; [`Tests/Surface/PVerifySmtProbe.lean`](../Tests/Surface/PVerifySmtProbe.lean) keeps the per-stage SMT probes against the `#pverify` generator's actual emitted shape; [`Tests/Surface/PVerifyConditionalProbe.lean`](../Tests/Surface/PVerifyConditionalProbe.lean) pins the conditional + send case. If a future Loom / lean-auto upgrade breaks the recipe, all three fail loud.
+- **Pinned regression checks.** [`Tests/Semantics/SmtVeilRecipe.lean`](../Tests/Semantics/SmtVeilRecipe.lean) keeps the synthetic `DefaultInvariants`-preservation probes; [`Tests/Surface/PVerifyConditional.lean`](../Tests/Surface/PVerifyConditional.lean) pins the conditional + send case.
 
 ### 2026-06-10 (later still) — R-P3.1 / R-P3.2 closed: drop type-ascription on `get`/`set` in accessors and primitives
 
@@ -1811,6 +1817,29 @@ by sorry` skeletons for the failed ones. `pverify.failOnIncomplete`
 option lets users iterate on manual proofs without breaking the
 build. M3 acceptance becomes "write the manual proofs"; the
 architectural plumbing is in place._
+
+_Updated 2026-06-10: SMT-prep recipe (Veil-style preparation +
+`WithName` strip + `dsimp only` + per-conjunct unfolds) shipped;
+soundness fix landed and `system <s> { … }` block introduced for
+explicit state binding. `PInvariantDecl` gains a `stateBinder` field;
+the materialiser emits `def name : GS → Prop := fun <s> => <body>`
+(or `fun _ => <body>` for state-independent invariants). Inner-`∀ s`
+shadowing rejected at materialisation. False-invariant regression
+test added._
+
+_Updated 2026-06-11 (commit `101a36148`): committed the Phase-3
+SMT-discharge pipeline + soundness fix. Honest closure rates:
+DistributedLock 2/4, LockServer 2/15, all other tests 100%. M3
+acceptance is now a matter of porting the missing inductive
+invariants from the P sources or supplying `@[pverifyProof]` proofs
+— the tooling is in place. Probe / debug files
+(`Tests/Surface/PVerifyDefaultDebug.lean`,
+`Tests/Surface/PVerifySmtProbe.lean`,
+`Tests/Surface/WpgenAccessorProbe.lean`,
+`Tests/Semantics/SmtEncodingProbe.lean`) are intentionally
+untracked. Comment cleanup: dropped dated narrative across the
+modified library files and tests, keeping only functional
+explanation._
 
 ## Document Index
 - [`PLAN.md`](PLAN.md) — overall implementation plan (all phases). NOTE: its

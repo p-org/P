@@ -937,6 +937,14 @@ Phase 3:
 
 ## Hand-off to Phase 4 and beyond
 
+> **Phase 4 plan** — see [`PLAN_P4.md`](PLAN_P4.md). Phase 4 owns spec
+> machines (D26 deferred to it) *and* the residual P3 items collected
+> under "Deferred from REVIEW_P3" — most importantly R15
+> (per-accessor `#derive_lifted_wp` + per-primitive `loomSpec`
+> lemmas), which gates every M3 benchmark beyond
+> Phase3PingPong/trivial.
+
+
 Phase 4 (Spec machines) needs:
 - The handler-wrapper pattern from D27 — spec handlers fire on
   observed events, so `markReceived` injection still applies.

@@ -22,12 +22,25 @@ fail in any but the most trivial cases.
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
+import PLean.Semantics.GlobalState
 
 open Lean Elab Command
 
 namespace PLean
 
-/-! ## Invariant -/
+/-! ## Invariant
+
+Invariants are state-implicit: `invariant <name> : <body>` materialises
+to `def <name> : GS → Prop := fun <s> => <body>`, where `<s>` is the
+state binder introduced by an enclosing `system <s> { … }` block. A
+bare `invariant <name> : <body>` (outside `system`) emits
+`fun _ => <body>` — only valid for state-independent properties.
+
+The `system <s> { … }` block is the user-facing way to bind the state
+explicitly. It can appear at top level inside a `pmodule`, or nested
+inside a `Lemma` / `Theorem` block. Multiple `system` blocks may
+appear, possibly with different binder names — each invariant
+remembers its own. -/
 
 syntax (name := pInvariant) "invariant " ident " : " term : command
 
@@ -37,8 +50,49 @@ def elabPInvariant : CommandElab := fun stx => do
     | throwUnsupportedSyntax
   let _ ← requireLocalPModuleCtx "invariant"
   let ns ← getCurrNamespace
+  -- Bare top-level form: no state binder; the body must be
+  -- state-independent. The materialiser emits `fun _ => <body>`.
   addInvariant
-    { name := id.getId, leanName := ns ++ id.getId, defStx := some stx, ref := stx }
+    { name := id.getId, leanName := ns ++ id.getId
+      stateBinder := none
+      defStx := some stx, ref := stx }
+
+/-! ### `system <s> { invariant … ; … }` — state-implicit invariant block.
+
+Top-level form. Each child invariant is registered with
+`stateBinder := some <s>`, so the materialiser emits
+`def <name> : GS → Prop := fun <s> => <body>`. -/
+
+/-- Invariant-line grammar inside a `system` block. Shared between the
+top-level and Lemma-nested forms so the pattern can be matched with
+`` `(pSystemInv| invariant … : …) ``. We need a real syntax category
+because `pInvariant` is a named *command* rule and can't be folded
+into a sub-pattern. -/
+declare_syntax_cat pSystemInv
+
+syntax (name := pSystemInvItem)
+  "invariant " ident " : " term : pSystemInv
+
+syntax (name := pSystemBlock) "system " ident "{" pSystemInv* "}" : command
+
+@[command_elab pSystemBlock]
+def elabPSystemBlock : CommandElab := fun stx => do
+  let `(system $sid:ident { $items:pSystemInv* }) := stx
+    | throwUnsupportedSyntax
+  let _ ← requireLocalPModuleCtx "system"
+  let ns ← getCurrNamespace
+  let sName := sid.getId
+  for it in items do
+    match it with
+    | `(pSystemInv| invariant $iid:ident : $prop:term) =>
+      -- Reconstruct the inner syntax so `materialiseInvariant`'s
+      -- existing pattern match still works (`invariant <ident> : <term>`).
+      let invStx ← `(command| invariant $iid:ident : $prop)
+      addInvariant
+        { name := iid.getId, leanName := ns ++ iid.getId
+          stateBinder := some sName
+          defStx := some invStx.raw, ref := it }
+    | _ => throwErrorAt it "internal: unexpected `system`-block child"
 
 /-! ## Axiom (single-prop) -/
 
@@ -107,29 +161,27 @@ def elabPInstance : CommandElab := fun stx => do
     { name := id.getId, classRepr := typeRepr, typeRepr := typeRepr
       defStx := some stx, ref := stx }
 
-/-! ## Lemma / Theorem / Proof blocks (D19)
+/-! ## Lemma / Theorem / Proof blocks
 
-P's grammar:
-  ```
-  Lemma   <name> { invariant a: ...; invariant b: ...; }
-  Theorem <name> { invariant safety: ...; }
-  Proof   <name>? { prove <lemma> [using <l1>, ...]; prove default; }
-  ```
+  Lemma   <name> { (invariant … | system <s> { invariant … }) … }
+  Theorem <name> { (invariant … | system <s> { invariant … }) … }
+  Proof   <name>? { prove <lemma> [using <l1>, …]; prove default; }
 
-`Lemma X` and `Theorem Y` register a *named group* of invariants; each
-inner `invariant` registers as a free-standing `PInvariantDecl` so
-references via `using` can resolve to the individual prop. The lemma
-record itself remembers the ordered list of invariant names so it can
-emit `def X.bundle : PProp Sig := fun s => P1 s ∧ P2 s` at materialisation
-time.
-
-`Proof <name>?` registers a list of `prove …` directives; multiple
-`Proof` blocks accumulate. -/
+Each inner `invariant` is also registered as a free-standing
+`PInvariantDecl` so `using`-clauses can reference it by name. The
+Lemma/Theorem record retains the ordered name list so the bundle
+predicate `def X : GS → Prop := fun s => P1 s ∧ P2 s ∧ …` can be
+emitted at materialisation time. -/
 
 declare_syntax_cat pLemmaBodyItem
 
 syntax (name := pLemmaInvariant)
   "invariant " ident " : " term : pLemmaBodyItem
+
+/-- `system <s> { invariant … }` inside a Lemma / Theorem block. Same
+semantics as the top-level form. -/
+syntax (name := pLemmaSystemBlock)
+  "system " ident "{" pSystemInv* "}" : pLemmaBodyItem
 
 syntax (name := pLemmaDeclSyntax)
   "Lemma " ident " {" pLemmaBodyItem* "}" : command
@@ -139,13 +191,12 @@ syntax (name := pTheoremDeclSyntax)
 
 declare_syntax_cat pProofItem
 
-/-- `prove <name> [using <name1>, <name2>, ...];`
+/-- `prove <name> [using <name1>, <name2>, …];`
 
-    The special form `prove default;` uses the literal identifier
-    `default` as `<name>`; the elaborator dispatches on the name string.
-    We do NOT introduce `default` as a keyword token because that would
-    break any place in the codebase that uses `default` as a term
-    (e.g., `Inhabited`-generated `⟨ctor default⟩` instances). -/
+`prove default;` uses the literal identifier `default`; the elaborator
+dispatches on the name string. We do NOT introduce `default` as a
+keyword token because that would break uses of `default` as a term
+(e.g. `Inhabited`-generated `⟨ctor default⟩`). -/
 syntax (name := pProofProve)
   "prove " ident (" using " ident,+)? ";" : pProofItem
 
@@ -158,22 +209,31 @@ private def collectLemmaInvariants (id : Ident) (items : Array Syntax)
   let _ ← requireLocalPModuleCtx (if isTheorem then "Theorem" else "Lemma")
   let ns ← getCurrNamespace
   let mut invNames : Array Name := #[]
-  -- Each `invariant <id> : <prop>` inside the block is also added as a
-  -- free-standing `PInvariantDecl`. We re-use the existing materialisation
-  -- path so cross-references via `using` resolve to a Lean def of the
-  -- name.
+  -- Helper: register one invariant with the given (optional) state binder.
+  let registerOne (iid : TSyntax `ident) (prop : TSyntax `term)
+      (stateBinder : Option Name) (childRef : Syntax) :
+      CommandElabM Unit := do
+    let invStxReal ← `(command| invariant $iid:ident : $prop)
+    addInvariant
+      { name := iid.getId, leanName := ns ++ iid.getId
+        stateBinder := stateBinder
+        defStx := some invStxReal.raw, ref := childRef }
   for it in items do
     match it with
     | `(pLemmaBodyItem| invariant $iid:ident : $prop:term) =>
-      -- Re-emit as a free-standing `invariant <name> : <prop>` syntax so
-      -- the existing `materialiseInvariant` path can replay it. The
-      -- `PInvariantDecl.defStx` field expects a `(invariant ... : ...)`
-      -- top-level command pattern.
-      let invStxReal ← `(command| invariant $iid:ident : $prop)
-      addInvariant
-        { name := iid.getId, leanName := ns ++ iid.getId
-          defStx := some invStxReal.raw, ref := it }
+      -- Bare invariant inside a Lemma — state-independent.
+      registerOne iid prop none it
       invNames := invNames.push iid.getId
+    | `(pLemmaBodyItem| system $sid:ident { $invs:pSystemInv* }) =>
+      -- Nested `system <s> { … }`: each child invariant binds the same
+      -- state name `<s>` for its body.
+      let sName := sid.getId
+      for inv in invs do
+        match inv with
+        | `(pSystemInv| invariant $iid:ident : $prop:term) =>
+          registerOne iid prop (some sName) inv
+          invNames := invNames.push iid.getId
+        | _ => throwErrorAt inv "internal: unexpected `system`-block child"
     | _ => throwErrorAt it "unrecognised lemma body item"
   addLemma
     { name := id.getId, isTheorem := isTheorem
@@ -220,10 +280,9 @@ def elabPProof : CommandElab := fun stx => do
       let useIds : Array Name := useTokens.map (·.getId)
       let tgtName := tgt.getId
       let isDefault := tgtName == `default
-      -- REVIEW_P3 §4.6: validate the prove-target names early so a typo
-      -- surfaces a clear error at the `prove` line, not as a cryptic
-      -- elaboration failure later in `pverify`. `default` is the
-      -- sanity-invariant sentinel and is always valid.
+      -- Validate prove-target names early so typos surface at the
+      -- `prove` line instead of as a cryptic later elaboration failure.
+      -- `default` is the sanity-invariant sentinel and is always valid.
       unless isDefault || ctx.lemmas.contains tgtName do
         throwErrorAt tgt
           s!"`prove`: no `Lemma` or `Theorem` named '{tgtName}' in pmodule '{ctx.name}' (must be `default` or a previously-declared lemma)"
@@ -244,13 +303,54 @@ Replay each verification declaration as a Lean def. Called by
 `#gen_module` after machines have been materialised so invariant /
 axiom bodies can reference machine fields and event payloads. -/
 
+/-- Reject `∀ <ident> : GlobalState <Sig>, …` at the head of an
+invariant body when the invariant lives inside a `system <s> { … }`
+block: the inner ∀-binder would shadow the outer `<s>` and silently
+decouple the invariant from per-handler state.
+
+A bare top-level `invariant standalone : ∀ s : GlobalState Sig, P` is
+allowed — it's intentionally state-independent (the materialiser uses
+a wildcard binder, so no shadowing risk). -/
+private def rejectExplicitStateBinder (id : Ident) (prop : TSyntax `term) :
+    CommandElabM Unit := do
+  match prop with
+  | `(∀ _ : PLean.GlobalState $_, $_) | `(∀ _ : GlobalState $_, $_)
+  | `(∀ $_:ident : PLean.GlobalState $_, $_) | `(∀ $_:ident : GlobalState $_, $_)
+  | `(∀ ($_:ident : PLean.GlobalState $_), $_) | `(∀ ($_:ident : GlobalState $_), $_) =>
+    throwErrorAt prop m!"invariant `{id.getId}` is inside a `system` block \
+      but its body begins with `∀ <ident> : GlobalState <Sig>, …`. That \
+      inner ∀-binder shadows the outer `system` state binder and \
+      silently decouples the invariant from per-handler state (the \
+      soundness hole fixed 2026-06-10). Drop the leading \
+      `∀ … : GlobalState Sig,` and reference the `system`-block's \
+      state binder directly in the body."
+  | _ => pure ()
+
 def materialiseInvariant (d : PInvariantDecl) : CommandElabM Unit := do
   match d.defStx with
   | none => pure ()
   | some stx =>
     let `(invariant $id:ident : $prop:term) := stx
       | throwErrorAt stx "internal error: invariant defStx malformed"
-    elabCommand (← `(def $id : Prop := $prop))
+    -- Body shape: `def <name> : GS → Prop := fun <binder> => <body>`,
+    -- where `<binder>` is the user's `system <s>` name when present
+    -- and the wildcard `_` otherwise (forcing state-independence;
+    -- stray state references then fail loudly as `unknown identifier`).
+    --
+    -- The binder is built via `mkIdent` so it is UNHYGIENIC and
+    -- therefore visible to the user's body. `\`(fun s => …)` would
+    -- hygiene-mark `s` and break resolution.
+    let sigId : Ident := mkIdent `Sig
+    let gsTy : Ident := mkIdent ``PLean.GlobalState
+    let binderIdent : Ident :=
+      match d.stateBinder with
+      | some sName => mkIdent sName
+      | none       => mkIdent `_
+    if d.stateBinder.isSome then
+      rejectExplicitStateBinder id prop
+    let cmd ← `(command|
+      def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop)
+    elabCommand cmd
 
 def materialiseAxiom (d : PAxiomDecl) : CommandElabM Unit := do
   match d.defStx with
@@ -261,10 +361,9 @@ def materialiseAxiom (d : PAxiomDecl) : CommandElabM Unit := do
     elabCommand (← `(axiom $id : $prop))
 
 def materialiseInit (_d : PInitDecl) : CommandElabM Unit := do
-  -- Phase 3: per-init-clause materialisation is a no-op — the
-  -- aggregation happens in `Commands/GenModule.lean` (`emitInitConditions`),
-  -- which folds every saved `init-holds <prop>` into a single
-  -- `<Mod>.InitConditions : PProp Sig` predicate. See PLAN_P3 D21.
+  -- Per-clause materialisation is a no-op: aggregation lives in
+  -- `Commands/GenModule.lean::emitInitConditions`, which folds every
+  -- saved `init-holds <prop>` into `<Mod>.InitConditions : PProp Sig`.
   pure ()
 
 def materialisePure (d : PPureDecl) : CommandElabM Unit := do

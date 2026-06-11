@@ -1,22 +1,19 @@
 /-
-PLean Phase-3 — `#guard_msgs`-pinned regression tests for the
-error paths the second-pass review (REVIEW_P3 §4 / §B.1) flagged as
-unprotected. Each test exercises one of the validations added during
-the REVIEW_P3 follow-up sweep so a future refactor that weakens any
-of these checks fails CI rather than passing silently.
+`#guard_msgs`-pinned regression tests for surface error paths:
 
-`#guard_msgs in` wraps a *single* command. We keep each error case
-in its own `pmodule` and place the `#guard_msgs in <command>` against
-the specific declaration that should fail. (Wrapping a whole
-`pmodule M ... end M` block fails to capture diagnostics that
-elaborate at a child position; the `#guard_msgs` must appear
-*inside* the open pmodule, immediately before the offending decl.)
+- `Lemma default` / `Theorem default` are rejected (`default` is the
+  sanity-invariant sentinel).
+- `prove <unknown>;` and `prove … using <unknown>;` raise an error at
+  the offending token.
+
+`#guard_msgs in` wraps a single command and must appear *inside* the
+open pmodule, immediately before the offending decl.
 -/
 import PLean
 
 open PLean
 
-/-! ## §4.7 — `Lemma default` reserved-name rejection -/
+/-! ## `Lemma default` is reserved -/
 
 pmodule Phase3ErrLemmaDefault
 /--
@@ -24,11 +21,11 @@ error: `Lemma` name 'default' is reserved for the sanity-invariant sentinel used
 -/
 #guard_msgs in
 Lemma default {
-  invariant t : ∀ _ : GlobalState Sig, True
+  invariant t : True
 }
 end Phase3ErrLemmaDefault
 
-/-! ## §4.7 — same applies to `Theorem default` -/
+/-! ## `Theorem default` is reserved -/
 
 pmodule Phase3ErrTheoremDefault
 /--
@@ -36,11 +33,11 @@ error: `Theorem` name 'default' is reserved for the sanity-invariant sentinel us
 -/
 #guard_msgs in
 Theorem default {
-  invariant t : ∀ _ : GlobalState Sig, True
+  invariant t : True
 }
 end Phase3ErrTheoremDefault
 
-/-! ## §4.6 — `prove <unknown>;` rejected at the `prove` line -/
+/-! ## `prove <unknown>;` is rejected -/
 
 pmodule Phase3ErrUnknownTarget
   event eFoo
@@ -49,7 +46,7 @@ pmodule Phase3ErrUnknownTarget
   }
 
   Lemma good {
-    invariant t : ∀ _ : GlobalState Sig, True
+    invariant t : True
   }
 
 /--
@@ -61,7 +58,7 @@ Proof {
 }
 end Phase3ErrUnknownTarget
 
-/-! ## §4.6 — `prove ... using <unknown>;` rejected at the using-token -/
+/-! ## `prove ... using <unknown>;` is rejected at the `using` token -/
 
 pmodule Phase3ErrUnknownUsing
   event eFoo
@@ -70,7 +67,7 @@ pmodule Phase3ErrUnknownUsing
   }
 
   Lemma good {
-    invariant t : ∀ _ : GlobalState Sig, True
+    invariant t : True
   }
 
 /--

@@ -106,14 +106,27 @@ structure PMachineDecl where
   /-- Raw machine-body syntax saved at registration time. Bodies elaborate
       to Lean defs only at `#gen_module` time, after every machine in the
       module has been registered (so cross-machine type references like
-      `var server : Server` resolve). Empty until elaboration completes. -/
+      `var server : Server` resolve). The body is RETAINED after
+      materialisation so the Phase-3 obligation generator can extract
+      `var` declarations to build accessor-unfold lists. -/
   body      : Array Syntax := #[]
+  /-- True after `#gen_module M` has elaborated the machine into Lean
+      defs. `#pwf` / `#pverify` check this to ensure materialisation
+      precedes them. -/
+  materialised : Bool := false
   ref       : Syntax
   deriving Inhabited
 
 structure PInvariantDecl where
   name      : Name
   leanName  : Name
+  /-- The state binder name introduced by the enclosing `system <s> { … }`
+      block. `none` for bare top-level / Lemma-internal invariants whose
+      bodies don't reference state. The materialiser uses this to choose
+      the lambda binder: `none` → `fun _ => <body>` (state-independent);
+      `some n` → `fun n => <body>` (state-implicit, using the user's
+      chosen name). -/
+  stateBinder : Option Name := none
   defStx    : Option Syntax := none
   ref       : Syntax
   deriving Inhabited

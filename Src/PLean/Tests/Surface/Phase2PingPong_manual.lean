@@ -1,25 +1,11 @@
 /-
-PLean Phase-2 M2 — surface-syntax ping-pong, verifies.
+Surface-syntax ping-pong with hand-written `theorem ..._correct`
+proofs. Mirrors `Tests/Semantics/HandPingPong.lean` against the
+`#gen_module`-emitted handler bodies and wrapper structs.
 
-Re-expresses the M1 hand-written ping-pong (`Tests/Semantics/HandPingPong.lean`)
-in PLean surface syntax. Two handler triples discharge with the same
-`wpgen` + manual-tail proofs M1 used.
-
-Differences from M1:
-- The handler bodies come from `#gen_module` macro expansion, not hand-written
-  Lean defs. They use the per-pmodule `Sig` / `PM'` / `GS` synthesised from
-  the registry (decision D8) and the wrapper-struct `this` (decision D10/D11).
-- The `≺` notation lives in `PLean.Surface.Notation` (decision D16); we open
-  the namespace to use it inside the user invariant.
-- `markReceived` is *not* part of the surface-emitted handler bodies — the
-  dispatcher is responsible for it in production, and the M2 proofs are
-  shaped to not depend on it. This is the intentional surface↔M1 difference.
-
-What this test proves: surface-syntax pmodules verify against the same
-backend as Phase-1 hand-written examples. Phase-3's obligation generator
-will synthesise the `theorem ..._correct` lemmas mechanically from the
-registry; for now they're hand-written and mirror the M1 shape modulo
-markReceived elision and wrapper-struct `this`.
+`markReceived` is intentionally absent from surface-emitted handler
+bodies — the dispatcher injects it in production — so the proofs here
+are shaped not to depend on it.
 -/
 import PLean
 import Loom.Meta
@@ -50,10 +36,7 @@ end Phase2PingPongManual
 #gen_module Phase2PingPongManual
 #pwf        Phase2PingPongManual
 
-/-! ## Verifying the two handler triples
-
-The proofs mirror `HandPingPong.lean` line-for-line modulo (a) names from
-the synthesised `Sig` / `E` ctors, and (b) the wrapper-struct `this`. -/
+/-! ## Verifying the two handler triples -/
 
 namespace Phase2PingPongManual
 

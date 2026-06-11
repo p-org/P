@@ -1,18 +1,7 @@
 /-
-PLean Phase-3 — explicit positive regression for the §A.1 theorem-name
-disambiguation (REVIEW_P3 second-pass §2.3).
-
-Two `Proof` blocks both target lemma `safety` with no `using`-clause.
-Before the §A.1 fix, both directives produced
-`<M>.<S>.<ev>_correct_safety` and the second emit collided in the
-environment, surfacing as a "failed obligation" rather than as the
-two-block resolution the user wrote. After the fix, the Proof-block
-tag (`Block1` / `Block2`) is embedded in the theorem name and both
-directives produce distinct, well-formed theorems.
-
-This file proves the disambiguation works *positively* (both theorem
-names exist after `#pverify`); `ObligationShape.lean` covers it
-implicitly via `#guard_msgs` on the emitted signatures.
+Two `Proof` blocks targeting the same lemma must produce distinct
+theorem names. The Proof-block tag (`Block1` / `Block2`) is embedded
+in the obligation name to disambiguate.
 -/
 import PLean
 
@@ -29,13 +18,9 @@ pmodule Phase3DuplicateTargetMod
   }
 
   Theorem safety {
-    invariant always_true : ∀ s : GlobalState Sig, True
+    invariant always_true : True
   }
 
-  -- Two `Proof` blocks targeting the same lemma. Tags are required
-  -- (anonymous blocks fall back to `block<idx>`, which would also
-  -- disambiguate, but the explicit tags exercise the more interesting
-  -- code path).
   Proof Block1 {
     prove safety ;
   }
@@ -51,9 +36,7 @@ end Phase3DuplicateTargetMod
 
 namespace Phase3DuplicateTargetMod
 
--- Both theorems must exist with the Proof-block-tag-disambiguated names.
--- If the §A.1 disambiguation regresses, one of these `#check`s will
--- fail with `unknown identifier`.
+-- Both disambiguated names must resolve.
 #check @M.S.eHello_correct_Block1_safety
 #check @M.S.eHello_correct_Block2_safety
 

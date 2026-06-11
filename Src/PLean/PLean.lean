@@ -19,6 +19,7 @@ import PLean.Surface.Stmt
 import PLean.Surface.Verify
 import PLean.Surface.Notation
 import PLean.Verify.Tactic
+import PLean.Verify.ProofRegistry
 import PLean.Verify.Obligation
 -- `PLean.Verify.DispatcherContract` is intentionally not re-exported.
 -- It contains documentation for the dispatcher-contract design but its

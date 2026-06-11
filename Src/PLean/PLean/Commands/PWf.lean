@@ -125,7 +125,7 @@ def elabPWf : CommandElab := fun stx => do
     -- Require `#gen_module` to have run: every registered machine must
     -- have an empty `body` (cleared by materialisation).
     let unmaterialised := ctx.machines.foldl (init := (#[] : Array Name))
-      fun acc n m => if m.body.isEmpty then acc else acc.push n
+      fun acc n m => if m.materialised then acc else acc.push n
     if !unmaterialised.isEmpty then
       let names := String.intercalate ", " (unmaterialised.toList.map Name.toString)
       throwError "{modName}: machines [{names}] not yet materialised — run `#gen_module {modName}` first"

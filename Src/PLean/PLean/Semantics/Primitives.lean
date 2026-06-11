@@ -31,23 +31,30 @@ variable [DecidableEq P.E] [DecidableEq P.G]
 
 /-- `send target ev`: enqueue an event label addressed to `target` and
 bump the global action counter. Mirrors PVerifier's `SendStmt` branch
-(`Uclid5CodeGenerator.cs:1981-1999`). -/
-def send (target : MachineRef) (ev : P.E) : PM P Unit := do
-  let s ← (get : StateT (GlobalState P) DivM (GlobalState P))
+(`Uclid5CodeGenerator.cs:1981-1999`).
+
+NOTE (Phase 3, R15 / R-P3.2): primitives are emitted as `@[reducible]`
+so the obligation generator's `unfold` step (or a `simp` pass over
+the primitives) reaches the underlying `get` / `set` calls. The
+per-pmodule `#derive_lifted_wp` for `get` / `set` (`emitDerivedWP`)
+registers `loomSpec` lemmas, so once the primitive reduces to its
+body `wpgen` walks through state reads / writes natively. -/
+@[reducible] def send (target : MachineRef) (ev : P.E) : PM P Unit := do
+  let s ← get
   let lbl : P.Label :=
     { target := target, action := .event ev, actionCount := s.actionCount }
   set ((s.addSent lbl).bumpActionCount)
 
 /-- `raise ev`: like `send` but addressed to the running machine. -/
-def raise (this : MachineRef) (ev : P.E) : PM P Unit :=
+@[reducible] def raise (this : MachineRef) (ev : P.E) : PM P Unit :=
   send this ev
 
 /-- `goto stateTag gotoPayload`: enqueue a goto label addressed to the
 running machine, bump the counter, and update the machine's
 `currentState`/`stage`. Preserves the machine's `kind` field (D20).
 Mirrors PVerifier's `GotoStmt` branch. -/
-def goto (this : MachineRef) (newState : P.S) (gotoArg : P.G) : PM P Unit := do
-  let s ← (get : StateT (GlobalState P) DivM (GlobalState P))
+@[reducible] def goto (this : MachineRef) (newState : P.S) (gotoArg : P.G) : PM P Unit := do
+  let s ← get
   let lbl : P.Label :=
     { target := this, action := .goto gotoArg, actionCount := s.actionCount }
   let curr := s.machines this
@@ -57,16 +64,16 @@ def goto (this : MachineRef) (newState : P.S) (gotoArg : P.G) : PM P Unit := do
 
 /-- `announce ev`: broadcast variant of `send`. Phase-4 spec-machine
 flattening hooks here. -/
-def announce (this : MachineRef) (ev : P.E) : PM P Unit :=
+@[reducible] def announce (this : MachineRef) (ev : P.E) : PM P Unit :=
   send this ev
 
 /-- `newMachine kind args` — Phase 1 returns a placeholder ref. -/
-def newMachine (this : MachineRef) (_kind : Nat) : PM P MachineRef :=
+@[reducible] def newMachine (this : MachineRef) (_kind : Nat) : PM P MachineRef :=
   pure this
 
 /-- Mark a label as received. Called by the runtime when a handler fires. -/
-def markReceived (lbl : P.Label) : PM P Unit := do
-  let s ← (get : StateT (GlobalState P) DivM (GlobalState P))
+@[reducible] def markReceived (lbl : P.Label) : PM P Unit := do
+  let s ← get
   set (s.addReceived lbl)
 
 end PLean

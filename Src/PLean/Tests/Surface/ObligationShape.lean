@@ -1,19 +1,11 @@
 /-
-PLean Phase-3 — `#guard_msgs`-pinned obligation-shape regression
-(REVIEW_P3 §6.7). Records the exact `theorem` types `#pverify` emits
-so a future refactor of `Verify/Obligation.lean::emitOneObligation`
-can't silently change the obligation shape (precondition,
-postcondition, dispatcher contract, theorem-name suffix scheme).
+`#guard_msgs`-pinned obligation-shape regression. Records the exact
+`theorem` types `#pverify` emits — precondition, postcondition,
+dispatcher contract, theorem-name suffix scheme — so a refactor of
+`emitOneObligation` cannot silently change the shape.
 
-We use a tiny pmodule with two `Proof` blocks targeting the same
-lemma — exercising the §A.1 theorem-name disambiguation (proof tag
-embedded in the name) — and check the resulting theorem signatures
-via `#check`. If the generator changes pre/post/lemma-bundle plumbing,
-the `#check` output drifts and `#guard_msgs` fails.
-
-We deliberately use a `pure ()` handler so the obligations close
-trivially under `pverify`'s present automation (the shape regression
-is about the *theorem statement*, not whether it discharges).
+Two `Proof` blocks target the same lemma to exercise the proof-tag
+disambiguation embedded in the theorem name.
 -/
 import PLean
 
@@ -30,7 +22,7 @@ pmodule ObligationShapeMod
   }
 
   Theorem safety {
-    invariant always_true : ∀ s : GlobalState Sig, True
+    invariant always_true : True
   }
 
   Proof Block1 {
@@ -48,13 +40,7 @@ end ObligationShapeMod
 
 namespace ObligationShapeMod
 
-/-! ## Pinned obligation-shape signatures
-
-If any of these `#check` outputs change, the obligation generator
-has shifted shape — see [`Verify/Obligation.lean`](../../PLean/Verify/Obligation.lean).
-The expected names embed the Proof-block tag (`Block1` / `Block2`)
-per the §A.1 fix so two `Proof` blocks targeting the same handler
-no longer collide. -/
+/-! ## Pinned obligation-shape signatures -/
 
 /--
 info: M.S.eHello_correct_Block1_safety : ∀ (this : M),

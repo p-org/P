@@ -360,22 +360,37 @@ private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
     let getName : Ident := mkIdent (v.name.appendAfter "_get")
     let setName : Ident := mkIdent (v.name.appendAfter "_set")
     let ty := v.ty
-    -- get: reads the field from state.
+    -- Accessors are emitted as `@[reducible] def` so the obligation
+    -- generator's `unfold <v>_get; unfold <v>_set` step (or alternatively
+    -- a `simp [<v>_get, <v>_set]` step) reaches the underlying `get`/
+    -- `set`. The per-pmodule `#derive_lifted_wp` for `get`/`set`
+    -- (`emitDerivedWP`) registers `loomSpec` lemmas, so once the
+    -- accessor unfolds, `wpgen` walks through state reads/writes
+    -- natively (PLAN_P3 R15 / R-P3.1).
+    --
+    -- IMPORTANT: do NOT ascribe `(get : StateT $idGS $idDivM $idGS)`
+    -- explicitly inside the accessor body. The ascription makes the
+    -- elaborated `liftM (get : StateT _ _ _) : PM' _` term not match
+    -- the discr-tree key that `#derive_lifted_wp` registered (probed
+    -- empirically — see `Tests/Surface/WpgenAccessorProbe.lean`).
+    -- Letting Lean's `do`-elaborator pick `get` from the
+    -- `MonadStateOf` instance produces a `liftM get` whose head form
+    -- matches the registered `loomSpec`, so `wpgen` walks the body
+    -- without falling back to `WPGen.default`.
     elabCommand (← `(
-      def $getName ($idThis : $idMachineRef) : $idPM $ty := do
-        let s ← ($idGet : StateT $idGS $idDivM $idGS)
+      @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
+        let s ← get
         pure (s.machines $idThis).fields.$fldId
     ))
-    -- set: writes the field, leaving currentState/stage/kind untouched.
     elabCommand (← `(
-      def $setName ($idThis : $idMachineRef) (v : $ty) : $idPM Unit := do
-        let s ← ($idGet : StateT $idGS $idDivM $idGS)
+      @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) : $idPM Unit := do
+        let s ← get
         let curr := s.machines $idThis
         let newFields : $idFields := { curr.fields with $fldId:ident := v }
         let newMS : ($idSig).MachineState :=
           { stage := curr.stage, currentState := curr.currentState
             fields := newFields, kind := curr.kind }
-        ($idSet (s.updateMachine $idThis newMS))
+        set (s.updateMachine $idThis newMS)
     ))
 
 private def emitStateAliases (mname : Name) (states : Array PStateDecl) :
@@ -537,15 +552,18 @@ private def emitLemmaBundles (ctx : LocalPModuleCtx) : CommandElabM Unit := do
         def $lid : ($idGS) → Prop := fun _ => True
       ))
       continue
-    -- Build `fun s => i1 s ∧ i2 s ∧ ... ∧ True`.
+    -- Build `fun s => i1 s ∧ i2 s ∧ ... ∧ True`. Each `iN` is itself a
+    -- `GS → Prop` (per `materialiseInvariant`) so we APPLY it to `s` —
+    -- otherwise the bundle would reference the closed proposition
+    -- `iN` and ignore its state argument (the soundness bug fixed
+    -- 2026-06-10 final-final).
     let sId : Ident := mkIdent `s
     let mut body : TSyntax `term ← `(True)
     for ivName in l.invariants.reverse do
       let ivIdent : Ident := mkIdent ivName
-      body ← `(($ivIdent) ∧ $body)
-    let _ := sId
+      body ← `(($ivIdent) $sId ∧ $body)
     elabCommand (← `(
-      def $lid : ($idGS) → Prop := fun _s => $body
+      def $lid : ($idGS) → Prop := fun $sId => $body
     ))
 
 /-! ## Step 7d: `<Mod>.UserInv` (D18).
@@ -567,11 +585,13 @@ private def emitUserInv (ctx : LocalPModuleCtx) : CommandElabM Unit := do
       def $userInvId : ($idGS) → Prop := fun _ => True
     ))
     return
+  -- Apply each invariant to the bound `s`, mirroring `emitLemmaBundles`.
+  let sId : Ident := mkIdent `s
   let mut body : TSyntax `term ← `(True)
   for c in conjuncts.reverse do
-    body ← `(($c) ∧ $body)
+    body ← `(($c) $sId ∧ $body)
   elabCommand (← `(
-    def $userInvId : ($idGS) → Prop := fun _s => $body
+    def $userInvId : ($idGS) → Prop := fun $sId => $body
   ))
 
 /-! ## The `#gen_module` command -/
@@ -649,9 +669,15 @@ def elabPGenModule : CommandElab := fun stx => do
     -- invariant into `<Mod>.UserInv` (PLAN_P3 D18). Empty -> True.
     emitUserInv ctx
     elabCommand (← `(end $name))
-    -- Step 8: mark everything as materialised.
+    -- Step 8: mark types/events/invariants/etc. as materialised by
+    -- clearing their `defStx` (so re-elaboration in another file's
+    -- import won't fire them again). We KEEP the machine body Syntax
+    -- so the Phase-3 obligation generator (`#pverify`) can extract
+    -- `var` declarations to build accessor-unfold lists; the
+    -- `materialised` flag is set so `#pwf` knows the machine has been
+    -- emitted.
     let machines' := ctx.machines.foldl (init := ({} : NameMap PMachineDecl))
-      fun acc n d => acc.insert n { d with body := #[] }
+      fun acc n d => acc.insert n { d with materialised := true }
     let types'    := ctx.types.foldl (init := ({} : NameMap PTypeDecl))
       fun acc n d => acc.insert n { d with defStx := none }
     let events'   := ctx.events.foldl (init := ({} : NameMap PEventDecl))

@@ -248,11 +248,35 @@ hypothesis by type. -/
 syntax "default_inv_guard" : tactic
 syntax "default_inv" : tactic
 
-/-- No-op placeholder — kept as a hook for a future head-symbol guard
-if `default_inv` over-fires on some user invariant. Current call sites
-all wrap in `first | default_inv | ...` so fall-through is harmless. -/
+/-- Sub-expression guard: fail unless the goal type mentions one of the
+four default-invariant constants (`DefaultInvariants` / `UniqueActions`
+/ `IncreasingCount` / `ReceivedSubsetSent`) somewhere in its tree.
+
+`default_inv` runs `refine ⟨?_, ?_, ?_⟩` and per-conjunct rcases
+tactics shaped for those four constants, so applying it to a goal that
+contains *no* default-invariant content (e.g., a user invariant
+`P1 ∧ P2 ∧ P3` of unrelated 3-arity) could mangle the goal. The guard
+makes that fall-through cheap: `first | default_inv | …` rejects
+unfit goals at entry. The check is permissive — the obligation
+generator's post is `lemmaPred s ∧ DefaultInvariants s ∧ … `, so any
+real obligation contains the constants. Pure user-invariant goals do
+not. -/
 elab_rules : tactic
-  | `(tactic| default_inv_guard) => pure ()
+  | `(tactic| default_inv_guard) => withMainContext do
+      let goal ← getMainTarget
+      let allowed : List Name :=
+        [``PLean.DefaultInvariants, ``PLean.UniqueActions,
+         ``PLean.IncreasingCount, ``PLean.ReceivedSubsetSent]
+      let mentions := goal.find? fun e =>
+        match e.getAppFn.constName? with
+        | some n => allowed.contains n
+        | none   => false
+      if mentions.isNone then
+        throwError "default_inv: this goal does not mention any of \
+                    `DefaultInvariants` / `UniqueActions` / \
+                    `IncreasingCount` / `ReceivedSubsetSent`; tactic \
+                    declined to fire (would over-split a generic \
+                    n-conjunct goal)"
 
 macro_rules
   | `(tactic| default_inv) => `(tactic| (
@@ -349,8 +373,12 @@ manual proof's structure. -/
 macro_rules
   | `(tactic| pverify) => `(tactic| (
       first
-        | -- Trivial `pure ()` handler: post-state predicate equals one
-          -- of the introduced pre-state hypotheses; `assumption` finds it.
+        | -- Post-equals-pre branch: the post-state predicate is
+          -- structurally equal to one of the introduced pre-state
+          -- hypotheses, so `assumption` closes the goal directly. This
+          -- subsumes the trivial `pure ()` handler case but does NOT
+          -- require the body to be `pure ()` — any handler whose post
+          -- happens to match a pre-clause hits this branch first.
           (pverify_step_wp
            intros
            assumption)

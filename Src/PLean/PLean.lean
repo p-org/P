@@ -21,11 +21,6 @@ import PLean.Surface.Notation
 import PLean.Verify.Tactic
 import PLean.Verify.ProofRegistry
 import PLean.Verify.Obligation
--- `PLean.Verify.DispatcherContract` is intentionally not re-exported.
--- It contains documentation for the dispatcher-contract design but its
--- `buildDispatcherContractTerm` helper is currently inert (the inline
--- existential in `Verify/Obligation.lean` is the live emission path).
--- See REVIEW_P3 §2.3.
 import PLean.Commands.GenModule
 import PLean.Commands.PWf
 import PLean.Commands.PVerify

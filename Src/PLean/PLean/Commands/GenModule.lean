@@ -1,43 +1,17 @@
 /-
 PLean.Commands.GenModule — `#gen_module M` finalisation command.
 
-Phase 2: walks the registry and emits, in dependency order:
+Walks the registry and emits, in dependency order: machine wrapper
+structs; types and enums; per-event payload abbrevs; the per-pmodule
+unions (`<Mod>.E` / `G` / `S` / `Fields`) and aliases (`Sig` / `PM'` /
+`GS`); `#derive_lifted_wp` for `get`/`set`; per-machine var accessors,
+state-tag aliases, and handler defs; finally invariants / axioms /
+init-conditions / function / pinstance materialisation.
 
-  1. Per-machine wrapper structs (D10):
-        structure <Mod>.<MName> where ref : MachineRef
-          deriving DecidableEq, Inhabited
-        instance : Coe <Mod>.<MName> MachineRef := ⟨<Mod>.<MName>.ref⟩
-  2. Types and enums (foreign / alias / named-tuple).
-  3. Events: per-event payload abbrev `<ev>_payload`.
-  4. The per-pmodule unions:
-        inductive <Mod>.E ...                       -- one ctor per event
-        inductive <Mod>.G | unit                    -- goto payload (Unit-like)
-        inductive <Mod>.S ...                       -- one ctor per (machine, state)
-        structure <Mod>.Fields ...                  -- one field per var across all machines
-        abbrev <Mod>.Sig : ProgramSig := ...
-        abbrev <Mod>.PM' (α : Type) := PM Sig α
-        abbrev <Mod>.GS := GlobalState Sig
-  5. `#derive_lifted_wp` for `get`/`set` on `GS` (D14).
-  6. Per-machine var accessors `<MName>.<vname>_get` / `_set`,
-     state-tag aliases `<MName>.<sname>_st`, and replayed handler defs.
-  7. Verification declarations (invariant, paxiom, init, function, pinstance).
-
-Decisions: D8 (one Sig per pmodule), D10 (typed machine wrappers),
-D11 (handlers over real PM with typed `this`), D12 (real var fields),
-D13 (real `goto`), D14 (`#derive_lifted_wp`), D15 (Stub retirement).
-
-## A note on macro hygiene
-
-This file constructs syntax for command emission. Bare identifiers
-inside `\`(...)` quotations (e.g., `E`, `Sig`, `this`) get hygiene
-marks during macro expansion. The user-facing names we emit must NOT
-be hygienic — `<Mod>.E`, `<Mod>.Sig`, etc. live in the user's
-namespace and are referenced by handler bodies (which were macro-
-expanded earlier and saw the bare names without hygiene marks). To
-avoid mismatch, every binder/identifier we want resolved against
-those user-namespace names is constructed via `mkIdent` and spliced
-in. Lean handles `.field` projections and qualified names like
-`PLean.send` correctly without further intervention.
+Macro hygiene: identifiers that must resolve against user-namespace
+constants (`<Mod>.E`, `<Mod>.Sig`, `this`, …) are built via `mkIdent`
+so they remain unhygienic. Bare names inside `\`(...)` would acquire
+hygiene marks and fail to resolve.
 -/
 import Lean
 import PLean.Internal.Decls
@@ -157,26 +131,14 @@ private def emitMachineKinds (ctx : LocalPModuleCtx) : CommandElabM Unit := do
     ))
     idx := idx + 1
   -- Per-machine `<M>_allocated` and top-level `is_<M>` predicates.
-  --
-  -- The wrapper struct `<Mod>.<M>` is *both* a structure and a
-  -- target namespace; emitting `def allocated` inside `namespace M`
-  -- proved unreliable (the structure declaration claims the slot
-  -- first). We instead emit a flat top-level `<Mod>.<M>_allocated`
-  -- and an `is_<M>` alias used by the surface `is` macro.
-  --
-  -- `is_<M>` is `MachineRef → GS → Prop` (Curry of `<M>_allocated`),
-  -- mirroring the `is_<ev>` shape so the surface `is` macro can
-  -- dispatch uniformly: `m is <M>` expands to `is_<M> m` (a
-  -- `GS → Prop`).
+  -- WHY flat top-level rather than `namespace <M>`: the wrapper struct
+  -- `<Mod>.<M>` claims the namespace slot, making nested defs there
+  -- unreliable. WHY `kind ≠ 0`: `0` is the default-initialised value;
+  -- without the guard, an unassigned `MachineRef` would satisfy the
+  -- first declared machine's `_allocated` predicate.
   for mn in allKinds do
     let kindNameId := mkIdent (mn.appendAfter "_kind")
     let allocName : Ident := mkIdent (mn.appendAfter "_allocated")
-    -- PLAN_P3 R20 mitigation: `kind ≠ 0` excludes default-initialised
-    -- (uninitialised) machines from any `<M>_allocated` predicate.
-    -- Without this, a `MachineRef` whose state was never explicitly
-    -- assigned a kind would satisfy `<M0>_allocated` for the first
-    -- declared machine M0 (since both have kind 0), violating the
-    -- "real machine kinds are ≥ 1" invariant.
     elabCommand (← `(
       @[inline] def $allocName (m : $idMachineRef) (s : $idGS) : Prop :=
         (s.machines m).kind ≠ 0 ∧ (s.machines m).kind = $kindNameId
@@ -360,23 +322,16 @@ private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
     let getName : Ident := mkIdent (v.name.appendAfter "_get")
     let setName : Ident := mkIdent (v.name.appendAfter "_set")
     let ty := v.ty
-    -- Accessors are emitted as `@[reducible] def` so the obligation
-    -- generator's `unfold <v>_get; unfold <v>_set` step (or alternatively
-    -- a `simp [<v>_get, <v>_set]` step) reaches the underlying `get`/
-    -- `set`. The per-pmodule `#derive_lifted_wp` for `get`/`set`
-    -- (`emitDerivedWP`) registers `loomSpec` lemmas, so once the
-    -- accessor unfolds, `wpgen` walks through state reads/writes
-    -- natively (PLAN_P3 R15 / R-P3.1).
+    -- Accessors are `@[reducible] def` so the obligation generator's
+    -- `unfold <v>_get/<v>_set` step reaches the underlying `get`/`set`
+    -- whose `loomSpec` is registered by the per-pmodule
+    -- `#derive_lifted_wp` (`emitDerivedWP`).
     --
-    -- IMPORTANT: do NOT ascribe `(get : StateT $idGS $idDivM $idGS)`
-    -- explicitly inside the accessor body. The ascription makes the
-    -- elaborated `liftM (get : StateT _ _ _) : PM' _` term not match
-    -- the discr-tree key that `#derive_lifted_wp` registered (probed
-    -- empirically — see `Tests/Surface/WpgenAccessorProbe.lean`).
-    -- Letting Lean's `do`-elaborator pick `get` from the
-    -- `MonadStateOf` instance produces a `liftM get` whose head form
-    -- matches the registered `loomSpec`, so `wpgen` walks the body
-    -- without falling back to `WPGen.default`.
+    -- WHY no type ascription on `← get`: the ascribed
+    -- `(get : StateT _ _ _)` form does not match the registered
+    -- discr-tree key, so `wpgen` falls back to `WPGen.default`. Letting
+    -- Lean pick `get` from the `MonadStateOf` instance produces the
+    -- key shape the spec expects.
     elabCommand (← `(
       @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
         let s ← get

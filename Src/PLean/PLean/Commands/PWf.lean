@@ -123,7 +123,7 @@ def elabPWf : CommandElab := fun stx => do
     throwError "no `pmodule {modName}` is registered (did you forget to import the file that declares it?)"
   | some ctx =>
     -- Require `#gen_module` to have run: every registered machine must
-    -- have an empty `body` (cleared by materialisation).
+    -- have its `materialised` flag set.
     let unmaterialised := ctx.machines.foldl (init := (#[] : Array Name))
       fun acc n m => if m.materialised then acc else acc.push n
     if !unmaterialised.isEmpty then

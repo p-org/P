@@ -87,6 +87,11 @@ def elabPSystemBlock : CommandElab := fun stx => do
     | `(pSystemInv| invariant $iid:ident : $prop:term) =>
       -- Reconstruct the inner syntax so `materialiseInvariant`'s
       -- existing pattern match still works (`invariant <ident> : <term>`).
+      -- Position info: `iid` and `prop` are spliced verbatim and retain
+      -- their original source ranges, so any error targeting them via
+      -- `throwErrorAt $iid` / `throwErrorAt $prop` still points at the
+      -- user's source. Only the outermost `invariant` token sits at
+      -- the macro expansion site; no current error path uses it.
       let invStx ← `(command| invariant $iid:ident : $prop)
       addInvariant
         { name := iid.getId, leanName := ns ++ iid.getId
@@ -254,20 +259,12 @@ def elabPTheorem : CommandElab := fun stx => do
 @[command_elab pProofDeclSyntax]
 def elabPProof : CommandElab := fun stx => do
   let ctx ← requireLocalPModuleCtx "Proof"
-  -- `Proof <name>? { <items>* }`. Children:
-  --   stx[0] = "Proof"
-  --   stx[1] = optional ident
-  --   stx[2] = "{"
-  --   stx[3] = items*
-  --   stx[4] = "}"
-  let nameOpt := stx[1]
-  let nm : Name :=
-    if nameOpt.getNumArgs == 1 then
-      let i : Ident := ⟨nameOpt[0]⟩
-      i.getId
-    else
-      Name.anonymous
-  let items := stx[3].getArgs
+  let (nm, items) ← match stx with
+    | `(Proof $nm:ident { $items:pProofItem* }) =>
+      pure (nm.getId, items)
+    | `(Proof { $items:pProofItem* }) =>
+      pure (Name.anonymous, items)
+    | _ => throwUnsupportedSyntax
   let mut directives : Array PProveDirective := #[]
   for it in items do
     match it with
@@ -303,28 +300,46 @@ Replay each verification declaration as a Lean def. Called by
 `#gen_module` after machines have been materialised so invariant /
 axiom bodies can reference machine fields and event payloads. -/
 
-/-- Reject `∀ <ident> : GlobalState <Sig>, …` at the head of an
-invariant body when the invariant lives inside a `system <s> { … }`
-block: the inner ∀-binder would shadow the outer `<s>` and silently
-decouple the invariant from per-handler state.
+/-- Reject any `∀ <ident> : GlobalState <Sig>, …` (or `∀ <ident> :
+PLean.GlobalState <Sig>, …`) anywhere in an invariant body when the
+invariant lives inside a `system <s> { … }` block. Such a binder
+shadows the outer `<s>` for the body it scopes — and the previous
+fix only caught the leading-position case, so a body like
+`True ∧ (∀ s : GlobalState Sig, P s)` evaded detection. The walk
+below is recursive over the body Syntax.
 
 A bare top-level `invariant standalone : ∀ s : GlobalState Sig, P` is
 allowed — it's intentionally state-independent (the materialiser uses
-a wildcard binder, so no shadowing risk). -/
+a wildcard binder, so no shadowing risk). The check therefore only
+fires when an enclosing `system` block has registered a state binder. -/
+private partial def containsExplicitStateBinder (stx : Syntax) : Option Syntax := Id.run do
+  -- Match-on-Syntax patterns return `Option (TSyntax k)`; we surface
+  -- the offending sub-expression so the error can `throwErrorAt` it.
+  match stx with
+  | `(∀ _ : PLean.GlobalState $_, $_)
+  | `(∀ _ : GlobalState $_, $_)
+  | `(∀ $_:ident : PLean.GlobalState $_, $_)
+  | `(∀ $_:ident : GlobalState $_, $_)
+  | `(∀ ($_:ident : PLean.GlobalState $_), $_)
+  | `(∀ ($_:ident : GlobalState $_), $_) => return some stx
+  | _ => pure ()
+  for child in stx.getArgs do
+    if let some hit := containsExplicitStateBinder child then
+      return some hit
+  return none
+
 private def rejectExplicitStateBinder (id : Ident) (prop : TSyntax `term) :
     CommandElabM Unit := do
-  match prop with
-  | `(∀ _ : PLean.GlobalState $_, $_) | `(∀ _ : GlobalState $_, $_)
-  | `(∀ $_:ident : PLean.GlobalState $_, $_) | `(∀ $_:ident : GlobalState $_, $_)
-  | `(∀ ($_:ident : PLean.GlobalState $_), $_) | `(∀ ($_:ident : GlobalState $_), $_) =>
-    throwErrorAt prop m!"invariant `{id.getId}` is inside a `system` block \
-      but its body begins with `∀ <ident> : GlobalState <Sig>, …`. That \
+  match containsExplicitStateBinder prop with
+  | some hit =>
+    throwErrorAt hit m!"invariant `{id.getId}` lives inside a `system` block \
+      but its body contains `∀ <ident> : GlobalState <Sig>, …`. That \
       inner ∀-binder shadows the outer `system` state binder and \
       silently decouples the invariant from per-handler state (the \
-      soundness hole fixed 2026-06-10). Drop the leading \
+      soundness hole fixed 2026-06-10). Drop the inner \
       `∀ … : GlobalState Sig,` and reference the `system`-block's \
       state binder directly in the body."
-  | _ => pure ()
+  | none => pure ()
 
 def materialiseInvariant (d : PInvariantDecl) : CommandElabM Unit := do
   match d.defStx with

@@ -83,7 +83,6 @@ PLean/
                                _normalize_state / _smt_close / _grind / default_inv
     ProofRegistry.lean      -- @[pverifyProof] attribute + persistent env extension
     SimpAttrs.lean          -- @[pverifySimp] simp attribute (state-update unfolds)
-    DispatcherContract.lean -- (inert; doc-only — see file header)
 
 Examples/
   PingPong/                 -- the canonical surface demo

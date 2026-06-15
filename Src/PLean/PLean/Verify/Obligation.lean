@@ -2,34 +2,20 @@
 PLean.Verify.Obligation — synthesise per-handler Hoare-triple
 obligations from registry data.
 
-For every `Proof <name>? { prove X using Y, Z; ... }` directive,
-emit one obligation per (machine, state, handler) triple:
+For each `Proof { prove X using Y, …; }` directive in the registry,
+walk every (machine, state, handler) triple and emit one Hoare-triple
+theorem per (handler, target lemma) pair: `triple <pre> <handler>
+<post>`. The precondition conjoins target + using-lemmas + the three
+default invariants + `InitConditions` + the dispatcher contract; the
+post drops the using-lemmas. `prove default;` swaps the bundle for
+`DefaultInvariants` and the discharger for `pverify_default`.
 
-  theorem <Mod>.<M>.<S>.<ev>_correct_<X>
-      (this : <M>) (param : <ev>_payload) :
-      triple (l := PProp Sig)
-        (fun s =>
-          X s ∧ Y s ∧ Z s ∧ DefaultInvariants s ∧ InitConditions s ∧
-          ∃ lbl, inflight lbl s ∧ lbl.target = this.ref ∧
-                 (s.machines this.ref).currentState = <S>_st ∧
-                 lbl.action = .event (E.<ev> param))
-        (<M>.<S>.<ev>_handler this param)
-        (fun _ s => X s ∧ DefaultInvariants s ∧ InitConditions s) := by
-    pverify
-
-For `prove default;`, the bundle expands to `DefaultInvariants` and
-the proof tactic switches to `pverify_default`.
-
-`synthesise` first consults the `pverifyProofExt` registry: if the
-user has tagged a theorem with `@[pverifyProof]` under the obligation's
-name, emission is skipped and the obligation counts as user-proved.
-Otherwise we emit `theorem ... := by pverify` and inspect the value
-for `sorry` to detect tactic failure.
-
-After the user's `Proof` directives, `synthesise` auto-emits a
-`prove default;` obligation for every (M, S, ev) that wasn't already
-covered (synthetic `block_auto_default` proof tag avoids name
-collisions with user-tagged emissions).
+`synthesise` consults the `pverifyProofExt` registry first: a theorem
+tagged `@[pverifyProof]` under the obligation's name skips auto
+emission. Otherwise the emitted theorem ends in `by first | <chain> |
+sorry`; a `sorry` in the elaborated value flags a failed obligation.
+After user directives, a synthetic `block_auto_default` pass emits a
+default obligation for every (M, S, ev) not already covered.
 -/
 import Lean
 import PLean.Internal.Decls
@@ -205,19 +191,12 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let usingUnfolds : Array Ident := usingNamesAll
     let hasAccessors := !accessorUnfolds.isEmpty
     let hasUsings    := !usingUnfolds.isEmpty
-    -- `pverify_default` runs `default_inv` first; `pverify` runs SMT
-    -- first.
     let tail : TSyntax `tactic ←
       if isDefault then `(tactic| pverify_default)
       else                `(tactic| pverify)
-    -- Unfold order: handler → target lemma → InitConditions →
-    -- using-lemmas + per-invariant defs → per-machine accessors →
-    -- PLean primitives → final tactic. Accessors-before-primitives is
-    -- load-bearing: when `PLean.send` is unfolded first, its inlined
-    -- `liftM get` ends up where the per-pmodule `loomSpec` doesn't
-    -- match the discr-tree key, `wpgen` falls through to
-    -- `WPGen.default`, and the residual defeats lean-auto. See
-    -- `Tests/Surface/PVerifyConditional.lean` for the trace.
+    -- WHY: unfold accessors before primitives so `liftM get` matches
+    -- the registered `loomSpec` discr-tree key; reversal trips `wpgen`
+    -- into `WPGen.default`. See PVerifyConditional regression.
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       match isDefault, hasAccessors, hasUsings with
       | true,  false, false =>

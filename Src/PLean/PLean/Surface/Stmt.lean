@@ -1,44 +1,14 @@
 /-
-PLean.Surface.Stmt — statement-level macros.
+PLean.Surface.Stmt — `doElem`-level macros for statements inside a
+handler body: `send`, `raise`, `goto`, `pnew`, `announce`, plus the
+machine-var assignment `<v> = <expr>`. Each rewrites to a call into
+the corresponding `PLean.*` primitive over the per-pmodule `Sig`.
 
-P statements inside a handler body. Phase 2 supports
-the most common five:
-  send <target>, <event>, <payload>?
-  raise <event>, <payload>?
-  goto <stateName>, <payload>?
-  pnew <interfaceName>, <payload>?
-  announce <event>, <payload>?
-
-We expose macros at Lean's `doElem` level so handler bodies can be written
-with Lean's `do`-notation. That lets us reuse Lean's expression parser
-(preserving things like `≺`, quantifiers, `lbl is e`) without
-reimplementing it.
-
-Each macro elaborates to a call into `PLean.send` / `PLean.raise` /
-`PLean.goto` / `PLean.announce` / `PLean.newMachine` (the real PM
-primitives over the synthesised per-pmodule `Sig`). The `(P := Sig)`
-ascription resolves `Sig` against the surrounding namespace — handler
-defs are emitted inside `<Mod>.<MachineName>` after `open <Mod>`, so
-`Sig` finds `<Mod>.Sig`.
-
-Decision D11 (Phase 2): macros target the real PM. The Phase-0 `Stub`
-indirection is gone; `PLean.Internal.Stub` is retired (D15).
-
-## A note on macro hygiene
-
-Several macros below reference user-namespace constants emitted by
-`#gen_module`:
-
-  - the handler's `this` binder (made unhygienic in `#gen_module` via
-    `mkIdent \`this`),
-  - the per-pmodule `Sig` constant (`<Mod>.Sig`),
-  - the per-pmodule `E` / `G` constructors and `<S>_st` aliases.
-
-Bare names written inside macro quotations would acquire hygiene marks
-and fail to resolve against those user-namespace constants. We build
-each via `mkIdent` and splice it in. Lean handles `.field` projections
-and qualified names like `PLean.send` correctly without further
-intervention.
+Macro hygiene: identifiers that must resolve against user-namespace
+constants emitted by `#gen_module` (`Sig`, `E`/`G` constructors,
+`<S>_st` aliases, the handler's `this`) are built via `mkIdent` and
+spliced in. Bare names inside macro quotations pick up hygiene marks
+and fail to resolve.
 -/
 import Lean
 import PLean.Semantics.Primitives
@@ -142,27 +112,54 @@ macro_rules
     let tref ← thisRef
     let stTag := mkIdentFrom st (st.getId.appendAfter "_st")
     `(doElem| PLean.goto (P := $idSig) $tref $stTag $idGUnit)
-  | `(doElem| goto $st:ident, $_payload) => do
-    let tref ← thisRef
-    let stTag := mkIdentFrom st (st.getId.appendAfter "_st")
-    `(doElem| PLean.goto (P := $idSig) $tref $stTag $idGUnit)
+  | `(doElem| goto $_st:ident, $payload) => do
+    -- Payload-bearing `goto S, p` is parsed but not yet supported: the
+    -- per-pmodule `Sig.G` union is `Unit`-only until Phase 5 wires per-
+    -- target-state payload types. Erroring is safer than silently
+    -- discarding — see REVIEW.md I.3.
+    Macro.throwErrorAt payload
+      "`goto <state>, <payload>` is not yet supported (the per-pmodule \
+       goto-payload union `Sig.G` is `Unit`-only). Use `goto <state>` \
+       and pass arguments via a separate `send`/`raise`."
 
 /-! ## New (machine creation) -/
 
 syntax (name := pNewNoArg) "pnew " ident : doElem
 syntax (name := pNewArg)   "pnew " ident ", " term : doElem
 
+-- `pnew M` resolves the kind tag through the per-pmodule registered
+-- `<M>_kind : Nat` def (emitted by `Commands/GenModule.lean::emitMachineKinds`).
+-- Lean's namespace search picks `<Mod>.<M>_kind` because handler defs
+-- elaborate inside `<Mod>.<MachineName>` after `open <Mod>` — the same
+-- mechanism that resolves `Sig` and `is_<M>`. The earlier `m.toString.hash`
+-- form was unrelated to the registered tag and silently violated
+-- `<M>_allocated` for the freshly-created machine (REVIEW.md I.2).
+private def kindIdentFor (m : Ident) : Ident :=
+  mkIdentFrom m (m.getId.appendAfter "_kind")
+
 macro_rules
   | `(doElem| pnew $m:ident) => do
     let tref ← thisRef
-    let lit := Syntax.mkStrLit m.getId.toString
-    `(doElem| PLean.newMachine (P := $idSig) $tref ($lit).hash.toNat)
+    let kindId := kindIdentFor m
+    `(doElem| PLean.newMachine (P := $idSig) $tref $kindId)
   | `(doElem| pnew $m:ident, $_arg) => do
     let tref ← thisRef
-    let lit := Syntax.mkStrLit m.getId.toString
-    `(doElem| PLean.newMachine (P := $idSig) $tref ($lit).hash.toNat)
+    let kindId := kindIdentFor m
+    `(doElem| PLean.newMachine (P := $idSig) $tref $kindId)
 
-/-! ## Assignment (D12). -/
+/-! ## Assignment
+
+`pAssign` parses `<ident> = <term>` at high priority and rewrites it
+into `<lhs>_set this.ref <rhs>; let <lhs> ← <lhs>_get this.ref`.
+
+Known limitation (REVIEW.md I.11): the macro fires on any
+identifier-followed-by-`=` form inside a handler `do` block, including
+ones the user did not intend as a machine-var write. If `<lhs>` is not
+a machine var, the user sees a "unknown identifier `x_set`" error
+rather than a bespoke "var `x` is not declared in this machine". A
+registry-aware version of this macro requires access to the local
+pmodule context at expansion time (currently only reachable from
+`CommandElabM`, not `MacroM`); deferred. -/
 
 syntax (name := pAssign) (priority := high) ident " = " term : doElem
 

@@ -1,7 +1,6 @@
 # PLean — Roadmap
 
-A collaborator-facing summary of where PLean is and what's left. Intended
-for sprint planning and onboarding new contributors. The authoritative
+The authoritative
 state lives in [`STATUS.md`](STATUS.md) (running tracker, decision log,
 milestones) and [`PLAN.md`](PLAN.md) / [`PLAN_P{0..4}.md`](.) (per-phase
 designs); this file is the index that turns those into pickable chunks
@@ -118,7 +117,7 @@ Src/PLean/
     Semantics/     Label / GlobalState / Monad / Primitives / Predicates / Default
     Surface/       Module / Types / Events / Machine / Stmt / Notation / Verify
     Commands/      GenModule, PWf, PVerify, PrintModule
-    Verify/        Obligation, Tactic, ProofRegistry, SimpAttrs, DispatcherContract
+    Verify/        Obligation, Tactic, ProofRegistry, SimpAttrs
   Examples/        PingPong demo
   Tests/           Bootstrap, Semantics, Surface
   docs/            PLAN.md, PLAN_P{0..4}.md, STATUS.md, REVIEW_P3.md, ROADMAP.md (this)

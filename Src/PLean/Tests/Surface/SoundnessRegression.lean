@@ -100,7 +100,33 @@ end SoundnessR2
 -- registration: the `Theorem` block records a `defStx` that
 -- `materialiseInvariant` rejects.
 /--
-error: invariant `bad_shape` is inside a `system` block but its body begins with `∀ <ident> : GlobalState <Sig>, …`. That inner ∀-binder shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Drop the leading `∀ … : GlobalState Sig,` and reference the `system`-block's state binder directly in the body.
+error: invariant `bad_shape` lives inside a `system` block but its body contains `∀ <ident> : GlobalState <Sig>, …`. That inner ∀-binder shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Drop the inner `∀ … : GlobalState Sig,` and reference the `system`-block's state binder directly in the body.
 -/
 #guard_msgs in
 #gen_module SoundnessR2
+
+/-! ## Probe 3 — non-leading `∀ s : GlobalState Sig, …` is also rejected.
+
+The earlier rejector matched only the leading binder shape, so a body
+like `True ∧ (∀ s : GlobalState Sig, P)` evaded detection and silently
+re-introduced the soundness hole. The fix walks the body Syntax
+recursively. -/
+
+pmodule SoundnessR3
+  event eGo
+  machine M {
+    start state S { on eGo { pure () } }
+  }
+
+  Theorem nested_shape {
+    system s {
+      invariant bad_nested : True ∧ (∀ s : GlobalState Sig, True)
+    }
+  }
+end SoundnessR3
+
+/--
+error: invariant `bad_nested` lives inside a `system` block but its body contains `∀ <ident> : GlobalState <Sig>, …`. That inner ∀-binder shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Drop the inner `∀ … : GlobalState Sig,` and reference the `system`-block's state binder directly in the body.
+-/
+#guard_msgs in
+#gen_module SoundnessR3

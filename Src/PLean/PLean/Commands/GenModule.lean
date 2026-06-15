@@ -448,106 +448,73 @@ private def materialiseMachineBody (mname : Name) (items : Array Syntax)
       for sit in sitems do materialiseStateBodyItem mname sname vars sit
     | _ => throwErrorAt it "unrecognised machine body item (during materialisation)"
 
-/-! ## Step 7b: `<Mod>.InitConditions` aggregation (D21).
+/-! ## Step 7b–d: state-indexed conjunction predicates.
 
-Walk the saved `init-holds <prop>` clauses and emit a single
-`<Mod>.InitConditions : PProp Sig` predicate that is the conjunction
-of all `<prop>`s. The Phase-3 obligation generator threads this into
-every per-handler triple's pre- and post-condition. -/
+`emitConjPredicate name members applyState` emits
 
-private def emitInitConditions (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  let initsId : Ident := mkIdent `InitConditions
-  if ctx.inits.isEmpty then
+  def <name> : GS → Prop := fun <binder> => m1 ∧ m2 ∧ ... ∧ True
+
+When `applyState = true`, each `mN` is applied to the bound state (so
+the binder is an unhygienic `s` that the `mN`s reference); otherwise
+the binder is `_` and each `mN` is used verbatim (the user's clauses
+are closed propositions, e.g. `init-holds (∀ x, P x)`). Empty `members`
+collapses to `fun _ => True`.
+
+WHY a single helper: three earlier callers (`emitInitConditions`,
+`emitLemmaBundles`, `emitUserInv`) hand-rolled the same fold. The
+2026-06-10 soundness bug was exactly the bundle predicate failing to
+apply `s` — having the apply-or-not decision in one place removes the
+foot-gun. -/
+
+private def emitConjPredicate (name : Ident) (members : Array (TSyntax `term))
+    (applyState : Bool) : CommandElabM Unit := do
+  if members.isEmpty then
     elabCommand (← `(
-      def $initsId : ($idGS) → Prop := fun _ => True
+      def $name : ($idGS) → Prop := fun _ => True
     ))
     return
-  -- Build a chain of `∧` of the clause predicates. Each clause was saved
-  -- as a syntax `(init-holds <prop>)`; we extract the `<prop>` term from
-  -- index 1 of the saved syntax.
+  let sId : Ident := mkIdent `s
+  let mut body : TSyntax `term ← `(True)
+  for m in members.reverse do
+    if applyState then
+      body ← `(($m) $sId ∧ $body)
+    else
+      body ← `(($m) ∧ $body)
+  if applyState then
+    elabCommand (← `(def $name : ($idGS) → Prop := fun $sId => $body))
+  else
+    elabCommand (← `(def $name : ($idGS) → Prop := fun _ => $body))
+
+/-- Aggregate every saved `init-holds <prop>` clause into the single
+predicate `<Mod>.InitConditions : GS → Prop`. The clauses are closed
+propositions so the binder is a wildcard. The obligation generator
+threads this into every per-handler triple's pre- and post-condition. -/
+private def emitInitConditions (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   let mut props : Array (TSyntax `term) := #[]
   for d in ctx.inits do
-    match d.defStx with
-    | none => continue
-    | some stx =>
+    if let some stx := d.defStx then
       -- `init-holds <term>` — child index 1 is the term.
-      let propStx : TSyntax `term := ⟨stx[1]⟩
-      props := props.push propStx
-  if props.isEmpty then
-    elabCommand (← `(
-      def $initsId : ($idGS) → Prop := fun _ => True
-    ))
-    return
-  -- Fold right: `p1 ∧ p2 ∧ ... ∧ True`. The user's clauses are closed
-  -- props (forall ...), so they are `Prop` values — InitConditions
-  -- `s` ignores `s` for unconditional clauses but must remain
-  -- `GS → Prop`-shaped for the obligation generator. We wrap the
-  -- conjunction in `fun _ => ...`.
-  let mut body : TSyntax `term ← `(True)
-  for p in props.reverse do
-    body ← `(($p) ∧ $body)
-  elabCommand (← `(
-    def $initsId : ($idGS) → Prop := fun _ => $body
-  ))
+      props := props.push ⟨stx[1]⟩
+  emitConjPredicate (mkIdent `InitConditions) props (applyState := false)
 
-/-! ## Step 7c: per-Lemma/Theorem bundle predicates (D19).
-
-For each registered `Lemma X { invariant a; invariant b; }`, emit
-`def X : PProp Sig := fun s => a s ∧ b s`. The free-standing
-invariants `a`, `b`, ... are emitted by `materialiseInvariant`
-(in step 7); the bundle composes them so `Proof { prove ... using X }`
-can pull the whole group as a single hypothesis. -/
-
+/-- Per-`Lemma X { invariant a; invariant b; }` (and `Theorem`) bundle
+predicate `<Mod>.X : GS → Prop := fun s => a s ∧ b s`. Each individual
+invariant is itself emitted as `GS → Prop` by `materialiseInvariant`,
+so the bundle applies `s` to each conjunct. -/
 private def emitLemmaBundles (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   for lname in ctx.lemmaOrder do
     let some l := ctx.lemmas.find? lname | continue
-    let lid : Ident := mkIdent l.name
-    if l.invariants.isEmpty then
-      elabCommand (← `(
-        def $lid : ($idGS) → Prop := fun _ => True
-      ))
-      continue
-    -- Build `fun s => i1 s ∧ i2 s ∧ ... ∧ True`. Each `iN` is itself a
-    -- `GS → Prop` (per `materialiseInvariant`) so we APPLY it to `s` —
-    -- otherwise the bundle would reference the closed proposition
-    -- `iN` and ignore its state argument (the soundness bug fixed
-    -- 2026-06-10 final-final).
-    let sId : Ident := mkIdent `s
-    let mut body : TSyntax `term ← `(True)
-    for ivName in l.invariants.reverse do
-      let ivIdent : Ident := mkIdent ivName
-      body ← `(($ivIdent) $sId ∧ $body)
-    elabCommand (← `(
-      def $lid : ($idGS) → Prop := fun $sId => $body
-    ))
+    let conjuncts : Array (TSyntax `term) := l.invariants.map fun n => ⟨mkIdent n⟩
+    emitConjPredicate (mkIdent l.name) conjuncts (applyState := true)
 
-/-! ## Step 7d: `<Mod>.UserInv` (D18).
-
-Conjunction of every registered free-standing invariant in registration
-order, plus every Lemma/Theorem bundle name (so `prove X` lemmas join
-the global state-invariant lattice when no `Proof` directive
-references them). When no invariants exist, emit `True`. -/
-
+/-- `<Mod>.UserInv` — conjunction of every free-standing invariant in
+registration order. -/
 private def emitUserInv (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  let userInvId : Ident := mkIdent `UserInv
   let mut conjuncts : Array (TSyntax `term) := #[]
   for invName in ctx.invariantOrder do
-    let some _ := ctx.invariants.find? invName | continue
-    let ivIdent : Ident := mkIdent invName
-    conjuncts := conjuncts.push (⟨ivIdent⟩)
-  if conjuncts.isEmpty then
-    elabCommand (← `(
-      def $userInvId : ($idGS) → Prop := fun _ => True
-    ))
-    return
-  -- Apply each invariant to the bound `s`, mirroring `emitLemmaBundles`.
-  let sId : Ident := mkIdent `s
-  let mut body : TSyntax `term ← `(True)
-  for c in conjuncts.reverse do
-    body ← `(($c) $sId ∧ $body)
-  elabCommand (← `(
-    def $userInvId : ($idGS) → Prop := fun $sId => $body
-  ))
+    if ctx.invariants.contains invName then
+      conjuncts := conjuncts.push ⟨mkIdent invName⟩
+  emitConjPredicate (mkIdent `UserInv) conjuncts (applyState := true)
 
 /-! ## The `#gen_module` command -/
 

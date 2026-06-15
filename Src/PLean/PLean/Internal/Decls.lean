@@ -10,8 +10,10 @@ Each record carries:
   - the user-facing P name (`Name`)
   - the fully-qualified Lean def the macro emitted (`Name`, when applicable)
   - source-position info (`Syntax`) for error reporting
-  - structural metadata needed by `#pwf` (e.g., which events a machine
-    receives/sends, which state is `start`, which events a spec observes)
+  - structural metadata needed by `#pwf` (e.g., which state is `start`,
+    which events a spec observes; events received / sent are derived
+    from the states list and body Syntax on demand — see
+    `Surface/Machine.lean::{machineReceives, machineSends}`)
 
 The records are stored in `LocalPModuleCtx` (see Registry.lean). They do not
 need to be `inhabited` or `serializable` — env-extension persistence handles
@@ -80,8 +82,8 @@ structure PStateDecl where
   /-- Optional temperature: `hot`/`cold` for liveness; `none` for safety-only.
       Phase 0 just records it; semantics arrive later. -/
   temperature : Option Name
-  /-- Events handled by this state (used by `#pwf` to check that referenced
-      events exist and are consistent with the machine's `receives` set). -/
+  /-- Events handled by this state (used by `#pwf` to check that
+      referenced events exist). -/
   handles     : Array Name
   /-- States this state may `goto`. Resolved against the owning machine. -/
   gotos       : Array Name
@@ -91,12 +93,6 @@ structure PStateDecl where
 structure PMachineDecl where
   name      : Name
   leanName  : Name
-  /-- Events the machine receives — derived from the events handled across
-      its states (the union of each state's `handles`). -/
-  receives  : Array Name
-  /-- Events the machine sends — derived by scanning handler bodies for
-      `send` statements naming a bare-identifier event. -/
-  sends     : Array Name
   states    : Array PStateDecl
   /-- True iff this is a `spec` machine. Spec machines are flattened into
       globals + handler procedures in Phase 4. -/

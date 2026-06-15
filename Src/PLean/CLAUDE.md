@@ -200,6 +200,36 @@ needs to change, update the regression test in lock-step.
 
 ## Conventions worth knowing
 
+### Surface keywords vs. P keywords
+
+PLean's surface tracks P verbatim except where a P keyword collides
+with a Lean reserved word or builtin. The collisions are:
+
+| P keyword       | PLean surface  | Reason                                                       |
+|-----------------|----------------|--------------------------------------------------------------|
+| `module`        | `pmodule`      | Lean reserves `module`                                       |
+| `axiom`         | `paxiom`       | Lean's builtin `axiom` command intercepts before our gating  |
+| `instance`      | `pinstance`    | Lean's builtin `instance` command intercepts before gating   |
+| `pure`          | `function`     | Lean's `pure ()` term parses first; renamed for natural reading |
+| `init`          | `init-holds`   | Avoids Lean's `(init := …)` named-argument syntax            |
+| `do` (in `on`)  | (dropped)      | Lean's tokenizer eagerly consumes `do` as a do-block opener  |
+
+Tutorial/Advanced ports therefore differ from their `.p` source by a
+small set of mechanical replacements:
+
+```
+P:      pure lock_server() : machine        →   PLean: function lock_server : MachineRef
+P:      init <prop>                         →   PLean: init-holds <prop>
+P:      axiom <name> : <prop>               →   PLean: paxiom <name> : <prop>
+P:      module M { … }                      →   PLean: pmodule M { … }
+P:      on ev do (p : T) { … }              →   PLean: on ev (p : T) { … }
+```
+
+Capitals (`Lemma`, `Theorem`, `Proof`, `prove`, `using`) are
+new-in-PLean keywords introduced for the verification-declaration
+surface (Phase 3); `default` is a reserved sentinel used inside
+`Proof` blocks but not a reserved Lean token.
+
 ### Macro hygiene through `mkIdent`
 
 `#gen_module` and `Surface/Stmt.lean` emit identifiers that must
@@ -386,10 +416,7 @@ Tagging new `GlobalState` update functions with `@[pverifySimp]`
 keeps them in the recipe's reach.
 
 [`Tests/Semantics/SmtVeilRecipe.lean`](Tests/Semantics/SmtVeilRecipe.lean)
-pins this on the three default invariants;
-[`Tests/Semantics/SmtEncodingProbe.lean`](Tests/Semantics/SmtEncodingProbe.lean)
-keeps the *failing* baseline pinned via `#guard_msgs` so a future
-upgrade that changes the rejection message fails loud.
+pins this on the three default invariants.
 
 ## Common operations
 

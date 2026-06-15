@@ -194,79 +194,29 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let tail : TSyntax `tactic ←
       if isDefault then `(tactic| pverify_default)
       else                `(tactic| pverify)
-    -- WHY: unfold accessors before primitives so `liftM get` matches
-    -- the registered `loomSpec` discr-tree key; reversal trips `wpgen`
-    -- into `WPGen.default`. See PVerifyConditional regression.
+    -- Build the proof tactic sequence programmatically. WHY this order:
+    -- handler → target lemma → InitConditions → using-lemmas → per-machine
+    -- accessors → PLean primitives → final tactic. Accessors must
+    -- precede primitives because reversing the order trips `wpgen` into
+    -- `WPGen.default` (see PVerifyConditional regression). The
+    -- `isDefault` branch skips the lemma unfold — `lemmaPred` is
+    -- `DefaultInvariants` and `target` is the literal `default`, which
+    -- the `default_inv` tactic unfolds itself.
+    let mut steps : Array (TSyntax `tactic) := #[]
+    steps := steps.push (← `(tactic| unfold $handlerUnfold:ident))
+    unless isDefault do
+      steps := steps.push (← `(tactic| try unfold $lemmaUnfold:ident))
+    steps := steps.push (← `(tactic| try unfold $initsUnfold:ident))
+    if hasUsings then
+      steps := steps.push (← `(tactic| try unfold $[$usingUnfolds:ident]*))
+    if hasAccessors then
+      steps := steps.push (← `(tactic| try unfold $[$accessorUnfolds:ident]*))
+    steps := steps.push (← `(tactic|
+      try unfold PLean.send PLean.goto PLean.raise
+                 PLean.markReceived PLean.announce))
+    steps := steps.push tail
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
-      match isDefault, hasAccessors, hasUsings with
-      | true,  false, false =>
-        `(Lean.Parser.Tactic.tacticSeq|
-            unfold $handlerUnfold:ident
-            try unfold $initsUnfold:ident
-            try unfold PLean.send PLean.goto PLean.raise
-                       PLean.markReceived PLean.announce
-            $tail:tactic)
-      | true,  true,  false =>
-        `(Lean.Parser.Tactic.tacticSeq|
-            unfold $handlerUnfold:ident
-            try unfold $initsUnfold:ident
-            try unfold $[$accessorUnfolds:ident]*
-            try unfold PLean.send PLean.goto PLean.raise
-                       PLean.markReceived PLean.announce
-            $tail:tactic)
-      | true,  false, true =>
-        `(Lean.Parser.Tactic.tacticSeq|
-            unfold $handlerUnfold:ident
-            try unfold $initsUnfold:ident
-            try unfold $[$usingUnfolds:ident]*
-            try unfold PLean.send PLean.goto PLean.raise
-                       PLean.markReceived PLean.announce
-            $tail:tactic)
-      | true,  true,  true =>
-        `(Lean.Parser.Tactic.tacticSeq|
-            unfold $handlerUnfold:ident
-            try unfold $initsUnfold:ident
-            try unfold $[$usingUnfolds:ident]*
-            try unfold $[$accessorUnfolds:ident]*
-            try unfold PLean.send PLean.goto PLean.raise
-                       PLean.markReceived PLean.announce
-            $tail:tactic)
-      | false, false, false =>
-        `(Lean.Parser.Tactic.tacticSeq|
-            unfold $handlerUnfold:ident
-            try unfold $lemmaUnfold:ident
-            try unfold $initsUnfold:ident
-            try unfold PLean.send PLean.goto PLean.raise
-                       PLean.markReceived PLean.announce
-            $tail:tactic)
-      | false, true,  false =>
-        `(Lean.Parser.Tactic.tacticSeq|
-            unfold $handlerUnfold:ident
-            try unfold $lemmaUnfold:ident
-            try unfold $initsUnfold:ident
-            try unfold $[$accessorUnfolds:ident]*
-            try unfold PLean.send PLean.goto PLean.raise
-                       PLean.markReceived PLean.announce
-            $tail:tactic)
-      | false, false, true =>
-        `(Lean.Parser.Tactic.tacticSeq|
-            unfold $handlerUnfold:ident
-            try unfold $lemmaUnfold:ident
-            try unfold $initsUnfold:ident
-            try unfold $[$usingUnfolds:ident]*
-            try unfold PLean.send PLean.goto PLean.raise
-                       PLean.markReceived PLean.announce
-            $tail:tactic)
-      | false, true,  true =>
-        `(Lean.Parser.Tactic.tacticSeq|
-            unfold $handlerUnfold:ident
-            try unfold $lemmaUnfold:ident
-            try unfold $initsUnfold:ident
-            try unfold $[$usingUnfolds:ident]*
-            try unfold $[$accessorUnfolds:ident]*
-            try unfold PLean.send PLean.goto PLean.raise
-                       PLean.markReceived PLean.announce
-            $tail:tactic)
+      `(Lean.Parser.Tactic.tacticSeq| $[$steps]*)
     -- Wrap in `first | <chain> | sorry` so elaboration always
     -- succeeds; on tactic failure Lean inserts a `sorryAx` into the
     -- value, which the post-elaboration `hasSorry` check below treats

@@ -200,6 +200,17 @@ private def collectMachineMetadata (mname : Name) (items : Array Syntax) :
     | _ => throwErrorAt it "unrecognised machine body item"
   return (states, bodySaved)
 
+/-- Derive the events a machine receives: the union of every state's
+`handles` set, dedup'd. Computed on demand because the body Syntax is
+retained and may evolve in later phases (e.g. spec-machine emission). -/
+def machineReceives (m : PMachineDecl) : Array Name :=
+  dedupNames (m.states.flatMap (·.handles))
+
+/-- Derive the events a machine sends: every bare-identifier event
+named in a `send` statement anywhere in the body. -/
+def machineSends (m : PMachineDecl) : Array Name :=
+  dedupNames (m.body.flatMap collectSentEvents)
+
 @[command_elab pMachineDecl]
 def elabPMachineDecl : CommandElab := fun stx => do
   let `(machine $name:ident { $items:pMachineBodyItem* }) := stx
@@ -207,16 +218,10 @@ def elabPMachineDecl : CommandElab := fun stx => do
   let modCtx ← requireLocalPModuleCtx "machine"
   let mname := name.getId
   let (states, body) ← collectMachineMetadata mname (items.map (·.raw))
-  -- Derive `receives` = union of events handled across states;
-  -- `sends` = events named in `send` statements anywhere in the body.
-  let receives := dedupNames (states.flatMap (·.handles))
-  let sends := dedupNames (body.flatMap collectSentEvents)
   let leanName := modCtx.name ++ mname
   addMachine
     { name      := mname
       leanName  := leanName
-      receives  := receives
-      sends     := sends
       states    := states
       isSpec    := false
       observed  := #[]
@@ -233,14 +238,10 @@ def elabPSpecDecl : CommandElab := fun stx => do
   let obs := stx[4].getSepArgs.map (·.getId)
   let itemsStx := stx[7].getArgs
   let (states, body) ← collectMachineMetadata mname itemsStx
-  let receives := dedupNames (states.flatMap (·.handles))
-  let sends := dedupNames (body.flatMap collectSentEvents)
   let leanName := modCtx.name ++ mname
   addMachine
     { name      := mname
       leanName  := leanName
-      receives  := receives
-      sends     := sends
       states    := states
       isSpec    := true
       observed  := obs

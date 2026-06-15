@@ -7,6 +7,7 @@ both human inspection and #guard_msgs-based regression tests.
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
+import PLean.Surface.Machine
 
 open Lean Elab Command
 
@@ -46,8 +47,8 @@ private def renderMachine (d : PMachineDecl) : String :=
       let obs := String.intercalate "," (d.observed.toList.map Name.toString)
       "  " ++ kw ++ " " ++ d.name.toString ++ " observes [" ++ obs ++ "] {"
     else
-      let r := String.intercalate "," (d.receives.toList.map Name.toString)
-      let s := String.intercalate "," (d.sends.toList.map Name.toString)
+      let r := String.intercalate "," ((machineReceives d).toList.map Name.toString)
+      let s := String.intercalate "," ((machineSends d).toList.map Name.toString)
       "  " ++ kw ++ " " ++ d.name.toString ++ " receives [" ++ r ++ "] sends [" ++ s ++ "] {"
   let stateLines := d.states.toList.map renderState
   String.intercalate "\n" (header :: stateLines ++ ["  }"])

@@ -25,9 +25,7 @@ of work.
 | 6 — Tutorial port | ☐ not started | **M5: `Tutorial/1_ClientServer`**, **M6: `Tutorial/2_TwoPhaseCommit`** verify under PLean |
 | 7 — Stretch | ⊘ deferred | PChecker bridge, lean-smt evaluation, counter-example surfacing |
 
-Build state at [`b9f42ff37`](#): all 985 test jobs green. Two probe
-files (`Tests/Surface/PVerifyDefaultDebug.lean`,
-`Tests/Semantics/SmtEncodingProbe.lean`) are intentionally untracked.
+Build state: all test jobs green at HEAD.
 
 ---
 
@@ -142,11 +140,13 @@ short summary:
 
 - **Surface language.** A P-faithful surface — `event`, `machine`,
   `state`, `invariant`, `Lemma` / `Theorem` / `Proof`, `≺` for
-  temporal precedence — embedded in Lean. Five Lean-keyword
-  collisions are resolved by either a `p` prefix (`pmodule`,
-  `paxiom`, `pinstance`) or a rename (`pure` → `function`, `init` →
-  `init-holds`). A `pmodule M` declaration may span multiple files;
-  fragments aggregate automatically.
+  temporal precedence — embedded in Lean. A small set of P keywords
+  is renamed where they collide with Lean reserved words or builtins
+  (e.g. `module` → `pmodule`, `pure` → `function`, `init` →
+  `init-holds`); the full table lives in
+  [`CLAUDE.md` § "Surface keywords vs. P keywords"](../CLAUDE.md).
+  A `pmodule M` declaration may span multiple files; fragments
+  aggregate automatically.
 
 - **Materialisation.** `#gen_module M` walks the registry and emits
   the per-program union types (events, goto targets, states,
@@ -380,50 +380,41 @@ pick them up between heavier workstreams.
 
 **Action items.**
 
-1. *Unblock the conditional-with-send case.* The
-   `PVerifyConditionalProbeSend` test (handler with
-   `if cond then …; send …`) does not auto-discharge when called
-   from the obligation generator's tactic ladder, even though the
-   same goal closes when probed standalone. The divergence is in
-   elaboration context; identifying it should take roughly a half
-   day for someone willing to read the lookup traces. Documented in
-   [`Tests/Surface/PVerifyConditionalProbe.lean`](../Tests/Surface/PVerifyConditionalProbe.lean)
-   (intentionally untracked).
-2. *Make the `is` notation registry-aware.* Today `m is Server`
+1. *Make the `is` notation registry-aware.* Today `m is Server`
    relies on Lean's name-resolution to find `is_Server`; a typo
    produces a generic "unknown identifier" error. Look up the
    right-hand side in the local pmodule registry at expansion time
    and emit a bespoke error if it is neither a registered event
    nor a registered machine.
-3. *Extract a handler wrapper that injects `markReceived`.* Today
+2. *Extract a handler wrapper that injects `markReceived`.* Today
    the obligation generator emits triples directly against the
    user-visible handler definition and carries the dispatcher
    contract via an existential precondition. A wrapper that takes
    `lbl` as an explicit parameter and prepends `markReceived` would
    make the precondition concrete and is closer to the runtime
    semantics. Land in a new `PLean/Verify/Wrapper.lean`.
-4. *Strengthen the default-invariant tactic.* The current
+3. *Strengthen the default-invariant tactic.* The current
    `default_inv` tactic is a guarded `simp only` plus arithmetic
    fallback; it works on simple handlers but does not implement
    the per-primitive case table (no-`send`, single-`send`,
    `markReceived` + `send`, `goto`) that handles the full range of
    well-formed handlers deterministically. Implement the case
    table in [`PLean/Verify/Tactic.lean`](../PLean/Verify/Tactic.lean).
-5. *Add a configurable SMT fallback for the user-facing `pverify`
+4. *Add a configurable SMT fallback for the user-facing `pverify`
    tactic.* The chain currently terminates at `tauto`. Adding
    `loom_smt` as a final step (gated on the `loom.solver` option)
    closes goals that decide arithmetically but for which `tauto`
    gives up.
-6. *User-facing tactic conveniences.* `pverify using L1, L2` to
+5. *User-facing tactic conveniences.* `pverify using L1, L2` to
    conjoin extra lemmas into the precondition; `pverify!` to report
    unsolved goals as errors; `pverify?` to print the explicit
    tactic script. Each is small and individually deferable.
-7. *Sweep the small-distributed-protocol benchmarks once item 2
+6. *Sweep the small-distributed-protocol benchmarks once item 1
    lands* so they invariably write `m is Node` (the user-facing
    form) rather than `Node_allocated m` (the underlying predicate).
 
-**Blockers.** Items 2 and 7 must land in that order; items 3, 4, 5,
-6 are independent of each other.
+**Blockers.** Items 1 and 6 must land in that order; items 2–5 are
+independent of each other.
 
 ### W6 — Port the canonical P tutorials *(L, sequential after W3 + W4)*
 

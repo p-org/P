@@ -3,7 +3,9 @@ PLean.Verify.Tactic — atomic `pverify_*` tactics.
 
 `#pverify M` is an SMT-discharge command; the tactics here are the
 user-facing primitives for manual proofs of obligations SMT can't
-close, registered via `@[pverifyProof]`.
+close, registered via `@[pverifyProof]`. The pre-SMT simp set lives
+in `Verify/SimpAttrs.lean` (lemmas + the `pverifySimp` attribute);
+this file is purely tactic syntax.
 
 Composing a manual proof:
 
@@ -20,8 +22,8 @@ Composing a manual proof:
 
 Macro-hygiene rule: every simp lemma name lives inside a named tactic
 helper. The obligation generator and manual proofs both call the named
-tactics; neither inlines lemma names. This avoids hygiene marks turning
-bare `simp [wp_bind]` into `simp [wp_bind✝]` at expansion.
+tactics; neither inlines lemma names — bare references would get
+hygiene marks at expansion.
 -/
 import Lean
 import Loom.MonadAlgebras.WP.Basic
@@ -32,87 +34,9 @@ import PLean.Semantics.Default
 import PLean.Semantics.GlobalState
 import PLean.Semantics.Predicates
 import PLean.Semantics.Primitives
-import PLean.Verify.SimpAttrs
+import PLean.Verify.SimpLemmas
 
 open Lean Elab Tactic Meta
-
-/-! ## `pverifySimp` — pre-SMT simplification set
-
-Tagged lemmas turn higher-order constructs (function-typed record
-fields, function/iff/tuple equalities) into first-order forms
-lean-auto can translate. The attribute is registered in
-`Verify/SimpAttrs.lean` so it's available before any `@[pverifySimp]`
-use site here is elaborated. -/
-
-/-- Function-extensional equality. After this rewrite fires,
-function-typed values never appear as SMT atoms; only their *applied*
-forms do, which lean-auto translates as uninterpreted function symbols.
-This is what lets `Label → Bool` / `MachineRef → MachineState` record
-fields go through SMT without refactoring `GlobalState` itself. -/
-theorem PLean.funextEq' {α β : Type} (f g : α → β) :
-    (f = g) = ∀ x, f x = g x := by
-  apply propext
-  constructor
-  · intro h; simp only [h, implies_true]
-  · intro h; apply funext h
-
-open Lean Expr Meta in
-/-- Simproc form of `funextEq'` that fires whenever both sides of an
-equality have a function type. -/
-simproc ↓ funextEq (_ = _) :=
-  fun e => do
-    let_expr Eq _ lhs rhs := e | return .continue
-    let lhsT ← inferType lhs
-    if lhsT.isArrow && (← inferType rhs).isArrow then
-      let bn ← Lean.Meta.getUnusedUserName `a
-      let bt := lhsT.bindingDomain!
-      let nlhs := app lhs (bvar 0)
-      let nrhs := app rhs (bvar 0)
-      let qexpr := forallE bn bt (← mkEq nlhs nrhs) BinderInfo.default
-      let proof ← mkAppM ``PLean.funextEq' #[lhs, rhs]
-      return .visit { expr := qexpr, proof? := proof }
-    return .continue
-attribute [pverifySimp] funextEq
-
-/-- `(p ↔ q) = (p = q)` — lean-auto can choke on `↔`; this rewrite
-makes the goal use `=` only. -/
-@[pverifySimp] theorem PLean.iff_eq_eq {p q : Prop} : (p ↔ q) = (p = q) :=
-  propext ⟨propext, (· ▸ ⟨(·), (·)⟩)⟩
-
-/-- Tuple equality unfolds to per-component equality (tuples are not
-native SMT-LIB sorts). -/
-@[pverifySimp] theorem PLean.tupleEq {α β : Type}
-    [DecidableEq α] [DecidableEq β] (a c : α) (b d : β) :
-    ((a, b) = (c, d)) = (a = c ∧ b = d) := by
-  apply propext; constructor
-  · intro h; injection h; constructor <;> assumption
-  · rintro ⟨h1, h2⟩; rw [h1, h2]
-
-/-- Destruct a quantifier over tuples into per-component quantifiers. -/
-@[pverifySimp] theorem PLean.tupleForall {α β : Type} {P : α × β → Prop} :
-    (∀ x : α × β, P x) = (∀ a : α, ∀ b : β, P (a, b)) := by
-  apply propext; constructor
-  · rintro h a b; exact h (a, b)
-  · rintro h ⟨a, b⟩; exact h a b
-
-/-- Mirror of `tupleForall` for existentials. -/
-@[pverifySimp] theorem PLean.tupleExists {α β : Type} {P : α × β → Prop} :
-    (∃ x : α × β, P x) = (∃ a : α, ∃ b : β, P (a, b)) := by
-  apply propext; constructor
-  · rintro ⟨⟨a, b⟩, h⟩; exact ⟨a, b, h⟩
-  · rintro ⟨a, b, h⟩; exact ⟨⟨a, b⟩, h⟩
-
--- After `simp only [pverifySimp]`, a goal mentioning `(s.addSent lbl).sent l`
--- becomes `decide (l = lbl) || s.sent l = true`, which lean-auto translates
--- as an applied uninterpreted `s.sent` symbol.
-attribute [pverifySimp]
-  PLean.GlobalState.addSent
-  PLean.GlobalState.addReceived
-  PLean.GlobalState.bumpActionCount
-  PLean.GlobalState.updateMachine
-  PLean.inflight
-  PLean.sent
-  PLean.received
 
 namespace PLean
 
@@ -363,6 +287,29 @@ elab_rules : tactic
 syntax (name := pverifyTactic) "pverify" : tactic
 syntax (name := pverifyDefaultTactic) "pverify_default" : tactic
 
+/-- Shared closing chain for `pverify` / `pverify_default`. Tries
+`default_inv` first (cheap when the goal head matches one of the four
+default-invariant constants — guarded otherwise), then SMT, then the
+arithmetic / boolean fallback. -/
+syntax "pverify_close_chain" : tactic
+macro_rules
+  | `(tactic| pverify_close_chain) => `(tactic| (
+      first
+        | default_inv
+        | pverify_smt_close
+        | pverify_grind))
+
+/-- Inverse-ordered close (SMT first), used by `pverify_default` whose
+goal arrives with explicit `DefaultInvariants` content the SMT path
+handles directly without needing `default_inv`'s case split. -/
+syntax "pverify_close_chain_smt_first" : tactic
+macro_rules
+  | `(tactic| pverify_close_chain_smt_first) => `(tactic| (
+      first
+        | pverify_smt_close
+        | default_inv
+        | pverify_grind))
+
 /-- The headline auto-discharge tactic.
 
 `pverify_step_wp` already runs `wpgen` (which itself opens the triple
@@ -385,10 +332,7 @@ macro_rules
         | (pverify_step_wp
            intros
            split_conjunction_hyps
-           first
-             | default_inv
-             | pverify_smt_close
-             | pverify_grind)
+           pverify_close_chain)
     ))
 
 macro_rules
@@ -402,10 +346,7 @@ macro_rules
            simp only [PLean.DefaultInvariants, PLean.UniqueActions,
                       PLean.IncreasingCount, PLean.ReceivedSubsetSent] at *
            split_conjunction_hyps
-           first
-             | pverify_smt_close
-             | default_inv
-             | pverify_grind)
+           pverify_close_chain_smt_first)
     ))
 
 end PLean

@@ -141,11 +141,17 @@ is `pverify` for non-default lemmas, `pverify_default` for
 `prove default`. `varNames` are the owning machine's `var` accessor
 names (added to the `unfold` chain so `wpgen` can step through state
 reads/writes); `lemmaInvNames` are the target lemma's per-invariant
-defs (similarly unfolded). -/
+defs (similarly unfolded); `machineNames` are every machine kind in the
+pmodule (used to unfold `<M>_allocated` / `<M>_kind` so kind-tag checks
+in user invariants reduce to plain arithmetic the SMT solver can see).
+`is_<ev>` predicates are intentionally NOT added to the unfold chain —
+their `match` bodies trip lean-auto's monomorphizer; leaving them folded
+lets SMT treat them as uninterpreted predicates. -/
 def emitOneObligation (modName : Name) (mname sname evname : Name)
     (target : Name) (isDefault : Bool) (usingNames : Array Name)
     (hasPayload : Bool) (varNames : Array Name)
     (lemmaInvNames : Array Name)
+    (machineNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
     CommandElabM ObligationOutcome := do
   let thmName : Name :=
@@ -220,8 +226,26 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     -- unfold each `i` so SMT sees the user's actual proposition.
     let usingNamesAll : Array Ident := (usingNames ++ lemmaInvNames).map mkIdent
     let usingUnfolds : Array Ident := usingNamesAll
+    -- Per-machine kind helpers: user invariants frequently reference
+    -- `<M>_allocated m s` (or the `is_<M>` alias the materialiser emits)
+    -- and the `<M>_kind` numeric tag. Unfolding all three exposes
+    -- `(s.machines m).kind` as an applied projection — SMT-translatable
+    -- as a uninterpreted function symbol — and reduces kind equality to
+    -- a Nat literal comparison.
+    --
+    -- Order matters: `is_<M>` MUST be unfolded before `<M>_allocated`,
+    -- because `is_<M>` is `@[inline] def is_<M> m := <M>_allocated m` —
+    -- when the goal carries `is_<M>` calls, attempting to unfold
+    -- `<M>_allocated` first finds nothing to unfold (the constant
+    -- doesn't appear yet). Once `is_<M>` is unfolded, `<M>_allocated`
+    -- shows up and its unfold can fire.
+    let mut kindUnfolds : Array Ident := #[]
+    for m in machineNames do
+      kindUnfolds := kindUnfolds.push
+        (mkIdent (Name.mkSimple ("is_" ++ m.toString)))
+      kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_allocated"))
+      kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_kind"))
     let hasAccessors := !accessorUnfolds.isEmpty
-    let hasUsings    := !usingUnfolds.isEmpty
     let tail : TSyntax `tactic ←
       if isDefault then `(tactic| pverify_default)
       else                `(tactic| pverify)
@@ -238,8 +262,14 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     unless isDefault do
       steps := steps.push (← `(tactic| try unfold $lemmaUnfold:ident))
     steps := steps.push (← `(tactic| try unfold $initsUnfold:ident))
-    if hasUsings then
-      steps := steps.push (← `(tactic| try unfold $[$usingUnfolds:ident]*))
+    -- WHY per-name `try unfold` rather than one batched `try unfold a b c …`:
+    -- `unfold` fails atomically if ANY listed name is missing from the goal.
+    -- Wrapping the batch in `try` would then drop EVERY unfold in that batch.
+    -- Emitting one `try unfold` per name lets each succeed or fail independently.
+    for u in usingUnfolds do
+      steps := steps.push (← `(tactic| try unfold $u:ident))
+    for u in kindUnfolds do
+      steps := steps.push (← `(tactic| try unfold $u:ident))
     if hasAccessors then
       steps := steps.push (← `(tactic| try unfold $[$accessorUnfolds:ident]*))
     steps := steps.push (← `(tactic|
@@ -412,6 +442,7 @@ private def processOne (modName mname sname evname : Name)
     (target : Name) (isDefault : Bool) (usingNames : Array Name)
     (hasPayload : Bool) (varNames : Array Name)
     (lemmaInvNames : Array Name)
+    (machineNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
     (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
   let acc := { acc with attempted := acc.attempted + 1 }
@@ -423,7 +454,7 @@ private def processOne (modName mname sname evname : Name)
   let savedSt ← get
   let outcomeRaw ← try
     emitOneObligation modName mname sname evname target isDefault
-      usingNames hasPayload varNames lemmaInvNames proofTag proofIdx
+      usingNames hasPayload varNames lemmaInvNames machineNames proofTag proofIdx
   catch e =>
     let errMsg ← e.toMessageData.toString
     pure (ObligationOutcome.tacticError (truncateForReport errMsg))
@@ -476,6 +507,16 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
     match ctx.lemmas.find? n with
     | some l => l.invariants
     | none   => #[]
+  -- Every non-spec machine's name in registration order. Drives the
+  -- `<M>_allocated` / `<M>_kind` unfold chain in `emitOneObligation`,
+  -- so user invariants that reference machine-kind predicates reduce to
+  -- plain arithmetic for the SMT solver.
+  let allMachineNames : Array Name := Id.run do
+    let mut out : Array Name := #[]
+    for mn in ctx.machineOrder do
+      if let some md := ctx.machines.find? mn then
+        if !md.isSpec then out := out.push mn
+    return out
   for hProof : proofIdx in [0:ctx.proofs.size] do
     let proof := ctx.proofs[proofIdx]'hProof.upper
     for dir in proof.directives do
@@ -500,7 +541,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
               lemmaInvNames := lemmaInvNames ++ lemmaInvariantsOf u
             result ← processOne modName mname sd.name ev
               dir.target dir.isDefault dir.usingLemmas hasPayload varNames
-              lemmaInvNames proof.name proofIdx result
+              lemmaInvNames allMachineNames proof.name proofIdx result
   -- Auto-default pass: synthetic `block_auto_default` tag avoids
   -- collisions with user-tagged emissions; index past-the-end of the
   -- proofs array.
@@ -517,7 +558,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
         let hasPayload := eventHasPayload ctx ev
         result ← processOne modName mname sd.name ev
           `default true #[] hasPayload varNames
-          #[] autoTag autoIdx result
+          #[] allMachineNames autoTag autoIdx result
   return result
 
 end Verify

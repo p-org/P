@@ -70,9 +70,8 @@ lemmas so `wpgen` can step through `liftM (get : StateT _ DivM _)` and
 `liftM (set _)`. Without these the body of any handler that reads or
 writes state is opaque to `wpgen`.
 
-This is the same pattern Cashmere uses (`Cashmere.lean:31-33`); when
-Phase 2's `#gen_module` synthesises per-program type aliases, it will
-also emit these declarations automatically. -/
+When Phase 2's `#gen_module` synthesises per-program type aliases, it
+will also emit these declarations automatically. -/
 
 open PartialCorrectness DemonicChoice
 

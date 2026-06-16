@@ -7,11 +7,11 @@ This is the executable counterpart of M1's triples — confirming the
 primitives compute the buffer/counter updates we proved them to
 preserve.
 
-Mirrors Cashmere's `#eval (prog args).run.run.run initState` idiom,
-adapted for our two-transformer stack: the `.run.run.run` chain
-unwraps `NonDetT → StateT → DivM`; the final `DivM` value is
-destructured via `DivM.run` (`Inhabited`-defaulted on divergence,
-which the terminating test programs never trigger).
+Uses the `#eval (prog args).run.run.run initState` idiom for our
+two-transformer stack: the `.run.run.run` chain unwraps
+`NonDetT → StateT → DivM`; the final `DivM` value is destructured via
+`DivM.run` (`Inhabited`-defaulted on divergence, which the terminating
+test programs never trigger).
 
 Tests are `theorem`s (not `example`s) because `decide`'s reflection
 step generates auxiliary `match_*` constants and needs a stable

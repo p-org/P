@@ -30,8 +30,7 @@ structure SpikeState where
   deriving Inhabited
 
 /-- The recommended Phase-1 stack: `NonDetT` outermost, `StateT` over
-`DivM` underneath. Cashmere uses the same shape (with an extra `ExceptT`
-layer) and its `MAlgOrdered` instance is derived automatically. -/
+`DivM` underneath. The `MAlgOrdered` instance is derived automatically. -/
 abbrev PM (α : Type) := NonDetT (StateT SpikeState DivM) α
 
 /-- Top-level assertion lattice for the stack. `StateT σ` lifts logic

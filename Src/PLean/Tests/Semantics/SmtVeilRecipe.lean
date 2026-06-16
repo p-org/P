@@ -1,5 +1,5 @@
 /-
-PLean Phase-3 — confirm the Veil-style SMT recipe closes a default
+PLean Phase-3 — confirm the SMT preprocessing recipe closes a default
 obligation on the *actual* `GlobalState` shape (no refactor).
 
 This file complements `SmtEncodingProbe.lean`. The probe established

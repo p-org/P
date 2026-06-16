@@ -57,9 +57,13 @@ end SoundnessR1
 
 -- Pin the failure count via the warning line. If the soundness fix
 -- regresses (false invariant gets "verified"), the warning vanishes
--- and `#guard_msgs (severity := warning)` flags the mismatch.
+-- and `#guard_msgs (severity := warning)` flags the mismatch. The
+-- failed obligation now lands as `1 disproved` (SMT counter-example)
+-- since the `<M>_allocated` / `<M>_kind` unfolds expose `(s.machines
+-- m).kind` to the translator — previously it surfaced as a translator
+-- rejection (`1 tactic-error`).
 /--
-warning: SoundnessR1: 1 proved by SMT, 0 user-proved, 0 disproved, 0 unknown, 1 tactic-error, 0 no-diagnostic
+warning: SoundnessR1: 1 proved by SMT, 0 user-proved, 1 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic
 1 obligation(s) need a manual proof; skeletons printed above.
 ---
 warning: declaration uses 'sorry'

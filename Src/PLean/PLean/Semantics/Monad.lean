@@ -6,9 +6,8 @@ the inner divergence monad:
 
   `PM P α := NonDetT (StateT (GlobalState P) DivM) α`
 
-with assertion lattice `PProp P := GlobalState P → Prop`. The stack
-reflects Cashmere's shape (Cashmere has an extra `ExceptT String` layer
-which P's safety-only verification doesn't need).
+with assertion lattice `PProp P := GlobalState P → Prop`. P's
+safety-only verification doesn't need an `ExceptT` layer on top.
 
 The `MAlgOrdered` instances for the `NonDetT` and `DivM` layers are
 `scoped` inside `PartialCorrectness DemonicChoice` (decision D5 — the

@@ -1,12 +1,12 @@
 /-
 PLean port of [`Tutorial/Advanced/6_DistributedLock`](../../../Tutorial/Advanced/6_DistributedLock/PSrc/System.p).
 
-The three invariants in `Theorem safety` are not jointly inductive
-over the `eGrant` / `eAccept` handlers without the original P
-source's `not_held_after_release` and `transfer_to_higher` clauses;
-those `prove safety` obligations are expected to fail SMT and need
-either the missing invariants or `@[pverifyProof]` manual proofs.
-The `prove default` obligations close via SMT.
+`Theorem safety` ports all five P-source invariants (including
+`not_held_after_release` and `transfer_to_higher`, which the original
+P proof needs). The `prove default` obligations close via SMT;
+`prove safety` still yields counter-examples — the residual gap is
+in the `init-condition` port (not yet wired) and any further
+invariants needed once init-conditions are in the precondition.
 -/
 import PLean
 
@@ -56,6 +56,26 @@ pmodule DistributedLock
       invariant unique_accept :
         ∀ e1 e2 : Sig.Label,
           e1 is eAccept → e2 is eAccept → inflight e1 s → inflight e2 s → e1 = e2
+
+      -- Ported from the P source: when an eAccept is in flight from
+      -- node n1, n1 has already released the lock.
+      invariant not_held_after_release :
+        ∀ n1 : Node, ∀ e : Sig.Label, ∀ p : tAccept,
+          Node_allocated n1.ref s →
+          inflight e s →
+          e.action = .event (E.eAccept p) →
+          p.source = n1.ref →
+          (s.machines n1.ref).fields.Node_held = false
+
+      -- Ported from the P source: an in-flight eAccept always
+      -- transfers to a strictly higher epoch.
+      invariant transfer_to_higher :
+        ∀ n1 : Node, ∀ e : Sig.Label, ∀ p : tAccept,
+          Node_allocated n1.ref s →
+          inflight e s →
+          e.action = .event (E.eAccept p) →
+          p.source = n1.ref →
+          p.epoch > (s.machines n1.ref).fields.Node_epoch
     }
   }
 

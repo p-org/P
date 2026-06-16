@@ -57,14 +57,16 @@ end SoundnessR1
 
 -- Pin the failure count via the warning line. If the soundness fix
 -- regresses (false invariant gets "verified"), the warning vanishes
--- and `#guard_msgs (severity := warning)` flags the mismatch. The
--- failed obligation now lands as `1 disproved` (SMT counter-example)
--- since the `<M>_allocated` / `<M>_kind` unfolds expose `(s.machines
--- m).kind` to the translator — previously it surfaced as a translator
--- rejection (`1 tactic-error`).
+-- and `#guard_msgs (severity := warning)` flags the mismatch. Both
+-- the base-case VC and the inductive step disprove for `always_x_is_42`:
+-- - base case: `InitConditions s → always_x_is_42 s` — at init,
+--   nothing constrains `(s.machines b.ref).fields.Bad_x` to be `42`.
+-- - inductive step: the handler increments `x`, breaking the invariant.
 /--
-warning: SoundnessR1: 1 proved by SMT, 0 user-proved, 1 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic
-1 obligation(s) need a manual proof; skeletons printed above.
+warning: SoundnessR1: 1 proved by SMT, 0 user-proved, 2 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic
+2 obligation(s) need a manual proof; skeletons printed above.
+---
+warning: declaration uses 'sorry'
 ---
 warning: declaration uses 'sorry'
 -/

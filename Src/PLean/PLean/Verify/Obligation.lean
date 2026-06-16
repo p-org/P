@@ -6,9 +6,20 @@ For each `Proof { prove X using Y, …; }` directive in the registry,
 walk every (machine, state, handler) triple and emit one Hoare-triple
 theorem per (handler, target lemma) pair: `triple <pre> <handler>
 <post>`. The precondition conjoins target + using-lemmas + the three
-default invariants + `InitConditions` + the dispatcher contract; the
-post drops the using-lemmas. `prove default;` swaps the bundle for
+default invariants + the dispatcher contract; the post drops the
+using-lemmas. `prove default;` swaps the bundle for
 `DefaultInvariants` and the discharger for `pverify_default`.
+
+`InitConditions` does NOT appear in any per-handler triple — it would
+be unsound to assume mid-trace, and per-handler obligations are
+inductive-step checks (`Inv ∧ Step ⇒ Inv`). The initiation leg
+(`InitConditions ⇒ Inv`) is discharged by `emitBaseCaseObligation`:
+one VC per (directive, individual-invariant-in-target-lemma) pair, so
+a failed base case names exactly which invariant doesn't follow from
+init. Premises don't get a base-case VC from a directive that uses
+them — only goals do — matching PVerifier's behaviour where only
+`cmd.Goals` get a UCLID `invariant` declaration (whose base case
+UCLID checks automatically).
 
 `synthesise` consults the `pverifyProofExt` registry first: a theorem
 tagged `@[pverifyProof]` under the obligation's name skips auto
@@ -170,7 +181,6 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
   let stx ← liftMacroM do
     let lemmaPred ← lemmaPredIdent target isDefault
     let usingPreds ← usingPredIdents usingNames
-    let initsId : Ident := mkIdent `InitConditions
     let payloadTy := mkIdent (evname.appendAfter "_payload")
     let prpAbbrev : TSyntax `term := ← `(PProp $idSig)
     -- Pre/post both include `DefaultInvariants` so the three sanity
@@ -181,7 +191,7 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let sId : TSyntax `term := ← `(s)
     let basePre ← do
       let preds : Array (TSyntax `term) :=
-        #[lemmaPred] ++ usingPreds ++ #[defaultPred, ← `($initsId)]
+        #[lemmaPred] ++ usingPreds ++ #[defaultPred]
       buildConjAt preds sId
     -- Dispatcher contract: existential witness that this handler
     -- only fires when an inflight label of the right shape exists.
@@ -202,7 +212,7 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
             lbl.action = .event $evCtor)
     let preTerm : TSyntax `term ← `(fun (s : PLean.GlobalState $idSig) =>
                                       $basePre ∧ $dispatcherClause)
-    let postBody ← buildConjAt #[lemmaPred, defaultPred, ← `($initsId)] sId
+    let postBody ← buildConjAt #[lemmaPred, defaultPred] sId
     let postTerm : TSyntax `term ← `(fun (_ : Unit) (s : PLean.GlobalState $idSig) =>
                                        $postBody)
     let handlerTerm : TSyntax `term ←
@@ -214,7 +224,6 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let lemmaUnfold : Ident :=
       if isDefault then mkIdent ``PLean.DefaultInvariants
       else                mkIdent target
-    let initsUnfold : Ident := mkIdent `InitConditions
     let mut accessorUnfolds : Array Ident := #[]
     for v in varNames do
       accessorUnfolds := accessorUnfolds.push
@@ -250,8 +259,8 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
       if isDefault then `(tactic| pverify_default)
       else                `(tactic| pverify)
     -- Build the proof tactic sequence programmatically. WHY this order:
-    -- handler → target lemma → InitConditions → using-lemmas → per-machine
-    -- accessors → PLean primitives → final tactic. Accessors must
+    -- handler → target lemma → using-lemmas → per-machine kind helpers
+    -- → accessors → PLean primitives → final tactic. Accessors must
     -- precede primitives because reversing the order trips `wpgen` into
     -- `WPGen.default` (see PVerifyConditional regression). The
     -- `isDefault` branch skips the lemma unfold — `lemmaPred` is
@@ -261,7 +270,6 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     steps := steps.push (← `(tactic| unfold $handlerUnfold:ident))
     unless isDefault do
       steps := steps.push (← `(tactic| try unfold $lemmaUnfold:ident))
-    steps := steps.push (← `(tactic| try unfold $initsUnfold:ident))
     -- WHY per-name `try unfold` rather than one batched `try unfold a b c …`:
     -- `unfold` fails atomically if ANY listed name is missing from the goal.
     -- Wrapping the batch in `try` would then drop EVERY unfold in that batch.
@@ -307,6 +315,97 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
   -- inspection alone would miss. The fine-grained sub-classification
   -- (disproved / unknown / tacticError) is added by `processOne`,
   -- which has access to the message-log slice.
+  let env ← getEnv
+  match env.find? fullThmName with
+  | some (.thmInfo info) =>
+    if info.value.hasSorry then return .unfinished
+    return .provedBySmt
+  | _ => return .unfinished
+
+/-! ## Base-case obligation emission
+
+For each `prove G [using P1, …]` directive, every individual invariant
+`i` that constitutes the bundle `G` (its `lemma.invariants`) gets its
+own theorem: `∀ s, InitConditions s → i s`. One VC per invariant lets a
+failure report name the exact clause that doesn't follow from the init
+state, instead of pointing at the conjunction.
+
+`prove default` expands to one base-case VC per default-invariant
+(`UniqueActions`, `IncreasingCount`, `ReceivedSubsetSent`); all three
+hold vacuously at init (no labels sent yet) so they should close
+trivially via SMT.
+
+Premises (`using P`) do NOT get base-case VCs from this directive —
+matching PVerifier's behaviour. They get their own base-case VCs when
+they appear as the target of a separate `prove P` directive. -/
+
+/-- Build the name `<Mod>.base_<proofTag>_<invariant>`. The proof-tag
+prefix avoids collisions when two `Proof` blocks both prove the same
+invariant (with different `using`-clauses). -/
+def baseCaseName (invName : Name) (proofTag : Name) (proofIdx : Nat) : Name :=
+  let proofTagStr : String :=
+    if proofTag == Name.anonymous then s!"block{proofIdx}"
+    else proofTag.toString
+  Name.mkSimple ("base_" ++ proofTagStr ++ "_" ++ invName.toString)
+
+/-- Emit one base-case obligation:
+`∀ s : GlobalState Sig, InitConditions s → <invName> s`. The kind-helper
+unfolds (`<M>_allocated`, `is_<M>`, `<M>_kind`) and the invariant
+unfold are added to the proof so SMT sees the user's actual
+proposition. `InitConditions` is unfolded too — its body is a closed
+conjunction of `init-holds` clauses. -/
+def emitBaseCaseObligation (modName : Name) (invName : Name)
+    (isDefaultInv : Bool) (machineNames : Array Name)
+    (proofTag : Name) (proofIdx : Nat) :
+    CommandElabM ObligationOutcome := do
+  let thmName : Name := baseCaseName invName proofTag proofIdx
+  let fullThmName : Name := modName ++ thmName
+  if ← liftCoreM (hasPVerifyProof fullThmName) then
+    logInfo m!"obligation {fullThmName} picked up from `@[pverifyProof]`"
+    return .userProved
+  let thmId : Ident := mkIdent thmName
+  -- Unhygienic `s` binder: bare `s` inside a macro quotation acquires
+  -- a macro scope and renders as `s✝` in the pretty-printed signature,
+  -- breaking the copy-paste manual-proof skeleton. Same convention as
+  -- `idThis` / `idParam` in the per-handler emitter.
+  let idS : Ident := mkIdent `s
+  let stx ← liftMacroM do
+    let initsId : Ident := mkIdent `InitConditions
+    let invIdent : Ident :=
+      if isDefaultInv then mkIdent (`PLean ++ invName)
+      else                 mkIdent invName
+    let prpAbbrev : TSyntax `term ← `(PProp $idSig)
+    let goalType : TSyntax `term ←
+      `(∀ $idS : PLean.GlobalState $idSig,
+          ($initsId : $prpAbbrev) $idS → ($invIdent) $idS)
+    -- Unfold chain: `InitConditions`, the invariant, kind helpers,
+    -- then close with `pverify_smt_close` (the base case never
+    -- involves `wpgen` or handler unfolds).
+    let mut steps : Array (TSyntax `tactic) := #[]
+    steps := steps.push (← `(tactic| try unfold $initsId:ident))
+    steps := steps.push (← `(tactic| try unfold $invIdent:ident))
+    for m in machineNames do
+      let isPred  := mkIdent (Name.mkSimple ("is_" ++ m.toString))
+      let alloc   := mkIdent (m.appendAfter "_allocated")
+      let kindLit := mkIdent (m.appendAfter "_kind")
+      steps := steps.push (← `(tactic| try unfold $isPred:ident))
+      steps := steps.push (← `(tactic| try unfold $alloc:ident))
+      steps := steps.push (← `(tactic| try unfold $kindLit:ident))
+    if isDefaultInv then
+      steps := steps.push (← `(tactic|
+        try unfold PLean.UniqueActions PLean.IncreasingCount
+                   PLean.ReceivedSubsetSent))
+    steps := steps.push (← `(tactic|
+      first | (intros; trivial) | pverify_smt_close))
+    let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
+      `(Lean.Parser.Tactic.tacticSeq| $[$steps]*)
+    let wrappedProof : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
+      `(Lean.Parser.Tactic.tacticSeq|
+          pverify_log_failure_else_sorry $proofTacSeq)
+    `(set_option linter.unusedTactic false in
+      theorem $thmId : $goalType := by
+        $wrappedProof)
+  elabCommand stx
   let env ← getEnv
   match env.find? fullThmName with
   | some (.thmInfo info) =>
@@ -434,30 +533,22 @@ private def renderSignature (fullThmName : Name) : CommandElabM String := do
     catch _ => return ""
   | none => return ""
 
-/-- Emit one obligation, classify the outcome, and append a record to
-the running `SynthesiseResult`. Errors logged during elaboration are
-filtered out of the message log; the structured report consumes the
-diagnostic refs directly. -/
-private def processOne (modName mname sname evname : Name)
-    (target : Name) (isDefault : Bool) (usingNames : Array Name)
-    (hasPayload : Bool) (varNames : Array Name)
-    (lemmaInvNames : Array Name)
-    (machineNames : Array Name)
-    (proofTag : Name) (proofIdx : Nat)
+/-- Shared bookkeeping: clear diag refs, run the emitter, classify
+the outcome, scrub sync-error messages, and append a record. The
+emitter returns the raw outcome; `classifyFailure` upgrades a bare
+`.unfinished` via the diagnostic refs. -/
+private def runEmitterAndRecord (modName mname sname evname target thmName : Name)
+    (emitter : CommandElabM ObligationOutcome)
     (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
   let acc := { acc with attempted := acc.attempted + 1 }
-  let thmName :=
-    obligationName mname sname evname target isDefault usingNames proofTag proofIdx
   let fullThmName := modName ++ thmName
   pverifySmtDiagRef.set none
   pverifyTacDiagRef.set none
   let savedSt ← get
-  let outcomeRaw ← try
-    emitOneObligation modName mname sname evname target isDefault
-      usingNames hasPayload varNames lemmaInvNames machineNames proofTag proofIdx
-  catch e =>
-    let errMsg ← e.toMessageData.toString
-    pure (ObligationOutcome.tacticError (truncateForReport errMsg))
+  let outcomeRaw ← try emitter
+    catch e =>
+      let errMsg ← e.toMessageData.toString
+      pure (ObligationOutcome.tacticError (truncateForReport errMsg))
   let outcome ← match outcomeRaw with
     | .unfinished => classifyFailure
     | other       => pure other
@@ -491,6 +582,35 @@ private def processOne (modName mname sname evname : Name)
   | .unfinished      =>
     return { acc with unfinished  := acc.unfinished + 1 }
 
+/-- Emit one per-handler obligation. -/
+private def processOne (modName mname sname evname : Name)
+    (target : Name) (isDefault : Bool) (usingNames : Array Name)
+    (hasPayload : Bool) (varNames : Array Name)
+    (lemmaInvNames : Array Name)
+    (machineNames : Array Name)
+    (proofTag : Name) (proofIdx : Nat)
+    (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
+  let thmName :=
+    obligationName mname sname evname target isDefault usingNames proofTag proofIdx
+  runEmitterAndRecord modName mname sname evname target thmName
+    (emitOneObligation modName mname sname evname target isDefault
+      usingNames hasPayload varNames lemmaInvNames machineNames proofTag proofIdx)
+    acc
+
+/-- Emit one base-case obligation for a single invariant in a directive's
+target lemma. `mname`/`sname`/`evname` are recorded as `anonymous` —
+base-case VCs are pmodule-scoped, not handler-scoped. -/
+private def processBaseCase (modName invName : Name) (isDefaultInv : Bool)
+    (machineNames : Array Name)
+    (proofTag : Name) (proofIdx : Nat)
+    (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
+  let thmName := baseCaseName invName proofTag proofIdx
+  runEmitterAndRecord modName Name.anonymous Name.anonymous Name.anonymous
+    invName thmName
+    (emitBaseCaseObligation modName invName isDefaultInv machineNames
+      proofTag proofIdx)
+    acc
+
 /-- For each `Proof` block's `prove X` directive, walk every
 `(machine, state, event)` and emit an obligation. After the user's
 directives, auto-emit a `prove default;` obligation for every
@@ -517,9 +637,27 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
       if let some md := ctx.machines.find? mn then
         if !md.isSpec then out := out.push mn
     return out
+  -- Names of the three default invariants — the base case for
+  -- `prove default;` enumerates them so the failure report names which
+  -- one didn't hold at init (rather than the bundled `DefaultInvariants`).
+  let defaultInvNames : Array Name :=
+    #[`UniqueActions, `IncreasingCount, `ReceivedSubsetSent]
   for hProof : proofIdx in [0:ctx.proofs.size] do
     let proof := ctx.proofs[proofIdx]'hProof.upper
     for dir in proof.directives do
+      -- Base case: one VC per individual invariant in the target lemma's
+      -- bundle (or per default-invariant for `prove default`). Premises
+      -- (`using P`) intentionally do NOT get base-case VCs from this
+      -- directive — they get one when they themselves are a `prove`
+      -- target. Matches PVerifier's "only Goals get UCLID `invariant`
+      -- declarations" semantics.
+      let baseInvs : Array Name :=
+        if dir.isDefault then defaultInvNames
+        else lemmaInvariantsOf dir.target
+      for inv in baseInvs do
+        result ← processBaseCase modName inv dir.isDefault allMachineNames
+          proof.name proofIdx result
+      -- Inductive step: per-handler triples.
       for mname in ctx.machineOrder do
         let some m := ctx.machines.find? mname | continue
         if m.isSpec then
@@ -544,7 +682,9 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
               lemmaInvNames allMachineNames proof.name proofIdx result
   -- Auto-default pass: synthetic `block_auto_default` tag avoids
   -- collisions with user-tagged emissions; index past-the-end of the
-  -- proofs array.
+  -- proofs array. No base case emitted here — the default invariants'
+  -- base case is so trivial (vacuously true on the empty buffer) that
+  -- duplicating it per (M, S, ev) gap would just pad the report.
   let autoTag : Name := `block_auto_default
   let autoIdx : Nat := ctx.proofs.size
   for mname in ctx.machineOrder do

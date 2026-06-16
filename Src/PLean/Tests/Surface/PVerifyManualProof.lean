@@ -42,7 +42,7 @@ emits. -/
 theorem M.S.eHello_correct_Safety_trivial (this : M) :
     triple (l := PProp Sig)
       (fun s =>
-        (trivial s ∧ DefaultInvariants s ∧ InitConditions s ∧ True) ∧
+        (trivial s ∧ DefaultInvariants s ∧ True) ∧
         ∃ lbl : Sig.Label,
           PLean.inflight lbl s ∧
           lbl.target = this.ref ∧
@@ -50,7 +50,7 @@ theorem M.S.eHello_correct_Safety_trivial (this : M) :
           lbl.action = .event E.eHello)
       (M.S.eHello_handler this)
       (fun _ s =>
-        trivial s ∧ DefaultInvariants s ∧ InitConditions s ∧ True) := by
+        trivial s ∧ DefaultInvariants s ∧ True) := by
   -- Step through the WP plumbing and unfold the handler / framework
   -- predicates. The atomic tactics in `Verify/Tactic.lean` are
   -- composable: each is a single-purpose step the user can chain.
@@ -58,7 +58,7 @@ theorem M.S.eHello_correct_Safety_trivial (this : M) :
   pverify_step_wp
   intros
   -- Handler is `pure ()`; post conjunction matches pre-state hypotheses.
-  refine ⟨?_, ?_, ?_⟩ <;> assumption
+  refine ⟨?_, ?_⟩ <;> assumption
 
 end PVerifyManualProofDemo
 

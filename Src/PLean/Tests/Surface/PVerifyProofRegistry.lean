@@ -67,7 +67,7 @@ namespace PVerifyWithManual
 theorem M.S.eHello_correct_Safety_trivial (this : M) :
     triple (l := PProp Sig)
       (fun s =>
-        (trivial s ∧ DefaultInvariants s ∧ InitConditions s ∧ True) ∧
+        (trivial s ∧ DefaultInvariants s ∧ True) ∧
         ∃ lbl : Sig.Label,
           PLean.inflight lbl s ∧
           lbl.target = this.ref ∧
@@ -75,11 +75,11 @@ theorem M.S.eHello_correct_Safety_trivial (this : M) :
           lbl.action = .event E.eHello)
       (M.S.eHello_handler this)
       (fun _ s =>
-        trivial s ∧ DefaultInvariants s ∧ InitConditions s ∧ True) := by
+        trivial s ∧ DefaultInvariants s ∧ True) := by
   unfold M.S.eHello_handler
   pverify_step_wp
   intros
-  refine ⟨?_, ?_, ?_⟩ <;> assumption
+  refine ⟨?_, ?_⟩ <;> assumption
 
 end PVerifyWithManual
 

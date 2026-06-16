@@ -485,17 +485,44 @@ private def emitConjPredicate (name : Ident) (members : Array (TSyntax `term))
   else
     elabCommand (← `(def $name : ($idGS) → Prop := fun _ => $body))
 
-/-- Aggregate every saved `init-holds <prop>` clause into the single
-predicate `<Mod>.InitConditions : GS → Prop`. The clauses are closed
-propositions so the binder is a wildcard. The obligation generator
-threads this into every per-handler triple's pre- and post-condition. -/
+/-- Aggregate every saved `init-holds <prop>` clause **plus the
+framework init constraints** into the single predicate
+`<Mod>.InitConditions : GS → Prop`. Matches PVerifier's `init {}` block
+(`Uclid5CodeGenerator.cs::GenerateInitBlock`):
+- buffers `sent` / `received` start empty,
+- `actionCount` starts at 0.
+
+(`InStart` / `InEntry` for every `MachineRef` is a PVerifier convention
+that PLean does not yet model; this can be added when initialization-
+action support lands.) -/
 private def emitInitConditions (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  let mut props : Array (TSyntax `term) := #[]
+  -- Framework init: emit as a state-dependent conjunct via `(applyState
+  -- := true)`. We need `s` to appear in the body, so we build the
+  -- predicate as a closed `fun s => <framework> ∧ <user clauses>` here
+  -- rather than re-using `emitConjPredicate` (which currently can't mix
+  -- per-state and closed conjuncts in one call).
+  let sId : Ident := mkIdent `s
+  -- Framework: `(∀ l, s.sent l = false) ∧ (∀ l, s.received l = false) ∧
+  -- s.actionCount = 0`. Encoded so SMT can use it directly.
+  let frameworkClauses : Array (TSyntax `term) :=
+    #[← `((∀ l : ($idSig).Label, ($sId).sent l = false)),
+      ← `((∀ l : ($idSig).Label, ($sId).received l = false)),
+      ← `(($sId).actionCount = 0)]
+  let mut props : Array (TSyntax `term) := frameworkClauses
   for d in ctx.inits do
     if let some stx := d.defStx then
-      -- `init-holds <term>` — child index 1 is the term.
+      -- `init-holds <term>` — child index 1 is the term. The user's
+      -- clauses are closed (no state reference), so they stand
+      -- alongside the framework conjuncts inside the same `fun s => …`.
       props := props.push ⟨stx[1]⟩
-  emitConjPredicate (mkIdent `InitConditions) props (applyState := false)
+  -- Build the conjunction by hand (mirrors `emitConjPredicate`'s shape
+  -- but doesn't apply `s` to the conjuncts — they're plain props).
+  let mut body : TSyntax `term ← `(True)
+  for p in props.reverse do
+    body ← `(($p) ∧ $body)
+  elabCommand (← `(
+    def $(mkIdent `InitConditions) : ($idGS) → Prop := fun $sId => $body
+  ))
 
 /-- Per-`Lemma X { invariant a; invariant b; }` (and `Theorem`) bundle
 predicate `<Mod>.X : GS → Prop := fun s => a s ∧ b s`. Each individual

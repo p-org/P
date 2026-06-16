@@ -33,6 +33,14 @@ namespace Verify
 
 private def idSig : Ident := mkIdent `Sig
 
+-- Unhygienic binders for the emitted obligation theorem. Without
+-- these, the bare `this` / `param` inside the macro-quotation acquire
+-- macro scopes and the rendered signature carries ✝ marks that break
+-- the copy-paste manual-proof skeleton. Mirrors the same convention
+-- used in `Surface/Stmt.lean` and `Commands/GenModule.lean`.
+private def idThis  : Ident := mkIdent `this
+private def idParam : Ident := mkIdent `param
+
 /-- Resolve a `prove` target name (lemma) to its corresponding bundle
 predicate. `default` resolves to `PLean.DefaultInvariants` (a closed
 `PProp Sig` predicate, applied via partial application). User lemmas
@@ -169,23 +177,22 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
       let preds : Array (TSyntax `term) :=
         #[lemmaPred] ++ usingPreds ++ #[defaultPred, ← `($initsId)]
       buildConjAt preds sId
-    -- The dispatcher contract: an existential `∃ lbl, inflight … ∧ …`
-    -- witnessing the framework's runtime guarantee that this handler
+    -- Dispatcher contract: existential witness that this handler
     -- only fires when an inflight label of the right shape exists.
-    -- Handlers don't re-establish the contract on exit, so it appears
-    -- only in the precondition.
+    -- Handlers don't re-establish it on exit, so it lives only in the
+    -- precondition.
     let dispatcherClause ← do
       if hasPayload then
         `(∃ lbl : ($idSig).Label,
             PLean.inflight lbl s ∧
-            lbl.target = this.ref ∧
-            (s.machines this.ref).currentState = $stateAlias ∧
-            lbl.action = .event ($evCtor param))
+            lbl.target = ($idThis).ref ∧
+            (s.machines ($idThis).ref).currentState = $stateAlias ∧
+            lbl.action = .event ($evCtor $idParam))
       else
         `(∃ lbl : ($idSig).Label,
             PLean.inflight lbl s ∧
-            lbl.target = this.ref ∧
-            (s.machines this.ref).currentState = $stateAlias ∧
+            lbl.target = ($idThis).ref ∧
+            (s.machines ($idThis).ref).currentState = $stateAlias ∧
             lbl.action = .event $evCtor)
     let preTerm : TSyntax `term ← `(fun (s : PLean.GlobalState $idSig) =>
                                       $basePre ∧ $dispatcherClause)
@@ -194,9 +201,9 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
                                        $postBody)
     let handlerTerm : TSyntax `term ←
       if hasPayload then
-        `($handlerId this param)
+        `($handlerId $idThis $idParam)
       else
-        `($handlerId this)
+        `($handlerId $idThis)
     let handlerUnfold : Ident := mkIdent handlerName
     let lemmaUnfold : Ident :=
       if isDefault then mkIdent ``PLean.DefaultInvariants
@@ -254,13 +261,13 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     if hasPayload then
       `(set_option linter.unusedTactic false in
         theorem $thmId
-            (this : $mIdent) (param : $payloadTy) :
+            ($idThis : $mIdent) ($idParam : $payloadTy) :
             triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
           $wrappedProof)
     else
       `(set_option linter.unusedTactic false in
         theorem $thmId
-            (this : $mIdent) :
+            ($idThis : $mIdent) :
             triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
           $wrappedProof)
   elabCommand stx

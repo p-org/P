@@ -92,21 +92,48 @@ private def eventHasPayload (ctx : LocalPModuleCtx) (evName : Name) : Bool :=
   | some e => e.payload.isSome
   | none   => false
 
-/-- Result of attempting to discharge one obligation. -/
+/-- Discharge result for one obligation. Failure variants carry the
+solver / tactic diagnostic so the per-obligation report can show a
+counter-example, an `unknown` reason, or a translator rejection. -/
 inductive ObligationOutcome where
-  | provedBySmt        -- closed by the auto `pverify` (incl. SMT) path
-  | userProved         -- user supplied a @[pverifyProof] theorem
-  | failed             -- tactic failed; user must write a manual proof
-  deriving Inhabited, Repr
+  | provedBySmt
+  | userProved
+  | disproved (cex : String)
+  | unknown (reason : String)
+  | tacticError (msg : String)
+  | unfinished
+  deriving Inhabited
+
+namespace ObligationOutcome
+
+def glyph : ObligationOutcome → String
+  | provedBySmt    => "✓"
+  | userProved     => "✓"
+  | disproved _    => "✗"
+  | unknown _      => "?"
+  | tacticError _  => "✗"
+  | unfinished     => "✗"
+
+def tag : ObligationOutcome → String
+  | provedBySmt    => "[SMT]"
+  | userProved     => "[manual]"
+  | disproved _    => "[SMT: counter-example]"
+  | unknown _      => "[SMT: unknown]"
+  | tacticError _  => "[tactic error]"
+  | unfinished     => "[no diagnostic]"
+
+def isFailure : ObligationOutcome → Bool
+  | provedBySmt | userProved => false
+  | _ => true
+
+end ObligationOutcome
 
 /-- Build the per-handler theorem and elaborate it. The proof tactic
 is `pverify` for non-default lemmas, `pverify_default` for
-`prove default`.
-
-`varNames` is the list of `var` names declared on the owning machine
-— their `<v>_get` / `<v>_set` accessors get added to the `unfold` list
-so `wpgen` can step through them. `lemmaInvNames` is the target
-lemma's per-invariant defs, similarly unfolded. -/
+`prove default`. `varNames` are the owning machine's `var` accessor
+names (added to the `unfold` chain so `wpgen` can step through state
+reads/writes); `lemmaInvNames` are the target lemma's per-invariant
+defs (similarly unfolded). -/
 def emitOneObligation (modName : Name) (mname sname evname : Name)
     (target : Name) (isDefault : Bool) (usingNames : Array Name)
     (hasPayload : Bool) (varNames : Array Name)
@@ -115,9 +142,6 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     CommandElabM ObligationOutcome := do
   let thmName : Name :=
     obligationName mname sname evname target isDefault usingNames proofTag proofIdx
-  -- The `@[pverifyProof]` registry is keyed on the fully-qualified
-  -- theorem name (`<Mod>.<thmName>` — the obligation generator emits
-  -- inside the `<Mod>` namespace).
   let fullThmName : Name := modName ++ thmName
   if ← liftCoreM (hasPVerifyProof fullThmName) then
     logInfo m!"obligation {fullThmName} picked up from `@[pverifyProof]`"
@@ -217,15 +241,16 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     steps := steps.push tail
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq| $[$steps]*)
-    -- Wrap in `first | <chain> | sorry` so elaboration always
-    -- succeeds; on tactic failure Lean inserts a `sorryAx` into the
-    -- value, which the post-elaboration `hasSorry` check below treats
-    -- as a failed obligation. The IDE may still surface the inner
-    -- tactic error as an informational hint; the synthesise loop
-    -- emits the consolidated "supply @[pverifyProof]" warning.
+    -- Wrap in `pverify_log_failure_else_sorry` so a tactic failure
+    -- (translator rejection, SMT `sat`/`unknown`, etc.) is logged as
+    -- a recoverable error before elaboration falls through to sorry.
+    -- The post-elaboration scan in `processOne` reads that error from
+    -- the message-log slice to classify the failure (counter-example
+    -- vs. unknown vs. tactic error). Without the wrapper, an enclosing
+    -- `first | … | sorry` would discard the SMT diagnostic entirely.
     let wrappedProof : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq|
-          first | ($proofTacSeq) | sorry)
+          pverify_log_failure_else_sorry $proofTacSeq)
     if hasPayload then
       `(set_option linter.unusedTactic false in
         theorem $thmId
@@ -242,24 +267,49 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
   -- A `sorryAx` in the elaborated value means the tactic chain fell
   -- through to the `first | … | sorry` fallback. This catches both
   -- synchronous and async-snapshot tactic errors that message-log
-  -- inspection alone would miss.
+  -- inspection alone would miss. The fine-grained sub-classification
+  -- (disproved / unknown / tacticError) is added by `processOne`,
+  -- which has access to the message-log slice.
   let env ← getEnv
   match env.find? fullThmName with
   | some (.thmInfo info) =>
-    if info.value.hasSorry then return .failed
+    if info.value.hasSorry then return .unfinished
     return .provedBySmt
-  | _ => return .failed
+  | _ => return .unfinished
 
 /-! ## Walking the registry — `synthesise` is the entry point. -/
 
-/-- Per-obligation outcome counts. The failure array carries
-`(machine, state, ev, lemma, theoremName)` for the report. -/
+/-- One obligation's record: provenance, theorem name, pretty-printed
+signature (used in the failure-skeleton dump), and outcome. -/
+structure ObligationRecord where
+  mname     : Name
+  sname     : Name
+  evname    : Name
+  target    : Name
+  thmName   : Name
+  signature : String
+  outcome   : ObligationOutcome
+  deriving Inhabited
+
+/-- Per-obligation records plus tally counters. -/
 structure SynthesiseResult where
   attempted   : Nat := 0
   smtProved   : Nat := 0
   userProved  : Nat := 0
-  failed      : Array (Name × Name × Name × Name × Name) := #[]
+  disproved   : Nat := 0
+  unknown     : Nat := 0
+  tacticErr   : Nat := 0
+  unfinished  : Nat := 0
+  records     : Array ObligationRecord := #[]
   deriving Inhabited
+
+namespace SynthesiseResult
+
+/-- Total number of obligations that did NOT discharge. -/
+def failures (r : SynthesiseResult) : Nat :=
+  r.disproved + r.unknown + r.tacticErr + r.unfinished
+
+end SynthesiseResult
 
 /-! ## Cycle detection on the `using` graph. -/
 
@@ -301,10 +351,56 @@ private def machineVarNames (m : PMachineDecl) : Array Name := Id.run do
         if i.isIdent then out := out.push i.getId
   return out
 
-/-- Process one obligation, emitting it (or skipping if user-proved)
-and capturing the outcome. Synchronous error messages from elaboration
-are dropped — the consolidated "obligation incomplete; supply
-`@[pverifyProof]`" warning is what the user sees. -/
+/-! ## Failure classification helpers. -/
+
+private def hasSubstring (s : String) (pattern : String) : Bool :=
+  let pLen := pattern.length
+  let sLen := s.length
+  if pLen == 0 then true
+  else if pLen > sLen then false
+  else Id.run do
+    let mut i : Nat := 0
+    while i + pLen ≤ sLen do
+      if s.extract ⟨i⟩ ⟨i + pLen⟩ == pattern then
+        return true
+      i := i + 1
+    return false
+
+/-- Cap a multi-line diagnostic at ~12 lines and 1500 chars so the
+report doesn't degenerate into a wall of solver model output. -/
+private def truncateForReport (s : String) : String :=
+  let lines := s.splitOn "\n"
+  let joined := String.intercalate "\n" (lines.take 12)
+  if joined.length > 1500 then joined.take 1500 ++ " …" else joined
+
+/-- Classify a failure from the diagnostic refs set during emission.
+The SMT diagnostic discriminates `sat` (counter-example) from
+`unknown` (incomplete theory / timeout); anything else collapses to
+`tacticError`. -/
+private def classifyFailure : CommandElabM ObligationOutcome := do
+  if let some smtMsg ← pverifySmtDiagRef.get then
+    if hasSubstring smtMsg "the goal is false" then
+      return .disproved (truncateForReport smtMsg)
+    if hasSubstring smtMsg "the goal is unknown" then
+      return .unknown (truncateForReport smtMsg)
+    return .tacticError (truncateForReport smtMsg)
+  if let some tacMsg ← pverifyTacDiagRef.get then
+    return .tacticError (truncateForReport tacMsg)
+  return .unfinished
+
+private def renderSignature (fullThmName : Name) : CommandElabM String := do
+  match (← getEnv).find? fullThmName with
+  | some _ =>
+    try
+      let sig ← liftTermElabM (Lean.PrettyPrinter.ppSignature fullThmName)
+      return sig.fmt.pretty
+    catch _ => return ""
+  | none => return ""
+
+/-- Emit one obligation, classify the outcome, and append a record to
+the running `SynthesiseResult`. Errors logged during elaboration are
+filtered out of the message log; the structured report consumes the
+diagnostic refs directly. -/
 private def processOne (modName mname sname evname : Name)
     (target : Name) (isDefault : Bool) (usingNames : Array Name)
     (hasPayload : Bool) (varNames : Array Name)
@@ -314,40 +410,48 @@ private def processOne (modName mname sname evname : Name)
   let acc := { acc with attempted := acc.attempted + 1 }
   let thmName :=
     obligationName mname sname evname target isDefault usingNames proofTag proofIdx
+  let fullThmName := modName ++ thmName
+  pverifySmtDiagRef.set none
+  pverifyTacDiagRef.set none
   let savedSt ← get
-  let outcome ← try
+  let outcomeRaw ← try
     emitOneObligation modName mname sname evname target isDefault
       usingNames hasPayload varNames lemmaInvNames proofTag proofIdx
   catch e =>
     let errMsg ← e.toMessageData.toString
-    logWarning m!"obligation failed for {mname}.{sname}.{evname} (lemma {target}): {errMsg}"
-    pure ObligationOutcome.failed
-  -- Drop synchronous error messages from elaboration — the `hasSorry`
-  -- check already accounted for them. Keep info / warning entries.
+    pure (ObligationOutcome.tacticError (truncateForReport errMsg))
+  let outcome ← match outcomeRaw with
+    | .unfinished => classifyFailure
+    | other       => pure other
+  -- Drop sync-error messages from the slice; the diagnostic refs
+  -- already carry what we need, and surfacing the raw tactic errors
+  -- would just clutter the build log alongside our structured report.
   let curSt ← get
   let preMsgsArr := savedSt.messages.toArray
   let postMsgsArr := curSt.messages.toArray
   let newMsgs := postMsgsArr.extract preMsgsArr.size postMsgsArr.size
-  let hadSyncError := newMsgs.any
-    (fun (m : Lean.Message) => m.severity matches .error)
-  if hadSyncError then
-    let kept := newMsgs.filter
-      (fun (m : Lean.Message) => !(m.severity matches .error))
-    let mergedMsgs : MessageLog :=
-      kept.foldl (init := savedSt.messages) (fun ml m => ml.add m)
+  if newMsgs.any (fun m => m.severity matches .error) then
+    let kept := newMsgs.filter (fun m => !(m.severity matches .error))
+    let mergedMsgs := kept.foldl (init := savedSt.messages) (·.add ·)
     modify fun st => { st with messages := mergedMsgs }
+  let signature ← renderSignature fullThmName
+  let record : ObligationRecord :=
+    { mname, sname, evname, target, thmName := fullThmName,
+      signature, outcome }
+  let acc := { acc with records := acc.records.push record }
   match outcome with
-  | .userProved =>
-    return { acc with userProved := acc.userProved + 1 }
-  | .failed =>
-    logWarning m!"obligation incomplete for {mname}.{sname}.{evname} \
-                  (lemma {target}); SMT could not close. Write a \
-                  `@[pverifyProof] theorem {thmName} : ... := by ...` \
-                  to supply a manual proof."
-    return { acc with
-      failed := acc.failed.push (mname, sname, evname, target, thmName) }
-  | .provedBySmt =>
-    return { acc with smtProved := acc.smtProved + 1 }
+  | .userProved      =>
+    return { acc with userProved  := acc.userProved + 1 }
+  | .provedBySmt     =>
+    return { acc with smtProved   := acc.smtProved + 1 }
+  | .disproved _     =>
+    return { acc with disproved   := acc.disproved + 1 }
+  | .unknown _       =>
+    return { acc with unknown     := acc.unknown + 1 }
+  | .tacticError _   =>
+    return { acc with tacticErr   := acc.tacticErr + 1 }
+  | .unfinished      =>
+    return { acc with unfinished  := acc.unfinished + 1 }
 
 /-- For each `Proof` block's `prove X` directive, walk every
 `(machine, state, event)` and emit an obligation. After the user's

@@ -149,7 +149,7 @@ def elabPPureForeign : CommandElab := fun stx => do
     { name := id.getId, leanName := ns ++ id.getId
       hasBody := false, defStx := some stx, ref := stx }
 
-/-! ## Pinstance (axiom bundle, Veil-style)
+/-! ## Pinstance (axiom bundle)
 
   `pinstance nm : Class T`  ↝  `variable [nm : Class T]`
 -/

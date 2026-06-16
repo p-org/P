@@ -1,47 +1,15 @@
 /-
 PLean.Verify.ProofRegistry — `@[pverifyProof]` attribute and lookup.
 
-Veil's analogue: `@[invProof]` registers a theorem proving an
-`(action, invariant)` Hoare triple in a global table; `#check_invariants`
-walks the table and skips the SMT call for any obligation already
-covered by a registered theorem.
+A theorem tagged `@[pverifyProof]` registers itself as the manual
+proof for the obligation whose generated name matches. When
+`#pverify` walks obligations it consults this registry first and
+skips auto-emission for any name already covered.
 
-PLean's analogue: `@[pverifyProof]` registers a theorem whose name
-matches the obligation generator's emitted name
-`<Mod>.<M>.<S>.<ev>_correct_<X>` (see
-[`Verify/Obligation.lean::emitOneObligation`]). When `#pverify`
-walks obligations, it consults this registry first; if a registered
-theorem exists for the obligation name, the SMT call is skipped and
-the user's manual proof is used.
-
-We intentionally use **theorem-name matching** rather than goal-shape
-matching (Veil's `DiscrTree`-based approach) because the obligation
-generator owns the name; the registry just records "the user wrote
-this theorem name with `@[pverifyProof]`, so don't emit the auto
-version."
-
-This is simpler, deterministic, and easy to debug — the user reads
-the failure message ("obligation X failed via SMT"), copies X verbatim
-into their `@[pverifyProof] theorem X : ...` skeleton, and re-runs
-`#pverify`.
-
-## Usage
-
-```lean
--- Run #pverify, see "DistributedLock.Node.Act.eGrant_correct_Safety_safety failed":
--- copy the printed skeleton into the file:
-@[pverifyProof]
-theorem DistributedLock.Node.Act.eGrant_correct_Safety_safety
-    (this : Node) (param : eGrant_payload) :
-    triple ... := by
-  pverify_open_triple
-  pverify_step_wp
-  intro s hpre
-  -- ... user finishes the proof manually ...
-  pverify_smt_close
-
--- Re-running #pverify picks the proof up.
-```
+The registry is keyed on theorem name (not goal shape): the
+obligation generator owns the name, and the user copies it verbatim
+from `#pverify`'s failure report. Theorem-name keying keeps the
+registration cheap to verify and easy to debug.
 -/
 import Lean
 

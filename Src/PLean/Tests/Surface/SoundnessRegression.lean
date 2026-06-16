@@ -55,23 +55,16 @@ end SoundnessR1
 #guard_msgs in
 #check @SoundnessR1.always_x_is_42
 
--- Pin the `1 failed` count. If it flips to `0 failed`, the soundness
--- fix has regressed (the false invariant got "verified").
+-- Pin the failure count via the warning line. If the soundness fix
+-- regresses (false invariant gets "verified"), the warning vanishes
+-- and `#guard_msgs (severity := warning)` flags the mismatch.
 /--
-info: SoundnessR1: well-formed (0 types, 1 events, 1 machines, 1 invariants, 0 axioms, 0 instances)
----
-warning: obligation incomplete for Bad.Act.eGo (lemma broken); SMT could not close. Write a `@[pverifyProof] theorem Bad.Act.eGo_correct_Safety_broken : ... := by ...` to supply a manual proof.
----
-warning: SoundnessR1: 2 obligations from 1 prove-directives (1 proved by SMT, 0 user-proved, 1 failed)
-Failed: Bad.Act.eGo (lemma broken)
-Write a manual proof for each via `@[pverifyProof]` (paste these names verbatim):
-  @[pverifyProof] theorem Bad.Act.eGo_correct_Safety_broken := by sorry  -- supply manual proof
+warning: SoundnessR1: 1 proved by SMT, 0 user-proved, 0 disproved, 0 unknown, 1 tactic-error, 0 no-diagnostic
+1 obligation(s) need a manual proof; skeletons printed above.
 ---
 warning: declaration uses 'sorry'
----
-info: Goal proven by cvc5. Trusting SMT solver result.
 -/
-#guard_msgs in
+#guard_msgs (warning, drop info) in
 set_option pverify.failOnIncomplete false in
 #pverify SoundnessR1
 

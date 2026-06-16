@@ -40,6 +40,47 @@ open Lean Elab Tactic Meta
 
 namespace PLean
 
+/-! ## Diagnostic refs
+
+`#pverify`'s obligation generator wraps each obligation in
+`pverify_log_failure_else_sorry`. When the inner chain fails, the
+SMT solver's diagnostic (counter-example / `unknown` reason) and any
+non-SMT tactic-error text are stashed in these refs before the chain
+falls through to `sorry`. The obligation generator clears them before
+each obligation and reads them after.
+
+We need `IO.Ref`s rather than message-log entries because the surrounding
+`first | … | …` ladder rolls back the log on rollback; the refs survive
+tactic-state restoration. -/
+
+initialize pverifySmtDiagRef : IO.Ref (Option String) ← IO.mkRef none
+initialize pverifyTacDiagRef : IO.Ref (Option String) ← IO.mkRef none
+
+/-- Run a tactic chain; on throw or unclosed goals, stash the
+diagnostic in `pverifyTacDiagRef` and close with `sorry` so the
+enclosing `theorem ... := by ...` still elaborates. The post-elab
+`info.value.hasSorry` check tells the reporting layer which
+obligations failed; the ref carries the WHY. -/
+syntax "pverify_log_failure_else_sorry " tacticSeq : tactic
+elab_rules : tactic
+  | `(tactic| pverify_log_failure_else_sorry $ts:tacticSeq) =>
+      withMainContext do
+        let savedGoals ← getGoals
+        let mut diagnostic : Option String := none
+        try
+          evalTactic (← `(tactic| ($ts:tacticSeq)))
+        catch e =>
+          diagnostic := some (← e.toMessageData.toString)
+        if diagnostic.isNone && !(← getGoals).isEmpty then
+          diagnostic := some
+            "the `pverify` tactic chain did not close the goal"
+        match diagnostic with
+        | some msg =>
+          setGoals savedGoals
+          pverifyTacDiagRef.set (some msg)
+          evalTactic (← `(tactic| sorry))
+        | none => pure ()
+
 /-- Peel a `triple pre body post` goal: replaces it with
 `pre ≤ wpg.get post` for a synthesised `wpg : WPGen body`. Alias for
 Loom's `wpgen_intro`. -/
@@ -107,46 +148,43 @@ elab_rules : tactic
         try evalTactic stx
         catch _ => pure ()
 
-/-- Veil-style pre-SMT normalisation. After this runs, the goal is
-over applied uninterpreted symbols and concrete `Label`/`Nat`/`Bool`
-atoms — the shape lean-auto's monomorphizer translates without hitting
-"Higher order input?".
+/-- Pre-SMT normalisation: simp the `pverifySimp` set, destruct
+state hypotheses, strip `WithName` wrappers, then unfold the
+default-invariant predicates so lean-auto's monomorphizer sees applied
+uninterpreted symbols and concrete `Label`/`Nat`/`Bool` atoms instead
+of `Higher order input?`-flagged shapes.
 
-Step ordering matters: `simp [pverifySimp]` must run BEFORE
-`sdestruct_state` so `addSent` / `addReceived` / etc. expand into
-record literals while the state still has its struct form; the
-subsequent destruct + `dsimp only` then iota-reduces
-`{ sent := f, ... }.sent l` to `f l`. -/
+Step ordering: `simp [pverifySimp]` must precede `sdestruct_state` so
+`addSent` / `addReceived` / etc. expand into record literals while
+the state still has its struct form; the subsequent destruct +
+`dsimp only` iota-reduces `{ sent := f, ... }.sent l` to `f l`. -/
 syntax "pverify_smt_prep" : tactic
 macro_rules
   | `(tactic| pverify_smt_prep) => `(tactic| (
       try intros
       try simp only [pverifySimp] at *
       try sdestruct_state
-      -- WithName n α = α; unfolding it strips Loom's named-assertion
-      -- wrappers that survive `pverify_step_wp` in some elaboration
-      -- contexts (Veil's recipe doesn't need this; their DSL doesn't go
-      -- through Loom's WPGen).
       try unfold WithName at *
       try dsimp only at *
-      -- Each `unfold` is its own `try` because `unfold X at *` fails
-      -- atomically when `X` doesn't appear anywhere — we want each
-      -- to fire independently.
       try unfold PLean.DefaultInvariants at *
       try unfold PLean.UniqueActions at *
       try unfold PLean.IncreasingCount at *
       try unfold PLean.ReceivedSubsetSent at *
     ))
 
-/-- SMT discharge: prep the goal then send to cvc5/z3 via Loom's
-`loom_smt`. On `unsat` the goal closes via `trust_smt`; on
-`sat`/`unknown`/translation failure the call throws. -/
+/-- SMT discharge: prep the goal, run `loom_smt`. On non-unsat the
+solver throws; we stash the diagnostic in `pverifySmtDiagRef` and
+re-throw so the surrounding `first |` can try fallbacks. -/
 syntax "pverify_smt_close" : tactic
-macro_rules
-  | `(tactic| pverify_smt_close) => `(tactic| (
-      pverify_smt_prep
-      loom_smt [*]
-    ))
+elab_rules : tactic
+  | `(tactic| pverify_smt_close) =>
+      withMainContext do
+        try
+          evalTactic (← `(tactic| (pverify_smt_prep; loom_smt [*])))
+        catch e =>
+          let msg ← e.toMessageData.toString
+          pverifySmtDiagRef.set (some msg)
+          throw e
 
 /-- Arithmetic / boolean fallback for default-invariant goals SMT
 can't translate (e.g., when the goal involves `GlobalState`'s

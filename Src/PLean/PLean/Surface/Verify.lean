@@ -493,21 +493,182 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
       (injectKindGuards machineKinds eventKinds sBinder)
     return stx.setArgs args'
 
+/-! ## Field-projection sugar
+
+Inside a `system <s> { … }` block, an invariant body may project
+machine fields and event payload fields with the abbreviated dot
+syntax `<binder>.<field>`. The materialiser walks the body and rewrites:
+
+| User wrote | Materialiser emits |
+|---|---|
+| `n.<v>`  (where `n : <M>`, `<v>` is a machine var)        | `(<s>.machines n.ref).fields.<M>_<v>` |
+| `e.<f>`  (where `e : <ev>`, `<f>` is a payload field)     | `(<ev>_payload_of e).<f>` |
+
+Projections whose LHS doesn't track a machine / event kind, or whose
+field name isn't registered, are left alone — `n.ref`, `e.action`,
+`s.machines`, etc. still resolve through Lean's regular projection.
+
+The pass runs **before** `injectKindGuards` so it sees the original
+quantifier types (`∀ e : <ev>, …`); kind-guard injection retypes the
+event binder to `Sig.Label` and would defeat the lookup. Bare top-level
+invariants (no `system` block) skip this rewrite. -/
+
+inductive KindRef where
+  | machine (name : Name)
+  | event   (name : Name)
+  deriving Inhabited
+
+/-! ### Quantifier binder collection.
+
+Two surface shapes carry quantifier binders, and they nest the
+`(binderIdent, type)` pair at different child positions:
+
+* `Lean.Parser.Term.forall` — Lean's primitive `∀ x : T, body`. Args:
+  `[«∀», binders, typeSpec, «,», body]`. Binder idents at `[1]`,
+  shared type at `[2]` (a `typeSpec` whose `[1]` is the type term).
+
+* `«term∀_,_»` / `«term∃_,_»` — mathlib's `notation`-defined
+  quantifier macros. Args: `[keyword, explicitBinders, «,», body]`.
+  The `explicitBinders` at `[1]` houses an `unbracketedExplicitBinders`
+  whose `[0]` is a `null` of `Lean.binderIdent`s and `[1]` is a `null`
+  containing `[«:», T]` when typed.
+
+The macro kinds aren't reachable via `Name`-quotation (they're created
+inside mathlib's notation file), so we keep them as simple-name
+literals in one place and check membership via the `quantNotationKinds`
+set. -/
+
+private def quantNotationKinds : NameSet :=
+  ({} : NameSet)
+    |>.insert (Name.mkSimple "term∀_,_")
+    |>.insert (Name.mkSimple "term∃_,_")
+
+private partial def collectMacroQuantBinders : Syntax → Array (Syntax × Syntax)
+  | s =>
+    if s.getKind == ``Lean.unbracketedExplicitBinders then
+      -- `unbracketedExplicitBinders` is `(ppSpace binderIdent)+ (" : " term)?`.
+      -- `s[0]` is the `null` of binderIdents; `s[1]` is the optional
+      -- type-annotation `null` — present-and-typed iff its children are
+      -- `[«:», T]` (numArgs == 2), so `s[1][1]` is the type term.
+      let ids := s[0].getArgs
+      let tyOpt := s[1]
+      if tyOpt.getNumArgs == 2 then
+        let ty := tyOpt[1]
+        ids.map fun i =>
+          let x := if i.getKind == ``Lean.binderIdent then i[0] else i
+          (x, ty)
+      else #[]
+    else s.getArgs.foldl (init := #[]) fun acc c =>
+      acc ++ collectMacroQuantBinders c
+
+/-- Return every `(binderIdent, typeIdent)` pair this quantifier
+introduces. Returns `#[]` for non-quantifier syntax so the caller can
+unconditionally fold the result into the kind environment. -/
+private def collectQuantifierBinderPairs (stx : Syntax) :
+    Array (Syntax × Syntax) :=
+  let k := stx.getKind
+  if k == ``Lean.Parser.Term.forall then
+    collectBinderPairs stx[1].getArgs stx[2]
+  else if quantNotationKinds.contains k then
+    collectMacroQuantBinders stx[1]
+  else
+    #[]
+
+private def buildFieldProjection
+    (machineFields : NameMap NameSet)
+    (eventPayloadFields : NameMap NameSet)
+    (sBinder : Name) (binder : Ident) (field : Name) (kind : KindRef) :
+    MacroM (Option (TSyntax `term)) := do
+  match kind with
+  | .machine mName =>
+    let some flds := machineFields.find? mName | return none
+    unless flds.contains field do return none
+    let sIdent : Ident := mkIdent sBinder
+    let qualField : Ident :=
+      mkIdent (Name.mkSimple (mName.toString ++ "_" ++ field.toString))
+    let out : TSyntax `term ←
+      `((($sIdent).machines ($binder).ref).fields.$qualField:ident)
+    return some out
+  | .event evName =>
+    let some flds := eventPayloadFields.find? evName | return none
+    unless flds.contains field do return none
+    let extractor : Ident :=
+      mkIdent (Name.mkSimple (evName.toString ++ "_payload_of"))
+    let fldId : Ident := mkIdent field
+    let out : TSyntax `term ←
+      `(($extractor $binder).$fldId:ident)
+    return some out
+
+private partial def rewriteFieldProjectionsAux
+    (machineKinds eventKinds : NameSet)
+    (machineFields : NameMap NameSet)
+    (eventPayloadFields : NameMap NameSet)
+    (sBinder : Name) (kindEnv : NameMap KindRef)
+    (stx : Syntax) : MacroM Syntax := do
+  -- Two surface shapes carry a `<binder>.<field>` projection:
+  -- (1) explicit `Lean.Parser.Term.proj` (`stx[0]` ident, `stx[2]` ident);
+  -- (2) a plain `ident` whose hierarchical name is the dotted form
+  --     (`n1.has_lock` parses as a single Name `.str (.str .anonymous "n1") "has_lock"`
+  --     when `n1` is a quantifier-bound name — not a constant — which
+  --     is the common case for invariant bodies).
+  if stx.getKind == ``Lean.Parser.Term.proj then
+    let lhs := stx[0]
+    let fldStx := stx[2]
+    if lhs.isIdent && fldStx.isIdent then
+      let bName := lhs.getId
+      let fName := fldStx.getId
+      if let some kind := kindEnv.find? bName then
+        let bIdent : Ident := ⟨lhs⟩
+        let rebuilt? ← buildFieldProjection
+          machineFields eventPayloadFields sBinder bIdent fName kind
+        if let some out := rebuilt? then
+          return out.raw
+  if stx.isIdent then
+    match stx.getId with
+    | .str (.str .anonymous head) field =>
+      let headN := Name.mkSimple head
+      let fieldN := Name.mkSimple field
+      if let some kind := kindEnv.find? headN then
+        let bIdent : Ident := mkIdent headN
+        let rebuilt? ← buildFieldProjection
+          machineFields eventPayloadFields sBinder bIdent fieldN kind
+        if let some out := rebuilt? then
+          return out.raw
+    | _ => pure ()
+  -- Extend `env` for any quantifier-bound binder whose type is a
+  -- registered machine / event kind. `collectQuantifierBinderPairs`
+  -- handles both quantifier surface shapes (Lean's `Term.forall` and
+  -- mathlib's `«term∃_,_»`/`«term∀_,_»` macros) — see its docstring.
+  let mut env := kindEnv
+  for (xRaw, tRaw) in collectQuantifierBinderPairs stx do
+    if xRaw.isIdent && tRaw.isIdent then
+      let tName := tRaw.getId
+      if machineKinds.contains tName then
+        env := env.insert xRaw.getId (.machine tName)
+      else if eventKinds.contains tName then
+        env := env.insert xRaw.getId (.event tName)
+  let args' ← stx.getArgs.mapM
+    (rewriteFieldProjectionsAux machineKinds eventKinds machineFields
+      eventPayloadFields sBinder env)
+  return stx.setArgs args'
+
+def rewriteFieldProjections
+    (machineKinds eventKinds : NameSet)
+    (machineFields : NameMap NameSet)
+    (eventPayloadFields : NameMap NameSet)
+    (sBinder : Name) (stx : Syntax) : MacroM Syntax :=
+  rewriteFieldProjectionsAux machineKinds eventKinds machineFields
+    eventPayloadFields sBinder {} stx
+
 def materialiseInvariant (machineKinds eventKinds : NameSet)
+    (machineFields : NameMap NameSet)
+    (eventPayloadFields : NameMap NameSet)
     (d : PInvariantDecl) : CommandElabM Unit := do
   match d.defStx with
   | none => pure ()
   | some stx =>
     let `(invariant $id:ident : $prop:term) := stx
       | throwErrorAt stx "internal error: invariant defStx malformed"
-    -- Body shape: `def <name> : GS → Prop := fun <binder> => <body>`,
-    -- where `<binder>` is the user's `system <s>` name when present
-    -- and the wildcard `_` otherwise (forcing state-independence;
-    -- stray state references then fail loudly as `unknown identifier`).
-    --
-    -- The binder is built via `mkIdent` so it is UNHYGIENIC and
-    -- therefore visible to the user's body. `\`(fun s => …)` would
-    -- hygiene-mark `s` and break resolution.
     let sigId : Ident := mkIdent `Sig
     let gsTy : Ident := mkIdent ``PLean.GlobalState
     let binderIdent : Ident :=
@@ -516,17 +677,14 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
       | none       => mkIdent `_
     if d.stateBinder.isSome then
       rejectExplicitStateBinder id prop
-    -- Auto-inject runtime kind guards: every `∀ n : <M>, …` becomes
-    -- `∀ n : <M>, is_<M> n.ref <s> → …`. Only fires inside a
-    -- `system <s> { … }` block, where the state binder is in scope.
-    -- Bare top-level invariants have no `<s>` so the rewrite is skipped
-    -- (and a user reference to a kind-typed binder there is a no-op
-    -- anyway — the body can't touch state).
     let prop' : TSyntax `term ←
       match d.stateBinder with
       | some sName =>
+        let rewritten ← liftMacroM <|
+          rewriteFieldProjections machineKinds eventKinds
+            machineFields eventPayloadFields sName prop.raw
         let stxOut ← liftMacroM <|
-          injectKindGuards machineKinds eventKinds sName prop.raw
+          injectKindGuards machineKinds eventKinds sName rewritten
         pure ⟨stxOut⟩
       | none => pure prop
     let cmd ← `(command|

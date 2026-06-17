@@ -50,50 +50,51 @@ pmodule DistributedLock
   -- has `held = false` and `epoch = 0`. The `∀ n : Node` / `∃ n : Node`
   -- quantifiers auto-inject `is_Node n.ref s` guards at materialisation
   -- — bare `n : Node` value would otherwise admit refs whose state
-  -- slot is unallocated or has a different kind.
+  -- slot is unallocated or has a different kind. The `n.held` / `n.epoch`
+  -- shorthand desugars to `(s.machines n.ref).fields.Node_held` /
+  -- `Node_epoch` via the field-projection sugar.
   init-holds (
     ∃ n : Node,
-      (s.machines n.ref).fields.Node_held = true ∧
-      (s.machines n.ref).fields.Node_epoch > 0 ∧
+      n.held = true ∧
+      n.epoch > 0 ∧
       ∀ n1 : Node,
         n1 ≠ n →
-        (s.machines n1.ref).fields.Node_held = false ∧
-        (s.machines n1.ref).fields.Node_epoch = 0)
+        n1.held = false ∧
+        n1.epoch = 0)
 
   Theorem safety {
     system s {
       invariant unique_holder :
         ∀ n1 n2 : Node,
-          (s.machines n1.ref).fields.Node_held = true →
-          (s.machines n2.ref).fields.Node_held = true →
+          n1.held = true →
+          n2.held = true →
           n1 = n2
 
       invariant no_lock_while_transfer :
         ∀ n : Node, ∀ e : eAccept,
           inflight e s →
-          (s.machines n.ref).fields.Node_held = false
+          n.held = false
 
       invariant unique_accept :
         ∀ e1 e2 : eAccept,
           inflight e1 s → inflight e2 s → e1 = e2
 
       -- Ported from the P source: when an eAccept is in flight from
-      -- node n1, n1 has already released the lock.
+      -- node n1, n1 has already released the lock. `e.source` desugars
+      -- to `(eAccept_payload_of e).source` via the field-projection sugar.
       invariant not_held_after_release :
-        ∀ n1 : Node, ∀ e : Sig.Label, ∀ p : tAccept,
+        ∀ n1 : Node, ∀ e : eAccept,
           inflight e s →
-          e.action = .event (E.eAccept p) →
-          p.source = n1.ref →
-          (s.machines n1.ref).fields.Node_held = false
+          e.source = n1.ref →
+          n1.held = false
 
       -- Ported from the P source: an in-flight eAccept always
       -- transfers to a strictly higher epoch.
       invariant transfer_to_higher :
-        ∀ (n1 : Node) (e : Sig.Label) (p : tAccept),
+        ∀ (n1 : Node) (e : eAccept),
           inflight e s →
-          e.action = .event (E.eAccept p) →
-          p.source = n1.ref →
-          p.epoch > (s.machines n1.ref).fields.Node_epoch
+          e.source = n1.ref →
+          e.epoch > n1.epoch
     }
   }
 

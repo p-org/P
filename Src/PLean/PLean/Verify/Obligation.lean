@@ -163,6 +163,7 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     (hasPayload : Bool) (varNames : Array Name)
     (lemmaInvNames : Array Name)
     (machineNames : Array Name)
+    (eventNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
     CommandElabM ObligationOutcome := do
   let thmName : Name :=
@@ -254,6 +255,7 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
         (mkIdent (Name.mkSimple ("is_" ++ m.toString)))
       kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_allocated"))
       kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_kind"))
+    let _ := eventNames -- bridging lemmas not injected (see file header)
     let hasAccessors := !accessorUnfolds.isEmpty
     let tail : TSyntax `tactic ←
       if isDefault then `(tactic| pverify_default)
@@ -356,6 +358,7 @@ proposition. `InitConditions` is unfolded too — its body is a closed
 conjunction of `init-holds` clauses. -/
 def emitBaseCaseObligation (modName : Name) (invName : Name)
     (isDefaultInv : Bool) (machineNames : Array Name)
+    (eventNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
     CommandElabM ObligationOutcome := do
   let thmName : Name := baseCaseName invName proofTag proofIdx
@@ -391,6 +394,7 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
       steps := steps.push (← `(tactic| try unfold $isPred:ident))
       steps := steps.push (← `(tactic| try unfold $alloc:ident))
       steps := steps.push (← `(tactic| try unfold $kindLit:ident))
+    let _ := eventNames -- bridging lemmas not injected (see file header)
     if isDefaultInv then
       steps := steps.push (← `(tactic|
         try unfold PLean.UniqueActions PLean.IncreasingCount
@@ -588,13 +592,15 @@ private def processOne (modName mname sname evname : Name)
     (hasPayload : Bool) (varNames : Array Name)
     (lemmaInvNames : Array Name)
     (machineNames : Array Name)
+    (eventNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
     (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
   let thmName :=
     obligationName mname sname evname target isDefault usingNames proofTag proofIdx
   runEmitterAndRecord modName mname sname evname target thmName
     (emitOneObligation modName mname sname evname target isDefault
-      usingNames hasPayload varNames lemmaInvNames machineNames proofTag proofIdx)
+      usingNames hasPayload varNames lemmaInvNames machineNames eventNames
+      proofTag proofIdx)
     acc
 
 /-- Emit one base-case obligation for a single invariant in a directive's
@@ -602,13 +608,14 @@ target lemma. `mname`/`sname`/`evname` are recorded as `anonymous` —
 base-case VCs are pmodule-scoped, not handler-scoped. -/
 private def processBaseCase (modName invName : Name) (isDefaultInv : Bool)
     (machineNames : Array Name)
+    (eventNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
     (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
   let thmName := baseCaseName invName proofTag proofIdx
   runEmitterAndRecord modName Name.anonymous Name.anonymous Name.anonymous
     invName thmName
     (emitBaseCaseObligation modName invName isDefaultInv machineNames
-      proofTag proofIdx)
+      eventNames proofTag proofIdx)
     acc
 
 /-- For each `Proof` block's `prove X` directive, walk every
@@ -637,6 +644,10 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
       if let some md := ctx.machines.find? mn then
         if !md.isSpec then out := out.push mn
     return out
+  -- Every event name in the pmodule. Drives the `<ev>_payload_of`
+  -- unfold chain in `emitOneObligation` / `emitBaseCaseObligation` so
+  -- the field-projection sugar `e.<f>` reduces under SMT prep.
+  let allEventNames : Array Name := ctx.eventOrder
   -- Names of the three default invariants — the base case for
   -- `prove default;` enumerates them so the failure report names which
   -- one didn't hold at init (rather than the bundled `DefaultInvariants`).
@@ -656,7 +667,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
         else lemmaInvariantsOf dir.target
       for inv in baseInvs do
         result ← processBaseCase modName inv dir.isDefault allMachineNames
-          proof.name proofIdx result
+          allEventNames proof.name proofIdx result
       -- Inductive step: per-handler triples.
       for mname in ctx.machineOrder do
         let some m := ctx.machines.find? mname | continue
@@ -679,7 +690,8 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
               lemmaInvNames := lemmaInvNames ++ lemmaInvariantsOf u
             result ← processOne modName mname sd.name ev
               dir.target dir.isDefault dir.usingLemmas hasPayload varNames
-              lemmaInvNames allMachineNames proof.name proofIdx result
+              lemmaInvNames allMachineNames allEventNames
+              proof.name proofIdx result
   -- Auto-default pass: synthetic `block_auto_default` tag avoids
   -- collisions with user-tagged emissions; index past-the-end of the
   -- proofs array. No base case emitted here — the default invariants'
@@ -698,7 +710,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
         let hasPayload := eventHasPayload ctx ev
         result ← processOne modName mname sd.name ev
           `default true #[] hasPayload varNames
-          #[] allMachineNames autoTag autoIdx result
+          #[] allMachineNames allEventNames autoTag autoIdx result
   return result
 
 end Verify

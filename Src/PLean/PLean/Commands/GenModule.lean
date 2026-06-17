@@ -495,7 +495,8 @@ framework init constraints** into the single predicate
 (`InStart` / `InEntry` for every `MachineRef` is a PVerifier convention
 that PLean does not yet model; this can be added when initialization-
 action support lands.) -/
-private def emitInitConditions (ctx : LocalPModuleCtx) : CommandElabM Unit := do
+private def emitInitConditions (machineKinds eventKinds : NameSet)
+    (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   -- Framework init: emit as a state-dependent conjunct via `(applyState
   -- := true)`. We need `s` to appear in the body, so we build the
   -- predicate as a closed `fun s => <framework> ∧ <user clauses>` here
@@ -511,10 +512,14 @@ private def emitInitConditions (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   let mut props : Array (TSyntax `term) := frameworkClauses
   for d in ctx.inits do
     if let some stx := d.defStx then
-      -- `init-holds <term>` — child index 1 is the term. The user's
-      -- clauses are closed (no state reference), so they stand
-      -- alongside the framework conjuncts inside the same `fun s => …`.
-      props := props.push ⟨stx[1]⟩
+      -- `init-holds <term>` — child index 1 is the term. Auto-inject
+      -- `is_<M> n.ref s →` guards on `∀ n : <M>, …` quantifiers (same
+      -- transform as invariant bodies) so the user's clause means
+      -- "for every allocated Node, …" without needing the manual
+      -- guard.
+      let raw ← liftMacroM <|
+        PLean.injectKindGuards machineKinds eventKinds `s stx[1]
+      props := props.push ⟨raw⟩
   -- Build the conjunction by hand (mirrors `emitConjPredicate`'s shape
   -- but doesn't apply `s` to the conjuncts — they're plain props).
   let mut body : TSyntax `term ← `(True)
@@ -601,14 +606,24 @@ def elabPGenModule : CommandElab := fun stx => do
         materialiseMachineBody mname m.body vars
       elabCommand (← `(end $mid))
     -- Step 7: verification declarations.
-    for (_, d) in ctx.invariants.toList do materialiseInvariant d
+    -- Machine and event kind sets drive auto-injection of kind guards
+    -- on `∀ x : <M>, …` / `∀ e : <ev>, …` quantifiers inside
+    -- `system <s> { … }` blocks (see
+    -- `Surface/Verify.lean::injectKindGuards`). Spec machines are
+    -- included for completeness — `is_<M>` is emitted for them too.
+    let machineKinds : NameSet :=
+      ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
+    let eventKinds : NameSet :=
+      ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
+    for (_, d) in ctx.invariants.toList do
+      materialiseInvariant machineKinds eventKinds d
     for (_, d) in ctx.axioms.toList do     materialiseAxiom d
     for (_, d) in ctx.pures.toList do      materialisePure d
     for (_, d) in ctx.instances.toList do  materialiseInstance d
     -- Step 7b: aggregate `init-holds` clauses into `<Mod>.InitConditions`
     -- (D21). Available to obligation generation as a global precondition
     -- term that flows into every per-handler triple's pre/post.
-    emitInitConditions ctx
+    emitInitConditions machineKinds eventKinds ctx
     -- Step 7c: emit per-Lemma/Theorem bundle predicates (D19): for each
     -- registered Lemma/Theorem `X` whose body lists invariants
     -- `[a, b, c]`, emit `def X : PProp Sig := fun s => a s ∧ b s ∧ c s`

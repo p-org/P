@@ -341,7 +341,160 @@ private def rejectExplicitStateBinder (id : Ident) (prop : TSyntax `term) :
       state binder directly in the body."
   | none => pure ()
 
-def materialiseInvariant (d : PInvariantDecl) : CommandElabM Unit := do
+/-! ## Auto-injection of kind guards over machines and events
+
+PLean wraps **machines** in a struct `<M> := { ref : MachineRef }`
+(D10) and emits a runtime kind predicate `is_<M> : MachineRef → GS → Prop`.
+`∀ n : <M>, P n` quantifies over every `<M>`-wrapped ref, including
+ones whose state slot is unallocated or has the wrong kind. The
+convention is to follow each such quantifier with `is_<M> n.ref s →`
+(or `∧` under `∃`) so the body can rely on the kind tag.
+
+PVerifier's source surface treats events the same way: `∀ (e : eGrant), P`
+means "every label whose action is an `eGrant` event." PLean has no
+event wrapper struct — events flow through `Sig.Label` with a ctor
+inside `.action`. We bridge by rewriting `∀ e : <ev>, body` (where
+`<ev>` is a registered event) to `∀ e : Sig.Label, is_<ev> e → body`.
+The binder's static type becomes `Sig.Label`; the body's references to
+`e` now compile as ordinary `Sig.Label` projections (`e.action`,
+`e.target`, …).
+
+The rewriter walks the body Syntax: every `∀`/`∃` over a machine kind
+gets the `is_<M> x.ref s` guard; every `∀`/`∃` over an event kind
+gets its type retyped to `Sig.Label` and the `is_<ev> x` guard. Both
+recurse through the body. -/
+
+private def isMachineKindIdent (machineKinds : NameSet) (stx : Syntax) : Bool :=
+  stx.isIdent && machineKinds.contains stx.getId
+
+private def isEventKindIdent (eventKinds : NameSet) (stx : Syntax) : Bool :=
+  stx.isIdent && eventKinds.contains stx.getId
+
+/-- Extract `(idents, typeIdent)` pairs from a single binder node. A
+`∀`/`∃` quantifier carries an array of binders in `stx[1]`; each is
+either an ident (in the `∀ x y z : T, body` shape — multiple idents
+sharing the type in `stx[2]`) or a bracketed `explicitBinder` (in the
+`∀ (x : T) (y : U), body` shape — one ident + type per binder). The
+trailing typeSpec in `stx[2]` is only meaningful when the binders are
+bare idents. -/
+private def collectBinderPairs (binders : Array Syntax) (typeSpec : Syntax) :
+    Array (Syntax × Syntax) := Id.run do
+  let mut out : Array (Syntax × Syntax) := #[]
+  -- Type from the outer typeSpec, if present: `stx[2][0]` is a
+  -- `Term.typeSpec` (`: T`); its `[1]` child is the type term.
+  let sharedTypeIdent : Option Syntax :=
+    if typeSpec.getNumArgs > 0 then some typeSpec[0][1] else none
+  for b in binders do
+    if b.isIdent then
+      if let some ty := sharedTypeIdent then
+        out := out.push (b, ty)
+    else if b.getKind == ``Lean.Parser.Term.explicitBinder then
+      -- `( idents : type )`: idents at `[1]`, type at `[2][1]`.
+      let ids := b[1].getArgs
+      let tyTerm := b[2][1]
+      for i in ids do
+        out := out.push (i, tyTerm)
+  return out
+
+/-- Expand a multi-binder `∀ x y z : T, body` / `∀ (x : T) (y : U), body`
+(and the `∃` analogues) into nested single-binder form. Returns the
+original syntax unchanged if it isn't a recognised quantifier or
+already has a single binder pair. -/
+private def expandMultiBinder (stx : Syntax) : MacroM (Option Syntax) := do
+  let asTerm (s : Syntax) : TSyntax `term := ⟨s⟩
+  let kind := stx.getKind
+  let isForall := kind == ``Lean.Parser.Term.forall
+  let isExists :=
+    kind == `Lean.Parser.Term.exists || kind.toString.endsWith ".exists"
+  unless isForall || isExists do return none
+  let binders := stx[1].getArgs
+  let typeSpec := stx[2]
+  let pairs := collectBinderPairs binders typeSpec
+  if pairs.size ≤ 1 then return none
+  let body := stx[4]
+  -- Build the nested form right-to-left.
+  let mut acc : Syntax := body
+  for (xRaw, tyRaw) in pairs.reverse do
+    let xIdent : TSyntax `ident := ⟨xRaw⟩
+    let typeT : TSyntax `term := ⟨tyRaw⟩
+    let inner ←
+      if isForall then `(∀ $xIdent:ident : $typeT, $(asTerm acc))
+      else            `(∃ $xIdent:ident : $typeT, $(asTerm acc))
+    acc := inner.raw
+  return some acc
+
+/-- Build a quantifier of the requested shape (`isForall`, `parens`)
+binding `x : t` over `body`. -/
+private def mkQuantifier (isForall parens : Bool)
+    (x : TSyntax `ident) (t : TSyntax `term) (body : TSyntax `term) :
+    MacroM (TSyntax `term) :=
+  match isForall, parens with
+  | true,  false => `(∀ $x:ident : $t, $body)
+  | true,  true  => `(∀ ($x:ident : $t), $body)
+  | false, false => `(∃ $x:ident : $t, $body)
+  | false, true  => `(∃ ($x:ident : $t), $body)
+
+partial def injectKindGuards (machineKinds eventKinds : NameSet)
+    (sBinder : Name) (stx : Syntax) : MacroM Syntax := do
+  let sIdent : Ident := mkIdent sBinder
+  let sigLabelTy : TSyntax `term ← `(($(mkIdent `Sig)).Label)
+  let asTerm (s : Syntax) : TSyntax `term := ⟨s⟩
+  -- First, normalise multi-binder forms (`∀ x y : T, …`,
+  -- `∀ (x : T) (y : U), …`) to nested single-binder shape.
+  if let some expanded ← expandMultiBinder stx then
+    return ← injectKindGuards machineKinds eventKinds sBinder expanded
+  -- Single-binder rewrite: a small helper picks the right shape and
+  -- splices the guard. Returns `none` if the type isn't a kind we
+  -- recognise (the caller then re-emits without injection).
+  let tryInject (x : TSyntax `ident) (t : TSyntax `term)
+      (body' : TSyntax `term) (isForall parens : Bool) :
+      MacroM (Option (TSyntax `term)) := do
+    if isMachineKindIdent machineKinds t.raw then
+      let isPred : Ident :=
+        mkIdent (Name.mkSimple ("is_" ++ t.raw.getId.toString))
+      let guard : TSyntax `term ← `(($isPred ($x).ref $sIdent))
+      let combined : TSyntax `term ←
+        if isForall then `($guard → $body') else `($guard ∧ $body')
+      return some (← mkQuantifier isForall parens x t combined)
+    if isEventKindIdent eventKinds t.raw then
+      let isPred : Ident :=
+        mkIdent (Name.mkSimple ("is_" ++ t.raw.getId.toString))
+      let guard : TSyntax `term ← `(($isPred $x))
+      let combined : TSyntax `term ←
+        if isForall then `($guard → $body') else `($guard ∧ $body')
+      -- Re-type the binder to `Sig.Label` — the event "type" isn't a
+      -- real Lean type; it's just a tag the rewriter routes through
+      -- `is_<ev>`.
+      return some (← mkQuantifier isForall parens x sigLabelTy combined)
+    return none
+  match stx with
+  | `(∀ $x:ident : $t, $body) =>
+    let body' ← injectKindGuards machineKinds eventKinds sBinder body.raw
+    match ← tryInject x t (asTerm body') true false with
+    | some out => pure out
+    | none     => `(∀ $x:ident : $t, $(asTerm body'))
+  | `(∀ ($x:ident : $t), $body) =>
+    let body' ← injectKindGuards machineKinds eventKinds sBinder body.raw
+    match ← tryInject x t (asTerm body') true true with
+    | some out => pure out
+    | none     => `(∀ ($x:ident : $t), $(asTerm body'))
+  | `(∃ $x:ident : $t, $body) =>
+    let body' ← injectKindGuards machineKinds eventKinds sBinder body.raw
+    match ← tryInject x t (asTerm body') false false with
+    | some out => pure out
+    | none     => `(∃ $x:ident : $t, $(asTerm body'))
+  | `(∃ ($x:ident : $t), $body) =>
+    let body' ← injectKindGuards machineKinds eventKinds sBinder body.raw
+    match ← tryInject x t (asTerm body') false true with
+    | some out => pure out
+    | none     => `(∃ ($x:ident : $t), $(asTerm body'))
+  | _ =>
+    let args' ← stx.getArgs.mapM
+      (injectKindGuards machineKinds eventKinds sBinder)
+    return stx.setArgs args'
+
+def materialiseInvariant (machineKinds eventKinds : NameSet)
+    (d : PInvariantDecl) : CommandElabM Unit := do
   match d.defStx with
   | none => pure ()
   | some stx =>
@@ -363,8 +516,21 @@ def materialiseInvariant (d : PInvariantDecl) : CommandElabM Unit := do
       | none       => mkIdent `_
     if d.stateBinder.isSome then
       rejectExplicitStateBinder id prop
+    -- Auto-inject runtime kind guards: every `∀ n : <M>, …` becomes
+    -- `∀ n : <M>, is_<M> n.ref <s> → …`. Only fires inside a
+    -- `system <s> { … }` block, where the state binder is in scope.
+    -- Bare top-level invariants have no `<s>` so the rewrite is skipped
+    -- (and a user reference to a kind-typed binder there is a no-op
+    -- anyway — the body can't touch state).
+    let prop' : TSyntax `term ←
+      match d.stateBinder with
+      | some sName =>
+        let stxOut ← liftMacroM <|
+          injectKindGuards machineKinds eventKinds sName prop.raw
+        pure ⟨stxOut⟩
+      | none => pure prop
     let cmd ← `(command|
-      def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop)
+      def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop')
     elabCommand cmd
 
 def materialiseAxiom (d : PAxiomDecl) : CommandElabM Unit := do

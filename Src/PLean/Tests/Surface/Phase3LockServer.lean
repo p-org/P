@@ -89,7 +89,6 @@ pmodule LockServer
     system s {
       invariant unique_lock_holder :
         ∀ n1 n2 : Node,
-          Node_allocated n1.ref s → Node_allocated n2.ref s →
           (s.machines n1.ref).fields.Node_has_lock = true →
           (s.machines n2.ref).fields.Node_has_lock = true →
           n1 = n2

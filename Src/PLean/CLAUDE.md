@@ -151,15 +151,17 @@ before attempting one.
 - Phase 3 (Verification declarations) — ◐ in progress. The
   SMT-discharge pipeline, the `@[pverifyProof]` registry, and the
   `pverify_*` tactic library are in tree. Closure rates:
-  `Phase3DistributedLock` **12/12** (11 SMT + 1 manual `@[pverifyProof]`)
-  and `Phase3LockServer` **37/37** (34 SMT + 3 manual) — both fully
-  verified. LockServer's port now carries the full P-source invariant
-  set; the 3 manual proofs are the send-handlers whose routing
-  obligations the solver can't close as a single-shot bundle.
+  `Phase3DistributedLock` **12/12** (11 SMT + 1 manual `@[pverifyProof]`),
+  `Phase3LockServer` **37/37** (34 SMT + 3 manual), and
+  `Phase3RingLeader` **32/32** (30 SMT + 2 manual) — all three M3
+  benchmarks fully verified. LockServer's port now carries the full
+  P-source invariant set; the 3 manual proofs are the send-handlers
+  whose routing obligations the solver can't close as a single-shot
+  bundle.
   `#gen_module` now emits `<ev>_payload_of_spec`/`_mk` characterisations
   (and seals `<ev>_payload_of` `@[irreducible]`) so send-handler
-  obligations reach SMT. Two soundness holes were found+fixed this
-  session (see STATUS.md "Session 2026-06-19"): the GlobalState-shadow
+  obligations reach SMT. Two soundness holes were found+fixed
+  (see STATUS.md "Session 2026-06-19"): the GlobalState-shadow
   guard now rejects all binder forms (not just `∀`), and a sorried
   `@[pverifyProof]` is now reported as a failure.
   Reusable manual-proof tactics (`pverify_unchanged` /
@@ -170,9 +172,8 @@ before attempting one.
   `<project>/.lake/build/pverify_cache/` shaves 11–14% wall-clock on
   warm rebuilds; soundness pinned by
   [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
-  `3_RingLeaderVerification` is ported in
-  [`Tests/Surface/Phase3RingLeader.lean`](Tests/Surface/Phase3RingLeader.lean).
-  Porting it produced three reusable framework fixes:
+  Porting `3_RingLeaderVerification` produced three reusable framework
+  fixes:
 
   1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
      hygienically, so the `goto` doElem macro (first exercised inside an
@@ -191,7 +192,16 @@ before attempting one.
      `emitInitConditions` now asserts every machine begins in a start
      state, and `<S>_st` aliases are `@[reducible] def` so the solver
      sees the raw `S` constructors. Together these close
-     state-dependent base cases.
+     state-dependent base cases (e.g. `LeaderMax` / `UniqueLeader`).
+
+  RingLeader's two inductive steps through `goto Won` (`lemmas` /
+  `Safety`) are discharged by `@[pverifyProof]` manual proofs in the
+  test file: `Safety` needs a `SelfPendingMax` instantiation hint;
+  `lemmas` uses the cyclic-betweenness argument (`btw_1`..`btw_4`)
+  to show forwarding `eNominate` to the ring successor preserves
+  `NoBypass`. Both are self-contained in the test file and serve as
+  the worked template for the `@[pverifyProof]` escape hatch on
+  jointly-inductive ring invariants.
 - Phase 4 (Spec machines) — ☐ next. Plan in PLAN_P4.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.

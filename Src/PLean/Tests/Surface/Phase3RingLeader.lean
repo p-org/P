@@ -28,26 +28,25 @@ Mechanical surface differences from the `.p` source (per `Src/PLean/CLAUDE.md`):
          invariants; the bundle is a superset of the two P-named
          invariants, so the precondition is at least as strong.)
 
-Verification outcome (as built): #pverify discharges 30 of 32
-obligations by SMT, with 1 disproved and 1 unknown. The 30 cover every
-base case (including the state-dependent `LeaderMax` / `UniqueLeader`
-base cases), every step for the three relational `Lemma`s (`less_than`,
-`between_rel`, `right_rel`), the `Aux` / `NoBypass` / `SelfPendingMax`
-invariants, all three default invariants, and the `Won`-state handler
-obligations.
+Verification outcome (as built): 31 of 32 obligations discharged —
+30 by SMT and 1 (`Safety`'s inductive step) by an `@[pverifyProof]`
+manual proof. The 30 SMT obligations cover every base case (incl. the
+state-dependent `LeaderMax` / `UniqueLeader` base cases), every step
+for the three relational `Lemma`s (`less_than`, `between_rel`,
+`right_rel`), `Aux` / `NoBypass` / `SelfPendingMax`, all three default
+invariants, and the `Won`-state handler obligations.
 
-The 2 residual obligations are the *inductive steps* of `LeaderMax` and
-`UniqueLeader` through the `Proposing` handler (the one that does
-`goto Won`):
+`Safety`'s inductive step (`UniqueLeader` through the `goto Won`
+handler) is proved manually below: it was reported `disproved`, but
+that "counter-example" was a quantifier-instantiation artifact — the
+goal IS valid. The manual proof supplies the one fact the solver could
+not synthesise (`SelfPendingMax` applied to the in-flight `eNominate`
+⇒ `this` is the global maximum) and lets SMT finish.
 
-  ? Server.Proposing.eNominate ⊢ lemmas    (unknown)
-  ✗ Server.Proposing.eNominate ⊢ Safety    (disproved / counter-example)
-
-These are genuine verification gaps, not tooling limits: preserving
-"only the running-max can reach `Won`" across the `goto Won` transition
-needs a stronger jointly-inductive invariant than the ported P lemmas
-give the SMT solver here. Closing them is protocol-strengthening work
-(adding invariants) or `@[pverifyProof]` manual proofs.
+The 1 remaining obligation is `lemmas`'s inductive step
+(`NoBypass` / `SelfPendingMax` preservation across forwarding) — the
+ring `btw`/`right` reasoning, reported `unknown`. It needs either a
+similar (longer) instantiation-hint proof or solver-trigger tuning.
 
 Three framework fixes (all upstream of this file) got us here:
   • `goto`-hygiene: `<Mod>.G.unit` is now emitted unhygienically so the
@@ -64,9 +63,10 @@ Three framework fixes (all upstream of this file) got us here:
     state-dependent base cases.
 
 The file is built with `pverify.failOnIncomplete false` so it loads
-with those 2 obligations left as printed skeletons. The deliverable is
-a faithful, well-formed port that `#gen_module` / `#pwf` accept and
-`#pverify` drives to a 30/32 closure rate.
+with the one remaining obligation left as a printed skeleton. The
+deliverable is a faithful, well-formed port that `#gen_module` / `#pwf`
+accept and `#pverify` drives to a 31/32 closure rate (30 SMT + 1
+manual).
 -/
 import PLean
 
@@ -199,6 +199,62 @@ end RingLeader
 
 #gen_module RingLeader
 #pwf        RingLeader
+
+/-
+Manual proofs (instantiation hints) for the two inductive-step
+obligations that `#pverify`'s SMT chain leaves open. They are valid but
+need a quantifier instantiation the solver doesn't find on its own: the
+fact that a node receiving its *own* nomination is the global maximum
+(`SelfPendingMax` applied to the in-flight `eNominate`), which then makes
+`LeaderMax` + `Aux` (antisymmetry) collapse any two `Won` nodes.
+
+Registered via `@[pverifyProof]` so `#pverify` picks them up instead of
+re-deriving (and failing) them. The names match the obligation names
+`#pverify` prints.
+-/
+namespace RingLeader
+open PLean PartialCorrectness DemonicChoice
+
+set_option maxHeartbeats 2000000 in
+@[pverifyProof]
+theorem Server.Proposing.eNominate_correct_block4_Safety_using_lemmas
+    (this : Server) (param : eNominate_payload) :
+    triple (l := PProp Sig)
+      (fun s => (Safety s ∧ lemmas s ∧ DefaultInvariants s ∧ True) ∧
+        ∃ lbl, inflight lbl s ∧ lbl.target = this.ref ∧
+          (s.machines this.ref).currentState = Server.Proposing_st ∧
+          lbl.action = EventOrGoto.event (E.eNominate param))
+      (Server.Proposing.eNominate_handler this param)
+      (fun _ s => Safety s ∧ DefaultInvariants s ∧ True) := by
+  unfold Server.Proposing.eNominate_handler
+  unfold Safety lemmas UniqueLeader LeaderMax Aux NoBypass SelfPendingMax
+  try unfold PLean.send PLean.goto PLean.raise PLean.markReceived PLean.announce
+  pverify_step_wp
+  intros
+  split_conjunction_hyps
+  -- Flattened precondition hyps, in registration order:
+  --   UniqueLeader, LeaderMax, Aux, NoBypass, SelfPendingMax,
+  --   DefaultInvariants, dispatcher (the `∃ lbl …`).
+  rename_i hUniq hLM hAux hNB hSPM hDI hdisp
+  obtain ⟨lbl, hinf, htgt, hst, hact⟩ := hdisp
+  refine ⟨?_, ?_⟩
+  · -- `goto Won` branch: `this` received its own nomination ⇒ it is the
+    -- global max, so any pre-existing `Won` node equals it.
+    intro hg
+    have hMax : ∀ n : MachineRef, le n this.ref = true :=
+      fun n => hSPM n this.ref lbl param hinf htgt hact hg
+    -- Push `currentState` through the `goto` machine-update `ite` so the
+    -- post-state read abstracts to the same `pStateOf` the hypotheses use.
+    simp only [PLean.stateOf, apply_ite (f := PLean.MachineState.currentState)]
+    pverify_smt_close
+  · -- forwarding branches: no machine changes `currentState`, so the
+    -- `Won` set is unchanged and `Safety` is preserved directly.
+    intro _
+    refine ⟨?_, ?_⟩ <;> intro _ <;>
+      (simp only [PLean.stateOf, apply_ite (f := PLean.MachineState.currentState)]
+       pverify_smt_close)
+
+end RingLeader
 
 -- The 4 residual `stateOf`-bearing obligations are expensive to reduce
 -- in `whnf` before lean-auto rejects them as higher-order, so the

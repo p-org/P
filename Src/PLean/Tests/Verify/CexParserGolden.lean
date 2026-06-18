@@ -120,6 +120,36 @@ witnesses (handler & skolem bindings):
 -/
 #guard_msgs in #eval IO.println ((renderModelText constMachinesModel lockKindCtx).getD "FALLBACK")
 
+/-! ## Type-constraint alert: a `Server`-declared reference whose slot is
+a `Node` raises an actionable advisory prescribing the `init-holds` +
+typing invariant. A raw-`MachineRef` reference (bare numeral, no wrapper
+ctor) never triggers it. -/
+
+private def twoKindCtx : CexNameCtx := {
+  stateCtors  := #[("Server_Serving", "Server", "Serving"), ("Node_Working", "Node", "Working")],
+  machineKinds := #["Server", "Node"]
+}
+
+private def mistypedModel : String :=
+  "((define-fun |_machines.1_| ((|x| Int)) |_MachineState| " ++
+  "   (|_MachineState.mk| false |_S.Node_Working| (|_Fields.mk|) 2)) " ++
+  " (define-fun |_sent.2_| ((|l| |_Label|)) Bool false) " ++
+  " (define-fun |_lock_server| () |_Server| (|_Server.mk| 3)))"
+
+/--
+info: machines:
+  machine[else] = Node@Working
+sent (ordered by actionCount): []
+witnesses (handler & skolem bindings):
+  lock_server = Node#3 = Node@Working
+⚠ machine-type constraint missing: a typed reference was placed in a wrong-kind slot. A machine-typed reference is kind-erased in the VC, so its kind must be pinned by an invariant seeded at init.
+  `lock_server` is declared `Server` but ref 3 is a `Node` here. To rule this out, add:
+    init-holds (is_Server lock_server.ref)
+    invariant lock_server_is_Server : is_Server lock_server.ref s
+  then thread `lock_server_is_Server` through the relevant `prove … using …` chain.
+-/
+#guard_msgs in #eval IO.println ((renderModelText mistypedModel twoKindCtx).getD "FALLBACK")
+
 /-! ## Without registry names, machine/event fall back to raw values. -/
 
 /--

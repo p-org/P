@@ -415,13 +415,28 @@ solver had to inhabit one of the program's union sorts. -/
 private def isUniverseVal (v : String) : Bool :=
   (v.splitOn "!val!").length > 1 || v.startsWith "@"
 
+/-- A typed machine reference the counter-example placed in a slot of
+the wrong kind: the reference's source name (witness/field), its
+declared kind (from the wrapper constructor), the ref value, and the
+actual slot kind. A declared-`Server` reference sitting in a `Node`
+slot means no invariant pins its kind — the verifier prescribes the
+`init-holds` + typing invariant to add. -/
+structure TypeAlert where
+  source   : String
+  declared : String
+  ref      : Int
+  slotKind : String
+  deriving Inhabited, BEq
+
 /-- The decoded counter-example. `witnesses` are the obligation's bound
-values (`this`, the event payload, skolem witnesses for a failing ∀). -/
+values (`this`, the event payload, skolem witnesses for a failing ∀);
+`typeAlerts` are typed references the model put in wrong-kind slots. -/
 structure CexModel where
   machines    : Array MachineEntry
   sent        : Array SentEntry
   actionCount : Option String
   witnesses   : Array (String × String)
+  typeAlerts  : Array TypeAlert
   deriving Inhabited
 
 /-- Render a witness value. A `Label.mk …` shows as its action; a
@@ -467,6 +482,47 @@ private def renderWitness (ctx : CexNameCtx) (rk : RefKinds)
     else renderValue (substLet body)
   | none => renderValue (substLet body)
 
+/-- Collect every typed machine-reference `(<K>.mk <r>)` subterm of a
+value, where `K` is a declared machine kind. The wrapper constructor
+names the *declared* kind; a raw `MachineRef` reference is a bare
+numeral and is never collected, so untyped `machine` references (which
+carry no kind claim) raise no alert. -/
+private partial def collectTypedRefs (machineKinds : Array String) :
+    Sexp → Array (String × Int)
+  | .app xs =>
+    let here : Array (String × Int) :=
+      match xs[0]? with
+      | some (Sexp.atom (LexVal.symb h)) =>
+        if h.endsWith ".mk" then
+          let k := (h.splitOn ".").head!
+          match (if machineKinds.contains k then (appArgs (.app xs))[0]?.bind asInt? else none) with
+          | some r => #[(k, r)]
+          | none   => #[]
+        else #[]
+      | _ => #[]
+    xs.foldl (fun acc x => acc ++ collectTypedRefs machineKinds x) here
+  | _ => #[]
+
+/-- Detect typed references the model placed in wrong-kind slots. For
+each top-level def, collect its typed refs and compare each declared
+kind against the ref's actual slot kind in the `machines` table; a
+known, differing slot kind is a typing violation attributable to the
+def's name. Deduplicated by (source, declared, ref). -/
+private def detectTypeAlerts (ctx : CexNameCtx) (machines : FnTable)
+    (defs : Array ModelDef) : Array TypeAlert := Id.run do
+  let mut out : Array TypeAlert := #[]
+  for d in defs do
+    if isInternalName d.name then continue
+    let src := if d.args.isEmpty then d.name else s!"{d.name}(…)"
+    for (declared, r) in collectTypedRefs ctx.machineKinds d.body do
+      match machineKindOf ctx (machines.at (.atom (.nat r.toNat))) with
+      | some slotKind =>
+        if slotKind != declared then
+          let a : TypeAlert := { source := src, declared, ref := r, slotKind }
+          unless out.contains a do out := out.push a
+      | none => pure ()
+  return out
+
 /-- Decode all entries into a `CexModel`. Nullary, non-internal defs
 become witnesses (with values rendered through `ctx`); function-typed
 internal tables (`is_*`, `*_payload_of`) are dropped. -/
@@ -483,7 +539,8 @@ def CexModel.decode (ctx : CexNameCtx) (defs : Array ModelDef) : CexModel :=
       let val := renderWitness ctx rk machTbl d.body
       if isUniverseVal val then none else some (d.name, val)
     else none)
-  { machines, sent, actionCount, witnesses }
+  let typeAlerts := detectTypeAlerts ctx machTbl defs
+  { machines, sent, actionCount, witnesses, typeAlerts }
 
 /-! ## Rendering -/
 
@@ -515,13 +572,30 @@ def CexModel.render (m : CexModel) : String := Id.run do
     lines := lines.push "witnesses (handler & skolem bindings):"
     for (n, v) in m.witnesses do
       lines := lines.push s!"  {n} = {v}"
+  unless m.typeAlerts.isEmpty do
+    lines := lines.push
+      "⚠ machine-type constraint missing: a typed reference was placed \
+       in a wrong-kind slot. A machine-typed reference is kind-erased in \
+       the VC, so its kind must be pinned by an invariant seeded at init."
+    for a in m.typeAlerts do
+      let src := a.source
+      lines := lines.push
+        s!"  `{src}` is declared `{a.declared}` but ref {a.ref} is a \
+           `{a.slotKind}` here. To rule this out, add:"
+      lines := lines.push
+        s!"    init-holds (is_{a.declared} {src}.ref)"
+      lines := lines.push
+        s!"    invariant {src}_is_{a.declared} : is_{a.declared} {src}.ref s"
+      lines := lines.push
+        s!"  then thread `{src}_is_{a.declared}` through the relevant \
+           `prove … using …` chain."
   return "\n".intercalate lines.toList
 
 /-- Whether the decode produced any structured content beyond the
 always-present `sent` line. -/
 def CexModel.nonEmpty (m : CexModel) : Bool :=
   !m.machines.isEmpty || !m.sent.isEmpty || m.actionCount.isSome
-  || !m.witnesses.isEmpty
+  || !m.witnesses.isEmpty || !m.typeAlerts.isEmpty
 
 /-- End-to-end: parse a model string and render it against `ctx`.
 Returns `none` when the text doesn't parse or decodes to nothing, so the

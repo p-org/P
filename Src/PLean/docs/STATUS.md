@@ -19,7 +19,7 @@ rather than narrating.
 | 0 — Bootstrap                    | ☑ | — | 2026-05-28 | 2026-05-29 | M0 reached |
 | 1 — Semantic core                | ☑ | — | 2026-06-01 | 2026-06-04 | M1 reached |
 | 2 — Registry + minimal surface   | ☑ | — | 2026-06-05 | 2026-06-05 | M2 reached |
-| 3 — Verification declarations    | ◐ | — | 2026-06-06 | — | M3 partial — pipeline is sound; **post 2026-06-17 base/inductive split + kind-guard auto-injection: DistributedLock 10/12, LockServer 17/22**. Residuals are genuine inductive-step gaps, not infrastructure. |
+| 3 — Verification declarations    | ◐ | — | 2026-06-06 | — | M3 partial — pipeline is sound; **2026-06-18: DistributedLock 12/12 (fully verified), LockServer 23/25**. The DL residuals were VC-generator gaps (now fixed: is_<ev> bridge, DefaultInvariants decoupling, dispatcher kind-guard, markReceived prologue) + one manual proof; LockServer's 2 residuals are a genuinely incomplete port (missing strengthening invariants). |
 | 4 — Spec machines                | ☐ | — | — | — | plan in [`PLAN_P4.md`](PLAN_P4.md) |
 | 5 — Remaining surface            | ☐ | — | — | — | |
 | 6 — Tutorial port                | ☐ | — | — | — | |
@@ -106,7 +106,92 @@ omit some of the original P source's invariants (e.g.
 safety` obligations correctly fail SMT and need either the missing
 invariants or `@[pverifyProof]` manual proofs._
 
-### Session 2026-06-17 (latest) — VC fix: kind/state coupling in `<M>_allocated`
+### Session 2026-06-18 (latest) — SMT-discharge VC fixes; DistributedLock 12/12
+
+A debugging pass on the M3 `unknown`/`disproved` residuals traced every
+one to a VC-generator gap (not a missing invariant), and closed
+DistributedLock end-to-end. Six fixes landed, each verified against
+PVerifier's [`Uclid5CodeGenerator.cs`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs):
+
+1. **`is_<ev>` characterisation lemmas** (commit `eb0eac3dc`).
+   `#gen_module` now emits `is_<ev>_iff : is_<ev> l ↔ l.action = .event
+   (E.<ev> …)` tagged `@[pverifySimp]`. `is_<ev>` was opaque to SMT, so
+   any obligation with an `e is <ev>` guard returned `unknown`; the
+   `@[pverifySimp]` rewrite turns it into a concrete action equality
+   before `loom_smt`. Pairwise disjointness is derived by the solver from
+   constructor injectivity. Same commit: the counter-example renderer
+   flags kind/state desync (`[kind=N ≠ <M>_kind=K; not is_<M> — fields
+   unconstrained]`) so spurious rows read as such.
+
+2. **Default invariants decoupled** (commit `28ec6140e`). PVerifier only
+   `ensures` the three sanity invariants on `prove default` obligations
+   (`generateSanityChecks = cmd.Name == "default"`); PLean was conjoining
+   `DefaultInvariants` into every obligation's pre and post, dragging the
+   `actionCount` linear-integer arithmetic (from `≺`/`IncreasingCount`)
+   into goals that don't need it → quantified UF+LIA → `unknown`. Now
+   user-invariant obligations carry no `DefaultInvariants`; they're a
+   separate well-formedness bundle. Sound (strictly fewer hypotheses) and
+   ~4× faster (LockServer build 103s → 27s).
+
+3. **`abstract_machine_lookups`** in `pverify_smt_prep` (commit
+   `90fbed5f4`). `s.machines ((<ev>_payload_of e).field)` — the function
+   field applied to a ref through the opaque payload extractor — made
+   lean-auto emit an identity lambda and abort. The new step generalises
+   such compound lookups (gated on a `…_payload_of` argument so it doesn't
+   over-abstract plain `s.machines n.ref`).
+
+4. **Dispatcher kind-guard** (commit `9a8645a2d`). The per-handler
+   dispatcher contract now includes `is_<M> this.ref s` — PVerifier gets
+   this structurally from `requires MachineStateAdtInS`; PLean's flat
+   `MachineState` (independent `kind`/`currentState`) needs it stated, else
+   the solver fabricates a `this` of the right control state but wrong kind
+   (observed on DistributedLock eGrant: `this = Node#3` with `kind=5 ≠
+   Node_kind=1`). Flipped both DL eGrant and a LockServer obligation from
+   spuriously-disproved to honest.
+
+5. **`@[pverifyProof]` type-checking** (commit `555641970`). The manual-
+   proof registry was keyed on theorem *name* only: a theorem
+   `<obligationName> : True := trivial` was accepted as discharging the
+   real `triple …` obligation — a soundness hole. Both emitters now build
+   the obligation's exact expected type and discharge it by `exact
+   @<userThm>` in a `<name>_check` theorem, so the elaborator verifies the
+   user proved precisely that proposition.
+
+6. **`markReceived` prologue** (commit `df7acad25`). PVerifier marks the
+   dispatched label received at handler entry (`received[label -> true]`);
+   PLean did not, so the consumed event stayed in-flight in the post-state,
+   spuriously violating any "in-flight `<ev>` ⇒ …" invariant (DL eAccept's
+   `no_lock_while_transfer` was a genuine `sat`). The handler obligation
+   now binds `lbl` as a universal parameter, states the dispatch conditions
+   as plain preconditions, and runs `markReceived lbl >>= handler`. eAccept
+   then closes by SMT.
+
+**DistributedLock: 12/12** — 11 obligations by SMT, 1 (`eGrant` safety) by
+a hand-written `@[pverifyProof]` (commit `cea639ae5`, updated for the
+markReceived shape). The eGrant proof splits `safety` into its five
+invariants across the two `if`-branches; nine of ten leaves close by
+`pverify_smt_close`, and `transfer_to_higher` on the then-branch uses a
+local `eAccept_payload_of_mk` characterisation + a new-vs-old-label case
+split (the opaque extractor blocks SMT from computing the new label's
+payload). Triage (split each conjunct, solve standalone) confirmed BOTH DL
+obligations are fully inductive — no missing invariant.
+
+**LockServer: 23/25** — unchanged. Its `safety` Theorem ports only
+`unique_lock_holder`; it is a genuinely incomplete port missing the
+mutually-inductive strengthening invariants from the P source
+(`node_server_mutex`, `no_lock_while_grant`, `grant_server_unlocked`,
+`unique_grant`, `unique_unlock`, …). Finishing it is a port-completeness
+task, not a VC fix.
+
+Follow-ups surfaced (not yet done): emit `<ev>_payload_of_mk`
+characterisation lemmas from `#gen_module` (like `is_<ev>_iff`) to remove
+that manual step; abstract `MachineRef` to an uninterpreted sort
+(PVerifier uses `type M_Ref_t;`, not `Int`) to remove the wrapper round-
+trip facts that make cvc5's quantifier instantiation fragile.
+
+Full suite green at 3402 jobs.
+
+### Session 2026-06-17 — VC fix: kind/state coupling in `<M>_allocated`
 
 Reading a LockServer base-case counter-example with the v1 renderer
 surfaced a genuine VC-generation defect, not just a lossy port. The
@@ -1748,29 +1833,29 @@ The shipped approach is the strict superset: it reaches the same SMT-closing pow
       in `Surface/Notation.lean` (D16); `Internal/Stub.lean` is
       deleted (D15).
 - [ ] **M3 — `#pverify` synthesizes Hoare-triple obligations from registry
-      and dispatches them to SMT** (Phase 3, partial). The SMT-discharge
-      pipeline works correctly post-soundness-fix; the residual M3
-      benchmarks (`Phase3DistributedLock` 10/12, `Phase3LockServer`
-      17/22, both as of 2026-06-17 after the base/inductive split and
-      kind-guard auto-injection) legitimately fail because the ports
-      are missing inductiveness invariants from the original P sources.
-      Closing M3 is now a matter of either porting the missing
-      invariants or supplying `@[pverifyProof]` manual proofs.
+      and dispatches them to SMT** (Phase 3, partial). As of 2026-06-18:
+      `Phase3DistributedLock` is **12/12 — fully verified** (11 by SMT, 1
+      by a `@[pverifyProof]` manual proof), after a sweep of VC-generator
+      fixes (`is_<ev>` characterisation lemmas, default-invariant
+      decoupling, dispatcher kind-guard, `markReceived` prologue) plus
+      `@[pverifyProof]` type-checking. `Phase3LockServer` is 23/25 — its
+      2 residuals are a genuinely incomplete port (the P source's
+      strengthening invariants aren't ported). Closing the last M3
+      benchmark is a port-completeness task + the same manual technique.
 - [ ] **M4 — Tutorial/1_ClientServer ports + verifies in PLean** (Phase 6).
 - [ ] **M5 — Tutorial/2_TwoPhaseCommit ports + verifies; v1 cut**.
 
 ---
 
-_Last updated 2026-06-17. Phase 3 is in progress: Phase-3
-SMT-discharge pipeline + soundness fix shipped (commit `101a36148`,
-2026-06-11); base/inductive split + kind-guard auto-injection
-shipped (commit `209768396`, 2026-06-17); field-projection sugar
-shipped; counter-example rendering v1 shipped (this session,
-[`PLAN_CEX.md`](PLAN_CEX.md)). Closure rates: DistributedLock
-**10/12**, LockServer **17/22**, all other tests 100%. Residuals are genuine
-inductiveness gaps in the ports — closing M3 is now a matter of
-porting the missing invariants from the P sources or supplying
-`@[pverifyProof]` proofs. Probe / debug files
+_Last updated 2026-06-18. Phase 3 is in progress. This session: a sweep of
+SMT-discharge VC-generator fixes (`is_<ev>` characterisation lemmas,
+default-invariant decoupling, `abstract_machine_lookups`, dispatcher
+kind-guard, `markReceived` prologue) + `@[pverifyProof]` type-checking +
+one hand-written eGrant manual proof took **DistributedLock to 12/12 —
+fully verified**. LockServer is **23/25** (genuinely incomplete port —
+missing strengthening invariants). All other tests 100%; full suite green
+at 3402 jobs. See "Session 2026-06-18" above for per-fix detail and the
+follow-ups (auto-emit `<ev>_payload_of_mk`; abstract `MachineRef`). Probe / debug files
 (`Tests/Surface/PVerifyDefaultDebug.lean`,
 `Tests/Surface/PVerifySmtProbe.lean`,
 `Tests/Surface/WpgenAccessorProbe.lean`,

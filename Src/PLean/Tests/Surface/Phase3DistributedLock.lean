@@ -164,9 +164,9 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
     obtain ⟨hHeld, hGt⟩ := hcond
     simp only [safety]
     refine ⟨?_, ?_, ?_, ?_, ?_, trivial⟩
-    · simp only [unique_holder, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
+    · simp only [unique_holder, is_Node, Node_allocated, Node_kind]; pverify_smt_close
     · simp only [no_lock_while_transfer, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
-    · simp only [unique_accept, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
+    · simp only [unique_accept, inflight]; pverify_smt_close
     · simp only [not_held_after_release, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
     · -- transfer_to_higher: new eAccept carries `param.epoch > this.epoch`
       -- (from `hGt`); old labels keep the pre-state bound (`hTH`).

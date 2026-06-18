@@ -137,7 +137,7 @@ Most Tutorial/Advanced benchmarks need surface features that aren't
 built yet — check PLAN_P3's "Tutorial benchmark inventory" table
 before attempting one.
 
-## Phase status (as of 2026-06-17)
+## Phase status (as of 2026-06-18)
 
 - Phase 0 (Bootstrap) — ☑ M0.
 - Phase 1 (Semantic core) — ☑ M1. Hand-written ping-pong verifies via
@@ -148,9 +148,15 @@ before attempting one.
 - Phase 3 (Verification declarations) — ◐ in progress. The
   SMT-discharge pipeline, the `@[pverifyProof]` registry, and the
   `pverify_*` tactic library are in tree. Closure rates:
-  `Phase3DistributedLock` 10/12, `Phase3LockServer` 17/22 — residuals
-  are genuine inductiveness gaps in the ports, not infrastructure
-  bugs. `3_RingLeaderVerification` not yet ported.
+  `Phase3DistributedLock` **12/12** (fully verified — 11 SMT + 1 manual
+  `@[pverifyProof]`), `Phase3LockServer` 23/25. The DistributedLock
+  residuals turned out to be VC-generator gaps, all fixed 2026-06-18
+  (`is_<ev>` characterisation lemmas, default-invariant decoupling,
+  dispatcher kind-guard, `markReceived` prologue; plus `@[pverifyProof]`
+  type-checking). LockServer's 2 residuals are a genuinely incomplete
+  port (missing the P source's strengthening invariants).
+  `3_RingLeaderVerification` not yet ported. See STATUS.md
+  "Session 2026-06-18" for the per-fix detail.
 - Phase 4 (Spec machines) — ☐ next.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.

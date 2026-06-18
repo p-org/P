@@ -108,8 +108,91 @@ end DistributedLock
 #gen_module DistributedLock
 #pwf        DistributedLock
 
--- @[pverifyProof] theorem Node.Act.eGrant_correct_Safety_safety := by sorry  -- supply manual proof
--- @[pverifyProof] theorem Node.Act.eAccept_correct_Safety_safety := by sorry  -- supply manual proof
+namespace DistributedLock
+open PartialCorrectness DemonicChoice
+
+/-- Characterisation of the opaque `eAccept_payload_of` extractor on a
+concrete label: needed because the extractor is left uninterpreted for
+SMT, so the solver can't compute its value on the freshly-sent label. -/
+theorem eAccept_payload_of_mk (t : MachineRef) (p : tAccept) (c : Nat) :
+    eAccept_payload_of (Label.mk t (.event (E.eAccept p)) c) = p := by
+  unfold eAccept_payload_of; rfl
+
+set_option loom.solver "cvc5" in
+set_option loom.solver.smt.timeout 30 in
+set_option maxHeartbeats 4000000 in
+/-- Manual proof of the `eGrant` inductive step. Splitting the post into
+its five invariant conjuncts (across the handler's two `if`-branches)
+closes nine of ten leaves by SMT directly. The tenth —
+`transfer_to_higher` on the then-branch, which sends a fresh `eAccept` —
+needs the opaque payload extractor's value on the new label, so it is
+discharged by an explicit new-vs-old-label case split. -/
+@[pverifyProof]
+theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payload) :
+    triple (l := PProp Sig)
+      (fun s =>
+        (safety s ∧ True) ∧
+        ∃ lbl : Sig.Label,
+          inflight lbl s ∧
+          lbl.target = this.ref ∧
+          is_Node this.ref s ∧
+          (s.machines this.ref).currentState = Node.Act_st ∧
+          lbl.action = .event (E.eGrant param))
+      (Node.Act.eGrant_handler this param)
+      (fun _ s => safety s ∧ True) := by
+  unfold Node.Act.eGrant_handler
+  pverify_step_wp
+  intro s hpre hdisp
+  obtain ⟨lbl, hInf, hTgt, hThisKind, hrest⟩ := hdisp
+  simp only [safety, unique_holder, no_lock_while_transfer, unique_accept,
+    not_held_after_release, transfer_to_higher, is_Node, Node_allocated,
+    Node_kind, inflight] at hpre hThisKind
+  obtain ⟨hUH, hNLT, hUA, hNHR, hTH⟩ := hpre
+  refine ⟨?_, ?_⟩
+  · -- then-branch: `held && param.epoch > epoch` — release + send eAccept.
+    intro hcond
+    rw [Bool.and_eq_true, decide_eq_true_eq] at hcond
+    obtain ⟨hHeld, hGt⟩ := hcond
+    simp only [safety]
+    refine ⟨?_, ?_, ?_, ?_, ?_, trivial⟩
+    · simp only [unique_holder, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
+    · simp only [no_lock_while_transfer, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
+    · simp only [unique_accept, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
+    · simp only [not_held_after_release, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
+    · -- transfer_to_higher: new eAccept carries `param.epoch > this.epoch`
+      -- (from `hGt`); old labels keep the pre-state bound (`hTH`).
+      simp only [transfer_to_higher, is_Node, Node_allocated, Node_kind, inflight]
+      intro n1 hn1kind e hisE hsent hsrc
+      obtain ⟨hsent1, hrecv⟩ := hsent
+      rw [Bool.or_eq_true] at hsent1
+      rcases hsent1 with hNew | hOld
+      · rw [decide_eq_true_eq] at hNew
+        subst hNew
+        rw [eAccept_payload_of_mk] at hsrc ⊢
+        simp only at hsrc ⊢
+        rw [if_pos hsrc.symm]
+        simpa using hGt
+      · have hinflE : s.sent e = true ∧ s.received e = false := ⟨hOld, hrecv⟩
+        by_cases hn1 : n1.ref = this.ref
+        · rw [if_pos hn1] at hn1kind ⊢
+          have hk : (s.machines n1.ref).kind ≠ 0 ∧ (s.machines n1.ref).kind = 1 ∧ True := by
+            rw [hn1]; exact ⟨hThisKind.1, hThisKind.2.1, trivial⟩
+          simpa [hn1] using hTH.1 n1 hk e hisE hinflE hsrc
+        · rw [if_neg hn1]
+          have hk : (s.machines n1.ref).kind ≠ 0 ∧ (s.machines n1.ref).kind = 1 ∧ True := by
+            rw [if_neg hn1] at hn1kind; exact hn1kind
+          exact hTH.1 n1 hk e hisE hinflE hsrc
+  · -- else-branch: `if`-condition false — state unchanged, invariants hold
+    -- verbatim from the pre-state.
+    intro hcond
+    simp only [safety]
+    refine ⟨?_, ?_, ?_, ?_, ?_, trivial⟩ <;>
+      (simp only [unique_holder, no_lock_while_transfer, unique_accept,
+         not_held_after_release, transfer_to_higher, is_Node, Node_allocated,
+         Node_kind, inflight]
+       pverify_smt_close)
+
+end DistributedLock
 
 set_option pverify.failOnIncomplete false in
 #pverify DistributedLock

@@ -212,17 +212,30 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     -- only fires when an inflight label of the right shape exists.
     -- Handlers don't re-establish it on exit, so it lives only in the
     -- precondition.
+    --
+    -- `is_<M> this.ref s` pins the handler's own machine to its kind.
+    -- PVerifier gets this structurally from `requires MachineStateAdtInS`
+    -- (its typed per-machine state arrays make "in state <M>.<S>" imply
+    -- "is an <M>"); PLean's flat `MachineRef`/`MachineState` encoding has
+    -- independent `kind` and `currentState` fields, so without this guard
+    -- the solver may fabricate a `this` whose `currentState` is the right
+    -- state but whose `kind` is some other machine's — making an honest
+    -- obligation spuriously disprovable. Same reasoning as the
+    -- `<M>_allocated` state/kind coupling.
+    let isThisKind : Ident := mkIdent (Name.mkSimple ("is_" ++ mname.toString))
     let dispatcherClause ← do
       if hasPayload then
         `(∃ lbl : ($idSig).Label,
             PLean.inflight lbl s ∧
             lbl.target = ($idThis).ref ∧
+            $isThisKind ($idThis).ref s ∧
             (s.machines ($idThis).ref).currentState = $stateAlias ∧
             lbl.action = .event ($evCtor $idParam))
       else
         `(∃ lbl : ($idSig).Label,
             PLean.inflight lbl s ∧
             lbl.target = ($idThis).ref ∧
+            $isThisKind ($idThis).ref s ∧
             (s.machines ($idThis).ref).currentState = $stateAlias ∧
             lbl.action = .event $evCtor)
     let preTerm : TSyntax `term ← `(fun (s : PLean.GlobalState $idSig) =>

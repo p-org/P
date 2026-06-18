@@ -46,6 +46,8 @@ namespace ObligationShapeMod
 -- post (the sanity invariants are a separate well-formedness bundle,
 -- proven only by `prove default`; see `emitOneObligation`). Pre carries
 -- the target lemma + dispatcher contract only; post carries the target.
+-- The dispatcher contract pins the handler's own machine kind via
+-- `is_M this.ref s` (PVerifier's `MachineStateAdtInS`).
 /--
 info: M.S.eHello_correct_Block1_safety : ∀ (this : M),
   triple
@@ -54,7 +56,7 @@ info: M.S.eHello_correct_Block1_safety : ∀ (this : M),
         ∃ lbl,
           inflight lbl s ∧
             lbl.target = this.ref ∧
-              (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
+              is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
     (M.S.eHello_handler this) fun x s ↦ safety s ∧ True
 -/
 #guard_msgs in
@@ -71,7 +73,7 @@ info: M.S.eHello_correct_Block2_default : ∀ (this : M),
         ∃ lbl,
           inflight lbl s ∧
             lbl.target = this.ref ∧
-              (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
+              is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
     (M.S.eHello_handler this) fun x s ↦ DefaultInvariants s ∧ True
 -/
 #guard_msgs in

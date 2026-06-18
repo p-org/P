@@ -172,7 +172,7 @@ before attempting one.
   [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
   `3_RingLeaderVerification` is ported in
   [`Tests/Surface/Phase3RingLeader.lean`](Tests/Surface/Phase3RingLeader.lean).
-  Porting it produced two reusable framework fixes:
+  Porting it produced three reusable framework fixes:
 
   1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
      hygienically, so the `goto` doElem macro (first exercised inside an
@@ -187,6 +187,11 @@ before attempting one.
      `MachineRef → _` function before `loom_smt`. Complements
      `abstract_machine_lookups` (which handles `s.machines (payload_of e).field`
      compound-argument cases).
+  3. **`InStart` init modelling + reducible state aliases** —
+     `emitInitConditions` now asserts every machine begins in a start
+     state, and `<S>_st` aliases are `@[reducible] def` so the solver
+     sees the raw `S` constructors. Together these close
+     state-dependent base cases.
 - Phase 4 (Spec machines) — ☐ next. Plan in PLAN_P4.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.

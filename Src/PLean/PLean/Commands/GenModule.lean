@@ -533,10 +533,12 @@ private def emitStateAliases (mname : Name) (states : Array PStateDecl) :
     let cName := (mname.toString ++ "_" ++ sd.name.toString)
     let aliasName : Ident := mkIdent (sd.name.appendAfter "_st")
     let sCtorIdent : Ident := mkIdent (`S ++ Name.mkSimple cName)
-    -- `@[reducible]` so SMT prep's `dsimp only` reduces a goal's
-    -- `currentState = <S>_st` to the raw `S.<M>_<S>` constructor —
-    -- matching the form the state/kind coupling in `<M>_allocated`
-    -- produces, so the solver can relate them.
+    -- `@[reducible] def` (equivalently, `abbrev`) so SMT prep's
+    -- `dsimp only` reduces a goal's `currentState = <S>_st` to the raw
+    -- `S.<M>_<S>` constructor. Without this the solver leaves `<S>_st`
+    -- uninterpreted and returns `unknown` on base cases that need to
+    -- distinguish e.g. `Won_st ≠ Proposing_st`. Also matches the
+    -- coupling form the state/kind check in `<M>_allocated` produces.
     elabCommand (← `(
       @[reducible] def $aliasName : ($idSig).S := $sCtorIdent
     ))
@@ -693,6 +695,36 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
       ← `((∀ l : ($idSig).Label, ($sId).received l = false)),
       ← `(($sId).actionCount = 0)]
   let mut props : Array (TSyntax `term) := frameworkClauses
+  -- InStart: every machine ref starts in a start state (mirrors
+  -- PVerifier's `InStart` init constraint). Allocated machines are in
+  -- their kind's `start state`; unallocated refs hold the default
+  -- `MachineState`, whose `currentState` is the first `S` constructor —
+  -- so include that ctor too. This is what lets base-case obligations
+  -- for state-dependent invariants (e.g. `∀ x, stateOf x s = Won →
+  -- …`) discharge: no machine is in a non-start state initially. Sound
+  -- because P machines begin in their start state.
+  let mut startCtors : Array Name := #[]
+  -- First `S` ctor = Inhabited default for unallocated refs.
+  if let some m0 := ctx.machineOrder[0]? then
+    if let some md0 := ctx.machines.find? m0 then
+      if let some sd0 := md0.states[0]? then
+        startCtors := startCtors.push
+          (Name.mkSimple (m0.toString ++ "_" ++ sd0.name.toString))
+  -- Each machine's declared `start state`.
+  for mname in ctx.machineOrder do
+    if let some md := ctx.machines.find? mname then
+      for sd in md.states do
+        if sd.isStart then
+          let c := Name.mkSimple (mname.toString ++ "_" ++ sd.name.toString)
+          unless startCtors.contains c do startCtors := startCtors.push c
+  if let some c0 := startCtors[0]? then
+    let mId : Ident := mkIdent `m
+    let csRead : TSyntax `term ← `((($sId).machines $mId).currentState)
+    let mut disj : TSyntax `term ← `($csRead = $(mkIdent (`S ++ c0)))
+    for i in [1:startCtors.size] do
+      let ci := startCtors[i]!
+      disj ← `($disj ∨ $csRead = $(mkIdent (`S ++ ci)))
+    props := props.push (← `(∀ $mId : PLean.MachineRef, $disj))
   for d in ctx.inits do
     if let some stx := d.defStx then
       -- `init-holds` bodies are materialised under a hardcoded `s` binder

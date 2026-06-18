@@ -28,47 +28,45 @@ Mechanical surface differences from the `.p` source (per `Src/PLean/CLAUDE.md`):
          invariants; the bundle is a superset of the two P-named
          invariants, so the precondition is at least as strong.)
 
-Verification outcome (as built): #pverify discharges 28 of 32
-obligations by SMT, with 1 disproved and 3 unknown. The 28 cover every
-base case and inductive step for the three relational `Lemma`s
-(`less_than`, `between_rel`, `right_rel`), the `Aux` / `NoBypass` /
-`SelfPendingMax` invariants, all three default invariants, and the
-`Won`-state (no-op) handler obligations.
+Verification outcome (as built): #pverify discharges 30 of 32
+obligations by SMT, with 1 disproved and 1 unknown. The 30 cover every
+base case (including the state-dependent `LeaderMax` / `UniqueLeader`
+base cases), every step for the three relational `Lemma`s (`less_than`,
+`between_rel`, `right_rel`), the `Aux` / `NoBypass` / `SelfPendingMax`
+invariants, all three default invariants, and the `Won`-state handler
+obligations.
 
-The 4 residual obligations are exactly those that mention `stateOf x s`
-(`LeaderMax` and the `Safety` invariant `UniqueLeader`):
+The 2 residual obligations are the *inductive steps* of `LeaderMax` and
+`UniqueLeader` through the `Proposing` handler (the one that does
+`goto Won`):
 
-  ? base_block3_LeaderMax                          (unknown)
-  ? Server.Proposing.eNominate ⊢ lemmas            (unknown, inductive step)
-  ? base_block4_UniqueLeader                       (unknown)
-  ✗ Server.Proposing.eNominate ⊢ Safety            (disproved, inductive step)
+  ? Server.Proposing.eNominate ⊢ lemmas    (unknown)
+  ✗ Server.Proposing.eNominate ⊢ Safety    (disproved / counter-example)
 
-These previously crashed lean-auto with `lamSort2SSortAux :: Higher
-order input?`, because `stateOf x s` reads the function-typed field
-`s.machines : MachineRef → MachineState` and projects the `MachineState`
-*record* (an array-of-records that lean-auto can't turn into a
-first-order SMT sort). That higher-order limitation is now fixed
-generally: `pverify_smt_prep` runs `pverify_defunctionalize_machines`
-(see `PLean/Verify/Tactic.lean`), which abstracts each scalar/enum
-machine-state projection into a fresh uninterpreted `MachineRef → _`
-function before `loom_smt`. With that, all 4 reach the solver as
-first-order queries.
+These are genuine verification gaps, not tooling limits: preserving
+"only the running-max can reach `Won`" across the `goto Won` transition
+needs a stronger jointly-inductive invariant than the ported P lemmas
+give the SMT solver here. Closing them is protocol-strengthening work
+(adding invariants) or `@[pverifyProof]` manual proofs.
 
-What remains is no longer an SMT-translation gap but two genuine
-verification gaps:
-  • the 2 base cases are `unknown` because `InitConditions` does not yet
-    pin initial machine states (the `InStart`/`InEntry` modelling that
-    `emitInitConditions` flags as TODO), so the solver cannot rule out a
-    machine starting in `Won`;
-  • the `lemmas`/`Safety` inductive steps over the `Proposing` handler
-    need a stronger jointly-inductive invariant (the `Safety` step is
-    `disproved` as currently stated) — protocol-strengthening work, or
-    `@[pverifyProof]` manual proofs.
+Three framework fixes (all upstream of this file) got us here:
+  • `goto`-hygiene: `<Mod>.G.unit` is now emitted unhygienically so the
+    `goto` doElem macro resolves it (first exercised by this benchmark);
+  • machine-state defunctionalisation: `pverify_smt_prep` runs
+    `pverify_defunctionalize_machines`, abstracting each scalar/enum
+    `(s.machines m).{currentState,kind,stage}` projection into a fresh
+    uninterpreted `MachineRef → _` function, so lean-auto no longer
+    rejects `stateOf`-bearing goals with `Higher order input?`;
+  • `InStart` init modelling + reducible state aliases:
+    `emitInitConditions` now asserts every machine begins in a start
+    state, and `<S>_st` aliases are `abbrev` (reducible) so the solver
+    sees the raw `S` constructors — together these close the two
+    state-dependent base cases.
 
 The file is built with `pverify.failOnIncomplete false` so it loads
-with those 4 obligations left as printed skeletons. The deliverable is
+with those 2 obligations left as printed skeletons. The deliverable is
 a faithful, well-formed port that `#gen_module` / `#pwf` accept and
-`#pverify` drives to a 28/32 closure rate.
+`#pverify` drives to a 30/32 closure rate.
 -/
 import PLean
 

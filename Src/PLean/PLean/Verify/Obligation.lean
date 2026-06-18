@@ -185,15 +185,28 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let usingPreds ← usingPredIdents usingNames
     let payloadTy := mkIdent (evname.appendAfter "_payload")
     let prpAbbrev : TSyntax `term := ← `(PProp $idSig)
-    -- Pre/post both include `DefaultInvariants` so the three sanity
-    -- invariants flow through every obligation. For `prove default;`
-    -- directives `lemmaPred` *is* `DefaultInvariants`, so the
-    -- duplicate is harmless (same predicate twice in the conjunction).
-    let defaultPred : TSyntax `term ← `(PLean.DefaultInvariants)
+    -- The three sanity invariants (`UniqueActions` / `IncreasingCount` /
+    -- `ReceivedSubsetSent`) are a *well-formedness* check, proven once by
+    -- the `prove default` obligations — they do NOT participate in user
+    -- invariant obligations, neither assumed in the pre nor checked in the
+    -- post. Two reasons:
+    --   * Soundness is unaffected: omitting them from the pre only removes
+    --     hypotheses (the obligation gets strictly harder, never unsound),
+    --     and they're a separate inductive bundle anyway.
+    --   * They carry `actionCount` linear-integer arithmetic (from `≺` /
+    --     `IncreasingCount`). Assuming them drags every obligation into the
+    --     quantified UF+LIA fragment, where SMT returns `unknown` instead of
+    --     a counter-example to induction. Dropping them keeps user-invariant
+    --     obligations in a fragment the solver decides.
+    -- For `prove default;`, `lemmaPred` *is* `DefaultInvariants`, so the
+    -- defaults are still assumed-and-checked there (and they are mutually
+    -- inductive, so they need each other in the pre — supplied via
+    -- `lemmaPred`). A user invariant that genuinely needs the buffer
+    -- ordering should name it via an explicit `using` premise.
     let sId : TSyntax `term := ← `(s)
     let basePre ← do
       let preds : Array (TSyntax `term) :=
-        #[lemmaPred] ++ usingPreds ++ #[defaultPred]
+        #[lemmaPred] ++ usingPreds
       buildConjAt preds sId
     -- Dispatcher contract: existential witness that this handler
     -- only fires when an inflight label of the right shape exists.
@@ -214,7 +227,11 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
             lbl.action = .event $evCtor)
     let preTerm : TSyntax `term ← `(fun (s : PLean.GlobalState $idSig) =>
                                       $basePre ∧ $dispatcherClause)
-    let postBody ← buildConjAt #[lemmaPred, defaultPred] sId
+    -- Post checks the target lemma only. For `prove default` obligations
+    -- `lemmaPred` *is* `DefaultInvariants` (so the defaults are checked);
+    -- for user invariants the defaults are assumption-only (in the pre),
+    -- never re-proven here.
+    let postBody ← buildConjAt #[lemmaPred] sId
     let postTerm : TSyntax `term ← `(fun (_ : Unit) (s : PLean.GlobalState $idSig) =>
                                        $postBody)
     let handlerTerm : TSyntax `term ←

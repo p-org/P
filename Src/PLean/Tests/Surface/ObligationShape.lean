@@ -42,30 +42,37 @@ namespace ObligationShapeMod
 
 /-! ## Pinned obligation-shape signatures -/
 
+-- Non-default obligation: `DefaultInvariants` appears in NEITHER pre nor
+-- post (the sanity invariants are a separate well-formedness bundle,
+-- proven only by `prove default`; see `emitOneObligation`). Pre carries
+-- the target lemma + dispatcher contract only; post carries the target.
 /--
 info: M.S.eHello_correct_Block1_safety : ∀ (this : M),
   triple
     (fun s ↦
-      (safety s ∧ DefaultInvariants s ∧ True) ∧
+      (safety s ∧ True) ∧
         ∃ lbl,
           inflight lbl s ∧
             lbl.target = this.ref ∧
               (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
-    (M.S.eHello_handler this) fun x s ↦ safety s ∧ DefaultInvariants s ∧ True
+    (M.S.eHello_handler this) fun x s ↦ safety s ∧ True
 -/
 #guard_msgs in
 #check @M.S.eHello_correct_Block1_safety
 
+-- Default obligation: the target IS `DefaultInvariants`, so it appears
+-- once in pre and once in post (assumed-and-checked), with no separate
+-- duplicate conjunct.
 /--
 info: M.S.eHello_correct_Block2_default : ∀ (this : M),
   triple
     (fun s ↦
-      (DefaultInvariants s ∧ DefaultInvariants s ∧ True) ∧
+      (DefaultInvariants s ∧ True) ∧
         ∃ lbl,
           inflight lbl s ∧
             lbl.target = this.ref ∧
               (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
-    (M.S.eHello_handler this) fun x s ↦ DefaultInvariants s ∧ DefaultInvariants s ∧ True
+    (M.S.eHello_handler this) fun x s ↦ DefaultInvariants s ∧ True
 -/
 #guard_msgs in
 #check @M.S.eHello_correct_Block2_default

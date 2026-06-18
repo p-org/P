@@ -369,6 +369,12 @@ manual proof's structure. -/
 macro_rules
   | `(tactic| pverify) => `(tactic| (
       first
+        | -- `pverify_step_wp` alone closes it (trivial / `True`-shaped
+          -- post). Guard with `done` so this branch only succeeds when
+          -- no goals remain — otherwise a follow-on `intros` would error
+          -- with "no goals" on an already-closed goal.
+          (pverify_step_wp
+           done)
         | -- Post-equals-pre branch: the post-state predicate is
           -- structurally equal to one of the introduced pre-state
           -- hypotheses, so `assumption` closes the goal directly. This

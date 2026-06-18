@@ -1,12 +1,12 @@
 /-
 PLean.Commands.PVerify — `#pverify M`.
 
-Walks the registry, runs the obligation generator, and prints one
-consolidated report grouped by outcome — `── failed ──` (with
-counter-examples), `── manual-proof skeletons ──` (copy-paste
-`@[pverifyProof]` decls echoing the full theorem signature), then
-`── passed ──` — followed by a concise pass/fail summary. Grouping by
-outcome keeps failures and their fixes together at the top rather than
+Walks the registry, runs the obligation generator, and prints the
+report grouped by outcome in three separate message boxes —
+`── failed ──` (with counter-examples), `── manual-proof skeletons ──`
+(copy-paste `@[pverifyProof]` decls echoing the full theorem signature),
+then `── passed ──` — followed by a concise pass/fail summary. Grouping
+by outcome keeps failures and their fixes together rather than
 interleaved with passes. The summary is a separate trailing message
 (info on success, warning/error on incomplete) so callers can pin the
 verdict with `#guard_msgs (…, drop info)`.
@@ -89,35 +89,33 @@ def elabPVerify : CommandElab := fun stx => do
     if result.attempted == 0 then
       logInfo m!"{modName}: no `Proof` directives — nothing to verify"
       return
-    -- The detailed report is ONE info message, ordered by outcome (not
-    -- emission order): header → failed obligations (+ diagnostics) →
-    -- manual-proof skeletons → passed obligations. This keeps failures
-    -- and their fixes together at the top instead of interleaved with
-    -- passes. The concise pass/fail summary is a separate trailing
-    -- message (info on success, warning/error on incomplete) so callers
-    -- can pin the verdict with `#guard_msgs (… , drop info)`.
+    -- Grouped by outcome (not emission order), in three separate
+    -- message boxes — failed obligations (+ diagnostics), manual-proof
+    -- skeletons, then passed obligations — so failures and their fixes
+    -- stay together rather than interleaved with passes. The concise
+    -- pass/fail summary is a separate trailing message (info on success,
+    -- warning/error on incomplete) so callers can pin the verdict with
+    -- `#guard_msgs (…, drop info)`.
     let failedRecs := result.records.filter (·.outcome.isFailure)
     let passedRecs := result.records.filter (!·.outcome.isFailure)
-    let mut blocks : Array String := #[]
-    blocks := blocks.push
-      s!"{modName}: {result.attempted} obligations from {proofCount} prove-directives"
+    logInfo m!"{modName}: {result.attempted} obligations from \
+               {proofCount} prove-directives"
     unless failedRecs.isEmpty do
       let mut sec : Array String := #["── failed ──"]
       for rec in failedRecs do
         let diag := renderDiagnostic rec
         sec := sec.push (if diag.isEmpty then renderRow rec
                          else s!"{renderRow rec}\n{diag}")
-      blocks := blocks.push ("\n".intercalate sec.toList)
+      logInfo ("\n".intercalate sec.toList)
       let mut skel : Array String := #["── manual-proof skeletons ──"]
       for rec in failedRecs do
         skel := skel.push (renderSkeleton rec)
-      blocks := blocks.push ("\n".intercalate skel.toList)
+      logInfo ("\n".intercalate skel.toList)
     unless passedRecs.isEmpty do
       let mut sec : Array String := #["── passed ──"]
       for rec in passedRecs do
         sec := sec.push (renderRow rec)
-      blocks := blocks.push ("\n".intercalate sec.toList)
-    logInfo ("\n\n".intercalate blocks.toList)
+      logInfo ("\n".intercalate sec.toList)
     let summary :=
       m!"{modName}: {result.smtProved} proved by SMT, \
          {result.userProved} user-proved, \

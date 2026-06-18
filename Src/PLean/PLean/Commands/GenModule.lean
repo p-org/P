@@ -705,12 +705,18 @@ def elabPGenModule : CommandElab := fun stx => do
       ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
     let eventKinds : NameSet :=
       ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
+    -- `function` / `paxiom` / `pinstance` come BEFORE invariants:
+    -- invariant and `init-holds` bodies may reference a `function`
+    -- (e.g. `n.server = lock_server`), but functions only reference
+    -- types / machine fields (already materialised in step 6) and never
+    -- reference invariants. Emitting invariants first left `lock_server`
+    -- undefined inside a `Lemma`/`Theorem` block.
+    for (_, d) in ctx.pures.toList do      materialisePure d
+    for (_, d) in ctx.axioms.toList do     materialiseAxiom d
+    for (_, d) in ctx.instances.toList do  materialiseInstance d
     for (_, d) in ctx.invariants.toList do
       materialiseInvariant machineKinds eventKinds machineFields
         eventPayloadFields d
-    for (_, d) in ctx.axioms.toList do     materialiseAxiom d
-    for (_, d) in ctx.pures.toList do      materialisePure d
-    for (_, d) in ctx.instances.toList do  materialiseInstance d
     -- Step 7b: aggregate `init-holds` clauses into `<Mod>.InitConditions`
     -- (D21). Available to obligation generation as a global precondition
     -- term that flows into every per-handler triple's pre/post.

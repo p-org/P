@@ -83,6 +83,8 @@ PLean/
     ProofRegistry.lean -- @[pverifyProof] attribute + env extension
     SimpAttrs.lean   -- @[pverifySimp] simp attribute
     SimpLemmas.lean  -- the lemmas tagged with @[pverifySimp]
+    CexParse.lean    -- parse + de-mangle a solver model from the SAT diag
+    CexModel.lean    -- decode model into machine table + sorted sent trace
 
 Examples/PingPong/   -- canonical surface demo
 Tests/               -- Tests.** is globbed; new files auto-pick up
@@ -109,6 +111,9 @@ plan, the phase plan wins (PLAN.md predates the implementation).
   Tutorial/Advanced benchmarks driving M3 acceptance.
 - [`docs/PLAN_P4.md`](docs/PLAN_P4.md) — Phase 4 (Spec machines);
   D29–D35 plus the residual P3 follow-ups.
+- [`docs/PLAN_CEX.md`](docs/PLAN_CEX.md) — counter-example rendering
+  (v1 shipped); the v1.5 / v2 follow-ups (CVC5 finite-model-find,
+  pre/post diff, exact name recovery via lean-auto's `h2lMap`).
 - [`docs/REVIEW_P3.md`](docs/REVIEW_P3.md) — code review against
   PLAN_P3.
 - [`docs/STATUS.md`](docs/STATUS.md) — phase status, decision log,
@@ -237,8 +242,21 @@ MachineRef` plus `instance : Coe <M> MachineRef`. The runtime carrier
 (state map, label target field) is keyed on the flat `MachineRef`.
 The per-kind *dynamic* check goes through a `Nat` `kind` tag on
 `MachineState`: `0` reserved for "unset", real kinds `≥ 1`,
-`<M>_allocated` checks `kind ≠ 0 ∧ kind = <M>_kind`. `is_<M>` is the
-public alias.
+`<M>_allocated` checks `kind ≠ 0 ∧ kind = <M>_kind ∧ currentState ∈
+<M>'s states`. `is_<M>` is the public alias.
+
+The `currentState ∈ <M>'s states` conjunct is load-bearing: `kind :
+Nat` and `currentState : S` (a flat union of *every* machine's states)
+are independent `MachineState` fields, so without it a spurious model
+can fabricate a machine with one kind's tag and another kind's control
+state — PVerifier's typed per-machine state arrays exclude that
+structurally. It only ever weakens a guard antecedent (`is_<M> m s →
+…`), so it can't make a real obligation harder, and `goto` preserves it
+(a machine only transitions within its own states). For the coupling to
+reach SMT, the `<S>_st` state aliases are `@[reducible]` so prep's
+`dsimp only` reduces `currentState = <S>_st` to the raw `S.<M>_<S>`
+constructor. [`Tests/Surface/Phase3R20.lean`](Tests/Surface/Phase3R20.lean)
+pins the desync exclusion.
 
 Don't introduce a `MachineRef <M>`-parameterised refinement; that
 would diverge from PVerifier's flat encoding.
@@ -296,6 +314,32 @@ helper or predicate that should reduce before SMT, tag it with
 `@[pverifySimp]`.
 [`Tests/Semantics/SmtVeilRecipe.lean`](Tests/Semantics/SmtVeilRecipe.lean)
 pins the recipe on the three default invariants.
+
+### Counter-examples are decoded, not dumped
+
+A disproved obligation routes its solver model through
+`Verify/CexParse.lean` + `Verify/CexModel.lean` (called from
+`Obligation.lean::renderCex`) into a per-machine state table
+(`Node@Act(epoch=9, held=false)`), the `sent` trace ordered by
+`actionCount` (`eGrant(node=Node#8, epoch=7)`, `[]` when empty), and a
+witnesses section. Machine refs render as `<Kind>#<ref>` labels; since
+`MachineRef` is a reducible `Nat`, ref-typed fields are found from
+projection return types and kinds from the `machines` table (a ref not
+in `machines` renders bare, `#24`). Two name sources combine: string
+de-mangling of lean-auto's `"_" ++ delab(expr)` atoms (exact `h2lMap`
+recovery is the v2 follow-up), and a `CexNameCtx` built from the registry
+in `Obligation.lean::buildCexNameCtx` and passed via `cexNameCtxRef`
+(state-ctor → machine/state, global `Fields` order, event payload field
+names, ref-typed field names). All names are read from the materialised
+structures via the **environment** (`getStructureInfo?` + projection
+types), NOT the registry `defStx` — `#gen_module` clears `defStx` before
+`synthesise` runs. Anything without a name degrades to a de-mangled raw
+value. Don't pin exact model *values* in tests — they're solver-specific;
+pin de-mangling and structural markers (see
+[`Tests/Verify/CexEndToEnd.lean`](Tests/Verify/CexEndToEnd.lean)). The
+synthetic-model goldens in
+[`Tests/Verify/CexParserGolden.lean`](Tests/Verify/CexParserGolden.lean)
+pin exact rendering with a hand-built `CexNameCtx`.
 
 ## Common operations
 

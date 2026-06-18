@@ -1,7 +1,10 @@
 /-
-Regression for `<Mod>.<M>_allocated m s := kind ≠ 0 ∧ kind = <M>_kind`.
-Pins both halves of the conjunction so a future revert to a single
-equality is caught by `decide`.
+Regression for
+`<Mod>.<M>_allocated m s := kind ≠ 0 ∧ kind = <M>_kind ∧ currentState ∈ <M>'s states`.
+Pins all three conjuncts so a future revert to a weaker predicate is
+caught by `decide`. The `currentState ∈ <M>'s states` conjunct couples
+the flat `kind`/`currentState` fields so a model can't fabricate a
+machine with one kind's tag and another kind's control state.
 -/
 import PLean
 
@@ -61,6 +64,18 @@ def stateInitB : GlobalState Sig :=
 
 example : ¬ A_allocated 0 stateInitB := by
   unfold A_allocated A_kind stateInitB
+  decide
+
+/-- State/kind coupling: a machine carrying `A_kind` but parked in B's
+control state (`S.B_T`) is NOT `A_allocated`. Without the
+`currentState ∈ A's states` conjunct this would spuriously hold. -/
+def stateKindDesync : GlobalState Sig :=
+  GlobalState.initial (P := Sig) fun _ =>
+    { stage := false, currentState := S.B_T, fields := default,
+      kind := A_kind }
+
+example : ¬ A_allocated 0 stateKindDesync := by
+  unfold A_allocated A_kind stateKindDesync
   decide
 
 end Phase3R20Mod

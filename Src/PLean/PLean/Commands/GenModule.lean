@@ -137,13 +137,39 @@ private def emitMachineKinds (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   -- unreliable. WHY `kind ≠ 0`: `0` is the default-initialised value;
   -- without the guard, an unassigned `MachineRef` would satisfy the
   -- first declared machine's `_allocated` predicate.
+  --
+  -- WHY the `currentState ∈ <M>'s states` conjunct: `MachineState`
+  -- flattens `kind : Nat` and `currentState : S` (a union of *every*
+  -- machine's states) as independent fields. Without coupling them, a
+  -- model can set `kind = <M>_kind` while `currentState` is some *other*
+  -- machine's state — an impossible machine PVerifier's typed
+  -- per-machine state arrays exclude structurally. Tying state
+  -- membership into `<M>_allocated` rules those spurious models out.
+  -- This only ever weakens a guard antecedent (`is_<M> m s → …`), so it
+  -- cannot make a real obligation harder, and it is preserved because
+  -- `goto` only moves a machine within its own states.
   for mn in allKinds do
     let kindNameId := mkIdent (mn.appendAfter "_kind")
     let allocName : Ident := mkIdent (mn.appendAfter "_allocated")
-    elabCommand (← `(
-      @[inline] def $allocName (m : $idMachineRef) (s : $idGS) : Prop :=
-        (s.machines m).kind ≠ 0 ∧ (s.machines m).kind = $kindNameId
-    ))
+    let stateCtors : Array Ident := Id.run do
+      let mut out : Array Ident := #[]
+      if let some m := ctx.machines.find? mn then
+        for sd in m.states do
+          out := out.push (mkIdent (`S ++ Name.mkSimple (mn.toString ++ "_" ++ sd.name.toString)))
+      out
+    if stateCtors.isEmpty then
+      elabCommand (← `(
+        @[inline] def $allocName (m : $idMachineRef) (s : $idGS) : Prop :=
+          (s.machines m).kind ≠ 0 ∧ (s.machines m).kind = $kindNameId
+      ))
+    else
+      let mut stateMem : TSyntax `term ← `((s.machines m).currentState = $(stateCtors[0]!))
+      for i in [1:stateCtors.size] do
+        stateMem ← `($stateMem ∨ (s.machines m).currentState = $(stateCtors[i]!))
+      elabCommand (← `(
+        @[inline] def $allocName (m : $idMachineRef) (s : $idGS) : Prop :=
+          (s.machines m).kind ≠ 0 ∧ (s.machines m).kind = $kindNameId ∧ ($stateMem)
+      ))
   for mn in allKinds do
     let predName : Ident := mkIdent (Name.mkSimple ("is_" ++ mn.toString))
     let allocName : Ident := mkIdent (mn.appendAfter "_allocated")
@@ -385,8 +411,12 @@ private def emitStateAliases (mname : Name) (states : Array PStateDecl) :
     let cName := (mname.toString ++ "_" ++ sd.name.toString)
     let aliasName : Ident := mkIdent (sd.name.appendAfter "_st")
     let sCtorIdent : Ident := mkIdent (`S ++ Name.mkSimple cName)
+    -- `@[reducible]` so SMT prep's `dsimp only` reduces a goal's
+    -- `currentState = <S>_st` to the raw `S.<M>_<S>` constructor —
+    -- matching the form the state/kind coupling in `<M>_allocated`
+    -- produces, so the solver can relate them.
     elabCommand (← `(
-      def $aliasName : ($idSig).S := $sCtorIdent
+      @[reducible] def $aliasName : ($idSig).S := $sCtorIdent
     ))
 
 /-! ## Handler emission

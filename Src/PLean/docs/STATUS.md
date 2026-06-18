@@ -19,7 +19,7 @@ rather than narrating.
 | 0 — Bootstrap                    | ☑ | — | 2026-05-28 | 2026-05-29 | M0 reached |
 | 1 — Semantic core                | ☑ | — | 2026-06-01 | 2026-06-04 | M1 reached |
 | 2 — Registry + minimal surface   | ☑ | — | 2026-06-05 | 2026-06-05 | M2 reached |
-| 3 — Verification declarations    | ◐ | — | 2026-06-06 | — | M3 partial — pipeline is sound; DistributedLock 2/4 + LockServer 2/15 auto-discharge after soundness fix |
+| 3 — Verification declarations    | ◐ | — | 2026-06-06 | — | M3 partial — pipeline is sound; **post 2026-06-17 base/inductive split + kind-guard auto-injection: DistributedLock 10/12, LockServer 17/22**. Residuals are genuine inductive-step gaps, not infrastructure. |
 | 4 — Spec machines                | ☐ | — | — | — | plan in [`PLAN_P4.md`](PLAN_P4.md) |
 | 5 — Remaining surface            | ☐ | — | — | — | |
 | 6 — Tutorial port                | ☐ | — | — | — | |
@@ -72,16 +72,18 @@ and the bundle `fun _ => name ∧ True` ignored `s` — letting SMT
 trivially "verify" falsehoods like `∀ b, b.x = 42` on a machine that
 increments x._
 
-_**Current closure rates (post-fix, honest):**_
-- _DistributedLock: **2/4** (defaults pass; the two `prove safety`
-  obligations on `eGrant`/`eAccept` legitimately fail because the
-  port omits two of PVerifier's five inductiveness invariants —
-  `not_held_after_release`, `transfer_to_higher`)._
-- _LockServer: **2/15** (defaults pass; 13 lemma obligations
-  legitimately fail without manual proofs or additional invariants)._
+_**Current closure rates (post 2026-06-17 base/inductive split +
+kind-guard auto-injection):**_
+- _DistributedLock: **10/12** (5/5 base-case, 2/2 default inductive,
+  3/5 user-invariant inductive; the two failing inductive-step
+  obligations on `eGrant`/`eAccept` are a genuine inductiveness gap)._
+- _LockServer: **17/22** (all default base + inductive close; 4
+  user-invariant inductive-step + 1 base-case `unique_lock_holder`
+  remain as genuine inductiveness gaps)._
 - _All other tests close 100% via SMT or `@[pverifyProof]`._
 
-_Headline tests (all green at HEAD, 985 jobs; commit `101a36148`):_
+_Headline tests (all green at HEAD, 3397 jobs after the
+field-projection sugar work):_
 - _[`Phase3PingPong.lean`](../Tests/Surface/Phase3PingPong.lean) —
   trivial-handler auto-discharge._
 - _[`PVerifyManualProof.lean`](../Tests/Surface/PVerifyManualProof.lean) —
@@ -93,6 +95,9 @@ _Headline tests (all green at HEAD, 985 jobs; commit `101a36148`):_
 - _[`SoundnessRegression.lean`](../Tests/Surface/SoundnessRegression.lean) —
   pins (a) `name : GS → Prop` shape, (b) false invariant fails,
   (c) inner-`∀ s` shadowing rejected._
+- _[`FieldProjectionSugar.lean`](../Tests/Surface/FieldProjectionSugar.lean) —
+  pins the `n.<v>` / `e.<f>` rewrites and the pass-through behaviour
+  on non-registered fields._
 
 _M3 acceptance: the SMT-discharge pipeline closes every obligation
 that's actually inductive. The DistributedLock and LockServer ports
@@ -100,6 +105,271 @@ omit some of the original P source's invariants (e.g.
 `not_held_after_release`, `transfer_to_higher`), so their `prove
 safety` obligations correctly fail SMT and need either the missing
 invariants or `@[pverifyProof]` manual proofs._
+
+### Session 2026-06-17 (latest) — VC fix: kind/state coupling in `<M>_allocated`
+
+Reading a LockServer base-case counter-example with the v1 renderer
+surfaced a genuine VC-generation defect, not just a lossy port. The
+rendered model showed `n1 = Node#1` and `n2 = Node#4` whose machine
+state was `Server@Serving` — a machine with `kind = Node_kind` but
+`currentState` set to a *Server* state. `MachineState` flattens `kind :
+Nat` and `currentState : S` (a union of every machine's states) as
+independent fields, and `<M>_allocated` checked only the `kind` tag, so
+the solver could fabricate impossible machines. A minimal probe
+confirmed it: `∀ n : Node, (s.machines n.ref).currentState ≠
+Server.SrvA_st` was *disproved at the base case* (it should be a
+well-formedness tautology).
+
+Fix ([`Commands/GenModule.lean::emitMachineKinds`](../PLean/Commands/GenModule.lean)):
+`<M>_allocated m s` now also requires `(s.machines m).currentState ∈
+<M>'s states`. PVerifier gets this for free from its typed per-machine
+state arrays; PLean's flat encoding must state it. The conjunct only
+ever weakens a guard antecedent (`is_<M> m s → …`) so it cannot make a
+real obligation harder, and `goto` preserves it (transitions stay within
+a machine's own states). For the coupling to reach SMT, `<S>_st` aliases
+([`emitStateAliases`](../PLean/Commands/GenModule.lean)) are now
+`@[reducible]` so prep's `dsimp only` reduces `currentState = <S>_st` to
+the raw constructor.
+
+The probe now closes (5/5). Benchmark rates are *unchanged*
+(DistributedLock 10/12, LockServer 17/22) — confirming the fix removed
+only spurious models, not honest failures. The residual LockServer
+failures are now provably faithful: with well-formed models, the
+`unique_lock_holder` base case fails because the port's `init-holds`
+dropped the P source's `∀ n : Node :: !n.has_lock` (Nodes start
+unlocked) and `const_server` clauses. Full suite green at 3401 jobs.
+[`Tests/Surface/Phase3R20.lean`](../Tests/Surface/Phase3R20.lean) gains
+a `decide` regression pinning the desync exclusion.
+
+### Session 2026-06-17 (latest) — Counter-example rendering (v1)
+
+`#pverify`'s disproved obligations used to print the solver's
+`(get-model)` reply verbatim: a one-line wall of `(define-fun
+valid_fact_N () Bool …)` boilerplate interleaved with lean-auto-mangled
+symbols (`_machines.116_`, `_sent.1546_`), capped at 12 lines / 1500
+chars. The clause that broke, the per-machine state, and the send order
+were all unreadable. v1 decodes the model into a structured
+counter-example. Plan: [`PLAN_CEX.md`](PLAN_CEX.md).
+
+What landed:
+- [`Verify/CexParse.lean`](../PLean/Verify/CexParse.lean) (NEW) —
+  `extractModelText` strips `loom_smt`'s `the goal is false:` prefix;
+  `parseModel` re-parses the model S-expression via
+  `Auto.Parser.SMTSexp` and keeps non-boilerplate `define-fun`s;
+  `demangle` maps lean-auto's `"_" ++ delab(expr)` names back to
+  readable bases (`_sent.1546_ → sent`, `_Label.actionCount →
+  Label.actionCount`) by dropping the leading `_` and trailing all-digit
+  gensym segments. No Loom / lean-auto changes — the full untruncated
+  model already reaches PLean in `pverifySmtDiagRef`.
+- [`Verify/CexModel.lean`](../PLean/Verify/CexModel.lean) (NEW) —
+  `CexModel.decode` reads the `machines` table (a `MachineState.mk …`
+  per `MachineRef`) and the `sent` set, rendering against a
+  `CexNameCtx` (see the registry-aware follow-up below). Every section
+  degrades to a de-mangled raw value when context is missing, so output
+  is never worse than the verbatim dump.
+- [`Verify/Obligation.lean`](../PLean/Verify/Obligation.lean) —
+  `classifyFailure`'s `.disproved` branch now routes through `renderCex`
+  (decode → render, raw fallback). `truncateForReport` gained
+  configurable caps; the disproved path uses a looser bound (60 lines /
+  6000 chars) so a decoded CEX survives.
+- Tests: [`Tests/Verify/CexParserGolden.lean`](../Tests/Verify/CexParserGolden.lean)
+  pins exact rendered output on synthetic models (both encodings) +
+  de-mangling; [`Tests/Verify/CexEndToEnd.lean`](../Tests/Verify/CexEndToEnd.lean)
+  asserts structural invariants on a captured cvc5 model (machine table
+  + sorted sent trace present, mangling / `valid_fact_*` absent).
+
+Registry-aware rendering (follow-up, same session): the renderer now
+takes a `CexNameCtx` (built in `synthesise` from the registry and stashed
+in `cexNameCtxRef`) carrying state-ctor → (machine, state), the global
+`Fields` order as `(machine, var)`, and event payload field names (read
+from the materialised `<Mod>.<payloadType>` structure via
+`getStructureInfo?`, since `#gen_module` clears `defStx` before
+`synthesise` runs). With it:
+- machines render `Node@Act(epoch=9, held=false)` — machine kind, control
+  state, and named `var` fields (sliced from the global `Fields.mk` by
+  the state's owning machine);
+- the `sent` set is collected as every `Label.mk …` subterm (robust to
+  the `or`-of-equalities / `ite`-chain / `let`-bound shapes the solver
+  emits), rendered `eGrant(node=4, epoch=7719)`, ordered by
+  `actionCount`, with a `[delivered]` marker from `received`; an empty
+  set prints `[]`;
+- the `other` section is now `witnesses (handler & skolem bindings)` —
+  the obligation's `this` / payload / skolem witnesses — with
+  uninterpreted-sort universe values (`Type!val!0`), `<state>_st` aliases,
+  `is_*` / `*_payload_of` tables, and `k!*` skolems filtered out;
+- negative `Int` literals collapse from `(- 1)` to `-1`;
+- `MachineRef`-typed values render as machine labels `<Kind>#<ref>`
+  (e.g. `eGrant(node=Node#8, …)`, target `→ Node#8`, `this = Node#3`).
+  `MachineRef` is a reducible `Nat` alias, so the model can't distinguish
+  a ref from any other `Nat`: `buildCexNameCtx` reads each payload/var
+  field's projection-function return type from the environment to find
+  the `MachineRef`-typed fields (`refFields`), and the renderer learns
+  each ref's kind from the `machines` table (`Node@Act → ref is a
+  Node`). A ref not present in `machines` has unknown kind and renders
+  bare (`#24`).
+
+Live DistributedLock `eGrant` CEX, after:
+```
+✗ DistributedLock.Node.Act.eGrant_correct_Safety_safety  [SMT: counter-example]
+      counter-example:
+        machines:
+          machine[8]  = Node@Act(epoch=9, held=false)
+          machine[42] = Node@Act(epoch=-1, held=false)
+        sent (ordered by actionCount):
+          @5246  → Node#8  eGrant(node=Node#42, epoch=72)
+          @11100 → #3      eGrant(node=#4, epoch=7719)
+        actionCount = 14099
+        witnesses (handler & skolem bindings):
+          this = Node#8
+          param = (tGrant.mk 4 7719)
+          sk0 = eGrant(node=#4, epoch=7719)
+```
+
+Closure rates unchanged (DistributedLock 10/12) — the change is purely
+presentational. All CEX + Phase-3 tests green.
+
+Deferred to v1.5 / v2 (see [`PLAN_CEX.md`](PLAN_CEX.md)): CVC5
+`--finite-model-find` re-query for cleaner finite universes; pre/post
+state diff for inductive-step obligations; exposing lean-auto's
+`h2lMap` / `l2hMap` for exact symbol→`Expr` recovery instead of the
+heuristic de-mangle; `(get-abduct …)` missing-invariant suggestions.
+
+### Session 2026-06-17 (later) — Field-projection sugar inside `system` blocks
+
+Inside an invariant body (or `init-holds` clause) under a `system <s>
+{ … }` block, two new desugarings remove the verbose
+`(s.machines x.ref).fields.<M>_<v>` / `(<ev>_payload_of e).<f>`
+shapes:
+
+| User wrote | Materialiser emits |
+|---|---|
+| `n.<v>`  (where `n : <M>`, `<v>` is a registered machine var) | `(s.machines n.ref).fields.<M>_<v>` |
+| `e.<f>`  (where `e : <ev>`, `<f>` is a payload field)         | `(<ev>_payload_of e).<f>` |
+
+The rewrite is gated on the field name being registered, so `n.ref`,
+`e.action`, `e.target`, `e.actionCount`, `s.machines`, etc. pass
+through unchanged. Bare top-level invariants (no `system` block) skip
+the rewrite — they have no `s` binder to feed the machine-field
+expansion.
+
+Implementation:
+- [`Surface/Verify.lean::rewriteFieldProjections`](../PLean/Surface/Verify.lean)
+  walks the body Syntax with a `KindRef` env tracking quantifier-bound
+  machine / event names. Handles both Lean's `Term.forall` shape and
+  mathlib's `«term∀_,_»` / `«term∃_,_»` macros. Runs **before**
+  `injectKindGuards` so the original quantifier types are visible
+  (kind-guard injection retypes event binders to `Sig.Label`, which
+  would defeat the lookup).
+- [`Commands/GenModule.lean::emitEventPayloadAccessors`](../PLean/Commands/GenModule.lean)
+  emits one `<ev>_payload_of : Sig.Label → <PayloadTy>` per event with
+  a named-tuple payload. The def is left **opaque** to SMT — lean-auto
+  treats it as an uninterpreted function, which is the right SMT-level
+  interpretation: `<ev>_payload_of e` becomes an applied uninterpreted
+  symbol whose return value the user invariant constrains transitively
+  via `is_<ev>` (also an uninterpreted predicate at SMT level).
+- Field maps `machineFields : NameMap NameSet` and
+  `eventPayloadFields : NameMap NameSet` are built once in
+  `elabPGenModule` and threaded through `materialiseInvariant` and
+  `emitInitConditions`.
+
+**Migrated tests**: `Tests/Surface/Phase3LockServer.lean` and
+`Tests/Surface/Phase3DistributedLock.lean` now use `n.has_lock` /
+`n.held` / `e.source` etc. instead of the verbose forms.
+
+**Closure rates unchanged**: `Phase3DistributedLock` 10/12,
+`Phase3LockServer` 17/22 — the rewrite produces definitionally equal
+terms.
+
+**Regression test**:
+[`Tests/Surface/FieldProjectionSugar.lean`](../Tests/Surface/FieldProjectionSugar.lean)
+— five pmodules pinning the rewrites for machine fields, event
+payloads, mixed quantifiers, pass-through (non-registered fields), and
+`init-holds`.
+
+### Session 2026-06-17 — VC partition + kind-guard auto-injection
+
+Three changes landed this session, each motivated by a careful read of
+PVerifier's [`Uclid5CodeGenerator.cs`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs)
+to keep PLean's semantics aligned with the reference.
+
+1. **`Higher order input?` translator rejection fixed.** Per-handler
+   triples now unfold the per-pmodule `is_<M>`, `<M>_allocated`, and
+   `<M>_kind` predicates before SMT. Without the unfolds, lean-auto
+   saw function-typed `GlobalState` fields at sort-level and rejected
+   the goal. Order matters: `is_<M>` precedes `<M>_allocated` because
+   the former delegates to the latter; `unfold` fails atomically when
+   a name isn't present, so we emit one `try unfold` per name. See
+   [`Verify/Obligation.lean::emitOneObligation`](../PLean/Verify/Obligation.lean).
+
+2. **Per-handler triples no longer carry `InitConditions`.** The pre
+   *and* post used to conjoin `InitConditions s ∧ …`, which was
+   unsound on both sides:
+   - mid-trace, the user's init-condition is no longer assumable;
+   - a handler that, e.g., adds a label to `sent` cannot preserve a
+     "no labels ever sent" init clause as a post-condition.
+
+   PVerifier is faithful to the consecution discipline: its handler
+   procedures' `requires`/`ensures` mention only `InFlight + state-tag
+   + event-tag + default invariants + user invariants` ([`Uclid5CodeGenerator.cs:1432-1562`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L1432-L1562)).
+   Init clauses live exclusively inside UCLID's `init {}` block, where
+   they are `assume`d once at startup ([`:1266-1286`](../../PCompiler/CompilerCore/Backend/PVerifier/Uclid5CodeGenerator.cs#L1266-L1286)).
+   UCLID's `invariant`-declaration discipline then base-case-checks
+   each goal automatically; PVerifier emits no separate "Init ⇒ Inv"
+   obligation because UCLID gets it for free.
+
+   PLean has no UCLID and no BMC engine, so the base case has to be
+   discharged explicitly. We now emit **one base-case VC per
+   individual invariant in each `prove G [using P]` directive's target
+   bundle**, of the form `∀ s, InitConditions s → i s`. Per-invariant
+   (rather than one conjoined VC) so a failed base case names exactly
+   which clause doesn't follow from init. Premises (`using P`) do NOT
+   get base-case VCs from a directive that uses them — only goals do
+   — matching PVerifier's "only `cmd.Goals` get a UCLID `invariant`
+   declaration" semantics. See
+   [`Verify/Obligation.lean::emitBaseCaseObligation`](../PLean/Verify/Obligation.lean)
+   and the `synthesise` driver.
+
+   `<Mod>.InitConditions` was extended to fold in the framework start
+   state alongside user `init-holds` clauses, mirroring
+   `GenerateInitBlock`: buffers `sent` / `received` start empty,
+   `actionCount` starts at 0. Without this, the trivial
+   `UniqueActions`/`IncreasingCount`/`ReceivedSubsetSent` base cases
+   would be unprovable (they implicitly depend on the empty buffer).
+   `InStart`/`InEntry` for every `MachineRef` is a PVerifier
+   convention PLean does not yet model — to add when initialization-
+   action support lands.
+
+3. **Kind-guard auto-injection on machine and event quantifiers.**
+   PLean wraps machines in `structure <M> where ref : MachineRef`
+   (D10) so `∀ n : <M>, P n` quantifies over every `<M>`-wrapped
+   ref — including ones whose state slot is unallocated or has the
+   wrong kind. The convention had been to follow each such quantifier
+   with a manual `is_<M> n.ref s →` guard. The new
+   [`Surface/Verify.lean::injectKindGuards`](../PLean/Surface/Verify.lean)
+   does this automatically at materialisation: every `∀`/`∃` over a
+   machine kind gets `is_<M> x.ref s` injected, every `∀`/`∃` over an
+   event kind has its binder retyped to `Sig.Label` and gets `is_<ev>
+   x` injected (matching PVerifier's `∀ (e : eAccept)` surface).
+   Multi-binder forms (`∀ x y : T, …` and `∀ (x : T) (y : U), …`) are
+   normalised to nested singles before the matcher fires.
+
+   The `Phase3DistributedLock` test exercises all three forms (machine
+   multi-ident, event single, event multi-ident in the bracketed
+   `∀ (n1 : Node) (e : Sig.Label) (p : tAccept), …` shape).
+
+**Headline tally at HEAD (commit `209768396`):**
+- DistributedLock: 2/4 → **10/12**
+- LockServer: 2/15 → **17/22**
+- SoundnessRegression's false invariant now disproves on BOTH legs
+  (base case + inductive step) — two independent checks instead of
+  one.
+- Full test suite: 3396 jobs green.
+
+**Outstanding** (deferred, unchanged from prior session): port
+`3_RingLeaderVerification` (M3 stretch); supply `@[pverifyProof]`
+theorems for the residual inductive-step gaps in DistributedLock /
+LockServer once the missing inductive-strengthening invariants are
+identified.
 
 ### Session 2026-06-09 (afternoon) — Phase-3 architectural pivot landed
 
@@ -228,283 +498,51 @@ What did **not** land (rolled back to keep the test suite green at HEAD):
   stays green; the in-progress branch is preserved as session
   notes here.
 
-### Phase-3 close-out plan — TODO list for next session
+### Phase-3 close-out plan — superseded
 
-**Strategic shift (recorded 2026-06-09)**: re-architect Phase 3 around
-two clearly separated layers, mirroring Veil's
-`#check_invariants` / `prove_inv_*` / `@[invProof]` design:
+The detailed 8-step plan recorded here on 2026-06-09 (re-architect
+`#pverify` as an SMT-discharge command + `@[pverifyProof]` attribute
++ atomic `pverify_*` tactic library + R-P3.1/R-P3.2 follow-ups +
+M3 benchmarks) **has shipped**. The Decision Log entries below
+record what actually landed:
+
+- 2026-06-09 (afternoon) — Phase-3 architectural pivot landed (steps 3–7).
+- 2026-06-10 (later still) — R-P3.1 / R-P3.2 closed via the
+  `(get : ...)` ascription drop in accessors / primitives.
+- 2026-06-10 (later) — Veil-recipe SMT-prep ported.
+- 2026-06-10 (final) — `WithName` strip + per-conjunct unfolds added
+  to the SMT-prep ladder.
+- 2026-06-10 (final-final-fix) — soundness hole closed; invariants
+  state-parameterised.
+- 2026-06-10 (system-binder) — explicit `system <s> { … }` block
+  syntax replaces the unhygienic `s` trick.
+- 2026-06-17 — base/inductive split + kind-guard auto-injection on
+  machine and event quantifiers.
+
+Retain only the cross-cutting takeaways that survive into the
+implementation:
 
 - **`#pverify M` is an SMT-discharge command, not a tactic engine.**
-  For each obligation `synthesise` would emit, `#pverify` directly
-  produces an SMT query (via Loom's `loom_smt`) and asks the solver
-  to close the goal. There is no Lean tactic chain involved by
-  default. The output is `<modName>: N obligations, all ✓` or a
-  list of unsatisfied obligations (with their goal text) for the
-  user to handle manually.
-
-- **The `pverify_*` atomic tactics are user-facing, for manual
-  proofs only.** When SMT can't close a particular obligation, the
-  user writes a manual proof using a small library of composable
-  tactics — analogous to Veil's `solve_clause` / `sts_induction` /
-  `sdestruct` toolkit. PLean's obligation generator does NOT use
-  these tactics internally; only humans do.
-
-- **Manual proofs get registered via an `@[pverifyProof]` attribute
-  on user-supplied theorems.** When `#pverify` walks the
-  obligations, it first checks whether a `@[pverifyProof]`-tagged
-  theorem already proves the obligation (matching by goal shape /
-  declared name). If yes, it skips that obligation; if no, it
-  emits the SMT query. This mirrors Veil's `@[invProof]`
-  precisely.
-
-- **Three top-level escape hatches** (mirrors Veil's
-  `prove_inv_init` / `prove_inv_safe` / `prove_inv_inductive`):
-  - `prove_default_obligation by { … }` for `prove default;` if
-    the user wants to override the SMT discharge.
-  - `prove_lemma_obligation <name> by { … }` for a specific
-    `prove <lemma>` directive.
-  - `prove_handler_obligation <M.S.ev> for <lemma> by { … }`
-    for a single (handler, lemma) leaf.
-
-  Each captures the obligation's goal statement (built by the same
-  `synthesise` machinery) and lets the user supply a `by …` block
-  in the place of the default SMT call.
-
-**Decision rationale.** The session-2026-06-09 attempt at composing
-`tauto` / `grind` / per-conjunct mini-tactics inside `#pverify`
-fought two distinct problems with the same hammer: (a) mechanical
-goal transformation (open `triple`, run `wpgen`, simp through
-`wp_bind`/`NonDetT.wp_lift`/`StateT.wp_get`/`addSent`/
-`updateMachine`) vs. (b) substantive first-order reasoning over the
-resulting propositional goal (e.g., `unique_holder` survives
-`held = false`). SMT solvers (cvc5, z3) handle (b) directly; the
-2026-06-09 ladder had no chance against it. PVerifier — which PLean
-ports — already emits VCs to UCLID5 → SMT; aligning the discharge
-backend with PVerifier's keeps the verification stories congruent.
-
-The atomic `pverify_*` tactics are still needed, but **only** as
-user-facing primitives for the manual fallback path. Loom wiring
-already works:
-[`Tests/Semantics/SmtRoundtrip.lean`](../Tests/Semantics/SmtRoundtrip.lean)
-confirms cvc5 runs cleanly from the project; three quantified goals
-discharge sub-second.
-
-**Plan, ordered for testable progress.** Each step's exit criterion
-is observable before moving on.
-
-#### Step 1 — Per-accessor `#derive_lifted_wp` emission *(R-P3.1; ~1.5d)*
-
-In [`Commands/GenModule.lean::emitVarAccessors`](../PLean/Commands/GenModule.lean),
-emit a `#derive_lifted_wp` call for each `<v>_get`/`<v>_set`
-alongside the accessor `def`. Mirror `emitDerivedWP`'s
-`open PartialCorrectness DemonicChoice in #derive_lifted_wp …`
-wrapper. Exit: `#check @<Mod>.<v>_get._wp_…` resolves; for any
-synthetic single-handler test, after `wpgen` the goal does not
-contain `WPGen.default (<v>_get this.ref)` residue.
-
-#### Step 2 — Per-primitive `@[loomSpec]` lemmas *(R-P3.2; ~1d)*
-
-Add `@[loomSpec]`-tagged WP lemmas next to each primitive in
-[`Semantics/Primitives.lean`](../PLean/Semantics/Primitives.lean)
-(`send`, `raise`, `goto`, `announce`, `markReceived`,
-`newMachine`). Each lemma states
-`wp (primitive args) post = post () <updated-state>`. Reference:
-Loom's `Loom.MonadAlgebras.WP.Basic` has
-`StateT.wp_get`/`StateT.wp_set` as templates; combine with
-`NonDetT.wp_lift` to wrap the inner-monad spec into a
-`NonDetT (StateT _ _)`-shaped one. Exit: `wpgen` walks through any
-`do`-block of primitive calls without `WPGen.default` residue.
-
-#### Step 3 — `#pverify` rewrite as an SMT-discharge command *(2d)*
-
-[`Commands/PVerify.lean`](../PLean/Commands/PVerify.lean) and
-[`Verify/Obligation.lean`](../PLean/Verify/Obligation.lean) are the
-files to edit. The new `#pverify` flow:
-
-1. Walk the registry as today (`Verify.synthesise` already builds
-   `(handler, lemma, prove-directive)` triples and the per-handler
-   triple statement).
-2. **For each triple**, build the obligation **statement** (not a
-   theorem with proof yet). Call this `obligationStmt : Expr`.
-3. **Look up `@[pverifyProof]`-tagged theorems in the env** and
-   check if any unifies with `obligationStmt`. If yes, mark this
-   obligation as user-proved; don't generate an SMT query for it.
-4. **Otherwise, emit a structural Lean theorem whose `by` block is
-   a single SMT call** of the form:
-   ```
-   theorem <Mod>.<M>.<S>.<ev>_correct_<X> ... :
-       triple ... := by
-     pverify_open_triple
-     pverify_step_wp                    -- mechanical reduction
-     pverify_intro_pre <pattern>
-     pverify_normalize_state
-     pverify_smt_close                  -- THE SMT call
-   ```
-   The first four lines are fixed: they perform the mechanical
-   transformations that put the goal in a propositional form. The
-   `pverify_smt_close` step is where SMT runs; on success the
-   theorem is proved, on failure an error is recorded.
-5. **Report**: `<modName>: N obligations (M proved by SMT, K
-   user-proved, J failed)`. Failed obligations are listed by name
-   with a one-line goal shape so the user can write a
-   `@[pverifyProof] theorem` for each.
-
-   Veil's analogue: `#check_invariants!` prints the unproved
-   theorem statements verbatim so the user can paste them into the
-   file and start a `by` block. PLean should do the same — emit
-   the failed obligations' statements as a copy-paste skeleton,
-   each tagged `@[pverifyProof]` with a `by sorry` placeholder for
-   the user to fill in.
-
-Exit: `#pverify Phase3PingPong` reports `1 obligations (1 proved
-by SMT, 0 user-proved, 0 failed)`. `#pverify DistributedLock`
-reports a count and either proves them all via SMT or prints the
-unproved obligation statements.
-
-#### Step 4 — Atomic `pverify_*` tactic library for manual proofs *(1–1.5d)*
-
-In [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean), drop the
-existing monolithic `pverify` / `pverify_default` / `pverify_close`
-chain (the session-2026-06-09 work). Replace with a flat library
-of single-purpose tactics that users compose by hand:
-
-- `pverify_open_triple` — `apply WPGen.intro; rotate_right` (alias
-  for Loom's `wpgen_intro`).
-- `pverify_step_wp` — runs `wpgen <;> first | apply WPGen.default |
-  skip`, then simps through the WP plumbing (Loom's `loomWpSimp` /
-  `loomLogicSimp` / `loomWPGenRewrite`, plus
-  `PartialCorrectness.DemonicChoice.NonDetT.wp_lift`,
-  `StateT.wp_get`/`StateT.wp_set`, and the four `GlobalState`
-  update functions).
-- `pverify_intro_pre <pattern>` — `intro s hpre`, then `obtain` the
-  precondition into named hypotheses (`hLemma, hUA, hIC, hRS, lbl,
-  hInflight, hTarget, hStateOf, hAction`). Pattern argument so it
-  adapts to the obligation's actual shape.
-- `pverify_split_ifs` — `split_ifs` plus state-update simp in each
-  branch.
-- `pverify_normalize_state` — aggressively simps `GlobalState`
-  accessors so each function application β-reduces against the
-  concrete post-state.
-- `pverify_smt_close` — invokes `loom_smt [*]` (importing all
-  hypotheses). Used by `#pverify` internally for the auto path,
-  AND callable by users in manual proofs.
-- `pverify_grind` — fallback for the linear-arithmetic
-  default-invariant cases. Roughly the M1 manual proof tail
-  compressed: `intros; first | omega | grind`.
-
-**Macro-hygiene rule (carried from 2026-06-09)**: every simp lemma
-name lives inside its own tactic's `simp [...]` body. The
-obligation generator and the manual user proofs both call the
-named tactics; neither inlines simp lemma names.
-
-Exit: a unit test `Tests/Surface/PVerifyManual.lean` proves a
-synthetic obligation by hand using `pverify_open_triple ;
-pverify_step_wp ; pverify_intro_pre ⟨…⟩ ; pverify_smt_close`,
-exercising every atomic tactic in isolation.
-
-#### Step 5 — `@[pverifyProof]` attribute + manual-proof workflow *(1d)*
-
-Define an `@[pverifyProof]` attribute analogous to Veil's
-`@[invProof]`. When applied to a `theorem` whose statement matches
-an obligation's expected shape, `#pverify` recognises it and skips
-that obligation in the SMT pass. Implementation:
-
-- Register an env extension `pverifyProofMap : DiscrTree Name`
-  keyed on the obligation's statement (use `DiscrTree.mkPath` on
-  the goal `Expr`).
-- The attribute's `add` handler builds the key from the
-  theorem's type and inserts the theorem name into the map.
-- `#pverify` looks up each obligation's statement; if found, it
-  emits `Lean.logInfo` saying "user proof for X picked up" and
-  skips the SMT query.
-
-User experience (mirrors Veil's `#check_invariants!`):
-
-```lean
--- User runs #pverify, gets a "failed" report listing
--- DistributedLock.Node.Act.eGrant_correct_Safety_safety
--- Copies the printed skeleton into the file:
-@[pverifyProof]
-theorem DistributedLock.Node.Act.eGrant_correct_Safety_safety
-    (this : Node) (param : eGrant_payload) :
-    triple (l := PProp Sig)
-      (fun s => ...) (Node.Act.eGrant_handler this param) (fun _ => ...) := by
-  pverify_open_triple
-  pverify_step_wp
-  pverify_intro_pre ⟨hLemma, hUA, hIC, hRS, lbl, hInflight, hTarget, hStateOf, hAction⟩
-  -- ... user finishes the proof manually ...
-  sorry
-```
-
-After this lands, the user can re-run `#pverify` and the
-obligation gets picked up.
-
-Exit: a test file with two obligations (one closed by SMT, one
-closed by `@[pverifyProof] theorem ... := by sorry`) shows
-`#pverify` reporting `2 obligations (1 proved by SMT, 1 user-
-proved, 0 failed)`. Removing the `@[pverifyProof]` line should
-make the count flip to `(1, 0, 1)`.
-
-#### Step 6 — Top-level escape hatches *(½d, optional Phase-3-MVP)*
-
-`prove_default_obligation by …` and friends. These are syntactic
-sugar over `@[pverifyProof] theorem ...` for the common case
-where the user wants to override SMT for the entire
-`prove default;` directive instead of one specific (handler,
-lemma) leaf. Implementation: a command macro that expands into
-the corresponding `@[pverifyProof] theorem` skeletons for every
-(M, S, ev) under the directive. Defer if Step 5 covers the
-acceptance use cases.
-
-#### Step 7 — D24 auto-emit `prove default;` per (M, S, ev) *(½d)*
-
-Independent of the SMT work; can land in parallel with Step 1.
-After `synthesise`'s for-loop over user `Proof` directives, add a
-second pass that walks every `(M, S, ev)` and emits a
-`prove default;` obligation if one isn't already present (track
-via `Std.HashSet (Name × Name × Name)`). Idempotent w.r.t. user-
-written `prove default;`. Exit: a pmodule with no
-`prove default;` line gets the obligations anyway.
-
-#### Step 8 — M3 benchmarks *(1–2d)*
-
-Uncomment `#pverify` in
-[`Phase3DistributedLock.lean`](../Tests/Surface/Phase3DistributedLock.lean)
-and [`Phase3LockServer.lean`](../Tests/Surface/Phase3LockServer.lean),
-port [`Tutorial/Advanced/3_RingLeaderVerification`](../../../Tutorial/Advanced/3_RingLeaderVerification/PSrc/System.p).
-Expected outcomes:
-
-- `prove default` obligations: SMT closes them all (these are
-  linear-arithmetic / boolean-only goals over the four
-  `GlobalState` updates).
-- `prove safety` obligations: many will close via SMT directly;
-  for the residual ones, write `@[pverifyProof]` theorems using
-  the atomic tactic library. Each manual proof should be 5–10
-  lines following the Step 4 template.
-
-Exit: `#pverify` reports `all ✓` for each of the three M3
-benchmarks. M3 milestone reached; STATUS.md updated.
-
-**Why this is likely to work where the 2026-06-09 ladder didn't.**
-The session's ladder failed at three points: (a) the `wp get` chain
-not reducing through `NonDetT (StateT _ _)`, (b) the user-lemma
-preservation across `held = false` not closing under `tauto`, and
-(c) macro hygiene cascading marks across simp lemma names.
-
-(a) is solved by Steps 1–2 (specs registered for every leaf).
-(b) is what SMT solves directly — finite case-split + equality
-propagation is the SMT solver's home turf. The lean-auto translation
-from `GlobalState`-shaped Lean goals to SMT-LIB is the remaining
-technical risk; if it rejects on "higher-order input", insert a
-defunctionalisation pre-pass before `pverify_smt_close` (or use the
-manual `@[pverifyProof]` path until the pre-pass lands).
-(c) is solved by the atomic-tactic discipline — each simp set lives
-inside its own named tactic, never inlined.
-
-**The user's manual-proof escape hatch is the load-bearing piece.**
-Even if SMT can't close every obligation in M3, the user can
-always write a `@[pverifyProof] theorem` to cover that gap; the
-project ships `all ✓` either way.
+  For each obligation it (a) consults `@[pverifyProof]` for a
+  user-supplied theorem matching the obligation's name, (b) emits
+  `theorem ... := by first | <pverify chain> | sorry`, (c) inspects
+  `info.value.hasSorry` to detect failure. **Don't bake substantive
+  automation into `#pverify` itself**; that work belongs in the
+  user-callable `pverify_*` tactics or `@[pverifyProof]`-tagged
+  theorems.
+- **The atomic `pverify_*` library lives in
+  [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean).** Users compose
+  these by hand for manual proofs (mirrors Veil's
+  `solve_clause` / `sts_induction` / `sdestruct`). The obligation
+  generator emits the same chain in its preamble for the auto path.
+- **M3 acceptance set** — three Tutorial/Advanced benchmarks port to
+  PLean and verify via `#pverify`, no hand-written triples:
+  1. [`Tutorial/Advanced/6_DistributedLock`](../../../Tutorial/Advanced/6_DistributedLock/) — minimum (40 lines, ~8 VCs).
+  2. [`Tutorial/Advanced/8_LockServer`](../../../Tutorial/Advanced/8_LockServer/) — exercises machine-kind `is` (96 lines, ~20 VCs).
+  3. [`Tutorial/Advanced/3_RingLeaderVerification`](../../../Tutorial/Advanced/3_RingLeaderVerification/) — exercises `Lemma using` chain (92 lines, ~25 VCs).
+  Heavier benchmarks (Consensus, 2PC, ChainReplication, Paxos) need
+  Phase 4 (spec machines) and/or Phase 5 (`foreach`, maps) and are
+  deferred from M3.
 
 ### Pitfalls observed in the 2026-06-09 attempt (avoid repeating)
 
@@ -535,71 +573,27 @@ project ships `all ✓` either way.
   2026-06-09 entry. The body-retention change broke `#pwf` until
   the new `materialised` flag was added; both pieces ship together.
 
-**Phase 3 entry point** — [`#pverify M`](../PLean/Commands/PVerify.lean#L54-L72) becomes the user-facing
-verification command: walks the registry, synthesises one per-handler
-triple per (`Lemma`/`Theorem`, `prove`-directive, handler) tuple,
-discharges each via the new PLean `pverify` tactic. The user writes
-`Lemma`/`Theorem`/`Proof` blocks and **no hand-written `theorem
-... := by ...`**.
-
-Highlights from PLAN_P3:
+**Phase 3 highlights** (PLAN_P3 D19–D28; surface-keyword summary is
+now in [`../CLAUDE.md`](../CLAUDE.md)):
 - `Lemma`/`Theorem`/`Proof` blocks (D19) parse and register into the
-  pmodule registry; `prove X using Y, Z;` directives become
-  obligation-generation directives.
-- `m is <MachineKind>` machine-kind predicate (D20) extends the
-  Phase-2 `is` notation; needed by every benchmark with multiple
-  machine kinds. Resolves R14.
-- `init-condition`s aggregate into a single `<Mod>.InitConditions`
-  precondition that flows into every obligation (D21).
-- `pverify` tactic (D22) — PLean's `loom_solve`-equivalent. The
-  Phase-2 experiment confirmed `CaseStudies.Tactic.loom_solve`
-  doesn't fit (it requires Cashmere's `WithName` registration),
-  so PLean re-composes `wpgen` + simp + `loom_intro` chain + grind
-  fallback in `Verify/Tactic.lean` (file does not yet exist).
-- Handler `_wrapped` form (D27) injects `markReceived` automatically,
-  closing the M2 surface↔M1 gap.
-
-**M3 acceptance set** — three Tutorial/Advanced benchmarks port to
-PLean and verify via `#pverify`, no hand-written triples:
-1. [`Tutorial/Advanced/6_DistributedLock`](../../../Tutorial/Advanced/6_DistributedLock/) — minimum (40 lines, ~8 VCs).
-2. [`Tutorial/Advanced/8_LockServer`](../../../Tutorial/Advanced/8_LockServer/) — exercises machine-kind `is` (96 lines, ~20 VCs).
-3. [`Tutorial/Advanced/3_RingLeaderVerification`](../../../Tutorial/Advanced/3_RingLeaderVerification/) — exercises `Lemma using` chain (92 lines, ~25 VCs).
-
-Heavier benchmarks (Consensus, 2PC, ChainReplication, Paxos) need
-Phase 4 (spec machines) and/or Phase 5 (`foreach`, maps) and are
-deferred from M3.
-
-**Current surface keyword truth** (authoritative; the per-file syntax
-decls are the source):
-- From P verbatim: `event`, `eventset`, `enum`, `type`, `machine`,
-  `spec`, `state`, `entry`, `on`, `goto`, `var`, `send`, `raise`,
-  `announce`, `invariant`.
-- From P (capital initials, Phase 3 — D19): `Lemma`, `Theorem`, `Proof`,
-  `prove`, `using`. The identifier `default` is reserved as a
-  `prove default;` sentinel; `Lemma default { ... }` and
-  `Theorem default { ... }` are rejected at registration time.
-- `p`-prefixed (Lean collision): `pmodule`, `paxiom`, `pinstance`.
-- Renamed (Lean collision): `pure` → `function`, `init` → `init-holds`.
-- Finalisation command: `#gen_module M`; checks: `#pwf M`, `#pverify M`;
-  debug: `#print_pmodule M`.
-- Event payload abbrev is `<ev>_payload` (underscore, not dot).
+  pmodule registry; `prove X using Y, Z;` directives drive
+  obligation-generation.
+- `m is <MachineKind>` (D20) extends the Phase-2 `is` notation
+  (resolves R14).
+- `init-condition`s aggregate into `<Mod>.InitConditions` (D21).
+- `pverify` tactic (D22) — PLean's `loom_solve`-equivalent. Phase-2
+  confirmed `CaseStudies.Tactic.loom_solve` doesn't fit (it needs
+  Cashmere's `WithName` registration); PLean re-composes the pieces
+  in [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean).
+- Handler `_wrapped` form (D27) for auto `markReceived` is **deferred**
+  to Phase 3b — current obligations carry the M2-style existential
+  precondition.
 
 **Note on the Done log below**: the first "Phase 0 — Bootstrap" entry
 records the *initial* landing and mentions superseded spellings
 (`<ev>.payload`, `init`, `pure`, `#endmachine`/`end M`). The
 "Refinement" entry immediately after it supersedes those. When in doubt,
 trust this Active-Work summary and the code, not the historical entry.
-
-<!-- Template — copy when starting a task:
-### <Phase N — short task name>
-- **Status**: ◐ in progress
-- **Owner**:
-- **Started**: YYYY-MM-DD
-- **Branch / PR**:
-- **Summary**: one sentence on what's being built
-- **Done when**: concrete exit criterion
-- **Notes**:
--->
 
 ---
 
@@ -1190,27 +1184,11 @@ trust this Active-Work summary and the code, not the historical entry.
     only to keep auto-include happy; Phase 1 replaces with real
     state-record updates.
 
-<!-- Template — copy when finishing a task:
-### <Phase N — short task name>  · YYYY-MM-DD
-- **PR / commit**:
-- **What landed**: one sentence
-- **Follow-ups**: link to any spawned tickets
--->
-
 ---
 
 ## Blockers / Open Questions
 
 _None yet._
-
-<!-- Template:
-### <short title>
-- **Raised**: YYYY-MM-DD by <owner>
-- **Phase**:
-- **Question / blocker**:
-- **Decision needed by**:
-- **Resolution**:
--->
 
 ### Anticipated (from PLAN.md "Risks")
 These aren't blockers yet, just things to watch:
@@ -1741,14 +1719,6 @@ The shipped approach is the strict superset: it reaches the same SMT-closing pow
   uniformly over any `T` — uninterpreted sort, alias, enum, primitive,
   built-in (e.g., `MachineRef`).
 
-<!-- Template:
-### YYYY-MM-DD — <decision title>
-- **Context**:
-- **Decision**:
-- **Alternatives considered**:
-- **Consequences**:
--->
-
 ---
 
 ## Milestones
@@ -1780,66 +1750,32 @@ The shipped approach is the strict superset: it reaches the same SMT-closing pow
 - [ ] **M3 — `#pverify` synthesizes Hoare-triple obligations from registry
       and dispatches them to SMT** (Phase 3, partial). The SMT-discharge
       pipeline works correctly post-soundness-fix; the residual M3
-      benchmarks (`Phase3DistributedLock` 2/4, `Phase3LockServer` 2/15)
-      legitimately fail because the ports are missing inductiveness
-      invariants from the original P sources. Closing M3 is now a matter
-      of either porting the missing invariants or supplying
-      `@[pverifyProof]` manual proofs.
+      benchmarks (`Phase3DistributedLock` 10/12, `Phase3LockServer`
+      17/22, both as of 2026-06-17 after the base/inductive split and
+      kind-guard auto-injection) legitimately fail because the ports
+      are missing inductiveness invariants from the original P sources.
+      Closing M3 is now a matter of either porting the missing
+      invariants or supplying `@[pverifyProof]` manual proofs.
 - [ ] **M4 — Tutorial/1_ClientServer ports + verifies in PLean** (Phase 6).
 - [ ] **M5 — Tutorial/2_TwoPhaseCommit ports + verifies; v1 cut**.
 
 ---
 
-_Last updated: 2026-06-05 (Phase 2 closed; M2 reached.
-[`PLAN_P3.md`](PLAN_P3.md) drafted with decisions D18–D28 and the
-M3 acceptance set targeting three Tutorial/Advanced benchmarks
-(6_DistributedLock, 8_LockServer, 3_RingLeaderVerification). Phase 3
-ahead: `Lemma`/`Theorem`/`Proof` blocks, the `pverify` tactic with
-focused `default_inv` automation (D28), per-handler obligation
-synthesis, and `markReceived`-injecting handler wrappers.)_
-
-_Updated 2026-06-09: machine-body retention (`PMachineDecl.materialised`)
-+ `#pwf` migration shipped; `pverify` tactic ladder remains
-unfinished. **Architectural pivot recorded for next session**:
-`#pverify` becomes an SMT-discharge command (modeled on Veil's
-`#check_invariants`), and the `pverify_*` tactics become a user-
-facing toolkit for manual proofs registered via a new
-`@[pverifyProof]` attribute (modeled on Veil's `@[invProof]`).
-Tracked under "Active Work → Phase-3 close-out plan" above._
-
-_Updated 2026-06-09 (afternoon): pivot landed end-to-end. New
-`Verify/ProofRegistry.lean` provides `@[pverifyProof]`; the
-atomic `pverify_*` tactics in `Verify/Tactic.lean` are usable
-directly by users (see `Tests/Surface/PVerifyManualProof.lean`).
-`#pverify` now reports `(M proved by SMT, K user-proved, J
-failed)` and prints copy-paste `@[pverifyProof] theorem ... :=
-by sorry` skeletons for the failed ones. `pverify.failOnIncomplete`
-option lets users iterate on manual proofs without breaking the
-build. M3 acceptance becomes "write the manual proofs"; the
-architectural plumbing is in place._
-
-_Updated 2026-06-10: SMT-prep recipe (Veil-style preparation +
-`WithName` strip + `dsimp only` + per-conjunct unfolds) shipped;
-soundness fix landed and `system <s> { … }` block introduced for
-explicit state binding. `PInvariantDecl` gains a `stateBinder` field;
-the materialiser emits `def name : GS → Prop := fun <s> => <body>`
-(or `fun _ => <body>` for state-independent invariants). Inner-`∀ s`
-shadowing rejected at materialisation. False-invariant regression
-test added._
-
-_Updated 2026-06-11 (commit `101a36148`): committed the Phase-3
-SMT-discharge pipeline + soundness fix. Honest closure rates:
-DistributedLock 2/4, LockServer 2/15, all other tests 100%. M3
-acceptance is now a matter of porting the missing inductive
-invariants from the P sources or supplying `@[pverifyProof]` proofs
-— the tooling is in place. Probe / debug files
+_Last updated 2026-06-17. Phase 3 is in progress: Phase-3
+SMT-discharge pipeline + soundness fix shipped (commit `101a36148`,
+2026-06-11); base/inductive split + kind-guard auto-injection
+shipped (commit `209768396`, 2026-06-17); field-projection sugar
+shipped; counter-example rendering v1 shipped (this session,
+[`PLAN_CEX.md`](PLAN_CEX.md)). Closure rates: DistributedLock
+**10/12**, LockServer **17/22**, all other tests 100%. Residuals are genuine
+inductiveness gaps in the ports — closing M3 is now a matter of
+porting the missing invariants from the P sources or supplying
+`@[pverifyProof]` proofs. Probe / debug files
 (`Tests/Surface/PVerifyDefaultDebug.lean`,
 `Tests/Surface/PVerifySmtProbe.lean`,
 `Tests/Surface/WpgenAccessorProbe.lean`,
 `Tests/Semantics/SmtEncodingProbe.lean`) are intentionally
-untracked. Comment cleanup: dropped dated narrative across the
-modified library files and tests, keeping only functional
-explanation._
+untracked. Earlier waypoints are in the Decision Log above._
 
 ## Document Index
 - [`PLAN.md`](PLAN.md) — overall implementation plan (all phases). NOTE: its

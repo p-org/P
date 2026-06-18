@@ -34,6 +34,7 @@ import PLean.Internal.Registry
 import PLean.Surface.Machine
 import PLean.Verify.Tactic
 import PLean.Verify.ProofRegistry
+import PLean.Verify.CexModel
 
 open Lean Elab Command
 
@@ -491,6 +492,81 @@ private def machineVarNames (m : PMachineDecl) : Array Name := Id.run do
         if i.isIdent then out := out.push i.getId
   return out
 
+/-- Whether a structure field is a machine reference — its projection
+returns either `PLean.MachineRef` or a machine-wrapper struct (`Server`,
+`Node`, …). A machine ref is a reducible `Nat`, and a wrapper is a
+`structure … where ref : MachineRef`; both denote a machine reference,
+so the renderer labels either as `<Kind>#<ref>`. `machineLeanNames` is
+the set of fully-qualified wrapper type names (`<Mod>.<M>`). -/
+private def fieldIsRef (env : Environment) (machineLeanNames : Array Name)
+    (structName fieldName : Name) : Bool :=
+  let projName := structName ++ fieldName
+  match env.find? projName with
+  | some ci =>
+    -- `projFn : <struct> → <fieldTy>`; the field type is the body.
+    match ci.type with
+    | .forallE _ _ body _ =>
+      match body.getAppFn.constName? with
+      | some ``PLean.MachineRef => true
+      | some n => machineLeanNames.contains n
+      | none   => false
+    | _ => false
+  | none => false
+
+/-- Field names of a materialised structure in declaration order, paired
+with whether each is `MachineRef`-typed. Read from the environment — the
+registry's `defStx` is cleared by `#gen_module` before `synthesise`
+runs, so re-parsing it is not an option. -/
+private def structFields (env : Environment) (machineLeanNames : Array Name)
+    (structName : Name) : Array (String × Bool) :=
+  match Lean.getStructureInfo? env structName with
+  | some info =>
+    info.fieldNames.map (fun f =>
+      (f.toString, fieldIsRef env machineLeanNames structName f))
+  | none => #[]
+
+/-- Build the name context the counter-example renderer needs from the
+registry: state-constructor → (machine, state), the global `Fields`
+order as `(machine, var)`, each event's payload field names, and the set
+of all machine-reference field/var names (rendered as machine labels). -/
+private def buildCexNameCtx (modName : Name) (ctx : LocalPModuleCtx) :
+    CommandElabM Verify.CexNameCtx := do
+  let env ← getEnv
+  -- Fully-qualified wrapper type names (`<Mod>.<M>`), so a field typed
+  -- by a machine wrapper (`var server : Server`) counts as a ref.
+  let machineLeanNames : Array Name :=
+    ctx.machineOrder.filterMap (fun mn =>
+      if (ctx.machines.find? mn).isSome then some (modName ++ mn) else none)
+  let mut stateCtors : Array (String × String × String) := #[]
+  let mut fieldOrder : Array (String × String) := #[]
+  let mut refFields : Array String := #[]
+  let mut machineKinds : Array String := #[]
+  for mname in ctx.machineOrder do
+    let some m := ctx.machines.find? mname | continue
+    let mStr := mname.toString
+    machineKinds := machineKinds.push mStr
+    for sd in m.states do
+      let key := mStr ++ "_" ++ sd.name.toString
+      stateCtors := stateCtors.push (key, mStr, sd.name.toString)
+    -- Machine vars live in the global `<Mod>.Fields` struct as
+    -- `<machine>_<var>`; check each for a machine-reference type.
+    for v in machineVarNames m do
+      fieldOrder := fieldOrder.push (mStr, v.toString)
+      if fieldIsRef env machineLeanNames (modName ++ `Fields)
+          (Name.mkSimple (mStr ++ "_" ++ v.toString)) then
+        refFields := refFields.push v.toString
+  let mut eventFields : Array (String × Array String) := #[]
+  for ename in ctx.eventOrder do
+    let some e := ctx.events.find? ename | continue
+    let some payloadName := e.payload | continue
+    let flds := structFields env machineLeanNames (modName ++ payloadName)
+    unless flds.isEmpty do
+      eventFields := eventFields.push (ename.toString, flds.map (·.1))
+      for (fname, isRef) in flds do
+        if isRef && !refFields.contains fname then
+          refFields := refFields.push fname
+  return { stateCtors, fieldOrder, eventFields, refFields, machineKinds }
+
 /-! ## Failure classification helpers. -/
 
 private def hasSubstring (s : String) (pattern : String) : Bool :=
@@ -506,12 +582,37 @@ private def hasSubstring (s : String) (pattern : String) : Bool :=
       i := i + 1
     return false
 
-/-- Cap a multi-line diagnostic at ~12 lines and 1500 chars so the
-report doesn't degenerate into a wall of solver model output. -/
-private def truncateForReport (s : String) : String :=
+/-- Cap a multi-line diagnostic so the report doesn't degenerate into a
+wall of solver output. `maxLines` / `maxChars` default to the tight
+bound used for tactic / unknown diagnostics; the disproved path passes a
+looser bound so a decoded counter-example survives intact. -/
+private def truncateForReport (s : String)
+    (maxLines : Nat := 12) (maxChars : Nat := 1500) : String :=
   let lines := s.splitOn "\n"
-  let joined := String.intercalate "\n" (lines.take 12)
-  if joined.length > 1500 then joined.take 1500 ++ " …" else joined
+  let joined := String.intercalate "\n" (lines.take maxLines)
+  if joined.length > maxChars then joined.take maxChars ++ " …" else joined
+
+/-- Turn `loom_smt`'s SAT diagnostic into a readable counter-example.
+Decodes the embedded model into the per-machine state table + the
+`sent` trace ordered by `actionCount`, using `ctx` to recover field /
+state / payload names. Falls back to the de-mangled raw model when the
+decode yields nothing, so the output is never worse than the verbatim
+dump. -/
+private def renderCex (smtMsg : String) (ctx : Verify.CexNameCtx) : String :=
+  match Verify.extractModelText smtMsg with
+  | none => truncateForReport smtMsg 40 4000
+  | some modelText =>
+    match Verify.renderModelText modelText ctx with
+    | some rendered => truncateForReport rendered 60 6000
+    | none =>
+      let cleaned :=
+        match Verify.parseModel modelText with
+        | some defs =>
+          "\n".intercalate (defs.toList.map (fun d =>
+            if d.args.isEmpty then s!"{d.name} = {Verify.renderValue d.body}"
+            else s!"{d.name} {Verify.renderValue (.app d.args)} = {Verify.renderValue d.body}"))
+        | none => modelText
+      truncateForReport cleaned 40 4000
 
 /-- Classify a failure from the diagnostic refs set during emission.
 The SMT diagnostic discriminates `sat` (counter-example) from
@@ -520,7 +621,8 @@ The SMT diagnostic discriminates `sat` (counter-example) from
 private def classifyFailure : CommandElabM ObligationOutcome := do
   if let some smtMsg ← pverifySmtDiagRef.get then
     if hasSubstring smtMsg "the goal is false" then
-      return .disproved (truncateForReport smtMsg)
+      let ctx := (← Verify.cexNameCtxRef.get).getD {}
+      return .disproved (renderCex smtMsg ctx)
     if hasSubstring smtMsg "the goal is unknown" then
       return .unknown (truncateForReport smtMsg)
     return .tacticError (truncateForReport smtMsg)
@@ -625,6 +727,7 @@ directives, auto-emit a `prove default;` obligation for every
 def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
     CommandElabM SynthesiseResult := do
   detectUsingCycles ctx
+  Verify.cexNameCtxRef.set (some (← buildCexNameCtx modName ctx))
   let mut result : SynthesiseResult := {}
   let mut explicitDefault : Std.HashSet (Name × Name × Name) := {}
   -- Per-lemma invariant-name lookup used to feed `lemmaInvNames` into

@@ -195,10 +195,17 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
         instance : Inhabited $idE := ⟨$firstFull default⟩
       ))
   -- `<Mod>.G`: goto payload union. Phase-2 surface doesn't expose goto
-  -- payloads; one trivial constructor suffices.
+  -- payloads; one trivial constructor suffices. The constructor MUST be
+  -- emitted unhygienically (via `mkIdent`): the `goto` doElem macro in
+  -- `Surface/Stmt.lean` references it as the clean name `G.unit`, so a
+  -- hygienic `| unit` ctor (which Lean would name `G.unit._@…._hyg.N`)
+  -- would make `goto <state>` fail to resolve `G.unit` inside a handler
+  -- body. (`goto` inside an `on`-handler is first exercised by the
+  -- RingLeader port; `on ev goto st` transitions don't hit this path.)
+  let gUnitCtor ← `(Lean.Parser.Command.ctor| | $(mkIdent `unit):ident)
   elabCommand (← `(
     inductive $idG where
-      | unit
+      $gUnitCtor:ctor
       deriving DecidableEq, Inhabited
   ))
   -- `<Mod>.S`: one ctor per (machine, state).
@@ -587,6 +594,14 @@ def elabPGenModule : CommandElab := fun stx => do
     emitMachineKinds ctx
     -- Step 5: derive lifted WP for `get`/`set` (D14).
     emitDerivedWP
+    -- Step 5b: materialise `pure` functions (foreign + defined) *before*
+    -- the per-machine handler bodies (Step 6) and the verification
+    -- declarations (Step 7). Both may reference `pure` functions: a
+    -- handler can branch on `le this.ref x` and an invariant can assert
+    -- `le x y = true`. `3_RingLeaderVerification` is the first benchmark
+    -- to do so, so the opaque/defined `pure`s must exist by the time
+    -- those scopes are replayed.
+    for (_, d) in ctx.pures.toList do      materialisePure d
     -- Step 6: per-machine var accessors + state-tag aliases, plus
     -- handler defs replayed inside each machine namespace.
     for mname in ctx.machineOrder do
@@ -603,7 +618,6 @@ def elabPGenModule : CommandElab := fun stx => do
     -- Step 7: verification declarations.
     for (_, d) in ctx.invariants.toList do materialiseInvariant d
     for (_, d) in ctx.axioms.toList do     materialiseAxiom d
-    for (_, d) in ctx.pures.toList do      materialisePure d
     for (_, d) in ctx.instances.toList do  materialiseInstance d
     -- Step 7b: aggregate `init-holds` clauses into `<Mod>.InitConditions`
     -- (D21). Available to obligation generation as a global precondition

@@ -143,10 +143,63 @@ elab_rules : tactic
       let ty ← Lean.Meta.whnf (← Lean.Meta.inferType ldecl.toExpr)
       if ty.consumeMData.isAppOfArity ``PLean.GlobalState 1 then
         let hName := ldecl.userName
+        -- Name the four fields with stable, *unhygienic* identifiers so the
+        -- follow-up `pverify_defunctionalize_machines` can reference
+        -- `gsMachines`. (A second `GlobalState` local — rare at SMT time —
+        -- just shadows these names; harmless.)
         let stx ← `(tactic|
-          obtain ⟨_, _, _, _⟩ := $(mkIdent hName))
+          obtain ⟨$(mkIdent `gsSent), $(mkIdent `gsReceived),
+                  $(mkIdent `gsMachines), $(mkIdent `gsActionCount)⟩ :=
+            $(mkIdent hName))
         try evalTactic stx
         catch _ => pure ()
+
+/-- Defunctionalise machine-state reads. After `sdestruct_state` the
+`machines` field is an fvar `gsMachines : MachineRef → MachineState …`
+whose *record codomain* lean-auto rejects ("Higher order input?") the
+moment a projection like `(gsMachines m).currentState` appears — unlike
+`sent`/`received : Label → Bool`, whose scalar codomain translates as an
+uninterpreted function.
+
+For each scalar/enum projection (`currentState : S`, `kind : Nat`,
+`stage : Bool`) we introduce a fresh *opaque* function
+`f : MachineRef → <projTy>` together with `∀ m, (gsMachines m).proj = f m`
+(trivially true by `rfl`), rewrite every occurrence, and drop
+`gsMachines`. The goal then mentions only first-order
+`MachineRef → {S, Nat, Bool}` arrows, which lean-auto models as
+uninterpreted functions. The `fields : F` projection is intentionally
+*not* abstracted: `F` is itself a record, so abstracting it would only
+move the record codomain rather than remove it (those obligations keep
+`gsMachines` and behave as before).
+
+Each `obtain`+`simp` is guarded by `first | … | skip`: when the
+projection does not occur, `simp` makes no progress, the branch is
+rolled back (including the `obtain`), and we move on. -/
+syntax "pverify_defunctionalize_machines" : tactic
+macro_rules
+  | `(tactic| pverify_defunctionalize_machines) => do
+      let gm := mkIdent `gsMachines
+      `(tactic| (
+        first
+          | (obtain ⟨pStateOf, hStateOf⟩ :
+                ∃ f : PLean.MachineRef → _, ∀ m, ($gm m).currentState = f m :=
+                  ⟨_, fun _ => rfl⟩
+             simp only [hStateOf] at *)
+          | skip
+        first
+          | (obtain ⟨pKindOf, hKindOf⟩ :
+                ∃ f : PLean.MachineRef → _, ∀ m, ($gm m).kind = f m :=
+                  ⟨_, fun _ => rfl⟩
+             simp only [hKindOf] at *)
+          | skip
+        first
+          | (obtain ⟨pStageOf, hStageOf⟩ :
+                ∃ f : PLean.MachineRef → _, ∀ m, ($gm m).stage = f m :=
+                  ⟨_, fun _ => rfl⟩
+             simp only [hStageOf] at *)
+          | skip
+        try clear $gm
+      ))
 
 /-- Pre-SMT normalisation: simp the `pverifySimp` set, destruct
 state hypotheses, strip `WithName` wrappers, then unfold the
@@ -157,12 +210,16 @@ of `Higher order input?`-flagged shapes.
 Step ordering: `simp [pverifySimp]` must precede `sdestruct_state` so
 `addSent` / `addReceived` / etc. expand into record literals while
 the state still has its struct form; the subsequent destruct +
-`dsimp only` iota-reduces `{ sent := f, ... }.sent l` to `f l`. -/
+`dsimp only` iota-reduces `{ sent := f, ... }.sent l` to `f l`.
+`stateOf` is unfolded before the destruct so machine-state reads surface
+as `(gsMachines m).currentState`, which `pverify_defunctionalize_machines`
+then turns into a first-order uninterpreted function. -/
 syntax "pverify_smt_prep" : tactic
 macro_rules
   | `(tactic| pverify_smt_prep) => `(tactic| (
       try intros
       try simp only [pverifySimp] at *
+      try unfold PLean.stateOf at *
       try sdestruct_state
       try unfold WithName at *
       try dsimp only at *
@@ -170,6 +227,8 @@ macro_rules
       try unfold PLean.UniqueActions at *
       try unfold PLean.IncreasingCount at *
       try unfold PLean.ReceivedSubsetSent at *
+      try pverify_defunctionalize_machines
+      try dsimp only at *
     ))
 
 /-- SMT discharge: prep the goal, run `loom_smt`. On non-unsat the

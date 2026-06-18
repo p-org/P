@@ -173,12 +173,32 @@ first — most need surface features that aren't built yet.
 - Phase 3 (Verification declarations) — ◐ in progress. The
   SMT-discharge `#pverify` pipeline, the `@[pverifyProof]` registry,
   and the `pverify_*` tactic library are in tree and load-bearing.
-  M3 is partial: closure rates are `Phase3DistributedLock` 2/4 and
-  `Phase3LockServer` 2/15 — the residual obligations are genuine
-  inductiveness gaps in the ports, not infrastructure bugs. Closing
-  M3 is a matter of porting the missing invariants from the original
-  P sources or supplying `@[pverifyProof]` manual proofs. The
-  `3_RingLeaderVerification` benchmark is not yet ported.
+  M3: `Phase3DistributedLock` (9 proved / 3 disproved) and
+  `Phase3LockServer` (12 proved / 9 disproved / 1 unknown) — the
+  residual obligations are genuine inductiveness gaps in the ports, not
+  infrastructure bugs. Closing them is a matter of porting the missing
+  invariants from the original P sources or supplying `@[pverifyProof]`
+  manual proofs. The `3_RingLeaderVerification` benchmark is now ported
+  in `Tests/Surface/Phase3RingLeader.lean` (28 proved / 1 disproved /
+  3 unknown of 32). Porting it produced two reusable framework fixes:
+
+  1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
+     hygienically, so the `goto` doElem macro (first exercised inside an
+     `on`-handler by this benchmark) couldn't resolve `G.unit`. Now
+     emitted unhygienically in `emitProgramUnions`.
+  2. **Machine-state defunctionalisation** — lean-auto rejected any
+     goal reading `(s.machines m).currentState` ("Higher order input?")
+     because `machines : MachineRef → MachineState` is an
+     array-of-records. `pverify_smt_prep` now runs
+     `pverify_defunctionalize_machines`, abstracting each scalar/enum
+     machine-state projection into a fresh uninterpreted
+     `MachineRef → _` function before `loom_smt`. This removed the
+     higher-order failures across all benchmarks (LockServer jumped
+     2→12 proved) and is the general fix for the SMT higher-order
+     limitation. The RingLeader residuals are now genuine verification
+     gaps: 2 base cases are `unknown` pending `InitConditions`
+     `InStart`/`InEntry` modelling; the `Safety` inductive step is
+     `disproved` pending a stronger jointly-inductive invariant.
 - Phase 4 (Spec machines) — ☐ next. Plan in PLAN_P4.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the workstream-level

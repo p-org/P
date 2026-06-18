@@ -170,10 +170,18 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
   let thmName : Name :=
     obligationName mname sname evname target isDefault usingNames proofTag proofIdx
   let fullThmName : Name := modName ++ thmName
-  if ← liftCoreM (hasPVerifyProof fullThmName) then
-    logInfo m!"obligation {fullThmName} picked up from `@[pverifyProof]`"
-    return .userProved
-  let thmId : Ident := mkIdent thmName
+  -- A `@[pverifyProof]`-registered theorem supplies the proof, but we do
+  -- NOT trust it on name alone: we still build the obligation's exact
+  -- expected type below and discharge it by `exact @<userThm>`. If the
+  -- user's theorem has the wrong type, that `exact` fails and the
+  -- obligation is reported as failed — closing the soundness hole where a
+  -- name-matching theorem of an unrelated (e.g. trivially-`True`) type was
+  -- accepted verbatim. The checking theorem is emitted under a fresh
+  -- `<thmName>_check` name so it can't shadow the user's theorem.
+  let manualProof ← liftCoreM (hasPVerifyProof fullThmName)
+  let thmId : Ident :=
+    if manualProof then mkIdent (thmName.appendAfter "_check") else mkIdent thmName
+  let userThmId : Ident := mkIdent fullThmName
   let handlerName : Name :=
     mname ++ sname ++ (evname.appendAfter "_handler")
   let handlerId : Ident := mkIdent handlerName
@@ -326,9 +334,20 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     -- the message-log slice to classify the failure (counter-example
     -- vs. unknown vs. tactic error). Without the wrapper, an enclosing
     -- `first | … | sorry` would discard the SMT diagnostic entirely.
+    -- Proof body: for an auto obligation, the `pverify` tactic chain
+    -- (wrapped so SMT/tactic failures are logged then `sorry`-ed). For a
+    -- manual obligation, discharge the *expected* type by delegating to
+    -- the user's `@[pverifyProof]` theorem — so the elaborator checks the
+    -- user proved exactly this proposition; a wrong-type theorem makes the
+    -- `exact` fail (reported as a failed obligation, not silently trusted).
+    let bodyTac : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
+      if manualProof then
+        if hasPayload then `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis $idParam)
+        else                `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis)
+      else pure proofTacSeq
     let wrappedProof : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq|
-          pverify_log_failure_else_sorry $proofTacSeq)
+          pverify_log_failure_else_sorry $bodyTac)
     if hasPayload then
       `(set_option linter.unusedTactic false in
         theorem $thmId
@@ -342,16 +361,21 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
             triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
           $wrappedProof)
   elabCommand stx
-  -- A `sorryAx` in the elaborated value means the tactic chain fell
-  -- through to the `first | … | sorry` fallback. This catches both
-  -- synchronous and async-snapshot tactic errors that message-log
-  -- inspection alone would miss. The fine-grained sub-classification
-  -- (disproved / unknown / tacticError) is added by `processOne`,
-  -- which has access to the message-log slice.
+  -- A `sorryAx` in the elaborated value means the proof fell through to
+  -- the `pverify_log_failure_else_sorry` fallback (tactic chain failed, or
+  -- — for a manual proof — the user's theorem had the wrong type so the
+  -- delegating `exact` failed). This catches both synchronous and
+  -- async-snapshot errors. The check theorem is `<thmName>_check` when a
+  -- manual proof was delegated, else `<thmName>` itself.
+  let checkName : Name :=
+    if manualProof then fullThmName.appendAfter "_check" else fullThmName
   let env ← getEnv
-  match env.find? fullThmName with
+  match env.find? checkName with
   | some (.thmInfo info) =>
     if info.value.hasSorry then return .unfinished
+    if manualProof then
+      logInfo m!"obligation {fullThmName} discharged by `@[pverifyProof]` (type checked)"
+      return .userProved
     return .provedBySmt
   | _ => return .unfinished
 
@@ -394,10 +418,13 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
     CommandElabM ObligationOutcome := do
   let thmName : Name := baseCaseName invName proofTag proofIdx
   let fullThmName : Name := modName ++ thmName
-  if ← liftCoreM (hasPVerifyProof fullThmName) then
-    logInfo m!"obligation {fullThmName} picked up from `@[pverifyProof]`"
-    return .userProved
-  let thmId : Ident := mkIdent thmName
+  -- See `emitOneObligation`: a `@[pverifyProof]` theorem is delegated to
+  -- via `exact` against the freshly-built expected type, never trusted on
+  -- name alone.
+  let manualProof ← liftCoreM (hasPVerifyProof fullThmName)
+  let thmId : Ident :=
+    if manualProof then mkIdent (thmName.appendAfter "_check") else mkIdent thmName
+  let userThmId : Ident := mkIdent fullThmName
   -- Unhygienic `s` binder: bare `s` inside a macro quotation acquires
   -- a macro scope and renders as `s✝` in the pretty-printed signature,
   -- breaking the copy-paste manual-proof skeleton. Same convention as
@@ -434,17 +461,25 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
       first | (intros; trivial) | pverify_smt_close))
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq| $[$steps]*)
+    let bodyTac : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
+      if manualProof then `(Lean.Parser.Tactic.tacticSeq| exact $userThmId)
+      else pure proofTacSeq
     let wrappedProof : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq|
-          pverify_log_failure_else_sorry $proofTacSeq)
+          pverify_log_failure_else_sorry $bodyTac)
     `(set_option linter.unusedTactic false in
       theorem $thmId : $goalType := by
         $wrappedProof)
   elabCommand stx
+  let checkName : Name :=
+    if manualProof then fullThmName.appendAfter "_check" else fullThmName
   let env ← getEnv
-  match env.find? fullThmName with
+  match env.find? checkName with
   | some (.thmInfo info) =>
     if info.value.hasSorry then return .unfinished
+    if manualProof then
+      logInfo m!"obligation {fullThmName} discharged by `@[pverifyProof]` (type checked)"
+      return .userProved
     return .provedBySmt
   | _ => return .unfinished
 

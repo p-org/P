@@ -142,7 +142,7 @@ info: machines:
 sent (ordered by actionCount): []
 witnesses (handler & skolem bindings):
   lock_server = Node#3 = Node@Working
-add type constraints:
+⚠ add type constraints:
   init-holds (is_Server lock_server.ref)
   invariant lock_server_is_Server : is_Server lock_server.ref s
 -/

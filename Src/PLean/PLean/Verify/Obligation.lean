@@ -658,15 +658,22 @@ private def runEmitterAndRecord (modName mname sname evname target thmName : Nam
   let outcome ← match outcomeRaw with
     | .unfinished => classifyFailure
     | other       => pure other
-  -- Drop sync-error messages from the slice; the diagnostic refs
-  -- already carry what we need, and surfacing the raw tactic errors
-  -- would just clutter the build log alongside our structured report.
+  -- Scrub per-obligation noise from the slice so only the command's
+  -- one consolidated report reaches the user. Drop (a) sync-error
+  -- messages — the diagnostic refs already carry what we need — and
+  -- (b) Loom's `loom_smt` "Goal proven by <solver>" info, emitted once
+  -- per discharged obligation; the report's "N proved by SMT" summary
+  -- subsumes it.
   let curSt ← get
   let preMsgsArr := savedSt.messages.toArray
   let postMsgsArr := curSt.messages.toArray
   let newMsgs := postMsgsArr.extract preMsgsArr.size postMsgsArr.size
-  if newMsgs.any (fun m => m.severity matches .error) then
-    let kept := newMsgs.filter (fun m => !(m.severity matches .error))
+  let isNoise (m : Lean.Message) : CommandElabM Bool := do
+    if m.severity matches .error then return true
+    let s ← m.data.toString
+    return hasSubstring s "Goal proven by" || hasSubstring s "Trusting SMT solver"
+  if ← newMsgs.anyM isNoise then
+    let kept ← newMsgs.filterM (fun m => return !(← isNoise m))
     let mergedMsgs := kept.foldl (init := savedSt.messages) (·.add ·)
     modify fun st => { st with messages := mergedMsgs }
   let signature ← renderSignature fullThmName

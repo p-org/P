@@ -64,7 +64,7 @@ end SoundnessR1
 -- - inductive step: the handler increments `x`, breaking the invariant.
 /--
 warning: SoundnessR1: 1 proved by SMT, 0 user-proved, 2 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic
-2 obligation(s) need a manual proof; skeletons printed above.
+2 obligation(s) need a manual proof; fill in the skeletons above.
 ---
 warning: declaration uses 'sorry'
 ---

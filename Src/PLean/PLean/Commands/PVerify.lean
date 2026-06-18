@@ -1,12 +1,15 @@
 /-
 PLean.Commands.PVerify — `#pverify M`.
 
-Walks the registry, runs the obligation generator, and prints a
-per-obligation report classifying each result as proved by SMT,
-proved manually (via `@[pverifyProof]`), disproved (with
-counter-example), unknown, tactic-error, or unfinished. Failures
-print a copy-paste skeleton echoing the full theorem signature so
-the user can fill in a manual proof.
+Walks the registry, runs the obligation generator, and prints one
+consolidated report grouped by outcome — `── failed ──` (with
+counter-examples), `── manual-proof skeletons ──` (copy-paste
+`@[pverifyProof]` decls echoing the full theorem signature), then
+`── passed ──` — followed by a concise pass/fail summary. Grouping by
+outcome keeps failures and their fixes together at the top rather than
+interleaved with passes. The summary is a separate trailing message
+(info on success, warning/error on incomplete) so callers can pin the
+verdict with `#guard_msgs (…, drop info)`.
 -/
 import Lean
 import PLean.Commands.PWf
@@ -86,14 +89,35 @@ def elabPVerify : CommandElab := fun stx => do
     if result.attempted == 0 then
       logInfo m!"{modName}: no `Proof` directives — nothing to verify"
       return
-    logInfo m!"{modName}: {result.attempted} obligations from \
-               {proofCount} prove-directives"
-    for rec in result.records do
-      let diag := renderDiagnostic rec
-      if diag.isEmpty then
-        logInfo m!"{renderRow rec}"
-      else
-        logInfo m!"{renderRow rec}\n{diag}"
+    -- The detailed report is ONE info message, ordered by outcome (not
+    -- emission order): header → failed obligations (+ diagnostics) →
+    -- manual-proof skeletons → passed obligations. This keeps failures
+    -- and their fixes together at the top instead of interleaved with
+    -- passes. The concise pass/fail summary is a separate trailing
+    -- message (info on success, warning/error on incomplete) so callers
+    -- can pin the verdict with `#guard_msgs (… , drop info)`.
+    let failedRecs := result.records.filter (·.outcome.isFailure)
+    let passedRecs := result.records.filter (!·.outcome.isFailure)
+    let mut blocks : Array String := #[]
+    blocks := blocks.push
+      s!"{modName}: {result.attempted} obligations from {proofCount} prove-directives"
+    unless failedRecs.isEmpty do
+      let mut sec : Array String := #["── failed ──"]
+      for rec in failedRecs do
+        let diag := renderDiagnostic rec
+        sec := sec.push (if diag.isEmpty then renderRow rec
+                         else s!"{renderRow rec}\n{diag}")
+      blocks := blocks.push ("\n".intercalate sec.toList)
+      let mut skel : Array String := #["── manual-proof skeletons ──"]
+      for rec in failedRecs do
+        skel := skel.push (renderSkeleton rec)
+      blocks := blocks.push ("\n".intercalate skel.toList)
+    unless passedRecs.isEmpty do
+      let mut sec : Array String := #["── passed ──"]
+      for rec in passedRecs do
+        sec := sec.push (renderRow rec)
+      blocks := blocks.push ("\n".intercalate sec.toList)
+    logInfo ("\n\n".intercalate blocks.toList)
     let summary :=
       m!"{modName}: {result.smtProved} proved by SMT, \
          {result.userProved} user-proved, \
@@ -104,14 +128,9 @@ def elabPVerify : CommandElab := fun stx => do
     if result.failures == 0 then
       logInfo summary
     else
-      -- Skeletons go in their own info messages so the warning /
-      -- error stays a single short line tests can pin.
-      let failedRecs := result.records.filter (·.outcome.isFailure)
-      for rec in failedRecs do
-        logInfo m!"{renderSkeleton rec}"
       let body :=
         m!"{summary}\n{result.failures} obligation(s) need a manual \
-           proof; skeletons printed above."
+           proof; fill in the skeletons above."
       if pverify.failOnIncomplete.get (← getOptions) then
         throwError body
       else

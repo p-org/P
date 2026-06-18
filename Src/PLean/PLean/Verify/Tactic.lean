@@ -174,13 +174,24 @@ macro_rules
 
 /-- SMT discharge: prep the goal, run `loom_smt`. On non-unsat the
 solver throws; we stash the diagnostic in `pverifySmtDiagRef` and
-re-throw so the surrounding `first |` can try fallbacks. -/
+re-throw so the surrounding `first |` can try fallbacks.
+
+`loom_smt` logs a "Goal proven by <solver>" info on success — one per
+obligation. Under `#pverify` that's per-obligation noise the command's
+consolidated report already subsumes, so we drop new info-severity
+messages this tactic produced (errors/warnings are kept). -/
 syntax "pverify_smt_close" : tactic
 elab_rules : tactic
   | `(tactic| pverify_smt_close) =>
       withMainContext do
+        let log0 := (← getThe Core.State).messages
         try
           evalTactic (← `(tactic| (pverify_smt_prep; loom_smt [*])))
+          let log1 := (← getThe Core.State).messages
+          let fresh := log1.toArray.extract log0.toArray.size log1.toArray.size
+          let kept := fresh.filter (fun m => !(m.severity matches .information))
+          modifyThe Core.State fun st =>
+            { st with messages := kept.foldl (·.add ·) log0 }
         catch e =>
           let msg ← e.toMessageData.toString
           pverifySmtDiagRef.set (some msg)

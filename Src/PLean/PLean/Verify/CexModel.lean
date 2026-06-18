@@ -573,7 +573,7 @@ def CexModel.render (m : CexModel) : String := Id.run do
     for (n, v) in m.witnesses do
       lines := lines.push s!"  {n} = {v}"
   unless m.typeAlerts.isEmpty do
-    lines := lines.push "add type constraints:"
+    lines := lines.push "⚠ add type constraints:"
     for a in m.typeAlerts do
       lines := lines.push s!"  init-holds (is_{a.declared} {a.source}.ref)"
       lines := lines.push s!"  invariant {a.source}_is_{a.declared} : is_{a.declared} {a.source}.ref s"

@@ -59,6 +59,16 @@ projection-function return types) and the ref → kind map (from the
 The base case has one state; the inductive step has pre/post — v1
 renders the model's state(s) as they decode; pre/post diffing is v2.
 
+### Report layout
+
+`#pverify` prints ONE consolidated info message grouped by outcome —
+`── failed ──` (each failing obligation + its counter-example),
+`── manual-proof skeletons ──` (the `@[pverifyProof]` placeholders), then
+`── passed ──` — followed by a concise summary as a separate trailing
+message (so `#guard_msgs (…, drop info)` can pin just the verdict).
+Loom's per-obligation `Goal proven by <solver>` info is suppressed in
+`pverify_smt_close` (the summary's "N proved by SMT" subsumes it).
+
 ## Architecture
 
 The model already reaches PLean as a string in `pverifySmtDiagRef`

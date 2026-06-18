@@ -33,13 +33,17 @@ namespace Verify
 global `Fields` struct order as `(machine, var)` pairs; `eventFields`
 maps an event name to its payload field names in declaration order;
 `refFields` is the set of payload/var field names whose type is
-`MachineRef`, so their values render as machine labels. -/
+`MachineRef`, so their values render as machine labels; `machineKindIdx`
+maps a machine name to its `<M>_kind` Nat tag (assigned 1,2,… in
+registration order by `#gen_module`), so the renderer can cross-check a
+row's runtime `kind` field against the kind its `currentState` implies. -/
 structure CexNameCtx where
-  stateCtors   : Array (String × String × String) := #[]
-  fieldOrder   : Array (String × String) := #[]
-  eventFields  : Array (String × Array String) := #[]
-  refFields    : Array String := #[]
-  machineKinds : Array String := #[]
+  stateCtors     : Array (String × String × String) := #[]
+  fieldOrder     : Array (String × String) := #[]
+  eventFields    : Array (String × Array String) := #[]
+  refFields      : Array String := #[]
+  machineKinds   : Array String := #[]
+  machineKindIdx : Array (String × Int) := #[]
   deriving Inhabited
 
 /-- Set by `#pverify` before walking obligations; read by the renderer
@@ -64,6 +68,11 @@ private def CexNameCtx.payloadOf (c : CexNameCtx) (event : String) :
 
 private def CexNameCtx.isRefField (c : CexNameCtx) (field : String) : Bool :=
   c.refFields.contains field
+
+/-- The `<M>_kind` Nat tag registered for a machine, if known. -/
+private def CexNameCtx.kindIdxOf (c : CexNameCtx) (machine : String) :
+    Option Int :=
+  (c.machineKindIdx.find? (fun (m, _) => m == machine)).map (·.2)
 
 /-- Maps a machine ref (a `Nat` in the model) to its kind, learned from
 the `machines` table. Lets ref-typed values elsewhere render as
@@ -251,10 +260,31 @@ private def machineKindOf (ctx : CexNameCtx) (st : Sexp) : Option String :=
     (ctx.lookupState csName).map (·.1)
   | none => none
 
+/-- A `MachineState.mk stage currentState fields kind` value labels a row
+by its `currentState` constructor (e.g. `Node@Working`), but `is_<M>`
+gates on the independent runtime `kind : Nat` field. When the row's kind
+tag (arg 3) contradicts the kind its `currentState` implies, the row is
+NOT actually an `is_<M>` machine — its `var` fields are unconstrained by
+any `∀ m : <M>, is_<M> m → …` invariant, so a server-ref var pointing
+"wrong" is expected, not a violation. This annotation makes that
+explicit. Returns `none` when the kind matches, the tag is unknown
+(`machineKindIdx` unpopulated — synthetic goldens), or the kind field is
+absent, so the common path renders exactly as before. -/
+private def kindMismatchNote (ctx : CexNameCtx) (machine : String)
+    (kindArg : Option Sexp) : Option String := do
+  let expected ← ctx.kindIdxOf machine
+  let actual ← kindArg.bind asInt?
+  if actual == expected then none
+  else if actual == 0 then
+    some s!" [kind=0 (unallocated); not is_{machine} — fields unconstrained]"
+  else
+    some s!" [kind={actual} ≠ {machine}_kind={expected}; not is_{machine} — fields unconstrained]"
+
 /-- Render a `MachineState.mk stage currentState fields kind` value.
 Identifies the machine + state from `currentState`, then pairs the
 `Fields.mk` positional args with the machine's var names (ref-typed vars
-render as `<Kind>#<ref>`). -/
+render as `<Kind>#<ref>`). A kind/state desync (the row's runtime `kind`
+tag disagreeing with its `currentState`) is flagged inline. -/
 private def renderMachineState (ctx : CexNameCtx) (rk : RefKinds) (st : Sexp) :
     String :=
   let args := appArgs st
@@ -269,8 +299,9 @@ private def renderMachineState (ctx : CexNameCtx) (rk : RefKinds) (st : Sexp) :
         match fieldArgs[idx]? with
         | some v => some s!"{vname}={renderField ctx rk vname v}"
         | none   => none)
-      if parts.isEmpty then s!"{machine}@{state}"
-      else s!"{machine}@{state}(" ++ ", ".intercalate parts.toList ++ ")"
+      let note := (kindMismatchNote ctx machine args[3]?).getD ""
+      if parts.isEmpty then s!"{machine}@{state}{note}"
+      else s!"{machine}@{state}(" ++ ", ".intercalate parts.toList ++ s!"){note}"
     | none => renderValue st
   | _, _ => renderValue st
 

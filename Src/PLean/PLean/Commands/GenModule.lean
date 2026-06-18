@@ -344,6 +344,55 @@ private def emitEventPayloadAccessors (ctx : LocalPModuleCtx)
         | _ => default
     ))
 
+/-! ## Step 4d′: per-event characterisation lemmas `is_<ev>_iff`
+
+Bridge the opaque `is_<ev>` tag predicate to a concrete `Label.action`
+constructor equality. `is_<ev>` is emitted (step 4b) as a `match`-on-
+`action` def left folded so lean-auto treats it as an uninterpreted
+predicate (its `match` body trips the monomorphizer if unfolded). With
+no axiom relating `is_<ev> e` to `e.action`, any obligation whose
+invariant quantifies `∀ e, e is <ev> → …` reaches SMT with `is_<ev>` as
+a free predicate — the solver can neither discharge the guard nor
+exclude a spurious label of that tag, so the goal comes back `unknown`.
+
+The `@[pverifySimp]` tag means `pverify_smt_prep`'s `simp only
+[pverifySimp]` rewrites every `is_<ev> e` into the action equality
+before `loom_smt` runs, so SMT sees a concrete constructor equality.
+Pairwise disjointness between events is then *derived* by the solver
+from `EventOrGoto` / `E` constructor injectivity — no separate
+disjointness lemma is needed. -/
+
+private def emitIsCharacterizations (ctx : LocalPModuleCtx) : CommandElabM Unit := do
+  for ename in ctx.eventOrder do
+    let some e := ctx.events.find? ename | continue
+    let thmName : Ident :=
+      mkIdent (Name.mkSimple ("is_" ++ e.name.toString ++ "_iff"))
+    let predName : Ident := mkIdent (Name.mkSimple ("is_" ++ e.name.toString))
+    let evCtor   : Ident := mkIdent (`E ++ e.name)
+    let evOrGoto : Ident := mkIdent ``PLean.EventOrGoto.event
+    -- `cases ev <;> simp_all` splits on however many `E` constructors
+    -- exist (do NOT hard-code the arity), then closes each arm. The
+    -- `goto` action arm closes by `simp_all` directly.
+    match e.payload with
+    | none =>
+      elabCommand (← `(
+        @[pverifySimp] theorem $thmName (lbl : ($idSig).Label) :
+            $predName lbl ↔ lbl.action = $evOrGoto $evCtor := by
+          unfold $predName
+          rcases h : lbl.action with ev | g
+          · cases ev <;> simp_all
+          · simp_all
+      ))
+    | some _ =>
+      elabCommand (← `(
+        @[pverifySimp] theorem $thmName (lbl : ($idSig).Label) :
+            $predName lbl ↔ ∃ p, lbl.action = $evOrGoto ($evCtor p) := by
+          unfold $predName
+          rcases h : lbl.action with ev | g
+          · cases ev <;> simp_all
+          · simp_all
+      ))
+
 /-! ## Step 5: `#derive_lifted_wp` for the per-pmodule `get`/`set`
 
 These register `loomSpec` lemmas that teach `wpgen` how to step through
@@ -680,6 +729,10 @@ def elabPGenModule : CommandElab := fun stx => do
     -- Step 4d: per-event payload extractor `<ev>_payload_of`. Lives
     -- after the union types so it can pattern-match on `E.<ev>`.
     emitEventPayloadAccessors ctx eventPayloadFields
+    -- Step 4d′: per-event `is_<ev>_iff` characterisation lemmas. Lives
+    -- after `emitIsPredicates` (so `is_<ev>` exists to unfold) and the
+    -- union types (so `E.<ev>` resolves).
+    emitIsCharacterizations ctx
     -- Step 5: derive lifted WP for `get`/`set` (D14).
     emitDerivedWP
     -- Step 6: per-machine var accessors + state-tag aliases, plus

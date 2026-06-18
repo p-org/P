@@ -541,10 +541,17 @@ private def buildCexNameCtx (modName : Name) (ctx : LocalPModuleCtx) :
   let mut fieldOrder : Array (String × String) := #[]
   let mut refFields : Array String := #[]
   let mut machineKinds : Array String := #[]
+  -- `<M>_kind` Nat tags, assigned 1,2,… in registration order — mirrors
+  -- `GenModule.lean::emitMachineKinds`'s `idx := 1` numbering (same
+  -- `ctx.machineOrder` loop, same skip of missing machines), so the
+  -- renderer can flag a row whose runtime `kind` field contradicts the
+  -- kind its `currentState` implies.
+  let mut machineKindIdx : Array (String × Int) := #[]
   for mname in ctx.machineOrder do
     let some m := ctx.machines.find? mname | continue
     let mStr := mname.toString
     machineKinds := machineKinds.push mStr
+    machineKindIdx := machineKindIdx.push (mStr, Int.ofNat (machineKindIdx.size + 1))
     for sd in m.states do
       let key := mStr ++ "_" ++ sd.name.toString
       stateCtors := stateCtors.push (key, mStr, sd.name.toString)
@@ -565,7 +572,7 @@ private def buildCexNameCtx (modName : Name) (ctx : LocalPModuleCtx) :
       for (fname, isRef) in flds do
         if isRef && !refFields.contains fname then
           refFields := refFields.push fname
-  return { stateCtors, fieldOrder, eventFields, refFields, machineKinds }
+  return { stateCtors, fieldOrder, eventFields, refFields, machineKinds, machineKindIdx }
 
 /-! ## Failure classification helpers. -/
 

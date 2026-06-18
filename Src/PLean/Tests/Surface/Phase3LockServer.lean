@@ -14,6 +14,9 @@ import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
+set_option loom.solver "cvc5"
+set_option loom.solver.smt.timeout 3
+
 pmodule LockServer
 
   type tLockSender   = (sender : PLean.MachineRef)
@@ -27,7 +30,7 @@ pmodule LockServer
 
   -- P source has `pure lock_server() : machine`; modelled as an
   -- opaque constant (no body).
-  function lock_server : PLean.MachineRef
+  function lock_server : Server
 
   machine Server {
     var has_lock : Bool
@@ -47,7 +50,7 @@ pmodule LockServer
 
   machine Node {
     var has_lock : Bool
-    var server   : PLean.MachineRef
+    var server   : Server
 
     start state Working {
       on eAquire {
@@ -66,8 +69,16 @@ pmodule LockServer
     }
   }
 
+  init-holds ∀ n : Node, n.server = lock_server
+  init-holds ∀ n : Node, n.has_lock = false
+  init-holds ∀ sv : Server, sv = lock_server
+  init-holds is_Server lock_server s
+
   Lemma system_config {
     system s {
+      invariant const_server : ∀ n : Node, n.server = lock_server
+      invariant serv_is_serv : is_Server lock_server s
+      invariant single_server : ∀ sv : Server, sv = lock_server
       invariant aquire_to_node :
         ∀ (e : Sig.Label) (mref : MachineRef),
           e is eAquire → (e targets mref) → (is_Server mref s) → ¬ inflight e s

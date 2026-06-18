@@ -179,8 +179,10 @@ first — most need surface features that aren't built yet.
   infrastructure bugs. Closing them is a matter of porting the missing
   invariants from the original P sources or supplying `@[pverifyProof]`
   manual proofs. The `3_RingLeaderVerification` benchmark is now ported
-  in `Tests/Surface/Phase3RingLeader.lean` (30 proved / 1 disproved /
-  1 unknown of 32). Porting it produced three reusable framework fixes:
+  in `Tests/Surface/Phase3RingLeader.lean` and **fully verifies, 32/32**
+  (30 by SMT + 2 by `@[pverifyProof]` manual proofs, with
+  `pverify.failOnIncomplete` at its default `true`). Porting it produced
+  three reusable framework fixes:
 
   1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
      hygienically, so the `goto` doElem macro (first exercised inside an
@@ -200,12 +202,17 @@ first — most need surface features that aren't built yet.
      `emitInitConditions` now asserts every machine begins in a start
      state, and `<S>_st` aliases are `abbrev` (reducible) so the solver
      sees the raw `S` constructors. Together these close the two
-     state-dependent base cases (`LeaderMax` / `UniqueLeader`). The
-     remaining 2 RingLeader residuals are the *inductive steps* of
-     those invariants through the `goto Won` handler — genuine
-     jointly-inductive-invariant gaps (`lemmas` `unknown`, `Safety`
-     `disproved`), to be closed by stronger invariants or
-     `@[pverifyProof]` manual proofs.
+     state-dependent base cases (`LeaderMax` / `UniqueLeader`).
+
+  The two RingLeader inductive steps through the `goto Won` handler
+  (`lemmas` and `Safety`) are discharged by `@[pverifyProof]` manual
+  proofs in the test file. `Safety` needed only a one-fact
+  instantiation hint (`SelfPendingMax` ⇒ `this` is the global max);
+  `lemmas` needed the full cyclic-betweenness argument (`btw_1`..`btw_4`)
+  to show forwarding `eNominate` to the ring successor preserves
+  `NoBypass`. Both are self-contained in the test file — no library
+  change — and serve as the worked template for the `@[pverifyProof]`
+  escape hatch on jointly-inductive ring invariants.
 - Phase 4 (Spec machines) — ☐ next. Plan in PLAN_P4.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the workstream-level

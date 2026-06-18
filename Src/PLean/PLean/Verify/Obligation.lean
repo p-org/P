@@ -52,6 +52,7 @@ private def idSig : Ident := mkIdent `Sig
 -- used in `Surface/Stmt.lean` and `Commands/GenModule.lean`.
 private def idThis  : Ident := mkIdent `this
 private def idParam : Ident := mkIdent `param
+private def idLbl   : Ident := mkIdent `lbl
 
 /-- Resolve a `prove` target name (lemma) to its corresponding bundle
 predicate. `default` resolves to `PLean.DefaultInvariants` (a closed
@@ -230,22 +231,27 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     -- state but whose `kind` is some other machine's — making an honest
     -- obligation spuriously disprovable. Same reasoning as the
     -- `<M>_allocated` state/kind coupling.
+    -- Dispatcher contract. `lbl` is a *universal* theorem binder (idLbl)
+    -- rather than an existential: PVerifier models the handler as a
+    -- procedure taking the dispatched `label` and `requires`-ing the
+    -- in-flight / target / kind / state / event-tag conditions
+    -- ([Uclid5CodeGenerator.cs] GenerateEventHandler). Making `lbl` a
+    -- binder lets the executed program mark it received before the body
+    -- runs (see `handlerTerm`), which the existential form could not.
     let isThisKind : Ident := mkIdent (Name.mkSimple ("is_" ++ mname.toString))
     let dispatcherClause ← do
       if hasPayload then
-        `(∃ lbl : ($idSig).Label,
-            PLean.inflight lbl s ∧
-            lbl.target = ($idThis).ref ∧
-            $isThisKind ($idThis).ref s ∧
-            (s.machines ($idThis).ref).currentState = $stateAlias ∧
-            lbl.action = .event ($evCtor $idParam))
+        `(PLean.inflight $idLbl s ∧
+          ($idLbl).target = ($idThis).ref ∧
+          $isThisKind ($idThis).ref s ∧
+          (s.machines ($idThis).ref).currentState = $stateAlias ∧
+          ($idLbl).action = .event ($evCtor $idParam))
       else
-        `(∃ lbl : ($idSig).Label,
-            PLean.inflight lbl s ∧
-            lbl.target = ($idThis).ref ∧
-            $isThisKind ($idThis).ref s ∧
-            (s.machines ($idThis).ref).currentState = $stateAlias ∧
-            lbl.action = .event $evCtor)
+        `(PLean.inflight $idLbl s ∧
+          ($idLbl).target = ($idThis).ref ∧
+          $isThisKind ($idThis).ref s ∧
+          (s.machines ($idThis).ref).currentState = $stateAlias ∧
+          ($idLbl).action = .event $evCtor)
     let preTerm : TSyntax `term ← `(fun (s : PLean.GlobalState $idSig) =>
                                       $basePre ∧ $dispatcherClause)
     -- Post checks the target lemma only. For `prove default` obligations
@@ -255,11 +261,16 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let postBody ← buildConjAt #[lemmaPred] sId
     let postTerm : TSyntax `term ← `(fun (_ : Unit) (s : PLean.GlobalState $idSig) =>
                                        $postBody)
+    -- Executed program: mark the dispatched label received (PVerifier's
+    -- `received = received[label -> true]` at handler entry), THEN run the
+    -- handler. Without the prologue the consumed event stays in-flight in
+    -- the post-state, spuriously violating any "in-flight <ev> ⇒ …"
+    -- invariant (e.g. DistributedLock's `no_lock_while_transfer`).
+    let handlerCall : TSyntax `term ←
+      if hasPayload then `($handlerId $idThis $idParam)
+      else                `($handlerId $idThis)
     let handlerTerm : TSyntax `term ←
-      if hasPayload then
-        `($handlerId $idThis $idParam)
-      else
-        `($handlerId $idThis)
+      `(PLean.markReceived (P := $idSig) $idLbl >>= fun _ => $handlerCall)
     let handlerUnfold : Ident := mkIdent handlerName
     let lemmaUnfold : Ident :=
       if isDefault then mkIdent ``PLean.DefaultInvariants
@@ -342,8 +353,8 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     -- `exact` fail (reported as a failed obligation, not silently trusted).
     let bodyTac : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       if manualProof then
-        if hasPayload then `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis $idParam)
-        else                `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis)
+        if hasPayload then `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis $idParam $idLbl)
+        else                `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis $idLbl)
       else pure proofTacSeq
     let wrappedProof : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq|
@@ -351,13 +362,13 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     if hasPayload then
       `(set_option linter.unusedTactic false in
         theorem $thmId
-            ($idThis : $mIdent) ($idParam : $payloadTy) :
+            ($idThis : $mIdent) ($idParam : $payloadTy) ($idLbl : ($idSig).Label) :
             triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
           $wrappedProof)
     else
       `(set_option linter.unusedTactic false in
         theorem $thmId
-            ($idThis : $mIdent) :
+            ($idThis : $mIdent) ($idLbl : ($idSig).Label) :
             triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
           $wrappedProof)
   elabCommand stx

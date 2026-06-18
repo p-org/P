@@ -128,26 +128,35 @@ closes nine of ten leaves by SMT directly. The tenth —
 needs the opaque payload extractor's value on the new label, so it is
 discharged by an explicit new-vs-old-label case split. -/
 @[pverifyProof]
-theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payload) :
+theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payload)
+    (lbl : Sig.Label) :
     triple (l := PProp Sig)
       (fun s =>
         (safety s ∧ True) ∧
-        ∃ lbl : Sig.Label,
-          inflight lbl s ∧
-          lbl.target = this.ref ∧
-          is_Node this.ref s ∧
-          (s.machines this.ref).currentState = Node.Act_st ∧
-          lbl.action = .event (E.eGrant param))
-      (Node.Act.eGrant_handler this param)
+        inflight lbl s ∧
+        lbl.target = this.ref ∧
+        is_Node this.ref s ∧
+        (s.machines this.ref).currentState = Node.Act_st ∧
+        lbl.action = .event (E.eGrant param))
+      (do PLean.markReceived (P := Sig) lbl; Node.Act.eGrant_handler this param)
       (fun _ s => safety s ∧ True) := by
   unfold Node.Act.eGrant_handler
   pverify_step_wp
-  intro s hpre hdisp
-  obtain ⟨lbl, hInf, hTgt, hThisKind, hrest⟩ := hdisp
+  intro s hpre
+  -- `pverify_step_wp` peeled the dispatcher conjuncts into goal
+  -- antecedents; `hpre : safety s`. Destructure the bundle (keeping each
+  -- invariant folded so `pverify_smt_close`'s own prep unfolds them), then
+  -- intro the dispatcher facts.
+  -- Unfold the bundle + each invariant in the pre-state so the conjuncts
+  -- are first-order (folded `is_Node`/`inflight` are higher-order to
+  -- lean-auto); the ∧-structure is preserved so the `obtain` still splits
+  -- five ways. `is_eAccept` stays folded — its bridge lemma handles it.
   simp only [safety, unique_holder, no_lock_while_transfer, unique_accept,
     not_held_after_release, transfer_to_higher, is_Node, Node_allocated,
-    Node_kind, inflight] at hpre hThisKind
-  obtain ⟨hUH, hNLT, hUA, hNHR, hTH⟩ := hpre
+    Node_kind, inflight] at hpre
+  obtain ⟨hUH, hNLT, hUA, hNHR, hTH, _⟩ := hpre
+  intro hInf hTgt hThisKind hAct
+  simp only [is_Node, Node_allocated, Node_kind, inflight] at hThisKind hInf
   refine ⟨?_, ?_⟩
   · -- then-branch: `held && param.epoch > epoch` — release + send eAccept.
     intro hcond
@@ -161,10 +170,22 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
     · simp only [not_held_after_release, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
     · -- transfer_to_higher: new eAccept carries `param.epoch > this.epoch`
       -- (from `hGt`); old labels keep the pre-state bound (`hTH`).
-      simp only [transfer_to_higher, is_Node, Node_allocated, Node_kind, inflight]
+      -- Keep `is_Node` folded so it matches `hTH`'s pre-state kind guard.
+      -- The handler updates only `held`/`epoch`, never `kind`/`currentState`,
+      -- so `is_Node n1.ref s_post ↔ is_Node n1.ref s` (the `if` on the
+      -- machines map preserves both fields).
+      simp only [transfer_to_higher, inflight] at ⊢
       intro n1 hn1kind e hisE hsent hsrc
       obtain ⟨hsent1, hrecv⟩ := hsent
       rw [Bool.or_eq_true] at hsent1
+      simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not] at hrecv
+      -- The post-state kind guard `hn1kind` reduces to the pre-state one
+      -- (the machine update preserves `kind` and `currentState`). `hTH` is
+      -- now in unfolded `kind`-conjunction form, so match that shape.
+      have hn1pre : (s.machines n1.ref).kind ≠ 0 ∧
+          (s.machines n1.ref).kind = 1 ∧ True := by
+        simp only [is_Node, Node_allocated, Node_kind] at hn1kind
+        by_cases hn1 : n1.ref = this.ref <;> simp_all
       rcases hsent1 with hNew | hOld
       · rw [decide_eq_true_eq] at hNew
         subst hNew
@@ -172,16 +193,11 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
         simp only at hsrc ⊢
         rw [if_pos hsrc.symm]
         simpa using hGt
-      · have hinflE : s.sent e = true ∧ s.received e = false := ⟨hOld, hrecv⟩
+      · have hinflE : s.sent e = true ∧ s.received e = false := ⟨hOld, hrecv.2⟩
+        have hbound := hTH n1 hn1pre e hisE hinflE hsrc
         by_cases hn1 : n1.ref = this.ref
-        · rw [if_pos hn1] at hn1kind ⊢
-          have hk : (s.machines n1.ref).kind ≠ 0 ∧ (s.machines n1.ref).kind = 1 ∧ True := by
-            rw [hn1]; exact ⟨hThisKind.1, hThisKind.2.1, trivial⟩
-          simpa [hn1] using hTH.1 n1 hk e hisE hinflE hsrc
-        · rw [if_neg hn1]
-          have hk : (s.machines n1.ref).kind ≠ 0 ∧ (s.machines n1.ref).kind = 1 ∧ True := by
-            rw [if_neg hn1] at hn1kind; exact hn1kind
-          exact hTH.1 n1 hk e hisE hinflE hsrc
+        · rw [if_pos hn1]; simpa [hn1] using hbound
+        · rw [if_neg hn1]; exact hbound
   · -- else-branch: `if`-condition false — state unchanged, invariants hold
     -- verbatim from the pre-state.
     intro hcond

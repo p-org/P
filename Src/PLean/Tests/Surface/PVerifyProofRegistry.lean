@@ -64,17 +64,16 @@ namespace PVerifyWithManual
 
 /-- Manual proof for the `prove trivial` obligation. -/
 @[pverifyProof]
-theorem M.S.eHello_correct_Safety_trivial (this : M) :
+theorem M.S.eHello_correct_Safety_trivial (this : M) (lbl : Sig.Label) :
     triple (l := PProp Sig)
       (fun s =>
         (trivial s ∧ True) ∧
-        ∃ lbl : Sig.Label,
-          PLean.inflight lbl s ∧
-          lbl.target = this.ref ∧
-          is_M this.ref s ∧
-          (s.machines this.ref).currentState = M.S_st ∧
-          lbl.action = .event E.eHello)
-      (M.S.eHello_handler this)
+        PLean.inflight lbl s ∧
+        lbl.target = this.ref ∧
+        is_M this.ref s ∧
+        (s.machines this.ref).currentState = M.S_st ∧
+        lbl.action = .event E.eHello)
+      (do PLean.markReceived (P := Sig) lbl; M.S.eHello_handler this)
       (fun _ s =>
         trivial s ∧ True) := by
   unfold M.S.eHello_handler trivial always_true

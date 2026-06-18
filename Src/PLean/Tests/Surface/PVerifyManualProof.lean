@@ -39,25 +39,22 @@ open PartialCorrectness DemonicChoice
 `<M>.<S>.<ev>_correct_<proofTag>_<target>` the obligation generator
 emits. -/
 @[pverifyProof]
-theorem M.S.eHello_correct_Safety_trivial (this : M) :
+theorem M.S.eHello_correct_Safety_trivial (this : M) (lbl : Sig.Label) :
     triple (l := PProp Sig)
       (fun s =>
         (trivial s ∧ True) ∧
-        ∃ lbl : Sig.Label,
-          PLean.inflight lbl s ∧
-          lbl.target = this.ref ∧
-          is_M this.ref s ∧
-          (s.machines this.ref).currentState = M.S_st ∧
-          lbl.action = .event E.eHello)
-      (M.S.eHello_handler this)
+        PLean.inflight lbl s ∧
+        lbl.target = this.ref ∧
+        is_M this.ref s ∧
+        (s.machines this.ref).currentState = M.S_st ∧
+        lbl.action = .event E.eHello)
+      (do PLean.markReceived (P := Sig) lbl; M.S.eHello_handler this)
       (fun _ s =>
         trivial s ∧ True) := by
-  -- Step through the WP plumbing and unfold the handler / framework
-  -- predicates. The atomic tactics in `Verify/Tactic.lean` are
-  -- composable: each is a single-purpose step the user can chain.
-  -- Handler is `pure ()` and the invariant is `always_true := True`, so
-  -- once the bundle is unfolded the post `True ∧ True` closes during
-  -- `pverify_step_wp`'s own simp.
+  -- The dispatched label `lbl` is now a binder; the program marks it
+  -- received then runs the handler. Handler is `pure ()` and the invariant
+  -- is `always_true := True`, so once the bundle is unfolded the post
+  -- `True ∧ True` closes during `pverify_step_wp`'s own simp.
   unfold M.S.eHello_handler trivial always_true
   pverify_step_wp
 

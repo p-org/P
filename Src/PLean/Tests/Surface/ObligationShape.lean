@@ -44,20 +44,24 @@ namespace ObligationShapeMod
 
 -- Non-default obligation: `DefaultInvariants` appears in NEITHER pre nor
 -- post (the sanity invariants are a separate well-formedness bundle,
--- proven only by `prove default`; see `emitOneObligation`). Pre carries
--- the target lemma + dispatcher contract only; post carries the target.
--- The dispatcher contract pins the handler's own machine kind via
--- `is_M this.ref s` (PVerifier's `MachineStateAdtInS`).
+-- proven only by `prove default`; see `emitOneObligation`). The dispatched
+-- label `lbl` is a universal binder (PVerifier's procedure `label`); the
+-- pre carries the target lemma + the dispatch conditions (in-flight,
+-- target, kind, state, event tag); the executed program marks `lbl`
+-- received (PVerifier's `received[label -> true]`) before running the
+-- handler; the post carries the target.
 /--
-info: M.S.eHello_correct_Block1_safety : ∀ (this : M),
+info: M.S.eHello_correct_Block1_safety : ∀ (this : M) (lbl : Sig.Label),
   triple
     (fun s ↦
       (safety s ∧ True) ∧
-        ∃ lbl,
-          inflight lbl s ∧
-            lbl.target = this.ref ∧
-              is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
-    (M.S.eHello_handler this) fun x s ↦ safety s ∧ True
+        inflight lbl s ∧
+          lbl.target = this.ref ∧
+            is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
+    (do
+      markReceived lbl
+      M.S.eHello_handler this)
+    fun x s ↦ safety s ∧ True
 -/
 #guard_msgs in
 #check @M.S.eHello_correct_Block1_safety
@@ -66,15 +70,17 @@ info: M.S.eHello_correct_Block1_safety : ∀ (this : M),
 -- once in pre and once in post (assumed-and-checked), with no separate
 -- duplicate conjunct.
 /--
-info: M.S.eHello_correct_Block2_default : ∀ (this : M),
+info: M.S.eHello_correct_Block2_default : ∀ (this : M) (lbl : Sig.Label),
   triple
     (fun s ↦
       (DefaultInvariants s ∧ True) ∧
-        ∃ lbl,
-          inflight lbl s ∧
-            lbl.target = this.ref ∧
-              is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
-    (M.S.eHello_handler this) fun x s ↦ DefaultInvariants s ∧ True
+        inflight lbl s ∧
+          lbl.target = this.ref ∧
+            is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
+    (do
+      markReceived lbl
+      M.S.eHello_handler this)
+    fun x s ↦ DefaultInvariants s ∧ True
 -/
 #guard_msgs in
 #check @M.S.eHello_correct_Block2_default

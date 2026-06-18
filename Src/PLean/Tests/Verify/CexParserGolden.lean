@@ -142,11 +142,9 @@ info: machines:
 sent (ordered by actionCount): []
 witnesses (handler & skolem bindings):
   lock_server = Node#3 = Node@Working
-⚠ machine-type constraint missing: a typed reference was placed in a wrong-kind slot. A machine-typed reference is kind-erased in the VC, so its kind must be pinned by an invariant seeded at init.
-  `lock_server` is declared `Server` but ref 3 is a `Node` here. To rule this out, add:
-    init-holds (is_Server lock_server.ref)
-    invariant lock_server_is_Server : is_Server lock_server.ref s
-  then thread `lock_server_is_Server` through the relevant `prove … using …` chain.
+add type constraints:
+  init-holds (is_Server lock_server.ref)
+  invariant lock_server_is_Server : is_Server lock_server.ref s
 -/
 #guard_msgs in #eval IO.println ((renderModelText mistypedModel twoKindCtx).getD "FALLBACK")
 

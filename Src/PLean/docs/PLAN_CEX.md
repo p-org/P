@@ -37,16 +37,16 @@ produces). The useful content, in priority order:
    minus uninterpreted-sort universe noise.
 5. **Machine-type alert** — when the model places a *typed* machine
    reference (declared `: <M>`, e.g. `function lock_server : Server`,
-   `reshard_to : Node`) in a slot whose runtime kind differs, surface a
-   consolidated advisory naming the reference and prescribing the
-   `init-holds` + typing `invariant` to add. A machine-typed reference
-   is kind-erased in the VC (matching PVerifier: `PermissionType{Origin:
-   Machine}` → flat `MachineRefT`), so its kind must be pinned by a
-   user invariant seeded at init — exactly P's `const_server` pattern.
-   Detection keys on the wrapper constructor `(<M>.mk r)` in the model,
-   so a raw `MachineRef` reference (bare numeral, P's untyped `machine`)
-   never triggers it, and a kind-guarded `∀ n : <M>` binder cannot
-   mismatch. The advisory fires only when ≥1 mismatch exists.
+   `reshard_to : Node`) in a slot whose runtime kind differs, append the
+   concrete type constraints to add — `init-holds (is_<M> <ref>.ref)`
+   and `invariant <ref>_is_<M> : is_<M> <ref>.ref s`. A machine-typed
+   reference is kind-erased in the VC (matching PVerifier:
+   `PermissionType{Origin: Machine}` → flat `MachineRefT`), so its kind
+   must be pinned by a user invariant seeded at init — P's
+   `const_server` pattern. Detection keys on the wrapper constructor
+   `(<M>.mk r)` in the model, so a raw `MachineRef` reference (P's
+   untyped `machine`) never triggers it, and a kind-guarded
+   `∀ n : <M>` binder cannot mismatch.
 
 `MachineRef`-typed values (event-payload ref fields, ref-typed `var`s,
 label targets, `this`) render as `<Kind>#<ref>` machine labels so a

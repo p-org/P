@@ -573,22 +573,10 @@ def CexModel.render (m : CexModel) : String := Id.run do
     for (n, v) in m.witnesses do
       lines := lines.push s!"  {n} = {v}"
   unless m.typeAlerts.isEmpty do
-    lines := lines.push
-      "⚠ machine-type constraint missing: a typed reference was placed \
-       in a wrong-kind slot. A machine-typed reference is kind-erased in \
-       the VC, so its kind must be pinned by an invariant seeded at init."
+    lines := lines.push "add type constraints:"
     for a in m.typeAlerts do
-      let src := a.source
-      lines := lines.push
-        s!"  `{src}` is declared `{a.declared}` but ref {a.ref} is a \
-           `{a.slotKind}` here. To rule this out, add:"
-      lines := lines.push
-        s!"    init-holds (is_{a.declared} {src}.ref)"
-      lines := lines.push
-        s!"    invariant {src}_is_{a.declared} : is_{a.declared} {src}.ref s"
-      lines := lines.push
-        s!"  then thread `{src}_is_{a.declared}` through the relevant \
-           `prove … using …` chain."
+      lines := lines.push s!"  init-holds (is_{a.declared} {a.source}.ref)"
+      lines := lines.push s!"  invariant {a.source}_is_{a.declared} : is_{a.declared} {a.source}.ref s"
   return "\n".intercalate lines.toList
 
 /-- Whether the decode produced any structured content beyond the

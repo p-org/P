@@ -170,8 +170,24 @@ before attempting one.
   `<project>/.lake/build/pverify_cache/` shaves 11–14% wall-clock on
   warm rebuilds; soundness pinned by
   [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
-  `3_RingLeaderVerification` not yet ported.
-- Phase 4 (Spec machines) — ☐ next.
+  `3_RingLeaderVerification` is ported in
+  [`Tests/Surface/Phase3RingLeader.lean`](Tests/Surface/Phase3RingLeader.lean).
+  Porting it produced two reusable framework fixes:
+
+  1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
+     hygienically, so the `goto` doElem macro (first exercised inside an
+     `on`-handler by this benchmark) couldn't resolve `G.unit`. Now
+     emitted unhygienically in `emitProgramUnions`.
+  2. **Machine-state defunctionalisation** — lean-auto rejected any
+     goal reading `(s.machines m).currentState` ("Higher order input?")
+     because `machines : MachineRef → MachineState` is an
+     array-of-records. `pverify_smt_prep` now runs
+     `pverify_defunctionalize_machines`, abstracting each scalar/enum
+     machine-state projection into a fresh uninterpreted
+     `MachineRef → _` function before `loom_smt`. Complements
+     `abstract_machine_lookups` (which handles `s.machines (payload_of e).field`
+     compound-argument cases).
+- Phase 4 (Spec machines) — ☐ next. Plan in PLAN_P4.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.
 

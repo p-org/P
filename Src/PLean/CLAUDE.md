@@ -179,8 +179,8 @@ first — most need surface features that aren't built yet.
   infrastructure bugs. Closing them is a matter of porting the missing
   invariants from the original P sources or supplying `@[pverifyProof]`
   manual proofs. The `3_RingLeaderVerification` benchmark is now ported
-  in `Tests/Surface/Phase3RingLeader.lean` (28 proved / 1 disproved /
-  3 unknown of 32). Porting it produced two reusable framework fixes:
+  in `Tests/Surface/Phase3RingLeader.lean` (30 proved / 1 disproved /
+  1 unknown of 32). Porting it produced three reusable framework fixes:
 
   1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
      hygienically, so the `goto` doElem macro (first exercised inside an
@@ -195,10 +195,17 @@ first — most need surface features that aren't built yet.
      `MachineRef → _` function before `loom_smt`. This removed the
      higher-order failures across all benchmarks (LockServer jumped
      2→12 proved) and is the general fix for the SMT higher-order
-     limitation. The RingLeader residuals are now genuine verification
-     gaps: 2 base cases are `unknown` pending `InitConditions`
-     `InStart`/`InEntry` modelling; the `Safety` inductive step is
-     `disproved` pending a stronger jointly-inductive invariant.
+     limitation.
+  3. **`InStart` init modelling + reducible state aliases** —
+     `emitInitConditions` now asserts every machine begins in a start
+     state, and `<S>_st` aliases are `abbrev` (reducible) so the solver
+     sees the raw `S` constructors. Together these close the two
+     state-dependent base cases (`LeaderMax` / `UniqueLeader`). The
+     remaining 2 RingLeader residuals are the *inductive steps* of
+     those invariants through the `goto Won` handler — genuine
+     jointly-inductive-invariant gaps (`lemmas` `unknown`, `Safety`
+     `disproved`), to be closed by stronger invariants or
+     `@[pverifyProof]` manual proofs.
 - Phase 4 (Spec machines) — ☐ next. Plan in PLAN_P4.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the workstream-level

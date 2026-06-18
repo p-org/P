@@ -148,16 +148,76 @@ elab_rules : tactic
         try evalTactic stx
         catch _ => pure ()
 
+/-- Abstract every `machines`-field lookup whose ref argument is derived
+from an *opaque event-payload extractor* (`<ev>_payload_of`) to a fresh
+`MachineState` local.
+
+The `machines` field is `MachineRef → MachineState`. lean-auto translates
+`s.machines x` (x a bound/free variable, or a plain wrapper projection
+like `n.ref`) as an applied uninterpreted function — fine. But
+`s.machines ((<ev>_payload_of e).sender)` — the field applied to a ref
+pulled through the *opaque* payload extractor — makes lean-auto emit an
+identity lambda and abort with `lamTerm2STermAux :: Unexpected head term
+... lam`. Generalising the whole `machines <compound>` application to a
+fresh `ms : MachineState` removes the offending argument before SMT sees
+it; the invariant body then reads plain `MachineState` projections
+(`ms.kind`, …), which translate cleanly. Sound: it only names a subterm.
+
+The trigger is gated on the argument mentioning a `…_payload_of` constant
+so it does NOT fire on ordinary `s.machines n.ref` lookups (over-
+abstracting those would sever the link between two reads at the same ref,
+e.g. `unique_lock_holder`'s `n1`/`n2`). Generalisation also only succeeds
+on a closed term, so it abstracts the post-negation skolem case and
+leaves genuinely-under-binder occurrences for lean-auto. -/
+syntax "abstract_machine_lookups" : tactic
+elab_rules : tactic
+  | `(tactic| abstract_machine_lookups) => withMainContext do
+    let isMachineStateTy (t : Expr) : MetaM Bool := do
+      return (← Lean.Meta.whnf t).isAppOf ``PLean.MachineState
+    -- Whether `a` is derived from an opaque `<ev>_payload_of` extractor.
+    let viaPayloadExtractor (a : Expr) : Bool :=
+      a.find? (fun sub =>
+        match sub.getAppFn.constName? with
+        | some n => n.toString.endsWith "_payload_of"
+        | none   => false) |>.isSome
+    -- First `machines`-field lookup `f a` in `e` whose result is
+    -- `MachineState`, `f : _ → MachineState`, and `a` goes through a
+    -- payload extractor. Recurses into subterms.
+    let rec firstLookup (e : Expr) : MetaM (Option Expr) := do
+      if e.isApp then
+        let arg := e.appArg!
+        if viaPayloadExtractor arg && (← isMachineStateTy (← Lean.Meta.inferType e)) then
+          match ← Lean.Meta.inferType e.appFn! with
+          | .forallE _ _ body _ =>
+            if !body.hasLooseBVars && (← isMachineStateTy body) then
+              return some e
+          | _ => pure ()
+      for sub in e.getAppArgs.push e.getAppFn do
+        if sub != e then
+          if let some hit ← firstLookup sub then return hit
+      return none
+    -- Bounded loop: each pass abstracts one compound lookup, then
+    -- re-scans (the goal changed). 8 is a safe cap.
+    for _ in [0:8] do
+      match ← firstLookup (← getMainTarget) with
+      | none   => break
+      | some e =>
+        let stx ← `(tactic| generalize $(← e.toSyntax) = ms at *)
+        try evalTactic stx catch _ => break
+
 /-- Pre-SMT normalisation: simp the `pverifySimp` set, destruct
-state hypotheses, strip `WithName` wrappers, then unfold the
-default-invariant predicates so lean-auto's monomorphizer sees applied
-uninterpreted symbols and concrete `Label`/`Nat`/`Bool` atoms instead
-of `Higher order input?`-flagged shapes.
+state hypotheses, strip `WithName` wrappers, abstract compound machine
+lookups, then unfold the default-invariant predicates so lean-auto's
+monomorphizer sees applied uninterpreted symbols and concrete
+`Label`/`Nat`/`Bool` atoms instead of `Higher order input?`-flagged
+shapes.
 
 Step ordering: `simp [pverifySimp]` must precede `sdestruct_state` so
 `addSent` / `addReceived` / etc. expand into record literals while
 the state still has its struct form; the subsequent destruct +
-`dsimp only` iota-reduces `{ sent := f, ... }.sent l` to `f l`. -/
+`dsimp only` iota-reduces `{ sent := f, ... }.sent l` to `f l`.
+`abstract_machine_lookups` runs after the destruct so it sees the bare
+`machines` field applied to any compound ref. -/
 syntax "pverify_smt_prep" : tactic
 macro_rules
   | `(tactic| pverify_smt_prep) => `(tactic| (
@@ -166,6 +226,7 @@ macro_rules
       try sdestruct_state
       try unfold WithName at *
       try dsimp only at *
+      try abstract_machine_lookups
       try unfold PLean.DefaultInvariants at *
       try unfold PLean.UniqueActions at *
       try unfold PLean.IncreasingCount at *

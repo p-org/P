@@ -47,7 +47,7 @@ except ImportError:
 # ============================================================================
 
 from core.llm import get_default_provider
-from core.services import GenerationService, CompilationService, FixerService
+from core.services import GenerationService, CompilationService, FixerService, LearnInvariantsService
 from core.services.base import ResourceLoader
 from ui.mcp.contracts import with_metadata as contract_with_metadata
 
@@ -107,6 +107,10 @@ def get_services() -> Dict[str, Any]:
             resource_loader=resource_loader,
             compilation_service=_services["compilation"]
         )
+        _services["learn_invariants"] = LearnInvariantsService(
+            llm_provider=provider,
+            resource_loader=resource_loader
+        )
         _services["resources"] = resource_loader
         
         logger.info("Services initialized")
@@ -146,6 +150,7 @@ from ui.mcp.tools.fixing import register_fixing_tools
 from ui.mcp.tools.query import register_query_tools
 from ui.mcp.tools.rag_tools import register_rag_tools
 from ui.mcp.tools.workflows import register_workflow_tools
+from ui.mcp.tools.invariants import register_invariant_tools
 from ui.mcp.resources import register_resources
 
 register_env_tools(mcp, _with_metadata)
@@ -155,6 +160,7 @@ register_fixing_tools(mcp, get_services, _with_metadata)
 register_query_tools(mcp, get_services, _with_metadata)
 register_rag_tools(mcp, _with_metadata)
 register_workflow_tools(mcp, get_services, _with_metadata)
+register_invariant_tools(mcp, get_services, _with_metadata)
 register_resources(mcp, get_services)
 
 

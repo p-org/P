@@ -131,5 +131,37 @@ iteration. Probably both: tutorials for CI-speed loops, the 43 for the headline 
 
 ---
 
+---
+
+## E. Implementation status (this branch)
+
+Built per **D-delivery = shared core + both wrappers**:
+
+- **Shared core** — `Src/PInfer/Scripts/invariant_core.py`: engine-agnostic. Deterministic
+  validation (`validate_candidates`: wire → compile → bounded `p check` → classify HOLDS / FAILS+cex
+  / VACUOUS / INCONCLUSIVE / COMPILE-ERR, with canary vacuity + SUT-confound detection) **+** the
+  template/lens propose prompts, the Specy-Table-3 judge rubric, and the P-syntax repair rules.
+  `check_candidates.py` is now a thin CLI over it. ✅ unit-tested (`test_invariant_core.py`, 8 tests)
+  and verified end-to-end against `Tutorial/4_FailureDetector`.
+- **MCP wrapper (PeasyAI)** — `core/services/learn_invariants.py` (`LearnInvariantsService`:
+  propose via `self.llm.complete`, validate via the shared core, judge, rank) +
+  `ui/mcp/tools/invariants.py` (`peasy-ai-learn-invariants`, `peasy-ai-validate-invariants`),
+  registered in `server.py` / `services/__init__.py`. ✅ `py_compile`-clean; core import path
+  verified. ⚠️ full runtime needs the PeasyAI venv + an LLM provider (not exercised here).
+- **Claude Code skill** — `.claude/skills/learn-invariants/SKILL.md`: the multi-agent loop
+  (fan-out proposers + adversarial judges) over the same scripts.
+
+**Deviation from §5 of the design doc:** the proposed `VacuityValidator` / `FalsePositiveValidator`
+were *not* added to `CORE_VALIDATORS` — the `Validator.validate(code, context)` interface has no
+project/test handle to run `p check`, and model-checking the whole generation chain would be too
+slow. Validation lives in `LearnInvariantsService` (shared core) instead. Update the design doc to
+match.
+
+**Still pending:** D1/D2 decisions; the Specy-engine backend (Phase 4, needs `experimental/pinfer`);
+the trace-filter Stage A (currently vacuity is via the PChecker canary, not cheap trace replay);
+runtime test with a configured LLM provider; the evaluation harness (Phase 5).
+
+---
+
 *This plan is intended to be iterated. Edit decisions in §A, re-scope phases in §B, and we converge
 before writing production code.*

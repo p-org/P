@@ -1,66 +1,26 @@
 #!/usr/bin/env python3
 """
-check_candidates.py — the mechanical core of the agentic invariant pipeline.
+check_candidates.py — CLI over the shared `invariant_core` engine: wire candidate spec
+monitors into a P project, compile, bounded model-check, and classify each as
+HOLDS / FAILS(+counterexample) / VACUOUS / INCONCLUSIVE / COMPILE-ERR.
 
-    agent proposes (from code + intent)            <- human/LLM step, outside this tool
-        -> candidate spec monitors (a .p file)
-        -> [THIS TOOL] TransformToP-style wiring + PChecker on every candidate
-        -> verdict table: HOLDS / FAILS(+counterexample) / VACUOUS
-    agent judges each verdict (verified / vacuous / bug / spurious)   <- human/LLM step
+A `<Name>_canary` companion spec (assert false in the same guarded branch) drives vacuity
+detection; a failure owned by a pre-existing SUT assertion is reported INCONCLUSIVE.
 
-This tool does NOT propose or judge (those need an LLM). It removes all the
-manual harness work: it drops the candidate monitors into a P project, generates
-one test per candidate, compiles, model-checks each, classifies the result, and
-runs vacuity canaries.
+    python3 check_candidates.py --project Tutorial/4_FailureDetector \
+        --candidates fd_candidates.p --main TestMultipleClients \
+        --assert-in "union { TestMultipleClients }, FailureDetector, FailureInjector" --iters 3000
 
-Conventions
------------
-* Each candidate is a `spec <Name> observes ... { ... }` block in the candidates file.
-* A candidate named `<Name>_canary` is treated as a *vacuity probe* for `<Name>`:
-  it should `assert false` inside the exact branch `<Name>`'s real assertion guards.
-  If `<Name>` HOLDS and `<Name>_canary` also HOLDS (0 bugs => the guarded branch is
-  never reached), `<Name>` is reported VACUOUS (it verified nothing).
-
-Example
--------
-  python3 check_candidates.py \
-    --project Tutorial/4_FailureDetector \
-    --candidates /tmp/fd_candidates.p \
-    --main TestMultipleClients \
-    --assert-in "union { TestMultipleClients }, FailureDetector, FailureInjector" \
-    --iters 3000
+This is the deterministic middle of the agentic loop (propose → check → judge). See
+README_agentic_invariants.md; the engine lives in invariant_core.py.
 """
-import argparse, json, os, re, shutil, subprocess, sys, glob
+import argparse
+import json
+import sys
 from pathlib import Path
 
-SPEC_RE = re.compile(r'^\s*spec\s+([A-Za-z_]\w*)', re.MULTILINE)
-BUG_RE = re.compile(r'Found (\d+) bug')
-FAIL_RE = re.compile(r'(Assertion Failed:.*|detected liveness bug.*|Deadlock detected.*)')
-
-
-def build_env():
-    """Return an env where `dotnet` and the `p` global tool resolve. Prefers an
-    already-working PATH/DOTNET_ROOT; otherwise probes common install locations
-    (version-agnostic, Linux + macOS/homebrew)."""
-    env = dict(os.environ)
-    tools = str(Path.home() / ".dotnet" / "tools")
-    if tools not in env.get("PATH", ""):
-        env["PATH"] = tools + os.pathsep + env.get("PATH", "")
-    if shutil.which("dotnet", path=env["PATH"]):
-        return env
-    probes = ([env["DOTNET_ROOT"]] if env.get("DOTNET_ROOT") else []) + [
-        "/usr/share/dotnet", "/usr/local/share/dotnet", str(Path.home() / ".dotnet"),
-    ] + sorted(glob.glob("/opt/homebrew/Cellar/dotnet@*/*/libexec"))
-    for root in probes:
-        if Path(root, "dotnet").exists() or Path(root, "host").is_dir():
-            env["DOTNET_ROOT"] = root
-            env["PATH"] = root + os.pathsep + env["PATH"]
-            return env
-    return env
-
-
-def run(cmd, cwd, env):
-    return subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from invariant_core import validate_candidates  # noqa: E402
 
 
 def main():
@@ -68,102 +28,21 @@ def main():
     ap.add_argument("--project", required=True, help="P project dir (contains the .pproj)")
     ap.add_argument("--candidates", required=True, help=".p file of candidate spec monitors")
     ap.add_argument("--main", required=True, help="test main machine name")
-    ap.add_argument("--assert-in", required=True,
-                    help="exact module expression after 'in' (no trailing ';')")
+    ap.add_argument("--assert-in", required=True, help="module expression after 'in' (no trailing ';')")
     ap.add_argument("--iters", type=int, default=3000, help="schedules per candidate")
     ap.add_argument("--keep", action="store_true", help="leave generated files in place")
     args = ap.parse_args()
 
-    proj = Path(args.project).resolve()
-    env = build_env()
-    cand_src = Path(args.candidates).read_text()
-    names = SPEC_RE.findall(cand_src)
-    if not names:
-        sys.exit("No `spec <Name>` blocks found in candidates file.")
-    reals = [n for n in names if not n.endswith("_canary")]
-    canaries = {n[:-7] for n in names if n.endswith("_canary")}
+    src = Path(args.candidates).read_text()
+    verdicts = validate_candidates(args.project, src, args.main, args.assert_in, args.iters, args.keep)
 
-    # Wire the candidates + generated tests into the project.
-    cand_dst = proj / "PSpec" / "_candidates.p"
-    test_dst = proj / "PTst" / "_candidate_tests.p"
-    shutil.copyfile(args.candidates, cand_dst)
-    tests = []
-    for n in names:
-        tests.append(f"test tc_{n} [main={args.main}]:\n"
-                     f"  assert {n} in {args.assert_in};\n")
-    test_dst.write_text("// AUTO-GENERATED by check_candidates.py\n\n" + "\n".join(tests))
-
-    # Map each spec name to its source block, so we can isolate a single candidate.
-    spans = [(m.start(), m.group(1)) for m in SPEC_RE.finditer(cand_src)]
-    spans.append((len(cand_src), None))
-    block_of = {spans[i][1]: cand_src[spans[i][0]:spans[i + 1][0]] for i in range(len(spans) - 1)}
-
-    def wire(subset):
-        cand_dst.write_text("\n".join(block_of[n] for n in subset))
-        test_dst.write_text("// AUTO-GENERATED\n\n" + "\n".join(
-            f"test tc_{n} [main={args.main}]:\n  assert {n} in {args.assert_in};\n" for n in subset))
-        return "Compilation succeeded" in run(["p", "compile"], proj, env).stdout
-
-    def check_one(n):
-        bf = proj / "PCheckerOutput" / "BugFinding"
-        for f in glob.glob(str(bf / "*_0_*.txt")):
-            os.remove(f)
-        out = run(["p", "check", "-tc", f"tc_{n}", "-i", str(args.iters)], proj, env).stdout
-        m = BUG_RE.search(out)
-        bugs = int(m.group(1)) if m else -1
-        cex, owner = "", "monitor"
-        if bugs > 0:
-            tfs = sorted(glob.glob(str(bf / "*_0_*.txt")), key=os.path.getmtime)
-            if tfs:
-                fm = FAIL_RE.search(Path(tfs[-1]).read_text())
-                cex = (fm.group(1) if fm else "").strip()[:160]
-                # Did THIS candidate's monitor fail, or did a pre-existing SUT
-                # assertion / deadlock fire first (masking the candidate)?
-                if "_candidates.p" in cex or "liveness" in cex or "hot state" in cex:
-                    owner = "monitor"
-                else:
-                    owner = "sut"
-        return {"bugs": bugs, "holds": bugs == 0, "cex": cex, "owner": owner}
-
-    try:
-        results = {}
-        if wire(names):                               # fast path: everything compiles together
-            print(f"Compiled OK (batch). {len(reals)} candidates, {len(canaries)} canaries.\n")
-            for n in names:
-                results[n] = check_one(n)
-        else:                                         # robust path: isolate each candidate
-            print("Batch compile failed — isolating candidates so one bad spec can't sink the rest.\n")
-            for n in names:
-                if wire([n]):
-                    results[n] = check_one(n)
-                else:
-                    results[n] = {"bugs": -1, "holds": False, "cex": "COMPILE-ERROR", "compile_error": True}
-
-        # Classify, folding in vacuity verdicts from canaries.
-        print(f"{'CANDIDATE':<42}{'VERDICT':<10}DETAIL")
-        print("-" * 100)
-        report = []
-        for n in reals:
-            r = results[n]
-            if r.get("compile_error"):
-                verdict, detail = "COMPILE-ERR", "candidate did not compile (dropped)"
-            elif not r["holds"] and r.get("owner") == "sut":
-                verdict, detail = "INCONCLUSIVE", f"SUT assertion fired first (candidate untested): {r['cex']}"
-            elif not r["holds"]:
-                verdict, detail = "FAILS", r["cex"]
-            elif n in canaries and results.get(f"{n}_canary", {}).get("holds"):
-                verdict, detail = "VACUOUS", "guarded branch never reached (canary did not trip)"
-            else:
-                verdict, detail = "HOLDS", "non-vacuous" if n in canaries else ""
-            report.append({"name": n, "verdict": verdict, "detail": detail})
-            print(f"{n:<42}{verdict:<10}{detail}")
-        print("\nNext: an agent judges each FAILS as `bug` (required property) or "
-              "`spurious` (over-strong), and each HOLDS for interestingness.")
-        print(json.dumps(report))
-    finally:
-        if not args.keep:
-            cand_dst.unlink(missing_ok=True)
-            test_dst.unlink(missing_ok=True)
+    print(f"{'CANDIDATE':<42}{'VERDICT':<13}DETAIL")
+    print("-" * 100)
+    for v in verdicts:
+        print(f"{v.name:<42}{v.verdict:<13}{v.detail}")
+    print("\nNext: an agent judges each FAILS as `bug` (required property) or `spurious` "
+          "(over-strong), and each HOLDS for vacuity/interestingness.")
+    print(json.dumps([{"name": v.name, "verdict": v.verdict, "detail": v.detail} for v in verdicts]))
 
 
 if __name__ == "__main__":

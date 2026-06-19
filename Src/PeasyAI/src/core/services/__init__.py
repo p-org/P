@@ -11,15 +11,18 @@ without any UI-specific dependencies.
 from .generation import GenerationService, GenerationResult
 from .compilation import CompilationService, CompilationResult
 from .fixer import FixerService, FixResult, FixAttemptTracker
+from .learn_invariants import LearnInvariantsService, LearningResult
 
 __all__ = [
     "GenerationService",
     "GenerationResult",
-    "CompilationService", 
+    "CompilationService",
     "CompilationResult",
     "FixerService",
     "FixResult",
     "FixAttemptTracker",
+    "LearnInvariantsService",
+    "LearningResult",
 ]
 
 

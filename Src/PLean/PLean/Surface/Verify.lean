@@ -300,29 +300,37 @@ Replay each verification declaration as a Lean def. Called by
 `#gen_module` after machines have been materialised so invariant /
 axiom bodies can reference machine fields and event payloads. -/
 
-/-- Reject any `∀ <ident> : GlobalState <Sig>, …` (or `∀ <ident> :
-PLean.GlobalState <Sig>, …`) anywhere in an invariant body when the
-invariant lives inside a `system <s> { … }` block. Such a binder
-shadows the outer `<s>` for the body it scopes — and the previous
-fix only caught the leading-position case, so a body like
-`True ∧ (∀ s : GlobalState Sig, P s)` evaded detection. The walk
-below is recursive over the body Syntax.
+/-- Reject any binder that introduces a fresh `GlobalState`-typed
+identifier inside a `system <s> { … }` invariant body. Such a binder
+shadows the outer `<s>` for the body it scopes, decoupling the invariant
+from the per-handler state and letting a *false* property verify as a
+clean pass (the 2026-06-10 soundness hole).
+
+The original guard matched only the six leading `∀ … : GlobalState …`
+shapes, so a `let`/`have`/`fun`/`λ`/`∃` binder of the same type — e.g.
+`let s : GlobalState Sig := default; …` or `∃ s : GlobalState Sig, …` —
+slipped past and re-opened the hole. Rather than enumerate every binder
+form, we reject *any* occurrence of the `GlobalState` / `PLean.GlobalState`
+type identifier in the body: a well-formed `system`-block invariant never
+needs to name the state type (it references the bound `s` instead), so
+this is a sound over-approximation that cannot be evaded by a new binder
+syntax. The walk is recursive over the body `Syntax` and surfaces the
+offending occurrence for `throwErrorAt`.
 
 A bare top-level `invariant standalone : ∀ s : GlobalState Sig, P` is
-allowed — it's intentionally state-independent (the materialiser uses
-a wildcard binder, so no shadowing risk). The check therefore only
-fires when an enclosing `system` block has registered a state binder. -/
+still allowed — the materialiser uses a wildcard binder there, so there
+is no `system`-block `s` to shadow; this check only runs when an
+enclosing `system` block has registered a state binder. -/
 private partial def containsExplicitStateBinder (stx : Syntax) : Option Syntax := Id.run do
-  -- Match-on-Syntax patterns return `Option (TSyntax k)`; we surface
-  -- the offending sub-expression so the error can `throwErrorAt` it.
-  match stx with
-  | `(∀ _ : PLean.GlobalState $_, $_)
-  | `(∀ _ : GlobalState $_, $_)
-  | `(∀ $_:ident : PLean.GlobalState $_, $_)
-  | `(∀ $_:ident : GlobalState $_, $_)
-  | `(∀ ($_:ident : PLean.GlobalState $_), $_)
-  | `(∀ ($_:ident : GlobalState $_), $_) => return some stx
-  | _ => pure ()
+  -- A bare reference to the state type — `GlobalState` or its qualified
+  -- form `PLean.GlobalState` — anywhere in the body is the trigger.
+  -- Matching the identifier (rather than a particular binder shape)
+  -- catches `∀`/`∃`/`let`/`have`/`fun`/`λ` uniformly.
+  if stx.isIdent then
+    let n := stx.getId
+    if n == ``PLean.GlobalState || n == `GlobalState
+        || n == `PLean.GlobalState then
+      return some stx
   for child in stx.getArgs do
     if let some hit := containsExplicitStateBinder child then
       return some hit
@@ -333,12 +341,27 @@ private def rejectExplicitStateBinder (id : Ident) (prop : TSyntax `term) :
   match containsExplicitStateBinder prop with
   | some hit =>
     throwErrorAt hit m!"invariant `{id.getId}` lives inside a `system` block \
-      but its body contains `∀ <ident> : GlobalState <Sig>, …`. That \
-      inner ∀-binder shadows the outer `system` state binder and \
-      silently decouples the invariant from per-handler state (the \
-      soundness hole fixed 2026-06-10). Drop the inner \
-      `∀ … : GlobalState Sig,` and reference the `system`-block's \
-      state binder directly in the body."
+      but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` \
+      binder of type `GlobalState <Sig>` shadows the outer `system` state \
+      binder and silently decouples the invariant from per-handler state \
+      (the soundness hole fixed 2026-06-10). Reference the `system`-block's \
+      state binder directly in the body instead of introducing a new \
+      `GlobalState`-typed variable."
+  | none => pure ()
+
+/-- Public guard for `init-holds` bodies (and any other state-bound
+prop materialised with a hardcoded `s` binder): reject a body that names
+the `GlobalState` type, since such a binder shadows the `s` the
+materialiser introduces. Same soundness rationale as
+`rejectExplicitStateBinder` for `system`-block invariants. -/
+def rejectStateShadowIn (what : String) (prop : Syntax) : CommandElabM Unit := do
+  match containsExplicitStateBinder prop with
+  | some hit =>
+    throwErrorAt hit m!"{what} body names the `GlobalState` type. A \
+      `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows \
+      the materialiser's state binder and decouples the clause from the \
+      actual state (a soundness hole). Reference the state directly rather \
+      than introducing a new `GlobalState`-typed variable."
   | none => pure ()
 
 /-! ## Auto-injection of kind guards over machines and events

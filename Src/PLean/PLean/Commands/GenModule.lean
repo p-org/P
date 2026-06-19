@@ -344,6 +344,72 @@ private def emitEventPayloadAccessors (ctx : LocalPModuleCtx)
         | _ => default
     ))
 
+/-! ## Step 4d″: per-event payload characterisation `<ev>_payload_of_spec`
+
+`<ev>_payload_of` (step 4d) is meant to be opaque to SMT — lean-auto
+treats it as an uninterpreted function. That is right for an in-flight
+label `e` whose payload the invariant constrains transitively. But two
+things go wrong for a *send*-handler whose post-state routing invariant
+quantifies `∀ e, is_<ev> e → … (<ev>_payload_of e) …`:
+
+  1. As a plain `def`, lean-auto tries to look inside `<ev>_payload_of`'s
+     `match` body when it appears applied to a *bound* `e`, and aborts
+     with `lamTerm2STermAux :: Unexpected head term … lam`. Marking the
+     extractor `@[irreducible]` (below) stops that — it then translates
+     as a true uninterpreted symbol even under a `∀` binder.
+
+  2. With the extractor uninterpreted, the solver has no way to compute
+     its value on the freshly-sent label `Label.mk t (.event (E.<ev> p))
+     c`, so it picks a spurious model and reports a counter-example. The
+     emitted `<ev>_payload_of_spec` fact — `∀ lbl p, lbl.action = .event
+     (E.<ev> p) → <ev>_payload_of lbl = p` — supplies exactly the
+     defining equation the solver needs; `emitOneObligation` brings it
+     into context (`have`) so `loom_smt [*]` instantiates it at the new
+     label.
+
+This generalises the manual `eAccept_payload_of_mk` lemma the
+DistributedLock port hand-wrote: the generator now emits the
+characterisation for every event with a payload, and the obligation
+generator feeds it to SMT automatically. -/
+
+private def emitPayloadCharacterizations (ctx : LocalPModuleCtx)
+    (eventPayloadFields : NameMap NameSet) : CommandElabM Unit := do
+  for ename in ctx.eventOrder do
+    let some e := ctx.events.find? ename | continue
+    let some _ := eventPayloadFields.find? ename | continue
+    let some payloadName := e.payload | continue
+    let extractor : Ident :=
+      mkIdent (Name.mkSimple (e.name.toString ++ "_payload_of"))
+    let mkThm : Ident :=
+      mkIdent (Name.mkSimple (e.name.toString ++ "_payload_of_mk"))
+    let specThm : Ident :=
+      mkIdent (Name.mkSimple (e.name.toString ++ "_payload_of_spec"))
+    let payloadId : Ident := mkIdent payloadName
+    let evCtor   : Ident := mkIdent (`E ++ e.name)
+    let labelMk  : Ident := mkIdent ``PLean.Label.mk
+    -- Defining equation on a literal `Label.mk` (proved before the
+    -- extractor is sealed). Kept as a public lemma for manual proofs.
+    elabCommand (← `(
+      theorem $mkThm (t : PLean.MachineRef) (p : $payloadId) (c : Nat) :
+          $extractor ($labelMk t (.event ($evCtor p)) c) = p := by
+        unfold $extractor; rfl
+    ))
+    -- Universal characterisation from any label whose action is known.
+    -- Proved via `_mk` after destructuring so it does NOT depend on the
+    -- extractor staying reducible.
+    elabCommand (← `(
+      theorem $specThm (lbl : ($idSig).Label) (p : $payloadId)
+          (h : lbl.action = .event ($evCtor p)) : $extractor lbl = p := by
+        obtain ⟨t, a, c⟩ := lbl
+        simp only at h
+        subst h
+        exact $mkThm t p c
+    ))
+    -- Seal the extractor so lean-auto always translates it as an
+    -- uninterpreted function (point 1 above). `_spec` supplies its value
+    -- to SMT where needed.
+    elabCommand (← `(attribute [irreducible] $extractor))
+
 /-! ## Step 4d′: per-event characterisation lemmas `is_<ev>_iff`
 
 Bridge the opaque `is_<ev>` tag predicate to a concrete `Label.action`
@@ -622,6 +688,11 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
   let mut props : Array (TSyntax `term) := frameworkClauses
   for d in ctx.inits do
     if let some stx := d.defStx then
+      -- `init-holds` bodies are materialised under a hardcoded `s` binder
+      -- (below), so a `GlobalState`-typed binder in the body would shadow
+      -- it and decouple the clause from the actual init state — the same
+      -- soundness hole `rejectExplicitStateBinder` guards for invariants.
+      PLean.rejectStateShadowIn "`init-holds`" stx[1]
       let rewritten ← liftMacroM <|
         PLean.rewriteFieldProjections machineKinds eventKinds
           machineFields eventPayloadFields `s stx[1]
@@ -729,6 +800,11 @@ def elabPGenModule : CommandElab := fun stx => do
     -- Step 4d: per-event payload extractor `<ev>_payload_of`. Lives
     -- after the union types so it can pattern-match on `E.<ev>`.
     emitEventPayloadAccessors ctx eventPayloadFields
+    -- Step 4d″: per-event `<ev>_payload_of_mk` characterisation lemma —
+    -- the defining equation of the extractor on a freshly-constructed
+    -- event label, used by send-handler manual proofs. Lives after
+    -- `emitEventPayloadAccessors` (so `<ev>_payload_of` exists).
+    emitPayloadCharacterizations ctx eventPayloadFields
     -- Step 4d′: per-event `is_<ev>_iff` characterisation lemmas. Lives
     -- after `emitIsPredicates` (so `is_<ev>` exists to unfold) and the
     -- union types (so `E.<ev>` resolves).

@@ -305,7 +305,20 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
         (mkIdent (Name.mkSimple ("is_" ++ m.toString)))
       kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_allocated"))
       kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_kind"))
-    let _ := eventNames -- bridging lemmas not injected (see file header)
+    -- `<ev>_payload_of_spec` facts: one per payload-bearing event. Brought
+    -- into context (via `have`) so `loom_smt [*]` can compute the opaque
+    -- (irreducible) extractor's value on a freshly-sent label — needed by
+    -- send-handlers preserving a routing invariant `∀ e, is_<ev> e → …
+    -- (<ev>_payload_of e) …` over the new label. The extractor is sealed
+    -- `@[irreducible]` by `#gen_module`, so SMT translates it as an
+    -- uninterpreted symbol; the `_spec` fact is its defining equation.
+    let mut specHaves : Array (TSyntax `tactic) := #[]
+    for en in eventNames do
+      let specId : Ident :=
+        mkIdent (Name.mkSimple (en.toString ++ "_payload_of_spec"))
+      let hypId : Ident :=
+        mkIdent (Name.mkSimple ("hspec_" ++ en.toString))
+      specHaves := specHaves.push (← `(tactic| have $hypId:ident := $specId:ident))
     let hasAccessors := !accessorUnfolds.isEmpty
     let tail : TSyntax `tactic ←
       if isDefault then `(tactic| pverify_default)
@@ -335,6 +348,10 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     steps := steps.push (← `(tactic|
       try unfold PLean.send PLean.goto PLean.raise
                  PLean.markReceived PLean.announce))
+    -- Bring each payload event's `_spec` characterisation into context
+    -- before the closing tactic (see `specHaves` above).
+    for h in specHaves do
+      steps := steps.push h
     steps := steps.push tail
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq| $[$steps]*)
@@ -385,6 +402,16 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
   | some (.thmInfo info) =>
     if info.value.hasSorry then return .unfinished
     if manualProof then
+      -- The `_check` value is `@<userThm> args` — a bare const reference,
+      -- so `hasSorry` on it never sees through to the user theorem's body.
+      -- A `@[pverifyProof] … := by sorry` would therefore be reported as a
+      -- clean pass. Inspect the USER theorem's own value too; a `sorry`
+      -- (or any axiom-backed hole) there means the obligation is NOT
+      -- discharged. (`exact @userThm` already type-checks the statement.)
+      match env.find? fullThmName with
+      | some (.thmInfo userInfo) =>
+        if userInfo.value.hasSorry then return .unfinished
+      | _ => return .unfinished
       logInfo m!"obligation {fullThmName} discharged by `@[pverifyProof]` (type checked)"
       return .userProved
     return .provedBySmt
@@ -489,6 +516,13 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
   | some (.thmInfo info) =>
     if info.value.hasSorry then return .unfinished
     if manualProof then
+      -- Inspect the USER theorem's own value (not just the `@userThm`
+      -- reference in `_check`) so a `@[pverifyProof] … := by sorry` base
+      -- case is reported as unfinished rather than a clean pass.
+      match env.find? fullThmName with
+      | some (.thmInfo userInfo) =>
+        if userInfo.value.hasSorry then return .unfinished
+      | _ => return .unfinished
       logInfo m!"obligation {fullThmName} discharged by `@[pverifyProof]` (type checked)"
       return .userProved
     return .provedBySmt
@@ -837,10 +871,17 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
       if let some md := ctx.machines.find? mn then
         if !md.isSpec then out := out.push mn
     return out
-  -- Every event name in the pmodule. Drives the `<ev>_payload_of`
-  -- unfold chain in `emitOneObligation` / `emitBaseCaseObligation` so
-  -- the field-projection sugar `e.<f>` reduces under SMT prep.
-  let allEventNames : Array Name := ctx.eventOrder
+  -- Events that carry a payload. `emitOneObligation` brings each one's
+  -- `<ev>_payload_of_spec` characterisation into context so SMT can
+  -- compute the extractor's value on a freshly-sent label (send-handlers
+  -- that must re-establish a routing invariant over the new label).
+  -- Payload-free events have no extractor, so they're excluded.
+  let allEventNames : Array Name := Id.run do
+    let mut out : Array Name := #[]
+    for en in ctx.eventOrder do
+      if let some e := ctx.events.find? en then
+        if e.payload.isSome then out := out.push en
+    return out
   -- Names of the three default invariants — the base case for
   -- `prove default;` enumerates them so the failure report names which
   -- one didn't hold at init (rather than the bundled `DefaultInvariants`).

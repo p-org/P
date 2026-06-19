@@ -116,6 +116,9 @@ plan, the phase plan wins (PLAN.md predates the implementation).
   pre/post diff, exact name recovery via lean-auto's `h2lMap`).
 - [`docs/REVIEW_P3.md`](docs/REVIEW_P3.md) — code review against
   PLAN_P3.
+- [`docs/AUTOMATION.md`](docs/AUTOMATION.md) — how `#pverify` discharges
+  obligations, reusable manual-proof tactics (to avoid LockServer-style
+  boilerplate), and the planned parallel-SMT + proof-caching features.
 - [`docs/STATUS.md`](docs/STATUS.md) — phase status, decision log,
   milestones.
 
@@ -137,7 +140,7 @@ Most Tutorial/Advanced benchmarks need surface features that aren't
 built yet — check PLAN_P3's "Tutorial benchmark inventory" table
 before attempting one.
 
-## Phase status (as of 2026-06-18)
+## Phase status (as of 2026-06-19)
 
 - Phase 0 (Bootstrap) — ☑ M0.
 - Phase 1 (Semantic core) — ☑ M1. Hand-written ping-pong verifies via
@@ -148,15 +151,18 @@ before attempting one.
 - Phase 3 (Verification declarations) — ◐ in progress. The
   SMT-discharge pipeline, the `@[pverifyProof]` registry, and the
   `pverify_*` tactic library are in tree. Closure rates:
-  `Phase3DistributedLock` **12/12** (fully verified — 11 SMT + 1 manual
-  `@[pverifyProof]`), `Phase3LockServer` 23/25. The DistributedLock
-  residuals turned out to be VC-generator gaps, all fixed 2026-06-18
-  (`is_<ev>` characterisation lemmas, default-invariant decoupling,
-  dispatcher kind-guard, `markReceived` prologue; plus `@[pverifyProof]`
-  type-checking). LockServer's 2 residuals are a genuinely incomplete
-  port (missing the P source's strengthening invariants).
-  `3_RingLeaderVerification` not yet ported. See STATUS.md
-  "Session 2026-06-18" for the per-fix detail.
+  `Phase3DistributedLock` **12/12** (11 SMT + 1 manual `@[pverifyProof]`)
+  and `Phase3LockServer` **37/37** (34 SMT + 3 manual) — both fully
+  verified. LockServer's port now carries the full P-source invariant
+  set; the 3 manual proofs are the send-handlers whose routing
+  obligations the solver can't close as a single-shot bundle.
+  `#gen_module` now emits `<ev>_payload_of_spec`/`_mk` characterisations
+  (and seals `<ev>_payload_of` `@[irreducible]`) so send-handler
+  obligations reach SMT. Two soundness holes were found+fixed this
+  session (see STATUS.md "Session 2026-06-19"): the GlobalState-shadow
+  guard now rejects all binder forms (not just `∀`), and a sorried
+  `@[pverifyProof]` is now reported as a failure.
+  `3_RingLeaderVerification` not yet ported.
 - Phase 4 (Spec machines) — ☐ next.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.

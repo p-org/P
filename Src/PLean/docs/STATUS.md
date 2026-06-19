@@ -19,7 +19,7 @@ rather than narrating.
 | 0 — Bootstrap                    | ☑ | — | 2026-05-28 | 2026-05-29 | M0 reached |
 | 1 — Semantic core                | ☑ | — | 2026-06-01 | 2026-06-04 | M1 reached |
 | 2 — Registry + minimal surface   | ☑ | — | 2026-06-05 | 2026-06-05 | M2 reached |
-| 3 — Verification declarations    | ◐ | — | 2026-06-06 | — | M3 partial — pipeline is sound; **2026-06-18: DistributedLock 12/12 (fully verified), LockServer 23/25**. The DL residuals were VC-generator gaps (now fixed: is_<ev> bridge, DefaultInvariants decoupling, dispatcher kind-guard, markReceived prologue) + one manual proof; LockServer's 2 residuals are a genuinely incomplete port (missing strengthening invariants). |
+| 3 — Verification declarations    | ◐ | — | 2026-06-06 | — | M3 partial — pipeline is sound; **2026-06-19: DistributedLock 12/12 and LockServer 37/37 — both fully verified**. LockServer's port now carries the full P-source invariant set (10 `system_config` + 8 `safety`); 34 obligations close by SMT (via the new `<ev>_payload_of_spec`/`_mk` characterisations + irreducible extractor), 3 send-handlers by `@[pverifyProof]`. Two soundness holes found+fixed this session (GlobalState-shadow guard generalised to all binders; sorried `@[pverifyProof]` now fails). |
 | 4 — Spec machines                | ☐ | — | — | — | plan in [`PLAN_P4.md`](PLAN_P4.md) |
 | 5 — Remaining surface            | ☐ | — | — | — | |
 | 6 — Tutorial port                | ☐ | — | — | — | |
@@ -106,7 +106,69 @@ omit some of the original P source's invariants (e.g.
 safety` obligations correctly fail SMT and need either the missing
 invariants or `@[pverifyProof]` manual proofs._
 
-### Session 2026-06-18 (latest) — SMT-discharge VC fixes; DistributedLock 12/12
+### Session 2026-06-19 (latest) — LockServer 37/37; payload-characterisation infra; two soundness holes closed
+
+**LockServer is now fully verified (37/37).** The port was completed and two
+genuine soundness holes in the VC generator were found (via an adversarial
+audit) and fixed.
+
+**1. LockServer port completion.** The earlier skeleton dropped 5 of
+`system_config`'s invariants and 7 of `safety`'s. Restoring the full P-source
+set ([`8_LockServer/PSrc/System.p`](../../../Tutorial/Advanced/8_LockServer/PSrc/System.p))
+made the previously-disproved `eGrant` safety obligation inductive (the
+mutually-inductive strengthening invariants — `unique_grant`,
+`no_lock_while_grant`, `node_server_mutex`, …) and the routing obligations
+provable (`node_send_lock`/`node_send_unlock` are the load-bearing additions).
+34 obligations now close by SMT.
+
+**2. Payload-characterisation infrastructure** (generalises the manual
+`eAccept_payload_of_mk` DistributedLock hand-wrote). `#gen_module` now emits,
+per payload-bearing event:
+- `<ev>_payload_of_mk` — the extractor's value on a literal `Label.mk`;
+- `<ev>_payload_of_spec` — its value from any label with a known action;
+- `attribute [irreducible] <ev>_payload_of` — so lean-auto translates the
+  extractor as a true uninterpreted symbol even under a `∀` binder (an
+  un-sealed `def` trips `lamTerm2STermAux :: Unexpected head term … lam`).
+
+`emitOneObligation` brings every `<ev>_payload_of_spec` into context (`have`)
+so SMT can compute a freshly-sent label's payload. DistributedLock's
+hand-written `eAccept_payload_of_mk` was removed (now generated).
+
+**3. The 3 send-handler obligations** (`eLock`/`eAquire`/`eRelease` on
+`system_config`) return `unknown` from both solvers as a single-shot
+11-invariant query, so they carry hand-written `@[pverifyProof]` proofs: split
+the bundle into named conjuncts, do a new-vs-old-label case analysis per
+conjunct (the fresh label's event tag mismatches non-matching routing clauses;
+topology clauses transfer because the field-only machine update preserves
+kind/control-state/`Node_server`).
+
+**4. Two soundness holes found + fixed** (adversarial audit of the VC
+pipeline):
+- **GlobalState-shadow guard was ∀-only** ([`Surface/Verify.lean`](../PLean/Surface/Verify.lean)).
+  `rejectExplicitStateBinder` matched only `∀ … : GlobalState …`, so a
+  `let`/`have`/`fun`/`∃` binder of the state type
+  (`let s : GlobalState Sig := default; …`) shadowed the `system`-block `s`,
+  made the invariant state-independent, and let a **false** property verify as
+  a clean pass. `containsExplicitStateBinder` now rejects *any* mention of the
+  `GlobalState` type identifier in a `system`-bound invariant body (a
+  well-formed body never names it). The same guard (`rejectStateShadowIn`) now
+  also runs on `init-holds` bodies in `emitInitConditions`.
+- **Sorried `@[pverifyProof]` reported as a pass**
+  ([`Verify/Obligation.lean`](../PLean/Verify/Obligation.lean)). The manual-
+  proof path discharges the obligation by `exact @<userThm>` in a
+  `<name>_check` theorem and checked `_check`'s value for `sorry` — but that
+  value is just a const reference, so `hasSorry` never saw a `sorry` in the
+  user theorem's body. Both emitters now also inspect the user theorem's own
+  value; a sorried manual proof is reported as unfinished (so `#pverify`
+  fails under the default `failOnIncomplete`).
+
+Both holes pinned by new probes 4–6 in
+[`SoundnessRegression.lean`](../Tests/Surface/SoundnessRegression.lean).
+(The audit also flagged the `on _ goto _` event/state name-collision as a
+risk; verified it is a completeness bug — always yields a tactic-error
+failure, never a false pass — not a soundness hole.)
+
+### Session 2026-06-18 — SMT-discharge VC fixes; DistributedLock 12/12
 
 A debugging pass on the M3 `unknown`/`disproved` residuals traced every
 one to a VC-generator gap (not a missing invariant), and closed

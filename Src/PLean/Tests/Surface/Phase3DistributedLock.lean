@@ -111,12 +111,10 @@ end DistributedLock
 namespace DistributedLock
 open PartialCorrectness DemonicChoice
 
-/-- Characterisation of the opaque `eAccept_payload_of` extractor on a
-concrete label: needed because the extractor is left uninterpreted for
-SMT, so the solver can't compute its value on the freshly-sent label. -/
-theorem eAccept_payload_of_mk (t : MachineRef) (p : tAccept) (c : Nat) :
-    eAccept_payload_of (Label.mk t (.event (E.eAccept p)) c) = p := by
-  unfold eAccept_payload_of; rfl
+-- The characterisation of the opaque `eAccept_payload_of` extractor on a
+-- freshly-built label (`eAccept_payload_of_mk`) is now emitted by
+-- `#gen_module` for every event with a payload, so the manual proof below
+-- uses that generated lemma directly (no hand-written copy needed).
 
 set_option loom.solver "cvc5" in
 set_option loom.solver.smt.timeout 30 in
@@ -210,5 +208,5 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
 
 end DistributedLock
 
-set_option pverify.failOnIncomplete false in
+-- set_option pverify.failOnIncomplete false in
 #pverify DistributedLock

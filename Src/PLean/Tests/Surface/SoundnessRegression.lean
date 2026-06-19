@@ -99,7 +99,7 @@ end SoundnessR2
 -- registration: the `Theorem` block records a `defStx` that
 -- `materialiseInvariant` rejects.
 /--
-error: invariant `bad_shape` lives inside a `system` block but its body contains `∀ <ident> : GlobalState <Sig>, …`. That inner ∀-binder shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Drop the inner `∀ … : GlobalState Sig,` and reference the `system`-block's state binder directly in the body.
+error: invariant `bad_shape` lives inside a `system` block but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Reference the `system`-block's state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
 -/
 #guard_msgs in
 #gen_module SoundnessR2
@@ -125,7 +125,116 @@ pmodule SoundnessR3
 end SoundnessR3
 
 /--
-error: invariant `bad_nested` lives inside a `system` block but its body contains `∀ <ident> : GlobalState <Sig>, …`. That inner ∀-binder shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Drop the inner `∀ … : GlobalState Sig,` and reference the `system`-block's state binder directly in the body.
+error: invariant `bad_nested` lives inside a `system` block but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Reference the `system`-block's state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
 -/
 #guard_msgs in
 #gen_module SoundnessR3
+
+/-! ## Probe 4 — `let`/`have` GlobalState shadow is rejected.
+
+The ∀-only guard missed a `let s : GlobalState Sig := default; …`
+binder (elaborates to `have`), which shadows the `system`-block `s` and
+makes the invariant state-independent — a *false* property would then
+verify as a clean pass (audit-confirmed 2026-06-19). The generalised
+guard rejects any `GlobalState` mention in the body. -/
+
+pmodule SoundnessR4
+  event eGo
+  machine Bad {
+    var x : Nat
+    start state Act { on eGo { x = x + 1 } }
+  }
+
+  Theorem broken_let {
+    system s {
+      invariant let_shadow :
+        let s : GlobalState Sig := default;
+        (s.machines (default : MachineRef)).fields.Bad_x = 0
+    }
+  }
+end SoundnessR4
+
+/--
+error: invariant `let_shadow` lives inside a `system` block but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Reference the `system`-block's state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
+-/
+#guard_msgs in
+#gen_module SoundnessR4
+
+/-! ## Probe 5 — `∃ s : GlobalState Sig, …` shadow is rejected.
+
+The companion of probe 4: an existential binder of the state type also
+slipped the ∀-only guard. The generalised guard catches it. -/
+
+pmodule SoundnessR5
+  event eGo
+  machine M {
+    start state S { on eGo { pure () } }
+  }
+
+  Theorem broken_exists {
+    system s {
+      invariant exists_shadow : ∃ s : GlobalState Sig, s.actionCount = 0
+    }
+  }
+end SoundnessR5
+
+/--
+error: invariant `exists_shadow` lives inside a `system` block but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Reference the `system`-block's state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
+-/
+#guard_msgs in
+#gen_module SoundnessR5
+
+/-! ## Probe 6 — a `sorry`-backed `@[pverifyProof]` is NOT a pass.
+
+The obligation generator type-checks a manual proof by `exact @userThm`,
+but `hasSorry` on that delegating `_check` value never sees through to
+the user theorem's body. A `@[pverifyProof] … := by sorry` would then be
+reported as `user-proved` (audit-confirmed 2026-06-19). The fix also
+inspects the user theorem's own value; a sorried proof is reported as a
+failure (`no-diagnostic`), so `#pverify` does not falsely pass. -/
+
+pmodule SoundnessR6
+  event eGo
+  machine M {
+    var x : Bool
+    start state Act { on eGo { x = true } }
+  }
+  init-holds ∀ m : M, m.x = false
+
+  Theorem broken_manual {
+    system s { invariant always_false : ∀ m : M, m.x = false }
+  }
+  Proof { prove broken_manual ; }
+end SoundnessR6
+
+#gen_module SoundnessR6
+
+namespace SoundnessR6
+open PartialCorrectness DemonicChoice
+
+-- A deliberately-sorried manual proof of the (false) obligation. Its
+-- statement type-checks, but the proof is a hole.
+@[pverifyProof]
+theorem M.Act.eGo_correct_block0_broken_manual (this : M) (lbl : Sig.Label) :
+    triple (l := PProp Sig)
+      (fun s => (broken_manual s ∧ True) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
+        is_M this.ref s ∧ (s.machines this.ref).currentState = M.Act_st ∧
+        lbl.action = .event E.eGo)
+      (do PLean.markReceived (P := Sig) lbl; M.Act.eGo_handler this)
+      (fun _ s => broken_manual s ∧ True) := by
+  sorry
+end SoundnessR6
+
+-- The sorried manual proof is counted as a failure (`no-diagnostic`),
+-- NOT as `user-proved`. Key pin: `user-proved` stays 0. If the fix
+-- regresses, the `eGo_correct_block0_broken_manual` obligation flips to
+-- `user-proved` (1) and the summary line mismatches. (The base case and
+-- auto-default also fail — `always_false` is genuinely non-inductive —
+-- so all three are `no-diagnostic`.)
+/--
+warning: SoundnessR6: 0 proved by SMT, 0 user-proved, 0 disproved, 0 unknown, 0 tactic-error, 3 no-diagnostic
+3 obligation(s) need a manual proof; fill in the skeletons above.
+-/
+#guard_msgs (warning, drop info) in
+set_option pverify.failOnIncomplete false in
+#pverify SoundnessR6

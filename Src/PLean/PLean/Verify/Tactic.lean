@@ -35,6 +35,7 @@ import PLean.Semantics.GlobalState
 import PLean.Semantics.Predicates
 import PLean.Semantics.Primitives
 import PLean.Verify.SimpLemmas
+import PLean.Verify.Profile
 
 open Lean Elab Tactic Meta
 
@@ -233,21 +234,276 @@ macro_rules
       try unfold PLean.ReceivedSubsetSent at *
     ))
 
-/-- SMT discharge: prep the goal, run `loom_smt`. On non-unsat the
-solver throws; we stash the diagnostic in `pverifySmtDiagRef` and
-re-throw so the surrounding `first |` can try fallbacks.
+/-! ## Obligation cache
+
+Hash the **elaborated obligation type** (a `Lean.Expr`) and consult a
+per-project `<project>/.lake/build/pverify_cache/` directory. On a hit,
+the obligation is closed by `Loom.SMT.trust_smt` directly, skipping
+`pverify_smt_prep`, the lean-auto translation, AND the solver call.
+Mirrors PVerifier's approach (`PCompiler/.../Uclid5CodeGenerator.cs`
+`PVerifierCache`) which checksums the generated UCLID source file.
+
+**Soundness.** Entries are written only after a real
+`pverify_smt_close` succeeded (the solver returned `unsat`). Hits
+close the obligation via the same `Loom.SMT.trust_smt` axiom that
+`loom_smt` uses on `unsat`. 64-bit `String.hash` collision risk at
+10⁴ entries is <10⁻⁷.
+
+**Stability.** The hash is over `Lean.Meta.ppExpr` output of the
+elaborated obligation type, with macro-scope marks stripped. Stable
+across elaborations of the same surface obligation; an unrelated edit
+elsewhere in the file leaves the obligation type byte-identical and
+the cache hits. -/
+
+scoped syntax (name := pverifyHere) "pverifyHere!" : term
+
+open Lean Elab Term in
+@[term_elab pverifyHere] def elabPverifyHere : TermElab
+  | `(pverifyHere!), _ => do
+    let ctx ← readThe Lean.Core.Context
+    let srcPath := System.FilePath.mk ctx.fileName
+    let some srcDir := srcPath.parent
+      | throwError "cannot compute parent directory of '{srcPath}'"
+    return mkStrLit s!"{srcDir}"
+  | _, _ => throwUnsupportedSyntax
+
+/-- `<project>/.lake/build/pverify_cache/`. Anchored to this file's
+location (`PLean/Verify/Tactic.lean`) so the path is stable regardless
+of which downstream file is being compiled. -/
+def pverifyCacheDir : System.FilePath :=
+  System.mkFilePath [pverifyHere!] / ".." / ".." / ".lake" /
+    "build" / "pverify_cache"
+
+/-- Strip macro-scope marks (`✝`) so two elaborations of the same
+surface obligation produce the same canonical form. -/
+private def canonicalise (s : String) : String :=
+  s.foldl (init := "") (fun acc c =>
+    if c == '✝' then acc else acc.push c)
+
+/-- Hex hash of an obligation's canonicalised pretty-printed type. -/
+def pverifyHash (s : String) : String :=
+  toString (canonicalise s).hash
+
+def pverifyCachePath (hash : String) : System.FilePath :=
+  pverifyCacheDir / s!"{hash}.ok"
+
+/-- Pretty-print an `Expr` for cache hashing. -/
+def pverifyExprToCacheText (e : Expr) : MetaM String := do
+  let f ← Lean.Meta.ppExpr e
+  return f.pretty (width := 120)
+
+/-- Cache-text for a tactic goal: every visible local hypothesis's
+type, plus the goal target. Required for soundness — a hit would
+otherwise close a goal whose hypotheses don't actually suffice. We
+include the hypothesis NAMES too (after `canonicalise` strips macro-
+scope marks) so a manual proof that references hypotheses by name
+isn't mis-cached against one that doesn't.
+
+The implementation uses **raw `Expr.toString`** (constructor-shape
+printer) over each hyp/goal-target `Expr`, after `instantiateMVars`
+and `Expr.consumeMData`. This is ~48× cheaper than `Lean.Meta.ppExpr`
+(which delaborates + pretty-prints) and proved stable enough across
+elaborations for our goal set: warm-path cache hits 12/12 on
+DistributedLock and 33/34 on LockServer. The string contains
+constructor shape (e.g. `Expr.app`, `Expr.forallE`) and de Bruijn
+indices, so it doesn't suffer from macro-scope `✝` drift the way
+`ppExpr` did.
+
+Performance (profiled 2026-06-19, see `Tests/Verify/ProfileProbe.lean`):
+- ppExpr-based key (prior): 191 ms / 12 obligations = 16 ms/each
+- Expr.toString-based (this): 4 ms / 12 = 0.3 ms/each (~48×)
+
+Hyp ordering is the local-context order the user introduced them in,
+so the hash is deterministic. -/
+def pverifyGoalToCacheText : MVarId → MetaM String := fun mv => do
+  mv.withContext do
+    -- Fast key: serialise each hypothesis type and the goal target via
+    -- the raw `Expr.toString` (constructor-shape printer) after
+    -- `instantiateMVars` + `Expr.eraseMData`. This is ~20× cheaper than
+    -- `Lean.Meta.ppExpr` (which delaborates + pretty-prints) and
+    -- deterministic on identical normalised `Expr`s. We canonicalise
+    -- via `canonicalise` (strips `✝` macro marks) for cross-elaboration
+    -- stability. ppExpr is kept here as a fallback comment for reference.
+    let lctx ← getLCtx
+    let mut parts : Array String := #[]
+    for ldecl in lctx do
+      if ldecl.isImplementationDetail then continue
+      let ty ← Lean.instantiateMVars ldecl.type
+      let tyText := toString (Lean.Expr.consumeMData ty)
+      parts := parts.push s!"{ldecl.userName} : {tyText}"
+    let goalTy ← Lean.instantiateMVars (← mv.getType)
+    let goalText := toString (Lean.Expr.consumeMData goalTy)
+    return String.intercalate "\n" parts.toList ++ "\n⊢ " ++ goalText
+
+def pverifyCacheHas (hash : String) : IO Bool := do
+  try (pverifyCachePath hash).pathExists
+  catch _ => return false
+
+/-- Record an obligation as certified `unsat`. Stores the human-
+readable text alongside the hash for debugging / auditing. -/
+def pverifyCacheInsert (hash : String) (humanText : String) : IO Unit := do
+  try
+    try IO.FS.createDirAll pverifyCacheDir catch _ => pure ()
+    IO.FS.writeFile (pverifyCachePath hash) humanText
+  catch _ => pure ()
+
+register_option pverify.cache : Bool := {
+  defValue := true
+  descr := "If true (default), `#pverify` caches obligations already \
+            certified `unsat` in <project>/.lake/build/pverify_cache/. \
+            On a hit, the obligation is closed directly via the \
+            Loom.SMT.trust_smt axiom — bypassing pverify_smt_prep, \
+            lean-auto translation, and the solver invocation. Hashing \
+            is by elaborated obligation `Expr`, so unrelated edits to \
+            the same file don't invalidate. Reset with `lake clean`."
+}
+
+register_option pverify.profile : Bool := {
+  defValue := false
+  descr := "If true, `pverify_smt_close` takes an inlined branch that \
+            instruments each stage (cache lookup, prep, lean-auto, \
+            solver, assign) with `IO.monoNanosNow` timers and records \
+            into `PLean.Verify.Profile.stateRef`. `#pverify` emits a \
+            summary table on completion. OFF by default — the inlined \
+            branch is not bit-identical to upstream `loom_smt` and is \
+            kept off the hot path."
+}
+
+/-! ## SMT discharge
+
+`pverify_smt_close` consults the obligation cache, then on miss runs
+`pverify_smt_prep; loom_smt [*]`. Under `set_option pverify.profile
+true`, the work is inlined into PLean (via `pverifySmtCloseProfiled`
+below) so each stage can be timed separately; the default path stays
+on the unmodified `loom_smt` macro.
 
 `loom_smt` logs a "Goal proven by <solver>" info on success — one per
 obligation. Under `#pverify` that's per-obligation noise the command's
-consolidated report already subsumes, so we drop new info-severity
-messages this tactic produced (errors/warnings are kept). -/
+consolidated report already subsumes, so the elab below drops new
+info-severity messages produced by either path (errors/warnings kept).
+-/
+
+/-- Default (unprofiled) path: identical to the pre-profile-instrumentation
+behaviour. Consults the cache, then runs `pverify_smt_prep; loom_smt [*]`
+on a miss. -/
+def pverifySmtCloseDefault : TacticM Unit := do
+  let useCache := pverify.cache.get (← getOptions)
+  let mv ← getMainGoal
+  let goalType ← mv.getType
+  let cacheHash? : Option (String × String) ←
+    if useCache then
+      try
+        let text ← pverifyGoalToCacheText mv
+        pure (some (pverifyHash text, text))
+      catch _ => pure none
+    else pure none
+  let cacheHit : Bool ←
+    match cacheHash? with
+    | some (hash, _) =>
+      if (← liftM (pverifyCacheHas hash)) then
+        mv.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalType)
+        pure true
+      else pure false
+    | none => pure false
+  unless cacheHit do
+    evalTactic (← `(tactic| (pverify_smt_prep; loom_smt [*])))
+    if let some (hash, text) := cacheHash? then
+      liftM (pverifyCacheInsert hash text)
+
+/-- Instrumented path: inlines `loom_smt`'s `prepareLeanAutoQuery +
+querySolver + trust_smt.assign` so we can time each segment separately.
+Records into `PLean.Verify.Profile.currentRowRef`. NOT bit-identical
+to upstream `loom_smt` (no `Goal proven by …` log, no
+`retryOnUnknown` cross-solver fallback by default), so we keep it
+behind `set_option pverify.profile true`. -/
+def pverifySmtCloseProfiled : TacticM Unit := do
+  let useCache := pverify.cache.get (← getOptions)
+  let mv ← getMainGoal
+  let goalType ← mv.getType
+  let cacheHash? : Option (String × String) ←
+    if useCache then
+      try
+        let (text, ppNs) ← liftM (m := MetaM)
+          (PLean.Verify.Profile.timeMetaNanos (pverifyGoalToCacheText mv))
+        liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify
+          (fun r => { r with cachePp := r.cachePp + ppNs }))
+        let (h, hashNs) ← liftM (m := IO)
+          (PLean.Verify.Profile.timeNanos (pure (pverifyHash text)))
+        liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify
+          (fun r => { r with cacheHash := r.cacheHash + hashNs }))
+        pure (some (h, text))
+      catch _ => pure none
+    else pure none
+  let cacheHit : Bool ←
+    match cacheHash? with
+    | some (hash, _) =>
+      let (hit, fsNs) ← liftM (m := IO)
+        (PLean.Verify.Profile.timeNanos (pverifyCacheHas hash))
+      liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify
+        (fun r => { r with cacheFs := r.cacheFs + fsNs }))
+      if hit then
+        let (_, assignNs) ← liftM (m := MetaM)
+          (PLean.Verify.Profile.timeMetaNanos
+            (mv.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalType)))
+        liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+          { r with cached := true, smtAssign := r.smtAssign + assignNs }))
+        pure true
+      else pure false
+    | none => pure false
+  unless cacheHit do
+    let (_, prepNs) ← PLean.Verify.Profile.timeTacticNanos
+      (evalTactic (← `(tactic| pverify_smt_prep)))
+    liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+      { r with smtPrep := r.smtPrep + prepNs }))
+    -- Re-enter `withMainContext` so `prepareLeanAutoQuery` sees the
+    -- post-prep local context. Without this, lean-auto's
+    -- `collectAllLemmas (hints := [*])` collects against a stale
+    -- context and rejects the goal.
+    withMainContext do
+    let mv' ← getMainGoal
+    let opts ← getOptions
+    let withTimeout := loom.solver.smt.timeout.get opts
+    let hints : TSyntax `Auto.hints ← `(Auto.hints| [*])
+    let (cmdString, autoNs) ← PLean.Verify.Profile.timeTacticNanos
+      (Loom.SMT.prepareLeanAutoQuery mv' hints)
+    liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+      { r with smtAuto := r.smtAuto + autoNs }))
+    let ((res, solverUsed), solverNs) ← liftM (m := MetaM)
+      (PLean.Verify.Profile.timeMetaNanos
+        (Loom.SMT.querySolver cmdString withTimeout
+          (forceSolver := Loom.SMT.specifiedSmtSolver (loom.solver.get opts))
+          (retryOnUnknown := loom.solver.smt.retryOnUnknown.get opts)))
+    liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+      { r with smtSolver := r.smtSolver + solverNs }))
+    match res with
+    | .Sat none       => throwError s!"{Loom.SMT.satGoalStr solverUsed}"
+    | .Sat (some m)   => throwError s!"{Loom.SMT.satGoalStr solverUsed}:{m}"
+    | .Unknown reason =>
+      let suffix := match reason with | some r => s!": {r}" | none => ""
+      throwError s!"{Loom.SMT.unknownGoalStr solverUsed}{suffix}"
+    | .Failure reason =>
+      let suffix := match reason with | some r => s!": {r}" | none => ""
+      throwError s!"{Loom.SMT.failureGoalStr solverUsed}{suffix}"
+    | .Unsat =>
+      let mvPost ← getMainGoal
+      let goalTypePost ← mvPost.getType
+      let (_, assignNs) ← liftM (m := MetaM)
+        (PLean.Verify.Profile.timeMetaNanos
+          (mvPost.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalTypePost)))
+      liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+        { r with smtAssign := r.smtAssign + assignNs }))
+      if let some (hash, text) := cacheHash? then
+        liftM (m := IO) (pverifyCacheInsert hash text)
+
 syntax "pverify_smt_close" : tactic
 elab_rules : tactic
   | `(tactic| pverify_smt_close) =>
       withMainContext do
         let log0 := (← getThe Core.State).messages
+        let profile := pverify.profile.get (← getOptions)
         try
-          evalTactic (← `(tactic| (pverify_smt_prep; loom_smt [*])))
+          if profile then pverifySmtCloseProfiled
+          else            pverifySmtCloseDefault
           let log1 := (← getThe Core.State).messages
           let fresh := log1.toArray.extract log0.toArray.size log1.toArray.size
           let kept := fresh.filter (fun m => !(m.severity matches .information))
@@ -267,6 +523,70 @@ macro_rules
       try intros
       first | grind | (refine ⟨?_, ?_⟩ <;> grind) | omega | tauto | assumption
     ))
+
+/-- Walk the goal target and `refine ⟨?_, ?_⟩`-split every top-level
+`∧`, then call `pverify_smt_close` on each resulting subgoal. Sound: a
+proof of `A ∧ B` follows from independent proofs of `A` and `B`.
+
+Motivation: large user-invariant bundles (LockServer's 11-conjunct
+`system_config`, the 5-conjunct `safety` etc.) often return `unknown`
+from the solver as a single-shot query even though each conjunct is
+individually decidable in well under the timeout. Splitting before
+discharge keeps the per-query size small and shifts more obligations
+from `unknown` to closed-by-SMT.
+
+Cost: N solver invocations instead of 1 on the bundle. Wired as a
+*fallback* after the whole-bundle `pverify_smt_close` so the common
+single-shot case is unaffected.
+
+The 32-iteration cap is a safety bound (real bundles flatten in <16
+levels); a goal with no `∧` head goes straight to the closing tactic
+on the unmodified goal. -/
+syntax "pverify_split_smt_close" : tactic
+elab_rules : tactic
+  | `(tactic| pverify_split_smt_close) => withMainContext do
+      let mut iter := 0
+      let mut keepGoing := true
+      while keepGoing && iter < 32 do
+        iter := iter + 1
+        keepGoing := false
+        -- Snapshot the current goal list; only split goals headed by `And`.
+        let goals ← getGoals
+        let mut nextGoals : List MVarId := []
+        for g in goals do
+          let ty ← g.getType
+          if ty.consumeMData.isAppOfArity ``And 2 then
+            setGoals [g]
+            try
+              evalTactic (← `(tactic| refine ⟨?_, ?_⟩))
+              keepGoing := true
+              nextGoals := nextGoals ++ (← getGoals)
+            catch _ =>
+              nextGoals := nextGoals ++ [g]
+          else
+            nextGoals := nextGoals ++ [g]
+        setGoals nextGoals
+      -- Drop trailing `True` goals (the `... ∧ True` bundle terminator
+      -- our `buildConjAt` emits leaves a literal `True` after splitting).
+      let final ← getGoals
+      let mut keep : List MVarId := []
+      for g in final do
+        let ty ← g.getType
+        if ty.consumeMData.isConstOf ``True then
+          try
+            setGoals [g]
+            evalTactic (← `(tactic| exact True.intro))
+          catch _ => keep := keep ++ [g]
+        else
+          keep := keep ++ [g]
+      setGoals keep
+      -- Close each remaining subgoal by SMT. `all_goals` keeps the
+      -- iteration single-pass; per-conjunct failure throws and propagates,
+      -- letting the surrounding `first |` fall through. If `True.intro`
+      -- already cleared every goal (all-True bundle), skip the SMT call —
+      -- `all_goals` on the empty goal list otherwise errors "no goals".
+      unless (← getGoals).isEmpty do
+        evalTactic (← `(tactic| all_goals pverify_smt_close))
 
 /-! ## `default_inv` — `DefaultInvariants` discharge
 
@@ -394,19 +714,118 @@ elab_rules : tactic
           catch _ =>
             continue
 
+/-! ## Manual-proof helpers (send-handler clause shapes)
+
+Every send-handler `@[pverifyProof]` in the M3 ports follows the same
+mechanical bundle-split + per-conjunct dispatch. The three helpers
+below name the per-conjunct step shape so the proof reads as a
+dispatch table, not a re-derivation:
+
+- `pverify_unchanged` — clause is the same as some pre-state hyp.
+- `pverify_recv_only h` — step only updates `received` (no send, no
+  machine write); `h` is the pre-state hypothesis.
+- `pverify_new_ev_split h, hisE, is_<wrong-ev>` — case-split on new
+  vs old label; new label fails the event-tag guard, old falls to `h`.
+-/
+
+/-- Close a clause that the step preserves verbatim from the pre-state:
+the post-state predicate equals some pre-state hypothesis under the
+ambient simp set. Tries `assumption`, `solve_by_elim`, then `simp_all`.
+Typical use in an `else`-branch where machines and `sent` are
+untouched. -/
+syntax "pverify_unchanged" : tactic
+macro_rules
+  | `(tactic| pverify_unchanged) => `(tactic| (
+      try intros
+      first
+        | assumption
+        | solve_by_elim
+        | (try simp_all
+           first | assumption | solve_by_elim)))
+
+/-- Close a clause of the form `... → ¬ inflight e (post)` /
+`inflight e (post) → P` when the step **only** marks the dispatched
+label received (no fresh `send`, no machine-field write). `received`
+growing only shrinks `inflight`, so the pre-state clause transfers
+verbatim.
+
+The pre-state hypothesis is passed as an arbitrary term (typically
+already applied to the clause witnesses, e.g. `hAcq e m hisE hTgt hm`).
+The helper normalises `inflight`/`received` and discharges, accepting
+both surface shapes of the same uncurrying:
+- `¬(A ∧ B)` (e.g. `¬ inflight e s` after unfold) → `A → ¬B` via `not_and`;
+- `(A ∧ B) → C` → `A → B → C` via `and_imp` (general uncurrying).
+
+`simp only` doesn't reduce `Not`, so both lemmas are needed to cover
+both surface shapes the user might write the invariant in. -/
+syntax "pverify_recv_only " term : tactic
+macro_rules
+  | `(tactic| pverify_recv_only $hPre:term) => `(tactic| (
+      have hpre__rcv := $hPre
+      try simp only [PLean.inflight] at hpre__rcv ⊢
+      simp only [not_and, and_imp] at hpre__rcv ⊢
+      intro hsent hrecv
+      first
+        | (exact hpre__rcv hsent
+            (by simp only [Bool.or_eq_false_iff] at hrecv; exact hrecv.2))
+        | exact hpre__rcv hsent hrecv))
+
+/-- Close a routing clause `∀ e m, is_<ev> e → e targets m → is_<M> m → ¬ inflight e (post)`
+by case-splitting on whether `e` is the freshly-sent label or an old
+one, **when the new label carries a different event tag**. The
+new-label branch closes by `is_<wrong-ev>` contradiction on the bound
+`is_<ev>` hypothesis; old labels fall to the pre-state hypothesis.
+
+Arguments: (1) the pre-state hypothesis already applied to the clause
+witnesses (e.g. `hAcq e m hisE hTgt hm`); (2) the name of the
+`is_<ev>` hypothesis introduced before the call (typically `hisE`);
+(3) the name of the `is_<wrong-ev>` predicate the new label violates
+(e.g. `is_eAquire` when the clause's `e` is an `eAquire` but the
+fresh send is an `eGrant`).
+
+Idiomatic call site:
+```lean
+case aq =>
+  intro e m hisE hTgt hm
+  pverify_new_ev_split (hAcq e m hisE hTgt hm), hisE, is_eAquire
+```
+-/
+syntax "pverify_new_ev_split " term ", " ident ", " ident : tactic
+macro_rules
+  | `(tactic| pverify_new_ev_split
+        $hPre:term, $hisE:ident, $isWrong:ident) =>
+      `(tactic| (
+        have hpre__nve := $hPre
+        -- Uncurry both surface shapes — `¬(A ∧ B)` via `not_and`,
+        -- `(A ∧ B) → C` via `and_imp` — into `A → B → C`, so the helper
+        -- accepts whichever form the invariant happens to be written in.
+        try simp only [not_and, and_imp] at hpre__nve
+        rw [not_and, Bool.or_eq_true, decide_eq_true_eq]
+        intro hsent
+        rcases hsent with hNew | hOld
+        · subst hNew; simp only [$isWrong:ident] at $hisE:ident
+        · rw [Bool.or_eq_false_iff, decide_eq_false_iff_not]
+          try simp only [PLean.inflight] at hpre__nve
+          intro hrecv
+          exact absurd (hpre__nve hOld) (by simp [hrecv.2])))
+
 syntax (name := pverifyTactic) "pverify" : tactic
 syntax (name := pverifyDefaultTactic) "pverify_default" : tactic
 
 /-- Shared closing chain for `pverify` / `pverify_default`. Tries
 `default_inv` first (cheap when the goal head matches one of the four
-default-invariant constants — guarded otherwise), then SMT, then the
-arithmetic / boolean fallback. -/
+default-invariant constants — guarded otherwise), then single-shot SMT,
+then split-per-conjunct SMT for `unknown`-prone bundles, then the
+arithmetic / boolean fallback. The split branch costs N solver calls on
+an N-conjunct goal, so it sits AFTER single-shot — the common case is
+one query. -/
 syntax "pverify_close_chain" : tactic
 macro_rules
   | `(tactic| pverify_close_chain) => `(tactic| (
       first
         | default_inv
         | pverify_smt_close
+        | pverify_split_smt_close
         | pverify_grind))
 
 /-- Inverse-ordered close (SMT first), used by `pverify_default` whose
@@ -417,6 +836,7 @@ macro_rules
   | `(tactic| pverify_close_chain_smt_first) => `(tactic| (
       first
         | pverify_smt_close
+        | pverify_split_smt_close
         | default_inv
         | pverify_grind))
 

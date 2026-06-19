@@ -162,6 +162,14 @@ before attempting one.
   session (see STATUS.md "Session 2026-06-19"): the GlobalState-shadow
   guard now rejects all binder forms (not just `∀`), and a sorried
   `@[pverifyProof]` is now reported as a failure.
+  Reusable manual-proof tactics (`pverify_unchanged` /
+  `pverify_recv_only` / `pverify_new_ev_split` + `pverify_split_smt_close`)
+  shrunk LockServer's three manual proofs by 114 lines (37/37 closure
+  rate maintained); see [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
+  An obligation cache (hashing `(local context, goal target)`) at
+  `<project>/.lake/build/pverify_cache/` shaves 11–14% wall-clock on
+  warm rebuilds; soundness pinned by
+  [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
   `3_RingLeaderVerification` not yet ported.
 - Phase 4 (Spec machines) — ☐ next.
 

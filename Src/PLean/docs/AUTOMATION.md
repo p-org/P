@@ -100,6 +100,14 @@ in [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean) alongside the
 existing `pverify_*` family; the macro-hygiene rule (every simp-lemma
 name inside a named tactic) applies.
 
+**Status (2026-06-19, later session):** §3.1, §3.5 and an additional
+`pverify_new_ev_split` helper landed and were applied to the
+LockServer manual proofs (−114 lines / ~16% file shrinkage, 37/37
+closure rate maintained). §3.2 / §3.3 / §3.4 are not yet built —
+their highest-leverage application is the kind-bridge step in the
+eLock/eRelease then-branches, currently still inline (≈ 4 lines per
+clause).
+
 ### 3.1 `pverify_pre_transfer` / `pverify_received_monotone`
 
 Close a conjunct that the step preserves directly. Takes the pre-state
@@ -202,7 +210,14 @@ by obligation name before printing).
 
 ---
 
-## 5. Planned: proof caching
+## 5. Proof caching — landed second attempt (2026-06-19)
+
+**Status.** First design (cmdString-keyed) was reverted same-session
+because key calculation cost as much as the solver call. Second design
+keys on the **(local context, goal target)** pair before
+`pverify_smt_prep`, so a hit skips the prep simp set, the lean-auto
+translation, AND the solver. Measured wall-clock: 11–14% cold-vs-warm
+reduction on the M3 benchmarks. Both versions documented below.
 
 **Problem.** Re-running `#pverify` after an *unrelated* edit (a comment,
 a different machine, a doc change) re-invokes the solver on every
@@ -251,16 +266,178 @@ stored verdict.
 then send only the misses to the parallel solver pool. The two features
 compose — caching cuts the work set, parallelism speeds up what remains.
 
+**Post-mortem of the 2026-06-19 attempt.** Two issues, both load-bearing:
+
+1. *The cache key calculation is the work we're trying to avoid.*
+   `loom_smt`'s wall-clock cost is dominated by `prepareLeanAutoQuery`
+   (the lean-auto translation) rather than the cvc5/z3 invocation —
+   for the M3 benchmarks, the solver returns `unsat` in <100ms but
+   the translation costs ~400ms. Caching the **query string** still
+   requires running `prepareLeanAutoQuery` to compute the key, so a
+   cache hit saves only the ~100ms solver time, not the ~400ms
+   translation. Cold/warm timings on `Tests.Surface.Phase3DistributedLock`
+   were 15.7s and 16.2s respectively (the cache adds ~0.5s of overhead
+   per call from the duplicate `prepareLeanAutoQuery`).
+2. *The query string is not stable across elaborations.* lean-auto's
+   monomorphiser delab's local hypotheses to fresh-gensym names; the
+   gensym counter resets per elaboration but the **order of declared
+   constants** can shift across runs (e.g. when an unrelated `def`
+   earlier in the file changes ctor index). On `Phase3DistributedLock`,
+   13 of 20 obligations had stable cmdStrings (cache hits on re-elab);
+   the other 7 produced different bytes each time and never cached.
+   The cache only papered over the half-deterministic cases.
+
+A useful cache would key on the **Lean goal Expr** (post-`pverify_smt_prep`)
+with gensym names normalised, and skip both `prepareLeanAutoQuery`
+and the solver on a hit.
+
+### 5b. Second attempt — Expr-level keying (landed, 11–14% wall-clock win)
+
+Keys on the canonicalised pretty-printed `(local context, goal target)`
+pair at the entry of `pverify_smt_close`, **before** `pverify_smt_prep`
+runs. On a hit, the goal is closed by `Loom.SMT.trust_smt` directly,
+bypassing the prep simp set, the lean-auto translation, and the
+solver call. Mirrors PVerifier's
+`PCompiler/.../Uclid5CodeGenerator.cs::PVerifierCache` design (which
+checksums the generated UCLID source) but at the Lean-`Expr` level.
+
+**Why this design beats the cmdString variant.**
+- The hash is computed via raw `Expr.toString` (a fraction of a ms per
+  obligation, see §5c warm-path table), not `prepareLeanAutoQuery`
+  (hundreds of ms). Hits genuinely skip work.
+- `Expr.toString` is stable across elaborations on the same normalised
+  `Expr` (`instantiateMVars` + `Expr.consumeMData` upfront). Goals
+  that the cmdString variant failed to cache (7/20 of DistLock's
+  obligations) are stable here. (Initial version used `Lean.Meta.ppExpr`;
+  swapped to `Expr.toString` 2026-06-19 for 48× speedup on cache.pp.)
+
+**Hash composition (sound).** The hash includes every visible local
+hypothesis's `userName + ppType` plus the goal target's `ppExpr`,
+joined with `\n` separators. Including hypotheses is required for
+soundness: `trust_smt` only proves the target type, so the cache hit
+is only valid if the hypotheses-in-context entail the target. A
+target-only hash would let an unrelated hypothesis context close the
+same target — wrong. [`Tests/Verify/CacheSoundness.lean`](../Tests/Verify/CacheSoundness.lean)
+pins three goals where the target is the same but the hypothesis
+contexts differ, confirming three distinct hashes.
+
+**Persistence.** One file per entry, named `<hash>.ok`, body is the
+canonical text (for `cat`-debuggability). Directory:
+`<project>/.lake/build/pverify_cache/`. `lake clean` invalidates.
+
+**Measured.**
+- `Phase3DistributedLock`: cold 15.8s → warm 14.1s. 20 entries cached.
+- `Phase3LockServer`: cold 54.0s → warm 46.5s. 34 entries cached.
+
+The speedup is bounded by the fraction of wall-clock spent in
+`pverify_smt_prep + lean-auto + solver` (which is what the hit skips).
+For SMT-light tests it's a wash; for SMT-heavy tests (LockServer's
+big bundles) it's worth more.
+
+**Future improvements.** Larger gains require:
+- Parallel SMT (§4) — cuts the misses' wall-clock.
+- A finer `Expr`-level canonicaliser that ignores irrelevant
+  re-ordering of hypotheses (today, swapping two `intro` order
+  invalidates the cache, even when the goal is logically identical).
+- A goal-fingerprint that strips known-irrelevant metadata (binder
+  names that don't appear in the body, `_` underscores). Would
+  increase the hit rate on cosmetic edits.
+
+---
+
+## 5c. Where does the cold-path time actually go? — profiled 2026-06-19
+
+`Verify/Profile.lean` adds per-stage `IO.monoNanosNow` instrumentation
+behind `set_option pverify.profile true`. The instrumented branch
+inlines `loom_smt [*]` into PLean so each segment can be timed
+separately (it's NOT bit-identical to the upstream `loom_smt` macro —
+no `Goal proven by …` info log, no `retryOnUnknown` cross-solver
+fallback by default — hence opt-in).
+
+The probe harness is [`Tests/Verify/ProfileProbe.lean`](../Tests/Verify/ProfileProbe.lean):
+a synthetic 12-obligation pmodule modelled on `Phase3DistributedLock`.
+
+**Cold-path breakdown (cache OFF, all 12 obligations go through solver):**
+
+| Stage | Total | Per-obligation | % |
+|---|---|---|---|
+| smt.prep (defunctionalisation simp chain) | 252 ms | 21 ms | 15% |
+| **smt.auto (lean-auto translation)** | **941 ms** | **78 ms** | **57%** |
+| **smt.solver (cvc5 process)** | **464 ms** | **39 ms** | **28%** |
+| smt.assign (`trust_smt` term build) | 0.3 ms | 0.02 ms | <1% |
+| **Total** | **1657 ms** | **138 ms** | |
+
+**Headline finding.** lean-auto's `prepareLeanAutoQuery` (monomorphisation
++ lam→SMT-LIB serialisation) costs **~2× the solver itself**. The
+solver is fast (~40 ms / obligation on these small bundles). This
+flips intuition: optimising the solver call is a small lever; reducing
+lean-auto cost (or skipping it entirely via a cache hit) is the big
+one. This is the empirical justification for the goal-Expr cache (§5b)
+covering both stages — caching only the solver result would skip <30%
+of the cost.
+
+**Warm-path breakdown (cache ON, all 12 obligations hit):**
+
+| Stage | Total | % |
+|---|---|---|
+| cache.pp (pretty-print for cache key) | 191 ms | **99%** |
+| cache.hash | 0.01 ms | <1% |
+| cache.fs (file-existence check) | 1.2 ms | 1% |
+| smt.assign | 0.15 ms | <1% |
+| **Total** | **192 ms** | |
+
+The warm-path was essentially pure `Lean.Meta.ppExpr` of the goal +
+local context. Net cold→warm speedup: 9.6× (then).
+
+**Optimisation landed 2026-06-19: raw `Expr.toString` cache key.**
+The cache key now uses Lean's constructor-shape printer (after
+`instantiateMVars` + `Expr.consumeMData`) instead of `Lean.Meta.ppExpr`'s
+delaboration pass. `Expr.toString` produces a string that uniquely
+identifies the normalised `Expr` and is deterministic across runs —
+without the macro-scope `✝` drift that `Expr.hash`-based proposals
+would have to canonicalise.
+
+Updated warm-path numbers (12 obligations):
+
+| Stage | Time | % |
+|---|---|---|
+| **cache.pp** (raw Expr.toString) | **4 ms** | **78%** |
+| cache.fs (file-existence check) | 1 ms | 18% |
+| smt.assign | 0.15 ms | 3% |
+| **Total** | **5 ms** | |
+
+**48× speedup on cache.pp, 38× speedup on warm-path total.** Cold/warm
+ratio is now ~340× on DistLock (cold 1655 ms / warm 5 ms).
+
+The change is in [`PLean/Verify/Tactic.lean::pverifyGoalToCacheText`](../PLean/Verify/Tactic.lean) —
+~5 line edit. Cache file format is unchanged (entries written under
+old ppExpr hashes are simply invalidated; `lake clean` clears them or
+they're regenerated on first re-run). 12/12 DistributedLock + 33/34
+LockServer SMT obligations cache-hit across re-runs.
+
 ---
 
 ## 6. Priority order
 
-1. **§3.5 split-then-SMT** — smallest change, may auto-close obligations
-   that are manual today; do first to measure how many manual proofs §3
-   actually needs to eliminate.
-2. **§5 proof cache** — biggest wall-clock win on iterative builds, fully
-   local to the SMT boundary, sound by construction.
-3. **§4 parallel SMT** — largest speedup on a cold run; more invasive
-   (touches `synthesise`'s control flow and process management).
-4. **§3.1–3.4 reusable tactics** — quality-of-life for the manual proofs
-   that remain after §3.5; reduces the LockServer-style boilerplate.
+1. **§3.5 split-then-SMT** — ✅ landed 2026-06-19. Wired into
+   `pverify_close_chain` after single-shot SMT. Did not change the M3
+   pass/fail mix on the current bundles (which all close as one shot or
+   need a manual proof for a non-SMT reason), but is in tree as a
+   no-cost fallback for future ports.
+2. **§3.1 reusable manual tactics** — ✅ landed 2026-06-19. Three
+   helpers (`pverify_unchanged`, `pverify_recv_only`,
+   `pverify_new_ev_split`) shrunk LockServer's three manual proofs
+   by ~114 lines, with the 37/37 closure rate maintained.
+3. **§5 proof cache** — ✅ landed 2026-06-19 (second design). Keys on
+   the `(local context, goal target)` Expr pretty-print rather than
+   the lean-auto query string, so a hit skips lean-auto and the
+   solver. 11–14% wall-clock reduction on the M3 benchmarks. First
+   cmdString-keyed attempt reverted same session; see §5 for the
+   full post-mortem.
+4. **§4 parallel SMT** — largest speedup on a cold run; more invasive
+   (touches `synthesise`'s control flow and process management). Not yet
+   landed.
+5. **§3.2–3.4 remaining helpers** — `pverify_kind_bridge` (field-only
+   update bridge) and the `pverify_send_handler` driver. Next port that
+   exercises these (RingLeaderVerification, or one of the heavier
+   benchmarks) is the right time to extract them.

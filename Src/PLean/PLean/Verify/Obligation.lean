@@ -35,6 +35,7 @@ import PLean.Surface.Machine
 import PLean.Verify.Tactic
 import PLean.Verify.ProofRegistry
 import PLean.Verify.CexModel
+import PLean.Verify.Profile
 
 open Lean Elab Command
 
@@ -767,6 +768,12 @@ private def runEmitterAndRecord (modName mname sname evname target thmName : Nam
   let fullThmName := modName ++ thmName
   pverifySmtDiagRef.set none
   pverifyTacDiagRef.set none
+  -- Per-obligation profile row scaffolding. When `pverify.profile` is
+  -- false, `pverifySmtCloseDefault` doesn't touch the row, but we still
+  -- begin/end so the row gets a name in the eventual report (rows where
+  -- every stage is 0 simply mean the obligation was not SMT-discharged,
+  -- e.g. closed by `default_inv` or a manual `@[pverifyProof]`).
+  liftM (PLean.Verify.Profile.beginObligation fullThmName.toString : IO Unit)
   let savedSt ← get
   let outcomeRaw ← try emitter
     catch e =>
@@ -798,6 +805,9 @@ private def runEmitterAndRecord (modName mname sname evname target thmName : Nam
     { mname, sname, evname, target, thmName := fullThmName,
       signature, outcome }
   let acc := { acc with records := acc.records.push record }
+  -- Flush the profile row for this obligation. No-op effect on the
+  -- aggregate when `pverify.profile = false` (all stage timings = 0).
+  liftM (PLean.Verify.Profile.endObligation : IO Unit)
   match outcome with
   | .userProved      =>
     return { acc with userProved  := acc.userProved + 1 }

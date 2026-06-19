@@ -76,6 +76,11 @@ def elabPVerify : CommandElab := fun stx => do
   match ← getPModule? modName with
   | none => pure ()
   | some ctx =>
+    -- Reset the profile aggregator at command entry; obligation rows
+    -- accumulate during `synthesise` and we emit a report at the end
+    -- when `pverify.profile` is enabled. The reset is a no-op (one
+    -- ref assignment) when profiling is off — cheap to always do.
+    liftM (PLean.Verify.Profile.reset : IO Unit)
     -- Open `<Mod>` and `PartialCorrectness.DemonicChoice` so emitted
     -- theorems resolve unqualified module names and so `wpgen` sees
     -- the scoped `MAlgOrdered` instances it needs.
@@ -123,6 +128,18 @@ def elabPVerify : CommandElab := fun stx => do
          {result.unknown} unknown, \
          {result.tacticErr} tactic-error, \
          {result.unfinished} no-diagnostic"
+    -- Emit the profile breakdown when `pverify.profile` is set. Two
+    -- tables: per-obligation top-10 by wall time, then per-stage
+    -- aggregate with % of total. The instrumented branch in
+    -- `pverify_smt_close` writes into `Profile.stateRef` only when the
+    -- option is on, so when it's off this dumps zero-valued rows and
+    -- we just skip the message entirely.
+    if pverify.profile.get (← getOptions) then
+      let prof ← liftM (PLean.Verify.Profile.stateRef.get : IO _)
+      logInfo m!"── profile (per obligation, top 10 by wall) ──\n{
+        PLean.Verify.Profile.renderTopN prof.rows 10}"
+      logInfo m!"── profile (stage aggregate) ──\n{
+        PLean.Verify.Profile.renderAggregate prof.rows}"
     if result.failures == 0 then
       logInfo summary
     else

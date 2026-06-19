@@ -18,6 +18,7 @@ import PLean.Surface.Machine
 import PLean.Surface.Stmt
 import PLean.Surface.Verify
 import PLean.Surface.Notation
+import PLean.Verify.Profile
 import PLean.Verify.Tactic
 import PLean.Verify.ProofRegistry
 import PLean.Verify.Obligation

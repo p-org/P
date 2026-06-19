@@ -106,7 +106,132 @@ omit some of the original P source's invariants (e.g.
 safety` obligations correctly fail SMT and need either the missing
 invariants or `@[pverifyProof]` manual proofs._
 
-### Session 2026-06-19 (latest) — LockServer 37/37; payload-characterisation infra; two soundness holes closed
+### Session 2026-06-19 (later) — reusable manual-proof tactics; LockServer manual proofs −114 lines
+
+Three reusable tactic primitives from [`AUTOMATION.md`](AUTOMATION.md)
+§3 landed in [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean), plus a
+split-then-SMT fallback (§3.5) in the automatic discharge chain. The
+LockServer send-handler manual proofs were refactored against them.
+
+**New tactics:**
+- `pverify_split_smt_close` — splits every top-level `∧` in the goal,
+  closes each conjunct by `pverify_smt_close` independently, and
+  short-circuits trivial `True` leaves. Wired into `pverify_close_chain`
+  AFTER the single-shot `pverify_smt_close` (the common 1-query case is
+  unaffected) and AFTER `default_inv`. Motivation: large bundles
+  (LockServer's 11-conjunct `system_config`) return `unknown` from the
+  solver as a single shot but each conjunct is individually decidable;
+  the fallback recovers them automatically.
+- `pverify_unchanged` — discharges a clause unchanged by the step
+  (`assumption` → `solve_by_elim` → `simp_all` fallback). Replaces the
+  verbatim `exact h<X>` pattern in else-branches where machines and the
+  buffer are untouched.
+- `pverify_recv_only h` — discharges a routing clause's received-
+  monotone shape (step marks `lbl` received, nothing else changes).
+  Pre-state hypothesis passed as a term; the helper normalises
+  `inflight` / `not_and` / `Bool.or_eq_false_iff` and exact-applies.
+- `pverify_new_ev_split hPre, hisE, is_<wrong-ev>` — the routing-
+  clause "new label is a different event" case-split: the new-label
+  branch closes by `is_<wrong-ev>` contradiction on `hisE`, old labels
+  fall through to `hPre`.
+
+**LockServer manual proofs.** Both else-branches (10 conjuncts each)
+collapsed to the helper one-liners; the eAquire then-branch (4 wrong-
+event conjuncts) and the eLock/eRelease then-branches (4 wrong-event
+conjuncts each, with field-only kind-bridge prologues) reduced
+similarly. Headline numbers:
+- `Tests/Surface/Phase3LockServer.lean` went from 689 → 575 lines
+  (−114 lines, ~16% file shrinkage; the three manual proofs themselves
+  dropped from ~480 to ~340 lines of tactic code).
+- LockServer remains **37/37** (34 SMT + 3 manual); DistributedLock
+  remains **12/12** (11 SMT + 1 manual).
+- Build wall-clock on `Tests` lean_lib unchanged (~73 s).
+
+**Regression test:**
+[`Tests/Verify/ManualProofHelpers.lean`](../Tests/Verify/ManualProofHelpers.lean)
+pins each helper on synthetic miniature goals (no full `#gen_module` so
+the test is independent of the M3 ports).
+
+Full suite green at 3403 jobs.
+
+**SMT-query cache (§5) — landed second attempt (Expr-level keying).**
+
+First attempt keyed on the lean-auto query string and was reverted
+same-session: `prepareLeanAutoQuery` (computing the key) cost as much
+as the solver call it skipped → net 0% speedup. See
+[`AUTOMATION.md`](AUTOMATION.md) §5 post-mortem.
+
+Second attempt keys on the **(local context, goal target)** pair —
+pretty-printed and `String.hash`-ed before `pverify_smt_prep` runs,
+so a hit skips the prep simp set, the lean-auto translation, AND the
+solver. Mirrors PVerifier's approach (checksum the generated UCLID
+source) but at the Lean-`Expr` level. Storage: one file per cached
+obligation under `<project>/.lake/build/pverify_cache/<hash>.ok`.
+`lake clean` invalidates.
+
+**Soundness.** Hits close the obligation via the same
+`Loom.SMT.trust_smt` axiom `loom_smt` uses on `unsat`. The hash
+includes every visible local hypothesis (name + type), so a goal that
+needs hypothesis H₁ to discharge can't be closed by a cache entry
+that was certified under a different hypothesis context.
+[`Tests/Verify/CacheSoundness.lean`](../Tests/Verify/CacheSoundness.lean)
+pins this with three goals where the target is the same but the
+hypotheses differ — three distinct hashes confirmed.
+
+**Measured wall-clock (truly cold via removing `.olean` + cache):**
+- `Phase3DistributedLock`: cold 15.8s → warm 14.1s (~11% reduction).
+- `Phase3LockServer`: cold 54.0s → warm 46.5s (~14% reduction).
+
+Speedup grows with SMT-heavy workloads; on lighter tests it's a wash.
+Cache entries: 20 for DistLock, 34 for LockServer (every SMT-discharged
+obligation cached).
+
+**Not yet landed from `AUTOMATION.md`:** parallel SMT (§4) and the
+`pverify_send_handler` macro driver (§3.4). Parallel SMT is the
+biggest remaining wall-clock win on cold runs; the cache compounds
+nicely with it (cache cuts the work set, parallelism speeds up what
+remains).
+
+**Profile breakdown of the cold path** (added 2026-06-19;
+opt-in via `set_option pverify.profile true`; see
+[`Tests/Verify/ProfileProbe.lean`](../Tests/Verify/ProfileProbe.lean)
+for the harness). Measured on a synthetic DistLock-equivalent
+12-obligation pmodule, cache OFF:
+- `smt.auto` (lean-auto translation, `prepareLeanAutoQuery`): 941 ms (**57%**)
+- `smt.solver` (cvc5 process): 464 ms (**28%**)
+- `smt.prep` (defunctionalisation simp chain): 252 ms (15%)
+- `smt.assign` (`trust_smt` term build): 0.3 ms (<1%)
+
+**Lean-auto translation is ~2× slower than the solver itself.** This
+is the reason the goal-Expr cache works: hits skip both translation
+and solver, not just solver. It also flags lean-auto as the highest-
+value optimisation target for cold runs — replacing it (or pre-
+caching its output per goal) would beat parallel-SMT.
+
+**Warm-path (cache hit) profile.** All `smt.*` stages → 0; only
+`cache.pp` (pretty-printing for the cache key) remains.
+
+**Optimisation landed 2026-06-19: replace `Lean.Meta.ppExpr` with raw
+`Expr.toString` for the cache key.** The pretty-printer's delaboration
+pass was 191 ms/12 obligations (~16 ms each); the raw constructor-
+shape printer (after `instantiateMVars` + `Expr.consumeMData`) does
+the same job for cache hashing in 4 ms total (~0.3 ms each) — a **48×
+speedup on `cache.pp`**, the warm path's dominant cost.
+
+End-to-end measurement:
+
+| | ppExpr key (prior) | toString key (now) | Speedup |
+|---|---|---|---|
+| Warm path (12 obligations) | 192 ms | **5 ms** | **38×** |
+| `cache.pp` total | 191 ms | 4 ms | 48× |
+| Cold-vs-warm (DistLock) | 9.6× | ~340× | — |
+
+Soundness preserved: 12/12 + 37/37 cache hits maintained across runs
+(`Expr.toString` is stable on identical normalised `Expr`s; macro-
+scope `✝` drift that broke `Expr.hash`-based proposals doesn't affect
+`toString`'s shape-based output).
+
+### Session 2026-06-19 — LockServer 37/37; payload-characterisation infra; two soundness holes closed
 
 **LockServer is now fully verified (37/37).** The port was completed and two
 genuine soundness holes in the VC generator were found (via an adversarial

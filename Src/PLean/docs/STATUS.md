@@ -122,15 +122,15 @@ LockServer send-handler manual proofs were refactored against them.
   (LockServer's 11-conjunct `system_config`) return `unknown` from the
   solver as a single shot but each conjunct is individually decidable;
   the fallback recovers them automatically.
-- `pverify_unchanged` — discharges a clause unchanged by the step
+- `pverify_carry_through` — discharges a clause unchanged by the step
   (`assumption` → `solve_by_elim` → `simp_all` fallback). Replaces the
   verbatim `exact h<X>` pattern in else-branches where machines and the
   buffer are untouched.
-- `pverify_recv_only h` — discharges a routing clause's received-
+- `pverify_carry_after_recv h` — discharges a routing clause's received-
   monotone shape (step marks `lbl` received, nothing else changes).
   Pre-state hypothesis passed as a term; the helper normalises
   `inflight` / `not_and` / `Bool.or_eq_false_iff` and exact-applies.
-- `pverify_new_ev_split hPre, hisE, is_<wrong-ev>` — the routing-
+- `pverify_not_inflight hPre, hisE, is_<wrong-ev>` — the routing-
   clause "new label is a different event" case-split: the new-label
   branch closes by `is_<wrong-ev>` contradiction on `hisE`, old labels
   fall through to `hPre`.

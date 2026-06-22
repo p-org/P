@@ -101,7 +101,7 @@ existing `pverify_*` family; the macro-hygiene rule (every simp-lemma
 name inside a named tactic) applies.
 
 **Status (2026-06-19, later session):** §3.1, §3.5 and an additional
-`pverify_new_ev_split` helper landed and were applied to the
+`pverify_not_inflight` helper landed and were applied to the
 LockServer manual proofs (−114 lines / ~16% file shrinkage, 37/37
 closure rate maintained). §3.2 / §3.3 / §3.4 are not yet built —
 their highest-leverage application is the kind-bridge step in the
@@ -425,8 +425,8 @@ LockServer SMT obligations cache-hit across re-runs.
    need a manual proof for a non-SMT reason), but is in tree as a
    no-cost fallback for future ports.
 2. **§3.1 reusable manual tactics** — ✅ landed 2026-06-19. Three
-   helpers (`pverify_unchanged`, `pverify_recv_only`,
-   `pverify_new_ev_split`) shrunk LockServer's three manual proofs
+   helpers (`pverify_carry_through`, `pverify_carry_after_recv`,
+   `pverify_not_inflight`) shrunk LockServer's three manual proofs
    by ~114 lines, with the 37/37 closure rate maintained.
 3. **§5 proof cache** — ✅ landed 2026-06-19 (second design). Keys on
    the `(local context, goal target)` Expr pretty-print rather than

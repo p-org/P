@@ -151,27 +151,54 @@ before attempting one.
 - Phase 3 (Verification declarations) — ◐ in progress. The
   SMT-discharge pipeline, the `@[pverifyProof]` registry, and the
   `pverify_*` tactic library are in tree. Closure rates:
-  `Phase3DistributedLock` **12/12** (11 SMT + 1 manual `@[pverifyProof]`)
-  and `Phase3LockServer` **37/37** (34 SMT + 3 manual) — both fully
-  verified. LockServer's port now carries the full P-source invariant
-  set; the 3 manual proofs are the send-handlers whose routing
-  obligations the solver can't close as a single-shot bundle.
+  `Phase3DistributedLock` **12/12** (11 SMT + 1 manual `@[pverifyProof]`),
+  `Phase3LockServer` **37/37** (34 SMT + 3 manual), and
+  `Phase3RingLeader` **14/14** (12 SMT + 2 manual) — all three M3
+  benchmarks fully verified. RingLeader's relational facts about
+  `le` / `btw` / `right` are stated as `paxiom`s (axioms about opaque
+  `function`s, no state dependency); the obligation generator injects
+  every pmodule `paxiom` into the local context of every VC via
+  `have hax_<name> := @<name>` so `loom_smt [*]` (which only sees the
+  lctx) can use them — pinned by `Tests/Surface/PAxiomProbe.lean`. LockServer's port now carries the full
+  P-source invariant set; the 3 manual proofs are the send-handlers
+  whose routing obligations the solver can't close as a single-shot
+  bundle.
   `#gen_module` now emits `<ev>_payload_of_spec`/`_mk` characterisations
   (and seals `<ev>_payload_of` `@[irreducible]`) so send-handler
-  obligations reach SMT. Two soundness holes were found+fixed this
-  session (see STATUS.md "Session 2026-06-19"): the GlobalState-shadow
+  obligations reach SMT. Two soundness holes were found+fixed
+  (see STATUS.md "Session 2026-06-19"): the GlobalState-shadow
   guard now rejects all binder forms (not just `∀`), and a sorried
   `@[pverifyProof]` is now reported as a failure.
-  Reusable manual-proof tactics (`pverify_unchanged` /
-  `pverify_recv_only` / `pverify_new_ev_split` + `pverify_split_smt_close`)
+  Reusable manual-proof tactics (`pverify_carry_through` /
+  `pverify_carry_after_recv` / `pverify_not_inflight` + `pverify_split_smt_close`)
   shrunk LockServer's three manual proofs by 114 lines (37/37 closure
   rate maintained); see [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
   An obligation cache (hashing `(local context, goal target)`) at
   `<project>/.lake/build/pverify_cache/` shaves 11–14% wall-clock on
   warm rebuilds; soundness pinned by
   [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
-  `3_RingLeaderVerification` not yet ported.
-- Phase 4 (Spec machines) — ☐ next.
+  Porting `3_RingLeaderVerification` produced two reusable framework
+  fixes:
+
+  1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
+     hygienically, so the `goto` doElem macro (first exercised inside an
+     `on`-handler by this benchmark) couldn't resolve `G.unit`. Now
+     emitted unhygienically in `emitProgramUnions`.
+  2. **`InStart` init modelling + reducible state aliases** —
+     `emitInitConditions` now asserts every machine begins in a start
+     state, and `<S>_st` aliases are `@[reducible] def` so the solver
+     sees the raw `S` constructors. Together these close
+     state-dependent base cases (e.g. `LeaderMax` / `UniqueLeader`).
+
+  RingLeader's two inductive steps through `goto Won` (`lemmas` /
+  `Safety`) are discharged by `@[pverifyProof]` manual proofs in the
+  test file: `Safety` needs a `SelfPendingMax` instantiation hint;
+  `lemmas` uses the cyclic-betweenness argument (`btw_1`..`btw_4`)
+  to show forwarding `eNominate` to the ring successor preserves
+  `NoBypass`. Both are self-contained in the test file and serve as
+  the worked template for the `@[pverifyProof]` escape hatch on
+  jointly-inductive ring invariants.
+- Phase 4 (Spec machines) — ☐ next. Plan in PLAN_P4.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.
 

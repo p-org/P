@@ -222,10 +222,17 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
         instance : Inhabited $idE := ⟨$firstFull default⟩
       ))
   -- `<Mod>.G`: goto payload union. Phase-2 surface doesn't expose goto
-  -- payloads; one trivial constructor suffices.
+  -- payloads; one trivial constructor suffices. The constructor MUST be
+  -- emitted unhygienically (via `mkIdent`): the `goto` doElem macro in
+  -- `Surface/Stmt.lean` references it as the clean name `G.unit`, so a
+  -- hygienic `| unit` ctor (which Lean would name `G.unit._@…._hyg.N`)
+  -- would make `goto <state>` fail to resolve `G.unit` inside a handler
+  -- body. (`goto` inside an `on`-handler is first exercised by the
+  -- RingLeader port; `on ev goto st` transitions don't hit this path.)
+  let gUnitCtor ← `(Lean.Parser.Command.ctor| | $(mkIdent `unit):ident)
   elabCommand (← `(
     inductive $idG where
-      | unit
+      $gUnitCtor:ctor
       deriving DecidableEq, Inhabited
   ))
   -- `<Mod>.S`: one ctor per (machine, state).
@@ -526,10 +533,12 @@ private def emitStateAliases (mname : Name) (states : Array PStateDecl) :
     let cName := (mname.toString ++ "_" ++ sd.name.toString)
     let aliasName : Ident := mkIdent (sd.name.appendAfter "_st")
     let sCtorIdent : Ident := mkIdent (`S ++ Name.mkSimple cName)
-    -- `@[reducible]` so SMT prep's `dsimp only` reduces a goal's
-    -- `currentState = <S>_st` to the raw `S.<M>_<S>` constructor —
-    -- matching the form the state/kind coupling in `<M>_allocated`
-    -- produces, so the solver can relate them.
+    -- `@[reducible] def` (equivalently, `abbrev`) so SMT prep's
+    -- `dsimp only` reduces a goal's `currentState = <S>_st` to the raw
+    -- `S.<M>_<S>` constructor. Without this the solver leaves `<S>_st`
+    -- uninterpreted and returns `unknown` on base cases that need to
+    -- distinguish e.g. `Won_st ≠ Proposing_st`. Also matches the
+    -- coupling form the state/kind check in `<M>_allocated` produces.
     elabCommand (← `(
       @[reducible] def $aliasName : ($idSig).S := $sCtorIdent
     ))
@@ -570,8 +579,13 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     let bindings ← liftMacroM <| buildVarBindings vars
     let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
       liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
+    -- `noncomputable` so a handler that references an axiomatised
+    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
+    -- doesn't fail Lean's code-generator check. Handler bodies are
+    -- never compiled — they're only inspected by WP / SMT — so making
+    -- them noncomputable has no downstream effect.
     elabCommand (← `(
-      def $defName ($idThis : $mIdent) : $idPM Unit := do
+      noncomputable def $defName ($idThis : $mIdent) : $idPM Unit := do
         $bindings*
         $bodyItem
     ))
@@ -580,8 +594,13 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     let bindings ← liftMacroM <| buildVarBindings vars
     let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
       liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
+    -- `noncomputable` so a handler that references an axiomatised
+    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
+    -- doesn't fail Lean's code-generator check. Handler bodies are
+    -- never compiled — they're only inspected by WP / SMT — so making
+    -- them noncomputable has no downstream effect.
     elabCommand (← `(
-      def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
+      noncomputable def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
         $bindings*
         $bodyItem
     ))
@@ -590,8 +609,13 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     let bindings ← liftMacroM <| buildVarBindings vars
     let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
       liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
+    -- `noncomputable` so a handler that references an axiomatised
+    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
+    -- doesn't fail Lean's code-generator check. Handler bodies are
+    -- never compiled — they're only inspected by WP / SMT — so making
+    -- them noncomputable has no downstream effect.
     elabCommand (← `(
-      def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
+      noncomputable def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
         $bindings*
         $bodyItem
     ))
@@ -600,8 +624,13 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     let bindings ← liftMacroM <| buildVarBindings vars
     let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
       liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
+    -- `noncomputable` so a handler that references an axiomatised
+    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
+    -- doesn't fail Lean's code-generator check. Handler bodies are
+    -- never compiled — they're only inspected by WP / SMT — so making
+    -- them noncomputable has no downstream effect.
     elabCommand (← `(
-      def $defName ($idThis : $mIdent) : $idPM Unit := do
+      noncomputable def $defName ($idThis : $mIdent) : $idPM Unit := do
         $bindings*
         $bodyItem
     ))
@@ -686,6 +715,36 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
       ← `((∀ l : ($idSig).Label, ($sId).received l = false)),
       ← `(($sId).actionCount = 0)]
   let mut props : Array (TSyntax `term) := frameworkClauses
+  -- InStart: every machine ref starts in a start state (mirrors
+  -- PVerifier's `InStart` init constraint). Allocated machines are in
+  -- their kind's `start state`; unallocated refs hold the default
+  -- `MachineState`, whose `currentState` is the first `S` constructor —
+  -- so include that ctor too. This is what lets base-case obligations
+  -- for state-dependent invariants (e.g. `∀ x, stateOf x s = Won →
+  -- …`) discharge: no machine is in a non-start state initially. Sound
+  -- because P machines begin in their start state.
+  let mut startCtors : Array Name := #[]
+  -- First `S` ctor = Inhabited default for unallocated refs.
+  if let some m0 := ctx.machineOrder[0]? then
+    if let some md0 := ctx.machines.find? m0 then
+      if let some sd0 := md0.states[0]? then
+        startCtors := startCtors.push
+          (Name.mkSimple (m0.toString ++ "_" ++ sd0.name.toString))
+  -- Each machine's declared `start state`.
+  for mname in ctx.machineOrder do
+    if let some md := ctx.machines.find? mname then
+      for sd in md.states do
+        if sd.isStart then
+          let c := Name.mkSimple (mname.toString ++ "_" ++ sd.name.toString)
+          unless startCtors.contains c do startCtors := startCtors.push c
+  if let some c0 := startCtors[0]? then
+    let mId : Ident := mkIdent `m
+    let csRead : TSyntax `term ← `((($sId).machines $mId).currentState)
+    let mut disj : TSyntax `term ← `($csRead = $(mkIdent (`S ++ c0)))
+    for i in [1:startCtors.size] do
+      let ci := startCtors[i]!
+      disj ← `($disj ∨ $csRead = $(mkIdent (`S ++ ci)))
+    props := props.push (← `(∀ $mId : PLean.MachineRef, $disj))
   for d in ctx.inits do
     if let some stx := d.defStx then
       -- `init-holds` bodies are materialised under a hardcoded `s` binder
@@ -811,6 +870,19 @@ def elabPGenModule : CommandElab := fun stx => do
     emitIsCharacterizations ctx
     -- Step 5: derive lifted WP for `get`/`set` (D14).
     emitDerivedWP
+    -- Step 5b: materialise `pure` functions (foreign + defined),
+    -- `paxiom`s, and `pinstance`s *before* the per-machine handler
+    -- bodies (Step 6) and the verification declarations (Step 7).
+    -- Handler bodies and invariants may reference any of: a `function`
+    -- (`if le this.ref x then …`), an axiom (`have := f_total x`), or
+    -- a typeclass projection (`LeOrder.le this.ref x`, found via the
+    -- anonymous instance `pinstance` emits). The pinstance bundle has
+    -- to land *before* Step 6 specifically so typeclass resolution for
+    -- `LeOrder.le` inside a handler body succeeds; otherwise the
+    -- elaborator reports `failed to synthesize LeOrder MachineRef`.
+    for (_, d) in ctx.pures.toList do      materialisePure d
+    for (_, d) in ctx.axioms.toList do     materialiseAxiom d
+    for (_, d) in ctx.instances.toList do  materialiseInstance d
     -- Step 6: per-machine var accessors + state-tag aliases, plus
     -- handler defs replayed inside each machine namespace.
     for mname in ctx.machineOrder do
@@ -834,15 +906,20 @@ def elabPGenModule : CommandElab := fun stx => do
       ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
     let eventKinds : NameSet :=
       ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
-    -- `function` / `paxiom` / `pinstance` come BEFORE invariants:
-    -- invariant and `init-holds` bodies may reference a `function`
-    -- (e.g. `n.server = lock_server`), but functions only reference
-    -- types / machine fields (already materialised in step 6) and never
-    -- reference invariants. Emitting invariants first left `lock_server`
-    -- undefined inside a `Lemma`/`Theorem` block.
-    for (_, d) in ctx.pures.toList do      materialisePure d
-    for (_, d) in ctx.axioms.toList do     materialiseAxiom d
-    for (_, d) in ctx.instances.toList do  materialiseInstance d
+    -- `pure`s / `paxiom`s / `pinstance`s were already emitted in
+    -- Step 5b above — handler bodies need them in scope.
+    -- Per-pinstance: synthesise one top-level def per Prop-typed class
+    -- field, and accumulate them into `synthAxioms` so they flow into
+    -- the persistent `ctx.axioms` map (and thus into the obligation
+    -- generator's `have hax_<name>` injection — the same SMT bridge
+    -- hand-written `paxiom`s use). Done here rather than in
+    -- `materialiseInstance` because adding to `ctx.axioms` requires the
+    -- enclosing pmodule's context, which we have here.
+    let mut synthAxioms : NameMap PAxiomDecl := {}
+    for (_, d) in ctx.instances.toList do
+      let decls ← synthInstanceFieldAxioms modName d
+      for ax in decls do
+        synthAxioms := synthAxioms.insert ax.name ax
     for (_, d) in ctx.invariants.toList do
       materialiseInvariant machineKinds eventKinds machineFields
         eventPayloadFields d
@@ -875,7 +952,8 @@ def elabPGenModule : CommandElab := fun stx => do
       fun acc n d => acc.insert n { d with defStx := none }
     let invs'     := ctx.invariants.foldl (init := ({} : NameMap PInvariantDecl))
       fun acc n d => acc.insert n { d with defStx := none }
-    let axs'      := ctx.axioms.foldl (init := ({} : NameMap PAxiomDecl))
+    let axs'      := ctx.axioms.foldl
+      (init := synthAxioms)  -- start with the pinstance-synthesised axioms
       fun acc n d => acc.insert n { d with defStx := none }
     let pures'    := ctx.pures.foldl (init := ({} : NameMap PPureDecl))
       fun acc n d => acc.insert n { d with defStx := none }

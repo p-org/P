@@ -167,6 +167,7 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     (lemmaInvNames : Array Name)
     (machineNames : Array Name)
     (eventNames : Array Name)
+    (axiomNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
     CommandElabM ObligationOutcome := do
   let thmName : Name :=
@@ -320,6 +321,19 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
       let hypId : Ident :=
         mkIdent (Name.mkSimple ("hspec_" ++ en.toString))
       specHaves := specHaves.push (← `(tactic| have $hypId:ident := $specId:ident))
+    -- `paxiom` facts: one `have` per pmodule-declared `paxiom`. PLean
+    -- materialises `paxiom <id> : <prop>` as a top-level Lean `axiom`,
+    -- but `loom_smt [*]` / lean-auto's `collectAllLemmas` only sees the
+    -- *local context*, so the axiom otherwise never reaches the solver.
+    -- Bringing each axiom in by name gives SMT access to facts about
+    -- opaque `function`s (e.g. RingLeader's totality / antisymmetry of
+    -- `le`) without restating them as init-holds + invariants.
+    let mut axiomHaves : Array (TSyntax `tactic) := #[]
+    for an in axiomNames do
+      let axId : Ident := mkIdent an
+      let hypId : Ident :=
+        mkIdent (Name.mkSimple ("hax_" ++ an.toString))
+      axiomHaves := axiomHaves.push (← `(tactic| have $hypId:ident := @$axId))
     let hasAccessors := !accessorUnfolds.isEmpty
     let tail : TSyntax `tactic ←
       if isDefault then `(tactic| pverify_default)
@@ -352,6 +366,9 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     -- Bring each payload event's `_spec` characterisation into context
     -- before the closing tactic (see `specHaves` above).
     for h in specHaves do
+      steps := steps.push h
+    -- Bring each `paxiom`'s statement into context (see `axiomHaves`).
+    for h in axiomHaves do
       steps := steps.push h
     steps := steps.push tail
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
@@ -453,6 +470,7 @@ conjunction of `init-holds` clauses. -/
 def emitBaseCaseObligation (modName : Name) (invName : Name)
     (isDefaultInv : Bool) (machineNames : Array Name)
     (eventNames : Array Name)
+    (axiomNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
     CommandElabM ObligationOutcome := do
   let thmName : Name := baseCaseName invName proofTag proofIdx
@@ -496,6 +514,16 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
       steps := steps.push (← `(tactic|
         try unfold PLean.UniqueActions PLean.IncreasingCount
                    PLean.ReceivedSubsetSent))
+    -- Bring every `paxiom` into scope before the closing tactic — same
+    -- mechanism as `emitOneObligation`. Base-case obligations are the
+    -- primary consumers (a base case for an invariant that restates an
+    -- axiom would otherwise be unprovable without restating the axiom
+    -- as an init-holds clause too).
+    for an in axiomNames do
+      let axId : Ident := mkIdent an
+      let hypId : Ident :=
+        mkIdent (Name.mkSimple ("hax_" ++ an.toString))
+      steps := steps.push (← `(tactic| have $hypId:ident := @$axId))
     steps := steps.push (← `(tactic|
       first | (intros; trivial) | pverify_smt_close))
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
@@ -829,6 +857,7 @@ private def processOne (modName mname sname evname : Name)
     (lemmaInvNames : Array Name)
     (machineNames : Array Name)
     (eventNames : Array Name)
+    (axiomNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
     (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
   let thmName :=
@@ -836,7 +865,7 @@ private def processOne (modName mname sname evname : Name)
   runEmitterAndRecord modName mname sname evname target thmName
     (emitOneObligation modName mname sname evname target isDefault
       usingNames hasPayload varNames lemmaInvNames machineNames eventNames
-      proofTag proofIdx)
+      axiomNames proofTag proofIdx)
     acc
 
 /-- Emit one base-case obligation for a single invariant in a directive's
@@ -845,13 +874,14 @@ base-case VCs are pmodule-scoped, not handler-scoped. -/
 private def processBaseCase (modName invName : Name) (isDefaultInv : Bool)
     (machineNames : Array Name)
     (eventNames : Array Name)
+    (axiomNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
     (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
   let thmName := baseCaseName invName proofTag proofIdx
   runEmitterAndRecord modName Name.anonymous Name.anonymous Name.anonymous
     invName thmName
     (emitBaseCaseObligation modName invName isDefaultInv machineNames
-      eventNames proofTag proofIdx)
+      eventNames axiomNames proofTag proofIdx)
     acc
 
 /-- For each `Proof` block's `prove X` directive, walk every
@@ -892,6 +922,18 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
       if let some e := ctx.events.find? en then
         if e.payload.isSome then out := out.push en
     return out
+  -- Pmodule-level `paxiom`s. `emitOneObligation` and
+  -- `emitBaseCaseObligation` inject a `have h_<name> := @<leanName>`
+  -- per axiom so `loom_smt [*]` (which reads only the local context)
+  -- sees them. Without this, top-level `axiom`s emitted by `paxiom` are
+  -- invisible to the SMT pipeline and any obligation whose proof
+  -- depends on a stated property of a `function` will be reported as
+  -- disproved.
+  let allAxiomNames : Array Name := Id.run do
+    let mut out : Array Name := #[]
+    for (_, d) in ctx.axioms.toList do
+      out := out.push d.leanName
+    return out
   -- Names of the three default invariants — the base case for
   -- `prove default;` enumerates them so the failure report names which
   -- one didn't hold at init (rather than the bundled `DefaultInvariants`).
@@ -911,7 +953,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
         else lemmaInvariantsOf dir.target
       for inv in baseInvs do
         result ← processBaseCase modName inv dir.isDefault allMachineNames
-          allEventNames proof.name proofIdx result
+          allEventNames allAxiomNames proof.name proofIdx result
       -- Inductive step: per-handler triples.
       for mname in ctx.machineOrder do
         let some m := ctx.machines.find? mname | continue
@@ -934,7 +976,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
               lemmaInvNames := lemmaInvNames ++ lemmaInvariantsOf u
             result ← processOne modName mname sd.name ev
               dir.target dir.isDefault dir.usingLemmas hasPayload varNames
-              lemmaInvNames allMachineNames allEventNames
+              lemmaInvNames allMachineNames allEventNames allAxiomNames
               proof.name proofIdx result
   -- Auto-default pass: synthetic `block_auto_default` tag avoids
   -- collisions with user-tagged emissions; index past-the-end of the
@@ -954,7 +996,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
         let hasPayload := eventHasPayload ctx ev
         result ← processOne modName mname sd.name ev
           `default true #[] hasPayload varNames
-          #[] allMachineNames allEventNames autoTag autoIdx result
+          #[] allMachineNames allEventNames allAxiomNames autoTag autoIdx result
   return result
 
 end Verify

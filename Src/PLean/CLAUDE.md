@@ -153,8 +153,13 @@ before attempting one.
   `pverify_*` tactic library are in tree. Closure rates:
   `Phase3DistributedLock` **12/12** (11 SMT + 1 manual `@[pverifyProof]`),
   `Phase3LockServer` **37/37** (34 SMT + 3 manual), and
-  `Phase3RingLeader` **32/32** (30 SMT + 2 manual) — all three M3
-  benchmarks fully verified. LockServer's port now carries the full
+  `Phase3RingLeader` **14/14** (12 SMT + 2 manual) — all three M3
+  benchmarks fully verified. RingLeader's relational facts about
+  `le` / `btw` / `right` are stated as `paxiom`s (axioms about opaque
+  `function`s, no state dependency); the obligation generator injects
+  every pmodule `paxiom` into the local context of every VC via
+  `have hax_<name> := @<name>` so `loom_smt [*]` (which only sees the
+  lctx) can use them — pinned by `Tests/Surface/PAxiomProbe.lean`. LockServer's port now carries the full
   P-source invariant set; the 3 manual proofs are the send-handlers
   whose routing obligations the solver can't close as a single-shot
   bundle.

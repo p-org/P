@@ -579,8 +579,13 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     let bindings ← liftMacroM <| buildVarBindings vars
     let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
       liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
+    -- `noncomputable` so a handler that references an axiomatised
+    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
+    -- doesn't fail Lean's code-generator check. Handler bodies are
+    -- never compiled — they're only inspected by WP / SMT — so making
+    -- them noncomputable has no downstream effect.
     elabCommand (← `(
-      def $defName ($idThis : $mIdent) : $idPM Unit := do
+      noncomputable def $defName ($idThis : $mIdent) : $idPM Unit := do
         $bindings*
         $bodyItem
     ))
@@ -589,8 +594,13 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     let bindings ← liftMacroM <| buildVarBindings vars
     let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
       liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
+    -- `noncomputable` so a handler that references an axiomatised
+    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
+    -- doesn't fail Lean's code-generator check. Handler bodies are
+    -- never compiled — they're only inspected by WP / SMT — so making
+    -- them noncomputable has no downstream effect.
     elabCommand (← `(
-      def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
+      noncomputable def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
         $bindings*
         $bodyItem
     ))
@@ -599,8 +609,13 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     let bindings ← liftMacroM <| buildVarBindings vars
     let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
       liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
+    -- `noncomputable` so a handler that references an axiomatised
+    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
+    -- doesn't fail Lean's code-generator check. Handler bodies are
+    -- never compiled — they're only inspected by WP / SMT — so making
+    -- them noncomputable has no downstream effect.
     elabCommand (← `(
-      def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
+      noncomputable def $defName ($idThis : $mIdent) ($param : $ty) : $idPM Unit := do
         $bindings*
         $bodyItem
     ))
@@ -609,8 +624,13 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     let bindings ← liftMacroM <| buildVarBindings vars
     let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
       liftMacroM <| `(Lean.Parser.Term.doSeqItem| do $body)
+    -- `noncomputable` so a handler that references an axiomatised
+    -- `pinstance` projection (e.g. `LeOrder.le this.ref n.voteFor`)
+    -- doesn't fail Lean's code-generator check. Handler bodies are
+    -- never compiled — they're only inspected by WP / SMT — so making
+    -- them noncomputable has no downstream effect.
     elabCommand (← `(
-      def $defName ($idThis : $mIdent) : $idPM Unit := do
+      noncomputable def $defName ($idThis : $mIdent) : $idPM Unit := do
         $bindings*
         $bodyItem
     ))
@@ -850,14 +870,19 @@ def elabPGenModule : CommandElab := fun stx => do
     emitIsCharacterizations ctx
     -- Step 5: derive lifted WP for `get`/`set` (D14).
     emitDerivedWP
-    -- Step 5b: materialise `pure` functions (foreign + defined) *before*
-    -- the per-machine handler bodies (Step 6) and the verification
-    -- declarations (Step 7). Both may reference `pure` functions: a
-    -- handler can branch on `le this.ref x` and an invariant can assert
-    -- `le x y = true`. `3_RingLeaderVerification` is the first benchmark
-    -- to do so, so the opaque/defined `pure`s must exist by the time
-    -- those scopes are replayed.
+    -- Step 5b: materialise `pure` functions (foreign + defined),
+    -- `paxiom`s, and `pinstance`s *before* the per-machine handler
+    -- bodies (Step 6) and the verification declarations (Step 7).
+    -- Handler bodies and invariants may reference any of: a `function`
+    -- (`if le this.ref x then …`), an axiom (`have := f_total x`), or
+    -- a typeclass projection (`LeOrder.le this.ref x`, found via the
+    -- anonymous instance `pinstance` emits). The pinstance bundle has
+    -- to land *before* Step 6 specifically so typeclass resolution for
+    -- `LeOrder.le` inside a handler body succeeds; otherwise the
+    -- elaborator reports `failed to synthesize LeOrder MachineRef`.
     for (_, d) in ctx.pures.toList do      materialisePure d
+    for (_, d) in ctx.axioms.toList do     materialiseAxiom d
+    for (_, d) in ctx.instances.toList do  materialiseInstance d
     -- Step 6: per-machine var accessors + state-tag aliases, plus
     -- handler defs replayed inside each machine namespace.
     for mname in ctx.machineOrder do
@@ -881,12 +906,20 @@ def elabPGenModule : CommandElab := fun stx => do
       ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
     let eventKinds : NameSet :=
       ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
-    -- `paxiom` / `pinstance` come BEFORE invariants: invariant and
-    -- `init-holds` bodies may reference an axiom / instance. `pure`s
-    -- were already emitted in Step 5b (above) — needed earlier by
-    -- handler bodies as well.
-    for (_, d) in ctx.axioms.toList do     materialiseAxiom d
-    for (_, d) in ctx.instances.toList do  materialiseInstance d
+    -- `pure`s / `paxiom`s / `pinstance`s were already emitted in
+    -- Step 5b above — handler bodies need them in scope.
+    -- Per-pinstance: synthesise one top-level def per Prop-typed class
+    -- field, and accumulate them into `synthAxioms` so they flow into
+    -- the persistent `ctx.axioms` map (and thus into the obligation
+    -- generator's `have hax_<name>` injection — the same SMT bridge
+    -- hand-written `paxiom`s use). Done here rather than in
+    -- `materialiseInstance` because adding to `ctx.axioms` requires the
+    -- enclosing pmodule's context, which we have here.
+    let mut synthAxioms : NameMap PAxiomDecl := {}
+    for (_, d) in ctx.instances.toList do
+      let decls ← synthInstanceFieldAxioms modName d
+      for ax in decls do
+        synthAxioms := synthAxioms.insert ax.name ax
     for (_, d) in ctx.invariants.toList do
       materialiseInvariant machineKinds eventKinds machineFields
         eventPayloadFields d
@@ -919,7 +952,8 @@ def elabPGenModule : CommandElab := fun stx => do
       fun acc n d => acc.insert n { d with defStx := none }
     let invs'     := ctx.invariants.foldl (init := ({} : NameMap PInvariantDecl))
       fun acc n d => acc.insert n { d with defStx := none }
-    let axs'      := ctx.axioms.foldl (init := ({} : NameMap PAxiomDecl))
+    let axs'      := ctx.axioms.foldl
+      (init := synthAxioms)  -- start with the pinstance-synthesised axioms
       fun acc n d => acc.insert n { d with defStx := none }
     let pures'    := ctx.pures.foldl (init := ({} : NameMap PPureDecl))
       fun acc n d => acc.insert n { d with defStx := none }

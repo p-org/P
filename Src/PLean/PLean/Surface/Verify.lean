@@ -739,12 +739,121 @@ def materialisePure (d : PPureDecl) : CommandElabM Unit := do
       elabCommand (← `(opaque $id $binders* : $ret))
     | _ => throwErrorAt stx "internal error: function defStx malformed"
 
+/-- Materialise `pinstance <id> : <Class> <T>`.
+
+The original design ([`docs/PLAN_P0.md`](../../docs/PLAN_P0.md) §6,
+following Veil) elaborated this to a single `variable [<id> : <Class>
+<T>]`, but that has two SMT-visibility gaps:
+
+1. **Auto-bound generalisation.** A later `invariant P : <body using
+   Class.field>` gets type `[ord : <Class> <T>] → GS → Prop`, not
+   `GS → Prop`. The bundle predicate `def L : GS → Prop := fun s =>
+   P s ∧ True` then can't typecheck (`P s` is missing the instance
+   argument) and the obligation skeleton renders as `sorry ∧ True`.
+2. **Lctx invisibility.** `loom_smt [*]` collects only the local
+   context, so even if the invariant body elaborated, the class's
+   stated axioms about its functions would be invisible to SMT.
+
+We close (1) by elaborating `pinstance <id> : <Class> <T>` into a
+top-level `axiom` for the instance plus a real `instance` that wraps
+it, so `<Class>.<field>` resolves via typeclass resolution without
+inserting an explicit binder on the invariant's type. (2) is closed
+by the per-field axiom synthesis in `emitInstanceAxioms` (below) —
+called by `#gen_module` after `materialiseInstance` runs so the
+synthesised axiom names land in `ctx.axioms` and flow through the
+existing `paxiom → have hax_<name>` SMT bridge. -/
 def materialiseInstance (d : PInstanceDecl) : CommandElabM Unit := do
   match d.defStx with
   | none => pure ()
   | some stx =>
     let `(pinstance $id:ident : $tp:term) := stx
       | throwErrorAt stx "internal error: pinstance defStx malformed"
-    elabCommand (← `(variable [$id : $tp]))
+    -- (1) + (2) wrapped in a `noncomputable section` so the synthesised
+    -- witness — neither computational (it's axiomatic) nor inhabited
+    -- in general — passes Lean's codegen check. `axiom <id> : <tp>`
+    -- alone trips the code generator with "not supported by code
+    -- generator"; `opaque` requires `Inhabited <tp>` (not provided for
+    -- arbitrary classes); `noncomputable section` is the canonical
+    -- escape hatch.
+    elabCommand (← `(noncomputable section))
+    -- Axiomatise the instance witness, then wrap it in a real
+    -- `instance` (anonymous form — found by structural typeclass
+    -- lookup; name doesn't matter) so `<Class>.<field>` resolves
+    -- automatically in subsequent declarations.
+    elabCommand (← `(axiom $id : $tp))
+    elabCommand (← `(instance : $tp := $id))
+    elabCommand (← `(end))
+
+/-- Per-field axiom synthesis for `pinstance <id> : <Class> <T>`.
+
+For every Prop-typed field of `<Class>`, emit a top-level
+`noncomputable def <Mod>.<id>_<field> := @<Class>.<field> _ <id>`,
+returning the array of registered theorem names so the caller can add
+them to `ctx.axioms`. The obligation generator's existing
+`paxiom → have hax_<name>` SMT bridge then carries them into every
+VC's local context.
+
+`modName` is the owning pmodule's full name; the witness `<id>` lives
+under `modName.<id>` after `materialiseInstance` ran.
+
+Called by `#gen_module` directly, *after* `materialiseInstance` has
+emitted the instance and after the pmodule block has been closed — so
+we cannot call `addAxiom` (which requires being inside a pmodule
+block). Instead, return the names and let the caller update the
+persistent `LocalPModuleCtx` via `setPModule`. -/
+def synthInstanceFieldAxioms (modName : Name) (d : PInstanceDecl) :
+    CommandElabM (Array PAxiomDecl) := do
+  match d.defStx with
+  | none => return #[]
+  | some stx =>
+    let `(pinstance $_id:ident : $tp:term) := stx
+      | return #[]
+    -- Elaborate the class application to find its head constant.
+    let classNameAndArgs? ←
+      try
+        Lean.Elab.Command.liftTermElabM do
+          let tpExpr ← Lean.Elab.Term.elabTerm tp.raw none
+          let tpExpr ← Lean.instantiateMVars tpExpr
+          let head := tpExpr.getAppFn
+          match head.constName? with
+          | some n => return some (n, tpExpr.getAppArgs)
+          | none   => return none
+      catch _ => pure none
+    let some (className, _classArgs) := classNameAndArgs?
+      | return #[]
+    let env ← getEnv
+    let some classInfo := Lean.getStructureInfo? env className
+      | return #[]
+    let instWitness : Ident := mkIdent (modName ++ d.name)
+    let mut out : Array PAxiomDecl := #[]
+    for fname in classInfo.fieldNames do
+      let projName : Name := className ++ fname
+      let some _ := env.find? projName | continue
+      let thmName : Name :=
+        Name.mkSimple (d.name.toString ++ "_" ++ fname.toString)
+      let thmId : Ident := mkIdent thmName
+      let projId : Ident := mkIdent projName
+      let projInstantiated : Term ← `(@$projId _ $instWitness)
+      let cmd ← `(
+        set_option linter.unusedVariables false in
+        noncomputable def $thmId := $projInstantiated)
+      let okElaborated : Bool ← (do
+        try
+          elabCommand cmd
+        catch _ => return false
+        let env' ← getEnv
+        match env'.find? (modName ++ thmName) with
+        | some info =>
+          try
+            let isProp ← Lean.Elab.Command.liftTermElabM do
+              Lean.Meta.isProp info.type
+            return isProp
+          catch _ => return false
+        | none => return false)
+      if okElaborated then
+        out := out.push
+          { name := thmName, leanName := modName ++ thmName
+            defStx := none, ref := stx }
+    return out
 
 end PLean

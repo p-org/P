@@ -1,13 +1,21 @@
 /-
-Regression tests for the manual-proof helpers in `Verify/Tactic.lean`:
+Regression tests for the manual-proof helpers in `Verify/Tactic.lean`.
+See `Verify/Tactic.lean`'s "Manual-proof helpers" section for the full
+Hoare-triple shape table.
 
 - `pverify_split_smt_close` — split top-level `∧` then SMT-close each;
-- `pverify_unchanged` — discharge a clause unchanged by the step;
-- `pverify_recv_only` — discharge a `¬ inflight e (post)` clause
-  when the step only marks the dispatched label received.
+- `pverify_carry_through` — discharge a clause unchanged by the step;
+- `pverify_carry_after_recv h` — discharge a `¬ inflight e (post)` /
+  `inflight e (post) → P` clause across a step that only marks the
+  dispatched label received.
 
-These pin the behaviour the LockServer manual proofs rely on. They use
-synthetic mini-pmodules so the test does NOT depend on the full M3 ports.
+`pverify_not_inflight` and `pverify_inflight_by` exercise the full
+dispatcher contract (`is_<ev>`, `Sig.Label`, the `GlobalState` shape),
+so they are pinned via the LockServer / RingLeader manual proofs
+rather than synthetic miniatures here.
+
+The tests use synthetic miniatures of the LockServer step shape so
+they do NOT depend on the full M3 ports.
 -/
 import PLean
 
@@ -28,15 +36,15 @@ example (a b c : Nat) (_hab : a = b) (_hbc : b = c) :
     a = b ∧ b = c ∧ a = c := by
   pverify_split_smt_close
 
-/-! ## `pverify_unchanged` — close by assumption / solve_by_elim. -/
+/-! ## `pverify_carry_through` — close by assumption / solve_by_elim. -/
 
 example (p : Prop) (hp : p) : p := by
-  pverify_unchanged
+  pverify_carry_through
 
 example (p q : Prop) (h : p → q) (hp : p) : q := by
-  pverify_unchanged
+  pverify_carry_through
 
-/-! ## `pverify_recv_only` — received-monotone shape.
+/-! ## `pverify_carry_after_recv` — received-monotone shape.
 
 The lemma synthesises the canonical "step marks `lbl` received" goal
 shape: `¬ inflight e (post)` where `post.sent = pre.sent` and
@@ -49,7 +57,7 @@ constructing a full `#gen_module` pmodule for the regression. -/
 example (S : Type) [DecidableEq S] (sent received : S → Bool) (lbl e : S)
     (hPre : ¬ (sent e = true ∧ received e = false)) :
     ¬ (sent e = true ∧ (decide (e = lbl) || received e) = false) := by
-  pverify_recv_only hPre
+  pverify_carry_after_recv hPre
 
 /-- Same shape but the pre-state hypothesis is written as `(A ∧ B) → C`
 (uncurried implication) rather than `¬(A ∧ B)`. Both reduce to the
@@ -58,6 +66,6 @@ different lemmas (`and_imp` vs `not_and`), so the helper applies both. -/
 example (S : Type) [DecidableEq S] (sent received : S → Bool) (lbl e : S)
     (hPre : sent e = true ∧ received e = false → False) :
     ¬ (sent e = true ∧ (decide (e = lbl) || received e) = false) := by
-  pverify_recv_only hPre
+  pverify_carry_after_recv hPre
 
 end PLean.Tests.ManualProofHelpers

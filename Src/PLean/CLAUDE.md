@@ -164,31 +164,22 @@ before attempting one.
   (see STATUS.md "Session 2026-06-19"): the GlobalState-shadow
   guard now rejects all binder forms (not just `∀`), and a sorried
   `@[pverifyProof]` is now reported as a failure.
-  Reusable manual-proof tactics (`pverify_unchanged` /
-  `pverify_recv_only` / `pverify_new_ev_split` + `pverify_split_smt_close`)
+  Reusable manual-proof tactics (`pverify_carry_through` /
+  `pverify_carry_after_recv` / `pverify_not_inflight` + `pverify_split_smt_close`)
   shrunk LockServer's three manual proofs by 114 lines (37/37 closure
   rate maintained); see [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
   An obligation cache (hashing `(local context, goal target)`) at
   `<project>/.lake/build/pverify_cache/` shaves 11–14% wall-clock on
   warm rebuilds; soundness pinned by
   [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
-  Porting `3_RingLeaderVerification` produced three reusable framework
+  Porting `3_RingLeaderVerification` produced two reusable framework
   fixes:
 
   1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
      hygienically, so the `goto` doElem macro (first exercised inside an
      `on`-handler by this benchmark) couldn't resolve `G.unit`. Now
      emitted unhygienically in `emitProgramUnions`.
-  2. **Machine-state defunctionalisation** — lean-auto rejected any
-     goal reading `(s.machines m).currentState` ("Higher order input?")
-     because `machines : MachineRef → MachineState` is an
-     array-of-records. `pverify_smt_prep` now runs
-     `pverify_defunctionalize_machines`, abstracting each scalar/enum
-     machine-state projection into a fresh uninterpreted
-     `MachineRef → _` function before `loom_smt`. Complements
-     `abstract_machine_lookups` (which handles `s.machines (payload_of e).field`
-     compound-argument cases).
-  3. **`InStart` init modelling + reducible state aliases** —
+  2. **`InStart` init modelling + reducible state aliases** —
      `emitInitConditions` now asserts every machine begins in a start
      state, and `<S>_st` aliases are `@[reducible] def` so the solver
      sees the raw `S` constructors. Together these close

@@ -216,25 +216,25 @@ theorem Node.Working.eAquire_correct_block0_system_config (this : Node) (lbl : S
   -- The handler only `send`s (machines unchanged); topology clauses are
   -- verbatim pre-state, routing clauses over non-eLock events transfer
   -- (the only new label is an eLock).
-  case cn  => pverify_unchanged
-  case ss  => pverify_unchanged
-  case sgl => pverify_unchanged
-  case uq  => pverify_unchanged
+  case cn  => pverify_carry_through
+  case ss  => pverify_carry_through
+  case sgl => pverify_carry_through
+  case uq  => pverify_carry_through
   -- New label is an eLock; the four clauses below key on a different
   -- event tag, so the new-label branch is closed by `is_<wrong>`
   -- contradiction and old labels fall to the pre-state.
   case aq  =>
     intro e m hisE hTgt hm
-    pverify_new_ev_split (hAcq e m hisE hTgt hm), hisE, is_eAquire
+    pverify_not_inflight (hAcq e m hisE hTgt hm), hisE, is_eAquire
   case rel =>
     intro e m hisE hTgt hm
-    pverify_new_ev_split (hRel e m hisE hTgt hm), hisE, is_eRelease
+    pverify_not_inflight (hRel e m hisE hTgt hm), hisE, is_eRelease
   case gr  =>
     intro e m hisE hTgt hm
-    pverify_new_ev_split (hGrant e m hisE hTgt hm), hisE, is_eGrant
+    pverify_not_inflight (hGrant e m hisE hTgt hm), hisE, is_eGrant
   case ulk =>
     intro e m hisE hTgt hm
-    pverify_new_ev_split (hUnlock e m hisE hTgt hm), hisE, is_eUnlock
+    pverify_not_inflight (hUnlock e m hisE hTgt hm), hisE, is_eUnlock
   case lk =>
     -- lock_to_server: the new eLock targets lock_server (a Server), so a
     -- Node-target `m` ⟹ old label ⟹ pre-state hLock.
@@ -337,26 +337,26 @@ theorem Server.Serving.eLock_correct_block0_system_config (this : Server) (param
       have hmPre : is_Server m s := by
         simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
         by_cases hmt : m = this.ref <;> simp_all
-      pverify_new_ev_split (hAcq e m hisE hTgt hmPre), hisE, is_eAquire
+      pverify_not_inflight (hAcq e m hisE hTgt hmPre), hisE, is_eAquire
     case rel =>
       intro e m hisE hTgt hm
       have hmPre : is_Server m s := by
         simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
         by_cases hmt : m = this.ref <;> simp_all
-      pverify_new_ev_split (hRel e m hisE hTgt hmPre), hisE, is_eRelease
+      pverify_not_inflight (hRel e m hisE hTgt hmPre), hisE, is_eRelease
     case ulk =>
       intro e m hisE hTgt hm
       have hmPre : is_Node m s := by
         simp only [is_Node, Node_allocated, Node_kind] at hm ⊢
         by_cases hmt : m = this.ref <;> simp_all
-      pverify_new_ev_split (hUnlock e m hisE hTgt hmPre), hisE, is_eUnlock
+      pverify_not_inflight (hUnlock e m hisE hTgt hmPre), hisE, is_eUnlock
     case lk =>
       -- lock_to_server: new label is eGrant (not eLock) → old → pre hLock.
       intro e m hisE hTgt hm
       have hmPre : is_Node m s := by
         simp only [is_Node, Node_allocated, Node_kind] at hm ⊢
         by_cases hmt : m = this.ref <;> simp_all
-      pverify_new_ev_split (hLock e m hisE hTgt hmPre), hisE, is_eLock
+      pverify_not_inflight (hLock e m hisE hTgt hmPre), hisE, is_eLock
     case gr =>
       -- grant_to_node: new eGrant targets param.sender (a Node), so a
       -- Server-target ⟹ old label ⟹ pre-state hGrant.
@@ -410,15 +410,15 @@ theorem Server.Serving.eLock_correct_block0_system_config (this : Server) (param
     -- received-monotone pattern.
     intro _hcond
     refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
-    case cn  => pverify_unchanged
-    case ss  => pverify_unchanged
-    case sgl => pverify_unchanged
-    case uq  => pverify_unchanged
-    case aq  => intro e m hisE hTgt hm; pverify_recv_only (hAcq e m hisE hTgt hm)
-    case rel => intro e m hisE hTgt hm; pverify_recv_only (hRel e m hisE hTgt hm)
-    case gr  => intro e m hisE hTgt hm; pverify_recv_only (hGrant e m hisE hTgt hm)
-    case lk  => intro e m hisE hTgt hm; pverify_recv_only (hLock e m hisE hTgt hm)
-    case ulk => intro e m hisE hTgt hm; pverify_recv_only (hUnlock e m hisE hTgt hm)
+    case cn  => pverify_carry_through
+    case ss  => pverify_carry_through
+    case sgl => pverify_carry_through
+    case uq  => pverify_carry_through
+    case aq  => intro e m hisE hTgt hm; pverify_carry_after_recv (hAcq e m hisE hTgt hm)
+    case rel => intro e m hisE hTgt hm; pverify_carry_after_recv (hRel e m hisE hTgt hm)
+    case gr  => intro e m hisE hTgt hm; pverify_carry_after_recv (hGrant e m hisE hTgt hm)
+    case lk  => intro e m hisE hTgt hm; pverify_carry_after_recv (hLock e m hisE hTgt hm)
+    case ulk => intro e m hisE hTgt hm; pverify_carry_after_recv (hUnlock e m hisE hTgt hm)
     case nsl =>
       intro e hisE hsent
       exact hNSL e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
@@ -481,26 +481,26 @@ theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : 
       have hmPre : is_Server m s := by
         simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
         by_cases hmt : m = this.ref <;> simp_all
-      pverify_new_ev_split (hAcq e m hisE hTgt hmPre), hisE, is_eAquire
+      pverify_not_inflight (hAcq e m hisE hTgt hmPre), hisE, is_eAquire
     case rel =>
       intro e m hisE hTgt hm
       have hmPre : is_Server m s := by
         simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
         by_cases hmt : m = this.ref <;> simp_all
-      pverify_new_ev_split (hRel e m hisE hTgt hmPre), hisE, is_eRelease
+      pverify_not_inflight (hRel e m hisE hTgt hmPre), hisE, is_eRelease
     case gr =>
       intro e m hisE hTgt hm
       have hmPre : is_Server m s := by
         simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
         by_cases hmt : m = this.ref <;> simp_all
-      pverify_new_ev_split (hGrant e m hisE hTgt hmPre), hisE, is_eGrant
+      pverify_not_inflight (hGrant e m hisE hTgt hmPre), hisE, is_eGrant
     case lk =>
       -- new label is eUnlock (not eLock) → old → pre hLock.
       intro e m hisE hTgt hm
       have hmPre : is_Node m s := by
         simp only [is_Node, Node_allocated, Node_kind] at hm ⊢
         by_cases hmt : m = this.ref <;> simp_all
-      pverify_new_ev_split (hLock e m hisE hTgt hmPre), hisE, is_eLock
+      pverify_not_inflight (hLock e m hisE hTgt hmPre), hisE, is_eLock
     case ulk =>
       -- unlock_to_server: new eUnlock targets `server` = lock_server (a
       -- Server), so a Node-target ⟹ old → pre hUnlock.
@@ -552,15 +552,15 @@ theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : 
   · -- else-branch: nothing sent, machines unchanged, only `received[lbl]:=true`.
     intro _hcond
     refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
-    case cn  => pverify_unchanged
-    case ss  => pverify_unchanged
-    case sgl => pverify_unchanged
-    case uq  => pverify_unchanged
-    case aq  => intro e m hisE hTgt hm; pverify_recv_only (hAcq e m hisE hTgt hm)
-    case rel => intro e m hisE hTgt hm; pverify_recv_only (hRel e m hisE hTgt hm)
-    case gr  => intro e m hisE hTgt hm; pverify_recv_only (hGrant e m hisE hTgt hm)
-    case lk  => intro e m hisE hTgt hm; pverify_recv_only (hLock e m hisE hTgt hm)
-    case ulk => intro e m hisE hTgt hm; pverify_recv_only (hUnlock e m hisE hTgt hm)
+    case cn  => pverify_carry_through
+    case ss  => pverify_carry_through
+    case sgl => pverify_carry_through
+    case uq  => pverify_carry_through
+    case aq  => intro e m hisE hTgt hm; pverify_carry_after_recv (hAcq e m hisE hTgt hm)
+    case rel => intro e m hisE hTgt hm; pverify_carry_after_recv (hRel e m hisE hTgt hm)
+    case gr  => intro e m hisE hTgt hm; pverify_carry_after_recv (hGrant e m hisE hTgt hm)
+    case lk  => intro e m hisE hTgt hm; pverify_carry_after_recv (hLock e m hisE hTgt hm)
+    case ulk => intro e m hisE hTgt hm; pverify_carry_after_recv (hUnlock e m hisE hTgt hm)
     case nsl =>
       intro e hisE hsent
       exact hNSL e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
@@ -572,3 +572,5 @@ end LockServer
 
 set_option maxHeartbeats 4000000 in
 #pverify LockServer
+
+

@@ -144,10 +144,10 @@ elab_rules : tactic
       let ty ← Lean.Meta.whnf (← Lean.Meta.inferType ldecl.toExpr)
       if ty.consumeMData.isAppOfArity ``PLean.GlobalState 1 then
         let hName := ldecl.userName
-        -- Name the four fields with stable, *unhygienic* identifiers so the
-        -- follow-up `pverify_defunctionalize_machines` can reference
-        -- `gsMachines`. (A second `GlobalState` local — rare at SMT time —
-        -- just shadows these names; harmless.)
+        -- Name the four fields with stable, unhygienic identifiers so
+        -- `pverify_defunctionalize_state` (a user-invokable helper) can
+        -- reference `gsMachines`. A second GlobalState local — rare at
+        -- SMT time — just shadows these names; harmless.
         let stx ← `(tactic|
           obtain ⟨$(mkIdent `gsSent), $(mkIdent `gsReceived),
                   $(mkIdent `gsMachines), $(mkIdent `gsActionCount)⟩ :=
@@ -212,57 +212,66 @@ elab_rules : tactic
         let stx ← `(tactic| generalize $(← e.toSyntax) = ms at *)
         try evalTactic stx catch _ => break
 
-/-- Defunctionalise machine-state reads. After `sdestruct_state` the
-`machines` field is an fvar `gsMachines : MachineRef → MachineState …`
-whose *record codomain* lean-auto rejects ("Higher order input?") the
-moment a projection like `(gsMachines m).currentState` appears — unlike
-`sent`/`received : Label → Bool`, whose scalar codomain translates as an
-uninterpreted function.
+/-- User-invokable helper: find a local of type
+`MachineRef → MachineState …` in the context (named or anonymous,
+e.g. `gsMachines` or `machines✝` after `sdestruct_state`) and abstract
+every `(<that local> m).currentState` read in the goal into a fresh
+opaque `pStateOf m : S`.
 
-For each scalar/enum projection (`currentState : S`, `kind : Nat`,
-`stage : Bool`) we introduce a fresh *opaque* function
-`f : MachineRef → <projTy>` together with `∀ m, (gsMachines m).proj = f m`
-(trivially true by `rfl`), rewrite every occurrence, and drop
-`gsMachines`. The goal then mentions only first-order
-`MachineRef → {S, Nat, Bool}` arrows, which lean-auto models as
-uninterpreted functions. The `fields : F` projection is intentionally
-*not* abstracted: `F` is itself a record, so abstracting it would only
-move the record codomain rather than remove it (those obligations keep
-`gsMachines` and behave as before).
+After `sdestruct_state`, the `machines` field is in scope as a local
+with type `MachineRef → MachineState ProgramSig.…`. The
+`.currentState` projection's codomain is the per-pmodule `S` union of
+every machine's states — lean-auto rejects that record-of-an-inductive
+shape with "Higher order input?" whenever the read appears under a
+quantifier. Introducing
+`∃ pStateOf : MachineRef → _, ∀ m, (f m).currentState = pStateOf m`
+(closed by `rfl`) and rewriting the goal turns those reads into a
+first-order `MachineRef → S` uninterpreted function lean-auto can
+translate.
 
-Complements `abstract_machine_lookups` above (which handles
-`machines (payload_of e).field` compound-argument cases): this one fires
-on plain `(gsMachines m).<proj>` where the argument is a free variable
-but the record codomain still trips lean-auto.
-
-Each `obtain`+`simp` is guarded by `first | … | skip`: when the
-projection does not occur, `simp` makes no progress, the branch is
-rolled back (including the `obtain`), and we move on. -/
-syntax "pverify_defunctionalize_machines" : tactic
-macro_rules
-  | `(tactic| pverify_defunctionalize_machines) => do
-      let gm := mkIdent `gsMachines
-      `(tactic| (
-        first
-          | (obtain ⟨pStateOf, hStateOf⟩ :
-                ∃ f : PLean.MachineRef → _, ∀ m, ($gm m).currentState = f m :=
-                  ⟨_, fun _ => rfl⟩
-             simp only [hStateOf] at *)
-          | skip
-        first
-          | (obtain ⟨pKindOf, hKindOf⟩ :
-                ∃ f : PLean.MachineRef → _, ∀ m, ($gm m).kind = f m :=
-                  ⟨_, fun _ => rfl⟩
-             simp only [hKindOf] at *)
-          | skip
-        first
-          | (obtain ⟨pStageOf, hStageOf⟩ :
-                ∃ f : PLean.MachineRef → _, ∀ m, ($gm m).stage = f m :=
-                  ⟨_, fun _ => rfl⟩
-             simp only [hStageOf] at *)
-          | skip
-        try clear $gm
-      ))
+NOT run by the default prep chain — most obligations close without it
+via the `<S>_st` `@[reducible] def` aliases. Invoke this in a manual
+`@[pverifyProof]` proof body, just before `pverify_smt_close`, when
+the goal contains `(_.machines _).currentState` reads under a `∀` and
+SMT returns "Higher order input?". -/
+syntax "pverify_defunctionalize_state" : tactic
+elab_rules : tactic
+  | `(tactic| pverify_defunctionalize_state) => withMainContext do
+      let lctx ← getLCtx
+      let mut found : Option Lean.FVarId := none
+      for ldecl in lctx do
+        let ty ← Lean.Meta.whnf (← Lean.Meta.inferType ldecl.toExpr)
+        match ty with
+        | .forallE _ dom body _ =>
+          let domH ← Lean.Meta.whnf dom
+          -- The body's head is `ProgramSig.MachineState` (an `abbrev`,
+          -- but `whnf` doesn't always reduce projections). Match on
+          -- either `PLean.MachineState` (post-reduction) or accept any
+          -- forall whose domain is `MachineRef` and codomain head ends
+          -- in `MachineState`. The second pass uses `isDefEq` against
+          -- an existentially-quantified `MachineState`-codomained arrow.
+          if domH.isConstOf ``PLean.MachineRef then
+            let bodyHead := body.getAppFn.constName?
+            match bodyHead with
+            | some n =>
+              if n == ``PLean.MachineState || n.toString.endsWith "MachineState" then
+                found := some ldecl.fvarId
+                break
+            | _ => pure ()
+        | _ => pure ()
+      match found with
+      | none => pure ()
+      | some fvarId =>
+        let fvarExpr := Lean.Expr.fvar fvarId
+        let fvarStx ← fvarExpr.toSyntax
+        let stx ← `(tactic| (
+          obtain ⟨pStateOf, hStateOf⟩ :
+              ∃ pStateOf : PLean.MachineRef → _,
+                ∀ m, ($fvarStx m).currentState = pStateOf m :=
+                ⟨_, fun _ => rfl⟩
+          simp only [hStateOf] at *))
+        try evalTactic stx
+        catch _ => pure ()
 
 /-- Pre-SMT normalisation: simp the `pverifySimp` set, destruct
 state hypotheses, strip `WithName` wrappers, abstract compound machine
@@ -277,9 +286,11 @@ the state still has its struct form; the subsequent destruct +
 `dsimp only` iota-reduces `{ sent := f, ... }.sent l` to `f l`.
 `abstract_machine_lookups` runs after the destruct so it sees the bare
 `machines` field applied to any compound payload-extractor ref.
-`stateOf` is unfolded before the destruct so plain `(gsMachines m).<proj>`
-reads surface, which `pverify_defunctionalize_machines` then turns into
-first-order uninterpreted functions. -/
+`PLean.stateOf` is unfolded early so state-comparison reads in
+quantifier bodies (`stateOf x s = <S>_st`) surface as the underlying
+`(s.machines _).currentState` projections, which lean-auto translates
+via the `<S>_st` `@[reducible] def` aliases to raw `S` constructors
+the solver can decide. -/
 syntax "pverify_smt_prep" : tactic
 macro_rules
   | `(tactic| pverify_smt_prep) => `(tactic| (
@@ -294,7 +305,6 @@ macro_rules
       try unfold PLean.UniqueActions at *
       try unfold PLean.IncreasingCount at *
       try unfold PLean.ReceivedSubsetSent at *
-      try pverify_defunctionalize_machines
       try dsimp only at *
     ))
 
@@ -781,25 +791,47 @@ elab_rules : tactic
 /-! ## Manual-proof helpers (send-handler clause shapes)
 
 Every send-handler `@[pverifyProof]` in the M3 ports follows the same
-mechanical bundle-split + per-conjunct dispatch. The three helpers
-below name the per-conjunct step shape so the proof reads as a
-dispatch table, not a re-derivation:
+mechanical bundle-split + per-conjunct dispatch. The four helpers below
+name the (clause shape, step footprint) pair so a proof reads as a
+dispatch table.
 
-- `pverify_unchanged` — clause is the same as some pre-state hyp.
-- `pverify_recv_only h` — step only updates `received` (no send, no
-  machine write); `h` is the pre-state hypothesis.
-- `pverify_new_ev_split h, hisE, is_<wrong-ev>` — case-split on new
-  vs old label; new label fails the event-tag guard, old falls to `h`.
--/
+The shape comments use Hoare-triple notation: `{ Pre } step { Post }`,
+where `Pre` lists the hypotheses available, `step` is the primitive
+footprint, and `Post` is the goal the tactic discharges. `s` is the
+pre-state, `s'` the post-state.
 
-/-- Close a clause that the step preserves verbatim from the pre-state:
-the post-state predicate equals some pre-state hypothesis under the
-ambient simp set. Tries `assumption`, `solve_by_elim`, then `simp_all`.
-Typical use in an `else`-branch where machines and `sent` are
-untouched. -/
-syntax "pverify_unchanged" : tactic
+| Helper                              | { Pre }                                                | step                | { Post }                            |
+|-------------------------------------|--------------------------------------------------------|---------------------|-------------------------------------|
+| `pverify_carry_through`             | `{ h : P s' }`                                         | (any)               | `{ P s' }`                          |
+| `pverify_carry_after_recv h`        | `{ h : P s }`                                          | `markReceived lbl`  | `{ P s' }`     (P is recv-monotone) |
+| `pverify_not_inflight h, hisE, isW` | `{ h : ¬ inflight e s, hisE : is_<ev> e }`             | `send <newEv>`      | `{ ¬ inflight e s' }`               |
+| `pverify_inflight_by h using x => …`| `{ h : inflight e s', user discriminator on new lbl }` | `send <newLbl>`     | `{ inflight e s }`                  |
+
+`pverify_carry_through` and `pverify_carry_after_recv` close goals where
+the post-state clause already follows from a pre-state hypothesis (no
+quantifier instantiation needed). `pverify_not_inflight` and
+`pverify_inflight_by` handle the routing-clause case where the clause's
+`∀ e` quantifier ranges over a buffer that the step grew, so the
+freshly-sent label has to be ruled out before the pre-state hypothesis
+fires on old labels. -/
+
+/-- Close a goal whose post-state predicate already holds verbatim from
+some pre-state hypothesis. The clause's content (and the step) need not
+satisfy any structural invariant: this is the "the proof obligation is
+literally something we already know" case.
+
+```
+  { h : P s' }  (any step)  ⊢  P s'
+```
+
+Tries `assumption`, `solve_by_elim`, then `simp_all` (as a last resort
+to close residual definitional unfolding). Typical use: `else`-branches
+of an `if` in the handler, where the machine update is conditional and
+the inactive branch leaves the entire post-state predicate equal to a
+pre-state conjunct already in scope. -/
+syntax "pverify_carry_through" : tactic
 macro_rules
-  | `(tactic| pverify_unchanged) => `(tactic| (
+  | `(tactic| pverify_carry_through) => `(tactic| (
       try intros
       first
         | assumption
@@ -807,24 +839,27 @@ macro_rules
         | (try simp_all
            first | assumption | solve_by_elim)))
 
-/-- Close a clause of the form `... → ¬ inflight e (post)` /
-`inflight e (post) → P` when the step **only** marks the dispatched
-label received (no fresh `send`, no machine-field write). `received`
-growing only shrinks `inflight`, so the pre-state clause transfers
-verbatim.
+/-- Carry a clause from the pre-state through a step whose only
+footprint is `markReceived lbl`. Such a step grows `received` and
+leaves every other component (machines, `sent`, `actionCount`)
+untouched — so `received↑` only shrinks `inflight`, and any
+`inflight`-monotone predicate (typically `¬ inflight …` or
+`inflight … → P`) transfers verbatim.
 
-The pre-state hypothesis is passed as an arbitrary term (typically
-already applied to the clause witnesses, e.g. `hAcq e m hisE hTgt hm`).
-The helper normalises `inflight`/`received` and discharges, accepting
-both surface shapes of the same uncurrying:
-- `¬(A ∧ B)` (e.g. `¬ inflight e s` after unfold) → `A → ¬B` via `not_and`;
-- `(A ∧ B) → C` → `A → B → C` via `and_imp` (general uncurrying).
+```
+  { h : P s }   markReceived lbl   ⊢  P s'
+```
 
-`simp only` doesn't reduce `Not`, so both lemmas are needed to cover
-both surface shapes the user might write the invariant in. -/
-syntax "pverify_recv_only " term : tactic
+`P` is supplied as a term applied to the clause's witnesses
+(`hAcq e m hisE hTgt hm`, say). The helper normalises both surface
+shapes the goal may take —
+- `¬(A ∧ B)` (after `inflight` unfolds) and
+- `(A ∧ B) → C` —
+via `not_and` / `and_imp`, then discharges by feeding the user's
+hypothesis through. -/
+syntax "pverify_carry_after_recv " term : tactic
 macro_rules
-  | `(tactic| pverify_recv_only $hPre:term) => `(tactic| (
+  | `(tactic| pverify_carry_after_recv $hPre:term) => `(tactic| (
       have hpre__rcv := $hPre
       try simp only [PLean.inflight] at hpre__rcv ⊢
       simp only [not_and, and_imp] at hpre__rcv ⊢
@@ -834,29 +869,37 @@ macro_rules
             (by simp only [Bool.or_eq_false_iff] at hrecv; exact hrecv.2))
         | exact hpre__rcv hsent hrecv))
 
-/-- Close a routing clause `∀ e m, is_<ev> e → e targets m → is_<M> m → ¬ inflight e (post)`
-by case-splitting on whether `e` is the freshly-sent label or an old
-one, **when the new label carries a different event tag**. The
-new-label branch closes by `is_<wrong-ev>` contradiction on the bound
-`is_<ev>` hypothesis; old labels fall to the pre-state hypothesis.
+/-- Close a routing clause `¬ inflight e s'` (a goal where `e` is a
+universally-quantified label) across a step that sends a fresh label
+with a *different* event tag. The freshly-sent label is excluded by
+event-tag mismatch against the bound `is_<ev> e` hypothesis; old
+labels fall through to the pre-state's `¬ inflight e s`.
 
-Arguments: (1) the pre-state hypothesis already applied to the clause
-witnesses (e.g. `hAcq e m hisE hTgt hm`); (2) the name of the
-`is_<ev>` hypothesis introduced before the call (typically `hisE`);
-(3) the name of the `is_<wrong-ev>` predicate the new label violates
-(e.g. `is_eAquire` when the clause's `e` is an `eAquire` but the
-fresh send is an `eGrant`).
+```
+  { hPre : ¬ inflight e s, hisE : is_<ev> e }   send <newEv> ...
+  ⊢  ¬ inflight e s'
+```
+where `<newEv> ≠ <ev>` is captured by passing `is_<wrong>` (the
+predicate the freshly-sent label satisfies but the clause's `e` does
+not).
+
+Arguments:
+1. `hPre` — the pre-state hypothesis already applied to the clause
+   witnesses (e.g. `hAcq e m hisE hTgt hm`).
+2. `hisE` — name of the `is_<ev>` hypothesis in context (typically
+   introduced by the surrounding `intro e m hisE …`).
+3. `is_<wrong>` — the freshly-sent label's event predicate; used to
+   discharge the new-label case by contradiction on `hisE`.
 
 Idiomatic call site:
 ```lean
 case aq =>
   intro e m hisE hTgt hm
-  pverify_new_ev_split (hAcq e m hisE hTgt hm), hisE, is_eAquire
-```
--/
-syntax "pverify_new_ev_split " term ", " ident ", " ident : tactic
+  pverify_not_inflight (hAcq e m hisE hTgt hm), hisE, is_eAquire
+``` -/
+syntax "pverify_not_inflight " term ", " ident ", " ident : tactic
 macro_rules
-  | `(tactic| pverify_new_ev_split
+  | `(tactic| pverify_not_inflight
         $hPre:term, $hisE:ident, $isWrong:ident) =>
       `(tactic| (
         have hpre__nve := $hPre
@@ -872,6 +915,46 @@ macro_rules
           try simp only [PLean.inflight] at hpre__nve
           intro hrecv
           exact absurd (hpre__nve hOld) (by simp [hrecv.2])))
+
+/-- Transport `inflight e s'` *back* to `inflight e s` across a step
+that performs one fresh `send` (and `markReceived`). The case for the
+freshly-sent label is left to the caller via a user-supplied
+discriminator — used when no automatic event-tag mismatch is
+available (the new label and `e` share an event tag, or the
+discriminator is on the action constructor rather than the tag).
+
+```
+  { hinfe : inflight e s', user closes "e ≠ newLbl" or its consequence }
+  send <newLbl> ...
+  ⊢  inflight e s
+```
+
+```lean
+pverify_inflight_by $hinfe using $hNewIdent => <tac>
+```
+
+`$hNewIdent` is bound to `e = newLbl` (the new-label witness) inside
+`<tac>`, which must derive `False`. Two recurring shapes:
+- `goto`-branch (different action constructor on the new label):
+  `using h => rw [h] at hacte; simp at hacte` — the new label's
+  action is `goto _`, not `event _`, contradicting the clause's
+  `e.action = .event …`.
+- forwarding-branch (same event tag, but an explicit `hee : e ≠ newLbl`
+  is in context): `using h => exact hee h`.
+
+Companion to `pverify_not_inflight` (negative form, automatic
+discriminator) and to `pverify_carry_after_recv` (no fresh send). -/
+syntax "pverify_inflight_by " term " using " ident " => " tacticSeq : tactic
+macro_rules
+  | `(tactic| pverify_inflight_by $hinfe:term using $h:ident => $ts:tacticSeq) =>
+      `(tactic| (
+        have hinfe__back := $hinfe
+        simp only [PLean.inflight, Bool.or_eq_false_iff, Bool.or_eq_true,
+                   decide_eq_true_eq, decide_eq_false_iff_not] at hinfe__back ⊢
+        refine ⟨?_, hinfe__back.2.2⟩
+        rcases hinfe__back.1 with $h:ident | hOld__back
+        · exfalso; ($ts:tacticSeq)
+        · exact hOld__back))
 
 syntax (name := pverifyTactic) "pverify" : tactic
 syntax (name := pverifyDefaultTactic) "pverify_default" : tactic

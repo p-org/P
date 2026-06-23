@@ -35,12 +35,96 @@ helpers, obligation cache, profiler) is in tree. **Phase 4 (spec
 machines) is next** — design in [`PLAN_P4.md`](PLAN_P4.md), pending
 a port author._
 
-_**Closure rates (M3, final):**_
+_**Closure rates (M3 + ClockBound, final):**_
 - _[`Examples/DistributedLock`](../Examples/DistributedLock.lean) — **12/12** (11 SMT + 1 manual `@[pverifyProof]`)._
 - _[`Examples/LockServer`](../Examples/LockServer.lean) — **37/37** (34 SMT + 3 manual)._
 - _[`Examples/RingLeader`](../Examples/RingLeader.lean) — **14/14** (12 SMT + 2 manual)._
+- _[`Examples/ClockBound`](../Examples/ClockBound.lean) — **59/59** (58 SMT + 1 manual). Off-tree benchmark
+  ([PInfer-Benchmarks/ClockBound](https://github.com/AD1024/PInfer-Benchmarks/blob/main/ClockBound/PSrc/System.p));
+  exercises `PLean.choose` (bounded nondet `Int`) and the safety
+  properties from `goals.json`._
 
-_Build: 3414 jobs green at HEAD._
+_Build: green at HEAD._
+
+### Session 2026-06-24 — ClockBound port; `PLean.choose` for bounded nondet
+
+A non-Tutorial benchmark ported end-to-end:
+[ClockBound](https://github.com/AD1024/PInfer-Benchmarks/blob/main/ClockBound/PSrc/System.p)
+(AWS clock-bound daemon-style protocol). Two impl machines
+(GlobalClock, LocalClock), four events, three safety goals over pairs
+of sent `eLocalResponse` labels (from
+[goals.json](https://github.com/AD1024/PInfer-Benchmarks/blob/main/ClockBound/goals.json)):
+G1 (interval-disjoint ⇒ time-ordered), G2 (time-ordered ⇒
+interval-overlap), G3 (per-target earliest is time-monotone). Closure:
+**59/59** (58 SMT + 1 manual proof for the `causal` lemma's
+`eGlobalResponse` inductive step).
+
+**1. `PLean.choose : Int → PM Int`** ([`Semantics/Primitives.lean`](../PLean/Semantics/Primitives.lean)).
+Models P's `choose(n)` as `MonadNonDet.pickSuchThat Int (fun x => 0 ≤
+x ∧ x ≤ bound)`. WP spec registered as `@[loomSpec]`:
+`fun post s => ∀ x, 0 ≤ x → x ≤ bound → post x s`. The verifier gets
+the bound as a hypothesis at the call site; soundness is via
+`pickSuchThat`'s `Findable` (synthesised from `Encodable Int +
+DecidablePred`). Probe in
+[`Tests/Semantics/ChooseProbe.lean`](../Tests/Semantics/ChooseProbe.lean).
+
+**2. ClockBound model strategy.** Drop the Client machine entirely
+(its only purpose in the P source is to receive `eLocalResponse`; the
+safety properties are over the sent set, not delivery). Drop the
+spec machine (`Correctness`); the goals as stated are universal facts
+over sent labels, expressible as `Theorem`s. Drop Init states; use
+`init-holds` for steady-state config. Add `Idle`/`Waiting` states to
+LocalClock (mandatory — see "Causal-chain invariants" below).
+
+**3. Causal-chain invariants.** The hard part. ClockBound needs five
+mutually-inductive invariants tying LC state to the in-flight set:
+`idle_no_gQuery`, `idle_no_gResp`, `gResp_unique_per_lc`,
+`gQuery_unique_per_lc`, `gQuery_excludes_gResp`. They form one
+`Lemma causal` (split-by-Lemma fails because each one's inductive
+step depends on the others). The bundle's `LC.Waiting.eGlobalResponse`
+obligation returns `unknown` as a single SMT query; closed by a
+manual `@[pverifyProof]` in the
+[LockServer/DistributedLock pattern](../Examples/LockServer.lean#L199):
+case-split each conjunct on (1) label origin in post (goto / new
+eLocalResponse / old-and-not-lbl) and (2) `lc.ref = this.ref` vs not,
+using `pverify_machine_has_type hLcKindPre : LocalClock lc.ref from
+hLcKind` as the kind-bridge.
+
+**4. Linking invariant for G3.** The
+case `(e0 = new eLocalResponse, e1 = old eLocalResponse,
+e0.trueTime < e1.trueTime)` is meant to be contradictory by GC time
+monotonicity (e1's source eGlobalResponse was received before lbl, so
+e1.trueTime < lbl.trueTime = e0.trueTime). Captured by an invariant
+`lResp_trueTime_le_inflight_gResp`: for any sent eLocalResponse
+`e_lresp` (target = lc.client) and in-flight eGlobalResponse `e_gresp`
+(target = lc.ref), `e_lresp.trueTime ≤ e_gresp.trueTime`. Plus
+`lc_client_injective` in `topology` (one-to-one client ↔ LC).
+
+**5. Higher-order rejection workaround for the manual proof.** The
+manual proof needs the fact `lbl.target = (eGlobalResponse_payload_of
+lbl).target` (the GC handler sets both label-target and payload-target
+to the same value). Stating it as `∀ e : eGlobalResponse, …` makes
+the kind-guard injection rewrite `e.target` → `(payload_of e).target`
+in the user's body, yielding a tautology. The fix: state with a
+plain `∀ e : Sig.Label, is_eGlobalResponse e → …` quantifier — the
+materializer leaves `Sig.Label`-typed quantifiers untouched. Pinned
+in `topology.gResp_label_payload_target_match`.
+
+**6. Surface keyword count + invariant count.**
+- 26 invariants across 7 lemmas (topology, causal, global_time,
+  linking, 3 single-invariant local-clock-bounds Lemmas, 3 safety
+  theorems G1/G2/G3).
+- ClockBound's `Proof Safety` block chains 10 `prove` directives with
+  cumulative `using`-lists.
+
+**7. Manual proof statistics.**
+- File length: 479 lines (model + invariants + manual proof).
+- Manual proof: ~110 lines, structured as 5 named cases via `refine
+  ⟨?inq, ?inr, ?urp, ?uqp, ?qer, trivial⟩`. Each case does the
+  three-way label-origin split + `by_cases lc.ref = this.ref`.
+- After simplification with `pverify_machine_has_type`, four
+  3-line `have hLcKindPre := by simp ... ; simpa` blocks collapsed to
+  one line each.
 
 _**Soundness shape.** Invariants are bound to a global-state argument
 via a `system <s> { … }` block:_

@@ -76,4 +76,50 @@ flattening hooks here. -/
   let s ← get
   set (s.addReceived lbl)
 
+/-- `choose bound` — return a nondeterministically chosen `Int` `x`
+with `0 ≤ x ∧ x ≤ bound`. Mirrors P's `choose(n)`, which returns an
+integer in `[0, n-1]` (we use `[0, bound]` for symmetry of the
+constraint; the off-by-one isn't load-bearing — invariants depending
+on the exact bound state it explicitly).
+
+Implementation: `MonadNonDet.pickSuchThat` over the decidable predicate
+`fun x => 0 ≤ x ∧ x ≤ bound`. `Findable` synthesises from `Encodable
+Int + DecidablePred` automatically, so no user-supplied witness is
+needed at the call site.
+
+The WP is `⨅ x, ⌜0 ≤ x ∧ x ≤ bound⌝ ⇨ post x` — i.e., "the
+post-condition must hold for every `x` *if* `0 ≤ x ≤ bound`". The
+verifier gets the bound as a hypothesis when reasoning about the
+chosen value. -/
+@[reducible] def choose (bound : Int) : PM P Int :=
+  MonadNonDet.pickSuchThat (m := PM P) Int (fun x => 0 ≤ x ∧ x ≤ bound)
+
 end PLean
+
+open PartialCorrectness DemonicChoice in
+/-- WP spec for `PLean.choose`: post must hold for every `x` *given*
+`0 ≤ x ∧ x ≤ bound`. Registered as a `loomSpec` so `wpgen` steps
+through `choose` (otherwise it falls into `WPGen.default`). -/
+@[loomSpec, loomWpSimp]
+noncomputable def PLean.WPGen.choose
+    {P : PLean.ProgramSig}
+    [DecidableEq P.E] [DecidableEq P.G]
+    (bound : Int) :
+    WPGen (PLean.choose (P := P) bound : PLean.PM P Int) where
+  get := fun (post : Int → PLean.PProp P) =>
+    fun s => ∀ x : Int, 0 ≤ x → x ≤ bound → post x s
+  prop := by
+    intro post
+    unfold PLean.choose
+    rw [MonadNonDet.wp_pickSuchThat]
+    -- Pointwise on the state. `⨅` over functions unfolds via
+    -- `iInf_apply`; the residual `⨅` over `Prop` unfolds via
+    -- `iInf_Prop_eq` to a `∀`. Then `⌜p⌝ ⇨ q` over `Prop`-valued
+    -- functions reduces case-by-case on `p`.
+    intro s hAll
+    rw [iInf_apply, iInf_Prop_eq]
+    intro x
+    rw [himp_eq]
+    by_cases hp : 0 ≤ x ∧ x ≤ bound
+    · exact Or.inl (hAll x hp.1 hp.2)
+    · exact Or.inr (by simp [LE.pure, hp])

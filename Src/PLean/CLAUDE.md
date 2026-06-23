@@ -94,6 +94,8 @@ Examples/            -- protocol ports (showcased benchmarks)
   DistributedLock.lean--  6_DistributedLock port (12/12)
   LockServer.lean    --   8_LockServer port (37/37)
   RingLeader.lean    --   3_RingLeaderVerification port (14/14)
+  ClockBound.lean    --   AWS-style clock-bound daemon (59/59) — exercises
+                     --   `PLean.choose` (bounded nondet Int)
 
 Tests/               -- regressions; Tests.** is globbed
   Bootstrap/         --   Phase-0 #pwf / multi-file aggregation
@@ -132,6 +134,9 @@ plan, the phase plan wins (PLAN.md predates the implementation).
 - [`docs/AUTOMATION.md`](docs/AUTOMATION.md) — how `#pverify` discharges
   obligations, reusable manual-proof tactics (to avoid LockServer-style
   boilerplate), and the planned parallel-SMT + proof-caching features.
+- [`docs/ProofSkill.md`](docs/ProofSkill.md) — practical workflow for
+  finding inductive invariants, writing manual proofs, and coping with
+  SMT complexity (higher-order rejection, bundle sizing, `using` chains).
 - [`docs/STATUS.md`](docs/STATUS.md) — phase status, decision log,
   milestones.
 
@@ -153,7 +158,7 @@ Most Tutorial/Advanced benchmarks need surface features that aren't
 built yet — check PLAN_P3's "Tutorial benchmark inventory" table
 before attempting one.
 
-## Phase status (as of 2026-06-19)
+## Phase status (as of 2026-06-24)
 
 - Phase 0 (Bootstrap) — ☑ M0.
 - Phase 1 (Semantic core) — ☑ M1. Hand-written ping-pong verifies via
@@ -169,6 +174,11 @@ before attempting one.
     (34 SMT + 3 manual),
   - [`Examples/RingLeader`](Examples/RingLeader.lean) — **14/14**
     (12 SMT + 2 manual).
+  - [`Examples/ClockBound`](Examples/ClockBound.lean) — **59/59**
+    (58 SMT + 1 manual). Off-tree benchmark from
+    [PInfer-Benchmarks](https://github.com/AD1024/PInfer-Benchmarks/tree/main/ClockBound);
+    exercises `PLean.choose` (bounded nondet `Int`) and per-target
+    monotonicity safety properties from `goals.json`.
 
   The user-facing surface for axiomatic facts is `paxiom` (single
   proposition) and `pinstance` (Veil-style typeclass bundle). The
@@ -198,18 +208,25 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.
 PLean tracks P verbatim except where a P keyword collides with a Lean
 reserved word or builtin. Mechanical replacements when porting `.p`:
 
-| P keyword       | PLean surface  |
-|-----------------|----------------|
-| `module`        | `pmodule`      |
-| `axiom`         | `paxiom`       |
-| `instance`      | `pinstance`    |
-| `pure`          | `function`     |
-| `init`          | `init-holds`   |
-| `do` (in `on`)  | (dropped)      |
+| P keyword       | PLean surface          |
+|-----------------|------------------------|
+| `module`        | `pmodule`              |
+| `axiom`         | `paxiom`               |
+| `instance`      | `pinstance`            |
+| `pure`          | `function`             |
+| `init`          | `init-holds`           |
+| `do` (in `on`)  | (dropped)              |
+| `choose(n)`     | `← PLean.choose n`     |
 
 `Lemma`, `Theorem`, `Proof`, `prove`, `using`, `system` are
 new-in-PLean keywords for the verification-declaration surface
 (Phase 3); `default` is a reserved sentinel inside `Proof` blocks.
+
+`PLean.choose : Int → PM Int` returns a nondeterministically-chosen
+`Int` in `[0, bound]`. Implemented via `MonadNonDet.pickSuchThat`;
+the WP spec (registered as `@[loomSpec]`) gives the verifier `0 ≤ x
+∧ x ≤ bound` as a hypothesis at the call site. See
+[`Examples/ClockBound.lean`](Examples/ClockBound.lean) for usage.
 
 ## Conventions worth knowing
 

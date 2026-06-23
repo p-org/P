@@ -1,29 +1,29 @@
 /-
-PLean.Verify.Tactic — atomic `pverify_*` tactics.
+PLean.Verify.Tactic — user-facing `pverify_*` tactics.
 
-`#pverify M` is an SMT-discharge command; the tactics here are the
-user-facing primitives for manual proofs of obligations SMT can't
-close, registered via `@[pverifyProof]`. The pre-SMT simp set lives
-in `Verify/SimpAttrs.lean` (lemmas + the `pverifySimp` attribute);
-this file is purely tactic syntax.
+`#pverify M` is an SMT-discharge command; the tactics here drive
+manual proofs of obligations SMT can't close (registered via
+`@[pverifyProof]`). The pre-SMT simp set lives in
+`Verify/SimpLemmas.lean` under the `pverifySimp` attribute.
 
-Composing a manual proof:
+User-facing tactics (a typical manual proof composes some of these):
 
-```lean
-@[pverifyProof] theorem MyMod.M.S.<ev>_correct_safety
-    (this : M) (param : payload) :
-    triple ... := by
-  pverify_open_triple
-  pverify_step_wp
-  intro s hpre
-  obtain ⟨hLemma, hUA, hIC, hRS, lbl, hInflight, hTarget, hStateOf, hAction⟩ := hpre
-  pverify_smt_close
-```
+- `pverify` — auto-discharge: step WP + close-chain.
+- `pverify_step_wp` — run `wpgen` and clean up the resulting `WPGen`
+  shapes, leaving a propositional VC.
+- `pverify_smt_prep`, `pverify_smt_close` — pre-SMT normalisation
+  and the SMT discharger.
+- `pverify_split_smt_close`, `pverify_grind` — fallbacks for goals
+  the single-shot solver doesn't decide.
+- `default_inv` — discharges any of the four default-invariant
+  constants by case analysis.
+- Manual-proof helpers (see "Manual-proof helpers" section below):
+  `pverify_carry_through`, `pverify_carry_after_recv`,
+  `pverify_not_inflight`, `pverify_inflight_by`.
 
 Macro-hygiene rule: every simp lemma name lives inside a named tactic
 helper. The obligation generator and manual proofs both call the named
-tactics; neither inlines lemma names — bare references would get
-hygiene marks at expansion.
+tactics; bare lemma references would get hygiene marks at expansion.
 -/
 import Lean
 import Loom.MonadAlgebras.WP.Basic
@@ -82,13 +82,6 @@ elab_rules : tactic
           evalTactic (← `(tactic| sorry))
         | none => pure ()
 
-/-- Peel a `triple pre body post` goal: replaces it with
-`pre ≤ wpg.get post` for a synthesised `wpg : WPGen body`. Alias for
-Loom's `wpgen_intro`. -/
-syntax "pverify_open_triple" : tactic
-macro_rules
-  | `(tactic| pverify_open_triple) => `(tactic| (apply WPGen.intro; rotate_right))
-
 /-- Run `wpgen` and clean up the post-`wpgen` plumbing.
 
 After `wpgen`, the goal carries `WPGen.bind` / `WPGen.pure` shapes,
@@ -108,32 +101,20 @@ macro_rules
       try simp only [if_true, if_false]
     ))
 
-/-- Unfold framework-level state predicates so subsequent simp / grind
-/ SMT calls see boolean / arithmetic content. User invariants and
-lemma bundles are unfolded by the obligation generator's preamble. -/
-syntax "pverify_unfold" : tactic
-macro_rules
-  | `(tactic| pverify_unfold) => `(tactic| (
-      try unfold PLean.DefaultInvariants PLean.UniqueActions
-                 PLean.IncreasingCount PLean.ReceivedSubsetSent
-                 PLean.inflight PLean.sent PLean.received
-                 PLean.precedes PLean.Label.targets? PLean.stateOf
-    ))
+/-! ## Pre-SMT preparation (internal to `pverify_smt_close`)
 
-/-- Aggressive state-update simp at the propositional VC level (after
-`intro s hpre`). Same simp set as `pverify_step_wp` but applied at
-`*`. -/
-syntax "pverify_normalize_state" : tactic
-macro_rules
-  | `(tactic| pverify_normalize_state) => `(tactic| (
-      try simp only [PLean.GlobalState.addSent, PLean.GlobalState.bumpActionCount,
-                     PLean.GlobalState.addReceived, PLean.GlobalState.updateMachine] at *
-    ))
+The next three tactics — `sdestruct_state`, `abstract_machine_lookups`,
+and `pverify_smt_prep` — together transform a propositional VC into a
+shape lean-auto can translate (no `GlobalState`-typed locals, no
+compound `machines _` lookups under an opaque extractor). Manual
+proofs call `pverify_smt_close`, which calls `pverify_smt_prep`, which
+calls the other two; calling the internal tactics directly is rarely
+useful. -/
 
 /-- Destruct every `GlobalState`-typed local into its four fields,
 making them top-level uninterpreted symbols rather than struct
 projections. Without this, lean-auto rejects with "Higher order input?"
-on the first `s.sent l` projection. -/
+on the first `s.sent l` projection. Internal to `pverify_smt_prep`. -/
 syntax "sdestruct_state" : tactic
 elab_rules : tactic
   | `(tactic| sdestruct_state) => withMainContext do
@@ -144,10 +125,9 @@ elab_rules : tactic
       let ty ← Lean.Meta.whnf (← Lean.Meta.inferType ldecl.toExpr)
       if ty.consumeMData.isAppOfArity ``PLean.GlobalState 1 then
         let hName := ldecl.userName
-        -- Name the four fields with stable, unhygienic identifiers so
-        -- `pverify_defunctionalize_state` (a user-invokable helper) can
-        -- reference `gsMachines`. A second GlobalState local — rare at
-        -- SMT time — just shadows these names; harmless.
+        -- Stable, unhygienic field names so downstream tactics in this
+        -- file can refer to them by name. A second GlobalState local —
+        -- rare at SMT time — just shadows these; harmless.
         let stx ← `(tactic|
           obtain ⟨$(mkIdent `gsSent), $(mkIdent `gsReceived),
                   $(mkIdent `gsMachines), $(mkIdent `gsActionCount)⟩ :=
@@ -155,27 +135,18 @@ elab_rules : tactic
         try evalTactic stx
         catch _ => pure ()
 
-/-- Abstract every `machines`-field lookup whose ref argument is derived
-from an *opaque event-payload extractor* (`<ev>_payload_of`) to a fresh
-`MachineState` local.
+/-- Abstract `s.machines ((<ev>_payload_of e).<field>)` — a machines-
+field lookup through an opaque payload extractor — to a fresh
+`MachineState` local. Such compound lookups make lean-auto emit an
+identity lambda and abort ("`Unexpected head term ... lam`"). The
+generalisation removes the offending argument; the invariant body
+then reads plain `MachineState` projections, which translate cleanly.
+Internal to `pverify_smt_prep`.
 
-The `machines` field is `MachineRef → MachineState`. lean-auto translates
-`s.machines x` (x a bound/free variable, or a plain wrapper projection
-like `n.ref`) as an applied uninterpreted function — fine. But
-`s.machines ((<ev>_payload_of e).sender)` — the field applied to a ref
-pulled through the *opaque* payload extractor — makes lean-auto emit an
-identity lambda and abort with `lamTerm2STermAux :: Unexpected head term
-... lam`. Generalising the whole `machines <compound>` application to a
-fresh `ms : MachineState` removes the offending argument before SMT sees
-it; the invariant body then reads plain `MachineState` projections
-(`ms.kind`, …), which translate cleanly. Sound: it only names a subterm.
-
-The trigger is gated on the argument mentioning a `…_payload_of` constant
-so it does NOT fire on ordinary `s.machines n.ref` lookups (over-
-abstracting those would sever the link between two reads at the same ref,
-e.g. `unique_lock_holder`'s `n1`/`n2`). Generalisation also only succeeds
-on a closed term, so it abstracts the post-negation skolem case and
-leaves genuinely-under-binder occurrences for lean-auto. -/
+Gated on the argument mentioning a `…_payload_of` constant so it
+doesn't fire on ordinary `s.machines n.ref` lookups (over-abstracting
+those would sever the link between two reads at the same ref). Sound:
+it only names a subterm. -/
 syntax "abstract_machine_lookups" : tactic
 elab_rules : tactic
   | `(tactic| abstract_machine_lookups) => withMainContext do
@@ -212,85 +183,21 @@ elab_rules : tactic
         let stx ← `(tactic| generalize $(← e.toSyntax) = ms at *)
         try evalTactic stx catch _ => break
 
-/-- User-invokable helper: find a local of type
-`MachineRef → MachineState …` in the context (named or anonymous,
-e.g. `gsMachines` or `machines✝` after `sdestruct_state`) and abstract
-every `(<that local> m).currentState` read in the goal into a fresh
-opaque `pStateOf m : S`.
-
-After `sdestruct_state`, the `machines` field is in scope as a local
-with type `MachineRef → MachineState ProgramSig.…`. The
-`.currentState` projection's codomain is the per-pmodule `S` union of
-every machine's states — lean-auto rejects that record-of-an-inductive
-shape with "Higher order input?" whenever the read appears under a
-quantifier. Introducing
-`∃ pStateOf : MachineRef → _, ∀ m, (f m).currentState = pStateOf m`
-(closed by `rfl`) and rewriting the goal turns those reads into a
-first-order `MachineRef → S` uninterpreted function lean-auto can
-translate.
-
-NOT run by the default prep chain — most obligations close without it
-via the `<S>_st` `@[reducible] def` aliases. Invoke this in a manual
-`@[pverifyProof]` proof body, just before `pverify_smt_close`, when
-the goal contains `(_.machines _).currentState` reads under a `∀` and
-SMT returns "Higher order input?". -/
-syntax "pverify_defunctionalize_state" : tactic
-elab_rules : tactic
-  | `(tactic| pverify_defunctionalize_state) => withMainContext do
-      let lctx ← getLCtx
-      let mut found : Option Lean.FVarId := none
-      for ldecl in lctx do
-        let ty ← Lean.Meta.whnf (← Lean.Meta.inferType ldecl.toExpr)
-        match ty with
-        | .forallE _ dom body _ =>
-          let domH ← Lean.Meta.whnf dom
-          -- The body's head is `ProgramSig.MachineState` (an `abbrev`,
-          -- but `whnf` doesn't always reduce projections). Match on
-          -- either `PLean.MachineState` (post-reduction) or accept any
-          -- forall whose domain is `MachineRef` and codomain head ends
-          -- in `MachineState`. The second pass uses `isDefEq` against
-          -- an existentially-quantified `MachineState`-codomained arrow.
-          if domH.isConstOf ``PLean.MachineRef then
-            let bodyHead := body.getAppFn.constName?
-            match bodyHead with
-            | some n =>
-              if n == ``PLean.MachineState || n.toString.endsWith "MachineState" then
-                found := some ldecl.fvarId
-                break
-            | _ => pure ()
-        | _ => pure ()
-      match found with
-      | none => pure ()
-      | some fvarId =>
-        let fvarExpr := Lean.Expr.fvar fvarId
-        let fvarStx ← fvarExpr.toSyntax
-        let stx ← `(tactic| (
-          obtain ⟨pStateOf, hStateOf⟩ :
-              ∃ pStateOf : PLean.MachineRef → _,
-                ∀ m, ($fvarStx m).currentState = pStateOf m :=
-                ⟨_, fun _ => rfl⟩
-          simp only [hStateOf] at *))
-        try evalTactic stx
-        catch _ => pure ()
-
 /-- Pre-SMT normalisation: simp the `pverifySimp` set, destruct
 state hypotheses, strip `WithName` wrappers, abstract compound machine
 lookups, then unfold the default-invariant predicates so lean-auto's
-monomorphizer sees applied uninterpreted symbols and concrete
-`Label`/`Nat`/`Bool` atoms instead of `Higher order input?`-flagged
-shapes.
+monomorphizer sees applied uninterpreted symbols and concrete atoms
+instead of `Higher order input?`-flagged shapes.
 
-Step ordering: `simp [pverifySimp]` must precede `sdestruct_state` so
-`addSent` / `addReceived` / etc. expand into record literals while
-the state still has its struct form; the subsequent destruct +
-`dsimp only` iota-reduces `{ sent := f, ... }.sent l` to `f l`.
-`abstract_machine_lookups` runs after the destruct so it sees the bare
-`machines` field applied to any compound payload-extractor ref.
-`PLean.stateOf` is unfolded early so state-comparison reads in
-quantifier bodies (`stateOf x s = <S>_st`) surface as the underlying
-`(s.machines _).currentState` projections, which lean-auto translates
-via the `<S>_st` `@[reducible] def` aliases to raw `S` constructors
-the solver can decide. -/
+Step ordering matters: `simp [pverifySimp]` precedes `sdestruct_state`
+so the state's `addSent` / `addReceived` / … expand into record
+literals while it's still a struct; the destruct + `dsimp only`
+iota-reduces `{ sent := f, … }.sent l` to `f l`.
+`abstract_machine_lookups` runs after the destruct so it sees the
+bare `machines` field. `PLean.stateOf` is unfolded early so
+`stateOf x s = <S>_st` surfaces as the underlying
+`(s.machines _).currentState` projection, which lean-auto translates
+via the `<S>_st` `@[reducible] def` aliases. -/
 syntax "pverify_smt_prep" : tactic
 macro_rules
   | `(tactic| pverify_smt_prep) => `(tactic| (
@@ -676,19 +583,11 @@ hypothesis by type. -/
 syntax "default_inv_guard" : tactic
 syntax "default_inv" : tactic
 
-/-- Sub-expression guard: fail unless the goal type mentions one of the
-four default-invariant constants (`DefaultInvariants` / `UniqueActions`
-/ `IncreasingCount` / `ReceivedSubsetSent`) somewhere in its tree.
-
-`default_inv` runs `refine ⟨?_, ?_, ?_⟩` and per-conjunct rcases
-tactics shaped for those four constants, so applying it to a goal that
-contains *no* default-invariant content (e.g., a user invariant
-`P1 ∧ P2 ∧ P3` of unrelated 3-arity) could mangle the goal. The guard
-makes that fall-through cheap: `first | default_inv | …` rejects
-unfit goals at entry. The check is permissive — the obligation
-generator's post is `lemmaPred s ∧ DefaultInvariants s ∧ … `, so any
-real obligation contains the constants. Pure user-invariant goals do
-not. -/
+/-- Internal head-symbol guard for `default_inv`: fails unless the
+goal mentions one of the four default-invariant constants
+(`DefaultInvariants` / `UniqueActions` / `IncreasingCount` /
+`ReceivedSubsetSent`). Without this guard `default_inv`'s
+`refine ⟨?_, ?_, ?_⟩` would mangle unrelated 3-conjunct goals. -/
 elab_rules : tactic
   | `(tactic| default_inv_guard) => withMainContext do
       let goal ← getMainTarget
@@ -757,15 +656,10 @@ macro_rules
           (first | grind | tauto | assumption | omega)
     ))
 
-/-- Walk the local context and `obtain`-split every `(A ∧ B)` /
-`(A ∧ B ∧ C)` hypothesis. After `pverify_step_wp` + `intros` the
-precondition lives as a folded conjunction in one anonymous hypothesis;
-flattening lets `solve_by_elim` / `assumption` find each clause by
-type.
-
-The 16-iteration cap is a safety bound, not a real limit (any real
-obligation flattens in a handful of steps). Implemented as `elab_rules`
-so it can use `Lean.Meta.inferType` to inspect hypothesis types. -/
+/-- Walk the local context and `obtain`-split every `(A ∧ B)`
+hypothesis. After `pverify_step_wp` + `intros` the precondition lives
+as one folded conjunction; flattening lets `solve_by_elim` /
+`assumption` find each clause by type. Internal to `pverify`. -/
 syntax "split_conjunction_hyps" : tactic
 elab_rules : tactic
   | `(tactic| split_conjunction_hyps) => withMainContext do
@@ -959,13 +853,12 @@ macro_rules
 syntax (name := pverifyTactic) "pverify" : tactic
 syntax (name := pverifyDefaultTactic) "pverify_default" : tactic
 
-/-- Shared closing chain for `pverify` / `pverify_default`. Tries
-`default_inv` first (cheap when the goal head matches one of the four
-default-invariant constants — guarded otherwise), then single-shot SMT,
-then split-per-conjunct SMT for `unknown`-prone bundles, then the
-arithmetic / boolean fallback. The split branch costs N solver calls on
-an N-conjunct goal, so it sits AFTER single-shot — the common case is
-one query. -/
+/-- Internal close-chain used by `pverify`: try `default_inv` (cheap
+when the goal head is a default-invariant constant — guarded
+otherwise), then single-shot SMT, then split-per-conjunct SMT for
+`unknown`-prone bundles, then the arithmetic / boolean fallback. The
+split branch costs N solver calls on an N-conjunct goal, so it sits
+AFTER single-shot — the common case is one query. -/
 syntax "pverify_close_chain" : tactic
 macro_rules
   | `(tactic| pverify_close_chain) => `(tactic| (
@@ -975,9 +868,9 @@ macro_rules
         | pverify_split_smt_close
         | pverify_grind))
 
-/-- Inverse-ordered close (SMT first), used by `pverify_default` whose
-goal arrives with explicit `DefaultInvariants` content the SMT path
-handles directly without needing `default_inv`'s case split. -/
+/-- Internal close-chain used by `pverify_default`: SMT first because
+the goal arrives with explicit `DefaultInvariants` content the SMT
+path handles directly without needing `default_inv`'s case split. -/
 syntax "pverify_close_chain_smt_first" : tactic
 macro_rules
   | `(tactic| pverify_close_chain_smt_first) => `(tactic| (
@@ -987,31 +880,21 @@ macro_rules
         | default_inv
         | pverify_grind))
 
-/-- The headline auto-discharge tactic.
-
-`pverify_step_wp` already runs `wpgen` (which itself opens the triple
-via `wpgen_intro`); calling `pverify_open_triple` here would re-try
-`WPGen.intro` past the triple boundary and fail. `pverify_open_triple`
-remains exposed standalone for users who want full control over the
-manual proof's structure. -/
+/-- The headline auto-discharge tactic. Three branches in order:
+trivial / `True`-shaped post; post-equals-pre (any handler whose
+post matches a pre-clause); full chain — step WP, intros, flatten the
+precondition's conjunction, then run the close-chain. -/
 macro_rules
   | `(tactic| pverify) => `(tactic| (
       first
-        | -- `pverify_step_wp` alone closes it (trivial / `True`-shaped
-          -- post). Guard with `done` so this branch only succeeds when
-          -- no goals remain — otherwise a follow-on `intros` would error
-          -- with "no goals" on an already-closed goal.
-          (pverify_step_wp
-           done)
-        | -- Post-equals-pre branch: the post-state predicate is
-          -- structurally equal to one of the introduced pre-state
-          -- hypotheses, so `assumption` closes the goal directly. This
-          -- subsumes the trivial `pure ()` handler case but does NOT
-          -- require the body to be `pure ()` — any handler whose post
-          -- happens to match a pre-clause hits this branch first.
-          (pverify_step_wp
+        -- Trivial-handler branch: step WP closes it directly. `done`
+        -- guards against a follow-on `intros` erroring on no-goals.
+        | (pverify_step_wp; done)
+        -- Post-equals-pre branch.
+        | (pverify_step_wp
            intros
            assumption)
+        -- Full chain.
         | (pverify_step_wp
            intros
            split_conjunction_hyps
@@ -1024,8 +907,8 @@ macro_rules
       first
         | (intro s h; exact h)
         | (intros
-           -- Unfold so the precondition's `DefaultInvariants s` becomes
-           -- `(∀ a b, ...) ∧ (∀ a, ...) ∧ (∀ a, ...)` and can be split.
+           -- Unfold the bundle so `split_conjunction_hyps` sees three
+           -- conjuncts instead of an opaque `DefaultInvariants s`.
            simp only [PLean.DefaultInvariants, PLean.UniqueActions,
                       PLean.IncreasingCount, PLean.ReceivedSubsetSent] at *
            split_conjunction_hyps

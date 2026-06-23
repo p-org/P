@@ -7,7 +7,7 @@ import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
-pmodule Phase3PingPongTrivial
+pmodule PingPongTrivial
 
   event eHello
 
@@ -25,8 +25,8 @@ pmodule Phase3PingPongTrivial
     prove trivial_safety ;
   }
 
-end Phase3PingPongTrivial
+end PingPongTrivial
 
-#gen_module Phase3PingPongTrivial
-#pwf        Phase3PingPongTrivial
-#pverify    Phase3PingPongTrivial
+#gen_module PingPongTrivial
+#pwf        PingPongTrivial
+#pverify    PingPongTrivial

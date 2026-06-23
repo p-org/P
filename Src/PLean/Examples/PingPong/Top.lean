@@ -9,8 +9,8 @@ Note: temporal predicates (using `≺`) are not yet checkable in Phase 0.
 The demo uses `set_option pverify.failOnIncomplete false` so the auto-
 emitted `prove default;` obligations on the `send`-bearing handlers
 get reported as warnings (with `@[pverifyProof]` skeletons) rather
-than failing the build. Mirror of the Phase3DistributedLock /
-Phase3LockServer treatment.
+than failing the build. Mirror of the `DistributedLock` /
+`LockServer` treatment.
 -/
 import Examples.PingPong.Events
 import Examples.PingPong.Server

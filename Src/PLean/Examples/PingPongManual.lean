@@ -12,7 +12,7 @@ import Loom.Meta
 
 open PLean PartialCorrectness DemonicChoice
 
-pmodule Phase2PingPongManual
+pmodule PingPongManual
 
   event ePing : PLean.MachineRef
   event ePong
@@ -31,14 +31,14 @@ pmodule Phase2PingPongManual
     }
   }
 
-end Phase2PingPongManual
+end PingPongManual
 
-#gen_module Phase2PingPongManual
-#pwf        Phase2PingPongManual
+#gen_module PingPongManual
+#pwf        PingPongManual
 
 /-! ## Verifying the two handler triples -/
 
-namespace Phase2PingPongManual
+namespace PingPongManual
 
 abbrev Prp := PProp Sig
 abbrev Lbl := Sig.Label
@@ -142,4 +142,4 @@ theorem Client.Booting.ePong_correct (this : Client) :
   intro _ h
   exact h
 
-end Phase2PingPongManual
+end PingPongManual

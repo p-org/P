@@ -1,13 +1,13 @@
 /-
-PLean Phase-3 — `pverify` tactic regression on the simplest M2 case.
+Regression for the `pverify` tactic on the simplest trivial-handler
+case. Rewrites the `Client.Booting.ePong_correct` triple from
+[`Examples/PingPongAuto.lean`](../../Examples/PingPongAuto.lean) using
+`by pverify` instead of the manual `unfold; wpgen; intro _ h; exact h`
+tail.
 
-Goal: rewrite the `Client.Booting.ePong_correct` triple from
-[`Tests/Surface/Phase2PingPong.lean`] using `by pverify` instead of
-the manual `unfold; wpgen; intro _ h; exact h` tail.
-
-If this test passes, `pverify` covers the trivial-handler case. The
-non-trivial cases (handlers with `send`, default-invariant goals) get
-exercised in Phase3DistributedLock and friends.
+The non-trivial cases (handlers with `send`, default-invariant goals)
+are exercised in [`Examples/DistributedLock.lean`](../../Examples/DistributedLock.lean)
+and friends.
 -/
 import PLean
 import PLean.Verify.Tactic

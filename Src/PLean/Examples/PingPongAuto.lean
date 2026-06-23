@@ -3,14 +3,14 @@ Surface-syntax ping-pong auto-discharged via `#pverify`. One handler
 calls `send`, the other is `pure ()`; the invariant is `True`.
 
 The hand-written manual-proof variant (`PongAfterPing` over the real
-`PM`) lives in [`Phase2PingPong_manual.lean`](Phase2PingPong_manual.lean)
-as a regression for `wpgen` + raw Loom primitives.
+`PM`) lives in [`PingPongManual.lean`](PingPongManual.lean) as a
+regression for `wpgen` + raw Loom primitives.
 -/
 import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
-pmodule Phase2PingPong
+pmodule PingPongAuto
 
   event ePing : PLean.MachineRef
   event ePong
@@ -37,9 +37,9 @@ pmodule Phase2PingPong
     prove trivial_safety ;
   }
 
-end Phase2PingPong
+end PingPongAuto
 
-#gen_module Phase2PingPong
-#pwf        Phase2PingPong
+#gen_module PingPongAuto
+#pwf        PingPongAuto
 set_option pverify.failOnIncomplete false in
-#pverify Phase2PingPong
+#pverify PingPongAuto

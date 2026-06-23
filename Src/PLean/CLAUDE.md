@@ -33,10 +33,10 @@ PLean is its own Lake project. Always work from inside `Src/PLean/`:
 
 ```bash
 cd Src/PLean
-lake build PLean         # the library
-lake build Tests         # all tests under Tests/
-lake build Examples      # the PingPong demo
-lake build Tests.Surface.Phase2PingPong   # one specific test
+lake build PLean                     # the library
+lake build Tests                     # all regressions under Tests/
+lake build Examples                  # protocol ports (PingPong, DistributedLock, …)
+lake build Examples.DistributedLock  # one specific protocol
 ```
 
 `lake build` from the repo root will fail. The first build downloads
@@ -86,11 +86,24 @@ PLean/
     CexParse.lean    -- parse + de-mangle a solver model from the SAT diag
     CexModel.lean    -- decode model into machine table + sorted sent trace
 
-Examples/PingPong/   -- canonical surface demo
-Tests/               -- Tests.** is globbed; new files auto-pick up
-  Bootstrap/         -- Phase-0 regressions
-  Semantics/         -- Phase-1 regressions (M1, SMT round-trip)
-  Surface/           -- Phase-2 / Phase-3 regressions (M2, M3 benchmarks)
+Examples/            -- protocol ports (showcased benchmarks)
+  PingPong/          --   multi-file PingPong demo
+  PingPongAuto.lean  --   trivial PingPong with #pverify auto-discharge
+  PingPongManual.lean--   PingPong with hand-written triples
+  PingPongTrivial.lean--  smoke test for the trivial-handler auto path
+  DistributedLock.lean--  6_DistributedLock port (12/12)
+  LockServer.lean    --   8_LockServer port (37/37)
+  RingLeader.lean    --   3_RingLeaderVerification port (14/14)
+
+Tests/               -- regressions; Tests.** is globbed
+  Bootstrap/         --   Phase-0 #pwf / multi-file aggregation
+  Semantics/         --   PM stack + SMT round-trip
+  Surface/           --   surface-syntax + #pverify regressions
+                     --   (Errors, Parse, MachineKindIs, ObligationShape,
+                     --    FieldProjectionSugar, PVerify*, PAxiomProbe,
+                     --    PInstanceExercise, SoundnessRegression, …)
+  Verify/            --   pverify infrastructure (cache, CEX, profile,
+                     --   ManualProofHelpers)
 ```
 
 ## Phase plans (READ THESE BEFORE NON-TRIVIAL CHANGES)
@@ -151,10 +164,13 @@ before attempting one.
 - Phase 3 (Verification declarations) — ◐ in progress. The
   SMT-discharge pipeline, the `@[pverifyProof]` registry, and the
   `pverify_*` tactic library are in tree. Closure rates:
-  `Phase3DistributedLock` **12/12** (11 SMT + 1 manual `@[pverifyProof]`),
-  `Phase3LockServer` **37/37** (34 SMT + 3 manual), and
-  `Phase3RingLeader` **14/14** (12 SMT + 2 manual) — all three M3
-  benchmarks fully verified. RingLeader's relational facts about
+  [`Examples/DistributedLock`](Examples/DistributedLock.lean) **12/12**
+  (11 SMT + 1 manual `@[pverifyProof]`),
+  [`Examples/LockServer`](Examples/LockServer.lean) **37/37**
+  (34 SMT + 3 manual), and
+  [`Examples/RingLeader`](Examples/RingLeader.lean) **14/14**
+  (12 SMT + 2 manual) — all three M3 benchmarks fully verified.
+  RingLeader's relational facts about
   `le` / `btw` / `right` are stated as `paxiom`s (axioms about opaque
   `function`s, no state dependency); the obligation generator injects
   every pmodule `paxiom` into the local context of every VC via
@@ -302,7 +318,7 @@ structurally. It only ever weakens a guard antecedent (`is_<M> m s →
 (a machine only transitions within its own states). For the coupling to
 reach SMT, the `<S>_st` state aliases are `@[reducible]` so prep's
 `dsimp only` reduces `currentState = <S>_st` to the raw `S.<M>_<S>`
-constructor. [`Tests/Surface/Phase3R20.lean`](Tests/Surface/Phase3R20.lean)
+constructor. [`Tests/Surface/MachineKindIs.lean`](Tests/Surface/MachineKindIs.lean)
 pins the desync exclusion.
 
 Don't introduce a `MachineRef <M>`-parameterised refinement; that
@@ -390,10 +406,16 @@ pin exact rendering with a hand-built `CexNameCtx`.
 
 ## Common operations
 
-### Add a new test
+### Add a new test or example
 
-Drop the file under `Tests/Bootstrap/`, `Tests/Semantics/`, or
-`Tests/Surface/` — the `Tests` lean_lib globs `Tests.**`.
+- **Regression**: drop the file under `Tests/Bootstrap/`,
+  `Tests/Semantics/`, `Tests/Surface/`, or `Tests/Verify/` — the
+  `Tests` lean_lib globs `Tests.**`. A regression pins a behaviour
+  (`#guard_msgs`-style) or covers a feature in isolation.
+- **Protocol port / showcase**: drop it under `Examples/` — the
+  `Examples` lean_lib globs `Examples.**`. Use this for substantial
+  pmodules that demonstrate end-to-end verification of a real
+  protocol.
 
 ### Iterate on a failing test
 

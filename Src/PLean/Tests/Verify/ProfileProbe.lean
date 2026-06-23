@@ -4,7 +4,7 @@ run with `pverify.profile := true` and `pverify.cache := false`
 (so the solver runs on every obligation, no cache hits).
 
 We use a tiny synthetic pmodule rather than importing the real
-`Phase3DistributedLock` so re-elaboration is forced and the
+`DistributedLock` example so re-elaboration is forced and the
 instrumented branch of `pverify_smt_close` actually fires.
 
 The profile output is two `logInfo` tables:

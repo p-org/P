@@ -182,7 +182,7 @@ theorem Server.Proposing.eNominate_correct_block1_Safety_using_lemmas
     -- or `hUniq` (uniqueness of pre-state `Won` nodes).
     simp only [PLean.stateOf, apply_ite (f := PLean.MachineState.currentState)]
     intro x y hx hy
-    by_cases hxThis : x = this.ref <;> try pverify_smt_close
+    by_cases hxThis : x = this.ref <;> try pverify_smt
     · by_cases hyThis : y = this.ref <;> try pverify_grind
       · -- x post-Won, y reads pre-state: `hLM y` + `hMax y` + antisymmetry.
         exfalso; apply hyThis

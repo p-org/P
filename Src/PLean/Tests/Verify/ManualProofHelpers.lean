@@ -3,16 +3,17 @@ Regression tests for the manual-proof helpers in `Verify/Tactic.lean`.
 See `Verify/Tactic.lean`'s "Manual-proof helpers" section for the full
 Hoare-triple shape table.
 
-- `pverify_split_smt_close` — split top-level `∧` then SMT-close each;
-- `pverify_carry_through` — discharge a clause unchanged by the step;
+- `pverify_split_smt` — split top-level `∧` then SMT-discharge each;
 - `pverify_carry_after_recv h` — discharge a `¬ inflight e (post)` /
   `inflight e (post) → P` clause across a step that only marks the
   dispatched label received.
 
-`pverify_not_inflight` and `pverify_inflight_by` exercise the full
-dispatcher contract (`is_<ev>`, `Sig.Label`, the `GlobalState` shape),
-so they are pinned via the LockServer / RingLeader manual proofs
-rather than synthetic miniatures here.
+`pverify_not_inflight`, `pverify_inflight_by`,
+`pverify_machine_has_type`, and `pverify_not_inflight_by` exercise
+the full dispatcher contract (`is_<ev>`, `Sig.Label`, the
+`GlobalState` shape + a machine wrapper struct), so they are pinned
+via the LockServer / RingLeader manual proofs rather than synthetic
+miniatures here.
 
 The tests use synthetic miniatures of the LockServer step shape so
 they do NOT depend on the full M3 ports.
@@ -26,23 +27,15 @@ set_option loom.solver.smt.timeout 8
 
 namespace PLean.Tests.ManualProofHelpers
 
-/-! ## `pverify_split_smt_close` — split a conjunction then SMT-close each.
+/-! ## `pverify_split_smt` — split a conjunction then SMT-discharge each.
 
 Each conjunct goes to SMT independently after the outer `∧` is split. -/
 example (a b : Nat) (_hab : a = b) : a = b ∧ b = a := by
-  pverify_split_smt_close
+  pverify_split_smt
 
 example (a b c : Nat) (_hab : a = b) (_hbc : b = c) :
     a = b ∧ b = c ∧ a = c := by
-  pverify_split_smt_close
-
-/-! ## `pverify_carry_through` — close by assumption / solve_by_elim. -/
-
-example (p : Prop) (hp : p) : p := by
-  pverify_carry_through
-
-example (p q : Prop) (h : p → q) (hp : p) : q := by
-  pverify_carry_through
+  pverify_split_smt
 
 /-! ## `pverify_carry_after_recv` — received-monotone shape.
 

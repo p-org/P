@@ -5,10 +5,10 @@ obligation on the *actual* `GlobalState` shape (no refactor).
 This file complements `SmtEncodingProbe.lean`. The probe established
 that destructuring a state-struct hypothesis + intros + bare simp
 lets lean-auto translate `GlobalState`-shaped goals. This file
-confirms `pverify_smt_close` (which packages the recipe) closes a
+confirms `pverify_smt` (which packages the recipe) closes a
 default-invariant obligation on PLean's real `GlobalState` type.
 
-If `pverify_smt_close` succeeds here, the next step is to wire it
+If `pverify_smt` succeeds here, the next step is to wire it
 into `pverify_default` so `#pverify` benefits automatically.
 -/
 import PLean
@@ -50,7 +50,7 @@ example (s : GS) (newLbl : Sig.Label)
     (hNew : newLbl.actionCount = s.actionCount) :
     UniqueActions ((s.addSent newLbl).bumpActionCount) := by
   unfold UniqueActions IncreasingCount at *
-  pverify_smt_close
+  pverify_smt
 
 /-- The same shape, but for `IncreasingCount`. -/
 example (s : GS) (newLbl : Sig.Label)
@@ -58,14 +58,14 @@ example (s : GS) (newLbl : Sig.Label)
     (hNew : newLbl.actionCount = s.actionCount) :
     IncreasingCount ((s.addSent newLbl).bumpActionCount) := by
   unfold IncreasingCount at *
-  pverify_smt_close
+  pverify_smt
 
 /-- And `ReceivedSubsetSent`. -/
 example (s : GS) (newLbl : Sig.Label)
     (hRS : ReceivedSubsetSent s) :
     ReceivedSubsetSent ((s.addSent newLbl).bumpActionCount) := by
   unfold ReceivedSubsetSent at *
-  pverify_smt_close
+  pverify_smt
 
 /-! ## The full bundle: `DefaultInvariants` preservation -/
 
@@ -75,4 +75,4 @@ example (s : GS) (newLbl : Sig.Label)
     DefaultInvariants ((s.addSent newLbl).bumpActionCount) := by
   unfold DefaultInvariants UniqueActions IncreasingCount
     ReceivedSubsetSent at *
-  pverify_smt_close
+  pverify_smt

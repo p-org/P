@@ -1,7 +1,7 @@
 /-
 PLean.Verify.Profile — opt-in instrumentation for `#pverify`.
 
-When `pverify.profile` is true, `pverify_smt_close` records per-stage
+When `pverify.profile` is true, `pverify_smt` records per-stage
 wall-clock times into the IORefs declared here. `#pverify` consumes the
 records at end-of-command and emits a summary table via `logInfo`.
 
@@ -59,7 +59,7 @@ append rows during obligation discharge. -/
 initialize stateRef : IO.Ref State ← IO.mkRef {}
 
 /-- A row being built by the current obligation. Set up by
-`#pverify`'s wrapper, mutated by `pverify_smt_close`, flushed into
+`#pverify`'s wrapper, mutated by `pverify_smt`, flushed into
 `stateRef.rows` at obligation end. We keep it separate from `stateRef`
 to avoid race-y partial rows. -/
 initialize currentRowRef : IO.Ref Row ← IO.mkRef { obligation := "" }

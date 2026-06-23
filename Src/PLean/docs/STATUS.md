@@ -19,8 +19,8 @@ rather than narrating.
 | 0 — Bootstrap                    | ☑ | — | 2026-05-28 | 2026-05-29 | M0 reached |
 | 1 — Semantic core                | ☑ | — | 2026-06-01 | 2026-06-04 | M1 reached |
 | 2 — Registry + minimal surface   | ☑ | — | 2026-06-05 | 2026-06-05 | M2 reached |
-| 3 — Verification declarations    | ◐ | — | 2026-06-06 | — | M3 partial — pipeline is sound; **2026-06-19: DistributedLock 12/12 and LockServer 37/37 — both fully verified**. LockServer's port now carries the full P-source invariant set (10 `system_config` + 8 `safety`); 34 obligations close by SMT (via the new `<ev>_payload_of_spec`/`_mk` characterisations + irreducible extractor), 3 send-handlers by `@[pverifyProof]`. Two soundness holes found+fixed this session (GlobalState-shadow guard generalised to all binders; sorried `@[pverifyProof]` now fails). |
-| 4 — Spec machines                | ☐ | — | — | — | plan in [`PLAN_P4.md`](PLAN_P4.md) |
+| 3 — Verification declarations    | ☑ | — | 2026-06-06 | 2026-06-23 | M3 reached — all three Tutorial/Advanced benchmarks fully verify: `Examples/DistributedLock` 12/12, `Examples/LockServer` 37/37, `Examples/RingLeader` 14/14. paxiom/pinstance both reach SMT; reusable manual-proof helpers shipped; obligation cache + profiler in tree |
+| 4 — Spec machines                | ☐ | — | — | — | next; plan in [`PLAN_P4.md`](PLAN_P4.md) |
 | 5 — Remaining surface            | ☐ | — | — | — | |
 | 6 — Tutorial port                | ☐ | — | — | — | |
 | 7 — Stretch / future             | ⊘ | — | — | — | post-v1 |
@@ -29,18 +29,20 @@ rather than narrating.
 
 ## Active Work
 
-_Phase 3 (Verification declarations) — **architectural pivot landed
-2026-06-09**, **SMT-prep recipe shipped 2026-06-10 (mid)**,
-**soundness fix shipped 2026-06-10 (final-final)**.
+_Phase 3 reached M3 on 2026-06-23. All three Tutorial/Advanced
+benchmarks fully verify; the pipeline (SMT-discharge, manual-proof
+helpers, obligation cache, profiler) is in tree. **Phase 4 (spec
+machines) is next** — design in [`PLAN_P4.md`](PLAN_P4.md), pending
+a port author._
 
-`#pverify M` is an SMT-discharge command that walks the registry,
-consults a `@[pverifyProof]` attribute for manual proofs, and emits
-`theorem ... := by pverify` for the remaining obligations. The
-`pverify_*` family in [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean)
-is the user-facing primitive set for manual proofs (Veil's
-`#check_invariants` / `@[invProof]` design)._
+_**Closure rates (M3, final):**_
+- _[`Examples/DistributedLock`](../Examples/DistributedLock.lean) — **12/12** (11 SMT + 1 manual `@[pverifyProof]`)._
+- _[`Examples/LockServer`](../Examples/LockServer.lean) — **37/37** (34 SMT + 3 manual)._
+- _[`Examples/RingLeader`](../Examples/RingLeader.lean) — **14/14** (12 SMT + 2 manual)._
 
-_**Soundness status (post-fix).** Invariants are explicitly bound
+_Build: 3414 jobs green at HEAD._
+
+_**Soundness shape.** Invariants are bound to a global-state argument
 via a `system <s> { … }` block:_
 
 ```lean
@@ -48,63 +50,184 @@ Theorem safety {
   system s {
     invariant unique_holder :
       ∀ n1 n2 : Node,
-        Node_allocated n1.ref s → Node_allocated n2.ref s →
-        (s.machines n1.ref).fields.Node_held = true →
-        (s.machines n2.ref).fields.Node_held = true →
-        n1 = n2
+        n1.held = true → n2.held = true → n1 = n2
   }
 }
 ```
 
-_The `system <s>` binder is materialised as the lambda binder of
-`def unique_holder : GS → Prop := fun s => <body>`, so references
-to `s` inside the body resolve to the obligation's state argument.
-Bare `invariant <name> : <body>` outside a `system` block is
-materialised as `fun _ => <body>` — only valid for state-independent
-properties; any state reference becomes a clean `unknown identifier`
-error. Inside a `system` block, an inner `∀ s : GlobalState Sig, …`
-shadowing pattern is detected and rejected at materialisation time
-with an actionable error.
+_The materialiser binds `s` as the lambda binder of
+`def unique_holder : GS → Prop := fun s => <body>`. Bare
+`invariant <name> : <body>` outside a `system` block is only valid
+for state-independent properties. Inside `system`, any binder of
+`GlobalState` type (∀, ∃, `let`, `have`, `fun`) is rejected — pinned
+by [`Tests/Surface/SoundnessRegression.lean`](../Tests/Surface/SoundnessRegression.lean)._
 
-This replaces the original (buggy) pre-2026-06-10 design where the
-materialiser emitted `def name : Prop := <body>` (closed proposition)
-and the bundle `fun _ => name ∧ True` ignored `s` — letting SMT
-trivially "verify" falsehoods like `∀ b, b.x = 42` on a machine that
-increments x._
+_**Axiomatic facts reach SMT.** `paxiom <name> : <prop>` and
+`pinstance <id> : <Class> <T>` are the two surfaces for axioms about
+opaque relations. `#gen_module` materialises a `pinstance` as an
+axiomatic instance witness + an anonymous `instance` (for typeclass
+resolution) + one top-level axiom per Prop-typed class field. The
+obligation generator injects every pmodule axiom (hand-written or
+pinstance-synthesised) into every VC's local context via
+`have hax_<name> := @<name>`. Pinned by
+[`PAxiomProbe.lean`](../Tests/Surface/PAxiomProbe.lean) and
+[`PInstanceExercise.lean`](../Tests/Surface/PInstanceExercise.lean)._
 
-_**Current closure rates (post 2026-06-17 base/inductive split +
-kind-guard auto-injection):**_
-- _DistributedLock: **10/12** (5/5 base-case, 2/2 default inductive,
-  3/5 user-invariant inductive; the two failing inductive-step
-  obligations on `eGrant`/`eAccept` are a genuine inductiveness gap)._
-- _LockServer: **17/22** (all default base + inductive close; 4
-  user-invariant inductive-step + 1 base-case `unique_lock_holder`
-  remain as genuine inductiveness gaps)._
-- _All other tests close 100% via SMT or `@[pverifyProof]`._
+_**Manual-proof helpers.** Five user-facing helpers for routing-clause
++ kind-bridge work, named by the Hoare triple they discharge:
+`pverify_carry_after_recv`, `pverify_not_inflight`,
+`pverify_inflight_by`, `pverify_machine_has_type`, plus the composite
+`pverify_not_inflight_by`. The "carry verbatim from pre-state" case
+is closed by plain `assumption`; no named helper. See
+[`AUTOMATION.md`](AUTOMATION.md) §3._
 
-_Headline tests (all green at HEAD, 3397 jobs after the
-field-projection sugar work):_
-- _[`Phase3PingPong.lean`](../Tests/Surface/Phase3PingPong.lean) —
-  trivial-handler auto-discharge._
-- _[`PVerifyManualProof.lean`](../Tests/Surface/PVerifyManualProof.lean) —
-  end-to-end `@[pverifyProof]` workflow._
-- _[`PVerifyProofRegistry.lean`](../Tests/Surface/PVerifyProofRegistry.lean) —
-  auto vs. manual paths side-by-side._
-- _[`PVerifyConditional.lean`](../Tests/Surface/PVerifyConditional.lean) —
-  `if cond then … else …` with and without an inner `send`._
-- _[`SoundnessRegression.lean`](../Tests/Surface/SoundnessRegression.lean) —
-  pins (a) `name : GS → Prop` shape, (b) false invariant fails,
-  (c) inner-`∀ s` shadowing rejected._
-- _[`FieldProjectionSugar.lean`](../Tests/Surface/FieldProjectionSugar.lean) —
-  pins the `n.<v>` / `e.<f>` rewrites and the pass-through behaviour
-  on non-registered fields._
+### Session 2026-06-23 (later) — manual-proof helper sweep; LockServer −18%
 
-_M3 acceptance: the SMT-discharge pipeline closes every obligation
-that's actually inductive. The DistributedLock and LockServer ports
-omit some of the original P source's invariants (e.g.
-`not_held_after_release`, `transfer_to_higher`), so their `prove
-safety` obligations correctly fail SMT and need either the missing
-invariants or `@[pverifyProof]` manual proofs._
+The dispatch table in LockServer's three send-handler `@[pverifyProof]`
+proofs (eAquire / eLock / eRelease) had two repeating patterns that
+weren't yet named:
+
+1. **Kind-bridge across field-only updates** — 12 inline `have hmPre :
+   is_<K> m s := by simp [...] at hm; by_cases m = this.ref <;> simp_all`
+   blocks (4 lines each), turning a post-state kind guard back into
+   its pre-state form because the update preserves `kind` /
+   `currentState` / ref-typed fields.
+2. **Field-only + wrong-event routing clause** — 9 sites
+   composing the kind-bridge with `pverify_not_inflight` (5-line
+   blocks each).
+
+Both lifted into named tactics in
+[`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean):
+
+- `pverify_machine_has_type <K> on <r>` (closing form) /
+  `pverify_machine_has_type <hPre> : <K> <r> from <hPost>` (synthesising
+  form) — the kind-bridge primitive. Sound because the canonical kind
+  triple `is_<K>` / `<K>_allocated` / `<K>_kind` is preserved by any
+  update that doesn't touch a machine's `kind`.
+- `pverify_not_inflight_by <K>, <hPre>, <isWrong>` — composes
+  `pverify_machine_has_type` with `pverify_not_inflight`. One line per
+  call site, each carrying the three load-bearing pieces of content
+  (kind, pre-state hypothesis, wrong-event predicate).
+
+Renames + deletions:
+
+- `pverify_smt_close` → `pverify_smt`; `pverify_split_smt_close` →
+  `pverify_split_smt`. The `_close` was implementation, not intent.
+- `pverify_carry_through` deleted — audit across all benchmarks showed
+  every call site closes by plain `assumption`. The 2 regression-test
+  uses degrade cleanly. Section-header table and `AUTOMATION.md`
+  updated.
+- Docstrings rewritten to explain *what each argument is* generically
+  (e.g., "the *name* of a machine kind registered by `#gen_module`",
+  "the *binder name* for the new-label witness inside `<tac>`") +
+  *how to find it* in the proof context, instead of by LockServer-
+  specific example.
+
+LockServer.lean: 575 → 469 lines (−106, −18%). Closure rates
+unchanged: DistributedLock 12/12, LockServer 37/37, RingLeader 14/14.
+
+### Session 2026-06-23 — M3 reached: pinstance fully exercised in RingLeader; Tests/Examples reorg; Tactic.lean dead-code sweep
+
+Three threads landed this session.
+
+**1. `pinstance` reaches SMT.** The earlier `variable [<id> : <Class>]`
+elaboration had two SMT-visibility gaps: it inserted an explicit
+binder onto invariant types (breaking bundle elaboration —
+`sorry ∧ True` skeletons), and class-field axioms stayed out of every
+VC's lctx. `materialiseInstance` now emits inside a `noncomputable
+section`: a top-level `axiom <id>`, an anonymous
+`instance : <Class> <T> := <id>` for typeclass resolution, and one
+top-level def per Prop-typed class field — registered in `ctx.axioms`
+so the existing paxiom → lctx bridge picks them up.
+`materialiseInstance` runs in Step 5b (alongside `materialisePure`)
+so handler bodies can reference class projections at elaboration
+time. Handler defs are marked `noncomputable` because the witness is
+axiomatic. Pinned by [`PInstanceExercise.lean`](../Tests/Surface/PInstanceExercise.lean).
+
+**2. RingLeader fully refactored onto `pinstance`.** Two Veil-style
+typeclasses replace the `function`+`paxiom` blocks:
+- `LeOrder` — total order on `le` (4 axioms).
+- `RingTopology` — cyclic betweenness `btw`, successor `right`, and
+  the 8 joint axioms relating them.
+
+Inside `pmodule RingLeader` only `pinstance order : LeOrder
+MachineRef` and `pinstance ring : RingTopology MachineRef` remain;
+no `function`, `paxiom`, or `init-holds` declarations. Handlers and
+invariants refer to `LeOrder.le` / `RingTopology.btw` / etc.; Lean's
+typeclass resolution finds the synthesised anonymous instances.
+Closure rate **14/14** (12 SMT + 2 manual `@[pverifyProof]` for the
+`goto Won` inductive steps).
+
+**3. Tests/Examples reorg + Tactic.lean cleanup.** Protocol ports
+move to `Examples/` with phase-numbered prefixes dropped:
+- `Tests/Surface/Phase3{DistributedLock,LockServer,RingLeader}`
+  → `Examples/{DistributedLock,LockServer,RingLeader}`
+- `Tests/Surface/Phase{2,3}PingPong*` → `Examples/PingPong{Trivial,Auto,Manual}`
+- `Tests/Surface/Phase3{Errors,Parse,R20,DuplicateTarget}`
+  → `Tests/Surface/{Errors,Parse,MachineKindIs,DuplicateTarget}`
+
+`Verify/Tactic.lean` drops four dead tactics (`pverify_open_triple`,
+`pverify_unfold`, `pverify_normalize_state`,
+`pverify_defunctionalize_state`) and marks six as internal in their
+docstrings (`sdestruct_state`, `abstract_machine_lookups`,
+`default_inv_guard`, `split_conjunction_hyps`, `pverify_close_chain`,
+`pverify_close_chain_smt_first`). Implementation-archaeology comments
+in `abstract_machine_lookups`, `pverify_smt_prep`, and the
+`pverify` / `pverify_default` macro bodies trimmed. File shrinks
+1019 → 902 lines.
+
+Closure rates unchanged across the reorg + cleanup. Full suite green
+at 3414 jobs.
+
+### Sessions 2026-06-20..22 — RingLeader 32/32; paxiom → SMT bridge; manual-proof helper rename
+
+(Consolidated entry covering several short sessions between the
+2026-06-19 LockServer push and the 2026-06-23 M3 finish.)
+
+**RingLeader Safety + lemmas inductive steps.** Both inductive steps
+through `goto Won` go manual: `Safety` (1 obligation) closes by a
+`SelfPendingMax` instantiation hint that the solver doesn't
+synthesise; `lemmas` (1 obligation) uses the cyclic-betweenness
+axioms (`btw_1`..`btw_4`) to show that forwarding `eNominate` to the
+ring successor preserves `NoBypass` — a `btw_3` totality case-split
+contradicts the bypass hypothesis via `btw`-asymmetry. Both proofs
+are self-contained in [`Examples/RingLeader.lean`](../Examples/RingLeader.lean)
+and serve as the worked template for jointly-inductive ring
+invariants. RingLeader reached **32/32** at this point (the bench had
+17 invariants before the pinstance refactor).
+
+**`pverify_inflight_by` and the helper rename.** The four manual-
+proof shapes in the M3 ports are now named by the Hoare triple they
+discharge:
+- `pverify_carry_through` (formerly `pverify_unchanged`) — `{ h : P s' } (any step) ⊢ P s'`.
+- `pverify_carry_after_recv h` (formerly `pverify_recv_only`) — `{ h : P s } markReceived lbl ⊢ P s'` (P recv-monotone).
+- `pverify_not_inflight h, hisE, isW` (formerly `pverify_new_ev_split`) — `{ h : ¬ inflight e s, hisE : is_<ev> e } send <newEv> ⊢ ¬ inflight e s'`.
+- `pverify_inflight_by h using x => …` (new) — `{ h : inflight e s', user discriminator } send <newLbl> ⊢ inflight e s`.
+
+RingLeader's 6 manual `simp + refine + rcases + absurd` blocks
+collapsed to one-liners. File 543 → 478 lines (−65). All
+call sites + docs renamed; the four helpers now carry Hoare-triple
+shape headers in their docstrings.
+
+**`paxiom` reaches SMT.** Pmodule-level `paxiom <name> : <prop>`
+materialised as a top-level Lean `axiom`, but `loom_smt [*]`'s
+`collectAllLemmas` reads only the local context, so top-level axioms
+were invisible to SMT. Fix in `Verify/Obligation.lean`: both
+`emitOneObligation` and `emitBaseCaseObligation` inject
+`have hax_<name> := @<name>` per pmodule axiom into the proof
+preamble. Pinned by [`PAxiomProbe.lean`](../Tests/Surface/PAxiomProbe.lean).
+Before this fix, `base_block0_always_true` (a base case whose body
+literally restates the axiom) was reported `disproved`; after, it
+closes by SMT.
+
+**RingLeader migrated off `init-holds` + `Lemma X / Proof prove X`
+boilerplate.** The relational facts about `le` / `btw` / `right`
+were previously stated three times: `init-holds <prop>`,
+`Lemma X { invariant <same prop> }`, then cited via `using` on the
+`lemmas` proof. With the paxiom → SMT bridge, the `init-holds` +
+`Lemma` indirections collapse to direct `paxiom <name> : <prop>`
+declarations and the `using` clause drops. Obligations 32 → 14 (the
+three pre-existing Lemma blocks accounted for 6 obligations each).
 
 ### Session 2026-06-19 (later) — reusable manual-proof tactics; LockServer manual proofs −114 lines
 

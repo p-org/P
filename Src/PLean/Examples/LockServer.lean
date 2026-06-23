@@ -213,28 +213,14 @@ theorem Node.Working.eAquire_correct_block0_system_config (this : Node) (lbl : S
   obtain ⟨hConst, hServ, hSingle, hUniq, hAcq, hRel, hGrant, hLock, hUnlock, hNSL, hNSU, _⟩ := hpre
   intro hInflLbl hTgtThis hThisKind hStThis hActThis
   refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
-  -- The handler only `send`s (machines unchanged); topology clauses are
-  -- verbatim pre-state, routing clauses over non-eLock events transfer
-  -- (the only new label is an eLock).
-  case cn  => pverify_carry_through
-  case ss  => pverify_carry_through
-  case sgl => pverify_carry_through
-  case uq  => pverify_carry_through
-  -- New label is an eLock; the four clauses below key on a different
-  -- event tag, so the new-label branch is closed by `is_<wrong>`
-  -- contradiction and old labels fall to the pre-state.
-  case aq  =>
-    intro e m hisE hTgt hm
-    pverify_not_inflight (hAcq e m hisE hTgt hm), hisE, is_eAquire
-  case rel =>
-    intro e m hisE hTgt hm
-    pverify_not_inflight (hRel e m hisE hTgt hm), hisE, is_eRelease
-  case gr  =>
-    intro e m hisE hTgt hm
-    pverify_not_inflight (hGrant e m hisE hTgt hm), hisE, is_eGrant
-  case ulk =>
-    intro e m hisE hTgt hm
-    pverify_not_inflight (hUnlock e m hisE hTgt hm), hisE, is_eUnlock
+  -- Handler only `send`s an eLock: machines unchanged; topology clauses
+  -- transfer verbatim; the only new label is an eLock so non-eLock
+  -- routing clauses fall to the pre-state.
+  case cn | ss | sgl | uq => assumption
+  case aq  => intro e m hisE hTgt hm; pverify_not_inflight (hAcq e m hisE hTgt hm), hisE, is_eAquire
+  case rel => intro e m hisE hTgt hm; pverify_not_inflight (hRel e m hisE hTgt hm), hisE, is_eRelease
+  case gr  => intro e m hisE hTgt hm; pverify_not_inflight (hGrant e m hisE hTgt hm), hisE, is_eGrant
+  case ulk => intro e m hisE hTgt hm; pverify_not_inflight (hUnlock e m hisE hTgt hm), hisE, is_eUnlock
   case lk =>
     -- lock_to_server: the new eLock targets lock_server (a Server), so a
     -- Node-target `m` ⟹ old label ⟹ pre-state hLock.
@@ -265,15 +251,13 @@ theorem Node.Working.eAquire_correct_block0_system_config (this : Node) (lbl : S
       simp only [is_Node, Node_allocated, Node_kind] at hThisKind ⊢; exact hThisKind
     · have := hNSL e hisE ⟨hOld, hrecv.2⟩; simpa using this
   case nsu =>
-    -- node_send_unlock: no eUnlock sent; pre-state hNSU on old labels.
+    -- node_send_unlock: new label is an eLock, fails is_eUnlock.
     intro e hisE hsent
     obtain ⟨hsent1, hrecv⟩ := hsent
     rw [Bool.or_eq_true, decide_eq_true_eq] at hsent1
     simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not] at hrecv
     rcases hsent1 with hNew | hOld
-    · -- new label is an eLock, not eUnlock: is_eUnlock contradiction.
-      subst hNew
-      simp only [is_eUnlock] at hisE
+    · subst hNew; simp only [is_eUnlock] at hisE
     · have := hNSU e hisE ⟨hOld, hrecv.2⟩; simpa using this
 
 -- eLock: Server, `if has_lock then has_lock=false; send p.sender eGrant`.
@@ -304,86 +288,48 @@ theorem Server.Serving.eLock_correct_block0_system_config (this : Server) (param
     -- kind/currentState/Node_server), sends fresh eGrant to param.sender.
     intro _hcond
     refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
-    -- The machine update is field-only (Server_has_lock), preserving every
-    -- machine's kind / currentState / Node_server; topology + routing
-    -- clauses over non-eGrant events transfer from the pre-state.
+    -- Machine update is field-only (Server_has_lock); kind / currentState
+    -- / Node_server are preserved, so a post-state `is_<M> m` guard
+    -- bridges to the pre-state form by `by_cases m = this.ref`.
     case cn =>
       intro n hn
-      have hnPre : is_Node n.ref s := by
-        simp only [is_Node, Node_allocated, Node_kind] at hn ⊢
-        by_cases hnt : n.ref = this.ref <;> simp_all
+      pverify_machine_has_type hnPre : Node n.ref from hn
       have hcn := hConst n hnPre
       by_cases hnt : n.ref = this.ref <;> simp_all
-    case ss =>
-      simp only [is_Server, Server_allocated, Server_kind] at hServ ⊢
-      by_cases hlt : lock_server.ref = this.ref <;> simp_all
-    case sgl =>
-      intro sv hsv
-      apply hSingle
-      simp only [is_Server, Server_allocated, Server_kind] at hsv ⊢
-      by_cases hst : sv.ref = this.ref <;> simp_all
-    case uq =>
-      intro m1 m2 hm1 hm2
-      apply hUniq m1 m2
-      · simp only [is_Server, Server_allocated, Server_kind] at hm1 ⊢
-        by_cases h1 : m1 = this.ref <;> simp_all
-      · simp only [is_Server, Server_allocated, Server_kind] at hm2 ⊢
-        by_cases h2 : m2 = this.ref <;> simp_all
-    -- The handler's machine update is field-only (Server_has_lock); kind /
-    -- currentState / Node_server are preserved, so a post-state kind guard
-    -- `is_<M> m` bridges to the pre-state form by `by_cases m = this.ref`.
-    case aq =>
-      intro e m hisE hTgt hm
-      have hmPre : is_Server m s := by
-        simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
-      pverify_not_inflight (hAcq e m hisE hTgt hmPre), hisE, is_eAquire
-    case rel =>
-      intro e m hisE hTgt hm
-      have hmPre : is_Server m s := by
-        simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
-      pverify_not_inflight (hRel e m hisE hTgt hmPre), hisE, is_eRelease
-    case ulk =>
-      intro e m hisE hTgt hm
-      have hmPre : is_Node m s := by
-        simp only [is_Node, Node_allocated, Node_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
-      pverify_not_inflight (hUnlock e m hisE hTgt hmPre), hisE, is_eUnlock
-    case lk =>
-      -- lock_to_server: new label is eGrant (not eLock) → old → pre hLock.
-      intro e m hisE hTgt hm
-      have hmPre : is_Node m s := by
-        simp only [is_Node, Node_allocated, Node_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
-      pverify_not_inflight (hLock e m hisE hTgt hmPre), hisE, is_eLock
+    case ss  => pverify_machine_has_type Server on lock_server.ref
+    case sgl => intro sv hsv; apply hSingle
+                pverify_machine_has_type Server on sv.ref
+    case uq  => intro m1 m2 hm1 hm2; apply hUniq m1 m2
+                · pverify_machine_has_type Server on m1
+                · pverify_machine_has_type Server on m2
+    -- 4 routing clauses with a wrong-event new label: field-only update
+    -- + kind-bridge + pre-state hypothesis (see Tactic.lean).
+    case aq  => pverify_not_inflight_by Server, hAcq,    is_eAquire
+    case rel => pverify_not_inflight_by Server, hRel,    is_eRelease
+    case ulk => pverify_not_inflight_by Node,   hUnlock, is_eUnlock
+    case lk  => pverify_not_inflight_by Node,   hLock,   is_eLock
     case gr =>
       -- grant_to_node: new eGrant targets param.sender (a Node), so a
-      -- Server-target ⟹ old label ⟹ pre-state hGrant.
+      -- Server-target ⟹ old label ⟹ pre hGrant.
       intro e m hisE hTgt hm
       rw [not_and, Bool.or_eq_true, decide_eq_true_eq]
       intro hsent
       rcases hsent with hNew | hOld
-      · -- new eGrant: target = param.sender; m = param.sender by hTgt; but
-        -- param.sender is a Node and hm says is_Server m → contradiction.
-        subst hNew
+      · subst hNew
         simp only [Label.targets?] at hTgt
         exfalso
         rw [← hTgt] at hm
         simp only [is_Server, Server_allocated, Server_kind] at hm
-        -- but param.sender is a Node (kind 2); the post-state preserves kind.
         simp only [is_Node, Node_allocated, Node_kind] at hParamNode
         by_cases hps : param.sender = this.ref <;> simp_all
       · rw [Bool.or_eq_false_iff, decide_eq_false_iff_not]
-        -- old label: relate post is_Server m to pre, apply hGrant.
-        have hmPre : is_Server m s := by
-          simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
-          by_cases hmt : m = this.ref <;> simp_all
+        pverify_machine_has_type hmPre : Server m from hm
         have := hGrant e m hisE hTgt hmPre
         simp only [not_and] at this
         intro hrecv; exact absurd (this hOld) (by simp [hrecv.2])
+    -- node_send_{lock,unlock}: new label is eGrant; fails the event tag
+    -- on both clauses, so old labels carry to the pre-state hypothesis.
     case nsl =>
-      -- node_send_lock: new label is eGrant (not eLock) → old → pre hNSL.
       intro e hisE hsent
       obtain ⟨hsent1, hrecv⟩ := hsent
       rw [Bool.or_eq_true, decide_eq_true_eq] at hsent1
@@ -394,7 +340,6 @@ theorem Server.Serving.eLock_correct_block0_system_config (this : Server) (param
         simp only [is_Node, Node_allocated, Node_kind] at hpre ⊢
         by_cases hpt : (eLock_payload_of e).sender = this.ref <;> simp_all
     case nsu =>
-      -- node_send_unlock: new label is eGrant (not eUnlock) → old → pre hNSU.
       intro e hisE hsent
       obtain ⟨hsent1, hrecv⟩ := hsent
       rw [Bool.or_eq_true, decide_eq_true_eq] at hsent1
@@ -404,27 +349,19 @@ theorem Server.Serving.eLock_correct_block0_system_config (this : Server) (param
       · have hpre := hNSU e hisE ⟨hOld, hrecv.2⟩
         simp only [is_Node, Node_allocated, Node_kind] at hpre ⊢
         by_cases hpt : (eUnlock_payload_of e).sender = this.ref <;> simp_all
-  · -- else-branch: nothing sent, machines unchanged, only `received[lbl]:=true`.
-    -- `received` growing only shrinks `inflight`, so every pre-state clause
-    -- transfers. The first four are verbatim pre-state; the rest are the
-    -- received-monotone pattern.
+  · -- else-branch: machines unchanged, only `received[lbl]:=true`.
     intro _hcond
     refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
-    case cn  => pverify_carry_through
-    case ss  => pverify_carry_through
-    case sgl => pverify_carry_through
-    case uq  => pverify_carry_through
+    case cn | ss | sgl | uq => assumption
     case aq  => intro e m hisE hTgt hm; pverify_carry_after_recv (hAcq e m hisE hTgt hm)
     case rel => intro e m hisE hTgt hm; pverify_carry_after_recv (hRel e m hisE hTgt hm)
     case gr  => intro e m hisE hTgt hm; pverify_carry_after_recv (hGrant e m hisE hTgt hm)
     case lk  => intro e m hisE hTgt hm; pverify_carry_after_recv (hLock e m hisE hTgt hm)
     case ulk => intro e m hisE hTgt hm; pverify_carry_after_recv (hUnlock e m hisE hTgt hm)
-    case nsl =>
-      intro e hisE hsent
-      exact hNSL e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
-    case nsu =>
-      intro e hisE hsent
-      exact hNSU e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
+    case nsl => intro e hisE hsent
+                exact hNSL e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
+    case nsu => intro e hisE hsent
+                exact hNSU e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
 
 -- eRelease: Node, `if has_lock then has_lock=false; send server eUnlock`.
 set_option maxHeartbeats 8000000 in
@@ -453,67 +390,30 @@ theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : 
     refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
     case cn =>
       intro n hn
-      have hnPre : is_Node n.ref s := by
-        simp only [is_Node, Node_allocated, Node_kind] at hn ⊢
-        by_cases hnt : n.ref = this.ref <;> simp_all
+      pverify_machine_has_type hnPre : Node n.ref from hn
       have hcn := hConst n hnPre
       by_cases hnt : n.ref = this.ref <;> simp_all
-    case ss =>
-      simp only [is_Server, Server_allocated, Server_kind] at hServ ⊢
-      by_cases hlt : lock_server.ref = this.ref <;> simp_all
-    case sgl =>
-      intro sv hsv
-      apply hSingle
-      simp only [is_Server, Server_allocated, Server_kind] at hsv ⊢
-      by_cases hst : sv.ref = this.ref <;> simp_all
-    case uq =>
-      intro m1 m2 hm1 hm2
-      apply hUniq m1 m2
-      · simp only [is_Server, Server_allocated, Server_kind] at hm1 ⊢
-        by_cases h1 : m1 = this.ref <;> simp_all
-      · simp only [is_Server, Server_allocated, Server_kind] at hm2 ⊢
-        by_cases h2 : m2 = this.ref <;> simp_all
-    -- Field-only update (Node_has_lock); kind-bridge each post-state `is_<M> m`
-    -- guard back to its pre-state form, then dispatch the wrong-event case
-    -- (new label is an eUnlock, so non-eUnlock clauses fall to old labels).
-    case aq =>
-      intro e m hisE hTgt hm
-      have hmPre : is_Server m s := by
-        simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
-      pverify_not_inflight (hAcq e m hisE hTgt hmPre), hisE, is_eAquire
-    case rel =>
-      intro e m hisE hTgt hm
-      have hmPre : is_Server m s := by
-        simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
-      pverify_not_inflight (hRel e m hisE hTgt hmPre), hisE, is_eRelease
-    case gr =>
-      intro e m hisE hTgt hm
-      have hmPre : is_Server m s := by
-        simp only [is_Server, Server_allocated, Server_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
-      pverify_not_inflight (hGrant e m hisE hTgt hmPre), hisE, is_eGrant
-    case lk =>
-      -- new label is eUnlock (not eLock) → old → pre hLock.
-      intro e m hisE hTgt hm
-      have hmPre : is_Node m s := by
-        simp only [is_Node, Node_allocated, Node_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
-      pverify_not_inflight (hLock e m hisE hTgt hmPre), hisE, is_eLock
+    case ss  => pverify_machine_has_type Server on lock_server.ref
+    case sgl => intro sv hsv; apply hSingle
+                pverify_machine_has_type Server on sv.ref
+    case uq  => intro m1 m2 hm1 hm2; apply hUniq m1 m2
+                · pverify_machine_has_type Server on m1
+                · pverify_machine_has_type Server on m2
+    -- 4 routing clauses with a wrong-event new label (the new eUnlock
+    -- mismatches eAquire/eRelease/eGrant/eLock): field-only + kind-bridge.
+    case aq  => pverify_not_inflight_by Server, hAcq,   is_eAquire
+    case rel => pverify_not_inflight_by Server, hRel,   is_eRelease
+    case gr  => pverify_not_inflight_by Server, hGrant, is_eGrant
+    case lk  => pverify_not_inflight_by Node,   hLock,  is_eLock
     case ulk =>
-      -- unlock_to_server: new eUnlock targets `server` = lock_server (a
-      -- Server), so a Node-target ⟹ old → pre hUnlock.
+      -- unlock_to_server: new eUnlock targets server = lock_server (a
+      -- Server); a Node-target ⟹ old → pre hUnlock.
       intro e m hisE hTgt hm
-      have hmPre : is_Node m s := by
-        simp only [is_Node, Node_allocated, Node_kind] at hm ⊢
-        by_cases hmt : m = this.ref <;> simp_all
+      pverify_machine_has_type hmPre : Node m from hm
       rw [not_and, Bool.or_eq_true, decide_eq_true_eq]
       intro hsent
       rcases hsent with hNew | hOld
-      · -- new eUnlock: target = this's server = lock_server (a Server), but
-        -- m is a Node → contradiction.
-        subst hNew
+      · subst hNew
         simp only [Label.targets?] at hTgt
         exfalso
         rw [← hTgt, hcs] at hmPre
@@ -524,8 +424,9 @@ theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : 
         have := hUnlock e m hisE hTgt hmPre
         simp only [not_and] at this
         intro hrecv; exact absurd (this hOld) (by simp [hrecv.2])
+    -- node_send_{lock,unlock}: new label is eUnlock. nsl: fails is_eLock
+    -- on the new label. nsu: new label's sender is `this` (a Node).
     case nsl =>
-      -- new label is eUnlock (not eLock) → old → pre hNSL.
       intro e hisE hsent
       obtain ⟨hsent1, hrecv⟩ := hsent
       rw [Bool.or_eq_true, decide_eq_true_eq] at hsent1
@@ -536,7 +437,6 @@ theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : 
         simp only [is_Node, Node_allocated, Node_kind] at hpre ⊢
         by_cases hpt : (eLock_payload_of e).sender = this.ref <;> simp_all
     case nsu =>
-      -- node_send_unlock: new eUnlock's sender is `this` (a Node).
       intro e hisE hsent
       obtain ⟨hsent1, hrecv⟩ := hsent
       rw [Bool.or_eq_true, decide_eq_true_eq] at hsent1
@@ -549,28 +449,21 @@ theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : 
       · have hpre := hNSU e hisE ⟨hOld, hrecv.2⟩
         simp only [is_Node, Node_allocated, Node_kind] at hpre ⊢
         by_cases hpt : (eUnlock_payload_of e).sender = this.ref <;> simp_all
-  · -- else-branch: nothing sent, machines unchanged, only `received[lbl]:=true`.
+  · -- else-branch: machines unchanged, only `received[lbl]:=true`.
     intro _hcond
     refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
-    case cn  => pverify_carry_through
-    case ss  => pverify_carry_through
-    case sgl => pverify_carry_through
-    case uq  => pverify_carry_through
+    case cn | ss | sgl | uq => assumption
     case aq  => intro e m hisE hTgt hm; pverify_carry_after_recv (hAcq e m hisE hTgt hm)
     case rel => intro e m hisE hTgt hm; pverify_carry_after_recv (hRel e m hisE hTgt hm)
     case gr  => intro e m hisE hTgt hm; pverify_carry_after_recv (hGrant e m hisE hTgt hm)
     case lk  => intro e m hisE hTgt hm; pverify_carry_after_recv (hLock e m hisE hTgt hm)
     case ulk => intro e m hisE hTgt hm; pverify_carry_after_recv (hUnlock e m hisE hTgt hm)
-    case nsl =>
-      intro e hisE hsent
-      exact hNSL e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
-    case nsu =>
-      intro e hisE hsent
-      exact hNSU e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
+    case nsl => intro e hisE hsent
+                exact hNSL e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
+    case nsu => intro e hisE hsent
+                exact hNSU e hisE ⟨hsent.1, by simp only [Bool.or_eq_false_iff] at hsent; exact hsent.2.2⟩
 
 end LockServer
 
 set_option maxHeartbeats 4000000 in
 #pverify LockServer
-
-

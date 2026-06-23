@@ -497,7 +497,7 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
       `(∀ $idS : PLean.GlobalState $idSig,
           ($initsId : $prpAbbrev) $idS → ($invIdent) $idS)
     -- Unfold chain: `InitConditions`, the invariant, kind helpers,
-    -- then close with `pverify_smt_close` (the base case never
+    -- then close with `pverify_smt` (the base case never
     -- involves `wpgen` or handler unfolds).
     let mut steps : Array (TSyntax `tactic) := #[]
     steps := steps.push (← `(tactic| try unfold $initsId:ident))
@@ -525,7 +525,7 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
         mkIdent (Name.mkSimple ("hax_" ++ an.toString))
       steps := steps.push (← `(tactic| have $hypId:ident := @$axId))
     steps := steps.push (← `(tactic|
-      first | (intros; trivial) | pverify_smt_close))
+      first | (intros; trivial) | pverify_smt))
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq| $[$steps]*)
     let bodyTac : TSyntax ``Lean.Parser.Tactic.tacticSeq ←

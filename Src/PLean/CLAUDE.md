@@ -20,7 +20,7 @@ The user-facing pipeline:
    per `(machine, state, event, prove-directive)` (plus one base-case
    VC per `(directive, invariant)`), consults the `@[pverifyProof]`
    attribute for user-supplied manual proofs, and discharges the rest
-   via an SMT-backed tactic chain (`pverify_smt_close` → `loom_smt`).
+   via an SMT-backed tactic chain (`pverify_smt` → `loom_smt`).
 
 PLean is **not** a wrapper around PChecker or PVerifier. It's a
 parallel-language port whose deliverable is "P programs verify in
@@ -78,8 +78,8 @@ PLean/
     PrintModule.lean -- #print_pmodule M
   Verify/
     Obligation.lean  -- per-handler triple synthesis + base-case VCs
-    Tactic.lean      -- pverify_open_triple / _step_wp / _intro_pre /
-                        _normalize_state / _smt_close / _grind / default_inv
+    Tactic.lean      -- pverify / pverify_step_wp / pverify_smt /
+                        pverify_split_smt / default_inv / clause helpers
     ProofRegistry.lean -- @[pverifyProof] attribute + env extension
     SimpAttrs.lean   -- @[pverifySimp] simp attribute
     SimpLemmas.lean  -- the lemmas tagged with @[pverifySimp]
@@ -161,60 +161,35 @@ before attempting one.
 - Phase 2 (Registry + minimal surface) — ☑ M2. `#gen_module`
   synthesises per-pmodule `Sig`/`PM'`/`GS`; surface macros target the
   real PM; M2 surface ping-pong verifies.
-- Phase 3 (Verification declarations) — ◐ in progress. The
-  SMT-discharge pipeline, the `@[pverifyProof]` registry, and the
-  `pverify_*` tactic library are in tree. Closure rates:
-  [`Examples/DistributedLock`](Examples/DistributedLock.lean) **12/12**
-  (11 SMT + 1 manual `@[pverifyProof]`),
-  [`Examples/LockServer`](Examples/LockServer.lean) **37/37**
-  (34 SMT + 3 manual), and
-  [`Examples/RingLeader`](Examples/RingLeader.lean) **14/14**
-  (12 SMT + 2 manual) — all three M3 benchmarks fully verified.
-  RingLeader's relational facts about
-  `le` / `btw` / `right` are stated as `paxiom`s (axioms about opaque
-  `function`s, no state dependency); the obligation generator injects
-  every pmodule `paxiom` into the local context of every VC via
-  `have hax_<name> := @<name>` so `loom_smt [*]` (which only sees the
-  lctx) can use them — pinned by `Tests/Surface/PAxiomProbe.lean`. LockServer's port now carries the full
-  P-source invariant set; the 3 manual proofs are the send-handlers
-  whose routing obligations the solver can't close as a single-shot
-  bundle.
-  `#gen_module` now emits `<ev>_payload_of_spec`/`_mk` characterisations
-  (and seals `<ev>_payload_of` `@[irreducible]`) so send-handler
-  obligations reach SMT. Two soundness holes were found+fixed
-  (see STATUS.md "Session 2026-06-19"): the GlobalState-shadow
-  guard now rejects all binder forms (not just `∀`), and a sorried
-  `@[pverifyProof]` is now reported as a failure.
-  Reusable manual-proof tactics (`pverify_carry_through` /
-  `pverify_carry_after_recv` / `pverify_not_inflight` + `pverify_split_smt_close`)
-  shrunk LockServer's three manual proofs by 114 lines (37/37 closure
-  rate maintained); see [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
-  An obligation cache (hashing `(local context, goal target)`) at
-  `<project>/.lake/build/pverify_cache/` shaves 11–14% wall-clock on
-  warm rebuilds; soundness pinned by
+- Phase 3 (Verification declarations) — ☑ M3 reached. All three
+  Tutorial/Advanced benchmarks fully verify:
+  - [`Examples/DistributedLock`](Examples/DistributedLock.lean) — **12/12**
+    (11 SMT + 1 manual `@[pverifyProof]`),
+  - [`Examples/LockServer`](Examples/LockServer.lean) — **37/37**
+    (34 SMT + 3 manual),
+  - [`Examples/RingLeader`](Examples/RingLeader.lean) — **14/14**
+    (12 SMT + 2 manual).
+
+  The user-facing surface for axiomatic facts is `paxiom` (single
+  proposition) and `pinstance` (Veil-style typeclass bundle). The
+  obligation generator injects every pmodule axiom — both hand-written
+  `paxiom`s and fields synthesised from `pinstance` — into every VC's
+  local context as `have hax_<name> := @<name>`, so `loom_smt [*]`
+  (which only sees the lctx) can use them. Pinned by
+  [`Tests/Surface/PAxiomProbe.lean`](Tests/Surface/PAxiomProbe.lean)
+  and [`Tests/Surface/PInstanceExercise.lean`](Tests/Surface/PInstanceExercise.lean).
+  See [`docs/STATUS.md`](docs/STATUS.md) for the per-session log of
+  framework fixes that got us here.
+
+  Reusable manual-proof tactics (`pverify_carry_after_recv`,
+  `pverify_not_inflight` / `_by`, `pverify_inflight_by`,
+  `pverify_machine_has_type`, plus `pverify_split_smt`) cover the
+  five routing-clause + kind-bridge shapes the M3 proofs ran into; see
+  [`docs/AUTOMATION.md`](docs/AUTOMATION.md). An obligation cache at
+  `<project>/.lake/build/pverify_cache/` hashes `(lctx, goal target)`
+  and shaves 11–14% off warm rebuilds; soundness pinned by
   [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
-  Porting `3_RingLeaderVerification` produced two reusable framework
-  fixes:
-
-  1. **`goto` hygiene** — `<Mod>.G`'s `unit` constructor was emitted
-     hygienically, so the `goto` doElem macro (first exercised inside an
-     `on`-handler by this benchmark) couldn't resolve `G.unit`. Now
-     emitted unhygienically in `emitProgramUnions`.
-  2. **`InStart` init modelling + reducible state aliases** —
-     `emitInitConditions` now asserts every machine begins in a start
-     state, and `<S>_st` aliases are `@[reducible] def` so the solver
-     sees the raw `S` constructors. Together these close
-     state-dependent base cases (e.g. `LeaderMax` / `UniqueLeader`).
-
-  RingLeader's two inductive steps through `goto Won` (`lemmas` /
-  `Safety`) are discharged by `@[pverifyProof]` manual proofs in the
-  test file: `Safety` needs a `SelfPendingMax` instantiation hint;
-  `lemmas` uses the cyclic-betweenness argument (`btw_1`..`btw_4`)
-  to show forwarding `eNominate` to the ring successor preserves
-  `NoBypass`. Both are self-contained in the test file and serve as
-  the worked template for the `@[pverifyProof]` escape hatch on
-  jointly-inductive ring invariants.
-- Phase 4 (Spec machines) — ☐ next. Plan in PLAN_P4.
+- Phase 4 (Spec machines) — ☐ next. Plan in [`docs/PLAN_P4.md`](docs/PLAN_P4.md).
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.
 

@@ -12,20 +12,20 @@ of work.
 
 ---
 
-## At a glance — 2026-06-11
+## At a glance — 2026-06-23
 
 | Phase | Status | What it delivers |
 |---|---|---|
 | 0 — Bootstrap | ☑ done | Lake skeleton, registry, multi-file `pmodule M`, `#pwf`, `#pverify` shell |
 | 1 — Semantic core | ☑ done | `PM := NonDetT (StateT (GlobalState Sig) DivM)`, primitives, default invariants, **M1** |
 | 2 — Registry + surface | ☑ done | `#gen_module M`, surface macros target real PM, **M2** |
-| 3 — Verification declarations | ◐ **in progress** | `Lemma`/`Theorem`/`Proof`/`system <s> { … }`, SMT-discharge `#pverify`, `@[pverifyProof]` registry. **M3 partial** — closure rates DistributedLock 2/4, LockServer 2/15 (the residue is genuine inductiveness gaps in the ports, not infrastructure bugs) |
-| 4 — Spec machines | ☐ not started | `spec X observes [...] { ... }` flattening, `assert` obligations, send-time spec dispatch — **M4 acceptance: ChainReplication** |
+| 3 — Verification declarations | ☑ done | `Lemma`/`Theorem`/`Proof`/`system <s> { … }`, SMT-discharge `#pverify`, `@[pverifyProof]` registry, `paxiom`/`pinstance` axiomatic-fact bridge. **M3 reached** — `Examples/DistributedLock` **12/12**, `Examples/LockServer` **37/37**, `Examples/RingLeader` **14/14** |
+| 4 — Spec machines | ☐ next | `spec X observes [...] { ... }` flattening, `assert` obligations, send-time spec dispatch — **M4 acceptance: ChainReplication** |
 | 5 — Remaining surface | ☐ not started | `foreach`, `map[K,V]` / `set[T]`, `assume`, full `WPGen` plumbing for `if`/`while` |
 | 6 — Tutorial port | ☐ not started | **M5: `Tutorial/1_ClientServer`**, **M6: `Tutorial/2_TwoPhaseCommit`** verify under PLean |
 | 7 — Stretch | ⊘ deferred | PChecker bridge, lean-smt evaluation, counter-example surfacing |
 
-Build state: all test jobs green at HEAD.
+Build state: 3414 jobs green at HEAD.
 
 ---
 
@@ -174,11 +174,9 @@ short summary:
   materialisation (which silently let the verifier "prove" trivially
   false properties) is fixed and pinned by
   [`Tests/Surface/SoundnessRegression.lean`](../Tests/Surface/SoundnessRegression.lean).
-  Current honest SMT closure rates: `Phase3DistributedLock` 2/4,
-  `Phase3LockServer` 2/15; the residual obligations correspond to
-  inductive invariants that exist in the original P sources but were
-  not carried into the PLean ports, and to lemma-chain proofs that
-  need to be supplied manually.
+  Current M3 closure rates: [`Examples/DistributedLock`](../Examples/DistributedLock.lean)
+  **12/12**, [`Examples/LockServer`](../Examples/LockServer.lean) **37/37**,
+  [`Examples/RingLeader`](../Examples/RingLeader.lean) **14/14**.
 
 ---
 
@@ -190,75 +188,27 @@ size (S ≈ ½ day, M ≈ 1–2 days, L ≈ 3–5 days). Workstreams marked
 *parallel-safe* can proceed without coordinating with another
 in-flight workstream.
 
-### W1 — Close the small distributed-protocol benchmarks *(M, parallel-safe)*
+### W1 — Distributed-lock benchmarks ☑ **done**
 
-**Goal.** Take `Phase3DistributedLock` from 2/4 and `Phase3LockServer`
-from 2/15 to all obligations discharged.
+`Examples/DistributedLock` closes **12/12** (11 SMT + 1 manual) and
+`Examples/LockServer` closes **37/37** (34 SMT + 3 manual). Routine
+discharge for both. The 4 manual proofs across the two files are
+send-handler bundles where SMT returns `unknown` as a single shot —
+each proof splits the bundle and dispatches per-conjunct via the
+helpers documented in [`AUTOMATION.md`](AUTOMATION.md) §3.
 
-**Action items.**
+### W2 — Ring-leader benchmark ☑ **done**
 
-1. Read each benchmark's PLean source and the original P source side
-   by side; identify the inductive invariants present in the P
-   source but absent from the PLean port. Most-likely candidates
-   for DistributedLock are an invariant stating that no node holds
-   the lock after a release event, and an invariant stating that
-   transfers only move the lock to nodes with a strictly higher
-   identifier.
-2. For each missing invariant, add an `invariant <name> : <body>`
-   line inside the existing `system <s> { … }` block in
-   [`Tests/Surface/Phase3DistributedLock.lean`](../Tests/Surface/Phase3DistributedLock.lean)
-   or
-   [`Tests/Surface/Phase3LockServer.lean`](../Tests/Surface/Phase3LockServer.lean).
-   Re-run `#pverify` and observe whether SMT now closes the
-   `prove safety` obligations.
-3. For obligations the solver still cannot close, copy the
-   `@[pverifyProof] theorem … := by sorry` skeleton printed in the
-   `#pverify` failure report into the file. Fill the proof using
-   the atomic tactic primitives — `pverify_open_triple`,
-   `pverify_step_wp`, `pverify_intro_pre`, `pverify_normalize_state`,
-   `pverify_smt_close`, `pverify_grind` — and the worked example in
-   [`Tests/Surface/PVerifyManualProof.lean`](../Tests/Surface/PVerifyManualProof.lean).
-4. Once everything closes, remove the
-   `set_option pverify.failOnIncomplete false` line from the top of
-   each file.
-
-**Exit criterion.** Both benchmark files build with
-`failOnIncomplete` defaulted to true and `#pverify` reports zero
-failures.
-
-**Blockers.** None. Step 3 expects familiarity with reading WP-shape
-goals; step 1 expects familiarity with the original P semantics.
-
-### W2 — Port the ring-leader benchmark *(M, parallel-safe)*
-
-**Goal.** Add the third small distributed-protocol benchmark to the
-test suite, matching the level of detail of `Phase3DistributedLock`
-and `Phase3LockServer`.
-
-**Action items.**
-
-1. Create `Tests/Surface/Phase3RingLeader.lean` and port the surface
-   declarations from
-   [`Tutorial/Advanced/3_RingLeaderVerification/PSrc/System.p`](../../../Tutorial/Advanced/3_RingLeaderVerification/PSrc/System.p):
-   the events, the ring-node machine, the shared lemmas
-   (`less_than`, `between_rel`, `right_rel`, `lemmas`), and the
-   safety theorem.
-2. The benchmark uses uninterpreted `pure` functions (`btw`, `right`,
-   `le`) constrained by axioms. Declare them with `function` and
-   `paxiom`; verify the axioms flow into the obligation generator's
-   precondition (this path exists but has not been exercised by a
-   benchmark — flag as a follow-up if it does not).
-3. Run `#pwf` and `#pverify`. Treat any failures the same way as W1
-   step 3: either by porting an additional invariant, or by
-   supplying a manual `@[pverifyProof]` theorem.
-
-**Exit criterion.** `Tests/Surface/Phase3RingLeader.lean` parses
-clean, `#pwf` succeeds, and `#pverify` either closes all obligations
-or has a documented set of manual proofs covering the residue.
-
-**Blockers.** None for the structural port. Closing the lemma-chain
-proofs may take longer than for W1 because of the larger
-verification-condition count (~25 vs. ~8 / ~20).
+`Examples/RingLeader` closes **14/14** (12 SMT + 2 manual). The two
+manual proofs are the inductive steps through `goto Won`, where
+lean-auto rejects `(_.machines _).currentState` reads under a `∀`
+("Higher order input?") — each was discharged by a short proof
+splitting on whether `x = this.ref` (for state-dependent invariants)
+and whether `e` is the freshly-sent label (for routing invariants).
+The relational facts about `le` / `btw` / `right` are stated as two
+`pinstance` declarations (`LeOrder`, `RingTopology`); the obligation
+generator's `have hax_<name>` injection brings every class-field
+axiom into every VC's local context.
 
 ### W3 — Add spec machines to the language *(L, sequential within)*
 
@@ -565,8 +515,8 @@ on framework engineering.
    ```bash
    cd Src/PLean
    lake build PLean
-   lake build Tests           # all tests
-   lake build Tests.Surface.Phase3PingPong   # single test
+   lake build Tests Examples       # full regression + protocol suite
+   lake build Examples.RingLeader  # single benchmark
    ```
 5. **Pick a workstream above** and update [`STATUS.md`](STATUS.md)'s
    "At a Glance" table when you start (set Owner + Started date).

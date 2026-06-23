@@ -1,10 +1,8 @@
 # PLean — Verification Automation (current + planned)
 
 How `#pverify` discharges obligations today, the reusable tactics that
-keep manual proofs short, and the two performance features we will add
-next (parallel SMT, proof caching). Written against the LockServer port
-experience (2026-06-19), where three send-handler obligations needed
-hand-written proofs whose bulk was pure boilerplate.
+keep manual proofs short, and the performance features that have
+landed (proof caching, profiling) or remain planned (parallel SMT).
 
 Companion docs: [`PLAN_P3.md`](PLAN_P3.md) (verification-declaration
 design), [`STATUS.md`](STATUS.md) (per-session change log),
@@ -30,29 +28,38 @@ For each it:
    plus the captured SMT diagnostic.
 
 The closing tactic chain is `pverify_step_wp → intros →
-split_conjunction_hyps → (default_inv | pverify_smt_close |
-pverify_grind)`. `pverify_smt_close` runs `pverify_smt_prep` (Veil-style
-defunctionalisation: `simp [pverifySimp]`, `sdestruct_state`,
-`abstract_machine_lookups`, default-invariant unfolds) then `loom_smt [*]`
-→ cvc5/z3.
+split_conjunction_hyps → pverify_close_chain` where `pverify_close_chain`
+tries `default_inv | pverify_smt | pverify_split_smt |
+pverify_grind`. `pverify_smt` consults the obligation cache (§5b),
+then on miss runs `pverify_smt_prep` (defunctionalisation: `simp
+[pverifySimp]`, `sdestruct_state`, `abstract_machine_lookups`, default-
+invariant unfolds) and `loom_smt [*]` → cvc5/z3.
+
+**Axiomatic facts reach SMT.** Pmodule-level `paxiom`s (and the per-
+field axioms `#gen_module` synthesises from each `pinstance`) are
+injected into every VC's local context via `have hax_<name> := @<name>`,
+so `loom_smt [*]`'s `collectAllLemmas` (which only reads the lctx) sees
+them. Pinned by [`Tests/Surface/PAxiomProbe.lean`](../Tests/Surface/PAxiomProbe.lean)
+and [`PInstanceExercise.lean`](../Tests/Surface/PInstanceExercise.lean).
 
 **When SMT is enough.** Most obligations close fully automatically. The
-new `<ev>_payload_of_spec` / `_mk` characterisations + the
-`@[irreducible]` seal on `<ev>_payload_of` (emitted by `#gen_module`,
-2026-06-19) let *send-handler* obligations reach SMT at all.
+`<ev>_payload_of_spec` / `_mk` characterisations + the `@[irreducible]`
+seal on `<ev>_payload_of` (emitted by `#gen_module`) let *send-handler*
+obligations reach SMT at all.
 
 **When it isn't.** A handler that `send`s a fresh event and must
 re-establish a routing invariant `∀ e, is_<ev> e → … (<ev>_payload_of e) …`
 produces a quantified goal the solver returns `unknown` on as a single
 shot once the invariant bundle is large (LockServer's `system_config` has
-11 conjuncts; both cvc5 and z3 time out). Those go to `@[pverifyProof]`.
+11 conjuncts; both cvc5 and z3 time out). Those go to `@[pverifyProof]`
+manual proofs, composed from the helpers in §3.
 
 ---
 
 ## 2. The manual-proof shape (and why LockServer's proofs are long)
 
 Every send-handler `@[pverifyProof]` in
-[`Phase3LockServer.lean`](../Tests/Surface/Phase3LockServer.lean) follows
+[`Examples/LockServer.lean`](../Examples/LockServer.lean) follows
 the same skeleton:
 
 ```
@@ -92,84 +99,64 @@ The logic per case is 3–8 lines and almost entirely mechanical.
 
 ---
 
-## 3. Proposed reusable tactics
+## 3. Reusable manual-proof helpers (landed)
 
-Goal: a send-handler `@[pverifyProof]` should be a short driver that
-*names* which shape each conjunct takes, not a re-derivation. These live
-in [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean) alongside the
-existing `pverify_*` family; the macro-hygiene rule (every simp-lemma
-name inside a named tactic) applies.
+A send-handler `@[pverifyProof]` should be a short driver that *names*
+which shape each conjunct takes, not a re-derivation. The current
+helper family in [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean)
+covers five shapes, named by the Hoare triple they discharge:
 
-**Status (2026-06-19, later session):** §3.1, §3.5 and an additional
-`pverify_not_inflight` helper landed and were applied to the
-LockServer manual proofs (−114 lines / ~16% file shrinkage, 37/37
-closure rate maintained). §3.2 / §3.3 / §3.4 are not yet built —
-their highest-leverage application is the kind-bridge step in the
-eLock/eRelease then-branches, currently still inline (≈ 4 lines per
-clause).
+| Helper | `{ Pre } step { Post }` |
+|---|---|
+| `pverify_carry_after_recv h`                       | `{ h : P s }` `markReceived lbl` `⊢ P s'` (P recv-monotone) |
+| `pverify_not_inflight h, hisE, isW`                | `{ h : ¬ inflight e s, hisE : is_<ev> e }` `send <newEv>` `⊢ ¬ inflight e s'` |
+| `pverify_not_inflight_by <K>, hPre, isW`           | composite: kind-bridge + `pverify_not_inflight` after a field-only update |
+| `pverify_inflight_by h using x => …`               | `{ h : inflight e s' }` + user discriminator `⊢ inflight e s` |
+| `pverify_machine_has_type <K> on <r>` / `_ : <K> r from hPost` | close or synthesise `is_<K> r` across a field-only update |
 
-### 3.1 `pverify_pre_transfer` / `pverify_received_monotone`
+The "carry / transfer" case where the post-state clause already holds
+verbatim is closed by plain `assumption`; no named helper for that.
 
-Close a conjunct that the step preserves directly. Takes the pre-state
-hypothesis by name or finds it by `assumption`/`solve_by_elim`:
+The two `inflight` variants handle routing clauses where the new label
+has to be ruled out before the pre-state hypothesis fires.
+`pverify_not_inflight` rules out by event-tag mismatch (automatic
+discriminator); `pverify_inflight_by` exposes the new-label witness
+so the caller supplies the discriminator (used when the new label
+shares an event tag with the clause's `e` and the mismatch is on the
+action constructor or an explicit `e ≠ newLbl` hypothesis).
 
-```lean
--- clause unchanged by the step
-macro "pverify_pre_transfer" : tactic =>
-  `(tactic| first | assumption | (intros; solve_by_elim))
+`pverify_machine_has_type` is the kind-bridge primitive: it asserts a
+machine ref's kind across a field-only update by exploiting that the
+canonical kind triple (`is_<K>` / `<K>_allocated` / `<K>_kind`) is
+preserved. `pverify_not_inflight_by` composes it with
+`pverify_not_inflight` for the "field-only update + wrong-event
+routing clause" pattern that fires 9 times in LockServer's eLock /
+eRelease then-branches (each call site is one line carrying the kind,
+the pre-state hypothesis, and the wrong-event predicate).
 
--- `received[lbl]:=true` only: peel the `decide (e = lbl) || …`
--- and reuse the pre-state clause.
-syntax "pverify_received_monotone" term : tactic   -- term = pre hyp
-```
+Regression: [`Tests/Verify/ManualProofHelpers.lean`](../Tests/Verify/ManualProofHelpers.lean)
+pins `pverify_carry_after_recv` and `pverify_split_smt` on synthetic
+miniatures. The dispatcher-shape helpers
+(`pverify_not_inflight` / `_inflight_by` / `_not_inflight_by` /
+`pverify_machine_has_type`) require the full `is_<ev>` / `Sig.Label` /
+`GlobalState` shape + machine-wrapper struct, so they are pinned
+indirectly via the LockServer / RingLeader manual proofs.
 
-These collapse the `aq`/`rel`/`gr`/`ulk`/`nsl`/`nsu` else-branch cases
-(currently 4 lines each) to one line.
+**Split-then-SMT.** `pverify_split_smt` walks the goal's top-level
+`∧`, applies `pverify_smt` to each conjunct independently, and
+short-circuits trivial `True` leaves. Wired into `pverify_close_chain`
+AFTER the whole-bundle `pverify_smt` so the common 1-query case
+is unaffected. Recovers `unknown`-returning large bundles where each
+conjunct is individually decidable.
 
-### 3.2 `pverify_kind_bridge`
-
-The recurring `is_<M> m post ↔ is_<M> m s` step for a field-only machine
-update. An `elab` tactic that, given the post-state `is_<M> m`
-hypothesis, rewrites it to the pre-state form by case-splitting on
-`m = this.ref` and discharging via `simp_all` over
-`<M>_allocated`/`<M>_kind`. Eliminates the `have hmPre : is_<M> m s := by
-… by_cases … <;> simp_all` block repeated in every `field_only_kind`
-case.
-
-### 3.3 `pverify_new_label_split`
-
-The new-vs-old core. Expands a goal/hypothesis over
-`decide (e = <newLabel>) || s.sent e` into two named subgoals
-(`case new`, `case old`), and in `case old` automatically weakens the
-post-state `received`/`is_<M>` back to pre-state. The driver then only
-fills `case new` (and often `case old` closes by `pverify_pre_transfer`).
-
-### 3.4 `pverify_send_handler` (the driver)
-
-A `macro` that runs the fixed prologue
-(`pverify_step_wp; intro s hpre; simp only […] at hpre ⊢; obtain …;
-intro …; refine ⟨…⟩`) and then dispatches each resulting conjunct
-through `first | pverify_pre_transfer | pverify_received_monotone _ |
-(pverify_kind_bridge; …) | (pverify_new_label_split <;> …)`. The author
-supplies only the genuinely-hard `new_vs_old_target` case(s) by name.
-
-**Target:** LockServer's three proofs drop from ~150 lines to ~15–25,
-and most future Tutorial ports need *no* manual send-handler proof at
-all (the driver's automatic cases cover everything but the one
-target-determining clause).
-
-### 3.5 Lower-effort win — split-then-SMT inside `pverify`
-
-Before building 3.1–3.4, try the cheapest lever: have `pverify` **split
-the post conjunction and call `pverify_smt_close` per conjunct** rather
-than once on the whole bundle. Probe evidence (2026-06-19): the
-11-invariant bundle returns `unknown` as one query, but the same
-conjuncts each closed individually in earlier probes. Per-conjunct
-splitting is sound (proving `A ∧ B` by proving `A`, `B`) and may close
-some currently-manual obligations with no new tactics — at the cost of N
-solver calls (see §4, parallel SMT, which makes this cheap). Gate it
-behind the `first | (whole-bundle SMT) | (split; all_goals SMT)` so the
-common single-shot case is unaffected.
+**Not yet shipped.** A `pverify_new_label_split` that exposes the
+new-vs-old subgoal pair generically (the current `pverify_inflight_by`
+covers the positive case; a `pverify_not_inflight_split` that exposes
+both subgoals for routing clauses where the new label can't be ruled
+out automatically would be the next step), and a full
+`pverify_send_handler` driver macro that fires the prologue + per-
+conjunct dispatcher table. The next protocol that exercises these is
+the right time to extract them.
 
 ---
 
@@ -294,7 +281,7 @@ and the solver on a hit.
 ### 5b. Second attempt — Expr-level keying (landed, 11–14% wall-clock win)
 
 Keys on the canonicalised pretty-printed `(local context, goal target)`
-pair at the entry of `pverify_smt_close`, **before** `pverify_smt_prep`
+pair at the entry of `pverify_smt`, **before** `pverify_smt_prep`
 runs. On a hit, the goal is closed by `Loom.SMT.trust_smt` directly,
 bypassing the prep simp set, the lean-auto translation, and the
 solver call. Mirrors PVerifier's
@@ -325,9 +312,9 @@ contexts differ, confirming three distinct hashes.
 canonical text (for `cat`-debuggability). Directory:
 `<project>/.lake/build/pverify_cache/`. `lake clean` invalidates.
 
-**Measured.**
-- `Phase3DistributedLock`: cold 15.8s → warm 14.1s. 20 entries cached.
-- `Phase3LockServer`: cold 54.0s → warm 46.5s. 34 entries cached.
+**Measured** (paths refer to the files now under `Examples/`):
+- `DistributedLock`: cold 15.8s → warm 14.1s. 20 entries cached.
+- `LockServer`: cold 54.0s → warm 46.5s. 34 entries cached.
 
 The speedup is bounded by the fraction of wall-clock spent in
 `pverify_smt_prep + lean-auto + solver` (which is what the hit skips).
@@ -419,25 +406,29 @@ LockServer SMT obligations cache-hit across re-runs.
 
 ## 6. Priority order
 
-1. **§3.5 split-then-SMT** — ✅ landed 2026-06-19. Wired into
-   `pverify_close_chain` after single-shot SMT. Did not change the M3
-   pass/fail mix on the current bundles (which all close as one shot or
-   need a manual proof for a non-SMT reason), but is in tree as a
-   no-cost fallback for future ports.
-2. **§3.1 reusable manual tactics** — ✅ landed 2026-06-19. Three
-   helpers (`pverify_carry_through`, `pverify_carry_after_recv`,
-   `pverify_not_inflight`) shrunk LockServer's three manual proofs
-   by ~114 lines, with the 37/37 closure rate maintained.
-3. **§5 proof cache** — ✅ landed 2026-06-19 (second design). Keys on
-   the `(local context, goal target)` Expr pretty-print rather than
-   the lean-auto query string, so a hit skips lean-auto and the
-   solver. 11–14% wall-clock reduction on the M3 benchmarks. First
-   cmdString-keyed attempt reverted same session; see §5 for the
-   full post-mortem.
-4. **§4 parallel SMT** — largest speedup on a cold run; more invasive
-   (touches `synthesise`'s control flow and process management). Not yet
-   landed.
-5. **§3.2–3.4 remaining helpers** — `pverify_kind_bridge` (field-only
-   update bridge) and the `pverify_send_handler` driver. Next port that
-   exercises these (RingLeaderVerification, or one of the heavier
-   benchmarks) is the right time to extract them.
+1. **Split-then-SMT** — ✅ landed. Wired into `pverify_close_chain`
+   after single-shot SMT as a no-cost fallback.
+2. **Manual-proof helpers** — ✅ landed (and pruned over multiple
+   sessions). Four user-facing helpers shipped — `pverify_carry_after_recv`,
+   `pverify_not_inflight`, `pverify_inflight_by`,
+   `pverify_machine_has_type` — plus one composite,
+   `pverify_not_inflight_by`. The deleted `pverify_carry_through` was
+   subsumed by plain `assumption` after audit. LockServer's three
+   manual proofs and RingLeader's two use them throughout.
+3. **Proof cache** — ✅ landed. Keys on the `(local context, goal
+   target)` Expr pretty-print at `pverify_smt` entry, skipping
+   lean-auto and the solver on a hit. 11–14% wall-clock reduction on
+   the M3 benchmarks. See §5b.
+4. **paxiom / pinstance → SMT** — ✅ landed. The obligation generator
+   injects every pmodule axiom (and every pinstance field axiom) into
+   every VC's local context. Pinned by `PAxiomProbe.lean` and
+   `PInstanceExercise.lean`.
+5. **Parallel SMT** — largest speedup on a cold run; more invasive
+   (touches `synthesise`'s control flow and process management).
+   Not yet landed.
+6. **`pverify_send_handler` driver macro** — see §3 footer. Would fire
+   the prologue + per-conjunct dispatcher table, compressing
+   LockServer's ~150 lines of manual proof to ~15. The kind-bridge
+   primitive it would use (`pverify_machine_has_type`) is already in
+   tree; the unbuilt piece is the prologue + per-conjunct dispatch
+   shape itself.

@@ -5,7 +5,7 @@ run with `pverify.profile := true` and `pverify.cache := false`
 
 We use a tiny synthetic pmodule rather than importing the real
 `DistributedLock` example so re-elaboration is forced and the
-instrumented branch of `pverify_smt_close` actually fires.
+instrumented branch of `pverify_smt` actually fires.
 
 The profile output is two `logInfo` tables:
 - per-obligation top-10 by wall time (cache.pp/hash/fs + smt.prep/auto/solver/assign);

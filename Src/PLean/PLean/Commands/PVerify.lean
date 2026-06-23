@@ -131,7 +131,7 @@ def elabPVerify : CommandElab := fun stx => do
     -- Emit the profile breakdown when `pverify.profile` is set. Two
     -- tables: per-obligation top-10 by wall time, then per-stage
     -- aggregate with % of total. The instrumented branch in
-    -- `pverify_smt_close` writes into `Profile.stateRef` only when the
+    -- `pverify_smt` writes into `Profile.stateRef` only when the
     -- option is on, so when it's off this dumps zero-valued rows and
     -- we just skip the message entirely.
     if pverify.profile.get (← getOptions) then

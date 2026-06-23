@@ -143,7 +143,7 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
   intro s hpre
   -- `pverify_step_wp` peeled the dispatcher conjuncts into goal
   -- antecedents; `hpre : safety s`. Destructure the bundle (keeping each
-  -- invariant folded so `pverify_smt_close`'s own prep unfolds them), then
+  -- invariant folded so `pverify_smt`'s own prep unfolds them), then
   -- intro the dispatcher facts.
   -- Unfold the bundle + each invariant in the pre-state so the conjuncts
   -- are first-order (folded `is_Node`/`inflight` are higher-order to
@@ -162,10 +162,10 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
     obtain ⟨hHeld, hGt⟩ := hcond
     simp only [safety]
     refine ⟨?_, ?_, ?_, ?_, ?_, trivial⟩
-    · simp only [unique_holder, is_Node, Node_allocated, Node_kind]; pverify_smt_close
-    · simp only [no_lock_while_transfer, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
-    · simp only [unique_accept, inflight]; pverify_smt_close
-    · simp only [not_held_after_release, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt_close
+    · simp only [unique_holder, is_Node, Node_allocated, Node_kind]; pverify_smt
+    · simp only [no_lock_while_transfer, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt
+    · simp only [unique_accept, inflight]; pverify_smt
+    · simp only [not_held_after_release, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt
     · -- transfer_to_higher: new eAccept carries `param.epoch > this.epoch`
       -- (from `hGt`); old labels keep the pre-state bound (`hTH`).
       -- Keep `is_Node` folded so it matches `hTH`'s pre-state kind guard.
@@ -204,7 +204,7 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
       (simp only [unique_holder, no_lock_while_transfer, unique_accept,
          not_held_after_release, transfer_to_higher, is_Node, Node_allocated,
          Node_kind, inflight]
-       pverify_smt_close)
+       pverify_smt)
 
 end DistributedLock
 

@@ -11,9 +11,9 @@ User-facing tactics (a typical manual proof composes some of these):
 - `pverify` — auto-discharge: step WP + close-chain.
 - `pverify_step_wp` — run `wpgen` and clean up the resulting `WPGen`
   shapes, leaving a propositional VC.
-- `pverify_smt_prep`, `pverify_smt_close` — pre-SMT normalisation
+- `pverify_smt_prep`, `pverify_smt` — pre-SMT normalisation
   and the SMT discharger.
-- `pverify_split_smt_close`, `pverify_grind` — fallbacks for goals
+- `pverify_split_smt`, `pverify_grind` — fallbacks for goals
   the single-shot solver doesn't decide.
 - `default_inv` — discharges any of the four default-invariant
   constants by case analysis.
@@ -101,13 +101,13 @@ macro_rules
       try simp only [if_true, if_false]
     ))
 
-/-! ## Pre-SMT preparation (internal to `pverify_smt_close`)
+/-! ## Pre-SMT preparation (internal to `pverify_smt`)
 
 The next three tactics — `sdestruct_state`, `abstract_machine_lookups`,
 and `pverify_smt_prep` — together transform a propositional VC into a
 shape lean-auto can translate (no `GlobalState`-typed locals, no
 compound `machines _` lookups under an opaque extractor). Manual
-proofs call `pverify_smt_close`, which calls `pverify_smt_prep`, which
+proofs call `pverify_smt`, which calls `pverify_smt_prep`, which
 calls the other two; calling the internal tactics directly is rarely
 useful. -/
 
@@ -225,7 +225,7 @@ Mirrors PVerifier's approach (`PCompiler/.../Uclid5CodeGenerator.cs`
 `PVerifierCache`) which checksums the generated UCLID source file.
 
 **Soundness.** Entries are written only after a real
-`pverify_smt_close` succeeded (the solver returned `unsat`). Hits
+`pverify_smt` succeeded (the solver returned `unsat`). Hits
 close the obligation via the same `Loom.SMT.trust_smt` axiom that
 `loom_smt` uses on `unsat`. 64-bit `String.hash` collision risk at
 10⁴ entries is <10⁻⁷.
@@ -341,7 +341,7 @@ register_option pverify.cache : Bool := {
 
 register_option pverify.profile : Bool := {
   defValue := false
-  descr := "If true, `pverify_smt_close` takes an inlined branch that \
+  descr := "If true, `pverify_smt` takes an inlined branch that \
             instruments each stage (cache lookup, prep, lean-auto, \
             solver, assign) with `IO.monoNanosNow` timers and records \
             into `PLean.Verify.Profile.stateRef`. `#pverify` emits a \
@@ -352,7 +352,7 @@ register_option pverify.profile : Bool := {
 
 /-! ## SMT discharge
 
-`pverify_smt_close` consults the obligation cache, then on miss runs
+`pverify_smt` consults the obligation cache, then on miss runs
 `pverify_smt_prep; loom_smt [*]`. Under `set_option pverify.profile
 true`, the work is inlined into PLean (via `pverifySmtCloseProfiled`
 below) so each stage can be timed separately; the default path stays
@@ -476,9 +476,9 @@ def pverifySmtCloseProfiled : TacticM Unit := do
       if let some (hash, text) := cacheHash? then
         liftM (m := IO) (pverifyCacheInsert hash text)
 
-syntax "pverify_smt_close" : tactic
+syntax "pverify_smt" : tactic
 elab_rules : tactic
-  | `(tactic| pverify_smt_close) =>
+  | `(tactic| pverify_smt) =>
       withMainContext do
         let log0 := (← getThe Core.State).messages
         let profile := pverify.profile.get (← getOptions)
@@ -506,7 +506,7 @@ macro_rules
     ))
 
 /-- Walk the goal target and `refine ⟨?_, ?_⟩`-split every top-level
-`∧`, then call `pverify_smt_close` on each resulting subgoal. Sound: a
+`∧`, then call `pverify_smt` on each resulting subgoal. Sound: a
 proof of `A ∧ B` follows from independent proofs of `A` and `B`.
 
 Motivation: large user-invariant bundles (LockServer's 11-conjunct
@@ -517,15 +517,15 @@ discharge keeps the per-query size small and shifts more obligations
 from `unknown` to closed-by-SMT.
 
 Cost: N solver invocations instead of 1 on the bundle. Wired as a
-*fallback* after the whole-bundle `pverify_smt_close` so the common
+*fallback* after the whole-bundle `pverify_smt` so the common
 single-shot case is unaffected.
 
 The 32-iteration cap is a safety bound (real bundles flatten in <16
 levels); a goal with no `∧` head goes straight to the closing tactic
 on the unmodified goal. -/
-syntax "pverify_split_smt_close" : tactic
+syntax "pverify_split_smt" : tactic
 elab_rules : tactic
-  | `(tactic| pverify_split_smt_close) => withMainContext do
+  | `(tactic| pverify_split_smt) => withMainContext do
       let mut iter := 0
       let mut keepGoing := true
       while keepGoing && iter < 32 do
@@ -567,7 +567,7 @@ elab_rules : tactic
       -- already cleared every goal (all-True bundle), skip the SMT call —
       -- `all_goals` on the empty goal list otherwise errors "no goals".
       unless (← getGoals).isEmpty do
-        evalTactic (← `(tactic| all_goals pverify_smt_close))
+        evalTactic (← `(tactic| all_goals pverify_smt))
 
 /-! ## `default_inv` — `DefaultInvariants` discharge
 
@@ -684,73 +684,60 @@ elab_rules : tactic
 
 /-! ## Manual-proof helpers (send-handler clause shapes)
 
-Every send-handler `@[pverifyProof]` in the M3 ports follows the same
-mechanical bundle-split + per-conjunct dispatch. The four helpers below
-name the (clause shape, step footprint) pair so a proof reads as a
-dispatch table.
+These helpers compose into per-conjunct dispatch for `@[pverifyProof]`
+proofs of send-handler obligations. Each helper names a specific
+combination of *which kind of clause* (carry / inflight predicate /
+kind guard) and *what the step did* (received, sent, field-only
+update).
 
 The shape comments use Hoare-triple notation: `{ Pre } step { Post }`,
 where `Pre` lists the hypotheses available, `step` is the primitive
 footprint, and `Post` is the goal the tactic discharges. `s` is the
-pre-state, `s'` the post-state.
+pre-state, `s'` the post-state, `lbl` the dispatched label.
 
-| Helper                              | { Pre }                                                | step                | { Post }                            |
-|-------------------------------------|--------------------------------------------------------|---------------------|-------------------------------------|
-| `pverify_carry_through`             | `{ h : P s' }`                                         | (any)               | `{ P s' }`                          |
-| `pverify_carry_after_recv h`        | `{ h : P s }`                                          | `markReceived lbl`  | `{ P s' }`     (P is recv-monotone) |
-| `pverify_not_inflight h, hisE, isW` | `{ h : ¬ inflight e s, hisE : is_<ev> e }`             | `send <newEv>`      | `{ ¬ inflight e s' }`               |
-| `pverify_inflight_by h using x => …`| `{ h : inflight e s', user discriminator on new lbl }` | `send <newLbl>`     | `{ inflight e s }`                  |
+| Helper                                             | { Pre }                                                | step                               | { Post }                            |
+|----------------------------------------------------|--------------------------------------------------------|------------------------------------|-------------------------------------|
+| `pverify_carry_after_recv h`                       | `{ h : P s }`                                          | `markReceived lbl`                 | `{ P s' }`  (P recv-monotone)       |
+| `pverify_not_inflight h, hisE, isW`                | `{ h : ¬ inflight e s, hisE : is_<ev> e }`             | `send <newEv>`                     | `{ ¬ inflight e s' }`               |
+| `pverify_not_inflight_by <K>, hPre, isW`           | per-conjunct prologue + `hPre`                         | field-only update + `send <newEv>` | `{ ¬ inflight e s' }`               |
+| `pverify_inflight_by h using x => …`               | `{ h : inflight e s' }` + user-supplied discriminator  | `send <newLbl>`                    | `{ inflight e s }`                  |
+| `pverify_machine_has_type <K> on <r>`              | post-state form of the kind predicate visible to lctx  | field-only update                  | `{ is_<K> <r> }` (closes the goal)  |
+| `pverify_machine_has_type hPre : <K> r from hPost` | `{ hPost : is_<K> r post }`                            | field-only update                  | introduces `hPre : is_<K> r s`      |
 
-`pverify_carry_through` and `pverify_carry_after_recv` close goals where
-the post-state clause already follows from a pre-state hypothesis (no
-quantifier instantiation needed). `pverify_not_inflight` and
-`pverify_inflight_by` handle the routing-clause case where the clause's
-`∀ e` quantifier ranges over a buffer that the step grew, so the
-freshly-sent label has to be ruled out before the pre-state hypothesis
-fires on old labels. -/
+The "carry" / "transfer" case — where the post-state predicate already
+holds verbatim from a pre-state hypothesis — is closed by plain
+`assumption`; no named helper for that.
 
-/-- Close a goal whose post-state predicate already holds verbatim from
-some pre-state hypothesis. The clause's content (and the step) need not
-satisfy any structural invariant: this is the "the proof obligation is
-literally something we already know" case.
+`pverify_not_inflight` and `pverify_inflight_by` handle the routing-
+clause case where the clause's `∀ e` quantifier ranges over a buffer
+that the step grew. `pverify_not_inflight_by` composes
+`pverify_machine_has_type` (kind-bridge) with `pverify_not_inflight`
+for the recurring "field-only update + wrong-event routing clause"
+shape. `pverify_machine_has_type` is the underlying primitive: it
+asserts a machine ref's kind by exploiting that the kind triple is
+preserved by any field-only update. -/
 
-```
-  { h : P s' }  (any step)  ⊢  P s'
-```
-
-Tries `assumption`, `solve_by_elim`, then `simp_all` (as a last resort
-to close residual definitional unfolding). Typical use: `else`-branches
-of an `if` in the handler, where the machine update is conditional and
-the inactive branch leaves the entire post-state predicate equal to a
-pre-state conjunct already in scope. -/
-syntax "pverify_carry_through" : tactic
-macro_rules
-  | `(tactic| pverify_carry_through) => `(tactic| (
-      try intros
-      first
-        | assumption
-        | solve_by_elim
-        | (try simp_all
-           first | assumption | solve_by_elim)))
-
-/-- Carry a clause from the pre-state through a step whose only
-footprint is `markReceived lbl`. Such a step grows `received` and
-leaves every other component (machines, `sent`, `actionCount`)
-untouched — so `received↑` only shrinks `inflight`, and any
-`inflight`-monotone predicate (typically `¬ inflight …` or
-`inflight … → P`) transfers verbatim.
+/-- Carry an `inflight`-monotone clause from the pre-state through a
+step whose only footprint is `markReceived lbl`. Such a step grows
+`received` and leaves every other component (machines, `sent`,
+`actionCount`) untouched, so `received` growing only shrinks
+`inflight`; any predicate of the form `¬ inflight …` or
+`inflight … → P` therefore transfers verbatim.
 
 ```
-  { h : P s }   markReceived lbl   ⊢  P s'
+  { hPre : P s }   markReceived lbl   ⊢  P s'
 ```
 
-`P` is supplied as a term applied to the clause's witnesses
-(`hAcq e m hisE hTgt hm`, say). The helper normalises both surface
-shapes the goal may take —
-- `¬(A ∧ B)` (after `inflight` unfolds) and
-- `(A ∧ B) → C` —
-via `not_and` / `and_imp`, then discharges by feeding the user's
-hypothesis through. -/
+**Argument.**
+- `hPre` is a *proof of the pre-state form of the goal*, applied to
+  whatever quantified witnesses the clause introduces. Look for a
+  pre-state hypothesis in the local context whose statement matches
+  the goal modulo replacing `s'` with `s`; if the goal opens
+  `∀ x …, …`, intro those binders first, then supply
+  `<preHyp> x …` as the argument. The helper handles both
+  `¬(A ∧ B)` and `(A ∧ B) → C` surface shapes (via `not_and` /
+  `and_imp` normalisation), so either form for the pre-state
+  hypothesis is accepted. -/
 syntax "pverify_carry_after_recv " term : tactic
 macro_rules
   | `(tactic| pverify_carry_after_recv $hPre:term) => `(tactic| (
@@ -764,33 +751,32 @@ macro_rules
         | exact hpre__rcv hsent hrecv))
 
 /-- Close a routing clause `¬ inflight e s'` (a goal where `e` is a
-universally-quantified label) across a step that sends a fresh label
-with a *different* event tag. The freshly-sent label is excluded by
-event-tag mismatch against the bound `is_<ev> e` hypothesis; old
-labels fall through to the pre-state's `¬ inflight e s`.
+universally-quantified label constrained by `is_<ev> e`) across a
+step that sends a fresh label with a *different* event tag than
+`<ev>`. The freshly-sent label is excluded by event-tag mismatch
+against the bound `is_<ev>` hypothesis; old labels fall through to
+the pre-state's `¬ inflight e s`.
 
 ```
   { hPre : ¬ inflight e s, hisE : is_<ev> e }   send <newEv> ...
   ⊢  ¬ inflight e s'
 ```
-where `<newEv> ≠ <ev>` is captured by passing `is_<wrong>` (the
-predicate the freshly-sent label satisfies but the clause's `e` does
-not).
 
-Arguments:
-1. `hPre` — the pre-state hypothesis already applied to the clause
-   witnesses (e.g. `hAcq e m hisE hTgt hm`).
-2. `hisE` — name of the `is_<ev>` hypothesis in context (typically
-   introduced by the surrounding `intro e m hisE …`).
-3. `is_<wrong>` — the freshly-sent label's event predicate; used to
-   discharge the new-label case by contradiction on `hisE`.
-
-Idiomatic call site:
-```lean
-case aq =>
-  intro e m hisE hTgt hm
-  pverify_not_inflight (hAcq e m hisE hTgt hm), hisE, is_eAquire
-``` -/
+**Arguments.**
+- `hPre` — a *proof of the pre-state form of the goal*, applied to
+  the clause's witnesses. The clause is typically `∀ e m, is_<ev> e
+  → e targets m → is_<K> m s → ¬ inflight e s`, so after intro'ing
+  `e m hisE hTgt hm`, pass `<preHyp> e m hisE hTgt hm` (or whatever
+  shape the pre-state hypothesis takes — both `¬(A ∧ B)` and `(A ∧ B)
+  → C` are accepted).
+- `hisE` — the in-scope hypothesis `is_<ev> e` (introduced by the
+  preceding `intro` for the clause's bound event predicate).
+- `<isWrong>` — the *name* of an `is_<ev'>` predicate (`<ev'> ≠
+  <ev>`) that the freshly-sent label satisfies. Used to derive a
+  contradiction on the new-label branch: `is_<ev'> e` (from the new
+  label) and `is_<ev> e` (from `hisE`) are incompatible. To find:
+  look at what the step's `send` emits; its event predicate is
+  `<isWrong>`. -/
 syntax "pverify_not_inflight " term ", " ident ", " ident : tactic
 macro_rules
   | `(tactic| pverify_not_inflight
@@ -811,33 +797,44 @@ macro_rules
           exact absurd (hpre__nve hOld) (by simp [hrecv.2])))
 
 /-- Transport `inflight e s'` *back* to `inflight e s` across a step
-that performs one fresh `send` (and `markReceived`). The case for the
-freshly-sent label is left to the caller via a user-supplied
-discriminator — used when no automatic event-tag mismatch is
-available (the new label and `e` share an event tag, or the
-discriminator is on the action constructor rather than the tag).
+that performs one fresh `send` (and `markReceived`). Used when the
+clause has the **positive** form `inflight e s → P` and the caller
+needs to discharge the antecedent. Unlike `pverify_not_inflight`, the
+new-label exclusion is *not* automatic — there's no event-tag
+mismatch available because the new label and the clause's `e` may
+share an event tag.
 
 ```
-  { hinfe : inflight e s', user closes "e ≠ newLbl" or its consequence }
-  send <newLbl> ...
-  ⊢  inflight e s
+  { hinfe : inflight e s' }   send <newLbl> ...
+  ⊢  inflight e s   -- (under the user-supplied discriminator)
 ```
 
 ```lean
-pverify_inflight_by $hinfe using $hNewIdent => <tac>
+pverify_inflight_by <hinfe> using <h> => <tac>
 ```
 
-`$hNewIdent` is bound to `e = newLbl` (the new-label witness) inside
-`<tac>`, which must derive `False`. Two recurring shapes:
-- `goto`-branch (different action constructor on the new label):
-  `using h => rw [h] at hacte; simp at hacte` — the new label's
-  action is `goto _`, not `event _`, contradicting the clause's
-  `e.action = .event …`.
-- forwarding-branch (same event tag, but an explicit `hee : e ≠ newLbl`
-  is in context): `using h => exact hee h`.
+**Arguments.**
+- `<hinfe>` — the post-state hypothesis `inflight e s'` available
+  after `apply <preHyp> ... ?_ ...` introduces the
+  `inflight e s` subgoal. Look in the local context for the
+  hypothesis that came from the goal's `inflight e s' → …`
+  antecedent (typically named after the binder, e.g. `hinfe`).
+- `<h>` — *binder name* for the new-label witness `e = <newLbl>`
+  inside `<tac>`. Choose any fresh local name; you'll reference it
+  inside `<tac>` to derive `False`.
+- `<tac>` — a tactic sequence that closes a `False` goal using `<h>`
+  (which says `e` IS the freshly-sent label). The caller knows what's
+  contradictory about that — common shapes:
+  - **`goto`-handler**: the new label's action is `goto _`, not
+    `event _`. If the clause asserts `e.action = .event …` (via a
+    hypothesis like `hacte`), then `rw [<h>] at hacte; simp at hacte`
+    derives the contradiction.
+  - **Forwarding branch**: the proof has already case-split on
+    `e = <newLbl>` via `by_cases hee : …` and the current branch is
+    `¬ (e = <newLbl>)`. Discharge by `exact hee <h>`.
 
-Companion to `pverify_not_inflight` (negative form, automatic
-discriminator) and to `pverify_carry_after_recv` (no fresh send). -/
+Companion to `pverify_not_inflight` (negative form, automatic event-
+tag discriminator) and `pverify_carry_after_recv` (no fresh send). -/
 syntax "pverify_inflight_by " term " using " ident " => " tacticSeq : tactic
 macro_rules
   | `(tactic| pverify_inflight_by $hinfe:term using $h:ident => $ts:tacticSeq) =>
@@ -849,6 +846,113 @@ macro_rules
         rcases hinfe__back.1 with $h:ident | hOld__back
         · exfalso; ($ts:tacticSeq)
         · exact hOld__back))
+
+/-- Assert that a `MachineRef` has a given machine kind.
+
+The canonical kind triple `is_<K>` / `<K>_allocated` / `<K>_kind`
+(emitted by `#gen_module` for every registered machine) is preserved
+by any step that updates a machine *field* — the same triple holds
+before and after, because `kind`, `currentState`, and ref-typed
+fields are not touched. The tactic exploits this with a `simp only`
+unfold and a case-split on `<r> = this.ref`.
+
+Two surface forms:
+
+```lean
+-- Closing form: discharge a goal of shape `is_<K> <r>`. (`<r>` need
+-- not be the goal's literal ref — it's the one the case-split is on.)
+pverify_machine_has_type <K> on <r>
+
+-- Bridging form: introduce `<hPre>` as a new hypothesis with the
+-- pre-state form, using `<hPost>` as the source.
+pverify_machine_has_type <hPre> : <K> <r> from <hPost>
+```
+
+**Arguments.**
+- `<K>` — *name* of a machine kind registered by `#gen_module` in
+  the current `pmodule` (e.g. the name of a `machine M { … }`
+  declaration). The tactic derives the simp-set names
+  `is_<K>` / `<K>_allocated` / `<K>_kind` from `<K>` by string
+  concatenation.
+- `<r>` — the `MachineRef`-typed *term* the kind predicate is about.
+  Typically a binder introduced by the surrounding `intro` (e.g.
+  the `m` in `∀ m, is_<K> m s → …`), or a `<wrap>.ref` projection.
+- `<hPre>` (bridging form only) — *binder name* to introduce. Choose
+  any fresh local name; you'll reference it downstream.
+- `<hPost>` (bridging form only) — *name* of an in-scope hypothesis
+  whose statement is the post-state form `is_<K> <r> s'`. Find it
+  by looking at the clause's `is_<K> <r>` antecedent, which the
+  surrounding `intro` brought in.
+
+**Required ambient context.** Both forms expect a `this` binder in
+scope whose type is the machine wrapper struct (i.e., the handler's
+`this : <M>` parameter); the case-split discriminator is
+`<r> = this.ref`. -/
+syntax "pverify_machine_has_type " ident " on " term : tactic
+syntax "pverify_machine_has_type " ident " : " ident term " from " ident : tactic
+macro_rules
+  | `(tactic| pverify_machine_has_type $kind:ident on $r:term) => do
+      let k := kind.getId.toString
+      let alloc  := mkIdentFrom kind (Name.mkSimple (k ++ "_allocated"))
+      let kindN  := mkIdentFrom kind (Name.mkSimple (k ++ "_kind"))
+      let isKind := mkIdentFrom kind (Name.mkSimple ("is_" ++ k))
+      -- `this` is a user-namespace identifier from the calling proof's
+      -- context; quote it via `mkIdent` so it doesn't acquire hygiene
+      -- marks at macro expansion.
+      let thisId : Ident := mkIdent `this
+      `(tactic| (
+        simp only [$isKind:ident, $alloc:ident, $kindN:ident] at *
+        by_cases hMHT__t : $r = ($thisId).ref <;> simp_all))
+  | `(tactic| pverify_machine_has_type $hPre:ident :
+        $kind:ident $r:term from $hPost:ident) => do
+      let k := kind.getId.toString
+      let alloc  := mkIdentFrom kind (Name.mkSimple (k ++ "_allocated"))
+      let kindN  := mkIdentFrom kind (Name.mkSimple (k ++ "_kind"))
+      let isKind := mkIdentFrom kind (Name.mkSimple ("is_" ++ k))
+      let thisId : Ident := mkIdent `this
+      let sId    : Ident := mkIdent `s
+      `(tactic| (
+        have $hPre:ident : $isKind:ident $r $sId := by
+          simp only [$isKind:ident, $alloc:ident, $kindN:ident] at $hPost:ident ⊢
+          by_cases hMHT__t : $r = ($thisId).ref <;> simp_all))
+
+/-- Composite for the recurring "field-only update + wrong-event
+routing clause" shape. Equivalent to manually writing:
+
+```lean
+  intro e m hisE hTgt hm
+  pverify_machine_has_type hmPre : <K> m from hm
+  pverify_not_inflight (<hPre> e m hisE hTgt hmPre), hisE, <isWrong>
+```
+
+Applies when:
+- the goal is a routing clause `∀ e m, is_<ev> e → e targets m →
+  is_<K> m s → ¬ inflight e s` (so the prologue is `intro e m hisE
+  hTgt hm`),
+- the step performs a *field-only* machine update plus one fresh
+  `send` of an event whose tag differs from `<ev>`.
+
+**Arguments.**
+- `<K>` — *name* of the machine kind in the clause's `is_<K> m s`
+  guard (the one needing to bridge from post-state to pre-state).
+- `<hPre>` — *name* of the in-scope pre-state hypothesis that
+  proves the clause for `s`. The composite applies it to the
+  intro'd witnesses as `<hPre> e m hisE hTgt hmPre`, so it must
+  have the matching `∀ e m, is_<ev> e → … → is_<K> m s → …` shape.
+  Look for the hypothesis named after the clause that was bound by
+  the `obtain ⟨…⟩` flattening earlier in the proof.
+- `<isWrong>` — *name* of the `is_<ev'>` predicate the freshly-sent
+  label satisfies (`<ev'> ≠ <ev>`). See `pverify_not_inflight`'s
+  docstring for how to find it. -/
+syntax "pverify_not_inflight_by " ident ", " ident ", " ident : tactic
+macro_rules
+  | `(tactic| pverify_not_inflight_by $kind:ident, $hPre:ident, $isWrong:ident) =>
+      `(tactic| (
+        intro e__fo m__fo hisE__fo hTgt__fo hm__fo
+        pverify_machine_has_type hmPre__fo : $kind m__fo from hm__fo
+        pverify_not_inflight
+          ($hPre:ident e__fo m__fo hisE__fo hTgt__fo hmPre__fo),
+          hisE__fo, $isWrong:ident))
 
 syntax (name := pverifyTactic) "pverify" : tactic
 syntax (name := pverifyDefaultTactic) "pverify_default" : tactic
@@ -864,8 +968,8 @@ macro_rules
   | `(tactic| pverify_close_chain) => `(tactic| (
       first
         | default_inv
-        | pverify_smt_close
-        | pverify_split_smt_close
+        | pverify_smt
+        | pverify_split_smt
         | pverify_grind))
 
 /-- Internal close-chain used by `pverify_default`: SMT first because
@@ -875,8 +979,8 @@ syntax "pverify_close_chain_smt_first" : tactic
 macro_rules
   | `(tactic| pverify_close_chain_smt_first) => `(tactic| (
       first
-        | pverify_smt_close
-        | pverify_split_smt_close
+        | pverify_smt
+        | pverify_split_smt
         | default_inv
         | pverify_grind))
 

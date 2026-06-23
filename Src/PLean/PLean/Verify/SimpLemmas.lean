@@ -1,5 +1,5 @@
 /-
-PLean.Verify.SimpLemmas — pre-SMT simplification set for `pverify_smt_close`.
+PLean.Verify.SimpLemmas — pre-SMT simplification set for `pverify_smt`.
 
 Houses every lemma / simproc tagged into the `pverifySimp` attribute
 (registered in `Verify/SimpAttrs.lean`). The set turns higher-order
@@ -13,7 +13,7 @@ equalities) into first-order forms `lean-auto` can translate. After
   projections become applied uninterpreted symbols.
 
 Tactics that consume this set live in `Verify/Tactic.lean`
-(`pverify_smt_prep` / `pverify_smt_close`).
+(`pverify_smt_prep` / `pverify_smt`).
 -/
 import Lean
 import Loom.MonadAlgebras.WP.Tactic

@@ -111,35 +111,22 @@ Tests/               -- regressions; Tests.** is globbed
 
 ## Phase plans (READ THESE BEFORE NON-TRIVIAL CHANGES)
 
-The plan docs are the authoritative design record. STATUS.md is a
-living tracker, not a design doc. When PLAN.md disagrees with a phase
-plan, the phase plan wins (PLAN.md predates the implementation).
+The plan docs are the authoritative design record. When PLAN.md
+disagrees with a phase plan, the phase plan wins (PLAN.md predates
+the implementation).
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — collaborator-facing entry
-  point; current phase, W1–W7 workstreams, sprint allocation.
+  point; current phase, workstreams, sprint allocation.
 - [`docs/PLAN.md`](docs/PLAN.md) — overall phase plan.
 - [`docs/PLAN_P0.md`](docs/PLAN_P0.md) — Phase 0 (Bootstrap).
 - [`docs/PLAN_P1.md`](docs/PLAN_P1.md) — Phase 1 (Semantic core).
-- [`docs/PLAN_P2.md`](docs/PLAN_P2.md) — Phase 2 (Registry + surface);
-  decisions D8–D17, risks R8–R14.
+- [`docs/PLAN_P2.md`](docs/PLAN_P2.md) — Phase 2 (Registry + surface).
 - [`docs/PLAN_P3.md`](docs/PLAN_P3.md) — Phase 3 (Verification
-  declarations); decisions D18–D28, risks R15–R21. Names the
-  Tutorial/Advanced benchmarks driving M3 acceptance.
-- [`docs/PLAN_P4.md`](docs/PLAN_P4.md) — Phase 4 (Spec machines);
-  D29–D35 plus the residual P3 follow-ups.
-- [`docs/PLAN_CEX.md`](docs/PLAN_CEX.md) — counter-example rendering
-  (v1 shipped); the v1.5 / v2 follow-ups (CVC5 finite-model-find,
+  declarations). Names the Tutorial/Advanced benchmarks driving M3.
+- [`docs/PLAN_P4.md`](docs/PLAN_P4.md) — Phase 4 (Spec machines).
+- [`docs/PLAN_CEX.md`](docs/PLAN_CEX.md) — counter-example rendering;
+  v1 shipped, v1.5 / v2 follow-ups listed (CVC5 finite-model-find,
   pre/post diff, exact name recovery via lean-auto's `h2lMap`).
-- [`docs/REVIEW_P3.md`](docs/REVIEW_P3.md) — code review against
-  PLAN_P3.
-- [`docs/AUTOMATION.md`](docs/AUTOMATION.md) — how `#pverify` discharges
-  obligations, reusable manual-proof tactics (to avoid LockServer-style
-  boilerplate), and the planned parallel-SMT + proof-caching features.
-- [`docs/ProofSkill.md`](docs/ProofSkill.md) — practical workflow for
-  finding inductive invariants, writing manual proofs, and coping with
-  SMT complexity (higher-order rejection, bundle sizing, `using` chains).
-- [`docs/STATUS.md`](docs/STATUS.md) — phase status, decision log,
-  milestones.
 
 ## Verification benchmarks
 
@@ -190,14 +177,13 @@ before attempting one.
   (which only sees the lctx) can use them. Pinned by
   [`Tests/Syntax/PAxiomProbe.lean`](Tests/Syntax/PAxiomProbe.lean)
   and [`Tests/Syntax/PInstanceExercise.lean`](Tests/Syntax/PInstanceExercise.lean).
-  See [`docs/STATUS.md`](docs/STATUS.md) for the per-session log of
-  framework fixes that got us here.
 
   Reusable manual-proof tactics (`pverify_carry_after_recv`,
   `pverify_not_inflight` / `_by`, `pverify_inflight_by`,
   `pverify_machine_has_type`, plus `pverify_split_smt`) cover the
-  five routing-clause + kind-bridge shapes the M3 proofs ran into; see
-  [`docs/AUTOMATION.md`](docs/AUTOMATION.md). An obligation cache at
+  five routing-clause + kind-bridge shapes the M3 proofs ran into;
+  their docstrings in [`PLean/Verify/Tactic.lean`](PLean/Verify/Tactic.lean)
+  spell out the calling pattern. An obligation cache at
   `<project>/.lake/build/pverify_cache/` hashes `(lctx, goal target)`
   and shaves 11–14% off warm rebuilds; soundness pinned by
   [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
@@ -254,11 +240,10 @@ Theorem safety {
 }
 ```
 
-The 2026-06-10 soundness fix (see STATUS.md decision log) made this
-non-optional; a `Tests/Syntax/SoundnessRegression.lean` test pins
-the shape `def name : GS → Prop`, so don't reintroduce the
-closed-`Prop` form. If the materialiser needs to change, update the
-regression test in lockstep.
+A `Tests/Syntax/SoundnessRegression.lean` test pins the shape
+`def name : GS → Prop`, so don't reintroduce the closed-`Prop` form.
+If the materialiser needs to change, update the regression test in
+lockstep.
 
 ### Field-projection sugar inside `system` blocks
 
@@ -462,8 +447,7 @@ applies, not just what it is.
 - **Don't reference phase numbers or plan-doc section IDs in source
   comments.** Plan docs evolve, source comments don't get re-numbered.
   If a comment needs to justify a design decision, state the reason
-  directly. References to `STATUS.md` are fine when pinning a
-  named-bug-fix, but only when the fix is still load-bearing.
+  directly.
 - **Don't dump deliberation into comments.** No "I tried X but it
   didn't work because …", no decision logs, no exploratory narration.
   Document the *invariant the code maintains*, not the path you took
@@ -505,17 +489,14 @@ applies, not just what it is.
   surface with extra import overhead is worse than the original. Match
   the decomposition to the existing `PLean/{Syntax,Commands,Verify,
   Semantics,Internal}/` axes where it fits.
-- **Read [`docs/ProofSkill.md`](docs/ProofSkill.md) before writing
-  manual proofs.** It covers the one-step-at-a-time workflow, the
-  higher-order-rejection workaround, bundle-sizing for SMT, and the
-  `using`-chain pattern — most novel proofs hit one of these.
 - **Lean on `Verify/Tactic.lean` and extend it.** When a manual proof
   uses the same shape twice — `pverify_carry_after_recv`,
   `pverify_not_inflight[_by]`, `pverify_inflight_by`,
   `pverify_machine_has_type`, `pverify_split_smt` — that's the catalogue
   of "common pattern → atomic tactic". Before duplicating a proof shape,
   check whether a tactic already covers it; if a *new* recurring shape
-  shows up, add it to the catalogue. `docs/AUTOMATION.md` is the index.
+  shows up, add it to the catalogue. The docstrings on each tactic
+  spell out their calling pattern and prerequisites.
 - **Shorten proofs after they close.** Once an obligation is green,
   cross-check it against neighbouring proofs. If the same boilerplate
   appears in 2+ places, factor it into a tactic and replace the

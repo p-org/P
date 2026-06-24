@@ -1,15 +1,9 @@
 /-
-PLean Phase-3 — confirm the SMT preprocessing recipe closes a default
-obligation on the *actual* `GlobalState` shape (no refactor).
-
-This file complements `SmtEncodingProbe.lean`. The probe established
-that destructuring a state-struct hypothesis + intros + bare simp
-lets lean-auto translate `GlobalState`-shaped goals. This file
-confirms `pverify_smt` (which packages the recipe) closes a
-default-invariant obligation on PLean's real `GlobalState` type.
-
-If `pverify_smt` succeeds here, the next step is to wire it
-into `pverify_default` so `#pverify` benefits automatically.
+Pin: `pverify_smt` closes a default-invariant obligation on PLean's
+real `GlobalState` shape. The packaged recipe — destructure the
+state-struct hypothesis, intros, then bare simp — is what lets
+lean-auto translate `GlobalState`-shaped goals; a regression that
+reverts any step in `pverify_smt_prep` is caught here.
 -/
 import PLean
 import PLean.Verify.Tactic

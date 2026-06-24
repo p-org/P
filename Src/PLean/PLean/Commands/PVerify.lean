@@ -81,6 +81,7 @@ def elabPVerify : CommandElab := fun stx => do
     -- when `pverify.profile` is enabled. The reset is a no-op (one
     -- ref assignment) when profiling is off — cheap to always do.
     liftM (PLean.Verify.Profile.reset : IO Unit)
+    liftM (PLean.resetDiagMap : IO Unit)
     -- Open `<Mod>` and `PartialCorrectness.DemonicChoice` so emitted
     -- theorems resolve unqualified module names and so `wpgen` sees
     -- the scoped `MAlgOrdered` instances it needs.

@@ -43,25 +43,56 @@ namespace PLean
 
 /-! ## Diagnostic refs
 
-`#pverify`'s obligation generator wraps each obligation in
-`pverify_log_failure_else_sorry`. When the inner chain fails, the
-SMT solver's diagnostic (counter-example / `unknown` reason) and any
-non-SMT tactic-error text are stashed in these refs before the chain
-falls through to `sorry`. The obligation generator clears them before
-each obligation and reads them after.
+`pverify_log_failure_else_sorry` wraps each obligation's tactic chain.
+On failure it stashes the diagnostic in `pverifyDiagMap` keyed by
+obligation name and closes with `sorry`; the obligation generator
+inspects the elaborated value for `sorry` and reads the diag map to
+classify the outcome.
 
-We need `IO.Ref`s rather than message-log entries because the surrounding
-`first | … | …` ladder rolls back the log on rollback; the refs survive
-tactic-state restoration. -/
+Keying by name lets concurrent obligation bodies (under `Elab.async =
+true`) write to disjoint slots. The key is supplied via the
+`pverify.obligationKey` option, set per-emission with
+`set_option pverify.obligationKey "…" in theorem …`. -/
 
-initialize pverifySmtDiagRef : IO.Ref (Option String) ← IO.mkRef none
-initialize pverifyTacDiagRef : IO.Ref (Option String) ← IO.mkRef none
+register_option pverify.obligationKey : String := {
+  defValue := ""
+  descr := "Per-obligation diagnostic key. The obligation generator \
+            sets it via `set_option … in theorem …` at each emission \
+            site so the tactic stashes its failure diagnostic under \
+            that key. Empty falls back to a process-global default \
+            cell — harmless when only one obligation is in flight."
+}
+
+/-- Diagnostic for one obligation. SMT diagnostics (counter-example
+/ `unknown` reason) live in `smt`; non-SMT tactic errors (lean-auto
+rejection, no-goals etc.) live in `tac`. -/
+structure ObligationDiag where
+  smt : Option String := none
+  tac : Option String := none
+  deriving Inhabited
+
+initialize pverifyDiagMap : IO.Ref (Std.HashMap String ObligationDiag) ←
+  IO.mkRef ∅
+
+def resetDiagMap : IO Unit :=
+  pverifyDiagMap.set ∅
+
+def getDiag (key : String) : IO ObligationDiag := do
+  return ((← pverifyDiagMap.get).get? key).getD {}
+
+def modifyDiag (key : String) (f : ObligationDiag → ObligationDiag) :
+    IO Unit := do
+  pverifyDiagMap.modify fun m =>
+    let cur := (m.get? key).getD {}
+    m.insert key (f cur)
+
+def currentObligationKey : Lean.Elab.Tactic.TacticM String := do
+  return pverify.obligationKey.get (← Lean.getOptions)
 
 /-- Run a tactic chain; on throw or unclosed goals, stash the
-diagnostic in `pverifyTacDiagRef` and close with `sorry` so the
-enclosing `theorem ... := by ...` still elaborates. The post-elab
-`info.value.hasSorry` check tells the reporting layer which
-obligations failed; the ref carries the WHY. -/
+diagnostic in `pverifyDiagMap` under the current obligation key and
+close with `sorry` so the enclosing `theorem … := by …` still
+elaborates. -/
 syntax "pverify_log_failure_else_sorry " tacticSeq : tactic
 elab_rules : tactic
   | `(tactic| pverify_log_failure_else_sorry $ts:tacticSeq) =>
@@ -78,7 +109,8 @@ elab_rules : tactic
         match diagnostic with
         | some msg =>
           setGoals savedGoals
-          pverifyTacDiagRef.set (some msg)
+          let key ← currentObligationKey
+          liftM (modifyDiag key fun d => { d with tac := some msg })
           evalTactic (← `(tactic| sorry))
         | none => pure ()
 
@@ -393,12 +425,13 @@ def pverifySmtCloseDefault : TacticM Unit := do
 
 /-- Instrumented path: inlines `loom_smt`'s `prepareLeanAutoQuery +
 querySolver + trust_smt.assign` so we can time each segment separately.
-Records into `PLean.Verify.Profile.currentRowRef`. NOT bit-identical
-to upstream `loom_smt` (no `Goal proven by …` log, no
-`retryOnUnknown` cross-solver fallback by default), so we keep it
-behind `set_option pverify.profile true`. -/
+Records into `PLean.Verify.Profile.inFlightRowsRef` under this
+obligation's key. NOT bit-identical to upstream `loom_smt` (no `Goal
+proven by …` log, no `retryOnUnknown` cross-solver fallback by
+default), so we keep it behind `set_option pverify.profile true`. -/
 def pverifySmtCloseProfiled : TacticM Unit := do
   let useCache := pverify.cache.get (← getOptions)
+  let key ← currentObligationKey
   let mv ← getMainGoal
   let goalType ← mv.getType
   let cacheHash? : Option (String × String) ←
@@ -406,11 +439,11 @@ def pverifySmtCloseProfiled : TacticM Unit := do
       try
         let (text, ppNs) ← liftM (m := MetaM)
           (PLean.Verify.Profile.timeMetaNanos (pverifyGoalToCacheText mv))
-        liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify
+        liftM (m := IO) (PLean.Verify.Profile.modifyRow key
           (fun r => { r with cachePp := r.cachePp + ppNs }))
         let (h, hashNs) ← liftM (m := IO)
           (PLean.Verify.Profile.timeNanos (pure (pverifyHash text)))
-        liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify
+        liftM (m := IO) (PLean.Verify.Profile.modifyRow key
           (fun r => { r with cacheHash := r.cacheHash + hashNs }))
         pure (some (h, text))
       catch _ => pure none
@@ -420,13 +453,13 @@ def pverifySmtCloseProfiled : TacticM Unit := do
     | some (hash, _) =>
       let (hit, fsNs) ← liftM (m := IO)
         (PLean.Verify.Profile.timeNanos (pverifyCacheHas hash))
-      liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify
+      liftM (m := IO) (PLean.Verify.Profile.modifyRow key
         (fun r => { r with cacheFs := r.cacheFs + fsNs }))
       if hit then
         let (_, assignNs) ← liftM (m := MetaM)
           (PLean.Verify.Profile.timeMetaNanos
             (mv.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalType)))
-        liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+        liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
           { r with cached := true, smtAssign := r.smtAssign + assignNs }))
         pure true
       else pure false
@@ -434,7 +467,7 @@ def pverifySmtCloseProfiled : TacticM Unit := do
   unless cacheHit do
     let (_, prepNs) ← PLean.Verify.Profile.timeTacticNanos
       (evalTactic (← `(tactic| pverify_smt_prep)))
-    liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+    liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
       { r with smtPrep := r.smtPrep + prepNs }))
     -- Re-enter `withMainContext` so `prepareLeanAutoQuery` sees the
     -- post-prep local context. Without this, lean-auto's
@@ -447,14 +480,14 @@ def pverifySmtCloseProfiled : TacticM Unit := do
     let hints : TSyntax `Auto.hints ← `(Auto.hints| [*])
     let (cmdString, autoNs) ← PLean.Verify.Profile.timeTacticNanos
       (Loom.SMT.prepareLeanAutoQuery mv' hints)
-    liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+    liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
       { r with smtAuto := r.smtAuto + autoNs }))
     let ((res, solverUsed), solverNs) ← liftM (m := MetaM)
       (PLean.Verify.Profile.timeMetaNanos
         (Loom.SMT.querySolver cmdString withTimeout
           (forceSolver := Loom.SMT.specifiedSmtSolver (loom.solver.get opts))
           (retryOnUnknown := loom.solver.smt.retryOnUnknown.get opts)))
-    liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+    liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
       { r with smtSolver := r.smtSolver + solverNs }))
     match res with
     | .Sat none       => throwError s!"{Loom.SMT.satGoalStr solverUsed}"
@@ -471,7 +504,7 @@ def pverifySmtCloseProfiled : TacticM Unit := do
       let (_, assignNs) ← liftM (m := MetaM)
         (PLean.Verify.Profile.timeMetaNanos
           (mvPost.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalTypePost)))
-      liftM (m := IO) (PLean.Verify.Profile.currentRowRef.modify (fun r =>
+      liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
         { r with smtAssign := r.smtAssign + assignNs }))
       if let some (hash, text) := cacheHash? then
         liftM (m := IO) (pverifyCacheInsert hash text)
@@ -492,7 +525,8 @@ elab_rules : tactic
             { st with messages := kept.foldl (·.add ·) log0 }
         catch e =>
           let msg ← e.toMessageData.toString
-          pverifySmtDiagRef.set (some msg)
+          let key ← currentObligationKey
+          liftM (modifyDiag key fun d => { d with smt := some msg })
           throw e
 
 /-- Arithmetic / boolean fallback for default-invariant goals SMT

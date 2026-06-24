@@ -2,31 +2,19 @@
 PLean.Verify.Obligation — synthesise per-handler Hoare-triple
 obligations from registry data.
 
-For each `Proof { prove X using Y, …; }` directive in the registry,
-walk every (machine, state, handler) triple and emit one Hoare-triple
-theorem per (handler, target lemma) pair: `triple <pre> <handler>
-<post>`. The precondition conjoins target + using-lemmas + the three
-default invariants + the dispatcher contract; the post drops the
-using-lemmas. `prove default;` swaps the bundle for
-`DefaultInvariants` and the discharger for `pverify_default`.
-
-`InitConditions` does NOT appear in any per-handler triple — it would
-be unsound to assume mid-trace, and per-handler obligations are
-inductive-step checks (`Inv ∧ Step ⇒ Inv`). The initiation leg
-(`InitConditions ⇒ Inv`) is discharged by `emitBaseCaseObligation`:
-one VC per (directive, individual-invariant-in-target-lemma) pair, so
-a failed base case names exactly which invariant doesn't follow from
-init. Premises don't get a base-case VC from a directive that uses
-them — only goals do — matching PVerifier's behaviour where only
-`cmd.Goals` get a UCLID `invariant` declaration (whose base case
-UCLID checks automatically).
-
-`synthesise` consults the `pverifyProofExt` registry first: a theorem
-tagged `@[pverifyProof]` under the obligation's name skips auto
-emission. Otherwise the emitted theorem ends in `by first | <chain> |
-sorry`; a `sorry` in the elaborated value flags a failed obligation.
-After user directives, a synthetic `block_auto_default` pass emits a
+For each `Proof { prove X using Y, …; }` directive, walk every
+(machine, state, handler) triple and emit one Hoare-triple theorem
+per (handler, target lemma) pair. `prove default;` swaps the bundle
+for `DefaultInvariants` and the discharger for `pverify_default`.
+The inductive-step VC carries the user invariant + dispatcher
+contract in its precondition; the initiation leg
+(`InitConditions ⇒ Inv`) is a separate base-case VC per individual
+invariant. After user directives a `block_auto_default` pass emits a
 default obligation for every (M, S, ev) not already covered.
+
+A theorem registered under `@[pverifyProof]` is discharged via
+`exact @<userThm>` inside a `_check` shim that re-builds the expected
+type, so a wrong-type or sorried user proof is reported as failed.
 -/
 import Lean
 import PLean.Internal.Decls
@@ -150,17 +138,46 @@ def isFailure : ObligationOutcome → Bool
 
 end ObligationOutcome
 
-/-- Build the per-handler theorem and elaborate it. The proof tactic
-is `pverify` for non-default lemmas, `pverify_default` for
-`prove default`. `varNames` are the owning machine's `var` accessor
-names (added to the `unfold` chain so `wpgen` can step through state
-reads/writes); `lemmaInvNames` are the target lemma's per-invariant
-defs (similarly unfolded); `machineNames` are every machine kind in the
-pmodule (used to unfold `<M>_allocated` / `<M>_kind` so kind-tag checks
-in user invariants reduce to plain arithmetic the SMT solver can see).
-`is_<ev>` predicates are intentionally NOT added to the unfold chain —
-their `match` bodies trip lean-auto's monomorphizer; leaving them folded
-lets SMT treat them as uninterpreted predicates. -/
+/-- Classify a previously-emitted obligation by reading the env. Looks
+up `<thmName>` (or `<thmName>_check` for a manual proof) and inspects
+its value for `sorry`. Under `Elab.async = true` the env-lookup blocks
+on the theorem's body-elab Task, so calling this AFTER all emissions
+are queued lets the bodies elaborate concurrently. `manualProof` must
+match the value used at emission time. -/
+private def classifyOneObligation (fullThmName : Name) (manualProof : Bool) :
+    CommandElabM ObligationOutcome := do
+  let checkName : Name :=
+    if manualProof then fullThmName.appendAfter "_check" else fullThmName
+  let env ← getEnv
+  match env.find? checkName with
+  | some (.thmInfo info) =>
+    if info.value.hasSorry then return .unfinished
+    if manualProof then
+      -- `_check`'s value is `@<userThm> args`, so `hasSorry` on it doesn't
+      -- see through to the user theorem's body. Inspect the user theorem
+      -- directly so a sorried `@[pverifyProof]` is reported as unfinished.
+      match env.find? fullThmName with
+      | some (.thmInfo userInfo) =>
+        if userInfo.value.hasSorry then return .unfinished
+      | _ => return .unfinished
+      logInfo m!"obligation {fullThmName} discharged by `@[pverifyProof]` (type checked)"
+      return .userProved
+    return .provedBySmt
+  | _ => return .unfinished
+
+/-- Emit the per-handler theorem. Returns `true` if the obligation has
+a `@[pverifyProof]`-supplied manual proof (passed to
+`classifyOneObligation` later). Under `Elab.async = true` `elabCommand`
+returns once the signature is committed; the body — which is where SMT
+runs — elaborates on a worker thread. Classification is deferred so
+bodies overlap.
+
+The proof tactic is `pverify` (or `pverify_default` for `prove default`).
+`varNames`, `lemmaInvNames`, and `machineNames` feed the `unfold` chain
+so `wpgen` steps through state reads/writes, invariant bundles unfold,
+and kind-tag checks reduce. `is_<ev>` predicates are intentionally left
+folded — their `match` bodies trip lean-auto's monomorphizer, but as
+opaque predicates they translate fine. -/
 def emitOneObligation (modName : Name) (mname sname evname : Name)
     (target : Name) (isDefault : Bool) (usingNames : Array Name)
     (hasPayload : Bool) (varNames : Array Name)
@@ -169,18 +186,15 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     (eventNames : Array Name)
     (axiomNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
-    CommandElabM ObligationOutcome := do
+    CommandElabM Bool := do
   let thmName : Name :=
     obligationName mname sname evname target isDefault usingNames proofTag proofIdx
   let fullThmName : Name := modName ++ thmName
-  -- A `@[pverifyProof]`-registered theorem supplies the proof, but we do
-  -- NOT trust it on name alone: we still build the obligation's exact
-  -- expected type below and discharge it by `exact @<userThm>`. If the
-  -- user's theorem has the wrong type, that `exact` fails and the
-  -- obligation is reported as failed — closing the soundness hole where a
-  -- name-matching theorem of an unrelated (e.g. trivially-`True`) type was
-  -- accepted verbatim. The checking theorem is emitted under a fresh
-  -- `<thmName>_check` name so it can't shadow the user's theorem.
+  -- A `@[pverifyProof]`-registered theorem isn't trusted on name alone:
+  -- we build the obligation's exact expected type and discharge it via
+  -- `exact @<userThm>` inside a `<thmName>_check` shim. A wrong-type
+  -- user theorem fails the `exact` and the obligation is reported as
+  -- failed.
   let manualProof ← liftCoreM (hasPVerifyProof fullThmName)
   let thmId : Ident :=
     if manualProof then mkIdent (thmName.appendAfter "_check") else mkIdent thmName
@@ -196,50 +210,28 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let usingPreds ← usingPredIdents usingNames
     let payloadTy := mkIdent (evname.appendAfter "_payload")
     let prpAbbrev : TSyntax `term := ← `(PProp $idSig)
-    -- The three sanity invariants (`UniqueActions` / `IncreasingCount` /
-    -- `ReceivedSubsetSent`) are a *well-formedness* check, proven once by
-    -- the `prove default` obligations — they do NOT participate in user
-    -- invariant obligations, neither assumed in the pre nor checked in the
-    -- post. Two reasons:
-    --   * Soundness is unaffected: omitting them from the pre only removes
-    --     hypotheses (the obligation gets strictly harder, never unsound),
-    --     and they're a separate inductive bundle anyway.
-    --   * They carry `actionCount` linear-integer arithmetic (from `≺` /
-    --     `IncreasingCount`). Assuming them drags every obligation into the
-    --     quantified UF+LIA fragment, where SMT returns `unknown` instead of
-    --     a counter-example to induction. Dropping them keeps user-invariant
-    --     obligations in a fragment the solver decides.
-    -- For `prove default;`, `lemmaPred` *is* `DefaultInvariants`, so the
-    -- defaults are still assumed-and-checked there (and they are mutually
-    -- inductive, so they need each other in the pre — supplied via
-    -- `lemmaPred`). A user invariant that genuinely needs the buffer
+    -- `DefaultInvariants` (UA/IC/RS) is a well-formedness bundle,
+    -- proven once by `prove default` obligations and not assumed in
+    -- user-invariant obligations. Keeping it out of the user-invariant
+    -- pre keeps those goals out of quantified UF+LIA, where SMT
+    -- returns `unknown`. A user invariant that needs the buffer
     -- ordering should name it via an explicit `using` premise.
     let sId : TSyntax `term := ← `(s)
     let basePre ← do
       let preds : Array (TSyntax `term) :=
         #[lemmaPred] ++ usingPreds
       buildConjAt preds sId
-    -- Dispatcher contract: existential witness that this handler
-    -- only fires when an inflight label of the right shape exists.
-    -- Handlers don't re-establish it on exit, so it lives only in the
-    -- precondition.
+    -- Dispatcher contract conjuncts: an inflight `lbl` of the right
+    -- shape exists. The contract lives only in the precondition (the
+    -- handler doesn't re-establish it).
     --
-    -- `is_<M> this.ref s` pins the handler's own machine to its kind.
-    -- PVerifier gets this structurally from `requires MachineStateAdtInS`
-    -- (its typed per-machine state arrays make "in state <M>.<S>" imply
-    -- "is an <M>"); PLean's flat `MachineRef`/`MachineState` encoding has
-    -- independent `kind` and `currentState` fields, so without this guard
-    -- the solver may fabricate a `this` whose `currentState` is the right
-    -- state but whose `kind` is some other machine's — making an honest
-    -- obligation spuriously disprovable. Same reasoning as the
-    -- `<M>_allocated` state/kind coupling.
-    -- Dispatcher contract. `lbl` is a *universal* theorem binder (idLbl)
-    -- rather than an existential: PVerifier models the handler as a
-    -- procedure taking the dispatched `label` and `requires`-ing the
-    -- in-flight / target / kind / state / event-tag conditions
-    -- ([Uclid5CodeGenerator.cs] GenerateEventHandler). Making `lbl` a
-    -- binder lets the executed program mark it received before the body
-    -- runs (see `handlerTerm`), which the existential form could not.
+    -- `is_<M> this.ref s` pins `this` to its kind. Without this guard
+    -- the solver could fabricate a `this` whose `currentState` is the
+    -- right state but whose `kind` is some other machine's — flat
+    -- `MachineState` doesn't enforce the coupling structurally.
+    --
+    -- `lbl` is a universal binder rather than an existential so the
+    -- executed program (`markReceived lbl >>= handler`) can refer to it.
     let isThisKind : Ident := mkIdent (Name.mkSimple ("is_" ++ mname.toString))
     let dispatcherClause ← do
       if hasPayload then
@@ -256,18 +248,15 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
           ($idLbl).action = .event $evCtor)
     let preTerm : TSyntax `term ← `(fun (s : PLean.GlobalState $idSig) =>
                                       $basePre ∧ $dispatcherClause)
-    -- Post checks the target lemma only. For `prove default` obligations
-    -- `lemmaPred` *is* `DefaultInvariants` (so the defaults are checked);
-    -- for user invariants the defaults are assumption-only (in the pre),
-    -- never re-proven here.
+    -- Post checks `lemmaPred` only. For `prove default` that's
+    -- `DefaultInvariants`; for user invariants the defaults stay
+    -- assumption-only (in the pre).
     let postBody ← buildConjAt #[lemmaPred] sId
     let postTerm : TSyntax `term ← `(fun (_ : Unit) (s : PLean.GlobalState $idSig) =>
                                        $postBody)
-    -- Executed program: mark the dispatched label received (PVerifier's
-    -- `received = received[label -> true]` at handler entry), THEN run the
-    -- handler. Without the prologue the consumed event stays in-flight in
-    -- the post-state, spuriously violating any "in-flight <ev> ⇒ …"
-    -- invariant (e.g. DistributedLock's `no_lock_while_transfer`).
+    -- Mark `lbl` received before running the handler — without the
+    -- prologue the consumed event would stay in-flight in the
+    -- post-state and break any "in-flight <ev> ⇒ …" invariant.
     let handlerCall : TSyntax `term ←
       if hasPayload then `($handlerId $idThis $idParam)
       else                `($handlerId $idThis)
@@ -284,36 +273,25 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
       accessorUnfolds := accessorUnfolds.push
         (mkIdent (mname ++ (v.appendAfter "_set")))
     -- Per-invariant unfolds: after the bundle `safety := fun s => i s ∧ …`
-    -- expands, the conjuncts `i s` are still opaque applications; we
-    -- unfold each `i` so SMT sees the user's actual proposition.
+    -- expands, each `i s` is still an opaque application; unfold every
+    -- `i` so SMT sees the user's actual proposition.
     let usingNamesAll : Array Ident := (usingNames ++ lemmaInvNames).map mkIdent
     let usingUnfolds : Array Ident := usingNamesAll
-    -- Per-machine kind helpers: user invariants frequently reference
-    -- `<M>_allocated m s` (or the `is_<M>` alias the materialiser emits)
-    -- and the `<M>_kind` numeric tag. Unfolding all three exposes
-    -- `(s.machines m).kind` as an applied projection — SMT-translatable
-    -- as a uninterpreted function symbol — and reduces kind equality to
-    -- a Nat literal comparison.
-    --
-    -- Order matters: `is_<M>` MUST be unfolded before `<M>_allocated`,
-    -- because `is_<M>` is `@[inline] def is_<M> m := <M>_allocated m` —
-    -- when the goal carries `is_<M>` calls, attempting to unfold
-    -- `<M>_allocated` first finds nothing to unfold (the constant
-    -- doesn't appear yet). Once `is_<M>` is unfolded, `<M>_allocated`
-    -- shows up and its unfold can fire.
+    -- Per-machine kind helpers reduce `is_<M>` / `<M>_allocated` /
+    -- `<M>_kind` to plain (Nat) comparisons on `(s.machines m).kind`.
+    -- Order matters: `is_<M> := <M>_allocated …`, so `is_<M>` must be
+    -- unfolded first (otherwise `<M>_allocated` is invisible).
     let mut kindUnfolds : Array Ident := #[]
     for m in machineNames do
       kindUnfolds := kindUnfolds.push
         (mkIdent (Name.mkSimple ("is_" ++ m.toString)))
       kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_allocated"))
       kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_kind"))
-    -- `<ev>_payload_of_spec` facts: one per payload-bearing event. Brought
-    -- into context (via `have`) so `loom_smt [*]` can compute the opaque
-    -- (irreducible) extractor's value on a freshly-sent label — needed by
-    -- send-handlers preserving a routing invariant `∀ e, is_<ev> e → …
-    -- (<ev>_payload_of e) …` over the new label. The extractor is sealed
-    -- `@[irreducible]` by `#gen_module`, so SMT translates it as an
-    -- uninterpreted symbol; the `_spec` fact is its defining equation.
+    -- Bring each event's `<ev>_payload_of_spec` into the local context.
+    -- The extractor is sealed `@[irreducible]` so SMT treats it as an
+    -- uninterpreted symbol; the `_spec` fact is its defining equation
+    -- and lets a routing invariant `∀ e, is_<ev> e → … (<ev>_payload_of
+    -- e) …` close over a freshly-sent label.
     let mut specHaves : Array (TSyntax `tactic) := #[]
     for en in eventNames do
       let specId : Ident :=
@@ -321,13 +299,10 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
       let hypId : Ident :=
         mkIdent (Name.mkSimple ("hspec_" ++ en.toString))
       specHaves := specHaves.push (← `(tactic| have $hypId:ident := $specId:ident))
-    -- `paxiom` facts: one `have` per pmodule-declared `paxiom`. PLean
-    -- materialises `paxiom <id> : <prop>` as a top-level Lean `axiom`,
-    -- but `loom_smt [*]` / lean-auto's `collectAllLemmas` only sees the
-    -- *local context*, so the axiom otherwise never reaches the solver.
-    -- Bringing each axiom in by name gives SMT access to facts about
-    -- opaque `function`s (e.g. RingLeader's totality / antisymmetry of
-    -- `le`) without restating them as init-holds + invariants.
+    -- One `have` per pmodule-declared `paxiom`. `loom_smt [*]` reads
+    -- only the local context, so top-level Lean `axiom`s (produced by
+    -- `paxiom` / `pinstance`-field synthesis) need to be lifted in
+    -- explicitly.
     let mut axiomHaves : Array (TSyntax `tactic) := #[]
     for an in axiomNames do
       let axId : Ident := mkIdent an
@@ -338,22 +313,17 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let tail : TSyntax `tactic ←
       if isDefault then `(tactic| pverify_default)
       else                `(tactic| pverify)
-    -- Build the proof tactic sequence programmatically. WHY this order:
-    -- handler → target lemma → using-lemmas → per-machine kind helpers
-    -- → accessors → PLean primitives → final tactic. Accessors must
-    -- precede primitives because reversing the order trips `wpgen` into
-    -- `WPGen.default` (see PVerifyConditional regression). The
-    -- `isDefault` branch skips the lemma unfold — `lemmaPred` is
-    -- `DefaultInvariants` and `target` is the literal `default`, which
-    -- the `default_inv` tactic unfolds itself.
+    -- Unfold order: handler → target lemma → using-lemmas → kind
+    -- helpers → accessors → PLean primitives → closing tactic.
+    -- Accessors must precede primitives, otherwise reversing the
+    -- order trips `wpgen` into `WPGen.default`.
     let mut steps : Array (TSyntax `tactic) := #[]
     steps := steps.push (← `(tactic| unfold $handlerUnfold:ident))
     unless isDefault do
       steps := steps.push (← `(tactic| try unfold $lemmaUnfold:ident))
-    -- WHY per-name `try unfold` rather than one batched `try unfold a b c …`:
-    -- `unfold` fails atomically if ANY listed name is missing from the goal.
-    -- Wrapping the batch in `try` would then drop EVERY unfold in that batch.
-    -- Emitting one `try unfold` per name lets each succeed or fail independently.
+    -- Per-name `try unfold` rather than a batched form: `unfold` fails
+    -- atomically if any listed name is missing, and wrapping the
+    -- batch in `try` would drop every unfold in it.
     for u in usingUnfolds do
       steps := steps.push (← `(tactic| try unfold $u:ident))
     for u in kindUnfolds do
@@ -363,29 +333,19 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     steps := steps.push (← `(tactic|
       try unfold PLean.send PLean.goto PLean.raise
                  PLean.markReceived PLean.announce))
-    -- Bring each payload event's `_spec` characterisation into context
-    -- before the closing tactic (see `specHaves` above).
     for h in specHaves do
       steps := steps.push h
-    -- Bring each `paxiom`'s statement into context (see `axiomHaves`).
     for h in axiomHaves do
       steps := steps.push h
     steps := steps.push tail
     let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq| $[$steps]*)
-    -- Wrap in `pverify_log_failure_else_sorry` so a tactic failure
-    -- (translator rejection, SMT `sat`/`unknown`, etc.) is logged as
-    -- a recoverable error before elaboration falls through to sorry.
-    -- The post-elaboration scan in `processOne` reads that error from
-    -- the message-log slice to classify the failure (counter-example
-    -- vs. unknown vs. tactic error). Without the wrapper, an enclosing
-    -- `first | … | sorry` would discard the SMT diagnostic entirely.
-    -- Proof body: for an auto obligation, the `pverify` tactic chain
-    -- (wrapped so SMT/tactic failures are logged then `sorry`-ed). For a
-    -- manual obligation, discharge the *expected* type by delegating to
-    -- the user's `@[pverifyProof]` theorem — so the elaborator checks the
-    -- user proved exactly this proposition; a wrong-type theorem makes the
-    -- `exact` fail (reported as a failed obligation, not silently trusted).
+    -- For an auto obligation the body is the `pverify` chain; for a
+    -- manual obligation the body delegates to the user's
+    -- `@[pverifyProof]` theorem via `exact @<userThm>`. Wrapping in
+    -- `pverify_log_failure_else_sorry` stashes any tactic failure in
+    -- the diag map and closes with `sorry` so elaboration of the
+    -- enclosing theorem still succeeds.
     let bodyTac : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       if manualProof then
         if hasPayload then `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis $idParam $idLbl)
@@ -394,46 +354,26 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     let wrappedProof : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq|
           pverify_log_failure_else_sorry $bodyTac)
+    -- `pverify.obligationKey` is captured by Lean's `wrapAsync` and
+    -- propagated into the body-elab worker, so the per-obligation
+    -- tactic finds its own slot in the diag map.
+    let keyLit := Syntax.mkStrLit fullThmName.toString
     if hasPayload then
       `(set_option linter.unusedTactic false in
+        set_option pverify.obligationKey $keyLit in
         theorem $thmId
             ($idThis : $mIdent) ($idParam : $payloadTy) ($idLbl : ($idSig).Label) :
             triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
           $wrappedProof)
     else
       `(set_option linter.unusedTactic false in
+        set_option pverify.obligationKey $keyLit in
         theorem $thmId
             ($idThis : $mIdent) ($idLbl : ($idSig).Label) :
             triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
           $wrappedProof)
   elabCommand stx
-  -- A `sorryAx` in the elaborated value means the proof fell through to
-  -- the `pverify_log_failure_else_sorry` fallback (tactic chain failed, or
-  -- — for a manual proof — the user's theorem had the wrong type so the
-  -- delegating `exact` failed). This catches both synchronous and
-  -- async-snapshot errors. The check theorem is `<thmName>_check` when a
-  -- manual proof was delegated, else `<thmName>` itself.
-  let checkName : Name :=
-    if manualProof then fullThmName.appendAfter "_check" else fullThmName
-  let env ← getEnv
-  match env.find? checkName with
-  | some (.thmInfo info) =>
-    if info.value.hasSorry then return .unfinished
-    if manualProof then
-      -- The `_check` value is `@<userThm> args` — a bare const reference,
-      -- so `hasSorry` on it never sees through to the user theorem's body.
-      -- A `@[pverifyProof] … := by sorry` would therefore be reported as a
-      -- clean pass. Inspect the USER theorem's own value too; a `sorry`
-      -- (or any axiom-backed hole) there means the obligation is NOT
-      -- discharged. (`exact @userThm` already type-checks the statement.)
-      match env.find? fullThmName with
-      | some (.thmInfo userInfo) =>
-        if userInfo.value.hasSorry then return .unfinished
-      | _ => return .unfinished
-      logInfo m!"obligation {fullThmName} discharged by `@[pverifyProof]` (type checked)"
-      return .userProved
-    return .provedBySmt
-  | _ => return .unfinished
+  return manualProof
 
 /-! ## Base-case obligation emission
 
@@ -461,31 +401,27 @@ def baseCaseName (invName : Name) (proofTag : Name) (proofIdx : Nat) : Name :=
     else proofTag.toString
   Name.mkSimple ("base_" ++ proofTagStr ++ "_" ++ invName.toString)
 
-/-- Emit one base-case obligation:
-`∀ s : GlobalState Sig, InitConditions s → <invName> s`. The kind-helper
-unfolds (`<M>_allocated`, `is_<M>`, `<M>_kind`) and the invariant
-unfold are added to the proof so SMT sees the user's actual
-proposition. `InitConditions` is unfolded too — its body is a closed
-conjunction of `init-holds` clauses. -/
+/-- Emit one base-case obligation
+`∀ s : GlobalState Sig, InitConditions s → <invName> s`. Unfolds
+`InitConditions`, the invariant, and the kind helpers so SMT sees
+the user's actual proposition. Returns `true` for a
+`@[pverifyProof]`-supplied proof. Classification is deferred to
+`classifyOneObligation` (same parallelism story as
+`emitOneObligation`). -/
 def emitBaseCaseObligation (modName : Name) (invName : Name)
     (isDefaultInv : Bool) (machineNames : Array Name)
     (eventNames : Array Name)
     (axiomNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
-    CommandElabM ObligationOutcome := do
+    CommandElabM Bool := do
   let thmName : Name := baseCaseName invName proofTag proofIdx
   let fullThmName : Name := modName ++ thmName
-  -- See `emitOneObligation`: a `@[pverifyProof]` theorem is delegated to
-  -- via `exact` against the freshly-built expected type, never trusted on
-  -- name alone.
   let manualProof ← liftCoreM (hasPVerifyProof fullThmName)
   let thmId : Ident :=
     if manualProof then mkIdent (thmName.appendAfter "_check") else mkIdent thmName
   let userThmId : Ident := mkIdent fullThmName
-  -- Unhygienic `s` binder: bare `s` inside a macro quotation acquires
-  -- a macro scope and renders as `s✝` in the pretty-printed signature,
-  -- breaking the copy-paste manual-proof skeleton. Same convention as
-  -- `idThis` / `idParam` in the per-handler emitter.
+  -- Unhygienic `s` binder so the pretty-printed signature shows `s`
+  -- (not `s✝`) in the copy-paste manual-proof skeleton.
   let idS : Ident := mkIdent `s
   let stx ← liftMacroM do
     let initsId : Ident := mkIdent `InitConditions
@@ -496,9 +432,8 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
     let goalType : TSyntax `term ←
       `(∀ $idS : PLean.GlobalState $idSig,
           ($initsId : $prpAbbrev) $idS → ($invIdent) $idS)
-    -- Unfold chain: `InitConditions`, the invariant, kind helpers,
-    -- then close with `pverify_smt` (the base case never
-    -- involves `wpgen` or handler unfolds).
+    -- Unfold chain (no `wpgen` needed for a base case): inits,
+    -- invariant, kind helpers, then close via SMT.
     let mut steps : Array (TSyntax `tactic) := #[]
     steps := steps.push (← `(tactic| try unfold $initsId:ident))
     steps := steps.push (← `(tactic| try unfold $invIdent:ident))
@@ -509,16 +444,13 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
       steps := steps.push (← `(tactic| try unfold $isPred:ident))
       steps := steps.push (← `(tactic| try unfold $alloc:ident))
       steps := steps.push (← `(tactic| try unfold $kindLit:ident))
-    let _ := eventNames -- bridging lemmas not injected (see file header)
+    let _ := eventNames
     if isDefaultInv then
       steps := steps.push (← `(tactic|
         try unfold PLean.UniqueActions PLean.IncreasingCount
                    PLean.ReceivedSubsetSent))
-    -- Bring every `paxiom` into scope before the closing tactic — same
-    -- mechanism as `emitOneObligation`. Base-case obligations are the
-    -- primary consumers (a base case for an invariant that restates an
-    -- axiom would otherwise be unprovable without restating the axiom
-    -- as an init-holds clause too).
+    -- Lift each `paxiom` into the local context (same reason as in
+    -- `emitOneObligation`: `loom_smt [*]` reads only the lctx).
     for an in axiomNames do
       let axId : Ident := mkIdent an
       let hypId : Ident :=
@@ -534,28 +466,13 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
     let wrappedProof : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
       `(Lean.Parser.Tactic.tacticSeq|
           pverify_log_failure_else_sorry $bodyTac)
+    let keyLit := Syntax.mkStrLit fullThmName.toString
     `(set_option linter.unusedTactic false in
+      set_option pverify.obligationKey $keyLit in
       theorem $thmId : $goalType := by
         $wrappedProof)
   elabCommand stx
-  let checkName : Name :=
-    if manualProof then fullThmName.appendAfter "_check" else fullThmName
-  let env ← getEnv
-  match env.find? checkName with
-  | some (.thmInfo info) =>
-    if info.value.hasSorry then return .unfinished
-    if manualProof then
-      -- Inspect the USER theorem's own value (not just the `@userThm`
-      -- reference in `_check`) so a `@[pverifyProof] … := by sorry` base
-      -- case is reported as unfinished rather than a clean pass.
-      match env.find? fullThmName with
-      | some (.thmInfo userInfo) =>
-        if userInfo.value.hasSorry then return .unfinished
-      | _ => return .unfinished
-      logInfo m!"obligation {fullThmName} discharged by `@[pverifyProof]` (type checked)"
-      return .userProved
-    return .provedBySmt
-  | _ => return .unfinished
+  return manualProof
 
 /-! ## Walking the registry — `synthesise` is the entry point. -/
 
@@ -629,6 +546,32 @@ private def machineVarNames (m : PMachineDecl) : Array Name := Id.run do
     if it.getKind == ``PLean.pMachineVar then
       if let some i := it[1]? then
         if i.isIdent then out := out.push i.getId
+  return out
+
+/-- Pull `(state, event)` pairs for which the state body has `on
+$ev goto $tgt` — those events have no `_handler` def, so the
+obligation generator must skip them. -/
+private def machineGotoHandlers (m : PMachineDecl) :
+    Std.HashSet (Name × Name) := Id.run do
+  let mut out : Std.HashSet (Name × Name) := {}
+  for it in m.body do
+    let kind := it.getKind
+    -- pMachineStartState: "start" "state" ident "{" body "}" (idx 2 = ident, 4 = body)
+    -- pMachineState:      "state" ident "{" body "}" (idx 1 = ident, 3 = body)
+    let (sidIdx, bodyIdx) :=
+      if kind == ``PLean.pMachineStartState then (2, 4)
+      else if kind == ``PLean.pMachineState then (1, 3)
+      else (0, 0)
+    if sidIdx == 0 then continue
+    let some sidStx := it[sidIdx]? | continue
+    unless sidStx.isIdent do continue
+    let sname := sidStx.getId
+    let some items := it[bodyIdx]? | continue
+    for sit in items.getArgs do
+      if sit.getKind == ``PLean.pStateOnGoto then
+        -- pStateOnGoto: "on" ident "goto" ident (idx 1 = event ident)
+        if let some evStx := sit[1]? then
+          if evStx.isIdent then out := out.insert (sname, evStx.getId)
   return out
 
 /-- Whether a structure field is a machine reference — its projection
@@ -760,19 +703,20 @@ private def renderCex (smtMsg : String) (ctx : Verify.CexNameCtx) : String :=
         | none => modelText
       truncateForReport cleaned 40 4000
 
-/-- Classify a failure from the diagnostic refs set during emission.
+/-- Classify a failure from the per-obligation diagnostic map.
 The SMT diagnostic discriminates `sat` (counter-example) from
 `unknown` (incomplete theory / timeout); anything else collapses to
 `tacticError`. -/
-private def classifyFailure : CommandElabM ObligationOutcome := do
-  if let some smtMsg ← pverifySmtDiagRef.get then
+private def classifyFailure (key : String) : CommandElabM ObligationOutcome := do
+  let diag ← liftM (getDiag key : IO _)
+  if let some smtMsg := diag.smt then
     if hasSubstring smtMsg "the goal is false" then
       let ctx := (← Verify.cexNameCtxRef.get).getD {}
       return .disproved (renderCex smtMsg ctx)
     if hasSubstring smtMsg "the goal is unknown" then
       return .unknown (truncateForReport smtMsg)
     return .tacticError (truncateForReport smtMsg)
-  if let some tacMsg ← pverifyTacDiagRef.get then
+  if let some tacMsg := diag.tac then
     return .tacticError (truncateForReport tacMsg)
   return .unfinished
 
@@ -785,57 +729,105 @@ private def renderSignature (fullThmName : Name) : CommandElabM String := do
     catch _ => return ""
   | none => return ""
 
-/-- Shared bookkeeping: clear diag refs, run the emitter, classify
-the outcome, scrub sync-error messages, and append a record. The
-emitter returns the raw outcome; `classifyFailure` upgrades a bare
-`.unfinished` via the diagnostic refs. -/
-private def runEmitterAndRecord (modName mname sname evname target thmName : Name)
-    (emitter : CommandElabM ObligationOutcome)
-    (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
+/-- One emitted-but-not-yet-classified obligation.
+`manualProof` is `true` for a `@[pverifyProof]`-supplied proof.
+`emitError?` carries any synchronous exception thrown by the emitter,
+so the classify pass can report it as a tactic error without
+inspecting an env entry that may not exist. -/
+private structure PendingObligation where
+  mname        : Name
+  sname        : Name
+  evname       : Name
+  target       : Name
+  fullThmName  : Name
+  key          : String
+  manualProof  : Bool
+  emitError?   : Option String
+  deriving Inhabited
+
+/-- Run the emitter, record a `PendingObligation`, and scrub per-
+obligation noise from the message log. Classification is deferred to
+`classifyOnePending` so all bodies can elaborate concurrently under
+`Elab.async = true`.
+
+Message scrubbing runs inline before the next emission appends. It
+drops sync error messages (their content is already in `emitError?` /
+the diag map) and Loom's per-obligation info logs. A buggy user
+`@[pverifyProof]` whose declaration name collides with the emitter's
+output produces a duplicate-decl error here — without the scrub that
+would break `#guard_msgs` even though the obligation's own classify
+path doesn't depend on it. -/
+private def runEmitOnly (modName mname sname evname target thmName : Name)
+    (emitter : CommandElabM Bool)
+    (acc : SynthesiseResult) :
+    CommandElabM (SynthesiseResult × PendingObligation) := do
   let acc := { acc with attempted := acc.attempted + 1 }
   let fullThmName := modName ++ thmName
-  pverifySmtDiagRef.set none
-  pverifyTacDiagRef.set none
-  -- Per-obligation profile row scaffolding. When `pverify.profile` is
-  -- false, `pverifySmtCloseDefault` doesn't touch the row, but we still
-  -- begin/end so the row gets a name in the eventual report (rows where
-  -- every stage is 0 simply mean the obligation was not SMT-discharged,
-  -- e.g. closed by `default_inv` or a manual `@[pverifyProof]`).
-  liftM (PLean.Verify.Profile.beginObligation fullThmName.toString : IO Unit)
+  let key := fullThmName.toString
+  liftM (PLean.Verify.Profile.beginObligation key : IO Unit)
   let savedSt ← get
-  let outcomeRaw ← try emitter
+  let preMsgsSize := savedSt.messages.toArray.size
+  let (manualProof, emitError?) ← try
+      let m ← emitter
+      pure (m, none)
     catch e =>
       let errMsg ← e.toMessageData.toString
-      pure (ObligationOutcome.tacticError (truncateForReport errMsg))
-  let outcome ← match outcomeRaw with
-    | .unfinished => classifyFailure
-    | other       => pure other
-  -- Scrub per-obligation noise from the slice so only the command's
-  -- one consolidated report reaches the user. Drop (a) sync-error
-  -- messages — the diagnostic refs already carry what we need — and
-  -- (b) Loom's `loom_smt` "Goal proven by <solver>" info, emitted once
-  -- per discharged obligation; the report's "N proved by SMT" summary
-  -- subsumes it.
+      pure (false, some (truncateForReport errMsg))
+  -- Operate on the persistent `MessageLog.unreported` directly; the
+  -- `Array.foldl` rebuild path lost the persistent structure that
+  -- Lean's snapshot machinery relies on. Quick-scan first so the slow
+  -- rebuild only runs when there's actual noise to drop.
   let curSt ← get
-  let preMsgsArr := savedSt.messages.toArray
-  let postMsgsArr := curSt.messages.toArray
-  let newMsgs := postMsgsArr.extract preMsgsArr.size postMsgsArr.size
-  let isNoise (m : Lean.Message) : CommandElabM Bool := do
-    if m.severity matches .error then return true
-    let s ← m.data.toString
-    return hasSubstring s "Goal proven by" || hasSubstring s "Trusting SMT solver"
-  if ← newMsgs.anyM isNoise then
-    let kept ← newMsgs.filterM (fun m => return !(← isNoise m))
-    let mergedMsgs := kept.foldl (init := savedSt.messages) (·.add ·)
-    modify fun st => { st with messages := mergedMsgs }
+  let curUnreported := curSt.messages.unreported
+  if curUnreported.size > preMsgsSize then
+    let isNoise (m : Lean.Message) : CommandElabM Bool := do
+      if m.severity matches .error then return true
+      let s ← m.data.toString
+      return hasSubstring s "Goal proven by"
+        || hasSubstring s "Trusting SMT solver"
+        || hasSubstring s "discharged by `@[pverifyProof]`"
+    let mut hasNoise : Bool := false
+    for i in [preMsgsSize:curUnreported.size] do
+      if ← isNoise (curUnreported.get! i) then hasNoise := true; break
+    if hasNoise then
+      let mut keptTail : Array Lean.Message := #[]
+      for i in [preMsgsSize:curUnreported.size] do
+        let m := curUnreported.get! i
+        unless ← isNoise m do keptTail := keptTail.push m
+      let preMsgs := savedSt.messages.unreported
+      let mergedUnreported : Lean.PersistentArray Lean.Message :=
+        keptTail.foldl (·.push ·) preMsgs
+      modify fun st =>
+        { st with messages := { st.messages with unreported := mergedUnreported } }
+  let pending : PendingObligation := {
+    mname, sname, evname, target, fullThmName, key, manualProof, emitError?
+  }
+  return (acc, pending)
+
+/-- Classify a previously-emitted obligation. Reads the env (blocking
+on the body-elab Task under `Elab.async = true`), promotes
+`.unfinished` via the per-obligation diag map, and appends a record
+to `acc.records`. The log was already scrubbed in `runEmitOnly`. -/
+private def classifyOnePending (pending : PendingObligation)
+    (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
+  let { mname, sname, evname, target, fullThmName, key,
+        manualProof, emitError?, .. } := pending
+  let outcomeRaw : ObligationOutcome ← match emitError? with
+    | some msg => pure (.tacticError msg)
+    | none =>
+      try classifyOneObligation fullThmName manualProof
+      catch e =>
+        let errMsg ← e.toMessageData.toString
+        pure (.tacticError (truncateForReport errMsg))
+  let outcome ← match outcomeRaw with
+    | .unfinished => classifyFailure key
+    | other       => pure other
   let signature ← renderSignature fullThmName
   let record : ObligationRecord :=
     { mname, sname, evname, target, thmName := fullThmName,
       signature, outcome }
   let acc := { acc with records := acc.records.push record }
-  -- Flush the profile row for this obligation. No-op effect on the
-  -- aggregate when `pverify.profile = false` (all stage timings = 0).
-  liftM (PLean.Verify.Profile.endObligation : IO Unit)
+  liftM (PLean.Verify.Profile.endObligation key : IO Unit)
   match outcome with
   | .userProved      =>
     return { acc with userProved  := acc.userProved + 1 }
@@ -850,8 +842,9 @@ private def runEmitterAndRecord (modName mname sname evname target thmName : Nam
   | .unfinished      =>
     return { acc with unfinished  := acc.unfinished + 1 }
 
-/-- Emit one per-handler obligation. -/
-private def processOne (modName mname sname evname : Name)
+/-- Emit one per-handler obligation; returns a `PendingObligation`
+record for later classification. -/
+private def processOneEmit (modName mname sname evname : Name)
     (target : Name) (isDefault : Bool) (usingNames : Array Name)
     (hasPayload : Bool) (varNames : Array Name)
     (lemmaInvNames : Array Name)
@@ -859,10 +852,11 @@ private def processOne (modName mname sname evname : Name)
     (eventNames : Array Name)
     (axiomNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
-    (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
+    (acc : SynthesiseResult) :
+    CommandElabM (SynthesiseResult × PendingObligation) := do
   let thmName :=
     obligationName mname sname evname target isDefault usingNames proofTag proofIdx
-  runEmitterAndRecord modName mname sname evname target thmName
+  runEmitOnly modName mname sname evname target thmName
     (emitOneObligation modName mname sname evname target isDefault
       usingNames hasPayload varNames lemmaInvNames machineNames eventNames
       axiomNames proofTag proofIdx)
@@ -871,14 +865,15 @@ private def processOne (modName mname sname evname : Name)
 /-- Emit one base-case obligation for a single invariant in a directive's
 target lemma. `mname`/`sname`/`evname` are recorded as `anonymous` —
 base-case VCs are pmodule-scoped, not handler-scoped. -/
-private def processBaseCase (modName invName : Name) (isDefaultInv : Bool)
+private def processBaseCaseEmit (modName invName : Name) (isDefaultInv : Bool)
     (machineNames : Array Name)
     (eventNames : Array Name)
     (axiomNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
-    (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
+    (acc : SynthesiseResult) :
+    CommandElabM (SynthesiseResult × PendingObligation) := do
   let thmName := baseCaseName invName proofTag proofIdx
-  runEmitterAndRecord modName Name.anonymous Name.anonymous Name.anonymous
+  runEmitOnly modName Name.anonymous Name.anonymous Name.anonymous
     invName thmName
     (emitBaseCaseObligation modName invName isDefaultInv machineNames
       eventNames axiomNames proofTag proofIdx)
@@ -887,116 +882,123 @@ private def processBaseCase (modName invName : Name) (isDefaultInv : Bool)
 /-- For each `Proof` block's `prove X` directive, walk every
 `(machine, state, event)` and emit an obligation. After the user's
 directives, auto-emit a `prove default;` obligation for every
-`(M, S, ev)` not already covered. -/
+`(M, S, ev)` not already covered.
+
+Runs in two passes: pass 1 emits every obligation (queueing body
+elaboration on worker threads under `Elab.async = true`); pass 2
+reads each theorem's value from the env, blocking on its own
+body-elab Task. The two-pass split is what lets the bodies overlap
+— a single-pass classify-after-each-emit serialises them. -/
 def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
     CommandElabM SynthesiseResult := do
   detectUsingCycles ctx
   Verify.cexNameCtxRef.set (some (← buildCexNameCtx modName ctx))
   let mut result : SynthesiseResult := {}
   let mut explicitDefault : Std.HashSet (Name × Name × Name) := {}
-  -- Per-lemma invariant-name lookup used to feed `lemmaInvNames` into
-  -- `processOne`: the obligation generator unfolds each individual
-  -- invariant in addition to the bundle predicate.
+  -- Preserves emission order so the report is deterministic.
+  let mut pendings : Array PendingObligation := #[]
   let lemmaInvariantsOf (n : Name) : Array Name :=
     match ctx.lemmas.find? n with
     | some l => l.invariants
     | none   => #[]
-  -- Every non-spec machine's name in registration order. Drives the
-  -- `<M>_allocated` / `<M>_kind` unfold chain in `emitOneObligation`,
-  -- so user invariants that reference machine-kind predicates reduce to
-  -- plain arithmetic for the SMT solver.
   let allMachineNames : Array Name := Id.run do
     let mut out : Array Name := #[]
     for mn in ctx.machineOrder do
       if let some md := ctx.machines.find? mn then
         if !md.isSpec then out := out.push mn
     return out
-  -- Events that carry a payload. `emitOneObligation` brings each one's
-  -- `<ev>_payload_of_spec` characterisation into context so SMT can
-  -- compute the extractor's value on a freshly-sent label (send-handlers
-  -- that must re-establish a routing invariant over the new label).
-  -- Payload-free events have no extractor, so they're excluded.
+  -- Events whose `<ev>_payload_of_spec` lemma was actually emitted by
+  -- `#gen_module`. Currently `emitPayloadCharacterizations` only emits
+  -- the lemma for named-tuple payloads, so an event with a single-type
+  -- payload (e.g. `event ePing : MachineRef`) is excluded — otherwise
+  -- the obligation generator would emit a `have hspec_<ev> := <ev>_payload_of_spec`
+  -- referencing a constant that doesn't exist.
+  let env ← getEnv
   let allEventNames : Array Name := Id.run do
     let mut out : Array Name := #[]
     for en in ctx.eventOrder do
       if let some e := ctx.events.find? en then
-        if e.payload.isSome then out := out.push en
+        unless e.payload.isSome do continue
+        let specName : Name :=
+          modName ++ Name.mkSimple (en.toString ++ "_payload_of_spec")
+        if env.contains specName then out := out.push en
     return out
-  -- Pmodule-level `paxiom`s. `emitOneObligation` and
-  -- `emitBaseCaseObligation` inject a `have h_<name> := @<leanName>`
-  -- per axiom so `loom_smt [*]` (which reads only the local context)
-  -- sees them. Without this, top-level `axiom`s emitted by `paxiom` are
-  -- invisible to the SMT pipeline and any obligation whose proof
-  -- depends on a stated property of a `function` will be reported as
-  -- disproved.
   let allAxiomNames : Array Name := Id.run do
     let mut out : Array Name := #[]
     for (_, d) in ctx.axioms.toList do
       out := out.push d.leanName
     return out
-  -- Names of the three default invariants — the base case for
-  -- `prove default;` enumerates them so the failure report names which
-  -- one didn't hold at init (rather than the bundled `DefaultInvariants`).
   let defaultInvNames : Array Name :=
     #[`UniqueActions, `IncreasingCount, `ReceivedSubsetSent]
+  -- ── Pass 1: emit every obligation ─────────────────────────────────
   for hProof : proofIdx in [0:ctx.proofs.size] do
     let proof := ctx.proofs[proofIdx]'hProof.upper
     for dir in proof.directives do
-      -- Base case: one VC per individual invariant in the target lemma's
-      -- bundle (or per default-invariant for `prove default`). Premises
-      -- (`using P`) intentionally do NOT get base-case VCs from this
-      -- directive — they get one when they themselves are a `prove`
-      -- target. Matches PVerifier's "only Goals get UCLID `invariant`
-      -- declarations" semantics.
+      -- Base case: one VC per individual invariant in the target
+      -- lemma's bundle (or per default-invariant for `prove default`).
+      -- Premises (`using P`) get a base-case VC only when they are
+      -- themselves a `prove` target — matching PVerifier.
       let baseInvs : Array Name :=
         if dir.isDefault then defaultInvNames
         else lemmaInvariantsOf dir.target
       for inv in baseInvs do
-        result ← processBaseCase modName inv dir.isDefault allMachineNames
-          allEventNames allAxiomNames proof.name proofIdx result
+        let (result', pending) ← processBaseCaseEmit modName inv dir.isDefault
+          allMachineNames allEventNames allAxiomNames proof.name proofIdx result
+        result := result'
+        pendings := pendings.push pending
       -- Inductive step: per-handler triples.
       for mname in ctx.machineOrder do
         let some m := ctx.machines.find? mname | continue
         if m.isSpec then
-          logInfo m!"spec machine `{mname}` skipped — Phase 4 owns spec obligations"
+          logInfo m!"spec machine `{mname}` skipped — spec obligations are not yet supported"
           continue
         let varNames := machineVarNames m
+        let gotoHandlers := machineGotoHandlers m
         for sd in m.states do
           for ev in sd.handles do
-            if sd.gotos.contains ev then
-              continue
+            if gotoHandlers.contains (sd.name, ev) then continue
             let hasPayload := eventHasPayload ctx ev
             if dir.isDefault then
               explicitDefault := explicitDefault.insert (mname, sd.name, ev)
-            -- Aggregate invariant unfolds: target lemma's invariants
-            -- + each `using`-lemma's. Duplicates are harmless.
+            -- Target lemma's invariants + each `using`-lemma's get
+            -- unfolded individually. Duplicates are harmless.
             let mut lemmaInvNames : Array Name :=
               if dir.isDefault then #[] else lemmaInvariantsOf dir.target
             for u in dir.usingLemmas do
               lemmaInvNames := lemmaInvNames ++ lemmaInvariantsOf u
-            result ← processOne modName mname sd.name ev
+            let (result', pending) ← processOneEmit modName mname sd.name ev
               dir.target dir.isDefault dir.usingLemmas hasPayload varNames
               lemmaInvNames allMachineNames allEventNames allAxiomNames
               proof.name proofIdx result
+            result := result'
+            pendings := pendings.push pending
   -- Auto-default pass: synthetic `block_auto_default` tag avoids
   -- collisions with user-tagged emissions; index past-the-end of the
-  -- proofs array. No base case emitted here — the default invariants'
-  -- base case is so trivial (vacuously true on the empty buffer) that
-  -- duplicating it per (M, S, ev) gap would just pad the report.
+  -- proofs array. No base case emitted here — the default invariants
+  -- hold vacuously at init, so duplicating per (M, S, ev) gap would
+  -- only pad the report.
   let autoTag : Name := `block_auto_default
   let autoIdx : Nat := ctx.proofs.size
   for mname in ctx.machineOrder do
     let some m := ctx.machines.find? mname | continue
     if m.isSpec then continue
     let varNames := machineVarNames m
+    let gotoHandlers := machineGotoHandlers m
     for sd in m.states do
       for ev in sd.handles do
-        if sd.gotos.contains ev then continue
+        if gotoHandlers.contains (sd.name, ev) then continue
         if explicitDefault.contains (mname, sd.name, ev) then continue
         let hasPayload := eventHasPayload ctx ev
-        result ← processOne modName mname sd.name ev
+        let (result', pending) ← processOneEmit modName mname sd.name ev
           `default true #[] hasPayload varNames
           #[] allMachineNames allEventNames allAxiomNames autoTag autoIdx result
+        result := result'
+        pendings := pendings.push pending
+  -- Pass 2: each `classifyOnePending` blocks on its own body-elab
+  -- Task; work overlaps across tasks already running in Lean's
+  -- worker pool.
+  for pending in pendings do
+    result ← classifyOnePending pending result
   return result
 
 end Verify

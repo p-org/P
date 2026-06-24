@@ -127,10 +127,13 @@ pmodule ClockBound
       -- For any sent label `e` whose action is an `eGlobalResponse`,
       -- the label's `target` field matches the payload's `target`
       -- field. The GC handler sets both to `payload.localClock` at
-      -- send time. We use a plain `Sig.Label` quantifier here (not
-      -- `eGlobalResponse`) to avoid the kind-guard injection that
-      -- rewrites `e.target` → `(payload_of e).target` (making the
-      -- equation trivially `(payload_of e).target = (payload_of e).target`).
+      -- send time. We quantify over `Sig.Label` (not `eGlobalResponse`)
+      -- so the `e.target` on the LHS stays the label's `target` field;
+      -- the field-projection sugar (`rewriteFieldProjections` in
+      -- `Surface/Verify.lean`) would otherwise rewrite it to
+      -- `(eGlobalResponse_payload_of e).target` (since `e` would have a
+      -- registered event kind and `target` is a registered payload
+      -- field), trivializing the equation.
       invariant gResp_label_payload_target_match :
         ∀ e : Sig.Label,
           is_eGlobalResponse e → s.sent e = true →

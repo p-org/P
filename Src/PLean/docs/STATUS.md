@@ -46,6 +46,136 @@ _**Closure rates (M3 + ClockBound, final):**_
 
 _Build: green at HEAD._
 
+### Session 2026-06-24 (latest) — PingPongAuto / PingPong.Top fixes; comment style sweep
+
+Two latent obligation-generator bugs surfaced when we tried to drop
+the `set_option pverify.failOnIncomplete false` workaround from the
+PingPong showcase files. Both pre-dated the parallel-SMT work; they
+were masked by the workaround.
+
+**1. `allEventNames` was over-broad.** The synthesiser injected
+`have hspec_<ev> := <ev>_payload_of_spec` for every event with a
+payload. But `#gen_module`'s `emitPayloadCharacterizations` only
+emits `_payload_of_spec` for events whose payload is a *named tuple*
+(it consults `eventPayloadFields`, which is empty for single-type
+payloads). An event like `event ePing : PLean.MachineRef` therefore
+caused an `Unknown identifier `ePing_payload_of_spec`` inside
+`pverify_log_failure_else_sorry`, which surfaced as the cryptic
+`internal exception #5` tactic error.
+
+Fix: in `Verify/Obligation.lean::synthesise`, compute `allEventNames`
+by filtering to events for which the `_payload_of_spec` constant
+actually exists in `env`. The filter mirrors what
+`emitPayloadCharacterizations` does, without re-doing the
+named-tuple syntax inspection.
+
+**2. Goto-handler skip checked the wrong field.** `PStateDecl.gotos`
+records *target state* names (`Done`), not events handled via
+`goto` (`ePong`). The check `sd.gotos.contains ev` was therefore
+always false. The obligation generator emitted theorems referencing
+non-existent `<M>.<S>.<ev>_handler` defs whenever the state had an
+`on _ goto _` clause; the resulting `Unknown constant` surfaced as a
+tactic error.
+
+Fix: a new `machineGotoHandlers : PMachineDecl → Std.HashSet (Name ×
+Name)` walks the retained machine body Syntax for `pStateOnGoto`
+nodes and returns `(state, event)` pairs. Both the user-directive
+loop and the auto-default loop in `synthesise` consult it. The
+child-index offsets matter — `pMachineStartState`'s state ident is
+at child 2 (after `start`/`state` keywords), while `pMachineState`
+puts the ident at child 1. Same trap with `pStateOnGoto` (`on $ev
+goto $tgt`): the event ident is at child 1.
+
+[`Examples/PingPongAuto.lean`](../Examples/PingPongAuto.lean) now
+closes **5/5** SMT (was: 1/5 with the workaround).
+[`Examples/PingPong/Top.lean`](../Examples/PingPong/Top.lean) now
+closes **1/1** SMT (was: 1/2 with the workaround). The four main
+M3 benchmarks (DistLock / LockServer / RingLeader / ClockBound) are
+unaffected (their handlers either don't have single-type payloads or
+don't have `on _ goto _` clauses to begin with). Full suite green at
+3416 jobs.
+
+Adjacent: [`Examples/PingPongManual.lean`](../Examples/PingPongManual.lean)
+was rewritten to match the post-soundness-fix obligation shape that
+`#pverify` now emits — `this`/`lbl` (+ optional `param`) are
+universally bound, the dispatcher contract is conjoined into the
+precondition, and the executed program is `markReceived lbl >>=
+handler …`. The witness for `PongAfterPing` past the freshly-sent
+`ePong` is now `lbl` itself (the dispatched `ePing`, in-flight at
+pre-state with `actionCount < s.actionCount` by IC), rather than an
+extra existential in the precondition.
+
+Comments swept across the files touched in the parallel-SMT session
+([`Verify/Obligation.lean`](../PLean/Verify/Obligation.lean),
+[`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean),
+[`Verify/Profile.lean`](../PLean/Verify/Profile.lean)) per the
+project comment-style rules: no phase / decision / risk numbers in
+source, no thought-process narration, file headers trimmed to a
+single paragraph of intent, WHY-only inline notes.
+
+### Session 2026-06-24 (later) — parallel SMT via Lean 4.24's `Elab.async`
+
+`#pverify` now overlaps obligation elaboration (and the per-obligation
+SMT call inside it) across worker threads, riding on Lean's built-in
+`Elab.async` theorem-body dispatch rather than a bespoke process pool.
+Wall-clock on cold rebuilds:
+
+| Benchmark | Before | After | Speedup |
+|---|---|---|---|
+| DistributedLock (12 obls) | 11s  | 8.9s | 1.24× |
+| LockServer     (37 obls) | 306s | 62s  | **4.9×** |
+| RingLeader     (14 obls) | 7.0s | 5.2s | 1.35× |
+| ClockBound     (59 obls) | 106s | 30s  | **3.5×** |
+
+Closure rates unchanged (12/12 + 37/37 + 14/14 + 59/59 = 122/122).
+
+**Approach.** Two-pass restructure of `Verify/Obligation.lean::synthesise`:
+
+1. **Emit pass.** For each obligation, run `elabCommand
+   theorem … := by pverify_log_failure_else_sorry …`. Under `Elab.async
+   = true` (default in `lake build`), Lean 4.24's
+   [`Elab.MutualDef.elabAsync`](https://github.com/leanprover/lean4/blob/v4.24.0/src/Lean/Elab/MutualDef.lean#L1210)
+   dispatches the body's tactic evaluation onto a worker thread via
+   `addConstAsync` + `wrapAsyncAsSnapshot`; `elabCommand` returns
+   immediately after the signature is committed.
+2. **Classify pass.** Walk recorded `PendingObligation` records; each
+   `env.find?` blocks on its own body-elab Task. Other tasks keep
+   running in the background.
+
+The unit of parallelism is the obligation; the cap is whatever Lean's
+task scheduler decides (~cores−1).
+
+**Per-obligation diagnostic plumbing.** Single-cell `IO.Ref (Option
+String)`s (`pverifySmtDiagRef`, `pverifyTacDiagRef`,
+`Profile.currentRowRef`) replaced by `IO.Ref (Std.HashMap String _)`
+keyed by obligation full name. Tactic reads its own key from a
+`pverify.obligationKey` option, set per-emission via `set_option
+pverify.obligationKey "…" in theorem …`. The option context is captured
+by Lean's `wrapAsync` and propagated into the body-elab worker.
+
+**Soundness.** Untouched. Each obligation is still its own `theorem`
+with the same `pverify` chain or `exact @<userThm>`; only the post-elab
+`env.find?` step was deferred to a second pass. `trust_smt` is applied
+per-obligation exactly as in the serial path. Pinned by all four
+benchmarks closing with identical (manual vs SMT) splits.
+
+**Pitfall, recorded.** `pverify.obligationKey` must be declared via
+`register_option` rather than `register_builtin_option`. The latter is
+for options declared inside Lean's bootstrap; using it from an imported
+library compiles fine but crashes at elaboration time with `libc++abi:
+terminating … unreachable code` on the first
+`pinstance`-axiom-heavy obligation. Symptom is silent (just process
+abort after `#gen_module`); RingLeader was the canary. Swap to
+`register_option` fixes it.
+
+**Compatibility with the cache (§5b of AUTOMATION.md).** The proof
+cache is unchanged: cache hits skip the lean-auto translation AND the
+solver call, so parallelism compounds with the cache. A warm run of
+LockServer with the cache pre-populated takes ~12s wall (~46s under
+the previous serial path).
+
+See [`AUTOMATION.md`](AUTOMATION.md) §4 for the full design.
+
 ### Session 2026-06-24 — ClockBound port; `PLean.choose` for bounded nondet
 
 A non-Tutorial benchmark ported end-to-end:

@@ -54,37 +54,36 @@ structure State where
   rows : Array Row := #[]
   deriving Inhabited
 
-/-- Process-wide ref. `#pverify` resets it on command entry; tactics
-append rows during obligation discharge. -/
+/-- Accumulator across all obligations of one `#pverify` run. -/
 initialize stateRef : IO.Ref State ← IO.mkRef {}
 
-/-- A row being built by the current obligation. Set up by
-`#pverify`'s wrapper, mutated by `pverify_smt`, flushed into
-`stateRef.rows` at obligation end. We keep it separate from `stateRef`
-to avoid race-y partial rows. -/
-initialize currentRowRef : IO.Ref Row ← IO.mkRef { obligation := "" }
+/-- Per-obligation rows, keyed by obligation full name. Two
+obligations elaborating concurrently land in distinct slots and can't
+race. Each row is flushed into `stateRef.rows` at obligation end. -/
+initialize inFlightRowsRef : IO.Ref (Std.HashMap String Row) ← IO.mkRef ∅
 
-/-- Begin a new obligation: clear `currentRowRef` with the provided
-name. Called by the obligation generator before invoking the tactic
-chain. -/
 def beginObligation (name : String) : IO Unit :=
-  currentRowRef.set { obligation := name }
+  inFlightRowsRef.modify (·.insert name { obligation := name })
 
-/-- Flush the current row into `stateRef.rows`. Called by the
-obligation generator after the tactic chain returns. -/
-def endObligation : IO Unit := do
-  let row ← currentRowRef.get
-  stateRef.modify fun s => { s with rows := s.rows.push row }
+def endObligation (key : String) : IO Unit := do
+  let m ← inFlightRowsRef.get
+  match m.get? key with
+  | some row =>
+    stateRef.modify fun s => { s with rows := s.rows.push row }
+    inFlightRowsRef.modify (·.erase key)
+  | none => pure ()
 
-/-- Reset everything for a new `#pverify` invocation. -/
 def reset : IO Unit := do
   stateRef.set {}
-  currentRowRef.set { obligation := "" }
+  inFlightRowsRef.set ∅
 
-/-- Stamp the outer elabCommand wall-clock for the current obligation.
-Called by the obligation generator wrapping `elabCommand stx`. -/
-def recordElabCmd (nanos : Nat) : IO Unit :=
-  currentRowRef.modify fun r => { r with elabCmd := r.elabCmd + nanos }
+def modifyRow (key : String) (f : Row → Row) : IO Unit :=
+  inFlightRowsRef.modify fun m =>
+    let cur := (m.get? key).getD { obligation := key }
+    m.insert key (f cur)
+
+def recordElabCmd (key : String) (nanos : Nat) : IO Unit :=
+  modifyRow key fun r => { r with elabCmd := r.elabCmd + nanos }
 
 /-- Run a `BaseIO` action, return its result and the elapsed nanos. -/
 def timeNanos (act : IO α) : IO (α × Nat) := do

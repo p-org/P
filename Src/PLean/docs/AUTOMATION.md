@@ -160,40 +160,102 @@ the right time to extract them.
 
 ---
 
-## 4. Planned: parallel SMT calls
+## 4. Parallel elaboration + parallel SMT — landed 2026-06-24
 
-**Problem.** `#pverify` discharges obligations sequentially, one
+**Problem.** `#pverify` used to discharge obligations sequentially, one
 `loom_smt` (hence one cvc5/z3 process) at a time. LockServer emits 37
-obligations; a clean run is dominated by serial solver latency, and the
-30 s-timeout obligations stack up. Per-conjunct splitting (§3.5) would
-multiply the call count.
+obligations; a clean cold run took ~5 minutes, dominated by serial
+solver latency. Per-conjunct splitting (§3) multiplied the call count.
 
-**Plan.** Run independent solver queries concurrently. The obligations
-within a `synthesise` run are independent (each is its own
-`theorem`), and so are the conjuncts within a split goal, so this is
-embarrassingly parallel.
+**Approach (shipped).** Rather than build a bespoke SMT process pool,
+PLean now leans on Lean 4.24's built-in `Elab.async` machinery — the
+same path that parallelises theorem-body elaboration in `lake build`
+and the language server. `#pverify` was restructured into a two-pass
+loop:
 
-**Insertion points.**
-- `Verify/Obligation.lean::synthesise` drives the per-obligation loop —
-  the unit of parallelism. Today it `elabCommand`s each obligation
-  inline; a parallel design elaborates each obligation's *goal* to an SMT
-  query string up front, dispatches the solver processes concurrently
-  (bounded pool, ~cores−2), then assigns results back.
-- `Loom/SMT.lean::querySolver` already shells out to a child `cvc5`/`z3`
-  process (`createSolver` → `IO.Process`); it is the natural concurrency
-  primitive. A `querySolverMany : Array String → MetaM (Array SmtResult)`
-  that spawns and `IO.wait`s a batch is the smallest addition.
-- The `retryOnUnknown` cross-solver retry (`querySolver`, default on)
-  becomes "race cvc5 and z3, take the first `unsat`" rather than
-  sequential fallback — strictly faster on the `unknown`-prone
-  send-handler queries.
+1. **Pass 1 — emit.** For each obligation, `synthesise` calls
+   `elabCommand stx` where `stx` is the per-obligation `theorem … :=
+   by pverify`. Under `Elab.async = true` (default in `lake build`),
+   Lean dispatches the body's tactic evaluation onto a worker thread
+   via `Lean.Elab.MutualDef.elabAsync` (which uses `addConstAsync` +
+   `wrapAsyncAsSnapshot`) and `elabCommand` returns immediately after
+   the *signature* is committed. The body — which is where
+   `pverify_smt` invokes lean-auto's translator and the
+   cvc5/z3 subprocess — runs concurrently with the next obligation's
+   emission.
+2. **Pass 2 — classify.** Once every obligation has been emitted,
+   `synthesise` walks the recorded `PendingObligation`s and calls
+   `classifyOneObligation` per entry. The env lookup `env.find?`
+   blocks on **that obligation's** body-elab Task — so the work the
+   other tasks have been doing concurrently is still happening; we
+   only serialise the *classification* step (which is cheap
+   `hasSorry` + record-append).
 
-**Caveats.** `loom_smt` closes the goal with the `trust_smt` axiom only
-*after* the solver says `unsat`; the parallel layer must preserve that
-(produce the query strings purely, run solvers off the elaboration
-thread, then close each goal on the main thread with its verified
-result). Determinism of the report ordering must be kept (sort results
-by obligation name before printing).
+The unit of parallelism is therefore the obligation, and the
+parallelism cap is whatever Lean's task scheduler decides (typically
+~cores−1).
+
+**Per-obligation diagnostic plumbing.** The previous design stashed
+solver / tactic diagnostics in single-cell `IO.Ref (Option String)`
+globals (`pverifySmtDiagRef`, `pverifyTacDiagRef`). Under concurrent
+emission those would race. The fix is a single
+`IO.Ref (Std.HashMap String ObligationDiag)` keyed by obligation full
+name (e.g. `Mod.M.S.ev_correct_safety`); the tactic reads the
+per-obligation key from a `pverify.obligationKey` option set
+per-emission via `set_option pverify.obligationKey "…" in theorem …`.
+Lean's `wrapAsync` captures the option context, so the body-elab
+worker thread sees the right key. Profile rows are similarly keyed
+under `inFlightRowsRef : IO.Ref (Std.HashMap String Row)`.
+
+**Soundness.** Untouched. Each obligation is still its own `theorem`
+with the same `pverify` / `pverify_default` chain or `exact @<userThm>`
+body; the only deferred step is the *post-elab* `env.find?` inspection
+to classify the outcome. The `trust_smt` axiom is the only assumption,
+applied per obligation exactly as in the serial path.
+
+**Measured (cold rebuilds, M3 Pro 12-core, 2026-06-24):**
+
+| Benchmark | Baseline (serial) | Parallel | Wall speedup | CPU/wall |
+|---|---|---|---|---|
+| `DistributedLock` (12 obls) | 11s     | 8.9s    | 1.24×   | — |
+| `LockServer`     (37 obls) | 306s    | 62s     | **4.9×** | 2.30× |
+| `RingLeader`     (14 obls) | 7.0s    | 5.2s    | 1.35×   | — |
+| `ClockBound`     (59 obls) | 106s    | 30s     | **3.5×** | — |
+
+The speedup is roughly proportional to the obligation count, as
+expected: tiny benchmarks have nothing to overlap; LockServer and
+ClockBound benefit most.
+
+**Pitfall hit during implementation.** Registering
+`pverify.obligationKey` as a `register_builtin_option` (instead of
+`register_option`) caused a Lean kernel "unreachable code" panic on
+RingLeader — `register_builtin_option` is for options declared inside
+core Lean's bootstrap; user-namespace options must use
+`register_option`. The two forms compile identically for `Bool` /
+`String`-typed options but the builtin path has runtime-resolution
+requirements that don't survive being used from an imported library.
+Pinned by the build succeeding on all four benchmarks after the swap.
+
+**What doesn't change.** Caching (§5) runs unchanged; cache hits skip
+both the lean-auto translation AND the solver, so the parallel pass
+compounds — the cache cuts the work set, parallelism speeds up what
+remains. The single-file message log is left intact except for
+filtering `Loom`'s per-obligation "Goal proven by …" infos, which
+`pverify_smt`'s tactic boundary already does for the parallel path
+too.
+
+**Knobs.**
+- `Elab.async = true` (Lean built-in, default `true` in `lake build`).
+  Setting `false` reverts to serial body elaboration; the two-pass
+  driver still runs but `classifyOneObligation` blocks immediately.
+  Useful when debugging interactively.
+- `pverify.cache = true` (default). Cache hits skip both translation
+  and solver — composes with parallelism.
+
+**Still future work.** Loom's `retryOnUnknown` (cross-solver fallback)
+remains sequential — racing cvc5 and z3 on the same query as
+concurrent processes would be a further win on `unknown`-prone
+send-handler bundles.
 
 ---
 
@@ -423,9 +485,13 @@ LockServer SMT obligations cache-hit across re-runs.
    injects every pmodule axiom (and every pinstance field axiom) into
    every VC's local context. Pinned by `PAxiomProbe.lean` and
    `PInstanceExercise.lean`.
-5. **Parallel SMT** — largest speedup on a cold run; more invasive
-   (touches `synthesise`'s control flow and process management).
-   Not yet landed.
+5. **Parallel SMT** — ✅ landed. Built on Lean 4.24's `Elab.async`
+   theorem-body dispatch: `synthesise` now emits all obligations in a
+   first pass (each body queued onto a worker thread) and classifies
+   them in a second pass. Per-obligation diag/profile maps replace
+   the global single-cell `IO.Ref`s. Measured 5.1× on LockServer
+   (37 obligations, 306s → 60s cold) and 3.1× on ClockBound
+   (59 obligations, 106s → 34s). See §4.
 6. **`pverify_send_handler` driver macro** — see §3 footer. Would fire
    the prologue + per-conjunct dispatcher table, compressing
    LockServer's ~150 lines of manual proof to ~15. The kind-bridge

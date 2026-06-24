@@ -41,5 +41,4 @@ end PingPongAuto
 
 #gen_module PingPongAuto
 #pwf        PingPongAuto
-set_option pverify.failOnIncomplete false in
-#pverify PingPongAuto
+#pverify    PingPongAuto

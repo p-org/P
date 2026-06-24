@@ -111,9 +111,9 @@ Tests/               -- regressions; Tests.** is globbed
 
 ## Phase plans (READ THESE BEFORE NON-TRIVIAL CHANGES)
 
-The plan docs are the authoritative design record. When PLAN.md
-disagrees with a phase plan, the phase plan wins (PLAN.md predates
-the implementation).
+The plan docs are the authoritative design record. STATUS.md is a
+living tracker, not a design doc. When PLAN.md disagrees with a phase
+plan, the phase plan wins (PLAN.md predates the implementation).
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — collaborator-facing entry
   point; current phase, workstreams, sprint allocation.
@@ -127,6 +127,11 @@ the implementation).
 - [`docs/PLAN_CEX.md`](docs/PLAN_CEX.md) — counter-example rendering;
   v1 shipped, v1.5 / v2 follow-ups listed (CVC5 finite-model-find,
   pre/post diff, exact name recovery via lean-auto's `h2lMap`).
+- [`docs/ProofSkill.md`](docs/ProofSkill.md) — practical workflow for
+  finding inductive invariants, writing manual proofs, and coping with
+  SMT complexity (higher-order rejection, bundle sizing, `using` chains).
+- [`docs/STATUS.md`](docs/STATUS.md) — phase status, decision log,
+  milestones.
 
 ## Verification benchmarks
 
@@ -177,6 +182,8 @@ before attempting one.
   (which only sees the lctx) can use them. Pinned by
   [`Tests/Syntax/PAxiomProbe.lean`](Tests/Syntax/PAxiomProbe.lean)
   and [`Tests/Syntax/PInstanceExercise.lean`](Tests/Syntax/PInstanceExercise.lean).
+  See [`docs/STATUS.md`](docs/STATUS.md) for the per-session log of
+  framework fixes that got us here.
 
   Reusable manual-proof tactics (`pverify_carry_after_recv`,
   `pverify_not_inflight` / `_by`, `pverify_inflight_by`,
@@ -240,10 +247,11 @@ Theorem safety {
 }
 ```
 
-A `Tests/Syntax/SoundnessRegression.lean` test pins the shape
-`def name : GS → Prop`, so don't reintroduce the closed-`Prop` form.
-If the materialiser needs to change, update the regression test in
-lockstep.
+The 2026-06-10 soundness fix (see STATUS.md decision log) made this
+non-optional; a `Tests/Syntax/SoundnessRegression.lean` test pins
+the shape `def name : GS → Prop`, so don't reintroduce the
+closed-`Prop` form. If the materialiser needs to change, update the
+regression test in lockstep.
 
 ### Field-projection sugar inside `system` blocks
 
@@ -447,7 +455,8 @@ applies, not just what it is.
 - **Don't reference phase numbers or plan-doc section IDs in source
   comments.** Plan docs evolve, source comments don't get re-numbered.
   If a comment needs to justify a design decision, state the reason
-  directly.
+  directly. References to `STATUS.md` are fine when pinning a
+  named-bug-fix, but only when the fix is still load-bearing.
 - **Don't dump deliberation into comments.** No "I tried X but it
   didn't work because …", no decision logs, no exploratory narration.
   Document the *invariant the code maintains*, not the path you took
@@ -489,6 +498,10 @@ applies, not just what it is.
   surface with extra import overhead is worse than the original. Match
   the decomposition to the existing `PLean/{Syntax,Commands,Verify,
   Semantics,Internal}/` axes where it fits.
+- **Read [`docs/ProofSkill.md`](docs/ProofSkill.md) before writing
+  manual proofs.** It covers the one-step-at-a-time workflow, the
+  higher-order-rejection workaround, bundle-sizing for SMT, and the
+  `using`-chain pattern — most novel proofs hit one of these.
 - **Lean on `Verify/Tactic.lean` and extend it.** When a manual proof
   uses the same shape twice — `pverify_carry_after_recv`,
   `pverify_not_inflight[_by]`, `pverify_inflight_by`,

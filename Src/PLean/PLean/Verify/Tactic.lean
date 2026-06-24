@@ -581,8 +581,9 @@ elab_rules : tactic
           else
             nextGoals := nextGoals ++ [g]
         setGoals nextGoals
-      -- Drop trailing `True` goals (the `... ∧ True` bundle terminator
-      -- our `buildConjAt` emits leaves a literal `True` after splitting).
+      -- Drop trailing `True` goals defensively — `buildConjAt` no longer
+      -- emits a trailing `True` terminator, but a user-written bundle or an
+      -- intermediate simp may still leave one after splitting.
       let final ← getGoals
       let mut keep : List MVarId := []
       for g in final do

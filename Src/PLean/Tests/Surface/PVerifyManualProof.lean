@@ -42,7 +42,7 @@ emits. -/
 theorem M.S.eHello_correct_Safety_trivial (this : M) (lbl : Sig.Label) :
     triple (l := PProp Sig)
       (fun s =>
-        (trivial s ∧ True) ∧
+        (trivial s) ∧
         PLean.inflight lbl s ∧
         lbl.target = this.ref ∧
         is_M this.ref s ∧
@@ -50,11 +50,11 @@ theorem M.S.eHello_correct_Safety_trivial (this : M) (lbl : Sig.Label) :
         lbl.action = .event E.eHello)
       (do PLean.markReceived (P := Sig) lbl; M.S.eHello_handler this)
       (fun _ s =>
-        trivial s ∧ True) := by
+        trivial s) := by
   -- The dispatched label `lbl` is now a binder; the program marks it
   -- received then runs the handler. Handler is `pure ()` and the invariant
   -- is `always_true := True`, so once the bundle is unfolded the post
-  -- `True ∧ True` closes during `pverify_step_wp`'s own simp.
+  -- `True` closes during `pverify_step_wp`'s own simp.
   unfold M.S.eHello_handler trivial always_true
   pverify_step_wp
 

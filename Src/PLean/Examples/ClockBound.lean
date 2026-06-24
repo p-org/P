@@ -333,7 +333,7 @@ theorem LocalClock.Waiting.eGlobalResponse_correct_Safety_causal_using_topology
     (this : LocalClock) (param : eGlobalResponse_payload) (lbl : Sig.Label) :
     triple (l := PProp Sig)
       (fun s =>
-        (causal s ∧ topology s ∧ True) ∧
+        (causal s ∧ topology s) ∧
         inflight lbl s ∧
         lbl.target = this.ref ∧
         is_LocalClock this.ref s ∧
@@ -341,7 +341,7 @@ theorem LocalClock.Waiting.eGlobalResponse_correct_Safety_causal_using_topology
         lbl.action = .event (E.eGlobalResponse param))
       (do PLean.markReceived (P := Sig) lbl;
           LocalClock.Waiting.eGlobalResponse_handler this param)
-      (fun _ s => causal s ∧ True) := by
+      (fun _ s => causal s) := by
   unfold LocalClock.Waiting.eGlobalResponse_handler
   pverify_step_wp
   intro s hpre
@@ -350,7 +350,7 @@ theorem LocalClock.Waiting.eGlobalResponse_correct_Safety_causal_using_topology
   simp only [causal, idle_no_gQuery, idle_no_gResp, gResp_unique_per_lc,
     gQuery_unique_per_lc, gQuery_excludes_gResp, inflight,
     stateOf] at hpre ⊢
-  obtain ⟨hINQ, hINR, hURP, hUQP, hQER, _⟩ := hpre
+  obtain ⟨hINQ, hINR, hURP, hUQP, hQER⟩ := hpre
   intro hTop hInf hTgt hThisKind hSt hAct
     earlyDelta hEarlyLo hEarlyHi lateDelta hLateLo hLateHi
   -- Topology hypothesis we need: lbl.target = (payload_of lbl).target.
@@ -358,13 +358,13 @@ theorem LocalClock.Waiting.eGlobalResponse_correct_Safety_causal_using_topology
   -- in hTop -- their projection gives `True` after `simp only`. Instead,
   -- access via the obtain pattern matching the structure of `topology`.
   simp only [topology] at hTop
-  obtain ⟨_hgcU, _hgcK, _hlcG, _hLcCInj, hGRLT, _hGQLT, _hLRLT, _⟩ := hTop
+  obtain ⟨_hgcU, _hgcK, _hlcG, _hLcCInj, hGRLT, _hGQLT, _hLRLT⟩ := hTop
   -- Establish the key identity: (payload_of lbl).target = this.ref.
   have hLblE : is_eGlobalResponse lbl := by simp only [is_eGlobalResponse, hAct]
   have hLblPayTgt : (eGlobalResponse_payload_of lbl).target = this.ref := by
     have h := hGRLT lbl hLblE hInf.1
     rw [← h]; exact hTgt
-  refine ⟨?inq, ?inr, ?urp, ?uqp, ?qer, trivial⟩
+  refine ⟨?inq, ?inr, ?urp, ?uqp, ?qer⟩
   case inq =>
     intro lc hLcKind q hisQ hLcIdle hInfQ
     obtain ⟨hSentQ, hRecvQ⟩ := hInfQ

@@ -54,14 +54,14 @@ namespace ObligationShapeMod
 info: M.S.eHello_correct_Block1_safety : ∀ (this : M) (lbl : Sig.Label),
   triple
     (fun s ↦
-      (safety s ∧ True) ∧
+      safety s ∧
         inflight lbl s ∧
           lbl.target = this.ref ∧
             is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
     (do
       markReceived lbl
       M.S.eHello_handler this)
-    fun x s ↦ safety s ∧ True
+    fun x s ↦ safety s
 -/
 #guard_msgs in
 #check @M.S.eHello_correct_Block1_safety
@@ -73,14 +73,14 @@ info: M.S.eHello_correct_Block1_safety : ∀ (this : M) (lbl : Sig.Label),
 info: M.S.eHello_correct_Block2_default : ∀ (this : M) (lbl : Sig.Label),
   triple
     (fun s ↦
-      (DefaultInvariants s ∧ True) ∧
+      DefaultInvariants s ∧
         inflight lbl s ∧
           lbl.target = this.ref ∧
             is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
     (do
       markReceived lbl
       M.S.eHello_handler this)
-    fun x s ↦ DefaultInvariants s ∧ True
+    fun x s ↦ DefaultInvariants s
 -/
 #guard_msgs in
 #check @M.S.eHello_correct_Block2_default

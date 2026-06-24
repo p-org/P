@@ -199,20 +199,20 @@ set_option maxHeartbeats 8000000 in
 @[pverifyProof]
 theorem Node.Working.eAquire_correct_block0_system_config (this : Node) (lbl : Sig.Label) :
     triple (l := PProp Sig)
-      (fun s => (system_config s ∧ True) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
+      (fun s => (system_config s) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
         is_Node this.ref s ∧ (s.machines this.ref).currentState = Node.Working_st ∧
         lbl.action = .event E.eAquire)
       (do PLean.markReceived (P := Sig) lbl; Node.Working.eAquire_handler this)
-      (fun _ s => system_config s ∧ True) := by
+      (fun _ s => system_config s) := by
   unfold Node.Working.eAquire_handler
   pverify_step_wp
   intro s hpre
   simp only [system_config, const_server, serv_is_serv, single_server, unique_server,
     aquire_to_node, release_to_node, grant_to_node, lock_to_server,
     unlock_to_server, node_send_lock, node_send_unlock, inflight] at hpre ⊢
-  obtain ⟨hConst, hServ, hSingle, hUniq, hAcq, hRel, hGrant, hLock, hUnlock, hNSL, hNSU, _⟩ := hpre
+  obtain ⟨hConst, hServ, hSingle, hUniq, hAcq, hRel, hGrant, hLock, hUnlock, hNSL, hNSU⟩ := hpre
   intro hInflLbl hTgtThis hThisKind hStThis hActThis
-  refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
+  refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu⟩
   -- Handler only `send`s an eLock: machines unchanged; topology clauses
   -- transfer verbatim; the only new label is an eLock so non-eLock
   -- routing clauses fall to the pre-state.
@@ -265,18 +265,18 @@ set_option maxHeartbeats 8000000 in
 @[pverifyProof]
 theorem Server.Serving.eLock_correct_block0_system_config (this : Server) (param : eLock_payload) (lbl : Sig.Label) :
     triple (l := PProp Sig)
-      (fun s => (system_config s ∧ True) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
+      (fun s => (system_config s) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
         is_Server this.ref s ∧ (s.machines this.ref).currentState = Server.Serving_st ∧
         lbl.action = .event (E.eLock param))
       (do PLean.markReceived (P := Sig) lbl; Server.Serving.eLock_handler this param)
-      (fun _ s => system_config s ∧ True) := by
+      (fun _ s => system_config s) := by
   unfold Server.Serving.eLock_handler
   pverify_step_wp
   intro s hpre
   simp only [system_config, const_server, serv_is_serv, single_server, unique_server,
     aquire_to_node, release_to_node, grant_to_node, lock_to_server,
     unlock_to_server, node_send_lock, node_send_unlock, inflight] at hpre ⊢
-  obtain ⟨hConst, hServ, hSingle, hUniq, hAcq, hRel, hGrant, hLock, hUnlock, hNSL, hNSU, _⟩ := hpre
+  obtain ⟨hConst, hServ, hSingle, hUniq, hAcq, hRel, hGrant, hLock, hUnlock, hNSL, hNSU⟩ := hpre
   intro hInflLbl hTgtThis hThisKind hStThis hActThis
   -- node_send_lock on the consumed eLock ⟹ its sender (param.sender) is a Node.
   have hIsLock : is_eLock lbl := by simp only [is_eLock, hActThis]
@@ -287,7 +287,7 @@ theorem Server.Serving.eLock_correct_block0_system_config (this : Server) (param
   · -- then-branch: state Server_has_lock:=false (field-only; preserves
     -- kind/currentState/Node_server), sends fresh eGrant to param.sender.
     intro _hcond
-    refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
+    refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu⟩
     -- Machine update is field-only (Server_has_lock); kind / currentState
     -- / Node_server are preserved, so a post-state `is_<M> m` guard
     -- bridges to the pre-state form by `by_cases m = this.ref`.
@@ -351,7 +351,7 @@ theorem Server.Serving.eLock_correct_block0_system_config (this : Server) (param
         by_cases hpt : (eUnlock_payload_of e).sender = this.ref <;> simp_all
   · -- else-branch: machines unchanged, only `received[lbl]:=true`.
     intro _hcond
-    refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
+    refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu⟩
     case cn | ss | sgl | uq => assumption
     case aq  => intro e m hisE hTgt hm; pverify_carry_after_recv (hAcq e m hisE hTgt hm)
     case rel => intro e m hisE hTgt hm; pverify_carry_after_recv (hRel e m hisE hTgt hm)
@@ -368,18 +368,18 @@ set_option maxHeartbeats 8000000 in
 @[pverifyProof]
 theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : Sig.Label) :
     triple (l := PProp Sig)
-      (fun s => (system_config s ∧ True) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
+      (fun s => (system_config s) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
         is_Node this.ref s ∧ (s.machines this.ref).currentState = Node.Working_st ∧
         lbl.action = .event E.eRelease)
       (do PLean.markReceived (P := Sig) lbl; Node.Working.eRelease_handler this)
-      (fun _ s => system_config s ∧ True) := by
+      (fun _ s => system_config s) := by
   unfold Node.Working.eRelease_handler
   pverify_step_wp
   intro s hpre
   simp only [system_config, const_server, serv_is_serv, single_server, unique_server,
     aquire_to_node, release_to_node, grant_to_node, lock_to_server,
     unlock_to_server, node_send_lock, node_send_unlock, inflight] at hpre ⊢
-  obtain ⟨hConst, hServ, hSingle, hUniq, hAcq, hRel, hGrant, hLock, hUnlock, hNSL, hNSU, _⟩ := hpre
+  obtain ⟨hConst, hServ, hSingle, hUniq, hAcq, hRel, hGrant, hLock, hUnlock, hNSL, hNSU⟩ := hpre
   intro hInflLbl hTgtThis hThisKind hStThis hActThis
   -- `this` (a Node) points at lock_server (a Server); the new eUnlock targets it.
   have hThisNodePre : is_Node this.ref s := hThisKind
@@ -387,7 +387,7 @@ theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : 
   refine ⟨?thenB, ?elseB⟩
   · -- then-branch: Node_has_lock:=false (field-only), sends eUnlock to server.
     intro _hcond
-    refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
+    refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu⟩
     case cn =>
       intro n hn
       pverify_machine_has_type hnPre : Node n.ref from hn
@@ -451,7 +451,7 @@ theorem Node.Working.eRelease_correct_block0_system_config (this : Node) (lbl : 
         by_cases hpt : (eUnlock_payload_of e).sender = this.ref <;> simp_all
   · -- else-branch: machines unchanged, only `received[lbl]:=true`.
     intro _hcond
-    refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu, trivial⟩
+    refine ⟨?cn, ?ss, ?sgl, ?uq, ?aq, ?rel, ?gr, ?lk, ?ulk, ?nsl, ?nsu⟩
     case cn | ss | sgl | uq => assumption
     case aq  => intro e m hisE hTgt hm; pverify_carry_after_recv (hAcq e m hisE hTgt hm)
     case rel => intro e m hisE hTgt hm; pverify_carry_after_recv (hRel e m hisE hTgt hm)

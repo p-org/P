@@ -217,11 +217,11 @@ open PartialCorrectness DemonicChoice
 @[pverifyProof]
 theorem M.Act.eGo_correct_block0_broken_manual (this : M) (lbl : Sig.Label) :
     triple (l := PProp Sig)
-      (fun s => (broken_manual s ∧ True) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
+      (fun s => (broken_manual s) ∧ inflight lbl s ∧ lbl.target = this.ref ∧
         is_M this.ref s ∧ (s.machines this.ref).currentState = M.Act_st ∧
         lbl.action = .event E.eGo)
       (do PLean.markReceived (P := Sig) lbl; M.Act.eGo_handler this)
-      (fun _ s => broken_manual s ∧ True) := by
+      (fun _ s => broken_manual s) := by
   sorry
 end SoundnessR6
 

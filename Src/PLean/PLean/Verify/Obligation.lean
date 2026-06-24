@@ -60,12 +60,16 @@ private def usingPredIdents (usingNames : Array Name) :
     MacroM (Array (TSyntax `term)) := do
   usingNames.mapM fun n => `($(mkIdent n))
 
-/-- Build the conjunction `(p1) s ∧ (p2) s ∧ ... ∧ True`. -/
+/-- Build the right-associated conjunction `(p1) s ∧ (p2) s ∧ ... ∧ (pn) s`,
+or `True` if `preds` is empty. -/
 private def buildConjAt (preds : Array (TSyntax `term))
     (sIdent : TSyntax `term) :
     MacroM (TSyntax `term) := do
-  let mut body : TSyntax `term ← `(True)
-  for p in preds.reverse do
+  if preds.isEmpty then
+    return ← `(True)
+  let last := preds[preds.size - 1]!
+  let mut body : TSyntax `term ← `(($last) $sIdent)
+  for p in preds.pop.reverse do
     body ← `(($p) $sIdent ∧ $body)
   return body
 

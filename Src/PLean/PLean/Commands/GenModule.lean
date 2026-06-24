@@ -657,7 +657,7 @@ private def materialiseMachineBody (mname : Name) (items : Array Syntax)
 
 `emitConjPredicate name members applyState` emits
 
-  def <name> : GS → Prop := fun <binder> => m1 ∧ m2 ∧ ... ∧ True
+  def <name> : GS → Prop := fun <binder> => m1 ∧ m2 ∧ ... ∧ mn
 
 When `applyState = true`, each `mN` is applied to the bound state (so
 the binder is an unhygienic `s` that the `mN`s reference); otherwise
@@ -679,8 +679,11 @@ private def emitConjPredicate (name : Ident) (members : Array (TSyntax `term))
     ))
     return
   let sId : Ident := mkIdent `s
-  let mut body : TSyntax `term ← `(True)
-  for m in members.reverse do
+  let last := members[members.size - 1]!
+  let init : TSyntax `term ←
+    if applyState then `(($last) $sId) else `(($last))
+  let mut body : TSyntax `term := init
+  for m in members.pop.reverse do
     if applyState then
       body ← `(($m) $sId ∧ $body)
     else
@@ -759,10 +762,19 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
         PLean.injectKindGuards machineKinds eventKinds `s rewritten
       props := props.push ⟨raw⟩
   -- Build the conjunction by hand (mirrors `emitConjPredicate`'s shape
-  -- but doesn't apply `s` to the conjuncts — they're plain props).
-  let mut body : TSyntax `term ← `(True)
-  for p in props.reverse do
-    body ← `(($p) ∧ $body)
+  -- but doesn't apply `s` to the conjuncts — they're plain props). For a
+  -- non-empty `props` we drop the trailing `True` terminator; the empty
+  -- case (no framework or user clauses, currently unreachable) falls back
+  -- to `True`.
+  let body : TSyntax `term ←
+    if props.isEmpty then
+      `(True)
+    else do
+      let last := props[props.size - 1]!
+      let mut acc : TSyntax `term ← `(($last))
+      for p in props.pop.reverse do
+        acc ← `(($p) ∧ $acc)
+      pure acc
   elabCommand (← `(
     def $(mkIdent `InitConditions) : ($idGS) → Prop := fun $sId => $body
   ))

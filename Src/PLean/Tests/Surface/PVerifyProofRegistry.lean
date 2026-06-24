@@ -67,7 +67,7 @@ namespace PVerifyWithManual
 theorem M.S.eHello_correct_Safety_trivial (this : M) (lbl : Sig.Label) :
     triple (l := PProp Sig)
       (fun s =>
-        (trivial s ∧ True) ∧
+        (trivial s) ∧
         PLean.inflight lbl s ∧
         lbl.target = this.ref ∧
         is_M this.ref s ∧
@@ -75,7 +75,7 @@ theorem M.S.eHello_correct_Safety_trivial (this : M) (lbl : Sig.Label) :
         lbl.action = .event E.eHello)
       (do PLean.markReceived (P := Sig) lbl; M.S.eHello_handler this)
       (fun _ s =>
-        trivial s ∧ True) := by
+        trivial s) := by
   unfold M.S.eHello_handler trivial always_true
   pverify_step_wp
 

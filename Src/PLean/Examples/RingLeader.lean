@@ -153,13 +153,13 @@ set_option maxHeartbeats 2000000 in
 theorem Server.Proposing.eNominate_correct_block1_Safety_using_lemmas
     (this : Server) (param : eNominate_payload) (lbl : Sig.Label) :
     triple (l := PProp Sig)
-      (fun s => (Safety s ∧ lemmas s ∧ True) ∧
+      (fun s => (Safety s ∧ lemmas s) ∧
         inflight lbl s ∧ lbl.target = this.ref ∧
         is_Server this.ref s ∧
         (s.machines this.ref).currentState = Server.Proposing_st ∧
         lbl.action = .event (E.eNominate param))
       (do PLean.markReceived (P := Sig) lbl; Server.Proposing.eNominate_handler this param)
-      (fun _ s => Safety s ∧ True) := by
+      (fun _ s => Safety s) := by
   unfold Server.Proposing.eNominate_handler
   unfold Safety lemmas UniqueLeader LeaderMax Aux NoBypass SelfPendingMax
   try unfold PLean.send PLean.goto PLean.raise PLean.markReceived PLean.announce
@@ -221,13 +221,13 @@ set_option maxHeartbeats 4000000 in
 theorem Server.Proposing.eNominate_correct_block0_lemmas
     (this : Server) (param : eNominate_payload) (lbl : Sig.Label) :
     triple (l := PProp Sig)
-      (fun s => (lemmas s ∧ True) ∧
+      (fun s => (lemmas s) ∧
         inflight lbl s ∧ lbl.target = this.ref ∧
         is_Server this.ref s ∧
         (s.machines this.ref).currentState = Server.Proposing_st ∧
         lbl.action = .event (E.eNominate param))
       (do PLean.markReceived (P := Sig) lbl; Server.Proposing.eNominate_handler this param)
-      (fun _ s => lemmas s ∧ True) := by
+      (fun _ s => lemmas s) := by
   unfold Server.Proposing.eNominate_handler
   unfold lemmas
   unfold LeaderMax Aux NoBypass SelfPendingMax

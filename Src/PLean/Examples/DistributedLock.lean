@@ -130,14 +130,14 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
     (lbl : Sig.Label) :
     triple (l := PProp Sig)
       (fun s =>
-        (safety s ∧ True) ∧
+        (safety s) ∧
         inflight lbl s ∧
         lbl.target = this.ref ∧
         is_Node this.ref s ∧
         (s.machines this.ref).currentState = Node.Act_st ∧
         lbl.action = .event (E.eGrant param))
       (do PLean.markReceived (P := Sig) lbl; Node.Act.eGrant_handler this param)
-      (fun _ s => safety s ∧ True) := by
+      (fun _ s => safety s) := by
   unfold Node.Act.eGrant_handler
   pverify_step_wp
   intro s hpre
@@ -152,7 +152,7 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
   simp only [safety, unique_holder, no_lock_while_transfer, unique_accept,
     not_held_after_release, transfer_to_higher, is_Node, Node_allocated,
     Node_kind, inflight] at hpre
-  obtain ⟨hUH, hNLT, hUA, hNHR, hTH, _⟩ := hpre
+  obtain ⟨hUH, hNLT, hUA, hNHR, hTH⟩ := hpre
   intro hInf hTgt hThisKind hAct
   simp only [is_Node, Node_allocated, Node_kind, inflight] at hThisKind hInf
   refine ⟨?_, ?_⟩
@@ -161,7 +161,7 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
     rw [Bool.and_eq_true, decide_eq_true_eq] at hcond
     obtain ⟨hHeld, hGt⟩ := hcond
     simp only [safety]
-    refine ⟨?_, ?_, ?_, ?_, ?_, trivial⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩
     · simp only [unique_holder, is_Node, Node_allocated, Node_kind]; pverify_smt
     · simp only [no_lock_while_transfer, is_Node, Node_allocated, Node_kind, inflight]; pverify_smt
     · simp only [unique_accept, inflight]; pverify_smt
@@ -200,7 +200,7 @@ theorem Node.Act.eGrant_correct_Safety_safety (this : Node) (param : eGrant_payl
     -- verbatim from the pre-state.
     intro hcond
     simp only [safety]
-    refine ⟨?_, ?_, ?_, ?_, ?_, trivial⟩ <;>
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
       (simp only [unique_holder, no_lock_while_transfer, unique_accept,
          not_held_after_release, transfer_to_higher, is_Node, Node_allocated,
          Node_kind, inflight]

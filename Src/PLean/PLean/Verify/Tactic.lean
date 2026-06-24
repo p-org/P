@@ -249,24 +249,17 @@ macro_rules
 
 /-! ## Obligation cache
 
-Hash the **elaborated obligation type** (a `Lean.Expr`) and consult a
-per-project `<project>/.lake/build/pverify_cache/` directory. On a hit,
-the obligation is closed by `Loom.SMT.trust_smt` directly, skipping
-`pverify_smt_prep`, the lean-auto translation, AND the solver call.
-Mirrors PVerifier's approach (`PCompiler/.../Uclid5CodeGenerator.cs`
-`PVerifierCache`) which checksums the generated UCLID source file.
+Hash the elaborated obligation type and consult a per-project
+`<project>/.lake/build/pverify_cache/`. On a hit, close the obligation
+via `Loom.SMT.trust_smt` directly — same axiom `loom_smt` uses on
+`unsat` — skipping prep, the lean-auto translation, and the solver
+call.
 
-**Soundness.** Entries are written only after a real
-`pverify_smt` succeeded (the solver returned `unsat`). Hits
-close the obligation via the same `Loom.SMT.trust_smt` axiom that
-`loom_smt` uses on `unsat`. 64-bit `String.hash` collision risk at
-10⁴ entries is <10⁻⁷.
-
-**Stability.** The hash is over `Lean.Meta.ppExpr` output of the
-elaborated obligation type, with macro-scope marks stripped. Stable
-across elaborations of the same surface obligation; an unrelated edit
-elsewhere in the file leaves the obligation type byte-identical and
-the cache hits. -/
+Entries are only written after a live `pverify_smt` returned `unsat`,
+so a hit certifies an earlier real solver run. The hash is over
+`Lean.Meta.ppExpr` of the elaborated type with macro-scope marks
+stripped, so unrelated edits in the same file leave entries
+byte-identical and the cache hits. -/
 
 scoped syntax (name := pverifyHere) "pverifyHere!" : term
 

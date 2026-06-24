@@ -1,41 +1,27 @@
 /-
-PLean Phase-1 Task 10 — SMT round-trip smoke test.
+SMT round-trip smoke test.
 
 Confirms that Loom's `loom_smt` tactic can find and run the bundled
-solver binaries (z3/cvc5) from a PLean source file *and* that the
-solver can discharge non-trivial first-order goals. This is a
-forward-looking check: M1/M2 close via `grind` and need no SMT, but
-Phase-3's obligation generator will dispatch to SMT for triples that
-`grind` can't close (D22 step 4, currently deferred under REVIEW_P3
-§2.5).
+solver binaries (z3/cvc5) from a PLean source file and that the solver
+can discharge non-trivial first-order goals. Three probes:
+  (1) binary reachability via the trivial `x = x` form,
+  (2) a quantified linear-arithmetic claim, and
+  (3) a `forall`/`exists` mix that would defeat `omega`.
 
-The earlier version of this file proved only `∀ x : Nat, x = x`,
-which was a useful "binary reachable + spawning works" smoke test
-but didn't exercise any reasoning. The current test additionally:
-  (1) confirms binary reachability with the trivial `x = x` form,
-  (2) discharges a quantified linear-arithmetic claim, and
-  (3) handles a `forall`/`exists` mix that would defeat `omega`.
-
-Risk R3 in PLAN_P1: the lakefile downloads the solvers into
-`Loom/.lake/build/`, and Loom's `Loom/SMT.lean` resolves them via
-`currentDirectory!` — confirm that resolution works from a PLean
-source dir, not just from a Loom one. If the solver isn't found,
-the error surfaces at compile time with a clear "binary not found"
-message — enough information to plan a Phase-3 fix.
+The lakefile downloads the solvers into `Loom/.lake/build/`, and Loom's
+`Loom/SMT.lean` resolves them via `currentDirectory!`; this test pins
+that resolution from a PLean source dir.
 
 ## What this test does NOT cover
 
 `loom_smt`'s translation backend (`lean-auto`) refuses higher-order
 inputs. PLean's `GlobalState.sent : Label → Bool` is a record field
-that's *first-order in Lean* but *higher-order from SMT-LIB's
-perspective* (a function in the goal universe). Goals like
-`(s.addSent lbl).sent lbl = true` therefore fail to translate with
-"`lamSort2SSortAux :: Unexpected error. Higher order input?`" even
-after `unfold GlobalState.addSent`. Phase 3's eventual `loom_smt`
-fallback in `pverify_solve` (REVIEW_P3 §2.5) will need a
-defunctionalisation pre-pass — or to keep restricting SMT to
-goals over `Nat`/`Int`/`Bool`/inductives only — before it can
-discharge GlobalState-shaped triples. Tracked, not yet built.
+that's first-order in Lean but higher-order from SMT-LIB's
+perspective. Goals like `(s.addSent lbl).sent lbl = true` therefore
+fail to translate with "`lamSort2SSortAux :: Unexpected error. Higher
+order input?`" — the obligation generator's prep chain
+(`pverify_smt_prep`) defunctionalises before reaching `loom_smt` to
+side-step this.
 -/
 import Loom.SMT
 import Loom.MonadAlgebras.WP.Options

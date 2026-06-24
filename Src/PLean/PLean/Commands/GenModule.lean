@@ -16,11 +16,11 @@ hygiene marks and fail to resolve.
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Surface.Types
-import PLean.Surface.Events
-import PLean.Surface.Machine
-import PLean.Surface.Verify
-import PLean.Surface.Stmt
+import PLean.Syntax.Types
+import PLean.Syntax.Events
+import PLean.Syntax.Machine
+import PLean.Syntax.Verify
+import PLean.Syntax.Stmt
 import PLean.Semantics.Monad
 import PLean.Semantics.Primitives
 import PLean.Semantics.Predicates
@@ -70,7 +70,7 @@ private def idProgramSig : Ident := mkIdent `PLean.ProgramSig
 private def idPM_PLean   : Ident := mkIdent `PLean.PM
 private def idGlobalState : Ident := mkIdent `PLean.GlobalState
 
-/-! ## Step 1: per-machine wrapper structs (D10) -/
+/-! ## Step 1: per-machine wrapper structs -/
 
 private def emitMachineWrappers (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   for mname in ctx.machineOrder do
@@ -85,20 +85,19 @@ private def emitMachineWrappers (ctx : LocalPModuleCtx) : CommandElabM Unit := d
       instance : Coe $mid $idMachineRef := ⟨fun s => s.ref⟩
     ))
 
-/-! ## Step 1b: machine-kind machinery (D20)
+/-! ## Step 1b: machine-kind machinery
 
 For each pmodule, emit:
   inductive <Mod>.MKind | <M1> | <M2> | ... deriving DecidableEq, Inhabited
-  def <Mod>.<M>_kind : Nat := <i>     -- index ≥ 1 (0 reserved per R20)
+  def <Mod>.<M>_kind : Nat := <i>     -- index ≥ 1 (0 reserved for "unset")
 
 Plus a per-machine `<M>.allocated (m : MachineRef) (s : GS) : Prop`
 predicate that asserts a machine ref's `kind` matches its expected
 ctor. The `is` macro extends to dispatch on machine names by
 expanding `m is <M>` to `<M>.allocated m`.
 
-Spec machines participate in the kind tagging too (decision: their kind
-is recognisable in invariants even though Phase 4 runs spec handlers
-specially). This costs nothing now and avoids re-emitting MKind later. -/
+Spec machines participate in the kind tagging too so their kind is
+recognisable in invariants. -/
 
 private def idMKind  : Ident := mkIdent `MKind
 
@@ -221,14 +220,12 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
       elabCommand (← `(
         instance : Inhabited $idE := ⟨$firstFull default⟩
       ))
-  -- `<Mod>.G`: goto payload union. Phase-2 surface doesn't expose goto
+  -- `<Mod>.G`: goto payload union. The surface doesn't expose goto
   -- payloads; one trivial constructor suffices. The constructor MUST be
   -- emitted unhygienically (via `mkIdent`): the `goto` doElem macro in
-  -- `Surface/Stmt.lean` references it as the clean name `G.unit`, so a
+  -- `Syntax/Stmt.lean` references it as the clean name `G.unit`, so a
   -- hygienic `| unit` ctor (which Lean would name `G.unit._@…._hyg.N`)
-  -- would make `goto <state>` fail to resolve `G.unit` inside a handler
-  -- body. (`goto` inside an `on`-handler is first exercised by the
-  -- RingLeader port; `on ev goto st` transitions don't hit this path.)
+  -- would make `goto <state>` fail to resolve `G.unit` inside a handler.
   let gUnitCtor ← `(Lean.Parser.Command.ctor| | $(mkIdent `unit):ident)
   elabCommand (← `(
     inductive $idG where
@@ -292,7 +289,7 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
 
 /-! ## Step 4b: per-event tag-check predicates `is_<ev>`
 
-The `is` notation in `Surface/Notation.lean` rewrites `lbl is <ev>` to
+The `is` notation in `Syntax/Notation.lean` rewrites `lbl is <ev>` to
 `is_<ev> lbl` — a *tag-only* check (matching P's surface semantics).
 Emitting one per event side-steps the awkwardness of "constructor as
 first-class value" in Lean: the user never has to write a payload to
@@ -353,31 +350,14 @@ private def emitEventPayloadAccessors (ctx : LocalPModuleCtx)
 
 /-! ## Step 4d″: per-event payload characterisation `<ev>_payload_of_spec`
 
-`<ev>_payload_of` (step 4d) is meant to be opaque to SMT — lean-auto
-treats it as an uninterpreted function. That is right for an in-flight
-label `e` whose payload the invariant constrains transitively. But two
-things go wrong for a *send*-handler whose post-state routing invariant
-quantifies `∀ e, is_<ev> e → … (<ev>_payload_of e) …`:
-
-  1. As a plain `def`, lean-auto tries to look inside `<ev>_payload_of`'s
-     `match` body when it appears applied to a *bound* `e`, and aborts
-     with `lamTerm2STermAux :: Unexpected head term … lam`. Marking the
-     extractor `@[irreducible]` (below) stops that — it then translates
-     as a true uninterpreted symbol even under a `∀` binder.
-
-  2. With the extractor uninterpreted, the solver has no way to compute
-     its value on the freshly-sent label `Label.mk t (.event (E.<ev> p))
-     c`, so it picks a spurious model and reports a counter-example. The
-     emitted `<ev>_payload_of_spec` fact — `∀ lbl p, lbl.action = .event
-     (E.<ev> p) → <ev>_payload_of lbl = p` — supplies exactly the
-     defining equation the solver needs; `emitOneObligation` brings it
-     into context (`have`) so `loom_smt [*]` instantiates it at the new
-     label.
-
-This generalises the manual `eAccept_payload_of_mk` lemma the
-DistributedLock port hand-wrote: the generator now emits the
-characterisation for every event with a payload, and the obligation
-generator feeds it to SMT automatically. -/
+`<ev>_payload_of` is sealed `@[irreducible]` so SMT treats it as an
+uninterpreted symbol — that's what lets a routing invariant
+`∀ e, is_<ev> e → … (<ev>_payload_of e) …` translate cleanly. The
+defining equation
+  `∀ lbl p, lbl.action = .event (E.<ev> p) → <ev>_payload_of lbl = p`
+is emitted as a separate theorem `<ev>_payload_of_spec`; the obligation
+generator brings it into the local context as a `have`, so SMT can
+compute the extractor's value on a freshly-sent label. -/
 
 private def emitPayloadCharacterizations (ctx : LocalPModuleCtx)
     (eventPayloadFields : NameMap NameSet) : CommandElabM Unit := do
@@ -546,7 +526,7 @@ private def emitStateAliases (mname : Name) (states : Array PStateDecl) :
 /-! ## Handler emission
 
 For each state body item, emit a Lean def. Handler defs take
-`(this : <MName>)` (the wrapper struct, D11/D10) as the explicit first
+`(this : <MName>)` (the wrapper struct) as the explicit first
 parameter.
 
 Each handler body is wrapped with leading `let v ← v_get this.ref` for
@@ -571,6 +551,7 @@ private def buildVarBindings (vars : Array VarInfo) :
         let $vId:ident ← $getName:ident ($thisI |>.ref))
 
 private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
+    (eventPayloadTy : Name → Option Name)
     (item : Syntax) : CommandElabM Unit := do
   let mIdent := mkIdent mname
   match item with
@@ -634,106 +615,130 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
         $bindings*
         $bodyItem
     ))
-  | `(pStateBodyItem| on $_:ident goto $_:ident) =>
-    -- Pure transition: no handler def emitted (registry-only).
-    pure ()
+  | `(pStateBodyItem| on $ev:ident goto $tgt:ident) =>
+    -- Emit a synthetic `_handler` whose body is just the `goto`. The
+    -- per-handler obligation needs a Lean def to apply `wpgen` to; without
+    -- one, the (state, event) pair was silently skipped and the goto's
+    -- `currentState` / `sent` / `actionCount` mutations went unverified.
+    -- The binder list matches the obligation generator's call shape:
+    -- payload events get a `param : <ev>_payload`, payload-less ones don't.
+    let defName := handlerName sname ev.getId (suffix := true)
+    let bindings ← liftMacroM <| buildVarBindings vars
+    let tgtAlias : Ident := mkIdent (tgt.getId.appendAfter "_st")
+    let gUnit : Ident := mkIdent (`G ++ `unit)
+    let bodyItem : TSyntax `Lean.Parser.Term.doSeqItem ←
+      liftMacroM <| `(Lean.Parser.Term.doSeqItem|
+        do PLean.goto ($idThis |>.ref) $tgtAlias $gUnit)
+    match eventPayloadTy ev.getId with
+    | some payloadTy =>
+      let payloadId : Ident := mkIdent payloadTy
+      elabCommand (← `(
+        noncomputable def $defName ($idThis : $mIdent) (_param : $payloadId) :
+            $idPM Unit := do
+          $bindings*
+          $bodyItem
+      ))
+    | none =>
+      elabCommand (← `(
+        noncomputable def $defName ($idThis : $mIdent) : $idPM Unit := do
+          $bindings*
+          $bodyItem
+      ))
   | _ => throwErrorAt item "unrecognised state body item (during materialisation)"
 
 private def materialiseMachineBody (mname : Name) (items : Array Syntax)
-    (vars : Array VarInfo) : CommandElabM Unit := do
+    (vars : Array VarInfo)
+    (eventPayloadTy : Name → Option Name) : CommandElabM Unit := do
   for it in items do
     match it with
     | `(pMachineBodyItem| var $_:ident : $_:term) =>
       pure ()
     | `(pMachineBodyItem| start state $sid:ident { $sitems:pStateBodyItem* }) =>
       let sname := sid.getId
-      for sit in sitems do materialiseStateBodyItem mname sname vars sit
+      for sit in sitems do
+        materialiseStateBodyItem mname sname vars eventPayloadTy sit
     | `(pMachineBodyItem| state $sid:ident { $sitems:pStateBodyItem* }) =>
       let sname := sid.getId
-      for sit in sitems do materialiseStateBodyItem mname sname vars sit
+      for sit in sitems do
+        materialiseStateBodyItem mname sname vars eventPayloadTy sit
     | _ => throwErrorAt it "unrecognised machine body item (during materialisation)"
 
 /-! ## Step 7b–d: state-indexed conjunction predicates.
 
-`emitConjPredicate name members applyState` emits
+`emitConjPredicate name members` emits
 
-  def <name> : GS → Prop := fun <binder> => m1 ∧ m2 ∧ ... ∧ mn
+  def <name> : GS → Prop := fun s => c₁ ∧ c₂ ∧ ... ∧ cₙ
 
-When `applyState = true`, each `mN` is applied to the bound state (so
-the binder is an unhygienic `s` that the `mN`s reference); otherwise
-the binder is `_` and each `mN` is used verbatim (the user's clauses
-are closed propositions, e.g. `init-holds (∀ x, P x)`). Empty `members`
-collapses to `fun _ => True`.
+The binder is always the unhygienic `s` (the soundness fix from
+2026-06-10: a bundle that elided the binder while the body still named
+`s` via macro capture silently decoupled the predicate from per-handler
+state). Each member is a `(term, applyState)` pair: when `applyState` is
+true the conjunct is rendered as `(m) s`; when false the conjunct is
+`m` verbatim — the user's clause is already a closed `Prop` that may
+reference `s` directly (e.g. a framework init clause like
+`s.actionCount = 0`, or an `init-holds (∀ x, P x)` body).
 
-WHY a single helper: three earlier callers (`emitInitConditions`,
-`emitLemmaBundles`, `emitUserInv`) hand-rolled the same fold. The
-2026-06-10 soundness bug was exactly the bundle predicate failing to
-apply `s` — having the apply-or-not decision in one place removes the
-foot-gun. -/
+The per-member flag lets `emitInitConditions` mix `s`-dependent
+framework clauses with closed user-supplied props in a single call.
+Empty `members` collapses to `fun _ => True`. -/
 
-private def emitConjPredicate (name : Ident) (members : Array (TSyntax `term))
-    (applyState : Bool) : CommandElabM Unit := do
+private def emitConjPredicate (name : Ident)
+    (members : Array (TSyntax `term × Bool)) : CommandElabM Unit := do
   if members.isEmpty then
     elabCommand (← `(
       def $name : ($idGS) → Prop := fun _ => True
     ))
     return
   let sId : Ident := mkIdent `s
+  let renderOne (m : TSyntax `term × Bool) : CommandElabM (TSyntax `term) :=
+    liftMacroM <|
+      if m.2 then `(($(m.1)) $sId) else `($(m.1))
   let last := members[members.size - 1]!
-  let init : TSyntax `term ←
-    if applyState then `(($last) $sId) else `(($last))
+  let init : TSyntax `term ← renderOne last
   let mut body : TSyntax `term := init
   for m in members.pop.reverse do
-    if applyState then
-      body ← `(($m) $sId ∧ $body)
-    else
-      body ← `(($m) ∧ $body)
-  if applyState then
-    elabCommand (← `(def $name : ($idGS) → Prop := fun $sId => $body))
-  else
-    elabCommand (← `(def $name : ($idGS) → Prop := fun _ => $body))
+    let head ← renderOne m
+    body ← liftMacroM <| `($head ∧ $body)
+  elabCommand (← `(def $name : ($idGS) → Prop := fun $sId => $body))
+
+/-- Convenience: every member uses the same `applyState` flag. -/
+private def emitConjPredicateUniform (name : Ident)
+    (members : Array (TSyntax `term)) (applyState : Bool) :
+    CommandElabM Unit :=
+  emitConjPredicate name (members.map (·, applyState))
 
 /-- Aggregate every saved `init-holds <prop>` clause **plus the
 framework init constraints** into the single predicate
-`<Mod>.InitConditions : GS → Prop`. Matches PVerifier's `init {}` block
-(`Uclid5CodeGenerator.cs::GenerateInitBlock`):
+`<Mod>.InitConditions : GS → Prop`:
 - buffers `sent` / `received` start empty,
-- `actionCount` starts at 0.
+- `actionCount` starts at 0,
+- every `MachineRef` starts in some machine's `start state`.
 
-(`InStart` / `InEntry` for every `MachineRef` is a PVerifier convention
-that PLean does not yet model; this can be added when initialization-
-action support lands.) -/
+The conjuncts are all closed `Prop`s that name `s` directly via macro
+capture (via the unhygienic `s` binder the helper introduces), so they
+all pass `applyState := false` through `emitConjPredicate`. -/
 private def emitInitConditions (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  -- Framework init: emit as a state-dependent conjunct via `(applyState
-  -- := true)`. We need `s` to appear in the body, so we build the
-  -- predicate as a closed `fun s => <framework> ∧ <user clauses>` here
-  -- rather than re-using `emitConjPredicate` (which currently can't mix
-  -- per-state and closed conjuncts in one call).
   let sId : Ident := mkIdent `s
-  let frameworkClauses : Array (TSyntax `term) :=
+  let mut props : Array (TSyntax `term) :=
     #[← `((∀ l : ($idSig).Label, ($sId).sent l = false)),
       ← `((∀ l : ($idSig).Label, ($sId).received l = false)),
       ← `(($sId).actionCount = 0)]
-  let mut props : Array (TSyntax `term) := frameworkClauses
-  -- InStart: every machine ref starts in a start state (mirrors
-  -- PVerifier's `InStart` init constraint). Allocated machines are in
-  -- their kind's `start state`; unallocated refs hold the default
-  -- `MachineState`, whose `currentState` is the first `S` constructor —
-  -- so include that ctor too. This is what lets base-case obligations
-  -- for state-dependent invariants (e.g. `∀ x, stateOf x s = Won →
-  -- …`) discharge: no machine is in a non-start state initially. Sound
-  -- because P machines begin in their start state.
+  -- InStart: every machine ref starts in a start state. Allocated
+  -- machines are in their kind's declared `start state`; unallocated
+  -- refs hold the default `MachineState`, whose `currentState` is the
+  -- first `S` constructor — so include that ctor too. This lets
+  -- base-case VCs for state-dependent invariants (e.g. `∀ x, stateOf x
+  -- s = Won → …`) discharge: no machine is in a non-start state
+  -- initially. Sound because P machines begin in their start state.
   let mut startCtors : Array Name := #[]
-  -- First `S` ctor = Inhabited default for unallocated refs.
   if let some m0 := ctx.machineOrder[0]? then
     if let some md0 := ctx.machines.find? m0 then
       if let some sd0 := md0.states[0]? then
         startCtors := startCtors.push
           (Name.mkSimple (m0.toString ++ "_" ++ sd0.name.toString))
-  -- Each machine's declared `start state`.
   for mname in ctx.machineOrder do
     if let some md := ctx.machines.find? mname then
       for sd in md.states do
@@ -750,10 +755,10 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
     props := props.push (← `(∀ $mId : PLean.MachineRef, $disj))
   for d in ctx.inits do
     if let some stx := d.defStx then
-      -- `init-holds` bodies are materialised under a hardcoded `s` binder
-      -- (below), so a `GlobalState`-typed binder in the body would shadow
-      -- it and decouple the clause from the actual init state — the same
-      -- soundness hole `rejectExplicitStateBinder` guards for invariants.
+      -- An `init-holds` body that names `GlobalState` as a binder type
+      -- would shadow the outer `s` and silently decouple the clause
+      -- from the actual init state — the same soundness hole
+      -- `rejectExplicitStateBinder` guards for invariants.
       PLean.rejectStateShadowIn "`init-holds`" stx[1]
       let rewritten ← liftMacroM <|
         PLean.rewriteFieldProjections machineKinds eventKinds
@@ -761,23 +766,8 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
       let raw ← liftMacroM <|
         PLean.injectKindGuards machineKinds eventKinds `s rewritten
       props := props.push ⟨raw⟩
-  -- Build the conjunction by hand (mirrors `emitConjPredicate`'s shape
-  -- but doesn't apply `s` to the conjuncts — they're plain props). For a
-  -- non-empty `props` we drop the trailing `True` terminator; the empty
-  -- case (no framework or user clauses, currently unreachable) falls back
-  -- to `True`.
-  let body : TSyntax `term ←
-    if props.isEmpty then
-      `(True)
-    else do
-      let last := props[props.size - 1]!
-      let mut acc : TSyntax `term ← `(($last))
-      for p in props.pop.reverse do
-        acc ← `(($p) ∧ $acc)
-      pure acc
-  elabCommand (← `(
-    def $(mkIdent `InitConditions) : ($idGS) → Prop := fun $sId => $body
-  ))
+  emitConjPredicateUniform (mkIdent `InitConditions)
+    props (applyState := false)
 
 /-- Per-`Lemma X { invariant a; invariant b; }` (and `Theorem`) bundle
 predicate `<Mod>.X : GS → Prop := fun s => a s ∧ b s`. Each individual
@@ -787,7 +777,7 @@ private def emitLemmaBundles (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   for lname in ctx.lemmaOrder do
     let some l := ctx.lemmas.find? lname | continue
     let conjuncts : Array (TSyntax `term) := l.invariants.map fun n => ⟨mkIdent n⟩
-    emitConjPredicate (mkIdent l.name) conjuncts (applyState := true)
+    emitConjPredicateUniform (mkIdent l.name) conjuncts (applyState := true)
 
 /-- `<Mod>.UserInv` — conjunction of every free-standing invariant in
 registration order. -/
@@ -796,7 +786,7 @@ private def emitUserInv (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   for invName in ctx.invariantOrder do
     if ctx.invariants.contains invName then
       conjuncts := conjuncts.push ⟨mkIdent invName⟩
-  emitConjPredicate (mkIdent `UserInv) conjuncts (applyState := true)
+  emitConjPredicateUniform (mkIdent `UserInv) conjuncts (applyState := true)
 
 /-! ## The `#gen_module` command -/
 
@@ -814,7 +804,7 @@ def elabPGenModule : CommandElab := fun stx => do
     -- Open the pmodule namespace so all materialised aliases / structures /
     -- handler defs live under <Mod>.* and so cross-references resolve.
     elabCommand (← `(namespace $name))
-    -- Step 1: per-machine wrapper structs (D10).
+    -- Step 1: per-machine wrapper structs.
     emitMachineWrappers ctx
     -- Step 2: types and enums in registration order.
     for tname in ctx.typeOrder do
@@ -834,10 +824,10 @@ def elabPGenModule : CommandElab := fun stx => do
     -- Step 4: emit `Sig`/`PM'`/`GS` and the union types.
     emitProgramUnions ctx machineVars
     -- Step 4b: per-event `is_<ev>` tag-check predicates (used by the
-    -- `is` notation from `Surface/Notation.lean`).
+    -- `is` notation from `Syntax/Notation.lean`).
     emitIsPredicates ctx
-    -- Step 4c: machine-kind inductive + `<M>.allocated` predicates
-    -- (D20). Lives between the `Sig`/`GS` aliases and the per-machine
+    -- Step 4c: machine-kind inductive + `<M>.allocated` predicates.
+    -- Lives between the `Sig`/`GS` aliases and the per-machine
     -- accessors so invariants and obligations can reference them.
     emitMachineKinds ctx
     -- Build the field-projection maps used by the invariant rewriter.
@@ -880,7 +870,7 @@ def elabPGenModule : CommandElab := fun stx => do
     -- after `emitIsPredicates` (so `is_<ev>` exists to unfold) and the
     -- union types (so `E.<ev>` resolves).
     emitIsCharacterizations ctx
-    -- Step 5: derive lifted WP for `get`/`set` (D14).
+    -- Step 5: derive lifted WP for `get`/`set`.
     emitDerivedWP
     -- Step 5b: materialise `pure` functions (foreign + defined),
     -- `paxiom`s, and `pinstance`s *before* the per-machine handler
@@ -905,14 +895,24 @@ def elabPGenModule : CommandElab := fun stx => do
       elabCommand (← `(open $name:ident))
       emitVarAccessors mname vars
       emitStateAliases mname m.states
+      -- Synthetic `on ev goto tgt` handler bodies need the event's
+      -- payload type identifier so the def's `param : <ev>_payload`
+      -- binder matches what the obligation generator expects when
+      -- `eventHasPayload ctx ev` is true.
+      let eventPayloadTy : Name → Option Name := fun ev =>
+        match ctx.events.find? ev with
+        | some e => if e.payload.isSome
+                    then some (ev.appendAfter "_payload")
+                    else none
+        | none => none
       if !m.body.isEmpty then
-        materialiseMachineBody mname m.body vars
+        materialiseMachineBody mname m.body vars eventPayloadTy
       elabCommand (← `(end $mid))
     -- Step 7: verification declarations.
     -- Machine and event kind sets drive auto-injection of kind guards
     -- on `∀ x : <M>, …` / `∀ e : <ev>, …` quantifiers inside
     -- `system <s> { … }` blocks (see
-    -- `Surface/Verify.lean::injectKindGuards`). Spec machines are
+    -- `Syntax/Verify.lean::injectKindGuards`). Spec machines are
     -- included for completeness — `is_<M>` is emitted for them too.
     let machineKinds : NameSet :=
       ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
@@ -935,27 +935,26 @@ def elabPGenModule : CommandElab := fun stx => do
     for (_, d) in ctx.invariants.toList do
       materialiseInvariant machineKinds eventKinds machineFields
         eventPayloadFields d
-    -- Step 7b: aggregate `init-holds` clauses into `<Mod>.InitConditions`
-    -- (D21). Available to obligation generation as a global precondition
-    -- term that flows into every per-handler triple's pre/post.
+    -- Step 7b: aggregate `init-holds` clauses into `<Mod>.InitConditions`.
+    -- The obligation generator consumes this as the base-case
+    -- precondition for each invariant.
     emitInitConditions machineKinds eventKinds machineFields
       eventPayloadFields ctx
-    -- Step 7c: emit per-Lemma/Theorem bundle predicates (D19): for each
+    -- Step 7c: emit per-Lemma/Theorem bundle predicates. For each
     -- registered Lemma/Theorem `X` whose body lists invariants
     -- `[a, b, c]`, emit `def X : PProp Sig := fun s => a s ∧ b s ∧ c s`
-    -- so `Proof { prove X using Y }` can later refer to the named lemma.
+    -- so `Proof { prove X using Y }` can refer to the named lemma.
     emitLemmaBundles ctx
-    -- Step 7d: aggregate the union of every registered free-standing
-    -- invariant into `<Mod>.UserInv` (PLAN_P3 D18). Empty -> True.
+    -- Step 7d: aggregate every free-standing invariant into
+    -- `<Mod>.UserInv` (empty → `True`).
     emitUserInv ctx
     elabCommand (← `(end $name))
     -- Step 8: mark types/events/invariants/etc. as materialised by
     -- clearing their `defStx` (so re-elaboration in another file's
     -- import won't fire them again). We KEEP the machine body Syntax
-    -- so the Phase-3 obligation generator (`#pverify`) can extract
-    -- `var` declarations to build accessor-unfold lists; the
-    -- `materialised` flag is set so `#pwf` knows the machine has been
-    -- emitted.
+    -- so the obligation generator can extract `var` declarations and
+    -- re-walk for entry / goto-only clauses; the `materialised` flag
+    -- is set so `#pwf` knows the machine has been emitted.
     let machines' := ctx.machines.foldl (init := ({} : NameMap PMachineDecl))
       fun acc n d => acc.insert n { d with materialised := true }
     let types'    := ctx.types.foldl (init := ({} : NameMap PTypeDecl))

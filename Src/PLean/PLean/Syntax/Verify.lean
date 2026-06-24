@@ -1,5 +1,5 @@
 /-
-PLean.Surface.Verify — `invariant`, `paxiom`, `init-holds`, `function`, `pinstance`.
+PLean.Syntax.Verify — `invariant`, `paxiom`, `init-holds`, `function`, `pinstance`.
 
   invariant <name> : <prop>
   paxiom    <name> : <prop>
@@ -300,32 +300,21 @@ Replay each verification declaration as a Lean def. Called by
 `#gen_module` after machines have been materialised so invariant /
 axiom bodies can reference machine fields and event payloads. -/
 
-/-- Reject any binder that introduces a fresh `GlobalState`-typed
-identifier inside a `system <s> { … }` invariant body. Such a binder
-shadows the outer `<s>` for the body it scopes, decoupling the invariant
-from the per-handler state and letting a *false* property verify as a
-clean pass (the 2026-06-10 soundness hole).
+/-- Reject any reference to the `GlobalState` / `PLean.GlobalState`
+type identifier inside a `system <s> { … }` invariant body. A binder
+of type `GlobalState <Sig>` (in any form — `∀`/`∃`/`let`/`have`/
+`fun`/`λ`) would shadow the outer `<s>` and silently decouple the
+invariant from per-handler state, letting a *false* property verify
+as a clean pass.
 
-The original guard matched only the six leading `∀ … : GlobalState …`
-shapes, so a `let`/`have`/`fun`/`λ`/`∃` binder of the same type — e.g.
-`let s : GlobalState Sig := default; …` or `∃ s : GlobalState Sig, …` —
-slipped past and re-opened the hole. Rather than enumerate every binder
-form, we reject *any* occurrence of the `GlobalState` / `PLean.GlobalState`
-type identifier in the body: a well-formed `system`-block invariant never
-needs to name the state type (it references the bound `s` instead), so
-this is a sound over-approximation that cannot be evaded by a new binder
-syntax. The walk is recursive over the body `Syntax` and surfaces the
-offending occurrence for `throwErrorAt`.
-
-A bare top-level `invariant standalone : ∀ s : GlobalState Sig, P` is
-still allowed — the materialiser uses a wildcard binder there, so there
-is no `system`-block `s` to shadow; this check only runs when an
-enclosing `system` block has registered a state binder. -/
+The check is intentionally name-based rather than binder-shape-based:
+a well-formed `system`-block invariant has no reason to name the state
+type (it references the bound `s` directly), so rejecting *any*
+mention is a sound over-approximation that no new binder syntax can
+evade. Bare top-level `invariant … : ∀ s : GlobalState Sig, P` is
+still allowed because the materialiser uses a wildcard binder there
+and there is no `system`-block `s` to shadow. -/
 private partial def containsExplicitStateBinder (stx : Syntax) : Option Syntax := Id.run do
-  -- A bare reference to the state type — `GlobalState` or its qualified
-  -- form `PLean.GlobalState` — anywhere in the body is the trigger.
-  -- Matching the identifier (rather than a particular binder shape)
-  -- catches `∀`/`∃`/`let`/`have`/`fun`/`λ` uniformly.
   if stx.isIdent then
     let n := stx.getId
     if n == ``PLean.GlobalState || n == `GlobalState
@@ -367,7 +356,7 @@ def rejectStateShadowIn (what : String) (prop : Syntax) : CommandElabM Unit := d
 /-! ## Auto-injection of kind guards over machines and events
 
 PLean wraps **machines** in a struct `<M> := { ref : MachineRef }`
-(D10) and emits a runtime kind predicate `is_<M> : MachineRef → GS → Prop`.
+and emits a runtime kind predicate `is_<M> : MachineRef → GS → Prop`.
 `∀ n : <M>, P n` quantifies over every `<M>`-wrapped ref, including
 ones whose state slot is unallocated or has the wrong kind. The
 convention is to follow each such quantifier with `is_<M> n.ref s →`
@@ -741,18 +730,16 @@ def materialisePure (d : PPureDecl) : CommandElabM Unit := do
 
 /-- Materialise `pinstance <id> : <Class> <T>`.
 
-The original design ([`docs/PLAN_P0.md`](../../docs/PLAN_P0.md) §6,
-following Veil) elaborated this to a single `variable [<id> : <Class>
-<T>]`, but that has two SMT-visibility gaps:
+A naive `variable [<id> : <Class> <T>]` elaboration has two
+SMT-visibility gaps:
 
-1. **Auto-bound generalisation.** A later `invariant P : <body using
+1. Auto-bound generalisation. A later `invariant P : <body using
    Class.field>` gets type `[ord : <Class> <T>] → GS → Prop`, not
    `GS → Prop`. The bundle predicate `def L : GS → Prop := fun s =>
-   P s ∧ True` then can't typecheck (`P s` is missing the instance
-   argument) and the obligation skeleton renders as `sorry ∧ True`.
-2. **Lctx invisibility.** `loom_smt [*]` collects only the local
-   context, so even if the invariant body elaborated, the class's
-   stated axioms about its functions would be invisible to SMT.
+   P s` then can't typecheck (`P s` is missing the instance argument).
+2. Lctx invisibility. `loom_smt [*]` collects only the local context,
+   so even if the invariant body elaborated, the class's stated axioms
+   would be invisible to SMT.
 
 We close (1) by elaborating `pinstance <id> : <Class> <T>` into a
 top-level `axiom` for the instance plus a real `instance` that wraps

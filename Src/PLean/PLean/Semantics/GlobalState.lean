@@ -1,33 +1,25 @@
 /-
 PLean.Semantics.GlobalState — the global system state.
 
-Mirrors PVerifier's `StateAdt` at `Uclid5CodeGenerator.cs:594-606`:
-```
-type StateAdt = record {
-  sent     : [Label]boolean,
-  received : [Label]boolean,
-  machines : [MachineRef]MachineStateAdt
-};
-```
-plus the top-level `actionCount : integer` from `:1119`. The Lean
-encoding folds `actionCount` into the record.
+The record has four fields:
+- `sent`, `received` — characteristic functions on labels (`Label →
+  Bool`). The function encoding mirrors PVerifier's `[Label]boolean`
+  array encoding so the SMT translation stays first-order.
+- `machines` — per-`MachineRef` runtime state.
+- `actionCount` — global counter bumped on every `send`/`goto`; gives
+  every label a unique `actionCount` (the temporal witness for
+  `a ≺ b := a.actionCount < b.actionCount`).
 
-`sent`/`received` are encoded as `Label → Bool` (matching PVerifier's
-`[Label]boolean` exactly), not as `Set Label`, to stay close to the
-PVerifier SMT encoding (decision D4).
-
-The whole thing is parameterised over the user program's union types
-through a `ProgramSig` bundle — Phase 2's `#gen_module` synthesises a
-concrete `ProgramSig` per pmodule, and Phase-1 hand-written examples
-construct one directly.
+Parameterised over the user program's union types through a
+`ProgramSig` bundle — `#gen_module` synthesises a concrete `ProgramSig`
+per pmodule; hand-written examples construct one directly.
 -/
 import PLean.Semantics.Label
 
 namespace PLean
 
-/-- A program's union types. Phase 2 will synthesise this from the
-registry. Phase 1 hand-written examples (e.g., `HandPingPong.lean`)
-populate it directly. -/
+/-- A program's union types. `#gen_module` synthesises this from the
+registry; hand-written examples populate it directly. -/
 structure ProgramSig where
   /-- Event payload union. -/
   E : Type
@@ -51,12 +43,10 @@ abbrev MachineState := PLean.MachineState P.S P.F
 end ProgramSig
 
 /-- The global state of a P system, generic over the program's unions.
-
-Mirrors PVerifier's `StateAdt` exactly. The `actionCount` field is the
-temporal witness used by every send/goto (and by the `≺` operator). -/
+The `actionCount` field is the temporal witness used by every
+send/goto (and by the `≺` operator). -/
 structure GlobalState (P : ProgramSig) where
-  /-- Set of all labels that have ever been sent. Encoded as a
-      characteristic function, matching PVerifier's `[Label]boolean`. -/
+  /-- Characteristic function over labels that have ever been sent. -/
   sent        : P.Label → Bool
   /-- Set of labels that have been delivered (consumed by a handler). -/
   received    : P.Label → Bool
@@ -103,8 +93,8 @@ end GlobalState
 
 /-- A program needs at least one possible `MachineState` value (for the
 NonDetT/CCPO machinery, which expects inhabited carriers). Every
-non-trivial P program has at least one machine, so this is provided
-by hand-written examples and synthesised by Phase 2. -/
+non-trivial P program has at least one machine; `#gen_module` derives
+this instance and hand-written examples provide it directly. -/
 instance {P : ProgramSig} [Inhabited P.S] [Inhabited P.F] :
     Inhabited (GlobalState P) where
   default :=

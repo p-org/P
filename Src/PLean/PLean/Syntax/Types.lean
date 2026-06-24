@@ -1,5 +1,5 @@
 /-
-PLean.Surface.Types — `type` and `enum` declarations.
+PLean.Syntax.Types — `type` and `enum` declarations.
 
 Three forms, mirroring P's `type`/`enum` grammar:
   `type N`              — uninterpreted (foreign) sort
@@ -104,7 +104,7 @@ def elabPEnum : CommandElab := fun stx => do
 /-! ## Materialisation
 
 Replay one type's saved `defStx` as a Lean def. Called by `#gen_module`
-in `Surface/Machine.lean` after machine type aliases (`abbrev MName :=
+in `Syntax/Machine.lean` after machine type aliases (`abbrev MName :=
 MachineRef`) have been emitted. -/
 
 def materialiseType (d : PTypeDecl) : CommandElabM Unit := do

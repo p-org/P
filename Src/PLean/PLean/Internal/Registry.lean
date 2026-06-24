@@ -236,10 +236,10 @@ def addPure (d : PPureDecl) : CommandElabM Unit := do
 def addLemma (d : PLemmaDecl) : CommandElabM Unit := do
   let kind := if d.isTheorem then "Theorem" else "Lemma"
   let ctx ← requireLocalPModuleCtx kind
-  -- REVIEW_P3 §4.7: `default` is reserved for the `prove default;`
-  -- sentinel. A user-named `Lemma default { ... }` would silently be
-  -- shadowed by the sentinel during obligation generation; reject it
-  -- at registration time with a clear message instead.
+  -- `default` is reserved for the `prove default;` sentinel. A
+  -- user-named `Lemma default { ... }` would silently be shadowed by
+  -- the sentinel during obligation generation; reject it at
+  -- registration time with a clear message instead.
   if d.name == `default then
     withRef d.ref <|
       throwError s!"`{kind}` name 'default' is reserved for the sanity-invariant sentinel used by `prove default;`"

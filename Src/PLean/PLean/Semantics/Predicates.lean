@@ -1,15 +1,10 @@
 /-
 PLean.Semantics.Predicates — state predicates that mirror P's surface
-keywords.
+keywords (`inflight`, `sent`, `is`, `targets`).
 
-P's surface uses the keywords `inflight`, `sent`, `is`, `targets` (see
-`PLexer.g4:72`). PVerifier compiles them to UCLID5 bool expressions on
-the global state (`Uclid5CodeGenerator.cs:600-602` for `InFlight`,
-`:2049-2052` for `targets`/`sent`/`flying`/`is`/`as`). PLean defines
-each as a Lean `def` so they appear verbatim in invariant bodies and
-in synthesized Hoare triples.
-
-Names mirror P's keywords, not C# AST node names like `FlyingExpr`.
+Each predicate is a plain Lean `def` so it appears verbatim in
+invariant bodies and synthesised Hoare triples, and so SMT-preparation
+unfolds reach the underlying `s.sent`/`s.received` projections.
 -/
 import PLean.Semantics.GlobalState
 
@@ -19,9 +14,7 @@ variable {P : ProgramSig}
 
 /-! ## Buffer-state predicates (act on `GlobalState P`) -/
 
-/-- `inflight lbl s`: the label has been sent but not yet received.
-Mirrors PVerifier's `InFlight` macro (`Uclid5CodeGenerator.cs:600-602`):
-`(sent[lbl] ∧ ¬received[lbl])`. -/
+/-- `inflight lbl s`: the label has been sent but not yet received. -/
 @[inline] def inflight (lbl : P.Label) (s : GlobalState P) : Prop :=
   s.sent lbl = true ∧ s.received lbl = false
 
@@ -35,39 +28,30 @@ Mirrors PVerifier's `InFlight` macro (`Uclid5CodeGenerator.cs:600-602`):
 
 /-! ## Label predicates (act on `Label` directly, no `GlobalState`)
 
-These match the P-surface meaning literally. The user writes
-`lbl targets m`; the `lbl is <ev>` form is per-event and is emitted
-by `Commands/GenModule.lean` as `is_<ev>` (a tag-only check, not a
-payload-equality check — which is what P semantics specifies).
+The user writes `lbl targets m`; the `lbl is <ev>` form is per-event
+and is emitted by `Commands/GenModule.lean` as `is_<ev>` (a tag-only
+check, not a payload-equality check — which is what P semantics
+specifies). -/
 
-Equivalent to PVerifier's `LabelAdtIsE`/`EventOrGotoAdtIsE`
-(`Uclid5CodeGenerator.cs:884-896`), modulo the user's choice of how
-the event union encodes its tag — PVerifier checks the tag only. -/
-
-/-- Test that a label is delivered to a particular machine. Mirrors
-PVerifier's `TargetsExpr` (`Uclid5CodeGenerator.cs:2051-2052`). -/
+/-- Test that a label is delivered to a particular machine. -/
 @[inline] def Label.targets? (lbl : P.Label) (m : MachineRef) : Prop :=
   lbl.target = m
 
 /-! ## Machine-state predicate -/
 
-/-- `stateOf m s`: the discrete control state of machine `m` in state
-`s`. Mirrors PVerifier's `MachineStateAdtSelectState`. -/
+/-- `stateOf m s`: the discrete control state of machine `m` in state `s`. -/
 @[inline] def stateOf (m : MachineRef) (s : GlobalState P) : P.S :=
   (s.machines m).currentState
 
 /-! ## Temporal precedence operator `≺`
 
-The Phase-1-baked encoding (decision D6 / PLAN.md "Open Design
-Problems"): two labels are ordered by their `actionCount`. Each label
-gets a unique `actionCount` because every primitive that creates a
-label first records the global counter and then bumps it.
+Two labels are ordered by their `actionCount`. Every primitive that
+creates a label first records the global counter and then bumps it, so
+each label has a unique counter; the `UniqueActions` default invariant
+certifies the ordering is total over the sent set. -/
 
-The `UniqueActions` invariant (in `Default.lean`) certifies that the
-ordering is total over `sent` labels. -/
-
-/-- `a ≺ b`: label `a` was sent before label `b`. Phase 2 adds the
-notation `a ≺ b`; for now this is a plain `def`. -/
+/-- `a ≺ b`: label `a` was sent before label `b`. The `≺` infix lives
+in `Syntax/Notation.lean`. -/
 @[inline] def precedes (a b : P.Label) : Prop :=
   a.actionCount < b.actionCount
 

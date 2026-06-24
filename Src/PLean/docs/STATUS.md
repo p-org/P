@@ -19,7 +19,7 @@ rather than narrating.
 | 0 — Bootstrap                    | ☑ | — | 2026-05-28 | 2026-05-29 | M0 reached |
 | 1 — Semantic core                | ☑ | — | 2026-06-01 | 2026-06-04 | M1 reached |
 | 2 — Registry + minimal surface   | ☑ | — | 2026-06-05 | 2026-06-05 | M2 reached |
-| 3 — Verification declarations    | ☑ | — | 2026-06-06 | 2026-06-23 | M3 reached — all three Tutorial/Advanced benchmarks fully verify: `Examples/DistributedLock` 12/12, `Examples/LockServer` 37/37, `Examples/RingLeader` 14/14. paxiom/pinstance both reach SMT; reusable manual-proof helpers shipped; obligation cache + profiler in tree |
+| 3 — Verification declarations    | ☑ | — | 2026-06-06 | 2026-06-23 | M3 reached — all three Tutorial/Advanced benchmarks fully verify: `Examples/DistributedLock` 12/12, `Examples/LockServer` 37/37, `Examples/RingLeader` 17/17. paxiom/pinstance both reach SMT; reusable manual-proof helpers shipped; obligation cache + profiler in tree |
 | 4 — Spec machines                | ☐ | — | — | — | next; plan in [`PLAN_P4.md`](PLAN_P4.md) |
 | 5 — Remaining surface            | ☐ | — | — | — | |
 | 6 — Tutorial port                | ☐ | — | — | — | |
@@ -38,13 +38,129 @@ a port author._
 _**Closure rates (M3 + ClockBound, final):**_
 - _[`Examples/DistributedLock`](../Examples/DistributedLock.lean) — **12/12** (11 SMT + 1 manual `@[pverifyProof]`)._
 - _[`Examples/LockServer`](../Examples/LockServer.lean) — **37/37** (34 SMT + 3 manual)._
-- _[`Examples/RingLeader`](../Examples/RingLeader.lean) — **14/14** (12 SMT + 2 manual)._
+- _[`Examples/RingLeader`](../Examples/RingLeader.lean) — **17/17** (14 SMT + 3 manual; entry-handler obligation added 2026-06-24)._
 - _[`Examples/ClockBound`](../Examples/ClockBound.lean) — **59/59** (58 SMT + 1 manual). Off-tree benchmark
   ([PInfer-Benchmarks/ClockBound](https://github.com/AD1024/PInfer-Benchmarks/blob/main/ClockBound/PSrc/System.p));
   exercises `PLean.choose` (bounded nondet `Int`) and the safety
   properties from `goals.json`._
 
 _Build: green at HEAD._
+
+### Session 2026-06-24 (newest) — VC completeness for `entry` + `on ev goto`; rename `Surface` → `Syntax`; unify bundle helper; comment-style sweep
+
+Soundness focus. Two real coverage gaps the code-review had flagged
+(`docs/REVIEW.md` §I.1.1 and §I.1.3) were silently letting unverified
+handlers slip past `#pverify`.
+
+**S.1.3 — `on ev goto tgt` was unverified.** `gotoHandlers.contains
+(sd.name, ev) → continue` short-circuited the (state, event) pair at
+both directive and auto-default emission sites because no
+`_handler` def existed. The `goto` primitive mutates `currentState` /
+`sent` / `actionCount`, so a goto-only transition that breaks an
+invariant was reported as 0 failures.
+
+Fix: synthesise the missing handler def at materialise time. In
+`Commands/GenModule.lean::materialiseStateBodyItem`, the
+`on $ev:ident goto $tgt:ident` arm now emits
+
+```
+noncomputable def <S>.<ev>_handler (this : M) [(_param : <ev>_payload)] :
+    PM' Unit := do <var-bindings>; PLean.goto this.ref <tgt>_st G.unit
+```
+
+Payload threading uses the event's registered payload type so the
+handler signature matches what `emitOneObligation` expects. The skip
+in `synthesise` is removed; the now-unused
+`machineGotoHandlers` helper is removed too.
+
+**S.1.1 — `entry { … }` blocks were unverified.** `PStateDecl.handles`
+excluded entries at registration, so the obligation generator's loop
+never iterated over them. An `entry { x = true }` that violates `x =
+false` verified cleanly.
+
+Fix: a new `emitEntryObligation` in `Verify/Obligation.lean` synthesises
+the entry triple. Entry has no dispatcher contract (no `lbl`, no event
+tag, no `markReceived` prelude), so the obligation is
+
+```
+∀ s, Inv s ∧ is_<M> this.ref s ∧ currentState = <S>_st ⇒ wp(entry, Inv) s
+```
+
+A helper `machineEntryHandlers : PMachineDecl → Array (Name × Option
+Syntax)` walks the retained machine body for `pStateEntry` /
+`pStateEntryTyped` items. Both the user-directive and auto-default
+loops in `synthesise` emit one entry obligation per (machine, state)
+with an entry block. The synthetic event tag `entry` slots into
+`obligationName` for the theorem name and doesn't collide with the
+entry def's own name (`<M>.<S>.entry`).
+
+The pre is conservative: it requires only that `this` already be in
+`<S>_st`, not that the transition into `<S>_st` was fresh. A future fix
+modelling `InEntry` / `stage` can tighten it.
+
+[`Examples/RingLeader`](../Examples/RingLeader.lean) gains 3
+obligations (2 SMT + 1 manual) for the `Proposing.entry { send
+eNominate, voteFor = this.ref }` handler — final count **17/17** (was
+14/14). The manual proof mirrors the existing eNominate `voteFor =
+this.ref` branch; without `markReceived` the post-state `inflight`
+simplifies one `∧` level shallower so `pverify_inflight_by` doesn't fit
+and the `Bool.or_eq_true` case-split runs inline.
+
+Regression pinned by [`Tests/Syntax/HandlerCoverage.lean`](../Tests/Syntax/HandlerCoverage.lean):
+- Probe 1: goto-only handler theorem `M.A.eGo_correct_block0_trivial` exists.
+- Probes 2-3: entry obligation theorem exists, with/without typed payload.
+- Probes 4-5: a goto-broken / entry-broken invariant produces an
+  obligation that fails to discharge (disproved or unknown), rather
+  than verifying silently. Pre-fix only the base case was emitted.
+
+Acknowledged still-open: S.1.4 (spec-machine handler obligations) —
+Phase-4 work, not exploitable today since `paxiom`/invariants don't
+reach spec handlers.
+
+**Refactor pass (`docs/REVIEW.md` §II)** alongside the soundness fix:
+
+- **Rename `PLean/Surface/` → `PLean/Syntax/`** and `Tests/Surface/` →
+  `Tests/Syntax/` (user request). Mechanical token rewrite across PLean,
+  Tests, Examples, `PLean.lean`, and `CLAUDE.md`. "Surface keywords" as
+  an English term is intentionally kept where it refers to the
+  user-facing keyword set, not the directory.
+
+- **`emitConjPredicate` unification (II.2.1).** The helper now accepts
+  `Array (TSyntax × Bool)` so callers can mix state-applied and
+  verbatim conjuncts. `emitInitConditions` is rewritten to use it
+  directly; the inline fold (the same shape that caused the 2026-06-10
+  soundness bug, when one of three sites forgot to apply `s`) is gone.
+  A thin `emitConjPredicateUniform` covers the existing same-flag
+  callers (`emitLemmaBundles`, `emitUserInv`).
+
+- **Comment-style sweep (II.3.1 / II.3.2 / II.3.3).** Dropped
+  `Uclid5CodeGenerator.cs:NNNN` file:line citations from the semantic
+  layer (`Default.lean`, `Label.lean`, `Predicates.lean`,
+  `Primitives.lean`, `GlobalState.lean`). Dropped phase / decision IDs
+  (`D10` / `D20` / `PLAN_P3 D19` / `REVIEW_P3` / `Phase 0..3`) across
+  `Commands/`, `Internal/`, `Semantics/`, `Syntax/`. Tightened the
+  narrative preambles the review named (`emitPayloadCharacterizations`,
+  `containsExplicitStateBinder`, obligation cache, `Monad.lean`,
+  unhygienic-binder comment in `Verify/Obligation.lean`). Each
+  remaining comment states the invariant the code maintains, not the
+  exploration path that found it.
+
+- **CLAUDE.md style guide.** Added the Do / Don't list per the user's
+  brief (`feedback_plean_comment_style`,
+  `feedback_no_paths_in_comments`,
+  `feedback_plean_verification_build_output` apply uniformly to source
+  comments and proof-iteration workflow). New "Bundle conjunctions"
+  and "Every executable handler gets an obligation" conventions
+  sections document the post-fix codegen invariants.
+
+Closure rates after the fix:
+- DistributedLock 12/12 (11 SMT + 1 manual) ✓
+- LockServer 37/37 (34 SMT + 3 manual) ✓
+- RingLeader **17/17** (14 SMT + 3 manual) ✓ (was 14/14)
+- ClockBound 59/59 (58 SMT + 1 manual) ✓
+- PingPong multi-file 4/4 ✓ (now exercises the goto-only path verifiably)
+
+Full suite green at 3418 jobs.
 
 ### Session 2026-06-24 (latest) — PingPongAuto / PingPong.Top fixes; comment style sweep
 
@@ -2371,20 +2487,11 @@ The shipped approach is the strict superset: it reaches the same SMT-closing pow
 
 ---
 
-_Last updated 2026-06-18. Phase 3 is in progress. This session: a sweep of
-SMT-discharge VC-generator fixes (`is_<ev>` characterisation lemmas,
-default-invariant decoupling, `abstract_machine_lookups`, dispatcher
-kind-guard, `markReceived` prologue) + `@[pverifyProof]` type-checking +
-one hand-written eGrant manual proof took **DistributedLock to 12/12 —
-fully verified**. LockServer is **23/25** (genuinely incomplete port —
-missing strengthening invariants). All other tests 100%; full suite green
-at 3402 jobs. See "Session 2026-06-18" above for per-fix detail and the
-follow-ups (auto-emit `<ev>_payload_of_mk`; abstract `MachineRef`). Probe / debug files
-(`Tests/Surface/PVerifyDefaultDebug.lean`,
-`Tests/Surface/PVerifySmtProbe.lean`,
-`Tests/Surface/WpgenAccessorProbe.lean`,
-`Tests/Semantics/SmtEncodingProbe.lean`) are intentionally
-untracked. Earlier waypoints are in the Decision Log above._
+_Last updated 2026-06-24. Phase 3 closed (M3 reached 2026-06-23; entry
++ goto-only handler coverage fix landed 2026-06-24; RingLeader 14/14 →
+17/17). Phase 4 is next. The earlier `Tests/Surface/` debug probes are
+now under `Tests/Syntax/` after the directory rename. Earlier
+waypoints are in the Decision Log above._
 
 ## Document Index
 - [`PLAN.md`](PLAN.md) — overall implementation plan (all phases). NOTE: its

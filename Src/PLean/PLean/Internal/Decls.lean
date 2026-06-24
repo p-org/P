@@ -2,9 +2,9 @@
 PLean.Internal.Decls — lightweight metadata records.
 
 These are NOT a deep AST. They exist only to (1) detect name conflicts during
-elaboration, (2) drive `#pwf` resolution checks, and (3) feed the Phase 3
-obligation generator. The actual runtime artifacts (state monad updates,
-handler bodies) are ordinary Lean defs.
+elaboration, (2) drive `#pwf` resolution checks, and (3) feed the obligation
+generator. The actual runtime artifacts (state monad updates, handler
+bodies) are ordinary Lean defs.
 
 Each record carries:
   - the user-facing P name (`Name`)
@@ -13,7 +13,7 @@ Each record carries:
   - structural metadata needed by `#pwf` (e.g., which state is `start`,
     which events a spec observes; events received / sent are derived
     from the states list and body Syntax on demand — see
-    `Surface/Machine.lean::{machineReceives, machineSends}`)
+    `Syntax/Machine.lean::{machineReceives, machineSends}`)
 
 The records are stored in `LocalPModuleCtx` (see Registry.lean). They do not
 need to be `inhabited` or `serializable` — env-extension persistence handles
@@ -80,7 +80,7 @@ structure PStateDecl where
       state per machine should have this set; `#pwf` enforces it. -/
   isStart     : Bool
   /-- Optional temperature: `hot`/`cold` for liveness; `none` for safety-only.
-      Phase 0 just records it; semantics arrive later. -/
+      Recorded for `#pwf` only — there is no liveness semantics yet. -/
   temperature : Option Name
   /-- Events handled by this state (used by `#pwf` to check that
       referenced events exist). -/
@@ -94,8 +94,8 @@ structure PMachineDecl where
   name      : Name
   leanName  : Name
   states    : Array PStateDecl
-  /-- True iff this is a `spec` machine. Spec machines are flattened into
-      globals + handler procedures in Phase 4. -/
+  /-- True iff this is a `spec` machine. Spec-machine handlers are not
+      yet covered by `#pverify` (see CLAUDE.md's "Phase status"). -/
   isSpec    : Bool
   /-- For spec machines, the events they observe. Empty for impl machines. -/
   observed  : Array Name
@@ -103,8 +103,8 @@ structure PMachineDecl where
       to Lean defs only at `#gen_module` time, after every machine in the
       module has been registered (so cross-machine type references like
       `var server : Server` resolve). The body is RETAINED after
-      materialisation so the Phase-3 obligation generator can extract
-      `var` declarations to build accessor-unfold lists. -/
+      materialisation so the obligation generator can extract `var`
+      declarations and re-walk for entry / goto-only clauses. -/
   body      : Array Syntax := #[]
   /-- True after `#gen_module M` has elaborated the machine into Lean
       defs. `#pwf` / `#pverify` check this to ensure materialisation
@@ -167,7 +167,7 @@ structure PPureDecl where
 /-- A `Lemma` or `Theorem` block — a named bundle of invariants. The
     distinction between `Lemma` and `Theorem` is purely declarative; both
     materialise to the same registry record (with `isTheorem` discriminating
-    for diagnostics). PLAN_P3 D19. -/
+    for diagnostics). -/
 structure PLemmaDecl where
   name       : Name
   /-- True iff declared with `Theorem`, false for `Lemma`. -/

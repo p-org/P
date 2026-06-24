@@ -7,7 +7,7 @@ both human inspection and #guard_msgs-based regression tests.
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Surface.Machine
+import PLean.Syntax.Machine
 
 open Lean Elab Command
 

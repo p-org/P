@@ -1,5 +1,5 @@
 /-
-PLean.Surface.Events — `event` and `eventset` declarations.
+PLean.Syntax.Events — `event` and `eventset` declarations.
 
 Two forms:
   `event eName`                 — payload-less event
@@ -84,10 +84,9 @@ def materialiseEvent (d : PEventDecl) : CommandElabM Unit := do
     -- macro reads to ascribe named-tuple literals. The abbrev name uses
     -- an underscore (`<ev>_payload`) rather than a dot
     -- (`<ev>.payload`) so it doesn't shadow / get confused with field
-    -- accessors. Phase 2 no longer emits a numeric event-tag def: the
-    -- per-pmodule event union `<Mod>.E` is the source of truth, and
-    -- `<ev>` resolves to the union constructor `<Mod>.E.<ev>` in
-    -- handler bodies.
+    -- accessors. The per-pmodule event union `<Mod>.E` is the source
+    -- of truth for event tags; `<ev>` resolves to the union constructor
+    -- `<Mod>.E.<ev>` in handler bodies.
     match stx with
     | `(event $_:ident : $payloadTy:term) =>
       let payloadAbbrev := mkIdent (d.name.appendAfter "_payload")

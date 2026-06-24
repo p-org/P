@@ -238,3 +238,11 @@ warning: SoundnessR6: 0 proved by SMT, 0 user-proved, 0 disproved, 0 unknown, 0 
 #guard_msgs (warning, drop info) in
 set_option pverify.failOnIncomplete false in
 #pverify SoundnessR6
+
+-- Handler-coverage soundness regressions (goto-only handlers and entry
+-- handlers) live in a separate file: probes 2–5 in this file
+-- deliberately leave `#gen_module` failing midway, which leaves the
+-- namespace stack non-empty for the rest of the file. The goto/entry
+-- probes need a clean stack to resolve handler def names via the
+-- standard `unfold M.S.ev_handler` chain, so they get their own
+-- isolated test module — see `Tests/Syntax/HandlerCoverage.lean`.

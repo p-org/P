@@ -1,5 +1,5 @@
 /-
-PLean.Surface.Module — `pmodule M` command.
+PLean.Syntax.Module — `pmodule M` command.
 
   `pmodule M`
     1. error if there's already an open `pmodule` (no nesting in v1)

@@ -1,21 +1,17 @@
 /-
 PLean.Semantics.Label — runtime artefacts that flow through the buffer.
 
-Mirrors PVerifier's UCLID5 encoding (the C# reference is the source of
-truth):
-- `Label`     ↔ `LabelAdt`         { target, action, actionCount }
-- `EventOrGoto` ↔ `EventOrGotoAdt` (event payload | goto payload)
-- `MachineState` ↔ `MachineStateAdt` { stage, machine }
+- `Label`        — a single buffer entry: `{ target, action, actionCount }`.
+- `EventOrGoto`  — the action carried by a label: an event with payload
+                   or a goto with payload.
+- `MachineState` — per-machine runtime row: stage flag, control state,
+                   `var`-block fields, kind tag.
 
-Phase 1 keeps these *generic* in the user-program-specific union types
-(`E`/`G`/`M`). The concrete tagged unions are synthesized per-program in
-Phase 2's `#gen_module`. For Phase-1 hand-written examples the user
-provides the unions directly (see `Tests/Semantics/HandPingPong.lean`).
-
-Why generic? PVerifier emits one tagged union per program (`MachineAdt`,
-`EventAdt`, `GotoAdt`). PLean's runtime artefacts are parameterised over
-those unions so the semantic core compiles once, regardless of what the
-program-specific unions look like.
+The semantic core is parameterised over the user program's union types
+(`E`/`G`/`S`/`F`); `#gen_module` synthesises the concrete unions per
+pmodule, and hand-written examples build them directly. Keeping the
+core generic means the semantic library compiles once regardless of
+what the per-program unions look like.
 -/
 
 namespace PLean
@@ -25,28 +21,25 @@ namespace PLean
 The runtime carrier stays untyped on purpose: `GlobalState.machines :
 MachineRef → MachineState` is a single map, the buffer's `Label.target`
 is a single field, and primitives (`send`/`goto`/...) take a single
-`MachineRef` regardless of the addressee's machine kind. This mirrors
-PVerifier's `MachineRef` ([Uclid5CodeGenerator.cs:594-606]).
+`MachineRef` regardless of the addressee's machine kind.
 
-Per-machine *static* refinements live one level up. Phase 2's
-`#gen_module` emits a wrapper struct per machine (decision D10):
+Per-machine *static* refinements live one level up: `#gen_module` emits
+a wrapper struct per machine, e.g.
 ```
 structure Server where ref : MachineRef
   deriving Inhabited, DecidableEq
 instance : Coe Server MachineRef := ⟨fun s => s.ref⟩
 ```
 Handlers take `(this : Server)` rather than `(this : MachineRef)`, so
-elaborator-level type-checking distinguishes the kinds (`var c : Client
-:= some_server` is rejected) while the underlying state map and buffer
-stay flat. Spec invariants in Phase 3 will quantify `∀ s : Server, …`
-over the wrapper, restricting the bound variable to that kind without
-needing a refined `MachineRef`. -/
+the elaborator distinguishes the kinds (`var c : Client := some_server`
+is rejected) while the underlying state map and buffer stay flat.
+Invariants quantify `∀ s : Server, …` over the wrapper to restrict the
+bound variable to one kind without needing a refined `MachineRef`. -/
 abbrev MachineRef : Type := Nat
 
 /-- A label's action is either an event with its payload, or a goto with
 its payload. Generic in `E` (the event-payload union) and `G` (the goto
-payload union). PVerifier's `EventOrGotoAdt` ties these to the
-program-specific `EventAdt` and `GotoAdt` ([Uclid5CodeGenerator.cs:801-806]). -/
+payload union). -/
 inductive EventOrGoto (E : Type) (G : Type) where
   /-- A user event with its payload. -/
   | event (e : E)
@@ -57,44 +50,33 @@ inductive EventOrGoto (E : Type) (G : Type) where
 /-- A label is the buffer entry that machines deliver to each other.
 Generic in the action's event/goto unions. The `actionCount` field is
 the temporal witness for the `≺` precedence operator (defined in
-`Predicates.lean`).
-
-Mirrors PVerifier's record at `Uclid5CodeGenerator.cs:762-766`:
-```
-type Label = record { target : MachineRef, action : EventOrGoto,
-                      actionCount : integer }
-```
--/
+`Predicates.lean`). -/
 structure Label (E : Type) (G : Type) where
   target      : MachineRef
   action      : EventOrGoto E G
   actionCount : Nat
   deriving Inhabited, DecidableEq, Repr
 
-/-- One machine instance's runtime state. `stage` is PVerifier's entry
-flag (`true` = entry handler is the next thing to run). `currentState`
-is the program-state-tag enum (provided by the user program); `fields`
-holds the machine's `var` block, also user-provided. `kind` is a
-per-pmodule index identifying which `MKind` constructor this machine
-belongs to (0 reserved for "unset"; real machine kinds are ≥ 1; see
-PLAN_P3 D20 / R20).
+/-- One machine instance's runtime state.
 
-Mirrors `MachineStateAdt` at `Uclid5CodeGenerator.cs:614-619`. -/
+- `stage`        — entry flag: `true` means the entry handler is the
+                   next thing to run.
+- `currentState` — discrete control state (the program-state-tag enum).
+- `fields`       — the machine's `var` block, as a record.
+- `kind`         — per-pmodule index identifying which `MKind`
+                   constructor this machine belongs to. `0` is reserved
+                   for "unset"; real machine kinds are `≥ 1`. The
+                   default lets the runtime use a single flat map
+                   (`MachineRef → MachineState`) while letting `is_<M>
+                   m s` decide statically what kind a ref belongs to. -/
 structure MachineState (S : Type) (F : Type) where
-  /-- Entry flag: is the entry handler the next thing to run? -/
   stage        : Bool
-  /-- Discrete control state of the machine. -/
   currentState : S
-  /-- Machine's local state (its `var` block), as a record. -/
   fields       : F
-  /-- Per-pmodule kind index. 0 = uninitialised; real machine kinds are
-      ≥ 1, mapped onto ctors of the synthesised `<Mod>.MKind`. The
-      default keeps existing constructors (M1, M2 hand-written) compiling
-      without modification. -/
   kind         : Nat := 0
   deriving Inhabited, Repr
 
-/-! ## Accessors mirroring PVerifier's UCLID5 helpers -/
+/-! ## Label accessors -/
 
 namespace Label
 

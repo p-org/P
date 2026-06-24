@@ -130,7 +130,7 @@ pmodule ClockBound
       -- send time. We quantify over `Sig.Label` (not `eGlobalResponse`)
       -- so the `e.target` on the LHS stays the label's `target` field;
       -- the field-projection sugar (`rewriteFieldProjections` in
-      -- `Surface/Verify.lean`) would otherwise rewrite it to
+      -- `Syntax/Verify.lean`) would otherwise rewrite it to
       -- `(eGlobalResponse_payload_of e).target` (since `e` would have a
       -- registered event kind and `target` is a registered payload
       -- field), trivializing the equation.

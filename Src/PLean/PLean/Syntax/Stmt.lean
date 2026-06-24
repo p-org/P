@@ -1,5 +1,5 @@
 /-
-PLean.Surface.Stmt — `doElem`-level macros for statements inside a
+PLean.Syntax.Stmt — `doElem`-level macros for statements inside a
 handler body: `send`, `raise`, `goto`, `pnew`, `announce`, plus the
 machine-var assignment `<v> = <expr>`. Each rewrites to a call into
 the corresponding `PLean.*` primitive over the per-pmodule `Sig`.
@@ -40,6 +40,9 @@ syntax pNamedTupleField := ident " = " term
 /-- A non-empty named-tuple payload: `(f = v, …)`. -/
 syntax pSendNamedTuple := "(" pNamedTupleField,+ ")"
 
+-- `priority := high` so the named-tuple form wins over the generic
+-- `pSendPayload` (a `term` would otherwise consume the parenthesised
+-- tuple as an anonymous expression).
 syntax (name := pSendNamed) (priority := high)
   "send " term ", " term ", " pSendNamedTuple : doElem
 syntax (name := pSendPayload)   "send " term ", " term ", " term : doElem
@@ -102,7 +105,7 @@ macro_rules
     else
       `(doElem| PLean.raise (P := $idSig) $tref $ev)
 
-/-! ## Goto — D13: real transition. -/
+/-! ## Goto — real state transition. -/
 
 syntax (name := pGotoNoPayload) "goto " ident : doElem
 syntax (name := pGotoPayload) "goto " ident ", " term : doElem
@@ -114,9 +117,8 @@ macro_rules
     `(doElem| PLean.goto (P := $idSig) $tref $stTag $idGUnit)
   | `(doElem| goto $_st:ident, $payload) => do
     -- Payload-bearing `goto S, p` is parsed but not yet supported: the
-    -- per-pmodule `Sig.G` union is `Unit`-only until Phase 5 wires per-
-    -- target-state payload types. Erroring is safer than silently
-    -- discarding — see REVIEW.md I.3.
+    -- per-pmodule `Sig.G` union is `Unit`-only. Erroring is safer than
+    -- silently discarding the payload.
     Macro.throwErrorAt payload
       "`goto <state>, <payload>` is not yet supported (the per-pmodule \
        goto-payload union `Sig.G` is `Unit`-only). Use `goto <state>` \
@@ -131,9 +133,9 @@ syntax (name := pNewArg)   "pnew " ident ", " term : doElem
 -- `<M>_kind : Nat` def (emitted by `Commands/GenModule.lean::emitMachineKinds`).
 -- Lean's namespace search picks `<Mod>.<M>_kind` because handler defs
 -- elaborate inside `<Mod>.<MachineName>` after `open <Mod>` — the same
--- mechanism that resolves `Sig` and `is_<M>`. The earlier `m.toString.hash`
--- form was unrelated to the registered tag and silently violated
--- `<M>_allocated` for the freshly-created machine (REVIEW.md I.2).
+-- mechanism that resolves `Sig` and `is_<M>`. Using a hash of `m`'s
+-- string form here would let the freshly-created machine violate
+-- `<M>_allocated` (the registered tag and the hash needn't match).
 private def kindIdentFor (m : Ident) : Ident :=
   mkIdentFrom m (m.getId.appendAfter "_kind")
 
@@ -149,17 +151,17 @@ macro_rules
 
 /-! ## Assignment
 
-`pAssign` parses `<ident> = <term>` at high priority and rewrites it
-into `<lhs>_set this.ref <rhs>; let <lhs> ← <lhs>_get this.ref`.
+`pAssign` parses `<ident> = <term>` at high priority (to win over Lean's
+default `=` parses inside a `do` block) and rewrites it into
+`<lhs>_set this.ref <rhs>; let <lhs> ← <lhs>_get this.ref`.
 
-Known limitation (REVIEW.md I.11): the macro fires on any
-identifier-followed-by-`=` form inside a handler `do` block, including
-ones the user did not intend as a machine-var write. If `<lhs>` is not
-a machine var, the user sees a "unknown identifier `x_set`" error
-rather than a bespoke "var `x` is not declared in this machine". A
-registry-aware version of this macro requires access to the local
-pmodule context at expansion time (currently only reachable from
-`CommandElabM`, not `MacroM`); deferred. -/
+Limitation: the macro fires on any identifier-followed-by-`=` form,
+including ones the user did not intend as a machine-var write. If
+`<lhs>` is not a machine var, the user sees a "unknown identifier
+`x_set`" error rather than a bespoke "var `x` is not declared in this
+machine". A registry-aware version of this macro requires access to the
+local pmodule context at expansion time (only reachable from
+`CommandElabM`, not `MacroM`). -/
 
 syntax (name := pAssign) (priority := high) ident " = " term : doElem
 

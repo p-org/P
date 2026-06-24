@@ -1,5 +1,5 @@
 /-
-PLean.Surface.Machine — `machine`, `spec`, `state`, `entry`, `on...`, `var`.
+PLean.Syntax.Machine — `machine`, `spec`, `state`, `entry`, `on...`, `var`.
 
 Surface (close to P's grammar):
 
@@ -53,7 +53,7 @@ machines whose `body` is non-empty (i.e., not yet replayed).
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Surface.Stmt
+import PLean.Syntax.Stmt
 
 open Lean Elab Command
 
@@ -106,11 +106,11 @@ syntax (name := pMachineDecl)
 syntax (name := pSpecDecl)
   "spec " ident "observes" "[" ident,* "]" "{" pMachineBodyItem* "}" : command
 
-/-! ## Registration phase (Phase 1 of two-phase elaboration)
+/-! ## Registration phase
 
-Walk the parsed body to extract the per-state metadata (`handles`,
-`gotos`, etc.) — this is what `#pwf` checks against. The raw body
-`Syntax` items are saved verbatim for replay at finalisation time.
+Walk the parsed body to extract per-state metadata (`handles`,
+`gotos`, …) — this is what `#pwf` checks against. The raw body
+`Syntax` items are saved verbatim for replay at `#gen_module` time.
 No Lean defs are produced yet.
 -/
 

@@ -19,7 +19,7 @@ type, so a wrong-type or sorried user proof is reported as failed.
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Surface.Machine
+import PLean.Syntax.Machine
 import PLean.Verify.Tactic
 import PLean.Verify.ProofRegistry
 import PLean.Verify.CexModel
@@ -34,11 +34,9 @@ namespace Verify
 
 private def idSig : Ident := mkIdent `Sig
 
--- Unhygienic binders for the emitted obligation theorem. Without
--- these, the bare `this` / `param` inside the macro-quotation acquire
--- macro scopes and the rendered signature carries ✝ marks that break
--- the copy-paste manual-proof skeleton. Mirrors the same convention
--- used in `Surface/Stmt.lean` and `Commands/GenModule.lean`.
+-- Unhygienic binders so the rendered theorem signature prints
+-- `this` / `param` / `lbl` (not the macro-scoped `this✝` form);
+-- the manual-proof skeleton copy-pastes verbatim.
 private def idThis  : Ident := mkIdent `this
 private def idParam : Ident := mkIdent `param
 private def idLbl   : Ident := mkIdent `lbl
@@ -379,6 +377,154 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
   elabCommand stx
   return manualProof
 
+/-- Emit the per-entry theorem for a state's `entry { … }` block.
+
+Unlike a `on <ev>` handler, an entry handler has no dispatcher contract
+— there is no in-flight label, no event tag, no `markReceived`. The
+obligation is the *pure consecution* triple
+
+  (Inv s ∧ is_<M> this.ref s ∧ (s.machines this.ref).currentState = <S>_st)
+    ⇒ wp(<S>.entry this [param], Inv)
+
+The pre-state guard is conservative (entry actually runs only on
+transition INTO the state, not from arbitrary same-state pre-images),
+so a sound entry-handler proof must preserve the invariant from any
+state with `this` already at <S>_st. The shape doesn't model the
+`InEntry`/`stage` runtime gate yet — when that lands, the pre can
+tighten with `stage = true`.
+
+Naming: the synthetic event tag `entry` slots into `obligationName`'s
+`evname` parameter, yielding `<M>.<S>.entry_correct_<tag>_<target>`,
+which doesn't collide with the entry handler's def name
+`<M>.<S>.entry`. -/
+def emitEntryObligation (modName : Name) (mname sname : Name)
+    (entryPayloadTy : Option Syntax)
+    (target : Name) (isDefault : Bool) (usingNames : Array Name)
+    (varNames : Array Name)
+    (lemmaInvNames : Array Name)
+    (machineNames : Array Name)
+    (eventNames : Array Name)
+    (axiomNames : Array Name)
+    (proofTag : Name) (proofIdx : Nat) :
+    CommandElabM Bool := do
+  let thmName : Name :=
+    obligationName mname sname `entry target isDefault usingNames proofTag proofIdx
+  let fullThmName : Name := modName ++ thmName
+  let manualProof ← liftCoreM (hasPVerifyProof fullThmName)
+  let thmId : Ident :=
+    if manualProof then mkIdent (thmName.appendAfter "_check") else mkIdent thmName
+  let userThmId : Ident := mkIdent fullThmName
+  let handlerNameN : Name := mname ++ sname ++ `entry
+  let handlerId : Ident := mkIdent handlerNameN
+  let mIdent : Ident := mkIdent mname
+  let stateAlias : Ident := mkIdent (sname.appendAfter "_st")
+  let hasPayload := entryPayloadTy.isSome
+  let stx ← liftMacroM do
+    let lemmaPred ← lemmaPredIdent target isDefault
+    let usingPreds ← usingPredIdents usingNames
+    let prpAbbrev : TSyntax `term ← `(PProp $idSig)
+    let sId : TSyntax `term := ← `(s)
+    let basePre ← do
+      let preds : Array (TSyntax `term) :=
+        #[lemmaPred] ++ usingPreds
+      buildConjAt preds sId
+    let isThisKind : Ident := mkIdent (Name.mkSimple ("is_" ++ mname.toString))
+    -- Entry's dispatcher contract: only kind + current state. No label,
+    -- no event tag, no `markReceived` prelude.
+    let entryClause ← do
+      `($isThisKind ($idThis).ref s ∧
+        (s.machines ($idThis).ref).currentState = $stateAlias)
+    let preTerm : TSyntax `term ← `(fun (s : PLean.GlobalState $idSig) =>
+                                      $basePre ∧ $entryClause)
+    let postBody ← buildConjAt #[lemmaPred] sId
+    let postTerm : TSyntax `term ← `(fun (_ : Unit) (s : PLean.GlobalState $idSig) =>
+                                       $postBody)
+    let handlerTerm : TSyntax `term ←
+      if hasPayload then `($handlerId $idThis $idParam)
+      else                `($handlerId $idThis)
+    let handlerUnfold : Ident := mkIdent handlerNameN
+    let lemmaUnfold : Ident :=
+      if isDefault then mkIdent ``PLean.DefaultInvariants
+      else                mkIdent target
+    let mut accessorUnfolds : Array Ident := #[]
+    for v in varNames do
+      accessorUnfolds := accessorUnfolds.push
+        (mkIdent (mname ++ (v.appendAfter "_get")))
+      accessorUnfolds := accessorUnfolds.push
+        (mkIdent (mname ++ (v.appendAfter "_set")))
+    let usingNamesAll : Array Ident := (usingNames ++ lemmaInvNames).map mkIdent
+    let usingUnfolds : Array Ident := usingNamesAll
+    let mut kindUnfolds : Array Ident := #[]
+    for m in machineNames do
+      kindUnfolds := kindUnfolds.push
+        (mkIdent (Name.mkSimple ("is_" ++ m.toString)))
+      kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_allocated"))
+      kindUnfolds := kindUnfolds.push (mkIdent (m.appendAfter "_kind"))
+    let mut specHaves : Array (TSyntax `tactic) := #[]
+    for en in eventNames do
+      let specId : Ident :=
+        mkIdent (Name.mkSimple (en.toString ++ "_payload_of_spec"))
+      let hypId : Ident :=
+        mkIdent (Name.mkSimple ("hspec_" ++ en.toString))
+      specHaves := specHaves.push (← `(tactic| have $hypId:ident := $specId:ident))
+    let mut axiomHaves : Array (TSyntax `tactic) := #[]
+    for an in axiomNames do
+      let axId : Ident := mkIdent an
+      let hypId : Ident :=
+        mkIdent (Name.mkSimple ("hax_" ++ an.toString))
+      axiomHaves := axiomHaves.push (← `(tactic| have $hypId:ident := @$axId))
+    let hasAccessors := !accessorUnfolds.isEmpty
+    let tail : TSyntax `tactic ←
+      if isDefault then `(tactic| pverify_default)
+      else                `(tactic| pverify)
+    let mut steps : Array (TSyntax `tactic) := #[]
+    steps := steps.push (← `(tactic| unfold $handlerUnfold:ident))
+    unless isDefault do
+      steps := steps.push (← `(tactic| try unfold $lemmaUnfold:ident))
+    for u in usingUnfolds do
+      steps := steps.push (← `(tactic| try unfold $u:ident))
+    for u in kindUnfolds do
+      steps := steps.push (← `(tactic| try unfold $u:ident))
+    if hasAccessors then
+      steps := steps.push (← `(tactic| try unfold $[$accessorUnfolds:ident]*))
+    steps := steps.push (← `(tactic|
+      try unfold PLean.send PLean.goto PLean.raise
+                 PLean.markReceived PLean.announce))
+    for h in specHaves do
+      steps := steps.push h
+    for h in axiomHaves do
+      steps := steps.push h
+    steps := steps.push tail
+    let proofTacSeq : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
+      `(Lean.Parser.Tactic.tacticSeq| $[$steps]*)
+    let bodyTac : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
+      if manualProof then
+        if hasPayload then `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis $idParam)
+        else                `(Lean.Parser.Tactic.tacticSeq| exact $userThmId $idThis)
+      else pure proofTacSeq
+    let wrappedProof : TSyntax ``Lean.Parser.Tactic.tacticSeq ←
+      `(Lean.Parser.Tactic.tacticSeq|
+          pverify_log_failure_else_sorry $bodyTac)
+    let keyLit := Syntax.mkStrLit fullThmName.toString
+    match entryPayloadTy with
+    | some payloadTy =>
+      let payloadTyTerm : TSyntax `term := ⟨payloadTy⟩
+      `(set_option linter.unusedTactic false in
+        set_option pverify.obligationKey $keyLit in
+        theorem $thmId
+            ($idThis : $mIdent) ($idParam : $payloadTyTerm) :
+            triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
+          $wrappedProof)
+    | none =>
+      `(set_option linter.unusedTactic false in
+        set_option pverify.obligationKey $keyLit in
+        theorem $thmId
+            ($idThis : $mIdent) :
+            triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
+          $wrappedProof)
+  elabCommand stx
+  return manualProof
+
 /-! ## Base-case obligation emission
 
 For each `prove G [using P1, …]` directive, every individual invariant
@@ -552,16 +698,15 @@ private def machineVarNames (m : PMachineDecl) : Array Name := Id.run do
         if i.isIdent then out := out.push i.getId
   return out
 
-/-- Pull `(state, event)` pairs for which the state body has `on
-$ev goto $tgt` — those events have no `_handler` def, so the
-obligation generator must skip them. -/
-private def machineGotoHandlers (m : PMachineDecl) :
-    Std.HashSet (Name × Name) := Id.run do
-  let mut out : Std.HashSet (Name × Name) := {}
+/-- Pull `(state, payloadTypeSyntax?)` pairs for which the state body has
+an `entry { … }` (or `entry (param : T) { … }`) block. The entry handler
+runs on transition INTO the state and gets its own obligation under the
+synthetic event tag `entry`. -/
+private def machineEntryHandlers (m : PMachineDecl) :
+    Array (Name × Option Syntax) := Id.run do
+  let mut out : Array (Name × Option Syntax) := #[]
   for it in m.body do
     let kind := it.getKind
-    -- pMachineStartState: "start" "state" ident "{" body "}" (idx 2 = ident, 4 = body)
-    -- pMachineState:      "state" ident "{" body "}" (idx 1 = ident, 3 = body)
     let (sidIdx, bodyIdx) :=
       if kind == ``PLean.pMachineStartState then (2, 4)
       else if kind == ``PLean.pMachineState then (1, 3)
@@ -572,10 +717,13 @@ private def machineGotoHandlers (m : PMachineDecl) :
     let sname := sidStx.getId
     let some items := it[bodyIdx]? | continue
     for sit in items.getArgs do
-      if sit.getKind == ``PLean.pStateOnGoto then
-        -- pStateOnGoto: "on" ident "goto" ident (idx 1 = event ident)
-        if let some evStx := sit[1]? then
-          if evStx.isIdent then out := out.insert (sname, evStx.getId)
+      let sk := sit.getKind
+      if sk == ``PLean.pStateEntry then
+        out := out.push (sname, none)
+      else if sk == ``PLean.pStateEntryTyped then
+        -- pStateEntryTyped: "entry" "(" ident ":" term ")" "{" doSeq "}"
+        -- idx 4 = type term
+        out := out.push (sname, sit[4]?)
   return out
 
 /-- Whether a structure field is a machine reference — its projection
@@ -866,6 +1014,28 @@ private def processOneEmit (modName mname sname evname : Name)
       axiomNames proofTag proofIdx)
     acc
 
+/-- Emit one entry-handler obligation. `evname` is the synthetic tag
+`entry` so the pending record's report distinguishes entries from event
+handlers. -/
+private def processEntryEmit (modName mname sname : Name)
+    (entryPayloadTy : Option Syntax)
+    (target : Name) (isDefault : Bool) (usingNames : Array Name)
+    (varNames : Array Name)
+    (lemmaInvNames : Array Name)
+    (machineNames : Array Name)
+    (eventNames : Array Name)
+    (axiomNames : Array Name)
+    (proofTag : Name) (proofIdx : Nat)
+    (acc : SynthesiseResult) :
+    CommandElabM (SynthesiseResult × PendingObligation) := do
+  let thmName :=
+    obligationName mname sname `entry target isDefault usingNames proofTag proofIdx
+  runEmitOnly modName mname sname `entry target thmName
+    (emitEntryObligation modName mname sname entryPayloadTy target isDefault
+      usingNames varNames lemmaInvNames machineNames eventNames axiomNames
+      proofTag proofIdx)
+    acc
+
 /-- Emit one base-case obligation for a single invariant in a directive's
 target lemma. `mname`/`sname`/`evname` are recorded as `anonymous` —
 base-case VCs are pmodule-scoped, not handler-scoped. -/
@@ -957,10 +1127,9 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
           logInfo m!"spec machine `{mname}` skipped — spec obligations are not yet supported"
           continue
         let varNames := machineVarNames m
-        let gotoHandlers := machineGotoHandlers m
+        let entries := machineEntryHandlers m
         for sd in m.states do
           for ev in sd.handles do
-            if gotoHandlers.contains (sd.name, ev) then continue
             let hasPayload := eventHasPayload ctx ev
             if dir.isDefault then
               explicitDefault := explicitDefault.insert (mname, sd.name, ev)
@@ -976,6 +1145,21 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
               proof.name proofIdx result
             result := result'
             pendings := pendings.push pending
+        -- Entry handlers: one VC per (machine, state) with an `entry`
+        -- block. Same target/using/default logic as on-handlers.
+        for (sname, payloadTy?) in entries do
+          if dir.isDefault then
+            explicitDefault := explicitDefault.insert (mname, sname, `entry)
+          let mut lemmaInvNames : Array Name :=
+            if dir.isDefault then #[] else lemmaInvariantsOf dir.target
+          for u in dir.usingLemmas do
+            lemmaInvNames := lemmaInvNames ++ lemmaInvariantsOf u
+          let (result', pending) ← processEntryEmit modName mname sname
+            payloadTy? dir.target dir.isDefault dir.usingLemmas varNames
+            lemmaInvNames allMachineNames allEventNames allAxiomNames
+            proof.name proofIdx result
+          result := result'
+          pendings := pendings.push pending
   -- Auto-default pass: synthetic `block_auto_default` tag avoids
   -- collisions with user-tagged emissions; index past-the-end of the
   -- proofs array. No base case emitted here — the default invariants
@@ -987,10 +1171,9 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
     let some m := ctx.machines.find? mname | continue
     if m.isSpec then continue
     let varNames := machineVarNames m
-    let gotoHandlers := machineGotoHandlers m
+    let entries := machineEntryHandlers m
     for sd in m.states do
       for ev in sd.handles do
-        if gotoHandlers.contains (sd.name, ev) then continue
         if explicitDefault.contains (mname, sd.name, ev) then continue
         let hasPayload := eventHasPayload ctx ev
         let (result', pending) ← processOneEmit modName mname sd.name ev
@@ -998,6 +1181,14 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
           #[] allMachineNames allEventNames allAxiomNames autoTag autoIdx result
         result := result'
         pendings := pendings.push pending
+    -- Auto-default for entry handlers, mirroring the on-handler loop above.
+    for (sname, payloadTy?) in entries do
+      if explicitDefault.contains (mname, sname, `entry) then continue
+      let (result', pending) ← processEntryEmit modName mname sname
+        payloadTy? `default true #[] varNames
+        #[] allMachineNames allEventNames allAxiomNames autoTag autoIdx result
+      result := result'
+      pendings := pendings.push pending
   -- Pass 2: each `classifyOnePending` blocks on its own body-elab
   -- Task; work overlaps across tasks already running in Lean's
   -- worker pool.

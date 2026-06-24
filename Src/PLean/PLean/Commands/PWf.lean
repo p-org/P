@@ -1,7 +1,7 @@
 /-
 PLean.Commands.PWf — `#pwf M` well-formedness validator.
 
-Checks performed (Phase 0 scope):
+Checks performed:
   1. Module exists in `pmoduleExt`.
   2. For every event with a named payload type, the payload resolves to a
      declared type in the module.

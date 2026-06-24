@@ -1,23 +1,15 @@
 /-
 PLean.Semantics.Monad — the P monad over Loom.
 
-The Phase-1 stack (decision D1) is `NonDetT` outermost, `StateT` over
-the inner divergence monad:
-
   `PM P α := NonDetT (StateT (GlobalState P) DivM) α`
 
 with assertion lattice `PProp P := GlobalState P → Prop`. P's
 safety-only verification doesn't need an `ExceptT` layer on top.
 
-The `MAlgOrdered` instances for the `NonDetT` and `DivM` layers are
-`scoped` inside `PartialCorrectness DemonicChoice` (decision D5 — the
-v1 verification mode). The `open` is *not* baked into this file because
-that would force every importer to use partial-correctness + demonic
-choice — instead we re-export the namespaces so importers can write a
-single `open PLean PartialCorrectness DemonicChoice` and reach
-everything.
-
-If a downstream file needs the instances, the recommended preamble is:
+`NonDetT`-outermost is load-bearing for the partial-correctness +
+demonic-choice mode the verifier targets — the lattice instances live
+under `scoped` in `PartialCorrectness DemonicChoice`. Importers reach
+the instances via the standard preamble:
 
   ```lean
   import PLean.Semantics.Monad

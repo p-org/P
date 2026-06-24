@@ -41,7 +41,7 @@ abbrev Prp := PProp Sig
 abbrev Lbl := Sig.Label
 
 /-- Every `ePong` is preceded by some `ePing`. State-indexed; uses the
-`≺` and `is` notations from `Surface/Notation.lean`. -/
+`≺` and `is` notations from `Syntax/Notation.lean`. -/
 def PongAfterPing : Prp := fun s =>
   ∀ q : Lbl, s.sent q = true → q is ePong →
     ∃ p : Lbl, s.sent p = true ∧ p is ePing ∧ p ≺ q

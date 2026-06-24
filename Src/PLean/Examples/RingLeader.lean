@@ -369,6 +369,71 @@ theorem Server.Proposing.eNominate_correct_block0_lemmas
         · refine hSPM n m e p ?_ htgte hacte hsvf
           pverify_inflight_by hinfe using h => exact hee h
 
+-- `lemmas` preservation by the `Proposing` entry handler. The entry's
+-- `send` carries `voteFor = this.ref`, matching the `this.ref → right this`
+-- branch of `eNominate_correct_block0_lemmas`. There's no dispatched
+-- `lbl` to case-split on (entry has no inflight precondition), so the
+-- proof is the second branch of the on-handler stripped of its
+-- forwarding-branch wrapper.
+set_option maxHeartbeats 2000000 in
+@[pverifyProof]
+theorem Server.Proposing.entry_correct_block0_lemmas (this : Server) :
+    triple (l := PProp Sig)
+      (fun s =>
+        (lemmas s) ∧
+        is_Server this.ref s ∧
+        (s.machines this.ref).currentState = Server.Proposing_st)
+      (Server.Proposing.entry this)
+      (fun _ s => lemmas s) := by
+  unfold Server.Proposing.entry
+  unfold lemmas
+  unfold LeaderMax Aux NoBypass SelfPendingMax
+  try unfold PLean.send PLean.goto PLean.raise PLean.markReceived PLean.announce
+  pverify_step_wp
+  intro s
+  intros
+  rename_i hLM hAux hNB hSPM _hThisKind _hst
+  have hNBnew2 : ∀ n : MachineRef,
+      RingTopology.btw this.ref n (RingTopology.right this.ref) = true →
+        LeOrder.le n this.ref = true :=
+    fun n hb => absurd hb (by simp [RingTopology.btw_Aux1 this.ref n])
+  have hSPMnew2 : this.ref = RingTopology.right this.ref →
+      ∀ n : MachineRef, LeOrder.le n (RingTopology.right this.ref) = true :=
+    fun heq _ => absurd heq (RingTopology.right_neq_self this.ref)
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · intro x y hx; exact hLM x y hx
+  · exact hAux
+  · rintro n m e p hinfe htgte hacte hbtwe
+    by_cases hee : e =
+        (⟨RingTopology.right this.ref, EventOrGoto.event (E.eNominate ⟨this.ref⟩), s.actionCount⟩ : Sig.Label)
+    · subst hee
+      injection hacte with hac; injection hac with hac2; subst hac2
+      simp only [PLean.Label.targets?] at htgte; subst htgte
+      exact hNBnew2 n hbtwe
+    · refine hNB n m e p ?_ htgte hacte hbtwe
+      -- Entry leaves `received` untouched, so `inflight e s'` simplifies
+      -- to `(e = newLbl ∨ s.sent e = true) ∧ s.received e = false` —
+      -- one less `∧` level than the on-handler form `pverify_inflight_by`
+      -- expects. Discharge by hand.
+      simp only [PLean.inflight, Bool.or_eq_true, decide_eq_true_eq] at hinfe ⊢
+      refine ⟨?_, hinfe.2⟩
+      rcases hinfe.1 with hNew | hOld
+      · exact absurd hNew hee
+      · exact hOld
+  · rintro n m e p hinfe htgte hacte hsvf
+    by_cases hee : e =
+        (⟨RingTopology.right this.ref, EventOrGoto.event (E.eNominate ⟨this.ref⟩), s.actionCount⟩ : Sig.Label)
+    · subst hee
+      injection hacte with hac; injection hac with hac2; subst hac2
+      simp only [PLean.Label.targets?] at htgte; subst htgte
+      exact hSPMnew2 hsvf n
+    · refine hSPM n m e p ?_ htgte hacte hsvf
+      simp only [PLean.inflight, Bool.or_eq_true, decide_eq_true_eq] at hinfe ⊢
+      refine ⟨?_, hinfe.2⟩
+      rcases hinfe.1 with hNew | hOld
+      · exact absurd hNew hee
+      · exact hOld
+
 end RingLeader
 
 -- The `stateOf`-bearing obligations are expensive to reduce in `whnf`,

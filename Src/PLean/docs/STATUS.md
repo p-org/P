@@ -19,7 +19,7 @@ rather than narrating.
 | 0 — Bootstrap                    | ☑ | — | 2026-05-28 | 2026-05-29 | M0 reached |
 | 1 — Semantic core                | ☑ | — | 2026-06-01 | 2026-06-04 | M1 reached |
 | 2 — Registry + minimal surface   | ☑ | — | 2026-06-05 | 2026-06-05 | M2 reached |
-| 3 — Verification declarations    | ☑ | — | 2026-06-06 | 2026-06-23 | M3 reached — all three Tutorial/Advanced benchmarks fully verify: `Examples/DistributedLock` 12/12, `Examples/LockServer` 37/37, `Examples/RingLeader` 17/17. paxiom/pinstance both reach SMT; reusable manual-proof helpers shipped; obligation cache + profiler in tree. ShardedKV added 2026-06-25 (11/11 SMT) — exercises container hoisting |
+| 3 — Verification declarations    | ☑ | — | 2026-06-06 | 2026-06-23 | M3 reached — Tutorial/Advanced benchmarks fully verify: `Examples/DistributedLock` 12/12 (all SMT after 2026-06-25), `Examples/LockServer` 37/37, `Examples/RingLeader` 17/17, `Examples/ClockBound` 59/59 (all SMT after 2026-06-25). paxiom/pinstance both reach SMT; reusable manual-proof helpers shipped; obligation cache + profiler in tree. ShardedKV added 2026-06-25 (11/11 SMT) — exercises container hoisting |
 | 4 — Spec machines                | ☐ | — | — | — | next; plan in [`PLAN_P4.md`](PLAN_P4.md) |
 | 5 — Remaining surface            | ☐ | — | — | — | |
 | 6 — Tutorial port                | ☐ | — | — | — | |
@@ -36,10 +36,14 @@ machines) is next** — design in [`PLAN_P4.md`](PLAN_P4.md), pending
 a port author._
 
 _**Closure rates (M3 + ClockBound + ShardedKV, final):**_
-- _[`Examples/DistributedLock`](../Examples/DistributedLock.lean) — **12/12** (11 SMT + 1 manual `@[pverifyProof]`)._
+- _[`Examples/DistributedLock`](../Examples/DistributedLock.lean) — **12/12** (all SMT;
+  the previously-manual `eGrant` `transfer_to_higher` step closes via the 2026-06-25 prep extensions)._
 - _[`Examples/LockServer`](../Examples/LockServer.lean) — **37/37** (34 SMT + 3 manual)._
 - _[`Examples/RingLeader`](../Examples/RingLeader.lean) — **17/17** (14 SMT + 3 manual; entry-handler obligation added 2026-06-24)._
-- _[`Examples/ClockBound`](../Examples/ClockBound.lean) — **59/59** (58 SMT + 1 manual). Off-tree benchmark
+- _[`Examples/ClockBound`](../Examples/ClockBound.lean) — **59/59** (all SMT;
+  the previously-manual `causal` inductive step now closes via the
+  prep + kind-guard-dedup fixes from the 2026-06-25 session). Off-tree
+  benchmark
   ([PInfer-Benchmarks/ClockBound](https://github.com/AD1024/PInfer-Benchmarks/blob/main/ClockBound/PSrc/System.p));
   exercises `PLean.choose` (bounded nondet `Int`) and the safety
   properties from `goals.json`._
@@ -111,16 +115,47 @@ ports the Tutorial/Advanced benchmark verbatim — two events, the
 `Node` machine with `var kv : map[tKey, tValue]`, both handlers
 (guarded `eReshard` doing read-erase-send, `eTransfer` doing insert),
 and the full 4-invariant `Safety` theorem including the multi-ref
-`unique_owner`. All 11 obligations close via SMT. Two surface
+`unique_owner`. All 11 obligations close via SMT. Three surface
 adjustments worth noting:
 - the handler uses `(kv e.reshard_key).getD 0` instead of an explicit
   `Option.get h` so `wpgen` steps through without falling into
   `WPGen.default`;
-- an `init-holds ∀ n : Node, ∀ k, ¬ (k ∈ n.kv)` is needed for the
-  `unique_owner` base case (no two Nodes own the same key at init).
+- invariant bodies use the typed-quantifier form `∀ (e : eTransfer)
+  (n : Node), …` (kind guard auto-injected) and field projection
+  `e.key` / `e.source` (rewritten to the underlying
+  `(eTransfer_payload_of e).key` form), matching the LockServer
+  /DistributedLock surface style;
+- `init-holds ∀ k n1 n2, k ∈ n1.kv → k ∈ n2.kv → n1 = n2` makes
+  explicit the deployment assumption P's source leaves implicit (the
+  protocol preserves uniqueness of key ownership but does not
+  establish it).
 
-**Regression**: 1039 jobs across Tests + Examples. No closure-rate
-changes to DistributedLock / LockServer / RingLeader / ClockBound.
+**ClockBound and DistributedLock drop their manual proofs.** Earlier
+entries recorded `Examples/ClockBound` at 58 SMT + 1 manual (the
+`causal` inductive step's `LocalClock.Waiting.eGlobalResponse`
+obligation) and `Examples/DistributedLock` at 11 SMT + 1 manual (the
+`eGrant` `transfer_to_higher` then-branch). Both manual `@[pverifyProof]`s
+covered multi-ref shapes the old prep returned as `unknown`. With this
+session's `destruct_machine_state` + `gsContainers` handling + kind-
+guard dedup, both obligations now close via SMT directly. New rates:
+**ClockBound 59/59 all SMT**, **DistributedLock 12/12 all SMT**.
+
+**CEX renderer learns the post-hoist shape.** Disproved obligations
+on container-using pmodules previously emitted no `machines:`
+section and dumped containers as a generic witness. The renderer
+now:
+- consults `gsMachines` / `gsSent` / `gsReceived` / `gsActionCount`
+  (the post-`sdestruct_state` names) as primary lookups, falling
+  back to the pre-destructure forms for synthetic test goldens;
+- decodes each hoisted container var (per
+  `CexNameCtx.containerFields`, populated by `buildCexNameCtx` from
+  `<Mod>.Containers`'s field set) into its own `containers:`
+  section — `ite`-case enumeration when the solver split keys,
+  `∀ (m, k) = <value>` when the function is constant (avoiding the
+  misleading `else = some 4` shape that reads as if the map IS the
+  literal).
+
+**Regression**: 1039 jobs across Tests + Examples.
 
 New tests:
 - [`Tests/Semantics/Containers.lean`](../Tests/Semantics/Containers.lean) — surface desugar, helper lemmas, `pverifySimp` round-trips.

@@ -91,11 +91,13 @@ Examples/            -- protocol ports (showcased benchmarks)
   PingPongAuto.lean  --   trivial PingPong with #pverify auto-discharge
   PingPongManual.lean--   PingPong with hand-written triples
   PingPongTrivial.lean--  smoke test for the trivial-handler auto path
-  DistributedLock.lean--  6_DistributedLock port (12/12)
+  DistributedLock.lean--  6_DistributedLock port (12/12 all SMT)
   LockServer.lean    --   8_LockServer port (37/37)
   RingLeader.lean    --   3_RingLeaderVerification port (17/17)
   ClockBound.lean    --   AWS-style clock-bound daemon (59/59) — exercises
                      --   `PLean.choose` (bounded nondet Int)
+  ShardedKV.lean     --   7_ShardedKV port (11/11) — exercises map[K, V]
+                     --   and the multi-ref `unique_owner` pattern
 
 Tests/               -- regressions; Tests.** is globbed
   Bootstrap/         --   Phase-0 #pwf / multi-file aggregation
@@ -161,14 +163,13 @@ before attempting one.
   real PM; M2 surface ping-pong verifies.
 - Phase 3 (Verification declarations) — ☑ M3 reached. All
   Tutorial/Advanced benchmarks fully verify:
-  - [`Examples/DistributedLock`](Examples/DistributedLock.lean) — **12/12**
-    (11 SMT + 1 manual `@[pverifyProof]`),
+  - [`Examples/DistributedLock`](Examples/DistributedLock.lean) — **12/12** (all SMT),
   - [`Examples/LockServer`](Examples/LockServer.lean) — **37/37**
     (34 SMT + 3 manual),
   - [`Examples/RingLeader`](Examples/RingLeader.lean) — **17/17**
     (14 SMT + 3 manual).
   - [`Examples/ClockBound`](Examples/ClockBound.lean) — **59/59**
-    (58 SMT + 1 manual). Off-tree benchmark from
+    (all SMT). Off-tree benchmark from
     [PInfer-Benchmarks](https://github.com/AD1024/PInfer-Benchmarks/tree/main/ClockBound);
     exercises `PLean.choose` (bounded nondet `Int`) and per-target
     monotonicity safety properties from `goals.json`.
@@ -493,7 +494,8 @@ A disproved obligation routes its solver model through
 `Verify/CexParse.lean` + `Verify/CexModel.lean` (called from
 `Obligation.lean::renderCex`) into a per-machine state table
 (`Node@Act(epoch=9, held=false)`), the `sent` trace ordered by
-`actionCount` (`eGrant(node=Node#8, epoch=7)`, `[]` when empty), and a
+`actionCount` (`eGrant(node=Node#8, epoch=7)`, `[]` when empty), a
+`containers:` section for each hoisted container var, and a
 witnesses section. Machine refs render as `<Kind>#<ref>` labels; since
 `MachineRef` is a reducible `Nat`, ref-typed fields are found from
 projection return types and kinds from the `machines` table (a ref not
@@ -502,11 +504,24 @@ de-mangling of lean-auto's `"_" ++ delab(expr)` atoms (exact `h2lMap`
 recovery is the v2 follow-up), and a `CexNameCtx` built from the registry
 in `Obligation.lean::buildCexNameCtx` and passed via `cexNameCtxRef`
 (state-ctor → machine/state, global `Fields` order, event payload field
-names, ref-typed field names). All names are read from the materialised
-structures via the **environment** (`getStructureInfo?` + projection
-types), NOT the registry `defStx` — `#gen_module` clears `defStx` before
-`synthesise` runs. Anything without a name degrades to a de-mangled raw
-value. Don't pin exact model *values* in tests — they're solver-specific;
+names, ref-typed field names, container field qualified names). All
+names are read from the materialised structures via the **environment**
+(`getStructureInfo?` + projection types), NOT the registry `defStx` —
+`#gen_module` clears `defStx` before `synthesise` runs. Anything without
+a name degrades to a de-mangled raw value.
+
+**Post-hoist lookups**: after `sdestruct_state` destructures
+`GlobalState`, the model's primary names are `gsSent` / `gsReceived`
+/ `gsMachines` / `gsActionCount`, with the pre-destructure forms
+(`sent`/`received`/`machines`/`actionCount`) kept as fallbacks for
+synthetic test goldens. Hoisted container vars (the
+`<Mod>.Containers` struct's fields) surface as top-level free
+functions; `decodeContainers` walks each one's `ite`-table and
+renders constant fallthroughs as `∀ (m, k) = <value>` to make
+explicit that the displayed value covers every (machine, key)
+pair.
+
+Don't pin exact model *values* in tests — they're solver-specific;
 pin de-mangling and structural markers (see
 [`Tests/Verify/CexEndToEnd.lean`](Tests/Verify/CexEndToEnd.lean)). The
 synthetic-model goldens in

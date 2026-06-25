@@ -48,8 +48,102 @@ _**Closure rates (M3 + ClockBound + ShardedKV, final):**_
   exercises `PLean.choose` (bounded nondet `Int`) and the safety
   properties from `goals.json`._
 - _[`Examples/ShardedKV`](../Examples/ShardedKV.lean) — **11/11** (all SMT). Exercises `map[K, V]` and the multi-ref `unique_owner` pattern._
+- _[`Examples/Consensus`](../Examples/Consensus.lean) — **23/23** (17 SMT + 5 manual + 1 axiom). Exercises `set[MachineRef]` (Bool-storage hoist), `foreach` broadcast, the toy Paxos-style `eRequestVote`/`eVote` consensus protocol, the `goto Won` quorum-triggered transition, and the `election_safety` (`unique_leader`) property. The 5 manual proofs cover: 2 base cases (`won_implies_quorum`, `unique_leader` — vacuous at init), 1 inductive step (`eVote → goto Won` using the `unique_quorum` axiom), 1 derived-from-bundle entry triple for `election_safety`, and 1 structural `triple_forIn_list`-driven entry triple for `DefaultInvariants` (the framework loop-invariant lookup doesn't unfold user lemma names; the structural proof bypasses the iteration VC's name-lookup)._
 
 _Build: green at HEAD._
+
+### Session 2026-06-27 (later) — Consensus 23/23 with `Won` + `unique_leader`; reducible invariants; recursive `wpgen` for loop body
+
+The toy Consensus port now verifies the full safety theorem
+`∀ n1 n2 : Node, n1 is Won ∧ n2 is Won → n1 = n2` — the Paxos-style
+election-safety property. Two structural fixes landed alongside.
+
+**Reducible invariant defs.** `materialiseInvariant` now emits
+`@[reducible] def <invName>` rather than a plain `def`. The
+reducibility lets SMT prep's `dsimp only` unfold invariant references
+inside iteration VCs (where the foreach loop's `invariantSeq` would
+otherwise leave them as opaque `GS → Prop` atoms — lean-auto's
+"Higher order input?" rejection). Lemma bundles (`emitConjPredicate`)
+remain `def` (not reducible) so manual proofs that destructure the
+bundle name-by-name via `simp only [bundle, conj1, conj2, …]` still
+work (LockServer's send-handler proofs).
+
+**Recursive `wpgen` for loop bodies.** `pverify_step_wp` now runs
+`all_goals (try wpgen)` after the outer `wpgen` pass, picking up the
+"WPGen (body x)" subgoal that a loop-bearing handler produces.
+Without this, the body's WPGen falls into `WPGen.default`, leaving a
+`Cont (PProp Sig) _` atom lean-auto rejects. Pinned by the entry-
+handler `quorum_votes` obligation in `Examples/Consensus` (closes via
+SMT after the fix; tactic-error before).
+
+**Consensus manual proofs.** Five `@[pverifyProof]` theorems:
+- `base_block0_won_implies_quorum` / `base_block1_unique_leader`:
+  base cases. Lean-auto's monomorphizer mishandles the
+  `currentState ∈ {start_states}` constraint from `is_<M>`'s
+  kind/state coupling and produces a spurious CEX with a `Won_st`-
+  state Node at init; closed by destructuring `InitConditions`'s
+  `InStart` clause + a direct `S.noConfusion`.
+- `eVote_correct_block1_election_safety_using_quorum_votes`: the
+  inductive step through `goto Won`. The `goto Won` branch invokes
+  the `unique_quorum` topology axiom on `n1.ref` / `n2.ref` (both
+  have `isQuorum` set by `won_implies_quorum` + the handler guard),
+  collapsing them via quorum-uniqueness. The else-branch carries
+  `unique_leader` pointwise (machines untouched).
+- `entry_correct_block1_election_safety_using_quorum_votes`:
+  reduces via `triple_cons` to "entry preserves `quorum_votes`"
+  (the auto-discharged block0 obligation re-applied), then derives
+  `unique_leader` from `won_implies_quorum` + `unique_quorum`.
+- `entry_correct_block1_default`: drives the framework default
+  preservation through the loop structurally via
+  `triple_forIn_list (inv := DefaultInvariants)`. The auto-generated
+  obligation uses the user's `quorum_votes` loop invariant — which
+  doesn't carry `DefaultInvariants` — so the structural proof
+  bypasses the iteration VC's invariant-list shape entirely.
+
+### Session 2026-06-27 — Toy consensus port; `set[T]` Bool-storage hoist; loop-aware `pverify_step_wp`; #gen_module Step 5c/5d split
+
+The toy consensus protocol from PVerifier's
+[`5_Consensus`](../../../Tutorial/Advanced/5_Consensus/PSrc/System.p)
+ports as [`Examples/Consensus`](../Examples/Consensus.lean) — exercises
+the foreach-broadcast loop, the multi-ref `set[MachineRef]` vote
+accumulator, and the one-vote-per-voter safety property under the
+inductive strengthening `voted_after_eVote_sent`. Closure: **10 / 11**
+SMT.
+
+Three framework changes landed alongside the port.
+
+**`set[T]` Bool-storage hoist.** `set[T] = T → Prop` previously hoisted
+into the `Containers` slot as `MachineRef × T → Prop`, but lean-auto's
+SMT translator rejects `Prop`-codomain functions as "Higher order
+input?" when invariants quantify over machines and touch the container.
+The hoisted field type for `set` vars now stores `Bool` instead;
+`<v>_get` (which the user sees as returning `Set T`) is marked
+`noncomputable` and bridges the Bool storage to the surface
+`Set T = T → Prop` via `... = true`; `<v>_set` writes through via
+`@Decidable.decide (v p) (Classical.propDecidable _)` so the call site
+stays `Set T`-typed. The field-projection sugar `n.<v>` for set vars
+emits `fun x => s.containers.<M>_<v> (n.ref, x) = true`, lifting the
+Bool back to the surface `Set` shape. Pinned by
+[`Tests/Verify/ContainerVerify`](../Tests/Verify/ContainerVerify.lean)
+(SetVerify still 3/3 SMT) and exercised by
+[`Examples/Consensus`](../Examples/Consensus.lean).
+
+**`pverify_step_wp` recursive `wpgen` pass.** A loop-bearing handler's
+outer `wpgen` produces a subgoal "WPGen (body x)" for the iteration
+body; without a recursive pass the subgoal falls through to
+`WPGen.default`, leaving a `Cont (PProp Sig) _`-typed atom lean-auto
+rejects. The tactic now runs `all_goals (try wpgen)` after the outer
+`wpgen`, then `apply WPGen.default | skip` on the residue. Pinned by
+the entry-handler obligations in [`Examples/Consensus`](../Examples/Consensus.lean)
+(`entry_correct_block0_quorum_votes` closes via SMT after the fix).
+
+**`#gen_module` Step 5c/5d split.** State aliases (`<M>.<S>_st`) and
+verification-declaration materialisation (`<inv>` defs, lemma bundles)
+move *before* machine handler bodies so loop-invariant clauses inside
+an entry handler can reference a `Lemma`/`Theorem` bundle by name (e.g.
+`invariant inv_bundle : quorum_votes s ;`). The previous order
+emitted handler defs before invariants, so the loop's name resolution
+for `quorum_votes` failed at elaboration time.
 
 ### Session 2026-06-26 — `foreach`/`while` loop surface; loop-aware `pverify_step_wp` + multi-state `sdestruct_state`; `pverify_split_smt` rewrite
 

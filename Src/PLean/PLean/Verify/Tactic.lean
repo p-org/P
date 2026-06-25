@@ -131,7 +131,16 @@ or another `wpgen` pass on the body's `wpg`. -/
 syntax "pverify_step_wp" : tactic
 macro_rules
   | `(tactic| pverify_step_wp) => `(tactic| (
-      wpgen <;> first | apply WPGen.default | skip
+      -- Run `wpgen` then a second pass on every subgoal it produces.
+      -- A loop-bearing handler's outer `wpgen` produces a subgoal
+      -- "WPGen (body x)" for the iteration body; the inner `wpgen`
+      -- on that subgoal peels the body's `send` / `set` calls down
+      -- to their registered `loomSpec`s. Without the second pass
+      -- the subgoal falls through to `WPGen.default`, leaving a
+      -- `Cont (PProp Sig) _`-typed atom lean-auto rejects.
+      wpgen
+      all_goals (try wpgen)
+      all_goals (first | apply WPGen.default | skip)
       try simp only [loomLogicSimp, loomWpSimp, loomWPGenRewrite]
       try simp only [PLean.GlobalState.addSent, PLean.GlobalState.bumpActionCount,
                      PLean.GlobalState.addReceived, PLean.GlobalState.updateMachine]
@@ -146,9 +155,14 @@ macro_rules
       -- (3) `(I ⊓ ⊤) s` reads as a `Pi`-typed meet applied to `s` —
       --     reduce via `Pi.inf_apply` / `Pi.top_apply` / `inf_Prop_eq`
       --     so the goal becomes a plain `∧`-chain of `Prop`s.
-      try simp only [invariantSeq, List.foldr]
+      try simp only [invariantSeq, List.foldr] at *
       try unfold spec at *
       try unfold WithName at *
+      try simp only [Pi.inf_apply, Pi.top_apply, inf_Prop_eq] at *
+      -- A second pass: after `spec` and `WithName` unfold, the
+      -- residual `invariantSeq`s buried in the body's WPGen result
+      -- get reduced too.
+      try simp only [invariantSeq, List.foldr] at *
       try simp only [Pi.inf_apply, Pi.top_apply, inf_Prop_eq] at *
       -- After the meet unfolds, residual `_ ∧ ⊤` clauses come from
       -- the empty done-with branch of an unannotated loop. Collapse
@@ -160,6 +174,14 @@ macro_rules
       -- function-typed-record sort even when the binder is unused;
       -- `forall_const` collapses the vacuous quantifier.
       try simp only [forall_const] at *
+      -- Unfold framework default-invariant aliases so the iteration
+      -- VC's `DefaultInvariants s` becomes a plain conjunction of
+      -- `UniqueActions s ∧ IncreasingCount s ∧ ReceivedSubsetSent s`,
+      -- each of which lean-auto translates first-order.
+      try unfold PLean.DefaultInvariants at *
+      try unfold PLean.UniqueActions at *
+      try unfold PLean.IncreasingCount at *
+      try unfold PLean.ReceivedSubsetSent at *
     ))
 
 /-! ## Pre-SMT preparation (internal to `pverify_smt`)

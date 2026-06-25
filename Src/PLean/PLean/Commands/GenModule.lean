@@ -49,28 +49,39 @@ structure VarInfo where
       projection as a flat applied symbol, not a `Fields`-projection
       that lean-auto rejects under a quantifier. -/
   isContainer : Bool
+  /-- True iff the container's codomain is `Prop` (`set[T] = T →
+      Prop`). The storage type for the hoisted field is then `Bool`
+      instead of `Prop` (lean-auto rejects `Prop`-codomain functions
+      under quantifiers as higher-order), and the accessor / field
+      projection bridges between the storage Bool and the surface
+      `Set T`. -/
+  isSetProp : Bool
 
-/-- A type is a container (eligible for hoisting) iff its elaborated
-form reduces to an arrow type. Catches `set[T] = Set T = T → Prop`
-and `map[K, V] = K → Option V`; `seq[T] = List T` stays first-order
-and is not hoisted. -/
+/-- Classify a container `var`'s declared type. Returns `(isContainer,
+isSetProp)`. `set[T]` desugars to `T → Prop` whose codomain is `Prop`
+— that's flagged so the hoisted field uses `Bool` storage. -/
 private def classifyTypeAsContainer (ty : TSyntax `term) :
-    CommandElabM Bool := do
+    CommandElabM (Bool × Bool) := do
   try
-    let r ← Lean.Elab.Command.runTermElabM fun _ => do
+    Lean.Elab.Command.runTermElabM fun _ => do
       let e ← Lean.Elab.Term.elabType ty
       let n ← Lean.Meta.whnf e
-      return n.isForall || n.isArrow
-    return r
-  catch _ => return false
+      if n.isForall || n.isArrow then
+        let codom ← Lean.Meta.whnf n.bindingBody!
+        return (true, codom.isProp)
+      else
+        return (false, false)
+  catch _ => return (false, false)
 
 private def collectVars (body : Array Syntax) : CommandElabM (Array VarInfo) := do
   let mut vars : Array VarInfo := #[]
   for it in body do
     match it with
     | `(pMachineBodyItem| var $vname:ident : $vty:term) =>
-      let isC ← classifyTypeAsContainer vty
-      vars := vars.push { name := vname.getId, ty := vty, isContainer := isC }
+      let (isC, isSP) ← classifyTypeAsContainer vty
+      vars := vars.push
+        { name := vname.getId, ty := vty,
+          isContainer := isC, isSetProp := isSP }
     | _ => pure ()
   return vars
 
@@ -330,6 +341,14 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
       -- via `Lean.Elab.Term.elabType` + `whnf`; if it's an arrow
       -- `Dom → Codom`, the field becomes `(MachineRef × Dom) → Codom`,
       -- else `MachineRef → <ty>`.
+      --
+      -- Special case: a `Prop`-valued codomain (`set[T]` desugars to
+      -- `T → Prop`) trips lean-auto's SMT translator
+      -- ("Higher order input?") when the container field type appears
+      -- in `GlobalState`. Substitute `Bool` for the storage type and
+      -- bridge back to `Set T` in the accessor (`<v>_get` /
+      -- `<v>_set`). Mirrors PVerifier's UCLID5 boolean-array encoding
+      -- of `set[T]`.
       let (domStxOpt, codomStxOpt) ← Lean.Elab.Command.runTermElabM
         fun _ => do
           let e ← Lean.Elab.Term.elabType v.ty
@@ -337,13 +356,17 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
           if n.isForall || n.isArrow then
             let dom := n.bindingDomain!
             let codom := n.bindingBody!
-            let domT  ← Lean.PrettyPrinter.delab dom
+            let domT ← Lean.PrettyPrinter.delab dom
+            if v.isSetProp then
+              return (some domT, none)
             let codomT ← Lean.PrettyPrinter.delab codom
             return (some domT, some codomT)
           else
             return (none, none)
       let fldTy : TSyntax `term ←
         match domStxOpt, codomStxOpt with
+        | some dom, none =>
+          `($idMachineRef × $dom → Bool)
         | some dom, some codom =>
           `($idMachineRef × $dom → $codom)
         | _, _ =>
@@ -590,22 +613,50 @@ private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
         let n ← Lean.Meta.whnf e
         return n.isForall || n.isArrow
       if isArrow then
-        elabCommand (← `(
-          @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
-            let s ← get
-            pure (fun x => s.containers.$fldId ($idThis, x))
-        ))
-        elabCommand (← `(
-          @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) :
-              $idPM Unit := do
-            let s ← get
-            let newSlot :=
-              fun (p : $idMachineRef × _) =>
-                if p.1 = $idThis then v p.2 else s.containers.$fldId p
-            let newContainers : $idContainers :=
-              { s.containers with $fldId:ident := newSlot }
-            set { s with containers := newContainers }
-        ))
+        if v.isSetProp then
+          -- `set[T]` case: container field stores `MachineRef × T →
+          -- Bool` (the SMT-friendly encoding); accessor lifts back to
+          -- `Set T = T → Prop` for the user surface. Writes go through
+          -- `Classical.decide`-based conversion. Marked `noncomputable`
+          -- because the bridge uses classical decidability; not a
+          -- problem since handler bodies are only ever symbolically
+          -- evaluated.
+          elabCommand (← `(
+            @[reducible] noncomputable def $getName ($idThis : $idMachineRef) :
+                $idPM $ty := do
+              let s ← get
+              pure (fun x => s.containers.$fldId ($idThis, x) = true)
+          ))
+          elabCommand (← `(
+            @[reducible] noncomputable def $setName ($idThis : $idMachineRef)
+                (v : $ty) : $idPM Unit := do
+              let s ← get
+              let newSlot :=
+                fun (p : $idMachineRef × _) =>
+                  if p.1 = $idThis then
+                    @Decidable.decide (v p.2) (Classical.propDecidable _)
+                  else s.containers.$fldId p
+              let newContainers : $idContainers :=
+                { s.containers with $fldId:ident := newSlot }
+              set { s with containers := newContainers }
+          ))
+        else
+          elabCommand (← `(
+            @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
+              let s ← get
+              pure (fun x => s.containers.$fldId ($idThis, x))
+          ))
+          elabCommand (← `(
+            @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) :
+                $idPM Unit := do
+              let s ← get
+              let newSlot :=
+                fun (p : $idMachineRef × _) =>
+                  if p.1 = $idThis then v p.2 else s.containers.$fldId p
+              let newContainers : $idContainers :=
+                { s.containers with $fldId:ident := newSlot }
+              set { s with containers := newContainers }
+          ))
       else
         elabCommand (← `(
           @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
@@ -863,6 +914,7 @@ all pass `applyState := false` through `emitConjPredicate`. -/
 private def emitInitConditions (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
+    (machineSetPropFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   let sId : Ident := mkIdent `s
@@ -906,7 +958,8 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
       PLean.rejectStateShadowIn "`init-holds`" stx[1]
       let rewritten ← liftMacroM <|
         PLean.rewriteFieldProjections machineKinds eventKinds
-          machineFields machineContainerFields eventPayloadFields `s stx[1]
+          machineFields machineContainerFields machineSetPropFields
+          eventPayloadFields `s stx[1]
       let raw ← liftMacroM <|
         PLean.injectKindGuards machineKinds eventKinds `s rewritten
       props := props.push ⟨raw⟩
@@ -996,6 +1049,19 @@ def elabPGenModule : CommandElab := fun stx => do
           fun s v => if v.isContainer then s.insert v.name else s
         out := out.insert mname s
       out
+    -- machineSetPropFields[M] is the subset of M's container vars whose
+    -- type is `set[T] = T → Prop` (Prop-codomain). The hoisted slot for
+    -- such a var stores `Bool` (lean-auto rejects `Prop`-codomain
+    -- function fields under quantifiers), and the field-projection sugar
+    -- `n.<v>` lifts back to `MachineRef → Prop` via `... = true`.
+    let machineSetPropFields : NameMap NameSet := Id.run do
+      let mut out : NameMap NameSet := {}
+      for mname in ctx.machineOrder do
+        let some vars := machineVars.find? mname | continue
+        let s := vars.foldl (init := ({} : NameSet))
+          fun s v => if v.isSetProp then s.insert v.name else s
+        out := out.insert mname s
+      out
     let eventPayloadFields : NameMap NameSet := Id.run do
       let mut out : NameMap NameSet := {}
       for ename in ctx.eventOrder do
@@ -1039,8 +1105,33 @@ def elabPGenModule : CommandElab := fun stx => do
     for (_, d) in ctx.pures.toList do      materialisePure d
     for (_, d) in ctx.axioms.toList do     materialiseAxiom d
     for (_, d) in ctx.instances.toList do  materialiseInstance d
-    -- Step 6: per-machine var accessors + state-tag aliases, plus
-    -- handler defs replayed inside each machine namespace.
+    -- Step 5c: emit per-machine state-tag aliases first (they're
+    -- needed both by invariants that reference `<M>.<S>_st` and by
+    -- handler bodies that `goto <S>`). State aliases don't depend on
+    -- var accessors or handlers, so this split is sound.
+    for mname in ctx.machineOrder do
+      let some m := ctx.machines.find? mname | continue
+      let mid := mkIdent m.name
+      elabCommand (← `(namespace $mid))
+      elabCommand (← `(open $name:ident))
+      emitStateAliases mname m.states
+      elabCommand (← `(end $mid))
+    -- Step 5d: materialise invariants + lemma bundles BEFORE machine
+    -- handler bodies so loop-invariant clauses inside handler entries
+    -- can reference a `Lemma X` / `Theorem X` bundle by name (the
+    -- post-loop WP needs `X s` preserved across iterations). Handlers
+    -- themselves don't reference invariants, so the move is sound.
+    let machineKindsEarly : NameSet :=
+      ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
+    let eventKindsEarly : NameSet :=
+      ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
+    for (_, d) in ctx.invariants.toList do
+      materialiseInvariant machineKindsEarly eventKindsEarly machineFields
+        machineContainerFields machineSetPropFields eventPayloadFields d
+    emitLemmaBundles ctx
+    -- Step 6: per-machine var accessors + handler defs replayed inside
+    -- each machine namespace. State aliases were emitted in Step 5c so
+    -- both invariants and handlers can reference `<M>.<S>_st`.
     for mname in ctx.machineOrder do
       let some m := ctx.machines.find? mname | continue
       let vars := (machineVars.find? mname).getD #[]
@@ -1048,7 +1139,6 @@ def elabPGenModule : CommandElab := fun stx => do
       elabCommand (← `(namespace $mid))
       elabCommand (← `(open $name:ident))
       emitVarAccessors mname vars
-      emitStateAliases mname m.states
       -- Synthetic `on ev goto tgt` handler bodies need the event's
       -- payload type identifier so the def's `param : <ev>_payload`
       -- binder matches what the obligation generator expects when
@@ -1086,19 +1176,14 @@ def elabPGenModule : CommandElab := fun stx => do
       let decls ← synthInstanceFieldAxioms modName d
       for ax in decls do
         synthAxioms := synthAxioms.insert ax.name ax
-    for (_, d) in ctx.invariants.toList do
-      materialiseInvariant machineKinds eventKinds machineFields
-        machineContainerFields eventPayloadFields d
+    -- Step 7a: invariants + lemma bundles were materialised at Step 5c
+    -- so the entry handler's loop invariant clauses could reference
+    -- the lemma names; no-op here.
     -- Step 7b: aggregate `init-holds` clauses into `<Mod>.InitConditions`.
     -- The obligation generator consumes this as the base-case
     -- precondition for each invariant.
     emitInitConditions machineKinds eventKinds machineFields
-      machineContainerFields eventPayloadFields ctx
-    -- Step 7c: emit per-Lemma/Theorem bundle predicates. For each
-    -- registered Lemma/Theorem `X` whose body lists invariants
-    -- `[a, b, c]`, emit `def X : PProp Sig := fun s => a s ∧ b s ∧ c s`
-    -- so `Proof { prove X using Y }` can refer to the named lemma.
-    emitLemmaBundles ctx
+      machineContainerFields machineSetPropFields eventPayloadFields ctx
     -- Step 7d: aggregate every free-standing invariant into
     -- `<Mod>.UserInv` (empty → `True`).
     emitUserInv ctx

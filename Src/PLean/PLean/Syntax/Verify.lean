@@ -643,6 +643,7 @@ private def collectQuantifierBinderPairs (stx : Syntax) :
 private def buildFieldProjection
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
+    (machineSetPropFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (binder : Ident) (field : Name) (kind : KindRef) :
     MacroM (Option (TSyntax `term)) := do
@@ -656,20 +657,30 @@ private def buildFieldProjection
     -- under any quantifier (matches PVerifier's UCLID5 2D-array
     -- encoding).
     --
-    -- The lambda itself never appears applied-to-nothing in
+    -- `set[T]` vars store `Bool` (Prop-codomain trips lean-auto);
+    -- the projection wraps the Bool lookup as `... = true` so the
+    -- surface invariant body still sees `n.<v> : T → Prop` (= `Set
+    -- T`). The lambda itself never appears applied-to-nothing in
     -- well-formed invariants: every container access feeds a
     -- membership check, lookup, or update at the same syntactic
-    -- depth. Manual proofs that *do* manipulate it explicitly can
-    -- unfold via `simp only [pverifySimp]`.
+    -- depth.
     if let some cflds := machineContainerFields.find? mName then
       if cflds.contains field then
         let sIdent : Ident := mkIdent sBinder
         let qualField : Ident :=
           mkIdent (Name.mkSimple (mName.toString ++ "_" ++ field.toString))
         let xId : Ident := mkIdent `x
+        let isSet :=
+          match machineSetPropFields.find? mName with
+          | some s => s.contains field
+          | none   => false
         let out : TSyntax `term ←
-          `(fun $xId =>
-              ($sIdent).containers.$qualField:ident (($binder).ref, $xId))
+          if isSet then
+            `(fun $xId =>
+                ($sIdent).containers.$qualField:ident (($binder).ref, $xId) = true)
+          else
+            `(fun $xId =>
+                ($sIdent).containers.$qualField:ident (($binder).ref, $xId))
         return some out
     let some flds := machineFields.find? mName | return none
     unless flds.contains field do return none
@@ -693,6 +704,7 @@ private partial def rewriteFieldProjectionsAux
     (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
+    (machineSetPropFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (kindEnv : NameMap KindRef)
     (stx : Syntax) : MacroM Syntax := do
@@ -711,8 +723,8 @@ private partial def rewriteFieldProjectionsAux
       if let some kind := kindEnv.find? bName then
         let bIdent : Ident := ⟨lhs⟩
         let rebuilt? ← buildFieldProjection
-          machineFields machineContainerFields eventPayloadFields sBinder
-          bIdent fName kind
+          machineFields machineContainerFields machineSetPropFields
+          eventPayloadFields sBinder bIdent fName kind
         if let some out := rebuilt? then
           return out.raw
   if stx.isIdent then
@@ -723,8 +735,8 @@ private partial def rewriteFieldProjectionsAux
       if let some kind := kindEnv.find? headN then
         let bIdent : Ident := mkIdent headN
         let rebuilt? ← buildFieldProjection
-          machineFields machineContainerFields eventPayloadFields sBinder
-          bIdent fieldN kind
+          machineFields machineContainerFields machineSetPropFields
+          eventPayloadFields sBinder bIdent fieldN kind
         if let some out := rebuilt? then
           return out.raw
     | _ => pure ()
@@ -742,21 +754,25 @@ private partial def rewriteFieldProjectionsAux
         env := env.insert xRaw.getId (.event tName)
   let args' ← stx.getArgs.mapM
     (rewriteFieldProjectionsAux machineKinds eventKinds machineFields
-      machineContainerFields eventPayloadFields sBinder env)
+      machineContainerFields machineSetPropFields eventPayloadFields
+      sBinder env)
   return stx.setArgs args'
 
 def rewriteFieldProjections
     (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
+    (machineSetPropFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (stx : Syntax) : MacroM Syntax :=
   rewriteFieldProjectionsAux machineKinds eventKinds machineFields
-    machineContainerFields eventPayloadFields sBinder {} stx
+    machineContainerFields machineSetPropFields eventPayloadFields
+    sBinder {} stx
 
 def materialiseInvariant (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
+    (machineSetPropFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (d : PInvariantDecl) : CommandElabM Unit := do
   match d.defStx with
@@ -777,14 +793,14 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
       | some sName =>
         let rewritten ← liftMacroM <|
           rewriteFieldProjections machineKinds eventKinds
-            machineFields machineContainerFields eventPayloadFields
-            sName prop.raw
+            machineFields machineContainerFields machineSetPropFields
+            eventPayloadFields sName prop.raw
         let stxOut ← liftMacroM <|
           injectKindGuards machineKinds eventKinds sName rewritten
         pure ⟨stxOut⟩
       | none => pure prop
     let cmd ← `(command|
-      def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop')
+      @[reducible] def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop')
     elabCommand cmd
 
 def materialiseAxiom (d : PAxiomDecl) : CommandElabM Unit := do

@@ -31,7 +31,7 @@ namespace Phase3R20Mod
 /-- Initial state where machine 0 has kind = 0 (the `Inhabited`
 default — unset). -/
 def stateUninit : GlobalState Sig :=
-  GlobalState.initial (P := Sig) fun _ => default
+  GlobalState.initial' (P := Sig) fun _ => default
 
 /-- A_allocated rejects kind = 0. -/
 example : ¬ A_allocated 0 stateUninit := by
@@ -46,7 +46,7 @@ example : ¬ B_allocated 0 stateUninit := by
 /-- Initial state where machine 0 has been explicitly assigned
 `A_kind`. -/
 def stateInitA : GlobalState Sig :=
-  GlobalState.initial (P := Sig) fun _ =>
+  GlobalState.initial' (P := Sig) fun _ =>
     { stage := false, currentState := default, fields := default,
       kind := A_kind }
 
@@ -58,7 +58,7 @@ example : A_allocated 0 stateInitA := by
 /-- A_allocated still rejects a machine whose kind is the
 *other* machine's kind (B_kind). -/
 def stateInitB : GlobalState Sig :=
-  GlobalState.initial (P := Sig) fun _ =>
+  GlobalState.initial' (P := Sig) fun _ =>
     { stage := false, currentState := default, fields := default,
       kind := B_kind }
 
@@ -70,7 +70,7 @@ example : ¬ A_allocated 0 stateInitB := by
 control state (`S.B_T`) is NOT `A_allocated`. Without the
 `currentState ∈ A's states` conjunct this would spuriously hold. -/
 def stateKindDesync : GlobalState Sig :=
-  GlobalState.initial (P := Sig) fun _ =>
+  GlobalState.initial' (P := Sig) fun _ =>
     { stage := false, currentState := S.B_T, fields := default,
       kind := A_kind }
 

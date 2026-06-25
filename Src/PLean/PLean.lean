@@ -11,6 +11,8 @@ import PLean.Semantics.Monad
 import PLean.Semantics.Primitives
 import PLean.Semantics.Predicates
 import PLean.Semantics.Default
+import PLean.Semantics.Containers
+import PLean.Syntax.Containers
 import PLean.Syntax.Module
 import PLean.Syntax.Types
 import PLean.Syntax.Events

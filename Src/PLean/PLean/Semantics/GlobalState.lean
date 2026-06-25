@@ -1,11 +1,13 @@
 /-
 PLean.Semantics.GlobalState — the global system state.
 
-The record has four fields:
+Five fields:
 - `sent`, `received` — characteristic functions on labels (`Label →
   Bool`). The function encoding mirrors PVerifier's `[Label]boolean`
   array encoding so the SMT translation stays first-order.
 - `machines` — per-`MachineRef` runtime state.
+- `containers` — per-pmodule bundle of hoisted container vars (see
+  `ProgramSig.C`); `Unit` when the pmodule has none.
 - `actionCount` — global counter bumped on every `send`/`goto`; gives
   every label a unique `actionCount` (the temporal witness for
   `a ≺ b := a.actionCount < b.actionCount`).
@@ -27,8 +29,22 @@ structure ProgramSig where
   G : Type
   /-- State-tag enum union (across all machines). -/
   S : Type
-  /-- Machine fields (var block) union. -/
+  /-- Machine fields (var block) union. Only **first-order** vars
+      live here — vars whose declared type is a function (e.g. a
+      `map[K, V]` which desugars to `K → Option V`) get hoisted out
+      into `C` so the SMT round-trip sees `s.containers.foo r k` as a
+      flat applied symbol instead of a `Fields`-projection under a
+      quantifier. -/
   F : Type
+  /-- Container bundle. One field per hoisted container var, each
+      typed `MachineRef × Dom → Codom` (uncurried). `Unit` when no
+      machine has a function-typed var. Hoisting is necessary so a
+      multi-ref invariant body `∀ n1 n2, k ∈ n1.kv → k ∈ n2.kv → …`
+      translates cleanly: the quantified projection `n.kv` becomes
+      `s.containers.<M>_<v> (n.ref, k)` — a flat applied symbol —
+      instead of `(s.machines n.ref).fields.<M>_<v>` which trips
+      lean-auto's "Higher order input?" guard. -/
+  C : Type := Unit
 
 namespace ProgramSig
 
@@ -52,6 +68,8 @@ structure GlobalState (P : ProgramSig) where
   received    : P.Label → Bool
   /-- Per-machine state map. -/
   machines    : MachineRef → P.MachineState
+  /-- Hoisted container vars. See `ProgramSig.C` for the rationale. -/
+  containers  : P.C
   /-- Global action counter. Incremented on every send/goto so that
       every label gets a unique `actionCount` (the temporal witness
       for `a ≺ b := a.actionCount < b.actionCount`). -/
@@ -62,12 +80,23 @@ namespace GlobalState
 variable {P : ProgramSig}
 
 /-- The empty buffer / no-action initial state, given a function for
-machine initialisation. Used by `init` blocks and tests. -/
-def initial (initMachine : MachineRef → P.MachineState) : GlobalState P :=
+machine initialisation and the program's initial container bundle.
+Used by `init` blocks and tests. -/
+def initial (initMachine : MachineRef → P.MachineState) (initContainers : P.C) :
+    GlobalState P :=
   { sent := fun _ => false
     received := fun _ => false
     machines := initMachine
+    containers := initContainers
     actionCount := 0 }
+
+/-- Convenience overload for programs whose `P.C` has an `Inhabited`
+instance (the common case — `Unit` for pmodules without hoisted
+container vars, or a `default`-initialised struct for those that
+do). Lets tests / hand-written examples elide the container slot. -/
+def initial' [Inhabited P.C] (initMachine : MachineRef → P.MachineState) :
+    GlobalState P :=
+  initial initMachine default
 
 /-- Add a label to `sent`. Pure update — used by the `send`/`goto`
 primitives in `Primitives.lean`. -/
@@ -95,12 +124,13 @@ end GlobalState
 NonDetT/CCPO machinery, which expects inhabited carriers). Every
 non-trivial P program has at least one machine; `#gen_module` derives
 this instance and hand-written examples provide it directly. -/
-instance {P : ProgramSig} [Inhabited P.S] [Inhabited P.F] :
+instance {P : ProgramSig} [Inhabited P.S] [Inhabited P.F] [Inhabited P.C] :
     Inhabited (GlobalState P) where
   default :=
     { sent := fun _ => false
       received := fun _ => false
       machines := fun _ => { stage := false, currentState := default, fields := default }
+      containers := default
       actionCount := 0 }
 
 end PLean

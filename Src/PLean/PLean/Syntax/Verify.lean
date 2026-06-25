@@ -446,6 +446,55 @@ private def mkQuantifier (isForall parens : Bool)
   | false, false => `(∃ $x:ident : $t, $body)
   | false, true  => `(∃ ($x:ident : $t), $body)
 
+/-- Leftmost segment of a hierarchical name (`a.b.c → a`); returns
+the name unchanged if it isn't a `.str` path. -/
+private partial def nameHead : Name → Name
+  | .str .anonymous s => .mkSimple s
+  | .str pre _        => nameHead pre
+  | nm                => nm
+
+/-- Whether `stx` mentions the identifier `n` anywhere — either as a
+bare `Ident` (e.g. `b`) or as the head of a hierarchical name
+(`b.ref` parses to `Name.str (Name.str .anonymous "b") "ref"`, so we
+check the head segment). -/
+private partial def syntaxMentions (n : Name) (stx : Syntax) : Bool :=
+  if stx.isIdent then
+    let id := stx.getId
+    id == n || nameHead id == n
+  else stx.getArgs.any (syntaxMentions n)
+
+private partial def findGuardCall (predNames : Array Name) (xName : Name)
+    (stx : Syntax) : Bool :=
+  let hereMatches : Bool :=
+    if stx.getKind == ``Lean.Parser.Term.app then
+      let fn := stx[0]
+      let argsBlock := stx[1]
+      fn.isIdent && predNames.contains fn.getId &&
+        syntaxMentions xName argsBlock
+    else false
+  if hereMatches then true
+  else stx.getArgs.any (findGuardCall predNames xName)
+
+/-- Whether `body` already carries an explicit kind guard for the
+binder `x` of kind `<typeName>` — i.e. mentions `is_<M> x.ref s` or
+`<M>_allocated x.ref s` (or the event-variant `is_<ev> x`) anywhere.
+If so, `injectKindGuards` skips the injection. Without this check the
+obligation generator's later unfold of `is_<M> → <M>_allocated` leaves
+a duplicate kind guard in the hypothesis chain, ballooning the SMT
+query and degrading cvc5's quantifier instantiation on disprove goals.
+False negatives (rare nested-quantifier shapes) just cost one extra
+injection — sound; false positives never happen because we require both
+the predicate name AND the binder ident to match. -/
+private def bodyAlreadyGuarded (machineGuard : Bool) (xName _sBinder typeName : Name)
+    (body : Syntax) : Bool :=
+  let isPredName := Name.mkSimple ("is_" ++ typeName.toString)
+  let predNames :=
+    if machineGuard then
+      #[isPredName, typeName.appendAfter "_allocated"]
+    else
+      #[isPredName]
+  findGuardCall predNames xName body
+
 partial def injectKindGuards (machineKinds eventKinds : NameSet)
     (sBinder : Name) (stx : Syntax) : MacroM Syntax := do
   let sIdent : Ident := mkIdent sBinder
@@ -457,11 +506,14 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
     return ← injectKindGuards machineKinds eventKinds sBinder expanded
   -- Single-binder rewrite: a small helper picks the right shape and
   -- splices the guard. Returns `none` if the type isn't a kind we
-  -- recognise (the caller then re-emits without injection).
+  -- recognise OR the body already carries an equivalent guard (the
+  -- caller then re-emits without injection).
   let tryInject (x : TSyntax `ident) (t : TSyntax `term)
       (body' : TSyntax `term) (isForall parens : Bool) :
       MacroM (Option (TSyntax `term)) := do
     if isMachineKindIdent machineKinds t.raw then
+      if bodyAlreadyGuarded true x.getId sBinder t.raw.getId body'.raw then
+        return none
       let isPred : Ident :=
         mkIdent (Name.mkSimple ("is_" ++ t.raw.getId.toString))
       let guard : TSyntax `term ← `(($isPred ($x).ref $sIdent))
@@ -469,6 +521,8 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
         if isForall then `($guard → $body') else `($guard ∧ $body')
       return some (← mkQuantifier isForall parens x t combined)
     if isEventKindIdent eventKinds t.raw then
+      if bodyAlreadyGuarded false x.getId sBinder t.raw.getId body'.raw then
+        return none
       let isPred : Ident :=
         mkIdent (Name.mkSimple ("is_" ++ t.raw.getId.toString))
       let guard : TSyntax `term ← `(($isPred $x))
@@ -588,11 +642,35 @@ private def collectQuantifierBinderPairs (stx : Syntax) :
 
 private def buildFieldProjection
     (machineFields : NameMap NameSet)
+    (machineContainerFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (binder : Ident) (field : Name) (kind : KindRef) :
     MacroM (Option (TSyntax `term)) := do
   match kind with
   | .machine mName =>
+    -- Container var: project through `Containers`'s uncurried slot.
+    -- `n.kv` becomes the η-expanded `fun x => s.containers.<M>_<v>
+    -- (n.ref, x)` so a use site `n.kv k` β-reduces (during
+    -- `pverify_smt_prep`'s `simp [pverifySimp]` pass) to a flat
+    -- applied symbol `s.containers.<M>_<v> (n.ref, k)` — first-order
+    -- under any quantifier (matches PVerifier's UCLID5 2D-array
+    -- encoding).
+    --
+    -- The lambda itself never appears applied-to-nothing in
+    -- well-formed invariants: every container access feeds a
+    -- membership check, lookup, or update at the same syntactic
+    -- depth. Manual proofs that *do* manipulate it explicitly can
+    -- unfold via `simp only [pverifySimp]`.
+    if let some cflds := machineContainerFields.find? mName then
+      if cflds.contains field then
+        let sIdent : Ident := mkIdent sBinder
+        let qualField : Ident :=
+          mkIdent (Name.mkSimple (mName.toString ++ "_" ++ field.toString))
+        let xId : Ident := mkIdent `x
+        let out : TSyntax `term ←
+          `(fun $xId =>
+              ($sIdent).containers.$qualField:ident (($binder).ref, $xId))
+        return some out
     let some flds := machineFields.find? mName | return none
     unless flds.contains field do return none
     let sIdent : Ident := mkIdent sBinder
@@ -614,6 +692,7 @@ private def buildFieldProjection
 private partial def rewriteFieldProjectionsAux
     (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
+    (machineContainerFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (kindEnv : NameMap KindRef)
     (stx : Syntax) : MacroM Syntax := do
@@ -632,7 +711,8 @@ private partial def rewriteFieldProjectionsAux
       if let some kind := kindEnv.find? bName then
         let bIdent : Ident := ⟨lhs⟩
         let rebuilt? ← buildFieldProjection
-          machineFields eventPayloadFields sBinder bIdent fName kind
+          machineFields machineContainerFields eventPayloadFields sBinder
+          bIdent fName kind
         if let some out := rebuilt? then
           return out.raw
   if stx.isIdent then
@@ -643,7 +723,8 @@ private partial def rewriteFieldProjectionsAux
       if let some kind := kindEnv.find? headN then
         let bIdent : Ident := mkIdent headN
         let rebuilt? ← buildFieldProjection
-          machineFields eventPayloadFields sBinder bIdent fieldN kind
+          machineFields machineContainerFields eventPayloadFields sBinder
+          bIdent fieldN kind
         if let some out := rebuilt? then
           return out.raw
     | _ => pure ()
@@ -661,19 +742,21 @@ private partial def rewriteFieldProjectionsAux
         env := env.insert xRaw.getId (.event tName)
   let args' ← stx.getArgs.mapM
     (rewriteFieldProjectionsAux machineKinds eventKinds machineFields
-      eventPayloadFields sBinder env)
+      machineContainerFields eventPayloadFields sBinder env)
   return stx.setArgs args'
 
 def rewriteFieldProjections
     (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
+    (machineContainerFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (sBinder : Name) (stx : Syntax) : MacroM Syntax :=
   rewriteFieldProjectionsAux machineKinds eventKinds machineFields
-    eventPayloadFields sBinder {} stx
+    machineContainerFields eventPayloadFields sBinder {} stx
 
 def materialiseInvariant (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
+    (machineContainerFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (d : PInvariantDecl) : CommandElabM Unit := do
   match d.defStx with
@@ -694,7 +777,8 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
       | some sName =>
         let rewritten ← liftMacroM <|
           rewriteFieldProjections machineKinds eventKinds
-            machineFields eventPayloadFields sName prop.raw
+            machineFields machineContainerFields eventPayloadFields
+            sName prop.raw
         let stxOut ← liftMacroM <|
           injectKindGuards machineKinds eventKinds sName rewritten
         pure ⟨stxOut⟩

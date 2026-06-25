@@ -143,10 +143,16 @@ proofs call `pverify_smt`, which calls `pverify_smt_prep`, which
 calls the other two; calling the internal tactics directly is rarely
 useful. -/
 
-/-- Destruct every `GlobalState`-typed local into its four fields,
+/-- Destruct every `GlobalState`-typed local into its primitive
+fields (sent / received / machines / containers / actionCount),
 making them top-level uninterpreted symbols rather than struct
 projections. Without this, lean-auto rejects with "Higher order input?"
-on the first `s.sent l` projection. Internal to `pverify_smt_prep`. -/
+on the first `s.sent l` / `s.containers.foo` projection. The
+`Containers` field is then destructured one level further so each
+per-pmodule container `var` (`Node_kv`, `Coordinator_votes`, …)
+becomes its own top-level local — the SMT view of a container
+projection collapses to a flat applied symbol. Internal to
+`pverify_smt_prep`. -/
 syntax "sdestruct_state" : tactic
 elab_rules : tactic
   | `(tactic| sdestruct_state) => withMainContext do
@@ -157,15 +163,165 @@ elab_rules : tactic
       let ty ← Lean.Meta.whnf (← Lean.Meta.inferType ldecl.toExpr)
       if ty.consumeMData.isAppOfArity ``PLean.GlobalState 1 then
         let hName := ldecl.userName
-        -- Stable, unhygienic field names so downstream tactics in this
-        -- file can refer to them by name. A second GlobalState local —
-        -- rare at SMT time — just shadows these; harmless.
+        -- Inspect `Sig.C` to know whether the program has any
+        -- container var. When not, we collapse the unused
+        -- `gsContainers` local after the destructure so the SMT
+        -- view of first-order benchmarks doesn't carry an extra
+        -- `containers := PUnit.unit` field in record literals —
+        -- which would otherwise enlarge cvc5's instantiation work.
+        let sigCArgs := ty.consumeMData.getAppArgs
+        let mut hasContainers := false
+        if sigCArgs.size ≥ 1 then
+          let sigVal ← Lean.Meta.whnf sigCArgs[0]!
+          let sigArgs := sigVal.getAppArgs
+          if sigArgs.size = 5 then
+            let cTy ← Lean.Meta.whnf sigArgs[4]!
+            if let some structName := cTy.consumeMData.getAppFn.constName? then
+              if let some sinfo := getStructureInfo? (← getEnv) structName then
+                if !sinfo.fieldInfo.isEmpty then
+                  hasContainers := true
         let stx ← `(tactic|
-          obtain ⟨$(mkIdent `gsSent), $(mkIdent `gsReceived),
-                  $(mkIdent `gsMachines), $(mkIdent `gsActionCount)⟩ :=
+          obtain ⟨$(mkIdent `gsSent),
+                  $(mkIdent `gsReceived),
+                  $(mkIdent `gsMachines),
+                  $(mkIdent `gsContainers),
+                  $(mkIdent `gsActionCount)⟩ :=
             $(mkIdent hName))
         try evalTactic stx
         catch _ => pure ()
+        unless hasContainers do
+          -- `clear` succeeds when nothing references the local;
+          -- the `obtain ⟨⟩` fallback inhabits the subsingleton
+          -- (`Unit` / 0-field struct) and substitutes its unique
+          -- value through any surviving hypothesis.
+          try evalTactic (← `(tactic| clear $(mkIdent `gsContainers)))
+          catch _ =>
+            let emptyPats : Array (TSyntax `rcasesPat) := #[]
+            try
+              evalTactic (← `(tactic|
+                obtain ⟨$emptyPats,*⟩ := $(mkIdent `gsContainers)))
+            catch _ => pure ()
+    -- Second pass: when the first pass bound `gsContainers` (i.e.,
+    -- `Sig.C` has ≥1 container var), destructure it so each var
+    -- becomes a top-level local of bare uncurried function type
+    -- (`MachineRef × Dom → Codom`) — the shape lean-auto handles.
+    -- For pmodules without container vars, the first pass already
+    -- collapsed the slot via a wildcard, so this is a no-op.
+    withMainContext do
+      let lctxNow ← getLCtx
+      if let some d := lctxNow.findFromUserName? `gsContainers then
+        let cTy ← Lean.Meta.whnf (← Lean.Meta.inferType d.toExpr)
+        if let some structName := cTy.consumeMData.getAppFn.constName? then
+          let env ← getEnv
+          if let some sinfo := getStructureInfo? env structName then
+            if !sinfo.fieldInfo.isEmpty then
+              let mut pats : Array (TSyntax `rcasesPat) := #[]
+              for fi in sinfo.fieldInfo do
+                pats := pats.push (← `(rcasesPat| $(mkIdent fi.fieldName)))
+              try
+                evalTactic (← `(tactic|
+                  obtain ⟨$pats,*⟩ := $(mkIdent `gsContainers)))
+              catch _ => pure ()
+              try evalTactic (← `(tactic| simp only [] at *))
+              catch _ => pure ()
+
+/-- Generalise every `MachineState`-typed projection (e.g.
+`gsMachines this.ref`) in the goal to a fresh `MachineState`-typed
+local, then destructure into `(stage, currentState, fields, kind)`
+and destructure `fields` so each function-valued machine `var`
+becomes a top-level local. Without this, lean-auto sees `gsMachines :
+MachineRef → Sig.MachineState` whose codomain `MachineState` contains
+a `Fields` record that may itself carry function-typed fields (e.g.
+a `var kv : map[K, V]` desugars to `Nat → Option Nat`), and rejects
+with "Higher order input?" — even when the goal never accesses the
+offending field. After this step, each function-typed machine var
+appears as a top-level applied uninterpreted symbol, which translates
+cleanly.
+
+**Gating**: this destructure only fires when the program's `Fields`
+struct has at least one function-typed component. With all-first-order
+`var`s, `MachineState` round-trips through lean-auto as-is, and the
+destructure would only erase the equation tying the projection back to
+its source — information the solver may need to disprove a goal /
+construct a counter-example. Internal to `pverify_smt_prep`. -/
+syntax "destruct_machine_state" : tactic
+elab_rules : tactic
+  | `(tactic| destruct_machine_state) => withMainContext do
+    let isMachineStateTy (t : Expr) : MetaM Bool := do
+      return (← Lean.Meta.whnf t).consumeMData.isAppOf ``PLean.MachineState
+    /-
+      Probe whether the resolved `Fields` type (the third argument of
+      the `MachineState` application) has any function-typed field.
+      If not, skip — the goal would round-trip without destructuring.
+    -/
+    let fieldsTypeHasFn (msTy : Expr) : MetaM Bool := do
+      let msApp := (← Lean.Meta.whnf msTy).consumeMData.getAppArgs
+      if msApp.size < 2 then return false
+      let fldsTy ← Lean.Meta.whnf msApp[1]!
+      let some structName := fldsTy.consumeMData.getAppFn.constName? |
+        return false
+      let env ← getEnv
+      let some sinfo := getStructureInfo? env structName | return false
+      for fi in sinfo.fieldInfo do
+        let some projInfo := env.find? fi.projFn | continue
+        let projTy ← Lean.Meta.whnf projInfo.type
+        match projTy with
+        | .forallE _ _ body _ =>
+          let codom ← Lean.Meta.whnf body
+          if codom.isArrow then return true
+        | _ => pure ()
+      return false
+    let rec firstMSProj (e : Expr) : MetaM (Option Expr) := do
+      if e.isApp then
+        if ← isMachineStateTy (← Lean.Meta.inferType e) then
+          return some e
+      for sub in e.getAppArgs.push e.getAppFn do
+        if sub != e then
+          if let some hit ← firstMSProj sub then return hit
+      return none
+    let collectAllInLocals : MetaM (Array Expr) := do
+      let lctx ← getLCtx
+      let mut acc : Array Expr := #[]
+      for ldecl in lctx do
+        if ldecl.isImplementationDetail then continue
+        let t ← Lean.instantiateMVars ldecl.type
+        if let some e ← firstMSProj t then acc := acc.push e
+      return acc
+    -- Gating probe: find ONE MachineState expression to check whether
+    -- its program's Fields has any function-valued component. Skip
+    -- entirely if not.
+    let target ← getMainTarget
+    let probe := (← firstMSProj target).getD <|
+      ((← collectAllInLocals)[0]?).getD target
+    if !(← fieldsTypeHasFn (← Lean.Meta.inferType probe)) then return
+    -- Loop: each pass generalises one occurrence, then destructures it.
+    -- Re-scans because each destruct introduces new `Fields`-typed
+    -- locals which may themselves need destructuring.
+    for i in [0:8] do
+      let scopes : Array Expr := (← collectAllInLocals)
+      let target ← getMainTarget
+      let inTargetExpr ← firstMSProj target
+      if scopes.isEmpty && inTargetExpr.isNone then break
+      let pick : Expr :=
+        match inTargetExpr with
+        | some e => e
+        | none   => scopes[0]!
+      let msName : Lean.Name := Name.mkSimple s!"ms{i}"
+      let fldsName : Lean.Name := Name.mkSimple s!"fields{i}"
+      let stx ← `(tactic|
+        (generalize $(← pick.toSyntax) = $(mkIdent msName) at *
+         obtain ⟨_, _, $(mkIdent fldsName), _⟩ := $(mkIdent msName)))
+      try evalTactic stx catch _ => break
+      let lctxNow ← getLCtx
+      let some fldsDecl := lctxNow.findFromUserName? fldsName | continue
+      let fldsTy ← Lean.Meta.whnf (← Lean.Meta.inferType fldsDecl.toExpr)
+      let some structName := fldsTy.consumeMData.getAppFn.constName? | continue
+      let env ← getEnv
+      let some sinfo := getStructureInfo? env structName | continue
+      if sinfo.fieldInfo.isEmpty then continue
+      try
+        evalTactic (← `(tactic| cases $(mkIdent fldsName):ident))
+      catch _ => pure ()
 
 /-- Abstract `s.machines ((<ev>_payload_of e).<field>)` — a machines-
 field lookup through an opaque payload extractor — to a fresh
@@ -240,6 +396,7 @@ macro_rules
       try unfold WithName at *
       try dsimp only at *
       try abstract_machine_lookups
+      try destruct_machine_state
       try unfold PLean.DefaultInvariants at *
       try unfold PLean.UniqueActions at *
       try unfold PLean.IncreasingCount at *

@@ -151,7 +151,7 @@ Most Tutorial/Advanced benchmarks need surface features that aren't
 built yet — check PLAN_P3's "Tutorial benchmark inventory" table
 before attempting one.
 
-## Phase status (as of 2026-06-24)
+## Phase status (as of 2026-06-25)
 
 - Phase 0 (Bootstrap) — ☑ M0.
 - Phase 1 (Semantic core) — ☑ M1. Hand-written ping-pong verifies via
@@ -159,20 +159,23 @@ before attempting one.
 - Phase 2 (Registry + minimal surface) — ☑ M2. `#gen_module`
   synthesises per-pmodule `Sig`/`PM'`/`GS`; surface macros target the
   real PM; M2 surface ping-pong verifies.
-- Phase 3 (Verification declarations) — ☑ M3 reached. All three
+- Phase 3 (Verification declarations) — ☑ M3 reached. All
   Tutorial/Advanced benchmarks fully verify:
   - [`Examples/DistributedLock`](Examples/DistributedLock.lean) — **12/12**
     (11 SMT + 1 manual `@[pverifyProof]`),
   - [`Examples/LockServer`](Examples/LockServer.lean) — **37/37**
     (34 SMT + 3 manual),
   - [`Examples/RingLeader`](Examples/RingLeader.lean) — **17/17**
-    (14 SMT + 3 manual). Entry handler obligation added by the
-    handler-coverage fix; see "VC completeness" below.
+    (14 SMT + 3 manual).
   - [`Examples/ClockBound`](Examples/ClockBound.lean) — **59/59**
     (58 SMT + 1 manual). Off-tree benchmark from
     [PInfer-Benchmarks](https://github.com/AD1024/PInfer-Benchmarks/tree/main/ClockBound);
     exercises `PLean.choose` (bounded nondet `Int`) and per-target
     monotonicity safety properties from `goals.json`.
+  - [`Examples/ShardedKV`](Examples/ShardedKV.lean) — **11/11** (all SMT).
+    Exercises `map[K, V]` container vars and the multi-ref
+    `unique_owner` pattern; landed 2026-06-25 alongside the container-
+    type port (see "Container types" below).
 
   The user-facing surface for axiomatic facts is `paxiom` (single
   proposition) and `pinstance` (Veil-style typeclass bundle). The
@@ -222,6 +225,25 @@ new-in-PLean keywords for the verification-declaration surface
 the WP spec (registered as `@[loomSpec]`) gives the verifier `0 ≤ x
 ∧ x ≤ bound` as a hypothesis at the call site. See
 [`Examples/ClockBound.lean`](Examples/ClockBound.lean) for usage.
+
+### Container types
+
+P's container types are surface macros over Lean / Mathlib:
+
+| Surface       | Desugars to                          |
+|---------------|---------------------------------------|
+| `set[T]`      | `Set T`               (Mathlib)       |
+| `map[K, V]`   | `PMap K V := K → Option V`            |
+| `seq[T]`      | `List T`              (no SMT support)|
+| `option[T]`   | `Option T`            (core inductive)|
+
+Mutation macros in [`PLean/Syntax/Stmt.lean`](PLean/Syntax/Stmt.lean):
+`s += (e)`, `s -= (e)`, `m[k] = v`, `m[k] += (e)`, `m[k] -= (e)`.
+`s -= (e)` overloads on `Set` and `PMap` via the `PContainerErase`
+typeclass. Lookup-after-mutation lemmas (`mapInsert_eq`,
+`mapErase_ne`, …) are tagged `@[pverifySimp]` so SMT prep reduces
+post-state lookups directly without case-splitting on key equality.
+See [`Examples/ShardedKV.lean`](Examples/ShardedKV.lean) for usage.
 
 ## Conventions worth knowing
 
@@ -283,6 +305,58 @@ over a registered machine / event kind:
 
 Same transform applies inside `init-holds`. Multi-binder forms get
 normalised to nested singles before injection.
+
+**Dedup**: if the body already mentions `is_<M> x.ref s` or
+`<M>_allocated x.ref s` (or the event-variant `is_<ev> x`) anywhere
+referencing the bound variable, injection is skipped. Without this
+check, an explicit user-written guard plus the auto-injected one
+would duplicate in the hypothesis chain after the obligation
+generator unfolds `is_<M> → <M>_allocated`, ballooning the SMT query
+and degrading cvc5's quantifier instantiation on disprove goals.
+Pinned by [`Tests/Syntax/SoundnessRegression.lean`](Tests/Syntax/SoundnessRegression.lean)
+(both legs of the false invariant must disprove, not surface as
+`unknown`).
+
+### Container `var`s are hoisted out of `Fields` into `Containers`
+
+A naïve placement of container vars in `Fields` trips lean-auto's
+"Higher order input?" check whenever an invariant quantifies over
+machines and projects the container field — `(s.machines
+n.ref).fields.<M>_<v>` under a `∀ n` is a function-valued projection
+lean-auto rejects.
+
+`#gen_module` classifies each `var`'s declared type
+(`Lean.Meta.whnf` → `Expr.isArrow`) and **hoists** container vars
+out of `Fields` into a per-pmodule `Containers` struct at the top
+level of `GlobalState`. The hoisted field type is **uncurried** with
+`MachineRef`:
+
+| Container surface | `Fields` placement | `Containers` field type           |
+|-------------------|--------------------|------------------------------------|
+| `set[T]`          | hoisted            | `MachineRef × T → Prop`            |
+| `map[K, V]`       | hoisted            | `MachineRef × K → Option V`        |
+| `seq[T]` (=List)  | stays in Fields    | n/a                                |
+| first-order       | stays in Fields    | n/a                                |
+
+The surface projection `n.<v>` desugars to `fun x =>
+s.containers.<M>_<v> (n.ref, x)`. At use sites (`k ∈ n.kv`, `n.kv k`,
+`m[k] = v`), the lambda β-reduces under `simp only [pverifySimp]` to
+the flat applied symbol `s.containers.<M>_<v> (n.ref, k)`, which
+lean-auto translates as an uninterpreted function.
+
+`ProgramSig.C : Type := Unit` is the default; `#gen_module` sets it
+to `<Mod>.Containers` only when at least one container var was
+declared. For pmodules with no container vars, `sdestruct_state`
+collapses the unused `gsContainers : Unit` local after the
+`GlobalState` destructure (via `clear` / `obtain ⟨⟩`) so the lctx
+shape matches the pre-hoist 4-field baseline — first-order
+benchmarks see no completeness drift.
+
+This mirrors PVerifier's UCLID5 2D-array layout for container vars.
+Pinned by [`Tests/Verify/ContainerVerify.lean`](Tests/Verify/ContainerVerify.lean)
+and exercised end-to-end by
+[`Examples/ShardedKV.lean`](Examples/ShardedKV.lean) (multi-ref
+`unique_owner`).
 
 ### `MachineRef` stays flat; per-machine static type is a wrapper
 

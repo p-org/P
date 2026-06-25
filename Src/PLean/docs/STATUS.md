@@ -19,7 +19,7 @@ rather than narrating.
 | 0 — Bootstrap                    | ☑ | — | 2026-05-28 | 2026-05-29 | M0 reached |
 | 1 — Semantic core                | ☑ | — | 2026-06-01 | 2026-06-04 | M1 reached |
 | 2 — Registry + minimal surface   | ☑ | — | 2026-06-05 | 2026-06-05 | M2 reached |
-| 3 — Verification declarations    | ☑ | — | 2026-06-06 | 2026-06-23 | M3 reached — all three Tutorial/Advanced benchmarks fully verify: `Examples/DistributedLock` 12/12, `Examples/LockServer` 37/37, `Examples/RingLeader` 17/17. paxiom/pinstance both reach SMT; reusable manual-proof helpers shipped; obligation cache + profiler in tree |
+| 3 — Verification declarations    | ☑ | — | 2026-06-06 | 2026-06-23 | M3 reached — all three Tutorial/Advanced benchmarks fully verify: `Examples/DistributedLock` 12/12, `Examples/LockServer` 37/37, `Examples/RingLeader` 17/17. paxiom/pinstance both reach SMT; reusable manual-proof helpers shipped; obligation cache + profiler in tree. ShardedKV added 2026-06-25 (11/11 SMT) — exercises container hoisting |
 | 4 — Spec machines                | ☐ | — | — | — | next; plan in [`PLAN_P4.md`](PLAN_P4.md) |
 | 5 — Remaining surface            | ☐ | — | — | — | |
 | 6 — Tutorial port                | ☐ | — | — | — | |
@@ -35,7 +35,7 @@ helpers, obligation cache, profiler) is in tree. **Phase 4 (spec
 machines) is next** — design in [`PLAN_P4.md`](PLAN_P4.md), pending
 a port author._
 
-_**Closure rates (M3 + ClockBound, final):**_
+_**Closure rates (M3 + ClockBound + ShardedKV, final):**_
 - _[`Examples/DistributedLock`](../Examples/DistributedLock.lean) — **12/12** (11 SMT + 1 manual `@[pverifyProof]`)._
 - _[`Examples/LockServer`](../Examples/LockServer.lean) — **37/37** (34 SMT + 3 manual)._
 - _[`Examples/RingLeader`](../Examples/RingLeader.lean) — **17/17** (14 SMT + 3 manual; entry-handler obligation added 2026-06-24)._
@@ -43,8 +43,89 @@ _**Closure rates (M3 + ClockBound, final):**_
   ([PInfer-Benchmarks/ClockBound](https://github.com/AD1024/PInfer-Benchmarks/blob/main/ClockBound/PSrc/System.p));
   exercises `PLean.choose` (bounded nondet `Int`) and the safety
   properties from `goals.json`._
+- _[`Examples/ShardedKV`](../Examples/ShardedKV.lean) — **11/11** (all SMT). Exercises `map[K, V]` and the multi-ref `unique_owner` pattern._
 
 _Build: green at HEAD._
+
+### Session 2026-06-25 — container types + ShardedKV port; `GlobalState.containers` slot
+
+P's `set[T]` / `map[K, V]` / `seq[T]` / `option[T]` ship as a surface
+syntax that desugars to bare Lean / Mathlib types (`Set T` / `PMap K V
+:= K → Option V` / `List T` / `Option T`). `Syntax/Stmt.lean` gains
+the matching mutation macros (`s += (e)`, `s -= (e)`, `m[k] = v`,
+`m[k] += (e)`, `m[k] -= (e)`); `s -= (e)` overloads on `Set` and `PMap`
+via the new `PContainerErase` typeclass. Map mutation goes through
+three thin helpers — `mapInsert` / `mapErase` / `mapModify` — each
+`@[reducible]` and tagged `@[pverifySimp]`, with lookup-after-mutation
+lemmas (`mapInsert_eq`, `mapErase_ne`, …) tagged into the same set so
+SMT prep reduces post-state lookups directly to the underlying value
+without case-splitting on key equality.
+
+**Hoisting.** A naïve placement of container `var`s in `Fields`
+trips lean-auto's "Higher order input?" check whenever an invariant
+quantifies over machines and projects the container field —
+`(s.machines n.ref).fields.<M>_<v>` under a `∀ n` is a function-valued
+projection lean-auto rejects. `#gen_module` now classifies each
+`var`'s declared type (`Lean.Meta.whnf` → `Expr.isArrow`) and **hoists**
+container vars out of `Fields` into a per-pmodule `Containers` struct
+at the top level of `GlobalState`. The hoisted field type is
+**uncurried with `MachineRef`**: `set[T]` becomes `MachineRef × T →
+Prop`, `map[K, V]` becomes `MachineRef × K → Option V`. The surface
+projection `n.kv` desugars to `fun k => s.containers.<M>_<v> (n.ref,
+k)`, which β-reduces at use sites to a flat applied symbol the SMT
+encoder accepts. Mirrors PVerifier's UCLID5 2D-array layout for
+container vars.
+
+`ProgramSig` gains `C : Type := Unit` (default for pmodules without
+container vars); `GlobalState` gains `containers : P.C`.
+`GlobalState.initial'` is a convenience overload using the `Inhabited
+P.C` default, so hand-written hand-`Sig`s don't need updating.
+
+`sdestruct_state` knows about the new field: it destructures
+`GlobalState` into 5 named locals (`gsSent` … `gsContainers` …
+`gsActionCount`), then on a non-empty `Containers` struct
+destructures one level deeper so each `<M>_<v>` becomes its own
+top-level local of the uncurried function type. For pmodules with no
+container vars (the empty / `Unit` case), the destructure collapses
+the unused `gsContainers` slot via `clear` / `obtain ⟨⟩` so the lctx
+shape matches the pre-hoist baseline exactly — first-order
+benchmarks see no completeness drift.
+
+**Multi-ref disprove fix in `injectKindGuards`.** A separate bug
+surfaced as a `disproved → unknown` regression on
+`SoundnessRegression`'s inductive step: when the user wrote an
+explicit `Bad_allocated b.ref s → …` guard in an invariant body,
+`injectKindGuards` unconditionally prepended its own `is_Bad b.ref s
+→`, and the obligation generator's later `is_<M> → <M>_allocated`
+unfold left a duplicated 4-implication chain in the hypothesis. The
+chain (over a universal `b : Bad`) bloated cvc5's quantifier
+instantiation past the test timeout. Fix: `bodyAlreadyGuarded`
+syntactically detects an existing `is_<M> x.ref s` /
+`<M>_allocated x.ref s` (or event-variant `is_<ev> x`) anywhere in the
+body whose first arg mentions the bound variable, and skips injection
+in that case. SoundnessR1 inductive step recovers to `disproved` in
+<2s.
+
+**ShardedKV** ([`Examples/ShardedKV.lean`](../Examples/ShardedKV.lean))
+ports the Tutorial/Advanced benchmark verbatim — two events, the
+`Node` machine with `var kv : map[tKey, tValue]`, both handlers
+(guarded `eReshard` doing read-erase-send, `eTransfer` doing insert),
+and the full 4-invariant `Safety` theorem including the multi-ref
+`unique_owner`. All 11 obligations close via SMT. Two surface
+adjustments worth noting:
+- the handler uses `(kv e.reshard_key).getD 0` instead of an explicit
+  `Option.get h` so `wpgen` steps through without falling into
+  `WPGen.default`;
+- an `init-holds ∀ n : Node, ∀ k, ¬ (k ∈ n.kv)` is needed for the
+  `unique_owner` base case (no two Nodes own the same key at init).
+
+**Regression**: 1039 jobs across Tests + Examples. No closure-rate
+changes to DistributedLock / LockServer / RingLeader / ClockBound.
+
+New tests:
+- [`Tests/Semantics/Containers.lean`](../Tests/Semantics/Containers.lean) — surface desugar, helper lemmas, `pverifySimp` round-trips.
+- [`Tests/Syntax/ContainerTypes.lean`](../Tests/Syntax/ContainerTypes.lean) — surface probe for set / map / map-of-set / option in `var` types.
+- [`Tests/Verify/ContainerVerify.lean`](../Tests/Verify/ContainerVerify.lean) — `#pverify` closes both set-mutating and map-mutating handlers via SMT.
 
 ### Session 2026-06-24 (newest) — VC completeness for `entry` + `on ev goto`; rename `Surface` → `Syntax`; unify bundle helper; comment-style sweep
 

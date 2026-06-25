@@ -12,6 +12,7 @@ and fail to resolve.
 -/
 import Lean
 import PLean.Semantics.Primitives
+import PLean.Semantics.Containers
 
 open Lean
 
@@ -148,6 +149,90 @@ macro_rules
     let tref ← thisRef
     let kindId := kindIdentFor m
     `(doElem| PLean.newMachine (P := $idSig) $tref $kindId)
+
+/-! ## Container mutation
+
+`s += (e)` / `s -= (e)` / `m[k] = v` / `m[k] += (e)` / `m[k] -= (e)`
+rewrite a machine `var` of container type by reading it, applying the
+op, and writing back. Each form re-binds `<v>` after the write so the
+post-update value is visible as a Lean local for the rest of the
+handler — same pattern as `pAssign`.
+
+Expansion table:
+
+| Surface         | Expansion                                                |
+|-----------------|-----------------------------------------------------------|
+| `s += (e)`      | `s := Insert.insert e s`                                  |
+| `s -= (e)`      | `s := PLean.containerErase s e`                           |
+| `m[k] = v`      | `m := PLean.mapInsert m k v`                              |
+| `m[k] += (e)`   | `m := PLean.mapModify m k (Insert.insert e)`              |
+| `m[k] -= (e)`   | `m := PLean.mapModify m k (· \ Set.singleton e)`          |
+
+`PLean.containerErase` is a typeclass that dispatches to set
+difference on `Set T` and to `mapErase` on `PMap K V`, so `s -= (e)`
+works on both kinds. Map helpers live in `Semantics/Containers.lean`
+and are tagged `@[pverifySimp]` so SMT prep reduces them to their
+`if`-lambda bodies. A user with a `seq` var falls back to `xs = xs ++
+[e]` via the generic `pAssign` macro. -/
+
+syntax (name := pSetAdd) (priority := high)
+  ident " += " "(" term ")" : doElem
+syntax (name := pSetRemove) (priority := high)
+  ident " -= " "(" term ")" : doElem
+syntax (name := pMapAssign) (priority := high)
+  ident "[" term "]" " = " term : doElem
+syntax (name := pMapAdd) (priority := high)
+  ident "[" term "]" " += " "(" term ")" : doElem
+syntax (name := pMapRemove) (priority := high)
+  ident "[" term "]" " -= " "(" term ")" : doElem
+
+macro_rules
+  | `(doElem| $lhs:ident += ($e:term)) => do
+    let tref ← thisRef
+    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
+    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
+    `(doElem| do
+        let $lhs:ident ← $getIdent:ident $tref
+        $setIdent:ident $tref (Insert.insert $e $lhs)
+        let $lhs:ident ← $getIdent:ident $tref)
+  | `(doElem| $lhs:ident -= ($e:term)) => do
+    let tref ← thisRef
+    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
+    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
+    -- `PLean.containerErase` dispatches via the `PContainerErase`
+    -- typeclass: `Set T` falls through to `\ Set.singleton`, `PMap K V`
+    -- falls through to `mapErase`. The user's choice of `s -= (e)` thus
+    -- works on both shapes without picking up a Lean error at expansion.
+    `(doElem| do
+        let $lhs:ident ← $getIdent:ident $tref
+        $setIdent:ident $tref (PLean.containerErase $lhs $e)
+        let $lhs:ident ← $getIdent:ident $tref)
+  | `(doElem| $lhs:ident [ $k:term ] = $v:term) => do
+    let tref ← thisRef
+    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
+    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
+    `(doElem| do
+        let $lhs:ident ← $getIdent:ident $tref
+        $setIdent:ident $tref (PLean.mapInsert $lhs $k $v)
+        let $lhs:ident ← $getIdent:ident $tref)
+  | `(doElem| $lhs:ident [ $k:term ] += ($e:term)) => do
+    let tref ← thisRef
+    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
+    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
+    `(doElem| do
+        let $lhs:ident ← $getIdent:ident $tref
+        $setIdent:ident $tref
+          (PLean.mapModify $lhs $k (Insert.insert $e))
+        let $lhs:ident ← $getIdent:ident $tref)
+  | `(doElem| $lhs:ident [ $k:term ] -= ($e:term)) => do
+    let tref ← thisRef
+    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
+    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
+    `(doElem| do
+        let $lhs:ident ← $getIdent:ident $tref
+        $setIdent:ident $tref
+          (PLean.mapModify $lhs $k (· \ (Set.singleton $e)))
+        let $lhs:ident ← $getIdent:ident $tref)
 
 /-! ## Assignment
 

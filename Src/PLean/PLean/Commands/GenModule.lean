@@ -42,13 +42,35 @@ accessors. -/
 structure VarInfo where
   name : Name
   ty   : TSyntax `term
+  /-- True iff the declared type elaborates to an arrow type — i.e. a
+      container (`set[T]` / `map[K, V]` / `seq[T]`, all of which
+      desugar to a function). Container vars get hoisted into the
+      top-level `Containers` slot so SMT translation sees the
+      projection as a flat applied symbol, not a `Fields`-projection
+      that lean-auto rejects under a quantifier. -/
+  isContainer : Bool
+
+/-- A type is a container (eligible for hoisting) iff its elaborated
+form reduces to an arrow type. Catches `set[T] = Set T = T → Prop`
+and `map[K, V] = K → Option V`; `seq[T] = List T` stays first-order
+and is not hoisted. -/
+private def classifyTypeAsContainer (ty : TSyntax `term) :
+    CommandElabM Bool := do
+  try
+    let r ← Lean.Elab.Command.runTermElabM fun _ => do
+      let e ← Lean.Elab.Term.elabType ty
+      let n ← Lean.Meta.whnf e
+      return n.isForall || n.isArrow
+    return r
+  catch _ => return false
 
 private def collectVars (body : Array Syntax) : CommandElabM (Array VarInfo) := do
   let mut vars : Array VarInfo := #[]
   for it in body do
     match it with
     | `(pMachineBodyItem| var $vname:ident : $vty:term) =>
-      vars := vars.push { name := vname.getId, ty := vty }
+      let isC ← classifyTypeAsContainer vty
+      vars := vars.push { name := vname.getId, ty := vty, isContainer := isC }
     | _ => pure ()
   return vars
 
@@ -253,13 +275,16 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
         $sCtors*
         deriving DecidableEq, Inhabited
     ))
-  -- `<Mod>.Fields`: one field per var across all machines, prefixed by
-  -- machine name.
+  -- `<Mod>.Fields`: one field per **first-order** var across all
+  -- machines. Container vars are hoisted into `<Mod>.Containers`
+  -- below so the SMT translation never sees a function-typed projection
+  -- under a quantifier.
   let mut fieldStxs : Array (TSyntax ``Lean.Parser.Command.structSimpleBinder) := #[]
   for mname in ctx.machineOrder do
     let some _ := ctx.machines.find? mname | continue
     let some vars := machineVars.find? mname | continue
     for v in vars do
+      if v.isContainer then continue
       let fldName := (mname.toString ++ "_" ++ v.name.toString)
       let fldId : Ident := mkIdent (Name.mkSimple fldName)
       let s ← `(Lean.Parser.Command.structSimpleBinder| $fldId:ident : $(v.ty))
@@ -275,11 +300,78 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
         $[$fieldStxs]*
         deriving Inhabited
     ))
-  -- `<Mod>.Sig`, `<Mod>.PM'`, `<Mod>.GS` aliases.
-  elabCommand (← `(
-    abbrev $idSig : $idProgramSig :=
-      { E := $idE, G := $idG, S := $idS, F := $idFields }
-  ))
+  -- `<Mod>.Containers`: one field per **container** var. To make the
+  -- projection's *saved type* first-order, we uncurry the container
+  -- type's outer arrow with `MachineRef`:
+  --   `set[T]    = T → Prop`            → field `MachineRef × T → Prop`
+  --   `map[K,V]  = K → Option V`         → field `MachineRef × K → Option V`
+  --   `seq[T]    = List T`               → field `MachineRef → List T`
+  -- For non-arrow container types (e.g. `seq` = `List`) the field
+  -- stays `MachineRef → <ty>` because the codomain is already
+  -- first-order. lean-auto's monomorphizer reads `Containers.<M>_<v>
+  -- : Containers → Prod MachineRef Dom → Codom` as a single applied
+  -- uninterpreted function — no nested arrows in the type.
+  --
+  -- Surface side, `n.kv` projects to `s.containers.<M>_<v>
+  -- (n.ref, k)` (we curry it back via Prod), the lookup `m k`
+  -- becomes `s.containers.<M>_<v> (m.ref, k)`, etc.
+  --
+  -- This mirrors PVerifier's UCLID5 backend, which encodes each
+  -- container var as a 2D array indexed on `(MachineRef, Key)`.
+  let mut contStxs : Array (TSyntax ``Lean.Parser.Command.structSimpleBinder) := #[]
+  for mname in ctx.machineOrder do
+    let some _ := ctx.machines.find? mname | continue
+    let some vars := machineVars.find? mname | continue
+    for v in vars do
+      if !v.isContainer then continue
+      let fldName := (mname.toString ++ "_" ++ v.name.toString)
+      let fldId : Ident := mkIdent (Name.mkSimple fldName)
+      -- Build the uncurried field type. We probe the elaborated type
+      -- via `Lean.Elab.Term.elabType` + `whnf`; if it's an arrow
+      -- `Dom → Codom`, the field becomes `(MachineRef × Dom) → Codom`,
+      -- else `MachineRef → <ty>`.
+      let (domStxOpt, codomStxOpt) ← Lean.Elab.Command.runTermElabM
+        fun _ => do
+          let e ← Lean.Elab.Term.elabType v.ty
+          let n ← Lean.Meta.whnf e
+          if n.isForall || n.isArrow then
+            let dom := n.bindingDomain!
+            let codom := n.bindingBody!
+            let domT  ← Lean.PrettyPrinter.delab dom
+            let codomT ← Lean.PrettyPrinter.delab codom
+            return (some domT, some codomT)
+          else
+            return (none, none)
+      let fldTy : TSyntax `term ←
+        match domStxOpt, codomStxOpt with
+        | some dom, some codom =>
+          `($idMachineRef × $dom → $codom)
+        | _, _ =>
+          `($idMachineRef → $(v.ty))
+      let s ← `(Lean.Parser.Command.structSimpleBinder|
+        $fldId:ident : $fldTy)
+      contStxs := contStxs.push s
+  let idContainers : Ident := mkIdent `Containers
+  let hasContainers := !contStxs.isEmpty
+  if hasContainers then
+    elabCommand (← `(
+      structure $idContainers where
+        $[$contStxs]*
+        deriving Inhabited
+    ))
+  -- `<Mod>.Sig`, `<Mod>.PM'`, `<Mod>.GS` aliases. Set `C := Containers`
+  -- when at least one container var was declared; else default to
+  -- `Unit` via `ProgramSig.C`'s default.
+  if hasContainers then
+    elabCommand (← `(
+      abbrev $idSig : $idProgramSig :=
+        { E := $idE, G := $idG, S := $idS, F := $idFields, C := $idContainers }
+    ))
+  else
+    elabCommand (← `(
+      abbrev $idSig : $idProgramSig :=
+        { E := $idE, G := $idG, S := $idS, F := $idFields }
+    ))
   elabCommand (← `(
     abbrev $idPM (α : Type) := $idPM_PLean $idSig α
   ))
@@ -481,31 +573,82 @@ private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
     let getName : Ident := mkIdent (v.name.appendAfter "_get")
     let setName : Ident := mkIdent (v.name.appendAfter "_set")
     let ty := v.ty
-    -- Accessors are `@[reducible] def` so the obligation generator's
-    -- `unfold <v>_get/<v>_set` step reaches the underlying `get`/`set`
-    -- whose `loomSpec` is registered by the per-pmodule
-    -- `#derive_lifted_wp` (`emitDerivedWP`).
-    --
-    -- WHY no type ascription on `← get`: the ascribed
-    -- `(get : StateT _ _ _)` form does not match the registered
-    -- discr-tree key, so `wpgen` falls back to `WPGen.default`. Letting
-    -- Lean pick `get` from the `MonadStateOf` instance produces the
-    -- key shape the spec expects.
-    elabCommand (← `(
-      @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
-        let s ← get
-        pure (s.machines $idThis).fields.$fldId
-    ))
-    elabCommand (← `(
-      @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) : $idPM Unit := do
-        let s ← get
-        let curr := s.machines $idThis
-        let newFields : $idFields := { curr.fields with $fldId:ident := v }
-        let newMS : ($idSig).MachineState :=
-          { stage := curr.stage, currentState := curr.currentState
-            fields := newFields, kind := curr.kind }
-        set (s.updateMachine $idThis newMS)
-    ))
+    if v.isContainer then
+      -- Container accessors operate on the uncurried `Containers`
+      -- field. `<v>_get this.ref` builds a Lean value of the original
+      -- type `<ty>` from the stored uncurried form by η-application;
+      -- `<v>_set this.ref new` builds the updated `Containers` by
+      -- re-introducing `<ty>`'s arrow over the swapped row.
+      --
+      -- For non-arrow `<ty>` (e.g. `seq`), the field is still
+      -- `MachineRef → <ty>` (single arrow, first-order) so the
+      -- accessors degrade to the standard `MachineRef` lookup /
+      -- `Function.update` pattern.
+      let idContainers : Ident := mkIdent `Containers
+      let isArrow ← Lean.Elab.Command.runTermElabM fun _ => do
+        let e ← Lean.Elab.Term.elabType v.ty
+        let n ← Lean.Meta.whnf e
+        return n.isForall || n.isArrow
+      if isArrow then
+        elabCommand (← `(
+          @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
+            let s ← get
+            pure (fun x => s.containers.$fldId ($idThis, x))
+        ))
+        elabCommand (← `(
+          @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) :
+              $idPM Unit := do
+            let s ← get
+            let newSlot :=
+              fun (p : $idMachineRef × _) =>
+                if p.1 = $idThis then v p.2 else s.containers.$fldId p
+            let newContainers : $idContainers :=
+              { s.containers with $fldId:ident := newSlot }
+            set { s with containers := newContainers }
+        ))
+      else
+        elabCommand (← `(
+          @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
+            let s ← get
+            pure (s.containers.$fldId $idThis)
+        ))
+        elabCommand (← `(
+          @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) :
+              $idPM Unit := do
+            let s ← get
+            let newSlot : $idMachineRef → $ty :=
+              fun r => if r = $idThis then v else s.containers.$fldId r
+            let newContainers : $idContainers :=
+              { s.containers with $fldId:ident := newSlot }
+            set { s with containers := newContainers }
+        ))
+    else
+      -- Accessors are `@[reducible] def` so the obligation generator's
+      -- `unfold <v>_get/<v>_set` step reaches the underlying `get`/`set`
+      -- whose `loomSpec` is registered by the per-pmodule
+      -- `#derive_lifted_wp` (`emitDerivedWP`).
+      --
+      -- WHY no type ascription on `← get`: the ascribed
+      -- `(get : StateT _ _ _)` form does not match the registered
+      -- discr-tree key, so `wpgen` falls back to `WPGen.default`. Letting
+      -- Lean pick `get` from the `MonadStateOf` instance produces the
+      -- key shape the spec expects.
+      elabCommand (← `(
+        @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
+          let s ← get
+          pure (s.machines $idThis).fields.$fldId
+      ))
+      elabCommand (← `(
+        @[reducible] def $setName ($idThis : $idMachineRef) (v : $ty) :
+            $idPM Unit := do
+          let s ← get
+          let curr := s.machines $idThis
+          let newFields : $idFields := { curr.fields with $fldId:ident := v }
+          let newMS : ($idSig).MachineState :=
+            { stage := curr.stage, currentState := curr.currentState
+              fields := newFields, kind := curr.kind }
+          set (s.updateMachine $idThis newMS)
+      ))
 
 private def emitStateAliases (mname : Name) (states : Array PStateDecl) :
     CommandElabM Unit := do
@@ -719,6 +862,7 @@ capture (via the unhygienic `s` binder the helper introduces), so they
 all pass `applyState := false` through `emitConjPredicate`. -/
 private def emitInitConditions (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
+    (machineContainerFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   let sId : Ident := mkIdent `s
@@ -762,7 +906,7 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
       PLean.rejectStateShadowIn "`init-holds`" stx[1]
       let rewritten ← liftMacroM <|
         PLean.rewriteFieldProjections machineKinds eventKinds
-          machineFields eventPayloadFields `s stx[1]
+          machineFields machineContainerFields eventPayloadFields `s stx[1]
       let raw ← liftMacroM <|
         PLean.injectKindGuards machineKinds eventKinds `s rewritten
       props := props.push ⟨raw⟩
@@ -831,7 +975,9 @@ def elabPGenModule : CommandElab := fun stx => do
     -- accessors so invariants and obligations can reference them.
     emitMachineKinds ctx
     -- Build the field-projection maps used by the invariant rewriter.
-    -- machineFields[M] is the set of `var` names for machine M;
+    -- machineFields[M] is the set of **first-order** `var` names for
+    -- machine M; machineContainerFields[M] is the set of
+    -- **container** `var` names (hoisted to `Containers`).
     -- eventPayloadFields[ev] is the set of named-tuple field names for
     -- event ev (empty if its payload isn't a named tuple).
     let machineFields : NameMap NameSet := Id.run do
@@ -839,7 +985,15 @@ def elabPGenModule : CommandElab := fun stx => do
       for mname in ctx.machineOrder do
         let some vars := machineVars.find? mname | continue
         let s := vars.foldl (init := ({} : NameSet))
-          fun s v => s.insert v.name
+          fun s v => if v.isContainer then s else s.insert v.name
+        out := out.insert mname s
+      out
+    let machineContainerFields : NameMap NameSet := Id.run do
+      let mut out : NameMap NameSet := {}
+      for mname in ctx.machineOrder do
+        let some vars := machineVars.find? mname | continue
+        let s := vars.foldl (init := ({} : NameSet))
+          fun s v => if v.isContainer then s.insert v.name else s
         out := out.insert mname s
       out
     let eventPayloadFields : NameMap NameSet := Id.run do
@@ -934,12 +1088,12 @@ def elabPGenModule : CommandElab := fun stx => do
         synthAxioms := synthAxioms.insert ax.name ax
     for (_, d) in ctx.invariants.toList do
       materialiseInvariant machineKinds eventKinds machineFields
-        eventPayloadFields d
+        machineContainerFields eventPayloadFields d
     -- Step 7b: aggregate `init-holds` clauses into `<Mod>.InitConditions`.
     -- The obligation generator consumes this as the base-case
     -- precondition for each invariant.
     emitInitConditions machineKinds eventKinds machineFields
-      eventPayloadFields ctx
+      machineContainerFields eventPayloadFields ctx
     -- Step 7c: emit per-Lemma/Theorem bundle predicates. For each
     -- registered Lemma/Theorem `X` whose body lists invariants
     -- `[a, b, c]`, emit `def X : PProp Sig := fun s => a s ∧ b s ∧ c s`

@@ -48,7 +48,7 @@ abbrev M' (α : Type) := PM Sig α
 
 /-- Concrete starting state with one machine at ref 0 in state A. -/
 def init0 : GlobalState Sig :=
-  GlobalState.initial (P := Sig) fun _ =>
+  GlobalState.initial' (P := Sig) fun _ =>
     { stage := true, currentState := St.A, fields := () }
 
 /-- Run a `PM Sig α` to its final `(α, GlobalState)` pair, projecting

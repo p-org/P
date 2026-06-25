@@ -86,7 +86,7 @@ open PartialCorrectness DemonicChoice
 /-! ## Default starting state -/
 
 def initialState : GlobalState Sig :=
-  GlobalState.initial (P := Sig) fun r =>
+  GlobalState.initial' (P := Sig) fun r =>
     if r = serverRef then
       { stage := true, currentState := St.ServerIdle, fields := () }
     else

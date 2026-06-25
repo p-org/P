@@ -40,7 +40,7 @@ namespace SurfCombinators
 
 /-- Initial state with one machine at ref 0 in `Counter_Idle`. -/
 def init0 : GlobalState Sig :=
-  GlobalState.initial (P := Sig) fun _ =>
+  GlobalState.initial' (P := Sig) fun _ =>
     { stage := true, currentState := S.Counter_Idle, fields := default }
 
 /-- Run a `PM Sig α` to its final `(α, GlobalState)`. -/

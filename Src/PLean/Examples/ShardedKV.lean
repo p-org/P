@@ -58,10 +58,16 @@ pmodule ShardedKV
     }
   }
 
-  -- Every Node starts with an empty shard. Without this, the
-  -- base case of `unique_owner` (no two Nodes own the same key) is
-  -- not entailed by `InitConditions` alone.
-  init-holds ∀ n : Node, ∀ k : tKey, ¬ (k ∈ n.kv)
+  -- `unique_owner` is a *deployment assumption* — the protocol
+  -- preserves uniqueness of key ownership but does not establish
+  -- it. The P source leaves `kv` initially unconstrained (no
+  -- `init-condition`) and relies on the user to deploy the system
+  -- with disjoint shards; PVerifier accepts this implicitly via
+  -- UCLID5's `init` block. We make the assumption explicit as an
+  -- `init-holds` so the base-case VC discharges.
+  init-holds
+    ∀ (k : tKey) (n1 n2 : Node),
+      k ∈ n1.kv → k ∈ n2.kv → n1 = n2
 
   Theorem Safety {
     system s {

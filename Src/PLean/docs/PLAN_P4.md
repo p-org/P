@@ -782,16 +782,34 @@ Inherits PLAN_P3's residual list. New risks specific to Phase 4:
 
 ## Hand-off to Phase 5 and beyond
 
-Phase 5 (Remaining surface) needs:
-- **`map[K,V]` and `set[T]`** — ChainReplication's spec uses
-  `map[int,int]`; the `kv[req.k] = req.v` write and `if (k in kv)`
-  test are not yet supported. PVerifier encodes maps as
-  `[K]Option V`; PLean should follow.
-- **`foreach (x in S) invariant <inv>; { body }`** — heavy in
-  Consensus/Paxos; not used by ChainReplication.
-- **`if`/`while` inside handler bodies with full `WPGen` plumbing**
-  — Lean already supports these in `do`-blocks, but the `pverify`
-  unfolder needs the right `WPGen.if`/`WPGen.while` simp lemmas.
+Phase 5 (Remaining surface) — partial; status as of 2026-06-26:
+- **`map[K,V]` and `set[T]`** — **shipped 2026-06-25**. ChainReplication's
+  `map[int,int]` writes and `if (k in kv)` tests are supported; encoding
+  follows PVerifier's `K → Option V` shape. See [`STATUS.md`](STATUS.md)'s
+  2026-06-25 session entry and [`Examples/ShardedKV`](../Examples/ShardedKV.lean).
+- **`foreach (x in S) invariant <inv>; { body }`** — **shipped 2026-06-26**
+  for `seq[T]` / `List` via a PLean-local `pforeach` primitive with a
+  `@[loomSpec] WPGen.pforeach` (proven by reduction to Loom's
+  `triple_forIn_list`). `forall new (e: event)`-style frame conditions
+  remain user-supplied invariants; no automation around `forall new`
+  yet.
+- **`while` inside handler bodies with full `WPGen` plumbing** —
+  **shipped 2026-06-26**. `while (cond) invariant N : I; [done_with …;]
+  [decreasing …;] { body }` desugars to `for _ in Lean.Loop.mk do
+  invariantGadget …; onDoneGadget …; decreasingGadget …; if cond then
+  body else break`, matched by Loom's `@[loomSpec]
+  WPGen.forWithInvariantLoop`. Still pending: `if`/`while` inside
+  handler bodies *without* the loop-invariant scaffolding (Loom has
+  no `WPGen.if` for `DivM`-backed `PM`); current workaround is the
+  user-side ternary / `match` shapes the existing simp set handles.
+- **Auto-default under loops.** The auto-emitted `prove default;`
+  obligation for a loop-bearing handler reports `[SMT:
+  counter-example]` unless the user states `DefaultInvariants`-strength
+  clauses as part of the loop invariant. A loop-aware `default_inv`
+  (recognising the post-`forWithInvariantLoop` shape and discharging
+  the unique-actions / increasing-count / received-subset-sent legs
+  symbolically over the iteration's `addSent`-style footprint)
+  remains future work. Logical limitation, not a tactic bug.
 - **`assume <prop>;`** — D33 stub; Phase 5 wires it as a tactic-
   level `have h : <prop> := ?_` plus an obligation that `<prop>`
   holds in context.

@@ -12,7 +12,9 @@ import PLean.Semantics.Primitives
 import PLean.Semantics.Predicates
 import PLean.Semantics.Default
 import PLean.Semantics.Containers
+import PLean.Semantics.Loop
 import PLean.Syntax.Containers
+import PLean.Syntax.Loop
 import PLean.Syntax.Module
 import PLean.Syntax.Types
 import PLean.Syntax.Events

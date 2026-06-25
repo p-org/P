@@ -21,7 +21,7 @@ of work.
 | 2 — Registry + surface | ☑ done | `#gen_module M`, surface macros target real PM, **M2** |
 | 3 — Verification declarations | ☑ done | `Lemma`/`Theorem`/`Proof`/`system <s> { … }`, SMT-discharge `#pverify`, `@[pverifyProof]` registry, `paxiom`/`pinstance` axiomatic-fact bridge. **M3 reached** — `Examples/DistributedLock` **12/12**, `Examples/LockServer` **37/37**, `Examples/RingLeader` **14/14** |
 | 4 — Spec machines | ☐ next | `spec X observes [...] { ... }` flattening, `assert` obligations, send-time spec dispatch — **M4 acceptance: ChainReplication** |
-| 5 — Remaining surface | ☐ not started | `foreach`, `map[K,V]` / `set[T]`, `assume`, full `WPGen` plumbing for `if`/`while` |
+| 5 — Remaining surface | ◐ partial | `map[K,V]` / `set[T]` / `seq[T]` / `option[T]` shipped 2026-06-25; `foreach` / `while` (with `invariant` / `done_with` / `decreasing`) shipped 2026-06-26; remaining: `assume`, loop-aware `default_inv`, `WPGen.if` for `DivM`-backed `PM` |
 | 6 — Tutorial port | ☐ not started | **M5: `Tutorial/1_ClientServer`**, **M6: `Tutorial/2_TwoPhaseCommit`** verify under PLean |
 | 7 — Stretch | ⊘ deferred | PChecker bridge, lean-smt evaluation, counter-example surfacing |
 
@@ -78,12 +78,19 @@ Four work areas remain on the path to v1.
    The acceptance benchmark is `1_ChainReplicationVerification`, the
    sole Tutorial/Advanced benchmark with a `spec` block.
 
-3. **Phase 5 — remaining surface.** Real protocols depend on
-   collection types and control flow not yet supported: `map[K,V]`
-   and `set[T]` (with PVerifier-parity SMT encoding), `foreach`,
-   `assume`, and `WPGen` plumbing for `if`/`while` inside handler
-   bodies. ChainReplication's spec body, Consensus, and Paxos all
-   require Phase 5 features.
+3. **Phase 5 — remaining surface.** Partially shipped. `map[K,V]` /
+   `set[T]` / `seq[T]` / `option[T]` landed 2026-06-25 with
+   PVerifier-parity SMT encoding (`K → Option V` for maps, hoisted
+   `Containers` struct for the multi-ref pattern); `foreach` and
+   `while` (with `invariant` / `done_with` / `decreasing` clauses)
+   landed 2026-06-26 via a PLean-local `pforeach` primitive + Loom's
+   `WPGen.forWithInvariantLoop`. Still pending: `assume <prop>;`, a
+   loop-aware `default_inv` so the auto-default obligation under
+   loops doesn't disprove on trivial invariants, and `WPGen.if` for
+   `DivM`-backed `PM` (so `if` inside handler bodies steps cleanly).
+   ChainReplication's spec body remains gated on Phase-4 spec
+   machines; Consensus and Paxos still need loop-aware default
+   invariants before their `prove default;` obligations close.
 
 4. **Phase 6 — tutorial ports (M5, M6).** Once Phases 4 and 5 land,
    port `Tutorial/1_ClientServer` and `Tutorial/2_TwoPhaseCommit`
@@ -126,7 +133,7 @@ Phase ownership of files (for "who touches what"):
 | Area | Active edits expected | Stable for now |
 |---|---|---|
 | `Semantics/*` | `GlobalState` widened to carry per-spec state when spec machines land | Otherwise stable since Phase 1 |
-| `Surface/*` | `Stmt.lean` extended so `send` fires observing specs; `Notation.lean` extended for registry-aware `is`; `foreach` / `map` syntax in Phase 5 | The user-facing surface is stable apart from these additions |
+| `Syntax/*` | `Stmt.lean` extended so `send` fires observing specs; `Notation.lean` extended for registry-aware `is`. Container syntax (`set` / `map` / `seq` / `option`) lives in `Syntax/Containers.lean`; loop syntax (`foreach` / `while`) in `Syntax/Loop.lean` (both shipped). | The user-facing surface is stable apart from spec-machine wiring |
 | `Commands/GenModule.lean` | Spec-state and dispatch emission; collection-type emission | Largest single file (~700 LOC) — coordinate edits |
 | `Verify/*` | New `SpecObligation.lean` for `assert`-site obligations; targeted tactic polish (see workstreams below) | The atomic tactic library users call from `@[pverifyProof]` proofs is stable |
 
@@ -286,32 +293,37 @@ no-op stub at unsupported syntax).
 
 **Action items.**
 
-1. *`map[K,V]` and `set[T]` types.* Add the types to the surface,
-   the registry, and `#gen_module`'s materialisation. Encode them
-   for SMT in the same shape PVerifier uses (`map[K,V]` represented
-   as a function `K → Option V`); this preserves the goals
-   PVerifier closes today and avoids drift between the two
-   verifiers. Reference: the *Map/seq SMT encoding parity* risk
-   noted in [`PLAN.md`](PLAN.md).
-2. *Membership and indexing.* Support `if (k in kv)` and `kv[k]`
-   read/write inside handler bodies, both at the surface and in the
-   weakest-precondition rules. The control-flow guard is what the
-   ChainReplication spec uses on every event.
-3. *Default values for collections.* Allow `var kv : map[int,int]
-   = default(map[int,int]);` and equivalent for `set`. Required for
-   spec field initialisation.
+1. *`map[K,V]` and `set[T]` types.* **✓ shipped 2026-06-25.** Surface
+   syntax in `Syntax/Containers.lean`, hoisted `Containers` struct in
+   `Semantics/GlobalState.lean`, materialised via `#gen_module`'s
+   `var`-classification pass. Maps encode as `K → Option V` (PVerifier
+   parity); the multi-ref pattern (`∀ n1 n2, k ∈ n1.kv → k ∈ n2.kv →
+   n1 = n2`) verifies cleanly because the projection
+   `s.containers.<M>_<v> (n.ref, k)` reaches lean-auto as a flat
+   applied symbol. Exercised by
+   [`Examples/ShardedKV`](../Examples/ShardedKV.lean) — 11/11 SMT.
+2. *Membership and indexing.* **✓ shipped 2026-06-25.** `if (k in kv)`
+   and `kv[k]` read/write supported via the `pverifySimp` set's
+   lookup-after-mutation lemmas (`mapInsert_eq`, `mapErase_ne`, …).
+3. *Default values for collections.* **✓ shipped 2026-06-25.**
+   `default(map[K, V])` reads as `fun _ => Option.none`, `default(set[T])`
+   as Mathlib's empty set.
 4. *`assume <prop>;`* — let users tighten the precondition of the
    surrounding handler obligation. Implement at the tactic level as
    the introduction of a hypothesis that the obligation also
-   discharges. (May land in a later sprint; flag as deferable if
-   not needed by the immediate benchmarks.)
-5. *Conditionals and loops in handler bodies.* Lean's `do`-notation
-   supports `if`/`while`, but the obligation generator's
-   weakest-precondition step needs the matching simp lemmas to step
-   through them cleanly. Add the missing lemmas and confirm the
-   conditional-probe regression file
-   ([`Tests/Surface/PVerifyConditional.lean`](../Tests/Surface/PVerifyConditional.lean))
-   stays green as more benchmarks exercise the path.
+   discharges. (Still pending; not blocking immediate benchmarks.)
+5. *Conditionals and loops in handler bodies.* `while` and `foreach`
+   **shipped 2026-06-26** via a PLean-local `pforeach` primitive +
+   Loom's `WPGen.forWithInvariantLoop`; the rigid gadget-chain body
+   `do invariantGadget …; onDoneGadget …; decreasingGadget …; if cond
+   then body else break` matches `wpgen` automatically.
+   `pverify_step_wp` carries the `Pi.inf_apply` / `inf_Prop_eq` simp
+   set that reduces the post-`wpgen` lattice meet to a `Prop`-level
+   conjunction SMT decides. Remaining: `if` *inside* loop bodies still
+   falls through to `WPGen.default` (Loom has no `WPGen.if` for
+   `DivM`-backed `PM`); and the auto-emitted `prove default;`
+   obligation under loops disproves on trivial invariants without a
+   loop-aware `default_inv`.
 
 **Exit criterion.** `Phase4ChainReplication.lean`'s spec body
 elaborates against a real (not stubbed) handler body, and

@@ -120,7 +120,14 @@ After `wpgen`, the goal carries `WPGen.bind` / `WPGen.pure` shapes,
 `GlobalState` update terms, and (for conditional handlers) Loom's
 `WithName` / `iInf` machinery from `if_pos` / `if_neg` branches. We
 strip each in sequence so the goal arrives at SMT prep as a clean
-propositional fact. -/
+propositional fact.
+
+For loop-bearing handlers (`foreach` / `while`), the post-`wpgen`
+goal additionally carries Loom's `forWithInvariantLoop` shape —
+`⌜∀ b, invariantSeq (inv b) ≤ (wpg b).get …⌝ ⊓ spec …`. The
+`invariantSeq` / `List.foldr` / `spec` unfolds turn that into a
+plain implication chain `∀ b, P1 b ∧ P2 b → … ≤ …`, ready for SMT
+or another `wpgen` pass on the body's `wpg`. -/
 syntax "pverify_step_wp" : tactic
 macro_rules
   | `(tactic| pverify_step_wp) => `(tactic| (
@@ -131,6 +138,28 @@ macro_rules
       try simp only [WithName.mk', WithName.erase, typeWithName.erase]
       try simp only [iInf_apply, iInf_Prop_eq, iSup_apply, iSup_Prop_eq]
       try simp only [if_true, if_false]
+      -- Loop-specific cleanup. After `wpgen` matches
+      -- `WPGen.forWithInvariantLoop`, the goal carries:
+      -- (1) `invariantSeq [I1, …, Ik] = I1 ⊓ … ⊓ Ik ⊓ ⊤` (the invariant
+      --     list folded into a meet);
+      -- (2) `spec pre post` (Loom's `pre ⊓ ⌜post ≤ wp ⌝` shape);
+      -- (3) `(I ⊓ ⊤) s` reads as a `Pi`-typed meet applied to `s` —
+      --     reduce via `Pi.inf_apply` / `Pi.top_apply` / `inf_Prop_eq`
+      --     so the goal becomes a plain `∧`-chain of `Prop`s.
+      try simp only [invariantSeq, List.foldr]
+      try unfold spec at *
+      try unfold WithName at *
+      try simp only [Pi.inf_apply, Pi.top_apply, inf_Prop_eq] at *
+      -- After the meet unfolds, residual `_ ∧ ⊤` clauses come from
+      -- the empty done-with branch of an unannotated loop. Collapse
+      -- them so the iteration VC reads as a plain `Prop` conjunction.
+      try simp only [Prop.top_eq_true, and_true, true_and] at *
+      -- A `Lean.Loop`-driven `while` whose body doesn't reference the
+      -- iteration carrier leaves `∀ _ : GlobalState Sig, P` with `P`
+      -- closed in the binder. lean-auto rejects the quantified
+      -- function-typed-record sort even when the binder is unused;
+      -- `forall_const` collapses the vacuous quantifier.
+      try simp only [forall_const] at *
     ))
 
 /-! ## Pre-SMT preparation (internal to `pverify_smt`)
@@ -157,18 +186,46 @@ syntax "sdestruct_state" : tactic
 elab_rules : tactic
   | `(tactic| sdestruct_state) => withMainContext do
     let lctx ← getLCtx
+    -- Visited counter so multiple `GlobalState`-typed locals (e.g. a
+    -- pre-state `s` and a loop's post-state `x` both being
+    -- `GlobalState Sig`) get destructured into disjoint field names:
+    -- `gsSent` for the first, `gsSent₁` for the second, `gsSent₂`
+    -- for the third, … . Without the suffix the second `obtain`
+    -- collides with the first's bindings and lean-auto sees the
+    -- un-destructured second state with its function-typed fields
+    -- intact, rejecting with "Higher order input?". This came up
+    -- first on loop-bearing handlers whose iteration VC quantifies
+    -- over a post-state.
+    --
+    -- The subscript-digit suffix (`₁`, `₂`, …) is identifier-legal
+    -- without French quotes, so `simp_all` and goal pretty-printing
+    -- render the names cleanly (no `«gsSent#1»` wrappers).
+    let mut visited : Nat := 0
+    let subscriptDigits : Array Char :=
+      #['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉']
+    let toSubscript (n : Nat) : String := Id.run do
+      if n == 0 then return ""
+      let mut out : String := ""
+      for c in n.repr.toList do
+        let d := c.toNat - '0'.toNat
+        if h : d < subscriptDigits.size then
+          out := out.push (subscriptDigits[d]'h)
+        else
+          out := out.push c
+      return out
     for ldecl in lctx do
       if ldecl.isImplementationDetail then continue
       -- Whnf so abbreviations like `GS = GlobalState Sig` reduce to the head.
       let ty ← Lean.Meta.whnf (← Lean.Meta.inferType ldecl.toExpr)
       if ty.consumeMData.isAppOfArity ``PLean.GlobalState 1 then
         let hName := ldecl.userName
-        -- Inspect `Sig.C` to know whether the program has any
-        -- container var. When not, we collapse the unused
-        -- `gsContainers` local after the destructure so the SMT
-        -- view of first-order benchmarks doesn't carry an extra
-        -- `containers := PUnit.unit` field in record literals —
-        -- which would otherwise enlarge cvc5's instantiation work.
+        let suffix : String := toSubscript visited
+        visited := visited + 1
+        let sentName := Name.mkSimple s!"gsSent{suffix}"
+        let recvName := Name.mkSimple s!"gsReceived{suffix}"
+        let machName := Name.mkSimple s!"gsMachines{suffix}"
+        let contName := Name.mkSimple s!"gsContainers{suffix}"
+        let actName := Name.mkSimple s!"gsActionCount{suffix}"
         let sigCArgs := ty.consumeMData.getAppArgs
         let mut hasContainers := false
         if sigCArgs.size ≥ 1 then
@@ -181,36 +238,37 @@ elab_rules : tactic
                 if !sinfo.fieldInfo.isEmpty then
                   hasContainers := true
         let stx ← `(tactic|
-          obtain ⟨$(mkIdent `gsSent),
-                  $(mkIdent `gsReceived),
-                  $(mkIdent `gsMachines),
-                  $(mkIdent `gsContainers),
-                  $(mkIdent `gsActionCount)⟩ :=
+          obtain ⟨$(mkIdent sentName),
+                  $(mkIdent recvName),
+                  $(mkIdent machName),
+                  $(mkIdent contName),
+                  $(mkIdent actName)⟩ :=
             $(mkIdent hName))
         try evalTactic stx
         catch _ => pure ()
         unless hasContainers do
-          -- `clear` succeeds when nothing references the local;
-          -- the `obtain ⟨⟩` fallback inhabits the subsingleton
-          -- (`Unit` / 0-field struct) and substitutes its unique
-          -- value through any surviving hypothesis.
-          try evalTactic (← `(tactic| clear $(mkIdent `gsContainers)))
+          try evalTactic (← `(tactic| clear $(mkIdent contName)))
           catch _ =>
             let emptyPats : Array (TSyntax `rcasesPat) := #[]
             try
               evalTactic (← `(tactic|
-                obtain ⟨$emptyPats,*⟩ := $(mkIdent `gsContainers)))
+                obtain ⟨$emptyPats,*⟩ := $(mkIdent contName)))
             catch _ => pure ()
-    -- Second pass: when the first pass bound `gsContainers` (i.e.,
-    -- `Sig.C` has ≥1 container var), destructure it so each var
+    -- Second pass: when the first pass bound `gsContainers[<sub>]`
+    -- (`Sig.C` has ≥1 container var), destructure it so each var
     -- becomes a top-level local of bare uncurried function type
     -- (`MachineRef × Dom → Codom`) — the shape lean-auto handles.
-    -- For pmodules without container vars, the first pass already
-    -- collapsed the slot via a wildcard, so this is a no-op.
+    -- Walk every `gsContainers`-prefixed local so multiple GlobalState
+    -- binders (pre-state + loop post-state) each get their containers
+    -- destructured.
     withMainContext do
       let lctxNow ← getLCtx
-      if let some d := lctxNow.findFromUserName? `gsContainers then
-        let cTy ← Lean.Meta.whnf (← Lean.Meta.inferType d.toExpr)
+      let mut anyDestructured : Bool := false
+      for ldecl in lctxNow do
+        if ldecl.isImplementationDetail then continue
+        let n := ldecl.userName.toString
+        unless n.startsWith "gsContainers" do continue
+        let cTy ← Lean.Meta.whnf (← Lean.Meta.inferType ldecl.toExpr)
         if let some structName := cTy.consumeMData.getAppFn.constName? then
           let env ← getEnv
           if let some sinfo := getStructureInfo? env structName then
@@ -220,10 +278,12 @@ elab_rules : tactic
                 pats := pats.push (← `(rcasesPat| $(mkIdent fi.fieldName)))
               try
                 evalTactic (← `(tactic|
-                  obtain ⟨$pats,*⟩ := $(mkIdent `gsContainers)))
+                  obtain ⟨$pats,*⟩ := $(mkIdent ldecl.userName)))
+                anyDestructured := true
               catch _ => pure ()
-              try evalTactic (← `(tactic| simp only [] at *))
-              catch _ => pure ()
+      if anyDestructured then
+        try evalTactic (← `(tactic| simp only [] at *))
+        catch _ => pure ()
 
 /-- Generalise every `MachineState`-typed projection (e.g.
 `gsMachines this.ref`) in the goal to a fresh `MachineState`-typed
@@ -548,7 +608,12 @@ info-severity messages produced by either path (errors/warnings kept).
 
 /-- Default (unprofiled) path: identical to the pre-profile-instrumentation
 behaviour. Consults the cache, then runs `pverify_smt_prep; loom_smt [*]`
-on a miss. -/
+on a miss. The `prep` step itself sometimes closes the goal (via
+`simp` on a tautology, container-lemma rewrite landing in `True`,
+etc.), so `loom_smt` is gated on the prep leaving a non-empty goal
+queue. Without the gate the post-prep run would error
+"No goals to be solved" and clobber a more meaningful upstream
+diagnostic. -/
 def pverifySmtCloseDefault : TacticM Unit := do
   let useCache := pverify.cache.get (← getOptions)
   let mv ← getMainGoal
@@ -569,7 +634,9 @@ def pverifySmtCloseDefault : TacticM Unit := do
       else pure false
     | none => pure false
   unless cacheHit do
-    evalTactic (← `(tactic| (pverify_smt_prep; loom_smt [*])))
+    evalTactic (← `(tactic| pverify_smt_prep))
+    unless (← getGoals).isEmpty do
+      evalTactic (← `(tactic| loom_smt [*]))
     if let some (hash, text) := cacheHash? then
       liftM (pverifyCacheInsert hash text)
 
@@ -689,9 +756,10 @@ macro_rules
       first | grind | (refine ⟨?_, ?_⟩ <;> grind) | omega | tauto | assumption
     ))
 
-/-- Walk the goal target and `refine ⟨?_, ?_⟩`-split every top-level
-`∧`, then call `pverify_smt` on each resulting subgoal. Sound: a
-proof of `A ∧ B` follows from independent proofs of `A` and `B`.
+/-- Walk the goal target, split every top-level `∧` into its conjuncts
+(filling assigned `True`-typed leaves via `True.intro`), then call
+`pverify_smt` on each remaining conjunct. Sound: a proof of `A ∧ B`
+follows from independent proofs of `A` and `B`.
 
 Motivation: large user-invariant bundles (LockServer's 11-conjunct
 `system_config`, the 5-conjunct `safety` etc.) often return `unknown`
@@ -710,48 +778,38 @@ on the unmodified goal. -/
 syntax "pverify_split_smt" : tactic
 elab_rules : tactic
   | `(tactic| pverify_split_smt) => withMainContext do
-      let mut iter := 0
-      let mut keepGoing := true
-      while keepGoing && iter < 32 do
-        iter := iter + 1
-        keepGoing := false
-        -- Snapshot the current goal list; only split goals headed by `And`.
-        let goals ← getGoals
-        let mut nextGoals : List MVarId := []
-        for g in goals do
-          let ty ← g.getType
-          if ty.consumeMData.isAppOfArity ``And 2 then
-            setGoals [g]
-            try
-              evalTactic (← `(tactic| refine ⟨?_, ?_⟩))
-              keepGoing := true
-              nextGoals := nextGoals ++ (← getGoals)
-            catch _ =>
-              nextGoals := nextGoals ++ [g]
-          else
-            nextGoals := nextGoals ++ [g]
-        setGoals nextGoals
-      -- Drop trailing `True` goals defensively — `buildConjAt` no longer
-      -- emits a trailing `True` terminator, but a user-written bundle or an
-      -- intermediate simp may still leave one after splitting.
-      let final ← getGoals
-      let mut keep : List MVarId := []
-      for g in final do
+      -- Recursively split every top-level `And` head into its conjuncts,
+      -- closing any `True`-typed leaf directly via `True.intro`. The
+      -- result is a list of unassigned MVars, one per non-trivial conjunct.
+      let rec splitOne (g : MVarId) (depth : Nat) : MetaM (List MVarId) := do
+        if ← g.isAssigned then return []
         let ty ← g.getType
-        if ty.consumeMData.isConstOf ``True then
-          try
-            setGoals [g]
-            evalTactic (← `(tactic| exact True.intro))
-          catch _ => keep := keep ++ [g]
-        else
-          keep := keep ++ [g]
+        let ty' := ty.consumeMData
+        if ty'.isConstOf ``True then
+          try g.assign (mkConst ``True.intro); return []
+          catch _ => return [g]
+        if depth = 0 then return [g]
+        if ty'.isAppOfArity ``And 2 then
+          let l := ty'.appFn!.appArg!
+          let r := ty'.appArg!
+          let lMv ← Lean.Meta.mkFreshExprSyntheticOpaqueMVar l (tag := ← g.getTag)
+          let rMv ← Lean.Meta.mkFreshExprSyntheticOpaqueMVar r (tag := ← g.getTag)
+          g.assign (mkApp4 (mkConst ``And.intro) l r lMv rMv)
+          let ls ← splitOne lMv.mvarId! (depth - 1)
+          let rs ← splitOne rMv.mvarId! (depth - 1)
+          return ls ++ rs
+        return [g]
+      let goals ← getGoals
+      let mut keep : List MVarId := []
+      for g in goals do
+        let sub ← splitOne g 32
+        keep := keep ++ sub
       setGoals keep
-      -- Close each remaining subgoal by SMT. `all_goals` keeps the
-      -- iteration single-pass; per-conjunct failure throws and propagates,
-      -- letting the surrounding `first |` fall through. If `True.intro`
-      -- already cleared every goal (all-True bundle), skip the SMT call —
-      -- `all_goals` on the empty goal list otherwise errors "no goals".
-      unless (← getGoals).isEmpty do
+      -- Discharge each remaining conjunct by SMT. Per-conjunct failure
+      -- throws and propagates so the surrounding `first | …` can fall
+      -- through. `all_goals` on an empty list errors "No goals to be
+      -- solved", so skip when nothing remains.
+      unless keep.isEmpty do
         evalTactic (← `(tactic| all_goals pverify_smt))
 
 /-! ## `default_inv` — `DefaultInvariants` discharge

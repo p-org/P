@@ -953,22 +953,36 @@ Phase 4 (Spec machines) needs:
 - The obligation generator from D23 — extended with a "spec-handler
   fires alongside every `send` of an observed event" obligation.
 
-Phase 5 (Remaining surface) needs:
-- `foreach (x in S) invariant <inv>; { body }` — desugars to a
-  `wpgen`-friendly Lean `for` loop with a user-supplied invariant.
-  `forall new (e: event)` is the frame condition predicate.
-  Used heavily in [`5_Consensus`](../../../Tutorial/Advanced/5_Consensus/PSrc/System.p)
-  and [`4_Paxos`](../../../Tutorial/Advanced/4_Paxos/PSrc/System.p).
-- `if`/`while` inside handler bodies — Lean already supports these
-  in `do`-blocks, but the `pverify` unfolder needs to handle the
-  `WPGen` shapes.
+Phase 5 (Remaining surface) — partial; status as of 2026-06-26:
+- `foreach (x in S) invariant <inv>; { body }` — **shipped 2026-06-26**.
+  Desugars to `PLean.pforeach xs invList (fun x => do body)` with a
+  PLean-local `@[loomSpec] WPGen.pforeach` (proven by reduction to
+  Loom's `triple_forIn_list`). User-supplied invariants are
+  state-implicit `PProp Sig` predicates; `forall new (e: event)`-style
+  frame conditions are not yet auto-derived (user writes them
+  explicitly).
+- `while` inside handler bodies — **shipped 2026-06-26**. Surface form
+  `while (cond) invariant N : I; [done_with …;] [decreasing …;] {
+  body }` lowers to a `Lean.Loop.mk`-driven `for`-block matching
+  Loom's `@[loomSpec] WPGen.forWithInvariantLoop`. `pverify_step_wp`
+  carries the `Pi.inf_apply` / `inf_Prop_eq` simp set that reduces
+  the post-`wpgen` lattice meet to a `Prop`-level conjunction SMT
+  decides. `if` inside loop bodies still falls through to
+  `WPGen.default` (no `WPGen.if` for `DivM`-backed `PM`).
+- Auto-default under loops. Loop-bearing handlers report `[SMT:
+  counter-example]` on the auto-emitted `prove default;` obligation
+  unless the user pins `DefaultInvariants`-strength clauses as part
+  of the loop invariant. Future work: a loop-aware `default_inv`
+  recognising the post-`forWithInvariantLoop` shape.
 - `assume <prop>` — a Lean `Classical.byContradiction` plus assumption,
   registered to flow into `pverify`'s context.
 - `assert <prop>` — only legal inside spec machines (Phase 4); errors
   otherwise.
-- Map / set / seq operations beyond plain membership (used in
-  [`1_ChainReplicationVerification`](../../../Tutorial/Advanced/1_ChainReplicationVerification/PSrc/System.p)
-  and Paxos).
+- Map / set / seq operations beyond plain membership — **shipped
+  2026-06-25** (see [`STATUS.md`](STATUS.md)'s 2026-06-25 session and
+  [`Examples/ShardedKV`](../Examples/ShardedKV.lean)). The
+  ChainReplication / Paxos spec-level uses remain gated on Phase-4
+  spec machines.
 
 Phase 6 (Tutorial port):
 - Port [`Tutorial/1_ClientServer`](../../../Tutorial/1_ClientServer/) (M4)

@@ -21,7 +21,7 @@ rather than narrating.
 | 2 — Registry + minimal surface   | ☑ | — | 2026-06-05 | 2026-06-05 | M2 reached |
 | 3 — Verification declarations    | ☑ | — | 2026-06-06 | 2026-06-23 | M3 reached — Tutorial/Advanced benchmarks fully verify: `Examples/DistributedLock` 12/12 (all SMT after 2026-06-25), `Examples/LockServer` 37/37, `Examples/RingLeader` 17/17, `Examples/ClockBound` 59/59 (all SMT after 2026-06-25). paxiom/pinstance both reach SMT; reusable manual-proof helpers shipped; obligation cache + profiler in tree. ShardedKV added 2026-06-25 (11/11 SMT) — exercises container hoisting |
 | 4 — Spec machines                | ☐ | — | — | — | next; plan in [`PLAN_P4.md`](PLAN_P4.md) |
-| 5 — Remaining surface            | ☐ | — | — | — | |
+| 5 — Remaining surface            | ◐ | — | 2026-06-25 | — | container types shipped (set/map/seq/option); `foreach`/`while` with loop invariants shipped 2026-06-26 (closes via `WPGen.pforeach` / Loom's `forWithInvariantLoop`); `assume` still pending |
 | 6 — Tutorial port                | ☐ | — | — | — | |
 | 7 — Stretch / future             | ⊘ | — | — | — | post-v1 |
 
@@ -50,6 +50,120 @@ _**Closure rates (M3 + ClockBound + ShardedKV, final):**_
 - _[`Examples/ShardedKV`](../Examples/ShardedKV.lean) — **11/11** (all SMT). Exercises `map[K, V]` and the multi-ref `unique_owner` pattern._
 
 _Build: green at HEAD._
+
+### Session 2026-06-26 — `foreach`/`while` loop surface; loop-aware `pverify_step_wp` + multi-state `sdestruct_state`; `pverify_split_smt` rewrite
+
+Phase 5's `foreach (x in xs) invariant N : I; { body }` and
+`while (cond) invariant N : I; [done_with …;] [decreasing …;] { body }`
+land. Both desugar into Loom-compatible `@[loomSpec]`-shaped
+bodies, so `wpgen` peels them automatically and SMT closes the
+iteration VC for any user invariant lean-auto can translate.
+
+**Loop primitive — `PLean.pforeach`.** Loom ships WPGen specs for
+`forIn` over `Std.Range` (`WPGen.forWithInvariant`) and over
+`Lean.Loop.mk` (`WPGen.forWithInvariantLoop`), but **not** over a
+plain `List`. The previous `foreach` macro lowered to Lean's native
+`for x in xs do …` and fell through to `WPGen.default`. A
+PLean-local primitive
+
+```
+@[reducible] noncomputable
+def pforeach (xs : List α) (inv : List (PProp P)) (body : α → PM P Unit) :
+    PM P Unit :=
+  forIn xs () fun x _ => do
+    invariantGadget inv
+    body x
+    pure (ForInStep.yield ())
+```
+
+fills the gap. Its `@[loomSpec]` WPGen
+([`Semantics/Loop.lean`](../PLean/Semantics/Loop.lean)) reduces the
+iteration VC to "every `body x` preserves the invariant
+conjunction" via Loom's generic `triple_forIn_list`. The macro now
+emits `pforeach xs invList (fun x => do body)` which `wpgen` matches
+directly.
+
+**`while` ↝ `for _ in Lean.Loop.mk do …`.** The `while` macro emits
+the rigid Loom-pattern body
+`do invariantGadget …; onDoneGadget …; decreasingGadget …; if cond
+then body else break`. `done_with` defaults to `¬cond`, `decreasing`
+to `none` (informational under partial correctness).
+[`Syntax/Loop.lean`](../PLean/Syntax/Loop.lean) holds the macro;
+gadget arguments are iteration-binder-parameterised even when the
+user's invariants don't reference the binder — Loom's pattern match
+requires that shape.
+
+**`pverify_step_wp` loop cleanup.** Post-`wpgen`, a loop-bearing
+goal carries a `Pi`-typed meet `min (fun s => I s) ⊤ s` and Loom's
+`spec pre post` shape. New simp set in `pverify_step_wp`:
+
+```
+try simp only [invariantSeq, List.foldr]
+try unfold spec at *
+try unfold WithName at *
+try simp only [Pi.inf_apply, Pi.top_apply, inf_Prop_eq] at *
+try simp only [Prop.top_eq_true, and_true, true_and] at *
+try simp only [forall_const] at *
+```
+
+reduces the meet to plain `Prop`-level conjunction; `Prop.top_eq_true`
+collapses `(⊤ : Prop)` to `True` so `and_true` / `true_and` clean up
+the residue. Without this, the iteration VC arrived at SMT prep with
+`Cont (GlobalState → Prop) PUnit`-typed continuation atoms lean-auto
+rejected.
+
+**Multi-state `sdestruct_state`.** A loop-bearing handler's iteration
+VC quantifies over a *post-state* `x : GlobalState Sig` in the goal
+body, in addition to the pre-state already in the lctx. The previous
+`sdestruct_state` destructured the first such local under
+`gsSent` / `gsReceived` / … and the obtain pattern for the second
+collided. Fix: maintain a visit counter and emit subscript-suffixed
+names — `gsSent` for the first, `gsSent₁` for the second,
+`gsSent₂` for the third, etc. The Unicode subscript digits
+(U+2081…U+2089) are identifier-legal without French quotes, so goal
+display reads cleanly. The second pass that destructures
+`gsContainers` walks every `gsContainers`-prefixed local so multi-
+state pmodules with container vars also work.
+
+**`pverify_split_smt` rewrite.** The previous implementation used
+`refine ⟨?_, ?_⟩` + `True.intro`-via-`evalTactic` to split top-level
+`∧` conjunctions, then `all_goals pverify_smt` on the survivors. For
+goals headed by `True ∧ X` Lean's elaborator left the assigned
+`True`-MVar in the goal queue; `all_goals pverify_smt` then ran
+`pverify_smt` on the stale MVar and got "No goals to be solved",
+which clobbered any meaningful upstream `diag.smt` entry. Rewrote
+the tactic to recursively split via direct `MVar.assign (And.intro
+…)` and close `True`-leaves via `MVar.assign True.intro`, returning
+only the unassigned non-trivial conjuncts. One `pverify_smt`
+invocation per real subgoal; diagnostic stash now carries the
+genuine sat / unsat result.
+
+**`pverifySmtCloseDefault` gate.** `pverify_smt_prep`'s simp /
+`dsimp` chain occasionally closes the goal on its own (when an
+invariant simplifies to `True` after pre-state substitution). The
+subsequent `loom_smt [*]` then errored "No goals to be solved" and
+clobbered upstream diagnostics. Gate `loom_smt` on the prep leaving
+a non-empty goal queue.
+
+**Limitations.** A loop with a trivial `True` invariant cannot
+preserve `DefaultInvariants` across iterations that grow `sent`
+(`UniqueActions` / `IncreasingCount` / `ReceivedSubsetSent` all
+constrain the in-flight buffer). The auto-emitted `prove default;`
+obligation for a loop-bearing handler therefore reports `[SMT:
+counter-example]` unless the user explicitly states the default
+invariants as part of the loop invariant — a logical gap, not a
+tactic bug.
+
+**Regression**: full Tests (1029 jobs) + Examples (1004 jobs) green.
+
+New files:
+- [`PLean/Semantics/Loop.lean`](../PLean/Semantics/Loop.lean) —
+  `loopInvariantGadget`, `pforeach`, `triple_pforeach`, and
+  `@[loomSpec] WPGen.pforeach`.
+- [`PLean/Syntax/Loop.lean`](../PLean/Syntax/Loop.lean) — `foreach`
+  / `while` `doElem` grammars and macro expansions.
+- [`Tests/Syntax/Loop.lean`](../Tests/Syntax/Loop.lean) — surface
+  parsing + end-to-end SMT discharge for both loop shapes.
 
 ### Session 2026-06-25 — container types + ShardedKV port; `GlobalState.containers` slot
 

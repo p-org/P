@@ -58,12 +58,14 @@ PLean/
     Primitives.lean  -- send / raise / goto / announce / markReceived
     Predicates.lean  -- inflight / sent / received / precedes / stateOf
     Default.lean     -- UniqueActions / IncreasingCount / ReceivedSubsetSent
+    Loop.lean        -- pforeach primitive + @[loomSpec] WPGen.pforeach
   Syntax/
     Module.lean      -- pmodule M ... end M
     Types.lean       -- type N / enum N / type N = (...)
     Events.lean      -- event ev : T
     Machine.lean     -- machine M { var ...; state S { ... } }
     Stmt.lean        -- send / raise / goto / announce / var-assign macros
+    Loop.lean        -- foreach / while macros + loop-invariant clauses
     Verify.lean      -- invariant / Lemma / Theorem / Proof / system <s>
                         paxiom / init-holds / function / pinstance,
                         plus the field-projection sugar and kind-guard
@@ -146,14 +148,18 @@ has the per-benchmark feature inventory.
   machine-kind `is`, multi-Lemma `using` chains.
 - **Phase 4 (specs)**: `1_ChainReplicationVerification`.
 - **Phase 5 (foreach/maps)**: `5_Consensus`,
-  `2_TwoPhaseCommitVerification`, `7_ShardedKV`.
+  `2_TwoPhaseCommitVerification`, `7_ShardedKV`. Maps + `foreach`
+  shipped (the `ShardedKV` port verifies); `Consensus` / 2PC blocked
+  on a stronger loop-aware `default_inv` so the auto-emitted `prove
+  default;` obligations under loops close without a hand-written
+  `DefaultInvariants` loop invariant.
 - **Phase 6 stretch**: `4_Paxos`.
 
 Most Tutorial/Advanced benchmarks need surface features that aren't
 built yet — check PLAN_P3's "Tutorial benchmark inventory" table
 before attempting one.
 
-## Phase status (as of 2026-06-25)
+## Phase status (as of 2026-06-26)
 
 - Phase 0 (Bootstrap) — ☑ M0.
 - Phase 1 (Semantic core) — ☑ M1. Hand-written ping-pong verifies via
@@ -199,6 +205,15 @@ before attempting one.
   and shaves 11–14% off warm rebuilds; soundness pinned by
   [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
 - Phase 4 (Spec machines) — ☐ next. Plan in [`docs/PLAN_P4.md`](docs/PLAN_P4.md).
+- Phase 5 (Remaining surface) — ◐ partial.
+  - Container types (`set[T]` / `map[K, V]` / `seq[T]` / `option[T]`)
+    shipped 2026-06-25 (see "Container types" above; exercised by
+    [`Examples/ShardedKV`](Examples/ShardedKV.lean)).
+  - `foreach` / `while` with loop invariants shipped 2026-06-26 (see
+    "Loops" above; exercised by
+    [`Tests/Syntax/Loop.lean`](Tests/Syntax/Loop.lean)).
+  - Still pending: `assume <prop>;`; loop-aware `default_inv` for
+    the auto-default obligation under loops.
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.
 
@@ -216,6 +231,8 @@ reserved word or builtin. Mechanical replacements when porting `.p`:
 | `init`          | `init-holds`           |
 | `do` (in `on`)  | (dropped)              |
 | `choose(n)`     | `← PLean.choose n`     |
+| `foreach (x in xs) inv N : I; { … }` | same surface, identifier-only invariant names |
+| `while (c) inv N : I; [done_with …;] [decreasing …;] { … }` | same surface, optional `done_with` / `decreasing` clauses |
 
 `Lemma`, `Theorem`, `Proof`, `prove`, `using`, `system` are
 new-in-PLean keywords for the verification-declaration surface
@@ -245,6 +262,59 @@ typeclass. Lookup-after-mutation lemmas (`mapInsert_eq`,
 `mapErase_ne`, …) are tagged `@[pverifySimp]` so SMT prep reduces
 post-state lookups directly without case-splitting on key equality.
 See [`Examples/ShardedKV.lean`](Examples/ShardedKV.lean) for usage.
+
+### Loops (`foreach` / `while`)
+
+```
+foreach (x in xs)
+  invariant N1 : I1;
+  invariant N2 : I2;
+  { body }
+
+while (cond)
+  invariant N : I;
+  [done_with <prop>;]
+  [decreasing <measure>;]
+  { body }
+```
+
+`foreach` desugars to `PLean.pforeach xs invList (fun x => do body)`,
+matched by `@[loomSpec] WPGen.pforeach` in
+[`PLean/Semantics/Loop.lean`](PLean/Semantics/Loop.lean) (proven by
+reduction to Loom's generic `triple_forIn_list`). `while` desugars to
+`for _ in Lean.Loop.mk do invariantGadget …; onDoneGadget …;
+decreasingGadget …; if cond then body else break`, matched by
+Loom's `@[loomSpec] WPGen.forWithInvariantLoop`.
+
+Both gadget chains are *rigid* — `wpgen` matches the exact body shape
+`do invariantGadget …; onDoneGadget …; decreasingGadget …; <tail>`,
+in that order. Inserting extra `do`-statements between gadgets or
+omitting one collapses the pattern match and `wpgen` falls back to
+`WPGen.default`, leaving `Cont _ _`-typed atoms lean-auto rejects.
+
+`done_with` defaults to `¬cond` for `while` (loop exits when the
+condition becomes false). `decreasing` defaults to `none` —
+informational under PLean's `PartialCorrectness DemonicChoice` mode;
+the surface accepts it for future total-correctness use.
+
+`pverify_step_wp` carries the simp set that reduces the post-`wpgen`
+`min (fun s => I s) ⊤` (a `Pi`-typed meet at the assertion lattice)
+to a plain `Prop`-level conjunction: `invariantSeq` / `List.foldr` /
+`spec` unfolds, then `Pi.inf_apply` / `Pi.top_apply` /
+`inf_Prop_eq` / `Prop.top_eq_true` simp the result into a goal SMT
+can translate.
+
+**Loop limitation.** The auto-emitted `prove default;` obligation for
+a loop-bearing handler discharges via SMT to `[counter-example]`
+when the loop invariant is too weak to entail `DefaultInvariants` for
+the post-state. The auto-default chain has no loop-aware
+`default_inv` (today's `default_inv` recognises only the three
+sanity-invariant heads on a flat post-state), so the user must either
+state `DefaultInvariants`-strength clauses as loop invariants, or
+mark the obligation with a manual `@[pverifyProof]`.
+
+See [`Tests/Syntax/Loop.lean`](Tests/Syntax/Loop.lean) for both
+shapes verifying end-to-end.
 
 ## Conventions worth knowing
 

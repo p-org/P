@@ -188,11 +188,15 @@ Src/PLean/
 
 ### Phase 5 — Remaining surface (≈1 week)
 - [ ] Quantifier notations
-- [ ] `foreach … invariant …`
+- [x] `foreach … invariant …` (2026-06-26 — `pforeach` + `@[loomSpec]`
+      reduction to Loom's `triple_forIn_list`; `while … invariant …
+      [done_with …] [decreasing …]` lands alongside)
 - [ ] `Surface/ForeignFun.lean`:
       `pure` (with body → `def`, without → `opaque`), foreign-fun
       `requires`/`ensures`, `param`
 - [ ] Polish error messages
+- [ ] Loop-aware `default_inv` so auto-emitted `prove default;` under
+      loops doesn't disprove on trivial invariants
 
 ### Phase 6 — Tutorial port (≈1–2 weeks)
 - [ ] Port [`Tutorial/1_ClientServer/`](../../../Tutorial/1_ClientServer/) into PLean

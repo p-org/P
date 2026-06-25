@@ -72,23 +72,19 @@ pmodule ShardedKV
   Theorem Safety {
     system s {
       invariant transfer_means_no_owner :
-        ∀ (e : Sig.Label) (n : Node),
-          e is eTransfer → inflight e s →
-          ¬ ((eTransfer_payload_of e).key ∈ n.kv)
+        ∀ (e : eTransfer) (n : Node),
+          inflight e s → ¬ (e.key ∈ n.kv)
 
       invariant unique_key_transfer :
-        ∀ e1 e2 : Sig.Label,
-          e1 is eTransfer → e2 is eTransfer →
+        ∀ e1 e2 : eTransfer,
           inflight e1 s → inflight e2 s →
-          (eTransfer_payload_of e1).key = (eTransfer_payload_of e2).key →
+          e1.key = e2.key →
           e1 = e2
 
       invariant transfer_means_not_own :
-        ∀ e : Sig.Label,
-          e is eTransfer → inflight e s →
-          ∀ src : Node,
-            src.ref = (eTransfer_payload_of e).source →
-            ¬ ((eTransfer_payload_of e).key ∈ src.kv)
+        ∀ (e : eTransfer) (src : Node),
+          inflight e s → src.ref = e.source →
+          ¬ (e.key ∈ src.kv)
 
       invariant unique_owner :
         ∀ (k : tKey) (n1 n2 : Node),

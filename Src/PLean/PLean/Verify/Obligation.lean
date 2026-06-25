@@ -781,6 +781,20 @@ private def buildCexNameCtx (modName : Name) (ctx : LocalPModuleCtx) :
   -- renderer can flag a row whose runtime `kind` field contradicts the
   -- kind its `currentState` implies.
   let mut machineKindIdx : Array (String × Int) := #[]
+  -- The `<Mod>.Containers` struct (if any) holds the per-pmodule
+  -- hoisted container vars; we use its field set to classify each
+  -- machine var as either "lives in `Fields`" (first-order) or "lives
+  -- in `containers`" (container). Without a `Containers` struct (a
+  -- pmodule with no container vars), every var is first-order.
+  let containersTy := modName ++ `Containers
+  let containerFieldNames : Array Name :=
+    match env.find? containersTy with
+    | some _ =>
+      match getStructureInfo? env containersTy with
+      | some si => si.fieldInfo.map (·.fieldName)
+      | none    => #[]
+    | none => #[]
+  let mut containerFields : Array (String × String × String) := #[]
   for mname in ctx.machineOrder do
     let some m := ctx.machines.find? mname | continue
     let mStr := mname.toString
@@ -789,13 +803,18 @@ private def buildCexNameCtx (modName : Name) (ctx : LocalPModuleCtx) :
     for sd in m.states do
       let key := mStr ++ "_" ++ sd.name.toString
       stateCtors := stateCtors.push (key, mStr, sd.name.toString)
-    -- Machine vars live in the global `<Mod>.Fields` struct as
-    -- `<machine>_<var>`; check each for a machine-reference type.
+    -- Classify each var. Container vars (hoisted) get their qualified
+    -- name + (machine, var) recorded; first-order vars get added to
+    -- the global `Fields` field order (used by `decodeMachines` to
+    -- pair `Fields.mk` positional args with surface var names).
     for v in machineVarNames m do
-      fieldOrder := fieldOrder.push (mStr, v.toString)
-      if fieldIsRef env machineLeanNames (modName ++ `Fields)
-          (Name.mkSimple (mStr ++ "_" ++ v.toString)) then
-        refFields := refFields.push v.toString
+      let qual := Name.mkSimple (mStr ++ "_" ++ v.toString)
+      if containerFieldNames.contains qual then
+        containerFields := containerFields.push (qual.toString, mStr, v.toString)
+      else
+        fieldOrder := fieldOrder.push (mStr, v.toString)
+        if fieldIsRef env machineLeanNames (modName ++ `Fields) qual then
+          refFields := refFields.push v.toString
   let mut eventFields : Array (String × Array String) := #[]
   for ename in ctx.eventOrder do
     let some e := ctx.events.find? ename | continue
@@ -806,7 +825,8 @@ private def buildCexNameCtx (modName : Name) (ctx : LocalPModuleCtx) :
       for (fname, isRef) in flds do
         if isRef && !refFields.contains fname then
           refFields := refFields.push fname
-  return { stateCtors, fieldOrder, eventFields, refFields, machineKinds, machineKindIdx }
+  return { stateCtors, fieldOrder, eventFields, refFields, machineKinds,
+           machineKindIdx, containerFields }
 
 /-! ## Failure classification helpers. -/
 

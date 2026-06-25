@@ -44,6 +44,12 @@ structure CexNameCtx where
   refFields      : Array String := #[]
   machineKinds   : Array String := #[]
   machineKindIdx : Array (String × Int) := #[]
+  /-- Hoisted container vars, as `(qualifiedName, machine, var)`
+      tuples (e.g. `("Node_kv", "Node", "kv")`). After `sdestruct_state`
+      destructures the per-pmodule `Containers` struct, each becomes a
+      top-level model function the renderer surfaces in its own
+      "containers" section. -/
+  containerFields : Array (String × String × String) := #[]
   deriving Inhabited
 
 /-- Set by `#pverify` before walking obligations; read by the renderer
@@ -364,7 +370,11 @@ renders displays with the complete map (so a machine's ref-typed `var`
 resolves even to a kind learned from a different table row). -/
 private def decodeMachines (ctx : CexNameCtx) (defs : Array ModelDef) :
     Array MachineEntry × RefKinds := Id.run do
-  let some md := findDef defs "machines" | return (#[], #[])
+  -- After `sdestruct_state`, the field is named `gsMachines`; the
+  -- pre-destructure record-projection form `machines` may still appear
+  -- in synthetic test goldens or future paths that skip the destructure.
+  let some md := (findDef defs "gsMachines").orElse (fun _ => findDef defs "machines")
+    | return (#[], #[])
   let tbl := decodeIte (argName? md) md.body
   let mut rk : RefKinds := #[]
   for (refKey, st) in tbl.cases do
@@ -383,6 +393,86 @@ private def decodeMachines (ctx : CexNameCtx) (defs : Array ModelDef) :
     else #[]
   return (sorted ++ elseEntry, rk)
 
+/-! ## Container decode
+
+Hoisted container vars surface in the model as top-level free
+functions whose name matches `CexNameCtx.containerFields` (e.g.
+`Node_kv : MachineRef × tKey → Option tValue` after the
+`sdestruct_state` second pass). We decode each as its `ite`-table
+plus fallthrough and render every case. -/
+
+/-- One entry from a hoisted container function: the rendered key (a
+`Prod.mk` or bare ref), the rendered value, and whether the entry came
+from the function's `else` (fallthrough). -/
+structure ContainerEntry where
+  key       : String
+  value     : String
+  isDefault : Bool := false
+  deriving Inhabited
+
+/-- One hoisted container var, with its decoded entries. -/
+structure ContainerSection where
+  /-- Qualified field name on the `Containers` struct (e.g.
+      `Node_kv`). -/
+  qualName : String
+  /-- Owning machine and surface var name (`Node`, `kv`). -/
+  machine  : String
+  var      : String
+  entries  : Array ContainerEntry
+  deriving Inhabited
+
+/-- Render a container's key, splitting a `Prod.mk` into `<ref>, <dom>`
+form with the ref shown via `renderRef`. Non-`Prod` keys (single-arg
+containers) render straight through. -/
+private def renderContainerKey (rk : RefKinds) (k : Sexp) : String :=
+  match appHead k with
+  | some h =>
+    if h == "Prod.mk" || h.endsWith ".mk" then
+      match (appArgs k)[0]?, (appArgs k)[1]? with
+      | some a, some b =>
+        let refPart :=
+          match asRefInt? a with
+          | some r => renderRef rk r
+          | none   => renderValue a
+        s!"({refPart}, {renderValue b})"
+      | _, _ => renderValue k
+    else renderValue k
+  | none =>
+    match asRefInt? k with
+    | some r => renderRef rk r
+    | none   => renderValue k
+
+/-- Decode every hoisted container var the registry knows about. For
+each `containerFields` entry we look up the model def (which may be
+absent if the solver elided it as constant `default`); when present we
+walk the `ite` chain via `decodeIte`, render the key/value pairs, and
+emit a section. Containers with no entries (constant `none` for a
+`map[K, V]`) emit a single `else` entry so the renderer can show "all
+keys absent". -/
+private def decodeContainers (ctx : CexNameCtx) (rk : RefKinds)
+    (defs : Array ModelDef) : Array ContainerSection := Id.run do
+  let mut out : Array ContainerSection := #[]
+  for (qn, m, v) in ctx.containerFields do
+    let some md := findDef defs qn | continue
+    let tbl := decodeIte (argName? md) md.body
+    let mut entries : Array ContainerEntry := #[]
+    for (k, val) in tbl.cases do
+      entries := entries.push
+        { key := renderContainerKey rk k, value := renderValue val }
+    -- Label the fallthrough. The hoisted container field is a
+    -- *function* `(MachineRef × K) → V`, so without explicit `ite`
+    -- cases the solver chose a single constant value for every
+    -- (machine, key) pair — saying `else = (some 4)` reads as if the
+    -- map itself were the literal `some 4`, which is wrong. Show the
+    -- function's signature explicitly when no cases exist; otherwise
+    -- the conventional `else` is correct (one of several cases).
+    let elseKey :=
+      if tbl.cases.isEmpty then "∀ (m, k)" else "else"
+    entries := entries.push
+      { key := elseKey, value := renderValue tbl.els, isDefault := true }
+    out := out.push { qualName := qn, machine := m, var := v, entries }
+  return out
+
 /-! ## Sent-trace decode -/
 
 /-- One sent label: its `actionCount` (sort key), `target` machine ref,
@@ -396,7 +486,7 @@ structure SentEntry where
 
 /-- The `received` set, as the rendered `Label.mk …` strings delivered. -/
 private def receivedLabels (defs : Array ModelDef) : Array String :=
-  match findDef defs "received" with
+  match (findDef defs "gsReceived").orElse (fun _ => findDef defs "received") with
   | some d => (collectLabels (substLet d.body)).map renderValue
   | none   => #[]
 
@@ -406,7 +496,8 @@ against `received`, sort by `actionCount`. Empty (or absent) `sent`
 yields `#[]`, rendered as `[]`. -/
 private def decodeSent (ctx : CexNameCtx) (rk : RefKinds) (defs : Array ModelDef) :
     Array SentEntry := Id.run do
-  let some md := findDef defs "sent" | return #[]
+  let some md := (findDef defs "gsSent").orElse (fun _ => findDef defs "sent")
+    | return #[]
   let labels := collectLabels (substLet md.body)
   let delivered := receivedLabels defs
   let mut entries : Array SentEntry := #[]
@@ -435,6 +526,8 @@ excluded from the witnesses list. -/
 private def isInternalName (name : String) : Bool :=
   name == "sent" || name == "received" || name == "machines"
   || name == "actionCount"
+  || name == "gsSent" || name == "gsReceived" || name == "gsMachines"
+  || name == "gsContainers" || name == "gsActionCount"
   || name.startsWith "is_"
   || name.endsWith "_payload_of"
   || name.endsWith "_st"
@@ -468,6 +561,10 @@ structure CexModel where
   actionCount : Option String
   witnesses   : Array (String × String)
   typeAlerts  : Array TypeAlert
+  /-- Hoisted container vars (set / map / …) the solver supplied a value
+      for. Each section's entries are the function's `ite`-decoded cases
+      plus a fallthrough. -/
+  containers  : Array ContainerSection := #[]
   deriving Inhabited
 
 /-- Render a witness value. A `Label.mk …` shows as its action; a
@@ -560,18 +657,26 @@ internal tables (`is_*`, `*_payload_of`) are dropped. -/
 def CexModel.decode (ctx : CexNameCtx) (defs : Array ModelDef) : CexModel :=
   let (machines, rk) := decodeMachines ctx defs
   let machTbl :=
-    match findDef defs "machines" with
+    match (findDef defs "gsMachines").orElse (fun _ => findDef defs "machines") with
     | some md => decodeIte (argName? md) md.body
     | none    => { cases := #[], els := .atom (.symb "?") }
   let sent := decodeSent ctx rk defs
-  let actionCount := (findDef defs "actionCount").map (fun d => renderValue d.body)
+  let actionCount :=
+    ((findDef defs "gsActionCount").orElse (fun _ => findDef defs "actionCount")).map
+      (fun d => renderValue d.body)
+  -- Container fields surface as top-level functions; exclude them
+  -- from `witnesses` so the dedicated "containers" section is the only
+  -- place they appear.
+  let isContainerField (n : String) : Bool :=
+    ctx.containerFields.any (fun (qn, _, _) => qn == n)
   let witnesses := defs.filterMap (fun d =>
-    if d.args.isEmpty && !isInternalName d.name then
+    if d.args.isEmpty && !isInternalName d.name && !isContainerField d.name then
       let val := renderWitness ctx rk machTbl d.body
       if isUniverseVal val then none else some (d.name, val)
     else none)
   let typeAlerts := detectTypeAlerts ctx machTbl defs
-  { machines, sent, actionCount, witnesses, typeAlerts }
+  let containers := decodeContainers ctx rk defs
+  { machines, sent, actionCount, witnesses, typeAlerts, containers }
 
 /-! ## Rendering -/
 
@@ -590,6 +695,15 @@ def CexModel.render (m : CexModel) : String := Id.run do
     for me in m.machines do
       let key := if me.isDefault then "else" else toString me.refKey
       lines := lines.push s!"  machine[{key}] = {me.display}"
+  unless m.containers.isEmpty do
+    lines := lines.push "containers:"
+    for cs in m.containers do
+      lines := lines.push s!"  {cs.machine}.{cs.var}:"
+      for ce in cs.entries do
+        -- For container entries, the per-entry key already carries
+        -- the right label (a `(ref, dom)` for `ite` cases, `∀
+        -- (m, k)` for a constant function). Don't second-guess it.
+        lines := lines.push s!"    {ce.key} = {ce.value}"
   if m.sent.isEmpty then
     lines := lines.push "sent (ordered by actionCount): []"
   else
@@ -614,7 +728,7 @@ def CexModel.render (m : CexModel) : String := Id.run do
 always-present `sent` line. -/
 def CexModel.nonEmpty (m : CexModel) : Bool :=
   !m.machines.isEmpty || !m.sent.isEmpty || m.actionCount.isSome
-  || !m.witnesses.isEmpty || !m.typeAlerts.isEmpty
+  || !m.witnesses.isEmpty || !m.typeAlerts.isEmpty || !m.containers.isEmpty
 
 /-- End-to-end: parse a model string and render it against `ctx`.
 Returns `none` when the text doesn't parse or decodes to nothing, so the

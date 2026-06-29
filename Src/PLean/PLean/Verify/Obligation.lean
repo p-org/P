@@ -307,9 +307,18 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
         acc ++ #[``PLean.DefaultInvariants, ``PLean.UniqueActions,
                  ``PLean.IncreasingCount, ``PLean.ReceivedSubsetSent]
       else acc.push n
+    -- `lemmaBundleNames` lists every pmodule-declared
+    -- `Lemma`/`Theorem` bundle name. They don't appear in the
+    -- obligation's pre/post directly but may show up inside loop-
+    -- invariant lists (`foreach (x in xs) invariant inv_bundle :
+    -- <bundle> s ;`). Without unfolding them, the iteration VC
+    -- reaches SMT with opaque bundle applications lean-auto rejects
+    -- ("Higher order input?"). Unfold them unconditionally —
+    -- previously they were unfolded only on the auto-default path,
+    -- which left user-invariant obligations under loop-bearing
+    -- handlers carrying opaque bundles.
     let usingNamesAll : Array Ident :=
-      ((usingExpanded ++ lemmaInvNames) ++
-        (if isDefault then lemmaBundleNames else #[])).map mkIdent
+      ((usingExpanded ++ lemmaInvNames) ++ lemmaBundleNames).map mkIdent
     let usingUnfolds : Array Ident := usingNamesAll
     -- Per-machine kind helpers reduce `is_<M>` / `<M>_allocated` /
     -- `<M>_kind` to plain (Nat) comparisons on `(s.machines m).kind`.
@@ -495,9 +504,18 @@ def emitEntryObligation (modName : Name) (mname sname : Name)
         acc ++ #[``PLean.DefaultInvariants, ``PLean.UniqueActions,
                  ``PLean.IncreasingCount, ``PLean.ReceivedSubsetSent]
       else acc.push n
+    -- `lemmaBundleNames` lists every pmodule-declared
+    -- `Lemma`/`Theorem` bundle name. They don't appear in the
+    -- obligation's pre/post directly but may show up inside loop-
+    -- invariant lists (`foreach (x in xs) invariant inv_bundle :
+    -- <bundle> s ;`). Without unfolding them, the iteration VC
+    -- reaches SMT with opaque bundle applications lean-auto rejects
+    -- ("Higher order input?"). Unfold them unconditionally —
+    -- previously they were unfolded only on the auto-default path,
+    -- which left user-invariant obligations under loop-bearing
+    -- handlers carrying opaque bundles.
     let usingNamesAll : Array Ident :=
-      ((usingExpanded ++ lemmaInvNames) ++
-        (if isDefault then lemmaBundleNames else #[])).map mkIdent
+      ((usingExpanded ++ lemmaInvNames) ++ lemmaBundleNames).map mkIdent
     let usingUnfolds : Array Ident := usingNamesAll
     let mut kindUnfolds : Array Ident := #[]
     for m in machineNames do

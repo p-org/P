@@ -71,7 +71,7 @@ pmodule Phase3ErrUnknownUsing
   }
 
 /--
-error: `prove ... using`: no `Lemma` or `Theorem` named 'notALemma' in pmodule 'Phase3ErrUnknownUsing'
+error: `prove ... using`: no `Lemma` or `Theorem` named 'notALemma' in pmodule 'Phase3ErrUnknownUsing' (must be `default` or a previously-declared lemma)
 -/
 #guard_msgs in
 Proof {

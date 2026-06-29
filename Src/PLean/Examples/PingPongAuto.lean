@@ -36,24 +36,16 @@ pmodule PingPongAuto
     }
   }
 
-  Lemma framework {
-
-    invariant inc_count :
-      ∀ a : Sig.Label, s.sent a = true → a.actionCount < s.actionCount
-  
-  }
-  Proof { prove framework ; }
-
   Theorem safety {
 
     invariant pong_after_ping :
-      ∀ q : Sig.Label, s.sent q = true → q is ePong →
-        ∃ p : Sig.Label, s.sent p = true ∧ p is ePing ∧ p ≺ q
-  
+      ∀ q : ePong, s.sent q = true →
+        ∃ p : ePing, s.sent p = true ∧ p ≺ q
+
   }
 
   Proof Safety {
-    prove safety using framework ;
+    prove safety using default ;
     prove default ;
   }
 

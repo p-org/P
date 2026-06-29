@@ -171,7 +171,7 @@ end HandlerCoverageGotoBroken
 -- its default were silently skipped. The `3 obligations from 1
 -- prove-directives` info line is the load-bearing pin.
 /--
-warning: HandlerCoverageGotoBroken: 1 proved by SMT, 0 user-proved, 1 disproved, 1 unknown, 0 tactic-error, 0 no-diagnostic
+warning: HandlerCoverageGotoBroken: 1 proved by SMT, 0 user-proved, 1 disproved, 1 unknown, 0 tactic-error, 0 no-diagnostic, 0 missing-premise
 2 obligation(s) need a manual proof; fill in the skeletons above.
 ---
 warning: declaration uses 'sorry'
@@ -220,7 +220,7 @@ end HandlerCoverageEntryBroken
 -- prove-directives` info line and the `1 disproved` pin together
 -- regress the fix.
 /--
-warning: HandlerCoverageEntryBroken: 4 proved by SMT, 0 user-proved, 1 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic
+warning: HandlerCoverageEntryBroken: 4 proved by SMT, 0 user-proved, 1 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic, 0 missing-premise
 1 obligation(s) need a manual proof; fill in the skeletons above.
 ---
 warning: declaration uses 'sorry'

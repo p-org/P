@@ -53,10 +53,14 @@ private def lemmaPredIdent (target : Name) (isDefault : Bool) :
     let id := mkIdent target
     `($id)
 
-/-- Resolve `using` lemma names to their bundle predicates. -/
+/-- Resolve `using` lemma names to their bundle predicates. `default`
+resolves to `PLean.DefaultInvariants`; user lemmas resolve to the
+locally-emitted `<Mod>.<X>` def. -/
 private def usingPredIdents (usingNames : Array Name) :
     MacroM (Array (TSyntax `term)) := do
-  usingNames.mapM fun n => `($(mkIdent n))
+  usingNames.mapM fun n =>
+    if n == `default then `(PLean.DefaultInvariants)
+    else `($(mkIdent n))
 
 /-- Build the right-associated conjunction `(p1) s ∧ (p2) s ∧ ... ∧ (pn) s`,
 or `True` if `preds` is empty. -/
@@ -106,7 +110,14 @@ private def eventHasPayload (ctx : LocalPModuleCtx) (evName : Name) : Bool :=
 
 /-- Discharge result for one obligation. Failure variants carry the
 solver / tactic diagnostic so the per-obligation report can show a
-counter-example, an `unknown` reason, or a translator rejection. -/
+counter-example, an `unknown` reason, or a translator rejection.
+
+`missingPremise lem refBy` is a structural failure raised by
+`synthesise` before any obligation is emitted: a `prove <refBy> using
+<lem>` directive cites a lemma that no other directive ever `prove`s
+as its target. Without it the cited lemma would silently flow into
+`refBy`'s precondition unproven, letting `safety` verify under an
+inductive hypothesis nothing established. -/
 inductive ObligationOutcome where
   | provedBySmt
   | userProved
@@ -114,25 +125,28 @@ inductive ObligationOutcome where
   | unknown (reason : String)
   | tacticError (msg : String)
   | unfinished
+  | missingPremise (lemmaName : Name) (referencedBy : Name)
   deriving Inhabited
 
 namespace ObligationOutcome
 
 def glyph : ObligationOutcome → String
-  | provedBySmt    => "✓"
-  | userProved     => "✓"
-  | disproved _    => "✗"
-  | unknown _      => "?"
-  | tacticError _  => "✗"
-  | unfinished     => "✗"
+  | provedBySmt       => "✓"
+  | userProved        => "✓"
+  | disproved _       => "✗"
+  | unknown _         => "?"
+  | tacticError _     => "✗"
+  | unfinished        => "✗"
+  | missingPremise .. => "✗"
 
 def tag : ObligationOutcome → String
-  | provedBySmt    => "[SMT]"
-  | userProved     => "[manual]"
-  | disproved _    => "[SMT: counter-example]"
-  | unknown _      => "[SMT: unknown]"
-  | tacticError _  => "[tactic error]"
-  | unfinished     => "[no diagnostic]"
+  | provedBySmt       => "[SMT]"
+  | userProved        => "[manual]"
+  | disproved _       => "[SMT: counter-example]"
+  | unknown _         => "[SMT: unknown]"
+  | tacticError _     => "[tactic error]"
+  | unfinished        => "[no diagnostic]"
+  | missingPremise .. => "[missing premise]"
 
 def isFailure : ObligationOutcome → Bool
   | provedBySmt | userProved => false
@@ -283,8 +297,18 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     -- show up inside loop-invariant lists (`foreach (x in xs) invariant
     -- inv_bundle : <bundle> s ;`); without unfolding them the iteration
     -- VC reaches SMT with opaque bundle applications lean-auto rejects.
+    -- Expand `default` in the using-name list to the three default-
+    -- invariant constants so the unfold pass sees them as plain
+    -- `PLean.{UniqueActions,IncreasingCount,ReceivedSubsetSent}` rather
+    -- than a literal `default` identifier (no such lemma exists at the
+    -- pmodule level — `default` is the sanity-invariant sentinel).
+    let usingExpanded : Array Name := usingNames.foldl (init := #[]) fun acc n =>
+      if n == `default then
+        acc ++ #[``PLean.DefaultInvariants, ``PLean.UniqueActions,
+                 ``PLean.IncreasingCount, ``PLean.ReceivedSubsetSent]
+      else acc.push n
     let usingNamesAll : Array Ident :=
-      ((usingNames ++ lemmaInvNames) ++
+      ((usingExpanded ++ lemmaInvNames) ++
         (if isDefault then lemmaBundleNames else #[])).map mkIdent
     let usingUnfolds : Array Ident := usingNamesAll
     -- Per-machine kind helpers reduce `is_<M>` / `<M>_allocated` /
@@ -461,8 +485,18 @@ def emitEntryObligation (modName : Name) (mname sname : Name)
         (mkIdent (mname ++ (v.appendAfter "_get")))
       accessorUnfolds := accessorUnfolds.push
         (mkIdent (mname ++ (v.appendAfter "_set")))
+    -- Expand `default` in the using-name list to the three default-
+    -- invariant constants so the unfold pass sees them as plain
+    -- `PLean.{UniqueActions,IncreasingCount,ReceivedSubsetSent}` rather
+    -- than a literal `default` identifier (no such lemma exists at the
+    -- pmodule level — `default` is the sanity-invariant sentinel).
+    let usingExpanded : Array Name := usingNames.foldl (init := #[]) fun acc n =>
+      if n == `default then
+        acc ++ #[``PLean.DefaultInvariants, ``PLean.UniqueActions,
+                 ``PLean.IncreasingCount, ``PLean.ReceivedSubsetSent]
+      else acc.push n
     let usingNamesAll : Array Ident :=
-      ((usingNames ++ lemmaInvNames) ++
+      ((usingExpanded ++ lemmaInvNames) ++
         (if isDefault then lemmaBundleNames else #[])).map mkIdent
     let usingUnfolds : Array Ident := usingNamesAll
     let mut kindUnfolds : Array Ident := #[]
@@ -651,21 +685,22 @@ structure ObligationRecord where
 
 /-- Per-obligation records plus tally counters. -/
 structure SynthesiseResult where
-  attempted   : Nat := 0
-  smtProved   : Nat := 0
-  userProved  : Nat := 0
-  disproved   : Nat := 0
-  unknown     : Nat := 0
-  tacticErr   : Nat := 0
-  unfinished  : Nat := 0
-  records     : Array ObligationRecord := #[]
+  attempted       : Nat := 0
+  smtProved       : Nat := 0
+  userProved      : Nat := 0
+  disproved       : Nat := 0
+  unknown         : Nat := 0
+  tacticErr       : Nat := 0
+  unfinished      : Nat := 0
+  missingPremise  : Nat := 0
+  records         : Array ObligationRecord := #[]
   deriving Inhabited
 
 namespace SynthesiseResult
 
 /-- Total number of obligations that did NOT discharge. -/
 def failures (r : SynthesiseResult) : Nat :=
-  r.disproved + r.unknown + r.tacticErr + r.unfinished
+  r.disproved + r.unknown + r.tacticErr + r.unfinished + r.missingPremise
 
 end SynthesiseResult
 
@@ -699,6 +734,86 @@ private def detectUsingCycles (ctx : LocalPModuleCtx) :
   let mut visited : NameSet := {}
   for (node, _) in graph.toList do
     visited ← dfsCheck graph node #[] visited
+
+/-- Post-discharge check, mirroring PVerifier's `MarkProvenInvariants`
++ `ShowRemainings`. A lemma `L` is *proven* iff some `prove L ;`
+directive exists AND every obligation tagged with target `L` actually
+discharged. A `using` citation on a proven lemma must itself resolve
+to a proven name — otherwise the cited lemma flowed into the citing
+obligation's precondition unproven, and the soundness chain is broken.
+
+`default` is treated as PVerifier does: a separate "is `default`
+proven?" flag, true iff a `prove default ;` directive exists AND all
+default-target records discharged. A `using default` citation from a
+proven lemma is reported as remaining when that flag is false. -/
+private def detectMissingPremises (modName : Name) (ctx : LocalPModuleCtx)
+    (records : Array ObligationRecord) :
+    CommandElabM (Array ObligationRecord) := do
+  -- Per-target rollup: one failed obligation taints the whole bundle.
+  -- Base-case records carry `target := <invariantName>` rather than the
+  -- containing lemma, so a failed base case for `i1` taints `i1` but
+  -- not `safety`. To capture "L's initiation leg failed" we walk
+  -- `ctx.lemmas` once, build the inverse `inv → owningLemma` map, and
+  -- propagate any invariant-keyed failure up to its lemma.
+  let mut invToLemma : NameMap Name := {}
+  for (lname, ldecl) in ctx.lemmas.toList do
+    for inv in ldecl.invariants do
+      invToLemma := invToLemma.insert inv lname
+  let mut hasFailure   : NameSet := {}
+  let mut hasAnyRecord : NameSet := {}
+  for rec in records do
+    hasAnyRecord := hasAnyRecord.insert rec.target
+    if rec.outcome.isFailure then
+      hasFailure := hasFailure.insert rec.target
+      -- Propagate failure to the containing lemma so a failed base
+      -- case correctly marks the lemma as not-proven, not just the
+      -- individual invariant.
+      if let some lname := invToLemma.find? rec.target then
+        hasFailure := hasFailure.insert lname
+  -- A lemma counts as proven only when (a) the user `prove`d it and
+  -- (b) the discharge produced no failure record. `default` is checked
+  -- as a sibling rather than a lemma name.
+  let mut directiveTargets : NameSet := {}
+  let mut hasDefaultDirective : Bool := false
+  for proof in ctx.proofs do
+    for dir in proof.directives do
+      if dir.isDefault then
+        hasDefaultDirective := true
+      else
+        directiveTargets := directiveTargets.insert dir.target
+  let isProven (n : Name) : Bool :=
+    if n == `default then
+      hasDefaultDirective && !hasFailure.contains `default
+    else
+      directiveTargets.contains n && !hasFailure.contains n
+  -- Walk every proven lemma's `using` citations and surface each cited
+  -- name that is neither proven nor in the failed set. `failed` is
+  -- already reported as a normal obligation failure — re-reporting it
+  -- as "missing" would double-count.
+  let mut recs : Array ObligationRecord := #[]
+  let mut reported : Std.HashSet (Name × Name) := {}
+  for proof in ctx.proofs do
+    for dir in proof.directives do
+      let dirTarget : Name :=
+        if dir.isDefault then `default else dir.target
+      -- Only proven lemmas' citations carry weight: if `safety` itself
+      -- failed, its `using` citations are noise next to the real failure.
+      unless isProven dirTarget do continue
+      for u in dir.usingLemmas do
+        if isProven u then continue
+        if hasFailure.contains u then continue
+        let key := (dirTarget, u)
+        if reported.contains key then continue
+        reported := reported.insert key
+        let thmName : Name :=
+          modName ++ Name.mkSimple ("_missing_premise_" ++
+            dirTarget.toString ++ "_uses_" ++ u.toString)
+        recs := recs.push
+          { mname := Name.anonymous, sname := Name.anonymous
+            evname := Name.anonymous, target := u
+            thmName := thmName, signature := ""
+            outcome := .missingPremise u dirTarget }
+  return recs
 
 /-- Pull the machine's `var` names from its retained body. -/
 private def machineVarNames (m : PMachineDecl) : Array Name := Id.run do
@@ -1024,6 +1139,11 @@ private def classifyOnePending (pending : PendingObligation)
     return { acc with tacticErr   := acc.tacticErr + 1 }
   | .unfinished      =>
     return { acc with unfinished  := acc.unfinished + 1 }
+  | .missingPremise .. =>
+    -- Never produced by SMT discharge; synthesised pre-emission by
+    -- `detectMissingPremises` and counted there. Treated as a no-op
+    -- tally bump here to satisfy exhaustiveness.
+    return acc
 
 /-- Emit one per-handler obligation; returns a `PendingObligation`
 record for later classification. -/
@@ -1243,11 +1363,14 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
         allLemmaBundleNames autoTag autoIdx result
       result := result'
       pendings := pendings.push pending
-  -- Pass 2: each `classifyOnePending` blocks on its own body-elab
-  -- Task; work overlaps across tasks already running in Lean's
-  -- worker pool.
   for pending in pendings do
     result ← classifyOnePending pending result
+  let missingRecs ← detectMissingPremises modName ctx result.records
+  for rec in missingRecs do
+    result := { result with
+      attempted := result.attempted + 1
+      missingPremise := result.missingPremise + 1
+      records := result.records.push rec }
   return result
 
 end Verify

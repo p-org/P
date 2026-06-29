@@ -48,6 +48,11 @@ private def renderDiagnostic (rec : Verify.ObligationRecord) : String :=
   | .tacticError msg =>
     if msg.isEmpty then "" else
       "      tactic error:\n" ++ indentBy 8 msg
+  | .missingPremise lem refBy =>
+    s!"      `{lem}` is cited by `prove {refBy} using …` but no \
+       `prove {lem} ;` directive exists in this pmodule.\n      \
+       Add `prove {lem} ;` to a Proof block (before the citing `prove`), \
+       or drop `{lem}` from the `using` list."
   | _ => ""
 where
   indentBy (n : Nat) (s : String) : String :=
@@ -113,10 +118,18 @@ def elabPVerify : CommandElab := fun stx => do
         sec := sec.push (if diag.isEmpty then renderRow rec
                          else s!"{renderRow rec}\n{diag}")
       logInfo ("\n".intercalate sec.toList)
-      let mut skel : Array String := #["── manual-proof skeletons ──"]
-      for rec in failedRecs do
-        skel := skel.push (renderSkeleton rec)
-      logInfo ("\n".intercalate skel.toList)
+      -- Missing-premise failures are structural — no theorem to write —
+      -- so they get no skeleton. Filter them out before emitting the
+      -- skeletons box, and skip the box entirely if nothing remains.
+      let skeletonRecs := failedRecs.filter fun rec =>
+        match rec.outcome with
+        | .missingPremise .. => false
+        | _ => true
+      unless skeletonRecs.isEmpty do
+        let mut skel : Array String := #["── manual-proof skeletons ──"]
+        for rec in skeletonRecs do
+          skel := skel.push (renderSkeleton rec)
+        logInfo ("\n".intercalate skel.toList)
     unless passedRecs.isEmpty do
       let mut sec : Array String := #["── passed ──"]
       for rec in passedRecs do
@@ -128,7 +141,8 @@ def elabPVerify : CommandElab := fun stx => do
          {result.disproved} disproved, \
          {result.unknown} unknown, \
          {result.tacticErr} tactic-error, \
-         {result.unfinished} no-diagnostic"
+         {result.unfinished} no-diagnostic, \
+         {result.missingPremise} missing-premise"
     -- Emit the profile breakdown when `pverify.profile` is set. Two
     -- tables: per-obligation top-10 by wall time, then per-stage
     -- aggregate with % of total. The instrumented branch in
@@ -144,9 +158,21 @@ def elabPVerify : CommandElab := fun stx => do
     if result.failures == 0 then
       logInfo summary
     else
-      let body :=
-        m!"{summary}\n{result.failures} obligation(s) need a manual \
-           proof; fill in the skeletons above."
+      let tail : MessageData :=
+        if result.missingPremise > 0 ∧
+            result.failures == result.missingPremise then
+          m!"{result.missingPremise} `using` premise(s) cite a lemma \
+             that no `prove` directive proves; add the missing \
+             `prove <lemma>;` directives."
+        else if result.missingPremise > 0 then
+          m!"{result.failures} obligation(s) need attention: \
+             {result.missingPremise} missing `using`-premise(s) need a \
+             `prove <lemma>;` directive added; the rest need a manual \
+             proof — fill in the skeletons above."
+        else
+          m!"{result.failures} obligation(s) need a manual proof; \
+             fill in the skeletons above."
+      let body := m!"{summary}\n{tail}"
       if pverify.failOnIncomplete.get (← getOptions) then
         throwError body
       else

@@ -18,7 +18,7 @@ User-facing tactics (a typical manual proof composes some of these):
 - `default_inv` — discharges any of the four default-invariant
   constants by case analysis.
 - Manual-proof helpers (see "Manual-proof helpers" section below):
-  `pverify_carry_through`, `pverify_carry_after_recv`,
+  `pverify_carry_after_recv`,
   `pverify_not_inflight`, `pverify_inflight_by`.
 
 Macro-hygiene rule: every simp lemma name lives inside a named tactic

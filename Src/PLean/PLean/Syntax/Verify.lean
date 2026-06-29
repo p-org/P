@@ -255,9 +255,9 @@ def elabPProof : CommandElab := fun stx => do
           s!"`prove`: no `Lemma` or `Theorem` named '{tgtName}' in pmodule '{ctx.name}' (must be `default` or a previously-declared lemma)"
       for tok in useTokens do
         let uid := tok.getId
-        unless ctx.lemmas.contains uid do
+        unless uid == `default || ctx.lemmas.contains uid do
           throwErrorAt tok
-            s!"`prove ... using`: no `Lemma` or `Theorem` named '{uid}' in pmodule '{ctx.name}'"
+            s!"`prove ... using`: no `Lemma` or `Theorem` named '{uid}' in pmodule '{ctx.name}' (must be `default` or a previously-declared lemma)"
       directives := directives.push
         { target := tgtName, isDefault := isDefault
           usingLemmas := useIds, ref := it }

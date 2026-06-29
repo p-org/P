@@ -63,7 +63,7 @@ end SoundnessR1
 --   nothing constrains `(s.machines b.ref).fields.Bad_x` to be `42`.
 -- - inductive step: the handler increments `x`, breaking the invariant.
 /--
-warning: SoundnessR1: 1 proved by SMT, 0 user-proved, 2 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic
+warning: SoundnessR1: 1 proved by SMT, 0 user-proved, 2 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic, 0 missing-premise
 2 obligation(s) need a manual proof; fill in the skeletons above.
 ---
 warning: declaration uses 'sorry'
@@ -228,7 +228,7 @@ end SoundnessR6
 -- auto-default also fail — `always_false` is genuinely non-inductive —
 -- so all three are `no-diagnostic`.)
 /--
-warning: SoundnessR6: 0 proved by SMT, 0 user-proved, 0 disproved, 0 unknown, 0 tactic-error, 3 no-diagnostic
+warning: SoundnessR6: 0 proved by SMT, 0 user-proved, 0 disproved, 0 unknown, 0 tactic-error, 3 no-diagnostic, 0 missing-premise
 3 obligation(s) need a manual proof; fill in the skeletons above.
 -/
 #guard_msgs (warning, drop info) in

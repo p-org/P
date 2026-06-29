@@ -1,31 +1,40 @@
 # PLean — Roadmap
 
-The authoritative
-state lives in [`STATUS.md`](STATUS.md) (running tracker, decision log,
-milestones) and [`PLAN.md`](PLAN.md) / [`PLAN_P{0..4}.md`](.) (per-phase
-designs); this file is the index that turns those into pickable chunks
-of work.
+Contributor-facing entry point: current status, workstreams, and how
+they slot into sprint planning. [`STATUS.md`](STATUS.md) carries the
+one-page snapshot; [`PLAN.md`](PLAN.md) / [`PLAN_P{0..4}.md`](.) carry
+the per-phase designs.
 
 > **Update cadence.** Refresh after each phase flips, after each major
 > work item lands, and at the start of any sprint planning session.
-> If this doc and [`STATUS.md`](STATUS.md) disagree, [`STATUS.md`](STATUS.md) wins.
 
 ---
 
-## At a glance — 2026-06-23
+## At a glance
 
 | Phase | Status | What it delivers |
 |---|---|---|
 | 0 — Bootstrap | ☑ done | Lake skeleton, registry, multi-file `pmodule M`, `#pwf`, `#pverify` shell |
-| 1 — Semantic core | ☑ done | `PM := NonDetT (StateT (GlobalState Sig) DivM)`, primitives, default invariants, **M1** |
-| 2 — Registry + surface | ☑ done | `#gen_module M`, surface macros target real PM, **M2** |
-| 3 — Verification declarations | ☑ done | `Lemma`/`Theorem`/`Proof`/`system <s> { … }`, SMT-discharge `#pverify`, `@[pverifyProof]` registry, `paxiom`/`pinstance` axiomatic-fact bridge. **M3 reached** — `Examples/DistributedLock` **12/12**, `Examples/LockServer` **37/37**, `Examples/RingLeader` **14/14** |
+| 1 — Semantic core | ☑ done | `PM := NonDetT (StateT (GlobalState Sig) DivM)`, primitives, default invariants |
+| 2 — Registry + surface | ☑ done | `#gen_module M`, surface macros target real PM |
+| 3 — Verification declarations | ☑ done | `Lemma`/`Theorem`/`Proof`/`system <σ>`, SMT-discharge `#pverify`, `@[pverifyProof]` registry, `paxiom`/`pinstance` axiomatic-fact bridge |
 | 4 — Spec machines | ☐ next | `spec X observes [...] { ... }` flattening, `assert` obligations, send-time spec dispatch — **M4 acceptance: ChainReplication** |
-| 5 — Remaining surface | ◐ partial | `map[K,V]` / `set[T]` / `seq[T]` / `option[T]` shipped 2026-06-25; `foreach` / `while` (with `invariant` / `done_with` / `decreasing`) shipped 2026-06-26; remaining: `assume`, loop-aware `default_inv`, `WPGen.if` for `DivM`-backed `PM` |
+| 5 — Remaining surface | ◐ partial | `map[K,V]` / `set[T]` / `seq[T]` / `option[T]`, `foreach` / `while` with invariants shipped; `assume`, loop-aware `default_inv`, `WPGen.if` for `DivM`-backed `PM` pending |
 | 6 — Tutorial port | ☐ not started | **M5: `Tutorial/1_ClientServer`**, **M6: `Tutorial/2_TwoPhaseCommit`** verify under PLean |
 | 7 — Stretch | ⊘ deferred | PChecker bridge, lean-smt evaluation, counter-example surfacing |
 
-Build state: 3414 jobs green at HEAD.
+Benchmark closure rates (Phase 3 + early Phase 5):
+
+| Benchmark | Obligations |
+|---|---|
+| [`Examples/DistributedLock`](../Examples/DistributedLock.lean) | **12 / 12**  (all SMT) |
+| [`Examples/LockServer`](../Examples/LockServer.lean)           | **37 / 37**  (34 SMT + 3 manual) |
+| [`Examples/RingLeader`](../Examples/RingLeader.lean)           | **17 / 17**  (14 SMT + 3 manual) |
+| [`Examples/ClockBound`](../Examples/ClockBound.lean)           | **59 / 59**  (all SMT) |
+| [`Examples/ShardedKV`](../Examples/ShardedKV.lean)             | **11 / 11**  (all SMT) |
+| [`Examples/Consensus`](../Examples/Consensus.lean)             | **23 / 23**  (17 SMT + 5 manual + 1 axiom) |
+
+Build green at HEAD.
 
 ---
 
@@ -44,32 +53,23 @@ with no hand-written proof scaffolding required from the user.
 
 ### Current state
 
-Phases 0–2 are complete; Phase 3 is in progress. The verification
-pipeline is functional end-to-end: P programs parse, register, and
-materialise into Lean definitions; `#pverify M` walks the registry,
-synthesises one obligation per `(machine, state, event)` triple,
-consults the `@[pverifyProof]` attribute for user-supplied proofs,
-and discharges the remainder via the `pverify_*` tactic library
-backed by `loom_smt`. The 2026-06-10 soundness fix (the `system <s>
-{ … }` binder block) ensures invariants are materialised as
-state-parameterised predicates, eliminating a class of unsound
-"verifications" of trivially false properties.
+Phases 0–3 are complete. The verification pipeline is functional
+end-to-end: P programs parse, register, and materialise into Lean
+definitions; `#pverify M` walks the registry, synthesises one
+obligation per `(machine, state, event)` triple, consults the
+`@[pverifyProof]` attribute for user-supplied proofs, and discharges
+the remainder via the `pverify_*` tactic library backed by
+`loom_smt`. Invariant / `init-holds` / `paxiom` bodies bind to the
+pmodule's `system <σ>`-declared state binder, materialised as
+state-parameterised predicates — closing the unsound "verifications"
+of trivially false properties the earlier closed-prop materialisation
+admitted.
 
 ### Outstanding work
 
-Four work areas remain on the path to v1.
+Three work areas remain on the path to v1.
 
-1. **Phase 3 closure (M3).** The verification infrastructure is in
-   place but the three M3 acceptance benchmarks — `6_DistributedLock`,
-   `8_LockServer`, `3_RingLeaderVerification` — are not all green.
-   DistributedLock and LockServer port some, but not all, of the
-   inductive invariants from the original P sources, and the third
-   benchmark is not yet ported. Closing M3 requires either
-   reproducing the missing invariants or supplying manual proofs via
-   `@[pverifyProof]`. This is protocol-modelling work rather than
-   framework work.
-
-2. **Phase 4 — spec machines (M4).** P's `spec X observes [...] {
+1. **Phase 4 — spec machines (M4).** P's `spec X observes [...] {
    ... }` construct introduces protocol-level observers that monitor
    `send` events and assert correctness conditions. Phase 4 extends
    `#gen_module` to materialise per-spec state and dispatch
@@ -78,21 +78,20 @@ Four work areas remain on the path to v1.
    The acceptance benchmark is `1_ChainReplicationVerification`, the
    sole Tutorial/Advanced benchmark with a `spec` block.
 
-3. **Phase 5 — remaining surface.** Partially shipped. `map[K,V]` /
-   `set[T]` / `seq[T]` / `option[T]` landed 2026-06-25 with
-   PVerifier-parity SMT encoding (`K → Option V` for maps, hoisted
-   `Containers` struct for the multi-ref pattern); `foreach` and
-   `while` (with `invariant` / `done_with` / `decreasing` clauses)
-   landed 2026-06-26 via a PLean-local `pforeach` primitive + Loom's
+2. **Phase 5 — remaining surface.** Partially shipped. `map[K,V]` /
+   `set[T]` / `seq[T]` / `option[T]` use PVerifier-parity SMT
+   encoding (`K → Option V` for maps, hoisted `Containers` struct
+   for the multi-ref pattern); `foreach` and `while` (with
+   `invariant` / `done_with` / `decreasing` clauses) desugar via a
+   PLean-local `pforeach` primitive + Loom's
    `WPGen.forWithInvariantLoop`. Still pending: `assume <prop>;`, a
    loop-aware `default_inv` so the auto-default obligation under
    loops doesn't disprove on trivial invariants, and `WPGen.if` for
    `DivM`-backed `PM` (so `if` inside handler bodies steps cleanly).
    ChainReplication's spec body remains gated on Phase-4 spec
-   machines; Consensus and Paxos still need loop-aware default
-   invariants before their `prove default;` obligations close.
+   machines.
 
-4. **Phase 6 — tutorial ports (M5, M6).** Once Phases 4 and 5 land,
+3. **Phase 6 — tutorial ports (M5, M6).** Once Phases 4 and 5 land,
    port `Tutorial/1_ClientServer` and `Tutorial/2_TwoPhaseCommit`
    into PLean. Phase 6 also includes a wall-clock comparison against
    PVerifier+UCLID5 on the same examples.
@@ -104,9 +103,8 @@ is tracked as a post-v1 stretch goal (Phase 7).
 ### Sequencing and effort
 
 Phases 4 and 5 are mutually independent and can be developed in
-parallel; Phase 6 depends on both. Phase 3 closure is independent of
-Phases 4 and 5 and may proceed concurrently. Estimated effort to v1
-is approximately 6–8 person-weeks, parallelisable across 2–3
+parallel; Phase 6 depends on both. Estimated effort to v1 is
+approximately 6–8 person-weeks, parallelisable across 2–3
 developers; see [Suggested division of labor](#suggested-division-of-labor)
 for a sample sprint allocation. Per-step sizing and file-level work
 breakdown follow in the [workstream sections below](#remaining-work--by-workstream).
@@ -120,12 +118,12 @@ Src/PLean/
   PLean/
     Internal/      Decls.lean, Registry.lean       — env-extension metadata
     Semantics/     Label / GlobalState / Monad / Primitives / Predicates / Default
-    Surface/       Module / Types / Events / Machine / Stmt / Notation / Verify
+    Syntax/        Module / Types / Events / Machine / Stmt / Loop / Notation / Verify
     Commands/      GenModule, PWf, PVerify, PrintModule
     Verify/        Obligation, Tactic, ProofRegistry, SimpAttrs
   Examples/        PingPong demo
   Tests/           Bootstrap, Semantics, Surface
-  docs/            PLAN.md, PLAN_P{0..4}.md, STATUS.md, REVIEW_P3.md, ROADMAP.md (this)
+  docs/            PLAN.md, PLAN_P{0..4}.md, STATUS.md, ROADMAP.md (this), REVIEW.md, ProofSkill.md
 ```
 
 Phase ownership of files (for "who touches what"):
@@ -141,9 +139,7 @@ Phase ownership of files (for "who touches what"):
 
 ## What is in place today
 
-The verbose history with decision rationale lives in
-[`STATUS.md` § Done](STATUS.md#done) and the per-phase plans. The
-short summary:
+The short summary — for the long form, see the per-phase plans:
 
 - **Surface language.** A P-faithful surface — `event`, `machine`,
   `state`, `invariant`, `Lemma` / `Theorem` / `Proof`, `≺` for
@@ -172,7 +168,7 @@ short summary:
   obligation, the user writes a theorem tagged `@[pverifyProof]`
   using the `pverify_*` tactic library
   ([`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean)).
-  [`Tests/Surface/PVerifyManualProof.lean`](../Tests/Surface/PVerifyManualProof.lean)
+  [`Tests/Syntax/PVerifyManualProof.lean`](../Tests/Syntax/PVerifyManualProof.lean)
   demonstrates the workflow end-to-end.
 
 - **Soundness.** Invariants are bound to a global-state argument via
@@ -180,7 +176,7 @@ short summary:
   body that ignores state. The earlier closed-proposition
   materialisation (which silently let the verifier "prove" trivially
   false properties) is fixed and pinned by
-  [`Tests/Surface/SoundnessRegression.lean`](../Tests/Surface/SoundnessRegression.lean).
+  [`Tests/Syntax/SoundnessRegression.lean`](../Tests/Syntax/SoundnessRegression.lean).
   Current M3 closure rates: [`Examples/DistributedLock`](../Examples/DistributedLock.lean)
   **12/12**, [`Examples/LockServer`](../Examples/LockServer.lean) **37/37**,
   [`Examples/RingLeader`](../Examples/RingLeader.lean) **14/14**.
@@ -197,17 +193,18 @@ in-flight workstream.
 
 ### W1 — Distributed-lock benchmarks ☑ **done**
 
-`Examples/DistributedLock` closes **12/12** (11 SMT + 1 manual) and
-`Examples/LockServer` closes **37/37** (34 SMT + 3 manual). Routine
-discharge for both. The 4 manual proofs across the two files are
-send-handler bundles where SMT returns `unknown` as a single shot —
-each proof splits the bundle and dispatches per-conjunct via the
-helpers documented in [`AUTOMATION.md`](AUTOMATION.md) §3.
+`Examples/DistributedLock` closes **12/12** (all SMT) and
+`Examples/LockServer` closes **37/37** (34 SMT + 3 manual). The 3
+LockServer manual proofs are send-handler bundles where SMT returns
+`unknown` as a single shot — each proof splits the bundle and
+dispatches per-conjunct via the manual-proof helpers documented in
+[`PLean/Verify/Tactic.lean`](../PLean/Verify/Tactic.lean).
 
 ### W2 — Ring-leader benchmark ☑ **done**
 
-`Examples/RingLeader` closes **14/14** (12 SMT + 2 manual). The two
-manual proofs are the inductive steps through `goto Won`, where
+`Examples/RingLeader` closes **17/17** (14 SMT + 3 manual). The
+manual proofs are the inductive steps through `goto Won` and an
+entry-handler obligation that mirrors them, where
 lean-auto rejects `(_.machines _).currentState` reads under a `∀`
 ("Higher order input?") — each was discharged by a short proof
 splitting on whether `x = this.ref` (for state-dependent invariants)
@@ -250,7 +247,7 @@ Detailed design is in [`PLAN_P4.md`](PLAN_P4.md); proceed in order.
    dispatch definition that case-splits on the spec's current state
    and forwards to the matching handler.
 4. *Trigger spec dispatch from `send`.* Extend the `send` macro
-   ([`PLean/Surface/Stmt.lean`](../PLean/Surface/Stmt.lean)) so a
+   ([`PLean/Syntax/Stmt.lean`](../PLean/Syntax/Stmt.lean)) so a
    `send target, ev, payload` call additionally invokes every
    dispatch definition for specs that observe `ev`. The handler's
    weakest-precondition computation already runs over the resulting
@@ -386,7 +383,7 @@ P tutorials, the agreed v1 cut.
 **Action items.**
 
 1. Port [`Tutorial/1_ClientServer/`](../../../Tutorial/1_ClientServer/)
-   into a new `Tests/Surface/Tutorial1_ClientServer.lean`. Run
+   into a new `Tests/Syntax/Tutorial1_ClientServer.lean`. Run
    `#pverify`; close any residual obligations using the same
    approach as W1.
 2. Port [`Tutorial/2_TwoPhaseCommit/`](../../../Tutorial/2_TwoPhaseCommit/)
@@ -521,8 +518,8 @@ on framework engineering.
 2. **Skim [`PLAN.md`](PLAN.md)**, then jump to the **phase plan
    matching what you're picking up** (PLAN_P3 for Phase 3 residue,
    PLAN_P4 for spec machines, etc.).
-3. **Check [`STATUS.md`](STATUS.md) "Active Work" and "Decision Log"**
-   for what's currently in flight or just landed.
+3. **Check [`STATUS.md`](STATUS.md)** for the current closure snapshot
+   and what's in flight.
 4. **Build & test from inside `Src/PLean/`:**
    ```bash
    cd Src/PLean
@@ -531,10 +528,10 @@ on framework engineering.
    lake build Examples.RingLeader  # single benchmark
    ```
 5. **Pick a workstream above** and update [`STATUS.md`](STATUS.md)'s
-   "At a Glance" table when you start (set Owner + Started date).
+   "At a Glance" table when you start.
 
 For verification work specifically: read
-[`Tests/Surface/PVerifyManualProof.lean`](../Tests/Surface/PVerifyManualProof.lean)
+[`Tests/Syntax/PVerifyManualProof.lean`](../Tests/Syntax/PVerifyManualProof.lean)
 to see the manual-proof workflow end-to-end, then
 [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean) for the atomic
 tactic library.
@@ -547,10 +544,9 @@ tactic library.
 |---|---|
 | Why is feature X designed the way it is? | `PLAN.md` for the headline; `PLAN_P{0..4}.md` for the matching phase |
 | What just landed / what's blocked? | [`STATUS.md`](STATUS.md) |
-| Why was Phase 3 reviewed three times? | [`REVIEW_P3.md`](REVIEW_P3.md) |
 | What does `#pverify` actually do? | [`Commands/PVerify.lean`](../PLean/Commands/PVerify.lean) → [`Verify/Obligation.lean`](../PLean/Verify/Obligation.lean) → [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean) |
 | How is a `pmodule M` materialised? | [`Commands/GenModule.lean`](../PLean/Commands/GenModule.lean) (start at the top — it's pipelined) |
-| What's a `system <s> { … }` block? | [`STATUS.md` § "2026-06-10 (system-binder)"](STATUS.md) |
+| What's a `system <σ>` declaration? | [`CLAUDE.md` § Conventions](../CLAUDE.md) |
 | What's the macro-hygiene rule? | [`CLAUDE.md` § Conventions](../CLAUDE.md) |
 
 ---

@@ -88,60 +88,24 @@ PLean/
     CexParse.lean    -- parse + de-mangle a solver model from the SAT diag
     CexModel.lean    -- decode model into machine table + sorted sent trace
 
-Examples/            -- protocol ports (showcased benchmarks)
-  PingPong/          --   multi-file PingPong demo
-  PingPongAuto.lean  --   trivial PingPong with #pverify auto-discharge
-  PingPongManual.lean--   PingPong with hand-written triples
-  PingPongTrivial.lean--  smoke test for the trivial-handler auto path
-  DistributedLock.lean--  6_DistributedLock port (12/12 all SMT)
-  LockServer.lean    --   8_LockServer port (37/37)
-  RingLeader.lean    --   3_RingLeaderVerification port (17/17)
-  ClockBound.lean    --   AWS-style clock-bound daemon (59/59) — exercises
-                     --   `PLean.choose` (bounded nondet Int)
-  ShardedKV.lean     --   7_ShardedKV port (11/11) — exercises map[K, V]
-                     --   and the multi-ref `unique_owner` pattern
-
+Examples/            -- protocol case studies (see Examples/ index)
 Tests/               -- regressions; Tests.** is globbed
-  Bootstrap/         --   Phase-0 #pwf / multi-file aggregation
-  Semantics/         --   PM stack + SMT round-trip
-  Syntax/            --   surface-syntax + #pverify regressions
-                     --   (Errors, Parse, MachineKindIs, ObligationShape,
-                     --    FieldProjectionSugar, PVerify*, PAxiomProbe,
-                     --    PInstanceExercise, HandlerCoverage,
-                     --    SoundnessRegression, …)
-  Verify/            --   pverify infrastructure (cache, CEX, profile,
-                     --   ManualProofHelpers)
 ```
 
-## Phase plans (READ THESE BEFORE NON-TRIVIAL CHANGES)
-
-The plan docs are the authoritative design record. STATUS.md is a
-living tracker, not a design doc. When PLAN.md disagrees with a phase
-plan, the phase plan wins (PLAN.md predates the implementation).
+## Contributor docs
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — collaborator-facing entry
   point; current phase, workstreams, sprint allocation.
-- [`docs/PLAN.md`](docs/PLAN.md) — overall phase plan.
-- [`docs/PLAN_P0.md`](docs/PLAN_P0.md) — Phase 0 (Bootstrap).
-- [`docs/PLAN_P1.md`](docs/PLAN_P1.md) — Phase 1 (Semantic core).
-- [`docs/PLAN_P2.md`](docs/PLAN_P2.md) — Phase 2 (Registry + surface).
-- [`docs/PLAN_P3.md`](docs/PLAN_P3.md) — Phase 3 (Verification
-  declarations). Names the Tutorial/Advanced benchmarks driving M3.
-- [`docs/PLAN_P4.md`](docs/PLAN_P4.md) — Phase 4 (Spec machines).
-- [`docs/PLAN_CEX.md`](docs/PLAN_CEX.md) — counter-example rendering;
-  v1 shipped, v1.5 / v2 follow-ups listed (CVC5 finite-model-find,
-  pre/post diff, exact name recovery via lean-auto's `h2lMap`).
+- [`docs/STATUS.md`](docs/STATUS.md) — phase status, decision log,
+  milestones.
 - [`docs/ProofSkill.md`](docs/ProofSkill.md) — practical workflow for
   finding inductive invariants, writing manual proofs, and coping with
   SMT complexity (higher-order rejection, bundle sizing, `using` chains).
-- [`docs/STATUS.md`](docs/STATUS.md) — phase status, decision log,
-  milestones.
 
 ## Verification benchmarks
 
 Phase 3+ targets the verified benchmarks under
-[`Tutorial/Advanced/`](../../Tutorial/Advanced/) (parent repo). PLAN_P3
-has the per-benchmark feature inventory.
+[`Tutorial/Advanced/`](../../Tutorial/Advanced/) (parent repo).
 
 - **M3 (Phase 3)**: `6_DistributedLock`, `8_LockServer`,
   `3_RingLeaderVerification` — basic Theorem/Proof/Lemma blocks,
@@ -156,66 +120,16 @@ has the per-benchmark feature inventory.
 - **Phase 6 stretch**: `4_Paxos`.
 
 Most Tutorial/Advanced benchmarks need surface features that aren't
-built yet — check PLAN_P3's "Tutorial benchmark inventory" table
-before attempting one.
+built yet — check `docs/ROADMAP.md`'s workstream breakdown before
+attempting one.
 
-## Phase status (as of 2026-06-26)
+## Phase status
 
-- Phase 0 (Bootstrap) — ☑ M0.
-- Phase 1 (Semantic core) — ☑ M1. Hand-written ping-pong verifies via
-  `wpgen` + manual proof tail.
-- Phase 2 (Registry + minimal surface) — ☑ M2. `#gen_module`
-  synthesises per-pmodule `Sig`/`PM'`/`GS`; surface macros target the
-  real PM; M2 surface ping-pong verifies.
-- Phase 3 (Verification declarations) — ☑ M3 reached. All
-  Tutorial/Advanced benchmarks fully verify:
-  - [`Examples/DistributedLock`](Examples/DistributedLock.lean) — **12/12** (all SMT),
-  - [`Examples/LockServer`](Examples/LockServer.lean) — **37/37**
-    (34 SMT + 3 manual),
-  - [`Examples/RingLeader`](Examples/RingLeader.lean) — **17/17**
-    (14 SMT + 3 manual).
-  - [`Examples/ClockBound`](Examples/ClockBound.lean) — **59/59**
-    (all SMT). Off-tree benchmark from
-    [PInfer-Benchmarks](https://github.com/AD1024/PInfer-Benchmarks/tree/main/ClockBound);
-    exercises `PLean.choose` (bounded nondet `Int`) and per-target
-    monotonicity safety properties from `goals.json`.
-  - [`Examples/ShardedKV`](Examples/ShardedKV.lean) — **11/11** (all SMT).
-    Exercises `map[K, V]` container vars and the multi-ref
-    `unique_owner` pattern; landed 2026-06-25 alongside the container-
-    type port (see "Container types" below).
-
-  The user-facing surface for axiomatic facts is `paxiom` (single
-  proposition) and `pinstance` (Veil-style typeclass bundle). The
-  obligation generator injects every pmodule axiom — both hand-written
-  `paxiom`s and fields synthesised from `pinstance` — into every VC's
-  local context as `have hax_<name> := @<name>`, so `loom_smt [*]`
-  (which only sees the lctx) can use them. Pinned by
-  [`Tests/Syntax/PAxiomProbe.lean`](Tests/Syntax/PAxiomProbe.lean)
-  and [`Tests/Syntax/PInstanceExercise.lean`](Tests/Syntax/PInstanceExercise.lean).
-  See [`docs/STATUS.md`](docs/STATUS.md) for the per-session log of
-  framework fixes that got us here.
-
-  Reusable manual-proof tactics (`pverify_carry_after_recv`,
-  `pverify_not_inflight` / `_by`, `pverify_inflight_by`,
-  `pverify_machine_has_type`, plus `pverify_split_smt`) cover the
-  five routing-clause + kind-bridge shapes the M3 proofs ran into;
-  their docstrings in [`PLean/Verify/Tactic.lean`](PLean/Verify/Tactic.lean)
-  spell out the calling pattern. An obligation cache at
-  `<project>/.lake/build/pverify_cache/` hashes `(lctx, goal target)`
-  and shaves 11–14% off warm rebuilds; soundness pinned by
-  [`Tests/Verify/CacheSoundness.lean`](Tests/Verify/CacheSoundness.lean).
-- Phase 4 (Spec machines) — ☐ next. Plan in [`docs/PLAN_P4.md`](docs/PLAN_P4.md).
-- Phase 5 (Remaining surface) — ◐ partial.
-  - Container types (`set[T]` / `map[K, V]` / `seq[T]` / `option[T]`)
-    shipped 2026-06-25 (see "Container types" above; exercised by
-    [`Examples/ShardedKV`](Examples/ShardedKV.lean)).
-  - `foreach` / `while` with loop invariants shipped 2026-06-26 (see
-    "Loops" above; exercised by
-    [`Tests/Syntax/Loop.lean`](Tests/Syntax/Loop.lean)).
-  - Still pending: `assume <prop>;`; loop-aware `default_inv` for
-    the auto-default obligation under loops.
-
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's left.
+See [`docs/STATUS.md`](docs/STATUS.md) for the current closure
+snapshot and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the workstream
+breakdown. Headline: Phases 0–3 complete; Phase 4 (spec machines) is
+next critical path; Phase 5 (remaining surface) is partial (`assume`
+and loop-aware `default_inv` pending).
 
 ## Surface keywords
 
@@ -246,451 +160,115 @@ the WP spec (registered as `@[loomSpec]`) gives the verifier `0 ≤ x
 
 ### Container types
 
-P's container types are surface macros over Lean / Mathlib:
-
-| Surface       | Desugars to                          |
-|---------------|---------------------------------------|
-| `set[T]`      | `Set T`               (Mathlib)       |
-| `map[K, V]`   | `PMap K V := K → Option V`            |
-| `seq[T]`      | `List T`              (no SMT support)|
-| `option[T]`   | `Option T`            (core inductive)|
-
-Mutation macros in [`PLean/Syntax/Stmt.lean`](PLean/Syntax/Stmt.lean):
-`s += (e)`, `s -= (e)`, `m[k] = v`, `m[k] += (e)`, `m[k] -= (e)`.
-`s -= (e)` overloads on `Set` and `PMap` via the `PContainerErase`
-typeclass. Lookup-after-mutation lemmas (`mapInsert_eq`,
-`mapErase_ne`, …) are tagged `@[pverifySimp]` so SMT prep reduces
-post-state lookups directly without case-splitting on key equality.
-See [`Examples/ShardedKV.lean`](Examples/ShardedKV.lean) for usage.
+Surface macros: `set[T]` → `Set T`, `map[K, V]` → `K → Option V`,
+`seq[T]` → `List T` (no SMT), `option[T]` → `Option T`. Mutation
+macros: `s += (e)`, `s -= (e)`, `m[k] = v`, `m[k] += (e)`,
+`m[k] -= (e)`. Lookup-after-mutation lemmas are tagged
+`@[pverifySimp]` so SMT prep reduces post-state lookups directly.
+See [`Examples/ShardedKV.lean`](Examples/ShardedKV.lean).
 
 ### Loops (`foreach` / `while`)
 
-```
-foreach (x in xs)
-  invariant N1 : I1;
-  invariant N2 : I2;
-  { body }
+`foreach (x in xs) invariant N : I ; { body }` and `while (cond)
+invariant N : I ; [done_with …;] [decreasing …;] { body }`. Both
+desugar to a rigid gadget chain that `wpgen` matches — inserting
+extra `do`-statements between gadgets or omitting one collapses the
+match. `done_with` defaults to `¬cond` for `while`; `decreasing`
+defaults to `none` (informational only under partial correctness).
 
-while (cond)
-  invariant N : I;
-  [done_with <prop>;]
-  [decreasing <measure>;]
-  { body }
-```
-
-`foreach` desugars to `PLean.pforeach xs invList (fun x => do body)`,
-matched by `@[loomSpec] WPGen.pforeach` in
-[`PLean/Semantics/Loop.lean`](PLean/Semantics/Loop.lean) (proven by
-reduction to Loom's generic `triple_forIn_list`). `while` desugars to
-`for _ in Lean.Loop.mk do invariantGadget …; onDoneGadget …;
-decreasingGadget …; if cond then body else break`, matched by
-Loom's `@[loomSpec] WPGen.forWithInvariantLoop`.
-
-Both gadget chains are *rigid* — `wpgen` matches the exact body shape
-`do invariantGadget …; onDoneGadget …; decreasingGadget …; <tail>`,
-in that order. Inserting extra `do`-statements between gadgets or
-omitting one collapses the pattern match and `wpgen` falls back to
-`WPGen.default`, leaving `Cont _ _`-typed atoms lean-auto rejects.
-
-`done_with` defaults to `¬cond` for `while` (loop exits when the
-condition becomes false). `decreasing` defaults to `none` —
-informational under PLean's `PartialCorrectness DemonicChoice` mode;
-the surface accepts it for future total-correctness use.
-
-`pverify_step_wp` carries the simp set that reduces the post-`wpgen`
-`min (fun s => I s) ⊤` (a `Pi`-typed meet at the assertion lattice)
-to a plain `Prop`-level conjunction: `invariantSeq` / `List.foldr` /
-`spec` unfolds, then `Pi.inf_apply` / `Pi.top_apply` /
-`inf_Prop_eq` / `Prop.top_eq_true` simp the result into a goal SMT
-can translate.
-
-**Loop limitation.** The auto-emitted `prove default;` obligation for
-a loop-bearing handler discharges via SMT to `[counter-example]`
-when the loop invariant is too weak to entail `DefaultInvariants` for
-the post-state. The auto-default chain has no loop-aware
-`default_inv` (today's `default_inv` recognises only the three
-sanity-invariant heads on a flat post-state), so the user must either
-state `DefaultInvariants`-strength clauses as loop invariants, or
-mark the obligation with a manual `@[pverifyProof]`.
-
-See [`Tests/Syntax/Loop.lean`](Tests/Syntax/Loop.lean) for both
-shapes verifying end-to-end.
+**Limitation.** Auto-emitted `prove default;` under a loop-bearing
+handler can disprove when the loop invariant is too weak to entail
+`DefaultInvariants` for the post-state. Strengthen the loop
+invariant, or write a manual `@[pverifyProof]`. See
+[`Tests/Syntax/Loop.lean`](Tests/Syntax/Loop.lean).
 
 ## Conventions worth knowing
 
-The plan docs and source comments cover the *why* in detail. The
-points below are the load-bearing invariants you'll need to respect
-when editing.
+Source comments cover the *why* in detail. The points below are the
+load-bearing invariants you need to respect when editing.
 
-### Invariants are state-parameterised — declare the binder once via `system <σ>`
-
-A `pmodule` that has `invariant` / `init-holds` / `paxiom` bodies
-referencing the global state declares its state binder once with a
-top-level `system <σ>` command. Every subsequent clause's body may
-name `σ` as the live state; the materialiser binds `σ` as the
-lambda argument when emitting the def / axiom / init aggregate.
-
-```lean
-pmodule M
-  system s
-
-  paxiom config_const : ∀ n : Node, n.cfg s = default_cfg
-  init-holds ∀ n : Node, n.held s = false
-
-  Theorem safety {
-    invariant unique_holder :
-      ∀ n1 n2 : Node, n1.held = true → n2.held = true → n1 = n2
-  }
-end M
-```
-
-A pmodule with no `system <σ>` declaration emits state-independent
-clauses (`fun _ => <body>` for invariants, no `σ` binder for axioms);
-that's fine for properties that don't reference state. The soundness
-guard (`rejectStateShadowIn` — pinned by
-`Tests/Syntax/SoundnessRegression.lean`) rejects bodies that name the
-`GlobalState` type via `∀`/`∃`/`let`/`have`/`fun` binders, which
-would shadow `σ` and decouple the clause from per-handler state.
-
-### Field-projection sugar inside state-bound clauses
-
-Inside a clause whose pmodule has a `system <σ>` binder (i.e. every
-`invariant` / `init-holds` / `paxiom` registered after the
-declaration), `n.<v>` (where `n : <M>` and `<v>` is a registered
-machine `var`) desugars to `(σ.machines n.ref).fields.<M>_<v>`.
-`e.<f>` (where `e : <ev>` and `<f>` is a payload field) desugars to
-`(<ev>_payload_of e).<f>`. The rewrite is gated on the field name
-being registered, so `n.ref`, `e.action`, `e.target`, `σ.machines`
-pass through unchanged. Clauses registered before any `system <σ>`
-declaration don't get the rewrite (the body must be state-independent).
-
-The pass runs **before** kind-guard injection, in
-`Syntax/Verify.lean::rewriteFieldProjections`, so it can see the
-original quantifier types — kind-guard injection retypes event
-binders to `Sig.Label` and would defeat the lookup.
-
-### Kind guards auto-injected on machine/event quantifiers
-
-Inside a `system <s> { … }` block, the materialiser walks the
-invariant body and adds the runtime kind check to every quantifier
-over a registered machine / event kind:
-
-| User wrote          | Materialiser emits                            |
-|---------------------|-----------------------------------------------|
-| `∀ n : <M>, body`   | `∀ n : <M>, is_<M> n.ref s → body`            |
-| `∃ n : <M>, body`   | `∃ n : <M>, is_<M> n.ref s ∧ body`            |
-| `∀ e : <ev>, body`  | `∀ e : Sig.Label, is_<ev> e → body`           |
-| `∃ e : <ev>, body`  | `∃ e : Sig.Label, is_<ev> e ∧ body`           |
-
-Same transform applies inside `init-holds`. Multi-binder forms get
-normalised to nested singles before injection.
-
-**Dedup**: if the body already mentions `is_<M> x.ref s` or
-`<M>_allocated x.ref s` (or the event-variant `is_<ev> x`) anywhere
-referencing the bound variable, injection is skipped. Without this
-check, an explicit user-written guard plus the auto-injected one
-would duplicate in the hypothesis chain after the obligation
-generator unfolds `is_<M> → <M>_allocated`, ballooning the SMT query
-and degrading cvc5's quantifier instantiation on disprove goals.
-Pinned by [`Tests/Syntax/SoundnessRegression.lean`](Tests/Syntax/SoundnessRegression.lean)
-(both legs of the false invariant must disprove, not surface as
-`unknown`).
-
-### Container `var`s are hoisted out of `Fields` into `Containers`
-
-A naïve placement of container vars in `Fields` trips lean-auto's
-"Higher order input?" check whenever an invariant quantifies over
-machines and projects the container field — `(s.machines
-n.ref).fields.<M>_<v>` under a `∀ n` is a function-valued projection
-lean-auto rejects.
-
-`#gen_module` classifies each `var`'s declared type
-(`Lean.Meta.whnf` → `Expr.isArrow`) and **hoists** container vars
-out of `Fields` into a per-pmodule `Containers` struct at the top
-level of `GlobalState`. The hoisted field type is **uncurried** with
-`MachineRef`:
-
-| Container surface | `Fields` placement | `Containers` field type           |
-|-------------------|--------------------|------------------------------------|
-| `set[T]`          | hoisted            | `MachineRef × T → Prop`            |
-| `map[K, V]`       | hoisted            | `MachineRef × K → Option V`        |
-| `seq[T]` (=List)  | stays in Fields    | n/a                                |
-| first-order       | stays in Fields    | n/a                                |
-
-The surface projection `n.<v>` desugars to `fun x =>
-s.containers.<M>_<v> (n.ref, x)`. At use sites (`k ∈ n.kv`, `n.kv k`,
-`m[k] = v`), the lambda β-reduces under `simp only [pverifySimp]` to
-the flat applied symbol `s.containers.<M>_<v> (n.ref, k)`, which
-lean-auto translates as an uninterpreted function.
-
-`ProgramSig.C : Type := Unit` is the default; `#gen_module` sets it
-to `<Mod>.Containers` only when at least one container var was
-declared. For pmodules with no container vars, `sdestruct_state`
-collapses the unused `gsContainers : Unit` local after the
-`GlobalState` destructure (via `clear` / `obtain ⟨⟩`) so the lctx
-shape matches the pre-hoist 4-field baseline — first-order
-benchmarks see no completeness drift.
-
-This mirrors PVerifier's UCLID5 2D-array layout for container vars.
-Pinned by [`Tests/Verify/ContainerVerify.lean`](Tests/Verify/ContainerVerify.lean)
-and exercised end-to-end by
-[`Examples/ShardedKV.lean`](Examples/ShardedKV.lean) (multi-ref
-`unique_owner`).
-
-### `MachineRef` stays flat; per-machine static type is a wrapper
-
-`MachineRef := Nat`. Per-machine static distinction lives in the
-wrapper struct emitted by `#gen_module`: `structure <M> where ref :
-MachineRef` plus `instance : Coe <M> MachineRef`. The runtime carrier
-(state map, label target field) is keyed on the flat `MachineRef`.
-The per-kind *dynamic* check goes through a `Nat` `kind` tag on
-`MachineState`: `0` reserved for "unset", real kinds `≥ 1`,
-`<M>_allocated` checks `kind ≠ 0 ∧ kind = <M>_kind ∧ currentState ∈
-<M>'s states`. `is_<M>` is the public alias.
-
-The `currentState ∈ <M>'s states` conjunct is load-bearing: `kind :
-Nat` and `currentState : S` (a flat union of *every* machine's states)
-are independent `MachineState` fields, so without it a spurious model
-can fabricate a machine with one kind's tag and another kind's control
-state — PVerifier's typed per-machine state arrays exclude that
-structurally. It only ever weakens a guard antecedent (`is_<M> m s →
-…`), so it can't make a real obligation harder, and `goto` preserves it
-(a machine only transitions within its own states). For the coupling to
-reach SMT, the `<S>_st` state aliases are `@[reducible]` so prep's
-`dsimp only` reduces `currentState = <S>_st` to the raw `S.<M>_<S>`
-constructor. [`Tests/Syntax/MachineKindIs.lean`](Tests/Syntax/MachineKindIs.lean)
-pins the desync exclusion.
-
-Don't introduce a `MachineRef <M>`-parameterised refinement; that
-would diverge from PVerifier's flat encoding.
-
-### Bundle conjunctions don't carry a trailing `True`
-
-The conjunction builders — `buildConjAt` (obligation pre/post, in
-`Verify/Obligation.lean`) and `emitConjPredicate` (every lemma /
-theorem / `UserInv` / `InitConditions` bundle, in
-`Commands/GenModule.lean`) — emit a right-associated chain `p1 ∧ p2
-∧ … ∧ pn` with no `True` terminator. Empty bundles still collapse to
-`fun _ => True` (correct identity).
-
-`emitConjPredicate` is the single emission point: it accepts an
-`Array (TSyntax × Bool)` so a caller can mix state-applied (`(m) s`)
-and verbatim conjuncts in one call (used by `emitInitConditions` to
-combine framework clauses with closed `init-holds` props).
-
-Why this matters when editing the codegen: a manual proof registered via
-`@[pverifyProof]` is **type-checked** against the obligation the
-generator would emit, and a stated triple of the form `... ∧ True` no
-longer matches. The corresponding `refine ⟨…, trivial⟩` site needs the
-trailing slot dropped as well. The `pverify_split_smt` tactic still
-defensively strips trailing `True` goals so a user bundle that happens
-to end in `True` doesn't break splitting, but the codegen no longer
-relies on it. Pinned by [`Tests/Syntax/ObligationShape.lean`](Tests/Syntax/ObligationShape.lean).
-
-### Every executable handler gets an obligation
-
-The obligation generator emits a per-handler triple for **three**
-handler shapes:
-
-| Surface form                            | Handler def                  | Obligation form                                                              |
-|-----------------------------------------|------------------------------|------------------------------------------------------------------------------|
-| `on <ev> ([param : T]) { body }`        | `<M>.<S>.<ev>_handler`       | `(Inv ∧ DispatcherContract) ⇒ wp(markReceived lbl >>= handler, Inv)`         |
-| `on <ev> goto <tgt>`                    | `<M>.<S>.<ev>_handler` (synth) | Same as above; the synthesised handler body is `goto this <tgt>_st .unit`. |
-| `entry [(param : T)] { body }`          | `<M>.<S>.entry`              | `(Inv ∧ is_<M> this.ref s ∧ currentState = <S>_st) ⇒ wp(entry, Inv)`         |
-
-The entry obligation has no `lbl` and no `markReceived` prelude —
-entry doesn't dispatch on an event. The pre is conservative: it
-verifies entry preserves invariants from *any* state with `this`
-already in `<S>_st`, not only the one reached via a fresh allocation
-or `goto`. When a future fix wires up the `InEntry` / `stage` runtime
-gate, the pre can tighten.
-
-Coverage is sound by construction: the user-directive pass and the
-auto-default pass both iterate over `(machine, state) × (events ∪
-{entry})`. Pinned by
-[`Tests/Syntax/HandlerCoverage.lean`](Tests/Syntax/HandlerCoverage.lean)
-(positive: the theorems exist; negative: a broken invariant on a goto
-or entry is reported as disproved, not silently passed).
-
-### Per-handler triples are pure consecution; init is a separate VC
-
-A per-handler obligation is `(Inv ∧ DispatcherContract) ⇒
-wp(handler, Inv)`; `InitConditions` does **not** appear there.
-`Verify/Obligation.lean::emitBaseCaseObligation` discharges the
-initiation leg separately, one VC per individual invariant in each
-`prove G` directive's bundle. Premises (`using P`) don't get base
-VCs — only goals do, matching PVerifier.
-
-### `#pverify` is an SMT-discharge command, not a tactic engine
-
-For each obligation it (a) consults `@[pverifyProof]` for a
-user-supplied theorem matching the obligation's name, (b) emits
-`theorem ... := by first | <chain> | sorry` otherwise,
-(c) inspects the elaborated value with `info.value.hasSorry` to
-detect failure (catches sync and async-snapshot tactic errors).
-The atomic `pverify_*` tactics in `Verify/Tactic.lean` are
-user-facing primitives for the manual-proof escape hatch — see
-[`Tests/Syntax/PVerifyManualProof.lean`](Tests/Syntax/PVerifyManualProof.lean).
-**Don't bake substantive automation into `#pverify` itself**;
-that work belongs in user-callable tactics or `@[pverifyProof]`
-theorems.
-
-### Macro hygiene through `mkIdent`
-
-`#gen_module` and `Syntax/Stmt.lean` emit identifiers that must
-resolve against user-namespace constants (`Sig`, `E`, `G`, `this`,
-`<S>_st`, `<v>_get`, …). Bare names inside `` `(...) `` quotations
-get hygiene marks during expansion and fail to resolve. Convention:
-any identifier that needs to resolve against a user-namespace constant
-is built via `mkIdent` and spliced. **If you see `PLean.DivM✝` or
-`Sig✝` in an error message, hygiene is the cause.**
-
-### `loom_solve` is CaseStudies-only and doesn't fit PLean
-
-PLean's lakefile only requires the `Loom` lib, not `CaseStudies`.
-`loom_solve` queries assertion data registered by Cashmere's `bdef`
-macro, which PLean does not produce. `Verify/Tactic.lean` recomposes
-the underlying pieces (`wpgen` + simp set + Veil-style preprocessing
-for `GlobalState` + `loom_smt`) without that scaffolding.
-
-### SMT preparation: tag new state-update functions with `@[pverifySimp]`
-
-`GlobalState`-shaped goals reach `loom_smt` through a preprocessing
-chain (`pverify_smt_prep`) that turns function-typed record fields
-into applied uninterpreted symbols lean-auto can translate. The
-recipe lives in `Verify/Tactic.lean`; the simp set it relies on is
-`@[pverifySimp]` (declared in `Verify/SimpAttrs.lean`, populated in
-`Verify/SimpLemmas.lean`). When you add a new `GlobalState` update
-helper or predicate that should reduce before SMT, tag it with
-`@[pverifySimp]`.
-[`Tests/Semantics/SmtVeilRecipe.lean`](Tests/Semantics/SmtVeilRecipe.lean)
-pins the recipe on the three default invariants.
-
-### Counter-examples are decoded, not dumped
-
-A disproved obligation routes its solver model through
-`Verify/CexParse.lean` + `Verify/CexModel.lean` (called from
-`Obligation.lean::renderCex`) into a per-machine state table
-(`Node@Act(epoch=9, held=false)`), the `sent` trace ordered by
-`actionCount` (`eGrant(node=Node#8, epoch=7)`, `[]` when empty), a
-`containers:` section for each hoisted container var, and a
-witnesses section. Machine refs render as `<Kind>#<ref>` labels; since
-`MachineRef` is a reducible `Nat`, ref-typed fields are found from
-projection return types and kinds from the `machines` table (a ref not
-in `machines` renders bare, `#24`). Two name sources combine: string
-de-mangling of lean-auto's `"_" ++ delab(expr)` atoms (exact `h2lMap`
-recovery is the v2 follow-up), and a `CexNameCtx` built from the registry
-in `Obligation.lean::buildCexNameCtx` and passed via `cexNameCtxRef`
-(state-ctor → machine/state, global `Fields` order, event payload field
-names, ref-typed field names, container field qualified names). All
-names are read from the materialised structures via the **environment**
-(`getStructureInfo?` + projection types), NOT the registry `defStx` —
-`#gen_module` clears `defStx` before `synthesise` runs. Anything without
-a name degrades to a de-mangled raw value.
-
-**Post-hoist lookups**: after `sdestruct_state` destructures
-`GlobalState`, the model's primary names are `gsSent` / `gsReceived`
-/ `gsMachines` / `gsActionCount`, with the pre-destructure forms
-(`sent`/`received`/`machines`/`actionCount`) kept as fallbacks for
-synthetic test goldens. Hoisted container vars (the
-`<Mod>.Containers` struct's fields) surface as top-level free
-functions; `decodeContainers` walks each one's `ite`-table and
-renders constant fallthroughs as `∀ (m, k) = <value>` to make
-explicit that the displayed value covers every (machine, key)
-pair.
-
-Don't pin exact model *values* in tests — they're solver-specific;
-pin de-mangling and structural markers (see
-[`Tests/Verify/CexEndToEnd.lean`](Tests/Verify/CexEndToEnd.lean)). The
-synthetic-model goldens in
-[`Tests/Verify/CexParserGolden.lean`](Tests/Verify/CexParserGolden.lean)
-pin exact rendering with a hand-built `CexNameCtx`.
+- **`system <σ>` declares the state binder for a pmodule.** Every
+  subsequent `invariant` / `init-holds` / `paxiom` body may reference
+  `σ` as the live state; the materialiser binds it as the lambda
+  argument. A pmodule without `system <σ>` emits state-independent
+  clauses. Soundness guard (`rejectStateShadowIn`, pinned by
+  `Tests/Syntax/SoundnessRegression.lean`) rejects bodies that name
+  `GlobalState` in any binder.
+- **Field-projection sugar.** Inside state-bound clauses, `n.<v>`
+  desugars to `(σ.machines n.ref).fields.<M>_<v>` and `e.<f>` to
+  `(<ev>_payload_of e).<f>`. Gated on registered field names; runs
+  before kind-guard injection so it sees the original quantifier
+  types.
+- **Kind guards auto-injected on quantifiers.** `∀ n : <M>, body`
+  becomes `∀ n : <M>, is_<M> n.ref s → body` (and similarly for `∃`
+  and event quantifiers). Skipped when the body already mentions the
+  guard. Pinned by `Tests/Syntax/SoundnessRegression.lean`.
+- **Container `var`s are hoisted into `Containers`.** `set[T]` /
+  `map[K, V]` vars hoist out of `Fields` into a per-pmodule
+  `Containers` struct uncurried with `MachineRef`, so `n.<v>`
+  reduces to a flat applied symbol lean-auto can translate.
+  `seq[T]` and first-order vars stay in `Fields`. Mirrors
+  PVerifier's UCLID5 2D-array layout. Exercised by
+  [`Examples/ShardedKV`](Examples/ShardedKV.lean).
+- **`MachineRef := Nat`; per-machine type is a wrapper.** Dynamic
+  kind check (`<M>_allocated`, public alias `is_<M>`) goes through
+  a `Nat` kind tag plus `currentState ∈ <M>'s states` (load-bearing
+  — without it spurious models fabricate a kind/state mismatch).
+  Don't introduce a `MachineRef <M>` refinement.
+- **Bundle conjunctions don't carry trailing `True`.**
+  `buildConjAt` and `emitConjPredicate` emit `p1 ∧ … ∧ pn` with no
+  terminator. Empty bundles collapse to `fun _ => True`. Manual
+  `@[pverifyProof]` statements must match exactly. Pinned by
+  `Tests/Syntax/ObligationShape.lean`.
+- **Every executable handler gets an obligation.** Three shapes:
+  `on <ev> { body }`, `on <ev> goto <tgt>`, and `entry { body }`.
+  Coverage is sound by construction — the user-directive pass and
+  the auto-default pass iterate over `(machine, state) × (events
+  ∪ {entry})`. Pinned by `Tests/Syntax/HandlerCoverage.lean`.
+- **Per-handler triples are pure consecution; init is separate.**
+  A per-handler obligation is `(Inv ∧ DispatcherContract) ⇒
+  wp(handler, Inv)`; `InitConditions` discharges via separate
+  base-case VCs (one per individual invariant per `prove` target).
+  Premises (`using P`) don't get base VCs.
+- **`using` premises must be `prove`d.** `prove safety using
+  framework ;` requires another directive `prove framework ;`
+  whose obligations actually discharge. Mirrors PVerifier's
+  `MarkProvenInvariants` + `ShowRemainings`. Failures surface as
+  `[missing premise]` records. `default` is treated as a sibling
+  flag: `using default` needs a `prove default ;` whose default
+  obligations all close. Pinned by
+  `Tests/Syntax/MissingPremise.lean`.
+- **`#pverify` is an SMT-discharge command, not a tactic engine.**
+  For each obligation it consults `@[pverifyProof]`, emits a
+  theorem with a `pverify` tail, and inspects the value for
+  `sorry`. Don't bake substantive automation into `#pverify`
+  itself; that belongs in user-callable tactics or
+  `@[pverifyProof]` theorems.
+- **Macro hygiene through `mkIdent`.** Identifiers that resolve
+  against user-namespace constants (`Sig`, `E`, `G`, `this`,
+  `<S>_st`, …) must be built via `mkIdent` and spliced. Bare names
+  inside `` `(...) `` quotations get hygiene marks and fail to
+  resolve. Symptom: `PLean.DivM✝` or `Sig✝` in error output.
+- **`loom_solve` is CaseStudies-only.** PLean uses `wpgen` + simp
+  set + Veil-style preprocessing + `loom_smt`; see
+  `Verify/Tactic.lean`.
+- **Tag new state-update helpers `@[pverifySimp]`.** The pre-SMT
+  simp pass uses this set; an untagged helper reaches lean-auto
+  as an opaque symbol and the obligation returns `unknown`.
+- **Counter-examples are decoded, not dumped.** A disproved
+  obligation routes its model through `Verify/CexParse.lean` +
+  `CexModel.lean` into a per-machine state table, `sent` trace,
+  `containers:` section, and witnesses. Don't pin exact model
+  *values* in tests — pin de-mangling and structural markers (see
+  `Tests/Verify/CexEndToEnd.lean`).
 
 ## Style guide
 
-These rules apply to PLean source, proofs, and tactics. Most are
-load-bearing: a violation can either silently waste solver time or
-introduce a soundness gap. The bullets below tell you when each rule
-applies, not just what it is.
-
-### Don'ts
-
-- **Don't over-comment.** Default to no comments. Add one only when the
-  *why* is non-obvious (a hidden invariant, a workaround, a soundness
-  consequence). Well-named identifiers explain *what*; don't restate
-  them.
-- **Don't reference phase numbers or plan-doc section IDs in source
-  comments.** Plan docs evolve, source comments don't get re-numbered.
-  If a comment needs to justify a design decision, state the reason
-  directly. References to `STATUS.md` are fine when pinning a
-  named-bug-fix, but only when the fix is still load-bearing.
-- **Don't dump deliberation into comments.** No "I tried X but it
-  didn't work because …", no decision logs, no exploratory narration.
-  Document the *invariant the code maintains*, not the path you took
-  to find it.
-- **Don't cite other codebases in source comments.** OK to mention a
-  specific PVerifier construct or a `Loom` API when the PLean piece
-  exists to mirror or interface with it (e.g., "matches PVerifier's
-  per-handler obligation shape"); not OK to gesture at "see paper X"
-  or "similar to project Y". Citations belong in plan docs.
-- **Don't trim `lake build` output on `#pverify` files.** A failing
-  verification produces a structured report — failing-obligation names,
-  copy-paste manual-proof skeletons, per-stage profile — *after* the
-  `✖` line. Re-running the build to recover output is expensive (SMT
-  solving dominates), so always read the full output the first time.
-  Pipe to a file (`lake build Examples.Foo 2>&1 | tee build.log`) if
-  it's long, and grep over the file rather than re-running.
-- **Don't leave probe code lying around.** When a probe (a temporary
-  `example`, `#check`, `#eval`, or a one-off file under `Tests/`) has
-  served its purpose, either delete it or convert it into a real
-  regression that pins a behaviour worth keeping. Don't pin trivial
-  facts that follow directly from the surrounding code — pins are
-  load-bearing only when they catch a real regression class.
-- **Don't introduce paths or repo URLs in source comments.** Describe a
-  module by its role (e.g., "the obligation generator", "the kind-guard
-  injection pass"), not its filesystem location. Paths rot when files
-  move.
-
-### Do's
-
-- **Correctness first.** A soundness regression is far worse than a
-  performance regression or a verbose proof. Two soundness guards are
-  pinned (`GlobalState`-shadowed binders, sorried `@[pverifyProof]`
-  failure) by `Tests/Syntax/SoundnessRegression.lean` — don't regress
-  them. Before adding a tactic that closes more goals, satisfy yourself
-  that it cannot close *false* goals.
-- **Decompose deliberately.** When a module crosses ~500 lines or
-  serves more than one cohesive purpose, split it — but only when the
-  split *reduces* coupling. A new sub-module that re-exports the same
-  surface with extra import overhead is worse than the original. Match
-  the decomposition to the existing `PLean/{Syntax,Commands,Verify,
-  Semantics,Internal}/` axes where it fits.
-- **Read [`docs/ProofSkill.md`](docs/ProofSkill.md) before writing
-  manual proofs.** It covers the one-step-at-a-time workflow, the
-  higher-order-rejection workaround, bundle-sizing for SMT, and the
-  `using`-chain pattern — most novel proofs hit one of these.
-- **Lean on `Verify/Tactic.lean` and extend it.** When a manual proof
-  uses the same shape twice — `pverify_carry_after_recv`,
-  `pverify_not_inflight[_by]`, `pverify_inflight_by`,
-  `pverify_machine_has_type`, `pverify_split_smt` — that's the catalogue
-  of "common pattern → atomic tactic". Before duplicating a proof shape,
-  check whether a tactic already covers it; if a *new* recurring shape
-  shows up, add it to the catalogue. The docstrings on each tactic
-  spell out their calling pattern and prerequisites.
-- **Shorten proofs after they close.** Once an obligation is green,
-  cross-check it against neighbouring proofs. If the same boilerplate
-  appears in 2+ places, factor it into a tactic and replace the
-  inlined copies. Smaller proofs make future obligations easier to
-  diagnose when SMT regresses.
-- **Keep tactics atomic; compose for the macro shapes.** A tactic should
-  do *one* recognisable proof step. If a pattern is "prove A, then use
-  A to close B", implement two atomic tactics and a `tactic|`-macro
-  that sequences them. Don't bake A+B into a single monolithic tactic
-  that you can't reuse for "prove A but close C differently" later. The
-  existing pverify_* family follows this rule — preserve it.
-- **Tag new `GlobalState` update helpers with `@[pverifySimp]`.** SMT
-  prep reduces them before lean-auto runs; an untagged helper reaches
-  the solver as an opaque symbol and the obligation returns `unknown`.
+See [`docs/STYLE.md`](docs/STYLE.md) for the source/proof/tactic
+style rules. Soundness rule of thumb: before adding a tactic that
+closes more goals, satisfy yourself it can't close *false* goals.
+Two pinned soundness guards live in
+`Tests/Syntax/SoundnessRegression.lean` — don't regress them.
 
 ## Common operations
 

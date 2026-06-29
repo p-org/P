@@ -2,8 +2,7 @@
 
 Contributor-facing entry point: current status, workstreams, and how
 they slot into sprint planning. [`STATUS.md`](STATUS.md) carries the
-one-page snapshot; [`PLAN.md`](PLAN.md) / [`PLAN_P{0..4}.md`](.) carry
-the per-phase designs.
+one-page snapshot.
 
 > **Update cadence.** Refresh after each phase flips, after each major
 > work item lands, and at the start of any sprint planning session.
@@ -123,7 +122,7 @@ Src/PLean/
     Verify/        Obligation, Tactic, ProofRegistry, SimpAttrs
   Examples/        PingPong demo
   Tests/           Bootstrap, Semantics, Surface
-  docs/            PLAN.md, PLAN_P{0..4}.md, STATUS.md, ROADMAP.md (this), REVIEW.md, ProofSkill.md
+  docs/            STATUS.md, ROADMAP.md (this), REVIEW.md, ProofSkill.md
 ```
 
 Phase ownership of files (for "who touches what"):
@@ -222,7 +221,7 @@ events, maintain their own state, and assert correctness conditions.
 The acceptance benchmark is
 [`Tutorial/Advanced/1_ChainReplicationVerification`](../../../Tutorial/Advanced/1_ChainReplicationVerification/PSrc/System.p),
 the only benchmark in `Tutorial/Advanced/` with a `spec` block.
-Detailed design is in [`PLAN_P4.md`](PLAN_P4.md); proceed in order.
+Proceed in order through the action items below.
 
 **Action items.**
 
@@ -405,8 +404,7 @@ A bridge that emits `.p` source from the registry so PLean-authored
 programs can run under the existing PChecker model checker; an
 evaluation of `lean-smt` as an alternative to Loom for the SMT
 backend; and counter-example surfacing for failed obligations.
-Tracked in [`PLAN.md` § Phase 7](PLAN.md). Not on the v1 critical
-path.
+Not on the v1 critical path.
 
 ---
 
@@ -514,13 +512,10 @@ on framework engineering.
 ## Onboarding for a new contributor
 
 1. **Read [`CLAUDE.md`](../CLAUDE.md)** (top of `Src/PLean/`) — the
-   build cookbook, hygiene rules, and `Stub.lean`-deletion gotcha.
-2. **Skim [`PLAN.md`](PLAN.md)**, then jump to the **phase plan
-   matching what you're picking up** (PLAN_P3 for Phase 3 residue,
-   PLAN_P4 for spec machines, etc.).
-3. **Check [`STATUS.md`](STATUS.md)** for the current closure snapshot
+   build cookbook, conventions, and surface-keyword table.
+2. **Check [`STATUS.md`](STATUS.md)** for the current closure snapshot
    and what's in flight.
-4. **Build & test from inside `Src/PLean/`:**
+3. **Build & test from inside `Src/PLean/`:**
    ```bash
    cd Src/PLean
    lake build PLean
@@ -542,8 +537,8 @@ tactic library.
 
 | Question | Look here |
 |---|---|
-| Why is feature X designed the way it is? | `PLAN.md` for the headline; `PLAN_P{0..4}.md` for the matching phase |
 | What just landed / what's blocked? | [`STATUS.md`](STATUS.md) |
+| Why is feature X designed the way it is? | The source comments in the relevant module; high-level rationale in [`CLAUDE.md`](../CLAUDE.md). |
 | What does `#pverify` actually do? | [`Commands/PVerify.lean`](../PLean/Commands/PVerify.lean) → [`Verify/Obligation.lean`](../PLean/Verify/Obligation.lean) → [`Verify/Tactic.lean`](../PLean/Verify/Tactic.lean) |
 | How is a `pmodule M` materialised? | [`Commands/GenModule.lean`](../PLean/Commands/GenModule.lean) (start at the top — it's pipelined) |
 | What's a `system <σ>` declaration? | [`CLAUDE.md` § Conventions](../CLAUDE.md) |
@@ -552,5 +547,5 @@ tactic library.
 ---
 
 _Maintainer: whoever is driving sprint planning. When this document
-and [`STATUS.md`](STATUS.md) or [`PLAN.md`](PLAN.md) disagree, update
-this document — those are authoritative._
+and [`STATUS.md`](STATUS.md) disagree, [`STATUS.md`](STATUS.md) is
+authoritative._

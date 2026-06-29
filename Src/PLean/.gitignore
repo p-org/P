@@ -11,3 +11,7 @@
 
 # OS / editor cruft.
 .DS_Store
+
+# Plan documents — local working drafts for LLM agents, not contributor-facing.
+docs/PLAN.md
+docs/PLAN_*.md

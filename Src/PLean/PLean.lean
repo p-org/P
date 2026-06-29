@@ -2,7 +2,7 @@
 -- as the verification backend.
 --
 -- Top-level facade. Re-exports the public surface so users only need
--- `import PLean`. See docs/PLAN.md and docs/PLAN_P0.md for the design.
+-- `import PLean`.
 import PLean.Internal.Decls
 import PLean.Internal.Registry
 import PLean.Semantics.Label

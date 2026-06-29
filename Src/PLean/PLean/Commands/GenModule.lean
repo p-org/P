@@ -103,7 +103,7 @@ private def idProgramSig : Ident := mkIdent `PLean.ProgramSig
 private def idPM_PLean   : Ident := mkIdent `PLean.PM
 private def idGlobalState : Ident := mkIdent `PLean.GlobalState
 
-/-! ## Step 1: per-machine wrapper structs -/
+/-! ## Per-machine wrapper structs -/
 
 private def emitMachineWrappers (ctx : LocalPModuleCtx) : CommandElabM Unit := do
   for mname in ctx.machineOrder do
@@ -118,7 +118,7 @@ private def emitMachineWrappers (ctx : LocalPModuleCtx) : CommandElabM Unit := d
       instance : Coe $mid $idMachineRef := ⟨fun s => s.ref⟩
     ))
 
-/-! ## Step 1b: machine-kind machinery
+/-! ## Machine-kind machinery
 
 For each pmodule, emit:
   inductive <Mod>.MKind | <M1> | <M2> | ... deriving DecidableEq, Inhabited
@@ -210,7 +210,7 @@ private def emitMachineKinds (ctx : LocalPModuleCtx) : CommandElabM Unit := do
         $allocName m
     ))
 
-/-! ## Step 4: union types `<Mod>.E`, `<Mod>.G`, `<Mod>.S`, `<Mod>.Fields` -/
+/-! ## Per-pmodule union types `<Mod>.E`, `<Mod>.G`, `<Mod>.S`, `<Mod>.Fields` -/
 
 private def emitProgramUnions (ctx : LocalPModuleCtx)
     (machineVars : NameMap (Array VarInfo)) : CommandElabM Unit := do
@@ -402,7 +402,7 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
     abbrev $idGS : Type := $idGlobalState $idSig
   ))
 
-/-! ## Step 4b: per-event tag-check predicates `is_<ev>`
+/-! ## Per-event tag-check predicates `is_<ev>`
 
 The `is` notation in `Syntax/Notation.lean` rewrites `lbl is <ev>` to
 `is_<ev> lbl` — a *tag-only* check (matching P's surface semantics).
@@ -433,7 +433,7 @@ private def emitIsPredicates (ctx : LocalPModuleCtx) : CommandElabM Unit := do
           | _ => False
       ))
 
-/-! ## Step 4c: per-event payload extractor `<ev>_payload_of`
+/-! ## Per-event payload extractor `<ev>_payload_of`
 
 Inside invariant bodies, `e : <ev>` (after the `system <s>` materialiser
 retypes the binder to `Sig.Label`) projects the payload via
@@ -463,7 +463,7 @@ private def emitEventPayloadAccessors (ctx : LocalPModuleCtx)
         | _ => default
     ))
 
-/-! ## Step 4d″: per-event payload characterisation `<ev>_payload_of_spec`
+/-! ## Per-event payload characterisation `<ev>_payload_of_spec`
 
 `<ev>_payload_of` is sealed `@[irreducible]` so SMT treats it as an
 uninterpreted symbol — that's what lets a routing invariant
@@ -512,7 +512,7 @@ private def emitPayloadCharacterizations (ctx : LocalPModuleCtx)
     -- to SMT where needed.
     elabCommand (← `(attribute [irreducible] $extractor))
 
-/-! ## Step 4d′: per-event characterisation lemmas `is_<ev>_iff`
+/-! ## Per-event characterisation lemmas `is_<ev>_iff`
 
 Bridge the opaque `is_<ev>` tag predicate to a concrete `Label.action`
 constructor equality. `is_<ev>` is emitted (step 4b) as a `match`-on-
@@ -561,7 +561,7 @@ private def emitIsCharacterizations (ctx : LocalPModuleCtx) : CommandElabM Unit 
           · simp_all
       ))
 
-/-! ## Step 5: `#derive_lifted_wp` for the per-pmodule `get`/`set`
+/-! ## `#derive_lifted_wp` for the per-pmodule `get`/`set`
 
 These register `loomSpec` lemmas that teach `wpgen` how to step through
 state reads and writes. Without them, surface-emitted handler triples
@@ -586,7 +586,7 @@ private def emitDerivedWP : CommandElabM Unit := do
       as $idPM PUnit
   ))
 
-/-! ## Step 6: per-machine var accessors and state-tag aliases -/
+/-! ## Per-machine var accessors and state-tag aliases -/
 
 private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
     CommandElabM Unit := do
@@ -838,7 +838,14 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
           $bindings*
           $bodyItem
       ))
-  | _ => throwErrorAt item "unrecognised state body item (during materialisation)"
+  | _ =>
+    -- `ignore <ev1>, <ev2>, …;` emits no handler def. The obligation
+    -- generator skips ignored events by consulting
+    -- `PStateDecl.ignoredEvents`. Match on the syntax kind because the
+    -- `ident,+` shape doesn't round-trip cleanly through a quotation
+    -- pattern.
+    if item.getKind == ``PLean.pStateIgnore then pure ()
+    else throwErrorAt item "unrecognised state body item (during materialisation)"
 
 private def materialiseMachineBody (mname : Name) (items : Array Syntax)
     (vars : Array VarInfo)
@@ -857,20 +864,20 @@ private def materialiseMachineBody (mname : Name) (items : Array Syntax)
         materialiseStateBodyItem mname sname vars eventPayloadTy sit
     | _ => throwErrorAt it "unrecognised machine body item (during materialisation)"
 
-/-! ## Step 7b–d: state-indexed conjunction predicates.
+/-! ## State-indexed conjunction predicates.
 
 `emitConjPredicate name members` emits
 
   def <name> : GS → Prop := fun s => c₁ ∧ c₂ ∧ ... ∧ cₙ
 
-The binder is always the unhygienic `s` (the soundness fix from
-2026-06-10: a bundle that elided the binder while the body still named
-`s` via macro capture silently decoupled the predicate from per-handler
-state). Each member is a `(term, applyState)` pair: when `applyState` is
-true the conjunct is rendered as `(m) s`; when false the conjunct is
-`m` verbatim — the user's clause is already a closed `Prop` that may
-reference `s` directly (e.g. a framework init clause like
-`s.actionCount = 0`, or an `init-holds (∀ x, P x)` body).
+The binder is always the unhygienic `s`. Eliding it while the body
+still names `s` via macro capture would silently decouple the
+predicate from per-handler state — a soundness hole. Each member is a
+`(term, applyState)` pair: when `applyState` is true the conjunct is
+rendered as `(m) s`; when false the conjunct is `m` verbatim — the
+user's clause is already a closed `Prop` that may reference `s`
+directly (e.g. a framework init clause like `s.actionCount = 0`, or
+an `init-holds (∀ x, P x)` body).
 
 The per-member flag lets `emitInitConditions` mix `s`-dependent
 framework clauses with closed user-supplied props in a single call.
@@ -908,16 +915,23 @@ framework init constraints** into the single predicate
 - `actionCount` starts at 0,
 - every `MachineRef` starts in some machine's `start state`.
 
-The conjuncts are all closed `Prop`s that name `s` directly via macro
-capture (via the unhygienic `s` binder the helper introduces), so they
-all pass `applyState := false` through `emitConjPredicate`. -/
+The conjuncts are all closed `Prop`s that name the pmodule's
+`system`-declared `<σ>` directly via macro capture. The lambda binder
+is `<σ>` when the pmodule declared `system <σ>`, falling back to the
+unhygienic `s` for pmodules that didn't (state-independent init
+clauses still work; the body just can't reference the state).
+Per-clause state binders are unified to the pmodule's binder at
+materialisation — declaring `system σ` and then `init-holds … σ …`
+binds via `σ` so the user-facing name in error messages matches what
+they wrote. -/
 private def emitInitConditions (machineKinds eventKinds : NameSet)
     (machineFields : NameMap NameSet)
     (machineContainerFields : NameMap NameSet)
     (machineSetPropFields : NameMap NameSet)
     (eventPayloadFields : NameMap NameSet)
     (ctx : LocalPModuleCtx) : CommandElabM Unit := do
-  let sId : Ident := mkIdent `s
+  let sName : Name := ctx.sBinder.getD `s
+  let sId : Ident := mkIdent sName
   let mut props : Array (TSyntax `term) :=
     #[← `((∀ l : ($idSig).Label, ($sId).sent l = false)),
       ← `((∀ l : ($idSig).Label, ($sId).received l = false)),
@@ -952,17 +966,23 @@ private def emitInitConditions (machineKinds eventKinds : NameSet)
   for d in ctx.inits do
     if let some stx := d.defStx then
       -- An `init-holds` body that names `GlobalState` as a binder type
-      -- would shadow the outer `s` and silently decouple the clause
-      -- from the actual init state — the same soundness hole
+      -- would shadow the outer state binder and silently decouple the
+      -- clause from the actual init state — the same soundness hole
       -- `rejectExplicitStateBinder` guards for invariants.
       PLean.rejectStateShadowIn "`init-holds`" stx[1]
-      let rewritten ← liftMacroM <|
-        PLean.rewriteFieldProjections machineKinds eventKinds
-          machineFields machineContainerFields machineSetPropFields
-          eventPayloadFields `s stx[1]
-      let raw ← liftMacroM <|
-        PLean.injectKindGuards machineKinds eventKinds `s rewritten
-      props := props.push ⟨raw⟩
+      -- A clause registered before `system <σ>` has no binder to bind
+      -- against; treat the body as a closed `Prop` verbatim.
+      match d.stateBinder with
+      | none =>
+        props := props.push ⟨stx[1]⟩
+      | some _ =>
+        let rewritten ← liftMacroM <|
+          PLean.rewriteFieldProjections machineKinds eventKinds
+            machineFields machineContainerFields machineSetPropFields
+            eventPayloadFields sName stx[1]
+        let raw ← liftMacroM <|
+          PLean.injectKindGuards machineKinds eventKinds sName rewritten
+        props := props.push ⟨raw⟩
   emitConjPredicateUniform (mkIdent `InitConditions)
     props (applyState := false)
 
@@ -1001,31 +1021,22 @@ def elabPGenModule : CommandElab := fun stx => do
     -- Open the pmodule namespace so all materialised aliases / structures /
     -- handler defs live under <Mod>.* and so cross-references resolve.
     elabCommand (← `(namespace $name))
-    -- Step 1: per-machine wrapper structs.
     emitMachineWrappers ctx
-    -- Step 2: types and enums in registration order.
     for tname in ctx.typeOrder do
       let some t := ctx.types.find? tname | continue
       materialiseType t
-    -- Step 3: events — emits `<ev>_payload` abbrevs.
     for ename in ctx.eventOrder do
       let some e := ctx.events.find? ename | continue
       materialiseEvent e
-    -- Pull out the var info for every machine before emitting `Fields`
-    -- and the per-machine accessors.
     let mut machineVars : NameMap (Array VarInfo) := {}
     for mname in ctx.machineOrder do
       let some m := ctx.machines.find? mname | continue
       let vars ← collectVars m.body
       machineVars := machineVars.insert mname vars
-    -- Step 4: emit `Sig`/`PM'`/`GS` and the union types.
     emitProgramUnions ctx machineVars
-    -- Step 4b: per-event `is_<ev>` tag-check predicates (used by the
-    -- `is` notation from `Syntax/Notation.lean`).
     emitIsPredicates ctx
-    -- Step 4c: machine-kind inductive + `<M>.allocated` predicates.
-    -- Lives between the `Sig`/`GS` aliases and the per-machine
-    -- accessors so invariants and obligations can reference them.
+    -- Machine-kind predicates emit between the `Sig`/`GS` aliases and the
+    -- per-machine accessors so invariants and obligations can reference them.
     emitMachineKinds ctx
     -- Build the field-projection maps used by the invariant rewriter.
     -- machineFields[M] is the set of **first-order** `var` names for
@@ -1078,37 +1089,42 @@ def elabPGenModule : CommandElab := fun stx => do
           out := out.insert ename s
         | _ => pure ()
       out
-    -- Step 4d: per-event payload extractor `<ev>_payload_of`. Lives
-    -- after the union types so it can pattern-match on `E.<ev>`.
+    -- Payload extractor lives after the union types so it can
+    -- pattern-match on `E.<ev>`.
     emitEventPayloadAccessors ctx eventPayloadFields
-    -- Step 4d″: per-event `<ev>_payload_of_mk` characterisation lemma —
-    -- the defining equation of the extractor on a freshly-constructed
-    -- event label, used by send-handler manual proofs. Lives after
-    -- `emitEventPayloadAccessors` (so `<ev>_payload_of` exists).
+    -- `_payload_of_mk` is the defining equation of the extractor on a
+    -- freshly-constructed event label; used by send-handler manual
+    -- proofs. Must follow `emitEventPayloadAccessors`.
     emitPayloadCharacterizations ctx eventPayloadFields
-    -- Step 4d′: per-event `is_<ev>_iff` characterisation lemmas. Lives
-    -- after `emitIsPredicates` (so `is_<ev>` exists to unfold) and the
-    -- union types (so `E.<ev>` resolves).
+    -- `is_<ev>_iff` lemmas need both `is_<ev>` (from `emitIsPredicates`)
+    -- and the union types (so `E.<ev>` resolves).
     emitIsCharacterizations ctx
-    -- Step 5: derive lifted WP for `get`/`set`.
     emitDerivedWP
-    -- Step 5b: materialise `pure` functions (foreign + defined),
-    -- `paxiom`s, and `pinstance`s *before* the per-machine handler
-    -- bodies (Step 6) and the verification declarations (Step 7).
-    -- Handler bodies and invariants may reference any of: a `function`
-    -- (`if le this.ref x then …`), an axiom (`have := f_total x`), or
-    -- a typeclass projection (`LeOrder.le this.ref x`, found via the
-    -- anonymous instance `pinstance` emits). The pinstance bundle has
-    -- to land *before* Step 6 specifically so typeclass resolution for
-    -- `LeOrder.le` inside a handler body succeeds; otherwise the
-    -- elaborator reports `failed to synthesize LeOrder MachineRef`.
+    -- Materialise `pure` functions, `paxiom`s, and `pinstance`s before
+    -- the per-machine handler bodies and the verification declarations:
+    -- handler bodies and invariants may reference a `function`, an
+    -- axiom (via a `have`), or a typeclass projection (via the
+    -- anonymous instance `pinstance` emits). The pinstance bundle in
+    -- particular must precede handler-body emission so typeclass
+    -- resolution finds it; otherwise `failed to synthesize <Class>
+    -- MachineRef` fires inside a handler.
     for (_, d) in ctx.pures.toList do      materialisePure d
-    for (_, d) in ctx.axioms.toList do     materialiseAxiom d
+    -- `paxiom` bodies may name the pmodule's `system <σ>` binder; the
+    -- materialiser binds it via `∀ <σ> : GlobalState Sig, …` and runs
+    -- the same field-projection + kind-guard pipeline `invariant`
+    -- bodies get.
+    let machineKindsForAx : NameSet :=
+      ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
+    let eventKindsForAx : NameSet :=
+      ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
+    for (_, d) in ctx.axioms.toList do
+      materialiseAxiom machineKindsForAx eventKindsForAx
+        machineFields machineContainerFields machineSetPropFields
+        eventPayloadFields d
     for (_, d) in ctx.instances.toList do  materialiseInstance d
-    -- Step 5c: emit per-machine state-tag aliases first (they're
-    -- needed both by invariants that reference `<M>.<S>_st` and by
-    -- handler bodies that `goto <S>`). State aliases don't depend on
-    -- var accessors or handlers, so this split is sound.
+    -- State-tag aliases emit before machine handler bodies so handler
+    -- bodies' `goto <S>` resolves to `<S>_st`, and before invariant
+    -- materialisation so an invariant naming `<M>.<S>_st` resolves too.
     for mname in ctx.machineOrder do
       let some m := ctx.machines.find? mname | continue
       let mid := mkIdent m.name
@@ -1116,11 +1132,11 @@ def elabPGenModule : CommandElab := fun stx => do
       elabCommand (← `(open $name:ident))
       emitStateAliases mname m.states
       elabCommand (← `(end $mid))
-    -- Step 5d: materialise invariants + lemma bundles BEFORE machine
-    -- handler bodies so loop-invariant clauses inside handler entries
-    -- can reference a `Lemma X` / `Theorem X` bundle by name (the
-    -- post-loop WP needs `X s` preserved across iterations). Handlers
-    -- themselves don't reference invariants, so the move is sound.
+    -- Invariants and lemma bundles emit before machine handler bodies
+    -- so loop-invariant clauses inside an entry handler can reference
+    -- a `Lemma X` / `Theorem X` bundle by name (the post-loop WP needs
+    -- `X s` preserved across iterations). Handlers don't reference
+    -- invariants, so the order is sound.
     let machineKindsEarly : NameSet :=
       ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
     let eventKindsEarly : NameSet :=
@@ -1129,9 +1145,8 @@ def elabPGenModule : CommandElab := fun stx => do
       materialiseInvariant machineKindsEarly eventKindsEarly machineFields
         machineContainerFields machineSetPropFields eventPayloadFields d
     emitLemmaBundles ctx
-    -- Step 6: per-machine var accessors + handler defs replayed inside
-    -- each machine namespace. State aliases were emitted in Step 5c so
-    -- both invariants and handlers can reference `<M>.<S>_st`.
+    -- Per-machine var accessors + handler defs, replayed inside each
+    -- machine namespace.
     for mname in ctx.machineOrder do
       let some m := ctx.machines.find? mname | continue
       let vars := (machineVars.find? mname).getD #[]
@@ -1152,48 +1167,40 @@ def elabPGenModule : CommandElab := fun stx => do
       if !m.body.isEmpty then
         materialiseMachineBody mname m.body vars eventPayloadTy
       elabCommand (← `(end $mid))
-    -- Step 7: verification declarations.
-    -- Machine and event kind sets drive auto-injection of kind guards
-    -- on `∀ x : <M>, …` / `∀ e : <ev>, …` quantifiers inside
-    -- `system <s> { … }` blocks (see
-    -- `Syntax/Verify.lean::injectKindGuards`). Spec machines are
-    -- included for completeness — `is_<M>` is emitted for them too.
+    -- Machine and event kind sets drive kind-guard auto-injection on
+    -- `∀ x : <M>, …` / `∀ e : <ev>, …` quantifiers inside state-bound
+    -- invariant bodies. Spec machines are included so `is_<M>` is
+    -- emitted for them too.
     let machineKinds : NameSet :=
       ctx.machineOrder.foldl (init := {}) fun s n => s.insert n
     let eventKinds : NameSet :=
       ctx.eventOrder.foldl (init := {}) fun s n => s.insert n
-    -- `pure`s / `paxiom`s / `pinstance`s were already emitted in
-    -- Step 5b above — handler bodies need them in scope.
     -- Per-pinstance: synthesise one top-level def per Prop-typed class
-    -- field, and accumulate them into `synthAxioms` so they flow into
-    -- the persistent `ctx.axioms` map (and thus into the obligation
-    -- generator's `have hax_<name>` injection — the same SMT bridge
+    -- field. The names accumulate into `synthAxioms` so they flow into
+    -- the persistent `ctx.axioms` map and thus into the obligation
+    -- generator's `have hax_<name>` injection (the same SMT bridge
     -- hand-written `paxiom`s use). Done here rather than in
     -- `materialiseInstance` because adding to `ctx.axioms` requires the
-    -- enclosing pmodule's context, which we have here.
+    -- enclosing pmodule's context.
     let mut synthAxioms : NameMap PAxiomDecl := {}
     for (_, d) in ctx.instances.toList do
       let decls ← synthInstanceFieldAxioms modName d
       for ax in decls do
         synthAxioms := synthAxioms.insert ax.name ax
-    -- Step 7a: invariants + lemma bundles were materialised at Step 5c
-    -- so the entry handler's loop invariant clauses could reference
-    -- the lemma names; no-op here.
-    -- Step 7b: aggregate `init-holds` clauses into `<Mod>.InitConditions`.
-    -- The obligation generator consumes this as the base-case
-    -- precondition for each invariant.
+    -- Aggregate `init-holds` clauses into `<Mod>.InitConditions` (the
+    -- base-case precondition for each invariant).
     emitInitConditions machineKinds eventKinds machineFields
       machineContainerFields machineSetPropFields eventPayloadFields ctx
-    -- Step 7d: aggregate every free-standing invariant into
-    -- `<Mod>.UserInv` (empty → `True`).
+    -- Aggregate every free-standing invariant into `<Mod>.UserInv`
+    -- (empty → `True`).
     emitUserInv ctx
     elabCommand (← `(end $name))
-    -- Step 8: mark types/events/invariants/etc. as materialised by
-    -- clearing their `defStx` (so re-elaboration in another file's
-    -- import won't fire them again). We KEEP the machine body Syntax
-    -- so the obligation generator can extract `var` declarations and
-    -- re-walk for entry / goto-only clauses; the `materialised` flag
-    -- is set so `#pwf` knows the machine has been emitted.
+    -- Mark types/events/invariants/etc. as materialised by clearing
+    -- their `defStx`, so re-elaboration in another file's import won't
+    -- fire them again. The machine body Syntax is retained so the
+    -- obligation generator can extract `var` declarations and re-walk
+    -- for entry / goto-only clauses; the `materialised` flag tells
+    -- `#pwf` the machine has been emitted.
     let machines' := ctx.machines.foldl (init := ({} : NameMap PMachineDecl))
       fun acc n d => acc.insert n { d with materialised := true }
     let types'    := ctx.types.foldl (init := ({} : NameMap PTypeDecl))

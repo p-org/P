@@ -1,7 +1,9 @@
 /-
-Smoke test for the `#pverify` auto-discharge path: a pmodule with
-trivial-`pure ()` handlers and a `True` invariant. Every obligation
-closes via the `pverify` tactic's trivial-handler branch.
+Smoke test for the `#pverify` auto-discharge path: a pmodule with an
+`ignore`d event and a `True` invariant. The ignored event has no
+handler def and is skipped by the obligation generator, so the only
+obligation left is the base case for `always_true`, which closes by
+`trivial`.
 -/
 import PLean
 
@@ -13,7 +15,7 @@ pmodule PingPongTrivial
 
   machine Greeter {
     start state Idle {
-      on eHello { pure () }
+      ignore eHello
     }
   }
 

@@ -6,13 +6,13 @@ Soundness regressions for state-implicit invariants:
      rather than ignoring it.)
 
   2. Invariants are emitted as `GS → Prop` (not closed `Prop`), so
-     bare state references inside the body resolve to the bundle's
-     state argument.
+     bare state references inside the body resolve to the pmodule's
+     `system`-declared state binder.
 
-  3. An inner `∀ s : GlobalState Sig, …` inside a `system <s> { … }`
-     block is rejected at materialisation — the inner binder would
-     shadow the outer one and silently decouple the invariant from
-     per-handler state.
+  3. An inner `∀ s : GlobalState Sig, …` inside an invariant under a
+     `system <s>`-bound pmodule is rejected at materialisation — the
+     inner binder would shadow the outer one and silently decouple the
+     invariant from per-handler state.
 -/
 import PLean
 
@@ -27,6 +27,8 @@ open PLean PartialCorrectness DemonicChoice
 so SMT must report `1 failed`. -/
 
 pmodule SoundnessR1
+  system s
+
   event eGo
   machine Bad {
     var x : Nat
@@ -36,11 +38,9 @@ pmodule SoundnessR1
   }
 
   Theorem broken {
-    system s {
-      invariant always_x_is_42 :
-        ∀ b : Bad, Bad_allocated b.ref s →
-          (s.machines b.ref).fields.Bad_x = 42
-    }
+    invariant always_x_is_42 :
+      ∀ b : Bad, Bad_allocated b.ref s →
+        (s.machines b.ref).fields.Bad_x = 42
   }
 
   Proof Safety {
@@ -74,24 +74,21 @@ warning: declaration uses 'sorry'
 set_option pverify.failOnIncomplete false in
 #pverify SoundnessR1
 
-/-! ## Probe 2 — `∀ s : GlobalState Sig, …` inside `system s { … }` is rejected.
+/-! ## Probe 2 — `∀ s : GlobalState Sig, …` inside a `system`-bound invariant is rejected.
 
-Outside a `system` block, the binder is the wildcard `_`, so an
-explicit `∀ s : GlobalState Sig, …` is harmless (defines a
-state-independent meta-property). Inside `system s { … }`, the inner
-∀ would shadow the outer binder and reintroduce the soundness hole —
-the materialiser rejects it. -/
+Under `system s`, the invariant materialises to `fun s => <body>`. An
+inner `∀ s : GlobalState Sig, …` would shadow the outer `s` and
+re-introduce the soundness hole — the materialiser rejects it. -/
 
 pmodule SoundnessR2
+  system s
   event eGo
   machine M {
     start state S { on eGo { pure () } }
   }
 
   Theorem broken_shape {
-    system s {
-      invariant bad_shape : ∀ s : GlobalState Sig, True
-    }
+    invariant bad_shape : ∀ s : GlobalState Sig, True
   }
 end SoundnessR2
 
@@ -99,7 +96,7 @@ end SoundnessR2
 -- registration: the `Theorem` block records a `defStx` that
 -- `materialiseInvariant` rejects.
 /--
-error: invariant `bad_shape` lives inside a `system` block but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Reference the `system`-block's state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
+error: invariant `bad_shape` body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the pmodule's `system` state binder and silently decouples the invariant from per-handler state (a soundness hole). Reference the pmodule's `system`-declared state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
 -/
 #guard_msgs in
 #gen_module SoundnessR2
@@ -112,20 +109,19 @@ re-introduced the soundness hole. The fix walks the body Syntax
 recursively. -/
 
 pmodule SoundnessR3
+  system s
   event eGo
   machine M {
     start state S { on eGo { pure () } }
   }
 
   Theorem nested_shape {
-    system s {
-      invariant bad_nested : True ∧ (∀ s : GlobalState Sig, True)
-    }
+    invariant bad_nested : True ∧ (∀ s : GlobalState Sig, True)
   }
 end SoundnessR3
 
 /--
-error: invariant `bad_nested` lives inside a `system` block but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Reference the `system`-block's state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
+error: invariant `bad_nested` body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the pmodule's `system` state binder and silently decouples the invariant from per-handler state (a soundness hole). Reference the pmodule's `system`-declared state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
 -/
 #guard_msgs in
 #gen_module SoundnessR3
@@ -133,12 +129,14 @@ error: invariant `bad_nested` lives inside a `system` block but its body names t
 /-! ## Probe 4 — `let`/`have` GlobalState shadow is rejected.
 
 The ∀-only guard missed a `let s : GlobalState Sig := default; …`
-binder (elaborates to `have`), which shadows the `system`-block `s` and
-makes the invariant state-independent — a *false* property would then
-verify as a clean pass (audit-confirmed 2026-06-19). The generalised
-guard rejects any `GlobalState` mention in the body. -/
+binder (elaborates to `have`), which shadows the pmodule's `system`-
+declared `s` and makes the invariant state-independent — a *false*
+property would then verify as a clean pass (audit-confirmed
+2026-06-19). The generalised guard rejects any `GlobalState` mention
+in the body. -/
 
 pmodule SoundnessR4
+  system s
   event eGo
   machine Bad {
     var x : Nat
@@ -146,16 +144,14 @@ pmodule SoundnessR4
   }
 
   Theorem broken_let {
-    system s {
-      invariant let_shadow :
-        let s : GlobalState Sig := default;
-        (s.machines (default : MachineRef)).fields.Bad_x = 0
-    }
+    invariant let_shadow :
+      let s : GlobalState Sig := default;
+      (s.machines (default : MachineRef)).fields.Bad_x = 0
   }
 end SoundnessR4
 
 /--
-error: invariant `let_shadow` lives inside a `system` block but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Reference the `system`-block's state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
+error: invariant `let_shadow` body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the pmodule's `system` state binder and silently decouples the invariant from per-handler state (a soundness hole). Reference the pmodule's `system`-declared state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
 -/
 #guard_msgs in
 #gen_module SoundnessR4
@@ -166,20 +162,19 @@ The companion of probe 4: an existential binder of the state type also
 slipped the ∀-only guard. The generalised guard catches it. -/
 
 pmodule SoundnessR5
+  system s
   event eGo
   machine M {
     start state S { on eGo { pure () } }
   }
 
   Theorem broken_exists {
-    system s {
-      invariant exists_shadow : ∃ s : GlobalState Sig, s.actionCount = 0
-    }
+    invariant exists_shadow : ∃ s : GlobalState Sig, s.actionCount = 0
   }
 end SoundnessR5
 
 /--
-error: invariant `exists_shadow` lives inside a `system` block but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the outer `system` state binder and silently decouples the invariant from per-handler state (the soundness hole fixed 2026-06-10). Reference the `system`-block's state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
+error: invariant `exists_shadow` body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows the pmodule's `system` state binder and silently decouples the invariant from per-handler state (a soundness hole). Reference the pmodule's `system`-declared state binder directly in the body instead of introducing a new `GlobalState`-typed variable.
 -/
 #guard_msgs in
 #gen_module SoundnessR5
@@ -194,6 +189,7 @@ inspects the user theorem's own value; a sorried proof is reported as a
 failure (`no-diagnostic`), so `#pverify` does not falsely pass. -/
 
 pmodule SoundnessR6
+  system s
   event eGo
   machine M {
     var x : Bool
@@ -202,7 +198,7 @@ pmodule SoundnessR6
   init-holds ∀ m : M, m.x = false
 
   Theorem broken_manual {
-    system s { invariant always_false : ∀ m : M, m.x = false }
+    invariant always_false : ∀ m : M, m.x = false
   }
   Proof { prove broken_manual ; }
 end SoundnessR6

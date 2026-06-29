@@ -28,6 +28,8 @@ set_option loom.solver.smt.timeout 30
 
 pmodule LockServer
 
+  system s
+
   type tLockSender   = (sender : PLean.MachineRef)
   type tUnlockSender = (sender : PLean.MachineRef)
 
@@ -91,40 +93,38 @@ pmodule LockServer
   -- fresh `eGrant` to the lock's `sender`, so preserving `grant_to_node`
   -- needs to know that sender is a Node (hence not a Server).
   Lemma system_config {
-    system s {
-      invariant const_server : ∀ n : Node, n.server = lock_server
-      invariant serv_is_serv : is_Server lock_server s
-      invariant single_server : ∀ sv : Server, sv = lock_server
-      invariant unique_server :
-        ∀ (m1 m2 : MachineRef),
-          is_Server m1 s → is_Server m2 s → m1 = m2
+    invariant const_server : ∀ n : Node, n.server = lock_server
+    invariant serv_is_serv : is_Server lock_server s
+    invariant single_server : ∀ sv : Server, sv = lock_server
+    invariant unique_server :
+      ∀ (m1 m2 : MachineRef),
+        is_Server m1 s → is_Server m2 s → m1 = m2
 
-      invariant aquire_to_node :
-        ∀ (e : Sig.Label) (mref : MachineRef),
-          e is eAquire → (e targets mref) → (is_Server mref s) → ¬ inflight e s
+    invariant aquire_to_node :
+      ∀ (e : Sig.Label) (mref : MachineRef),
+        e is eAquire → (e targets mref) → (is_Server mref s) → ¬ inflight e s
 
-      invariant release_to_node :
-        ∀ (e : Sig.Label) (mref : MachineRef),
-          e is eRelease → (e targets mref) → (is_Server mref s) → ¬ inflight e s
+    invariant release_to_node :
+      ∀ (e : Sig.Label) (mref : MachineRef),
+        e is eRelease → (e targets mref) → (is_Server mref s) → ¬ inflight e s
 
-      invariant grant_to_node :
-        ∀ (e : Sig.Label) (mref : MachineRef),
-          e is eGrant → (e targets mref) → (is_Server mref s) → ¬ inflight e s
+    invariant grant_to_node :
+      ∀ (e : Sig.Label) (mref : MachineRef),
+        e is eGrant → (e targets mref) → (is_Server mref s) → ¬ inflight e s
 
-      invariant lock_to_server :
-        ∀ (e : Sig.Label) (mref : MachineRef),
-          e is eLock → (e targets mref) → (is_Node mref s) → ¬ inflight e s
+    invariant lock_to_server :
+      ∀ (e : Sig.Label) (mref : MachineRef),
+        e is eLock → (e targets mref) → (is_Node mref s) → ¬ inflight e s
 
-      invariant unlock_to_server :
-        ∀ (e : Sig.Label) (mref : MachineRef),
-          e is eUnlock → (e targets mref) → (is_Node mref s) → ¬ inflight e s
+    invariant unlock_to_server :
+      ∀ (e : Sig.Label) (mref : MachineRef),
+        e is eUnlock → (e targets mref) → (is_Node mref s) → ¬ inflight e s
 
-      invariant node_send_lock :
-        ∀ e : eLock, inflight e s → is_Node (e.sender) s
+    invariant node_send_lock :
+      ∀ e : eLock, inflight e s → is_Node (e.sender) s
 
-      invariant node_send_unlock :
-        ∀ e : eUnlock, inflight e s → is_Node (e.sender) s
-    }
+    invariant node_send_unlock :
+      ∀ e : eUnlock, inflight e s → is_Node (e.sender) s
   }
   Proof {
     prove system_config ;
@@ -137,35 +137,33 @@ pmodule LockServer
   -- lock while a grant/unlock is in flight" facts, and the Node/Server
   -- mutex. Each is dropped by the earlier skeleton.
   Theorem safety {
-    system s {
-      invariant unique_lock_holder :
-        ∀ n1 n2 : Node,
-          n1.has_lock = true →
-          n2.has_lock = true →
-          n1 = n2
+    invariant unique_lock_holder :
+      ∀ n1 n2 : Node,
+        n1.has_lock = true →
+        n2.has_lock = true →
+        n1 = n2
 
-      invariant unique_grant :
-        ∀ e1 e2 : eGrant, inflight e1 s → inflight e2 s → e1 = e2
+    invariant unique_grant :
+      ∀ e1 e2 : eGrant, inflight e1 s → inflight e2 s → e1 = e2
 
-      invariant unique_unlock :
-        ∀ e1 e2 : eUnlock, inflight e1 s → inflight e2 s → e1 = e2
+    invariant unique_unlock :
+      ∀ e1 e2 : eUnlock, inflight e1 s → inflight e2 s → e1 = e2
 
-      invariant grant_server_unlocked :
-        ∀ (e : eGrant) (sv : Server), inflight e s → sv.has_lock = false
+    invariant grant_server_unlocked :
+      ∀ (e : eGrant) (sv : Server), inflight e s → sv.has_lock = false
 
-      invariant no_lock_while_grant :
-        ∀ (e : eGrant) (n : Node), inflight e s → n.has_lock = false
+    invariant no_lock_while_grant :
+      ∀ (e : eGrant) (n : Node), inflight e s → n.has_lock = false
 
-      invariant no_lock_while_unlock :
-        ∀ (e : eUnlock) (n : Node) (sv : Server),
-          inflight e s → n.has_lock = false ∧ sv.has_lock = false
+    invariant no_lock_while_unlock :
+      ∀ (e : eUnlock) (n : Node) (sv : Server),
+        inflight e s → n.has_lock = false ∧ sv.has_lock = false
 
-      invariant grant_not_unlock :
-        ∀ (e1 : eGrant) (e2 : eUnlock), ¬ (inflight e1 s ∧ inflight e2 s)
+    invariant grant_not_unlock :
+      ∀ (e1 : eGrant) (e2 : eUnlock), ¬ (inflight e1 s ∧ inflight e2 s)
 
-      invariant node_server_mutex :
-        ∀ (n : Node) (sv : Server), ¬ (n.has_lock = true ∧ sv.has_lock = true)
-    }
+    invariant node_server_mutex :
+      ∀ (n : Node) (sv : Server), ¬ (n.has_lock = true ∧ sv.has_lock = true)
   }
   Proof {
     prove safety using system_config ;

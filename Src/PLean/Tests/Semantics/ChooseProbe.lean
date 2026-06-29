@@ -24,9 +24,9 @@ pmodule ChooseProbe
   }
 
   Theorem trivial {
-    system s {
-      invariant t : ∀ m : M, True
-    }
+
+    invariant t : ∀ m : M, True
+  
   }
 
   Proof Safety { prove trivial ; prove default ; }

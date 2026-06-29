@@ -50,19 +50,69 @@ mode picks it up via the same WPGen entry.
 ## Limitations
 
 - Loop invariants don't yet flow through the registry-aware
-  field-projection / kind-guard rewrites that `system`-block
-  invariants get; users spell `n.<v>` projections out as
-  `(s.machines n.ref).fields.<M>_<v>`.
+  field-projection rewrites that `system`-block invariants get;
+  users spell `n.<v>` projections out as
+  `(s.machines n.ref).fields.<M>_<v>`. Kind-guard injection for
+  `∀ n : <M>, …` / `∀ e : <ev>, …` quantifiers *does* run on loop
+  invariant bodies via the `pLoopInvWrap%` elab-time wrapper.
 - `foreach` over `Set` / `PMap` requires a `ForIn` instance that
   PLean doesn't yet provide.
 -/
 import Lean
 import PLean.Semantics.Loop
 import PLean.Semantics.Monad
+import PLean.Internal.Registry
+import PLean.Syntax.Verify
 
-open Lean
+open Lean Elab Term
 
 namespace PLean
+
+/-! ## Elab-time kind-guard injection for loop-invariant bodies.
+
+Loop invariants written inside a `foreach` / `while` desugar at macro
+time, before the pmodule's registry has resolved its full machine /
+event kind set. Unlike `system`-block invariants (which materialise at
+`#gen_module` time and pick up registry-aware kind-guard injection),
+loop invariants would land at SMT with bare `∀ n : <M>, …` quantifiers
+— letting the solver fabricate machines whose runtime `kind` slot
+doesn't match `<M>_kind`.
+
+`pLoopInvWrap` is a sentinel `term` whose elaborator reads the env at
+elaboration time (any `pmodule` registration has completed by then),
+computes the machine / event kind sets, runs `injectKindGuards` over
+the body, then elaborates the rewritten term in place. Soundness:
+guards only weaken the body (`∀ n : <M>, P` → `∀ n : <M>, is_<M> n →
+P`), so injection cannot make a real obligation harder. -/
+
+scoped syntax (name := pLoopInvWrap)
+  "pLoopInvWrap%" "(" ident ")" term : term
+
+private def collectMachineKinds (ctxs : Array LocalPModuleCtx) : NameSet :=
+  ctxs.foldl (init := ({} : NameSet)) fun acc ctx =>
+    ctx.machines.foldl (init := acc) fun s n _ => s.insert n
+
+private def collectEventKinds (ctxs : Array LocalPModuleCtx) : NameSet :=
+  ctxs.foldl (init := ({} : NameSet)) fun acc ctx =>
+    ctx.events.foldl (init := acc) fun s n _ => s.insert n
+
+open Lean Elab Term in
+@[term_elab pLoopInvWrap]
+def elabPLoopInvWrap : TermElab := fun stx expected => do
+  match stx with
+  | `(pLoopInvWrap% ($s:ident) $body:term) =>
+    -- Read every registered pmodule's machine / event kinds. We don't
+    -- know which pmodule the loop belongs to at term-elab time, so we
+    -- accept ALL — kind injection only fires on quantifiers whose
+    -- type name matches a registered kind, so off-pmodule references
+    -- don't get spurious guards (a `∀ x : Nat, …` body is untouched).
+    let all := (pmoduleExt.getState (← getEnv)).toList.map (·.2) |>.toArray
+    let mks := collectMachineKinds all
+    let eks := collectEventKinds all
+    let rewritten ← liftMacroM <|
+      PLean.injectKindGuards mks eks s.getId body.raw
+    elabTerm rewritten expected
+  | _ => throwUnsupportedSyntax
 
 /-! ## Loop-invariant clause grammar.
 
@@ -147,8 +197,11 @@ private def buildGadgetPrelude
   let sigIdent : Ident := mkIdent `Sig
   let mut entries : Array (TSyntax `term) := #[]
   for p in props do
+    -- Wrap in `pLoopInvWrap% (s) <body>` so kind-guard injection
+    -- happens at term-elab time (when the registry is available).
     entries := entries.push
-      (← `(((fun $sBinder => $p) : PLean.PProp $sigIdent)))
+      (← `(((fun $sBinder =>
+              pLoopInvWrap% ($sBinder) $p) : PLean.PProp $sigIdent)))
   let listLit : TSyntax `term ← `([ $entries,* ])
   -- The gadgets take `inv : β → List l` / `on_done' : β → l` /
   -- `measure : β → Option ℕ`. We thread the iteration binder
@@ -204,8 +257,11 @@ private def buildInvariantList (invs : Array (TSyntax `pLoopInv)) :
   let sigIdent : Ident := mkIdent `Sig
   let mut entries : Array (TSyntax `term) := #[]
   for p in props do
+    -- Same `pLoopInvWrap%` indirection as `buildGadgetPrelude` —
+    -- elab-time kind-guard injection on each invariant body.
     entries := entries.push
-      (← `(((fun $sBinder => $p) : PLean.PProp $sigIdent)))
+      (← `(((fun $sBinder =>
+              pLoopInvWrap% ($sBinder) $p) : PLean.PProp $sigIdent)))
   `([ $entries,* ])
 
 macro_rules

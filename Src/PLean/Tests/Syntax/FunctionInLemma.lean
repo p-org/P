@@ -15,6 +15,8 @@ open PLean PartialCorrectness DemonicChoice
 
 pmodule FnInLemma
 
+  system s
+
   event eGo
 
   -- Foreign machine-typed constant (P's `pure srv() : machine`).
@@ -35,17 +37,17 @@ pmodule FnInLemma
 
   -- Reference from a `Lemma` invariant (the regressed path).
   Lemma cfg {
-    system s {
-      invariant const_server : ∀ n : Node, n.server = srv
-    }
+
+    invariant const_server : ∀ n : Node, n.server = srv
+  
   }
   Proof { prove cfg ; }
 
   -- Reference from a `Theorem` invariant too.
   Theorem safety {
-    system s {
-      invariant srv_ref_stable : ∀ n : Node, n.server = srv
-    }
+
+    invariant srv_ref_stable : ∀ n : Node, n.server = srv
+  
   }
   Proof { prove safety using cfg ; }
 

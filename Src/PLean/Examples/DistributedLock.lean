@@ -20,6 +20,10 @@ open PLean PartialCorrectness DemonicChoice
 
 pmodule DistributedLock
 
+  -- Name the pmodule's global state once; every `invariant` / `init-holds`
+  -- / `paxiom` body below may reference `s` as the live state.
+  system s
+
   type tGrant  = (node : PLean.MachineRef, epoch : Int)
   type tAccept = (epoch : Int, source : PLean.MachineRef)
 
@@ -63,39 +67,37 @@ pmodule DistributedLock
         n1.epoch = 0)
 
   Theorem safety {
-    system s {
-      invariant unique_holder :
-        ∀ n1 n2 : Node,
-          n1.held = true →
-          n2.held = true →
-          n1 = n2
+    invariant unique_holder :
+      ∀ n1 n2 : Node,
+        n1.held = true →
+        n2.held = true →
+        n1 = n2
 
-      invariant no_lock_while_transfer :
-        ∀ n : Node, ∀ e : eAccept,
-          inflight e s →
-          n.held = false
+    invariant no_lock_while_transfer :
+      ∀ n : Node, ∀ e : eAccept,
+        inflight e s →
+        n.held = false
 
-      invariant unique_accept :
-        ∀ e1 e2 : eAccept,
-          inflight e1 s → inflight e2 s → e1 = e2
+    invariant unique_accept :
+      ∀ e1 e2 : eAccept,
+        inflight e1 s → inflight e2 s → e1 = e2
 
-      -- Ported from the P source: when an eAccept is in flight from
-      -- node n1, n1 has already released the lock. `e.source` desugars
-      -- to `(eAccept_payload_of e).source` via the field-projection sugar.
-      invariant not_held_after_release :
-        ∀ n1 : Node, ∀ e : eAccept,
-          inflight e s →
-          e.source = n1.ref →
-          n1.held = false
+    -- Ported from the P source: when an eAccept is in flight from
+    -- node n1, n1 has already released the lock. `e.source` desugars
+    -- to `(eAccept_payload_of e).source` via the field-projection sugar.
+    invariant not_held_after_release :
+      ∀ n1 : Node, ∀ e : eAccept,
+        inflight e s →
+        e.source = n1.ref →
+        n1.held = false
 
-      -- Ported from the P source: an in-flight eAccept always
-      -- transfers to a strictly higher epoch.
-      invariant transfer_to_higher :
-        ∀ (n1 : Node) (e : eAccept),
-          inflight e s →
-          e.source = n1.ref →
-          e.epoch > n1.epoch
-    }
+    -- Ported from the P source: an in-flight eAccept always
+    -- transfers to a strictly higher epoch.
+    invariant transfer_to_higher :
+      ∀ (n1 : Node) (e : eAccept),
+        inflight e s →
+        e.source = n1.ref →
+        e.epoch > n1.epoch
   }
 
   Proof Safety {

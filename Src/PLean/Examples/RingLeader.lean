@@ -58,6 +58,8 @@ class RingTopology (t : Type) where
 
 pmodule RingLeader
 
+  system s
+
   type tNominate = (voteFor : PLean.MachineRef)
 
   event eNominate : tNominate
@@ -85,32 +87,27 @@ pmodule RingLeader
     }
 
     state Won {
-      -- P's `ignore eNominate`: a no-op handler that drops the event.
-      on eNominate (_n : tNominate) {
-        pure ()
-      }
+      ignore eNominate
     }
   }
 
   -- voteFor is the running max.
   Lemma lemmas {
-    system s {
-      invariant LeaderMax :
-        ∀ x y : MachineRef, stateOf x s = Server.Won_st → LeOrder.le y x = true
+    invariant LeaderMax :
+      ∀ x y : MachineRef, stateOf x s = Server.Won_st → LeOrder.le y x = true
 
-      invariant Aux :
-        ∀ x y : MachineRef, LeOrder.le x y = true → LeOrder.le y x = true → x = y
+    invariant Aux :
+      ∀ x y : MachineRef, LeOrder.le x y = true → LeOrder.le y x = true → x = y
 
-      invariant NoBypass :
-        ∀ (n m : MachineRef) (e : Sig.Label) (p : tNominate),
-          inflight e s → (e targets m) → e.action = .event (E.eNominate p) →
-          RingTopology.btw p.voteFor n m = true → LeOrder.le n p.voteFor = true
+    invariant NoBypass :
+      ∀ (n m : MachineRef) (e : Sig.Label) (p : tNominate),
+        inflight e s → (e targets m) → e.action = .event (E.eNominate p) →
+        RingTopology.btw p.voteFor n m = true → LeOrder.le n p.voteFor = true
 
-      invariant SelfPendingMax :
-        ∀ (n m : MachineRef) (e : Sig.Label) (p : tNominate),
-          inflight e s → (e targets m) → e.action = .event (E.eNominate p) →
-          p.voteFor = m → LeOrder.le n m = true
-    }
+    invariant SelfPendingMax :
+      ∀ (n m : MachineRef) (e : Sig.Label) (p : tNominate),
+        inflight e s → (e targets m) → e.action = .event (E.eNominate p) →
+        p.voteFor = m → LeOrder.le n m = true
   }
   Proof {
     prove lemmas ;
@@ -118,11 +115,9 @@ pmodule RingLeader
 
   -- Main theorem: at most one server reaches the `Won` state.
   Theorem Safety {
-    system s {
-      invariant UniqueLeader :
-        ∀ x y : MachineRef,
-          stateOf x s = Server.Won_st → stateOf y s = Server.Won_st → x = y
-    }
+    invariant UniqueLeader :
+      ∀ x y : MachineRef,
+        stateOf x s = Server.Won_st → stateOf y s = Server.Won_st → x = y
   }
   Proof {
     prove Safety using lemmas ;

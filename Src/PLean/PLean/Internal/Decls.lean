@@ -83,10 +83,18 @@ structure PStateDecl where
       Recorded for `#pwf` only — there is no liveness semantics yet. -/
   temperature : Option Name
   /-- Events handled by this state (used by `#pwf` to check that
-      referenced events exist). -/
+      referenced events exist). Includes events listed under `ignore`. -/
   handles     : Array Name
   /-- States this state may `goto`. Resolved against the owning machine. -/
   gotos       : Array Name
+  /-- Events listed under `ignore <e1>, <e2>, …;` in this state. Members
+      are also present in `handles` (so `#pwf` validates them and
+      duplicate detection works), but the obligation generator skips
+      them — an ignored event is semantically a no-op handler whose VC
+      is vacuously satisfied. Tracking the subset explicitly lets
+      `#gen_module` avoid emitting a handler def and `#pverify` avoid
+      emitting per-handler triples + the auto-default obligation. -/
+  ignoredEvents : Array Name := #[]
   ref         : Syntax
   deriving Inhabited
 
@@ -94,8 +102,8 @@ structure PMachineDecl where
   name      : Name
   leanName  : Name
   states    : Array PStateDecl
-  /-- True iff this is a `spec` machine. Spec-machine handlers are not
-      yet covered by `#pverify` (see CLAUDE.md's "Phase status"). -/
+  /-- True iff this is a `spec` machine. Spec-machine handlers are
+      not yet covered by `#pverify`. -/
   isSpec    : Bool
   /-- For spec machines, the events they observe. Empty for impl machines. -/
   observed  : Array Name
@@ -131,6 +139,12 @@ structure PInvariantDecl where
 structure PAxiomDecl where
   name      : Name
   leanName  : Name
+  /-- The pmodule's `system <σ>` binder at the time this axiom was
+      registered. `some σ` means the axiom's body may name `σ` as the
+      global state; the materialiser wraps it in `∀ σ : GlobalState Sig,
+      …`. `none` means no `system <σ>` was declared and the axiom is
+      emitted as a closed `Prop` verbatim (state-independent). -/
+  stateBinder : Option Name := none
   defStx    : Option Syntax := none
   ref       : Syntax
   deriving Inhabited
@@ -149,6 +163,12 @@ structure PInstanceDecl where
 /-- `init <prop>;` — assume-on-start clause. There may be many; we don't
     name them, hence an Array (not NameMap) in the module ctx. -/
 structure PInitDecl where
+  /-- The pmodule's `system <σ>` binder at the time this clause was
+      registered. `some σ` means the body may name `σ` as the global
+      state; the aggregator binds `σ` as the lambda argument when
+      emitting `InitConditions`. `none` means the clause is a closed
+      `Prop` (state-independent). -/
+  stateBinder : Option Name := none
   defStx    : Option Syntax := none
   /-- Position of the `init` keyword for diagnostics. -/
   ref       : Syntax

@@ -187,6 +187,7 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     (machineNames : Array Name)
     (eventNames : Array Name)
     (axiomNames : Array Name)
+    (lemmaBundleNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
     CommandElabM Bool := do
   let thmName : Name :=
@@ -276,8 +277,15 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
         (mkIdent (mname ++ (v.appendAfter "_set")))
     -- Per-invariant unfolds: after the bundle `safety := fun s => i s ∧ …`
     -- expands, each `i s` is still an opaque application; unfold every
-    -- `i` so SMT sees the user's actual proposition.
-    let usingNamesAll : Array Ident := (usingNames ++ lemmaInvNames).map mkIdent
+    -- `i` so SMT sees the user's actual proposition. On the auto-default
+    -- path we additionally unfold every pmodule-declared `Lemma`/`Theorem`
+    -- bundle — those don't appear in the obligation's pre/post but may
+    -- show up inside loop-invariant lists (`foreach (x in xs) invariant
+    -- inv_bundle : <bundle> s ;`); without unfolding them the iteration
+    -- VC reaches SMT with opaque bundle applications lean-auto rejects.
+    let usingNamesAll : Array Ident :=
+      ((usingNames ++ lemmaInvNames) ++
+        (if isDefault then lemmaBundleNames else #[])).map mkIdent
     let usingUnfolds : Array Ident := usingNamesAll
     -- Per-machine kind helpers reduce `is_<M>` / `<M>_allocated` /
     -- `<M>_kind` to plain (Nat) comparisons on `(s.machines m).kind`.
@@ -405,6 +413,7 @@ def emitEntryObligation (modName : Name) (mname sname : Name)
     (machineNames : Array Name)
     (eventNames : Array Name)
     (axiomNames : Array Name)
+    (lemmaBundleNames : Array Name)
     (proofTag : Name) (proofIdx : Nat) :
     CommandElabM Bool := do
   let thmName : Name :=
@@ -452,7 +461,9 @@ def emitEntryObligation (modName : Name) (mname sname : Name)
         (mkIdent (mname ++ (v.appendAfter "_get")))
       accessorUnfolds := accessorUnfolds.push
         (mkIdent (mname ++ (v.appendAfter "_set")))
-    let usingNamesAll : Array Ident := (usingNames ++ lemmaInvNames).map mkIdent
+    let usingNamesAll : Array Ident :=
+      ((usingNames ++ lemmaInvNames) ++
+        (if isDefault then lemmaBundleNames else #[])).map mkIdent
     let usingUnfolds : Array Ident := usingNamesAll
     let mut kindUnfolds : Array Ident := #[]
     for m in machineNames do
@@ -1023,6 +1034,7 @@ private def processOneEmit (modName mname sname evname : Name)
     (machineNames : Array Name)
     (eventNames : Array Name)
     (axiomNames : Array Name)
+    (lemmaBundleNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
     (acc : SynthesiseResult) :
     CommandElabM (SynthesiseResult × PendingObligation) := do
@@ -1031,7 +1043,7 @@ private def processOneEmit (modName mname sname evname : Name)
   runEmitOnly modName mname sname evname target thmName
     (emitOneObligation modName mname sname evname target isDefault
       usingNames hasPayload varNames lemmaInvNames machineNames eventNames
-      axiomNames proofTag proofIdx)
+      axiomNames lemmaBundleNames proofTag proofIdx)
     acc
 
 /-- Emit one entry-handler obligation. `evname` is the synthetic tag
@@ -1045,6 +1057,7 @@ private def processEntryEmit (modName mname sname : Name)
     (machineNames : Array Name)
     (eventNames : Array Name)
     (axiomNames : Array Name)
+    (lemmaBundleNames : Array Name)
     (proofTag : Name) (proofIdx : Nat)
     (acc : SynthesiseResult) :
     CommandElabM (SynthesiseResult × PendingObligation) := do
@@ -1053,7 +1066,7 @@ private def processEntryEmit (modName mname sname : Name)
   runEmitOnly modName mname sname `entry target thmName
     (emitEntryObligation modName mname sname entryPayloadTy target isDefault
       usingNames varNames lemmaInvNames machineNames eventNames axiomNames
-      proofTag proofIdx)
+      lemmaBundleNames proofTag proofIdx)
     acc
 
 /-- Emit one base-case obligation for a single invariant in a directive's
@@ -1122,6 +1135,16 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
     for (_, d) in ctx.axioms.toList do
       out := out.push d.leanName
     return out
+  -- Every user-defined `Lemma`/`Theorem` bundle name. Threaded into the
+  -- auto-default unfold list so an `invariant <inv_bundle> : <bundle> s ;`
+  -- clause inside a `foreach` loop unfolds in the iteration VC instead
+  -- of reaching SMT as an opaque `<bundle> s` application that lean-auto
+  -- rejects as higher-order.
+  let allLemmaBundleNames : Array Name := Id.run do
+    let mut out : Array Name := #[]
+    for ln in ctx.lemmaOrder do
+      if ctx.lemmas.contains ln then out := out.push ln
+    return out
   let defaultInvNames : Array Name :=
     #[`UniqueActions, `IncreasingCount, `ReceivedSubsetSent]
   -- ── Pass 1: emit every obligation ─────────────────────────────────
@@ -1150,6 +1173,12 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
         let entries := machineEntryHandlers m
         for sd in m.states do
           for ev in sd.handles do
+            -- `ignore <ev>` is a vacuous no-op handler: no def is emitted
+            -- and the (state, event) pair has no per-handler VC. Mark it
+            -- as covered so the auto-default pass skips it too.
+            if sd.ignoredEvents.contains ev then
+              explicitDefault := explicitDefault.insert (mname, sd.name, ev)
+              continue
             let hasPayload := eventHasPayload ctx ev
             if dir.isDefault then
               explicitDefault := explicitDefault.insert (mname, sd.name, ev)
@@ -1162,7 +1191,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
             let (result', pending) ← processOneEmit modName mname sd.name ev
               dir.target dir.isDefault dir.usingLemmas hasPayload varNames
               lemmaInvNames allMachineNames allEventNames allAxiomNames
-              proof.name proofIdx result
+              allLemmaBundleNames proof.name proofIdx result
             result := result'
             pendings := pendings.push pending
         -- Entry handlers: one VC per (machine, state) with an `entry`
@@ -1177,7 +1206,7 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
           let (result', pending) ← processEntryEmit modName mname sname
             payloadTy? dir.target dir.isDefault dir.usingLemmas varNames
             lemmaInvNames allMachineNames allEventNames allAxiomNames
-            proof.name proofIdx result
+            allLemmaBundleNames proof.name proofIdx result
           result := result'
           pendings := pendings.push pending
   -- Auto-default pass: synthetic `block_auto_default` tag avoids
@@ -1195,10 +1224,14 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
     for sd in m.states do
       for ev in sd.handles do
         if explicitDefault.contains (mname, sd.name, ev) then continue
+        -- Ignored events have no handler def; skip even when no user
+        -- directive registered them in `explicitDefault`.
+        if sd.ignoredEvents.contains ev then continue
         let hasPayload := eventHasPayload ctx ev
         let (result', pending) ← processOneEmit modName mname sd.name ev
           `default true #[] hasPayload varNames
-          #[] allMachineNames allEventNames allAxiomNames autoTag autoIdx result
+          #[] allMachineNames allEventNames allAxiomNames
+          allLemmaBundleNames autoTag autoIdx result
         result := result'
         pendings := pendings.push pending
     -- Auto-default for entry handlers, mirroring the on-handler loop above.
@@ -1206,7 +1239,8 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
       if explicitDefault.contains (mname, sname, `entry) then continue
       let (result', pending) ← processEntryEmit modName mname sname
         payloadTy? `default true #[] varNames
-        #[] allMachineNames allEventNames allAxiomNames autoTag autoIdx result
+        #[] allMachineNames allEventNames allAxiomNames
+        allLemmaBundleNames autoTag autoIdx result
       result := result'
       pendings := pendings.push pending
   -- Pass 2: each `classifyOnePending` blocks on its own body-elab

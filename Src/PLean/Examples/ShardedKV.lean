@@ -1,15 +1,6 @@
 /-
 PLean port of P's Tutorial/Advanced/7_ShardedKV.
 
-The benchmark drives the container-port story: every Node owns a
-`kv : map[Int, Int]` shard, and `unique_owner` quantifies over two
-Nodes' shards at once. `#gen_module` hoists every container var out of
-`Fields` into a top-level `Containers` slot uncurried with
-`MachineRef`, so `n.kv` desugars to `fun k => s.containers.<M>_<v>
-(n.ref, k)` — under `simp` this β-reduces at use sites to a flat
-applied symbol lean-auto translates as an uninterpreted function.
-Mirrors PVerifier's UCLID5 2D-array layout for `map[K, V]` vars.
-
 Surface notes:
 - `tKey` / `tValue` are `Int` aliases for parity with the P source.
 - Handler `if (e.reshard_key in kv) then ...` becomes `if e.reshard_key
@@ -25,6 +16,8 @@ set_option loom.solver "cvc5"
 set_option loom.solver.smt.timeout 5
 
 pmodule ShardedKV
+
+  system s
 
   type tKey   = Int
   type tValue = Int
@@ -70,26 +63,24 @@ pmodule ShardedKV
       k ∈ n1.kv → k ∈ n2.kv → n1 = n2
 
   Theorem Safety {
-    system s {
-      invariant transfer_means_no_owner :
-        ∀ (e : eTransfer) (n : Node),
-          inflight e s → ¬ (e.key ∈ n.kv)
+    invariant transfer_means_no_owner :
+      ∀ (e : eTransfer) (n : Node),
+        inflight e s → ¬ (e.key ∈ n.kv)
 
-      invariant unique_key_transfer :
-        ∀ e1 e2 : eTransfer,
-          inflight e1 s → inflight e2 s →
-          e1.key = e2.key →
-          e1 = e2
+    invariant unique_key_transfer :
+      ∀ e1 e2 : eTransfer,
+        inflight e1 s → inflight e2 s →
+        e1.key = e2.key →
+        e1 = e2
 
-      invariant transfer_means_not_own :
-        ∀ (e : eTransfer) (src : Node),
-          inflight e s → src.ref = e.source →
-          ¬ (e.key ∈ src.kv)
+    invariant transfer_means_not_own :
+      ∀ (e : eTransfer) (src : Node),
+        inflight e s → src.ref = e.source →
+        ¬ (e.key ∈ src.kv)
 
-      invariant unique_owner :
-        ∀ (k : tKey) (n1 n2 : Node),
-          k ∈ n1.kv → k ∈ n2.kv → n1 = n2
-    }
+    invariant unique_owner :
+      ∀ (k : tKey) (n1 n2 : Node),
+        k ∈ n1.kv → k ∈ n2.kv → n1 = n2
   }
 
   Proof of_Safety {

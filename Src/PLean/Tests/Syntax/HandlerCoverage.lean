@@ -144,6 +144,7 @@ goto auto-default) plus a non-zero failure count. Pre-fix the count was
 1 (base only). -/
 
 pmodule HandlerCoverageGotoBroken
+  system s
   event eGo
   machine M {
     start state A {
@@ -152,10 +153,10 @@ pmodule HandlerCoverageGotoBroken
     state B { }
   }
   Theorem stays_in_A {
-    system s {
-      invariant always_in_A :
-        ∀ m : M, (s.machines m.ref).currentState = M.A_st
-    }
+
+    invariant always_in_A :
+      ∀ m : M, (s.machines m.ref).currentState = M.A_st
+  
   }
   Proof { prove stays_in_A ; }
 end HandlerCoverageGotoBroken
@@ -189,6 +190,7 @@ skipped, so the broken invariant verified. Post-fix the
 `<M>.<S>.entry_correct_…` obligation exists. -/
 
 pmodule HandlerCoverageEntryBroken
+  system s
   event eGo
   machine M {
     var x : Bool
@@ -199,10 +201,10 @@ pmodule HandlerCoverageEntryBroken
   }
   init-holds ∀ m : M, m.x = false
   Theorem boot_keeps_false {
-    system s {
-      invariant always_false :
-        ∀ m : M, is_M m.ref s → (s.machines m.ref).fields.M_x = false
-    }
+
+    invariant always_false :
+      ∀ m : M, is_M m.ref s → (s.machines m.ref).fields.M_x = false
+  
   }
   Proof { prove boot_keeps_false ; }
 end HandlerCoverageEntryBroken

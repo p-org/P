@@ -26,7 +26,7 @@ pmodule PingPongManual
 
   machine Client {
     start state Booting {
-      on ePong { pure () }
+      ignore ePong
     }
   }
 
@@ -102,39 +102,5 @@ theorem Server.Idle.ePing_correct
     · obtain ⟨p, hSP, hPIs, hPrec⟩ := hPP q hQprev hev
       refine ⟨p, ?_, hPIs, hPrec⟩
       simp [hSP]
-
-/-! ### Handler 2: `Client.Booting.ePong_handler` — `pure ()`. -/
-theorem Client.Booting.ePong_correct
-    (this : Client) (lbl : Lbl) :
-    triple (l := Prp)
-      (fun s =>
-        Inv s ∧
-        inflight lbl s ∧
-        lbl.target = this.ref ∧
-        is_Client this.ref s ∧
-        (s.machines this.ref).currentState = Client.Booting_st ∧
-        lbl.action = .event E.ePong)
-      (do PLean.markReceived (P := Sig) lbl; Client.Booting.ePong_handler this)
-      (fun _ s => Inv s) := by
-  unfold Client.Booting.ePong_handler
-  pverify_step_wp
-  intro s hInv hInflight _hTgt _hKind _hState _hAction
-  have hSentLbl : s.sent lbl = true := hInflight.1
-  unfold Inv DefaultInvariants PongAfterPing
-    UniqueActions IncreasingCount ReceivedSubsetSent at hInv ⊢
-  obtain ⟨⟨hUA, hIC, hRS⟩, hPP⟩ := hInv
-  refine ⟨⟨?_, ?_, ?_⟩, ?_⟩
-  · intro a b hne ha hb
-    exact hUA a b hne ha hb
-  · intro a ha
-    exact hIC a ha
-  · intro a ha
-    simp at ha
-    rcases ha with hNewRcv | hOldRcv
-    · subst hNewRcv
-      exact hSentLbl
-    · exact hRS a hOldRcv
-  · intro q hq hev
-    exact hPP q hq hev
 
 end PingPongManual

@@ -26,6 +26,8 @@ open PLean PartialCorrectness DemonicChoice
 
 pmodule MachineFieldSugar
 
+  system s
+
   event ePoke
 
   machine Counter {
@@ -37,11 +39,11 @@ pmodule MachineFieldSugar
   }
 
   Theorem positive_or_zero {
-    system s {
-      invariant inv :
-        ∀ c : Counter,
-          c.count = 0 ∨ c.count > 0
-    }
+
+    invariant inv :
+      ∀ c : Counter,
+        c.count = 0 ∨ c.count > 0
+  
   }
 
 end MachineFieldSugar
@@ -56,6 +58,8 @@ end MachineFieldSugar
 
 pmodule EventPayloadSugar
 
+  system s
+
   type tMsg = (sender : PLean.MachineRef, value : Nat)
 
   event eMsg : tMsg
@@ -69,12 +73,12 @@ pmodule EventPayloadSugar
   }
 
   Theorem fact {
-    system s {
-      invariant inv :
-        ∀ e : eMsg,
-          inflight e s →
-          e.value ≥ 0
-    }
+
+    invariant inv :
+      ∀ e : eMsg,
+        inflight e s →
+        e.value ≥ 0
+  
   }
 
 end EventPayloadSugar
@@ -91,6 +95,8 @@ end EventPayloadSugar
 
 pmodule MixedSugar
 
+  system s
+
   type tBump = (sender : PLean.MachineRef, by_ : Nat)
 
   event eBump : tBump
@@ -104,13 +110,13 @@ pmodule MixedSugar
   }
 
   Theorem fact {
-    system s {
-      invariant inv :
-        ∀ b : Box, ∀ e : eBump,
-          inflight e s →
-          e.sender = b.ref →
-          b.count ≥ 0
-    }
+
+    invariant inv :
+      ∀ b : Box, ∀ e : eBump,
+        inflight e s →
+        e.sender = b.ref →
+        b.count ≥ 0
+  
   }
 
 end MixedSugar
@@ -126,6 +132,8 @@ the rewriter must NOT rewrite it. Same for `e.action`, `e.target`,
 
 pmodule PassThroughSugar
 
+  system s
+
   event eEvt
 
   machine Holder {
@@ -135,15 +143,15 @@ pmodule PassThroughSugar
   }
 
   Theorem fact {
-    system s {
-      invariant inv :
-        ∀ h : Holder, ∀ e : Sig.Label,
-          inflight e s →
-          e.target = h.ref →
-          e.actionCount > 0 →
-          (s.machines h.ref).currentState = Holder.S_st →
-          True
-    }
+
+    invariant inv :
+      ∀ h : Holder, ∀ e : Sig.Label,
+        inflight e s →
+        e.target = h.ref →
+        e.actionCount > 0 →
+        (s.machines h.ref).currentState = Holder.S_st →
+        True
+  
   }
 
 end PassThroughSugar
@@ -154,6 +162,8 @@ end PassThroughSugar
 /-! ## init-holds also gets the rewrite -/
 
 pmodule InitHoldsSugar
+
+  system s
 
   event ePing
 
@@ -166,9 +176,9 @@ pmodule InitHoldsSugar
   init-holds (∀ w : Worker, w.ready = false)
 
   Theorem fact {
-    system s {
-      invariant inv : ∀ w : Worker, w.ready = false ∨ w.ready = true
-    }
+
+    invariant inv : ∀ w : Worker, w.ready = false ∨ w.ready = true
+  
   }
 
 end InitHoldsSugar

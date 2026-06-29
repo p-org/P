@@ -75,6 +75,13 @@ syntax (name := pStateEntryTyped)   "entry " "(" ident " : " term ")" "{" doSeq 
 syntax (name := pStateOnDoTyped)    "on " ident "(" ident " : " term ")" "{" doSeq "}" : pStateBodyItem
 syntax (name := pStateOnDoUntyped)  "on " ident "{" doSeq "}" : pStateBodyItem
 syntax (name := pStateOnGoto)       "on " ident " goto " ident : pStateBodyItem
+/-- `ignore <e1>, <e2>, …;` — declare a no-op handler for each listed
+event without generating a body. The verifier skips ignored events
+entirely (no per-handler triple, no auto-default obligation): an
+ignored event is semantically equivalent to `on <e> { pure () }` whose
+VC is vacuously satisfied because the state and buffers don't change.
+Saves the SMT pass on shells like `state Won { ignore eNominate; }`. -/
+syntax (name := pStateIgnore)       "ignore " ident,+ : pStateBodyItem
 
 /-! ## Machine-body items
 
@@ -143,6 +150,14 @@ private def collectStateMetadata (sname : Name) (isStart : Bool) (ref : Syntax)
         throwErrorAt it "state `{sname}` already handles event `{evN}`"
       decl := { decl with handles := decl.handles.push evN
                           gotos   := decl.gotos.push tgt.getId }
+    | `(pStateBodyItem| ignore $evs:ident,*) =>
+      for evStx in evs.getElems do
+        let evN := evStx.getId
+        if decl.handles.contains evN then
+          throwErrorAt evStx "state `{sname}` already handles event `{evN}`"
+        decl := { decl with
+                    handles       := decl.handles.push evN
+                    ignoredEvents := decl.ignoredEvents.push evN }
     | _ => throwErrorAt it "unrecognised state body item"
   return decl
 

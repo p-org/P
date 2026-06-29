@@ -28,6 +28,8 @@ set_option maxHeartbeats 4000000
 
 pmodule ProfileProbe
 
+  system s
+
   type tGrant  = (node : PLean.MachineRef, epoch : Int)
   type tAccept = (epoch : Int, source : PLean.MachineRef)
 
@@ -63,34 +65,34 @@ pmodule ProfileProbe
         n1.epoch = 0)
 
   Theorem safety {
-    system s {
-      invariant unique_holder :
-        ∀ n1 n2 : Node,
-          n1.held = true →
-          n2.held = true →
-          n1 = n2
 
-      invariant no_lock_while_transfer :
-        ∀ n : Node, ∀ e : eAccept,
-          inflight e s →
-          n.held = false
+    invariant unique_holder :
+      ∀ n1 n2 : Node,
+        n1.held = true →
+        n2.held = true →
+        n1 = n2
 
-      invariant unique_accept :
-        ∀ e1 e2 : eAccept,
-          inflight e1 s → inflight e2 s → e1 = e2
+    invariant no_lock_while_transfer :
+      ∀ n : Node, ∀ e : eAccept,
+        inflight e s →
+        n.held = false
 
-      invariant not_held_after_release :
-        ∀ n1 : Node, ∀ e : eAccept,
-          inflight e s →
-          e.source = n1.ref →
-          n1.held = false
+    invariant unique_accept :
+      ∀ e1 e2 : eAccept,
+        inflight e1 s → inflight e2 s → e1 = e2
 
-      invariant transfer_to_higher :
-        ∀ (n1 : Node) (e : eAccept),
-          inflight e s →
-          e.source = n1.ref →
-          e.epoch > n1.epoch
-    }
+    invariant not_held_after_release :
+      ∀ n1 : Node, ∀ e : eAccept,
+        inflight e s →
+        e.source = n1.ref →
+        n1.held = false
+
+    invariant transfer_to_higher :
+      ∀ (n1 : Node) (e : eAccept),
+        inflight e s →
+        e.source = n1.ref →
+        e.epoch > n1.epoch
+  
   }
 
   Proof Safety {

@@ -1,16 +1,23 @@
 /-
-Surface-syntax ping-pong auto-discharged via `#pverify`. One handler
-calls `send`, the other is `pure ()`; the invariant is `True`.
+Surface-syntax ping-pong auto-discharged via `#pverify`. Proves the
+same safety property as the hand-written
+[`PingPongManual.lean`](PingPongManual.lean) variant:
 
-The hand-written manual-proof variant (`PongAfterPing` over the real
-`PM`) lives in [`PingPongManual.lean`](PingPongManual.lean) as a
-regression for `wpgen` + raw Loom primitives.
+  Every sent `ePong` is preceded (`≺`) by some sent `ePing`.
+
+The Server handler sends a fresh `ePong` in response to an `ePing`;
+since `≺` compares `actionCount` and `actionCount` strictly
+increments per send, the dispatched `ePing` (in-flight at pre-state,
+hence in `sent`) precedes the freshly sent `ePong`. The Client
+handler is a no-op so the invariant transfers verbatim.
 -/
 import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
 pmodule PingPongAuto
+
+  system s
 
   event ePing : PLean.MachineRef
   event ePong
@@ -25,16 +32,29 @@ pmodule PingPongAuto
 
   machine Client {
     start state Booting {
-      on ePong { pure () }
+      ignore ePong
     }
   }
 
-  Theorem trivial_safety {
-    invariant always_true : True
+  Lemma framework {
+
+    invariant inc_count :
+      ∀ a : Sig.Label, s.sent a = true → a.actionCount < s.actionCount
+  
+  }
+  Proof { prove framework ; }
+
+  Theorem safety {
+
+    invariant pong_after_ping :
+      ∀ q : Sig.Label, s.sent q = true → q is ePong →
+        ∃ p : Sig.Label, s.sent p = true ∧ p is ePing ∧ p ≺ q
+  
   }
 
   Proof Safety {
-    prove trivial_safety ;
+    prove safety using framework ;
+    prove default ;
   }
 
 end PingPongAuto

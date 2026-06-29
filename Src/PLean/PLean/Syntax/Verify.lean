@@ -28,19 +28,40 @@ open Lean Elab Command
 
 namespace PLean
 
+/-! ## `system <σ>` — pmodule-wide state binder.
+
+A top-level `system <σ>` command picks the identifier the pmodule uses
+to refer to the global state inside `invariant` / `init-holds` /
+`paxiom` bodies. It must appear before any clause that references it.
+The name is recorded on `LocalPModuleCtx.sBinder` and threaded into
+every subsequent clause's `stateBinder` field.
+
+```
+pmodule M
+  system s
+  paxiom config_const : ∀ n : Node, n.cfg s = default_cfg
+  init-holds ∀ n : Node, n.held s = false
+  invariant unique : ∀ n1 n2 : Node, n1.held s → n2.held s → n1 = n2
+end M
+```
+-/
+
+syntax (name := pSystem) "system " ident : command
+
+@[command_elab pSystem]
+def elabPSystem : CommandElab := fun stx => do
+  let `(system $sid:ident) := stx
+    | throwUnsupportedSyntax
+  let _ ← requireLocalPModuleCtx "system"
+  setSBinder sid.getId stx
+
 /-! ## Invariant
 
-Invariants are state-implicit: `invariant <name> : <body>` materialises
-to `def <name> : GS → Prop := fun <s> => <body>`, where `<s>` is the
-state binder introduced by an enclosing `system <s> { … }` block. A
-bare `invariant <name> : <body>` (outside `system`) emits
-`fun _ => <body>` — only valid for state-independent properties.
-
-The `system <s> { … }` block is the user-facing way to bind the state
-explicitly. It can appear at top level inside a `pmodule`, or nested
-inside a `Lemma` / `Theorem` block. Multiple `system` blocks may
-appear, possibly with different binder names — each invariant
-remembers its own. -/
+`invariant <name> : <body>` materialises to
+`def <name> : GS → Prop := fun <σ> => <body>` where `<σ>` is the
+pmodule's `system`-declared binder. A bare `invariant <name> : <body>`
+inside a pmodule that has *not* declared a `system <σ>` emits
+`fun _ => <body>` — only valid for state-independent properties. -/
 
 syntax (name := pInvariant) "invariant " ident " : " term : command
 
@@ -48,58 +69,20 @@ syntax (name := pInvariant) "invariant " ident " : " term : command
 def elabPInvariant : CommandElab := fun stx => do
   let `(invariant $id:ident : $_:term) := stx
     | throwUnsupportedSyntax
-  let _ ← requireLocalPModuleCtx "invariant"
+  let ctx ← requireLocalPModuleCtx "invariant"
   let ns ← getCurrNamespace
-  -- Bare top-level form: no state binder; the body must be
-  -- state-independent. The materialiser emits `fun _ => <body>`.
   addInvariant
     { name := id.getId, leanName := ns ++ id.getId
-      stateBinder := none
+      stateBinder := ctx.sBinder
       defStx := some stx, ref := stx }
 
-/-! ### `system <s> { invariant … ; … }` — state-implicit invariant block.
+/-! ## Axiom (single-prop)
 
-Top-level form. Each child invariant is registered with
-`stateBinder := some <s>`, so the materialiser emits
-`def <name> : GS → Prop := fun <s> => <body>`. -/
-
-/-- Invariant-line grammar inside a `system` block. Shared between the
-top-level and Lemma-nested forms so the pattern can be matched with
-`` `(pSystemInv| invariant … : …) ``. We need a real syntax category
-because `pInvariant` is a named *command* rule and can't be folded
-into a sub-pattern. -/
-declare_syntax_cat pSystemInv
-
-syntax (name := pSystemInvItem)
-  "invariant " ident " : " term : pSystemInv
-
-syntax (name := pSystemBlock) "system " ident "{" pSystemInv* "}" : command
-
-@[command_elab pSystemBlock]
-def elabPSystemBlock : CommandElab := fun stx => do
-  let `(system $sid:ident { $items:pSystemInv* }) := stx
-    | throwUnsupportedSyntax
-  let _ ← requireLocalPModuleCtx "system"
-  let ns ← getCurrNamespace
-  let sName := sid.getId
-  for it in items do
-    match it with
-    | `(pSystemInv| invariant $iid:ident : $prop:term) =>
-      -- Reconstruct the inner syntax so `materialiseInvariant`'s
-      -- existing pattern match still works (`invariant <ident> : <term>`).
-      -- Position info: `iid` and `prop` are spliced verbatim and retain
-      -- their original source ranges, so any error targeting them via
-      -- `throwErrorAt $iid` / `throwErrorAt $prop` still points at the
-      -- user's source. Only the outermost `invariant` token sits at
-      -- the macro expansion site; no current error path uses it.
-      let invStx ← `(command| invariant $iid:ident : $prop)
-      addInvariant
-        { name := iid.getId, leanName := ns ++ iid.getId
-          stateBinder := some sName
-          defStx := some invStx.raw, ref := it }
-    | _ => throwErrorAt it "internal: unexpected `system`-block child"
-
-/-! ## Axiom (single-prop) -/
+`paxiom <name> : <body>` registers an axiom whose body may name the
+pmodule's `system`-declared `<σ>` to refer to the global state — the
+materialiser binds it as `∀ <σ> : GlobalState Sig, <body>`. A pmodule
+that has not declared `system <σ>` admits the body verbatim
+(state-independent axiom). -/
 
 syntax (name := pAxiom) "paxiom " ident " : " term : command
 
@@ -107,19 +90,26 @@ syntax (name := pAxiom) "paxiom " ident " : " term : command
 def elabPAxiom : CommandElab := fun stx => do
   let `(paxiom $id:ident : $_:term) := stx
     | throwUnsupportedSyntax
-  let _ ← requireLocalPModuleCtx "paxiom"
+  let ctx ← requireLocalPModuleCtx "paxiom"
   let ns ← getCurrNamespace
   addAxiom
-    { name := id.getId, leanName := ns ++ id.getId, defStx := some stx, ref := stx }
+    { name := id.getId, leanName := ns ++ id.getId
+      stateBinder := ctx.sBinder
+      defStx := some stx, ref := stx }
 
-/-! ## Init (assume-on-start) -/
+/-! ## Init (assume-on-start)
+
+The body may reference the pmodule's `system`-declared `<σ>` to name
+the global state; the aggregator (`emitInitConditions`) binds `<σ>` as
+the lambda argument. Pmodules without a `system <σ>` declaration use a
+state-independent shape. -/
 
 syntax (name := pInit) "init-holds " term : command
 
 @[command_elab pInit]
 def elabPInit : CommandElab := fun stx => do
-  let _ ← requireLocalPModuleCtx "init-holds"
-  addInit { defStx := some stx, ref := stx }
+  let ctx ← requireLocalPModuleCtx "init-holds"
+  addInit { stateBinder := ctx.sBinder, defStx := some stx, ref := stx }
 
 /-! ## Pure (defined or foreign) -/
 
@@ -168,25 +158,21 @@ def elabPInstance : CommandElab := fun stx => do
 
 /-! ## Lemma / Theorem / Proof blocks
 
-  Lemma   <name> { (invariant … | system <s> { invariant … }) … }
-  Theorem <name> { (invariant … | system <s> { invariant … }) … }
+  Lemma   <name> { invariant … : …  … }
+  Theorem <name> { invariant … : …  … }
   Proof   <name>? { prove <lemma> [using <l1>, …]; prove default; }
 
 Each inner `invariant` is also registered as a free-standing
 `PInvariantDecl` so `using`-clauses can reference it by name. The
 Lemma/Theorem record retains the ordered name list so the bundle
-predicate `def X : GS → Prop := fun s => P1 s ∧ P2 s ∧ …` can be
-emitted at materialisation time. -/
+predicate `def X : GS → Prop := fun σ => P1 σ ∧ P2 σ ∧ …` can be
+emitted at materialisation time. Each invariant body may reference
+the pmodule's `system`-declared `<σ>`. -/
 
 declare_syntax_cat pLemmaBodyItem
 
 syntax (name := pLemmaInvariant)
   "invariant " ident " : " term : pLemmaBodyItem
-
-/-- `system <s> { invariant … }` inside a Lemma / Theorem block. Same
-semantics as the top-level form. -/
-syntax (name := pLemmaSystemBlock)
-  "system " ident "{" pSystemInv* "}" : pLemmaBodyItem
 
 syntax (name := pLemmaDeclSyntax)
   "Lemma " ident " {" pLemmaBodyItem* "}" : command
@@ -211,34 +197,18 @@ syntax (name := pProofDeclSyntax)
 private def collectLemmaInvariants (id : Ident) (items : Array Syntax)
     (isTheorem : Bool) (refStx : Syntax) :
     CommandElabM Unit := do
-  let _ ← requireLocalPModuleCtx (if isTheorem then "Theorem" else "Lemma")
+  let ctx ← requireLocalPModuleCtx (if isTheorem then "Theorem" else "Lemma")
   let ns ← getCurrNamespace
   let mut invNames : Array Name := #[]
-  -- Helper: register one invariant with the given (optional) state binder.
-  let registerOne (iid : TSyntax `ident) (prop : TSyntax `term)
-      (stateBinder : Option Name) (childRef : Syntax) :
-      CommandElabM Unit := do
-    let invStxReal ← `(command| invariant $iid:ident : $prop)
-    addInvariant
-      { name := iid.getId, leanName := ns ++ iid.getId
-        stateBinder := stateBinder
-        defStx := some invStxReal.raw, ref := childRef }
   for it in items do
     match it with
     | `(pLemmaBodyItem| invariant $iid:ident : $prop:term) =>
-      -- Bare invariant inside a Lemma — state-independent.
-      registerOne iid prop none it
+      let invStxReal ← `(command| invariant $iid:ident : $prop)
+      addInvariant
+        { name := iid.getId, leanName := ns ++ iid.getId
+          stateBinder := ctx.sBinder
+          defStx := some invStxReal.raw, ref := it }
       invNames := invNames.push iid.getId
-    | `(pLemmaBodyItem| system $sid:ident { $invs:pSystemInv* }) =>
-      -- Nested `system <s> { … }`: each child invariant binds the same
-      -- state name `<s>` for its body.
-      let sName := sid.getId
-      for inv in invs do
-        match inv with
-        | `(pSystemInv| invariant $iid:ident : $prop:term) =>
-          registerOne iid prop (some sName) inv
-          invNames := invNames.push iid.getId
-        | _ => throwErrorAt inv "internal: unexpected `system`-block child"
     | _ => throwErrorAt it "unrecognised lemma body item"
   addLemma
     { name := id.getId, isTheorem := isTheorem
@@ -301,19 +271,19 @@ Replay each verification declaration as a Lean def. Called by
 axiom bodies can reference machine fields and event payloads. -/
 
 /-- Reject any reference to the `GlobalState` / `PLean.GlobalState`
-type identifier inside a `system <s> { … }` invariant body. A binder
-of type `GlobalState <Sig>` (in any form — `∀`/`∃`/`let`/`have`/
-`fun`/`λ`) would shadow the outer `<s>` and silently decouple the
-invariant from per-handler state, letting a *false* property verify
-as a clean pass.
+type identifier inside a state-bound invariant body. A binder of type
+`GlobalState <Sig>` (in any form — `∀`/`∃`/`let`/`have`/`fun`/`λ`)
+would shadow the pmodule's `system`-declared `<σ>` and silently
+decouple the invariant from per-handler state, letting a *false*
+property verify as a clean pass.
 
 The check is intentionally name-based rather than binder-shape-based:
-a well-formed `system`-block invariant has no reason to name the state
-type (it references the bound `s` directly), so rejecting *any*
+a well-formed state-bound invariant has no reason to name the state
+type (it references the bound `<σ>` directly), so rejecting *any*
 mention is a sound over-approximation that no new binder syntax can
-evade. Bare top-level `invariant … : ∀ s : GlobalState Sig, P` is
-still allowed because the materialiser uses a wildcard binder there
-and there is no `system`-block `s` to shadow. -/
+evade. A bare `invariant … : ∀ s : GlobalState Sig, P` in a pmodule
+without `system <σ>` is still allowed because the materialiser uses a
+wildcard binder there and there's no outer `<σ>` to shadow. -/
 private partial def containsExplicitStateBinder (stx : Syntax) : Option Syntax := Id.run do
   if stx.isIdent then
     let n := stx.getId
@@ -329,20 +299,18 @@ private def rejectExplicitStateBinder (id : Ident) (prop : TSyntax `term) :
     CommandElabM Unit := do
   match containsExplicitStateBinder prop with
   | some hit =>
-    throwErrorAt hit m!"invariant `{id.getId}` lives inside a `system` block \
-      but its body names the `GlobalState` type. A `∀`/`∃`/`let`/`have`/`fun` \
-      binder of type `GlobalState <Sig>` shadows the outer `system` state \
-      binder and silently decouples the invariant from per-handler state \
-      (the soundness hole fixed 2026-06-10). Reference the `system`-block's \
-      state binder directly in the body instead of introducing a new \
-      `GlobalState`-typed variable."
+    throwErrorAt hit m!"invariant `{id.getId}` body names the `GlobalState` \
+      type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` \
+      shadows the pmodule's `system` state binder and silently decouples the \
+      invariant from per-handler state (a soundness hole). Reference the \
+      pmodule's `system`-declared state binder directly in the body instead \
+      of introducing a new `GlobalState`-typed variable."
   | none => pure ()
 
-/-- Public guard for `init-holds` bodies (and any other state-bound
-prop materialised with a hardcoded `s` binder): reject a body that names
-the `GlobalState` type, since such a binder shadows the `s` the
-materialiser introduces. Same soundness rationale as
-`rejectExplicitStateBinder` for `system`-block invariants. -/
+/-- Public guard for `init-holds` / `paxiom` bodies: reject a body
+that names the `GlobalState` type, since such a binder shadows the
+state binder the materialiser introduces. Same soundness rationale
+as `rejectExplicitStateBinder` for invariants. -/
 def rejectStateShadowIn (what : String) (prop : Syntax) : CommandElabM Unit := do
   match containsExplicitStateBinder prop with
   | some hit =>
@@ -803,13 +771,40 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
       @[reducible] def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop')
     elabCommand cmd
 
-def materialiseAxiom (d : PAxiomDecl) : CommandElabM Unit := do
+def materialiseAxiom (machineKinds eventKinds : NameSet)
+    (machineFields : NameMap NameSet)
+    (machineContainerFields : NameMap NameSet)
+    (machineSetPropFields : NameMap NameSet)
+    (eventPayloadFields : NameMap NameSet)
+    (d : PAxiomDecl) : CommandElabM Unit := do
   match d.defStx with
   | none => pure ()
   | some stx =>
     let `(paxiom $id:ident : $prop:term) := stx
       | throwErrorAt stx "internal error: paxiom defStx malformed"
-    elabCommand (← `(axiom $id : $prop))
+    match d.stateBinder with
+    | none =>
+      elabCommand (← `(axiom $id : $prop))
+    | some sName =>
+      -- The body may name `<σ>` as the global state; bind it via
+      -- `∀ <σ> : GlobalState Sig, …`. Field-projection sugar and
+      -- kind-guard injection both run against the original body so
+      -- `n.held σ` / `∀ n : Node, …` work the same way as inside an
+      -- `invariant`. The shadow guard also fires — a binder of type
+      -- `GlobalState <Sig>` inside the body would otherwise shadow the
+      -- outer `<σ>` and decouple the axiom from per-handler state.
+      rejectStateShadowIn "`paxiom`" prop.raw
+      let rewritten ← liftMacroM <|
+        rewriteFieldProjections machineKinds eventKinds
+          machineFields machineContainerFields machineSetPropFields
+          eventPayloadFields sName prop.raw
+      let guarded ← liftMacroM <|
+        injectKindGuards machineKinds eventKinds sName rewritten
+      let prop' : TSyntax `term := ⟨guarded⟩
+      let sBinder : Ident := mkIdent sName
+      let gsTy : Ident := mkIdent ``PLean.GlobalState
+      let sigId : Ident := mkIdent `Sig
+      elabCommand (← `(axiom $id : ∀ $sBinder : $gsTy $sigId, $prop'))
 
 def materialiseInit (_d : PInitDecl) : CommandElabM Unit := do
   -- Per-clause materialisation is a no-op: aggregation lives in

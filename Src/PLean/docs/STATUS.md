@@ -52,6 +52,66 @@ _**Closure rates (M3 + ClockBound + ShardedKV, final):**_
 
 _Build: green at HEAD._
 
+### Session 2026-06-29 — top-level `system <σ>` command; comment-style sweep
+
+Closes the review's top usability complaint: the `system <σ> { … }`
+block wrapper was uniform across every Lemma/Theorem in every example
+(authors wrote it identically per block) AND silently dictated that
+plain `s` inside an `init-holds` / `paxiom` body referred to the
+global state — a "load-bearing premise the surface didn't disclose."
+
+**New surface — one binder per pmodule.** `system <σ>` is now a
+top-level command, declared once per `pmodule`. Every subsequent
+`invariant` / `init-holds` / `paxiom` body may reference `<σ>` as
+the global state; the materialiser binds it as the lambda argument.
+The legacy `system <σ> { invariant … }` block syntax (both top-level
+and nested inside `Lemma`/`Theorem`) is gone — bare `invariant`
+clauses inside `Lemma`/`Theorem` pick up the pmodule's binder
+automatically.
+
+```
+pmodule M
+  system s
+  paxiom config_const : ∀ n : Node, n.cfg s = default_cfg
+  init-holds ∀ n : Node, n.held s = false
+  Theorem safety {
+    invariant unique : ∀ n1 n2 : Node,
+      n1.held s = true → n2.held s = true → n1 = n2
+  }
+end M
+```
+
+**Mechanics.** `LocalPModuleCtx` gains `sBinder : Option Name`,
+mutated by `setSBinder` from the top-level `system <σ>` command and
+threaded into every `PInvariantDecl` / `PAxiomDecl` / `PInitDecl`
+registered after it. `materialiseAxiom` is now state-aware: when the
+clause carries a binder, the body is wrapped as `∀ <σ> : GlobalState
+Sig, …`, runs the same field-projection + kind-guard pipeline
+invariants get, and goes through `rejectStateShadowIn` (so a
+`paxiom : ∀ s : GlobalState Sig, False` is rejected). Pmodules
+without a `system <σ>` declaration still admit closed-prop axioms
+(state-independent), so `Tests/Bootstrap/SingleFile`'s
+`paxiom round_distinct` continues to work unchanged.
+
+**Migration.** All Tutorial/Advanced ports + every test pmodule that
+used `system s { … }` now declare `system s` once at the top.
+Closure rates unchanged: DistributedLock 12/12, LockServer 37/37,
+RingLeader 14/14, ClockBound 59/59, ShardedKV 11/11, Consensus 16/16,
+PingPongAuto 8/8.
+
+**Comment-style sweep alongside.** Per the project memo:
+- Dropped `## Step N` / `-- Step N` section headers across
+  `Commands/GenModule.lean::elabPGenModule` — 10 doc-block headers
+  and 21 inline-comment references, plus the multi-paragraph
+  "before Step 6" rationale (collapsed to a single sentence).
+- Trimmed dated narration (`2026-06-10 soundness fix`, `2026-06-19
+  profile`) and inline benchmark name-drops (`DistributedLock 12/12`,
+  `LockServer's 11-conjunct system_config`) from the SMT-prep cache
+  docstring and `pverify_split_smt`'s motivation paragraph.
+- Updated `rejectExplicitStateBinder` / `rejectStateShadowIn` /
+  `pSystem` docstrings to describe the new pmodule-wide binder
+  instead of the removed `system <σ> { … }` block form.
+
 ### Session 2026-06-27 (later) — Consensus 23/23 with `Won` + `unique_leader`; reducible invariants; recursive `wpgen` for loop body
 
 The toy Consensus port now verifies the full safety theorem

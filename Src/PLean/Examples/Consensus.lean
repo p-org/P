@@ -55,6 +55,8 @@ set_option loom.solver.smt.timeout 10
 
 pmodule Consensus
 
+  system s
+
   type tRequestPayload = (src : PLean.MachineRef)
   type tVotePayload    = (voter : PLean.MachineRef)
 
@@ -96,8 +98,7 @@ pmodule Consensus
     }
 
     state Won {
-      on eRequestVote (_p : tRequestPayload) { pure () }
-      on eVote        (_p : tVotePayload)    { pure () }
+      ignore eRequestVote, eVote
     }
   }
 
@@ -114,20 +115,18 @@ pmodule Consensus
   --   `isQuorum` (a flat predicate, unchanged across all
   --   transitions) carries this through every step.
   Lemma quorum_votes {
-    system s {
-      invariant one_vote_per_voter :
-        ∀ e1 e2 : eVote,
-          s.sent e1 = true → s.sent e2 = true →
-          e1.voter = e2.voter → e1 = e2
+    invariant one_vote_per_voter :
+      ∀ e1 e2 : eVote,
+        s.sent e1 = true → s.sent e2 = true →
+        e1.voter = e2.voter → e1 = e2
 
-      invariant voted_after_eVote_sent :
-        ∀ (e : eVote) (n : Node),
-          s.sent e = true → e.voter = n.ref → n.voted = true
+    invariant voted_after_eVote_sent :
+      ∀ (e : eVote) (n : Node),
+        s.sent e = true → e.voter = n.ref → n.voted = true
 
-      invariant won_implies_quorum :
-        ∀ n : Node,
-          stateOf n.ref s = Node.Won_st → isQuorum n.ref = true
-    }
+    invariant won_implies_quorum :
+      ∀ n : Node,
+        stateOf n.ref s = Node.Won_st → isQuorum n.ref = true
   }
   Proof {
     prove quorum_votes ;
@@ -135,13 +134,11 @@ pmodule Consensus
 
   -- Election safety: at most one Node ever reaches `Won`.
   Theorem election_safety {
-    system s {
-      invariant unique_leader :
-        ∀ n1 n2 : Node,
-          stateOf n1.ref s = Node.Won_st →
-          stateOf n2.ref s = Node.Won_st →
-          n1 = n2
-    }
+    invariant unique_leader :
+      ∀ n1 n2 : Node,
+        stateOf n1.ref s = Node.Won_st →
+        stateOf n2.ref s = Node.Won_st →
+        n1 = n2
   }
   Proof {
     prove election_safety using quorum_votes ;
@@ -173,42 +170,31 @@ axiom unique_quorum :
     stateOf n1 s = Node.Won_st → stateOf n2 s = Node.Won_st →
     n1 = n2
 
--- Base case for `won_implies_quorum`: at init, every machine ref's
--- `currentState` is `RequestVoting_st`, so the `Won_st` antecedent
--- is unreachable.
+-- At init every machine starts in `RequestVoting_st`, so any `Won_st`
+-- antecedent reduces to a constructor mismatch via `S.noConfusion`.
+-- Shared between both base-case proofs below.
+private theorem init_not_won (s : GlobalState Sig)
+    (hInit : InitConditions s) (r : PLean.MachineRef) :
+    stateOf r s ≠ Node.Won_st := by
+  obtain ⟨_, _, _, hInStart, _⟩ := hInit
+  have hStart := hInStart r
+  unfold stateOf
+  rw [hStart]
+  exact fun h => S.noConfusion h
+
 @[pverifyProof]
 theorem base_block0_won_implies_quorum
     (s : GlobalState Sig) :
     InitConditions s → won_implies_quorum s := by
-  intro hInit
-  unfold won_implies_quorum
-  intro n _hkind hWon
-  unfold InitConditions at hInit
-  obtain ⟨_, _, _, hInStart, _⟩ := hInit
-  have hStart := hInStart n.ref
-  unfold stateOf at hWon
-  rw [hStart] at hWon
-  exfalso
-  simp only [Node.Won_st] at hWon
-  exact S.noConfusion hWon
+  intro hInit n _hkind hWon
+  exact absurd hWon (init_not_won s hInit n.ref)
 
--- Base case for `unique_leader`: same shape — no machine is in
--- `Won_st` at init.
 @[pverifyProof]
 theorem base_block1_unique_leader
     (s : GlobalState Sig) :
     InitConditions s → unique_leader s := by
-  intro hInit
-  unfold unique_leader
-  intro n1 _hk1 n2 _hk2 hWon1 _hWon2
-  unfold InitConditions at hInit
-  obtain ⟨_, _, _, hInStart, _⟩ := hInit
-  have hStart := hInStart n1.ref
-  unfold stateOf at hWon1
-  rw [hStart] at hWon1
-  exfalso
-  simp only [Node.Won_st] at hWon1
-  exact S.noConfusion hWon1
+  intro hInit n1 _hk1 n2 _hk2 hWon1 _hWon2
+  exact absurd hWon1 (init_not_won s hInit n1.ref)
 
 -- `eVote` handler preserves `election_safety`. The only branch that
 -- adds to the Won-state set is `goto Won`, which fires when
@@ -238,78 +224,38 @@ theorem Node.RequestVoting.eVote_correct_block1_election_safety_using_quorum_vot
   intros
   -- Hypothesis order (post `intros`): hUL hUniq hVoted hWonQ
   -- hInfl hTgt hThisKind hStThis hAct
-  rename_i hUL hUniq hVoted hWonQ hInfl hTgt hThisKind hStThis hAct
+  rename_i hUL _ _ hWonQ _ _ _ _ _
   refine ⟨?thenB, ?elseB⟩
-  · -- `goto Won` branch: `isQuorum this.ref = true`. The post-state
-    -- Won-set is `{ref : isQuorum ref ∧ (pre-state.currentState =
-    -- Won_st ∨ ref = this.ref)}`; both `n1`/`n2` satisfy `isQuorum`
-    -- so `unique_quorum` collapses them.
-    intro hQuorumGuard
-    intro n1 _hKind1 n2 _hKind2 hWon1 hWon2
+  · -- `goto Won` branch: post-state Won = pre-state Won ∪ {this.ref}.
+    -- Both refs satisfy `isQuorum` (handler guard for `this.ref`,
+    -- `won_implies_quorum` for any pre-existing Won-state Node after
+    -- bridging post→pre); collapse via `unique_quorum`.
+    intro hQuorumGuard n1 hKind1 n2 hKind2 hWon1 hWon2
     have hQ1 : isQuorum n1.ref = true := by
       by_cases hn1 : n1.ref = this.ref
       · rw [hn1]; exact hQuorumGuard
-      · -- post-state `currentState n1 = Won_st` and update only
-        -- touched `this.ref` ⟹ pre-state `currentState n1 = Won_st`.
-        simp only [stateOf, GlobalState.updateMachine,
-                   GlobalState.addSent, GlobalState.bumpActionCount,
-                   GlobalState.addReceived] at hWon1
+      · simp only [stateOf] at hWon1
         rw [if_neg hn1] at hWon1
-        -- Pre-state Won + post-state has same kind → `won_implies_quorum`
-        -- pre-state.
-        have hWonPre : stateOf n1.ref s = Node.Won_st := hWon1
-        -- Need is_Node n1.ref s. By kind-monotonicity (kind unchanged
-        -- by send/goto), and we have is_Node n1.ref <post>.
-        have hKindPre : is_Node n1.ref s := by
-          simp only [is_Node, Node_allocated, Node_kind,
-                     GlobalState.updateMachine, GlobalState.addSent,
-                     GlobalState.bumpActionCount,
-                     GlobalState.addReceived] at *
-          simp_all
-        exact hWonQ n1 hKindPre hWonPre
+        pverify_machine_has_type hKindPre : Node n1.ref from hKind1
+        exact hWonQ n1 hKindPre hWon1
     have hQ2 : isQuorum n2.ref = true := by
       by_cases hn2 : n2.ref = this.ref
       · rw [hn2]; exact hQuorumGuard
-      · simp only [stateOf, GlobalState.updateMachine,
-                   GlobalState.addSent, GlobalState.bumpActionCount,
-                   GlobalState.addReceived] at hWon2
+      · simp only [stateOf] at hWon2
         rw [if_neg hn2] at hWon2
-        have hWonPre : stateOf n2.ref s = Node.Won_st := hWon2
-        have hKindPre : is_Node n2.ref s := by
-          simp only [is_Node, Node_allocated, Node_kind,
-                     GlobalState.updateMachine, GlobalState.addSent,
-                     GlobalState.bumpActionCount,
-                     GlobalState.addReceived] at *
-          simp_all
-        exact hWonQ n2 hKindPre hWonPre
+        pverify_machine_has_type hKindPre : Node n2.ref from hKind2
+        exact hWonQ n2 hKindPre hWon2
     have heq : n1.ref = n2.ref :=
       unique_quorum _ n1.ref n2.ref hQ1 hQ2 hWon1 hWon2
     cases n1; cases n2; simp_all
-  · -- non-Won branch: machines unchanged (only send + markReceived),
-    -- so post-state `stateOf` agrees with pre-state.
-    intro _
-    intro n1 hKind1 n2 hKind2 hWon1 hWon2
-    have hWon1' : stateOf n1.ref s = Node.Won_st := by
-      simp only [stateOf, GlobalState.addSent,
-                 GlobalState.bumpActionCount,
-                 GlobalState.addReceived] at hWon1
-      exact hWon1
-    have hWon2' : stateOf n2.ref s = Node.Won_st := by
-      simp only [stateOf, GlobalState.addSent,
-                 GlobalState.bumpActionCount,
-                 GlobalState.addReceived] at hWon2
-      exact hWon2
-    have hKind1' : is_Node n1.ref s := by
-      simp only [is_Node, Node_allocated, Node_kind,
-                 GlobalState.addSent, GlobalState.bumpActionCount,
-                 GlobalState.addReceived] at *
-      exact hKind1
-    have hKind2' : is_Node n2.ref s := by
-      simp only [is_Node, Node_allocated, Node_kind,
-                 GlobalState.addSent, GlobalState.bumpActionCount,
-                 GlobalState.addReceived] at *
-      exact hKind2
-    exact hUL n1 hKind1' n2 hKind2' hWon1' hWon2'
+  · -- Non-Won branch: only send + markReceived + container write, so
+    -- `stateOf` and `is_Node` carry through. `pverify_machine_has_type`
+    -- bridges each kind hypothesis; `simp only` peels the wrapper sends.
+    intro _ n1 hKind1 n2 hKind2 hWon1 hWon2
+    simp only [stateOf] at hWon1 hWon2
+    pverify_machine_has_type hKind1' : Node n1.ref from hKind1
+    pverify_machine_has_type hKind2' : Node n2.ref from hKind2
+    exact hUL n1 hKind1' n2 hKind2' hWon1 hWon2
 
 -- Entry preserves `election_safety`. The entry only sends
 -- `eRequestVote`s and doesn't goto, so machines are unchanged.
@@ -335,19 +281,16 @@ theorem Node.RequestVoting.entry_correct_block1_election_safety_using_quorum_vot
     (post := fun _ s => quorum_votes s)
   · intro s ⟨⟨_hES, hQV⟩, hKind, hSt⟩
     exact ⟨hQV, hKind, hSt⟩
-  · intro _ s hQV
-    unfold election_safety unique_leader
-    intro n1 hKind1 n2 hKind2 hWon1 hWon2
-    unfold quorum_votes at hQV
-    obtain ⟨_, _, hWonQ⟩ := hQV
-    have hQ1 : isQuorum n1.ref = true := hWonQ n1 hKind1 hWon1
-    have hQ2 : isQuorum n2.ref = true := hWonQ n2 hKind2 hWon2
+  · -- Post-implication: `quorum_votes s → election_safety s` via
+    -- `won_implies_quorum` (from `quorum_votes`) + `unique_quorum`.
+    rintro _ s ⟨_, _, hWonQ⟩ n1 hKind1 n2 hKind2 hWon1 hWon2
     have heq : n1.ref = n2.ref :=
-      unique_quorum s n1.ref n2.ref hQ1 hQ2 hWon1 hWon2
+      unique_quorum s n1.ref n2.ref
+        (hWonQ n1 hKind1 hWon1) (hWonQ n2 hKind2 hWon2) hWon1 hWon2
     cases n1; cases n2; simp_all
-  -- Reduced: `triple (quorum_votes ∧ kind ∧ state) entry quorum_votes`.
-  -- Same shape as the auto-generated `entry_correct_block0_quorum_votes`
-  -- — discharge by running the headline `pverify` chain.
+  -- Reduced: same shape as `entry_correct_block0_quorum_votes` (which
+  -- the verifier auto-discharges). Run the unfold chain mirroring
+  -- what `#pverify` emits for that obligation, then `pverify`.
   unfold Node.RequestVoting.entry
   unfold quorum_votes
   unfold one_vote_per_voter voted_after_eVote_sent won_implies_quorum
@@ -357,13 +300,13 @@ theorem Node.RequestVoting.entry_correct_block1_election_safety_using_quorum_vot
              PLean.markReceived PLean.announce
   pverify
 
--- Entry preserves the framework default invariants. Same shape as
--- the auto-generated default obligation, but the multi-clause loop
--- invariant (DefaultInvariants unfolds to 3 conjuncts) trips
--- lean-auto's iteration-VC translation. Discharge by running the
--- same chain `pverify_default` uses, with explicit unfolds for the
--- machine kind / accessor helpers.
-set_option maxHeartbeats 4000000 in
+-- Entry preserves the framework default invariants. The handler is
+-- `pforeach`-shaped; the user-supplied loop invariant (`quorum_votes`)
+-- doesn't pin `DefaultInvariants`, so the auto-default chain's `wpgen`
+-- path leaves an unsatisfiable `(quorum_votes s' → DefaultInvariants s')`
+-- goal. We discharge structurally with `triple_pforeach_with`, which
+-- carries `DefaultInvariants` through the loop independent of the
+-- user's invariant list.
 @[pverifyProof]
 theorem Node.RequestVoting.entry_correct_block1_default
     (this : Node) :
@@ -373,44 +316,21 @@ theorem Node.RequestVoting.entry_correct_block1_default
         (s.machines this.ref).currentState = Node.RequestVoting_st)
       (Node.RequestVoting.entry this)
       (fun _ s => DefaultInvariants s) := by
-  -- Reduce the goal to "loop body preserves DefaultInvariants".
   apply triple_cons (pre := DefaultInvariants)
     (post := fun _ => DefaultInvariants)
   · intro s ⟨h, _, _⟩; exact h
   · intro _ s h; exact h
   unfold Node.RequestVoting.entry
-  -- The handler prefix is `let _ ← voted_get; let _ ← votes_get;
-  -- pforeach ...`. The `_get`s read state without modifying, so
-  -- their WP preserves any state-only invariant.
   apply triple_bind (cut := fun _ => DefaultInvariants)
-  · -- voted_get
-    unfold voted_get
-    pverify_step_wp
-    pverify_smt
+  · unfold voted_get; pverify
   intro _
   apply triple_bind (cut := fun _ => DefaultInvariants)
-  · -- votes_get
-    unfold votes_get
-    pverify_step_wp
-    pverify_smt
+  · unfold votes_get; pverify
   intro _
-  -- forIn: every iteration preserves DefaultInvariants.
-  apply triple_forIn_list (inv := fun _ _ => DefaultInvariants)
-  intro m _tl _u
-  apply triple_bind (cut := fun _ => DefaultInvariants)
-  · -- invariantGadget := pure .unit
-    simp only [invariantGadget]
-    exact (triple_pure _ _ _).mpr (le_refl _)
-  intro _
-  apply triple_bind (cut := fun _ => DefaultInvariants)
-  · -- send m eRequestVote (src = this.ref)
-    unfold PLean.send
-    pverify_step_wp
-    pverify_smt
-  intro _
-  -- pure ForInStep.yield: both branches of ForInStep are
-  -- DefaultInvariants ≤ DefaultInvariants.
-  exact (triple_pure _ _ _).mpr (le_refl _)
+  apply triple_pforeach_with (Q := DefaultInvariants)
+  intro m
+  unfold PLean.send
+  pverify
 
 end Consensus
 

@@ -39,6 +39,13 @@ named-tuple type must materialise *before* the type. NameMap iteration
 is not insertion-ordered, so we keep a parallel array. -/
 structure LocalPModuleCtx where
   name       : Name
+  /-- The pmodule's global-state binder, declared by `system <σ>`. Every
+      `invariant` / `init-holds` / `paxiom` body registered after the
+      declaration may reference `σ` as the global state; the materialiser
+      uses this name as the lambda binder when emitting them. `none`
+      means no `system <σ>` has been declared yet — clauses registered
+      while it is `none` are state-independent. -/
+  sBinder    : Option Name           := none
   types      : NameMap PTypeDecl     := {}
   typeOrder  : Array Name            := #[]
   events     : NameMap PEventDecl    := {}
@@ -86,6 +93,7 @@ private def mergeCtx (a b : LocalPModuleCtx) : LocalPModuleCtx :=
       if !aSet.contains n then out := out.push n
     return out
   { name         := a.name
+    sBinder      := b.sBinder.orElse fun _ => a.sBinder
     types        := b.types.foldl      (fun m k v => m.insert k v) a.types
     typeOrder    := mergeOrder a.typeOrder b.typeOrder
     events       := b.events.foldl     (fun m k v => m.insert k v) a.events
@@ -251,5 +259,20 @@ def addLemma (d : PLemmaDecl) : CommandElabM Unit := do
 def addProof (d : PProofDecl) : CommandElabM Unit := do
   let ctx ← requireLocalPModuleCtx "Proof"
   commit { ctx with proofs := ctx.proofs.push d }
+
+/-- Set the pmodule's `system <σ>` binder. Errors if a different binder
+was already declared in this pmodule (a second `system τ` would silently
+re-name the implicit state in clauses registered after it). -/
+def setSBinder (sName : Name) (ref : Syntax) : CommandElabM Unit := do
+  let ctx ← requireLocalPModuleCtx "system"
+  match ctx.sBinder with
+  | some prev =>
+    if prev == sName then
+      pure ()  -- idempotent: same name, no-op
+    else
+      withRef ref <|
+        throwError s!"`system`: pmodule `{ctx.name}` already declared its state binder as `{prev}` — cannot re-declare as `{sName}`. Use the existing name in subsequent clauses."
+  | none =>
+    commit { ctx with sBinder := some sName }
 
 end PLean

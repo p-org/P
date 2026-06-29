@@ -7,6 +7,7 @@ invariant bodies and synthesised Hoare triples, and so SMT-preparation
 unfolds reach the underlying `s.sent`/`s.received` projections.
 -/
 import PLean.Semantics.GlobalState
+import PLean.Verify.SimpAttrs
 
 namespace PLean
 
@@ -51,8 +52,11 @@ each label has a unique counter; the `UniqueActions` default invariant
 certifies the ordering is total over the sent set. -/
 
 /-- `a ≺ b`: label `a` was sent before label `b`. The `≺` infix lives
-in `Syntax/Notation.lean`. -/
-@[inline] def precedes (a b : P.Label) : Prop :=
+in `Syntax/Notation.lean`. Tagged `@[pverifySimp]` so SMT prep
+unfolds the `actionCount` comparison; otherwise lean-auto sees
+`precedes` as an opaque uninterpreted predicate and can't relate
+it to the `<` comparison `IncreasingCount` / `UniqueActions` use. -/
+@[inline, pverifySimp] def precedes (a b : P.Label) : Prop :=
   a.actionCount < b.actionCount
 
 end PLean

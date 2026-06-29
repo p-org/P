@@ -92,6 +92,38 @@ theorem triple_pforeach {P : ProgramSig} {α : Type}
   exact (triple_pure _ _ _).mpr (le_refl _)
 
 open PartialCorrectness DemonicChoice in
+/-- Loop-body-only version: the loop preserves any predicate `Q` the
+*body* preserves, independent of the user-supplied loop invariants
+`inv`. Used by the auto-default chain (`pverify_default`) to discharge
+the `prove default;` obligation on a loop-bearing handler — the
+user's `inv` may not entail `DefaultInvariants`, but each `body x`
+preserves `DefaultInvariants` (its `send`/`set` footprint is the same
+as outside the loop). With this lemma, the iteration-level obligation
+becomes "body preserves `DefaultInvariants`", which the standard
+chain discharges via SMT one iteration at a time.
+
+The `inv` list is unused at the assertion level but kept in the term
+(it lives inside `pforeach`'s body, surrounding `invariantGadget`).
+`invariantGadget` is definitionally `pure ()`, so it preserves `Q`
+trivially; the proof structure mirrors `triple_pforeach`. -/
+theorem triple_pforeach_with {P : ProgramSig} {α : Type}
+    (xs : List α) (inv : List (PProp P)) (Q : PProp P)
+    (body : α → PM P Unit)
+    (hstep : ∀ x, triple Q (body x) (fun _ => Q)) :
+    triple Q (pforeach (P := P) xs inv body) (fun _ => Q) := by
+  unfold pforeach
+  apply triple_forIn_list (inv := fun _ _ => Q)
+  intro hd _tl _b
+  apply triple_bind (cut := fun _ => Q)
+  · simp only [invariantGadget]
+    exact (triple_pure _ _ _).mpr (le_refl _)
+  intro _
+  apply triple_bind (cut := fun _ => Q)
+  · exact hstep hd
+  intro _
+  exact (triple_pure _ _ _).mpr (le_refl _)
+
+open PartialCorrectness DemonicChoice in
 /-- WPGen for `pforeach`. Same shape as Loom's
 `WPGen.forWithInvariantLoop` (Lean.Loop.mk version): the get carries
 the iteration condition as an embedded `⌜⌝`, conjoined with the

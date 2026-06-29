@@ -322,39 +322,47 @@ The plan docs and source comments cover the *why* in detail. The
 points below are the load-bearing invariants you'll need to respect
 when editing.
 
-### Invariants are state-parameterised — wrap in `system <s> { … }`
+### Invariants are state-parameterised — declare the binder once via `system <σ>`
 
-Invariant bodies that mention global state must be inside a
-`system <s> { … }` block. The materialiser binds `s` as the
-predicate's lambda argument and the body resolves bare `s` references
-to it. Outside `system`, an `invariant <name> : <body>` becomes
-`fun _ => <body>` (state-independent only).
+A `pmodule` that has `invariant` / `init-holds` / `paxiom` bodies
+referencing the global state declares its state binder once with a
+top-level `system <σ>` command. Every subsequent clause's body may
+name `σ` as the live state; the materialiser binds `σ` as the
+lambda argument when emitting the def / axiom / init aggregate.
 
 ```lean
-Theorem safety {
-  system s {
+pmodule M
+  system s
+
+  paxiom config_const : ∀ n : Node, n.cfg s = default_cfg
+  init-holds ∀ n : Node, n.held s = false
+
+  Theorem safety {
     invariant unique_holder :
-      ∀ n1 n2 : Node,
-        n1.held = true → n2.held = true → n1 = n2
+      ∀ n1 n2 : Node, n1.held = true → n2.held = true → n1 = n2
   }
-}
+end M
 ```
 
-The 2026-06-10 soundness fix (see STATUS.md decision log) made this
-non-optional; a `Tests/Syntax/SoundnessRegression.lean` test pins
-the shape `def name : GS → Prop`, so don't reintroduce the
-closed-`Prop` form. If the materialiser needs to change, update the
-regression test in lockstep.
+A pmodule with no `system <σ>` declaration emits state-independent
+clauses (`fun _ => <body>` for invariants, no `σ` binder for axioms);
+that's fine for properties that don't reference state. The soundness
+guard (`rejectStateShadowIn` — pinned by
+`Tests/Syntax/SoundnessRegression.lean`) rejects bodies that name the
+`GlobalState` type via `∀`/`∃`/`let`/`have`/`fun` binders, which
+would shadow `σ` and decouple the clause from per-handler state.
 
-### Field-projection sugar inside `system` blocks
+### Field-projection sugar inside state-bound clauses
 
-`n.<v>` (where `n : <M>` and `<v>` is a registered machine `var`)
-desugars to `(s.machines n.ref).fields.<M>_<v>`. `e.<f>` (where
-`e : <ev>` and `<f>` is a payload field) desugars to
+Inside a clause whose pmodule has a `system <σ>` binder (i.e. every
+`invariant` / `init-holds` / `paxiom` registered after the
+declaration), `n.<v>` (where `n : <M>` and `<v>` is a registered
+machine `var`) desugars to `(σ.machines n.ref).fields.<M>_<v>`.
+`e.<f>` (where `e : <ev>` and `<f>` is a payload field) desugars to
 `(<ev>_payload_of e).<f>`. The rewrite is gated on the field name
-being registered, so `n.ref`, `e.action`, `e.target`, `s.machines`
-pass through unchanged. Bare top-level invariants don't get the
-rewrite.
+being registered, so `n.ref`, `e.action`, `e.target`, `σ.machines`
+pass through unchanged. Clauses registered before any `system <σ>`
+declaration don't get the rewrite (the body must be state-independent).
 
 The pass runs **before** kind-guard injection, in
 `Syntax/Verify.lean::rewriteFieldProjections`, so it can see the

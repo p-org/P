@@ -34,6 +34,7 @@ import PLean.Semantics.Default
 import PLean.Semantics.GlobalState
 import PLean.Semantics.Predicates
 import PLean.Semantics.Primitives
+import PLean.Semantics.Loop
 import PLean.Verify.SimpLemmas
 import PLean.Verify.Profile
 
@@ -544,22 +545,14 @@ include the hypothesis NAMES too (after `canonicalise` strips macro-
 scope marks) so a manual proof that references hypotheses by name
 isn't mis-cached against one that doesn't.
 
-The implementation uses **raw `Expr.toString`** (constructor-shape
+The implementation uses raw `Expr.toString` (constructor-shape
 printer) over each hyp/goal-target `Expr`, after `instantiateMVars`
-and `Expr.consumeMData`. This is ~48× cheaper than `Lean.Meta.ppExpr`
-(which delaborates + pretty-prints) and proved stable enough across
-elaborations for our goal set: warm-path cache hits 12/12 on
-DistributedLock and 33/34 on LockServer. The string contains
-constructor shape (e.g. `Expr.app`, `Expr.forallE`) and de Bruijn
-indices, so it doesn't suffer from macro-scope `✝` drift the way
-`ppExpr` did.
-
-Performance (profiled 2026-06-19, see `Tests/Verify/ProfileProbe.lean`):
-- ppExpr-based key (prior): 191 ms / 12 obligations = 16 ms/each
-- Expr.toString-based (this): 4 ms / 12 = 0.3 ms/each (~48×)
-
-Hyp ordering is the local-context order the user introduced them in,
-so the hash is deterministic. -/
+and `Expr.consumeMData`. The string carries constructor shape (e.g.
+`Expr.app`, `Expr.forallE`) and de Bruijn indices, so it doesn't
+suffer from the macro-scope `✝` drift `ppExpr` does — and avoids the
+delab+pretty-print round-trip, which on our benchmarks costs ~50×
+what `Expr.toString` does. Hyp ordering is the local-context order
+the user introduced them in, so the hash is deterministic. -/
 def pverifyGoalToCacheText : MVarId → MetaM String := fun mv => do
   mv.withContext do
     -- Fast key: serialise each hypothesis type and the goal target via
@@ -783,9 +776,8 @@ macro_rules
 `pverify_smt` on each remaining conjunct. Sound: a proof of `A ∧ B`
 follows from independent proofs of `A` and `B`.
 
-Motivation: large user-invariant bundles (LockServer's 11-conjunct
-`system_config`, the 5-conjunct `safety` etc.) often return `unknown`
-from the solver as a single-shot query even though each conjunct is
+Motivation: large user-invariant bundles often return `unknown` from
+the solver as a single-shot query even though each conjunct is
 individually decidable in well under the timeout. Splitting before
 discharge keeps the per-query size small and shifts more obligations
 from `unknown` to closed-by-SMT.
@@ -1270,14 +1262,52 @@ macro_rules
            pverify_close_chain)
     ))
 
+/-! ## Loop-aware default discharge
+
+For a handler whose body contains a `pforeach` (P's `foreach`), the
+auto-default obligation `triple (DefaultInvariants ∧ …) handler
+DefaultInvariants` cannot close through `WPGen.pforeach` alone: the
+loop's user-supplied invariant list need not entail `DefaultInvariants`,
+so the `invariantSeq inv s' → DefaultInvariants s'` half of the
+`spec` translation is unsatisfiable abstractly.
+
+`triple_pforeach_with` (in `Semantics/Loop.lean`) carries an *external*
+invariant `Q` through the loop independently of the user-supplied list,
+provided the body preserves `Q`. Each `send` / `set` in the body
+preserves `DefaultInvariants` via the standard `default_inv` chain, so
+`Q := DefaultInvariants` composes.
+
+Manual `@[pverifyProof]` proofs for loop-bearing default obligations
+follow the same shape:
+
+```
+apply triple_cons (pre := DefaultInvariants)
+  (post := fun _ => DefaultInvariants)
+· intro s ⟨h, _, _⟩; exact h
+· intro _ s h; exact h
+unfold <handler>
+apply triple_bind (cut := fun _ => DefaultInvariants)
+· unfold <var1>_get; pverify
+…
+apply triple_pforeach_with (Q := DefaultInvariants)
+intro _
+unfold PLean.send; pverify
+```
+
+A future tactic could automate this walk, but the elab-level
+implementation must address two subtleties: (1) each `apply
+triple_bind` requires the head program to be in `_ >>= _` shape,
+which means unfolding `<var>_get`/`<var>_set` before the apply; (2)
+the head subgoal's `pverify` must FULLY close — a partial close
+(reducing `triple` to `wp`) leaves residual goals that confuse the
+walker's structural classifier. -/
+
 macro_rules
   | `(tactic| pverify_default) => `(tactic| (
       pverify_step_wp
       first
         | (intro s h; exact h)
         | (intros
-           -- Unfold the bundle so `split_conjunction_hyps` sees three
-           -- conjuncts instead of an opaque `DefaultInvariants s`.
            simp only [PLean.DefaultInvariants, PLean.UniqueActions,
                       PLean.IncreasingCount, PLean.ReceivedSubsetSent] at *
            split_conjunction_hyps

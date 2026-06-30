@@ -9,8 +9,11 @@ for `DefaultInvariants` and the discharger for `pverify_default`.
 The inductive-step VC carries the user invariant + dispatcher
 contract in its precondition; the initiation leg
 (`InitConditions ⇒ Inv`) is a separate base-case VC per individual
-invariant. After user directives a `block_auto_default` pass emits a
-default obligation for every (M, S, ev) not already covered.
+invariant. After user directives, when `pverify.autoProveDefault` is
+on, an `auto_default` pass emits a default obligation for every
+(M, S, ev) not already covered. Off by default — matches PVerifier
+semantics where default invariants are verified only on explicit
+`prove default ;`.
 
 A theorem registered under `@[pverifyProof]` is discharged via
 `exact @<userThm>` inside a `_check` shim that re-builds the expected
@@ -28,6 +31,24 @@ import PLean.Verify.Profile
 open Lean Elab Command
 
 namespace PLean
+
+/-- When `true`, `#pverify` emits a synthetic `prove default;`
+obligation for every `(machine, state, event ∪ {entry})` not already
+covered by an explicit user `prove default ;`. Off by default —
+PVerifier semantics check default invariants only on directives that
+ask for them, and a pmodule with a `Proof { prove safety; }` block and
+no `prove default ;` does not want default obligations padding the
+report. Opt in per-`#pverify` site for soundness-regression probes
+that pin auto-default coverage. -/
+register_option pverify.autoProveDefault : Bool := {
+  defValue := false
+  descr := "If true, `#pverify` adds a synthetic `prove default;` for \
+            every (machine, state, event/entry) triple not covered by \
+            an explicit user `prove default ;`. Off by default — \
+            mirrors PVerifier's semantics where default invariants are \
+            verified only when the user asks for them."
+}
+
 namespace Verify
 
 /-! ## Helpers -/
@@ -1347,40 +1368,41 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
             allLemmaBundleNames proof.name proofIdx result
           result := result'
           pendings := pendings.push pending
-  -- Auto-default pass: synthetic `block_auto_default` tag avoids
-  -- collisions with user-tagged emissions; index past-the-end of the
-  -- proofs array. No base case emitted here — the default invariants
-  -- hold vacuously at init, so duplicating per (M, S, ev) gap would
-  -- only pad the report.
-  let autoTag : Name := `block_auto_default
-  let autoIdx : Nat := ctx.proofs.size
-  for mname in ctx.machineOrder do
-    let some m := ctx.machines.find? mname | continue
-    if m.isSpec then continue
-    let varNames := machineVarNames m
-    let entries := machineEntryHandlers m
-    for sd in m.states do
-      for ev in sd.handles do
-        if explicitDefault.contains (mname, sd.name, ev) then continue
-        -- Ignored events have no handler def; skip even when no user
-        -- directive registered them in `explicitDefault`.
-        if sd.ignoredEvents.contains ev then continue
-        let hasPayload := eventHasPayload ctx ev
-        let (result', pending) ← processOneEmit modName mname sd.name ev
-          `default true #[] hasPayload varNames
+  -- Auto-default pass: gated on `pverify.autoProveDefault`. Synthetic
+  -- `auto_default` tag avoids collisions with user-tagged emissions;
+  -- index past-the-end of the proofs array. No base case emitted here
+  -- — the default invariants hold vacuously at init, so duplicating
+  -- per (M, S, ev) gap would only pad the report.
+  if pverify.autoProveDefault.get (← getOptions) then
+    let autoTag : Name := `auto_default
+    let autoIdx : Nat := ctx.proofs.size
+    for mname in ctx.machineOrder do
+      let some m := ctx.machines.find? mname | continue
+      if m.isSpec then continue
+      let varNames := machineVarNames m
+      let entries := machineEntryHandlers m
+      for sd in m.states do
+        for ev in sd.handles do
+          if explicitDefault.contains (mname, sd.name, ev) then continue
+          -- Ignored events have no handler def; skip even when no user
+          -- directive registered them in `explicitDefault`.
+          if sd.ignoredEvents.contains ev then continue
+          let hasPayload := eventHasPayload ctx ev
+          let (result', pending) ← processOneEmit modName mname sd.name ev
+            `default true #[] hasPayload varNames
+            #[] allMachineNames allEventNames allAxiomNames
+            allLemmaBundleNames autoTag autoIdx result
+          result := result'
+          pendings := pendings.push pending
+      -- Auto-default for entry handlers, mirroring the on-handler loop above.
+      for (sname, payloadTy?) in entries do
+        if explicitDefault.contains (mname, sname, `entry) then continue
+        let (result', pending) ← processEntryEmit modName mname sname
+          payloadTy? `default true #[] varNames
           #[] allMachineNames allEventNames allAxiomNames
           allLemmaBundleNames autoTag autoIdx result
         result := result'
         pendings := pendings.push pending
-    -- Auto-default for entry handlers, mirroring the on-handler loop above.
-    for (sname, payloadTy?) in entries do
-      if explicitDefault.contains (mname, sname, `entry) then continue
-      let (result', pending) ← processEntryEmit modName mname sname
-        payloadTy? `default true #[] varNames
-        #[] allMachineNames allEventNames allAxiomNames
-        allLemmaBundleNames autoTag autoIdx result
-      result := result'
-      pendings := pendings.push pending
   for pending in pendings do
     result ← classifyOnePending pending result
   let missingRecs ← detectMissingPremises modName ctx result.records

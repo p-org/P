@@ -90,3 +90,34 @@ attribute [pverifySimp]
   PLean.inflight
   PLean.sent
   PLean.received
+
+/-- Destruct `∀ s : GlobalState P, Q s` into per-field binders. A loop's
+iteration VC contains `∀ x : GlobalState Sig, …` for the intermediate
+state; lean-auto rejects the `GlobalState` sort because of its
+function-typed fields. Splitting into the five fields keeps each
+function type in applied positions only. -/
+@[pverifySimp] theorem PLean.globalStateForall {P : PLean.ProgramSig}
+    {Q : PLean.GlobalState P → Prop} :
+    (∀ s : PLean.GlobalState P, Q s) =
+      (∀ sent received : P.Label → Bool,
+       ∀ machines : PLean.MachineRef → P.MachineState,
+       ∀ containers : P.C,
+       ∀ actionCount : Nat,
+         Q ⟨sent, received, machines, containers, actionCount⟩) := by
+  apply propext; constructor
+  · intro h _ _ _ _ _; apply h
+  · intro h ⟨_, _, _, _, _⟩; apply h
+
+/-- Existential counterpart of `globalStateForall`. -/
+@[pverifySimp] theorem PLean.globalStateExists {P : PLean.ProgramSig}
+    {Q : PLean.GlobalState P → Prop} :
+    (∃ s : PLean.GlobalState P, Q s) =
+      (∃ sent received : P.Label → Bool,
+       ∃ machines : PLean.MachineRef → P.MachineState,
+       ∃ containers : P.C,
+       ∃ actionCount : Nat,
+         Q ⟨sent, received, machines, containers, actionCount⟩) := by
+  apply propext; constructor
+  · rintro ⟨⟨a, b, c, d, e⟩, h⟩; exact ⟨a, b, c, d, e, h⟩
+  · rintro ⟨a, b, c, d, e, h⟩; exact ⟨⟨a, b, c, d, e⟩, h⟩
+

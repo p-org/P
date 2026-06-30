@@ -1,27 +1,23 @@
 /-
-Probe: loop invariants that name user-declared bundle names should
-reach SMT in a closed form. After the Obligation-gen fix (always
-unfold lemmaBundleNames), the bundle reference unfolds before SMT.
-But: if the bundle body quantifies over a **machine wrapper type**
-(`∀ p : Participant, …`), lean-auto still rejects with
-"Higher order input?" — wrapper-type quantifiers under a `pforeach`
-iteration VC don't translate cleanly.
+Loop invariants that name user-declared bundle names reach SMT in
+unfolded form. The obligation generator unfolds bundle names + their
+individual invariants in the iteration VC's invariant list.
 
-This file probes two cases to isolate the gap:
+Pin two shapes:
 
-(A) `MachineRef`-quantified bundle: closes via SMT. The bundle
-    unfolds, the iteration VC contains `∀ m : MachineRef, …`
-    which is first-order.
+(A) `MachineRef`-quantified bundle. User-invariant closes via SMT;
+    auto-default disproves with a counter-example (loop body's `send`
+    doesn't preserve `DefaultInvariants` without a stronger user
+    invariant — strengthen by adding `invariant inv_default :
+    DefaultInvariants s ;` to the loop).
 
-(B) `MachineWrapper`-quantified bundle: fails with "Higher order
-    input?". The wrapper-typed quantifier under the iteration VC
-    is what triggers lean-auto's rejection.
-
-The fix is principled and sound: VC gen should automatically
-**reduce wrapper-quantified loop invariants to MachineRef-quantified
-ones** at materialisation time, mirroring the way event quantifiers
-get retyped to `Sig.Label` by `injectKindGuards`. This file pins
-the current behaviour so the future fix is observable.
+(B) Machine-wrapper-quantified bundle. Bundle body keeps wrapper
+    type at the surface; under a loop invariant body, lean-auto can
+    fabricate two `Worker` values with equal `ref` but distinct
+    identity, producing an SMT counter-example on the user-invariant
+    obligation. To close, use a `MachineRef`-quantified invariant
+    (`∀ m : MachineRef, is_Worker m s → …`) — `Tests/Verify/LoopInvStrong`
+    pins the working shape.
 -/
 import PLean
 
@@ -95,10 +91,9 @@ pmodule LoopInvBundleB
     }
   }
 
-  -- Bundle body quantifies over the machine WRAPPER type (`Worker`,
-  -- not `MachineRef`). The kind-guard injection adds
-  -- `is_Worker w.ref s →` but keeps `w : Worker`. This wrapper-
-  -- type quantifier under the iteration VC trips lean-auto.
+  -- Surface bundle body quantifies over the machine WRAPPER type.
+  -- Surface-invariant materialisation keeps the wrapper type (the
+  -- rewrite is opt-in for loop invariants only).
   Lemma wrapper_flag {
     invariant wf_main :
       ∀ w : Worker, preference w.ref = true ∨ preference w.ref = false

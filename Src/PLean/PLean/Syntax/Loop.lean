@@ -109,8 +109,12 @@ def elabPLoopInvWrap : TermElab := fun stx expected => do
     let all := (pmoduleExt.getState (← getEnv)).toList.map (·.2) |>.toArray
     let mks := collectMachineKinds all
     let eks := collectEventKinds all
+    -- Opt into the wrapper→MachineRef rewrite in loop invariants —
+    -- the iteration VC's `∀ x : <wrapper>` quantifier trips lean-auto;
+    -- surface invariants keep wrapper types for manual-proof ergonomics.
     let rewritten ← liftMacroM <|
       PLean.injectKindGuards mks eks s.getId body.raw
+        (rewriteWrapperToRef := true)
     elabTerm rewritten expected
   | _ => throwUnsupportedSyntax
 

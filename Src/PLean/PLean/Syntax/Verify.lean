@@ -463,8 +463,71 @@ private def bodyAlreadyGuarded (machineGuard : Bool) (xName _sBinder typeName : 
       #[isPredName]
   findGuardCall predNames xName body
 
+/-! ## Wrapper→MachineRef binder rewrite
+
+A wrapper-typed binder (`∀ x : <M>, …` with `<M> := { ref : MachineRef }`)
+trips lean-auto's monomorphizer when nested under an iteration VC —
+the non-first-order sort doesn't translate. `<M>` is isomorphic to
+`MachineRef`, so a body that only reads `x.ref` (after field-projection
+sugar has rewritten `x.<v>` into `(s.machines x.ref).fields.…`)
+admits a sound retype to `∀ x : MachineRef, is_<M> x s → body[x.ref ↦
+x]`. Bodies with bare `x` uses keep the wrapper type. -/
+
+private partial def stripParens (s : Syntax) : Syntax :=
+  if s.getKind == ``Lean.Parser.Term.paren && s.getNumArgs ≥ 2 then
+    stripParens s[1]
+  else s
+
+/-- Whether every reference to `x` in `body` goes through a `.ref`
+projection (`x.ref` or `(x).ref`). A bare `x` or a `x.<other>` use
+returns false, signalling the rewrite is unsafe. -/
+private partial def bodyUsesXOnlyViaRef (x : Name) : Syntax → Bool := go
+where
+  go (s : Syntax) : Bool := Id.run do
+    if s.getKind == ``Lean.Parser.Term.proj && s.getNumArgs ≥ 3 then
+      let lhs := stripParens s[0]
+      let fld := s[2]
+      if lhs.isIdent && lhs.getId == x then
+        return fld.isIdent && fld.getId == `ref
+    if s.isIdent then
+      let n := s.getId
+      match n with
+      | .str (.str .anonymous head) fld =>
+        if Name.mkSimple head == x then
+          return fld == "ref"
+        else
+          return true
+      | .str .anonymous head =>
+        return Name.mkSimple head != x
+      | _ => return n != x
+    for c in s.getArgs do
+      unless go c do return false
+    return true
+
+/-- Replace `x.ref` with `x` in both `Term.proj` and hierarchical-
+ident forms. Precondition: `bodyUsesXOnlyViaRef x body = true`. -/
+private partial def substXRef (x : Name) : Syntax → Syntax := go
+where
+  go (stx : Syntax) : Syntax :=
+    if stx.getKind == ``Lean.Parser.Term.proj && stx.getNumArgs ≥ 3 then
+      let lhs := stripParens stx[0]
+      let fld := stx[2]
+      if lhs.isIdent && lhs.getId == x &&
+         fld.isIdent && fld.getId == `ref then
+        lhs
+      else
+        stx.setArgs (stx.getArgs.map go)
+    else if stx.isIdent then
+      match stx.getId with
+      | .str (.str .anonymous head) "ref" =>
+        if Name.mkSimple head == x then mkIdent x else stx
+      | _ => stx
+    else
+      stx.setArgs (stx.getArgs.map go)
+
 partial def injectKindGuards (machineKinds eventKinds : NameSet)
-    (sBinder : Name) (stx : Syntax) : MacroM Syntax := do
+    (sBinder : Name) (stx : Syntax)
+    (rewriteWrapperToRef : Bool := false) : MacroM Syntax := do
   let sIdent : Ident := mkIdent sBinder
   let sigLabelTy : TSyntax `term ← `(($(mkIdent `Sig)).Label)
   let asTerm (s : Syntax) : TSyntax `term := ⟨s⟩
@@ -472,6 +535,7 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
   -- `∀ (x : T) (y : U), …`) to nested single-binder shape.
   if let some expanded ← expandMultiBinder stx then
     return ← injectKindGuards machineKinds eventKinds sBinder expanded
+      (rewriteWrapperToRef := rewriteWrapperToRef)
   -- Single-binder rewrite: a small helper picks the right shape and
   -- splices the guard. Returns `none` if the type isn't a kind we
   -- recognise OR the body already carries an equivalent guard (the
@@ -484,6 +548,18 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
         return none
       let isPred : Ident :=
         mkIdent (Name.mkSimple ("is_" ++ t.raw.getId.toString))
+      -- Loop-invariant call sites opt into the wrapper→MachineRef
+      -- rewrite: in an iteration VC the wrapper-typed binder trips
+      -- lean-auto, so we re-type to `MachineRef` when every `x` use
+      -- is through `.ref`. Surface invariants stay wrapper-typed —
+      -- manual proofs reference them by the surface name.
+      if rewriteWrapperToRef && bodyUsesXOnlyViaRef x.getId body'.raw then
+        let machineRefTy : TSyntax `term ← `(PLean.MachineRef)
+        let body'' : TSyntax `term := ⟨substXRef x.getId body'.raw⟩
+        let guard : TSyntax `term ← `(($isPred $x $sIdent))
+        let combined : TSyntax `term ←
+          if isForall then `($guard → $body'') else `($guard ∧ $body'')
+        return some (← mkQuantifier isForall parens x machineRefTy combined)
       let guard : TSyntax `term ← `(($isPred ($x).ref $sIdent))
       let combined : TSyntax `term ←
         if isForall then `($guard → $body') else `($guard ∧ $body')
@@ -501,30 +577,31 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
       -- `is_<ev>`.
       return some (← mkQuantifier isForall parens x sigLabelTy combined)
     return none
+  let recurse := fun s => injectKindGuards machineKinds eventKinds sBinder s
+    (rewriteWrapperToRef := rewriteWrapperToRef)
   match stx with
   | `(∀ $x:ident : $t, $body) =>
-    let body' ← injectKindGuards machineKinds eventKinds sBinder body.raw
+    let body' ← recurse body.raw
     match ← tryInject x t (asTerm body') true false with
     | some out => pure out
     | none     => `(∀ $x:ident : $t, $(asTerm body'))
   | `(∀ ($x:ident : $t), $body) =>
-    let body' ← injectKindGuards machineKinds eventKinds sBinder body.raw
+    let body' ← recurse body.raw
     match ← tryInject x t (asTerm body') true true with
     | some out => pure out
     | none     => `(∀ ($x:ident : $t), $(asTerm body'))
   | `(∃ $x:ident : $t, $body) =>
-    let body' ← injectKindGuards machineKinds eventKinds sBinder body.raw
+    let body' ← recurse body.raw
     match ← tryInject x t (asTerm body') false false with
     | some out => pure out
     | none     => `(∃ $x:ident : $t, $(asTerm body'))
   | `(∃ ($x:ident : $t), $body) =>
-    let body' ← injectKindGuards machineKinds eventKinds sBinder body.raw
+    let body' ← recurse body.raw
     match ← tryInject x t (asTerm body') false true with
     | some out => pure out
     | none     => `(∃ ($x:ident : $t), $(asTerm body'))
   | _ =>
-    let args' ← stx.getArgs.mapM
-      (injectKindGuards machineKinds eventKinds sBinder)
+    let args' ← stx.getArgs.mapM recurse
     return stx.setArgs args'
 
 /-! ## Field-projection sugar

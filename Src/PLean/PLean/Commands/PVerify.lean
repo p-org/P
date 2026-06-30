@@ -31,6 +31,7 @@ register_option pverify.failOnIncomplete : Bool := {
             and continues."
 }
 
+
 private def renderRow (rec : Verify.ObligationRecord) : String :=
   s!"  {rec.outcome.glyph} {rec.thmName}  {rec.outcome.tag}"
 

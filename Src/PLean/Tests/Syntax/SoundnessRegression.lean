@@ -71,6 +71,7 @@ warning: declaration uses 'sorry'
 warning: declaration uses 'sorry'
 -/
 #guard_msgs (warning, drop info) in
+set_option pverify.autoProveDefault true in
 set_option pverify.failOnIncomplete false in
 #pverify SoundnessR1
 
@@ -224,12 +225,13 @@ end SoundnessR6
 -- The sorried manual proof is counted as a failure (`no-diagnostic`),
 -- NOT as `user-proved`. Key pin: `user-proved` stays 0. If the fix
 -- regresses, the `eGo_correct_block0_broken_manual` obligation flips to
--- `user-proved` (1) and the summary line mismatches. (The base case and
--- auto-default also fail — `always_false` is genuinely non-inductive —
--- so all three are `no-diagnostic`.)
+-- `user-proved` (1) and the summary line mismatches. (The base case
+-- also fails — `always_false` is genuinely non-inductive.) The auto-
+-- default coverage is opt-in via `pverify.autoProveDefault`; we leave
+-- it off here so the pin focuses on the user-directive obligations.
 /--
-warning: SoundnessR6: 0 proved by SMT, 0 user-proved, 0 disproved, 0 unknown, 0 tactic-error, 3 no-diagnostic, 0 missing-premise
-3 obligation(s) need a manual proof; fill in the skeletons above.
+warning: SoundnessR6: 0 proved by SMT, 0 user-proved, 0 disproved, 0 unknown, 0 tactic-error, 2 no-diagnostic, 0 missing-premise
+2 obligation(s) need a manual proof; fill in the skeletons above.
 -/
 #guard_msgs (warning, drop info) in
 set_option pverify.failOnIncomplete false in

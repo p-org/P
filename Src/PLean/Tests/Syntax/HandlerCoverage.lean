@@ -45,14 +45,17 @@ pmodule HandlerCoverageGoto
 end HandlerCoverageGoto
 
 #gen_module HandlerCoverageGoto
+
+set_option pverify.autoProveDefault true in
 #pverify HandlerCoverageGoto
 
 namespace HandlerCoverageGoto
 -- The goto-only handler now has its own theorem. Before the fix the
 -- constant was missing and this `#check` errored with `Unknown
--- constant`. The auto-default also gets emitted.
+-- constant`. With `pverify.autoProveDefault := true` the synthetic
+-- `prove default ;` covers it too.
 #check @M.A.eGo_correct_block0_trivial
-#check @M.A.eGo_correct_block_auto_default_default
+#check @M.A.eGo_correct_auto_default_default
 end HandlerCoverageGoto
 
 /-! ## Probe 2 — `entry { … }` gets a per-handler obligation.
@@ -85,14 +88,17 @@ pmodule HandlerCoverageEntry
 end HandlerCoverageEntry
 
 #gen_module HandlerCoverageEntry
+
+set_option pverify.autoProveDefault true in
 #pverify HandlerCoverageEntry
 
 namespace HandlerCoverageEntry
 -- Entry obligation under the synthetic event tag `entry`. The user-
--- directive pass emits one for the explicit `prove trivial`, and the
--- auto-default pass emits a `prove default` for the same handler.
+-- directive pass emits one for the explicit `prove trivial`; with
+-- `pverify.autoProveDefault := true`, the synthetic auto-default pass
+-- emits a `prove default` for the same handler.
 #check @M.Boot.entry_correct_block0_trivial
-#check @M.Boot.entry_correct_block_auto_default_default
+#check @M.Boot.entry_correct_auto_default_default
 end HandlerCoverageEntry
 
 /-! ## Probe 3 — `entry (param : T) { … }` carries the payload binder. -/
@@ -163,13 +169,11 @@ end HandlerCoverageGotoBroken
 
 #gen_module HandlerCoverageGotoBroken
 
--- Three obligations: base (disproved — `always_in_A` doesn't hold for
--- arbitrary unallocated refs whose `currentState` is the default
--- `S.M_A`-like constructor; the cex shows the kind-guard not pinning
--- the ref), inductive step (unknown — z3 can't decide), auto-default
--- (proved). Pre-fix only the base case existed: the goto-only step and
--- its default were silently skipped. The `3 obligations from 1
--- prove-directives` info line is the load-bearing pin.
+-- With `autoProveDefault := true` (below), three obligations: base
+-- (disproved — `always_in_A` doesn't hold for arbitrary unallocated
+-- refs), inductive step (unknown — z3 can't decide), auto-default
+-- (proved). Without the option there's no synthetic default — only
+-- two obligations exist, both failing.
 /--
 warning: HandlerCoverageGotoBroken: 1 proved by SMT, 0 user-proved, 1 disproved, 1 unknown, 0 tactic-error, 0 no-diagnostic, 0 missing-premise
 2 obligation(s) need a manual proof; fill in the skeletons above.
@@ -179,6 +183,7 @@ warning: declaration uses 'sorry'
 warning: declaration uses 'sorry'
 -/
 #guard_msgs (warning, drop info) in
+set_option pverify.autoProveDefault true in
 set_option pverify.failOnIncomplete false in
 #pverify HandlerCoverageGotoBroken
 
@@ -213,12 +218,12 @@ end HandlerCoverageEntryBroken
 
 -- The entry obligation `M.Boot.entry_correct_block0_boot_keeps_false`
 -- is the one that disproves — SMT finds the model where `x = true` after
--- entry breaks `always_false`. The other four (base, on-handler step,
--- both auto-defaults) discharge cleanly because they don't touch `x`.
--- Pre-fix only 3 obligations were emitted (the two entry ones missing),
--- and `#pverify` reported 0 disproved. The `5 obligations from 1
--- prove-directives` info line and the `1 disproved` pin together
--- regress the fix.
+-- entry breaks `always_false`. With `autoProveDefault := true` the
+-- four other obligations (base, on-handler step, both auto-defaults)
+-- discharge cleanly because they don't touch `x`. Pre-fix only 3
+-- obligations were emitted (the two entry ones missing); the `5
+-- obligations from 1 prove-directives` info line and the `1
+-- disproved` pin together regress the fix.
 /--
 warning: HandlerCoverageEntryBroken: 4 proved by SMT, 0 user-proved, 1 disproved, 0 unknown, 0 tactic-error, 0 no-diagnostic, 0 missing-premise
 1 obligation(s) need a manual proof; fill in the skeletons above.
@@ -226,5 +231,6 @@ warning: HandlerCoverageEntryBroken: 4 proved by SMT, 0 user-proved, 1 disproved
 warning: declaration uses 'sorry'
 -/
 #guard_msgs (warning, drop info) in
+set_option pverify.autoProveDefault true in
 set_option pverify.failOnIncomplete false in
 #pverify HandlerCoverageEntryBroken

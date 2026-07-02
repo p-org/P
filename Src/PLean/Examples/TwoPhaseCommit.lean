@@ -58,7 +58,6 @@ pmodule TwoPhaseCommit
     start state Init {
       entry {
         foreach (p in participants)
-          invariant inv_trivial : True ;
         {
           send p, eVoteReq
         }
@@ -71,7 +70,6 @@ pmodule TwoPhaseCommit
         yesVotes += (resp.source)
         if (∀ p : PLean.MachineRef, inParticipants p = true → yesVotes p) then do
           foreach (p in participants)
-            invariant inv_trivial : True ;
           {
             send p, eCommit
           }

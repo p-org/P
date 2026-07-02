@@ -16,13 +16,19 @@ unanimous YES broadcasting `eCommit` (else `eAbort`).
 | `coordinator() : machine`      | `function coordinator : MachineRef`              |
 | `preference(m) : bool`         | `function preference : MachineRef → Bool`        |
 | `yesVotes : set[machine]`      | `var yesVotes : set[MachineRef]`                 |
-| `if yesVotes == participants()`| `if allParticipantsVoted = true` — Bool oracle   |
-|                                | kept opaque to avoid `Set X` quantifiers under   |
-|                                | a paxiom (lean-auto rejects those).              |
+| `if yesVotes == participants()`| `if ∀ p, inParticipants p → yesVotes p` — the    |
+|                                | guard directly states set-coverage, so no oracle |
+|                                | or axiom is needed (safety is fully derived).    |
 -/
 import PLean
 
 open PLean PartialCorrectness DemonicChoice
+-- The eYes commit guard is a `∀`-Prop over the vote set (`∀ p,
+-- inParticipants p → yesVotes p`), matching P's `yesVotes ==
+-- participants()`. `open Classical` supplies the `Decidable` instance the
+-- surface `if` needs (an unbounded `∀ : MachineRef` isn't computably
+-- decidable — but this model is only ever symbolically evaluated).
+open Classical
 
 set_option loom.solver "cvc5"
 set_option loom.solver.smt.timeout 5
@@ -41,12 +47,10 @@ pmodule TwoPhaseCommit
 
   function coordinator          : PLean.MachineRef
   function participants         : seq[PLean.MachineRef]
+  -- First-order membership oracle for `participants()`. Tied to the
+  -- runtime `is_Participant` kind by `system_config` below.
   function inParticipants       : PLean.MachineRef → Bool
   function preference           : PLean.MachineRef → Bool
-  -- Demonic-choice oracle deciding when to commit. Kept zero-arg and
-  -- opaque: a `Set X` argument would land `∀ v : Set X, …` quantifiers
-  -- in obligations that lean-auto's monomorphizer rejects.
-  function allParticipantsVoted : Bool
 
   machine Coordinator {
     var yesVotes : set[PLean.MachineRef]
@@ -65,7 +69,7 @@ pmodule TwoPhaseCommit
     state WaitForResponses {
       on eYes (resp : tVoteResp) {
         yesVotes += (resp.source)
-        if allParticipantsVoted = true then do
+        if (∀ p : PLean.MachineRef, inParticipants p = true → yesVotes p) then do
           foreach (p in participants)
             invariant inv_trivial : True ;
           {
@@ -118,15 +122,43 @@ pmodule TwoPhaseCommit
   init-holds ∀ p : Participant,
     stateOf p.ref s = Participant.Undecided_st
 
-  -- The runtime guarantee on the commit oracle: when
-  -- `allParticipantsVoted = true` fires, every Participant in fact
-  -- prefers YES. The P source carries this implicitly via the
-  -- `yesVotes == participants()` set-equality + `a5 :
-  -- p ∈ c.yesVotes ⟹ preference(p)`; PLean models it as a paxiom
-  -- on the Bool oracle so SMT can use it as a first-order fact.
-  paxiom allParticipantsVoted_sound :
-    allParticipantsVoted = true →
-      ∀ p : PLean.MachineRef, is_Participant p s → preference p = true
+  -- P's `init-condition forall m :: m in participants() == m is
+  -- Participant`: the membership oracle names exactly the Participant-kind
+  -- machines. Ported as an `init-holds` so the base case discharges.
+  init-holds ∀ p : PLean.MachineRef,
+    inParticipants p = true ↔ is_Participant p s
+
+  -- P's `system_config.participant_set`: the topology fact above is an
+  -- invariant (neither `inParticipants` nor the kind ever changes), so it
+  -- holds in every reachable state — no axiom needed.
+  Lemma system_config {
+    invariant participant_set :
+      ∀ p : PLean.MachineRef, inParticipants p = true ↔ is_Participant p s
+  }
+
+  Proof of_system_config {
+    prove system_config ;
+  }
+
+  -- Vote-tracking bundle (P's `kondo` invariants a2a + a5). Carries
+  -- `preference` from the eVoteReq guard (only yes-preferrers send eYes)
+  -- into the Coordinator's `yesVotes` set, so the eCommit-guard
+  -- derivation below reads `preference` off the collected votes.
+  Lemma votes {
+    -- a2a: an in-flight eYes was sent by a yes-preferring source.
+    invariant yes_implies_pref :
+      ∀ e : eYes,
+        s.sent e = true → preference e.source = true
+
+    -- a5: every collected vote is from a yes-preferring participant.
+    invariant votes_all_prefer :
+      ∀ (c : Coordinator) (p : PLean.MachineRef),
+        c.yesVotes p → preference p = true
+  }
+
+  Proof of_votes {
+    prove votes ;
+  }
 
   -- Prove the default framework invariants (`UniqueActions`,
   -- `IncreasingCount`, `ReceivedSubsetSent`). The Coordinator
@@ -138,14 +170,14 @@ pmodule TwoPhaseCommit
   }
 
   -- Strengthening lemma: every sent `eCommit` was sent at a moment
-  -- when every Participant preferred YES (the Coordinator's eYes
-  -- handler only broadcasts eCommit under
-  -- `allParticipantsVoted = true`, which by
-  -- `allParticipantsVoted_sound` forces unanimous YES).
+  -- when every participant preferred YES. Derived (not assumed): the
+  -- eYes handler only broadcasts eCommit under the guard `∀ p,
+  -- inParticipants p → yesVotes p`, which puts every participant into
+  -- `yesVotes`; `votes_all_prefer` (from `votes`) then gives unanimous
+  -- YES, and `system_config` bridges `is_Participant` to `inParticipants`.
   --
-  -- The body uses `s.sent e = true` (not `inflight e s`) so the
-  -- clause stays stable across `markReceived` — receiving an
-  -- eCommit doesn't unset `s.sent`.
+  -- Uses `s.sent e = true` (not `inflight e s`) so the clause stays
+  -- stable across `markReceived`.
   Lemma commit_sent {
     invariant commit_sent_implies_all_yes :
       ∀ e : Sig.Label,
@@ -155,11 +187,11 @@ pmodule TwoPhaseCommit
   }
 
   Proof of_commit_sent {
-    prove commit_sent ;
+    prove commit_sent using votes, system_config ;
   }
 
   -- Main safety theorem: every Participant in `Accepted` saw an
-  -- `eCommit` from the Coordinator. By `commit_sent`, all Participants
+  -- `eCommit` from the Coordinator. By `commit_sent`, all participants
   -- prefer YES.
   Theorem safety {
     invariant accepted_implies_all_prefer :
@@ -230,17 +262,9 @@ private theorem markReceived_preserves_default
   · rw [hEq]; exact hSent
   · exact hRSS a hOld
 
--- The two recurring `commit_sent`-preservation shapes:
--- (a) `send tgt <ev>` for `<ev> ≠ eCommit` — the new label has a
---     non-`eCommit` action, so `is_eCommit e` rules it out.
--- (b) `goto this WaitForResponses` (or any goto) — the new label
---     has action `.goto _`, also ruling out `is_eCommit e`.
---
--- Both proofs follow the same `Bool.or` split on `sent e = true`
--- in the post-state: new label fails `is_eCommit`; old labels fall
--- through to the pre-state hypothesis. Captured here so each
--- Coordinator handler's bind chain reads as a few short applies.
-
+-- `send tgt <ev>` with `<ev> ≠ eCommit` preserves `commit_sent`: the
+-- new label's action isn't an eCommit, so `is_eCommit e` rules it out;
+-- old labels fall through to the pre-state hypothesis.
 private theorem send_noncommit_preserves_commit_sent
     {ev : E} (h_ne_commit : ev ≠ E.eCommit) (tgt : MachineRef) :
     triple (l := PProp Sig)
@@ -257,7 +281,6 @@ private theorem send_noncommit_preserves_commit_sent
     unfold is_eCommit at hisE
     cases ev <;> simp_all
   · exact hCS e hisE hOld pp hpp
-
 
 
 
@@ -391,8 +414,12 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_default_default
   apply triple_bind (cut := fun _ => DefaultInvariants)
   · unfold yesVotes_get; pverify
   intro _
-  by_cases h : allParticipantsVoted = true
-  · rw [if_pos h]
+  -- `if (∀ p, inParticipants p → yesVotes p) then (foreach send eCommit;
+  -- goto) else pure ()`. Clear the guard hypothesis in the then-branch —
+  -- `DefaultInvariants` preservation doesn't need it, and leaving the `∀`
+  -- in context derails `default_inv`'s per-conjunct `simp`/`solve_by_elim`.
+  split
+  · rename_i hGuard; clear hGuard
     apply triple_bind (cut := fun _ => DefaultInvariants)
     · apply triple_pforeach_with (Q := DefaultInvariants)
       intro _
@@ -401,47 +428,430 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_default_default
     intro _
     unfold PLean.goto
     pverify
-  · rw [if_neg h]
-    pverify
+  · pverify
 
-/-! ## Manual proofs for `commit_sent` + `safety` on Coordinator handlers.
+/-! ## `votes`-bundle preservation on the Coordinator handlers.
 
-`commit_sent_implies_all_yes : ∀ e, e is eCommit → s.sent e = true →
-∀ p, is_Participant p → preference p = true` is preserved by every
-handler:
+`votes` = { `yes_implies_pref` (a2a), `votes_all_prefer` (a5) }.
 
-- **Init.entry / eNo**: no eCommit is sent — the new sent set only
-  adds an `eVoteReq` / `eAbort`, neither of which is an eCommit. Old
-  in-flight eCommits stay (sent is monotone), so the invariant
-  transports.
+- **eYes**: `+=` grows `yesVotes` by `resp.source`. The handled `lbl`
+  is an eYes, so `yes_implies_pref` on it gives `preference resp.source`
+  — the new member's preference. `votes_all_prefer` for pre-existing
+  members transfers.
+- **eNo / entry**: no eYes sent, `yesVotes` unchanged; both clauses
+  transfer (sent grows only by a non-eYes label / eVoteReq).
+- Participant handlers close by SMT. -/
 
-- **eYes**: the `then` branch broadcasts eCommit. The new eCommit's
-  preference-of-recipient is guaranteed by
-  `allParticipantsVoted_sound`. The `else` branch is a pure container
-  write.
+-- The `votes` bundle plus "the acting Coordinator keeps its kind" — the
+-- cut threaded through the eNo / entry handlers. Carrying `is_Coordinator
+-- this` lets the closing `goto`'s `votes_all_prefer` clause bridge its
+-- Coordinator-kind guard back to the pre-state in the `c.ref = this` case.
+private def votesCo (this : MachineRef) : PProp Sig :=
+  fun s => votes s ∧ is_Coordinator this s
 
-`accepted_implies_all_prefer` (the headline `safety`) is preserved by
-all Coordinator handlers: they don't change Participant currentState,
-so `stateOf p1.ref s` for a Participant `p1` is unchanged. -/
+-- A `send tgt <ev>` with `<ev> ≠ eYes` preserves `votesCo`.
+private theorem send_nonyes_preserves_votesCo
+    {ev : E} (h_ne_yes : ∀ p, ev ≠ E.eYes p) (this tgt : MachineRef) :
+    triple (l := PProp Sig)
+      (fun s => votesCo this s)
+      (PLean.send (P := Sig) tgt ev)
+      (fun _ s => votesCo this s) := by
+  unfold PLean.send votesCo
+  unfold votes yes_implies_pref votes_all_prefer
+  pverify_step_wp
+  intro x hYP hVP hCo
+  refine ⟨⟨?_, hVP⟩, ?_⟩
+  · intro e hisE hsent
+    rw [Bool.or_eq_true, decide_eq_true_eq] at hsent
+    rcases hsent with hEq | hOld
+    · exfalso; rw [hEq] at hisE; unfold is_eYes at hisE
+      cases ev with
+      | eYes p => exact h_ne_yes p rfl
+      | _ => simp_all
+    · exact hYP e hisE hOld
+  · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢
+    exact hCo
 
--- commit_sent for Init.entry: handler sends eVoteReq, not eCommit.
+-- A Coordinator `goto` preserves `votesCo` and lands in `votes`: the new
+-- label is a `goto` (fails `is_eYes`), and `goto` leaves the `yesVotes`
+-- container and every kind untouched. `is_Coordinator this` (in the cut)
+-- bridges `votes_all_prefer`'s kind guard for the `c.ref = this` case.
+private theorem goto_preserves_votes (this : MachineRef) (st : Sig.S) :
+    triple (l := PProp Sig)
+      (fun s => votesCo this s)
+      (PLean.goto (P := Sig) this st G.unit)
+      (fun _ s => votes s) := by
+  unfold PLean.goto votesCo
+  unfold votes yes_implies_pref votes_all_prefer
+  pverify_step_wp
+  intro x hYP hVP hCo
+  refine ⟨?_, ?_⟩
+  · intro e hisE hsent
+    rw [Bool.or_eq_true, decide_eq_true_eq] at hsent
+    rcases hsent with hEq | hOld
+    · exfalso; rw [hEq] at hisE; unfold is_eYes at hisE; exact hisE
+    · exact hYP e hisE hOld
+  · intro c hcKind p hmem
+    have hcPre : is_Coordinator c.ref x := by
+      by_cases hct : c.ref = this
+      · rw [hct]; exact hCo
+      · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hcKind ⊢
+        simp_all
+    exact hVP c hcPre p hmem
 
+-- eYes votes: the handled eYes label backs the new `yesVotes` member.
 @[pverifyProof]
-theorem Coordinator.Init.entry_correct_of_commit_sent_commit_sent
+theorem Coordinator.WaitForResponses.eYes_correct_of_votes_votes
+    (this : Coordinator) (param : eYes_payload) (lbl : Sig.Label) :
+    triple (l := PProp Sig)
+      (fun s => votes s ∧
+        inflight lbl s ∧ lbl.target = this.ref ∧ is_Coordinator this.ref s ∧
+        (s.machines this.ref).currentState = Coordinator.WaitForResponses_st ∧
+        lbl.action = EventOrGoto.event (E.eYes param))
+      (do PLean.markReceived (P := Sig) lbl;
+          Coordinator.WaitForResponses.eYes_handler this param)
+      (fun _ s => votes s) := by
+  -- Reduce to a precondition recording the freshly-added voter's
+  -- preference (`hPref`, from `yes_implies_pref` on the handled `lbl`)
+  -- and the acting Coordinator's kind.
+  apply triple_cons
+    (pre := fun s => votesCo this.ref s ∧
+      inflight lbl s ∧ preference param.source = true)
+    (post := fun _ => votes)
+  · rintro s ⟨⟨hYP, hVP⟩, hInfl, _, hCo, _, hAct⟩
+    have hisLbl : is_eYes lbl := by simp only [is_eYes, hAct]
+    have hPay : eYes_payload_of lbl = param := eYes_payload_of_spec lbl param hAct
+    exact ⟨⟨⟨hYP, hVP⟩, hCo⟩, hInfl, by have := hYP lbl hisLbl hInfl.1; rwa [hPay] at this⟩
+  · intro _ s h; exact h
+  -- markReceived (only `received` grows) then the prelude get.
+  apply triple_bind (cut := fun _ s => votesCo this.ref s ∧ preference param.source = true)
+  · unfold PLean.markReceived votesCo votes yes_implies_pref votes_all_prefer
+    pverify_step_wp
+    rintro s hYP hVP hCo hInfl hPref; exact ⟨⟨⟨hYP, hVP⟩, hCo⟩, hPref⟩
+  intro _
+  unfold Coordinator.WaitForResponses.eYes_handler
+  apply triple_bind (cut := fun _ s => votesCo this.ref s ∧ preference param.source = true)
+  · unfold Coordinator.yesVotes_get votesCo votes yes_implies_pref votes_all_prefer
+    pverify_step_wp
+    rintro s hYP hVP hCo hPref; exact ⟨⟨⟨hYP, hVP⟩, hCo⟩, hPref⟩
+  intro _
+  -- The `+=` get whose value `yv` feeds the set. Record that every member
+  -- of `yv` prefers YES (from `votes_all_prefer` at `this.ref`) — a fact
+  -- that survives the get's value-abstraction, unlike the raw container.
+  apply triple_bind
+    (cut := fun yv s => votesCo this.ref s ∧ preference param.source = true ∧
+      ∀ z, yv z → preference z = true)
+  · unfold Coordinator.yesVotes_get votesCo votes yes_implies_pref votes_all_prefer
+    pverify_step_wp
+    rintro s hYP hVP hCo hPref
+    exact ⟨⟨⟨hYP, hVP⟩, hCo⟩, hPref, fun z hz => hVP this hCo z hz⟩
+  intro yv
+  apply triple_bind (cut := fun _ => votesCo this.ref)
+  · unfold Coordinator.yesVotes_set votesCo votes yes_implies_pref votes_all_prefer
+    pverify_step_wp
+    rintro s hYP hVP hCo hPref hYvPref
+    refine ⟨⟨hYP, ?_⟩, ?_⟩
+    · -- grown `yesVotes` at `this.ref`: new member is `param.source`
+      -- (uses `hPref`), else a member of `yv` (uses `hYvPref`); at other
+      -- Coordinators the container is unchanged (uses `hVP`).
+      intro c hcKind p hmem
+      by_cases hct : c.ref = this.ref
+      · rw [if_pos hct] at hmem
+        simp only [decide_eq_true_eq] at hmem
+        rcases hmem with rfl | hold
+        · exact hPref
+        · exact hYvPref p hold
+      · rw [if_neg hct] at hmem
+        exact hVP c hcKind p hmem
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  -- trailing `+=` get preserves `votesCo`.
+  apply triple_bind (cut := fun _ => votesCo this.ref)
+  · unfold Coordinator.yesVotes_get votesCo votes yes_implies_pref votes_all_prefer
+    pverify_step_wp
+    rintro s hYP hVP hCo; exact ⟨⟨hYP, hVP⟩, hCo⟩
+  intro _
+  -- `if (∀ p, inParticipants p → yesVotes p) then (foreach send eCommit;
+  -- goto) else pure ()`.
+  split
+  · apply triple_bind (cut := fun _ => votesCo this.ref)
+    · apply triple_pforeach_with (Q := votesCo this.ref)
+      intro p
+      exact send_nonyes_preserves_votesCo (fun _ => by nofun) this.ref p
+    intro _
+    exact goto_preserves_votes this.ref Coordinator.Committed_st
+  · -- else-branch `pure ()`: `votesCo → votes` and the program is a no-op.
+    apply triple_cons (pre := votesCo this.ref) (post := fun _ => votesCo this.ref)
+    · intro s h; exact h
+    · intro _ s ⟨h, _⟩; exact h
+    unfold votesCo votes yes_implies_pref votes_all_prefer
+    pverify_step_wp
+    rintro s hYP hVP hCo; exact ⟨⟨hYP, hVP⟩, hCo⟩
+
+-- eNo votes: sends eAbort, not eYes; yesVotes unchanged.
+@[pverifyProof]
+theorem Coordinator.WaitForResponses.eNo_correct_of_votes_votes
+    (this : Coordinator) (param : eNo_payload) (lbl : Sig.Label) :
+    triple (l := PProp Sig)
+      (fun s => votes s ∧
+        inflight lbl s ∧ lbl.target = this.ref ∧ is_Coordinator this.ref s ∧
+        (s.machines this.ref).currentState = Coordinator.WaitForResponses_st ∧
+        lbl.action = EventOrGoto.event (E.eNo param))
+      (do PLean.markReceived (P := Sig) lbl;
+          Coordinator.WaitForResponses.eNo_handler this param)
+      (fun _ s => votes s) := by
+  apply triple_cons (pre := votesCo this.ref) (post := fun _ => votes)
+  · intro s ⟨h, _, _, hCo, _, _⟩; exact ⟨h, hCo⟩
+  · intro _ s h; exact h
+  apply triple_bind (cut := fun _ => votesCo this.ref)
+  · unfold PLean.markReceived votesCo votes yes_implies_pref votes_all_prefer; pverify
+  intro _
+  unfold Coordinator.WaitForResponses.eNo_handler
+  apply triple_bind (cut := fun _ => votesCo this.ref)
+  · unfold Coordinator.yesVotes_get votesCo votes yes_implies_pref votes_all_prefer; pverify
+  intro _
+  apply triple_bind (cut := fun _ => votesCo this.ref)
+  · apply triple_pforeach_with (Q := votesCo this.ref)
+    intro p
+    exact send_nonyes_preserves_votesCo (fun _ => by nofun) this.ref p
+  intro _
+  exact goto_preserves_votes this.ref Coordinator.Aborted_st
+
+-- entry votes: sends eVoteReq, not eYes; yesVotes unchanged.
+@[pverifyProof]
+theorem Coordinator.Init.entry_correct_of_votes_votes
     (this : Coordinator) :
     triple (l := PProp Sig)
-      (fun s => commit_sent s ∧
+      (fun s => votes s ∧ is_Coordinator this.ref s ∧
+        (s.machines this.ref).currentState = Coordinator.Init_st)
+      (Coordinator.Init.entry this)
+      (fun _ s => votes s) := by
+  apply triple_cons (pre := votesCo this.ref) (post := fun _ => votes)
+  · intro s ⟨h, hCo, _⟩; exact ⟨h, hCo⟩
+  · intro _ s h; exact h
+  unfold Coordinator.Init.entry
+  apply triple_bind (cut := fun _ => votesCo this.ref)
+  · unfold Coordinator.yesVotes_get votesCo votes yes_implies_pref votes_all_prefer; pverify
+  intro _
+  apply triple_bind (cut := fun _ => votesCo this.ref)
+  · apply triple_pforeach_with (Q := votesCo this.ref)
+    intro p
+    exact send_nonyes_preserves_votesCo (fun _ => by nofun) this.ref p
+  intro _
+  exact goto_preserves_votes this.ref Coordinator.WaitForResponses_st
+
+/-! ## `system_config` preservation on the Coordinator handlers.
+
+`participant_set : ∀ p, inParticipants p = true ↔ is_Participant p s`.
+`inParticipants` is a static function and machine *kinds* never change,
+so this transfers across every step. The only subtlety is `goto`, which
+rewrites the acting Coordinator's `currentState`: `is_Participant` folds
+`kind = 2 ∧ currentState ∈ Participant-states`, and a Coordinator's kind
+is `1`, so the acting machine is a non-Participant before and after. -/
+
+-- A Coordinator `goto`: the acting machine's kind stays `1 ≠ 2`, so it is
+-- a non-Participant in both states; every other machine is untouched. So
+-- `participant_set` transfers, given the actor is a Coordinator (`hCo`).
+private theorem goto_preserves_system_config (this : MachineRef) (st : Sig.S) :
+    triple (l := PProp Sig)
+      (fun s => system_config s ∧ is_Coordinator this s)
+      (PLean.goto (P := Sig) this st G.unit)
+      (fun _ s => system_config s) := by
+  unfold PLean.goto system_config participant_set
+  pverify_step_wp
+  intro x hPS hCo p
+  simp only [is_Participant, Participant_allocated, Participant_kind,
+             is_Coordinator, Coordinator_allocated, Coordinator_kind] at hPS hCo ⊢
+  by_cases hpt : p = this <;> simp_all
+
+-- The `system_config` cut threaded through the Coordinator handlers.
+private def scCo (this : MachineRef) : PProp Sig :=
+  fun s => system_config s ∧ is_Coordinator this s
+
+private theorem send_preserves_scCo (this tgt : MachineRef) (ev : E) :
+    triple (l := PProp Sig)
+      (fun s => scCo this s)
+      (PLean.send (P := Sig) tgt ev)
+      (fun _ s => scCo this s) := by
+  unfold PLean.send scCo system_config participant_set
+  pverify_step_wp
+  intro x hPS hCo
+  refine ⟨fun p => ?_, ?_⟩
+  · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢
+    exact hPS p
+  · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+
+@[pverifyProof]
+theorem Coordinator.WaitForResponses.eYes_correct_of_system_config_system_config
+    (this : Coordinator) (param : eYes_payload) (lbl : Sig.Label) :
+    triple (l := PProp Sig)
+      (fun s => system_config s ∧
+        inflight lbl s ∧ lbl.target = this.ref ∧ is_Coordinator this.ref s ∧
+        (s.machines this.ref).currentState = Coordinator.WaitForResponses_st ∧
+        lbl.action = EventOrGoto.event (E.eYes param))
+      (do PLean.markReceived (P := Sig) lbl;
+          Coordinator.WaitForResponses.eYes_handler this param)
+      (fun _ s => system_config s) := by
+  apply triple_cons (pre := scCo this.ref) (post := fun _ => system_config)
+  · intro s ⟨h, _, _, hCo, _, _⟩; exact ⟨h, hCo⟩
+  · intro _ s h; exact h
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · unfold PLean.markReceived scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo
+    refine ⟨fun p => ?_, ?_⟩
+    · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢; exact hPS p
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  unfold Coordinator.WaitForResponses.eYes_handler
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · unfold Coordinator.yesVotes_get scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo
+    refine ⟨fun p => ?_, ?_⟩
+    · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢; exact hPS p
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · unfold Coordinator.yesVotes_get scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo
+    refine ⟨fun p => ?_, ?_⟩
+    · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢; exact hPS p
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · unfold Coordinator.yesVotes_set scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo
+    refine ⟨fun p => ?_, ?_⟩
+    · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢; exact hPS p
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · unfold Coordinator.yesVotes_get scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo
+    refine ⟨fun p => ?_, ?_⟩
+    · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢; exact hPS p
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  split
+  · apply triple_bind (cut := fun _ => scCo this.ref)
+    · apply triple_pforeach_with (Q := scCo this.ref)
+      intro p
+      exact send_preserves_scCo this.ref p E.eCommit
+    intro _
+    apply triple_cons (pre := scCo this.ref) (post := fun _ => system_config)
+    · intro s h; exact h
+    · intro _ s h; exact h
+    exact goto_preserves_system_config this.ref Coordinator.Committed_st
+  · apply triple_cons (pre := scCo this.ref) (post := fun _ => scCo this.ref)
+    · intro s h; exact h
+    · intro _ s ⟨h, _⟩; exact h
+    unfold scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo; exact ⟨hPS, hCo⟩
+
+@[pverifyProof]
+theorem Coordinator.WaitForResponses.eNo_correct_of_system_config_system_config
+    (this : Coordinator) (param : eNo_payload) (lbl : Sig.Label) :
+    triple (l := PProp Sig)
+      (fun s => system_config s ∧
+        inflight lbl s ∧ lbl.target = this.ref ∧ is_Coordinator this.ref s ∧
+        (s.machines this.ref).currentState = Coordinator.WaitForResponses_st ∧
+        lbl.action = EventOrGoto.event (E.eNo param))
+      (do PLean.markReceived (P := Sig) lbl;
+          Coordinator.WaitForResponses.eNo_handler this param)
+      (fun _ s => system_config s) := by
+  apply triple_cons (pre := scCo this.ref) (post := fun _ => system_config)
+  · intro s ⟨h, _, _, hCo, _, _⟩; exact ⟨h, hCo⟩
+  · intro _ s h; exact h
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · unfold PLean.markReceived scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo
+    refine ⟨fun p => ?_, ?_⟩
+    · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢; exact hPS p
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  unfold Coordinator.WaitForResponses.eNo_handler
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · unfold Coordinator.yesVotes_get scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo
+    refine ⟨fun p => ?_, ?_⟩
+    · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢; exact hPS p
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · apply triple_pforeach_with (Q := scCo this.ref)
+    intro p
+    exact send_preserves_scCo this.ref p E.eAbort
+  intro _
+  apply triple_cons (pre := scCo this.ref) (post := fun _ => system_config)
+  · intro s h; exact h
+  · intro _ s h; exact h
+  exact goto_preserves_system_config this.ref Coordinator.Aborted_st
+
+@[pverifyProof]
+theorem Coordinator.Init.entry_correct_of_system_config_system_config
+    (this : Coordinator) :
+    triple (l := PProp Sig)
+      (fun s => system_config s ∧ is_Coordinator this.ref s ∧
+        (s.machines this.ref).currentState = Coordinator.Init_st)
+      (Coordinator.Init.entry this)
+      (fun _ s => system_config s) := by
+  apply triple_cons (pre := scCo this.ref) (post := fun _ => system_config)
+  · intro s ⟨h, hCo, _⟩; exact ⟨h, hCo⟩
+  · intro _ s h; exact h
+  unfold Coordinator.Init.entry
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · unfold Coordinator.yesVotes_get scCo system_config participant_set
+    pverify_step_wp
+    intro x hPS hCo
+    refine ⟨fun p => ?_, ?_⟩
+    · simp only [is_Participant, Participant_allocated, Participant_kind] at hPS ⊢; exact hPS p
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+  intro _
+  apply triple_bind (cut := fun _ => scCo this.ref)
+  · apply triple_pforeach_with (Q := scCo this.ref)
+    intro p
+    exact send_preserves_scCo this.ref p E.eVoteReq
+  intro _
+  apply triple_cons (pre := scCo this.ref) (post := fun _ => system_config)
+  · intro s h; exact h
+  · intro _ s h; exact h
+  exact goto_preserves_system_config this.ref Coordinator.WaitForResponses_st
+
+/-! ## `commit_sent` preservation on the Coordinator handlers.
+
+`commit_sent_implies_all_yes : ∀ e, e is eCommit → s.sent e = true →
+∀ p, is_Participant p → preference p = true`.
+
+- **Init.entry / eNo**: no eCommit is sent, so old in-flight eCommits
+  transfer (sent is monotone).
+- **eYes**: the `then` branch broadcasts eCommit. Its preference
+  guarantee is *derived*: the guard `∀ p, inParticipants p → yesVotes p`
+  puts every participant in `yesVotes`, and `votes_all_prefer` (from the
+  `votes` bundle) then gives `preference` (with `system_config` bridging
+  `is_Participant` ↔ `inParticipants`). -/
+
+@[pverifyProof]
+theorem Coordinator.Init.entry_correct_of_commit_sent_commit_sent_using_votes_system_config
+    (this : Coordinator) :
+    triple (l := PProp Sig)
+      (fun s => (commit_sent s ∧ votes s ∧ system_config s) ∧
         is_Coordinator this.ref s ∧
         (s.machines this.ref).currentState = Coordinator.Init_st)
       (Coordinator.Init.entry this)
       (fun _ s => commit_sent s) := by
-  apply triple_cons (pre := commit_sent)
-    (post := fun _ => commit_sent)
-  · intro s ⟨h, _, _⟩; exact h
+  apply triple_cons (pre := commit_sent) (post := fun _ => commit_sent)
+  · intro s ⟨⟨h, _, _⟩, _, _⟩; exact h
   · intro _ s h; exact h
   unfold Coordinator.Init.entry
   apply triple_bind (cut := fun _ => commit_sent)
-  · unfold yesVotes_get; pverify
+  · unfold Coordinator.yesVotes_get; pverify
   intro _
   apply triple_bind (cut := fun _ => commit_sent)
   · apply triple_pforeach_with (Q := commit_sent)
@@ -453,20 +863,15 @@ theorem Coordinator.Init.entry_correct_of_commit_sent_commit_sent
   intro s hCS e hisE ha pp hpp
   rw [Bool.or_eq_true, decide_eq_true_eq] at ha
   rcases ha with hEq | hOld
-  · exfalso
-    rw [hEq] at hisE
-    unfold is_eCommit at hisE
-    exact hisE
+  · exfalso; rw [hEq] at hisE; unfold is_eCommit at hisE; exact hisE
   · pverify_machine_has_type hppPre : Participant pp from hpp
     exact hCS e hisE hOld pp hppPre
 
--- commit_sent for eNo: handler sends eAbort, not eCommit.
-
 @[pverifyProof]
-theorem Coordinator.WaitForResponses.eNo_correct_of_commit_sent_commit_sent
+theorem Coordinator.WaitForResponses.eNo_correct_of_commit_sent_commit_sent_using_votes_system_config
     (this : Coordinator) (param : eNo_payload) (lbl : Sig.Label) :
     triple (l := PProp Sig)
-      (fun s => commit_sent s ∧
+      (fun s => (commit_sent s ∧ votes s ∧ system_config s) ∧
         inflight lbl s ∧ lbl.target = this.ref ∧
         is_Coordinator this.ref s ∧
         (s.machines this.ref).currentState = Coordinator.WaitForResponses_st ∧
@@ -474,21 +879,18 @@ theorem Coordinator.WaitForResponses.eNo_correct_of_commit_sent_commit_sent
       (do PLean.markReceived (P := Sig) lbl;
           Coordinator.WaitForResponses.eNo_handler this param)
       (fun _ s => commit_sent s) := by
-  apply triple_cons (pre := commit_sent)
-    (post := fun _ => commit_sent)
-  · intro s ⟨h, _, _, _, _, _⟩; exact h
+  apply triple_cons (pre := commit_sent) (post := fun _ => commit_sent)
+  · intro s ⟨⟨h, _, _⟩, _, _, _, _, _⟩; exact h
   · intro _ s h; exact h
   apply triple_bind (cut := fun _ => commit_sent)
   · unfold PLean.markReceived
     pverify_step_wp
     intro s hCS e hisE ha pp hpp
-    -- markReceived only modifies `received`; `sent` and machines are
-    -- unchanged, so the clause transports verbatim modulo unfolds.
     exact hCS e hisE ha pp hpp
   intro _
   unfold Coordinator.WaitForResponses.eNo_handler
   apply triple_bind (cut := fun _ => commit_sent)
-  · unfold yesVotes_get; pverify
+  · unfold Coordinator.yesVotes_get; pverify
   intro _
   apply triple_bind (cut := fun _ => commit_sent)
   · apply triple_pforeach_with (Q := commit_sent)
@@ -500,22 +902,16 @@ theorem Coordinator.WaitForResponses.eNo_correct_of_commit_sent_commit_sent
   intro s hCS e hisE ha pp hpp
   rw [Bool.or_eq_true, decide_eq_true_eq] at ha
   rcases ha with hEq | hOld
-  · exfalso
-    rw [hEq] at hisE
-    unfold is_eCommit at hisE
-    exact hisE
+  · exfalso; rw [hEq] at hisE; unfold is_eCommit at hisE; exact hisE
   · pverify_machine_has_type hppPre : Participant pp from hpp
     exact hCS e hisE hOld pp hppPre
 
--- commit_sent for eYes: the then-branch broadcasts eCommit; the
--- guard `allParticipantsVoted = true` + the soundness paxiom give
--- unanimous YES. The else-branch is a pure container write.
-
+set_option maxHeartbeats 4000000 in
 @[pverifyProof]
-theorem Coordinator.WaitForResponses.eYes_correct_of_commit_sent_commit_sent
+theorem Coordinator.WaitForResponses.eYes_correct_of_commit_sent_commit_sent_using_votes_system_config
     (this : Coordinator) (param : eYes_payload) (lbl : Sig.Label) :
     triple (l := PProp Sig)
-      (fun s => commit_sent s ∧
+      (fun s => (commit_sent s ∧ votes s ∧ system_config s) ∧
         inflight lbl s ∧ lbl.target = this.ref ∧
         is_Coordinator this.ref s ∧
         (s.machines this.ref).currentState = Coordinator.WaitForResponses_st ∧
@@ -523,79 +919,156 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_commit_sent_commit_sent
       (do PLean.markReceived (P := Sig) lbl;
           Coordinator.WaitForResponses.eYes_handler this param)
       (fun _ s => commit_sent s) := by
-  apply triple_cons (pre := commit_sent)
+  -- Cut carried up to the guard: `commit_sent`, `system_config`, the
+  -- acting kind, `votes_all_prefer` (grown-set members prefer), and the
+  -- new member's preference `preference param.source` (from
+  -- `yes_implies_pref` on the handled `lbl`, needed to keep
+  -- `votes_all_prefer` through the `+=`). At the guard these combine —
+  -- guard ⇒ participants ⊆ yesVotes, `votes_all_prefer` ⇒ members prefer,
+  -- `system_config` ⇒ `is_Participant ↔ inParticipants` — to give
+  -- unanimous preference, which then discharges each broadcast eCommit.
+  apply triple_cons
+    (pre := fun s => commit_sent s ∧ system_config s ∧
+      is_Coordinator this.ref s ∧
+      (∀ (c : Coordinator), is_Coordinator c.ref s →
+        ∀ p : PLean.MachineRef,
+          s.containers.Coordinator_yesVotes (c.ref, p) = true → preference p = true) ∧
+      preference param.source = true)
     (post := fun _ => commit_sent)
-  · intro s ⟨h, _, _, _, _, _⟩; exact h
+  · rintro s ⟨⟨hCS, hV, hSC⟩, hInfl, _, hCo, _, hAct⟩
+    have hisLbl : is_eYes lbl := by simp only [is_eYes, hAct]
+    have hPay : eYes_payload_of lbl = param := eYes_payload_of_spec lbl param hAct
+    exact ⟨hCS, hSC, hCo, hV.2, by have := hV.1 lbl hisLbl hInfl.1; rwa [hPay] at this⟩
   · intro _ s h; exact h
-  apply triple_bind (cut := fun _ => commit_sent)
-  · unfold PLean.markReceived commit_sent commit_sent_implies_all_yes; pverify
+  apply triple_bind
+    (cut := fun _ s => commit_sent s ∧ system_config s ∧
+      is_Coordinator this.ref s ∧
+      (∀ (c : Coordinator), is_Coordinator c.ref s →
+        ∀ p : PLean.MachineRef,
+          s.containers.Coordinator_yesVotes (c.ref, p) = true → preference p = true) ∧
+      preference param.source = true)
+  · unfold PLean.markReceived commit_sent commit_sent_implies_all_yes
+      system_config participant_set
+    pverify
   intro _
   unfold Coordinator.WaitForResponses.eYes_handler
-  apply triple_bind (cut := fun _ => commit_sent)
-  · unfold yesVotes_get commit_sent commit_sent_implies_all_yes; pverify
+  apply triple_bind
+    (cut := fun _ s => commit_sent s ∧ system_config s ∧
+      is_Coordinator this.ref s ∧
+      (∀ (c : Coordinator), is_Coordinator c.ref s →
+        ∀ p : PLean.MachineRef,
+          s.containers.Coordinator_yesVotes (c.ref, p) = true → preference p = true) ∧
+      preference param.source = true)
+  · unfold Coordinator.yesVotes_get commit_sent commit_sent_implies_all_yes
+      system_config participant_set
+    pverify
   intro _
-  apply triple_bind (cut := fun _ => commit_sent)
-  · unfold yesVotes_get commit_sent commit_sent_implies_all_yes; pverify
-  intro _
-  apply triple_bind (cut := fun _ => commit_sent)
-  · unfold yesVotes_set commit_sent commit_sent_implies_all_yes; pverify
-  intro _
-  apply triple_bind (cut := fun _ => commit_sent)
-  · unfold yesVotes_get commit_sent commit_sent_implies_all_yes; pverify
-  intro _
-  by_cases h : allParticipantsVoted = true
-  · rw [if_pos h]
-    -- Weaken to a stronger precondition that retains
-    -- `allParticipantsVoted = true` across the foreach broadcast.
-    apply triple_cons
-      (pre := fun s => commit_sent s ∧ allParticipantsVoted = true)
-      (post := fun _ => commit_sent)
-    · intro s hCS; exact ⟨hCS, h⟩
-    · intro _ s hCS; exact hCS
-    apply triple_bind
-      (cut := fun _ : Unit => (fun s => commit_sent s ∧ allParticipantsVoted = true : PProp Sig))
-    · apply triple_pforeach_with
-        (Q := fun s => commit_sent s ∧ allParticipantsVoted = true)
-      intro _
-      unfold PLean.send
-      pverify_step_wp
-      intro x hCS hAV
-      refine ⟨?_, hAV⟩
-      intro e hisE ha pp hp
-      rw [Bool.or_eq_true, decide_eq_true_eq] at ha
-      rcases ha with hEq | hOld
-      · -- New eCommit: use the soundness paxiom on `allParticipantsVoted`.
-        exact allParticipantsVoted_sound _ hAV pp hp
-      · exact hCS e hisE hOld pp hp
-    intro _
-    unfold PLean.goto
+  -- `+=` get whose value feeds the set: record grown-set members prefer.
+  apply triple_bind
+    (cut := fun yv s => commit_sent s ∧ system_config s ∧
+      is_Coordinator this.ref s ∧
+      (∀ (c : Coordinator), is_Coordinator c.ref s →
+        ∀ p : PLean.MachineRef,
+          s.containers.Coordinator_yesVotes (c.ref, p) = true → preference p = true) ∧
+      preference param.source = true ∧ (∀ z, yv z → preference z = true))
+  · unfold Coordinator.yesVotes_get commit_sent commit_sent_implies_all_yes
+      system_config participant_set
     pverify_step_wp
-    intro s hCS _hAV e hisE ha pp hp
+    rintro s hCS hSC hCo hVP hPref
+    exact ⟨hCS, hSC, hCo, hVP, hPref, fun z hz => hVP this hCo z hz⟩
+  intro yv
+  apply triple_bind
+    (cut := fun _ s => commit_sent s ∧ system_config s ∧
+      is_Coordinator this.ref s ∧
+      (∀ (c : Coordinator), is_Coordinator c.ref s →
+        ∀ p : PLean.MachineRef,
+          s.containers.Coordinator_yesVotes (c.ref, p) = true → preference p = true))
+  · unfold Coordinator.yesVotes_set commit_sent commit_sent_implies_all_yes
+      system_config participant_set
+    pverify_step_wp
+    rintro s hCS hSC hCo hVP hPref hYvPref
+    refine ⟨hCS, hSC, ?_, ?_⟩
+    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
+    · intro c hcKind p hmem
+      by_cases hct : c.ref = this.ref
+      · rw [if_pos hct] at hmem
+        simp only [decide_eq_true_eq] at hmem
+        rcases hmem with rfl | hold
+        · exact hPref
+        · exact hYvPref p hold
+      · rw [if_neg hct] at hmem; exact hVP c hcKind p hmem
+  intro _
+  -- Trailing `+=` get whose value `yv` is what the guard ranges over.
+  -- Record `system_config` and `∀ z, yv z → preference z` (grown-set
+  -- members prefer) so the guard yields unanimous preference directly.
+  apply triple_bind
+    (cut := fun yv s => commit_sent s ∧ system_config s ∧
+      (∀ z, yv z → preference z = true))
+  · unfold Coordinator.yesVotes_get commit_sent commit_sent_implies_all_yes
+      system_config participant_set
+    pverify_step_wp
+    rintro s hCS hSC hCo hVP
+    exact ⟨hCS, hSC, fun z hz => hVP ⟨this.ref⟩ hCo z hz⟩
+  intro yv
+  split
+  · -- then-branch: guard `hGuard : ∀ p, inParticipants p → yv p`.
+    rename_i hGuard
+    apply triple_cons
+      (pre := fun s => commit_sent s ∧
+        (∀ pp : PLean.MachineRef, is_Participant pp s → preference pp = true))
+      (post := fun _ => commit_sent)
+    · rintro s ⟨hCS, hSC, hMemPref⟩
+      refine ⟨hCS, fun pp hpp => ?_⟩
+      -- is_Participant pp → inParticipants pp (system_config) → pp ∈ yv
+      -- (guard) → preference pp (grown-set members prefer).
+      exact hMemPref pp (hGuard pp ((hSC pp).mpr hpp))
+    · intro _ s h; exact h
+    apply triple_bind
+      (cut := fun _ s => commit_sent s ∧
+        (∀ pp : PLean.MachineRef, is_Participant pp s → preference pp = true))
+    · apply triple_pforeach_with
+        (Q := fun s => commit_sent s ∧
+          ∀ pp : PLean.MachineRef, is_Participant pp s → preference pp = true)
+      intro p
+      unfold PLean.send commit_sent commit_sent_implies_all_yes
+      pverify_step_wp
+      intro x hCS hAllYes
+      refine ⟨?_, ?_⟩
+      · intro e hisE ha pp hp
+        rw [Bool.or_eq_true, decide_eq_true_eq] at ha
+        rcases ha with hEq | hOld
+        · exact hAllYes pp hp     -- new eCommit: recipient prefers (hAllYes)
+        · exact hCS e hisE hOld pp hp
+      · intro pp hp
+        simp only [is_Participant, Participant_allocated, Participant_kind] at hp ⊢
+        exact hAllYes pp hp
+    intro _
+    unfold PLean.goto commit_sent commit_sent_implies_all_yes
+    pverify_step_wp
+    intro s hCS _hAllYes e hisE ha pp hp
     rw [Bool.or_eq_true, decide_eq_true_eq] at ha
     rcases ha with hEq | hOld
-    · exfalso
-      rw [hEq] at hisE
-      unfold is_eCommit at hisE
-      exact hisE
+    · exfalso; rw [hEq] at hisE; unfold is_eCommit at hisE; exact hisE
     · pverify_machine_has_type hppPre : Participant pp from hp
       exact hCS e hisE hOld pp hppPre
-  · rw [if_neg h]
-    pverify_step_wp
-    intro s hCS e hisE ha pp hp
-    exact hCS e hisE ha pp hp
+  · -- else-branch: pure (); commit_sent transfers.
+    apply triple_cons (pre := commit_sent) (post := fun _ => commit_sent)
+    · intro s ⟨h, _⟩; exact h
+    · intro _ s h; exact h
+    unfold commit_sent commit_sent_implies_all_yes
+    pverify
 
--- safety base case: every Participant starts in Undecided, so no
--- Participant is in Accepted at init — accepted_implies_all_prefer
--- is vacuously true.
+/-! ## Safety inductive steps on Coordinator handlers.
+
+Coordinator handlers don't change Participant `currentState`, so
+`stateOf p.ref` for a Participant is unchanged and post-state `safety`
+follows from pre-state `safety`. -/
 
 @[pverifyProof]
 theorem base_of_safety_accepted_implies_all_prefer
     (s : GlobalState Sig) :
     InitConditions s → accepted_implies_all_prefer s := by
   intro hInit p1 hp1 hAccp
-  -- The kind-guarded init-holds carries
-  --   `∀ p : Participant, is_Participant p.ref s → stateOf p.ref s =
-  --     Undecided_st`.
   unfold InitConditions at hInit
   have hUndec : ∀ p : Participant,
       is_Participant p.ref s → stateOf p.ref s = Participant.Undecided_st := by
@@ -603,14 +1076,6 @@ theorem base_of_safety_accepted_implies_all_prefer
   have hp1Undec := hUndec p1 hp1
   rw [hp1Undec] at hAccp
   exact S.noConfusion hAccp
-
-/-! ### Safety inductive steps on Coordinator handlers.
-
-Coordinator handlers only update `this.ref`'s `currentState` and the
-`yesVotes` container; they don't touch Participant `currentState`.
-So `stateOf p.ref s'` for any Participant `p` (whose ref differs
-from `this.ref`, since kinds disagree) is unchanged. The post-state
-`safety` therefore follows from pre-state `safety`. -/
 
 @[pverifyProof]
 theorem Coordinator.Init.entry_correct_of_safety_safety_using_commit_sent
@@ -627,41 +1092,30 @@ theorem Coordinator.Init.entry_correct_of_safety_safety_using_commit_sent
   · intro s ⟨⟨h, _⟩, hCo, _⟩; exact ⟨h, hCo⟩
   · intro _ s h; exact h
   unfold Coordinator.Init.entry
-  show triple (l := PProp Sig) _
-    (yesVotes_get this.ref >>= fun _ => _) _
+  show triple (l := PProp Sig) _ (Coordinator.yesVotes_get this.ref >>= fun _ => _) _
   apply triple_bind
-    (pre := (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
     (cut := fun _ : Set MachineRef =>
       (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
-    (post := fun _ s => safety s)
-  · unfold yesVotes_get
+  · unfold Coordinator.yesVotes_get
     pverify_step_wp
-    intro s hSafe hCo
-    exact ⟨hSafe, hCo⟩
+    intro s hSafe hCo; exact ⟨hSafe, hCo⟩
   intro _
   apply triple_bind
-    (pre := (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
     (cut := fun _ : Unit => (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
-    (post := fun _ s => safety s)
-  · apply triple_pforeach_with
-      (Q := fun s => safety s ∧ is_Coordinator this.ref s)
+  · apply triple_pforeach_with (Q := fun s => safety s ∧ is_Coordinator this.ref s)
     intro p
     unfold PLean.send
     pverify_step_wp
     intro x hSafe hCo
-    refine ⟨?_, ?_⟩
-    · intro p1 hp1 hAccp pp hpp
-      exact hSafe p1 hp1 hAccp pp hpp
-    · simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢
-      exact hCo
+    refine ⟨hSafe, ?_⟩
+    simp only [is_Coordinator, Coordinator_allocated, Coordinator_kind] at hCo ⊢; exact hCo
   intro _
   unfold PLean.goto
   pverify_step_wp
   intro s hSafe hCo p1 hp1 hAccp pp hpp
   pverify_machine_has_type hp1Pre : Participant p1.ref from hp1
   pverify_machine_has_type hppPre : Participant pp from hpp
-  have hp1NotThis : p1.ref ≠ this.ref :=
-    participant_ne_this this p1.ref s hCo hp1Pre
+  have hp1NotThis : p1.ref ≠ this.ref := participant_ne_this this p1.ref s hCo hp1Pre
   simp [stateOf, hp1NotThis] at hAccp
   exact hSafe p1 hp1Pre hAccp pp hppPre
 
@@ -824,8 +1278,8 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_safety_safety_using_commit_
     intro s hSafe hCo
     exact ⟨hSafe, hCo⟩
   intro _
-  by_cases h : allParticipantsVoted = true
-  · rw [if_pos h]
+  split
+  ·
     show triple (l := PProp Sig) _
       (pforeach _ _ _ >>= fun _ => _) _
     apply triple_bind
@@ -854,10 +1308,7 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_safety_safety_using_commit_
       participant_ne_this this p1.ref s hCo hp1Pre
     simp [stateOf, hp1NotThis] at hAccp
     exact hSafe p1 hp1Pre hAccp pp hppPre
-  · rw [if_neg h]
-    pverify_step_wp
-    intro s hSafe _hCo p1 hp1 hAccp pp hpp
-    exact hSafe p1 hp1 hAccp pp hpp
+  · pverify_step_wp; grind
 
 end TwoPhaseCommit
 

@@ -1279,10 +1279,7 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_safety_safety_using_commit_
     exact ⟨hSafe, hCo⟩
   intro _
   split
-  ·
-    show triple (l := PProp Sig) _
-      (pforeach _ _ _ >>= fun _ => _) _
-    apply triple_bind
+  · apply triple_bind
       (pre := (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
       (cut := fun _ : Unit =>
         (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))

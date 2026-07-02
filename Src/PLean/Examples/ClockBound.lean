@@ -152,7 +152,6 @@ pmodule ClockBound
       ∀ e : Sig.Label,
         is_eLocalResponse e → s.sent e = true →
         e.target = (eLocalResponse_payload_of e).target
-  
   }
 
   -- Global-time facts: every sent eGlobalResponse has positive
@@ -182,7 +181,7 @@ pmodule ClockBound
     invariant lResp_trueTime_le_globalTime :
       ∀ e : eLocalResponse, ∀ g : GlobalClock,
         s.sent e = true → e.trueTime ≤ g.time
-  
+
   }
 
   -- Causal-chain bundle: per-LC, the in-flight `eGlobalQuery` and
@@ -218,7 +217,6 @@ pmodule ClockBound
       ∀ lc : LocalClock, ∀ q : eGlobalQuery, ∀ e : eGlobalResponse,
         inflight q s → inflight e s →
         q.localClock = lc.ref → ¬ (e.target = lc.ref)
-  
   }
 
   -- Linking invariants tying gResp in-flight to LC's state.
@@ -238,7 +236,7 @@ pmodule ClockBound
         s.sent e_lresp = true → e_lresp.target = lc.client →
         inflight e_gresp s → e_gresp.target = lc.ref →
         e_lresp.trueTime ≤ e_gresp.trueTime
-  
+
   }
 
   -- Local-clock bounds on sent eLocalResponses (one invariant per
@@ -248,7 +246,7 @@ pmodule ClockBound
     invariant lResp_earliest_le_trueTime :
       ∀ e : eLocalResponse,
         s.sent e = true → e.earliest ≤ e.trueTime
-  
+
   }
 
   Lemma lresp_trueTime_le_latest_lemma {
@@ -256,7 +254,7 @@ pmodule ClockBound
     invariant lResp_trueTime_le_latest :
       ∀ e : eLocalResponse,
         s.sent e = true → e.trueTime ≤ e.latest
-  
+
   }
 
   Lemma lc_currEarly_bounds_earliest_lemma {
@@ -266,7 +264,7 @@ pmodule ClockBound
         s.sent e = true →
         e.target = lc.client →
         e.earliest ≤ lc.currEarlyBound
-  
+
   }
 
   /-! ## Target safety properties. -/
@@ -278,7 +276,7 @@ pmodule ClockBound
         s.sent e0 = true → s.sent e1 = true →
         e0.latest < e1.earliest →
         e0.trueTime < e1.trueTime
-  
+
   }
 
   Theorem G2 {
@@ -288,7 +286,7 @@ pmodule ClockBound
         s.sent e0 = true → s.sent e1 = true →
         e0.trueTime < e1.trueTime →
         e0.earliest < e1.latest
-  
+
   }
 
   Theorem G3 {
@@ -299,7 +297,7 @@ pmodule ClockBound
         e0.trueTime < e1.trueTime →
         e0.target = e1.target →
         e0.earliest ≤ e1.earliest
-  
+
   }
 
   Proof Safety {

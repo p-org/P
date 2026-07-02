@@ -588,6 +588,105 @@ def judge_user_prompt(name: str, benchmark: str, scenario: str, cex: str, spec_s
             "\"development_action\"(debug-bug|drop-spurious)} with reasoning grounded in the cex.")
 
 
+# ───────────────────────── ranking (PLAN.md Phase 4) ─────────────────────────
+# Scoring kernel ported from experimental/pinfer's ranking_with_llm.py (ref [25],
+# "Ranking Formal Specifications using LLMs"), stripped of Strands/Bedrock/constants/
+# pruned_invariants.txt coupling: the LLM scores the four metrics (via the wrapper that
+# owns the provider); this module owns the deterministic combination + verdict gating.
+
+RANK_WEIGHTS = {"quality": 0.8, "distinguishability": 0.2, "visibility": 0.0}
+
+RANK_METRICS = ("generalization", "criticality", "distinguishability", "visibility")
+
+RANK_RUBRIC = (
+    "Score each specification 0.0-1.0 on four metrics:\n"
+    "- generalization: does it express a protocol-level guarantee that holds across "
+    "configurations/scales, or does it overfit trace/test specifics (magic constants, "
+    "specific machine counts)?\n"
+    "- criticality: how severe is a violation for protocol correctness (safety violations "
+    "like double-commit rank highest; bookkeeping invariants lowest)?\n"
+    "- distinguishability: how well does it separate correct from buggy implementations "
+    "(would a plausible bug trip it, or is it satisfied by almost any behavior)?\n"
+    "- visibility: is a violation observable by clients/users of the system, or purely internal?\n"
+    "Focus on specifications enforcing critical protocol properties over implementation details. "
+    "To break a tie, the more important specification must get the higher overall score.")
+
+# Structured output contract for the ranking LLM call (one entry per candidate).
+RANK_OUTPUT_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["scores"],
+    "properties": {"scores": {"type": "array", "items": {
+        "type": "object", "additionalProperties": False,
+        "required": ["name", *RANK_METRICS],
+        "properties": {"name": {"type": "string"},
+                       **{m: {"type": "number", "minimum": 0, "maximum": 1}
+                          for m in RANK_METRICS}}}}},
+}
+
+
+def compute_score(generalization: float, criticality: float, distinguishability: float,
+                  visibility: float, weights: Optional[Dict[str, float]] = None) -> float:
+    """Overall score = sqrt(gen*crit)*w_quality + dist*w_dist + vis*w_vis (ported kernel)."""
+    if weights is None:
+        weights = RANK_WEIGHTS
+    for s in (generalization, criticality, distinguishability, visibility):
+        if not 0.0 <= s <= 1.0:
+            raise ValueError(f"Score {s} must be between 0.0 and 1.0")
+    quality = (generalization * criticality) ** 0.5
+    return round(quality * weights["quality"]
+                 + distinguishability * weights["distinguishability"]
+                 + visibility * weights["visibility"], 4)
+
+
+# Verdicts eligible for ranking: only candidates that actually verified something.
+# Everything else is reported below the ranked block with the reason it isn't rankable.
+RANKABLE_VERDICTS = frozenset({"HOLDS-BOUNDED", "HOLDS-PROVEN"})
+
+
+def apply_scores(candidates: List[Candidate], metric_scores: List[Dict],
+                 weights: Optional[Dict[str, float]] = None) -> Tuple[List[Dict], List[Dict]]:
+    """Combine LLM metric scores with verdict gating: returns (ranked, unranked).
+    ranked = [{name, overall, <metrics>, candidate}] sorted by overall desc, only for
+    candidates whose verdict is in RANKABLE_VERDICTS; unranked = the rest with reasons."""
+    by_name = {s["name"]: s for s in metric_scores}
+    ranked, unranked = [], []
+    for c in candidates:
+        v = c.verdict.verdict if c.verdict else None
+        if v not in RANKABLE_VERDICTS:
+            unranked.append({"name": c.name, "reason": f"verdict={v or 'unvalidated'}",
+                             "candidate": c})
+            continue
+        s = by_name.get(c.name)
+        if s is None:
+            unranked.append({"name": c.name, "reason": "no metric scores returned",
+                             "candidate": c})
+            continue
+        overall = compute_score(*(float(s[m]) for m in RANK_METRICS), weights=weights)
+        ranked.append({"name": c.name, "overall": overall,
+                       **{m: float(s[m]) for m in RANK_METRICS}, "candidate": c})
+    ranked.sort(key=lambda r: r["overall"], reverse=True)
+    return ranked, unranked
+
+
+def rank_system_prompt() -> str:
+    return ("You are a specification-ranking expert for the P language: you evaluate "
+            "machine-checked candidate specifications by importance. " + RANK_RUBRIC)
+
+
+def rank_user_prompt(benchmark: str, model_summary: str, candidates: List[Candidate]) -> str:
+    lines = []
+    for c in candidates:
+        f = c.formula
+        lines.append(f"- {c.name}: {c.intent or '(no intent given)'}\n"
+                     f"  observes: {', '.join(c.observes)}; guards: {f.guards}; "
+                     f"relations: {f.relations}; sc: {f.sc}")
+    return (f"PROTOCOL: {benchmark}\n\nP MODEL SUMMARY:\n{model_summary}\n\n"
+            f"CANDIDATE SPECIFICATIONS (all machine-checked HOLDS-BOUNDED):\n"
+            + "\n".join(lines)
+            + "\n\nScore EVERY candidate on the four metrics (0.0-1.0). Return JSON "
+              "{\"scores\":[{\"name\",\"generalization\",\"criticality\","
+              "\"distinguishability\",\"visibility\"}]} — one entry per candidate, no other text.")
+
+
 def repair_user_prompt(name: str, benchmark: str, project_dir: str, error: str, source: str) -> str:
     return (f"This P spec monitor for {benchmark} ({project_dir}) FAILED TO COMPILE. Fix ONLY its "
             f"syntax/encoding — keep the property. NEVER invent event names; read {project_dir}/PSrc for real ones.\n"

@@ -238,6 +238,58 @@ class TestMergeCandidates(unittest.TestCase):
         self.assertEqual(merged["_default"]["stats"]["in"], 1)
 
 
+class TestRanking(unittest.TestCase):
+    def _cand(self, name, verdict=None):
+        c = core.Candidate(name=name, intent=f"intent of {name}", observes=["eX"],
+                           formula=core.Formula(guards=["g"], relations=["r"]))
+        if verdict:
+            c.verdict = core.Verdict(name, verdict)
+        return c
+
+    def test_compute_score_kernel(self):
+        # sqrt(0.9*0.6)*0.8 + 0.5*0.2 + 1.0*0.0  (ported formula, default weights)
+        self.assertEqual(core.compute_score(0.9, 0.6, 0.5, 1.0),
+                         round((0.9 * 0.6) ** 0.5 * 0.8 + 0.5 * 0.2, 4))
+
+    def test_compute_score_validates_range(self):
+        with self.assertRaises(ValueError):
+            core.compute_score(1.2, 0.5, 0.5, 0.5)
+
+    def test_compute_score_custom_weights(self):
+        w = {"quality": 0.0, "distinguishability": 1.0, "visibility": 0.0}
+        self.assertEqual(core.compute_score(0.1, 0.1, 0.7, 0.0, weights=w), 0.7)
+
+    def test_apply_scores_gates_and_sorts(self):
+        cands = [self._cand("low", "HOLDS-BOUNDED"), self._cand("high", "HOLDS-BOUNDED"),
+                 self._cand("vac", "VACUOUS"), self._cand("fails", "FAILS"),
+                 self._cand("unvalidated"), self._cand("noscores", "HOLDS-BOUNDED")]
+        scores = [
+            {"name": "low", "generalization": 0.2, "criticality": 0.2,
+             "distinguishability": 0.2, "visibility": 0.0},
+            {"name": "high", "generalization": 0.9, "criticality": 0.9,
+             "distinguishability": 0.9, "visibility": 0.0},
+            {"name": "vac", "generalization": 1.0, "criticality": 1.0,   # gated out anyway
+             "distinguishability": 1.0, "visibility": 1.0},
+        ]
+        ranked, unranked = core.apply_scores(cands, scores)
+        self.assertEqual([r["name"] for r in ranked], ["high", "low"])
+        reasons = {u["name"]: u["reason"] for u in unranked}
+        self.assertEqual(reasons["vac"], "verdict=VACUOUS")          # perfect scores can't rescue it
+        self.assertEqual(reasons["fails"], "verdict=FAILS")
+        self.assertEqual(reasons["unvalidated"], "verdict=unvalidated")
+        self.assertEqual(reasons["noscores"], "no metric scores returned")
+
+    def test_rank_prompts_and_schema(self):
+        c = self._cand("FD_x", "HOLDS-BOUNDED")
+        up = core.rank_user_prompt("FD", "summary text", [c])
+        self.assertIn("FD_x", up)
+        self.assertIn("summary text", up)
+        for m in core.RANK_METRICS:
+            self.assertIn(m, core.rank_system_prompt().lower())
+        item = core.RANK_OUTPUT_SCHEMA["properties"]["scores"]["items"]
+        self.assertEqual(set(item["required"]), {"name", *core.RANK_METRICS})
+
+
 class TestClassificationMatrix(unittest.TestCase):
     """validate_candidates classification, every branch, with model-checking mocked out."""
 

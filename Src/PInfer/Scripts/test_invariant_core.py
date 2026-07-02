@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+"""Unit tests for the pure (no-toolchain) parts of invariant_core.
+
+Run: python3 Src/PInfer/Scripts/test_invariant_core.py
+
+These cover the Phase-1 "frozen contract": the candidate schema (round-trip), the dedup key,
+the judge output schema, JS<->Python schema parity, and the full verdict-classification matrix
+of validate_candidates driven by mocked model-checking (so no `p` toolchain is needed). The
+model-checking half itself is exercised end-to-end by check_candidates.py against the tutorials.
+"""
+import re
+import sys
+import unittest
+from pathlib import Path
+from unittest import mock
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import invariant_core as core
+
+
+class TestSplitSpecs(unittest.TestCase):
+    def test_splits_multiple(self):
+        src = (
+            "spec A observes eX {\n  start state S { on eX do {} }\n}\n\n"
+            "spec B_canary observes eY {\n  start state S { on eY do {} }\n}\n"
+        )
+        blocks = core.split_specs(src)
+        self.assertEqual(set(blocks), {"A", "B_canary"})
+        self.assertIn("spec A", blocks["A"])
+        self.assertIn("spec B_canary", blocks["B_canary"])
+
+    def test_empty(self):
+        self.assertEqual(core.split_specs("// no specs here"), {})
+
+
+class TestPromptBuilders(unittest.TestCase):
+    def test_propose_prompt_mentions_target_and_grammar(self):
+        p = core.propose_user_prompt("FailureDetector", "Tutorial/4_FailureDetector",
+                                     "ePing: (fd, trial)", "tmpl_arity1", "single-event invariants")
+        self.assertIn("FailureDetector", p)
+        self.assertIn("forall", p.lower())
+        self.assertIn("JSON array", p)
+
+    def test_judge_prompt_includes_cex_and_structured_output(self):
+        p = core.judge_user_prompt("FD_x", "FailureDetector", "TestMain",
+                                   "Assertion Failed: ... false positive")
+        self.assertIn("false positive", p)
+        self.assertIn("development_action", p)
+
+    def test_repair_prompt_includes_error_and_rules(self):
+        p = core.repair_user_prompt("S", "B", "dir", "mismatched input '='", "spec S {}")
+        self.assertIn("mismatched input", p)
+        self.assertIn("NO inline var init", p)
+
+    def test_priors_nonempty(self):
+        self.assertTrue(core.TEMPLATE_SHAPES and core.INTENT_LENSES)
+        self.assertTrue(all(len(t) == 2 for t in core.TEMPLATE_SHAPES))
+
+
+class TestEnv(unittest.TestCase):
+    def test_build_env_has_path(self):
+        env = core.build_env()
+        self.assertIn("PATH", env)
+        self.assertIn(".dotnet", env["PATH"])  # global tools dir is prepended
+
+
+class TestVerdictModel(unittest.TestCase):
+    def test_verdict_defaults(self):
+        v = core.Verdict("n", "HOLDS-BOUNDED")
+        self.assertEqual(v.owner, "monitor")
+        self.assertEqual(v.bugs, 0)
+
+    def test_verdict_vocabulary_frozen(self):
+        # Guard against accidental verdict renames — PLAN.md §6.4 depends on these exact strings.
+        self.assertEqual(core.VERDICTS, {
+            "HOLDS-BOUNDED", "HOLDS-PROVEN", "FAILS", "VACUOUS",
+            "UNKNOWN-VACUITY", "INCONCLUSIVE", "COMPILE-ERR"})
+
+
+class TestCandidateSchema(unittest.TestCase):
+    def _sample(self) -> core.Candidate:
+        return core.Candidate(
+            name="TPC_agreement_atomicity", intent="all-or-nothing", category="atomicity",
+            provenance="intent", observes=["eCommit", "eAbort"],
+            formula=core.Formula(
+                quantifiers=[{"var": "e0", "type": "eDecide", "kind": "forall"},
+                             {"var": "e1", "type": "eVote", "kind": "exists"}],
+                guards=["e0.transId == e1.transId"], relations=["e1.vote == SUCCESS"],
+                sc={"op": "==", "bound": "numParticipants"}, config_event="eConfig",
+                uses_index=True),
+            spec_code="spec TPC_agreement_atomicity observes eCommit, eAbort { start state S {} }",
+            canary=None, predicted_bucket="verified")
+
+    def test_round_trip(self):
+        c = self._sample()
+        c2 = core.Candidate.from_dict(c.to_dict())
+        self.assertEqual(c2.to_dict(), c.to_dict())
+        self.assertEqual(c2.formula.arity, 1)  # one forall among the two quantifiers
+        self.assertTrue(c2.formula.uses_index)
+        self.assertEqual(c2.spec_code, c.spec_code)
+
+    def test_from_dict_accepts_camelcase_specCode(self):
+        c = core.Candidate.from_dict({"name": "X", "specCode": "spec X {}",
+                                      "predictedBucket": "bug", "observes": ["eA"]})
+        self.assertEqual(c.spec_code, "spec X {}")
+        self.assertEqual(c.predicted_bucket, "bug")
+
+    def test_verdict_serialized_when_present(self):
+        c = self._sample()
+        c.verdict = core.Verdict("TPC_agreement_atomicity", "HOLDS-BOUNDED", "ok")
+        rt = core.Candidate.from_dict(c.to_dict())
+        self.assertIsNotNone(rt.verdict)
+        self.assertEqual(rt.verdict.verdict, "HOLDS-BOUNDED")
+
+
+class TestDedupKey(unittest.TestCase):
+    def _cand(self, name, observes, guards, relations, sc=None, kinds=("forall",)):
+        return core.Candidate(name=name, observes=observes, formula=core.Formula(
+            quantifiers=[{"kind": k} for k in kinds], guards=guards, relations=relations, sc=sc))
+
+    def test_whitespace_and_order_insensitive(self):
+        a = self._cand("a", ["eY", "eX"], ["e0.k == e1.k", "e0.t>0"], ["e0.v==e1.v"])
+        b = self._cand("b", ["eX", "eY"], ["e0.t > 0", "e0.k==e1.k"], ["e0.v == e1.v"])
+        self.assertEqual(core.dedup_key(a), core.dedup_key(b))
+
+    def test_different_relation_distinguished(self):
+        a = self._cand("a", ["eX"], ["e0.k==e1.k"], ["e0.v < e1.v"])
+        b = self._cand("b", ["eX"], ["e0.k==e1.k"], ["e0.v <= e1.v"])
+        self.assertNotEqual(core.dedup_key(a), core.dedup_key(b))
+
+    def test_sc_distinguishes(self):
+        a = self._cand("a", ["eX"], [], ["r"], sc={"op": "==", "bound": "N"})
+        b = self._cand("b", ["eX"], [], ["r"], sc=None)
+        self.assertNotEqual(core.dedup_key(a), core.dedup_key(b))
+
+    def test_dedup_clusters_and_keeps_representative(self):
+        a = self._cand("a", ["eX"], ["g"], ["r"])
+        b = self._cand("b", ["eX"], ["g"], ["r"])          # same property as a
+        c = self._cand("c", ["eX"], ["g"], ["r2"])          # distinct
+        reps, clusters = core.dedup_candidates([a, b, c])
+        self.assertEqual([r.name for r in reps], ["a", "c"])       # first-wins, nothing dropped
+        self.assertEqual([len(cl) for cl in clusters], [2, 1])     # a+b cluster; c alone
+
+
+class TestJudgeSchema(unittest.TestCase):
+    def test_judge_output_schema_shape(self):
+        s = core.JUDGE_OUTPUT_SCHEMA
+        self.assertEqual(set(s["required"]),
+                         {"verdict", "confidence", "cex_grounding", "development_action"})
+        self.assertEqual(set(s["properties"]["development_action"]["enum"]),
+                         core.DEVELOPMENT_ACTIONS)
+        self.assertEqual(set(s["properties"]["verdict"]["enum"]), core.JUDGE_VERDICTS)
+
+
+class TestSchemaParity(unittest.TestCase):
+    """The proposer output contract lives in propose_templated.js; the consumer contract lives in
+    the Python Candidate dataclass. This guards drift between the two (PLAN.md §5, N1)."""
+    def setUp(self):
+        self.js = (HERE / "propose_templated.js").read_text()
+
+    def test_python_fields_present_in_js_schema(self):
+        for field in core.CANDIDATE_FIELDS:
+            self.assertIn(field, self.js, f"{field} missing from propose_templated.js CAND_SCHEMA")
+
+    def test_js_required_fields_are_known_to_python(self):
+        m = re.search(r"required:\s*\[([^\]]*)\]", self.js)  # first required[] is the candidate's
+        self.assertIsNotNone(m)
+        required = set(re.findall(r"'([^']+)'", m.group(1)))
+        # The candidates-wrapper required is ['candidates']; the item required is the real one.
+        item = re.findall(r"required:\s*\[([^\]]*)\]", self.js)
+        fields = set(re.findall(r"'([^']+)'", item[1]))
+        self.assertTrue(fields.issubset(set(core.CANDIDATE_FIELDS)),
+                        f"JS-required fields not modeled in Python: {fields - set(core.CANDIDATE_FIELDS)}")
+
+
+class TestClassificationMatrix(unittest.TestCase):
+    """validate_candidates classification, every branch, with model-checking mocked out."""
+
+    SRC = (
+        "spec HB observes eX {}\n"          # holds, canary trips -> HOLDS-BOUNDED
+        "spec HB_canary observes eX {}\n"
+        "spec VAC observes eX {}\n"          # holds, canary holds -> VACUOUS
+        "spec VAC_canary observes eX {}\n"
+        "spec UNKC observes eX {}\n"         # holds, canary errored -> UNKNOWN-VACUITY
+        "spec UNKC_canary observes eX {}\n"
+        "spec NOCAN observes eX {}\n"        # holds, no canary -> UNKNOWN-VACUITY
+        "spec FAIL observes eX {}\n"         # bugs, monitor-owned -> FAILS
+        "spec INC observes eX {}\n"          # bugs, sut-owned -> INCONCLUSIVE
+    )
+    CHECK = {  # name -> (bugs, cex, owner)
+        "HB": (0, "", "monitor"), "HB_canary": (1, "", "monitor"),
+        "VAC": (0, "", "monitor"), "VAC_canary": (0, "", "monitor"),
+        "UNKC": (0, "", "monitor"), "UNKC_canary": (-1, "COMPILE-ERROR", "monitor"),
+        "NOCAN": (0, "", "monitor"),
+        "FAIL": (1, "Assertion Failed: _candidates.p", "monitor"),
+        "INC": (1, "Assertion Failed: SUT", "sut"),
+    }
+
+    def _run(self, wire_ok=True):
+        with mock.patch.object(core, "build_env", return_value={}), \
+             mock.patch.object(core, "_wire", return_value=wire_ok), \
+             mock.patch.object(core, "_check_one",
+                               side_effect=lambda proj, n, iters, env: self.CHECK[n]):
+            return {v.name: v for v in core.validate_candidates(
+                "/tmp/does-not-exist-proj", self.SRC, "TestMain", "M", iters=10)}
+
+    def test_all_branches(self):
+        v = self._run()
+        self.assertEqual(v["HB"].verdict, "HOLDS-BOUNDED")
+        self.assertEqual(v["VAC"].verdict, "VACUOUS")
+        self.assertEqual(v["UNKC"].verdict, "UNKNOWN-VACUITY")
+        self.assertEqual(v["NOCAN"].verdict, "UNKNOWN-VACUITY")
+        self.assertEqual(v["FAIL"].verdict, "FAILS")
+        self.assertEqual(v["INC"].verdict, "INCONCLUSIVE")
+        # canaries are probes, not reported as real candidates
+        self.assertNotIn("HB_canary", v)
+
+    def test_all_emitted_verdicts_are_in_vocabulary(self):
+        for verdict in self._run().values():
+            self.assertIn(verdict.verdict, core.VERDICTS)
+
+    def test_compile_error_branch(self):
+        # Batch wire fails, and single-wire fails only for CE.
+        src = "spec OK observes eX {}\nspec OK_canary observes eX {}\nspec CE observes eX {}\n"
+        check = {"OK": (0, "", "monitor"), "OK_canary": (1, "", "monitor")}
+
+        def fake_wire(project, names, block_of, main, assert_in, env):
+            if len(names) > 1:
+                return False               # force the isolate path
+            return names[0] != "CE"        # CE never compiles
+
+        with mock.patch.object(core, "build_env", return_value={}), \
+             mock.patch.object(core, "_wire", side_effect=fake_wire), \
+             mock.patch.object(core, "_check_one",
+                               side_effect=lambda proj, n, iters, env: check[n]):
+            v = {x.name: x for x in core.validate_candidates(
+                "/tmp/does-not-exist-proj", src, "TestMain", "M", iters=10)}
+        self.assertEqual(v["CE"].verdict, "COMPILE-ERR")
+        self.assertEqual(v["OK"].verdict, "HOLDS-BOUNDED")
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

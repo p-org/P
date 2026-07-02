@@ -174,6 +174,70 @@ class TestSchemaParity(unittest.TestCase):
                         f"JS-required fields not modeled in Python: {fields - set(core.CANDIDATE_FIELDS)}")
 
 
+class TestProposerParity(unittest.TestCase):
+    """invariant_core.INTENT_LENSES is the source of truth; propose_intent.js mirrors it
+    (same pattern as TestSchemaParity). Guards lens drift between Python and the workflow."""
+    def setUp(self):
+        self.js = (HERE / "propose_intent.js").read_text()
+
+    def test_all_lenses_present_in_js(self):
+        for key, _focus in core.INTENT_LENSES:
+            self.assertIn(f"key: '{key}'", self.js, f"lens '{key}' missing from propose_intent.js")
+
+    def test_js_declares_intent_provenance_and_schema_fields(self):
+        self.assertIn("provenance: 'intent'", self.js)
+        for field in ("formula", "canary", "specCode", "predictedBucket"):
+            self.assertIn(field, self.js)
+
+
+class TestMergeCandidates(unittest.TestCase):
+    def setUp(self):
+        import merge_candidates
+        self.mc = merge_candidates
+
+    def _write(self, tmp: Path, name: str, payload) -> str:
+        p = tmp / name
+        p.write_text(__import__("json").dumps(payload))
+        return str(p)
+
+    def _cand(self, name, provenance, guards, relations):
+        return {"name": name, "intent": "", "category": "", "provenance": provenance,
+                "observes": ["eX"], "specCode": f"spec {name} observes eX {{}}",
+                "predictedBucket": "verified",
+                "formula": {"quantifiers": [{"kind": "forall"}], "guards": guards,
+                            "relations": relations, "sc": None, "config_event": None,
+                            "uses_index": False}}
+
+    def test_merge_dedups_across_proposers_and_keeps_stats(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            templated = {"FD": {"dir": "Tutorial/4_FailureDetector", "candidates": [
+                self._cand("FD_tmpl_mono", "templated", ["e0.k==e1.k"], ["e0.v <= e1.v"]),
+                self._cand("FD_tmpl_uniq", "templated", [], ["e0.id != e1.id"])]}}
+            intent = {"FD": {"dir": "Tutorial/4_FailureDetector", "candidates": [
+                # same property as FD_tmpl_mono, different name/phrasing/whitespace
+                self._cand("FD_intent_mono", "intent", ["e0.k == e1.k"], ["e0.v<=e1.v"]),
+                self._cand("FD_intent_resp", "intent", ["g"], ["r"])]}}
+            merged = self.mc.merge([self._write(tmp, "t.json", templated),
+                                    self._write(tmp, "i.json", intent)])
+        fd = merged["FD"]
+        self.assertEqual(fd["stats"], {"in": 4, "out": 3,
+                                       "per_provenance": {"templated": 2, "intent": 2}})
+        names = [c["name"] for c in fd["candidates"]]
+        self.assertEqual(names, ["FD_tmpl_mono", "FD_tmpl_uniq", "FD_intent_resp"])
+        self.assertEqual(fd["clusters"], [["FD_tmpl_mono", "FD_intent_mono"]])  # nothing silently dropped
+        self.assertEqual(fd["dir"], "Tutorial/4_FailureDetector")
+
+    def test_merge_accepts_plain_list(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            merged = self.mc.merge([self._write(tmp, "l.json",
+                                                [self._cand("A", "intent", [], ["r"])])])
+        self.assertEqual(merged["_default"]["stats"]["in"], 1)
+
+
 class TestClassificationMatrix(unittest.TestCase):
     """validate_candidates classification, every branch, with model-checking mocked out."""
 

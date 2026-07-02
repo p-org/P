@@ -264,8 +264,10 @@ class TestClassificationMatrix(unittest.TestCase):
     def _run(self, wire_ok=True):
         with mock.patch.object(core, "build_env", return_value={}), \
              mock.patch.object(core, "_wire", return_value=wire_ok), \
+             mock.patch.object(core, "static_gate", return_value={}), \
+             mock.patch.object(core, "_baseline_failures", return_value=frozenset()), \
              mock.patch.object(core, "_check_one",
-                               side_effect=lambda proj, n, iters, env: self.CHECK[n]):
+                               side_effect=lambda proj, n, iters, env, base: self.CHECK[n]):
             return {v.name: v for v in core.validate_candidates(
                 "/tmp/does-not-exist-proj", self.SRC, "TestMain", "M", iters=10)}
 
@@ -296,12 +298,126 @@ class TestClassificationMatrix(unittest.TestCase):
 
         with mock.patch.object(core, "build_env", return_value={}), \
              mock.patch.object(core, "_wire", side_effect=fake_wire), \
+             mock.patch.object(core, "static_gate", return_value={}), \
+             mock.patch.object(core, "_baseline_failures", return_value=frozenset()), \
              mock.patch.object(core, "_check_one",
-                               side_effect=lambda proj, n, iters, env: check[n]):
+                               side_effect=lambda proj, n, iters, env, base: check[n]):
             v = {x.name: x for x in core.validate_candidates(
                 "/tmp/does-not-exist-proj", src, "TestMain", "M", iters=10)}
         self.assertEqual(v["CE"].verdict, "COMPILE-ERR")
         self.assertEqual(v["OK"].verdict, "HOLDS-BOUNDED")
+
+
+class TestAutoCanary(unittest.TestCase):
+    def test_replaces_assert_and_renames(self):
+        block = ('spec M observes eX {\n  start state S {\n    on eX do (p: tP) {\n'
+                 '      if (p.v > 0) { assert p.v < 10, format("bad; v={0}", p.v); }\n'
+                 '    }\n  }\n}\n')
+        canary = core.make_canary("M", block)
+        self.assertIsNotNone(canary)
+        self.assertIn("spec M_canary", canary)
+        self.assertNotIn("p.v < 10", canary)                    # original condition gone
+        self.assertIn('assert false, "canary";', canary)
+        self.assertIn("if (p.v > 0)", canary)                    # guard preserved
+        # the `;` inside the format string must not have truncated the replacement
+        self.assertNotIn("bad; v=", canary)
+
+    def test_no_assert_means_no_canary(self):
+        self.assertIsNone(core.make_canary("L", "spec L observes eX { start state S { } }"))
+
+    def test_multiple_asserts_all_replaced(self):
+        block = "spec M observes eX { assert a == b; assert c > d, \"m\"; }"
+        _, n = core._replace_asserts(block)
+        self.assertEqual(n, 2)
+
+    def test_validate_autogenerates_canary(self):
+        # One candidate WITH an assert and NO proposer canary: auto-canary is derived and,
+        # since it trips (guard reachable), the candidate is HOLDS-BOUNDED, not UNKNOWN-VACUITY.
+        src = "spec A observes eX {\n  start state S { on eX do (p: tP) { assert p.v > 0; } }\n}\n"
+        check = {"A": (0, "", "monitor"), "A_canary": (1, "", "monitor")}
+        with mock.patch.object(core, "build_env", return_value={}), \
+             mock.patch.object(core, "_wire", return_value=True), \
+             mock.patch.object(core, "static_gate", return_value={}), \
+             mock.patch.object(core, "_baseline_failures", return_value=frozenset()), \
+             mock.patch.object(core, "_check_one",
+                               side_effect=lambda proj, n, iters, env, base: check[n]):
+            v = {x.name: x for x in core.validate_candidates(
+                "/tmp/does-not-exist-proj", src, "TestMain", "M", iters=10)}
+        self.assertEqual(v["A"].verdict, "HOLDS-BOUNDED")
+
+
+class TestAttribution(unittest.TestCase):
+    def test_candidates_file_is_definitively_monitor(self):
+        self.assertEqual(core._attribute_owner(
+            "Assertion Failed: _candidates.p:12", frozenset({"anything"})), "monitor")
+
+    def test_preexisting_signature_is_sut(self):
+        base = frozenset({"Assertion Failed: Atomicity.p:33 all-or-nothing"})
+        self.assertEqual(core._attribute_owner(
+            "Assertion Failed: Atomicity.p:33  all-or-nothing", base), "sut")
+
+    def test_novel_deadlock_is_monitor(self):
+        # The M5 regression: a monitor-induced deadlock has no trigger substring and no
+        # baseline match — must be attributed to the monitor, not silently dropped as SUT.
+        self.assertEqual(core._attribute_owner(
+            "Deadlock detected. TestMain is waiting", frozenset()), "monitor")
+
+    def test_empty_cex_defaults_to_monitor(self):
+        self.assertEqual(core._attribute_owner("", frozenset({"sig"})), "monitor")
+
+
+class TestStaticGate(unittest.TestCase):
+    def _project(self, tmp: Path) -> Path:
+        (tmp / "PSrc").mkdir()
+        (tmp / "PSrc" / "decls.p").write_text(
+            "type tPing = (fd: machine, trial: int);\n"
+            "event ePing: tPing;\n"
+            "event ePong: (node: machine);\n"
+            "event eShutdown;\n")
+        return tmp
+
+    def test_clean_candidate_passes(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            proj = self._project(Path(td))
+            block = ("spec OK observes ePing, ePong {\n  start state S {\n"
+                     "    on ePing do (p: tPing) { assert p.trial >= 0; }\n"
+                     "    on ePong do (q: (node: machine)) { assert q.node == q.node; }\n  }\n}")
+            self.assertEqual(core.static_gate(str(proj), {"OK": block}), {})
+
+    def test_flags_undeclared_event_unobserved_handler_and_phantom_field(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            proj = self._project(Path(td))
+            block = ("spec BAD observes ePing, eNoSuch {\n  start state S {\n"
+                     "    on ePing do (p: tPing) { assert p.attempt >= 0; }\n"
+                     "    on ePong do (q: (node: machine)) { }\n  }\n}")
+            errs = core.static_gate(str(proj), {"BAD": block})["BAD"]
+        joined = " | ".join(errs)
+        self.assertIn("eNoSuch", joined)                       # undeclared observed event
+        self.assertIn("not in the observes list", joined)       # ePong handled, not observed
+        self.assertIn("p.attempt", joined)                      # phantom payload field
+        self.assertIn("trial", joined)                          # ...with the real fields named
+
+    def test_gated_candidate_becomes_compile_err_with_diagnostic(self):
+        import tempfile
+        src = ("spec BAD observes eNoSuch { start state S { } }\n"
+               "spec OK observes ePing {\n  start state S { on ePing do (p: tPing) "
+               "{ assert p.trial >= 0; } }\n}\n")
+        check = {"OK": (0, "", "monitor"), "OK_canary": (1, "", "monitor")}
+        with tempfile.TemporaryDirectory() as td:
+            proj = self._project(Path(td))
+            with mock.patch.object(core, "build_env", return_value={}), \
+                 mock.patch.object(core, "_wire", return_value=True), \
+                 mock.patch.object(core, "_baseline_failures", return_value=frozenset()), \
+                 mock.patch.object(core, "_check_one",
+                                   side_effect=lambda p, n, iters, env, base: check[n]):
+                v = {x.name: x for x in core.validate_candidates(
+                    str(proj), src, "TestMain", "M", iters=10)}
+        self.assertEqual(v["BAD"].verdict, "COMPILE-ERR")
+        self.assertIn("static-gate:", v["BAD"].detail)
+        self.assertIn("eNoSuch", v["BAD"].detail)
+        self.assertEqual(v["OK"].verdict, "HOLDS-BOUNDED")     # gate didn't block the good one
 
 
 if __name__ == "__main__":

@@ -204,6 +204,129 @@ def dedup_candidates(cands: List[Candidate]) -> Tuple[List[Candidate], List[List
     return [groups[k][0] for k in order], [groups[k] for k in order]
 
 
+# ─────────────────────── auto-canary (PLAN.md §6.1) ─────────────────────
+# Vacuity detection must not depend on proposer cooperation: PREP derives a
+# `<Name>_canary` companion from the candidate itself by replacing every assert
+# with `assert false` IN PLACE — same states, same handlers, same guards — so the
+# canary trips iff the guarded branch is reachable. A candidate with no assert
+# (e.g. a pure hot-state liveness monitor) has no derivable canary and stays
+# UNKNOWN-VACUITY rather than being overclaimed.
+
+def _replace_asserts(body: str) -> Tuple[str, int]:
+    """Replace each `assert <expr>[, <msg>];` statement with `assert false, "canary";`,
+    respecting string literals (a `;` inside a format string must not end the scan)."""
+    out, i, n = [], 0, 0
+    while True:
+        m = re.search(r"\bassert\b", body[i:])
+        if not m:
+            out.append(body[i:])
+            break
+        start = i + m.start()
+        out.append(body[i:start])
+        j, in_str = i + m.end(), False
+        while j < len(body):
+            ch = body[j]
+            if in_str:
+                if ch == "\\":
+                    j += 1
+                elif ch == '"':
+                    in_str = False
+            elif ch == '"':
+                in_str = True
+            elif ch == ";":
+                break
+            j += 1
+        out.append('assert false, "canary";')
+        n += 1
+        i = j + 1
+    return "".join(out), n
+
+
+def make_canary(name: str, block: str) -> Optional[str]:
+    """Derive the vacuity canary for one `spec <name> ...` block, or None if the block
+    contains no assert (vacuity undecidable -> UNKNOWN-VACUITY)."""
+    replaced, n = _replace_asserts(block)
+    if n == 0:
+        return None
+    return re.sub(rf"\bspec\s+{re.escape(name)}\b", f"spec {name}_canary", replaced, count=1)
+
+
+# ─────────────────── static name gate (PLAN.md §6.2) ────────────────────
+# Deterministic pre-check before any compile/model-check cycle: every observed event
+# must be declared in the project, every handled event must be observed, and every
+# payload-field access must name a real field of that event's payload. Catches
+# hallucinated names early with a precise diagnostic (feeds REPAIR without burning a
+# compile), mirroring PeasyAI's EventDeclarationValidator / PayloadFieldValidator
+# semantics without importing PeasyAI (this module stays dependency-free).
+
+_EVENT_DECL_RE = re.compile(r"\bevent\s+(\w+)\s*(?::\s*([^;]+?))?\s*;")
+_TYPE_DECL_RE = re.compile(r"\btype\s+(\w+)\s*=\s*\(([^;]*)\)\s*;", re.DOTALL)
+_FIELD_RE = re.compile(r"(\w+)\s*:")
+
+
+def parse_event_decls(project_dir: str) -> Dict[str, Optional[frozenset]]:
+    """Map declared event name -> frozenset of payload field names, or None when the
+    payload isn't a named tuple we can resolve (field checks are then skipped)."""
+    texts = []
+    for p in sorted(Path(project_dir).rglob("*.p")):
+        if "PGenerated" in p.parts or p.name.startswith("_"):
+            continue
+        try:
+            texts.append(p.read_text())
+        except OSError:
+            continue
+    src = "\n".join(texts)
+    named_tuples = {m.group(1): frozenset(_FIELD_RE.findall(m.group(2)))
+                    for m in _TYPE_DECL_RE.finditer(src)}
+    events: Dict[str, Optional[frozenset]] = {}
+    for m in _EVENT_DECL_RE.finditer(src):
+        name, payload = m.group(1), (m.group(2) or "").strip()
+        if not payload:
+            events[name] = frozenset()
+        elif payload.startswith("("):
+            events[name] = frozenset(_FIELD_RE.findall(payload))
+        else:
+            events[name] = named_tuples.get(payload)  # None when unresolvable
+    return events
+
+
+_OBSERVES_RE = re.compile(r"\bobserves\s+([\w\s,]+?)\s*\{")
+_HANDLER_RE = re.compile(r"\bon\s+(\w+)\s+do\s*\(\s*(\w+)\s*:")
+
+
+def static_gate(project_dir: str, block_of: Dict[str, str]) -> Dict[str, List[str]]:
+    """Return {candidate name: [errors]} for candidates referencing undeclared events,
+    handling unobserved events, or accessing undeclared payload fields."""
+    declared = parse_event_decls(project_dir)
+    problems: Dict[str, List[str]] = {}
+    for name, block in block_of.items():
+        errs: List[str] = []
+        om = _OBSERVES_RE.search(block)
+        observed = [e.strip() for e in om.group(1).split(",")] if om else []
+        for ev in observed:
+            if ev and ev not in declared:
+                errs.append(f"observes undeclared event '{ev}'")
+        handlers = list(_HANDLER_RE.finditer(block))
+        for i, hm in enumerate(handlers):
+            ev, param = hm.group(1), hm.group(2)
+            if ev not in declared:
+                errs.append(f"handles undeclared event '{ev}'")
+                continue
+            if observed and ev not in observed:
+                errs.append(f"handles '{ev}' which is not in the observes list")
+            fields = declared[ev]
+            if fields is None:
+                continue  # payload type unresolvable; skip field checks
+            body_end = handlers[i + 1].start() if i + 1 < len(handlers) else len(block)
+            for fa in re.finditer(rf"\b{re.escape(param)}\.(\w+)", block[hm.end():body_end]):
+                if fa.group(1) not in fields:
+                    errs.append(f"'{param}.{fa.group(1)}' — event '{ev}' payload has no field "
+                                f"'{fa.group(1)}' (fields: {sorted(fields)})")
+        if errs:
+            problems[name] = errs
+    return problems
+
+
 # ─────────────────────── deterministic validation ───────────────────────
 
 def split_specs(candidates_src: str) -> Dict[str, str]:
@@ -226,7 +349,54 @@ def _wire(project: Path, names: List[str], block_of: Dict[str, str],
     return "Compilation succeeded" in out
 
 
-def _check_one(project: Path, name: str, iters: int, env) -> Tuple[int, str, str]:
+def _norm_sig(cex: str) -> str:
+    """Failure signature for baseline-differential comparison."""
+    return re.sub(r"\s+", " ", cex).strip()
+
+
+def _attribute_owner(cex: str, baseline_sigs: frozenset) -> str:
+    """monitor-vs-SUT attribution (PLAN.md §6.3): a candidate failure is SUT-owned iff the
+    same failure signature already occurs on the UNMODIFIED project (pre-existing), so the
+    candidate was never actually tested. Anything the baseline never produced — including a
+    deadlock the monitor induced — is attributed to the monitor. A cex that names the
+    candidates file is definitively monitor-owned."""
+    if "_candidates.p" in cex:
+        return "monitor"
+    sig = _norm_sig(cex)
+    if sig and any(sig in b or b in sig for b in baseline_sigs):
+        return "sut"
+    return "monitor"
+
+
+def _baseline_failures(project: Path, main: str, assert_in: str, iters: int, env) -> frozenset:
+    """Bounded-check the UNMODIFIED system (no candidate monitors) once and collect the
+    failure signatures that pre-exist. Bounded exploration can under-approximate this set
+    (a SUT failure only reachable under other schedules is missed) — documented in
+    PLAN.md §11 R3; the iters budget should match the per-candidate budget."""
+    (project / "PSpec" / "_candidates.p").write_text("// baseline: no candidates\n")
+    (project / "PTst" / "_candidate_tests.p").write_text(
+        f"// AUTO-GENERATED baseline\n\ntest tc__baseline [main={main}]:\n  {assert_in};\n")
+    out = subprocess.run(["p", "compile"], cwd=project, env=env,
+                         capture_output=True, text=True).stdout
+    if "Compilation succeeded" not in out:
+        return frozenset()
+    bf = project / "PCheckerOutput" / "BugFinding"
+    for f in glob.glob(str(bf / "*_0_*.txt")):
+        os.remove(f)
+    out = subprocess.run(["p", "check", "-tc", "tc__baseline", "-i", str(iters)],
+                         cwd=project, env=env, capture_output=True, text=True).stdout
+    m = BUG_RE.search(out)
+    if not m or int(m.group(1)) == 0:
+        return frozenset()
+    sigs = set()
+    for tf in glob.glob(str(bf / "*_0_*.txt")):
+        for fm in FAIL_RE.finditer(Path(tf).read_text()):
+            sigs.add(_norm_sig(fm.group(1)))
+    return frozenset(sigs)
+
+
+def _check_one(project: Path, name: str, iters: int, env,
+               baseline_sigs: frozenset = frozenset()) -> Tuple[int, str, str]:
     """Run `p check` for one wired candidate; return (bugs, cex, owner)."""
     bf = project / "PCheckerOutput" / "BugFinding"
     for f in glob.glob(str(bf / "*_0_*.txt")):
@@ -241,39 +411,55 @@ def _check_one(project: Path, name: str, iters: int, env) -> Tuple[int, str, str
         if tfs:
             fm = FAIL_RE.search(Path(tfs[-1]).read_text())
             cex = (fm.group(1) if fm else "").strip()[:160]
-            # Did THIS candidate's monitor fail, or a pre-existing SUT assertion/deadlock?
-            owner = "monitor" if ("_candidates.p" in cex or "liveness" in cex
-                                  or "hot state" in cex) else "sut"
+            owner = _attribute_owner(cex, baseline_sigs)
     return bugs, cex, owner
 
 
 def validate_candidates(project_path: str, candidates_src: str, main: str,
-                        assert_in: str, iters: int = 2000,
-                        keep: bool = False) -> List[Verdict]:
+                        assert_in: str, iters: int = 2000, keep: bool = False,
+                        auto_canary: bool = True, gate: bool = True,
+                        baseline: bool = True) -> List[Verdict]:
     """Wire, compile, bounded-check and classify every candidate spec.
 
-    A `<Name>_canary` block is treated as a vacuity probe for `<Name>`: if both
-    `<Name>` and `<Name>_canary` HOLD, the canary's guarded branch is unreachable,
-    so `<Name>` is VACUOUS. Candidates whose model-check failure is owned by a
-    pre-existing SUT assertion are INCONCLUSIVE (the candidate was never tested).
+    Backbone responsibilities (PLAN.md §6):
+    - auto_canary: derive a `<Name>_canary` vacuity probe for every candidate that
+      lacks one (proposer-supplied canaries are kept). If both `<Name>` and its canary
+      HOLD, the guarded branch is unreachable -> VACUOUS; canary trips -> HOLDS-BOUNDED;
+      no derivable canary -> UNKNOWN-VACUITY.
+    - gate: static name check (undeclared events / unobserved handlers / phantom payload
+      fields) rejects candidates before any compile cycle, with a REPAIR-ready diagnostic.
+    - baseline: bounded-check the unmodified project once; a candidate failure whose
+      signature pre-exists there is INCONCLUSIVE (SUT-owned, candidate never tested).
     """
     project = Path(project_path).resolve()
     env = build_env()
     block_of = split_specs(candidates_src)
-    names = list(block_of)
-    reals = [n for n in names if not n.endswith("_canary")]
+    reals = [n for n in block_of if not n.endswith("_canary")]
+
+    if auto_canary:
+        for n in reals:
+            if f"{n}_canary" not in block_of:
+                c = make_canary(n, block_of[n])
+                if c is not None:
+                    block_of[f"{n}_canary"] = c
+
+    gated: Dict[str, List[str]] = static_gate(str(project), {n: block_of[n] for n in reals}) if gate else {}
+    names = [n for n in block_of
+             if n not in gated and (not n.endswith("_canary") or n[:-7] not in gated)]
     canaries = {n[:-7] for n in names if n.endswith("_canary")}
 
     results: Dict[str, Tuple[int, str, str]] = {}
     compile_err: set = set()
     try:
-        if _wire(project, names, block_of, main, assert_in, env):       # fast path
+        baseline_sigs = _baseline_failures(project, main, assert_in, iters, env) \
+            if (baseline and names) else frozenset()
+        if names and _wire(project, names, block_of, main, assert_in, env):  # fast path
             for n in names:
-                results[n] = _check_one(project, n, iters, env)
-        else:                                                            # robust: isolate
+                results[n] = _check_one(project, n, iters, env, baseline_sigs)
+        elif names:                                                          # robust: isolate
             for n in names:
                 if _wire(project, [n], block_of, main, assert_in, env):
-                    results[n] = _check_one(project, n, iters, env)
+                    results[n] = _check_one(project, n, iters, env, baseline_sigs)
                 else:
                     compile_err.add(n)
                     results[n] = (-1, "COMPILE-ERROR", "monitor")
@@ -281,12 +467,16 @@ def validate_candidates(project_path: str, candidates_src: str, main: str,
         if not keep:
             (project / "PSpec" / "_candidates.p").unlink(missing_ok=True)
             (project / "PTst" / "_candidate_tests.p").unlink(missing_ok=True)
+    for n, errs in gated.items():
+        results[n] = (-1, "static-gate: " + "; ".join(errs), "monitor")
+        compile_err.add(n)
 
     out: List[Verdict] = []
     for n in reals:
         bugs, cex, owner = results[n]
         if n in compile_err:
-            out.append(Verdict(n, "COMPILE-ERR", "candidate did not compile (dropped)", bugs, owner))
+            detail = cex if cex.startswith("static-gate:") else "candidate did not compile (dropped)"
+            out.append(Verdict(n, "COMPILE-ERR", detail, bugs, owner))
         elif bugs > 0 and owner == "sut":
             out.append(Verdict(n, "INCONCLUSIVE", f"SUT assertion fired first: {cex}", bugs, owner))
         elif bugs > 0:

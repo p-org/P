@@ -31,10 +31,18 @@ def main():
     ap.add_argument("--assert-in", required=True, help="module expression after 'in' (no trailing ';')")
     ap.add_argument("--iters", type=int, default=3000, help="schedules per candidate")
     ap.add_argument("--keep", action="store_true", help="leave generated files in place")
+    ap.add_argument("--no-auto-canary", action="store_true",
+                    help="don't derive vacuity canaries for canary-less candidates")
+    ap.add_argument("--no-gate", action="store_true",
+                    help="skip the static event/field name gate")
+    ap.add_argument("--no-baseline", action="store_true",
+                    help="skip the baseline run (monitor-vs-SUT attribution degrades)")
     args = ap.parse_args()
 
     src = Path(args.candidates).read_text()
-    verdicts = validate_candidates(args.project, src, args.main, args.assert_in, args.iters, args.keep)
+    verdicts = validate_candidates(args.project, src, args.main, args.assert_in, args.iters, args.keep,
+                                   auto_canary=not args.no_auto_canary,
+                                   gate=not args.no_gate, baseline=not args.no_baseline)
 
     print(f"{'CANDIDATE':<42}{'VERDICT':<17}DETAIL")
     print("-" * 100)

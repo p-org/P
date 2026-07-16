@@ -23,6 +23,7 @@ from core.validation import (
     ProjectPathValidator,
     IssueSeverity,
     NamedTupleConstructionValidator,
+    VarDeclarationOrderValidator,
 )
 
 
@@ -869,6 +870,74 @@ class TestDocumentationReviewParser:
         import inspect
         sig = inspect.signature(PCodePostProcessor.process)
         assert "design_doc" not in sig.parameters
+
+
+class TestVarDeclarationOrderValidator:
+    """Tests for VarDeclarationOrderValidator, especially the multi-block auto-fix."""
+
+    @staticmethod
+    def _apply_like_pipeline(code):
+        """Mirror pipeline.py: apply each auto-fixable issue's fix sequentially
+        to the evolving code (this is exactly the loop that used to corrupt
+        output when >1 block carried a cumulative replacement snapshot)."""
+        validator = VarDeclarationOrderValidator()
+        result = validator.validate(code)
+        current = code
+        applied = 0
+        for issue in result.issues:
+            if issue.auto_fixable and issue.fix_function:
+                new_code = issue.apply_fix(current)
+                if new_code != current:
+                    current = new_code
+                    applied += 1
+        errors = sum(1 for i in result.issues if i.severity == IssueSeverity.ERROR)
+        return current, applied, errors
+
+    def test_two_blocks_reorder_without_corruption(self):
+        """Regression: two blocks each needing reorder must not corrupt the code.
+
+        Previously each issue captured a growing prefix of the replacement list
+        and the pipeline applied them independently against already-mutated text,
+        splicing with stale offsets and duplicating/garbling declarations.
+        """
+        code = (
+            "fun foo() {\n"
+            "x = 1;\n"
+            "var x: int;\n"
+            "}\n"
+            "fun bar() {\n"
+            "y = 2;\n"
+            "var y: int;\n"
+            "}\n"
+        )
+        fixed_code, applied, errors = self._apply_like_pipeline(code)
+
+        # Nothing duplicated or lost
+        assert fixed_code.count("var x: int;") == 1
+        assert fixed_code.count("var y: int;") == 1
+        assert fixed_code.count("x = 1;") == 1
+        assert fixed_code.count("y = 2;") == 1
+        # Each declaration now precedes its assignment
+        assert fixed_code.index("var x: int;") < fixed_code.index("x = 1;")
+        assert fixed_code.index("var y: int;") < fixed_code.index("y = 2;")
+        # One consolidated fix, but both offending blocks still reported
+        assert applied == 1
+        assert errors == 2
+
+    def test_single_block_reorder(self):
+        code = "fun foo() {\nx = 1;\nvar x: int;\n}\n"
+        fixed_code, applied, errors = self._apply_like_pipeline(code)
+        assert fixed_code.count("var x: int;") == 1
+        assert fixed_code.index("var x: int;") < fixed_code.index("x = 1;")
+        assert applied == 1
+        assert errors == 1
+
+    def test_already_ordered_no_fix(self):
+        code = "fun foo() {\nvar x: int;\nx = 1;\n}\n"
+        fixed_code, applied, errors = self._apply_like_pipeline(code)
+        assert applied == 0
+        assert errors == 0
+        assert fixed_code == code
 
 
 if __name__ == "__main__":

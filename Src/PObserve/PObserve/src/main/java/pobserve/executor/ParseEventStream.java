@@ -25,23 +25,26 @@ public class ParseEventStream {
      * @throws Exception when parsing fails for any of the log lines
      */
     public static Stream<? extends PObserveEvent<?>> parseToPObserveEvents(Stream<Object> inputStream) throws Exception {
-        try {
-            return inputStream.flatMap(logLine -> {
-                try {
-                    return ParseLogLine(logLine).filter(event -> {
-                        boolean keep = EventFilterUtils.filterBasedOnSpecObservation(event);
-                        if (keep) {
-                            getPObserveMetrics().addMetric(MetricConstants.TOTAL_EVENTS_READ, 1);
-                        }
-                        return keep;
-                    });
-                } catch (PObserveLogParsingException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } catch (RuntimeException ignored) {
-            return Stream.empty();
-        }
+        return inputStream.flatMap(logLine -> {
+            try {
+                return ParseLogLine(logLine).filter(event -> {
+                    boolean keep = EventFilterUtils.filterBasedOnSpecObservation(event);
+                    if (keep) {
+                        getPObserveMetrics().addMetric(MetricConstants.TOTAL_EVENTS_READ, 1);
+                    }
+                    return keep;
+                });
+            } catch (PObserveLogParsingException e) {
+                // A single unparseable log line must NOT abort verification of the whole
+                // stream. The stream is lazy, so throwing here would surface during the
+                // downstream terminal operation and escape to PObserveExecutor.run()'s
+                // blanket handler, which increments TOTAL_UNKNOWN_ERRORS and aborts the
+                // entire run -- masquerading as a "no bugs found" result. ParseLogLine has
+                // already recorded this failure (TOTAL_PARSER_ERRORS + TrackErrors), so we
+                // skip only this line and continue parsing the rest of the stream.
+                return Stream.<PObserveEvent<?>>empty();
+            }
+        });
     }
 
     /**

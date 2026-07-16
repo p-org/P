@@ -398,7 +398,6 @@ namespace PChecker.SystematicTesting
                 _checkerConfiguration.SchedulingStrategy is "pct" ||
                 _checkerConfiguration.SchedulingStrategy is "pos" ||
                 _checkerConfiguration.SchedulingStrategy is "feedbackpct" ||
-                _checkerConfiguration.SchedulingStrategy is "feedbackpctcp" ||
                 _checkerConfiguration.SchedulingStrategy is "feedbackpos" ||
                 _checkerConfiguration.SchedulingStrategy is "fairpct" ||
                 _checkerConfiguration.SchedulingStrategy is "probabilistic" ||
@@ -510,7 +509,6 @@ namespace PChecker.SystematicTesting
         /// </summary>
         private void RunNextIteration(int schedule)
         {
-            BehavioralObserver.NextIter();
             if (!IsReplayModeEnabled && ShouldPrintIteration(schedule + 1))
             {
                 Logger.WriteLine($"..... Schedule #{schedule + 1}");

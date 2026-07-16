@@ -540,7 +540,6 @@ namespace PChecker.Runtime.StateMachines
             AnnounceInternal(ev);
             // Update vector clock
             VectorTime.Increment();
-            BehavioralObserver.AddToCurrentTimeline(ev, BehavioralObserver.EventType.SEND, VectorTime);
             Runtime.SendEvent(target.Id, ev, this);
         }
         
@@ -598,8 +597,7 @@ namespace PChecker.Runtime.StateMachines
                 {
                     // Update state machine vector clock
                     VectorTime.Merge(info.VectorTime);
-                    BehavioralObserver.AddToCurrentTimeline(e, BehavioralObserver.EventType.DEQUEUE, VectorTime);
-                    
+
                     // Notify the runtime for a new event to handle. This is only used
                     // during bug-finding and operation bounding, because the runtime
                     // has to schedule an state machine when a new operation is dequeued.

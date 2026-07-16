@@ -8,6 +8,12 @@ P is built to be **cross-platform** and can be used on MacOS, Linux, and Windows
 !!! success "Verify each step"
     After each step, use the troubleshooting check to ensure the installation succeeded.
 
+!!! tip "Prefer Docker? Skip the manual setup"
+    If you just want to try P, or you are running in CI, you can use the
+    official Docker image instead of installing the toolchain by hand. It
+    bundles the .NET SDK, JDK, Maven, graphviz, and the `p` CLI. Jump to
+    [Alternative: Use the Docker image](#alternative-use-the-docker-image).
+
 ---
 
 ### :material-numeric-1-circle:{ .lg } Install .NET SDK
@@ -145,6 +151,60 @@ dotnet tool install --global P
     ```shell
     dotnet tool update --global P
     ```
+
+---
+
+## Alternative: Use the Docker image
+
+Instead of installing the .NET SDK, Java, and the `p` tool separately, you can
+use the official P Docker image. This is the fastest way to get a working P
+toolchain, and is especially convenient for **CI pipelines** and for trying P
+without changing your machine's setup.
+
+The image is published to the GitHub Container Registry (GHCR) and is built for
+both `linux/amd64` and `linux/arm64`.
+
+!!! info "Prerequisite"
+    You need [Docker](https://docs.docker.com/get-docker/) (or a compatible
+    runtime such as Finch/Podman) installed.
+
+### Pull the image
+
+```shell
+docker pull ghcr.io/p-org/p:latest
+```
+
+You can also pin a specific version, e.g. `ghcr.io/p-org/p:2.2.6`.
+
+### Compile and check a P project
+
+Mount your P project into the container's `/workspace` directory and run the
+`p` commands as usual:
+
+```shell
+# From the root of your P project (where the .pproj file lives)
+docker run --rm -it -v "$PWD":/workspace ghcr.io/p-org/p:latest bash
+
+# Now, inside the container:
+p compile
+p check -tc <testcase> -i 1000
+```
+
+Anything the tool writes (e.g. `PGenerated/`, `PCheckerOutput/`) lands back in
+your project directory on the host, because it is a mounted volume.
+
+You can also run a one-shot command without an interactive shell:
+
+```shell
+docker run --rm -v "$PWD":/workspace ghcr.io/p-org/p:latest p compile
+```
+
+??? hint "Troubleshoot: verify the toolchain inside the image"
+    ```shell
+    docker run --rm ghcr.io/p-org/p:latest bash -c 'p --version && java -version'
+    ```
+
+    You should see the P version and a Java 17 runtime.
 
 ---
 

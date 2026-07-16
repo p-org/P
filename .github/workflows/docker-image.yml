@@ -1,0 +1,75 @@
+name: Docker image
+
+# Build and smoke-test the P toolchain image. This runs only when the image
+# definition changes (or on manual dispatch) -- it is redundant with the
+# normal build/test CI on every push, so there is no need to run it always.
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/docker-image.yml'
+  push:
+    branches: [ master ]
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/docker-image.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & test (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Native runners for each architecture -- no QEMU emulation, so the
+          # arm64 build is exercised on real arm64 hardware. arm64 hosted
+          # runners are free for public repositories.
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build the image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: p:ci-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+
+      - name: Smoke test (compile & check a tutorial)
+        run: |
+          docker run --rm -v "$PWD/Tutorial/1_ClientServer":/workspace p:ci-${{ matrix.arch }} bash -c '
+            set -euo pipefail
+            p --version
+            java -version
+            dot -V
+            p compile
+            p check -tc tcSingleClient -i 100
+          '
+
+      # Export the built image to a tar so Trivy scans it directly, rather than
+      # via a daemon image reference (Trivy's image-name parser rejects some
+      # local tags that Docker itself accepts).
+      - name: Export image for scanning
+        run: docker save p:ci-${{ matrix.arch }} -o /tmp/p-image.tar
+
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          input: /tmp/p-image.tar
+          format: table
+          exit-code: '0'          # report only; do not fail the build on findings
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH

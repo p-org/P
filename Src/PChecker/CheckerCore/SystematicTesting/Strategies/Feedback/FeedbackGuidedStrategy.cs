@@ -30,7 +30,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     private HashSet<GeneratorRecord> _visitedGenerators = new HashSet<GeneratorRecord>();
     private GeneratorRecord _currentParent;
 
-    private System.Random _rnd = new System.Random();
+    private readonly System.Random _rnd;
 
 
 
@@ -40,6 +40,9 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     public FeedbackGuidedStrategy(CheckerConfiguration checkerConfiguration, ControlledRandom inputGenerator, IScheduler scheduler)
     {
         _maxScheduledSteps = checkerConfiguration.MaxUnfairSchedulingSteps;
+        // Seed the explore/exploit RNG from the configured seed so feedback-guided
+        // runs are reproducible under a fixed --seed (mirrors ControlledRandom).
+        _rnd = new System.Random((int?)checkerConfiguration.RandomGeneratorSeed ?? Guid.NewGuid().GetHashCode());
         Generator = new StrategyGenerator(inputGenerator, scheduler);
     }
 

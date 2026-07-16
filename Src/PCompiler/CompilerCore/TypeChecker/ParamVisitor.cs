@@ -50,13 +50,19 @@ namespace Plang.Compiler.TypeChecker
 
             if (context.SUB() != null && context.IntLiteral() != null)
             {
-                int value = -int.Parse(context.IntLiteral().GetText());
-                return new IntLiteralExpr(context, value);
+                if (!LiteralParsingUtils.TryParseIntLiteral(context.IntLiteral().GetText(), out var magnitude))
+                {
+                    throw handler.ValueOutOfRange(context, "int");
+                }
+                return new IntLiteralExpr(context, -magnitude);
             }
 
             if (context.IntLiteral() != null)
             {
-                int value = int.Parse(context.IntLiteral().GetText());
+                if (!LiteralParsingUtils.TryParseIntLiteral(context.IntLiteral().GetText(), out var value))
+                {
+                    throw handler.ValueOutOfRange(context, "int");
+                }
                 return new IntLiteralExpr(context, value);
             }
 
@@ -114,7 +120,11 @@ namespace Plang.Compiler.TypeChecker
 
             if (context.IntLiteral() != null)
             {
-                return new IntLiteralExpr(context, int.Parse(context.IntLiteral().GetText()));
+                if (!LiteralParsingUtils.TryParseIntLiteral(context.IntLiteral().GetText(), out var intValue))
+                {
+                    throw handler.ValueOutOfRange(context, "int");
+                }
+                return new IntLiteralExpr(context, intValue);
             }
 
             if (context.NullLiteral() != null)
@@ -132,12 +142,19 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitDecimalFloat(PParser.DecimalFloatContext context)
         {
-            var value = double.Parse($"{context.pre?.Text ?? ""}.{context.post.Text}");
+            if (!LiteralParsingUtils.TryParseFloatLiteral($"{context.pre?.Text ?? ""}.{context.post.Text}", out var value))
+            {
+                throw handler.ValueOutOfRange(context, "float");
+            }
             return new FloatLiteralExpr(context, value);
         }
         public override IPExpr VisitInt([NotNull] PParser.IntContext context)
         {
-            return new IntLiteralExpr(context, int.Parse(context.IntLiteral().GetText()));
+            if (!LiteralParsingUtils.TryParseIntLiteral(context.IntLiteral().GetText(), out var value))
+            {
+                throw handler.ValueOutOfRange(context, "int");
+            }
+            return new IntLiteralExpr(context, value);
         }
         
     }

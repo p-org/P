@@ -248,7 +248,11 @@ namespace Plang.Compiler.TypeChecker
         {
             // name=iden ASSIGN value=IntLiteral
             var elem = (EnumElem) nodesToDeclarations.Get(context);
-            elem.Value = int.Parse(context.value.Text);
+            if (!LiteralParsingUtils.TryParseIntLiteral(context.value.Text, out var enumValue))
+            {
+                throw Handler.ValueOutOfRange(context, "int");
+            }
+            elem.Value = enumValue;
             return elem;
         }
 

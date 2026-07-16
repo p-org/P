@@ -78,7 +78,10 @@ namespace Plang.Compiler.TypeChecker
                     }
                     else if (context.twise().WISE() != null)
                     {
-                        var t = int.Parse(context.twise().IntLiteral().GetText());
+                        if (!LiteralParsingUtils.TryParseIntLiteral(context.twise().IntLiteral().GetText(), out var t))
+                        {
+                            throw handler.ValueOutOfRange(context.twise(), "int");
+                        }
                         var (isValid, errMsg) = ParamAssignment.TwiseNumWellFormednessCheck(t, test.ParamExprMap.Count);
                         if (!isValid)
                         {

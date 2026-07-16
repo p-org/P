@@ -925,8 +925,7 @@ namespace PChecker.SystematicTesting
             var coverageInfo = runtime.GetCoverageInfo();
             report.CoverageInfo.Merge(coverageInfo);
             TestReport.Merge(report);
-            var timelineHash = timelineObserver.GetTimelineHash();
-            TestReport.ExploredTimelines.Add(timelineObserver.GetTimelineHash());
+            TestReport.ExploredTimelines.Add(timelineObserver.GetAbstractTimeline());
             // Also save the graph snapshot of the last iteration, if there is one.
             Graph = coverageInfo.CoverageGraph;
             // Also save the graph snapshot of the last schedule, if there is one.

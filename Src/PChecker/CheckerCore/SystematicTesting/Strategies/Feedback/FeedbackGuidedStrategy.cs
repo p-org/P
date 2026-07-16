@@ -22,7 +22,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
 
     protected int ScheduledSteps;
 
-    private readonly HashSet<int> _visitedTimelines = new();
+    private readonly HashSet<string> _visitedTimelines = new();
 
     private List<GeneratorRecord> _savedGenerators = new ();
     private int _pendingMutations;
@@ -110,7 +110,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
         ScheduledSteps = 0;
     }
 
-    private int ComputeDiversity(int timeline, List<int> hash)
+    private int ComputeDiversity(string timeline, List<int> hash)
     {
         if (!_visitedTimelines.Add(timeline))
         {
@@ -147,10 +147,10 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     /// </summary>
     public virtual void ObserveRunningResults(TimelineObserver timelineObserver)
     {
-        var timelineHash = timelineObserver.GetTimelineHash();
+        var timelineId = timelineObserver.GetAbstractTimeline();
         var timelineMinhash = timelineObserver.GetTimelineMinhash();
 
-        int diversityScore = ComputeDiversity(timelineHash, timelineMinhash);
+        int diversityScore = ComputeDiversity(timelineId, timelineMinhash);
 
         if (diversityScore == 0)
         {

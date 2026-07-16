@@ -27,11 +27,6 @@ internal class TimelineObserver : IControlledRuntimeLog
         }
     }
 
-    public int GetTimelineHash()
-    {
-        return GetAbstractTimeline().GetHashCode();
-    }
-
     public string GetAbstractTimeline()
     {
         var tls = _timelines.Select(it => $"<{it.Item1}, {it.Item2}, {it.Item3}>").ToList();

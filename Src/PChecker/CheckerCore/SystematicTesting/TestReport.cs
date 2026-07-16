@@ -102,10 +102,10 @@ namespace PChecker.SystematicTesting
         public HashSet<string> InternalErrors { get; internal set; }
         
         /// <summary>
-        /// Set of hashes of timelines discovered by the scheduler.
+        /// Set of canonical timeline strings discovered by the scheduler.
         /// </summary>
         [DataMember]
-        public HashSet<int> ExploredTimelines = new();
+        public HashSet<string> ExploredTimelines = new();
 
 
         /// <summary>

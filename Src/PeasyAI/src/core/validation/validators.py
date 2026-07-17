@@ -243,6 +243,7 @@ class VarDeclarationOrderValidator(Validator):
     ) -> ValidationResult:
         issues: List[ValidationIssue] = []
         replacements = []
+        reorder_blocks: List[str] = []
 
         for block_name, header, body, start_pos, close_pos in iter_all_code_blocks(code):
             lines = body.split("\n")
@@ -283,13 +284,25 @@ class VarDeclarationOrderValidator(Validator):
                 new_body = "\n".join(var_lines + other_lines)
                 replacement = header + "{" + new_body + "}"
                 replacements.append((start_pos, close_pos + 1, replacement))
+                reorder_blocks.append(block_name)
+
+        # Emit one ERROR per offending block (for accurate reporting), but attach
+        # the auto-fix to ONLY the first issue. That single fixer rewrites all
+        # offending blocks in one reversed-splice pass over the original code.
+        # Previously each issue captured a growing prefix of `replacements`
+        # (via replacements[:]) and the pipeline applied them independently to the
+        # already-mutated code, so with 2+ reorderable blocks the later fixers
+        # spliced with stale offsets and corrupted the saved P source.
+        if replacements:
+            bulk_fix = self._make_bulk_fix(replacements)
+            for idx, block_name in enumerate(reorder_blocks):
                 issues.append(ValidationIssue(
                     severity=IssueSeverity.ERROR,
                     validator=self.name,
                     message=f"Variable declaration after statement in '{block_name}'",
                     suggestion="Move var declarations to the start of the block",
-                    auto_fixable=True,
-                    fix_function=self._make_bulk_fix(replacements[:]),
+                    auto_fixable=(idx == 0),
+                    fix_function=bulk_fix if idx == 0 else None,
                 ))
 
         # Also detect vars declared inside while/foreach loops
@@ -315,7 +328,10 @@ class VarDeclarationOrderValidator(Validator):
     @staticmethod
     def _make_bulk_fix(repls):
         def fixer(code: str) -> str:
-            for start, end, repl in reversed(repls):
+            # Splice from the highest offset to the lowest so earlier offsets stay
+            # valid as later regions are replaced. Sort explicitly rather than
+            # relying on insertion order so the splice is deterministic.
+            for start, end, repl in sorted(repls, key=lambda r: r[0], reverse=True):
                 code = code[:start] + repl + code[end:]
             return code
         return fixer

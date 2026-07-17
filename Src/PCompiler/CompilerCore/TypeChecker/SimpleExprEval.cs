@@ -75,7 +75,7 @@ public abstract class SimpleExprEval
                 {
                     BinOpType.Add => new IntLiteralExpr(ForceInt(lhs) + ForceInt(rhs)),
                     BinOpType.Sub => new IntLiteralExpr(ForceInt(lhs) - ForceInt(rhs)),
-                    BinOpType.Mul => new IntLiteralExpr(ForceInt(lhs) + ForceInt(rhs)),
+                    BinOpType.Mul => new IntLiteralExpr(ForceInt(lhs) * ForceInt(rhs)),
                     BinOpType.Div => new IntLiteralExpr(ForceInt(lhs) / ForceInt(rhs)),
                     BinOpType.Mod => new IntLiteralExpr(ForceInt(lhs) % ForceInt(rhs)),
                     BinOpType.Eq => EvalEq(lhs, rhs),

@@ -23,7 +23,9 @@ namespace Plang.Compiler.TypeChecker
         /// </summary>
         public static bool TryParseIntLiteral(string text, out int value)
         {
-            return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+            // NumberStyles.None matches the grammar's IntLiteral ([0-9]+): digits only,
+            // no leading sign or whitespace (the sign is handled by the grammar).
+            return int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value);
         }
 
         /// <summary>

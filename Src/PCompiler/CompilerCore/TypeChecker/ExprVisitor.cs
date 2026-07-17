@@ -1116,7 +1116,7 @@ namespace Plang.Compiler.TypeChecker
 
             if (!LiteralParsingUtils.TryParseIntLiteral(context.@int().GetText(), out var field))
             {
-                handler.Diagnostics.Report(handler.ValueOutOfRange(context, "int"));
+                handler.Diagnostics.Report(handler.ValueOutOfRange(context.@int(), "int"));
                 return new ErrorExpr(context);
             }
             if (field >= type.Types.Count)

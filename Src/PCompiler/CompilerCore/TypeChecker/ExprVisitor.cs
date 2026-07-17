@@ -168,7 +168,11 @@ namespace Plang.Compiler.TypeChecker
             var subExpr = Visit(context.expr());
             if (subExpr.Type is ErrorType) return new ErrorExpr(context);
 
-            var fieldNo = int.Parse(context.field.GetText());
+            if (!LiteralParsingUtils.TryParseIntLiteral(context.field.GetText(), out var fieldNo))
+            {
+                handler.Diagnostics.Report(handler.ValueOutOfRange(context, "int"));
+                return new ErrorExpr(context);
+            }
             if (!(subExpr.Type.Canonicalize() is TupleType tuple))
             {
                 handler.Diagnostics.Report(handler.TypeMismatch(subExpr, TypeKind.Tuple, TypeKind.NamedTuple));
@@ -916,7 +920,12 @@ namespace Plang.Compiler.TypeChecker
 
             if (context.IntLiteral() != null)
             {
-                return new IntLiteralExpr(context, int.Parse(context.IntLiteral().GetText()));
+                if (!LiteralParsingUtils.TryParseIntLiteral(context.IntLiteral().GetText(), out var intValue))
+                {
+                    handler.Diagnostics.Report(handler.ValueOutOfRange(context, "int"));
+                    return new ErrorExpr(context);
+                }
+                return new IntLiteralExpr(context, intValue);
             }
 
             if (context.NullLiteral() != null)
@@ -1020,7 +1029,11 @@ namespace Plang.Compiler.TypeChecker
 
         public override IPExpr VisitDecimalFloat(PParser.DecimalFloatContext context)
         {
-            var value = double.Parse($"{context.pre?.Text ?? ""}.{context.post.Text}");
+            if (!LiteralParsingUtils.TryParseFloatLiteral($"{context.pre?.Text ?? ""}.{context.post.Text}", out var value))
+            {
+                handler.Diagnostics.Report(handler.ValueOutOfRange(context, "float"));
+                return new ErrorExpr(context);
+            }
             return new FloatLiteralExpr(context, value);
         }
 
@@ -1101,7 +1114,11 @@ namespace Plang.Compiler.TypeChecker
                 return new ErrorExpr(context);
             }
 
-            var field = int.Parse(context.@int().GetText());
+            if (!LiteralParsingUtils.TryParseIntLiteral(context.@int().GetText(), out var field))
+            {
+                handler.Diagnostics.Report(handler.ValueOutOfRange(context.@int(), "int"));
+                return new ErrorExpr(context);
+            }
             if (field >= type.Types.Count)
             {
                 handler.Diagnostics.Report(handler.OutOfBoundsTupleAccess(context.@int(), type));

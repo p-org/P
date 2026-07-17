@@ -148,7 +148,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     /// <summary>
     /// This method observes the results of previous run and prepare for the next run.
     /// </summary>
-    public virtual void ObserveRunningResults(TimelineObserver timelineObserver)
+    public virtual void ObserveRunningResults(TimelineObserver timelineObserver, double scenarioCompliance)
     {
         var timelineId = timelineObserver.GetAbstractTimeline();
         var timelineMinhash = timelineObserver.GetTimelineMinhash();
@@ -160,8 +160,14 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
             return;
         }
 
-        int priority = diversityScore;
-        
+        // Steer the search toward under-covered scenarios: boost priority by how close
+        // this run got to satisfying a scenario (compliance in [0,1]). With no active
+        // scenario, compliance is 0 -> priority == diversity (unchanged). A boost (rather
+        // than the paper's strict diversity x compliance product) keeps diverse-but-
+        // scenario-irrelevant schedules from being discarded, since scenarios are always
+        // auto-attached here.
+        int priority = (int)System.Math.Ceiling(diversityScore * (1.0 + scenarioCompliance));
+
         if (priority > 0)
         {
             var record = new GeneratorRecord(priority, Generator, timelineMinhash);

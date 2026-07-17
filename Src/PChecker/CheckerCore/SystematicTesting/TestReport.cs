@@ -122,6 +122,17 @@ namespace PChecker.SystematicTesting
         [DataMember]
         public Dictionary<string, HashSet<string>> ScenarioSatisfyingTimelines = new();
 
+        /// <summary>
+        /// Partial scenario coverage: per scenario, the most distinct states any single
+        /// schedule reached (how close an unsatisfied scenario got).
+        /// </summary>
+        [DataMember]
+        public Dictionary<string, int> ScenarioMaxStatesReached = new();
+
+        /// <summary>Partial scenario coverage: per scenario, its total number of states.</summary>
+        [DataMember]
+        public Dictionary<string, int> ScenarioTotalStates = new();
+
 
         /// <summary>
         /// Lock for the test report.
@@ -169,6 +180,25 @@ namespace PChecker.SystematicTesting
                 if (!ScenarioSatisfyingTimelines.ContainsKey(scenario))
                 {
                     ScenarioSatisfyingTimelines[scenario] = new HashSet<string>();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Records partial progress for <paramref name="scenario"/>: the most distinct states
+        /// reached (<paramref name="statesReached"/>) out of <paramref name="totalStates"/>.
+        /// </summary>
+        public void RecordScenarioProgress(string scenario, int statesReached, int totalStates)
+        {
+            lock (Lock)
+            {
+                if (!ScenarioMaxStatesReached.TryGetValue(scenario, out var best) || statesReached > best)
+                {
+                    ScenarioMaxStatesReached[scenario] = statesReached;
+                }
+                if (totalStates > 0)
+                {
+                    ScenarioTotalStates[scenario] = totalStates;
                 }
             }
         }
@@ -223,6 +253,17 @@ namespace PChecker.SystematicTesting
                         ScenarioSatisfyingTimelines[kv.Key] = timelines;
                     }
                     timelines.UnionWith(kv.Value);
+                }
+                foreach (var kv in testReport.ScenarioMaxStatesReached)
+                {
+                    if (!ScenarioMaxStatesReached.TryGetValue(kv.Key, out var best) || kv.Value > best)
+                    {
+                        ScenarioMaxStatesReached[kv.Key] = kv.Value;
+                    }
+                }
+                foreach (var kv in testReport.ScenarioTotalStates)
+                {
+                    ScenarioTotalStates[kv.Key] = kv.Value;
                 }
 
                 NumOfFoundBugs += testReport.NumOfFoundBugs;
@@ -336,6 +377,15 @@ namespace PChecker.SystematicTesting
                         triggered == 1 ? string.Empty : "s",
                         uniqueTimelines,
                         uniqueTimelines == 1 ? string.Empty : "s");
+
+                    // For scenarios that were never fully satisfied, show the best partial
+                    // progress reached (the coverage gap and how close exploration got).
+                    if (triggered == 0 &&
+                        ScenarioTotalStates.TryGetValue(scenario, out var total) && total > 0)
+                    {
+                        var reached = ScenarioMaxStatesReached.TryGetValue(scenario, out var r) ? r : 0;
+                        report.AppendFormat(" (best partial progress: {0}/{1} states)", reached, total);
+                    }
                 }
             }
 

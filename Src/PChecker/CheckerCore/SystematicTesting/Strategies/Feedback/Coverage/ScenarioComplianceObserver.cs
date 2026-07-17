@@ -23,10 +23,20 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
     // Short names (P scenario names) of scenarios satisfied at least once this iteration.
     private readonly HashSet<string> _satisfied = new();
 
+    // Short name -> distinct states entered this iteration (partial-progress signal).
+    private readonly Dictionary<string, HashSet<string>> _statesReached = new();
+
+    // Short name -> total number of states in that scenario.
+    private readonly Dictionary<string, int> _totalStates = new();
+
     public ScenarioComplianceObserver()
     {
         _coverageMonitorNames = PModule.coverageMonitors.Select(t => t.FullName).ToHashSet();
         AllScenarioNames = _coverageMonitorNames.Select(ShortName).ToList();
+        foreach (var kv in PModule.scenarioStateCounts)
+        {
+            _totalStates[ShortName(kv.Key.FullName)] = kv.Value;
+        }
     }
 
     /// <summary>Scenarios (by short name) satisfied at least once during this iteration.</summary>
@@ -38,6 +48,29 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
     /// <summary>True if any scenario monitors are active for this run.</summary>
     public bool HasScenarios => _coverageMonitorNames.Count > 0;
 
+    /// <summary>Distinct states <paramref name="scenario"/> entered this iteration.</summary>
+    public int StatesReached(string scenario) => _statesReached.TryGetValue(scenario, out var s) ? s.Count : 0;
+
+    /// <summary>Total states declared in <paramref name="scenario"/> (0 if unknown).</summary>
+    public int TotalStates(string scenario) => _totalStates.TryGetValue(scenario, out var n) ? n : 0;
+
+    /// <summary>
+    /// Run-level compliance in [0,1]: the maximum partial-progress fraction across all
+    /// scenarios this iteration (how close the run got to satisfying any scenario). Used
+    /// to steer the feedback-guided search toward under-covered scenarios.
+    /// </summary>
+    public double RunCompliance()
+    {
+        double max = 0;
+        foreach (var scenario in AllScenarioNames)
+        {
+            var total = TotalStates(scenario);
+            if (total <= 0) continue;
+            max = System.Math.Max(max, (double)StatesReached(scenario) / total);
+        }
+        return max;
+    }
+
     private static string ShortName(string fullName)
     {
         var idx = fullName.LastIndexOf('.');
@@ -46,10 +79,24 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
 
     public void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
     {
-        // A coverage monitor entering a cold (accepting) state == scenario satisfied.
-        if (isEntry && isInHotState == false && _coverageMonitorNames.Contains(monitorType))
+        if (!isEntry || !_coverageMonitorNames.Contains(monitorType))
         {
-            _satisfied.Add(ShortName(monitorType));
+            return;
+        }
+        var scenario = ShortName(monitorType);
+
+        // Track partial progress: distinct states this scenario has entered.
+        if (!_statesReached.TryGetValue(scenario, out var states))
+        {
+            states = new HashSet<string>();
+            _statesReached[scenario] = states;
+        }
+        states.Add(stateName);
+
+        // Entering a cold (accepting) state == scenario satisfied.
+        if (isInHotState == false)
+        {
+            _satisfied.Add(scenario);
         }
     }
 

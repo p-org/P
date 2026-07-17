@@ -519,6 +519,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             context.WriteLine(output, "PModule.coverageMonitors.Clear();");
+            context.WriteLine(output, "PModule.scenarioStateCounts.Clear();");
             foreach (var monitor in monitorMap.Keys)
             {
                 context.WriteLine(output, $"runtime.RegisterMonitor<{context.Names.GetNameForDecl(monitor)}>();");
@@ -526,8 +527,11 @@ namespace Plang.Compiler.Backend.CSharp
                 // counts their satisfaction and exempts them from the liveness check.
                 if (monitor.IsScenario)
                 {
+                    var monitorName = context.Names.GetNameForDecl(monitor);
+                    context.WriteLine(output, $"PModule.coverageMonitors.Add(typeof({monitorName}));");
+                    // Total state count enables partial-coverage reporting (states reached / total).
                     context.WriteLine(output,
-                        $"PModule.coverageMonitors.Add(typeof({context.Names.GetNameForDecl(monitor)}));");
+                        $"PModule.scenarioStateCounts[typeof({monitorName})] = {monitor.AllStates().Count()};");
                 }
             }
 

@@ -79,5 +79,35 @@ namespace UnitTests
             StringAssert.Contains("triggered in 1 schedule,", text);
             StringAssert.Contains("triggered in 0 schedules,", text);
         }
+
+        [NUnit.Framework.Test]
+        public void RecordScenarioProgress_KeepsBestAndReportsPartialForUncovered()
+        {
+            var report = NewReport();
+            report.EnsureScenarioTracked("NeverCovered");
+            report.RecordScenarioProgress("NeverCovered", 1, 3);
+            report.RecordScenarioProgress("NeverCovered", 2, 3); // better
+            report.RecordScenarioProgress("NeverCovered", 1, 3); // worse, ignored
+
+            Assert.AreEqual(2, report.ScenarioMaxStatesReached["NeverCovered"]);
+            Assert.AreEqual(3, report.ScenarioTotalStates["NeverCovered"]);
+
+            var text = report.GetText(CheckerConfiguration.Create());
+            StringAssert.Contains("best partial progress: 2/3 states", text);
+        }
+
+        [NUnit.Framework.Test]
+        public void Merge_TakesMaxPartialProgress()
+        {
+            var a = NewReport();
+            a.RecordScenarioProgress("S", 1, 4);
+            var b = NewReport();
+            b.RecordScenarioProgress("S", 3, 4);
+
+            a.Merge(b);
+
+            Assert.AreEqual(3, a.ScenarioMaxStatesReached["S"]);
+            Assert.AreEqual(4, a.ScenarioTotalStates["S"]);
+        }
     }
 }

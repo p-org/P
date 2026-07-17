@@ -21,6 +21,21 @@ namespace Plang.Compiler.TypeChecker
             // special validation for monitors:
             // ensure that each event handler is in the observe set.
             ValidateSpecObservesList(handler, machine, job);
+            // a scenario (coverage monitor) needs an accepting (cold) state, otherwise
+            // it can never be marked satisfied and will always report 0 coverage.
+            ValidateScenarioHasColdState(machine, job);
+        }
+
+        private static void ValidateScenarioHasColdState(Machine machine, ICompilerConfiguration job)
+        {
+            if (machine.IsScenario &&
+                machine.AllStates().All(s => s.Temperature != StateTemperature.Cold))
+            {
+                job.Output.WriteWarning(
+                    $"[{machine.SourceLocation.Start.Line}] scenario '{machine.Name}' has no accepting (cold) state; " +
+                    "it can never be marked satisfied and will always report 0 coverage. " +
+                    "Mark its accepting state 'cold'.");
+            }
         }
 
         private static void InitializeContructorType(ITranslationErrorHandler handler, Machine machine, Scope gScope)

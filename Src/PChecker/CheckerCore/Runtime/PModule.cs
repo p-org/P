@@ -18,6 +18,12 @@ namespace PChecker.Runtime
         /// </summary>
         public static HashSet<Type> coverageMonitors = new HashSet<Type>();
 
+        /// <summary>
+        /// Total number of states in each scenario (coverage) monitor, used to report
+        /// partial coverage (distinct states reached / total states).
+        /// </summary>
+        public static Dictionary<Type, int> scenarioStateCounts = new Dictionary<Type, int>();
+
         public static IDictionary<string, Dictionary<string, string>> linkMap =
             new Dictionary<string, Dictionary<string, string>>();
 

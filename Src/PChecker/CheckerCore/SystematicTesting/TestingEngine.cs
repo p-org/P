@@ -575,7 +575,7 @@ namespace PChecker.SystematicTesting
 
                 if (Strategy is IFeedbackGuidedStrategy strategy)
                 {
-                    strategy.ObserveRunningResults(timelineObserver);
+                    strategy.ObserveRunningResults(timelineObserver, scenarioObserver.RunCompliance());
                 }
 
                 // Checks that no monitor is in a hot state at termination. Only
@@ -606,6 +606,8 @@ namespace PChecker.SystematicTesting
                 foreach (var scenario in scenarioObserver.AllScenarioNames)
                 {
                     TestReport.EnsureScenarioTracked(scenario);
+                    TestReport.RecordScenarioProgress(
+                        scenario, scenarioObserver.StatesReached(scenario), scenarioObserver.TotalStates(scenario));
                 }
                 if (scenarioObserver.SatisfiedScenarios.Count > 0)
                 {

@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using NUnit.Framework;
 using PChecker;
 using PChecker.SystematicTesting;
@@ -139,6 +141,36 @@ namespace UnitTests
             StringAssert.Contains("S: covered in 2/2 test cases, 8 total triggers, 3 unique satisfying timelines", text);
             // Gap: never satisfied anywhere; best partial progress is the max across test cases.
             StringAssert.Contains("Gap: covered in 0/2 test cases, 0 total triggers, 0 unique satisfying timelines (best partial progress: 2/4 states)", text);
+        }
+
+        [NUnit.Framework.Test]
+        public void MergeDirectory_ReadsArtifactsRecursivelyFromSubdirectories()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "scencov_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path.Combine(root, "run1"));
+            Directory.CreateDirectory(Path.Combine(root, "run2"));
+            try
+            {
+                var r1 = NewReport();
+                r1.RecordScenarioSatisfied("S", "<t1>");
+                ScenarioCoverageMerger.Write(r1, "tc1", Path.Combine(root, "run1", "a" + ScenarioCoverageMerger.FileSuffix));
+
+                var r2 = NewReport();
+                r2.RecordScenarioSatisfied("S", "<t2>");
+                r2.EnsureScenarioTracked("Gap");
+                r2.RecordScenarioProgress("Gap", 1, 3);
+                ScenarioCoverageMerger.Write(r2, "tc2", Path.Combine(root, "run2", "b" + ScenarioCoverageMerger.FileSuffix));
+
+                var text = ScenarioCoverageMerger.MergeDirectory(root);
+
+                StringAssert.Contains("across 2 test case(s)", text);
+                StringAssert.Contains("S: covered in 2/2 test cases, 2 total triggers, 2 unique satisfying timelines", text);
+                StringAssert.Contains("Gap: covered in 0/1 test cases", text);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
         }
     }
 }

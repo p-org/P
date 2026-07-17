@@ -78,7 +78,8 @@ namespace PChecker.SystematicTesting
         public static string MergeDirectory(string directory)
         {
             var artifacts = new List<ScenarioCoverageArtifact>();
-            foreach (var file in Directory.GetFiles(directory, "*" + FileSuffix))
+            // Recurse: the checker writes each run's artifact into its own output subdirectory.
+            foreach (var file in Directory.GetFiles(directory, "*" + FileSuffix, SearchOption.AllDirectories))
             {
                 try
                 {

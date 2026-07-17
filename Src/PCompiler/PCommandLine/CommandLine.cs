@@ -42,6 +42,9 @@ namespace Plang
                 case "check":
                     RunChecker(args.Skip(1).ToArray());
                     break;
+                case "merge-scenario-coverage":
+                    RunScenarioCoverageMerge(args.Skip(1).ToArray());
+                    break;
                 case   "version":
                 case  "-v":
                 case  "-version":
@@ -80,6 +83,22 @@ namespace Plang
             // Parses the command line options to get the checkerConfiguration.
             var configuration = new PCheckerOptions().Parse(args);
             Checker.Run(configuration);
+        }
+
+        /// <summary>
+        /// Merges the per-run scenario-coverage artifacts under a directory (recursively)
+        /// into one unified, suite-wide scenario-coverage report.
+        /// Usage: p merge-scenario-coverage [directory]  (defaults to the current directory)
+        /// </summary>
+        private static void RunScenarioCoverageMerge(string[] args)
+        {
+            var directory = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            if (!Directory.Exists(directory))
+            {
+                CommandLineOutput.WriteError($"Directory not found: {directory}");
+                return;
+            }
+            Console.Write(PChecker.SystematicTesting.ScenarioCoverageMerger.MergeDirectory(directory));
         }
 
         /// <summary>

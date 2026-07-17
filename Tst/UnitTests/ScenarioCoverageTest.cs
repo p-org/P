@@ -109,5 +109,36 @@ namespace UnitTests
             Assert.AreEqual(3, a.ScenarioMaxStatesReached["S"]);
             Assert.AreEqual(4, a.ScenarioTotalStates["S"]);
         }
+
+        [NUnit.Framework.Test]
+        public void ScenarioMerger_AggregatesAcrossTestCases()
+        {
+            var tc1 = new ScenarioCoverageArtifact
+            {
+                TestCase = "tc1",
+                Scenarios = new()
+                {
+                    new ScenarioCoverageEntry { Name = "S", Triggered = 5, UniqueTimelines = 2, MaxStatesReached = 3, TotalStates = 3 },
+                    new ScenarioCoverageEntry { Name = "Gap", Triggered = 0, UniqueTimelines = 0, MaxStatesReached = 1, TotalStates = 4 },
+                }
+            };
+            var tc2 = new ScenarioCoverageArtifact
+            {
+                TestCase = "tc2",
+                Scenarios = new()
+                {
+                    new ScenarioCoverageEntry { Name = "S", Triggered = 3, UniqueTimelines = 1, MaxStatesReached = 3, TotalStates = 3 },
+                    new ScenarioCoverageEntry { Name = "Gap", Triggered = 0, UniqueTimelines = 0, MaxStatesReached = 2, TotalStates = 4 },
+                }
+            };
+
+            var text = ScenarioCoverageMerger.Merge(new[] { tc1, tc2 });
+
+            StringAssert.Contains("across 2 test case(s)", text);
+            // S: 5+3 triggers, 2+1 unique timelines, covered in both.
+            StringAssert.Contains("S: covered in 2/2 test cases, 8 total triggers, 3 unique satisfying timelines", text);
+            // Gap: never satisfied anywhere; best partial progress is the max across test cases.
+            StringAssert.Contains("Gap: covered in 0/2 test cases, 0 total triggers, 0 unique satisfying timelines (best partial progress: 2/4 states)", text);
+        }
     }
 }

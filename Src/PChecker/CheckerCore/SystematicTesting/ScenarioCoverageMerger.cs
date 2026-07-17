@@ -1,0 +1,135 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+
+namespace PChecker.SystematicTesting
+{
+    /// <summary>
+    /// Per-scenario coverage for one test case, in a machine-readable form so that
+    /// scenario coverage can be aggregated across the many test cases in a suite
+    /// (each `p check` runs a single test case).
+    /// </summary>
+    public class ScenarioCoverageEntry
+    {
+        public string Name { get; set; }
+        public int Triggered { get; set; }
+        public int UniqueTimelines { get; set; }
+        public int MaxStatesReached { get; set; }
+        public int TotalStates { get; set; }
+    }
+
+    public class ScenarioCoverageArtifact
+    {
+        public string TestCase { get; set; }
+        public List<ScenarioCoverageEntry> Scenarios { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Writes a per-test-case scenario-coverage artifact and merges a directory of them
+    /// into one unified, suite-wide scenario-coverage report.
+    /// </summary>
+    public static class ScenarioCoverageMerger
+    {
+        /// <summary>Suffix identifying a per-run scenario-coverage artifact.</summary>
+        public const string FileSuffix = "_scenario_coverage.json";
+
+        private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
+        /// <summary>Builds the artifact for a single completed test case from its report.</summary>
+        public static ScenarioCoverageArtifact FromReport(TestReport report, string testCaseName)
+        {
+            var artifact = new ScenarioCoverageArtifact { TestCase = testCaseName };
+            foreach (var scenario in report.ScenarioTriggerCounts.Keys.OrderBy(k => k))
+            {
+                artifact.Scenarios.Add(new ScenarioCoverageEntry
+                {
+                    Name = scenario,
+                    Triggered = report.ScenarioTriggerCounts[scenario],
+                    UniqueTimelines = report.ScenarioSatisfyingTimelines.TryGetValue(scenario, out var tls) ? tls.Count : 0,
+                    MaxStatesReached = report.ScenarioMaxStatesReached.TryGetValue(scenario, out var r) ? r : 0,
+                    TotalStates = report.ScenarioTotalStates.TryGetValue(scenario, out var t) ? t : 0,
+                });
+            }
+            return artifact;
+        }
+
+        /// <summary>Serializes the artifact to <paramref name="path"/> (no-op if no scenarios).</summary>
+        public static void Write(TestReport report, string testCaseName, string path)
+        {
+            if (report.ScenarioTriggerCounts.Count == 0)
+            {
+                return;
+            }
+            File.WriteAllText(path, JsonSerializer.Serialize(FromReport(report, testCaseName), JsonOptions));
+        }
+
+        /// <summary>
+        /// Reads every <c>*_scenario_coverage.json</c> artifact under <paramref name="directory"/>
+        /// and produces a unified suite-wide report: per scenario, the total triggers and unique
+        /// satisfying timelines summed across test cases, the number of test cases that covered it,
+        /// and the best partial progress anywhere.
+        /// </summary>
+        public static string MergeDirectory(string directory)
+        {
+            var artifacts = new List<ScenarioCoverageArtifact>();
+            foreach (var file in Directory.GetFiles(directory, "*" + FileSuffix))
+            {
+                try
+                {
+                    var a = JsonSerializer.Deserialize<ScenarioCoverageArtifact>(File.ReadAllText(file));
+                    if (a != null) artifacts.Add(a);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"... Skipping unreadable scenario artifact {file}: {e.Message}");
+                }
+            }
+            return Merge(artifacts);
+        }
+
+        /// <summary>Aggregates artifacts into a unified textual report.</summary>
+        public static string Merge(IReadOnlyList<ScenarioCoverageArtifact> artifacts)
+        {
+            // scenario name -> aggregate
+            var triggered = new Dictionary<string, int>();
+            var uniqueTimelines = new Dictionary<string, int>();
+            var testCasesCovered = new Dictionary<string, int>();
+            var testCasesTotal = new Dictionary<string, int>();
+            var bestReached = new Dictionary<string, int>();
+            var totalStates = new Dictionary<string, int>();
+
+            foreach (var artifact in artifacts)
+            {
+                foreach (var s in artifact.Scenarios)
+                {
+                    triggered[s.Name] = triggered.GetValueOrDefault(s.Name) + s.Triggered;
+                    uniqueTimelines[s.Name] = uniqueTimelines.GetValueOrDefault(s.Name) + s.UniqueTimelines;
+                    testCasesTotal[s.Name] = testCasesTotal.GetValueOrDefault(s.Name) + 1;
+                    if (s.Triggered > 0) testCasesCovered[s.Name] = testCasesCovered.GetValueOrDefault(s.Name) + 1;
+                    if (s.MaxStatesReached > bestReached.GetValueOrDefault(s.Name)) bestReached[s.Name] = s.MaxStatesReached;
+                    if (s.TotalStates > 0) totalStates[s.Name] = s.TotalStates;
+                }
+            }
+
+            var report = new StringBuilder();
+            report.AppendLine($"Unified scenario coverage across {artifacts.Count} test case(s):");
+            foreach (var scenario in triggered.Keys.OrderBy(k => k))
+            {
+                report.Append($"  {scenario}: covered in {testCasesCovered.GetValueOrDefault(scenario)}/{testCasesTotal[scenario]} test cases, ");
+                report.Append($"{triggered[scenario]} total triggers, {uniqueTimelines[scenario]} unique satisfying timelines");
+                if (triggered[scenario] == 0 && totalStates.TryGetValue(scenario, out var total) && total > 0)
+                {
+                    report.Append($" (best partial progress: {bestReached.GetValueOrDefault(scenario)}/{total} states)");
+                }
+                report.AppendLine();
+            }
+            return report.ToString();
+        }
+    }
+}

@@ -209,6 +209,17 @@ namespace PChecker.Testing
             var pintPath = directory + file + "_pchecker_summary.txt";
             Console.WriteLine($"..... Writing {pintPath}");
             File.WriteAllText(pintPath, testReport.GetSummaryText(Profiler));
+
+            // Emit a machine-readable per-test-case scenario-coverage artifact so coverage
+            // can be aggregated across the suite (ScenarioCoverageMerger.MergeDirectory).
+            if (testReport.ScenarioTriggerCounts.Count > 0)
+            {
+                var testCase = _checkerConfiguration.TestCaseName;
+                var suffix = string.IsNullOrEmpty(testCase) ? "" : "_" + testCase;
+                var scenarioPath = directory + file + suffix + ScenarioCoverageMerger.FileSuffix;
+                Console.WriteLine($"..... Writing {scenarioPath}");
+                ScenarioCoverageMerger.Write(testReport, testCase, scenarioPath);
+            }
             
             Console.WriteLine($"... Elapsed {Profiler.GetElapsedTime()} sec.");
 

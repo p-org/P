@@ -526,7 +526,7 @@ PYTHONPATH=src pytest tests/test_workflow_persistence.py -v
 When working with P programs, be aware of these syntax patterns and common pitfalls:
 
 ### Reserved Keywords
-Never use these as identifiers: `var`, `type`, `enum`, `event`, `on`, `do`, `goto`, `data`, `send`, `announce`, `receive`, `case`, `raise`, `machine`, `state`, `hot`, `cold`, `start`, `spec`, `module`, `test`, `main`, `fun`, `observes`, `entry`, `exit`, `with`, `union`, `foreach`, `else`, `while`, `return`, `break`, `continue`, `ignore`, `defer`, `assert`, `print`, `new`, `sizeof`, `keys`, `values`, `choose`, `format`, `if`, `halt`, `this`, `as`, `to`, `in`, `default`, `Interface`, `true`, `false`, `int`, `bool`, `float`, `string`, `seq`, `map`, `set`, `any`
+Never use these as identifiers: `var`, `type`, `enum`, `event`, `on`, `do`, `goto`, `data`, `send`, `announce`, `receive`, `case`, `raise`, `machine`, `state`, `hot`, `cold`, `start`, `spec`, `scenario`, `module`, `test`, `main`, `fun`, `observes`, `entry`, `exit`, `with`, `union`, `foreach`, `else`, `while`, `return`, `break`, `continue`, `ignore`, `defer`, `assert`, `print`, `new`, `sizeof`, `keys`, `values`, `choose`, `format`, `if`, `halt`, `this`, `as`, `to`, `in`, `default`, `Interface`, `true`, `false`, `int`, `bool`, `float`, `string`, `seq`, `map`, `set`, `any`
 
 ### Common P Syntax Mistakes to Avoid
 

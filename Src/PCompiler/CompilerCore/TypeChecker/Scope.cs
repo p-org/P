@@ -496,6 +496,21 @@ namespace Plang.Compiler.TypeChecker
             return specMachine;
         }
 
+        public Machine Put(string name, PParser.ScenarioMachineDeclContext tree)
+        {
+            // A scenario is a coverage monitor: registered like a spec machine
+            // (no corresponding interface), with IsScenario set on the Machine.
+            var scenarioMachine = new Machine(name, tree);
+            CheckConflicts(
+                scenarioMachine,
+                Namespace(machines),
+                Namespace(interfaces),
+                Namespace(enums),
+                Namespace(typedefs));
+            machines.Add(name, scenarioMachine);
+            return scenarioMachine;
+        }
+
         public Function Put(string name, PParser.FunDeclContext tree)
         {
             var function = new Function(name, tree);

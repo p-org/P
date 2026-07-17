@@ -371,7 +371,30 @@ namespace Plang.Compiler.TypeChecker
 
             return specMachine;
         }
-        
+
+        public override object VisitScenarioMachineDecl(PParser.ScenarioMachineDeclContext context)
+        {
+            // SCENARIO name=Iden — a coverage monitor; identical shape to a spec machine.
+            var scenarioMachine = (Machine) nodesToDeclarations.Get(context);
+
+            // scenario (coverage) machines neither send nor receive events.
+            scenarioMachine.Receives = new EventSet();
+            scenarioMachine.Sends = new EventSet();
+
+            // OBSERVES eventSetLiteral
+            scenarioMachine.Observes = new EventSet();
+            foreach (var pEvent in (Event[]) Visit(context.eventSetLiteral())) scenarioMachine.Observes.AddEvent(pEvent);
+
+            // machineBody
+            using (currentScope.NewContext(scenarioMachine.Scope))
+            using (currentMachine.NewContext(scenarioMachine))
+            {
+                Visit(context.machineBody());
+            }
+
+            return scenarioMachine;
+        }
+
         public override object VisitMachineBody(PParser.MachineBodyContext context)
         {
             foreach (var machineEntryContext in context.machineEntry())

@@ -223,6 +223,14 @@ namespace Plang.Compiler.TypeChecker
             return VisitChildrenWithNewScope(decl, context);
         }
 
+        public override object VisitScenarioMachineDecl(PParser.ScenarioMachineDeclContext context)
+        {
+            var symbolName = context.name.GetText();
+            var decl = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return VisitChildrenWithNewScope(decl, context);
+        }
+
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
             foreach (var varName in context.idenList()._names)

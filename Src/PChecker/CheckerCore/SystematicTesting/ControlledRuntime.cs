@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using PChecker.Coverage;
 using PChecker.Exceptions;
 using PChecker.Random;
+using PChecker.Runtime;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Logging;
 using PChecker.Runtime.StateMachines;
@@ -926,6 +927,13 @@ namespace PChecker.SystematicTesting
 
             foreach (var monitor in Monitors)
             {
+                // Coverage (scenario) monitors are exempt: an unsatisfied scenario left in
+                // a hot state is uncovered, not a liveness bug.
+                if (PModule.coverageMonitors.Contains(monitor.GetType()))
+                {
+                    continue;
+                }
+
                 if (monitor.IsInHotState(out var stateName))
                 {
                     var message = string.Format(CultureInfo.InvariantCulture,

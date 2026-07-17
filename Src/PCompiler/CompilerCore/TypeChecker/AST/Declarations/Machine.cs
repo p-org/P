@@ -16,13 +16,25 @@ namespace Plang.Compiler.TypeChecker.AST.Declarations
 
         public Machine(string name, ParserRuleContext sourceNode)
         {
-            Debug.Assert(sourceNode is PParser.ImplMachineDeclContext || sourceNode is PParser.SpecMachineDeclContext);
+            Debug.Assert(sourceNode is PParser.ImplMachineDeclContext
+                         || sourceNode is PParser.SpecMachineDeclContext
+                         || sourceNode is PParser.ScenarioMachineDeclContext);
             Name = name;
             SourceLocation = sourceNode;
-            IsSpec = sourceNode is PParser.SpecMachineDeclContext;
+            // A scenario is a coverage monitor: it reuses all spec-machine machinery
+            // (IsSpec == true) but is additionally flagged as a scenario so it is
+            // counted for scenario coverage and exempt from the liveness check.
+            IsScenario = sourceNode is PParser.ScenarioMachineDeclContext;
+            IsSpec = sourceNode is PParser.SpecMachineDeclContext || IsScenario;
         }
 
         public bool IsSpec { get; }
+
+        /// <summary>
+        /// True if this monitor was declared with the <c>scenario</c> keyword: it is a
+        /// coverage monitor whose accepting (cold) state marks a scenario satisfied.
+        /// </summary>
+        public bool IsScenario { get; }
         public uint? Assume { get; set; }
         public uint? Assert { get; set; }
         public IEventSet Receives { get; set; }

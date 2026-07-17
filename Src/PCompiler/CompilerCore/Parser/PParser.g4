@@ -56,6 +56,7 @@ topDecl : typeDefDecl
         | interfaceDecl
         | implMachineDecl
         | specMachineDecl
+        | scenarioMachineDecl
         | funDecl
         | pureDecl
         | namedModuleDecl
@@ -107,6 +108,12 @@ receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
               ;
 
 specMachineDecl : SPEC name=iden OBSERVES eventSetLiteral machineBody ;
+
+// A scenario is a coverage monitor: it observes events and walks a state
+// machine whose accepting (cold) state marks the scenario satisfied. It reuses
+// the spec-machine machinery but is counted for scenario coverage and is exempt
+// from the liveness-violation check when left unsatisfied.
+scenarioMachineDecl : SCENARIO name=iden OBSERVES eventSetLiteral machineBody ;
 
 machineBody : LBRACE machineEntry* RBRACE;
 machineEntry : varDecl

@@ -486,9 +486,17 @@ namespace Plang.Compiler.Backend.CSharp
                 }
             }
 
+            context.WriteLine(output, "PModule.coverageMonitors.Clear();");
             foreach (var monitor in monitorMap.Keys)
             {
                 context.WriteLine(output, $"runtime.RegisterMonitor<{context.Names.GetNameForDecl(monitor)}>();");
+                // Scenario monitors are coverage monitors: register them so the runtime
+                // counts their satisfaction and exempts them from the liveness check.
+                if (monitor.IsScenario)
+                {
+                    context.WriteLine(output,
+                        $"PModule.coverageMonitors.Add(typeof({context.Names.GetNameForDecl(monitor)}));");
+                }
             }
 
             context.WriteLine(output, "}");

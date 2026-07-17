@@ -49,6 +49,7 @@ PRINT     : 'print' ;
 RAISE     : 'raise' ;
 RECEIVE   : 'receive' ;
 RETURN    : 'return' ;
+SCENARIO  : 'scenario' ;
 SEND      : 'send' ;
 SIZEOF    : 'sizeof' ;
 SPEC      : 'spec' ;

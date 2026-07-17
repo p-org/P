@@ -66,8 +66,11 @@ public class ControlledRandom: IRandomValueGenerator
     
     public ControlledRandom Mutate()
     {
-        return new ControlledRandom(Utils.MutateRandomChoices(IntChoices, 5, 5, IntChoices.Random),
-            Utils.MutateRandomChoices(DoubleChoices, 5, 5, DoubleChoices.Random)
+        // Mutate ~5 integers on average (the paper's target): ~5 mutation sites of size 1,
+        // not ~5 runs of ~5 (which changed ~25). Small, localized changes keep the mutated
+        // schedule similar-but-distinct from its parent.
+        return new ControlledRandom(Utils.MutateRandomChoices(IntChoices, 5, 1, IntChoices.Random),
+            Utils.MutateRandomChoices(DoubleChoices, 5, 1, DoubleChoices.Random)
         );
     }
     

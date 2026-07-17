@@ -14,7 +14,15 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
 {
     public record StrategyGenerator(ControlledRandom InputGenerator, IScheduler Scheduler);
 
-    public record GeneratorRecord(int Priority, StrategyGenerator Generator, List<int> MinHash);
+    // Priority (ordering score) is decoupled from MutationBudget: Priority ranks saved
+    // generators for exploration order, while MutationBudget is how many mutations to
+    // spend on this parent. Both derive from the normalized diversity, but keeping them
+    // separate stops the [0,1] diversity metric from doubling as an integer budget.
+    public record GeneratorRecord(double Priority, int MutationBudget, StrategyGenerator Generator, List<int> MinHash);
+
+    // Default mutation budget for generators with no diversity-derived budget yet
+    // (the first parent's exploration and freshly-explored inputs).
+    private const int DefaultMutationBudget = 50;
 
     internal StrategyGenerator Generator;
 
@@ -113,19 +121,24 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
         ScheduledSteps = 0;
     }
 
-    private int ComputeDiversity(string timeline, List<int> hash)
+    /// <summary>
+    /// Diversity of a timeline as 1 - Jaccard(new, closest prior), in [0,1] (the Jaccard
+    /// index is estimated from the MinHash signatures). Returns 0 for a timeline already
+    /// seen exactly (a duplicate to discard); 1 for the first timeline (maximally novel).
+    /// </summary>
+    private double ComputeDiversity(string timeline, List<int> hash)
     {
         if (!_visitedTimelines.Add(timeline))
         {
             return 0;
         }
 
-        if (_savedGenerators.Count == 0)
+        if (_savedGenerators.Count == 0 || hash.Count == 0)
         {
-            return 20;
+            return 1.0;
         }
 
-        var maxSim = int.MinValue;
+        var maxSim = 0;
         foreach (var record in _savedGenerators)
         {
             var timelineHash = record.MinHash;
@@ -141,8 +154,8 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
             maxSim = Math.Max(maxSim, similarity);
         }
 
-
-        return (hash.Count - maxSim) + 20;
+        // 1 - estimated Jaccard similarity to the most-similar prior timeline.
+        return 1.0 - (double)maxSim / hash.Count;
     }
 
     /// <summary>
@@ -153,9 +166,9 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
         var timelineId = timelineObserver.GetAbstractTimeline();
         var timelineMinhash = timelineObserver.GetTimelineMinhash();
 
-        int diversityScore = ComputeDiversity(timelineId, timelineMinhash);
+        double diversity = ComputeDiversity(timelineId, timelineMinhash);
 
-        if (diversityScore == 0)
+        if (diversity <= 0)
         {
             return;
         }
@@ -166,11 +179,13 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
         // than the paper's strict diversity x compliance product) keeps diverse-but-
         // scenario-irrelevant schedules from being discarded, since scenarios are always
         // auto-attached here.
-        int priority = (int)System.Math.Ceiling(diversityScore * (1.0 + scenarioCompliance));
+        double priority = diversity * (1.0 + scenarioCompliance);
+        // Mutation budget is proportional to novelty (diversity) but kept as a separate
+        // integer so the [0,1] priority metric never doubles as the budget.
+        int mutationBudget = Math.Max(1, (int)Math.Round(diversity * DefaultMutationBudget));
 
-        if (priority > 0)
         {
-            var record = new GeneratorRecord(priority, Generator, timelineMinhash);
+            var record = new GeneratorRecord(priority, mutationBudget, Generator, timelineMinhash);
             if (_savedGenerators.Count == 0)
             {
                 _savedGenerators.Add(record);
@@ -213,7 +228,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
             {
                 _currentParent = _savedGenerators.First();
                 _visitedGenerators.Add(_currentParent);
-                _pendingMutations = 50;
+                _pendingMutations = _currentParent.MutationBudget;
             }
 
             if (_pendingMutations == 0)
@@ -225,7 +240,7 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
                     if (_visitedGenerators.Contains(generator)) continue;
                     _currentParent = generator;
                     _visitedGenerators.Add(generator);
-                    _pendingMutations = generator.Priority;
+                    _pendingMutations = generator.MutationBudget;
                     found = true;
                     break;
                 }
@@ -237,13 +252,13 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
                         _visitedGenerators.Clear();
                         _currentParent = _savedGenerators.First();
                         _visitedGenerators.Add(_currentParent);
-                        _pendingMutations = _currentParent.Priority;
+                        _pendingMutations = _currentParent.MutationBudget;
                     }
                     else
                     {
                         _shouldExploreNew = true;
                         _currentParent = null;
-                        _pendingMutations = 50;
+                        _pendingMutations = DefaultMutationBudget;
                     }
                 }
             }

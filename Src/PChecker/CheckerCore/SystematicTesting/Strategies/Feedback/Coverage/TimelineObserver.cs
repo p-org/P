@@ -109,8 +109,11 @@ internal class TimelineObserver : IControlledRuntimeLog
 
     public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
     {
-        string actor = id.Type;
-        
+        // Key the timeline on the receiver machine INSTANCE (id.Name), not its type, so
+        // the abstract Lamport timeline <M, e1, e2> is per receiver as the paper defines
+        // it — distinct instances of the same machine class have distinct timelines.
+        string actor = id.Name;
+
         _allEvents.TryAdd(actor, new());
         _orderedEvents.TryAdd(actor, new());
 

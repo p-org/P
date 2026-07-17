@@ -618,6 +618,13 @@ namespace PChecker.Runtime.Specifications
         /// </summary>
         internal void CheckLivenessTemperature()
         {
+            // Coverage (scenario) monitors are exempt from liveness checking: an
+            // unsatisfied scenario lingering in a hot state is uncovered, not a bug.
+            if (PChecker.Runtime.PModule.coverageMonitors.Contains(GetType()))
+            {
+                return;
+            }
+
             if (ActiveState.IsHot &&
                 Runtime.CheckerConfiguration.LivenessTemperatureThreshold > 0)
             {

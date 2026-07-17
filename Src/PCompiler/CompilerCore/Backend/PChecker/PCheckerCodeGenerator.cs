@@ -27,6 +27,11 @@ namespace Plang.Compiler.Backend.CSharp
         [ThreadStatic]
         private static List<Variable> _globalParams;
 
+        // Scenario (coverage) monitors are auto-attached to every test/impl, so they
+        // are collected once here and merged into each test's monitor map.
+        [ThreadStatic]
+        private static List<Machine> _scenarioMonitors;
+
         private string GetGlobalParamAndLocalVariableName(CompilationContext context, Variable v)
         {
             return _globalParams.Contains(v) ? $"({ICodeGenerator.GlobalConfigName}.{v.Name})" : context.Names.GetNameForDecl(v);
@@ -100,6 +105,7 @@ namespace Plang.Compiler.Backend.CSharp
             WriteSourcePrologue(context, source.Stream);
 
             _globalParams = globalScope.GetGlobalVariables();
+            _scenarioMonitors = globalScope.Machines.Where(m => m.IsScenario).ToList();
 
             DeclareGlobalParams(context, source.Stream);
             
@@ -356,8 +362,9 @@ namespace Plang.Compiler.Backend.CSharp
             WriteInitializeGlobalParams(context, output, assignment);
             WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, safety.ModExpr.ModuleInfo.InterfaceDef);
-            WriteInitializeMonitorObserves(context, output, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
-            WriteInitializeMonitorMap(context, output, safety.ModExpr.ModuleInfo.MonitorMap);
+            var safetyMonitorMap = MonitorMapWithScenarios(safety.ModExpr.ModuleInfo.MonitorMap, safety.ModExpr.ModuleInfo.InterfaceDef);
+            WriteInitializeMonitorObserves(context, output, safetyMonitorMap.Keys);
+            WriteInitializeMonitorMap(context, output, safetyMonitorMap);
             WriteTestFunction(context, output, safety.Main, true);
             context.WriteLine(output, "}");
 
@@ -371,12 +378,37 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, $"public class {context.Names.GetNameForDecl(impl)} {{");
             WriteInitializeLinkMap(context, output, impl.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, impl.ModExpr.ModuleInfo.InterfaceDef);
-            WriteInitializeMonitorObserves(context, output, impl.ModExpr.ModuleInfo.MonitorMap.Keys);
-            WriteInitializeMonitorMap(context, output, impl.ModExpr.ModuleInfo.MonitorMap);
+            var implMonitorMap = MonitorMapWithScenarios(impl.ModExpr.ModuleInfo.MonitorMap, impl.ModExpr.ModuleInfo.InterfaceDef);
+            WriteInitializeMonitorObserves(context, output, implMonitorMap.Keys);
+            WriteInitializeMonitorMap(context, output, implMonitorMap);
             WriteTestFunction(context, output, impl.Main, false);
             context.WriteLine(output, "}");
 
             WriteNameSpaceEpilogue(context, output);
+        }
+
+        /// <summary>
+        /// Auto-attaches scenario (coverage) monitors to a test/impl: every scenario is
+        /// added to the monitor map (observing all machines in the module) in addition to
+        /// any explicitly-asserted spec monitors. Scenarios need no `assert`.
+        /// </summary>
+        private static IDictionary<Machine, IEnumerable<Interface>> MonitorMapWithScenarios(
+            IDictionary<Machine, IEnumerable<Interface>> monitorMap,
+            IDictionary<Interface, Machine> interfaceDef)
+        {
+            var map = new Dictionary<Machine, IEnumerable<Interface>>(monitorMap);
+            if (_scenarioMonitors != null && interfaceDef.Count > 0)
+            {
+                var allInterfaces = interfaceDef.Keys.ToList();
+                foreach (var scenario in _scenarioMonitors)
+                {
+                    if (!map.ContainsKey(scenario))
+                    {
+                        map[scenario] = allInterfaces;
+                    }
+                }
+            }
+            return map;
         }
 
         private void WriteInitializeMonitorObserves(CompilationContext context, StringWriter output,

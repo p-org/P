@@ -525,6 +525,9 @@ namespace PChecker.SystematicTesting
 
             TimelineObserver timelineObserver = new TimelineObserver();
 
+            // Observes which scenario (coverage) monitors are satisfied this iteration.
+            ScenarioComplianceObserver scenarioObserver = new ScenarioComplianceObserver();
+
             // Logger used to intercept the program output if no custom logger
             // is installed and if verbosity is turned off.
             InMemoryLogger runtimeLogger = null;
@@ -539,6 +542,7 @@ namespace PChecker.SystematicTesting
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy);
 
                 runtime.RegisterLog(timelineObserver);
+                runtime.RegisterLog(scenarioObserver);
                 RegisterObservers(runtime);
 
 
@@ -595,6 +599,22 @@ namespace PChecker.SystematicTesting
                 runtime.LogWriter.LogCompletion();
 
                 GatherTestingStatistics(runtime, timelineObserver);
+
+                // Record scenario coverage: track every declared scenario (so uncovered
+                // ones are reported too), then count any satisfied this iteration, keyed
+                // by this schedule's abstract timeline.
+                foreach (var scenario in scenarioObserver.AllScenarioNames)
+                {
+                    TestReport.EnsureScenarioTracked(scenario);
+                }
+                if (scenarioObserver.SatisfiedScenarios.Count > 0)
+                {
+                    var scenarioTimeline = timelineObserver.GetAbstractTimeline();
+                    foreach (var scenario in scenarioObserver.SatisfiedScenarios)
+                    {
+                        TestReport.RecordScenarioSatisfied(scenario, scenarioTimeline);
+                    }
+                }
 
                 if (!IsReplayModeEnabled && TestReport.NumOfFoundBugs > 0)
                 {

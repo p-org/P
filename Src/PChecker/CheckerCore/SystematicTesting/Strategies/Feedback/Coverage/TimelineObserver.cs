@@ -46,7 +46,11 @@ internal class TimelineObserver : IControlledRuntimeLog
     public List<int> GetTimelineMinhash()
     {
         List<int> minHash = new();
-        var timelineHash = _timelines.Select(it => it.GetHashCode());
+        // Use a deterministic, process-independent hash of each timeline tuple.
+        // Tuple/string GetHashCode is randomized per process in modern .NET, which
+        // would make the minhash — and thus ComputeDiversity / generator
+        // prioritization — non-reproducible under a fixed --seed.
+        var timelineHash = _timelines.Select(it => StableHash(it.Item1, it.Item2, it.Item3)).ToList();
         foreach (var (a, b) in Coefficients)
         {
             int minValue = Int32.MaxValue;
@@ -58,6 +62,28 @@ internal class TimelineObserver : IControlledRuntimeLog
             minHash.Add(minValue);
         }
         return minHash;
+    }
+
+    /// <summary>
+    /// Deterministic 32-bit FNV-1a hash of a timeline tuple, stable across processes
+    /// (unlike string.GetHashCode). Fields are separated so distinct tuples do not alias.
+    /// </summary>
+    private static int StableHash(string a, string b, string c)
+    {
+        unchecked
+        {
+            const uint prime = 16777619;
+            uint hash = 2166136261;
+            foreach (var s in new[] { a, b, c })
+            {
+                foreach (var by in System.Text.Encoding.UTF8.GetBytes(s))
+                {
+                    hash = (hash ^ by) * prime;
+                }
+                hash = (hash ^ 0x1f) * prime; // field separator
+            }
+            return (int)hash;
+        }
     }
 
     public void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType)

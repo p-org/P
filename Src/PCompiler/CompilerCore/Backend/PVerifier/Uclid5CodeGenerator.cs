@@ -53,6 +53,12 @@ public class PVerifierCodeGenerator : ICodeGenerator
         }
     }
 
+    private string ChooseExprHelper(ChooseExpr cexpr)
+    {
+        _chooseToDeclare.Add(cexpr.SubExpr.Type);
+        return $"{GetChooseName(cexpr.SubExpr.Type)}({ExprToString(cexpr.SubExpr)})";
+    }
+
     public void Compile(ICompilerConfiguration job)
     {
         HashSet<string> failMessages = [];
@@ -1656,28 +1662,28 @@ public class PVerifierCodeGenerator : ICodeGenerator
         foreach (var choosePt in _chooseToDeclare)
         {
             var proc = GetChooseName(choosePt);
-            EmitLine($"procedure [noinline] {proc}(inp: {TypeToString(choosePt)})");
+            var inputType = TypeToString(choosePt);
             switch (choosePt)
             {
                 case MapType mapType:
-                    EmitLine($"\treturns (outp: {TypeToString(mapType.KeyType)})");
-                    EmitLine($"\tensures {OptionIsSome(mapType.ValueType, "inp[outp]")};");
+                    var chosenMapKey = $"{proc}(inp)";
+                    var mapChoiceInDomain = OptionIsSome(mapType.ValueType, $"inp[{chosenMapKey}]");
+                    EmitLine($"function {proc}(inp: {inputType}) : {TypeToString(mapType.KeyType)};");
+                    EmitLine($"axiom forall (inp: {inputType}) :: {mapChoiceInDomain};");
                     break;
                 case SetType setType:
-                    EmitLine($"\treturns (outp: {TypeToString(setType.ElementType)})");
-                    EmitLine($"\tensures inp[outp];");
+                    EmitLine($"function {proc}(inp: {inputType}) : {TypeToString(setType.ElementType)};");
+                    EmitLine($"axiom forall (inp: {inputType}) :: inp[{proc}(inp)];");
                     break;
                 case PrimitiveType pt when pt.Equals(PrimitiveType.Int):
-                    EmitLine($"\treturns (outp: {TypeToString(pt)})");
-                    EmitLine($"\tensures 0 <= outp && outp <= inp;");
+                    EmitLine($"function {proc}(inp: {inputType}) : {TypeToString(pt)};");
+                    EmitLine($"axiom forall (inp: {inputType}) :: 0 <= {proc}(inp) && {proc}(inp) <= inp;");
                     break;
                 default:
                     throw new NotSupportedException(
                         $"Not supported choose type: {choosePt} ({choosePt.OriginalRepresentation})");
             }
-
-            EmitLine("{");
-            EmitLine("}\n");
+            EmitLine("");
         }
     }
 
@@ -1740,12 +1746,19 @@ public class PVerifierCodeGenerator : ICodeGenerator
                 return;
             case AssignStmt { Value: ChooseExpr, Location: VariableAccessExpr } cstmt:
                 var chooseExpr = (ChooseExpr)cstmt.Value;
-                _chooseToDeclare.Add(chooseExpr.SubExpr.Type);
                 var cvax = (VariableAccessExpr)cstmt.Location;
                 var cv = ExprToString(cvax);
-                var cf = GetChooseName(chooseExpr.SubExpr.Type);
-                var arg = ExprToString(chooseExpr.SubExpr);
-                EmitLine($"call ({cv}) = {cf}({arg});");
+                if (chooseExpr.SubExpr is null)
+                {
+                    EmitLine($"{cv} = *;");
+                }
+                else
+                {
+                    _chooseToDeclare.Add(chooseExpr.SubExpr.Type);
+                    var cf = GetChooseName(chooseExpr.SubExpr.Type);
+                    var arg = ExprToString(chooseExpr.SubExpr);
+                    EmitLine($"{cv} = {cf}({arg});");
+                }
                 return;
             case AssignStmt astmt:
                 switch (astmt.Location)
@@ -2032,6 +2045,8 @@ public class PVerifierCodeGenerator : ICodeGenerator
             ContainsExpr cexp when cexp.Collection.Type.Canonicalize() is SetType =>
                 $"{ExprToString(cexp.Collection)}[{ExprToString(cexp.Item)}]",
             DefaultExpr dexp => DefaultValue(dexp.Type),
+            ChooseExpr { SubExpr: null } => "*",
+            ChooseExpr cexpr => ChooseExprHelper(cexpr),
             QuantExpr { Quant: QuantType.Forall } qexpr =>
                 $"(forall ({BoundVars(qexpr.Bound)}) :: {Guard(qexpr.Bound, qexpr.Difference, true)}({ExprToString(qexpr.Body)}))",
             QuantExpr { Quant: QuantType.Exists } qexpr =>

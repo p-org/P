@@ -188,21 +188,35 @@ run2: bugs=0 sched=500 timelines=17  scenarios: WithdrawThenResponse triggered 4
 IDENTICAL = True
 ```
 
-## E5 — Cross-test-case unified merge
+## E5 — Understandable per-run + unified reports
 
-`p merge-scenario-coverage` over both ClientServer test cases (`tcSingleClient`
-+ `tcMultipleClients`) produces one suite-wide report — per scenario: how many
-test cases covered it, total triggers, and unique satisfying timelines summed
-across cases (impossible scenarios carry their best partial progress):
+The report surfaces were redesigned for scannability: each **leads with a summary
+count**, groups **covered scenarios** first and **coverage gaps** last, marks each
+`[covered]` / `[  GAP  ]`, and the merge lists **which test cases** cover each scenario.
 
+**Per-run** (`p check`, one test case):
 ```
-Unified scenario coverage across 2 test case(s):
-  ErrorThenSuccess:         covered in 2/2 test cases, 915 total triggers, 26 unique satisfying timelines
-  ImpossibleRespFirst:      covered in 0/2 test cases,   0 total triggers,  0 unique satisfying timelines (best partial progress: 2/4 states)
-  TwoSuccessfulWithdrawals: covered in 2/2 test cases, 896 total triggers, 24 unique satisfying timelines
-  WithdrawError:            covered in 2/2 test cases, 915 total triggers, 26 unique satisfying timelines
-  WithdrawThenResponse:     covered in 2/2 test cases, 998 total triggers, 27 unique satisfying timelines
+..... Scenario coverage: 4/5 scenarios covered (1 gap)
+.....   [covered] ErrorThenSuccess: triggered in 399 schedules, 19 unique satisfying timelines
+.....   [covered] TwoSuccessfulWithdrawals: triggered in 399 schedules, 19 unique satisfying timelines
+.....   [covered] WithdrawError: triggered in 399 schedules, 19 unique satisfying timelines
+.....   [covered] WithdrawThenResponse: triggered in 399 schedules, 19 unique satisfying timelines
+.....   [  GAP  ] ImpossibleRespFirst: not covered (best partial progress: 2/4 states)
 ```
+
+**Unified** — `p merge-scenario-coverage` over both ClientServer test cases
+(`tcSingleClient` + `tcMultipleClients`):
+```
+Unified scenario coverage across 2 test cases:
+  4/5 scenarios covered in >=1 test case; 1 coverage gap.
+  [covered] ErrorThenSuccess: covered in 2/2 test cases (tcSingleClient, tcMultipleClients); 750 total triggers, 23 unique satisfying timelines
+  [covered] TwoSuccessfulWithdrawals: covered in 2/2 test cases (tcSingleClient, tcMultipleClients); 731 total triggers, 21 unique satisfying timelines
+  [covered] WithdrawError: covered in 2/2 test cases (tcSingleClient, tcMultipleClients); 750 total triggers, 23 unique satisfying timelines
+  [covered] WithdrawThenResponse: covered in 2/2 test cases (tcSingleClient, tcMultipleClients); 798 total triggers, 24 unique satisfying timelines
+  [  GAP  ] ImpossibleRespFirst: never covered in any of 2 test cases; best progress anywhere 2/4 states
+```
+The gap (`ImpossibleRespFirst`, structurally unsatisfiable) is called out explicitly
+rather than buried among the counters; a real coverage gap would read the same way.
 
 ## E6 — D4 scenario-steering ablation
 

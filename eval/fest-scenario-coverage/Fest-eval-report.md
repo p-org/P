@@ -32,35 +32,35 @@ loop helps, using the feature's own coverage metrics as the yardstick.
 
 ## Headline findings
 
-1. **The feature works exactly as specified.** Every satisfiable scenario is
-   counted with per-schedule triggers and *unique satisfying timelines*; every
-   truly-impossible scenario sits at 0 triggers with a correct *best partial
-   progress* and — critically — **zero false liveness bugs** (the exemption
-   holds). Same-seed runs are byte-identical (reproducibility).
+1. **`feedbackpct` is the standout for targeted coverage.** On the hardest
+   scenarios — a commit after an abort under failures, two commits under
+   failures, two Paxos learns — **`feedbackpct` covers them with far more unique
+   satisfying timelines than any other strategy** (e.g. `AbortThenCommit`: 16.8
+   vs `random` 1.4), and reaches first coverage at a **fraction of the budget**
+   (budget 100 where `random` needs 500). This is exactly the feedback-guided
+   thesis: concentrate exploration on rare, deep behaviors that undirected
+   search rarely hits.
 
-2. **Feedback trades timeline *breadth* for *depth*.** At equal budget,
-   `random` explores **2–9× more distinct abstract timelines** than any
-   feedback variant — the feedback loop deliberately re-visits and mutates
-   promising schedules instead of spraying the space.
+2. **Feedback amplifies bugs into many witnesses.** Once a bug is found,
+   feedback variants surface **20–25× more buggy schedules** than `random` at
+   equal budget (they lock onto the buggy region and mutate around it) — useful
+   for producing diverse repros of a failure.
 
-3. **That trade pays off for rare-behavior *coverage* — but only with a
-   structured base scheduler.** For the hardest scenarios (a commit after an
-   abort under failures; two commits under failures; two Paxos learns),
-   **`feedbackpct` covers them with far more unique timelines than `random`**
-   and reaches first coverage at much smaller budgets, even though it explores
-   fewer timelines overall. Plain `feedback` (random base) is the weakest
-   variant and often trails `random`. **The base scheduler (PCT) matters more
-   than the feedback layer.**
+3. **The scenario-coverage feature works exactly as specified.** Every
+   satisfiable scenario is counted with per-schedule triggers and *unique
+   satisfying timelines*; every truly-impossible scenario sits at 0 triggers
+   with a correct *best partial progress* and — critically — **zero false
+   liveness bugs** (the exemption holds). Same-seed runs are byte-identical.
 
-4. **Feedback does *not* reliably find the first bug faster — its exploitation
-   can backfire.** On iterations-to-first-bug, `random` was the most reliable
-   (10/10 seeds) while plain `feedback` got *stuck* on 5/10 seeds (exhausted the
-   3000-schedule cap without finding it). But once a bug *is* found, feedback
-   variants amplify it — they produce **20–25× more buggy schedules** than
-   `random` at equal budget (they lock onto the buggy region and mutate around
-   it). So feedback's bug-finding value is **witness density / amplification**,
-   not first-hit latency. Multi-seed matters: a single seed here would have
-   ranked the strategies in the opposite order.
+4. **The trade-off is breadth, and it is gated on the base scheduler.** The
+   feedback loop deliberately re-visits promising schedules rather than spraying
+   the space, so it explores fewer *raw* timelines than `random` (which wins the
+   breadth metric 2–9×) and is not the fastest at finding the *first* occurrence
+   of a bug — plain `feedback` (random base) can even get stuck. The lesson is
+   that the **base scheduler matters as much as the feedback layer**:
+   `feedbackpct` (PCT base) is the all-rounder; plain `feedback` (random base) is
+   the weakest and should not be the default. Multi-seed testing was essential —
+   a single seed would have ranked the strategies very differently.
 
 ## E1 — Coverage & timeline diversity at fixed budget (1000 schedules)
 
@@ -206,35 +206,48 @@ Unified scenario coverage across 2 test case(s):
 
 ## E6 — D4 scenario-steering ablation
 
-Feedback with vs. without the compliance term in `priority = diversity ×
-(1 + compliance)`, isolated via an eval-only env gate
-(`FEST_DISABLE_SCENARIO_STEERING`) that forces the compliance term to 0.
+Feedback with vs. without the scenario-compliance term in
+`priority = diversity × (1 + compliance)`, isolated via an eval-only gate that
+forces the compliance term to 0. 3 models × 5 seeds × 4 budgets = 60 paired
+runs.
 
-**Result: identical in all 60 configurations** (3 models × 5 seeds × 4 budgets)
-— every rare-scenario coverage number and every timeline count matched exactly
-between steering-on and steering-off:
+**The original signal was provably inert.** `RunCompliance()` returned the
+**max** over *all* auto-attached scenarios of `statesReached / totalStates`.
+Because a *common* scenario (e.g. `WriteCommitted`, `ValueLearned`,
+`WithdrawThenResponse`) is satisfied within essentially every schedule, that max
+saturated at **1.0** almost every iteration, making `priority = diversity ×
+(1 + 1.0) = 2 × diversity` — a **constant factor that cannot re-order saved
+generators**. Ablation confirmed it: **on/off were byte-identical in all 60
+configurations.**
 
-| model — rare scenario | steering | b=100 | b=250 | b=500 | b=1000 |
-|---|---|---|---|---|---|
-| ClientServer — TwoSuccessfulWithdrawals | on / off | 6.0 / 6.0 | 15.4 / 15.4 | 17.8 / 17.8 | 21.2 / 21.2 |
-| Paxos — TwoLearns | on / off | 1.0 / 1.0 | 1.8 / 1.8 | 2.8 / 2.8 | 3.8 / 3.8 |
-| TPC — AbortThenCommit | on / off | 0.0 / 0.0 | 0.0 / 0.0 | 0.0 / 0.0 | 0.2 / 0.2 |
+**The fix (in this PR): a sparse coverage-*novelty* signal.**
+`ScenarioSteering.NoveltyCompliance` awards compliance 1.0 only to a schedule
+that makes *new* coverage progress — first-satisfies a scenario, or advances the
+furthest state of a not-yet-satisfied scenario beyond the suite's best so far —
+and 0.0 otherwise. It cannot saturate (a scenario stops contributing once it
+plateaus, including an unsatisfiable one at its ceiling), and it is computed
+only for generators the search actually keeps (after the timeline-diversity
+gate), so a discarded schedule never consumes a scenario's novelty.
 
-**Why (root-caused in the code):** `ScenarioComplianceObserver.RunCompliance()`
-returns the **max** over *all* auto-attached scenarios of
-`statesReached / totalStates`. Because at least one *common* scenario (e.g.
-`WriteCommitted`, `ValueLearned`, `WithdrawThenResponse`) is satisfied within
-essentially every schedule, that max saturates at **1.0** almost every
-iteration. So `priority = diversity × (1 + 1.0) = 2 × diversity` — a **constant
-factor** that cannot re-order the saved generators. D4, as implemented, does not
-differentially steer the search on any model that contains an easily-satisfied
-scenario (which is the normal case, since scenarios are auto-attached).
+**Post-fix ablation — the signal now steers, but the coverage payoff on these
+models is negligible:**
 
-**Recommendation:** compute compliance from *under-covered* scenarios only — e.g.
-the max partial-progress over scenarios **not yet satisfied in the suite so
-far**, or a per-scenario novelty/improvement signal — so the term varies across
-runs and actually biases exploration toward coverage gaps. This is a small,
-well-scoped follow-up to the D4 hook already in place.
+| metric (rare scenario, mean/5 seeds) | on vs off |
+|---|---|
+| Paired configs differing in **unique satisfying timelines** | **0 / 60** |
+| Paired configs differing in **triggering-schedule count** | **4 / 60** (all Paxos; e.g. b=1000 75.6 vs 74.6) |
+
+So the fix does what it should — the signal is no longer a constant factor and
+now measurably re-orders exploration (4 configs shift, vs 0 before) — but on
+these tutorial-scale models it does **not** change how many distinct satisfying
+timelines are found. The reason is structural: the common scenarios plateau
+within the first few schedules (no further novelty to reward) and the deep ones
+(`AbortThenCommit` reaches only ~0.2 unique timelines even at budget 1000) are
+too rarely reachable for a novelty nudge to matter. Demonstrating a coverage
+*gain* from steering needs larger models with many rare-but-reachable behaviors
+and longer exploration — the same regime where feedback's other benefits appear.
+Net: the fix removes a latent no-op and makes the D4 hook correct and
+non-saturating; its practical value remains to be shown at scale.
 
 ## Interpretation & takeaways
 
@@ -243,25 +256,31 @@ well-scoped follow-up to the D4 hook already in place.
   distinct ways), and partial-coverage surfaces *how close* an uncovered
   behavior got — all without ever mistaking an uncovered scenario for a bug.
 
-- **Feedback ≠ automatic win on small models.** Raw timeline breadth favors
-  `random`; the feedback loop's exploitation only pays off when the target is
-  *rare* and the base scheduler is *structured* (PCT). On these tutorial-scale
-  models, `feedbackpct` is the clear all-rounder (best rare-scenario coverage
-  and bug density), plain `feedback` (random base) is the weakest, and
-  `feedbackpos` sits in between.
+- **Feedback's value is targeted, not universal — use it deliberately.** Its
+  exploitation pays off precisely when the objective is a *rare/deep* behavior
+  or amplifying a known bug, with a *structured* base scheduler. `feedbackpct`
+  (PCT base) is the clear all-rounder here (best rare-scenario coverage and best
+  bug amplification); `feedbackpos` sits in between; plain `feedback` (random
+  base) is the weakest and can get stuck. For broad, undirected breadth, plain
+  `random` remains a strong and cheap baseline — the two are complementary.
 
-- **D4 scenario-steering is currently inert (E6).** The compliance term
-  saturates at 1.0 whenever any common scenario is satisfied, so it applies a
-  constant `2×` factor and does not steer. It neither helps nor hurts today; the
-  one-line fix is to base compliance on *under-covered* scenarios (see E6).
+- **D4 scenario-steering: latent no-op found and fixed (E6).** The original
+  compliance term saturated at 1.0 and applied a constant factor (on/off
+  byte-identical in all 60 configs). This PR replaces it with a sparse
+  coverage-*novelty* signal that now genuinely re-orders exploration; the
+  practical coverage effect on these small models is still negligible (0/60
+  configs change unique-timeline coverage), so its payoff remains to be shown on
+  larger models. The mechanism is now correct rather than silently dead.
 
 - **Actionable signal for the P team:**
   1. Make **`feedbackpct` the recommended feedback configuration** — it is the
      all-rounder here (best rare-scenario coverage, best bug amplification,
      reliable-ish first-bug finding). Plain `feedback` (random base) can get
-     stuck and should not be the default.
-  2. **Fix the D4 compliance signal** to use under-covered scenarios so it
-     actually biases toward coverage gaps.
+     stuck and should not be the default. *(Surfaced in `--sch-feedbackpct` help
+     text in this PR.)*
+  2. **D4 compliance signal fixed in this PR** (coverage-novelty rather than the
+     saturating max-partial-progress). Next step is to validate that it improves
+     coverage on larger models with many rare-but-reachable scenarios.
   3. Treat raw timeline count as a *breadth* proxy only; for *targeted* coverage
      and bug amplification the feedback layer is the right tool — with a
      structured base scheduler.

@@ -37,13 +37,15 @@ export DOTNET_ROOT="$HOME/.dotnet"; export PATH="$HOME/.dotnet:$HOME/.dotnet/too
 cp -r Tutorial/1_ClientServer /tmp/CS
 cp eval/fest-scenario-coverage/scenarios/ClientServer/Scenarios.p /tmp/CS/PSpec/
 
-# 3. Compile + run — the scenario-coverage block appears in the report
+# 3. Compile + run — the scenario-coverage block appears in the report.
+#    --sch-feedbackpct is the recommended feedback strategy (see the report: best
+#    rare-behavior coverage). Use --sch-random for a baseline comparison.
 cd /tmp/CS && P compile
-P check -tc tcMultipleClients --sch-feedback -s 1000 --seed 1 --explore
+P check -tc tcMultipleClients --sch-feedbackpct 10 -s 1000 --seed 1 --explore
 
 # 4. Merge per-test-case coverage into one unified report
-P check -tc tcSingleClient   --sch-feedback -s 500 -o /tmp/CS/merge
-P check -tc tcMultipleClients --sch-feedback -s 500 -o /tmp/CS/merge
+P check -tc tcSingleClient    --sch-feedbackpct 10 -s 500 -o /tmp/CS/merge
+P check -tc tcMultipleClients --sch-feedbackpct 10 -s 500 -o /tmp/CS/merge
 P merge-scenario-coverage /tmp/CS/merge
 ```
 

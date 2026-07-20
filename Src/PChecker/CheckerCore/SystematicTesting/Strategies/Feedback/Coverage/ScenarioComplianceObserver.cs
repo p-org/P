@@ -55,20 +55,19 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
     public int TotalStates(string scenario) => _totalStates.TryGetValue(scenario, out var n) ? n : 0;
 
     /// <summary>
-    /// Run-level compliance in [0,1]: the maximum partial-progress fraction across all
-    /// scenarios this iteration (how close the run got to satisfying any scenario). Used
-    /// to steer the feedback-guided search toward under-covered scenarios.
+    /// Snapshot of distinct states reached this iteration, per scenario. Fed (with
+    /// <see cref="SatisfiedScenarios"/> and the suite-so-far state) to
+    /// <see cref="ScenarioSteering.NoveltyCompliance"/> to produce the coverage-novelty
+    /// steering signal for the feedback-guided search.
     /// </summary>
-    public double RunCompliance()
+    public IReadOnlyDictionary<string, int> ReachedSnapshot()
     {
-        double max = 0;
+        var snapshot = new Dictionary<string, int>();
         foreach (var scenario in AllScenarioNames)
         {
-            var total = TotalStates(scenario);
-            if (total <= 0) continue;
-            max = System.Math.Max(max, (double)StatesReached(scenario) / total);
+            snapshot[scenario] = StatesReached(scenario);
         }
-        return max;
+        return snapshot;
     }
 
     private static string ShortName(string fullName)

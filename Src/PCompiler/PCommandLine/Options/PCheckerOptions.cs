@@ -79,7 +79,7 @@ namespace Plang.Options
             schedulingGroup.AddArgument("sch-random", null, "Choose the random scheduling strategy (this is the default)", typeof(bool));
             schedulingGroup.AddArgument("sch-feedback", null, "Choose the random scheduling strategy with feedback mutation", typeof(bool));
 
-            schedulingGroup.AddArgument("sch-feedbackpct", null, "Choose the PCT scheduling strategy with feedback mutation", typeof(uint));
+            schedulingGroup.AddArgument("sch-feedbackpct", null, "Choose the PCT scheduling strategy with feedback mutation (recommended feedback strategy: best rare-behavior coverage; takes the max number of priority switch points, e.g. --sch-feedbackpct 10)", typeof(uint));
             schedulingGroup.AddArgument("sch-feedbackpos", null,
                 "Choose the POS scheduling strategy with feedback mutation", typeof(bool));
 

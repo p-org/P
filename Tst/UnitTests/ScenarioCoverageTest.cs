@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using PChecker;
+using PChecker.Feedback;
 using PChecker.SystematicTesting;
 
 namespace UnitTests
@@ -171,6 +173,74 @@ namespace UnitTests
             {
                 Directory.Delete(root, true);
             }
+        }
+
+        // ── Coverage-novelty steering signal (ScenarioSteering.NoveltyCompliance) ──
+
+        private static double Novelty(
+            Dictionary<string, int> reached, IReadOnlyCollection<string> satisfied,
+            Dictionary<string, int> suiteBest, HashSet<string> suiteSatisfied)
+            => ScenarioSteering.NoveltyCompliance(reached, satisfied, suiteBest, suiteSatisfied);
+
+        [NUnit.Framework.Test]
+        public void Novelty_NoScenarios_IsZero()
+        {
+            var best = new Dictionary<string, int>();
+            var sat = new HashSet<string>();
+            Assert.AreEqual(0.0, Novelty(new(), Array.Empty<string>(), best, sat));
+        }
+
+        [NUnit.Framework.Test]
+        public void Novelty_FirstSatisfactionScoresOnce_ThenZero()
+        {
+            var best = new Dictionary<string, int>();
+            var sat = new HashSet<string>();
+
+            // First run to satisfy "S" is novel.
+            Assert.AreEqual(1.0, Novelty(new() { ["S"] = 3 }, new[] { "S" }, best, sat));
+            Assert.IsTrue(sat.Contains("S"));
+            // A later run that satisfies the same "S" again earns nothing.
+            Assert.AreEqual(0.0, Novelty(new() { ["S"] = 3 }, new[] { "S" }, best, sat));
+        }
+
+        [NUnit.Framework.Test]
+        public void Novelty_AdvancingPartialProgressScores_PlateauDoesNot()
+        {
+            var best = new Dictionary<string, int>();
+            var sat = new HashSet<string>();
+
+            Assert.AreEqual(1.0, Novelty(new() { ["Rare"] = 1 }, Array.Empty<string>(), best, sat)); // 0 -> 1
+            Assert.AreEqual(1.0, Novelty(new() { ["Rare"] = 2 }, Array.Empty<string>(), best, sat)); // 1 -> 2
+            Assert.AreEqual(0.0, Novelty(new() { ["Rare"] = 2 }, Array.Empty<string>(), best, sat)); // 2 -> 2 (no gain)
+            Assert.AreEqual(0.0, Novelty(new() { ["Rare"] = 1 }, Array.Empty<string>(), best, sat)); // regress: no gain
+            Assert.AreEqual(2, best["Rare"]);
+        }
+
+        [NUnit.Framework.Test]
+        public void Novelty_ImpossibleScenarioBoostsOnceThenSaturatesToZero()
+        {
+            // The bug this fix addresses: a scenario stuck at a constant partial progress
+            // must NOT keep contributing a constant signal. It scores once (reaching its
+            // ceiling) then never again — so the signal cannot saturate the priority.
+            var best = new Dictionary<string, int>();
+            var sat = new HashSet<string>();
+
+            Assert.AreEqual(1.0, Novelty(new() { ["Impossible"] = 2 }, Array.Empty<string>(), best, sat));
+            for (var i = 0; i < 5; i++)
+            {
+                Assert.AreEqual(0.0, Novelty(new() { ["Impossible"] = 2 }, Array.Empty<string>(), best, sat));
+            }
+        }
+
+        [NUnit.Framework.Test]
+        public void Novelty_ProgressOnAlreadySatisfiedScenarioIsIgnored()
+        {
+            var best = new Dictionary<string, int>();
+            var sat = new HashSet<string> { "S" };   // already satisfied earlier in the suite
+
+            // Even a brand-new furthest state for S earns nothing once S is covered.
+            Assert.AreEqual(0.0, Novelty(new() { ["S"] = 9 }, Array.Empty<string>(), best, sat));
+            Assert.IsFalse(best.ContainsKey("S"));
         }
     }
 }

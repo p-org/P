@@ -32,6 +32,12 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
 
     private readonly HashSet<string> _visitedTimelines = new();
 
+    // Suite-level scenario-coverage state for steering, accumulated across schedules. Only
+    // advanced for KEPT generators (see ObserveRunningResults) so a discarded schedule can
+    // never "use up" a scenario's novelty and starve a later kept schedule of the boost.
+    private readonly Dictionary<string, int> _scenarioSuiteBestReached = new();
+    private readonly HashSet<string> _scenarioSuiteSatisfied = new();
+
     private List<GeneratorRecord> _savedGenerators = new ();
     private int _pendingMutations;
     private bool _shouldExploreNew;
@@ -161,7 +167,8 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
     /// <summary>
     /// This method observes the results of previous run and prepare for the next run.
     /// </summary>
-    public virtual void ObserveRunningResults(TimelineObserver timelineObserver, double scenarioCompliance)
+    public virtual void ObserveRunningResults(TimelineObserver timelineObserver,
+        IReadOnlyDictionary<string, int> scenarioReached, IReadOnlyCollection<string> scenarioSatisfied)
     {
         var timelineId = timelineObserver.GetAbstractTimeline();
         var timelineMinhash = timelineObserver.GetTimelineMinhash();
@@ -170,15 +177,19 @@ internal class FeedbackGuidedStrategy : IFeedbackGuidedStrategy
 
         if (diversity <= 0)
         {
+            // Timeline-redundant schedule is discarded; do NOT fold its scenario progress
+            // into the suite state, so it cannot rob a later kept schedule of the novelty.
             return;
         }
 
-        // Steer the search toward under-covered scenarios: boost priority by how close
-        // this run got to satisfying a scenario (compliance in [0,1]). With no active
-        // scenario, compliance is 0 -> priority == diversity (unchanged). A boost (rather
-        // than the paper's strict diversity x compliance product) keeps diverse-but-
-        // scenario-irrelevant schedules from being discarded, since scenarios are always
-        // auto-attached here.
+        // Steer the search toward under-covered scenarios. Compliance (a coverage-NOVELTY
+        // signal, computed only now that the generator is being kept) is 1.0 iff this
+        // schedule made new scenario progress; else 0.0 -> priority == diversity (unchanged).
+        // A boost (rather than the paper's strict diversity x compliance product) keeps
+        // diverse-but-scenario-irrelevant schedules from being discarded, since scenarios
+        // are always auto-attached here.
+        double scenarioCompliance = ScenarioSteering.NoveltyCompliance(
+            scenarioReached, scenarioSatisfied, _scenarioSuiteBestReached, _scenarioSuiteSatisfied);
         double priority = diversity * (1.0 + scenarioCompliance);
         // Mutation budget is proportional to novelty (diversity) but kept as a separate
         // integer so the [0,1] priority metric never doubles as the budget.

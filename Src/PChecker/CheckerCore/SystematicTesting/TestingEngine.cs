@@ -575,7 +575,11 @@ namespace PChecker.SystematicTesting
 
                 if (Strategy is IFeedbackGuidedStrategy strategy)
                 {
-                    strategy.ObserveRunningResults(timelineObserver, scenarioObserver.RunCompliance());
+                    // The strategy computes the coverage-novelty steering signal itself, but only
+                    // for generators it keeps (after its timeline-diversity gate), so a discarded
+                    // schedule never consumes a scenario's novelty. Pass this run's raw progress.
+                    strategy.ObserveRunningResults(timelineObserver,
+                        scenarioObserver.ReachedSnapshot(), scenarioObserver.SatisfiedScenarios);
                 }
 
                 // Checks that no monitor is in a hot state at termination. Only

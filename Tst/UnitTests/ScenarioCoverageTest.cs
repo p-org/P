@@ -77,11 +77,31 @@ namespace UnitTests
 
             var text = report.GetText(CheckerConfiguration.Create());
 
-            StringAssert.Contains("Scenario coverage:", text);
-            StringAssert.Contains("ReadAfterWrite", text);
-            StringAssert.Contains("NeverCovered", text);
-            StringAssert.Contains("triggered in 1 schedule,", text);
-            StringAssert.Contains("triggered in 0 schedules,", text);
+            // Summary line leads with the covered count and flags gaps.
+            StringAssert.Contains("Scenario coverage: 1/2 scenarios covered (1 gap)", text);
+            // Covered scenario is marked and shows its trigger/timeline counts.
+            StringAssert.Contains("[covered] ReadAfterWrite: triggered in 1 schedule, 1 unique satisfying timeline", text);
+            // The uncovered scenario is called out as a gap, not buried in a "0 schedules" line.
+            StringAssert.Contains("[  GAP  ] NeverCovered: not covered", text);
+        }
+
+        [NUnit.Framework.Test]
+        public void GetText_SummaryCountsAndGroupsCoveredBeforeGaps()
+        {
+            var report = NewReport();
+            report.RecordScenarioSatisfied("Alpha", "<t1>");
+            report.RecordScenarioSatisfied("Beta", "<t2>");
+            report.EnsureScenarioTracked("Zeta");   // a gap
+            report.RecordScenarioProgress("Zeta", 1, 2);
+
+            var text = report.GetText(CheckerConfiguration.Create());
+
+            StringAssert.Contains("Scenario coverage: 2/3 scenarios covered (1 gap)", text);
+            StringAssert.Contains("[covered] Alpha", text);
+            StringAssert.Contains("[covered] Beta", text);
+            StringAssert.Contains("[  GAP  ] Zeta: not covered (best partial progress: 1/2 states)", text);
+            // Covered scenarios are listed before the gaps so gaps stand out at the end.
+            Assert.Less(text.IndexOf("[covered] Beta"), text.IndexOf("[  GAP  ] Zeta"));
         }
 
         [NUnit.Framework.Test]
@@ -138,11 +158,13 @@ namespace UnitTests
 
             var text = ScenarioCoverageMerger.Merge(new[] { tc1, tc2 });
 
-            StringAssert.Contains("across 2 test case(s)", text);
-            // S: 5+3 triggers, 2+1 unique timelines, covered in both.
-            StringAssert.Contains("S: covered in 2/2 test cases, 8 total triggers, 3 unique satisfying timelines", text);
-            // Gap: never satisfied anywhere; best partial progress is the max across test cases.
-            StringAssert.Contains("Gap: covered in 0/2 test cases, 0 total triggers, 0 unique satisfying timelines (best partial progress: 2/4 states)", text);
+            StringAssert.Contains("across 2 test cases", text);
+            // Summary: 1 of 2 scenarios covered, 1 gap.
+            StringAssert.Contains("1/2 scenarios covered in >=1 test case; 1 coverage gap.", text);
+            // S: covered in both, lists which test cases; 5+3 triggers, 2+1 timelines.
+            StringAssert.Contains("[covered] S: covered in 2/2 test cases (tc1, tc2); 8 total triggers, 3 unique satisfying timelines", text);
+            // Gap: never satisfied anywhere; best progress is the max across test cases.
+            StringAssert.Contains("[  GAP  ] Gap: never covered in any of 2 test cases; best progress anywhere 2/4 states", text);
         }
 
         [NUnit.Framework.Test]
@@ -165,9 +187,15 @@ namespace UnitTests
 
                 var text = ScenarioCoverageMerger.MergeDirectory(root);
 
-                StringAssert.Contains("across 2 test case(s)", text);
-                StringAssert.Contains("S: covered in 2/2 test cases, 2 total triggers, 2 unique satisfying timelines", text);
-                StringAssert.Contains("Gap: covered in 0/1 test cases", text);
+                StringAssert.Contains("across 2 test cases", text);
+                // S covered in both; assert counts + that both test cases are listed (file
+                // enumeration order is filesystem-dependent, so don't pin the order).
+                StringAssert.Contains("[covered] S: covered in 2/2 test cases", text);
+                StringAssert.Contains("2 total triggers, 2 unique satisfying timelines", text);
+                StringAssert.Contains("tc1", text);
+                StringAssert.Contains("tc2", text);
+                // Gap seen in only one test case, never covered.
+                StringAssert.Contains("[  GAP  ] Gap: never covered in any of 1 test case", text);
             }
             finally
             {

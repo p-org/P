@@ -358,30 +358,36 @@ namespace PChecker.SystematicTesting
                 ExploredTimelines.Count,
                 ExploredTimelines.Count == 1 ? string.Empty : "s");
 
-            // Scenario coverage: for each declared scenario, how many schedules triggered it
-            // and how many distinct timelines satisfied it.
+            // Scenario coverage: a scannable summary (how many scenarios were covered), then
+            // the covered scenarios, then the coverage gaps (never satisfied) called out last.
             if (ScenarioTriggerCounts.Count > 0)
             {
+                var pfx = prefix.Equals("...") ? "....." : prefix;
+                var names = ScenarioTriggerCounts.Keys.OrderBy(k => k).ToList();
+                var covered = names.Where(s => ScenarioTriggerCounts[s] > 0).ToList();
+                var gaps = names.Where(s => ScenarioTriggerCounts[s] == 0).ToList();
+
                 report.AppendLine();
-                report.AppendFormat("{0} Scenario coverage:", prefix.Equals("...") ? "....." : prefix);
-                foreach (var scenario in ScenarioTriggerCounts.Keys.OrderBy(k => k))
+                report.AppendFormat("{0} Scenario coverage: {1}/{2} scenarios covered{3}",
+                    pfx, covered.Count, names.Count,
+                    gaps.Count > 0 ? $" ({gaps.Count} gap{(gaps.Count == 1 ? string.Empty : "s")})" : string.Empty);
+
+                foreach (var scenario in covered)
                 {
                     var triggered = ScenarioTriggerCounts[scenario];
                     var uniqueTimelines = ScenarioSatisfyingTimelines.TryGetValue(scenario, out var tls) ? tls.Count : 0;
                     report.AppendLine();
                     report.AppendFormat(
-                        "{0}  {1}: triggered in {2} schedule{3}, {4} unique satisfying timeline{5}",
-                        prefix.Equals("...") ? "....." : prefix,
-                        scenario,
-                        triggered,
-                        triggered == 1 ? string.Empty : "s",
-                        uniqueTimelines,
-                        uniqueTimelines == 1 ? string.Empty : "s");
-
-                    // For scenarios that were never fully satisfied, show the best partial
-                    // progress reached (the coverage gap and how close exploration got).
-                    if (triggered == 0 &&
-                        ScenarioTotalStates.TryGetValue(scenario, out var total) && total > 0)
+                        "{0}   [covered] {1}: triggered in {2} schedule{3}, {4} unique satisfying timeline{5}",
+                        pfx, scenario, triggered, triggered == 1 ? string.Empty : "s",
+                        uniqueTimelines, uniqueTimelines == 1 ? string.Empty : "s");
+                }
+                // Coverage gaps: scenarios never satisfied. Show how close exploration got.
+                foreach (var scenario in gaps)
+                {
+                    report.AppendLine();
+                    report.AppendFormat("{0}   [  GAP  ] {1}: not covered", pfx, scenario);
+                    if (ScenarioTotalStates.TryGetValue(scenario, out var total) && total > 0)
                     {
                         var reached = ScenarioMaxStatesReached.TryGetValue(scenario, out var r) ? r : 0;
                         report.AppendFormat(" (best partial progress: {0}/{1} states)", reached, total);

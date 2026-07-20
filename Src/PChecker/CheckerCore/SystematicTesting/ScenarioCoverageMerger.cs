@@ -94,39 +94,67 @@ namespace PChecker.SystematicTesting
             return Merge(artifacts);
         }
 
-        /// <summary>Aggregates artifacts into a unified textual report.</summary>
+        /// <summary>
+        /// Aggregates artifacts into a unified, human-readable report: a one-line summary,
+        /// then the covered scenarios (with WHICH test cases covered them), then the coverage
+        /// gaps (never satisfied anywhere) called out last with their best progress.
+        /// </summary>
         public static string Merge(IReadOnlyList<ScenarioCoverageArtifact> artifacts)
         {
             // scenario name -> aggregate
             var triggered = new Dictionary<string, int>();
             var uniqueTimelines = new Dictionary<string, int>();
-            var testCasesCovered = new Dictionary<string, int>();
             var testCasesTotal = new Dictionary<string, int>();
+            var coveringCases = new Dictionary<string, List<string>>(); // which test cases covered it
             var bestReached = new Dictionary<string, int>();
             var totalStates = new Dictionary<string, int>();
 
             foreach (var artifact in artifacts)
             {
+                var tcName = string.IsNullOrEmpty(artifact.TestCase) ? "(default)" : artifact.TestCase;
                 foreach (var s in artifact.Scenarios)
                 {
                     triggered[s.Name] = triggered.GetValueOrDefault(s.Name) + s.Triggered;
                     uniqueTimelines[s.Name] = uniqueTimelines.GetValueOrDefault(s.Name) + s.UniqueTimelines;
                     testCasesTotal[s.Name] = testCasesTotal.GetValueOrDefault(s.Name) + 1;
-                    if (s.Triggered > 0) testCasesCovered[s.Name] = testCasesCovered.GetValueOrDefault(s.Name) + 1;
+                    if (s.Triggered > 0)
+                    {
+                        if (!coveringCases.TryGetValue(s.Name, out var lst))
+                        {
+                            lst = new List<string>();
+                            coveringCases[s.Name] = lst;
+                        }
+                        lst.Add(tcName);
+                    }
                     if (s.MaxStatesReached > bestReached.GetValueOrDefault(s.Name)) bestReached[s.Name] = s.MaxStatesReached;
                     if (s.TotalStates > 0) totalStates[s.Name] = s.TotalStates;
                 }
             }
 
+            var names = triggered.Keys.OrderBy(k => k).ToList();
+            var covered = names.Where(n => triggered[n] > 0).ToList();
+            var gaps = names.Where(n => triggered[n] == 0).ToList();
+
             var report = new StringBuilder();
-            report.AppendLine($"Unified scenario coverage across {artifacts.Count} test case(s):");
-            foreach (var scenario in triggered.Keys.OrderBy(k => k))
+            report.AppendLine($"Unified scenario coverage across {artifacts.Count} test case{(artifacts.Count == 1 ? "" : "s")}:");
+            report.AppendLine($"  {covered.Count}/{names.Count} scenarios covered in >=1 test case" +
+                (gaps.Count > 0 ? $"; {gaps.Count} coverage gap{(gaps.Count == 1 ? "" : "s")}." : "."));
+
+            foreach (var scenario in covered)
             {
-                report.Append($"  {scenario}: covered in {testCasesCovered.GetValueOrDefault(scenario)}/{testCasesTotal[scenario]} test cases, ");
-                report.Append($"{triggered[scenario]} total triggers, {uniqueTimelines[scenario]} unique satisfying timelines");
-                if (triggered[scenario] == 0 && totalStates.TryGetValue(scenario, out var total) && total > 0)
+                var cases = coveringCases.TryGetValue(scenario, out var lst) ? lst : new List<string>();
+                report.AppendLine(
+                    $"  [covered] {scenario}: covered in {cases.Count}/{testCasesTotal[scenario]} test cases " +
+                    $"({string.Join(", ", cases)}); {triggered[scenario]} total triggers, " +
+                    $"{uniqueTimelines[scenario]} unique satisfying timelines");
+            }
+            foreach (var scenario in gaps)
+            {
+                report.Append($"  [  GAP  ] {scenario}: never covered in any of {testCasesTotal[scenario]} " +
+                              $"test case{(testCasesTotal[scenario] == 1 ? "" : "s")}");
+                if (totalStates.TryGetValue(scenario, out var total) && total > 0)
                 {
-                    report.Append($" (best partial progress: {bestReached.GetValueOrDefault(scenario)}/{total} states)");
+                    report.Append($"; best progress anywhere {bestReached.GetValueOrDefault(scenario)}/{total} states");
                 }
                 report.AppendLine();
             }

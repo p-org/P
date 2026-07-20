@@ -93,6 +93,11 @@ namespace Plang.Options
             var schPEx = schedulingGroup.AddArgument("sch-pex", null, "Choose the scheduling strategy for PEx mode (options: random, dfs). (default: random)");
             schPEx.AllowedValues = new List<string>() { "random", "dfs", "astar" };
 
+            var timelineRepr = schedulingGroup.AddArgument("timeline-repr", null, "How the feedback-guided search represents a schedule's timeline (the diversity signal): pairwise (default), kgram, causal, hybrid");
+            timelineRepr.AllowedValues = new List<string>() { "pairwise", "kgram", "causal", "hybrid" };
+            schedulingGroup.AddArgument("timeline-kgram", null, "Gram length for the kgram/hybrid timeline representation (default: 3)", typeof(uint));
+            schedulingGroup.AddArgument("timeline-payload", null, "Enrich timeline event labels with a stable hash of the event payload", typeof(bool));
+
             var replayOptions = Parser.GetOrCreateGroup("replay", "Replay and debug options");
             replayOptions.AddArgument("replay", "r", "Schedule file to replay");
 
@@ -235,6 +240,15 @@ namespace Plang.Options
                     break;
                 case "sch-pex":
                     checkerConfiguration.SchedulingStrategy = (string)option.Value;
+                    break;
+                case "timeline-repr":
+                    checkerConfiguration.TimelineRepresentation = (string)option.Value;
+                    break;
+                case "timeline-kgram":
+                    checkerConfiguration.TimelineKGram = (int)(uint)option.Value;
+                    break;
+                case "timeline-payload":
+                    checkerConfiguration.TimelinePayload = true;
                     break;
                 case "replay":
                 {

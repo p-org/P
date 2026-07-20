@@ -105,7 +105,7 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
     public void OnSendEvent(StateMachineId targetStateMachineId, string senderName, string senderType, string senderStateName, Event e, bool isTargetHalted) { }
     public void OnRaiseEvent(StateMachineId id, string stateName, Event e) { }
     public void OnEnqueueEvent(StateMachineId id, Event e) { }
-    public void OnDequeueEvent(StateMachineId id, string stateName, Event e) { }
+    public void OnDequeueEvent(StateMachineId id, string stateName, Event e, StateMachineId senderId, VectorTime deliveryTime) { }
     public void OnReceiveEvent(StateMachineId id, string stateName, Event e, bool wasBlocked) { }
     public void OnWaitEvent(StateMachineId id, string stateName, Type eventType) { }
     public void OnWaitEvent(StateMachineId id, string stateName, params Type[] eventTypes) { }

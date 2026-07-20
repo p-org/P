@@ -130,7 +130,7 @@ namespace PChecker.Coverage
             Dequeued = DefaultEvent.Instance;
         }
 
-        public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
+        public void OnDequeueEvent(StateMachineId id, string stateName, Event e, StateMachineId senderId, VectorTime deliveryTime)
         {
             Dequeued = e;
         }

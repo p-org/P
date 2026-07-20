@@ -1056,7 +1056,10 @@ namespace PChecker.SystematicTesting
             }
 
             var stateName = stateMachine.CurrentStateName;
-            LogWriter.LogDequeueEvent(stateMachine.Id, stateName, e);
+            // stateMachine.VectorTime is the receive-event timestamp here: NotifyDequeuedEvent
+            // is called after StateMachine merges the delivered event's clock (StateMachine.cs).
+            LogWriter.LogDequeueEvent(stateMachine.Id, stateName, e,
+                eventInfo?.OriginInfo?.SenderStateMachineId, stateMachine.VectorTime);
         }
 
         /// <summary>

@@ -157,7 +157,7 @@ namespace PChecker.Runtime.Logging
         /// <param name="id">The id of the state machine that the event is being dequeued by.</param>
         /// <param name="stateName">The state name, if the state machine is a state machine and a state exists, else null.</param>
         /// <param name="e">The event being dequeued.</param>
-        public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
+        public void OnDequeueEvent(StateMachineId id, string stateName, Event e, StateMachineId senderId, VectorTime deliveryTime)
         {
             var eventName = GetEventNameWithPayload(e);
             var log = stateName is null

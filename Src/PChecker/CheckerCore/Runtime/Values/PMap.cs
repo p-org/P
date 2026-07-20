@@ -179,7 +179,9 @@ namespace PChecker.Runtime.Values
             var sb = new StringBuilder();
             sb.Append("(");
             var sep = "";
-            foreach (var value in map)
+            // Iterate keys in a deterministic order (the backing store is unordered):
+            // a stable ToString is required for reproducible hashing/logging.
+            foreach (var value in map.OrderBy(kv => kv.Key?.ToString() ?? string.Empty, System.StringComparer.Ordinal))
             {
                 sb.Append(sep);
                 sb.Append("<");

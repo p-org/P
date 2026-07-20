@@ -119,7 +119,9 @@ namespace PChecker.Runtime.Values
             var sb = new StringBuilder();
             sb.Append("(");
             var sep = "";
-            foreach (var value in set)
+            // Iterate in a deterministic order (the backing store is an unordered HashSet):
+            // a stable ToString is required for reproducible hashing/logging.
+            foreach (var value in set.OrderBy(v => v?.ToString() ?? string.Empty, System.StringComparer.Ordinal))
             {
                 sb.Append(sep);
                 sb.Append("<");

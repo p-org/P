@@ -63,7 +63,9 @@ namespace PChecker.Runtime.Logging
         /// <param name="id">The id of the state machine that the event is being dequeued by.</param>
         /// <param name="stateName">The state name, if the state machine is a state machine and a state exists, else null.</param>
         /// <param name="e">The event being dequeued.</param>
-        void OnDequeueEvent(StateMachineId id, string stateName, Event e);
+        /// <param name="senderId">The id of the machine that sent the event, or null if none.</param>
+        /// <param name="deliveryTime">The receiver's vector clock at delivery (post-merge), for causal timeline analysis.</param>
+        void OnDequeueEvent(StateMachineId id, string stateName, Event e, StateMachineId senderId, VectorTime deliveryTime);
 
         /// <summary>
         /// Invoked when the specified event is received by an state machine.

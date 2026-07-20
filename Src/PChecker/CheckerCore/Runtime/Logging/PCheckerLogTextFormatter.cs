@@ -176,7 +176,7 @@ namespace PChecker.Runtime.Logging
         }
 
         /// <inheritdoc/>
-        public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
+        public void OnDequeueEvent(StateMachineId id, string stateName, Event e, StateMachineId senderId, VectorTime deliveryTime)
         {
             stateName = GetShortName(stateName);
             var eventName = GetEventNameWithPayload(e);

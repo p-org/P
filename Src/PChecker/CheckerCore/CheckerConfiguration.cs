@@ -154,6 +154,27 @@ namespace PChecker
         public int StrategyBound { get; set; }
 
         /// <summary>
+        /// How the feedback-guided search represents a schedule's "timeline" (the diversity
+        /// signal): "pairwise" (default, local event-type pairs), "kgram" (local k-grams),
+        /// "causal" (cross-machine happens-before via vector clocks), or "hybrid".
+        /// </summary>
+        [DataMember]
+        public string TimelineRepresentation { get; set; }
+
+        /// <summary>
+        /// Gram length for the "kgram"/"hybrid" timeline representations.
+        /// </summary>
+        [DataMember]
+        public int TimelineKGram { get; set; }
+
+        /// <summary>
+        /// If enabled, timeline event labels are enriched with a stable hash of the event
+        /// payload (so deliveries differing only by payload value are not conflated).
+        /// </summary>
+        [DataMember]
+        public bool TimelinePayload { get; set; }
+
+        /// <summary>
         /// If this option is enabled, liveness checking is enabled during bug-finding.
         /// </summary>
         [DataMember]
@@ -313,6 +334,9 @@ namespace PChecker
             TestingProcessId = 0;
             ConsiderDepthBoundHitAsBug = false;
             StrategyBound = 0;
+            TimelineRepresentation = "pairwise";
+            TimelineKGram = 3;
+            TimelinePayload = false;
 
             IsLivenessCheckingEnabled = true;
             LivenessTemperatureThreshold = 0;

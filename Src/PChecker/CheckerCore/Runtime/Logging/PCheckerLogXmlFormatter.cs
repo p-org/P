@@ -88,7 +88,7 @@ namespace PChecker.Runtime.Logging
             Writer.WriteEndElement();
         }
 
-        public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
+        public void OnDequeueEvent(StateMachineId id, string stateName, Event e, StateMachineId senderId, VectorTime deliveryTime)
         {
             if (Closed)
             {

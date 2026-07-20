@@ -52,18 +52,21 @@ public class VectorTime
         }
     }
     
-    // Compare this vector clock to another for sorting purposes
-    // Rturn value: -1 = This vector clock happens after the other, 1 = This vector clock happens before the other,
-    // 0 = Clocks are equal or concurrent
+    // Compare this vector clock to another (partial order over vector clocks).
+    // Follows the IComparable convention: negative => this happens-BEFORE other;
+    // positive => this happens-AFTER other; 0 => clocks are equal or concurrent.
+    // Missing entries are treated as 0, so the comparison must range over the UNION of
+    // both clocks' keys — otherwise a machine present only in `other` is never examined
+    // and a genuine ordering can be silently misreported as concurrent.
     public int CompareTo(VectorTime other)
     {
         bool atLeastOneLess = false;
         bool atLeastOneGreater = false;
 
-        foreach (var machineId in Clock.Keys)
+        foreach (var machineId in Clock.Keys.Union(other.Clock.Keys))
         {
-            int thisTime = Clock[machineId];
-            int otherTime = other.Clock.ContainsKey(machineId) ? other.Clock[machineId] : 0;
+            int thisTime = Clock.TryGetValue(machineId, out var t) ? t : 0;
+            int otherTime = other.Clock.TryGetValue(machineId, out var o) ? o : 0;
 
             if (thisTime < otherTime)
             {

@@ -128,7 +128,7 @@ namespace PChecker.Coverage
         }
 
         /// <inheritdoc/>
-        public void OnDequeueEvent(StateMachineId id, string stateName, Event e)
+        public void OnDequeueEvent(StateMachineId id, string stateName, Event e, StateMachineId senderId, VectorTime deliveryTime)
         {
             lock (Inbox)
             {

@@ -523,7 +523,10 @@ namespace PChecker.SystematicTesting
             // Runtime used to serialize and test the program in this schedule.
             ControlledRuntime runtime = null;
 
-            TimelineObserver timelineObserver = new TimelineObserver();
+            TimelineObserver timelineObserver = new TimelineObserver(
+                _checkerConfiguration.TimelineRepresentation,
+                _checkerConfiguration.TimelineKGram,
+                _checkerConfiguration.TimelinePayload);
 
             // Observes which scenario (coverage) monitors are satisfied this iteration.
             ScenarioComplianceObserver scenarioObserver = new ScenarioComplianceObserver();

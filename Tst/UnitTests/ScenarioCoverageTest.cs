@@ -270,5 +270,71 @@ namespace UnitTests
             Assert.AreEqual(0.0, Novelty(new() { ["S"] = 9 }, Array.Empty<string>(), best, sat));
             Assert.IsFalse(best.ContainsKey("S"));
         }
+
+        // ── Output-folder robustness: per-test-case folders + latest-only merge ──
+
+        [NUnit.Framework.Test]
+        public void SetOutputDirectory_GroupsOutputByTestCase()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "outdir_" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var cfg = CheckerConfiguration.Create();
+                cfg.OutputPath = root;
+                cfg.AssemblyToBeAnalyzed = "/x/MyModel.dll";
+                cfg.TestCaseName = "tcFoo";
+                cfg.SetOutputDirectory();
+                // With a test case, the layout is <root>/tcFoo/<Mode>/.
+                StringAssert.Contains(Path.Combine("tcFoo", cfg.Mode.ToString()), cfg.OutputDirectory);
+
+                var anon = CheckerConfiguration.Create();
+                anon.OutputPath = root;
+                anon.AssemblyToBeAnalyzed = "/x/MyModel.dll";
+                anon.TestCaseName = "";  // no test case -> layout unchanged (no extra segment)
+                anon.SetOutputDirectory();
+                StringAssert.DoesNotContain(Path.Combine("tcFoo", anon.Mode.ToString()), anon.OutputDirectory);
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        [NUnit.Framework.Test]
+        public void MergeDirectory_DedupesReRunsOfSameTestCaseKeepingLatest()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "scencov_dedup_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path.Combine(root, "BugFinding"));   // latest run
+            Directory.CreateDirectory(Path.Combine(root, "BugFinding0"));  // rotated history
+            try
+            {
+                // Older run of test case "tc": S covered with 1 distinct timeline.
+                var older = NewReport();
+                older.RecordScenarioSatisfied("S", "<t1>");
+                var olderPath = Path.Combine(root, "BugFinding0", "A" + ScenarioCoverageMerger.FileSuffix);
+                ScenarioCoverageMerger.Write(older, "tc", olderPath);
+                File.SetLastWriteTimeUtc(olderPath, DateTime.UtcNow.AddMinutes(-10));
+
+                // Latest run of the SAME test case "tc": S covered with 3 distinct timelines.
+                var latest = NewReport();
+                latest.RecordScenarioSatisfied("S", "<t1>");
+                latest.RecordScenarioSatisfied("S", "<t2>");
+                latest.RecordScenarioSatisfied("S", "<t3>");
+                var latestPath = Path.Combine(root, "BugFinding", "A" + ScenarioCoverageMerger.FileSuffix);
+                ScenarioCoverageMerger.Write(latest, "tc", latestPath);
+                File.SetLastWriteTimeUtc(latestPath, DateTime.UtcNow);
+
+                var text = ScenarioCoverageMerger.MergeDirectory(root);
+
+                // Deduped to ONE test case (the latest run) — not double-counted as two.
+                StringAssert.Contains("across 1 test case", text);
+                StringAssert.Contains("covered in 1/1 test cases", text);
+                StringAssert.Contains("3 unique satisfying timelines", text);  // latest's count, not the older 1
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
     }
 }

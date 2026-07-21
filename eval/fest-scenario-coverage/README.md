@@ -43,7 +43,10 @@ cp eval/fest-scenario-coverage/scenarios/ClientServer/Scenarios.p /tmp/CS/PSpec/
 cd /tmp/CS && P compile
 P check -tc tcMultipleClients --sch-feedbackpct 10 -s 1000 --seed 1 --explore
 
-# 4. Merge per-test-case coverage into one unified report
+# 4. Merge per-test-case coverage into one unified report.
+#    Each `p check` writes under <out>/<testCase>/<Mode>/, so different test cases are
+#    kept separate (and re-runs rotate within their own folder). merge-scenario-coverage
+#    recurses and keeps the LATEST artifact per test case, so re-runs never double-count.
 P check -tc tcSingleClient    --sch-feedbackpct 10 -s 500 -o /tmp/CS/merge
 P check -tc tcMultipleClients --sch-feedbackpct 10 -s 500 -o /tmp/CS/merge
 P merge-scenario-coverage /tmp/CS/merge

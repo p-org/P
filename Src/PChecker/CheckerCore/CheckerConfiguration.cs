@@ -547,9 +547,18 @@ namespace PChecker
         /// </summary>
         public void SetOutputDirectory()
         {
+            // Group output by test case so each test case gets its OWN rotated history
+            // (PCheckerOutput/<testCase>/<Mode>/...). Test cases no longer clobber each
+            // other's history, concurrent runs of different test cases don't race on a shared
+            // directory, and "the latest run of test case X" is unambiguous (the non-numbered
+            // <Mode>/ dir). With no test case (a single anonymous test) the layout is unchanged.
+            var suffix = string.IsNullOrEmpty(TestCaseName)
+                ? Mode.ToString()
+                : SanitizePathSegment(TestCaseName) + Path.DirectorySeparatorChar + Mode.ToString();
+
             // Do not create the output directory yet if we have to scroll back the history first.
             OutputDirectory = Reporter.GetOutputDirectory(OutputPath, AssemblyToBeAnalyzed,
-                Mode.ToString(), createDir: false);
+                suffix, createDir: false);
 
             // The MaxHistory previous results are kept under the directory name with a suffix scrolling back from 0 to 9 (oldest).
             const int MaxHistory = 10;
@@ -581,6 +590,24 @@ namespace PChecker
 
             // Now create the new directory.
             Directory.CreateDirectory(OutputDirectory);
+        }
+
+        /// <summary>
+        /// Makes a test-case name safe to use as a single path segment (identifiers and
+        /// parameterized names are already close; this just neutralizes any stray separators).
+        /// </summary>
+        private static string SanitizePathSegment(string name)
+        {
+            var chars = name.ToCharArray();
+            for (var i = 0; i < chars.Length; i++)
+            {
+                var c = chars[i];
+                if (!(char.IsLetterOrDigit(c) || c == '.' || c == '-' || c == '_'))
+                {
+                    chars[i] = '_';
+                }
+            }
+            return new string(chars);
         }
     }
 #pragma warning restore CA1724 // Type names should not match namespaces

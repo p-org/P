@@ -77,21 +77,30 @@ namespace PChecker.SystematicTesting
         /// </summary>
         public static string MergeDirectory(string directory)
         {
-            var artifacts = new List<ScenarioCoverageArtifact>();
-            // Recurse: the checker writes each run's artifact into its own output subdirectory.
+            // Keep only the LATEST artifact per test case. The checker rotates each run into
+            // history dirs (<Mode>0..9) and the recursion also picks those up, so without this
+            // a re-run of a test case would be counted twice. Test-case identity is the JSON's
+            // TestCase field; the newest file (by write time) is that test case's latest run.
+            var latest = new Dictionary<string, (ScenarioCoverageArtifact artifact, DateTime when)>();
             foreach (var file in Directory.GetFiles(directory, "*" + FileSuffix, SearchOption.AllDirectories))
             {
                 try
                 {
                     var a = JsonSerializer.Deserialize<ScenarioCoverageArtifact>(File.ReadAllText(file));
-                    if (a != null) artifacts.Add(a);
+                    if (a == null) continue;
+                    var when = File.GetLastWriteTimeUtc(file);
+                    var key = a.TestCase ?? string.Empty;
+                    if (!latest.TryGetValue(key, out var cur) || when > cur.when)
+                    {
+                        latest[key] = (a, when);
+                    }
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine($"... Skipping unreadable scenario artifact {file}: {e.Message}");
                 }
             }
-            return Merge(artifacts);
+            return Merge(latest.Values.Select(v => v.artifact).ToList());
         }
 
         /// <summary>

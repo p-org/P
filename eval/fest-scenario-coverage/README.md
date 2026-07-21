@@ -26,6 +26,11 @@ and it is **exempt from the liveness check** (an unsatisfied scenario is
 triggered each scenario, how many **unique satisfying timelines** were seen, and
 — for scenarios never satisfied — the **best partial progress** (`X/Y states`).
 
+Coverage requires *observed behavior*: the accepting state must be reached after
+the monitor sees at least one event. A `cold` **start** state (accepting before
+anything happens) is therefore reported as a gap, not trivially covered — and the
+compiler warns about it. Write scenarios as `start hot state ... cold state Done`.
+
 ## Reproducing the evaluation
 
 ```bash

@@ -24,6 +24,20 @@ namespace Plang.Compiler.TypeChecker
             // a scenario (coverage monitor) needs an accepting (cold) state, otherwise
             // it can never be marked satisfied and will always report 0 coverage.
             ValidateScenarioHasColdState(machine, job);
+            // and its start state should not be cold, else it is trivially "covered".
+            ValidateScenarioStartStateNotCold(machine, job);
+        }
+
+        private static void ValidateScenarioStartStateNotCold(Machine machine, ICompilerConfiguration job)
+        {
+            if (machine.IsScenario && machine.StartState?.Temperature == StateTemperature.Cold)
+            {
+                job.Output.WriteWarning(
+                    $"[{machine.SourceLocation.Start.Line}] scenario '{machine.Name}' has a 'cold' (accepting) " +
+                    "start state; it accepts before any behavior is observed, so it is NOT counted as covered " +
+                    "until observed events re-enter an accepting state. Mark the start state 'hot' (or leave it " +
+                    "unmarked) and mark the accepting state 'cold'.");
+            }
         }
 
         private static void ValidateScenarioHasColdState(Machine machine, ICompilerConfiguration job)

@@ -68,4 +68,17 @@ public static class ScenarioSteering
 
         return compliance;
     }
+
+    /// <summary>
+    /// Whether entering a state marks its scenario satisfied. A scenario is satisfied by
+    /// entering an accepting (cold) state (<paramref name="isInHotState"/> == false), EXCEPT
+    /// on the monitor's very first (start) state entry — that entry is logged during
+    /// RegisterMonitor, before any behavior is observed. Without this exception a
+    /// <c>cold start state</c> scenario would be reported "covered" in every schedule with
+    /// zero observed events (a coverage measurement that lies); with it, such a scenario is
+    /// correctly a coverage gap until it re-enters a cold state through observed behavior.
+    /// A hot (true) or unmarked/warm (null) state never satisfies.
+    /// </summary>
+    public static bool IsSatisfyingEntry(bool? isInHotState, bool isStartEntry)
+        => isInHotState == false && !isStartEntry;
 }

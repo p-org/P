@@ -31,6 +31,11 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
     // Short names (P scenario names) of scenarios satisfied at least once this iteration.
     private readonly HashSet<string> _satisfied = new();
 
+    // Scenarios whose initial (start) state-entry has already been seen. A monitor's very
+    // first state-entry is its start state, logged during RegisterMonitor before any observed
+    // behavior; a cold start state must NOT count as satisfied (see ScenarioSteering.IsSatisfyingEntry).
+    private readonly HashSet<string> _sawStartEntry = new();
+
     // Short name -> distinct states entered this iteration (partial-progress signal).
     private readonly Dictionary<string, HashSet<string>> _statesReached = new();
 
@@ -114,8 +119,11 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
         }
         states.Add(stateName);
 
-        // Entering a cold (accepting) state == scenario satisfied.
-        if (isInHotState == false)
+        // Entering a cold (accepting) state == scenario satisfied, EXCEPT the monitor's very
+        // first (start) state entry (logged during RegisterMonitor, before any observed event):
+        // a cold start state is not "covered" until real behavior re-enters an accepting state.
+        var isStartEntry = _sawStartEntry.Add(scenario); // true only on this scenario's first entry
+        if (ScenarioSteering.IsSatisfyingEntry(isInHotState, isStartEntry))
         {
             _satisfied.Add(scenario);
         }

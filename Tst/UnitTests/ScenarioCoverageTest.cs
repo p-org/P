@@ -371,5 +371,53 @@ namespace UnitTests
                 Directory.Delete(dir, true);
             }
         }
+
+        // ── Satisfaction detection: a cold START state must not be trivially "covered" ──
+
+        [NUnit.Framework.Test]
+        public void IsSatisfyingEntry_ColdStateSatisfies_ExceptTheStartEntry()
+        {
+            // A cold (accepting) state entry satisfies the scenario...
+            Assert.IsTrue(ScenarioSteering.IsSatisfyingEntry(isInHotState: false, isStartEntry: false));
+            // ...UNLESS it is the monitor's first (start) state entry: a `cold start state`
+            // fires during RegisterMonitor before any behavior, and must NOT count as covered.
+            Assert.IsFalse(ScenarioSteering.IsSatisfyingEntry(isInHotState: false, isStartEntry: true));
+            // Hot states never satisfy; unmarked/warm (null) states never satisfy.
+            Assert.IsFalse(ScenarioSteering.IsSatisfyingEntry(isInHotState: true, isStartEntry: false));
+            Assert.IsFalse(ScenarioSteering.IsSatisfyingEntry(isInHotState: true, isStartEntry: true));
+            Assert.IsFalse(ScenarioSteering.IsSatisfyingEntry(isInHotState: null, isStartEntry: false));
+            Assert.IsFalse(ScenarioSteering.IsSatisfyingEntry(isInHotState: null, isStartEntry: true));
+        }
+
+        [NUnit.Framework.Test]
+        public void MergeDirectory_SkipsArtifactsFromANewerSchemaVersion()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "scencov_ver_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            try
+            {
+                // A current (v1) artifact.
+                var ok = NewReport();
+                ok.RecordScenarioSatisfied("S", "<t1>");
+                ScenarioCoverageMerger.Write(ok, "tcCurrent", Path.Combine(root, "cur" + ScenarioCoverageMerger.FileSuffix));
+
+                // A future-schema artifact (version bumped): fields may mean something else, so it
+                // must be SKIPPED, not silently miscounted as v1.
+                File.WriteAllText(Path.Combine(root, "future" + ScenarioCoverageMerger.FileSuffix),
+                    "{\"version\": 999, \"testCase\": \"tcFuture\", \"scenarios\": [" +
+                    "{\"name\": \"S\", \"satisfied\": true, \"satisfyingSchedules\": 7, " +
+                    "\"distinctSatisfyingTimelines\": 3, \"maxStatesVisited\": 3, \"monitorStates\": 3}]}");
+
+                var text = ScenarioCoverageMerger.MergeDirectory(root);
+
+                StringAssert.Contains("across 1 test case", text);   // only the v1 artifact counted
+                StringAssert.Contains("tcCurrent", text);
+                StringAssert.DoesNotContain("tcFuture", text);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
     }
 }

@@ -641,21 +641,6 @@ namespace PChecker.Runtime.Specifications
         }
 
         /// <summary>
-        /// Checks the liveness temperature of the monitor and report
-        /// a potential liveness bug if the temperature passes the
-        /// specified threshold. Only works in a liveness monitor.
-        /// </summary>
-        internal void CheckLivenessTemperature(int livenessTemperature)
-        {
-            if (livenessTemperature > Runtime.CheckerConfiguration.LivenessTemperatureThreshold)
-            {
-                Runtime.Assert(
-                    livenessTemperature <= Runtime.CheckerConfiguration.LivenessTemperatureThreshold,
-                    $"{GetType().FullName} detected infinite execution that violates a liveness property.");
-            }
-        }
-
-        /// <summary>
         /// Returns true if the monitor is in a hot state.
         /// </summary>
         internal bool IsInHotState() => ActiveState?.IsHot ?? false;

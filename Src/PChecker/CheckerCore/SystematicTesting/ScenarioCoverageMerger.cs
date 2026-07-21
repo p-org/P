@@ -110,6 +110,15 @@ namespace PChecker.SystematicTesting
                 {
                     var a = JsonSerializer.Deserialize<ScenarioCoverageArtifact>(File.ReadAllText(file), JsonOptions);
                     if (a == null) continue;
+                    // Forward-compat guard: a newer artifact schema may have changed field
+                    // meanings, so merging it as v1 would silently miscount. Skip it loudly
+                    // rather than produce a wrong number. (This is why Version is written.)
+                    if (a.Version > SchemaVersion)
+                    {
+                        Console.WriteLine($"... Skipping scenario artifact {file}: schema version {a.Version} is " +
+                                          $"newer than this tool supports (v{SchemaVersion}); upgrade P to merge it.");
+                        continue;
+                    }
                     var when = File.GetLastWriteTimeUtc(file);
                     var key = a.TestCase ?? string.Empty;
                     if (!latest.TryGetValue(key, out var cur) || when > cur.when)

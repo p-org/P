@@ -44,7 +44,11 @@ internal class PExCodeGenerator : ICodeGenerator, IExpressionEmitter<Compilation
     ///     This compiler has a compilation stage.
     /// </summary>
     public bool HasCompilationStage => true;
-    private static List<Variable> _globalParams = [];
+    // [ThreadStatic] so concurrent in-process compilations do not race on this shared list;
+    // GenerateSource assigns it before any read. (The backend is a shared singleton, so an
+    // instance field would not isolate it.) Mirrors PChecker's already-ThreadStatic _globalParams.
+    [ThreadStatic]
+    private static List<Variable> _globalParams;
 
     private string GetGlobalParamAndLocalVariableName(Variable v)
     {

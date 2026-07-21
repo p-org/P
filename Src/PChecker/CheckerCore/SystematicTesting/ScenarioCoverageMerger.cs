@@ -93,8 +93,10 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// Reads every <c>*_scenario_coverage.json</c> artifact under <paramref name="directory"/>
-        /// and produces a unified suite-wide report: per scenario, the total triggers and unique
-        /// satisfying timelines summed across test cases, the number of test cases that covered it,
+        /// and produces a unified suite-wide report: per scenario, the total triggers and
+        /// satisfying timelines SUMMED across test cases (raw timelines are gone by merge time, so
+        /// this is a per-test-case sum, not a global-distinct count), the number of test cases that
+        /// covered it,
         /// and the best partial progress anywhere.
         /// </summary>
         public static string MergeDirectory(string directory)
@@ -186,7 +188,7 @@ namespace PChecker.SystematicTesting
                 report.AppendLine(
                     $"  [covered] {scenario}: covered in {cases.Count}/{testCasesTotal[scenario]} test cases " +
                     $"({string.Join(", ", cases)}); {triggered[scenario]} total triggers, " +
-                    $"{uniqueTimelines[scenario]} unique satisfying timelines");
+                    $"{uniqueTimelines[scenario]} satisfying timelines (summed per test case)");
             }
             foreach (var scenario in gaps)
             {

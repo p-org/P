@@ -332,6 +332,7 @@ public class PVerifierCodeGenerator : ICodeGenerator
 
     public IEnumerable<CompiledFile> GenerateCode(ICompilerConfiguration job, Scope globalScope)
     {
+        useLocalPrefix = false;   // reset per-compile so a prior compile on this thread can't leak state
         _ctx = new CompilationContext(job);
         _optionsToDeclare = [];
         _chooseToDeclare = [];
@@ -568,7 +569,10 @@ public class PVerifierCodeGenerator : ICodeGenerator
     private static string StateAdtReceivedSelector => $"{StateAdt}_Received";
     private static string StateAdtMachinesSelector => $"{StateAdt}_Machines";
 
-    private static bool useLocalPrefix = false;
+    // [ThreadStatic] so concurrent in-process compilations do not race on this transient flag
+    // (set true only within a wrapped block and reset false after). GenerateCode also resets it
+    // per-compile below. The backend is a shared singleton, so an instance field would not isolate it.
+    [ThreadStatic] private static bool useLocalPrefix;
 
     private static string StateAdtConstruct(string sent, string received, string machines)
     {

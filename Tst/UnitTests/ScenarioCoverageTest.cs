@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
+using System.Text.Json;
 using PChecker;
 using PChecker.Feedback;
+using PChecker.Random;
 using PChecker.Runtime;
 using PChecker.SystematicTesting;
 
@@ -163,7 +165,7 @@ namespace UnitTests
             // Summary: 1 of 2 scenarios covered, 1 gap.
             StringAssert.Contains("1/2 scenarios covered in >=1 test case; 1 coverage gap.", text);
             // S: covered in both, lists which test cases; 5+3 triggers, 2+1 timelines.
-            StringAssert.Contains("[covered] S: covered in 2/2 test cases (tc1, tc2); 8 total triggers, 3 unique satisfying timelines", text);
+            StringAssert.Contains("[covered] S: covered in 2/2 test cases (tc1, tc2); 8 total triggers, 3 satisfying timelines (summed per test case)", text);
             // Gap: never satisfied anywhere; best progress is the max across test cases.
             StringAssert.Contains("[  GAP  ] Gap: never covered in any of 2 test cases; best progress anywhere 2/4 states", text);
         }
@@ -192,7 +194,7 @@ namespace UnitTests
                 // S covered in both; assert counts + that both test cases are listed (file
                 // enumeration order is filesystem-dependent, so don't pin the order).
                 StringAssert.Contains("[covered] S: covered in 2/2 test cases", text);
-                StringAssert.Contains("2 total triggers, 2 unique satisfying timelines", text);
+                StringAssert.Contains("2 total triggers, 2 satisfying timelines (summed per test case)", text);
                 StringAssert.Contains("tc1", text);
                 StringAssert.Contains("tc2", text);
                 // Gap seen in only one test case, never covered.
@@ -330,7 +332,7 @@ namespace UnitTests
                 // Deduped to ONE test case (the latest run) — not double-counted as two.
                 StringAssert.Contains("across 1 test case", text);
                 StringAssert.Contains("covered in 1/1 test cases", text);
-                StringAssert.Contains("3 unique satisfying timelines", text);  // latest's count, not the older 1
+                StringAssert.Contains("3 satisfying timelines (summed per test case)", text);  // latest's count, not the older 1
             }
             finally
             {
@@ -551,6 +553,39 @@ namespace UnitTests
             {
                 Directory.Delete(dir, true);
             }
+        }
+
+        // ── Determinism: same seed -> identical artifact (RNG reseed x accounting x serialization) ──
+
+        [NUnit.Framework.Test]
+        public void SameSeed_ProducesIdenticalScenarioArtifact_DifferentSeedDiffers()
+        {
+            string RunOnce(uint seed)
+            {
+                var cfg = CheckerConfiguration.Create();
+                cfg.RandomGeneratorSeed = seed;
+                var rng = new RandomValueGenerator(cfg);   // reseeds deterministically from the seed
+                var report = new TestReport(cfg);
+                report.EnsureScenarioTracked("Alpha");
+                report.EnsureScenarioTracked("Beta");
+                for (var i = 0; i < 50; i++)
+                {
+                    if (rng.Next(2) == 0)
+                    {
+                        report.RecordScenarioSatisfied("Alpha", "<t" + rng.Next(5) + ">");
+                    }
+                    else
+                    {
+                        report.RecordScenarioProgress("Beta", rng.Next(3), 3);
+                    }
+                }
+                return JsonSerializer.Serialize(
+                    ScenarioCoverageMerger.FromReport(report, "tcDet"),
+                    new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            }
+
+            Assert.AreEqual(RunOnce(12345), RunOnce(12345), "same seed must produce a byte-identical artifact");
+            Assert.AreNotEqual(RunOnce(12345), RunOnce(99999), "different seeds should produce different coverage");
         }
     }
 }

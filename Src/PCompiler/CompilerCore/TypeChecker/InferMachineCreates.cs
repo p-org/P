@@ -11,7 +11,11 @@ namespace Plang.Compiler.TypeChecker
 {
     public static class InferMachineCreates
     {
-        // hash table used to store the functions inferred, to handle recursive, cyclic functions
+        // hash table used to store the functions inferred, to handle recursive, cyclic functions.
+        // [ThreadStatic] so concurrent in-process compilations (e.g. the parallel test harness)
+        // each get their own set instead of racing on a shared one (Populate reassigns it before
+        // any read, so per-thread default-null is safe). Mirrors the PChecker backend's _globalParams.
+        [ThreadStatic]
         private static HashSet<Function> _visitedFunctions;
         public static void Populate(Machine machine, ITranslationErrorHandler handler)
         {

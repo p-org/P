@@ -277,7 +277,11 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
             /*"while",*/
         };
 
-        private static HashSet<string> _reservedWords;
+        // Lazy (thread-safe by default) so concurrent in-process compilations don't race on the
+        // non-atomic lazy init, while preserving the original timing (built on first use, after all
+        // static string fields are initialized, so reflection still captures every reserved word).
+        private static readonly System.Lazy<HashSet<string>> _reservedWords =
+            new(() => ExtractReservedWords().Concat(_javaKeywords).ToHashSet());
 
         /// <summary>
         /// Reflects out all the string fields defined in this class.
@@ -298,10 +302,7 @@ xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/x
         /// </summary>
         public static bool IsReserved(string token)
         {
-            _reservedWords ??= ExtractReservedWords()
-                .Concat(_javaKeywords)
-                .ToHashSet();
-            return _reservedWords.Contains(token);
+            return _reservedWords.Value.Contains(token);
         }
 
         #endregion

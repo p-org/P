@@ -15,9 +15,11 @@ namespace Plang.Compiler.Backend.PEx;
 
 internal class TransformASTPass
 {
-    private static CompilationContext context;
-    private static int continuationNumber;
-    private static int callNum;
+    // [ThreadStatic] so concurrent in-process compilations do not share the context or interleave
+    // the generated-identifier counters; GetTransformedDecls resets all three before any read.
+    [ThreadStatic] private static CompilationContext context;
+    [ThreadStatic] private static int continuationNumber;
+    [ThreadStatic] private static int callNum;
 
     public static List<IPDecl> GetTransformedDecls(CompilationContext globalContext, Scope globalScope)
     {

@@ -522,9 +522,11 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "PModule.scenarioStateCounts.Clear();");
             foreach (var monitor in monitorMap.Keys)
             {
-                context.WriteLine(output, $"runtime.RegisterMonitor<{context.Names.GetNameForDecl(monitor)}>();");
-                // Scenario monitors are coverage monitors: register them so the runtime
-                // counts their satisfaction and exempts them from the liveness check.
+                // Scenario monitors are coverage monitors: register their coverage metadata so
+                // the runtime counts their satisfaction and exempts them from the liveness check.
+                // This must happen BEFORE RegisterMonitor, because the monitor's initial (start)
+                // state-entry transition is logged during RegisterMonitor — the coverage observer
+                // can only classify it if PModule.coverageMonitors already contains the type.
                 if (monitor.IsScenario)
                 {
                     var monitorName = context.Names.GetNameForDecl(monitor);
@@ -533,6 +535,7 @@ namespace Plang.Compiler.Backend.CSharp
                     context.WriteLine(output,
                         $"PModule.scenarioStateCounts[typeof({monitorName})] = {monitor.AllStates().Count()};");
                 }
+                context.WriteLine(output, $"runtime.RegisterMonitor<{context.Names.GetNameForDecl(monitor)}>();");
             }
 
             context.WriteLine(output, "}");

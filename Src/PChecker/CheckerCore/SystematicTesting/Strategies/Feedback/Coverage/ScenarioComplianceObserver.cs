@@ -17,8 +17,16 @@ namespace PChecker.Feedback;
 /// </summary>
 internal class ScenarioComplianceObserver : IControlledRuntimeLog
 {
-    // FullName of every coverage (scenario) monitor for this run.
-    private readonly HashSet<string> _coverageMonitorNames;
+    // Coverage-monitor metadata, snapshotted from PModule. PModule.coverageMonitors /
+    // scenarioStateCounts are populated by the generated InitializeMonitorMap during test
+    // setup — i.e. AFTER this observer is constructed — so we must NOT snapshot them in the
+    // ctor (that would make the first iteration, and any 1-schedule run, see an empty set and
+    // silently drop all scenario coverage). Instead Refresh() re-reads PModule whenever it has
+    // grown, so every transition — including the monitor's initial (start) state-entry logged
+    // during RegisterMonitor — is classified.
+    private HashSet<string> _coverageMonitorNames = new();
+    private List<string> _allScenarioNames = new();
+    private int _snapshotCount = -1;
 
     // Short names (P scenario names) of scenarios satisfied at least once this iteration.
     private readonly HashSet<string> _satisfied = new();
@@ -29,10 +37,15 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
     // Short name -> total number of states in that scenario.
     private readonly Dictionary<string, int> _totalStates = new();
 
-    public ScenarioComplianceObserver()
+    private void Refresh()
     {
+        if (PModule.coverageMonitors.Count == _snapshotCount)
+        {
+            return; // unchanged since the last read
+        }
+        _snapshotCount = PModule.coverageMonitors.Count;
         _coverageMonitorNames = PModule.coverageMonitors.Select(t => t.FullName).ToHashSet();
-        AllScenarioNames = _coverageMonitorNames.Select(ShortName).ToList();
+        _allScenarioNames = _coverageMonitorNames.Select(ShortName).ToList();
         foreach (var kv in PModule.scenarioStateCounts)
         {
             _totalStates[ShortName(kv.Key.FullName)] = kv.Value;
@@ -43,10 +56,16 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
     public IReadOnlyCollection<string> SatisfiedScenarios => _satisfied;
 
     /// <summary>Short names of all declared scenarios (so 0-coverage ones are reported too).</summary>
-    public IReadOnlyCollection<string> AllScenarioNames { get; }
+    public IReadOnlyCollection<string> AllScenarioNames
+    {
+        get { Refresh(); return _allScenarioNames; }
+    }
 
     /// <summary>True if any scenario monitors are active for this run.</summary>
-    public bool HasScenarios => _coverageMonitorNames.Count > 0;
+    public bool HasScenarios
+    {
+        get { Refresh(); return _coverageMonitorNames.Count > 0; }
+    }
 
     /// <summary>Distinct states <paramref name="scenario"/> entered this iteration.</summary>
     public int StatesReached(string scenario) => _statesReached.TryGetValue(scenario, out var s) ? s.Count : 0;
@@ -78,6 +97,9 @@ internal class ScenarioComplianceObserver : IControlledRuntimeLog
 
     public void OnMonitorStateTransition(string monitorType, string stateName, bool isEntry, bool? isInHotState)
     {
+        // Pick up coverage monitors registered since construction (see Refresh) so early
+        // transitions — including the initial state-entry during RegisterMonitor — are counted.
+        Refresh();
         if (!isEntry || !_coverageMonitorNames.Contains(monitorType))
         {
             return;

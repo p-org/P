@@ -23,4 +23,11 @@
         <None Include="../../../Icon/icon.png" Pack="true" PackagePath="" />
         <None Include="../../../README.md" Pack="true" PackagePath="" />
     </ItemGroup>
+    <!-- Expose internal types (e.g. ScenarioComplianceObserver, FeedbackGuidedStrategy) to the
+         unit-test assembly so the high-risk runtime seams can be driven directly by tests. -->
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>UnitTests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
 </Project>

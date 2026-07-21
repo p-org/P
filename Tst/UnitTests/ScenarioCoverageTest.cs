@@ -4,6 +4,7 @@ using System.IO;
 using NUnit.Framework;
 using PChecker;
 using PChecker.Feedback;
+using PChecker.Runtime;
 using PChecker.SystematicTesting;
 
 namespace UnitTests
@@ -417,6 +418,138 @@ namespace UnitTests
             finally
             {
                 Directory.Delete(root, true);
+            }
+        }
+
+        // ── Observer: drives ScenarioComplianceObserver directly (the end-to-end seam the
+        // pure IsSatisfyingEntry test cannot reach). Touches PModule static state, so kept
+        // NonParallelizable and always cleaned up. ──
+
+        private class DummyScenarioMonitor { }
+
+        [NUnit.Framework.Test]
+        [NonParallelizable]
+        public void Observer_ColdStartEntryDoesNotSatisfy_ButReEntryDoes()
+        {
+            PModule.coverageMonitors.Clear();
+            PModule.scenarioStateCounts.Clear();
+            try
+            {
+                PModule.coverageMonitors.Add(typeof(DummyScenarioMonitor));
+                PModule.scenarioStateCounts[typeof(DummyScenarioMonitor)] = 2;
+                var mt = typeof(DummyScenarioMonitor).FullName;
+
+                var obs = new ScenarioComplianceObserver();
+                // First entry is the monitor's START state, logged during RegisterMonitor. Even
+                // if it is cold, it must NOT satisfy (no behavior observed yet).
+                obs.OnMonitorStateTransition(mt, "Accept", isEntry: true, isInHotState: false);
+                Assert.AreEqual(0, obs.SatisfiedScenarios.Count, "cold start entry must not satisfy");
+                // A later cold-state entry (reached through observed behavior) DOES satisfy.
+                obs.OnMonitorStateTransition(mt, "Accept", isEntry: true, isInHotState: false);
+                Assert.AreEqual(1, obs.SatisfiedScenarios.Count, "re-entry into a cold state satisfies");
+            }
+            finally
+            {
+                PModule.coverageMonitors.Clear();
+                PModule.scenarioStateCounts.Clear();
+            }
+        }
+
+        [NUnit.Framework.Test]
+        [NonParallelizable]
+        public void Observer_RefreshPicksUpMonitorsPopulatedAfterConstruction_AndNormalPathSatisfies()
+        {
+            PModule.coverageMonitors.Clear();
+            PModule.scenarioStateCounts.Clear();
+            try
+            {
+                // Constructed while PModule is EMPTY (as it is in a real run: the generated
+                // InitializeMonitorMap populates PModule AFTER the observer exists).
+                var obs = new ScenarioComplianceObserver();
+                Assert.IsFalse(obs.HasScenarios);
+
+                PModule.coverageMonitors.Add(typeof(DummyScenarioMonitor));
+                PModule.scenarioStateCounts[typeof(DummyScenarioMonitor)] = 2;
+                var mt = typeof(DummyScenarioMonitor).FullName;
+
+                // Normal scenario: hot start entry (does not satisfy) then a cold accept via behavior.
+                obs.OnMonitorStateTransition(mt, "Init", isEntry: true, isInHotState: true);
+                obs.OnMonitorStateTransition(mt, "Accept", isEntry: true, isInHotState: false);
+
+                Assert.IsTrue(obs.HasScenarios, "Refresh must pick up monitors registered after construction");
+                Assert.IsNotEmpty(obs.AllScenarioNames);
+                Assert.AreEqual(1, obs.SatisfiedScenarios.Count, "hot-start -> cold-accept must satisfy");
+            }
+            finally
+            {
+                PModule.coverageMonitors.Clear();
+                PModule.scenarioStateCounts.Clear();
+            }
+        }
+
+        // ── Merge/report robustness: graceful degradation + zero-scenario contracts ──
+
+        [NUnit.Framework.Test]
+        public void MergeDirectory_SkipsCorruptJson_AndMergesTheValidArtifact()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "scencov_bad_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            try
+            {
+                var ok = NewReport();
+                ok.RecordScenarioSatisfied("S", "<t1>");
+                ScenarioCoverageMerger.Write(ok, "tcGood", Path.Combine(root, "good" + ScenarioCoverageMerger.FileSuffix));
+
+                // A truncated/corrupt artifact must be skipped, not crash the merge.
+                File.WriteAllText(Path.Combine(root, "bad" + ScenarioCoverageMerger.FileSuffix), "{ this is not valid json ");
+
+                var text = ScenarioCoverageMerger.MergeDirectory(root);
+
+                StringAssert.Contains("across 1 test case", text);
+                StringAssert.Contains("tcGood", text);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [NUnit.Framework.Test]
+        public void MergeDirectory_EmptyDirectory_ReportsZeroTestCasesWithoutCrashing()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "scencov_empty_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            try
+            {
+                var text = ScenarioCoverageMerger.MergeDirectory(root);
+                StringAssert.Contains("across 0 test cases", text);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [NUnit.Framework.Test]
+        public void ZeroScenarios_ReportOmitsBlock_AndWriteIsNoOp()
+        {
+            var report = NewReport();   // no scenarios recorded
+
+            // The per-run report must not print a scenario-coverage block when there are none.
+            StringAssert.DoesNotContain("Scenario coverage", report.GetText(CheckerConfiguration.Create()));
+
+            // And Write must not create an artifact file.
+            var dir = Path.Combine(Path.GetTempPath(), "scencov_none_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                var path = Path.Combine(dir, "none" + ScenarioCoverageMerger.FileSuffix);
+                ScenarioCoverageMerger.Write(report, "tcEmpty", path);
+                Assert.IsFalse(File.Exists(path), "no scenarios -> no artifact written");
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
             }
         }
     }

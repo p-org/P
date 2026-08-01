@@ -15,7 +15,10 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}   # -> ghcr.io/p-org/p
+  # Spelled out in lowercase rather than derived from `github.repository`:
+  # that yields `p-org/P`, and Docker/OCI reference names must be lowercase,
+  # so `ghcr.io/p-org/P` is rejected as an invalid reference.
+  IMAGE_NAME: p-org/p                    # -> ghcr.io/p-org/p
 
 jobs:
   # Build each architecture natively (no QEMU) and push it by digest.
@@ -107,8 +110,12 @@ jobs:
           # On release: tag with the semver from the release tag (git tags are
           # of the form `p-<version>`) plus a rolling `latest`. On manual runs:
           # honor the optional `tag` input.
+          #
+          # `type=match` takes no `event` qualifier (it is only meaningful for
+          # `type=ref`); it already applies only when the ref is a tag, which is
+          # the case for `release: published`.
           tags: |
-            type=match,pattern=p-(.*),group=1,event=tag
+            type=match,pattern=p-(.*),group=1
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '' }}
             type=raw,value=latest
 

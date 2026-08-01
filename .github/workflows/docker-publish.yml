@@ -117,7 +117,7 @@ jobs:
           tags: |
             type=match,pattern=p-(.*),group=1
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '' }}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.event_name != 'release' || !github.event.release.prerelease }}
 
       - name: Create and push the manifest list
         working-directory: /tmp/digests

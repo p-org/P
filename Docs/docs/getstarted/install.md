@@ -154,6 +154,18 @@ dotnet tool install --global P
 
 ---
 
+### :material-numeric-4-circle:{ .lg } Recommended IDE (Optional)
+
+| Purpose | Recommended Tool |
+|---------|-----------------|
+| Developing P programs | [**Peasy**](https://marketplace.visualstudio.com/items?itemName=PLanguage.peasy-extension) (VS Code extension) |
+| AI-assisted P development | [**PeasyAI**](peasyai.md) (Cursor / Claude Code) |
+
+!!! success ""
+    Great :smile:! You are all set to compile and check your first P program :mortar_board:!
+
+---
+
 ## Alternative: Use the Docker image
 
 Instead of installing the .NET SDK, Java, and the `p` tool separately, you can
@@ -205,15 +217,3 @@ docker run --rm -v "$PWD":/workspace ghcr.io/p-org/p:latest p compile
     ```
 
     You should see the P version and a Java 17 runtime.
-
----
-
-### :material-numeric-4-circle:{ .lg } Recommended IDE (Optional)
-
-| Purpose | Recommended Tool |
-|---------|-----------------|
-| Developing P programs | [**Peasy**](https://marketplace.visualstudio.com/items?itemName=PLanguage.peasy-extension) (VS Code extension) |
-| AI-assisted P development | [**PeasyAI**](peasyai.md) (Cursor / Claude Code) |
-
-!!! success ""
-    Great :smile:! You are all set to compile and check your first P program :mortar_board:!

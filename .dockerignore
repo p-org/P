@@ -1,0 +1,24 @@
+# Keep the build context small and the image clean. The build stage only
+# needs the source required to `dotnet pack` the P command-line tool.
+
+.git
+.github
+
+# Build outputs / drops (regenerated inside the build stage)
+Bld/Drops
+**/bin
+**/obj
+**/target
+
+# Docs site (not needed to build the tool)
+Docs
+
+# Local editor / OS cruft
+.idea
+.vs
+.vscode
+**/.DS_Store
+
+# The Dockerfile and its ignore file themselves
+Dockerfile
+.dockerignore

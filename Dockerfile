@@ -16,7 +16,7 @@
 # ---------------------------------------------------------------------------
 
 # --- Stage 1: build the P tool from the repository source ------------------
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 # The P compiler build runs the ANTLR4 code generator, which shells out to
 # `java`, so a JDK is required even just to `dotnet pack` the tool.
@@ -35,7 +35,7 @@ RUN dotnet pack Src/PCompiler/PCommandLine/PCommandLine.csproj -c Release \
     && cp Bld/Drops/Release/Binaries/[Pp].*.nupkg /nupkg/
 
 # --- Stage 2: the toolchain image ------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+FROM mcr.microsoft.com/dotnet/sdk:9.0
 
 LABEL org.opencontainers.image.title="P" \
       org.opencontainers.image.description="Toolchain image for the P formal modeling language (P compiler, PChecker, PEx). Includes .NET 8, JDK 17, Maven and graphviz." \

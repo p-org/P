@@ -22,6 +22,67 @@ P is a state machine based programming language for formally modeling and specif
 
 ![P framework toolchain overview](toolchain.jpg){ align=center }
 
+## :material-code-braces:{ .lg } Model Your Design, Specify What Must Hold, Let the Checker Find the Bugs
+
+<div class="grid" markdown>
+
+```java title="Model the design, then say what must always be true"
+event eWithdraw: int;
+event eBalance: int;
+
+// The model: a bank that serves withdrawals
+// and charges a $1 fee on each one.
+machine Bank {
+  var balance: int;
+
+  start state Serving {
+    entry (initial: int) { balance = initial; }
+
+    on eWithdraw do (amount: int) {
+      if (amount <= balance)
+        balance = balance - amount - 1;
+      announce eBalance, balance;
+    }
+  }
+}
+
+// The specification: whatever the bank does,
+// an account balance must never go negative.
+spec NoOverdraft observes eBalance {
+  start state Checking {
+    on eBalance do (balance: int) {
+      assert balance >= 0,
+        format("overdrawn! balance = {0}", balance);
+    }
+  }
+}
+```
+
+```text title="Check it — P explores the executions you would never test by hand"
+$ p check -tc tcWithdraw -s 1000
+
+... Checker is using 'random' strategy.
+..... Schedule #1
+..... Schedule #100
+..... Schedule #300
+Checker found a bug.
+... Emitting traces:
+..... Writing ptest_0_0.txt
+..... Found 1 bug.
+..... Explored 318 schedules
+..... Found 0.31% buggy schedules.
+
+# The trace replays the exact execution:
+<RandomLog> chose '100'
+<SendLog> sent 'eWithdraw with payload (100)'
+<AnnounceLog> announced 'eBalance' payload -1
+<ErrorLog> Assertion Failed:
+  Bank.p:25:7 overdrawn! balance = -1
+```
+
+</div>
+
+
 ---
 
 ## :material-new-box:{ .lg } What's New

@@ -7,7 +7,7 @@ PeasyAI exposes an MCP (Model Context Protocol) server that works with **Cursor*
 ## Features
 
 - **Design Doc → Verified P Code** — Generate types, state machines, safety specs, and test drivers from a plain-text design document
-- **Multi-Provider LLM Support** — Snowflake Cortex, AWS Bedrock, Direct Anthropic
+- **Multi-Provider LLM Support** — Google Gemini, Snowflake Cortex, AWS Bedrock, Direct Anthropic
 - **Ensemble Generation** — Best-of-N candidate selection for higher quality code
 - **Auto-Fix Pipeline** — Automatically fix compilation errors and PChecker failures
 - **Human-in-the-Loop** — Falls back to user guidance when automated fixing fails
@@ -99,6 +99,10 @@ Open it and fill in the credentials for the LLM provider you want to use:
     "model": "claude-sonnet-4-5",
     "timeout": 600,
     "providers": {
+      "gemini": {
+        "api_key": "your-gemini-api-key",
+        "model": "gemini-3.6-flash"
+      },
       "snowflake": {
         "api_key": "your-snowflake-pat-token",
         "base_url": "https://your-account.snowflakecomputing.com/api/v2/cortex/openai"
@@ -120,7 +124,7 @@ Open it and fill in the credentials for the LLM provider you want to use:
 }
 ```
 
-> **Only fill in the provider you use.** Set `"provider"` to `"snowflake"`, `"anthropic"`, or `"bedrock"`.
+> **Only fill in the provider you use.** Set `"provider"` to `"gemini"`, `"snowflake"`, `"anthropic"`, or `"bedrock"`.
 
 Verify everything is set up correctly:
 
@@ -161,9 +165,11 @@ All configuration lives in **`~/.peasyai/settings.json`**.
 
 | Key | Example | Description |
 |-----|---------|-------------|
-| `llm.provider` | `"snowflake"` | Active provider: `snowflake`, `anthropic`, or `bedrock` |
+| `llm.provider` | `"gemisnowflakeni"` | Active provider: `gemini` (or `google_gemini`), `snowflake`, `anthropic`, or `bedrock` |
 | `llm.model` | `"claude-sonnet-4-5"` | Model name (uses provider default if omitted) |
 | `llm.timeout` | `600` | Request timeout in seconds |
+| `llm.providers.gemini.api_key` | | Google Gemini API key |
+| `llm.providers.gemini.model` | `"gemini-3.6-flash"` | Specific model name overrides for Gemini |
 | `llm.providers.snowflake.api_key` | | Snowflake Programmatic Access Token |
 | `llm.providers.snowflake.base_url` | | Snowflake Cortex endpoint URL |
 | `llm.providers.anthropic.api_key` | | Anthropic API key |
@@ -177,6 +183,10 @@ All configuration lives in **`~/.peasyai/settings.json`**.
 ---
 
 ## LLM Providers
+
+### Google Gemini
+
+Set `"provider": "gemini"` and fill in `api_key`. Alternatively, you can use `"provider": "google_gemini"`. You can also configure standard environments with either the `GEMINI_API_KEY` or `GOOGLE_API_KEY` environment variables.
 
 ### Snowflake Cortex
 

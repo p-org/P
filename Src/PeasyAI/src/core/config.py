@@ -91,6 +91,7 @@ class PeasyAISettings:
             "snowflake_cortex": "snowflake",
             "aws_bedrock": "bedrock",
             "anthropic_direct": "anthropic",
+            "google_gemini": "gemini",
         }.get(name, name)
         return self.llm.providers.get(canonical, ProviderConfig())
 
@@ -121,6 +122,13 @@ class PeasyAISettings:
                 env["ANTHROPIC_BASE_URL"] = pc.base_url
             model = self.llm.model or pc.model or "claude-3-5-sonnet-20241022"
             env["ANTHROPIC_MODEL_NAME"] = model
+
+        elif name in ("gemini", "google_gemini"):
+            if pc.api_key:
+                env["GEMINI_API_KEY"] = pc.api_key
+                env["GOOGLE_API_KEY"] = pc.api_key
+            model = self.llm.model or pc.model or "gemini-3.6-flash"
+            env["GEMINI_MODEL_NAME"] = model
 
         elif name in ("bedrock", "aws_bedrock"):
             if pc.region:
@@ -264,6 +272,10 @@ def init_settings() -> Path:
                 "anthropic": {
                     "api_key": "",
                     "model": "claude-3-5-sonnet-20241022",
+                },
+                "gemini": {
+                    "api_key": "",
+                    "model": "gemini-3.6-flash",
                 },
                 "bedrock": {
                     "region": "us-west-2",

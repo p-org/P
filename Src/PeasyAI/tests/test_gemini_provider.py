@@ -70,10 +70,10 @@ class TestGeminiProvider(unittest.TestCase):
         
         contents = call_kwargs["contents"]
         self.assertEqual(len(contents), 2)
-        self.assertEqual(contents[0]["role"], "user")
-        self.assertEqual(contents[0]["parts"][0], "Hello")
-        self.assertEqual(contents[1]["role"], "model")
-        self.assertEqual(contents[1]["parts"][0], "Hi")
+        self.assertEqual(contents[0].role, "user")
+        self.assertEqual(contents[0].parts[0].text, "Hello")
+        self.assertEqual(contents[1].role, "model")
+        self.assertEqual(contents[1].parts[0].text, "Hi")
         
         # Verify GenerateContentConfig configuration
         config = call_kwargs["config"]

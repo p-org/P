@@ -84,8 +84,10 @@ class GeminiProvider(LLMProvider):
         model = self._get_model(config)
         client = self._get_client()
 
+        from google.genai import types
+
         # Build system prompt and format messages
-        # Gemini expects roles to be 'user' or 'model'.
+        # Gemini expects roles to be 'user' or 'model'. 
         # It doesn't allow 'system' inside contents list, so we map 'SYSTEM' messages to system_instruction or prepend.
         effective_system_prompt = system_prompt or ""
         chat_contents = []
@@ -98,10 +100,13 @@ class GeminiProvider(LLMProvider):
                     effective_system_prompt = msg.get_full_content()
             else:
                 role = "user" if msg.role == MessageRole.USER else "model"
-                chat_contents.append({
-                    "role": role,
-                    "parts": [msg.get_full_content()]
-                })
+                part = types.Part.from_text(text=msg.get_full_content())
+                chat_contents.append(
+                    types.Content(
+                        role=role,
+                        parts=[part]
+                    )
+                )
 
         max_tokens = min(cfg.max_tokens, 8192)
 
@@ -109,7 +114,6 @@ class GeminiProvider(LLMProvider):
         start_time = time.time()
 
         try:
-            from google.genai import types
 
             # Configure generation parameters using GenerateContentConfig
             generate_config = types.GenerateContentConfig(

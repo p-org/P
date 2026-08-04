@@ -14,3 +14,4 @@ streamlit_scrollable_textbox
 anthropic>=0.30.0
 openai>=1.0.0
 python-dotenv
+google-genai

@@ -13,6 +13,7 @@ from .base import LLMProvider, ProviderError
 from .snowflake import SnowflakeCortexProvider
 from .bedrock import BedrockProvider
 from .anthropic_direct import AnthropicProvider
+from .gemini import GeminiProvider
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ class LLMProviderFactory:
         "aws_bedrock": BedrockProvider,
         "anthropic": AnthropicProvider,
         "anthropic_direct": AnthropicProvider,
+        "gemini": GeminiProvider,
+        "google_gemini": GeminiProvider,
     }
     
     @classmethod
@@ -114,6 +117,7 @@ class LLMProviderFactory:
         openai_base_url = os.environ.get("OPENAI_BASE_URL", "")
         openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        gemini_api_key = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
         
         # 1. Check for Snowflake Cortex
         if openai_base_url and "snowflake" in openai_base_url.lower():
@@ -140,7 +144,16 @@ class LLMProviderFactory:
             
             return cls.create("anthropic", config)
         
-        # 3. Default to AWS Bedrock
+        # 3. Check for Gemini
+        if gemini_api_key:
+            logger.info("Auto-detected: Gemini API")
+            return cls.create("gemini", {
+                "api_key": gemini_api_key,
+                "model": os.environ.get("GEMINI_MODEL_NAME", "gemini-3.6-flash"),
+                "timeout": float(os.environ.get("LLM_TIMEOUT", "600")),
+            })
+        
+        # 4. Default to AWS Bedrock
         logger.info("Auto-detected: AWS Bedrock (default)")
         return cls.create("bedrock", {
             "region": os.environ.get("AWS_REGION", "us-west-2"),
@@ -175,6 +188,13 @@ class LLMProviderFactory:
                 config["base_url"] = anthropic_base_url
             
             return cls.create("anthropic", config)
+        
+        elif provider_name in ("gemini", "google_gemini"):
+            return cls.create("gemini", {
+                "api_key": os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"),
+                "model": os.environ.get("GEMINI_MODEL_NAME", "gemini-3.6-flash"),
+                "timeout": float(os.environ.get("LLM_TIMEOUT", "600")),
+            })
         
         elif provider_name in ("bedrock", "aws_bedrock"):
             return cls.create("bedrock", {

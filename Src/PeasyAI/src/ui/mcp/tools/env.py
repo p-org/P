@@ -70,6 +70,8 @@ def register_env_tools(mcp, with_metadata):
             provider = "openai"
         elif os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
             provider = "bedrock"
+        elif os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+            provider = "gemini"
 
         details["llm_provider_detected"] = provider
         if not provider:

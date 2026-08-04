@@ -15,7 +15,7 @@ providers:
       - claude-3-5-haiku
     timeout: 600
     description: "Snowflake Cortex with Claude models via OpenAI-compatible API"
-    
+
   # AWS Bedrock
   bedrock:
     type: bedrock
@@ -27,7 +27,7 @@ providers:
       - anthropic.claude-3-opus-20240229-v1:0
     timeout: 1000
     description: "AWS Bedrock with Claude models"
-    
+
   # Direct Anthropic API
   anthropic_direct:
     type: anthropic
@@ -40,6 +40,19 @@ providers:
       - claude-3-opus-20240229
     timeout: 600
     description: "Direct Anthropic API"
+
+  # Google Gemini API
+  gemini:
+    type: gemini
+    api_key: "${GEMINI_API_KEY}"
+    default_model: gemini-3.6-flash
+    models:
+      - gemini-3.6-flash
+      - gemini-3.5-flash
+      - gemini-3.1-pro-preview
+      - gemini-2.5-pro
+    timeout: 600
+    description: "Google Gemini API via google-genai SDK"
 
 # Default provider selection
 # The factory will auto-detect based on available environment variables,
@@ -56,5 +69,3 @@ default_provider: auto
 fallback_providers:
   - anthropic_direct
   - bedrock
-
-

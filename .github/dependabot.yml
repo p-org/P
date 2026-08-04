@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # Keep the base image in the Dockerfile up to date. The Dockerfile floats on
+  # `mcr.microsoft.com/dotnet/sdk:8.0`, so this mostly opens PRs if the pinned
+  # major/minor changes or a digest is added later; it also keeps things
+  # automated if the maintainers decide to pin by digest.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+
+  # Keep the GitHub Actions used by the Docker workflows (and others) current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -4,6 +4,7 @@
 </div>
 
 [![NuGet](https://img.shields.io/nuget/v/p.svg)](https://www.nuget.org/packages/P/)
+[![Docker image](https://img.shields.io/badge/ghcr.io-p--org%2Fp-blue?logo=docker)](https://github.com/p-org/P/pkgs/container/p)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/p-org/P/master/LICENSE.txt)
 ![GitHub Action (CI on Windows)](https://github.com/p-org/P/workflows/CI%20on%20Windows/badge.svg?branch=master)
 ![GitHub Action (CI on Ubuntu)](https://github.com/p-org/P/workflows/CI%20on%20Ubuntu/badge.svg?branch=master)
@@ -98,6 +99,12 @@ round-trips per N errors.
 ## Let the fun begin!
 
 You can find most of the information about the P framework on: **[https://p-org.github.io/P/](https://p-org.github.io/P/)**
+
+> 🐳 **Want to skip the setup?** Use the official Docker image, which bundles the P CLI, .NET SDK, JDK, Maven, and graphviz (available for `amd64` and `arm64`):
+> ```shell
+> docker run --rm -it -v "$PWD":/workspace ghcr.io/p-org/p:latest
+> ```
+> See the [installation guide](https://p-org.github.io/P/getstarted/install/#alternative-use-the-docker-image) for details.
 
 [What is P?](https://p-org.github.io/P/whatisP/) | [Getting Started](https://p-org.github.io/P/getstarted/install/) | [PeasyAI](https://p-org.github.io/P/getstarted/peasyai/) | [Tutorials](https://p-org.github.io/P/tutsoutline/) | [Case Studies](https://p-org.github.io/P/casestudies/) | [Publications](https://p-org.github.io/P/publications/)
 

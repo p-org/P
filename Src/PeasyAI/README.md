@@ -165,7 +165,7 @@ All configuration lives in **`~/.peasyai/settings.json`**.
 
 | Key | Example | Description |
 |-----|---------|-------------|
-| `llm.provider` | `"gemisnowflakeni"` | Active provider: `gemini` (or `google_gemini`), `snowflake`, `anthropic`, or `bedrock` |
+| `llm.provider` | `"snowflake"` | Active provider: `gemini` (or `google_gemini`), `snowflake`, `anthropic`, or `bedrock` |
 | `llm.model` | `"claude-sonnet-4-5"` | Model name (uses provider default if omitted) |
 | `llm.timeout` | `600` | Request timeout in seconds |
 | `llm.providers.gemini.api_key` | | Google Gemini API key |

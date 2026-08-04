@@ -3,6 +3,64 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+# Mock class definitions that mimic real google.genai classes for reliable tests
+class MockPart:
+    def __init__(self, text=None):
+        self.text = text
+    @classmethod
+    def from_text(cls, text):
+        return cls(text=text)
+
+class MockContent:
+    def __init__(self, role=None, parts=None):
+        self.role = role
+        self.parts = parts or []
+
+class MockGenerateContentConfig:
+    def __init__(self, temperature=None, top_p=None, max_output_tokens=None, system_instruction=None):
+        self.temperature = temperature
+        self.top_p = top_p
+        self.max_output_tokens = max_output_tokens
+        self.system_instruction = system_instruction
+
+# Set up mock module structures
+mock_genai = MagicMock()
+mock_types = MagicMock()
+mock_types.Part = MockPart
+mock_types.Content = MockContent
+mock_types.GenerateContentConfig = MockGenerateContentConfig
+mock_genai.types = mock_types
+
+sys.modules["google.genai"] = mock_genai
+sys.modules["google.genai.types"] = mock_types
+
+try:
+    import google
+    google.genai = mock_genai
+except ImportError:
+    mock_google = MagicMock()
+    mock_google.genai = mock_genai
+    sys.modules["google"] = mock_google
+
+# Mock google.api_core and exceptions
+class Unauthenticated(Exception): pass
+class PermissionDenied(Exception): pass
+class ResourceExhausted(Exception): pass
+class NotFound(Exception): pass
+class DeadlineExceeded(Exception): pass
+
+mock_exceptions = MagicMock()
+mock_exceptions.Unauthenticated = Unauthenticated
+mock_exceptions.PermissionDenied = PermissionDenied
+mock_exceptions.ResourceExhausted = ResourceExhausted
+mock_exceptions.NotFound = NotFound
+mock_exceptions.DeadlineExceeded = DeadlineExceeded
+
+# Set up mock google.api_core module with correct attributes
+mock_api_core = MagicMock()
+mock_api_core.exceptions = mock_exceptions
+sys.modules["google.api_core"] = mock_api_core
+sys.modules["google.api_core.exceptions"] = mock_exceptions
 PROJECT_ROOT = Path(__file__).parent.parent
 SRC_ROOT = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_ROOT))

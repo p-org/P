@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -13,6 +14,14 @@ namespace Plang.Compiler.Backend.Java
     /// </summary>
     internal static class Constants
     {
+        /// <summary>
+        /// A single UTC timestamp captured at class load time, shared by all generated file headers
+        /// and annotations to ensure consistency across all output files.
+        /// </summary>
+        private static readonly DateTime GenerationTimestampUtc = DateTime.UtcNow;
+
+        private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+
         #region P Java runtime constants
 
         public static readonly string PRTNamespaceName = "pobserve.runtime";
@@ -28,7 +37,8 @@ namespace Plang.Compiler.Backend.Java
         {
             "java.io.Serializable",
             "java.util.*",
-            "java.util.logging.*"
+            "java.util.logging.*",
+            "javax.annotation.processing.Generated"
         };
 
         /// <summary>
@@ -42,6 +52,18 @@ namespace Plang.Compiler.Backend.Java
 
             return classes.Select(pkg => $"import {pkg};");
         }
+
+        /// <summary>
+        /// The value to use in the @Generated annotation, identifying the P compiler as the code generator.
+        /// </summary>
+        internal static readonly string GeneratedAnnotationValue = "P Compiler";
+
+        /// <summary>
+        /// Returns the @Generated annotation line to emit before generated class declarations.
+        /// Includes the generation timestamp in ISO 8601 format.
+        /// </summary>
+        internal static string GeneratedAnnotation =>
+            $"@Generated(value = \"{GeneratedAnnotationValue}\", date = \"{GenerationTimestampUtc.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", Inv)}\")";
 
         public static readonly string MachineNamespaceName = "PMachines";
         public static readonly string MachineDefnFileName = $"{MachineNamespaceName}.java";
@@ -71,7 +93,7 @@ namespace Plang.Compiler.Backend.Java
         private static readonly string rawFFIBanner = $@"
 P <-> Java Foreign Function Interface Stubs
 
-This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.
+This file was auto-generated on {GenerationTimestampUtc.ToString("D", Inv)} at {GenerationTimestampUtc.ToString("T", Inv)} UTC.
 
 Please separate each generated class into its own .java file (detailed throughout the file), filling
 in the body of each function definition as necessary for your project's business logic.
@@ -105,7 +127,7 @@ in the body of each function definition as necessary for your project's business
 
         internal static string DoNotEditWarning => $@"
 /***************************************************************************
- * This file was auto-generated on {DateTime.Now.ToLongDateString()} at {DateTime.Now.ToLongTimeString()}.
+ * This file was auto-generated on {GenerationTimestampUtc.ToString("D", Inv)} at {GenerationTimestampUtc.ToString("T", Inv)} UTC.
  * Please do not edit manually!
  **************************************************************************/";
 

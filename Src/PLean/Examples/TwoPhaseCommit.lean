@@ -30,8 +30,8 @@ open PLean PartialCorrectness DemonicChoice
 -- decidable — but this model is only ever symbolically evaluated).
 open Classical
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 5
+set_option crush.backend "cvc5"
+set_option crush.timeout 5
 
 pmodule TwoPhaseCommit
 

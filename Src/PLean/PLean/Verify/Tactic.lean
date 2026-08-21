@@ -308,6 +308,22 @@ elab_rules : tactic
         try evalTactic (← `(tactic| simp only [] at *))
         catch _ => pure ()
 
+/-- Find the first subexpression accepted by a monadic predicate.
+Expression traversal is intentionally partial: `Expr.getAppArgs` is a
+view rather than an inductive subterm relation, so Lean cannot derive a
+structural termination proof even though every recursive call visits a
+strict application child. -/
+private partial def firstSubexprM? (accept : Expr → MetaM Bool)
+    (e : Expr) : MetaM (Option Expr) := do
+  if ← accept e then return some e
+  if e.isApp then
+    for sub in e.getAppArgs do
+      if let some hit ← firstSubexprM? accept sub then return some hit
+    let fn := e.getAppFn
+    if fn != e then
+      if let some hit ← firstSubexprM? accept fn then return some hit
+  return none
+
 /-- Generalise every `MachineState`-typed projection (e.g.
 `gsMachines this.ref`) in the goal to a fresh `MachineState`-typed
 local, then destructure into `(stage, currentState, fields, kind)`
@@ -354,14 +370,10 @@ elab_rules : tactic
           if codom.isArrow then return true
         | _ => pure ()
       return false
-    let rec firstMSProj (e : Expr) : MetaM (Option Expr) := do
-      if e.isApp then
-        if ← isMachineStateTy (← Lean.Meta.inferType e) then
-          return some e
-      for sub in e.getAppArgs.push e.getAppFn do
-        if sub != e then
-          if let some hit ← firstMSProj sub then return hit
-      return none
+    let firstMSProj (e : Expr) : MetaM (Option Expr) :=
+      firstSubexprM? (fun e => do
+        if !e.isApp then return false
+        isMachineStateTy (← Lean.Meta.inferType e)) e
     let collectAllInLocals : MetaM (Array Expr) := do
       let lctx ← getLCtx
       let mut acc : Array Expr := #[]
@@ -432,19 +444,16 @@ elab_rules : tactic
     -- First `machines`-field lookup `f a` in `e` whose result is
     -- `MachineState`, `f : _ → MachineState`, and `a` goes through a
     -- payload extractor. Recurses into subterms.
-    let rec firstLookup (e : Expr) : MetaM (Option Expr) := do
-      if e.isApp then
+    let firstLookup (e : Expr) : MetaM (Option Expr) :=
+      firstSubexprM? (fun e => do
+        if !e.isApp then return false
         let arg := e.appArg!
-        if viaPayloadExtractor arg && (← isMachineStateTy (← Lean.Meta.inferType e)) then
-          match ← Lean.Meta.inferType e.appFn! with
-          | .forallE _ _ body _ =>
-            if !body.hasLooseBVars && (← isMachineStateTy body) then
-              return some e
-          | _ => pure ()
-      for sub in e.getAppArgs.push e.getAppFn do
-        if sub != e then
-          if let some hit ← firstLookup sub then return hit
-      return none
+        unless viaPayloadExtractor arg do return false
+        unless ← isMachineStateTy (← Lean.Meta.inferType e) do return false
+        match ← Lean.Meta.inferType e.appFn! with
+        | .forallE _ _ body _ =>
+          return !body.hasLooseBVars && (← isMachineStateTy body)
+        | _ => return false) e
     -- Bounded loop: each pass abstracts one compound lookup, then
     -- re-scans (the goal changed). 8 is a safe cap.
     for _ in [0:8] do
@@ -453,6 +462,47 @@ elab_rules : tactic
       | some e =>
         let stx ← `(tactic| generalize $(← e.toSyntax) = ms at *)
         try evalTactic stx catch _ => break
+
+/-- Normalize every local declaration and target conjunct with `pverifySimp`,
+but do not run `simp_all`'s cross-hypothesis saturation. Top-level target
+conjunctions are split first: this shares local normalization across all
+conjuncts while preventing the simplifier from repeatedly traversing an entire
+invariant bundle under each nested binder. -/
+syntax "pverify_simp_each" : tactic
+elab_rules : tactic
+  | `(tactic| pverify_simp_each) => withMainContext do
+    let lctx ← getLCtx
+    for ldecl in lctx do
+      if ldecl.isImplementationDetail then continue
+      let hId := mkIdent ldecl.userName
+      try
+        evalTactic (← `(tactic|
+          simp (config := { maxDischargeDepth := 0, singlePass := true })
+            only [pverifySimp]
+            at $hId:ident))
+      catch _ => pure ()
+    let rec splitAnd (g : MVarId) : (depth : Nat) → MetaM (List MVarId)
+      | 0 => return [g]
+      | depth + 1 => g.withContext do
+        if ← g.isAssigned then return []
+        let ty := (← g.getType).consumeMData
+        unless ty.isAppOfArity ``And 2 do return [g]
+        let lhs := ty.appFn!.appArg!
+        let rhs := ty.appArg!
+        let lhsMv ← Lean.Meta.mkFreshExprSyntheticOpaqueMVar lhs (tag := ← g.getTag)
+        let rhsMv ← Lean.Meta.mkFreshExprSyntheticOpaqueMVar rhs (tag := ← g.getTag)
+        g.assign (mkApp4 (mkConst ``And.intro) lhs rhs lhsMv rhsMv)
+        return (← splitAnd lhsMv.mvarId! depth) ++
+          (← splitAnd rhsMv.mvarId! depth)
+    let mut goals : List MVarId := []
+    for g in ← getGoals do
+      goals := goals ++ (← splitAnd g 32)
+    setGoals goals
+    unless goals.isEmpty do
+      evalTactic (← `(tactic|
+        all_goals
+          (try simp (config := { maxDischargeDepth := 0, singlePass := true })
+            only [pverifySimp])))
 
 /-- Pre-SMT normalisation: simp the `pverifySimp` set, destruct
 state hypotheses, strip `WithName` wrappers, abstract compound machine
@@ -470,30 +520,64 @@ bare `machines` field. `PLean.stateOf` is unfolded early so
 `(s.machines _).currentState` projection, which lean-auto translates
 via the `<S>_st` `@[reducible] def` aliases. -/
 syntax "pverify_smt_prep" : tactic
+syntax "pverify_expose_functional_updates" : tactic
+
+/-- Run the prefix of `pverify_smt_prep` that exposes state-function updates,
+stopping before compound machine lookups are generalized. The guarded-update
+fallback case-splits at this boundary so abstraction cannot separate a lookup
+from the update equation that defines it. -/
+macro_rules
+  | `(tactic| pverify_expose_functional_updates) => `(tactic| (
+      try intros
+      try pverify_simp_each
+      all_goals (try unfold PLean.stateOf at *)
+      all_goals (try sdestruct_state)
+      all_goals (try unfold WithName at *)
+      all_goals (try dsimp only at *)
+    ))
+
 macro_rules
   | `(tactic| pverify_smt_prep) => `(tactic| (
-      try intros
-      try simp only [pverifySimp] at *
-      try unfold PLean.stateOf at *
-      try sdestruct_state
-      try unfold WithName at *
-      try dsimp only at *
-      try abstract_machine_lookups
-      try destruct_machine_state
-      try unfold PLean.DefaultInvariants at *
-      try unfold PLean.UniqueActions at *
-      try unfold PLean.IncreasingCount at *
-      try unfold PLean.ReceivedSubsetSent at *
-      try dsimp only at *
+      pverify_expose_functional_updates
+      all_goals (try abstract_machine_lookups)
+      all_goals (try destruct_machine_state)
+      all_goals (try unfold PLean.DefaultInvariants at *)
+      all_goals (try unfold PLean.UniqueActions at *)
+      all_goals (try unfold PLean.IncreasingCount at *)
+      all_goals (try unfold PLean.ReceivedSubsetSent at *)
+      all_goals (try dsimp only at *)
+      -- The first pass bounds work while state is nested. Once flattened, finish
+      -- normalizing predicates such as `inflight` and generated event tests.
+      -- Rewriting one declaration can expose rules in declarations simplified
+      -- earlier in the local context, so iterate only while a pass makes progress.
+      all_goals (repeat' (fail_if_no_progress simp only [pverifySimp] at *))
+    ))
+
+/-- Crush-native preparation that preserves `MachineState` values. The
+`destruct_machine_state` pass exists for lean-auto's higher-order rejection;
+Crush can encode the datatype and any function-valued fields directly. Keeping
+the value intact also keeps `currentState` and `kind` reads tied to the same
+functional update. -/
+syntax "pverify_smt_prep_structural" : tactic
+macro_rules
+  | `(tactic| pverify_smt_prep_structural) => `(tactic| (
+      pverify_expose_functional_updates
+      all_goals (try abstract_machine_lookups)
+      all_goals (try unfold PLean.DefaultInvariants at *)
+      all_goals (try unfold PLean.UniqueActions at *)
+      all_goals (try unfold PLean.IncreasingCount at *)
+      all_goals (try unfold PLean.ReceivedSubsetSent at *)
+      all_goals (try dsimp only at *)
+      all_goals (repeat' (fail_if_no_progress simp only [pverifySimp] at *))
     ))
 
 /-! ## Obligation cache
 
 Hash the elaborated obligation type and consult a per-project
 `<project>/.lake/build/pverify_cache/`. On a hit, close the obligation
-via `Loom.SMT.trust_smt` directly — same axiom `loom_smt` uses on
-`unsat` — skipping prep, the lean-auto translation, and the solver
-call.
+via `Crush.crushSorry`, the same auditable axiom Crush uses on `unsat`,
+and skip prep, translation, and the solver call. Reconstruction modes
+bypass the cache because a stored verdict is not a replayable proof.
 
 Entries are only written after a live `pverify_smt` returned `unsat`,
 so a hit certifies an earlier real solver run. The hash is over
@@ -590,47 +674,45 @@ register_option pverify.cache : Bool := {
   descr := "If true (default), `#pverify` caches obligations already \
             certified `unsat` in <project>/.lake/build/pverify_cache/. \
             On a hit, the obligation is closed directly via the \
-            Loom.SMT.trust_smt axiom — bypassing pverify_smt_prep, \
-            lean-auto translation, and the solver invocation. Hashing \
+            Crush.crushSorry axiom — bypassing pverify_smt_prep and \
+            Crush. The cache is disabled when crush.trust requests \
+            reconstruction. Hashing \
             is by elaborated obligation `Expr`, so unrelated edits to \
             the same file don't invalidate. Reset with `lake clean`."
 }
 
 register_option pverify.profile : Bool := {
   defValue := false
-  descr := "If true, `pverify_smt` takes an inlined branch that \
-            instruments each stage (cache lookup, prep, lean-auto, \
-            solver, assign) with `IO.monoNanosNow` timers and records \
+  descr := "If true, `pverify_smt` instruments cache lookup, prep, and \
+            the public crush call with \
+            `IO.monoNanosNow` timers and records \
             into `PLean.Verify.Profile.stateRef`. `#pverify` emits a \
-            summary table on completion. OFF by default — the inlined \
-            branch is not bit-identical to upstream `loom_smt` and is \
-            kept off the hot path."
+            summary table on completion. Use crush.profile for finer \
+            translation/solver/reconstruction timings."
 }
 
 /-! ## SMT discharge
 
 `pverify_smt` consults the obligation cache, then on miss runs
-`pverify_smt_prep; loom_smt [*]`. Under `set_option pverify.profile
-true`, the work is inlined into PLean (via `pverifySmtCloseProfiled`
-below) so each stage can be timed separately; the default path stays
-on the unmodified `loom_smt` macro.
+`pverify_smt_prep; crush [*]`. Both profile modes use the public
+`crush` tactic; the profiled path only wraps its phases with timers.
 
-`loom_smt` logs a "Goal proven by <solver>" info on success — one per
-obligation. Under `#pverify` that's per-obligation noise the command's
-consolidated report already subsumes, so the elab below drops new
-info-severity messages produced by either path (errors/warnings kept).
+Crush may log profiling information on success. Under `#pverify` the
+command's consolidated report subsumes per-obligation info, so the elab
+below drops new info-severity messages (errors/warnings kept).
 -/
 
 /-- Default (unprofiled) path: identical to the pre-profile-instrumentation
-behaviour. Consults the cache, then runs `pverify_smt_prep; loom_smt [*]`
+behaviour. Consults the cache, then runs `pverify_smt_prep; crush [*]`
 on a miss. The `prep` step itself sometimes closes the goal (via
 `simp` on a tautology, container-lemma rewrite landing in `True`,
-etc.), so `loom_smt` is gated on the prep leaving a non-empty goal
+etc.), so `crush` is gated on the prep leaving a non-empty goal
 queue. Without the gate the post-prep run would error
 "No goals to be solved" and clobber a more meaningful upstream
 diagnostic. -/
 def pverifySmtCloseDefault : TacticM Unit := do
-  let useCache := pverify.cache.get (← getOptions)
+  let opts ← getOptions
+  let useCache := pverify.cache.get opts && crush.trust.get opts == .trust
   let mv ← getMainGoal
   let goalType ← mv.getType
   let cacheHash? : Option (String × String) ←
@@ -644,25 +726,23 @@ def pverifySmtCloseDefault : TacticM Unit := do
     match cacheHash? with
     | some (hash, _) =>
       if (← liftM (pverifyCacheHas hash)) then
-        mv.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalType)
+        mv.assign (mkApp (mkConst ``Crush.crushSorry) goalType)
         pure true
       else pure false
     | none => pure false
   unless cacheHit do
     evalTactic (← `(tactic| pverify_smt_prep))
     unless (← getGoals).isEmpty do
-      evalTactic (← `(tactic| loom_smt [*]))
+      evalTactic (← `(tactic| all_goals crush [*]))
     if let some (hash, text) := cacheHash? then
       liftM (pverifyCacheInsert hash text)
 
-/-- Instrumented path: inlines `loom_smt`'s `prepareLeanAutoQuery +
-querySolver + trust_smt.assign` so we can time each segment separately.
-Records into `PLean.Verify.Profile.inFlightRowsRef` under this
-obligation's key. NOT bit-identical to upstream `loom_smt` (no `Goal
-proven by …` log, no `retryOnUnknown` cross-solver fallback by
-default), so we keep it behind `set_option pverify.profile true`. -/
+/-- Instrumented path. Records cache, prep, and the complete public
+`crush` call into `PLean.Verify.Profile.inFlightRowsRef` under this
+obligation's key. -/
 def pverifySmtCloseProfiled : TacticM Unit := do
-  let useCache := pverify.cache.get (← getOptions)
+  let opts ← getOptions
+  let useCache := pverify.cache.get opts && crush.trust.get opts == .trust
   let key ← currentObligationKey
   let mv ← getMainGoal
   let goalType ← mv.getType
@@ -690,9 +770,9 @@ def pverifySmtCloseProfiled : TacticM Unit := do
       if hit then
         let (_, assignNs) ← liftM (m := MetaM)
           (PLean.Verify.Profile.timeMetaNanos
-            (mv.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalType)))
+            (mv.assign (mkApp (mkConst ``Crush.crushSorry) goalType)))
         liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
-          { r with cached := true, smtAssign := r.smtAssign + assignNs }))
+          { r with cached := true, cacheClose := r.cacheClose + assignNs }))
         pure true
       else pure false
     | none => pure false
@@ -701,45 +781,13 @@ def pverifySmtCloseProfiled : TacticM Unit := do
       (evalTactic (← `(tactic| pverify_smt_prep)))
     liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
       { r with smtPrep := r.smtPrep + prepNs }))
-    -- Re-enter `withMainContext` so `prepareLeanAutoQuery` sees the
-    -- post-prep local context. Without this, lean-auto's
-    -- `collectAllLemmas (hints := [*])` collects against a stale
-    -- context and rejects the goal.
-    withMainContext do
-    let mv' ← getMainGoal
-    let opts ← getOptions
-    let withTimeout := loom.solver.smt.timeout.get opts
-    let hints : TSyntax `Auto.hints ← `(Auto.hints| [*])
-    let (cmdString, autoNs) ← PLean.Verify.Profile.timeTacticNanos
-      (Loom.SMT.prepareLeanAutoQuery mv' hints)
-    liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
-      { r with smtAuto := r.smtAuto + autoNs }))
-    let ((res, solverUsed), solverNs) ← liftM (m := MetaM)
-      (PLean.Verify.Profile.timeMetaNanos
-        (Loom.SMT.querySolver cmdString withTimeout
-          (forceSolver := Loom.SMT.specifiedSmtSolver (loom.solver.get opts))
-          (retryOnUnknown := loom.solver.smt.retryOnUnknown.get opts)))
-    liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
-      { r with smtSolver := r.smtSolver + solverNs }))
-    match res with
-    | .Sat none       => throwError s!"{Loom.SMT.satGoalStr solverUsed}"
-    | .Sat (some m)   => throwError s!"{Loom.SMT.satGoalStr solverUsed}:{m}"
-    | .Unknown reason =>
-      let suffix := match reason with | some r => s!": {r}" | none => ""
-      throwError s!"{Loom.SMT.unknownGoalStr solverUsed}{suffix}"
-    | .Failure reason =>
-      let suffix := match reason with | some r => s!": {r}" | none => ""
-      throwError s!"{Loom.SMT.failureGoalStr solverUsed}{suffix}"
-    | .Unsat =>
-      let mvPost ← getMainGoal
-      let goalTypePost ← mvPost.getType
-      let (_, assignNs) ← liftM (m := MetaM)
-        (PLean.Verify.Profile.timeMetaNanos
-          (mvPost.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalTypePost)))
+    unless (← getGoals).isEmpty do
+      let (_, crushNs) ← PLean.Verify.Profile.timeTacticNanos
+        (evalTactic (← `(tactic| all_goals crush [*])))
       liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
-        { r with smtAssign := r.smtAssign + assignNs }))
-      if let some (hash, text) := cacheHash? then
-        liftM (m := IO) (pverifyCacheInsert hash text)
+        { r with smtCrush := r.smtCrush + crushNs }))
+    if let some (hash, text) := cacheHash? then
+      liftM (m := IO) (pverifyCacheInsert hash text)
 
 syntax "pverify_smt" : tactic
 elab_rules : tactic
@@ -760,6 +808,15 @@ elab_rules : tactic
           let key ← currentObligationKey
           liftM (modifyDiag key fun d => { d with smt := some msg })
           throw e
+
+/-- Retry with Crush-native structural preparation, avoiding the legacy
+lean-auto `MachineState` flattening pass. -/
+syntax "pverify_structural_smt" : tactic
+macro_rules
+  | `(tactic| pverify_structural_smt) => `(tactic| (
+      pverify_smt_prep_structural
+      all_goals crush [*]
+    ))
 
 /-- Arithmetic / boolean fallback for default-invariant goals SMT
 can't translate (e.g., when the goal involves `GlobalState`'s
@@ -795,7 +852,8 @@ elab_rules : tactic
       -- Recursively split every top-level `And` head into its conjuncts,
       -- closing any `True`-typed leaf directly via `True.intro`. The
       -- result is a list of unassigned MVars, one per non-trivial conjunct.
-      let rec splitOne (g : MVarId) (depth : Nat) : MetaM (List MVarId) := do
+      let rec splitOne (g : MVarId) (depth : Nat) : MetaM (List MVarId) :=
+          g.withContext do
         if ← g.isAssigned then return []
         let ty ← g.getType
         let ty' := ty.consumeMData
@@ -824,6 +882,80 @@ elab_rules : tactic
       -- through. `all_goals` on an empty list errors "No goals to be
       -- solved", so skip when nothing remains.
       unless keep.isEmpty do
+        evalTactic (← `(tactic| all_goals pverify_smt))
+
+/-! ## Guarded functional updates
+
+State updates elaborate to functions containing guards such as
+`if r = updatedRef then newValue else oldState r`. Solvers can leave a
+quantified preservation VC unknown even though its two equality branches are
+small. The fallback below performs that split in Lean, but only for equality
+propositions that already occur as `ite`/`dite` guards. A depth-two cap bounds
+the search at four branches per goal and avoids turning arbitrary equalities
+into an exponential case analysis. -/
+
+private partial def firstIteEquality? (e : Expr) : Option Expr :=
+  let e := e.consumeMData
+  let guarded : Option Expr :=
+    if e.isAppOfArity ``ite 5 || e.isAppOfArity ``dite 5 then
+      let guard := e.getAppArgs[1]!
+      if guard.isAppOfArity ``Eq 3 && guard.hasFVar && !guard.hasLooseBVars then
+        some guard
+      else none
+    else none
+  match guarded with
+  | some guard => some guard
+  | none =>
+    match e with
+    | .app fn arg => firstIteEquality? fn <|> firstIteEquality? arg
+    | .lam _ type body _ | .forallE _ type body _ =>
+      firstIteEquality? type <|> firstIteEquality? body
+    | .letE _ type value body _ =>
+      firstIteEquality? type <|> firstIteEquality? value <|>
+        firstIteEquality? body
+    | .proj _ _ body => firstIteEquality? body
+    | _ => none
+
+private def firstGoalIteEquality? (g : MVarId) : MetaM (Option Expr) :=
+    g.withContext do
+  if let some guard := firstIteEquality? (← instantiateMVars (← g.getType)) then
+    return some guard
+  for localDecl in ← getLCtx do
+    if localDecl.isImplementationDetail then continue
+    if let some guard := firstIteEquality?
+        (← instantiateMVars localDecl.type) then
+      return some guard
+  return none
+
+/-- Retry a prepared VC after bounded case splitting on equality guards of
+functional updates. This is a fallback after ordinary SMT, so successful
+queries pay no branching cost. -/
+syntax "pverify_split_ite_smt" : tactic
+elab_rules : tactic
+  | `(tactic| pverify_split_ite_smt) => withMainContext do
+      evalTactic (← `(tactic| pverify_expose_functional_updates))
+      let rec splitGoal (g : MVarId) : Nat → TacticM (List MVarId)
+        | 0 => return if ← g.isAssigned then [] else [g]
+        | fuel + 1 => g.withContext do
+          if ← g.isAssigned then return []
+          let some guard ← firstGoalIteEquality? g | return [g]
+          let guardStx ← guard.toSyntax
+          setGoals [g]
+          evalTactic (← `(tactic| by_cases hUpdateGuard : $guardStx))
+          unless (← getGoals).isEmpty do
+            evalTactic (← `(tactic|
+              all_goals
+                (try simp_all (config := {
+                  maxDischargeDepth := 2, singlePass := true }))))
+          let mut leaves : List MVarId := []
+          for branch in ← getGoals do
+            leaves := leaves ++ (← splitGoal branch fuel)
+          return leaves
+      let mut leaves : List MVarId := []
+      for g in ← getGoals do
+        leaves := leaves ++ (← splitGoal g 2)
+      setGoals leaves
+      unless leaves.isEmpty do
         evalTactic (← `(tactic| all_goals pverify_smt))
 
 /-! ## `default_inv` — `DefaultInvariants` discharge
@@ -1226,6 +1358,8 @@ macro_rules
       first
         | default_inv
         | pverify_smt
+        | pverify_structural_smt
+        | pverify_split_ite_smt
         | pverify_split_smt
         | pverify_grind))
 
@@ -1237,6 +1371,8 @@ macro_rules
   | `(tactic| pverify_close_chain_smt_first) => `(tactic| (
       first
         | pverify_smt
+        | pverify_structural_smt
+        | pverify_split_ite_smt
         | pverify_split_smt
         | default_inv
         | pverify_grind))
@@ -1294,13 +1430,8 @@ intro _
 unfold PLean.send; pverify
 ```
 
-A future tactic could automate this walk, but the elab-level
-implementation must address two subtleties: (1) each `apply
-triple_bind` requires the head program to be in `_ >>= _` shape,
-which means unfolding `<var>_get`/`<var>_set` before the apply; (2)
-the head subgoal's `pverify` must FULLY close — a partial close
-(reducing `triple` to `wp`) leaves residual goals that confuse the
-walker's structural classifier. -/
+`pverify_frame_walk` (below) automates this walk for the general
+case — user invariants as well as defaults. -/
 
 macro_rules
   | `(tactic| pverify_default) => `(tactic| (
@@ -1313,5 +1444,78 @@ macro_rules
            split_conjunction_hyps
            pverify_close_chain_smt_first)
     ))
+
+/-! ## `pverify_frame_walk` — step-by-step discharge over a `>>=` spine
+
+A loop-bearing handler's obligation cannot go to SMT as one query: the
+`pforeach` WP contributes `invariantSeq inv s' → Post s'`, which is
+unprovable unless the user's annotated loop invariant happens to
+entail the whole target bundle. `wpgen` therefore leaves a goal no
+solver can close, and the obligation is reported as `unknown` (or,
+when the iteration VC quantifies over an intermediate `GlobalState`
+carrying a container row, as a lean-auto `Higher order input?`
+rejection).
+
+The walk sidesteps the annotation entirely. It decomposes the handler
+along its `>>=` spine and proves, for each step, that the step
+*preserves the obligation's own precondition* — using
+`triple_frame_step` (whose cut is the pre itself, so it unifies from
+the goal) and `triple_pforeach_with` (which threads an external
+predicate through a loop regardless of the annotation). Each per-step
+query is small: one primitive's footprint against a folded bundle.
+
+Soundness rests entirely on the two Loom lemmas being applied to the
+goal Lean checks: `triple_frame_step` is `triple_bind` at a frame cut,
+and `triple_pforeach_with` is proven in `Semantics/Loop.lean`. The
+tactic chooses *which* lemma to apply and calls `pverify` on the
+leaves; it cannot close a false goal that `pverify` wouldn't.
+
+Applicability: the walk needs every step to preserve the *whole* pre.
+That holds for a handler whose steps are var-reads plus a broadcast
+loop plus a closing `goto` — a state-changing step (a `<v>_set`, or a
+`goto` into a state the pre's guard pins) breaks the frame, and the
+walk then fails on that step rather than closing it, so the tactic is
+tried as a fallback after the single-shot chain.
+
+Termination: the recursion consumes one `>>=` per level, and a handler
+body is a finite term, so the spine bottoms out. It is not otherwise
+bounded — a runaway would surface as a heartbeat timeout rather than a
+hang, since every level performs a `refine`. -/
+syntax "pverify_frame_step_close" : tactic
+syntax "pverify_frame_walk" : tactic
+
+/-- Close one spine step. Either the step is a loop — thread the
+precondition through it via `triple_pforeach_with`, whose `Q` unifies
+from the goal — or it is an ordinary primitive, closed by the usual
+chain. Internal to `pverify_frame_walk`. -/
+macro_rules
+  | `(tactic| pverify_frame_step_close) => `(tactic| (
+      first
+        | (apply PLean.triple_pforeach_with
+           intro _
+           first | pverify | pverify_default)
+        | pverify
+        | pverify_default))
+
+/-- The walk itself. `repeat` cannot express this: it would keep
+applying `triple_frame_step` past the end of the spine and leave the
+tail goal in a shape the closer no longer matches. Instead each level
+peels one frame step and recurses, and at the spine's end — where
+`refine` fails structurally because the program is no longer a `>>=` —
+discharges against the real post.
+
+Peel-before-close is deliberate: `refine` failing on a non-`bind`
+program is a cheap unification failure, whereas `pverify` failing on a
+mid-spine step means a full lean-auto translation and solver round-trip.
+Trying the close first would pay that cost twice per step. -/
+macro_rules
+  | `(tactic| pverify_frame_walk) => `(tactic|
+      first
+        | (refine PLean.triple_frame_step _ _ _ _ ?frameHead ?frameTail
+           case frameHead => pverify_frame_step_close
+           case frameTail =>
+             intro _
+             pverify_frame_walk)
+        | pverify_frame_step_close)
 
 end PLean

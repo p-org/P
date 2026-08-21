@@ -20,8 +20,8 @@ import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 8
+set_option crush.backend "cvc5"
+set_option crush.timeout 8
 
 /-! ## Probe 1 — `on ev goto tgt` gets a per-handler obligation. -/
 

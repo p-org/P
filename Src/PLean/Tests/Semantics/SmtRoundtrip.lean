@@ -29,7 +29,7 @@ import Loom.MonadAlgebras.WP.Options
 -- Default Loom solver is `grind`; we explicitly switch to cvc5 so
 -- every `loom_smt` invocation in this file actually spawns a solver
 -- process.
-set_option loom.solver "cvc5"
+set_option crush.backend "cvc5"
 
 namespace PLean.SmtRoundtrip
 

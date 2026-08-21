@@ -1,15 +1,17 @@
 import Lake
 open Lake DSL System
 
-require Loom from git "https://github.com/verse-lab/loom.git"
-  @ "d10340821daf0ea04e05e7eec53814e0a9b248ce"
+require Loom from git "https://github.com/AD1024/loom.git"
+  @ "ec16b95ff8bbd047248de031cabd3160847e4b1b"
+require crush from git "https://github.com/AD1024/lean-crush.git"
+  @ "c1a2e13b2cc84abc1152eed46ad39b9cab328903"
 
 package PLean where
   leanOptions := #[⟨`pp.unicode.fun, true⟩]
 
 -- Solver versions — must match dependencies.toml.
 def z3.version := "4.15.4"
-def cvc5.version := "1.3.1"
+def cvc5.version := "1.3.4"
 def dependencyFile := "dependencies.toml"
 
 def z3.baseUrl := "https://github.com/Z3Prover/z3/releases/download"
@@ -90,13 +92,12 @@ def downloadDependency (pkg : Package) (oFile : FilePath) (build : Package → F
   let srcJob ← inputTextFile lakefilePath
   buildFileAfterDep oFile srcJob fun _srcFile => build pkg oFile
 
--- Loom's SMT.lean resolves solver paths relative to its own source via
--- `currentDirectory!`, which evaluates to `.lake/packages/Loom/.lake/build/`
--- when Loom is consumed as a dependency. We download solvers there.
-def loomBuildDir (pkg : Package) := pkg.lakeDir / "packages" / "Loom" / ".lake" / "build"
+-- lean-crush launches solvers by executable name. Lake places the root
+-- package's build/bin directory on PATH, so install the pinned binaries there.
+def solverBinDir (pkg : Package) := pkg.buildDir / "bin"
 
 target downloadDependencies pkg : Array FilePath := do
-  let solverDir := loomBuildDir pkg
+  let solverDir := solverBinDir pkg
   let z3 ← downloadDependency pkg (solverDir / "z3") (downloadSolver Solver.z3)
   let cvc5 ← downloadDependency pkg (solverDir / "cvc5") (downloadSolver Solver.cvc5)
   return Job.collectArray #[z3, cvc5]

@@ -44,7 +44,7 @@ def init0 : GlobalState Sig :=
     { stage := true, currentState := S.Counter_Idle, fields := default }
 
 /-- Run a `PM Sig α` to its final `(α, GlobalState)`. -/
-def runPM {α : Type} [Inhabited α]
+noncomputable def runPM {α : Type} [Inhabited α]
     (m : PM' α) (s : GlobalState Sig) : α × GlobalState Sig :=
   DivM.run (m.run.run s)
 

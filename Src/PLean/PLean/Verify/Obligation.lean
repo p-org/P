@@ -180,8 +180,15 @@ up `<thmName>` (or `<thmName>_check` for a manual proof) and inspects
 its value for `sorry`. Under `Elab.async = true` the env-lookup blocks
 on the theorem's body-elab Task, so calling this AFTER all emissions
 are queued lets the bodies elaborate concurrently. `manualProof` must
-match the value used at emission time. -/
-private def classifyOneObligation (fullThmName : Name) (manualProof : Bool) :
+match the value used at emission time.
+
+`viaThm?` is set for a derived-invariant obligation, whose body is
+`exact @<viaThm>`. As with the `_check` shim, `hasSorry` on that body
+does NOT see through to the cited theorem, so the citation is inspected
+separately — otherwise a sorried `via` theorem would report as
+discharged. -/
+private def classifyOneObligation (fullThmName : Name) (manualProof : Bool)
+    (viaThm? : Option Name := none) :
     CommandElabM ObligationOutcome := do
   let checkName : Name :=
     if manualProof then fullThmName.appendAfter "_check" else fullThmName
@@ -189,6 +196,15 @@ private def classifyOneObligation (fullThmName : Name) (manualProof : Bool) :
   match env.find? checkName with
   | some (.thmInfo info) =>
     if info.value.hasSorry then return .unfinished
+    if let some viaThm := viaThm? then
+      -- Same blind spot as the `_check` shim: look through to the cited
+      -- theorem's own value.
+      match env.find? viaThm with
+      | some (.thmInfo viaInfo) =>
+        if viaInfo.value.hasSorry then return .unfinished
+      | _ => return .unfinished
+      logInfo m!"obligation {fullThmName} derived via `{viaThm}` (type checked)"
+      return .userProved
     if manualProof then
       -- `_check`'s value is `@<userThm> args`, so `hasSorry` on it doesn't
       -- see through to the user theorem's body. Inspect the user theorem
@@ -374,9 +390,17 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
         mkIdent (Name.mkSimple ("hax_" ++ an.toString))
       axiomHaves := axiomHaves.push (← `(tactic| have $hypId:ident := @$axId))
     let hasAccessors := !accessorUnfolds.isEmpty
+    -- Single-shot chain first; on failure fall back to the per-step
+    -- frame walk. The walk is what closes loop-bearing handlers, whose
+    -- `pforeach` WP contributes an `invariantSeq inv ⇒ Post` premise no
+    -- solver can discharge unless the annotated loop invariant already
+    -- entails the whole target bundle. It costs one solver call per
+    -- spine step, so it sits after the single-shot attempt.
     let tail : TSyntax `tactic ←
-      if isDefault then `(tactic| pverify_default)
-      else                `(tactic| pverify)
+      if isDefault then
+        `(tactic| first | pverify_default | pverify_frame_walk)
+      else
+        `(tactic| first | pverify | pverify_frame_walk)
     -- Unfold order: handler → target lemma → using-lemmas → kind
     -- helpers → accessors → PLean primitives → closing tactic.
     -- Accessors must precede primitives, otherwise reversing the
@@ -558,9 +582,17 @@ def emitEntryObligation (modName : Name) (mname sname : Name)
         mkIdent (Name.mkSimple ("hax_" ++ an.toString))
       axiomHaves := axiomHaves.push (← `(tactic| have $hypId:ident := @$axId))
     let hasAccessors := !accessorUnfolds.isEmpty
+    -- Single-shot chain first; on failure fall back to the per-step
+    -- frame walk. The walk is what closes loop-bearing handlers, whose
+    -- `pforeach` WP contributes an `invariantSeq inv ⇒ Post` premise no
+    -- solver can discharge unless the annotated loop invariant already
+    -- entails the whole target bundle. It costs one solver call per
+    -- spine step, so it sits after the single-shot attempt.
     let tail : TSyntax `tactic ←
-      if isDefault then `(tactic| pverify_default)
-      else                `(tactic| pverify)
+      if isDefault then
+        `(tactic| first | pverify_default | pverify_frame_walk)
+      else
+        `(tactic| first | pverify | pverify_frame_walk)
     let mut steps : Array (TSyntax `tactic) := #[]
     steps := steps.push (← `(tactic| unfold $handlerUnfold:ident))
     unless isDefault do
@@ -608,6 +640,62 @@ def emitEntryObligation (modName : Name) (mname sname : Name)
           $wrappedProof)
   elabCommand stx
   return manualProof
+
+/-! ## Derived-invariant obligation emission
+
+A `prove X from A, B via thm ;` directive replaces X's per-handler
+consecution VCs and its base case with a single *state-level
+implication* VC:
+
+  `∀ s, A s → B s → X s`
+
+discharged by `exact @thm`. Soundness: A and B are separately proven
+invariant (the missing-premise check enforces that each is a `prove`
+target whose obligations all discharge), and the implication holds on
+every state, so X holds on every reachable state. No induction over
+handlers is needed — which is the point, since a derived invariant is
+precisely one whose real argument (a well-founded induction over a data
+value) is not expressible as a single Hoare step.
+
+The VC is emitted as an ordinary theorem so Lean type-checks `thm`
+against the exact statement; a mismatched or sorried `thm` fails the
+obligation the same way a bad `@[pverifyProof]` does. -/
+
+/-- Build the name `<Mod>.derive_<proofTag>_<target>`. -/
+def deriveCaseName (target : Name) (proofTag : Name) (proofIdx : Nat) : Name :=
+  let proofTagStr : String :=
+    if proofTag == Name.anonymous then s!"block{proofIdx}"
+    else proofTag.toString
+  Name.mkSimple ("derive_" ++ proofTagStr ++ "_" ++ target.toString)
+
+/-- Emit the derived-invariant VC `∀ s, prem₁ s → … → target s`,
+discharged by `exact @<viaThm>`. Unlike every other obligation this one
+has no tactic fallback: the user named the theorem that carries the
+argument, so either it type-checks or the obligation fails. -/
+def emitDeriveObligation (modName : Name) (target : Name)
+    (premises : Array Name) (viaThm : Name)
+    (proofTag : Name) (proofIdx : Nat) :
+    CommandElabM Unit := do
+  let thmName : Name := deriveCaseName target proofTag proofIdx
+  let idS : Ident := mkIdent `s
+  let stx ← liftMacroM do
+    let thmId : Ident := mkIdent thmName
+    let viaId : Ident := mkIdent viaThm
+    -- Premise chain: `prem₁ s → prem₂ s → … → target s`. `default`
+    -- resolves to the framework bundle, same as in a `using` list.
+    let mut body : TSyntax `term ← `(($(mkIdent target)) $idS)
+    for p in premises.reverse do
+      let pPred : TSyntax `term ←
+        if p == `default then `(PLean.DefaultInvariants) else `($(mkIdent p))
+      body ← `(($pPred) $idS → $body)
+    let goalType : TSyntax `term ←
+      `(∀ $idS : PLean.GlobalState $idSig, $body)
+    let keyLit := Syntax.mkStrLit ((modName ++ thmName).toString)
+    `(set_option linter.unusedTactic false in
+      set_option pverify.obligationKey $keyLit in
+      theorem $thmId : $goalType := by
+        pverify_log_failure_else_sorry (exact @$viaId))
+  elabCommand stx
 
 /-! ## Base-case obligation emission
 
@@ -996,17 +1084,7 @@ private def buildCexNameCtx (modName : Name) (ctx : LocalPModuleCtx) :
 /-! ## Failure classification helpers. -/
 
 private def hasSubstring (s : String) (pattern : String) : Bool :=
-  let pLen := pattern.length
-  let sLen := s.length
-  if pLen == 0 then true
-  else if pLen > sLen then false
-  else Id.run do
-    let mut i : Nat := 0
-    while i + pLen ≤ sLen do
-      if s.extract ⟨i⟩ ⟨i + pLen⟩ == pattern then
-        return true
-      i := i + 1
-    return false
+  pattern.isEmpty || (s.splitOn pattern).length > 1
 
 /-- Cap a multi-line diagnostic so the report doesn't degenerate into a
 wall of solver output. `maxLines` / `maxChars` default to the tight
@@ -1016,7 +1094,7 @@ private def truncateForReport (s : String)
     (maxLines : Nat := 12) (maxChars : Nat := 1500) : String :=
   let lines := s.splitOn "\n"
   let joined := String.intercalate "\n" (lines.take maxLines)
-  if joined.length > maxChars then joined.take maxChars ++ " …" else joined
+  if joined.length > maxChars then (joined.take maxChars).toString ++ " …" else joined
 
 /-- Turn `loom_smt`'s SAT diagnostic into a readable counter-example.
 Decodes the embedded model into the per-machine state table + the
@@ -1036,7 +1114,7 @@ private def renderCex (smtMsg : String) (ctx : Verify.CexNameCtx) : String :=
         | some defs =>
           "\n".intercalate (defs.toList.map (fun d =>
             if d.args.isEmpty then s!"{d.name} = {Verify.renderValue d.body}"
-            else s!"{d.name} {Verify.renderValue (.app d.args)} = {Verify.renderValue d.body}"))
+            else s!"{d.name} {Verify.renderValue (.list d.args)} = {Verify.renderValue d.body}"))
         | none => modelText
       truncateForReport cleaned 40 4000
 
@@ -1047,6 +1125,10 @@ The SMT diagnostic discriminates `sat` (counter-example) from
 private def classifyFailure (key : String) : CommandElabM ObligationOutcome := do
   let diag ← liftM (getDiag key : IO _)
   if let some smtMsg := diag.smt then
+    if hasSubstring smtMsg "goal is not provable" then
+      return .disproved (truncateForReport smtMsg 40 4000)
+    if hasSubstring smtMsg "solver returned `unknown`" then
+      return .unknown (truncateForReport smtMsg)
     if hasSubstring smtMsg "the goal is false" then
       let ctx := (← Verify.cexNameCtxRef.get).getD {}
       return .disproved (renderCex smtMsg ctx)
@@ -1080,6 +1162,10 @@ private structure PendingObligation where
   key          : String
   manualProof  : Bool
   emitError?   : Option String
+  /-- Set for a derived-invariant obligation: the fully-qualified name
+      of the cited `via` theorem, so classification can look through the
+      `exact @<thm>` body for a `sorry`. -/
+  viaThm?      : Option Name := none
   deriving Inhabited
 
 /-- Run the emitter, record a `PendingObligation`, and scrub per-
@@ -1096,7 +1182,8 @@ would break `#guard_msgs` even though the obligation's own classify
 path doesn't depend on it. -/
 private def runEmitOnly (modName mname sname evname target thmName : Name)
     (emitter : CommandElabM Bool)
-    (acc : SynthesiseResult) :
+    (acc : SynthesiseResult)
+    (viaThm? : Option Name := none) :
     CommandElabM (SynthesiseResult × PendingObligation) := do
   let acc := { acc with attempted := acc.attempted + 1 }
   let fullThmName := modName ++ thmName
@@ -1123,6 +1210,7 @@ private def runEmitOnly (modName mname sname evname target thmName : Name)
       return hasSubstring s "Goal proven by"
         || hasSubstring s "Trusting SMT solver"
         || hasSubstring s "discharged by `@[pverifyProof]`"
+        || hasSubstring s "derived via"
     let mut hasNoise : Bool := false
     for i in [preMsgsSize:curUnreported.size] do
       if ← isNoise (curUnreported.get! i) then hasNoise := true; break
@@ -1137,7 +1225,8 @@ private def runEmitOnly (modName mname sname evname target thmName : Name)
       modify fun st =>
         { st with messages := { st.messages with unreported := mergedUnreported } }
   let pending : PendingObligation := {
-    mname, sname, evname, target, fullThmName, key, manualProof, emitError?
+    mname, sname, evname, target, fullThmName, key, manualProof, emitError?,
+    viaThm?
   }
   return (acc, pending)
 
@@ -1148,11 +1237,11 @@ to `acc.records`. The log was already scrubbed in `runEmitOnly`. -/
 private def classifyOnePending (pending : PendingObligation)
     (acc : SynthesiseResult) : CommandElabM SynthesiseResult := do
   let { mname, sname, evname, target, fullThmName, key,
-        manualProof, emitError?, .. } := pending
+        manualProof, emitError?, viaThm?, .. } := pending
   let outcomeRaw : ObligationOutcome ← match emitError? with
     | some msg => pure (.tacticError msg)
     | none =>
-      try classifyOneObligation fullThmName manualProof
+      try classifyOneObligation fullThmName manualProof viaThm?
       catch e =>
         let errMsg ← e.toMessageData.toString
         pure (.tacticError (truncateForReport errMsg))
@@ -1227,6 +1316,25 @@ private def processEntryEmit (modName mname sname : Name)
       usingNames varNames lemmaInvNames machineNames eventNames axiomNames
       lemmaBundleNames proofTag proofIdx)
     acc
+
+/-- Emit the derived-invariant implication VC for a `prove X from … via
+<thm>;` directive. Recorded under `target := X` so the per-target
+rollup in `detectMissingPremises` treats a failed derivation as "X is
+not proven" — which then taints anything citing X. -/
+private def processDeriveEmit (modName target : Name)
+    (premises : Array Name) (viaThm : Name)
+    (proofTag : Name) (proofIdx : Nat)
+    (acc : SynthesiseResult) :
+    CommandElabM (SynthesiseResult × PendingObligation) := do
+  let thmName := deriveCaseName target proofTag proofIdx
+  runEmitOnly modName Name.anonymous Name.anonymous Name.anonymous
+    target thmName
+    (do emitDeriveObligation modName target premises viaThm proofTag proofIdx
+        -- Not a `@[pverifyProof]` obligation: the emitted theorem IS the
+        -- check (its body is `exact @<viaThm>`). Classification looks
+        -- through to the citation via `viaThm?` instead.
+        return false)
+    acc (viaThm? := some (modName ++ viaThm))
 
 /-- Emit one base-case obligation for a single invariant in a directive's
 target lemma. `mname`/`sname`/`evname` are recorded as `anonymous` —
@@ -1310,6 +1418,17 @@ def synthesise (modName : Name) (ctx : LocalPModuleCtx) :
   for hProof : proofIdx in [0:ctx.proofs.size] do
     let proof := ctx.proofs[proofIdx]'hProof.upper
     for dir in proof.directives do
+      -- Derived form (`prove X from A, B via thm ;`): X's invariance is
+      -- A's and B's invariance composed with a pointwise implication, so
+      -- there is nothing to induct over. Emit only the implication VC —
+      -- no per-handler consecution, no base case (X holds at init
+      -- because its premises do).
+      if let some viaThm := dir.deriveVia then
+        let (result', pending) ← processDeriveEmit modName dir.target
+          dir.usingLemmas viaThm proof.name proofIdx result
+        result := result'
+        pendings := pendings.push pending
+        continue
       -- Base case: one VC per individual invariant in the target
       -- lemma's bundle (or per default-invariant for `prove default`).
       -- Premises (`using P`) get a base-case VC only when they are

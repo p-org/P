@@ -6,22 +6,17 @@ wall-clock times into the IORefs declared here. `#pverify` consumes the
 records at end-of-command and emits a summary table via `logInfo`.
 
 Stages recorded per obligation:
-- `cache.pp`    — `Lean.Meta.ppExpr` on the goal's local context + target;
+- `cache.pp`    — canonical serialization of the local context + target;
 - `cache.hash`  — `String.hash` of the canonicalised text;
 - `cache.fs`    — `IO.FS.pathExists` of the cache file;
+- `cache.close` — assignment of Crush's auditable trust axiom on a hit;
 - `smt.prep`    — `pverify_smt_prep` (defunctionalisation simp chain);
-- `smt.auto`    — `prepareLeanAutoQuery` (lean-auto translation);
-- `smt.solver`  — `querySolver` (cvc5/z3 child process);
-- `smt.assign`  — `mv.assign (trust_smt _)` (proof term construction).
+- `smt.crush`   — the public `crush` call, including translation,
+  solving, and the configured trust or reconstruction policy.
 
-The profile path is exact-equivalent in *what* it does to the
-unprofiled path (same trust_smt axiom, same lean-auto translation,
-same solver invocation). It differs only in being inlined into PLean
-rather than going through `loom_smt`, so the segment timings sum to
-approximately the same wall-clock the unprofiled path would have.
-
-To avoid divergence from the upstream `loom_smt`, the profile path is
-ONLY taken when the option is explicitly enabled. Default `false`.
+The profile path invokes the same public `crush` tactic as the
+unprofiled path. Crush's own `crush.profile` option provides finer
+translation/solver/reconstruction timings when needed.
 
 Output: a per-obligation row plus a stage-aggregate table emitted on
 `#pverify` completion. We don't write CSV — the inline `logInfo`
@@ -42,10 +37,9 @@ structure Row where
   cachePp    : Nat := 0
   cacheHash  : Nat := 0
   cacheFs    : Nat := 0
+  cacheClose : Nat := 0
   smtPrep    : Nat := 0
-  smtAuto    : Nat := 0
-  smtSolver  : Nat := 0
-  smtAssign  : Nat := 0
+  smtCrush   : Nat := 0
   deriving Inhabited
 
 /-- Aggregate state across all obligations of a single `#pverify`
@@ -121,10 +115,10 @@ def padRight (s : String) (w : Nat) : String :=
 
 /-- Render the per-obligation rows table. -/
 def renderRows (rows : Array Row) : String :=
-  let header := s!"  {padRight "obligation" 60}  {padRight "elabCmd" 8}  {padRight "wall" 8}  {padRight "cache.pp" 8}  {padRight "cache.h" 8}  {padRight "cache.fs" 8}  {padRight "prep" 8}  {padRight "auto" 8}  {padRight "solver" 8}  {padRight "assign" 8}  cached"
+  let header := s!"  {padRight "obligation" 60}  {padRight "elabCmd" 8}  {padRight "wall" 8}  {padRight "cache.pp" 8}  {padRight "cache.h" 8}  {padRight "cache.fs" 8}  {padRight "cache.cl" 8}  {padRight "prep" 8}  {padRight "crush" 8}  cached"
   let lines := rows.toList.map fun r =>
-    let wall := r.cachePp + r.cacheHash + r.cacheFs + r.smtPrep + r.smtAuto + r.smtSolver + r.smtAssign
-    s!"  {padRight r.obligation 60}  {padRight (fmtMs r.elabCmd) 8}  {padRight (fmtMs wall) 8}  {padRight (fmtMs r.cachePp) 8}  {padRight (fmtMs r.cacheHash) 8}  {padRight (fmtMs r.cacheFs) 8}  {padRight (fmtMs r.smtPrep) 8}  {padRight (fmtMs r.smtAuto) 8}  {padRight (fmtMs r.smtSolver) 8}  {padRight (fmtMs r.smtAssign) 8}  {r.cached}"
+    let wall := r.cachePp + r.cacheHash + r.cacheFs + r.cacheClose + r.smtPrep + r.smtCrush
+    s!"  {padRight r.obligation 60}  {padRight (fmtMs r.elabCmd) 8}  {padRight (fmtMs wall) 8}  {padRight (fmtMs r.cachePp) 8}  {padRight (fmtMs r.cacheHash) 8}  {padRight (fmtMs r.cacheFs) 8}  {padRight (fmtMs r.cacheClose) 8}  {padRight (fmtMs r.smtPrep) 8}  {padRight (fmtMs r.smtCrush) 8}  {r.cached}"
   String.intercalate "\n" (header :: lines)
 
 /-- Render the stage-aggregate table (totals across all rows). -/
@@ -136,15 +130,14 @@ def renderAggregate (rows : Array Row) : String :=
   let cachePp   := total Row.cachePp
   let cacheHash := total Row.cacheHash
   let cacheFs   := total Row.cacheFs
+  let cacheClose := total Row.cacheClose
   let smtPrep   := total Row.smtPrep
-  let smtAuto   := total Row.smtAuto
-  let smtSolver := total Row.smtSolver
-  let smtAssign := total Row.smtAssign
+  let smtCrush  := total Row.smtCrush
   -- We report `elabCmd` separately (outer-wall, includes the others) and
   -- the "tactic-time" sum which is elabCmd minus what the tactic stages
   -- captured. That difference reveals where elaboration spends time
   -- outside the SMT path (e.g. theorem-type elaboration, kernel typecheck).
-  let smtSum := cachePp + cacheHash + cacheFs + smtPrep + smtAuto + smtSolver + smtAssign
+  let smtSum := cachePp + cacheHash + cacheFs + cacheClose + smtPrep + smtCrush
   let elabOuter := if elabCmd ≥ smtSum then elabCmd - smtSum else 0
   let grandTotal := if elabCmd > 0 then elabCmd else smtSum
   let pct (n : Nat) : String :=
@@ -157,16 +150,15 @@ def renderAggregate (rows : Array Row) : String :=
     ++ s!"  cache.pp:           {padRight (fmtMs cachePp) 8} ms  ({pct cachePp})\n"
     ++ s!"  cache.hash:         {padRight (fmtMs cacheHash) 8} ms  ({pct cacheHash})\n"
     ++ s!"  cache.fs:           {padRight (fmtMs cacheFs) 8} ms  ({pct cacheFs})\n"
+    ++ s!"  cache.close:        {padRight (fmtMs cacheClose) 8} ms  ({pct cacheClose})\n"
     ++ s!"  smt.prep:           {padRight (fmtMs smtPrep) 8} ms  ({pct smtPrep})\n"
-    ++ s!"  smt.auto:           {padRight (fmtMs smtAuto) 8} ms  ({pct smtAuto})\n"
-    ++ s!"  smt.solver:         {padRight (fmtMs smtSolver) 8} ms  ({pct smtSolver})\n"
-    ++ s!"  smt.assign:         {padRight (fmtMs smtAssign) 8} ms  ({pct smtAssign})\n"
+    ++ s!"  smt.crush:          {padRight (fmtMs smtCrush) 8} ms  ({pct smtCrush})\n"
     ++ s!"  total:              {padRight (fmtMs grandTotal) 8} ms"
 
 /-- Render a sorted top-N table (by wall time descending). -/
 def renderTopN (rows : Array Row) (n : Nat) : String :=
   let wallOf (r : Row) : Nat :=
-    r.cachePp + r.cacheHash + r.cacheFs + r.smtPrep + r.smtAuto + r.smtSolver + r.smtAssign
+    r.cachePp + r.cacheHash + r.cacheFs + r.cacheClose + r.smtPrep + r.smtCrush
   let sorted := rows.toList.toArray.qsort (fun a b => wallOf a > wallOf b)
   let top := sorted.extract 0 (min n sorted.size)
   renderRows top

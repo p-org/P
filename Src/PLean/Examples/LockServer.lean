@@ -18,13 +18,13 @@ import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
-set_option loom.solver "cvc5"
+set_option crush.backend "cvc5"
 -- Each obligation now preserves the full invariant bundle (10 in
 -- `system_config`, 8 in `safety`), so the per-obligation VC is far
 -- larger than the single-invariant skeleton; the 3 s probe budget that
 -- the skeleton used returns `unknown` on these. 30 s matches the
 -- DistributedLock port.
-set_option loom.solver.smt.timeout 30
+set_option crush.timeout 30
 
 pmodule LockServer
 
@@ -247,7 +247,9 @@ theorem Node.Working.eAquire_correct_block0_system_config (this : Node) (lbl : S
     rcases hsent1 with hNew | hOld
     · subst hNew; rw [eLock_payload_of_mk]
       simp only [is_Node, Node_allocated, Node_kind] at hThisKind ⊢; exact hThisKind
-    · have := hNSL e hisE ⟨hOld, hrecv.2⟩; simpa using this
+    · have hpre := hNSL e hisE ⟨hOld, hrecv.2⟩
+      simp only [is_Node, Node_allocated, Node_kind] at hpre ⊢
+      exact hpre
   case nsu =>
     -- node_send_unlock: new label is an eLock, fails is_eUnlock.
     intro e hisE hsent
@@ -256,7 +258,9 @@ theorem Node.Working.eAquire_correct_block0_system_config (this : Node) (lbl : S
     simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not] at hrecv
     rcases hsent1 with hNew | hOld
     · subst hNew; simp only [is_eUnlock] at hisE
-    · have := hNSU e hisE ⟨hOld, hrecv.2⟩; simpa using this
+    · have hpre := hNSU e hisE ⟨hOld, hrecv.2⟩
+      simp only [is_Node, Node_allocated, Node_kind] at hpre ⊢
+      exact hpre
 
 -- eLock: Server, `if has_lock then has_lock=false; send p.sender eGrant`.
 set_option maxHeartbeats 8000000 in

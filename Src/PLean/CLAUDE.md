@@ -117,12 +117,13 @@ Phase 3+ targets the verified benchmarks under
   machine-kind `is`, multi-Lemma `using` chains.
 - **Phase 4 (specs)**: `1_ChainReplicationVerification`.
 - **Phase 5 (foreach/maps)**: `5_Consensus`,
-  `2_TwoPhaseCommitVerification`, `7_ShardedKV`. Maps + `foreach`
-  shipped (the `ShardedKV` port verifies); `Consensus` / 2PC blocked
-  on a stronger loop-aware `default_inv` so the auto-emitted `prove
-  default;` obligations under loops close without a hand-written
-  `DefaultInvariants` loop invariant.
-- **Phase 6 stretch**: `4_Paxos`.
+  `2_TwoPhaseCommitVerification`, `7_ShardedKV`. All three ports
+  verify: `ShardedKV` fully by SMT, `Consensus` and 2PC with manual
+  proofs for the container/loop steps SMT can't reach.
+- **Phase 6 stretch**: `4_Paxos` — the ballot argument is
+  machine-checked and the port is `sorry`-free; 6 support-lemma
+  obligations remain `unknown` on `∃`-over-`sent` carry (see
+  `docs/PAXOS_TODO.md`).
 
 Most Tutorial/Advanced benchmarks need surface features that aren't
 built yet — check `docs/ROADMAP.md`'s workstream breakdown before
@@ -156,6 +157,17 @@ reserved word or builtin. Mechanical replacements when porting `.p`:
 `Lemma`, `Theorem`, `Proof`, `prove`, `using`, `system` are
 new-in-PLean keywords for the verification-declaration surface
 (Phase 3); `default` is a reserved sentinel inside `Proof` blocks.
+
+`prove <X> from <p1>, <p2> via <thm> ;` is the **derived-invariant**
+form: `X` is not separately inductive but follows pointwise from the
+premises, and `<thm>` is a user theorem `∀ s, p1 s → p2 s → X s`. A
+derived target gets **no per-handler consecution VC and no base case** —
+only an implication VC discharged by `exact @<thm>`. Use it when the
+real argument is a well-founded induction over a data value (Paxos
+ballots), which no Hoare step can express. The cited theorem is
+type-checked against the emitted statement and its value is checked for
+`sorry`; premises must still be `prove`d. See `docs/ProofSkill.md` §1.8
+and [`Tests/Syntax/DerivedInvariant.lean`](Tests/Syntax/DerivedInvariant.lean).
 
 `PLean.choose : Int → PM Int` returns a nondeterministically-chosen
 `Int` in `[0, bound]`. Implemented via `MonadNonDet.pickSuchThat`;

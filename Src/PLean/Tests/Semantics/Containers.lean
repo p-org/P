@@ -79,6 +79,6 @@ example (s : Set Nat) (x e : Nat) :
 example (s : Set Nat) (x e : Nat) :
     x ∈ s \ Set.singleton e ↔ x ∈ s ∧ x ≠ e := by
   simp only [pverifySimp]
-  tauto
+  simp only [Set.mem_singleton_iff]
 
 end PLean.Tests.Containers

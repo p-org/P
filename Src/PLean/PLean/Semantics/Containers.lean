@@ -80,7 +80,7 @@ instance [DecidableEq K] (m : PMap K V) (k : K) :
     Decidable (k ∈ m) :=
   match h : m k with
   | .some v => isTrue ⟨v, h⟩
-  | .none   => isFalse (fun ⟨_, hv⟩ => by rw [h] at hv; exact Option.noConfusion hv)
+  | .none   => isFalse (fun ⟨_, hv⟩ => by simp [h] at hv)
 
 /-! ## Removal — one operator over `Set` and `PMap`
 

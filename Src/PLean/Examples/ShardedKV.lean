@@ -12,8 +12,8 @@ import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 5
+set_option crush.backend "cvc5"
+set_option crush.timeout 5
 
 pmodule ShardedKV
 

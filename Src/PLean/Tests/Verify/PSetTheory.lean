@@ -17,7 +17,7 @@ import PLean.Verify.SimpLemmas
 
 open PLean
 
-set_option loom.solver "cvc5"
+set_option crush.backend "cvc5"
 
 namespace PLean.Tests.PSetTheory
 
@@ -37,11 +37,11 @@ namespace PLean.Tests.PSetTheory
 
 example (s : PSet Nat) (a x : Nat) (h : x ∈ s) (heq : x = a) : a ∈ s := by
   simp only [pverifySimp] at *
-  loom_smt [h, heq]
+  crush [h, heq]
 
 example (s : PSet Nat) (a b : Nat) (h : b ∈ s) : b ∈ PSet.insert a s := by
   simp only [pverifySimp] at *
-  loom_smt [h]
+  crush [h]
 
 example (a : Nat) : a ∈ PSet.insert a (PSet.empty : PSet Nat) := by
   simp only [pverifySimp] at *
@@ -50,7 +50,7 @@ example (a : Nat) : a ∈ PSet.insert a (PSet.empty : PSet Nat) := by
 example (s : PSet Nat) (a b : Nat) (h : b ∈ s) (hne : b ≠ a) :
     b ∈ PSet.erase a s := by
   simp only [pverifySimp] at *
-  loom_smt [h, hne]
+  crush [h, hne]
 
 /-! ## Whole-set value pass + intersection axiom (the Consensus shape) -/
 
@@ -62,6 +62,6 @@ axiom quorum_intersect {α : Type} (q1 q2 : PSet α) :
 example (q1 q2 : PSet Nat) (h1 : isQuorum q1 = true) (h2 : isQuorum q2 = true) :
     ∃ a : Nat, a ∈ q1 ∧ a ∈ q2 := by
   have := quorum_intersect q1 q2 h1 h2
-  loom_smt [this]
+  crush [this]
 
 end PLean.Tests.PSetTheory

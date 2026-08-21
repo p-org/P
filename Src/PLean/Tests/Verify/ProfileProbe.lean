@@ -22,8 +22,8 @@ open PLean PartialCorrectness DemonicChoice
 
 set_option pverify.profile true
 set_option pverify.cache true
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 30
+set_option crush.backend "cvc5"
+set_option crush.timeout 30
 set_option maxHeartbeats 4000000
 
 pmodule ProfileProbe

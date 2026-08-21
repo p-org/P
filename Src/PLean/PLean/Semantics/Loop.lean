@@ -124,6 +124,25 @@ theorem triple_pforeach_with {P : ProgramSig} {α : Type}
   exact (triple_pure _ _ _).mpr (le_refl _)
 
 open PartialCorrectness DemonicChoice in
+/-- `triple_bind` specialised to a *frame* cut: the intermediate
+assertion is the precondition itself. Because the cut mentions no
+bound value, it unifies from the goal — `refine triple_frame_step _ _
+_ _ ?head ?tail` leaves the head and tail subgoals without the caller
+naming a cut.
+
+This is what makes an automated step-walk over a handler's `>>=`
+spine possible: each step's obligation is "this step preserves the
+handler's precondition", stated against a pre that is still folded
+(so the SMT query carries the surface invariant names, not their
+expansions). `pverify_frame_walk` in `Verify/Tactic.lean` drives it. -/
+theorem triple_frame_step {P : ProgramSig} {α β : Type}
+    (pre : PProp P) (x : PM P α) (f : α → PM P β) (post : β → PProp P)
+    (head : triple pre x (fun _ => pre))
+    (tail : ∀ y, triple pre (f y) post) :
+    triple pre (x >>= f) post :=
+  triple_bind pre x (fun _ => pre) f post head tail
+
+open PartialCorrectness DemonicChoice in
 /-- WPGen for `pforeach`. Same shape as Loom's
 `WPGen.forWithInvariantLoop` (Lean.Loop.mk version): the get carries
 the iteration condition as an embedded `⌜⌝`, conjoined with the

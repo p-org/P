@@ -200,7 +200,38 @@ iteration VC. To make a loop-bearing handler's obligation close by SMT:
   retype to `∀ w : MachineRef, is_<M> w s → …[w.ref ↦ w]` — first-order
   under the iteration VC.
 
-**Known loop limits (still need manual `@[pverifyProof]`):**
+### 6.1 The frame walk — when the annotation can't carry the bundle
+
+Annotating helps only when the loop invariant entails the *whole*
+target. When it doesn't, `WPGen.pforeach` leaves `invariantSeq inv s' ⇒
+Post s'` in the goal, which no solver can close — and if the iteration
+VC also quantifies over an intermediate `GlobalState` carrying a
+container row, lean-auto rejects it outright as higher-order. Either
+way the obligation fails for a reason that has nothing to do with
+whether the invariant is true.
+
+`pverify_frame_walk` (`Verify/Tactic.lean`) sidesteps the annotation.
+It decomposes the handler along its `>>=` spine and proves, per step,
+that the step **preserves the obligation's own precondition**:
+
+- `triple_frame_step` (`Semantics/Loop.lean`) is `triple_bind` at a
+  frame cut — the intermediate assertion *is* the pre, so it unifies
+  from the goal and the tactic never has to synthesise a cut.
+- `triple_pforeach_with` threads that same predicate through the loop
+  independently of the annotation.
+
+Each per-step query is one primitive's footprint against a still-folded
+bundle, which is small enough to translate. The generator runs the walk
+as a fallback after the single-shot chain, so nothing that already
+closed changes shape.
+
+The walk applies when every step preserves the whole pre — var-reads, a
+broadcast loop, a closing `goto`. A step that breaks the frame (a
+`<v>_set`, or a `goto` into a state the pre's guard pins) makes the walk
+fail on that step rather than close it, which is why it's a fallback and
+not the default.
+
+**Remaining loop limits (still need manual `@[pverifyProof]`):**
 
 - **Event-quantifier invariants** — `∀ e : Label, e is <ev> → …
   payload_of e …` under the `∀ x : GlobalState` post-state binder gives
@@ -214,6 +245,21 @@ iteration VC. To make a loop-bearing handler's obligation close by SMT:
 Closing these two needs a value-tracking `pforeach` WP + first-order
 event handling that are **not yet built**; see
 [`PLAN_CONTAINERS_AND_LOOPS.md`](PLAN_CONTAINERS_AND_LOOPS.md).
+
+---
+
+## 8. Invariants with no Hoare-step proof at all
+
+Some invariants are true on every reachable state yet have no
+per-handler consecution proof, because their argument is a well-founded
+induction over a data value (Paxos ballots, Raft terms). No amount of
+VC-shaping fixes that — the obligation being asked for is the wrong
+obligation.
+
+The surface for these is `prove X from A, B via <thm>;`, which replaces
+X's consecution VCs and base case with a single pointwise-implication
+VC. See `docs/ProofSkill.md` §1.8; the mechanics and the two soundness
+guards are pinned in `Tests/Syntax/DerivedInvariant.lean`.
 
 ---
 

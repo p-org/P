@@ -22,10 +22,8 @@ import PLean
 
 open PLean PartialCorrectness DemonicChoice
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 10
-set_option loom.solver.smt.retryOnUnknown false
-set_option auto.mono.ignoreNonQuasiHigherOrder true
+set_option crush.backend "cvc5"
+set_option crush.timeout 10
 
 pmodule ClockBound
 

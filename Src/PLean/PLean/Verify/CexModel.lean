@@ -21,7 +21,7 @@ the verbatim dump.
 -/
 import PLean.Verify.CexParse
 
-open Auto.Parser.SMTSexp
+open Crush.SMT
 
 namespace PLean
 namespace Verify
@@ -98,67 +98,67 @@ private def renderRef (rk : RefKinds) (r : Int) : String :=
 /-! ## Sexp helpers -/
 
 private def appHead : Sexp → Option String
-  | .app xs =>
+  | .list xs =>
     match xs[0]? with
-    | some (Sexp.atom (LexVal.symb h)) => some h
+    | some (Sexp.atom h) => some h
     | _ => none
   | _ => none
 
 private def appArgs : Sexp → Array Sexp
-  | .app xs => xs.extract 1 xs.size
+  | .list xs => xs.extract 1 xs.size
   | _       => #[]
 
 /-- A value as a `Nat`, accepting both `5` and the negated form `(- 5)`
 solvers emit for `Int`-typed fields in spurious models. -/
 private def asInt? : Sexp → Option Int
-  | .atom (.nat n) => some (Int.ofNat n)
-  | .app xs =>
+  | .atom s => s.toInt?
+  | .list xs =>
     match xs[0]?, xs[1]? with
-    | some (Sexp.atom (LexVal.symb "-")), some (Sexp.atom (LexVal.nat n)) =>
-      some (-(Int.ofNat n))
+    | some (Sexp.atom "-"), some (Sexp.atom n) =>
+      n.toNat?.map (fun n => -(Int.ofNat n))
     | _, _ => none
   | _ => none
 
 private def isTrueVal : Sexp → Bool
-  | .atom (.symb "true") => true
+  | .atom "true" => true
   | _ => false
 
 /-- Inline SMT `let` bindings so the bound values (where solvers stash
 `Label` constructors) appear at their use sites. -/
 private partial def substVars (pairs : Array (String × Sexp)) : Sexp → Sexp
-  | .atom (.symb v) =>
+  | .atom v =>
     match pairs.find? (·.1 == v) with
     | some (_, t) => t
-    | none        => .atom (.symb v)
-  | .atom l => .atom l
-  | .app xs => .app (xs.map (substVars pairs))
+    | none        => .atom v
+  | .str s => .str s
+  | .list xs => .list (xs.map (substVars pairs))
 
 private partial def substLet : Sexp → Sexp
-  | .app xs =>
+  | .list xs =>
     match xs[0]? with
-    | some (Sexp.atom (LexVal.symb "let")) =>
+    | some (Sexp.atom "let") =>
       match xs[1]?, xs[2]? with
-      | some (Sexp.app binds), some body =>
+      | some (Sexp.list binds), some body =>
         let pairs := binds.filterMap (fun b =>
           match b with
-          | .app ys =>
+          | .list ys =>
             match ys[0]?, ys[1]? with
-            | some (Sexp.atom (LexVal.symb v)), some t => some (v, substLet t)
+            | some (Sexp.atom v), some t => some (v, substLet t)
             | _, _ => none
           | _ => none)
         substLet (substVars pairs body)
-      | _, _ => .app (xs.map substLet)
-    | _ => .app (xs.map substLet)
+      | _, _ => .list (xs.map substLet)
+    | _ => .list (xs.map substLet)
   | s => s
 
 /-- Collect every `Label.mk …` subterm of a `sent`/`received` body.
 Robust to the `or`-of-equalities and `ite`-chain shapes alike — the
 boolean skeleton is ignored, only the label constructors matter. -/
 private partial def collectLabels : Sexp → Array Sexp
-  | .app xs =>
+  | .list xs =>
     let here : Array Sexp :=
       match xs[0]? with
-      | some (Sexp.atom (LexVal.symb h)) => if h == "Label.mk" then #[.app xs] else #[]
+      | some (Sexp.atom h) => if h == "Label.mk" then #[.list xs] else #[]
       | _ => #[]
     xs.foldl (fun acc x => acc ++ collectLabels x) here
   | _ => #[]
@@ -169,19 +169,13 @@ private partial def collectLabels : Sexp → Array Sexp
 applications. Friendlier than `Sexp.toString`, which bar-quotes every
 symbol. -/
 partial def renderValue : Sexp → String
-  | .atom (.symb s) => s
-  | .atom (.nat n)  => toString n
-  | .atom (.rat n m) => s!"{n}/{m}"
-  | .atom (.str s)  => "\"" ++ s ++ "\""
-  | .atom (.kw s)   => ":" ++ s
-  | .atom (.comment _) => ""
-  | .atom .lparen   => "("
-  | .atom .rparen   => ")"
-  | .app xs         =>
+  | .atom s => s
+  | .str s  => "\"" ++ s ++ "\""
+  | .list xs =>
     -- Collapse the unary-minus application `(- n)` solvers emit for
     -- negative `Int` literals into `-n`.
     match xs[0]?, xs[1]?, xs.size with
-    | some (Sexp.atom (LexVal.symb "-")), some (Sexp.atom (LexVal.nat n)), 2 =>
+    | some (Sexp.atom "-"), some (Sexp.atom n), 2 =>
       s!"-{n}"
     | _, _, _ =>
       "(" ++ " ".intercalate (xs.toList.map renderValue) ++ ")"
@@ -191,11 +185,11 @@ wrapper-constructor application `(<M>.mk <n>)`. A `MachineRef`-typed
 field/var whose declared type is a wrapper struct stores the wrapper
 form; the bare form appears when the type is the raw `MachineRef`. -/
 private def asRefInt? : Sexp → Option Int
-  | .app xs =>
+  | .list xs =>
     match xs[0]? with
-    | some (Sexp.atom (LexVal.symb h)) =>
-      if h == "mk" || h.endsWith ".mk" then xs[1]?.bind asInt? else asInt? (.app xs)
-    | _ => asInt? (.app xs)
+    | some (Sexp.atom h) =>
+      if h == "mk" || h.endsWith ".mk" then xs[1]?.bind asInt? else asInt? (.list xs)
+    | _ => asInt? (.list xs)
   | s => asInt? s
 
 /-- Render a field value: a `MachineRef`-typed field as `<Kind>#<ref>`,
@@ -330,21 +324,21 @@ private def FnTable.at (t : FnTable) (key : Sexp) : Sexp :=
 
 private def argName? (d : ModelDef) : Option String :=
   match d.args[0]? with
-  | some (Sexp.app ys) =>
+  | some (Sexp.list ys) =>
     match ys[0]? with
-    | some (Sexp.atom (LexVal.symb nm)) => some nm
+    | some (Sexp.atom nm) => some nm
     | _ => none
   | _ => none
 
 private def guardKey? (argName : Option String) (guard : Sexp) : Option Sexp :=
   match guard with
-  | .app xs =>
+  | .list xs =>
     match xs[0]?, xs[1]?, xs[2]? with
-    | some (Sexp.atom (LexVal.symb "=")), some a, some b =>
+    | some (Sexp.atom "="), some a, some b =>
       match argName with
       | some nm =>
-        if a == .atom (.symb nm) then some b
-        else if b == .atom (.symb nm) then some a
+        if a == .atom nm then some b
+        else if b == .atom nm then some a
         else some b
       | none => some b
     | _, _, _ => none
@@ -353,13 +347,13 @@ private def guardKey? (argName : Option String) (guard : Sexp) : Option Sexp :=
 private partial def decodeIte (argName : Option String) (body : Sexp) : FnTable :=
   let rec go (acc : Array (Sexp × Sexp)) (s : Sexp) : FnTable :=
     match substLet s with
-    | .app xs =>
+    | .list xs =>
       match xs[0]?, xs[1]?, xs[2]?, xs[3]? with
-      | some (Sexp.atom (LexVal.symb "ite")), some guard, some thenV, some elseV =>
+      | some (Sexp.atom "ite"), some guard, some thenV, some elseV =>
         match guardKey? argName guard with
         | some key => go (acc.push (key, thenV)) elseV
-        | none     => { cases := acc, els := .app xs }
-      | _, _, _, _ => { cases := acc, els := .app xs }
+        | none     => { cases := acc, els := .list xs }
+      | _, _, _, _ => { cases := acc, els := .list xs }
     | leaf => { cases := acc, els := leaf }
   go #[] body
 
@@ -595,7 +589,7 @@ private def renderWitness (ctx : CexNameCtx) (rk : RefKinds)
     if isWrapper then
       match (appArgs body)[0]?.bind asInt? with
       | some r =>
-        let st := machines.at (.atom (.nat r.toNat))
+        let st := machines.at (.atom (toString r))
         let slotKind := machineKindOf ctx st
         -- Prefer the runtime slot's kind (authoritative) over the
         -- static wrapper ctor; fall back to the ref→kind map, then bare.
@@ -617,13 +611,13 @@ numeral and is never collected, so untyped `machine` references (which
 carry no kind claim) raise no alert. -/
 private partial def collectTypedRefs (machineKinds : Array String) :
     Sexp → Array (String × Int)
-  | .app xs =>
+  | .list xs =>
     let here : Array (String × Int) :=
       match xs[0]? with
-      | some (Sexp.atom (LexVal.symb h)) =>
+      | some (Sexp.atom h) =>
         if h.endsWith ".mk" then
           let k := (h.splitOn ".").head!
-          match (if machineKinds.contains k then (appArgs (.app xs))[0]?.bind asInt? else none) with
+          match (if machineKinds.contains k then (appArgs (.list xs))[0]?.bind asInt? else none) with
           | some r => #[(k, r)]
           | none   => #[]
         else #[]
@@ -643,7 +637,7 @@ private def detectTypeAlerts (ctx : CexNameCtx) (machines : FnTable)
     if isInternalName d.name then continue
     let src := if d.args.isEmpty then d.name else s!"{d.name}(…)"
     for (declared, r) in collectTypedRefs ctx.machineKinds d.body do
-      match machineKindOf ctx (machines.at (.atom (.nat r.toNat))) with
+      match machineKindOf ctx (machines.at (.atom (toString r))) with
       | some slotKind =>
         if slotKind != declared then
           let a : TypeAlert := { source := src, declared, ref := r, slotKind }
@@ -659,7 +653,7 @@ def CexModel.decode (ctx : CexNameCtx) (defs : Array ModelDef) : CexModel :=
   let machTbl :=
     match (findDef defs "gsMachines").orElse (fun _ => findDef defs "machines") with
     | some md => decodeIte (argName? md) md.body
-    | none    => { cases := #[], els := .atom (.symb "?") }
+    | none    => { cases := #[], els := .atom "?" }
   let sent := decodeSent ctx rk defs
   let actionCount :=
     ((findDef defs "gsActionCount").orElse (fun _ => findDef defs "actionCount")).map

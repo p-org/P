@@ -99,6 +99,67 @@ If you're CONFIDENT the invariant is inductive but SMT returns
 `unknown`, the issue is SMT complexity (see §3) or it really does
 need a manual proof (see §2).
 
+### 1.8 When the invariant isn't inductive *at all* — derive it
+
+Some invariants are true on every reachable state but have no
+per-handler consecution proof, because the argument for them is a
+**well-founded induction over a data value** rather than a single step.
+Paxos safety is the canonical case: it rests on induction over ballot
+numbers. Raft terms and version counters have the same shape.
+
+The symptom is distinctive. The invariant `B` follows *pointwise* from
+lemmas `A₁ … Aₙ` you've already proven inductive — you can write
+`∀ s, A₁ s → … → Aₙ s → B s` as an ordinary Lean theorem — but
+`#pverify` still asks you to preserve `B` across every handler. And
+`using` doesn't help: it supplies premises on the **pre-state**, while
+the obligation demands `B` on the **post-state**. To bridge that you
+would have to re-prove every `Aᵢ`'s own preservation inside `B`'s
+obligation, which puts the whole support bundle in one SMT context —
+reliably past what lean-auto will translate.
+
+Use the derived form instead:
+
+```
+Lemma quorum_agreement { invariant safe_value : … }
+
+Proof of_quorum_agreement {
+  prove quorum_agreement from
+    paxos_invariants, promise_facts, proposer_ballot, link_facts
+    via quorum_agreement_of_lemmas ;
+}
+```
+
+and supply the implication as a plain theorem (before `#pverify`):
+
+```lean
+theorem quorum_agreement_of_lemmas (s : GlobalState Sig)
+    (hPI : paxos_invariants s) (hPF : promise_facts s)
+    (hPB : proposer_ballot s) (hLF : link_facts s) :
+    quorum_agreement s := …
+```
+
+The generator then emits **no consecution VCs and no base case** for
+the derived target — just one VC stating the implication, discharged by
+`exact @<thm>`. Soundness is immediate: each premise is separately
+invariant (the missing-premise check enforces that every one is a
+`prove` target whose obligations all discharge), and an invariant
+composed with a pointwise implication is invariant. The base case is
+covered too — `B` holds at init because its premises do.
+
+Two guards to know about, both pinned in
+[`Tests/Syntax/DerivedInvariant.lean`](../Tests/Syntax/DerivedInvariant.lean):
+the cited theorem is **type-checked against the emitted implication**
+(a right-named but wrong-statement theorem fails), and its *value* is
+inspected for `sorry` (as with `@[pverifyProof]`, the `exact @thm` body
+would otherwise hide one).
+
+Where to put the induction itself: prove it as a state-level theorem
+over a support-bundle structure, the way `crux_safe` does in
+[`Examples/Paxos.lean`](../Examples/Paxos.lean) — strong induction on
+the ballot gap as a `Nat` measure — then let the `via` theorem project
+the premise bundles into that structure. Keep the induction out of any
+Hoare triple; it doesn't belong there and won't fit.
+
 ---
 
 ## 2. Manual proofs

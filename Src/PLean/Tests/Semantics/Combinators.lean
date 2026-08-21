@@ -54,7 +54,7 @@ def init0 : GlobalState Sig :=
 /-- Run a `PM Sig α` to its final `(α, GlobalState)` pair, projecting
 out of `DivM` with `default` on divergence. The test programs all
 terminate, so the `default` branch is never taken. -/
-def runPM {α : Type} [Inhabited α]
+noncomputable def runPM {α : Type} [Inhabited α]
     (m : M' α) (s : GlobalState Sig) : α × GlobalState Sig :=
   DivM.run (m.run.run s)
 

@@ -191,6 +191,28 @@ keyword token because that would break uses of `default` as a term
 syntax (name := pProofProve)
   "prove " ident (" using " ident,+)? ";" : pProofItem
 
+/-- `prove <name> from <prem1>, <prem2>, … via <thm>;` — the
+*derived-invariant* form.
+
+Use it when `<name>` is not separately inductive but follows
+*pointwise* from already-proven lemmas: `∀ s, prem1 s → … → name s`.
+That is the situation whenever the real argument is a well-founded
+induction over a data value (Paxos ballots, Raft terms, version
+numbers) rather than a single Hoare step — per-handler consecution
+cannot express such an argument, and forcing it into that shape means
+re-proving every premise's preservation inside the derived lemma's own
+obligation.
+
+Soundness: if each `premᵢ` is invariant and `prem1 ∧ … → name`
+pointwise, then `name` is invariant. So the generator emits no
+consecution VC and no base case for a derived target; instead it emits
+one `derive_<name>` obligation whose statement is exactly the
+implication, discharged by `exact @<thm>`. A wrong-type or sorried
+`<thm>` fails that obligation. The premises must still be `prove`d —
+the existing missing-premise check enforces it. -/
+syntax (name := pProofDerive)
+  "prove " ident " from " ident,+ " via " ident ";" : pProofItem
+
 syntax (name := pProofDeclSyntax)
   "Proof " (ident)? "{" pProofItem* "}" : command
 
@@ -261,6 +283,37 @@ def elabPProof : CommandElab := fun stx => do
       directives := directives.push
         { target := tgtName, isDefault := isDefault
           usingLemmas := useIds, ref := it }
+    | `(pProofItem| prove $tgt:ident from $premIds,* via $thm:ident ;) =>
+      let premTokens : Array (TSyntax `ident) := premIds.getElems
+      let tgtName := tgt.getId
+      -- `default` can't be derived: its content is framework-fixed and
+      -- its obligations are what establish the buffer well-formedness
+      -- every other clause implicitly rests on.
+      if tgtName == `default then
+        throwErrorAt tgt
+          "`prove default from … via …`: the default invariants cannot \
+           be derived — drop the `from … via …` clause and use \
+           `prove default ;`"
+      unless ctx.lemmas.contains tgtName do
+        throwErrorAt tgt
+          s!"`prove … from`: no `Lemma` or `Theorem` named '{tgtName}' in pmodule '{ctx.name}'"
+      for tok in premTokens do
+        let uid := tok.getId
+        unless uid == `default || ctx.lemmas.contains uid do
+          throwErrorAt tok
+            s!"`prove … from`: no `Lemma` or `Theorem` named '{uid}' in pmodule '{ctx.name}' (must be `default` or a previously-declared lemma)"
+      -- A target that derives from itself would be circular: the
+      -- implication `X s → X s` holds trivially and would let `X`
+      -- verify with no inductive content at all.
+      if premTokens.any (·.getId == tgtName) then
+        throwErrorAt tgt
+          s!"`prove {tgtName} from …`: '{tgtName}' cannot be among its own \
+             premises (the implication would be vacuous, so nothing would \
+             be verified)"
+      directives := directives.push
+        { target := tgtName, isDefault := false
+          usingLemmas := premTokens.map (·.getId)
+          deriveVia := some thm.getId, ref := it }
     | _ => throwErrorAt it "unrecognised Proof item"
   addProof { name := nm, directives := directives, ref := stx }
 

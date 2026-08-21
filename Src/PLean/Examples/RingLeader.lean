@@ -137,6 +137,27 @@ obligation names `#pverify` prints.
 namespace RingLeader
 open PLean PartialCorrectness DemonicChoice
 
+private theorem init_not_won (s : GlobalState Sig)
+    (hInit : InitConditions s) (r : MachineRef) :
+    stateOf r s ≠ Server.Won_st := by
+  obtain ⟨_, _, _, hStart⟩ := hInit
+  intro hWon
+  unfold stateOf at hWon
+  rw [hStart r] at hWon
+  exact S.noConfusion hWon
+
+@[pverifyProof]
+theorem base_block0_LeaderMax (s : GlobalState Sig) :
+    InitConditions s → LeaderMax s := by
+  intro hInit x _ hWon
+  exact absurd hWon (init_not_won s hInit x)
+
+@[pverifyProof]
+theorem base_block1_UniqueLeader (s : GlobalState Sig) :
+    InitConditions s → UniqueLeader s := by
+  intro hInit x _ hWon _
+  exact absurd hWon (init_not_won s hInit x)
+
 -- `Safety` inductive step through `goto Won`. The solver can't
 -- synthesise the one fact it needs: `SelfPendingMax` applied to the
 -- in-flight `eNominate` says `this` is the global max, so any
@@ -177,8 +198,9 @@ theorem Server.Proposing.eNominate_correct_block1_Safety_using_lemmas
     -- or `hUniq` (uniqueness of pre-state `Won` nodes).
     simp only [PLean.stateOf, apply_ite (f := PLean.MachineState.currentState)]
     intro x y hx hy
-    by_cases hxThis : x = this.ref <;> try pverify_smt
-    · by_cases hyThis : y = this.ref <;> try pverify_grind
+    by_cases hxThis : x = this.ref
+    · by_cases hyThis : y = this.ref
+      · exact hxThis.trans hyThis.symm
       · -- x post-Won, y reads pre-state: `hLM y` + `hMax y` + antisymmetry.
         exfalso; apply hyThis
         rw [if_neg hyThis] at hy

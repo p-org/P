@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace PChecker.Runtime.Logging
@@ -105,19 +104,6 @@ namespace PChecker.Runtime.Logging
         /// <returns>string: the name of the machine for the type among the possible attributes containing the machine name.</returns>
         private static string GetMachineName(LogDetails logDetails) =>
             (logDetails.Id ?? logDetails.Monitor ?? logDetails.Sender)!;
-
-        /// <summary>
-        /// Hashes a string.
-        /// </summary>
-        /// <param name="input">Some string input.</param>
-        /// <returns>string: the hashed string result.</returns>
-        private static string HashString(string input)
-        {
-            using var sha256 = SHA256.Create();
-            var inputBytes = Encoding.UTF8.GetBytes(input);
-            var hashBytes = sha256.ComputeHash(inputBytes);
-            return Convert.ToBase64String(hashBytes);
-        }
 
         /// <summary>
         /// Makes a copy of the vector clock map.
@@ -251,29 +237,28 @@ namespace PChecker.Runtime.Logging
 
             switch (logType)
             {
-                // On send event, hash the string containing information about the target machine to be sent to, the event name, and payload
+                // On send event, build the string containing information about the target machine to be sent to, the event name, and payload
                 // This is used as an unique id necessary to correctly update the vector clock for the right machine-event-payload combo that
                 // receives it later.
                 case "SendEvent":
                     var targetMachine = logDetails.Target;
                     var sendReqId = GetSendReceiveId(targetMachine, logDetails.Event, logDetails.Payload);
-                    var hashedGeneralSendReqId = HashString(sendReqId);
+                    var generalSendReqId = sendReqId;
 
                     // If we have seen this sendReqId before, increment the sent count of it in _sendRequestsCount
-                    if (_sendRequestsCount.TryGetValue(hashedGeneralSendReqId, out var generalSendReqIdValue))
+                    if (_sendRequestsCount.TryGetValue(generalSendReqId, out var generalSendReqIdValue))
                     {
                         generalSendReqIdValue.SentCount += 1;
                     }
                     // Else, create an instance of FifoSendReceiveMapping corresponding to the sendReqId in _sendRequestsCount.
                     else
                     {
-                        _sendRequestsCount.Add(hashedGeneralSendReqId, new FifoSendReceiveMapping());
+                        _sendRequestsCount.Add(generalSendReqId, new FifoSendReceiveMapping());
                     }
 
                     // Update the sendReqId with the send count of it.
-                    sendReqId += $":_{_sendRequestsCount[hashedGeneralSendReqId].SentCount}";
-                    var hashedSendReqId = HashString(sendReqId);
-                    _unhandledSendRequests.Add(hashedSendReqId, CopyVcMap(_contextVcMap[machine]));
+                    sendReqId += $":_{_sendRequestsCount[generalSendReqId].SentCount}";
+                    _unhandledSendRequests.Add(sendReqId, CopyVcMap(_contextVcMap[machine]));
                     break;
 
                 // For MonitorProcessEvents, tie it to the senderMachine's current vector clock
@@ -282,37 +267,36 @@ namespace PChecker.Runtime.Logging
                     if (logDetails.Sender != null) updateMachineVcMap(machine, _contextVcMap[logDetails.Sender]);
                     break;
 
-                // On dequeue OR receive event, has the string containing information about the current machine that dequeued (i.e. received the event),
+                // On dequeue OR receive event, build the string containing information about the current machine that dequeued (i.e. received the event),
                 // the event name, and payload. This is used to find the corresponding SendReqId from the machine that sent it in order to retrieve
                 // the vector clock of the sender machine during that time when it was sent.
                 case "ReceiveEvent":
                 case "DequeueEvent":
                     var correspondingSendReqId = GetSendReceiveId(machine, logDetails.Event, logDetails.Payload);
-                    var hashedGeneralCorrespondingSendReqId = HashString(correspondingSendReqId);
+                    var generalCorrespondingSendReqId = correspondingSendReqId;
                     var correspondingSendReqIdReceiveCount =
-                        _sendRequestsCount[hashedGeneralCorrespondingSendReqId].ReceivedCount;
+                        _sendRequestsCount[generalCorrespondingSendReqId].ReceivedCount;
 
                     // If we have handled all sent requests (i.e. received count is the same as sent count for the general sendReqId),
                     // remove it from _sendRequestsCount.
                     if (correspondingSendReqIdReceiveCount ==
-                        _sendRequestsCount[hashedGeneralCorrespondingSendReqId].SentCount)
+                        _sendRequestsCount[generalCorrespondingSendReqId].SentCount)
                     {
-                        _sendRequestsCount.Remove(hashedGeneralCorrespondingSendReqId);
+                        _sendRequestsCount.Remove(generalCorrespondingSendReqId);
                     }
                     // If not, increment received count.
                     else
                     {
-                        _sendRequestsCount[hashedGeneralCorrespondingSendReqId].ReceivedCount += 1;
+                        _sendRequestsCount[generalCorrespondingSendReqId].ReceivedCount += 1;
                     }
 
                     correspondingSendReqId += $":_{correspondingSendReqIdReceiveCount}";
-                    var hashedCorrespondingSendReqId = HashString(correspondingSendReqId);
-                    var senderVcMap = _unhandledSendRequests[hashedCorrespondingSendReqId];
+                    var senderVcMap = _unhandledSendRequests[correspondingSendReqId];
 
                     updateMachineVcMap(machine, senderVcMap);
 
                     // Remove the SendReqId because we've processed it.
-                    _unhandledSendRequests.Remove(hashedCorrespondingSendReqId);
+                    _unhandledSendRequests.Remove(correspondingSendReqId);
                     break;
             }
 

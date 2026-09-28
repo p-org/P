@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -32,7 +32,6 @@ using PChecker.SystematicTesting.Strategies.Special;
 using PChecker.SystematicTesting.Traces;
 using PChecker.Utilities;
 using Debug = PChecker.IO.Debugging.Debug;
-using Task = PChecker.Tasks.Task;
 
 namespace PChecker.SystematicTesting
 {
@@ -202,18 +201,6 @@ namespace PChecker.SystematicTesting
         /// Creates a new systematic testing engine.
         /// </summary>
         public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Action<ControlledRuntime> test) =>
-            new TestingEngine(checkerConfiguration, test);
-
-        /// <summary>
-        /// Creates a new systematic testing engine.
-        /// </summary>
-        public static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<Task> test) =>
-            new TestingEngine(checkerConfiguration, test);
-
-        /// <summary>
-        /// Creates a new systematic testing engine.
-        /// </summary>
-        internal static TestingEngine Create(CheckerConfiguration checkerConfiguration, Func<ControlledRuntime, Task> test) =>
             new TestingEngine(checkerConfiguration, test);
 
         /// <summary>
@@ -565,7 +552,6 @@ namespace PChecker.SystematicTesting
 
                 // Runs the test and waits for it to terminate.
                 runtime.RunTest(TestMethodInfo.Method, TestMethodInfo.Name);
-                runtime.WaitAsync().Wait();
 
                 // Invokes the user-specified schedule disposal method.
                 TestMethodInfo.DisposeCurrentIteration();

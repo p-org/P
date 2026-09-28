@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using PChecker.IO.Debugging;
 using PChecker.Runtime;
-using PChecker.Tasks;
 
 namespace PChecker.SystematicTesting
 {
@@ -159,14 +158,12 @@ namespace PChecker.SystematicTesting
 
             var hasVoidReturnType = testMethod.ReturnType == typeof(void) &&
                                     testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) == null;
-            var hasAsyncReturnType = testMethod.ReturnType == typeof(Task) &&
-                                     testMethod.GetCustomAttribute(typeof(AsyncStateMachineAttribute)) != null;
 
             var hasNoInputParameters = testParams.Length is 0;
             var hasStateMachineInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ControlledRuntime);
             var hasTaskInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ControlledRuntime);
 
-            if (!((hasVoidReturnType || hasAsyncReturnType) && (hasNoInputParameters || hasStateMachineInputParameters || hasTaskInputParameters) &&
+            if (!(hasVoidReturnType && (hasNoInputParameters || hasStateMachineInputParameters || hasTaskInputParameters) &&
                   !testMethod.IsAbstract && !testMethod.IsVirtual && !testMethod.IsConstructor &&
                   !testMethod.ContainsGenericParameters && testMethod.IsPublic && testMethod.IsStatic))
             {
@@ -175,48 +172,23 @@ namespace PChecker.SystematicTesting
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
                                     $"  public static void {testMethod.Name}() {{ ... }}\n\n" +
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}\n\n" +
-                                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}\n\n" +
-                                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}() {{ ... await ... }}\n\n" +
-                                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ControlledRuntime runtime) {{ ... await ... }}\n\n" +
-                                    $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static async {typeof(Task).FullName} {testMethod.Name}(ControlledRuntime runtime) {{ ... await ... }}");
+                                    $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}");
             }
 
             Delegate test;
-            if (hasAsyncReturnType)
+            if (hasStateMachineInputParameters)
             {
-                if (hasStateMachineInputParameters)
-                {
-                    test = Delegate.CreateDelegate(typeof(Func<ControlledRuntime, Task>), testMethod);
-                }
-                else if (hasTaskInputParameters)
-                {
-                    test = Delegate.CreateDelegate(typeof(Func<ControlledRuntime, Task>), testMethod);
-                }
-                else
-                {
-                    test = Delegate.CreateDelegate(typeof(Func<Task>), testMethod);
-                }
+                test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
+            }
+            else if (hasTaskInputParameters)
+            {
+                test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
             }
             else
             {
-                if (hasStateMachineInputParameters)
-                {
-                    test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
-                }
-                else if (hasTaskInputParameters)
-                {
-                    test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
-                }
-                else
-                {
-                    test = Delegate.CreateDelegate(typeof(Action), testMethod);
-                }
+                test = Delegate.CreateDelegate(typeof(Action), testMethod);
             }
+
 
             return (test, $"{testMethod.DeclaringType.Name}");
         }

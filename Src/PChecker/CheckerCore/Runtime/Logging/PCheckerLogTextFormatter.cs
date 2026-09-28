@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -278,10 +278,6 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc/>
         public void OnExceptionHandled(StateMachineId id, string stateName, string actionName, Exception ex)
         {
-            if (ex is PNonStandardReturnException)
-            {
-                return;
-            }
             string text;
             if (stateName is null)
             {
@@ -298,10 +294,6 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc/>
         public void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
         {
-            if (ex is PNonStandardReturnException)
-            {
-                return;
-            }
             string text;
             if (stateName is null)
             {

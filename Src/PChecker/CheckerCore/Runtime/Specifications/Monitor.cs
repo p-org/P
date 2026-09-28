@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -197,8 +197,13 @@ namespace PChecker.Runtime.Specifications
             Assert(e != null, "{0} is raising a null event.", GetType().FullName);
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.Raise, default, e);
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
+
+        /// <summary>
+        /// True if the current action raised an event or a goto transition. Generated code
+        /// checks it after each call that may raise, and returns to unwind the action.
+        /// </summary>
+        public bool HasPendingTransition => PendingTransition.TypeValue != Transition.Type.None;
 
         /// <summary>
         /// Writes PrintLog messages to logger.
@@ -244,7 +249,6 @@ namespace PChecker.Runtime.Specifications
         {
             gotoPayload = payload;
             RaiseGotoStateEvent(typeof(S));
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         /// <summary>
@@ -488,11 +492,6 @@ namespace PChecker.Runtime.Specifications
                     innerException = innerException.InnerException;
                 }
 
-                if (innerException is PNonStandardReturnException)
-                {
-                    return;
-                }
-                
                 if (innerException is AggregateException)
                 {
                     innerException = innerException.InnerException;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -181,11 +181,6 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc />
         public void OnExceptionHandled(StateMachineId id, string stateName, string actionName, Exception ex)
         {
-            if (ex is PNonStandardReturnException)
-            {
-                return;
-            }
-
             var log = stateName is null
                 ? $"{id} running action '{actionName}' chose to handle exception '{ex.GetType().Name}'."
                 : $"{id} running action '{actionName}' in state '{stateName}' chose to handle exception '{ex.GetType().Name}'.";
@@ -202,11 +197,6 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc />
         public void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
         {
-            if (ex is PNonStandardReturnException)
-            {
-                return;
-            }
-
             var log = stateName is null
                 ? $"{id} running action '{actionName}' chose to handle exception '{ex.GetType().Name}'."
                 : $"{id} running action '{actionName}' in state '{stateName}' threw exception '{ex.GetType().Name}'.";

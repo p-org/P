@@ -749,12 +749,39 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "}");
         }
 
+        /// <summary>
+        /// Receiving, sending and creating are scheduling points, which the checker implements
+        /// as awaits, so a function doing any of them (directly or through callees) is async.
+        /// </summary>
+        private static bool IsAsync(Function function) =>
+            function.CanReceive || function.CanSend || function.CanCreate;
+
+        /// <summary>
+        /// A goto or raise sets a pending transition and returns. The caller must then return as
+        /// well, until control reaches the action that the state machine invoked. A receive can
+        /// raise the halt event.
+        /// </summary>
+        private static bool MayLeavePendingTransition(Function function) =>
+            function.CanRaiseEvent || function.CanChangeState || function.CanReceive;
+
+        private string ReturnDefault(Function function) =>
+            GetCSharpType(function.Signature.ReturnType) == "void" ? "return;" : "return default;";
+
+        private void WritePendingTransitionCheck(CompilationContext context, StringWriter output, Function function,
+            Function callee)
+        {
+            if (!callee.IsForeign && MayLeavePendingTransition(callee))
+            {
+                context.WriteLine(output, $"if (currentMachine.HasPendingTransition) {ReturnDefault(function)}");
+            }
+        }
+
         private void WriteNamedFunctionWrapper(CompilationContext context, StringWriter output, Function function)
         {
             if (function.Role == FunctionRole.Method || function.Role == FunctionRole.Foreign)
                 return;
 
-            var isAsync = function.CanReceive;
+            var isAsync = IsAsync(function);
             var signature = function.Signature;
 
             var functionName = context.Names.GetNameForDecl(function);
@@ -798,7 +825,7 @@ namespace Plang.Compiler.Backend.CSharp
                 WriteNamedFunctionWrapper(context, output, function);
             }
 
-            var isAsync = function.CanReceive;
+            var isAsync = IsAsync(function);
             var signature = function.Signature;
 
             var staticKeyword = isStatic ? "static " : "";
@@ -946,6 +973,11 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             context.WriteLine(output, ");");
+            if (assignStmt.Value is FunCallExpr funCallExpr)
+            {
+                WritePendingTransitionCheck(context, output, function, funCallExpr.Function);
+            }
+
             return false;
         }
 
@@ -964,7 +996,7 @@ namespace Plang.Compiler.Backend.CSharp
         public bool WriteCtorStmt(CompilationContext context, StringWriter output, Function function, CtorStmt ctorStmt)
         {
             context.Write(output,
-                $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
+                $"await currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
             context.Write(output, "currentMachine");
             if (ctorStmt.Arguments.Any())
             {
@@ -996,7 +1028,7 @@ namespace Plang.Compiler.Backend.CSharp
         public bool WriteFunCallStmt(CompilationContext context, StringWriter output, Function function, FunCallStmt funCallStmt)
         {
             var isStatic = funCallStmt.Function.Owner == null;
-            var awaitMethod = funCallStmt.Function.CanReceive ? "await " : "";
+            var awaitMethod = IsAsync(funCallStmt.Function) ? "await " : "";
             var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
             context.Write(output,
                 $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
@@ -1015,6 +1047,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             context.WriteLine(output, ");");
+            WritePendingTransitionCheck(context, output, function, funCallStmt.Function);
             return false;
         }
 
@@ -1028,7 +1061,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             context.WriteLine(output, ");");
-            context.WriteLine(output, "return;");
+            context.WriteLine(output, ReturnDefault(function));
             return false;
         }
 
@@ -1123,7 +1156,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.Write(output, "currentMachine.RaiseEvent(");
             this.WriteExpr(context, output, raiseStmt.Event);
             context.WriteLine(output, ");");
-            context.WriteLine(output, "return;");
+            context.WriteLine(output, ReturnDefault(function));
             return false;
         }
 
@@ -1139,7 +1172,7 @@ namespace Plang.Compiler.Backend.CSharp
             // add halt as a special case if doesnt exist
             if (receiveStmt.Cases.All(kv => kv.Key.Name != "PHalt"))
             {
-                context.WriteLine(output,"case PHalt _hv: { currentMachine.RaiseEvent(_hv); break;} ");
+                context.WriteLine(output, $"case PHalt _hv: {{ currentMachine.RaiseEvent(_hv); {ReturnDefault(function)} }}");
 
             }
 
@@ -1243,7 +1276,7 @@ namespace Plang.Compiler.Backend.CSharp
                 this.WriteExpr(context, output, sendStmt.Arguments.First());
                 context.WriteLine(output, ";");
             }
-            context.Write(output, "currentMachine.SendEvent(");
+            context.Write(output, "await currentMachine.SendEvent(");
             this.WriteExpr(context, output, sendStmt.MachineExpr);
             context.Write(output, ", (Event)");
             this.WriteExpr(context, output, sendStmt.Evt);
@@ -1473,7 +1506,7 @@ namespace Plang.Compiler.Backend.CSharp
         public void WriteCtorExpr(CompilationContext context, StringWriter output, CtorExpr ctorExpr)
         {
             context.Write(output,
-                $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
+                $"(await currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
             context.Write(output, "currentMachine");
             if (ctorExpr.Arguments.Any())
             {
@@ -1498,7 +1531,7 @@ namespace Plang.Compiler.Backend.CSharp
                 }
             }
 
-            context.Write(output, ")");
+            context.Write(output, "))");
         }
 
         public void WriteDefaultExpr(CompilationContext context, StringWriter output, DefaultExpr defaultExpr)
@@ -1545,7 +1578,7 @@ namespace Plang.Compiler.Backend.CSharp
         public void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr funCallExpr)
         {
             var isStatic = funCallExpr.Function.Owner == null;
-            var awaitMethod = funCallExpr.Function.CanReceive ? "await " : "";
+            var awaitMethod = IsAsync(funCallExpr.Function) ? "await " : "";
             var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
             context.Write(output,
                 $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");

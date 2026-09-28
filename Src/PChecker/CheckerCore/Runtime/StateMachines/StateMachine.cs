@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -160,20 +160,17 @@ namespace PChecker.Runtime.StateMachines
         }
         
         /// <summary>
-        /// 
+        /// Creates a state machine implementing the interface <typeparamref name="T"/>. This is a
+        /// scheduling point, so the caller must await it.
         /// </summary>
-        /// <param name="creator"></param>
-        /// <param name="payload"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public PMachineValue CreateInterface<T>(StateMachine creator, IPValue payload = null)
+        public async ValueTask<PMachineValue> CreateInterface<T>(StateMachine creator, IPValue payload = null)
             where T : PMachineValue
         {
             var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = CreateStateMachine(createMachine, createdInterface.Substring(2),
+            var machineId = await CreateStateMachine(createMachine, createdInterface.Substring(2),
                 GetConstructorEvent(payload));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
@@ -520,16 +517,17 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="name">Optional name used for logging.</param>
         /// <param name="initialEvent">Optional initialization event.</param>
         /// <returns>The unique state machine id.</returns>
-        protected StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null) =>
-            Runtime.CreateStateMachine(null, type, name, initialEvent, this);
+        protected ValueTask<StateMachineId> CreateStateMachine(Type type, string name, Event initialEvent = null) =>
+            Runtime.CreateStateMachineAsync(null, type, name, initialEvent, this);
         
         
         /// <summary>
-        /// Sends an asynchronous <see cref="Event"/> to a target.
+        /// Sends an asynchronous <see cref="Event"/> to a target. This is a scheduling point,
+        /// so the caller must await it.
         /// </summary>
         /// <param name="target">The target.</param>
         /// <param name="ev">The event to send.</param>
-        public void SendEvent(PMachineValue target, Event ev)
+        public ValueTask SendEvent(PMachineValue target, Event ev)
         {
             Assert(ev != null, $"Machine cannot send a null event. Machine {Id} trying to send null event in state {CurrentStateName}.");
             Assert(target != null, $"Target in send cannot be null. Machine {Id} trying to send event {ev.GetType().Name} to null target in state {CurrentStateName}.");
@@ -540,7 +538,7 @@ namespace PChecker.Runtime.StateMachines
             AnnounceInternal(ev);
             // Update vector clock
             VectorTime.Increment();
-            Runtime.SendEvent(target.Id, ev, this);
+            return Runtime.SendEventAsync(target.Id, ev, this);
         }
         
         /// <summary>
@@ -550,7 +548,7 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="eventType">The event type.</param>
         /// <param name="predicate">The optional predicate.</param>
         /// <returns>The received event.</returns>
-        public Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
+        public ValueTask<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
             Runtime.NotifyReceiveCalled(this);
@@ -562,7 +560,7 @@ namespace PChecker.Runtime.StateMachines
         /// </summary>
         /// <param name="eventTypes">The event types to wait for.</param>
         /// <returns>The received event.</returns>
-        public Task<Event> ReceiveEventAsync(params Type[] eventTypes)
+        public ValueTask<Event> ReceiveEventAsync(params Type[] eventTypes)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
             Runtime.NotifyReceiveCalled(this);
@@ -575,7 +573,7 @@ namespace PChecker.Runtime.StateMachines
         /// </summary>
         /// <param name="events">Event types and predicates.</param>
         /// <returns>The received event.</returns>
-        public Task<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
+        public ValueTask<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked ReceiveEventAsync while halting.", Id);
             Runtime.NotifyReceiveCalled(this);
@@ -591,7 +589,7 @@ namespace PChecker.Runtime.StateMachines
             Event lastDequeuedEvent = null;
             while (CurrentStatus != Status.Halted && Runtime.IsRunning)
             {
-                (var status, var e, var info) = Inbox.Dequeue();
+                (var status, var e, var info) = await Inbox.DequeueAsync();
                 
                 if (status is DequeueStatus.Success)
                 {
@@ -601,7 +599,7 @@ namespace PChecker.Runtime.StateMachines
                     // Notify the runtime for a new event to handle. This is only used
                     // during bug-finding and operation bounding, because the runtime
                     // has to schedule an state machine when a new operation is dequeued.
-                    Runtime.NotifyDequeuedEvent(this, e, info);
+                    await Runtime.NotifyDequeuedEventAsync(this, e, info);
                     await InvokeUserCallbackAsync(UserCallbackType.OnEventDequeued, e);
                     lastDequeuedEvent = e;
                 }
@@ -618,7 +616,7 @@ namespace PChecker.Runtime.StateMachines
                     // If the default event was dequeued, then notify the runtime.
                     // This is only used during bug-finding, because the runtime must
                     // instrument a scheduling point between default event handlers.
-                    Runtime.NotifyDefaultEventDequeued(this);
+                    await Runtime.NotifyDefaultEventDequeuedAsync(this);
                 }
                 else if (status is DequeueStatus.NotAvailable)
                 {
@@ -672,7 +670,6 @@ namespace PChecker.Runtime.StateMachines
                     task = OnEventUnhandledAsync(e, currentState);
                 }
 
-                Runtime.NotifyWaitTask(this, task);
                 await task;
             }
             catch (Exception ex) when (OnExceptionHandler(ex, callbackType, e))
@@ -706,7 +703,6 @@ namespace PChecker.Runtime.StateMachines
                         task = taskFunc();
                     }
 
-                    Runtime.NotifyWaitTask(this, task);
 
                     // We have no reliable stack for awaited operations.
                     await task;
@@ -858,9 +854,7 @@ namespace PChecker.Runtime.StateMachines
             var v = ex is UnhandledEventException;
             if (!v)
             {
-                return ex is PNonStandardReturnException
-                    ? OnExceptionOutcome.HandledException
-                    : OnExceptionOutcome.ThrowException;
+                return OnExceptionOutcome.ThrowException;
             }
 
             return (ex as UnhandledEventException).UnhandledEvent is PHalt
@@ -963,8 +957,13 @@ namespace PChecker.Runtime.StateMachines
             Assert(e != null, $"{Id} is raising a null event in state {CurrentStateName}");
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.RaiseEvent, default, e);
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
+
+        /// <summary>
+        /// True if the current action raised an event or a goto transition. Generated code
+        /// checks it after each call that may raise, and returns to unwind the action.
+        /// </summary>
+        public bool HasPendingTransition => PendingTransition.TypeValue != Transition.Type.None;
 
         /// <summary>
         /// Raise a special event that performs a goto state operation at the end of the current action.
@@ -989,7 +988,6 @@ namespace PChecker.Runtime.StateMachines
         {
             gotoPayload = payload;
             RaiseGotoStateEvent(typeof(S));
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         /// <summary>

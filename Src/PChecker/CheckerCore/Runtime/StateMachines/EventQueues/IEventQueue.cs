@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -30,7 +30,7 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         /// <summary>
         /// Dequeues the next event, if there is one available.
         /// </summary>
-        (DequeueStatus status, Event e, EventInfo info) Dequeue();
+        ValueTask<(DequeueStatus status, Event e, EventInfo info)> DequeueAsync();
 
         /// <summary>
         /// Enqueues the specified raised event.
@@ -40,17 +40,17 @@ namespace PChecker.Runtime.StateMachines.EventQueues
         /// <summary>
         /// Waits to receive an event of the specified type that satisfies an optional predicate.
         /// </summary>
-        Task<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null);
+        ValueTask<Event> ReceiveEventAsync(Type eventType, Func<Event, bool> predicate = null);
 
         /// <summary>
         /// Waits to receive an event of the specified types.
         /// </summary>
-        Task<Event> ReceiveEventAsync(params Type[] eventTypes);
+        ValueTask<Event> ReceiveEventAsync(params Type[] eventTypes);
 
         /// <summary>
         /// Waits to receive an event of the specified types that satisfy the specified predicates.
         /// </summary>
-        Task<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events);
+        ValueTask<Event> ReceiveEventAsync(params Tuple<Type, Func<Event, bool>>[] events);
 
         /// <summary>
         /// Returns the cached state of the queue.

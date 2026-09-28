@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -38,15 +38,6 @@ namespace PChecker.SystematicTesting
     /// </summary>
     public sealed class ControlledRuntime : IDisposable
     {
-        /// <summary>
-        /// Provides access to the runtime associated with each asynchronous control flow.
-        /// </summary>
-        /// <remarks>
-        /// In testing mode, each testing schedule uses a unique runtime instance. To safely
-        /// retrieve it from static methods, we store it in each asynchronous control flow.
-        /// </remarks>
-        private static readonly AsyncLocal<ControlledRuntime> AsyncLocalInstance = new AsyncLocal<ControlledRuntime>();
-
         private static ControlledRuntime CreateWithConfiguration(CheckerConfiguration checkerConfiguration)
         {
             if (checkerConfiguration is null)
@@ -57,17 +48,6 @@ namespace PChecker.SystematicTesting
             var valueGenerator = new RandomValueGenerator(checkerConfiguration);
             return new ControlledRuntime(checkerConfiguration, valueGenerator);
         }
-        
-        /// <summary>
-        /// The currently executing runtime.
-        /// </summary>
-        internal static ControlledRuntime Current => AsyncLocalInstance.Value ??
-                                                                throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture,
-                                                                        "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
-                                                                        "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
-                                                                        "state machine handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
-                                                                        "you will need to mock them during testing.",
-                                                                        Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>"));
         
         /// <summary>
         /// The checkerConfiguration used by the runtime.
@@ -100,11 +80,6 @@ namespace PChecker.SystematicTesting
         internal readonly OperationScheduler Scheduler;
 
         /// <summary>
-        /// Responsible for controlling the execution of tasks.
-        /// </summary>
-        internal TaskController TaskController { get; private set; }
-
-        /// <summary>
         /// Data structure containing information regarding testing coverage.
         /// </summary>
         internal CoverageInfo CoverageInfo;
@@ -114,11 +89,6 @@ namespace PChecker.SystematicTesting
         /// </summary>
         internal readonly ConcurrentDictionary<string, StateMachineId> NameValueToStateMachineId;
 
-        /// <summary>
-        /// The root task id.
-        /// </summary>
-        internal readonly int? RootTaskId;
-        
         /// <summary>
         /// Cache storing state machine constructors.
         /// </summary>
@@ -220,7 +190,6 @@ namespace PChecker.SystematicTesting
             StateMachineMap = new ConcurrentDictionary<StateMachineId, StateMachine>();
             LogWriter = new LogWriter(checkerConfiguration);
 
-            RootTaskId = Task.CurrentId;
             NameValueToStateMachineId = new ConcurrentDictionary<string, StateMachineId>();
 
             CoverageInfo = new CoverageInfo();
@@ -232,11 +201,6 @@ namespace PChecker.SystematicTesting
             }
 
             Scheduler = new OperationScheduler(this, strategy, scheduleTrace, CheckerConfiguration);
-            TaskController = new TaskController(this, Scheduler);
-
-            // Update the current asynchronous control flow with this runtime instance,
-            // allowing future retrieval in the same asynchronous call stack.
-            AssignAsyncControlFlowRuntime(this);
         }
         
         /// <summary>
@@ -248,20 +212,10 @@ namespace PChecker.SystematicTesting
             StateMachineMap = new ConcurrentDictionary<StateMachineId, StateMachine>();
             LogWriter = new LogWriter(checkerConfiguration);
 
-            RootTaskId = Task.CurrentId;
             NameValueToStateMachineId = new ConcurrentDictionary<string, StateMachineId>();
 
             CoverageInfo = new CoverageInfo();
-            
-            // Update the current asynchronous control flow with this runtime instance,
-            // allowing future retrieval in the same asynchronous call stack.
-            AssignAsyncControlFlowRuntime(this);
         }
-        
-        /// <summary>
-        /// Assigns the specified runtime as the default for the current asynchronous control flow.
-        /// </summary>
-        internal static void AssignAsyncControlFlowRuntime(ControlledRuntime runtime) => AsyncLocalInstance.Value = runtime;
         
         /// <summary>
         /// Creates a fresh state machine id that has not yet been bound to any state machine.
@@ -310,80 +264,22 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Creates a new state machine of the specified <see cref="Type"/> and with the specified
-        /// optional <see cref="Event"/>. This event can only be used to access its payload,
-        /// and cannot be handled. The method returns only when the state machine is initialized and
-        /// the <see cref="Event"/> (if any) is handled.
-        /// </summary>
-        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(Type type, Event e = null) =>
-            CreateStateMachineAndExecuteAsync(null, type, null, e);
-
-        /// <summary>
-        /// Creates a new state machine of the specified <see cref="Type"/> and name, and with the
-        /// specified optional <see cref="Event"/>. This event can only be used to access
-        /// its payload, and cannot be handled. The method returns only when the state machine is
-        /// initialized and the <see cref="Event"/> (if any) is handled.
-        /// </summary>
-        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(Type type, string name, Event e = null) =>
-            CreateStateMachineAndExecuteAsync(null, type, name, e);
-
-        /// <summary>
-        /// Creates a new state machine of the specified <see cref="Type"/>, using the specified unbound
-        /// state machine id, and passes the specified optional <see cref="Event"/>. This event can only
-        /// be used to access its payload, and cannot be handled. The method returns only when
-        /// the state machine is initialized and the <see cref="Event"/> (if any)
-        /// is handled.
-        /// </summary>
-        public Task<StateMachineId> CreateStateMachineAndExecuteAsync(StateMachineId id, Type type, Event e = null)
-        {
-            Assert(id != null, "Cannot create an state machine using a null state machine id.");
-            return CreateStateMachineAndExecuteAsync(id, type, null, e);
-        }
-
-        /// <summary>
-        /// Sends an asynchronous <see cref="Event"/> to a state machine.
-        /// </summary>
-        public void SendEvent(StateMachineId targetId, Event e)
-        {
-            var senderOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            SendEvent(targetId, e, senderOp?.StateMachine);
-        }
-
-        /// <summary>
-        /// Sends an <see cref="Event"/> to a state machine. Returns immediately if the target was already
-        /// running. Otherwise, blocks until the target handles the event and reaches quiescence.
-        /// </summary>
-        public Task<bool> SendEventAndExecuteAsync(StateMachineId targetId, Event e)
-        {
-            var senderOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            return SendEventAndExecuteAsync(targetId, e, senderOp?.StateMachine);
-        }
-        
-        /// <summary>
-        /// Runs the specified test method.
+        /// Runs the specified test method, and then every operation it transitively creates,
+        /// until the schedule terminates.
         /// </summary>
         internal void RunTest(Delegate testMethod, string testName)
         {
             testName = string.IsNullOrEmpty(testName) ? string.Empty : $" '{testName}'";
             Logger.WriteLine($"<TestLog> Running test{testName}.");
             Assert(testMethod != null, "Unable to execute a null test method.");
-            Assert(Task.CurrentId != null, "The test must execute inside a controlled task.");
 
-            var operationId = GetNextOperationId();
-            var op = new TaskOperation(operationId, Scheduler);
+            var op = new TaskOperation(GetNextOperationId());
             Scheduler.RegisterOperation(op);
             op.OnEnabled();
-
-            var task = new Task(async () =>
+            op.Continuation = () =>
             {
                 try
                 {
-                    // Update the current asynchronous control flow with the current runtime instance,
-                    // allowing future retrieval in the same asynchronous call stack.
-                    AssignAsyncControlFlowRuntime(this);
-
-                    OperationScheduler.StartOperation(op);
-
                     if (testMethod is Action<ControlledRuntime> actionWithRuntime)
                     {
                         actionWithRuntime(this);
@@ -392,36 +288,23 @@ namespace PChecker.SystematicTesting
                     {
                         action();
                     }
-                    else if (testMethod is Func<ControlledRuntime, Tasks.Task> functionWithRuntime)
-                    {
-                        await functionWithRuntime(this);
-                    }
-                    else if (testMethod is Func<Tasks.Task> function)
-                    {
-                        await function();
-                    }
                     else
                     {
                         throw new InvalidOperationException($"Unsupported test delegate of type '{testMethod.GetType()}'.");
                     }
 
-                    Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", op.Name, Task.CurrentId);
                     op.OnCompleted();
-
-                    // Task has completed, schedule the next enabled operation.
-                    Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
+                    _ = Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
                 }
                 catch (Exception ex)
                 {
                     ProcessUnhandledExceptionInOperation(op, ex);
                 }
-            });
+            };
 
-            Scheduler.ScheduleOperation(op, task.Id);
-            task.Start();
-            Scheduler.WaitOperationStart(op);
+            Scheduler.Run();
         }
-        
+
         /// <summary>
         /// Returns the next available unique operation id.
         /// </summary>
@@ -431,58 +314,43 @@ namespace PChecker.SystematicTesting
             (ulong)Interlocked.Increment(ref OperationIdCounter) - 1;
 
         /// <summary>
-        /// Creates a new state machine of the specified <see cref="Type"/> and name, using the specified
-        /// unbound state machine id, and passes the specified optional <see cref="Event"/>. This event
-        /// can only be used to access its payload, and cannot be handled.
+        /// Creates a new state machine from the test entry method.
         /// </summary>
+        /// <remarks>
+        /// The test entry method runs synchronously, so its scheduling point cannot suspend. This
+        /// holds as long as it is the only enabled operation, i.e. it creates a single state machine.
+        /// </remarks>
         internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent = null)
         {
-            var creatorOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            return CreateStateMachine(id, type, name, initialEvent, creatorOp?.StateMachine);
-        }
+            var creator = Scheduler.GetExecutingOperation<StateMachineOperation>()?.StateMachine;
+            Assert(creator is null, "{0} must create state machines asynchronously.", creator?.Id);
 
-        /// <summary>
-        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/>.
-        /// </summary>
-        internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent, StateMachine creator)
-        {
-            AssertExpectedCallerStateMachine(creator, "CreateStateMachine");
+            if (!Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create).IsCompleted)
+            {
+                Assert(!Scheduler.IsRunning, "The test entry method can only create a single state machine.");
+                return null;
+            }
 
-            var stateMachine = CreateStateMachine(id, type, name, creator);
-            RunStateMachineEventHandler(stateMachine, initialEvent, true, null);
+            var stateMachine = CreateStateMachine(id, type, name, (StateMachine)null);
+            RunStateMachineEventHandler(stateMachine, initialEvent, true);
             return stateMachine.Id;
         }
 
         /// <summary>
-        /// Creates a new state machine of the specified <see cref="Type"/> and name, using the specified
-        /// unbound state machine id, and passes the specified optional <see cref="Event"/>. This event
-        /// can only be used to access its payload, and cannot be handled. The method returns only
-        /// when the state machine is initialized and the <see cref="Event"/> (if any) is handled.
+        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/> on behalf of
+        /// the specified creator.
         /// </summary>
-        internal Task<StateMachineId> CreateStateMachineAndExecuteAsync(StateMachineId id, Type type, string name, Event initialEvent = null)
-        {
-            var creatorOp = Scheduler.GetExecutingOperation<StateMachineOperation>();
-            return CreateStateMachineAndExecuteAsync(id, type, name, initialEvent, creatorOp?.StateMachine);
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/>. The method
-        /// returns only when the state machine is initialized and the <see cref="Event"/> (if any)
-        /// is handled.
-        /// </summary>
-        internal async Task<StateMachineId> CreateStateMachineAndExecuteAsync(StateMachineId id, Type type, string name,
+        internal async ValueTask<StateMachineId> CreateStateMachineAsync(StateMachineId id, Type type, string name,
             Event initialEvent, StateMachine creator)
         {
-            AssertExpectedCallerStateMachine(creator, "CreateStateMachineAndExecuteAsync");
-            Assert(creator != null, "Only a state machine can call 'CreateStateMachineAndExecuteAsync': avoid calling " +
-                                    "it directly from the test method; instead call it through a test driver state machine.");
+            AssertExpectedCallerStateMachine(creator, "CreateStateMachine");
+
+            await Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
+            ResetProgramCounter(creator);
 
             var stateMachine = CreateStateMachine(id, type, name, creator);
-            RunStateMachineEventHandler(stateMachine, initialEvent, true, creator);
-
-            // Wait until the state machine reaches quiescence.
-            await creator.ReceiveEventAsync(typeof(QuiescentEvent), rev => (rev as QuiescentEvent).StateMachineId == stateMachine.Id);
-            return await Task.FromResult(stateMachine.Id);
+            RunStateMachineEventHandler(stateMachine, initialEvent, true);
+            return stateMachine.Id;
         }
 
         /// <summary>
@@ -491,11 +359,6 @@ namespace PChecker.SystematicTesting
         private StateMachine CreateStateMachine(StateMachineId id, Type type, string name, StateMachine creator)
         {
             Assert(type.IsSubclassOf(typeof(StateMachine)), "Type '{0}' is not a state machine.", type.FullName);
-
-            // Using ulong.MaxValue because a Create operation cannot specify
-            // the id of its target, because the id does not exist yet.
-            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create);
-            ResetProgramCounter(creator);
 
             if (id is null)
             {
@@ -553,7 +416,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to a state machine.
         /// </summary>
-        internal void SendEvent(StateMachineId targetId, Event e, StateMachine sender)
+        internal async ValueTask SendEventAsync(StateMachineId targetId, Event e, StateMachine sender)
         {
             if (e is null)
             {
@@ -574,52 +437,14 @@ namespace PChecker.SystematicTesting
 
             AssertExpectedCallerStateMachine(sender, "SendEvent");
 
-            var enqueueStatus = EnqueueEvent(targetId, e, sender, out var target);
-            if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
-            {
-                RunStateMachineEventHandler(target, null, false, null);
-            }
-        }
-
-        /// <summary>
-        /// Sends an asynchronous <see cref="Event"/> to a state machine. Returns immediately if the target was
-        /// already running. Otherwise, blocks until the target handles the event and reaches quiescence.
-        /// </summary>
-        internal async Task<bool> SendEventAndExecuteAsync(StateMachineId targetId, Event e, StateMachine sender)
-        {
-            Assert(e != null, "{0} is sending a null event.", sender.Id);
-            Assert(targetId != null, "{0} is sending event {1} to a null state machine.", sender.Id, e);
-            AssertExpectedCallerStateMachine(sender, "SendEventAndExecuteAsync");
-
-            var enqueueStatus = EnqueueEvent(targetId, e, sender, out var target);
-            if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
-            {
-                RunStateMachineEventHandler(target, null, false, sender);
-
-                // Wait until the state machine reaches quiescence.
-                await sender.ReceiveEventAsync(typeof(QuiescentEvent), rev => (rev as QuiescentEvent).StateMachineId == targetId);
-                return true;
-            }
-
-            // EnqueueStatus.EventHandlerNotRunning is not returned by EnqueueEvent
-            // (even when the state machine was previously inactive) when the event e requires
-            // no action by the state machine (i.e., it implicitly handles the event).
-            return enqueueStatus is EnqueueStatus.Dropped || enqueueStatus is EnqueueStatus.NextEventUnavailable;
-        }
-
-        /// <summary>
-        /// Enqueues an event to the state machine with the specified id.
-        /// </summary>
-        private EnqueueStatus EnqueueEvent(StateMachineId targetId, Event e, StateMachine sender, out StateMachine target)
-        {
-            target = Scheduler.GetOperationWithId<StateMachineOperation>(targetId.Value)?.StateMachine;
+            var target = Scheduler.GetOperationWithId<StateMachineOperation>(targetId.Value)?.StateMachine;
             Assert(target != null,
                 "Cannot send event '{0}' to state machine id '{1}' that is not bound to an state machine instance.",
                 e.GetType().FullName, targetId.Value);
 
             Scheduler.ScheduledOperation.MessageReceiver = targetId.ToString();
 
-            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
+            await Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender);
 
             if (target.IsHalted)
@@ -627,7 +452,7 @@ namespace PChecker.SystematicTesting
                 LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
                     (sender)?.CurrentStateName ?? string.Empty, e, isTargetHalted: true);
                 TryHandleDroppedEvent(e, targetId);
-                return EnqueueStatus.Dropped;
+                return;
             }
 
             var enqueueStatus = EnqueueEvent(target, e, sender);
@@ -635,8 +460,10 @@ namespace PChecker.SystematicTesting
             {
                 TryHandleDroppedEvent(e, targetId);
             }
-
-            return enqueueStatus;
+            else if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
+            {
+                RunStateMachineEventHandler(target, null, false);
+            }
         }
 
         /// <summary>
@@ -657,59 +484,45 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Runs a new asynchronous event handler for the specified state machine.
-        /// This is a fire-and-forget invocation.
+        /// Enables the operation of the specified state machine, so that the scheduler
+        /// can start running its event handler.
         /// </summary>
         /// <param name="stateMachine">The state machine that executes this event handler.</param>
         /// <param name="initialEvent">Optional event for initializing the state machine.</param>
         /// <param name="isFresh">If true, then this is a new state machine.</param>
-        /// <param name="syncCaller">Caller state machine that is blocked for quiescence.</param>
-        private void RunStateMachineEventHandler(StateMachine stateMachine, Event initialEvent, bool isFresh, StateMachine syncCaller)
+        private void RunStateMachineEventHandler(StateMachine stateMachine, Event initialEvent, bool isFresh)
         {
             var op = Scheduler.GetOperationWithId<StateMachineOperation>(stateMachine.Id.Value);
             op.OnEnabled();
+            op.Continuation = () => _ = RunStateMachineEventHandlerAsync(op, stateMachine, initialEvent, isFresh);
+        }
 
-            var task = new Task(async () =>
+        private async Task RunStateMachineEventHandlerAsync(StateMachineOperation op, StateMachine stateMachine,
+            Event initialEvent, bool isFresh)
+        {
+            try
             {
-                try
+                if (isFresh)
                 {
-                    // Update the current asynchronous control flow with this runtime instance,
-                    // allowing future retrieval in the same asynchronous call stack.
-                    AssignAsyncControlFlowRuntime(this);
-
-                    OperationScheduler.StartOperation(op);
-
-                    if (isFresh)
-                    {
-                        await stateMachine.InitializeAsync(initialEvent);
-                    }
-
-                    await stateMachine.RunEventHandlerAsync();
-                    if (syncCaller != null)
-                    {
-                        EnqueueEvent(syncCaller, new QuiescentEvent(stateMachine.Id), stateMachine);
-                    }
-
-                    if (!stateMachine.IsHalted)
-                    {
-                        ResetProgramCounter(stateMachine);
-                    }
-
-                    Debug.WriteLine("<ScheduleDebug> Completed operation {0} on task '{1}'.", stateMachine.Id, Task.CurrentId);
-                    op.OnCompleted();
-
-                    // The state machine is inactive or halted, schedule the next enabled operation.
-                    Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
+                    await stateMachine.InitializeAsync(initialEvent);
                 }
-                catch (Exception ex)
+
+                await stateMachine.RunEventHandlerAsync();
+
+                if (!stateMachine.IsHalted)
                 {
-                    ProcessUnhandledExceptionInOperation(op, ex);
+                    ResetProgramCounter(stateMachine);
                 }
-            });
 
-            Scheduler.ScheduleOperation(op, task.Id);
-            task.Start();
-            Scheduler.WaitOperationStart(op);
+                op.OnCompleted();
+
+                // The state machine is inactive or halted, schedule the next enabled operation.
+                _ = Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Stop);
+            }
+            catch (Exception ex)
+            {
+                ProcessUnhandledExceptionInOperation(op, ex);
+            }
         }
 
         /// <summary>
@@ -1004,28 +817,6 @@ namespace PChecker.SystematicTesting
             Scheduler.GetExecutingOperation<TAsyncOperation>();
 
 
-        /// <summary>
-        /// Checks if the scheduling steps bound has been reached. If yes,
-        /// it stops the scheduler and kills all enabled machines.
-        /// </summary>
-        private void CheckIfSchedulingStepsBoundIsReached()
-        {
-            Scheduler.CheckIfSchedulingStepsBoundIsReached();
-        }
-
-        /// <summary>
-        /// Schedules the next controlled asynchronous operation. This method
-        /// is only used during testing.
-        /// </summary>
-        /// <param name="type">Type of the operation.</param>
-        internal void ScheduleNextOperation(AsyncOperationType type)
-        {
-            var callerOp = Scheduler.GetExecutingOperation<AsyncOperation>();
-            if (callerOp != null)
-            {
-                Scheduler.ScheduleNextEnabledOperation(type);
-            }
-        }
 
         /// <summary>
         /// Notifies that a state machine invoked an action.
@@ -1039,7 +830,7 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Notifies that a state machine dequeued an <see cref="Event"/>.
         /// </summary>
-        internal void NotifyDequeuedEvent(StateMachine stateMachine, Event e, EventInfo eventInfo)
+        internal async ValueTask NotifyDequeuedEventAsync(StateMachine stateMachine, Event e, EventInfo eventInfo)
         {
             var op = Scheduler.GetOperationWithId<StateMachineOperation>(stateMachine.Id.Value);
 
@@ -1051,7 +842,7 @@ namespace PChecker.SystematicTesting
             }
             else
             {
-                Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
+                await Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
                 ResetProgramCounter(stateMachine);
             }
 
@@ -1065,9 +856,9 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Notifies that a state machine dequeued the default <see cref="Event"/>.
         /// </summary>
-        internal void NotifyDefaultEventDequeued(StateMachine stateMachine)
+        internal async ValueTask NotifyDefaultEventDequeuedAsync(StateMachine stateMachine)
         {
-            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
+            await Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
             ResetProgramCounter(stateMachine);
         }
 
@@ -1075,10 +866,8 @@ namespace PChecker.SystematicTesting
         /// Notifies that the inbox of the specified state machine is about to be
         /// checked to see if the default event handler should fire.
         /// </summary>
-        internal void NotifyDefaultEventHandlerCheck(StateMachine stateMachine)
-        {
+        internal SchedulingPoint NotifyDefaultEventHandlerCheck(StateMachine stateMachine) =>
             Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Default);
-        }
 
         /// <summary>
         /// Notifies that a state machine raised an <see cref="Event"/>.
@@ -1122,37 +911,18 @@ namespace PChecker.SystematicTesting
         /// Notifies that a state machine received an event without waiting because the event
         /// was already in the inbox when the state machine invoked the receiving statement.
         /// </summary>
-        internal void NotifyReceivedEventWithoutWaiting(StateMachine stateMachine, Event e, EventInfo eventInfo)
+        internal async ValueTask NotifyReceivedEventWithoutWaitingAsync(StateMachine stateMachine, Event e, EventInfo eventInfo)
         {
             var stateName = stateMachine.CurrentStateName;
             LogWriter.LogReceiveEvent(stateMachine.Id, stateName, e, wasBlocked: false);
-            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
+            await Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Receive);
             ResetProgramCounter(stateMachine);
-        }
-
-        /// <summary>
-        /// Notifies that a state machine is waiting for the specified task to complete.
-        /// </summary>
-        internal void NotifyWaitTask(StateMachine stateMachine, Task task)
-        {
-            Assert(task != null, "{0} is waiting for a null task to complete.", stateMachine.Id);
-
-            var finished = task.IsCompleted || task.IsCanceled || task.IsFaulted;
-            if (!finished)
-            {
-                Assert(finished,
-                    "Controlled task '{0}' is trying to wait for an uncontrolled task or awaiter to complete. Please " +
-                    "make sure to avoid using concurrency APIs (e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from " +
-                    "the 'System.Threading.Tasks' namespace) inside state machine handlers. If you are using external libraries " +
-                    "that are executing concurrently, you will need to mock them during testing.",
-                    Task.CurrentId);
-            }
         }
 
         /// <summary>
         /// Notifies that a state machine is waiting to receive an event of one of the specified types.
         /// </summary>
-        internal void NotifyWaitEvent(StateMachine stateMachine, IEnumerable<Type> eventTypes)
+        internal async ValueTask NotifyWaitEventAsync(StateMachine stateMachine, IEnumerable<Type> eventTypes)
         {
             var stateName = stateMachine.CurrentStateName;
             var op = Scheduler.GetOperationWithId<StateMachineOperation>(stateMachine.Id.Value);
@@ -1168,7 +938,7 @@ namespace PChecker.SystematicTesting
                 LogWriter.LogWaitEvent(stateMachine.Id, stateName, eventWaitTypesArray);
             }
 
-            Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Join);
+            await Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Join);
             ResetProgramCounter(stateMachine);
         }
 
@@ -1414,16 +1184,6 @@ namespace PChecker.SystematicTesting
             Scheduler.NotifyAssertionFailure(message);
         }
 
-        /// <summary>
-        /// Waits until all stateMachines have finished execution.
-        /// </summary>
-        [DebuggerStepThrough]
-        internal async Task WaitAsync()
-        {
-            await Scheduler.WaitAsync();
-            IsRunning = false;
-        }
-        
         /// <summary>
         /// Terminates the runtime and notifies each active state machine to halt execution.
         /// </summary>

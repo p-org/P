@@ -1,13 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using PChecker.Exceptions;
 using PChecker.SystematicTesting.Operations;
 using PChecker.SystematicTesting.Strategies;
@@ -19,6 +17,12 @@ namespace PChecker.SystematicTesting
     /// <summary>
     /// Implements a scheduler that serializes and schedules controlled operations.
     /// </summary>
+    /// <remarks>
+    /// All operations run cooperatively on the thread that calls <see cref="Run"/>.
+    /// A scheduling decision that picks a different operation parks the continuation of
+    /// the current one (see <see cref="SchedulingPoint"/>) and control unwinds back to
+    /// the run loop, which resumes the chosen operation.
+    /// </remarks>
     internal sealed class OperationScheduler
     {
         /// <summary>
@@ -39,12 +43,12 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Map from unique ids to asynchronous operations.
         /// </summary>
-        private readonly ConcurrentDictionary<ulong, AsyncOperation> OperationMap;
+        private readonly Dictionary<ulong, AsyncOperation> OperationMap;
 
         /// <summary>
-        /// Map from ids of tasks that are controlled by the runtime to operations.
+        /// Registered operations ordered by id, as expected by the scheduling strategies.
         /// </summary>
-        internal readonly ConcurrentDictionary<int, AsyncOperation> ControlledTaskMap;
+        private readonly List<AsyncOperation> Operations;
 
         /// <summary>
         /// The program schedule trace.
@@ -52,9 +56,9 @@ namespace PChecker.SystematicTesting
         internal ScheduleTrace ScheduleTrace;
 
         /// <summary>
-        /// The scheduler completion source.
+        /// The thread executing the run loop.
         /// </summary>
-        private readonly TaskCompletionSource<bool> CompletionSource;
+        private int LoopThreadId;
 
         /// <summary>
         /// Checks if the scheduler is running.
@@ -95,52 +99,60 @@ namespace PChecker.SystematicTesting
             CheckerConfiguration = checkerConfiguration;
             Runtime = runtime;
             Strategy = strategy;
-            OperationMap = new ConcurrentDictionary<ulong, AsyncOperation>();
-            ControlledTaskMap = new ConcurrentDictionary<int, AsyncOperation>();
+            OperationMap = new Dictionary<ulong, AsyncOperation>();
+            Operations = new List<AsyncOperation>();
             ScheduleTrace = trace;
-            CompletionSource = new TaskCompletionSource<bool>();
             IsRunning = true;
             BugFound = false;
             HasFullyExploredSchedule = false;
         }
 
         /// <summary>
+        /// Runs scheduled operations until the schedule terminates.
+        /// </summary>
+        internal void Run()
+        {
+            LoopThreadId = Environment.CurrentManagedThreadId;
+            while (IsRunning)
+            {
+                var op = ScheduledOperation;
+                var continuation = op.Continuation;
+                if (continuation is null)
+                {
+                    NotifyAssertionFailure(string.Format(CultureInfo.InvariantCulture,
+                        "Operation '{0}' was scheduled, but it is not waiting at a scheduling point. Please make " +
+                        "sure to avoid awaiting anything but P runtime operations inside state machine handlers.",
+                        op.Name), cancelExecution: false);
+                    break;
+                }
+
+                op.Continuation = null;
+                continuation();
+            }
+        }
+
+        /// <summary>
         /// Schedules the next enabled operation.
         /// </summary>
-        internal void ScheduleNextEnabledOperation(AsyncOperationType type)
+        /// <returns>
+        /// An awaitable that completes immediately if the current operation keeps running,
+        /// otherwise it suspends the current operation until it is scheduled again.
+        /// </returns>
+        internal SchedulingPoint ScheduleNextEnabledOperation(AsyncOperationType type)
         {
-            var taskId = Task.CurrentId;
-
-            // TODO: figure out if this check is still needed.
-            // If the caller is the root task, then return.
-            if (taskId != null && taskId == Runtime.RootTaskId)
-            {
-                return;
-            }
-
-            AsyncOperation current = ScheduledOperation;
+            var current = ScheduledOperation;
             if (!IsRunning)
             {
-                // TODO: check if this stop is needed.
-                Stop();
-
-                if (current.Status != AsyncOperationStatus.Completed)
-                {
-                    // If scheduler is not running, throw exception to force terminate the current operation.
-                    throw new ExecutionCanceledException();
-                }
+                return Suspend(current);
             }
 
-            if (current.Status != AsyncOperationStatus.Completed)
+            CheckNoExternalConcurrencyUsed();
+
+            if (CheckIfSchedulingStepsBoundIsReached())
             {
-                // Checks if concurrency not controlled by the runtime was used.
-                CheckNoExternalConcurrencyUsed();
+                return Suspend(current);
             }
 
-            // Checks if the scheduling steps bound has been reached.
-            CheckIfSchedulingStepsBoundIsReached();
-
-            // Update the operation type.
             current.Type = type;
 
             if (CheckerConfiguration.IsProgramStateHashingEnabled)
@@ -149,76 +161,33 @@ namespace PChecker.SystematicTesting
                 current.HashedProgramState = Runtime.GetHashedProgramState();
             }
 
-            // Get and order the operations by their id.
-            var ops = OperationMap.Values.OrderBy(op => op.Id);
-
-            // Try enable any operation that is currently waiting, but has its dependencies already satisfied.
-            foreach (var op in ops)
+            if (!Strategy.GetNextOperation(current, Operations, out var next))
             {
-                if (op is AsyncOperation machineOp)
-                {
-                    machineOp.TryEnable();
-                    Debug.WriteLine("<ScheduleDebug> Operation '{0}' has status '{1}'.", op.Id, op.Status);
-                }
-            }
-
-            if (!Strategy.GetNextOperation(current, ops, out var next))
-            {
-                // Checks if the program has deadlocked.
-                CheckIfProgramHasDeadlocked(ops.Select(op => op));
+                CheckIfProgramHasDeadlocked(Operations);
 
                 Debug.WriteLine("<ScheduleDebug> Schedule explored.");
                 HasFullyExploredSchedule = true;
                 Stop();
-
-                if (current.Status != AsyncOperationStatus.Completed)
-                {
-                    // The schedule is explored so throw exception to force terminate the current operation.
-                    throw new ExecutionCanceledException();
-                }
+                return Suspend(current);
             }
 
             ScheduledOperation = next;
             ScheduleTrace.AddSchedulingChoice(next.Id);
 
-            Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
-
-            if (current != next)
+            if (current == next)
             {
-                current.IsActive = false;
-                lock (next)
-                {
-                    ScheduledOperation.IsActive = true;
-                    Monitor.PulseAll(next);
-                }
-
-                lock (current)
-                {
-                    if (!current.IsHandlerRunning)
-                    {
-                        return;
-                    }
-
-                    if (!ControlledTaskMap.ContainsKey(Task.CurrentId.Value))
-                    {
-                        ControlledTaskMap.TryAdd(Task.CurrentId.Value, current);
-                        Debug.WriteLine("<ScheduleDebug> Operation '{0}' is associated with task '{1}'.", current.Id, Task.CurrentId);
-                    }
-
-                    while (!current.IsActive)
-                    {
-                        Debug.WriteLine("<ScheduleDebug> Sleeping the operation of '{0}' on task '{1}'.", current.Name, Task.CurrentId);
-                        Monitor.Wait(current);
-                        Debug.WriteLine("<ScheduleDebug> Waking up the operation of '{0}' on task '{1}'.", current.Name, Task.CurrentId);
-                    }
-
-                    if (current.Status != AsyncOperationStatus.Enabled)
-                    {
-                        throw new ExecutionCanceledException();
-                    }
-                }
+                return SchedulingPoint.Continue;
             }
+
+            Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
+            return Suspend(current);
         }
+
+        /// <summary>
+        /// Suspends the operation, unless it has already completed and there is nothing left to resume.
+        /// </summary>
+        private static SchedulingPoint Suspend(AsyncOperation op) =>
+            op.Status is AsyncOperationStatus.Completed ? SchedulingPoint.Continue : new SchedulingPoint(op);
 
         /// <summary>
         /// Returns the next nondeterministic boolean choice.
@@ -231,11 +200,14 @@ namespace PChecker.SystematicTesting
                 throw new ExecutionCanceledException();
             }
 
-            // Checks if concurrency not controlled by the runtime was used.
             CheckNoExternalConcurrencyUsed();
 
-            // Checks if the scheduling steps bound has been reached.
-            CheckIfSchedulingStepsBoundIsReached();
+            if (CheckIfSchedulingStepsBoundIsReached())
+            {
+                // A choice cannot suspend its caller, so unwind it instead. This happens at
+                // most once per schedule.
+                throw new ExecutionCanceledException();
+            }
 
             if (!Strategy.GetNextBooleanChoice(ScheduledOperation, maxValue, out var choice))
             {
@@ -259,11 +231,14 @@ namespace PChecker.SystematicTesting
                 throw new ExecutionCanceledException();
             }
 
-            // Checks if concurrency not controlled by the runtime was used.
             CheckNoExternalConcurrencyUsed();
 
-            // Checks if the scheduling steps bound has been reached.
-            CheckIfSchedulingStepsBoundIsReached();
+            if (CheckIfSchedulingStepsBoundIsReached())
+            {
+                // A choice cannot suspend its caller, so unwind it instead. This happens at
+                // most once per schedule.
+                throw new ExecutionCanceledException();
+            }
 
             if (!Strategy.GetNextIntegerChoice(ScheduledOperation, maxValue, out var choice))
             {
@@ -279,76 +254,27 @@ namespace PChecker.SystematicTesting
         /// <summary>
         /// Registers the specified asynchronous operation.
         /// </summary>
-        /// <param name="op">The operation to register.</param>
         /// <returns>True if the operation was successfully registered, else false if it already exists.</returns>
         internal bool RegisterOperation(AsyncOperation op)
         {
-            if (OperationMap.Count == 0)
+            if (!OperationMap.TryAdd(op.Id, op))
+            {
+                return false;
+            }
+
+            if (Operations.Count == 0)
             {
                 ScheduledOperation = op;
             }
 
-            return OperationMap.TryAdd(op.Id, op);
-        }
-
-        /// <summary>
-        /// Schedules the specified asynchronous operation to execute on the task with the given id.
-        /// </summary>
-        /// <param name="op">The operation to schedule.</param>
-        /// <param name="taskId">The id of the task to be used to execute the operation.</param>
-        internal void ScheduleOperation(AsyncOperation op, int taskId)
-        {
-            Debug.WriteLine($"<ScheduleDebug> Scheduling operation '{op.Name}' to execute on task '{taskId}'.");
-            ControlledTaskMap.TryAdd(taskId, op);
-        }
-
-        /// <summary>
-        /// Starts the execution of the specified asynchronous operation.
-        /// </summary>
-        /// <param name="op">The operation to start executing.</param>
-        internal static void StartOperation(AsyncOperation op)
-        {
-            Debug.WriteLine($"<ScheduleDebug> Starting the operation of '{op.Name}' on task '{Task.CurrentId}'.");
-
-            lock (op)
+            var index = Operations.Count;
+            while (index > 0 && Operations[index - 1].Id > op.Id)
             {
-                op.IsHandlerRunning = true;
-                Monitor.PulseAll(op);
-                while (!op.IsActive)
-                {
-                    Debug.WriteLine($"<ScheduleDebug> Sleeping the operation of '{op.Name}' on task '{Task.CurrentId}'.");
-                    Monitor.Wait(op);
-                    Debug.WriteLine($"<ScheduleDebug> Waking up the operation of '{op.Name}' on task '{Task.CurrentId}'.");
-                }
-
-                if (op.Status != AsyncOperationStatus.Enabled)
-                {
-                    throw new ExecutionCanceledException();
-                }
+                index--;
             }
-        }
 
-        /// <summary>
-        /// Waits for the specified asynchronous operation to start executing.
-        /// </summary>
-        /// <param name="op">The operation to wait.</param>
-        internal void WaitOperationStart(AsyncOperation op)
-        {
-            lock (op)
-            {
-                if (OperationMap.Count == 1)
-                {
-                    op.IsActive = true;
-                    Monitor.PulseAll(op);
-                }
-                else
-                {
-                    while (!op.IsHandlerRunning)
-                    {
-                        Monitor.Wait(op);
-                    }
-                }
-            }
+            Operations.Insert(index, op);
+            return true;
         }
 
         /// <summary>
@@ -369,31 +295,18 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Gets the <see cref="IAsyncOperation"/> that is executing on the current
-        /// synchronization context, or null if no such operation is executing.
+        /// Gets the <see cref="IAsyncOperation"/> that is currently executing,
+        /// or null if no such operation is executing.
         /// </summary>
         [DebuggerStepThrough]
         internal TAsyncOperation GetExecutingOperation<TAsyncOperation>()
-            where TAsyncOperation : IAsyncOperation
-        {
-            if (Task.CurrentId.HasValue &&
-                ControlledTaskMap.TryGetValue(Task.CurrentId.Value, out var op) &&
-                op is TAsyncOperation expected)
-            {
-                return expected;
-            }
-
-            return default;
-        }
+            where TAsyncOperation : IAsyncOperation =>
+            ScheduledOperation is TAsyncOperation expected ? expected : default;
 
         /// <summary>
         /// Returns all registered operations.
         /// </summary>
-        /// <remarks>
-        /// This operation is thread safe because the systematic testing
-        /// runtime serializes the execution.
-        /// </remarks>
-        internal IEnumerable<IAsyncOperation> GetRegisteredOperations() => OperationMap.Values;
+        internal IEnumerable<IAsyncOperation> GetRegisteredOperations() => Operations;
 
         /// <summary>
         /// Returns the enabled operation ids.
@@ -401,11 +314,11 @@ namespace PChecker.SystematicTesting
         internal HashSet<ulong> GetEnabledOperationIds()
         {
             var enabledSchedulableIds = new HashSet<ulong>();
-            foreach (var machineInfo in OperationMap.Values)
+            foreach (var op in Operations)
             {
-                if (machineInfo.Status is AsyncOperationStatus.Enabled)
+                if (op.Status is AsyncOperationStatus.Enabled)
                 {
-                    enabledSchedulableIds.Add(machineInfo.Id);
+                    enabledSchedulableIds.Add(op.Id);
                 }
             }
 
@@ -465,28 +378,27 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Checks that no task that is not controlled by the runtime is currently executing.
+        /// Checks that the runtime is only invoked from the run loop thread.
         /// </summary>
 #if !DEBUG
         [DebuggerHidden]
 #endif
         internal void CheckNoExternalConcurrencyUsed()
         {
-            if (!Task.CurrentId.HasValue || !ControlledTaskMap.ContainsKey(Task.CurrentId.Value))
+            if (Environment.CurrentManagedThreadId != LoopThreadId)
             {
                 NotifyAssertionFailure(string.Format(CultureInfo.InvariantCulture,
-                    "Uncontrolled task '{0}' invoked a runtime method. Please make sure to avoid using concurrency APIs " +
-                    "(e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' namespace) inside " +
-                    "state machine handlers or controlled tasks. If you are using external libraries that are executing concurrently, " +
-                    "you will need to mock them during testing.",
-                    Task.CurrentId.HasValue ? Task.CurrentId.Value.ToString() : "<unknown>"));
+                    "Thread '{0}' invoked a runtime method outside of the scheduler. Please make sure to avoid using " +
+                    "concurrency APIs (e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' " +
+                    "namespace) inside state machine handlers. If you are using external libraries that are executing " +
+                    "concurrently, you will need to mock them during testing.",
+                    Environment.CurrentManagedThreadId));
             }
         }
 
         /// <summary>
         /// Checks for a deadlock. This happens when there are no more enabled operations,
-        /// but there is one or more blocked operations that are waiting to receive an event
-        /// or for a task to complete.
+        /// but there is one or more blocked operations that are waiting to receive an event.
         /// </summary>
 #if !DEBUG
         [DebuggerHidden]
@@ -563,45 +475,48 @@ namespace PChecker.SystematicTesting
                 message += "but no other controlled tasks are enabled.";
             }
 
-            NotifyAssertionFailure(message);
+            NotifyAssertionFailure(message, cancelExecution: false);
         }
 
         /// <summary>
-        /// Checks if the scheduling steps bound has been reached. If yes,
-        /// it stops the scheduler and kills all enabled machines.
+        /// Checks if the scheduling steps bound has been reached. If yes, it stops the scheduler.
         /// </summary>
+        /// <returns>True if the bound was reached and the schedule must end.</returns>
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        internal void CheckIfSchedulingStepsBoundIsReached()
+        internal bool CheckIfSchedulingStepsBoundIsReached()
         {
-            if (Strategy.HasReachedMaxSchedulingSteps())
+            if (!Strategy.HasReachedMaxSchedulingSteps())
             {
-                var bound = Strategy.IsFair() ? CheckerConfiguration.MaxFairSchedulingSteps :
-                    CheckerConfiguration.MaxUnfairSchedulingSteps;
-                var message = $"Scheduling steps bound of {bound} reached.";
-
-                if (CheckerConfiguration.ConsiderDepthBoundHitAsBug)
-                {
-                    NotifyAssertionFailure(message);
-                }
-                else
-                {
-                    Debug.WriteLine($"<ScheduleDebug> {message}");
-                    Stop();
-
-                    if (ScheduledOperation.Status != AsyncOperationStatus.Completed)
-                    {
-                        // The schedule is explored so throw exception to force terminate the current operation.
-                        throw new ExecutionCanceledException();
-                    }
-                }
+                return false;
             }
+
+            var bound = Strategy.IsFair() ? CheckerConfiguration.MaxFairSchedulingSteps :
+                CheckerConfiguration.MaxUnfairSchedulingSteps;
+            var message = $"Scheduling steps bound of {bound} reached.";
+
+            if (CheckerConfiguration.ConsiderDepthBoundHitAsBug)
+            {
+                NotifyAssertionFailure(message, cancelExecution: false);
+            }
+            else
+            {
+                Debug.WriteLine($"<ScheduleDebug> {message}");
+                Stop();
+            }
+
+            return true;
         }
 
         /// <summary>
         /// Notify that an assertion has failed.
         /// </summary>
+        /// <param name="text">Bug report.</param>
+        /// <param name="killTasks">Kill tasks.</param>
+        /// <param name="cancelExecution">
+        /// Unwind the failing operation with an <see cref="ExecutionCanceledException"/>.
+        /// </param>
 #if !DEBUG
         [DebuggerHidden]
 #endif
@@ -612,7 +527,6 @@ namespace PChecker.SystematicTesting
                 BugReport = text;
 
                 Runtime.LogWriter.LogAssertionFailure($"<ErrorLog> {text}");
-                var trace = new StackTrace();
                 Runtime.RaiseOnFailureEvent(new AssertionFailureException(text));
                 Runtime.LogWriter.LogStrategyDescription(CheckerConfiguration.SchedulingStrategy,
                     Strategy.GetDescription());
@@ -632,51 +546,15 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Waits until the scheduler terminates.
-        /// </summary>
-        internal Task WaitAsync() => CompletionSource.Task;
-
-        /// <summary>
-        /// Stops the scheduler.
+        /// Stops the scheduler. Suspended operations are never resumed.
         /// </summary>
         private void Stop()
         {
             IsRunning = false;
-            KillRemainingOperations();
-
-            // Check if the completion source is completed. If not synchronize on
-            // it (as it can only be set once) and set its result.
-            if (!CompletionSource.Task.IsCompleted)
+            foreach (var op in Operations)
             {
-                lock (CompletionSource)
-                {
-                    if (!CompletionSource.Task.IsCompleted)
-                    {
-                        CompletionSource.SetResult(true);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Kills any remaining operations at the end of the schedule.
-        /// </summary>
-        private void KillRemainingOperations()
-        {
-            foreach (var operation in OperationMap.Values)
-            {
-                // This casting is always safe.
-                var op = operation;
-                op.IsActive = true;
                 op.Status = AsyncOperationStatus.Canceled;
-
-                if (op.IsHandlerRunning)
-                {
-                    lock (op)
-                    {
-                        Monitor.PulseAll(op);
-                    }
-                }
+                op.Continuation = null;
             }
         }
     }

@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using PChecker.Runtime.Events;
 using PChecker.SystematicTesting;
 
@@ -82,8 +83,8 @@ namespace PChecker.Runtime.StateMachines.Managers
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnWaitEvent(IEnumerable<Type> eventTypes) =>
-            Runtime.NotifyWaitEvent(Instance, eventTypes);
+        public ValueTask OnWaitEventAsync(IEnumerable<Type> eventTypes) =>
+            Runtime.NotifyWaitEventAsync(Instance, eventTypes);
 
         /// <inheritdoc/>
         public void OnReceiveEvent(Event e, EventInfo eventInfo)
@@ -93,10 +94,8 @@ namespace PChecker.Runtime.StateMachines.Managers
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnReceiveEventWithoutWaiting(Event e, EventInfo eventInfo)
-        {
-            Runtime.NotifyReceivedEventWithoutWaiting(Instance, e, eventInfo);
-        }
+        public ValueTask OnReceiveEventWithoutWaitingAsync(Event e, EventInfo eventInfo) =>
+            Runtime.NotifyReceivedEventWithoutWaitingAsync(Instance, e, eventInfo);
 
         /// <inheritdoc/>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

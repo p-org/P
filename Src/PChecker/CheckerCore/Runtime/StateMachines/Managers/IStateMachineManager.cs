@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using PChecker.Runtime.Events;
 
 namespace PChecker.Runtime.StateMachines.Managers
@@ -50,7 +51,7 @@ namespace PChecker.Runtime.StateMachines.Managers
         /// <summary>
         /// Notifies the state machine that it is waiting to receive an event of one of the specified types.
         /// </summary>
-        void OnWaitEvent(IEnumerable<Type> eventTypes);
+        ValueTask OnWaitEventAsync(IEnumerable<Type> eventTypes);
 
         /// <summary>
         /// Notifies the state machine that an event it was waiting to receive has been enqueued.
@@ -61,7 +62,7 @@ namespace PChecker.Runtime.StateMachines.Managers
         /// Notifies the state machine that an event it was waiting to receive was already in the
         /// event queue when the state machine invoked the receiving statement.
         /// </summary>
-        void OnReceiveEventWithoutWaiting(Event e, EventInfo eventInfo);
+        ValueTask OnReceiveEventWithoutWaitingAsync(Event e, EventInfo eventInfo);
 
         /// <summary>
         /// Notifies the state machine that an event has been dropped.

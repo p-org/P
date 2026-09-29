@@ -60,6 +60,7 @@ public sealed class PairwiseLocalRepresentation : ITimelineRepresentation
 {
     private const char S = '\u001f';
     private readonly HashSet<string> _tokens = new();
+    private readonly HashSet<(string, string, string)> _pairs = new();
     private readonly Dictionary<string, HashSet<string>> _seenPerReceiver = new();
 
     public void RecordDelivery(string receiver, string sender, string label, VectorTime deliveryTime)
@@ -71,7 +72,11 @@ public sealed class PairwiseLocalRepresentation : ITimelineRepresentation
         }
         foreach (var prev in seen)
         {
-            _tokens.Add($"{receiver}{S}{prev}{S}{label}{S}");
+            // Pairs recur on almost every delivery; only format the token for a new one.
+            if (_pairs.Add((receiver, prev, label)))
+            {
+                _tokens.Add($"{receiver}{S}{prev}{S}{label}{S}");
+            }
         }
         seen.Add(label);
     }

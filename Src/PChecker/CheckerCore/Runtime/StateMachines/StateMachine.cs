@@ -1357,17 +1357,25 @@ namespace PChecker.Runtime.StateMachines
         /// <summary>
         /// Performs a goto transition to the specified state.
         /// </summary>
+        private static readonly ConcurrentDictionary<Type, string> StateQualifiedNames = new();
+
+        private static readonly ConcurrentDictionary<(Type, Type), State> StateInstancesByType = new();
+
+        private State GetStateInstance(Type stateType) =>
+            StateInstancesByType.GetOrAdd((GetType(), stateType),
+                key => StateInstanceCache[key.Item1].First(val => val.GetType().Equals(key.Item2)));
+
         private async Task GotoStateAsync(Type s, string onExitActionName, Event e)
         {
             Runtime.LogWriter.LogGotoState(Id, CurrentStateName,
-                $"{s.DeclaringType}.{s.Name}");
+                StateQualifiedNames.GetOrAdd(s, type => $"{type.DeclaringType}.{type.Name}"));
 
             // The state machine performs the on exit action of the current state.
             await ExecuteCurrentStateOnExitAsync(onExitActionName, e);
             if (CurrentStatus is Status.Active)
             {
                 // The state machine transitions to the new state.
-                var nextState = StateInstanceCache[GetType()].First(val => val.GetType().Equals(s));
+                var nextState = GetStateInstance(s);
                 DoStateTransition(nextState);
 
                 // The state machine performs the on entry action of the new state.

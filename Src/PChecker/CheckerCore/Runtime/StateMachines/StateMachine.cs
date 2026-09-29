@@ -259,14 +259,38 @@ namespace PChecker.Runtime.StateMachines
                 ev = HaltEvent.Instance;
             }
 
-            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
+            var @event = AnnouncedEventFactories.GetOrAdd(ev.GetType(), CreateAnnouncedEventFactory)(payload);
             if (IsTraceEnabled)
             {
                 LogAnnounce(ev, payload);
             }
 
             AnnounceInternal(@event);
+        }
+
+        private static readonly ConcurrentDictionary<Type, Func<object, Event>> AnnouncedEventFactories = new();
+
+        /// <summary>
+        /// Compiles a call to the payload constructor of the event type, which announce would
+        /// otherwise look up and invoke through reflection on every call.
+        /// </summary>
+        private static Func<object, Event> CreateAnnouncedEventFactory(Type eventType)
+        {
+            var constructor = eventType.GetConstructors().First(x => x.GetParameters().Length > 0);
+            var parameterType = constructor.GetParameters()[0].ParameterType;
+            var payload = Expression.Parameter(typeof(object), "payload");
+            Expression argument = Expression.Convert(payload, parameterType);
+            if (parameterType.IsValueType)
+            {
+                // Reflection passes default for a null value-type argument; unboxing null would throw.
+                argument = Expression.Condition(
+                    Expression.Equal(payload, Expression.Constant(null)),
+                    Expression.Default(parameterType),
+                    argument);
+            }
+
+            var body = Expression.Convert(Expression.New(constructor, argument), typeof(Event));
+            return Expression.Lambda<Func<object, Event>>(body, payload).Compile();
         }
 
         private void LogAnnounce(Event ev, object payload)

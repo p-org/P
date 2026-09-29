@@ -935,7 +935,7 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 var type = local.Type;
                 context.WriteLine(output,
-                    $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
+                    $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetLocalInitializer(context, local)};");
             }
 
             foreach (var bodyStatement in function.Body.Statements)
@@ -1222,7 +1222,7 @@ namespace Plang.Compiler.Backend.CSharp
                 {
                     var type = local.Type;
                     context.WriteLine(output,
-                        $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
+                        $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetLocalInitializer(context, local)};");
                 }
 
                 foreach (var caseStmt in value.Body.Statements)
@@ -1831,6 +1831,22 @@ namespace Plang.Compiler.Backend.CSharp
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));
             }
+        }
+
+        /// <summary>
+        /// Temporaries are always assigned before they are read, so building a default value for
+        /// them only allocates. Struct-typed values are free to default and keep their initializer.
+        /// </summary>
+        private string GetLocalInitializer(CompilationContext context, Variable local)
+        {
+            var csharpType = GetCSharpType(local.Type, true);
+            if (local.Role.HasFlag(VariableRole.Temp) &&
+                csharpType is not ("PInt" or "PBool" or "PFloat" or "PString"))
+            {
+                return "null";
+            }
+
+            return GetDefaultValue(context, local.Type);
         }
 
         private string GetDefaultValue(CompilationContext context, PLanguageType returnType)

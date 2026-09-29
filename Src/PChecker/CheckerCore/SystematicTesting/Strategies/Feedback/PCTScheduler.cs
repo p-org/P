@@ -8,6 +8,7 @@ using PChecker.Generator.Object;
 using PChecker.IO.Debugging;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
+using PChecker.SystematicTesting.Strategies;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic
 {
@@ -20,6 +21,8 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
     /// </remarks>
     internal class PCTScheduler : IScheduler
     {
+        private protected readonly List<AsyncOperation> EnabledBuffer = new List<AsyncOperation>();
+
         
         
         /// <summary>
@@ -73,7 +76,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         {
             ScheduledSteps++;
             next = null;
-            var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
+            var enabledOperations = EnabledOperations.Collect(ops, EnabledBuffer);
             if (enabledOperations.Count == 0)
             {
                 if (PriorityChangePoints.Contains(ScheduledSteps))
@@ -113,7 +116,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
             AsyncOperation prioritizedOp = null;
             foreach (var entity in PrioritizedOperations)
             {
-                if (choices.Any(m => m == entity))
+                if (EnabledOperations.ContainsReference(choices, entity))
                 {
                     prioritizedOp = entity;
                     break;
@@ -134,8 +137,13 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 PrioritizedOperations.Add(current);
             }
 
-            foreach (var op in ops.Where(op => !PrioritizedOperations.Contains(op)))
+            foreach (var op in ops)
             {
+                if (PrioritizedOperations.Contains(op))
+                {
+                    continue;
+                }
+
                 var mIndex = _randomValueGenerator.Next(PrioritizedOperations.Count) + 1;
                 PrioritizedOperations.Insert(mIndex, op);
                 Debug.WriteLine("<PCTLog> Detected new operation '{0}' at index '{1}'.", op.Id, mIndex);
@@ -175,7 +183,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
                 }
             }
 
-            return ops.First(op => op.Equals(prioritizedSchedulable));
+            return EnabledOperations.FirstEqual(ops, prioritizedSchedulable);
         }
 
         public void Reset()

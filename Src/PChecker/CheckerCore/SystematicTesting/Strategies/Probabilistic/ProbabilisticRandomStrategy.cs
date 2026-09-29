@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
+using PChecker.SystematicTesting.Strategies;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic
 {
@@ -31,7 +32,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
         /// <inheritdoc/>
         public override bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
         {
-            var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
+            var enabledOperations = EnabledOperations.Collect(ops, EnabledBuffer);
             if (enabledOperations.Count == 0)
             {
                 next = null;

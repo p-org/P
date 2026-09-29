@@ -51,7 +51,7 @@ namespace PChecker.Runtime.Values
 
         public IPValue Clone()
         {
-            return new PSeq(values.Select(item => item?.Clone()));
+            return new PSeq(values.Select(item => PValues.Clone(item)));
         }
 
         public bool Equals(IPValue other)
@@ -93,13 +93,13 @@ namespace PChecker.Runtime.Values
         public void Add(IPValue item)
         {
             IsDirty = true;
-            values.Add(item?.Clone());
+            values.Add(PValues.Clone(item));
         }
 
         public void Insert(int index, IPValue item)
         {
             IsDirty = true;
-            values.Insert(index, item?.Clone());
+            values.Insert(index, PValues.Clone(item));
         }
 
         public void RemoveAt(int index)

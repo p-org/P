@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using PChecker.Runtime.Values.Exceptions;
 
 namespace PChecker.Runtime.Values
@@ -8,27 +7,32 @@ namespace PChecker.Runtime.Values
     [Serializable]
     public class PTuple : IPValue
     {
-        public readonly List<IPValue> fieldValues;
-
-        public PTuple()
-        {
-            fieldValues = new List<IPValue>();
-        }
+        public readonly IPValue[] fieldValues;
 
         public PTuple(params IPValue[] elems)
         {
-            fieldValues = new List<IPValue>();
-            if (elems == null || elems.Length == 1)
+            if (elems == null)
             {
-                fieldValues.Add(elems?.First());
+                // A single null argument binds to the params array itself.
+                fieldValues = new IPValue[1];
+            }
+            else if (elems.Length == 1)
+            {
+                fieldValues = elems;
             }
             else
             {
-                foreach (var elem in elems)
+                fieldValues = elems;
+                for (var i = 0; i < elems.Length; i++)
                 {
-                    fieldValues.Add(elem?.Clone());
+                    elems[i] = PValues.Clone(elems[i]);
                 }
             }
+        }
+
+        private PTuple(IPValue[] fieldValues, bool _)
+        {
+            this.fieldValues = fieldValues;
         }
 
         public IPValue this[int key]
@@ -39,13 +43,13 @@ namespace PChecker.Runtime.Values
 
         public IPValue Clone()
         {
-            var clone = new PTuple();
-            foreach (var val in fieldValues)
+            var values = new IPValue[fieldValues.Length];
+            for (var i = 0; i < values.Length; i++)
             {
-                clone.fieldValues.Add(val?.Clone());
+                values[i] = PValues.Clone(fieldValues[i]);
             }
 
-            return clone;
+            return new PTuple(values, false);
         }
 
         public bool Equals(IPValue val)
@@ -61,12 +65,12 @@ namespace PChecker.Runtime.Values
                 return false;
             }
 
-            if (tupValue.fieldValues.Count != fieldValues.Count)
+            if (tupValue.fieldValues.Length != fieldValues.Length)
             {
                 return false;
             }
 
-            for (var i = 0; i < fieldValues.Count; i++)
+            for (var i = 0; i < fieldValues.Length; i++)
             {
                 if (!PValues.SafeEquals(fieldValues[i], tupValue.fieldValues[i]))
                 {
@@ -104,7 +108,7 @@ namespace PChecker.Runtime.Values
         {
             var tupleDict = new Dictionary<int, object>();
 
-            for (var i = 0; i < fieldValues.Count; i++)
+            for (var i = 0; i < fieldValues.Length; i++)
             {
                 var fieldValue = fieldValues[i];
                 tupleDict.Add(i, fieldValue);
@@ -117,66 +121,48 @@ namespace PChecker.Runtime.Values
     [Serializable]
     public class PNamedTuple : IPValue
     {
-        public readonly List<IPValue> fieldValues;
-        public List<string> fieldNames;
+        public readonly IPValue[] fieldValues;
 
-        public PNamedTuple()
-        {
-            fieldNames = new List<string>();
-            fieldValues = new List<IPValue>();
-        }
+        /// <summary>
+        /// Field names, shared by all tuples of the same type and never mutated.
+        /// </summary>
+        public readonly string[] fieldNames;
 
         public PNamedTuple(string[] _fieldNames, params IPValue[] _fieldValues)
         {
-            fieldNames = _fieldNames.ToList();
-            if (_fieldValues == null || _fieldValues.Length == 1)
-            {
-                fieldValues = new List<IPValue>();
-                fieldValues.Add(_fieldValues?.First());
-
-            }
-            else
-            {
-                fieldValues = _fieldValues.ToList();
-            }
+            fieldNames = _fieldNames;
+            // A single null argument binds to the params array itself.
+            fieldValues = _fieldValues ?? new IPValue[1];
         }
 
         public IPValue this[string name]
         {
-            get
+            get => fieldValues[IndexOf(name)];
+            set => fieldValues[IndexOf(name)] = value;
+        }
+
+        private int IndexOf(string name)
+        {
+            for (var i = 0; i < fieldNames.Length; i++)
             {
-                var idx = fieldNames.IndexOf(name);
-                if (idx == -1)
+                if (fieldNames[i] == name)
                 {
-                    throw UnknownNamedTupleFieldAccess.FromFields(name, fieldNames);
+                    return i;
                 }
-                return fieldValues[fieldNames.IndexOf(name)];
             }
-            set
-            {
-                var idx = fieldNames.IndexOf(name);
-                if (idx == -1)
-                {
-                    throw UnknownNamedTupleFieldAccess.FromFields(name, fieldNames);
-                }
-                fieldValues[fieldNames.IndexOf(name)] = value;
-            }
+
+            throw UnknownNamedTupleFieldAccess.FromFields(name, fieldNames);
         }
 
         public IPValue Clone()
         {
-            var clone = new PNamedTuple();
-            foreach (var name in fieldNames)
+            var values = new IPValue[fieldValues.Length];
+            for (var i = 0; i < values.Length; i++)
             {
-                clone.fieldNames.Add(name);
+                values[i] = PValues.Clone(fieldValues[i]);
             }
 
-            foreach (var val in fieldValues)
-            {
-                clone.fieldValues.Add(val?.Clone());
-            }
-
-            return clone;
+            return new PNamedTuple(fieldNames, values);
         }
 
         public bool Equals(IPValue val)
@@ -186,12 +172,12 @@ namespace PChecker.Runtime.Values
                 return false;
             }
 
-            if (tup.fieldValues.Count != fieldValues.Count)
+            if (tup.fieldValues.Length != fieldValues.Length)
             {
                 return false;
             }
 
-            for (var i = 0; i < tup.fieldValues.Count; i++)
+            for (var i = 0; i < tup.fieldValues.Length; i++)
             {
                 if (fieldNames[i] != tup.fieldNames[i])
                 {
@@ -216,7 +202,7 @@ namespace PChecker.Runtime.Values
         public override string ToString()
         {
             var retStr = "<";
-            for (var i = 0; i < fieldValues.Count; i++)
+            for (var i = 0; i < fieldValues.Length; i++)
             {
                 retStr += fieldNames[i] + ":" + fieldValues[i] + ", ";
             }
@@ -228,7 +214,7 @@ namespace PChecker.Runtime.Values
         public string ToEscapedString()
         {
             var retStr = "<";
-            for (var i = 0; i < fieldValues.Count; i++)
+            for (var i = 0; i < fieldValues.Length; i++)
             {
                 var v = fieldValues[i] == null ? "null" : fieldValues[i].ToEscapedString();
                 retStr += fieldNames[i] + ":" + v + ", ";
@@ -242,7 +228,7 @@ namespace PChecker.Runtime.Values
         {
             var namedTupleDict = new Dictionary<string, object>();
 
-            for (var i = 0; i < fieldValues.Count; i++)
+            for (var i = 0; i < fieldValues.Length; i++)
             {
                 var fieldValue = fieldValues[i] == null ? null : fieldValues[i].ToDict();
                 var fieldName = fieldNames[i];

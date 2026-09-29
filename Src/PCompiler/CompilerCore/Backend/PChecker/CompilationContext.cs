@@ -17,6 +17,12 @@ namespace Plang.Compiler.Backend.CSharp
 
         public PCheckerNameManager Names { get; }
 
+        /// <summary>
+        /// Field-name arrays of named tuple types, keyed by the C# array initializer, so that every
+        /// tuple of a type shares one array instead of allocating it on construction.
+        /// </summary>
+        public Dictionary<string, string> FieldNameArrays { get; } = new Dictionary<string, string>();
+
         public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 
         public string GlobalFunctionClassName { get; }

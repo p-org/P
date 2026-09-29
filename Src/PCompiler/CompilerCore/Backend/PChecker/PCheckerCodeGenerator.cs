@@ -121,6 +121,8 @@ namespace Plang.Compiler.Backend.CSharp
             // write the enum declarations
             WriteInitializeEnums(context, source.Stream, globalScope.Enums);
 
+            WriteFieldNameArrays(context, source.Stream);
+
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
@@ -189,6 +191,34 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "namespace PImplementation");
             context.WriteLine(output, "{");
             context.WriteLine(output, "}");
+        }
+
+        private const string FieldNameArraysClassName = "_PFieldNames";
+
+        private static string GetFieldNamesArray(CompilationContext context, NamedTupleType namedTupleType)
+        {
+            var initializer = "new string[]{" + string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\"")) + "}";
+            if (!context.FieldNameArrays.TryGetValue(initializer, out var fieldName))
+            {
+                fieldName = $"F{context.FieldNameArrays.Count}";
+                context.FieldNameArrays.Add(initializer, fieldName);
+            }
+
+            return $"{FieldNameArraysClassName}.{fieldName}";
+        }
+
+        private void WriteFieldNameArrays(CompilationContext context, StringWriter output)
+        {
+            WriteNameSpacePrologue(context, output);
+            context.WriteLine(output, $"internal static class {FieldNameArraysClassName}");
+            context.WriteLine(output, "{");
+            foreach (var (initializer, fieldName) in context.FieldNameArrays)
+            {
+                context.WriteLine(output, $"internal static readonly string[] {fieldName} = {initializer};");
+            }
+
+            context.WriteLine(output, "}");
+            WriteNameSpaceEpilogue(context, output);
         }
 
         private void WriteSourceEpilogue(CompilationContext context, StringWriter output)
@@ -295,7 +325,7 @@ namespace Plang.Compiler.Backend.CSharp
                 }
                 context.Write(output,
                     $"  public static {GetCSharpType(v.Type, true)} {context.Names.GetNameForDecl(v)} = ");
-                context.Write(output, $"{GetDefaultValue(v.Type)}");
+                context.Write(output, $"{GetDefaultValue(context, v.Type)}");
                 context.WriteLine(output, $";");
             }
             context.WriteLine(output, "}");
@@ -313,7 +343,7 @@ namespace Plang.Compiler.Backend.CSharp
             foreach (var field in machine.Fields)
             {
                 context.WriteLine(output,
-                    $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(field.Type)};");
+                    $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
             }
 
             WriteMonitorConstructor(context, output, machine);
@@ -606,7 +636,7 @@ namespace Plang.Compiler.Backend.CSharp
             foreach (var field in machine.Fields)
             {
                 context.WriteLine(output,
-                    $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(field.Type)};");
+                    $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
             }
 
             //create the constructor event
@@ -904,7 +934,7 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 var type = local.Type;
                 context.WriteLine(output,
-                    $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
+                    $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
             }
 
             foreach (var bodyStatement in function.Body.Statements)
@@ -1191,7 +1221,7 @@ namespace Plang.Compiler.Backend.CSharp
                 {
                     var type = local.Type;
                     context.WriteLine(output,
-                        $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
+                        $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
                 }
 
                 foreach (var caseStmt in value.Body.Statements)
@@ -1537,7 +1567,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteDefaultExpr(CompilationContext context, StringWriter output, DefaultExpr defaultExpr)
         {
-            context.Write(output, GetDefaultValue(defaultExpr.Type));
+            context.Write(output, GetDefaultValue(context, defaultExpr.Type));
         }
 
         public void WriteEnumElemRefExpr(CompilationContext context, StringWriter output, EnumElemRefExpr enumElemRefExpr)
@@ -1560,7 +1590,7 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 default:
-                    var payloadExpr = GetDefaultValue(eventRefExpr.Value.PayloadType);
+                    var payloadExpr = GetDefaultValue(context, eventRefExpr.Value.PayloadType);
                     context.Write(output, $"new {eventName}({payloadExpr})");
                     break;
             }
@@ -1614,9 +1644,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr namedTupleExpr)
         {
-            var fieldNamesArray = string.Join(",",
-                ((NamedTupleType)namedTupleExpr.Type).Names.Select(n => $"\"{n}\""));
-            fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
+            var fieldNamesArray = GetFieldNamesArray(context, (NamedTupleType)namedTupleExpr.Type);
             context.Write(output, $"(new {GetCSharpType(namedTupleExpr.Type)}({fieldNamesArray}, ");
             for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
             {
@@ -1732,7 +1760,16 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             var varName = GetGlobalParamAndLocalVariableName(context, variableRef.Variable);
-            context.Write(output, $"(({GetCSharpType(variableRef.Type)})((IPValue){varName})?.Clone())");
+            var csharpType = GetCSharpType(variableRef.Type);
+
+            // These values are immutable, and cloning a struct would box it twice.
+            if (csharpType is "PInt" or "PBool" or "PFloat" or "PString" or "PMachineValue")
+            {
+                context.Write(output, varName);
+                return;
+            }
+
+            context.Write(output, $"(({csharpType})((IPValue){varName})?.Clone())");
         }
 
         private string GetCSharpType(PLanguageType type, bool isVar = false)
@@ -1795,7 +1832,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        private string GetDefaultValue(PLanguageType returnType)
+        private string GetDefaultValue(CompilationContext context, PLanguageType returnType)
         {
             switch (returnType.Canonicalize())
             {
@@ -1812,15 +1849,14 @@ namespace Plang.Compiler.Backend.CSharp
                     return $"new {GetCSharpType(setType)}()";
 
                 case NamedTupleType namedTupleType:
-                    var fieldNamesArray = string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\""));
-                    fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
+                    var fieldNamesArray = GetFieldNamesArray(context, namedTupleType);
                     var fieldDefaults =
-                        string.Join(", ", namedTupleType.Types.Select(t => GetDefaultValue(t)));
+                        string.Join(", ", namedTupleType.Types.Select(t => GetDefaultValue(context, t)));
                     return $"(new {GetCSharpType(namedTupleType)}({fieldNamesArray},{fieldDefaults}))";
 
                 case TupleType tupleType:
                     var defaultTupleValues =
-                        string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(t)));
+                        string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(context, t)));
                     return $"(new {GetCSharpType(tupleType)}({defaultTupleValues}))";
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):

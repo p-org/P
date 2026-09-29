@@ -52,7 +52,7 @@ namespace PChecker.Runtime.Values
         public void Add(KeyValuePair<IPValue, IPValue> item)
         {
             MutabilityHelper.EnsureFrozen(item.Key);
-            map.Add(item.Key?.Clone(), item.Value?.Clone());
+            map.Add(PValues.Clone(item.Key), PValues.Clone(item.Value));
             IsDirty = true;
         }
 
@@ -88,7 +88,7 @@ namespace PChecker.Runtime.Values
         public void Add(IPValue key, IPValue value)
         {
             MutabilityHelper.EnsureFrozen(key);
-            map.Add(key?.Clone(), value?.Clone());
+            map.Add(PValues.Clone(key), PValues.Clone(value));
             IsDirty = true;
         }
 
@@ -134,8 +134,8 @@ namespace PChecker.Runtime.Values
         public IPValue Clone()
         {
             return new PMap(map.ToDictionary(
-                kv => kv.Key?.Clone(),
-                kv => kv.Value?.Clone()));
+                kv => PValues.Clone(kv.Key),
+                kv => PValues.Clone(kv.Value)));
         }
 
         public void Freeze()
@@ -150,12 +150,12 @@ namespace PChecker.Runtime.Values
 
         public PSeq CloneKeys()
         {
-            return new PSeq(map.Keys.Select(v => v.Clone()));
+            return new PSeq(map.Keys.Select(v => PValues.Clone(v)));
         }
 
         public PSeq CloneValues()
         {
-            return new PSeq(map.Values.Select(v => v.Clone()));
+            return new PSeq(map.Values.Select(v => PValues.Clone(v)));
         }
 
         public override int GetHashCode()

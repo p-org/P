@@ -38,9 +38,12 @@ namespace PChecker.Runtime.Values
             return Id.GetHashCode();
         }
 
+        /// <summary>
+        /// Machine references are immutable, so copies share the instance.
+        /// </summary>
         public IPValue Clone()
         {
-            return new PMachineValue(Id, new List<string>(Permissions));
+            return this;
         }
 
         public override string ToString()

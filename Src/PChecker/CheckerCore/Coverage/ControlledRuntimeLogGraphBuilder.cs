@@ -522,11 +522,36 @@ namespace PChecker.Coverage
             }
         }
 
+        /// <summary>
+        /// Memoizes graph updates for the current graph. The same machine states and event links
+        /// recur throughout a schedule, and building their string ids dominates the cost otherwise.
+        /// </summary>
+        private Graph CachedGraph;
+        private readonly Dictionary<(string, string, string, string), GraphNode> ChildCache = new();
+        private readonly Dictionary<(GraphNode, GraphNode, string, string), GraphLink> EventLinkCache = new();
+
+        private void InvalidateCachesIfGraphChanged()
+        {
+            if (!ReferenceEquals(CachedGraph, Graph))
+            {
+                ChildCache.Clear();
+                EventLinkCache.Clear();
+                CachedGraph = Graph;
+            }
+        }
+
         private GraphNode GetOrCreateChild(string name, string type, string stateName, string label = null)
         {
             GraphNode child = null;
             lock (Inbox)
             {
+                InvalidateCachesIfGraphChanged();
+                var cacheKey = (name, type, stateName, label);
+                if (ChildCache.TryGetValue(cacheKey, out child))
+                {
+                    return child;
+                }
+
                 AddNamespace(type);
 
                 var initalStateName = stateName;
@@ -550,6 +575,7 @@ namespace PChecker.Coverage
 
                 child = Graph.GetOrCreateNode(id, label);
                 Graph.GetOrCreateLink(parent, child, null, null, "Contains");
+                ChildCache[cacheKey] = child;
             }
 
             return child;
@@ -560,6 +586,13 @@ namespace PChecker.Coverage
             GraphLink link = null;
             lock (Inbox)
             {
+                InvalidateCachesIfGraphChanged();
+                var cacheKey = (source, target, e.Event, e.HandlingState);
+                if (EventLinkCache.TryGetValue(cacheKey, out link))
+                {
+                    return link;
+                }
+
                 var label = GetEventLabel(e.Event);
                 var index = GetLinkIndex(source, target, label);
                 var category = GetEventCategory(e.Event);
@@ -579,6 +612,8 @@ namespace PChecker.Coverage
                         link.AddAttribute("HandledBy", e.HandlingState);
                     }
                 }
+
+                EventLinkCache[cacheKey] = link;
             }
 
             return link;

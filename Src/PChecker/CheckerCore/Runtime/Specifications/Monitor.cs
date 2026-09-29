@@ -206,10 +206,21 @@ namespace PChecker.Runtime.Specifications
         public bool HasPendingTransition => PendingTransition.TypeValue != Transition.Type.None;
 
         /// <summary>
+        /// False while exploring schedules that are not traced. Generated code skips
+        /// formatting print messages then.
+        /// </summary>
+        public bool IsTraceEnabled => Runtime.LogWriter.IsTraceEnabled;
+
+        /// <summary>
         /// Writes PrintLog messages to logger.
         /// </summary>
         public void LogLine(string message)
         {
+            if (!IsTraceEnabled)
+            {
+                return;
+            }
+
             Logger.WriteLine($"<PrintLog> {message}");
 
             // Log message to JSON output
@@ -223,6 +234,11 @@ namespace PChecker.Runtime.Specifications
         /// </summary>
         public void Log(string message)
         {
+            if (!IsTraceEnabled)
+            {
+                return;
+            }
+
             Logger.Write($"{message}");
         }
 

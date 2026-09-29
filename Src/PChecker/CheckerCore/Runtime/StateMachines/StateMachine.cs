@@ -216,8 +216,19 @@ namespace PChecker.Runtime.StateMachines
             }
         }
 
+        /// <summary>
+        /// False while exploring schedules that are not traced. Generated code skips
+        /// formatting print messages then.
+        /// </summary>
+        public bool IsTraceEnabled => Runtime.LogWriter.IsTraceEnabled;
+
         public void LogLine(string message)
         {
+            if (!IsTraceEnabled)
+            {
+                return;
+            }
+
             Logger.WriteLine($"<PrintLog> {message}");
 
             // Log message to JSON output
@@ -228,6 +239,11 @@ namespace PChecker.Runtime.StateMachines
 
         public void Log(string message)
         {
+            if (!IsTraceEnabled)
+            {
+                return;
+            }
+
             Logger.Write($"{message}");
         }
 
@@ -241,6 +257,16 @@ namespace PChecker.Runtime.StateMachines
 
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
+            if (IsTraceEnabled)
+            {
+                LogAnnounce(ev, payload);
+            }
+
+            AnnounceInternal(@event);
+        }
+
+        private void LogAnnounce(Event ev, object payload)
+        {
             var pText = payload == null ? "" : $" with payload {((IPValue)payload).ToEscapedString()}";
 
             Logger.WriteLine($"<AnnounceLog> '{Id}' announced event '{ev.GetType().Name}'{pText}.");
@@ -255,8 +281,6 @@ namespace PChecker.Runtime.StateMachines
             }
             JsonLogger.AddLog($"{Id} announced event {ev.GetType().Name}{pText}.");
             JsonLogger.AddToLogs(updateVcMap: true);
-
-            AnnounceInternal(@event);
         }
 
         private void AnnounceInternal(Event ev)

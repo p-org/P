@@ -522,6 +522,10 @@ namespace PChecker.SystematicTesting
             // is installed and if verbosity is turned off.
             InMemoryLogger runtimeLogger = null;
 
+            // Untraced schedules skip building text and JSON traces; a failing one is
+            // replayed with tracing to produce them.
+            var isTraced = _checkerConfiguration.IsVerbose || IsReplayModeEnabled;
+
             // Gets a handle to the standard output and error streams.
             var stdOut = Console.Out;
             var stdErr = Console.Error;
@@ -530,6 +534,7 @@ namespace PChecker.SystematicTesting
             {
                 // Creates a new instance of the controlled runtime.
                 runtime = new ControlledRuntime(_checkerConfiguration, Strategy);
+                runtime.LogWriter.IsTraceEnabled = isTraced;
 
                 runtime.RegisterLog(timelineObserver);
                 runtime.RegisterLog(scenarioObserver);
@@ -540,8 +545,11 @@ namespace PChecker.SystematicTesting
                 // the standard output and error streams to a nul logger.
                 if (!_checkerConfiguration.IsVerbose)
                 {
-                    runtimeLogger = new InMemoryLogger();
-                    runtime.SetLogger(runtimeLogger);
+                    if (isTraced)
+                    {
+                        runtimeLogger = new InMemoryLogger();
+                        runtime.SetLogger(runtimeLogger);
+                    }
 
                     var writer = TextWriter.Null;
                     Console.SetOut(writer);
@@ -613,6 +621,11 @@ namespace PChecker.SystematicTesting
 
                 if (!IsReplayModeEnabled && TestReport.NumOfFoundBugs > 0)
                 {
+                    if (!isTraced)
+                    {
+                        runtimeLogger = TraceSchedule(runtime.Scheduler.ScheduleTrace);
+                    }
+
                     if (runtimeLogger != null)
                     {
                         ReadableTrace = runtimeLogger.ToString();
@@ -649,6 +662,35 @@ namespace PChecker.SystematicTesting
                 runtimeLogger?.Dispose();
                 runtime?.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Replays the specified schedule with tracing enabled, and returns its text trace.
+        /// The JSON trace is left in <see cref="JsonLogger"/>.
+        /// </summary>
+        private InMemoryLogger TraceSchedule(ScheduleTrace trace)
+        {
+            var strategy = new ReplayStrategy(_checkerConfiguration, trace, Strategy.IsFair());
+            var runtime = new ControlledRuntime(_checkerConfiguration, strategy);
+            var logger = new InMemoryLogger();
+            try
+            {
+                RegisterObservers(runtime);
+                runtime.SetLogger(logger);
+                runtime.RunTest(TestMethodInfo.Method, TestMethodInfo.Name);
+                if (!runtime.Scheduler.BugFound)
+                {
+                    runtime.CheckNoMonitorInHotStateAtTermination();
+                }
+
+                runtime.LogWriter.LogCompletion();
+            }
+            finally
+            {
+                runtime.Dispose();
+            }
+
+            return logger;
         }
 
         /// <summary>

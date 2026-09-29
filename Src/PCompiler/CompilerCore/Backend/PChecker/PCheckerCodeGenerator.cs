@@ -1137,7 +1137,8 @@ namespace Plang.Compiler.Backend.CSharp
 
         public bool WritePrintStmt(CompilationContext context, StringWriter output, Function function, PrintStmt printStmt)
         {
-            context.Write(output, "currentMachine.LogLine(\"\" + ");
+            // Calls are lifted out of expressions, so skipping the message has no side effects.
+            context.Write(output, "if (currentMachine.IsTraceEnabled) currentMachine.LogLine(\"\" + ");
             this.WriteExpr(context, output, printStmt.Message);
             context.WriteLine(output, ");");
             return false;

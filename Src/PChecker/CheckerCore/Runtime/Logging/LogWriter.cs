@@ -33,6 +33,13 @@ namespace PChecker.Runtime.Logging
         public JsonWriter JsonLogger { get; private set; }
 
         /// <summary>
+        /// When false, the text and JSON trace formatters are not registered and print
+        /// statements are skipped. The checker explores this way and replays a failing
+        /// schedule with tracing enabled to produce its traces.
+        /// </summary>
+        internal bool IsTraceEnabled { get; set; } = true;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LogWriter"/> class.
         /// </summary>
         internal LogWriter(CheckerConfiguration checkerConfiguration)
@@ -586,6 +593,11 @@ namespace PChecker.Runtime.Logging
             if (log == null)
             {
                 throw new InvalidOperationException("Cannot register a null log.");
+            }
+
+            if (!IsTraceEnabled && log is PCheckerLogTextFormatter or PCheckerLogJsonFormatter)
+            {
+                return;
             }
 
             // Make sure we only have one text logger

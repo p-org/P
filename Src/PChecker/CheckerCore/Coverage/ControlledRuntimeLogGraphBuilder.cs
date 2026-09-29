@@ -280,7 +280,9 @@ namespace PChecker.Coverage
                             var info = inbox[i];
                             if (info.Event == eventName)
                             {
+                                // Handled now; left in place it would pile up for every goto and raise.
                                 Dequeued[id] = info;
+                                inbox.RemoveAt(i);
                                 break;
                             }
                         }

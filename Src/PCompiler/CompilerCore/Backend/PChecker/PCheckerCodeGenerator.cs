@@ -619,7 +619,8 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "{");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
             context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
-            context.WriteLine(output, $"public override IPValue Clone() {{ return new {declName}();}}");
+            context.WriteLine(output, $"public override IPValue Clone() {{ return new {declName}() {{ Payload = null }};}}");
+            context.WriteLine(output, $"protected override IPValue CreateDefaultPayload() => {GetDefaultValue(context, pEvent.PayloadType)};");
             context.WriteLine(output, "}");
 
             WriteNameSpaceEpilogue(context, output);
@@ -1590,8 +1591,8 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 default:
-                    var payloadExpr = GetDefaultValue(context, eventRefExpr.Value.PayloadType);
-                    context.Write(output, $"new {eventName}({payloadExpr})");
+                    // The payload defaults lazily; it is usually assigned right after.
+                    context.Write(output, $"new {eventName}()");
                     break;
             }
         }

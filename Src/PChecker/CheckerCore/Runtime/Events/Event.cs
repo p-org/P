@@ -22,7 +22,36 @@ namespace PChecker.Runtime.Events
             Payload = payload;
         }
         
-        public IPValue Payload { get; set; }
+        private IPValue payload;
+        private bool isPayloadSet;
+
+        /// <summary>
+        /// The payload. Until assigned, it is the default value of the event's payload type,
+        /// built on first read: events are usually created only to have a payload assigned.
+        /// </summary>
+        public IPValue Payload
+        {
+            get
+            {
+                if (!isPayloadSet)
+                {
+                    payload = CreateDefaultPayload();
+                    isPayloadSet = true;
+                }
+
+                return payload;
+            }
+            set
+            {
+                payload = value;
+                isPayloadSet = true;
+            }
+        }
+
+        /// <summary>
+        /// Returns the default value of the payload type.
+        /// </summary>
+        protected virtual IPValue CreateDefaultPayload() => null;
         
         public bool Equals(IPValue other)
         {
@@ -57,6 +86,10 @@ namespace PChecker.Runtime.Events
     
     public class PHalt : Event
     {
+        public PHalt()
+        {
+        }
+
         public PHalt(IPValue payload) : base(payload)
         {
         }

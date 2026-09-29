@@ -107,6 +107,7 @@ namespace Plang.Options
             advancedGroup.AddArgument("graph-bug", null, "Output a DGML graph of the schedule that found a bug", typeof(bool));
             advancedGroup.AddArgument("graph", null, "Output a DGML graph of all test schedules whether a bug was found or not", typeof(bool));
             advancedGroup.AddArgument("xml-trace", null, "Specify a filename for XML runtime log output to be written to", typeof(bool));
+            advancedGroup.AddArgument("no-coverage", null, "Do not collect activity coverage (the .coverage.txt and .sci reports); speeds up exploration", typeof(bool));
             advancedGroup.AddArgument("jvm-args", null, "Specify a concatenated list of JVM arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("checker-args", null, "Specify a concatenated list of additional checker arguments to pass, each starting with a colon").IsHidden = true;
             advancedGroup.AddArgument("psym-args", null, "Specify a concatenated list of additional PSym-specific arguments to pass, each starting with a colon").IsHidden = true;
@@ -281,6 +282,9 @@ namespace Plang.Options
                     break;
                 case "xml-trace":
                     checkerConfiguration.IsXmlLogEnabled = true;
+                    break;
+                case "no-coverage":
+                    checkerConfiguration.ReportActivityCoverage = false;
                     break;
                 case "explore":
                     checkerConfiguration.PerformFullExploration = true;

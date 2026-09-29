@@ -249,7 +249,11 @@ namespace PChecker.Runtime.StateMachines
 
         public void Announce(Event ev, object payload = null)
         {
-            Assert(ev != null, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
+            if (ev == null)
+            {
+                Assert(false, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
+            }
+
             if (ev is PHalt)
             {
                 ev = HaltEvent.Instance;
@@ -285,13 +289,17 @@ namespace PChecker.Runtime.StateMachines
 
         private void AnnounceInternal(Event ev)
         {
-            Assert(ev != null, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
-            if (!PModule.monitorMap.ContainsKey(interfaceName))
+            if (ev == null)
+            {
+                Assert(false, $"Incorrect use of announce by Machine {Id.Name} in state {CurrentStateName}. Machine cannot announce a null event");
+            }
+
+            if (!PModule.monitorMap.TryGetValue(interfaceName, out var monitors))
             {
                 return;
             }
 
-            foreach (var monitor in PModule.monitorMap[interfaceName])
+            foreach (var monitor in monitors)
             {
                 if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))
                 {
@@ -553,12 +561,28 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="ev">The event to send.</param>
         public ValueTask SendEvent(PMachineValue target, Event ev)
         {
-            Assert(ev != null, $"Machine cannot send a null event. Machine {Id} trying to send null event in state {CurrentStateName}.");
-            Assert(target != null, $"Target in send cannot be null. Machine {Id} trying to send event {ev.GetType().Name} to null target in state {CurrentStateName}.");
-            Assert(sends.Contains(ev.GetType().Name),
-                $"Event {ev.GetType().Name} is not in the sends set of the Machine {GetType().Name}");
-            Assert(target.Permissions.Contains(ev.GetType().Name),
-                $"Event {ev.GetType().Name} is not in the permissions set of the target machine {target.Id}");
+            // Messages are only formatted on failure: sends are hot.
+            if (ev == null)
+            {
+                Assert(false, $"Machine cannot send a null event. Machine {Id} trying to send null event in state {CurrentStateName}.");
+            }
+
+            var eventName = ev.GetType().Name;
+            if (target == null)
+            {
+                Assert(false, $"Target in send cannot be null. Machine {Id} trying to send event {eventName} to null target in state {CurrentStateName}.");
+            }
+
+            if (!sends.Contains(eventName))
+            {
+                Assert(false, $"Event {eventName} is not in the sends set of the Machine {GetType().Name}");
+            }
+
+            if (!target.Permissions.Contains(eventName))
+            {
+                Assert(false, $"Event {eventName} is not in the permissions set of the target machine {target.Id}");
+            }
+
             AnnounceInternal(ev);
             // Update vector clock
             VectorTime.Increment();
@@ -978,7 +1002,11 @@ namespace PChecker.Runtime.StateMachines
         public void RaiseEvent(Event e)
         {
             Assert(CurrentStatus is Status.Active, "{0} invoked RaiseEvent while halting.", Id);
-            Assert(e != null, $"{Id} is raising a null event in state {CurrentStateName}");
+            if (e == null)
+            {
+                Assert(false, $"{Id} is raising a null event in state {CurrentStateName}");
+            }
+
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.RaiseEvent, default, e);
         }
@@ -1151,6 +1179,7 @@ namespace PChecker.Runtime.StateMachines
             o = null;
             return false;
         }
+
 
         private async Task HandleEventAsync(Event e, State declaringState, EventHandlerDeclaration eventHandler)
         {
@@ -1636,8 +1665,15 @@ namespace PChecker.Runtime.StateMachines
         /// </summary>
         private void AssertStateValidity()
         {
-            Assert(StateTypeCache[GetType()].Count > 0, InternalExceptionMessage($"{Id} must have one or more states."));
-            Assert(CurrentState != null, InternalExceptionMessage($"{Id} must not have a null current state."));
+            if (StateTypeCache[GetType()].Count == 0)
+            {
+                Assert(false, InternalExceptionMessage($"{Id} must have one or more states."));
+            }
+
+            if (CurrentState == null)
+            {
+                Assert(false, InternalExceptionMessage($"{Id} must not have a null current state."));
+            }
         }
 
         /// <summary>

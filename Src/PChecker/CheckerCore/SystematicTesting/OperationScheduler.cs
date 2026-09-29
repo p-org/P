@@ -179,7 +179,7 @@ namespace PChecker.SystematicTesting
                 return SchedulingPoint.Continue;
             }
 
-            Debug.WriteLine($"<ScheduleDebug> Scheduling the next operation of '{next.Name}'.");
+            Debug.WriteLine("<ScheduleDebug> Scheduling the next operation of '{0}'.", next.Name);
             return Suspend(current);
         }
 

@@ -82,8 +82,6 @@ namespace PImplementation
             PInt TMP_tmp1 = ((PInt)0);
             PInt TMP_tmp2 = ((PInt)0);
             PBool TMP_tmp3 = ((PBool)false);
-            PInt TMP_tmp4 = ((PInt)0);
-            PString TMP_tmp5 = ((PString)"");
             TMP_tmp0 = (PInt)((count) + (n));
             count = TMP_tmp0;
             TMP_tmp1 = (PInt)(((PInt)(log).Count));
@@ -96,9 +94,7 @@ namespace PImplementation
             }
             else
             {
-                TMP_tmp4 = (PInt)(count);
-                TMP_tmp5 = (PString)(((PString) String.Format("count={0}",TMP_tmp4)));
-                if (currentMachine.IsTraceEnabled) currentMachine.LogLine("" + TMP_tmp5);
+                if (currentMachine.IsTraceEnabled) currentMachine.LogLine("" + ((PString) String.Format("count={0}",count)));
             }
         }
         [Start]
@@ -130,7 +126,7 @@ namespace PImplementation
             PBool TMP_tmp1_1 = ((PBool)false);
             PString TMP_tmp2_1 = ((PString)"");
             PString TMP_tmp3_1 = ((PString)"");
-            PString TMP_tmp4_1 = ((PString)"");
+            PString TMP_tmp4 = ((PString)"");
             TMP_tmp0_1 = (PInt)((total) + (n_1));
             total = TMP_tmp0_1;
             TMP_tmp1_1 = (PBool)((total) >= (((PInt)(0))));
@@ -141,8 +137,8 @@ namespace PImplementation
             {
                 TMP_tmp2_1 = (PString)(((PString) String.Format("golden.p:37:13")));
                 TMP_tmp3_1 = (PString)(((PString) String.Format("total must stay non-negative")));
-                TMP_tmp4_1 = (PString)(((PString) String.Format("{0} {1}",TMP_tmp2_1,TMP_tmp3_1)));
-                currentMachine.Assert(TMP_tmp1_1,"Assertion Failed: " + TMP_tmp4_1);
+                TMP_tmp4 = (PString)(((PString) String.Format("{0} {1}",TMP_tmp2_1,TMP_tmp3_1)));
+                currentMachine.Assert(TMP_tmp1_1,"Assertion Failed: " + TMP_tmp4);
             }
         }
         [Start]

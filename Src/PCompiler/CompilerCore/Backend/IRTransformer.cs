@@ -484,6 +484,12 @@ namespace Plang.Compiler.Backend
                 case NoStmt _:
                     return new List<IPStmt>();
 
+                case PrintStmt { Message: StringExpr printString }
+                    when !printString.Args.Any(arg => MayFormatForeignValue(arg.Type)):
+                    (var printArgs, var printArgDeps) = SimplifyPrintArgs(printString.Args);
+                    return printArgDeps.Append(new PrintStmt(location,
+                        new StringExpr(printString.SourceLocation, printString.BaseString, printArgs))).ToList();
+
                 case PrintStmt printStmt:
                     var deps = new List<IPStmt>();
                     (var newMessage, var printDeps) = SimplifyExpression(printStmt.Message);
@@ -674,6 +680,69 @@ namespace Plang.Compiler.Backend
             var args = argsPack.ToList();
             (var refArgs, var deps) = SimplifyFunArgs(args);
             return (refArgs, deps);
+        }
+
+        /// <summary>
+        /// Simplifies the arguments of a formatted print message, which stays inline in the print
+        /// statement so that a backend can skip formatting it when nothing is logged. Everything that
+        /// can have side effects or fail (calls, choices, map and sequence accesses) is lifted into
+        /// the returned statements, which always run, so only the formatting of variables is skipped.
+        /// Unlike call arguments, a variable is not cloned unless a later argument runs statements
+        /// that could change it before the message is formatted.
+        /// </summary>
+        private (List<IPExpr>, List<IPStmt>) SimplifyPrintArgs(IReadOnlyList<IPExpr> printArgs)
+        {
+            var simplified = printArgs.Select(SimplifyExpression).ToList();
+            var args = new List<IPExpr>();
+            var deps = new List<IPStmt>();
+            for (var i = 0; i < simplified.Count; i++)
+            {
+                (var argExpr, var argDeps) = simplified[i];
+                deps.AddRange(argDeps);
+                var isStable = argExpr is VariableAccessExpr variableAccessExpr &&
+                               (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Temp) ||
+                                simplified.Skip(i + 1).All(later => later.Item2.Count == 0));
+                if (isStable)
+                {
+                    args.Add(argExpr);
+                }
+                else
+                {
+                    (var temp, var tempDep) = SaveInTemporary(new CloneExpr(argExpr));
+                    deps.Add(tempDep);
+                    args.Add(temp);
+                }
+            }
+
+            return (args, deps);
+        }
+
+        /// <summary>
+        /// Can formatting a value of the specified type run foreign code (its ToString)? Such a
+        /// print message is formatted even when nothing is logged, in case that code has side effects.
+        /// </summary>
+        private static bool MayFormatForeignValue(PLanguageType type)
+        {
+            switch (type.Canonicalize())
+            {
+                case ForeignType _:
+                case DataType _:
+                    return true;
+                case PrimitiveType primitiveType:
+                    return primitiveType.IsSameTypeAs(PrimitiveType.Any);
+                case SequenceType sequenceType:
+                    return MayFormatForeignValue(sequenceType.ElementType);
+                case SetType setType:
+                    return MayFormatForeignValue(setType.ElementType);
+                case MapType mapType:
+                    return MayFormatForeignValue(mapType.KeyType) || MayFormatForeignValue(mapType.ValueType);
+                case TupleType tupleType:
+                    return tupleType.Types.Any(MayFormatForeignValue);
+                case NamedTupleType namedTupleType:
+                    return namedTupleType.Types.Any(MayFormatForeignValue);
+                default:
+                    return false;
+            }
         }
 
         private (IVariableRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs)

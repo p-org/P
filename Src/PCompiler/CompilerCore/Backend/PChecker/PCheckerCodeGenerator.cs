@@ -1199,7 +1199,8 @@ namespace Plang.Compiler.Backend.CSharp
 
         public bool WritePrintStmt(CompilationContext context, StringWriter output, Function function, PrintStmt printStmt)
         {
-            // Calls are lifted out of expressions, so skipping the message has no side effects.
+            // A formatted message is left inline by IRTransformer, which lifts everything that can
+            // have side effects or fail out of it, so this skips formatting it when nothing is logged.
             context.Write(output, "if (currentMachine.IsTraceEnabled) currentMachine.LogLine(\"\" + ");
             this.WriteExpr(context, output, printStmt.Message);
             context.WriteLine(output, ");");

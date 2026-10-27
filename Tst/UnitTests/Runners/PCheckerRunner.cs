@@ -15,7 +15,7 @@ namespace UnitTests.Runners
 {
     internal class PCheckerRunner : ICompilerTestRunner
     {
-        private static readonly object CheckerLock = new object();
+        internal static readonly object CheckerLock = new object();
         private static readonly object RunTestLock = new object();
         private readonly FileInfo[] nativeSources;
         private readonly FileInfo[] sources;

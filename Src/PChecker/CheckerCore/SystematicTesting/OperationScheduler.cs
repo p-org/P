@@ -313,6 +313,23 @@ namespace PChecker.SystematicTesting
             ScheduledOperation is TAsyncOperation expected ? expected : default;
 
         /// <summary>
+        /// Checks if the specified operation is the only enabled one, so a scheduling point
+        /// cannot switch away from it.
+        /// </summary>
+        internal bool IsOnlyEnabledOperation(AsyncOperation op)
+        {
+            foreach (var other in Operations)
+            {
+                if (other != op && other.Status is AsyncOperationStatus.Enabled)
+                {
+                    return false;
+                }
+            }
+
+            return op.Status is AsyncOperationStatus.Enabled;
+        }
+
+        /// <summary>
         /// Returns all registered operations.
         /// </summary>
         internal IEnumerable<IAsyncOperation> GetRegisteredOperations() => Operations;

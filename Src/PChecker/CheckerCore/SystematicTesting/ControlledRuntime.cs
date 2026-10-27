@@ -314,20 +314,30 @@ namespace PChecker.SystematicTesting
             (ulong)Interlocked.Increment(ref OperationIdCounter) - 1;
 
         /// <summary>
-        /// Creates a new state machine from the test entry method.
+        /// Creates a new state machine from the test entry method, or on behalf of the executing
+        /// state machine when called from its foreign code.
         /// </summary>
         /// <remarks>
-        /// The test entry method runs synchronously, so its scheduling point cannot suspend. This
-        /// holds as long as it is the only enabled operation, i.e. it creates a single state machine.
+        /// The test entry method and foreign code run synchronously, so they cannot be suspended at
+        /// a scheduling point. The test entry takes the Create scheduling point only while it is the
+        /// only enabled operation, where the scheduler cannot switch away from it (this keeps the
+        /// usual single create of a P test identical to master). Later creates skip it: the machines
+        /// they create start running once the test entry returns.
         /// </remarks>
         internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent = null)
         {
             var creator = Scheduler.GetExecutingOperation<StateMachineOperation>()?.StateMachine;
-            Assert(creator is null, "{0} must create state machines asynchronously.", creator?.Id);
-
-            if (!Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create).IsCompleted)
+            if (creator != null)
             {
-                Assert(!Scheduler.IsRunning, "The test entry method can only create a single state machine.");
+                return CreateStateMachine(id, type, name, initialEvent, creator);
+            }
+
+            CheckSchedulerIsRunning();
+            if (Scheduler.IsOnlyEnabledOperation(Scheduler.ScheduledOperation) &&
+                !Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Create).IsCompleted)
+            {
+                // The schedule ended at this point (e.g. the steps bound was reached).
+                Assert(!Scheduler.IsRunning, "The test entry method was suspended at a scheduling point.");
                 return null;
             }
 

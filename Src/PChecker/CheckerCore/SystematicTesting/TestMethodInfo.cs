@@ -161,9 +161,8 @@ namespace PChecker.SystematicTesting
 
             var hasNoInputParameters = testParams.Length is 0;
             var hasStateMachineInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ControlledRuntime);
-            var hasTaskInputParameters = testParams.Length is 1 && testParams[0].ParameterType == typeof(ControlledRuntime);
 
-            if (!(hasVoidReturnType && (hasNoInputParameters || hasStateMachineInputParameters || hasTaskInputParameters) &&
+            if (!(hasVoidReturnType && (hasNoInputParameters || hasStateMachineInputParameters) &&
                   !testMethod.IsAbstract && !testMethod.IsVirtual && !testMethod.IsConstructor &&
                   !testMethod.ContainsGenericParameters && testMethod.IsPublic && testMethod.IsStatic))
             {
@@ -172,15 +171,14 @@ namespace PChecker.SystematicTesting
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
                                     $"  public static void {testMethod.Name}() {{ ... }}\n\n" +
                                     $"  [{typeof(TestAttribute).FullName}]\n" +
-                                    $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}");
+                                    $"  public static void {testMethod.Name}(ControlledRuntime runtime) {{ ... }}\n\n" +
+                                    "Asynchronous (async or Task-returning) test methods are no longer supported: the " +
+                                    "test method runs synchronously, and the state machines it creates start running " +
+                                    "after it returns.");
             }
 
             Delegate test;
             if (hasStateMachineInputParameters)
-            {
-                test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
-            }
-            else if (hasTaskInputParameters)
             {
                 test = Delegate.CreateDelegate(typeof(Action<ControlledRuntime>), testMethod);
             }

@@ -160,21 +160,43 @@ namespace PChecker.Runtime.StateMachines
         }
         
         /// <summary>
-        /// Creates a state machine implementing the interface <typeparamref name="T"/>. This is a
-        /// scheduling point, so the caller must await it.
+        /// Creates a state machine implementing the interface <typeparamref name="T"/>, for foreign
+        /// code. Foreign code runs synchronously and cannot be suspended, so unlike a P <c>new</c>
+        /// this is not a scheduling point: the machine is created right away, and the caller keeps
+        /// running until its next P scheduling point.
         /// </summary>
-        public async ValueTask<PMachineValue> CreateInterface<T>(StateMachine creator, IPValue payload = null)
+        public PMachineValue CreateInterface<T>(StateMachine creator, IPValue payload = null)
+            where T : PMachineValue
+        {
+            var createdInterface = GetCreatedInterface<T>(creator);
+            var machineId = CreateStateMachine(PModule.interfaceDefinitionMap[createdInterface],
+                createdInterface.Substring(2), GetConstructorEvent(payload));
+            return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
+        }
+
+        /// <summary>
+        /// Creates a state machine implementing the interface <typeparamref name="T"/>. This is a
+        /// scheduling point, so the caller must await it. Generated code uses it for a P <c>new</c>;
+        /// foreign code must use <see cref="CreateInterface{T}"/>.
+        /// </summary>
+        public async ValueTask<PMachineValue> CreateInterfaceAsync<T>(StateMachine creator, IPValue payload = null)
+            where T : PMachineValue
+        {
+            var createdInterface = GetCreatedInterface<T>(creator);
+            var machineId = await CreateStateMachineAsync(PModule.interfaceDefinitionMap[createdInterface],
+                createdInterface.Substring(2), GetConstructorEvent(payload));
+            return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
+        }
+
+        private string GetCreatedInterface<T>(StateMachine creator)
             where T : PMachineValue
         {
             var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
             Assert(creates.Contains(createdInterface),
                 $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
-            var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = await CreateStateMachine(createMachine, createdInterface.Substring(2),
-                GetConstructorEvent(payload));
-            return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
+            return createdInterface;
         }
-        
+
 
         /// <summary>
         /// 
@@ -573,17 +595,56 @@ namespace PChecker.Runtime.StateMachines
         /// <param name="name">Optional name used for logging.</param>
         /// <param name="initialEvent">Optional initialization event.</param>
         /// <returns>The unique state machine id.</returns>
-        protected ValueTask<StateMachineId> CreateStateMachine(Type type, string name, Event initialEvent = null) =>
-            Runtime.CreateStateMachineAsync(null, type, name, initialEvent, this);
-        
-        
+        /// <remarks>
+        /// This is not a scheduling point: the machine is created right away. Use
+        /// <see cref="CreateStateMachineAsync"/> from code that can await.
+        /// </remarks>
+        protected StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null) =>
+            Runtime.CreateStateMachine(null, type, name, initialEvent, this);
+
         /// <summary>
-        /// Sends an asynchronous <see cref="Event"/> to a target. This is a scheduling point,
-        /// so the caller must await it.
+        /// Creates a new state machine of the specified type and name, and with the specified
+        /// optional <see cref="Event"/>. This is a scheduling point, so the caller must await it.
+        /// </summary>
+        /// <param name="type">Type of the state machine.</param>
+        /// <param name="name">Optional name used for logging.</param>
+        /// <param name="initialEvent">Optional initialization event.</param>
+        /// <returns>The unique state machine id.</returns>
+        protected ValueTask<StateMachineId> CreateStateMachineAsync(Type type, string name, Event initialEvent = null) =>
+            Runtime.CreateStateMachineAsync(null, type, name, initialEvent, this);
+
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a target, for foreign code. Foreign code runs
+        /// synchronously and cannot be suspended, so unlike a P <c>send</c> this is not a scheduling
+        /// point: the event is enqueued right away, and the caller keeps running until its next P
+        /// scheduling point. It must be called on the state machine that is currently executing,
+        /// i.e. the one passed to the foreign function.
         /// </summary>
         /// <param name="target">The target.</param>
         /// <param name="ev">The event to send.</param>
-        public ValueTask SendEvent(PMachineValue target, Event ev)
+        public void SendEvent(PMachineValue target, Event ev)
+        {
+            PrepareSend(target, ev);
+            Runtime.SendEvent(target.Id, ev, this);
+        }
+
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a target. This is a scheduling point,
+        /// so the caller must await it. Generated code uses it for a P <c>send</c>; foreign code
+        /// must use <see cref="SendEvent"/>.
+        /// </summary>
+        /// <param name="target">The target.</param>
+        /// <param name="ev">The event to send.</param>
+        public ValueTask SendEventAsync(PMachineValue target, Event ev)
+        {
+            PrepareSend(target, ev);
+            return Runtime.SendEventAsync(target.Id, ev, this);
+        }
+
+        /// <summary>
+        /// Checks that the send is allowed, announces it to monitors and advances the vector clock.
+        /// </summary>
+        private void PrepareSend(PMachineValue target, Event ev)
         {
             // Messages are only formatted on failure: sends are hot.
             if (ev == null)
@@ -610,7 +671,6 @@ namespace PChecker.Runtime.StateMachines
             AnnounceInternal(ev);
             // Update vector clock
             VectorTime.Increment();
-            return Runtime.SendEventAsync(target.Id, ev, this);
         }
         
         /// <summary>

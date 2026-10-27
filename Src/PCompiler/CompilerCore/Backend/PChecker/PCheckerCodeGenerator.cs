@@ -1027,7 +1027,7 @@ namespace Plang.Compiler.Backend.CSharp
         public bool WriteCtorStmt(CompilationContext context, StringWriter output, Function function, CtorStmt ctorStmt)
         {
             context.Write(output,
-                $"await currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
+                $"await currentMachine.CreateInterfaceAsync<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
             context.Write(output, "currentMachine");
             if (ctorStmt.Arguments.Any())
             {
@@ -1308,7 +1308,7 @@ namespace Plang.Compiler.Backend.CSharp
                 this.WriteExpr(context, output, sendStmt.Arguments.First());
                 context.WriteLine(output, ";");
             }
-            context.Write(output, "await currentMachine.SendEvent(");
+            context.Write(output, "await currentMachine.SendEventAsync(");
             this.WriteExpr(context, output, sendStmt.MachineExpr);
             context.Write(output, ", (Event)");
             this.WriteExpr(context, output, sendStmt.Evt);
@@ -1538,7 +1538,7 @@ namespace Plang.Compiler.Backend.CSharp
         public void WriteCtorExpr(CompilationContext context, StringWriter output, CtorExpr ctorExpr)
         {
             context.Write(output,
-                $"(await currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
+                $"(await currentMachine.CreateInterfaceAsync<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
             context.Write(output, "currentMachine");
             if (ctorExpr.Arguments.Any())
             {

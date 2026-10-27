@@ -88,6 +88,9 @@ public class TestPEx {
         excluded.add(testBasePath + "Feature2Stmts/DynamicError/receive10");
         excluded.add(testBasePath + "Feature2Stmts/DynamicError/receive11");
         excluded.add(testBasePath + "Feature2Stmts/DynamicError/receive12");
+        // Foreign functions implemented only in C# (PChecker runtime interop)
+        excluded.add(testBasePath + "Integration/Correct/ForeignSend");
+        excluded.add(testBasePath + "Integration/Correct/ForeignCreate");
 
         /**
          * TODO: liveness with temperatures

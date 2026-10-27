@@ -338,6 +338,21 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/> on behalf of
+        /// the specified creator, without a scheduling point. Used by foreign code, which cannot be
+        /// suspended.
+        /// </summary>
+        internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent,
+            StateMachine creator)
+        {
+            AssertCallerIsExecuting(creator, "CreateInterface");
+
+            var stateMachine = CreateStateMachine(id, type, name, creator);
+            RunStateMachineEventHandler(stateMachine, initialEvent, true);
+            return stateMachine.Id;
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/> on behalf of
         /// the specified creator.
         /// </summary>
         internal async ValueTask<StateMachineId> CreateStateMachineAsync(StateMachineId id, Type type, string name,
@@ -447,18 +462,42 @@ namespace PChecker.SystematicTesting
             await Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender);
 
+            DeliverEvent(target, e, sender);
+        }
+
+        /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a state machine without a scheduling point.
+        /// Used by foreign code, which cannot be suspended.
+        /// </summary>
+        internal void SendEvent(StateMachineId targetId, Event e, StateMachine sender)
+        {
+            AssertCallerIsExecuting(sender, "SendEvent");
+
+            var target = Scheduler.GetOperationWithId<StateMachineOperation>(targetId.Value)?.StateMachine;
+            Assert(target != null,
+                "Cannot send event '{0}' to state machine id '{1}' that is not bound to an state machine instance.",
+                e.GetType().FullName, targetId.Value);
+
+            DeliverEvent(target, e, sender);
+        }
+
+        /// <summary>
+        /// Enqueues the event to the target, or drops it if the target has halted.
+        /// </summary>
+        private void DeliverEvent(StateMachine target, Event e, StateMachine sender)
+        {
             if (target.IsHalted)
             {
-                LogWriter.LogSendEvent(targetId, sender?.Id.Name, sender?.Id.Type,
+                LogWriter.LogSendEvent(target.Id, sender?.Id.Name, sender?.Id.Type,
                     (sender)?.CurrentStateName ?? string.Empty, e, isTargetHalted: true);
-                TryHandleDroppedEvent(e, targetId);
+                TryHandleDroppedEvent(e, target.Id);
                 return;
             }
 
             var enqueueStatus = EnqueueEvent(target, e, sender);
             if (enqueueStatus == EnqueueStatus.Dropped)
             {
-                TryHandleDroppedEvent(e, targetId);
+                TryHandleDroppedEvent(e, target.Id);
             }
             else if (enqueueStatus is EnqueueStatus.EventHandlerNotRunning)
             {
@@ -721,6 +760,38 @@ namespace PChecker.SystematicTesting
 
             Assert(op.StateMachine.Equals(caller), "{0} invoked {1} on behalf of {2}.",
                 op.StateMachine.Id, calledAPI, caller.Id);
+        }
+
+        /// <summary>
+        /// Asserts that the caller of a runtime method that takes no scheduling point (i.e. one meant
+        /// for foreign code) is the state machine that is currently executing. Acting on behalf of
+        /// any other state machine, e.g. from the test entry method, would bypass the scheduler.
+        /// </summary>
+#if !DEBUG
+        [DebuggerHidden]
+#endif
+        private void AssertCallerIsExecuting(StateMachine caller, string calledAPI)
+        {
+            CheckSchedulerIsRunning();
+            var op = Scheduler.GetExecutingOperation<StateMachineOperation>();
+            if (op is null || !op.StateMachine.Equals(caller))
+            {
+                Assert(false, "{0} invoked {1} while {2} is executing. Foreign code may only call {1} on the " +
+                              "state machine that called it.", caller.Id, calledAPI,
+                    Scheduler.ScheduledOperation?.Name);
+            }
+        }
+
+        /// <summary>
+        /// Unwinds the caller if the schedule has ended. Runtime methods that take no scheduling point
+        /// use it to stop acting once the scheduler has stopped.
+        /// </summary>
+        private void CheckSchedulerIsRunning()
+        {
+            if (!Scheduler.IsRunning)
+            {
+                throw new ExecutionCanceledException();
+            }
         }
 
         /// <summary>

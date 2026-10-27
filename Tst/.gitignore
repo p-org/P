@@ -10,6 +10,8 @@ stat
 *.c
 *.h
 *.cs
+# Foreign C# code of regression tests (see Runners/PCheckerRunner.cs)
+!RegressionTests/**/ForeignFunctions.cs
 stubs.c
 program.c
 program.h

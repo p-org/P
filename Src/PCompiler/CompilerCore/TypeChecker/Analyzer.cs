@@ -150,6 +150,8 @@ namespace Plang.Compiler.TypeChecker
                     true),
                 CreatePropagation(fn => fn.CanSend, (fn, value) => fn.CanSend = value,
                     true),
+                CreatePropagation(fn => fn.CanSendToMachine, (fn, value) => fn.CanSendToMachine = value,
+                    true),
                 CreatePropagation(fn => fn.IsNondeterministic, (fn, value) => fn.IsNondeterministic = value,
                     true)
             );

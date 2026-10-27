@@ -790,9 +790,10 @@ namespace Plang.Compiler.Backend.CSharp
         /// <summary>
         /// Receiving, sending and creating are scheduling points, which the checker implements
         /// as awaits, so a function doing any of them (directly or through callees) is async.
+        /// Announcing is not a scheduling point, so it does not make a function async.
         /// </summary>
         private static bool IsAsync(Function function) =>
-            function.CanReceive || function.CanSend || function.CanCreate;
+            function.CanReceive || function.CanSendToMachine || function.CanCreate;
 
         /// <summary>
         /// A goto or raise sets a pending transition and returns. The caller must then return as

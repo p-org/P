@@ -107,7 +107,7 @@ p check -v
     ... Checker is using 'random' strategy (seed:1636311106).
     ..... Schedule #1
     <TestLog> Running test 'tcCheckPriorityQueue'.
-    <CreateLog> Plang.CSharpRuntime._GodMachine(1) was created by task '2'.
+    <CreateLog> Plang.CSharpRuntime._GodMachine(1) was created by the test.
     <CreateLog> PImplementation.Client(2) was created by Plang.CSharpRuntime._GodMachine(1).
     <StateLog> PImplementation.Client(2) enters state 'Init'.
     <PrintLog> Creating Priority Queue!

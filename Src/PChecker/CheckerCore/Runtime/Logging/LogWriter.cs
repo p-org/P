@@ -595,7 +595,10 @@ namespace PChecker.Runtime.Logging
                 throw new InvalidOperationException("Cannot register a null log.");
             }
 
-            if (!IsTraceEnabled && log is PCheckerLogTextFormatter or PCheckerLogJsonFormatter)
+            // Only the trace formatters that generated code registers are skipped; subclasses are
+            // custom logs, which observe every schedule.
+            if (!IsTraceEnabled && (log.GetType() == typeof(PCheckerLogTextFormatter) ||
+                                    log.GetType() == typeof(PCheckerLogJsonFormatter)))
             {
                 return;
             }

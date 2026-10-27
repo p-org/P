@@ -6,6 +6,9 @@ using System.Runtime.Loader;
 using System.Text.Json;
 using NUnit.Framework;
 using PChecker;
+using PChecker.Runtime.Events;
+using PChecker.Runtime.Logging;
+using PChecker.Runtime.StateMachines;
 using PChecker.SystematicTesting;
 using UnitTests.Core;
 using UnitTests.Runners;
@@ -18,7 +21,7 @@ namespace UnitTests
     /// its text and JSON traces. Those traces must be the ones that tracing the failing schedule
     /// itself builds (as the checker did before), for every kind of bug. When the replay does not
     /// reproduce the bug, the traces must still report it, with a warning. Full exploration must not
-    /// replay schedules.
+    /// replay schedules, and custom logs must observe every schedule.
     /// </summary>
     [TestFixture]
     public class BugTraceTest
@@ -224,6 +227,57 @@ namespace UnitTests
             Assert.That(ForeignCounter - counterBefore, Is.EqualTo(iterations));
             Assert.That(engine.TestReport.NumOfFoundBugs, Is.EqualTo(iterations / 2));
             Assert.That(engine.ReproducableTrace, Is.Not.Empty, "the schedule of the first bug is kept");
+        }
+
+        private class CountingTextLog : PCheckerLogTextFormatter, IControlledRuntimeLog
+        {
+            internal static int Created;
+
+            public new void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType) =>
+                Created++;
+        }
+
+        private class CountingJsonLog : PCheckerLogJsonFormatter, IControlledRuntimeLog
+        {
+            internal static int Created;
+
+            public new void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType) =>
+                Created++;
+        }
+
+        private class Idle : StateMachine
+        {
+            [Start]
+            private class Init : State
+            {
+            }
+        }
+
+        [Test]
+        public void SubclassesOfTheTraceFormattersObserveEverySchedule()
+        {
+            const uint iterations = 20;
+            TestReport report;
+            lock (PCheckerRunner.CheckerLock)
+            {
+                CountingTextLog.Created = 0;
+                CountingJsonLog.Created = 0;
+                var engine = TestingEngine.Create(Configuration().WithTestingIterations(iterations), runtime =>
+                {
+                    // Like the default trace formatters that generated code registers.
+                    runtime.RegisterLog(new PCheckerLogTextFormatter());
+                    runtime.RegisterLog(new PCheckerLogJsonFormatter());
+                    runtime.RegisterLog(new CountingTextLog());
+                    runtime.RegisterLog(new CountingJsonLog());
+                    runtime.CreateStateMachine(typeof(Idle));
+                });
+                engine.Run();
+                report = engine.TestReport;
+            }
+
+            Assert.That(report.NumOfFoundBugs, Is.EqualTo(0));
+            Assert.That(CountingTextLog.Created, Is.EqualTo(iterations));
+            Assert.That(CountingJsonLog.Created, Is.EqualTo(iterations));
         }
     }
 }

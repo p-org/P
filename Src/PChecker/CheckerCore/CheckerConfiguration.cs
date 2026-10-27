@@ -260,7 +260,8 @@ namespace PChecker
 
         /// <summary>
         /// If specified, requests a custom runtime log to be used instead of the default.
-        /// This is the AssemblyQualifiedName of the type to load.
+        /// This is the AssemblyQualifiedName of the type to load. The log observes every
+        /// explored schedule, but not the replay that traces a failing schedule.
         /// </summary>
         [DataMember]
         public string CustomStateMachineRuntimeLogType;

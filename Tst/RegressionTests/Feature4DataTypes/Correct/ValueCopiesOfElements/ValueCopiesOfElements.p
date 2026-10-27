@@ -19,6 +19,8 @@ machine Main {
   var t: (a: seq[int], b: int);
   var m: map[int, seq[int]];
   var ss: seq[seq[int]];
+  var st: set[seq[int]];
+  var km: map[seq[int], int];
   var r: Receiver;
 
   start state Init {
@@ -26,6 +28,7 @@ machine Main {
       var u: (x: seq[int], y: int);
       var p: (seq[int], int);
       var s: seq[int];
+      var k: seq[int];
 
       // Function arguments.
       Grow(t.a);
@@ -69,6 +72,21 @@ machine Main {
       m += (1, ss[0]);
       m[1] += (0, 1);
       assert sizeof(ss[0]) == 0, "map value aliases a sequence element";
+
+      // Set elements and map keys are frozen when stored, but not their source.
+      st += (t.a);
+      t.a += (0, 2);
+      st += (ss[0]);
+      ss[0] += (0, 3);
+      km += (t.a, 1);
+      t.a += (0, 4);
+      km[ss[0]] = 2;
+      ss[0] += (0, 5);
+      assert sizeof(st) == 1 && default(seq[int]) in st, "set element changed with its source";
+      k += (0, 2);
+      assert sizeof(km) == 2 && km[k] == 1, "map key changed with its source";
+      t.a = default(seq[int]);
+      ss[0] = default(seq[int]);
 
       // Raise.
       raise eSeq, t.a;

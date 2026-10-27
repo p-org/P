@@ -64,9 +64,8 @@ namespace PChecker.Runtime.Values
 
         public bool Add(IPValue item)
         {
-            MutabilityHelper.EnsureFrozen(item);
             IsDirty = true;
-            return set.Add(PValues.Clone(item));
+            return set.Add(MutabilityHelper.FrozenCopy(item));
         }
 
         public void Clear()

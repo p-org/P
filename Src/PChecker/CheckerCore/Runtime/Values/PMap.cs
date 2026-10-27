@@ -51,8 +51,7 @@ namespace PChecker.Runtime.Values
 
         public void Add(KeyValuePair<IPValue, IPValue> item)
         {
-            MutabilityHelper.EnsureFrozen(item.Key);
-            map.Add(PValues.Clone(item.Key), PValues.Clone(item.Value));
+            map.Add(MutabilityHelper.FrozenCopy(item.Key), PValues.Clone(item.Value));
             IsDirty = true;
         }
 
@@ -87,8 +86,7 @@ namespace PChecker.Runtime.Values
 
         public void Add(IPValue key, IPValue value)
         {
-            MutabilityHelper.EnsureFrozen(key);
-            map.Add(PValues.Clone(key), PValues.Clone(value));
+            map.Add(MutabilityHelper.FrozenCopy(key), PValues.Clone(value));
             IsDirty = true;
         }
 
@@ -114,7 +112,12 @@ namespace PChecker.Runtime.Values
             get => map[key];
             set
             {
-                MutabilityHelper.EnsureFrozen(key);
+                if (key is IPMutableValue && !map.ContainsKey(key))
+                {
+                    // A new key is stored: store a frozen copy, as Add does.
+                    key = MutabilityHelper.FrozenCopy(key);
+                }
+
                 map[key] = value;
                 IsDirty = true;
             }

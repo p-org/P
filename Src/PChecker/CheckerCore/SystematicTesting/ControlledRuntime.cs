@@ -752,6 +752,9 @@ namespace PChecker.SystematicTesting
                 return;
             }
 
+            // A caller running outside of the scheduler would otherwise be reported as a bug.
+            Scheduler.CheckNoPendingContinuation();
+
             var op = Scheduler.GetExecutingOperation<StateMachineOperation>();
             if (op is null)
             {
@@ -773,6 +776,7 @@ namespace PChecker.SystematicTesting
         private void AssertCallerIsExecuting(StateMachine caller, string calledAPI)
         {
             CheckSchedulerIsRunning();
+            Scheduler.CheckNoPendingContinuation();
             var op = Scheduler.GetExecutingOperation<StateMachineOperation>();
             if (op is null || !op.StateMachine.Equals(caller))
             {

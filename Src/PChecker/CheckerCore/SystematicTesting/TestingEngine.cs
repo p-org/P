@@ -425,6 +425,7 @@ namespace PChecker.SystematicTesting
 
                         if (IsReplayModeEnabled || (!_checkerConfiguration.PerformFullExploration &&
                                                     TestReport.NumOfFoundBugs > 0) ||
+                            TestReport.InternalErrors.Count > 0 ||
                             !Strategy.PrepareForNextIteration())
                         {
                             break;
@@ -648,6 +649,12 @@ namespace PChecker.SystematicTesting
                 if (ShouldPrintIteration(schedule))
                 {
                     var seconds = watch.Elapsed.TotalSeconds;
+                }
+
+                if (runtime?.Scheduler.InternalError != null)
+                {
+                    Logger.WriteLine($"... Checker failed due to an internal error in schedule #{schedule + 1}: " +
+                                     runtime.Scheduler.InternalError);
                 }
 
                 if (!IsReplayModeEnabled && _checkerConfiguration.PerformFullExploration && runtime.Scheduler.BugFound)

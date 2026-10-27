@@ -91,6 +91,12 @@ namespace PChecker.SystematicTesting
         internal string BugReport { get; private set; }
 
         /// <summary>
+        /// Internal error that ended the schedule, or null. Unlike <see cref="BugReport"/>, it is a
+        /// misuse of the runtime or a checker bug, not a bug in the program under test.
+        /// </summary>
+        internal string InternalError { get; private set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="OperationScheduler"/> class.
         /// </summary>
         internal OperationScheduler(ControlledRuntime runtime, ISchedulingStrategy strategy,
@@ -147,6 +153,7 @@ namespace PChecker.SystematicTesting
             }
 
             CheckNoExternalConcurrencyUsed();
+            CheckNoPendingContinuation();
 
             if (CheckIfSchedulingStepsBoundIsReached())
             {
@@ -201,6 +208,7 @@ namespace PChecker.SystematicTesting
             }
 
             CheckNoExternalConcurrencyUsed();
+            CheckNoPendingContinuation();
 
             if (CheckIfSchedulingStepsBoundIsReached())
             {
@@ -232,6 +240,7 @@ namespace PChecker.SystematicTesting
             }
 
             CheckNoExternalConcurrencyUsed();
+            CheckNoPendingContinuation();
 
             if (CheckIfSchedulingStepsBoundIsReached())
             {
@@ -338,6 +347,11 @@ namespace PChecker.SystematicTesting
                 report.BugReports.Add(BugReport);
             }
 
+            if (InternalError != null)
+            {
+                report.InternalErrors.Add(InternalError);
+            }
+
             if (Strategy.IsFair())
             {
                 report.NumOfExploredFairSchedules++;
@@ -394,6 +408,32 @@ namespace PChecker.SystematicTesting
                     "concurrently, you will need to mock them during testing.",
                     Environment.CurrentManagedThreadId));
             }
+        }
+
+        /// <summary>
+        /// Checks that the scheduled operation is the one that is running, i.e. that it is not parked
+        /// at a scheduling point. Otherwise some code dropped the awaitable of a scheduling point
+        /// instead of awaiting it, and kept running after the scheduler had switched to another
+        /// operation. Continuing would run two operations at once and lose the parked one, so this
+        /// stops the schedule with an internal error.
+        /// </summary>
+#if !DEBUG
+        [DebuggerHidden]
+#endif
+        internal void CheckNoPendingContinuation()
+        {
+            var op = ScheduledOperation;
+            if (op?.Continuation is null)
+            {
+                return;
+            }
+
+            NotifyInternalError(string.Format(CultureInfo.InvariantCulture,
+                "A P runtime method was called while operation '{0}' was scheduled to resume from a " +
+                "scheduling point, so the caller is running outside of the scheduler. This happens when " +
+                "code does not await an asynchronous P runtime method (e.g. 'StateMachine.SendEventAsync' or " +
+                "'StateMachine.CreateInterfaceAsync', which are meant for generated code). Foreign code must " +
+                "call 'StateMachine.SendEvent' and 'StateMachine.CreateInterface' instead.", op.Name));
         }
 
         /// <summary>
@@ -522,7 +562,8 @@ namespace PChecker.SystematicTesting
 #endif
         internal void NotifyAssertionFailure(string text, bool killTasks = true, bool cancelExecution = true)
         {
-            if (!BugFound)
+            // After an internal error the program state is unreliable, so later failures are not bugs.
+            if (!BugFound && InternalError is null)
             {
                 BugReport = text;
 
@@ -543,6 +584,25 @@ namespace PChecker.SystematicTesting
             {
                 throw new ExecutionCanceledException();
             }
+        }
+
+        /// <summary>
+        /// Stops the schedule because of an internal error, and unwinds the caller with an
+        /// <see cref="ExecutionCanceledException"/>. The error is not reported as a bug.
+        /// </summary>
+#if !DEBUG
+        [DebuggerHidden]
+#endif
+        private void NotifyInternalError(string text)
+        {
+            if (InternalError is null && !BugFound)
+            {
+                InternalError = text;
+                Debug.WriteLine($"<ScheduleDebug> Internal error: {text}");
+            }
+
+            Stop();
+            throw new ExecutionCanceledException();
         }
 
         /// <summary>

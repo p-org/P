@@ -249,6 +249,14 @@ namespace UnitTests.Runners
                         exitCode = 1;
                     }
 
+                    // An internal error is neither a pass nor an expected bug.
+                    string internalError = engine.TestReport.InternalErrors.FirstOrDefault();
+                    if (internalError != null)
+                    {
+                        stderr += $"Internal error: {internalError}";
+                        exitCode = 2;
+                    }
+
                     context.Unload();
                     GC.Collect();
                     GC.WaitForPendingFinalizers();

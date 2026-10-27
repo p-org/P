@@ -319,7 +319,7 @@ namespace PChecker.SystematicTesting
         {
             try
             {
-                var task = CreateTestingTask();
+                var body = CreateTestingBody();
                 if (_checkerConfiguration.Timeout > 0)
                 {
                     CancellationTokenSource.CancelAfter(
@@ -329,8 +329,7 @@ namespace PChecker.SystematicTesting
                 Profiler.StartMeasuringExecutionTime();
                 if (!CancellationTokenSource.IsCancellationRequested)
                 {
-                    task.Start();
-                    task.Wait(CancellationTokenSource.Token);
+                    StartOnTestingThread(body).Wait(CancellationTokenSource.Token);
                 }
             }
             catch (OperationCanceledException)
@@ -377,9 +376,52 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Creates a new testing task.
+        /// Stack size of the thread that runs the schedules.
         /// </summary>
-        private System.Threading.Tasks.Task CreateTestingTask()
+        /// <remarks>
+        /// Every operation runs on this one thread, and a P function that sends or creates is an
+        /// async method, so each level of a recursion of such functions costs several frames, both
+        /// on the way down and when the operation is resumed and the calls complete back up. Once
+        /// the stack runs low, .NET also moves the remaining continuations to the thread pool, out
+        /// of the scheduler. The default stack of a thread pool thread (e.g. 1.5 MB on macOS) runs
+        /// low after a few hundred levels, so the schedules run on a thread with a larger stack. Only
+        /// the pages that are used are committed.
+        /// </remarks>
+        private const int TestingThreadStackSize = 256 * 1024 * 1024;
+
+        /// <summary>
+        /// Starts running the specified testing body on a new background thread with a stack of
+        /// <see cref="TestingThreadStackSize"/> bytes, instead of on a thread pool thread.
+        /// </summary>
+        /// <returns>A task that completes, or faults, when the body returns.</returns>
+        private static System.Threading.Tasks.Task StartOnTestingThread(Action body)
+        {
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    body();
+                    completion.SetResult();
+                }
+                catch (Exception ex)
+                {
+                    completion.SetException(ex);
+                }
+            }, TestingThreadStackSize)
+            {
+                IsBackground = true,
+                Name = "PChecker"
+            };
+
+            thread.Start();
+            return completion.Task;
+        }
+
+        /// <summary>
+        /// Creates the body of the testing thread, which runs every schedule.
+        /// </summary>
+        private Action CreateTestingBody()
         {
             var options = string.Empty;
             if (_checkerConfiguration.SchedulingStrategy is "random" ||
@@ -397,7 +439,7 @@ namespace PChecker.SystematicTesting
             Logger.WriteLine($"... Checker is " +
                              $"using '{_checkerConfiguration.SchedulingStrategy}' strategy{options}.");
 
-            return new System.Threading.Tasks.Task(() =>
+            return () =>
             {
                 try
                 {
@@ -480,7 +522,7 @@ namespace PChecker.SystematicTesting
                     using var jsonStreamFile = File.Create(jsonVerbosePath);
                     JsonSerializer.Serialize(jsonStreamFile, JsonVerboseLogs, jsonSerializerConfig);
                 }
-            }, CancellationTokenSource.Token);
+            };
         }
 
         /// <summary>

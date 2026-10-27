@@ -127,7 +127,9 @@ namespace PChecker.SystematicTesting
                 {
                     NotifyAssertionFailure(string.Format(CultureInfo.InvariantCulture,
                         "Operation '{0}' was scheduled, but it is not waiting at a scheduling point. Please make " +
-                        "sure to avoid awaiting anything but P runtime operations inside state machine handlers.",
+                        "sure to avoid awaiting anything but P runtime operations inside state machine handlers. " +
+                        "This also happens when P functions that send or create recurse so deeply that the stack " +
+                        "runs low, and .NET resumes the operation on another thread.",
                         op.Name), cancelExecution: false);
                     break;
                 }
@@ -422,7 +424,9 @@ namespace PChecker.SystematicTesting
                     "Thread '{0}' invoked a runtime method outside of the scheduler. Please make sure to avoid using " +
                     "concurrency APIs (e.g. 'Task.Run', 'Task.Delay' or 'Task.Yield' from the 'System.Threading.Tasks' " +
                     "namespace) inside state machine handlers. If you are using external libraries that are executing " +
-                    "concurrently, you will need to mock them during testing.",
+                    "concurrently, you will need to mock them during testing. This also happens when P functions that " +
+                    "send or create recurse so deeply that the stack runs low, and .NET resumes the operation on " +
+                    "another thread.",
                     Environment.CurrentManagedThreadId));
             }
         }

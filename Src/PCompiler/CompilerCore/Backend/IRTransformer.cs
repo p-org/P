@@ -323,7 +323,8 @@ namespace Plang.Compiler.Backend
                     return (valuesTemp, deps);
 
                 case StringExpr stringExpr:
-                    (IPExpr[] stringArgs, var stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
+                    // Formatting only reads its arguments, so they need not be copied out of other values.
+                    (IPExpr[] stringArgs, var stringArgsDeps) = SimplifyFunArgs(stringExpr.Args, copyElements: false);
                     (var stringTemp, var stringStore) = SaveInTemporary(new StringExpr(location, stringExpr.BaseString, stringArgs.ToList()));
                     deps.AddRange(stringArgsDeps);
                     deps.Add(stringStore);
@@ -461,8 +462,9 @@ namespace Plang.Compiler.Backend
                         .ToList();
                 case AddStmt addStmt:
                     var (addVar, addVarDeps) = SimplifyLvalue(addStmt.Variable);
-                    var (addVal, addValDeps) = SimplifyArgPack(new[] { addStmt.Value });
-                    Debug.Assert(addVal.Count == 1);
+                    // Collections store copies of the values added to them.
+                    var (addVal, addValDeps) = SimplifyFunArgs(new[] { addStmt.Value }, copyElements: false);
+                    Debug.Assert(addVal.Length == 1);
                     return addVarDeps.Concat(addValDeps)
                         .Concat(new[]
                         {
@@ -473,8 +475,9 @@ namespace Plang.Compiler.Backend
                 case InsertStmt insertStmt:
                     (var insVar, var insVarDeps) = SimplifyLvalue(insertStmt.Variable);
                     (var insIdx, var insIdxDeps) = SimplifyExpression(insertStmt.Index);
-                    (var insVal, var insValDeps) = SimplifyArgPack(new[] { insertStmt.Value });
-                    Debug.Assert(insVal.Count == 1);
+                    // Collections store copies of the values inserted into them.
+                    (var insVal, var insValDeps) = SimplifyFunArgs(new[] { insertStmt.Value }, copyElements: false);
+                    Debug.Assert(insVal.Length == 1);
                     return insVarDeps.Concat(insIdxDeps)
                         .Concat(insValDeps)
                         .Concat(new[]
@@ -755,13 +758,20 @@ namespace Plang.Compiler.Backend
             }
         }
 
-        private (IVariableRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs)
+        /// <summary>
+        /// Simplifies arguments into temporaries that hold copies of their values, which can be moved. With
+        /// <paramref name="copyElements"/> false, a temporary may instead be an element of another value (see
+        /// <see cref="SimplifyRvalue"/>), for uses that only read it or copy it themselves.
+        /// </summary>
+        private (IVariableRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs, bool copyElements = true)
         {
             var funArgs = new IVariableRef[funCallArgs.Count];
             var deps = new List<IPStmt>();
             for (var i = 0; i < funCallArgs.Count; i++)
             {
-                (var argExpr, var argDeps) = SimplifyRvalue(funCallArgs[i]);
+                (var argExpr, var argDeps) = copyElements
+                    ? SimplifyRvalue(funCallArgs[i])
+                    : SimplifyExpression(funCallArgs[i]);
                 deps.AddRange(argDeps);
                 // A temporary returned by SimplifyRvalue holds either an intermediate value or an explicit clone of
                 // another value (accesses into values are cloned there). In either case, the memory there is invisible

@@ -62,6 +62,14 @@ machine Main {
       announce eAnnounced, t.a;
       assert sizeof(t.a) == 0, "announced payload aliases a tuple field";
 
+      // Collections.
+      ss += (1, t.a);
+      ss[1] += (0, 1);
+      assert sizeof(t.a) == 0, "sequence element aliases a tuple field";
+      m += (1, ss[0]);
+      m[1] += (0, 1);
+      assert sizeof(ss[0]) == 0, "map value aliases a sequence element";
+
       // Raise.
       raise eSeq, t.a;
     }

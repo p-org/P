@@ -600,6 +600,11 @@ namespace PChecker.SystematicTesting
                 Debug.WriteLine("<Exception> {0} was thrown from operation '{1}' with reason '{2}'.",
                     innerException.GetType().Name, op.Name, ex.Message);
             }
+            else if (IsBindingFailure(innerException))
+            {
+                Scheduler.NotifyInternalError(GetBindingFailureMessage(innerException, $"operation {op.Name}"),
+                    cancelExecution: false);
+            }
             else
             {
                 // Report the unhandled exception.
@@ -611,6 +616,41 @@ namespace PChecker.SystematicTesting
                 Scheduler.NotifyAssertionFailure(message, killTasks: true, cancelExecution: false);
             }
         }
+
+        /// <summary>
+        /// Checks if the exception means that the code under test failed to bind to a member or type
+        /// it was compiled against, e.g. generated or foreign code compiled by another version of P.
+        /// This is a problem with the build, not a bug in the program under test.
+        /// </summary>
+        private static bool IsBindingFailure(Exception ex)
+        {
+            while (ex is TargetInvocationException || ex is AggregateException || ex is TypeInitializationException)
+            {
+                if (ex.InnerException is null)
+                {
+                    break;
+                }
+
+                ex = ex.InnerException;
+            }
+
+            // MissingMemberException covers MissingMethodException and MissingFieldException. Native
+            // library load failures (also TypeLoadExceptions) are not about P versions.
+            return ex is MissingMemberException ||
+                   (ex is TypeLoadException && !(ex is DllNotFoundException) && !(ex is EntryPointNotFoundException));
+        }
+
+        /// <summary>
+        /// Returns the internal error message for a binding failure, see <see cref="IsBindingFailure"/>.
+        /// </summary>
+        private static string GetBindingFailureMessage(Exception ex, string location) =>
+            string.Format(CultureInfo.InvariantCulture,
+                "Exception '{0}' was thrown in {1}: {2}\n" +
+                "The code under test failed to bind to the P runtime. This usually means that it, or foreign " +
+                "code it uses, was compiled by a different version of P. Please re-run 'p compile' (and " +
+                "recompile any foreign code built against the P runtime), then run 'p check' again.\n" +
+                "The stack trace is:\n{3}",
+                ex.GetType(), location, ex.Message, ex.StackTrace);
         
         /// <summary>
         /// Registers a new specification monitor of the specified <see cref="Type"/>.
@@ -1254,12 +1294,18 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// Throws an <see cref="AssertionFailureException"/> exception
-        /// containing the specified exception.
+        /// containing the specified exception. A binding failure (see <see cref="IsBindingFailure"/>)
+        /// is reported as an internal error instead.
         /// </summary>
         [DebuggerStepThrough]
         internal void WrapAndThrowException(Exception exception, string s, params object[] args)
         {
             var msg = string.Format(CultureInfo.InvariantCulture, s, args);
+            if (IsBindingFailure(exception))
+            {
+                Scheduler.NotifyInternalError(GetBindingFailureMessage(exception, msg));
+            }
+
             var message = string.Format(CultureInfo.InvariantCulture,
                 "Exception '{0}' was thrown in {1}: {2}\n" +
                 "from location '{3}':\n" +

@@ -604,13 +604,16 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Stops the schedule because of an internal error, and unwinds the caller with an
-        /// <see cref="ExecutionCanceledException"/>. The error is not reported as a bug.
+        /// Stops the schedule because of an internal error. The error is not reported as a bug.
         /// </summary>
+        /// <param name="text">Error message.</param>
+        /// <param name="cancelExecution">
+        /// Unwind the caller with an <see cref="ExecutionCanceledException"/>.
+        /// </param>
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        private void NotifyInternalError(string text)
+        internal void NotifyInternalError(string text, bool cancelExecution = true)
         {
             if (InternalError is null && !BugFound)
             {
@@ -619,7 +622,10 @@ namespace PChecker.SystematicTesting
             }
 
             Stop();
-            throw new ExecutionCanceledException();
+            if (cancelExecution)
+            {
+                throw new ExecutionCanceledException();
+            }
         }
 
         /// <summary>

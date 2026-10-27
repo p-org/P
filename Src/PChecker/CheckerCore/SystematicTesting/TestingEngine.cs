@@ -946,6 +946,15 @@ namespace PChecker.SystematicTesting
                 Error.ReportAndExit(ex.Message);
             }
 
+            // Running generated code against a runtime it was not compiled for reports bogus bugs
+            // (or misses real ones), so this is a tool error, not a bug.
+            var incompatibility = GeneratedCodeVersionAttribute.GetIncompatibilityError(assembly);
+            if (incompatibility != null)
+            {
+                Error.Report("{0}", incompatibility);
+                Environment.Exit((int)ExitCode.InternalError);
+            }
+
 #if NETFRAMEWORK
             // Load config file and absorb its settings.
             try

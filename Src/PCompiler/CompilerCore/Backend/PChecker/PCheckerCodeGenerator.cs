@@ -188,6 +188,9 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);
+            // Lets the checker refuse to run this code with a runtime it was not compiled for.
+            context.WriteLine(output, "[assembly: global::PChecker.SystematicTesting.GeneratedCodeVersion(" +
+                                      "global::PChecker.SystematicTesting.GeneratedCodeVersionAttribute.Current)]");
             context.WriteLine(output, "#pragma warning disable 162, 219, 414, 1998");
             context.WriteLine(output, "namespace PImplementation");
             context.WriteLine(output, "{");

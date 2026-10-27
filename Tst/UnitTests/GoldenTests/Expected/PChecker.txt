@@ -17,6 +17,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
+[assembly: global::PChecker.SystematicTesting.GeneratedCodeVersion(global::PChecker.SystematicTesting.GeneratedCodeVersionAttribute.Current)]
 #pragma warning disable 162, 219, 414, 1998
 namespace PImplementation
 {
@@ -33,7 +34,8 @@ namespace PImplementation
     {
         public eReq() : base() {}
         public eReq (PInt payload): base(payload){ }
-        public override IPValue Clone() { return new eReq();}
+        public override IPValue Clone() { return new eReq() { Payload = null };}
+        protected override IPValue CreateDefaultPayload() => ((PInt)0);
     }
 }
 namespace PImplementation
@@ -42,7 +44,8 @@ namespace PImplementation
     {
         public eResp() : base() {}
         public eResp (PInt payload): base(payload){ }
-        public override IPValue Clone() { return new eResp();}
+        public override IPValue Clone() { return new eResp() { Payload = null };}
+        protected override IPValue CreateDefaultPayload() => ((PInt)0);
     }
 }
 namespace PImplementation
@@ -84,7 +87,7 @@ namespace PImplementation
             TMP_tmp0 = (PInt)((count) + (n));
             count = TMP_tmp0;
             TMP_tmp1 = (PInt)(((PInt)(log).Count));
-            TMP_tmp2 = (PInt)(((PInt)((IPValue)n)?.Clone()));
+            TMP_tmp2 = (PInt)(n);
             ((PSeq)log).Insert(TMP_tmp1, TMP_tmp2);
             TMP_tmp3 = (PBool)((count) > (((PInt)(10))));
             if (TMP_tmp3)
@@ -93,9 +96,9 @@ namespace PImplementation
             }
             else
             {
-                TMP_tmp4 = (PInt)(((PInt)((IPValue)count)?.Clone()));
+                TMP_tmp4 = (PInt)(count);
                 TMP_tmp5 = (PString)(((PString) String.Format("count={0}",TMP_tmp4)));
-                currentMachine.LogLine("" + TMP_tmp5);
+                if (currentMachine.IsTraceEnabled) currentMachine.LogLine("" + TMP_tmp5);
             }
         }
         [Start]
@@ -171,5 +174,11 @@ namespace PImplementation
         }
     }
     
+}
+namespace PImplementation
+{
+    internal static class _PFieldNames
+    {
+    }
 }
 #pragma warning restore 162, 219, 414

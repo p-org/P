@@ -12,6 +12,27 @@ P 3.0 Changes
 - `PMachineValue.Permissions` is now a `ReadOnlyCollection<string>` (it was
   a `List<string>`), because copies of a machine reference share it.
 
+=== PChecker foreign sends and creates ===
+- PChecker runs state machines cooperatively on one thread, and foreign code
+  cannot be suspended. `StateMachine.SendEvent` and
+  `StateMachine.CreateInterface` called from foreign code are therefore
+  checked right away but performed when the foreign function returns to P
+  code, each at the scheduling point of a P `send` or `new`, in order. The
+  checker explores the same interleavings as before. Monitors observe these
+  sends (and events announced while the foreign function runs) at that time.
+  A machine created by foreign code can be sent to, but does not run, until
+  then.
+- P functions that call foreign functions (directly or through callees), and
+  P functions that send or create, are now `async` in the generated C# code.
+  Foreign code that calls them back gets a `Task`, which has already
+  completed: ignore it, or read `.Result` for a function that returns a value
+  (code that used the value directly must be changed). A P function called
+  from foreign code must not `receive`.
+- Calling `SendEvent`/`CreateInterface` on a machine other than the one
+  passed to the foreign function (e.g. one saved by an earlier call) now stops
+  the checker with an internal error (instead of reporting a bug in the P
+  program), before monitors observe anything.
+
 === Multi-Error Type Checker (#957, #963, #965, #967, #970) ===
 - `p compile` now reports ALL type errors in one pass by default, sorted by
   source location, instead of aborting on the first error.

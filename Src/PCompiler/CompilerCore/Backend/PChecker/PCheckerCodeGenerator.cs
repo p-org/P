@@ -354,10 +354,13 @@ namespace Plang.Compiler.Backend.CSharp
 
             WriteMonitorConstructor(context, output, machine);
 
+            context.WritingMonitorCode = true;
             foreach (var method in machine.Methods)
             {
                 WriteFunction(context, output, method);
             }
+
+            context.WritingMonitorCode = false;
 
             foreach (var state in machine.States)
             {
@@ -790,10 +793,41 @@ namespace Plang.Compiler.Backend.CSharp
         /// <summary>
         /// Receiving, sending and creating are scheduling points, which the checker implements
         /// as awaits, so a function doing any of them (directly or through callees) is async.
-        /// Announcing is not a scheduling point, so it does not make a function async.
+        /// Announcing is not a scheduling point, so it does not make a function async. A foreign
+        /// call may send or create, which takes its scheduling points after the call returns (see
+        /// <see cref="WriteForeignCallEpilogue"/>), so a function calling foreign code is async too.
+        /// Monitor code cannot send or create, so it is never async.
         /// </summary>
-        private static bool IsAsync(Function function) =>
-            function.CanReceive || function.CanSendToMachine || function.CanCreate;
+        private static bool IsAsync(CompilationContext context, Function function) =>
+            !context.WritingMonitorCode &&
+            (function.CanReceive || function.CanSendToMachine || function.CanCreate ||
+             (!function.IsForeign && context.ForeignCallers.Contains(function)));
+
+        /// <summary>
+        /// Foreign code cannot be suspended, so the sends and creates it requests are deferred until
+        /// the call returns (see <c>StateMachine.EndForeignCallAsync</c>). Monitors cannot send or
+        /// create, so nothing is written there.
+        /// </summary>
+        private static void WriteForeignCallPrologue(CompilationContext context, StringWriter output, Function callee)
+        {
+            if (callee.IsForeign && !context.WritingMonitorCode)
+            {
+                context.WriteLine(output, "currentMachine.BeginForeignCall();");
+            }
+        }
+
+        /// <summary>
+        /// Takes the scheduling points of the sends and creates that a foreign call requested, in
+        /// order, before anything else runs (in particular before a pending transition unwinds the
+        /// caller).
+        /// </summary>
+        private static void WriteForeignCallEpilogue(CompilationContext context, StringWriter output, Function callee)
+        {
+            if (callee.IsForeign && !context.WritingMonitorCode)
+            {
+                context.WriteLine(output, "await currentMachine.EndForeignCallAsync();");
+            }
+        }
 
         /// <summary>
         /// A goto or raise sets a pending transition and returns. The caller must then return as
@@ -847,7 +881,7 @@ namespace Plang.Compiler.Backend.CSharp
             if (function.Role == FunctionRole.Method || function.Role == FunctionRole.Foreign)
                 return;
 
-            var isAsync = IsAsync(function);
+            var isAsync = IsAsync(context, function);
             var signature = function.Signature;
 
             var functionName = context.Names.GetNameForDecl(function);
@@ -891,17 +925,8 @@ namespace Plang.Compiler.Backend.CSharp
                 WriteNamedFunctionWrapper(context, output, function);
             }
 
-            var isAsync = IsAsync(function);
             var signature = function.Signature;
-
             var staticKeyword = isStatic ? "static " : "";
-            var asyncKeyword = isAsync ? "async " : "";
-            var returnType = GetCSharpType(signature.ReturnType);
-
-            if (isAsync)
-            {
-                returnType = returnType == "void" ? "Task" : $"Task<{returnType}>";
-            }
 
             var functionName = context.Names.GetNameForDecl(function);
             var functionParameters = "";
@@ -923,26 +948,43 @@ namespace Plang.Compiler.Backend.CSharp
                 var seperator = functionParameters == "" ? "" : ", ";
                 var functionParameters_machine = functionParameters + string.Concat(seperator, "StateMachine currentMachine");
                 context.WriteLine(output,
-                    $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_machine})");
+                    $"public {staticKeyword}{GetFunctionReturnType(context, function)} {functionName}({functionParameters_machine})");
                 WriteFunctionBody(context, output, function);
 
                 // for monitor
                 if (!(function.CanCreate || function.CanSend || function.IsNondeterministic || function.CanReceive))
                 {
                     var functionParameters_monitor = functionParameters + string.Concat(seperator, "Monitor currentMachine");
+                    var writingMonitorCode = context.WritingMonitorCode;
+                    context.WritingMonitorCode = true;
                     context.WriteLine(output,
-                        $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_monitor})");
+                        $"public {staticKeyword}{GetFunctionReturnType(context, function)} {functionName}({functionParameters_monitor})");
                     WriteFunctionBody(context, output, function);
+                    context.WritingMonitorCode = writingMonitorCode;
                 }
 
             }
             else
             {
                 context.WriteLine(output,
-                    $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters})");
+                    $"public {staticKeyword}{GetFunctionReturnType(context, function)} {functionName}({functionParameters})");
                 WriteFunctionBody(context, output, function);
             }
 
+        }
+
+        /// <summary>
+        /// Returns the (async) return type of a function, as declared in the current context.
+        /// </summary>
+        private string GetFunctionReturnType(CompilationContext context, Function function)
+        {
+            var returnType = GetCSharpType(function.Signature.ReturnType);
+            if (!IsAsync(context, function))
+            {
+                return returnType;
+            }
+
+            return "async " + (returnType == "void" ? "Task" : $"Task<{returnType}>");
         }
 
         private void WriteFunctionBody(CompilationContext context, StringWriter output, Function function)
@@ -1020,6 +1062,11 @@ namespace Plang.Compiler.Backend.CSharp
             var needCtorAdapter = !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
                                   && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
                                   && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
+            if (assignStmt.Value is FunCallExpr foreignCallExpr)
+            {
+                WriteForeignCallPrologue(context, output, foreignCallExpr.Function);
+            }
+
             WriteLValue(context, output, assignStmt.Location);
             context.Write(output, $" = ({GetCSharpType(assignStmt.Location.Type, true)})(");
             if (needCtorAdapter)
@@ -1041,6 +1088,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, ");");
             if (assignStmt.Value is FunCallExpr funCallExpr)
             {
+                WriteForeignCallEpilogue(context, output, funCallExpr.Function);
                 WritePendingTransitionCheck(context, output, function, funCallExpr.Function);
             }
 
@@ -1094,7 +1142,8 @@ namespace Plang.Compiler.Backend.CSharp
         public bool WriteFunCallStmt(CompilationContext context, StringWriter output, Function function, FunCallStmt funCallStmt)
         {
             var isStatic = funCallStmt.Function.Owner == null;
-            var awaitMethod = IsAsync(funCallStmt.Function) ? "await " : "";
+            var awaitMethod = IsAsync(context, funCallStmt.Function) ? "await " : "";
+            WriteForeignCallPrologue(context, output, funCallStmt.Function);
             var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
             context.Write(output,
                 $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
@@ -1113,6 +1162,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             context.WriteLine(output, ");");
+            WriteForeignCallEpilogue(context, output, funCallStmt.Function);
             WritePendingTransitionCheck(context, output, function, funCallStmt.Function);
             return false;
         }
@@ -1646,7 +1696,7 @@ namespace Plang.Compiler.Backend.CSharp
         public void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr funCallExpr)
         {
             var isStatic = funCallExpr.Function.Owner == null;
-            var awaitMethod = IsAsync(funCallExpr.Function) ? "await " : "";
+            var awaitMethod = IsAsync(context, funCallExpr.Function) ? "await " : "";
             var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
             context.Write(output,
                 $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");

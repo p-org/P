@@ -7,7 +7,7 @@ namespace PImplementation
     {
         public static void ForeignSendUnawaited(PMachineValue target, StateMachine machine)
         {
-            // Wrong: SendEventAsync is a scheduling point and must be awaited.
+            // Not recommended (foreign code should call SendEvent), but harmless.
             _ = machine.SendEventAsync(target, new ePing());
         }
     }

@@ -265,9 +265,10 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// Sends an asynchronous <see cref="Event"/> to a state machine on behalf of the executing
-        /// state machine, e.g. from its foreign code. This is not a scheduling point: the event is
-        /// enqueued right away. As before, it skips the checks and the monitor announcement of a
-        /// P <c>send</c>, which <see cref="StateMachine.SendEvent"/> performs.
+        /// state machine, e.g. from its foreign code. Like <see cref="StateMachine.SendEvent"/>, the
+        /// event is enqueued at its scheduling point once the foreign call returns to P code. As
+        /// before, it skips the checks and the monitor announcement of a P <c>send</c>, which
+        /// <see cref="StateMachine.SendEvent"/> performs.
         /// </summary>
         /// <remarks>
         /// It cannot be called from the test method, which is not a state machine (this failed before
@@ -283,7 +284,8 @@ namespace PChecker.SystematicTesting
             var sender = Scheduler.GetExecutingOperation<StateMachineOperation>()?.StateMachine;
             Assert(sender != null, "ControlledRuntime.SendEvent can only be called while a state machine is " +
                                    "executing (e.g. from its foreign code), not from the test method.");
-            SendEvent(targetId, e, sender);
+            Scheduler.CheckNoPendingContinuation();
+            sender.DeferSendEvent(targetId, e, announce: false);
         }
 
         /// <summary>
@@ -338,7 +340,9 @@ namespace PChecker.SystematicTesting
 
         /// <summary>
         /// Creates a new state machine from the test entry method, or on behalf of the executing
-        /// state machine when called from its foreign code.
+        /// state machine when called from its foreign code. In the latter case the id is returned
+        /// right away, and the machine is created at its scheduling point once the foreign call
+        /// returns to P code (see <see cref="StateMachine.EndForeignCallAsync"/>).
         /// </summary>
         /// <remarks>
         /// The test entry method and foreign code run synchronously, so they cannot be suspended at
@@ -352,7 +356,8 @@ namespace PChecker.SystematicTesting
             var creator = Scheduler.GetExecutingOperation<StateMachineOperation>()?.StateMachine;
             if (creator != null)
             {
-                return CreateStateMachine(id, type, name, initialEvent, creator);
+                CheckForeignCaller(creator, "CreateStateMachine");
+                return creator.DeferCreateStateMachine(id, type, name, initialEvent);
             }
 
             CheckSchedulerIsRunning();
@@ -365,21 +370,6 @@ namespace PChecker.SystematicTesting
             }
 
             var stateMachine = CreateStateMachine(id, type, name, (StateMachine)null);
-            RunStateMachineEventHandler(stateMachine, initialEvent, true);
-            return stateMachine.Id;
-        }
-
-        /// <summary>
-        /// Creates a new <see cref="StateMachine"/> of the specified <see cref="Type"/> on behalf of
-        /// the specified creator, without a scheduling point. Used by foreign code, which cannot be
-        /// suspended.
-        /// </summary>
-        internal StateMachineId CreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent,
-            StateMachine creator)
-        {
-            AssertCallerIsExecuting(creator, "CreateInterface");
-
-            var stateMachine = CreateStateMachine(id, type, name, creator);
             RunStateMachineEventHandler(stateMachine, initialEvent, true);
             return stateMachine.Id;
         }
@@ -494,22 +484,6 @@ namespace PChecker.SystematicTesting
 
             await Scheduler.ScheduleNextEnabledOperation(AsyncOperationType.Send);
             ResetProgramCounter(sender);
-
-            DeliverEvent(target, e, sender);
-        }
-
-        /// <summary>
-        /// Sends an asynchronous <see cref="Event"/> to a state machine without a scheduling point.
-        /// Used by foreign code, which cannot be suspended.
-        /// </summary>
-        internal void SendEvent(StateMachineId targetId, Event e, StateMachine sender)
-        {
-            AssertCallerIsExecuting(sender, "SendEvent");
-
-            var target = Scheduler.GetOperationWithId<StateMachineOperation>(targetId.Value)?.StateMachine;
-            Assert(target != null,
-                "Cannot send event '{0}' to state machine id '{1}' that is not bound to an state machine instance.",
-                e.GetType().FullName, targetId.Value);
 
             DeliverEvent(target, e, sender);
         }
@@ -839,23 +813,26 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Asserts that the caller of a runtime method that takes no scheduling point (i.e. one meant
-        /// for foreign code) is the state machine that is currently executing. Acting on behalf of
-        /// any other state machine, e.g. from the test entry method, would bypass the scheduler.
+        /// Checks that the caller of a runtime method meant for foreign code is the state machine that
+        /// is currently executing. Acting on behalf of any other state machine, e.g. one saved by an
+        /// earlier foreign call, would bypass the scheduler. This is a misuse of the runtime rather
+        /// than a bug in the program, so it stops the schedule with an internal error. Callers check
+        /// it before anything else, so monitors never observe a send that cannot happen.
         /// </summary>
 #if !DEBUG
         [DebuggerHidden]
 #endif
-        private void AssertCallerIsExecuting(StateMachine caller, string calledAPI)
+        internal void CheckForeignCaller(StateMachine caller, string calledAPI)
         {
             CheckSchedulerIsRunning();
             Scheduler.CheckNoPendingContinuation();
             var op = Scheduler.GetExecutingOperation<StateMachineOperation>();
             if (op is null || !op.StateMachine.Equals(caller))
             {
-                Assert(false, "{0} invoked {1} while {2} is executing. Foreign code may only call {1} on the " +
-                              "state machine that called it.", caller.Id, calledAPI,
-                    Scheduler.ScheduledOperation?.Name);
+                Scheduler.NotifyInternalError(string.Format(CultureInfo.InvariantCulture,
+                    "{0} invoked {1} while {2} is executing. Foreign code may only call {1} on the state " +
+                    "machine passed to it, while the foreign call is running.", caller.Id, calledAPI,
+                    Scheduler.ScheduledOperation?.Name));
             }
         }
 

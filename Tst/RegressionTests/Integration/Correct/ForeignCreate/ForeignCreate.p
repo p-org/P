@@ -1,5 +1,7 @@
 // Foreign code creates a machine through the machine it is called on
-// (StateMachine.CreateInterface) and returns it to P code, which then talks to it.
+// (StateMachine.CreateInterface) and returns it to P code, which then talks to it. The
+// Replies spec stays hot until both workers replied, so the test fails if the machine created
+// by foreign code is never started or never takes part in the conversation.
 event ePing: Main;
 event ePong: int;
 
@@ -40,3 +42,20 @@ machine Worker {
     }
   }
 }
+
+spec Replies observes ePong {
+  var replied: set[int];
+  start hot state Waiting {
+    on ePong do (v: int) {
+      replied += (v);
+      if (sizeof(replied) == 2) {
+        goto AllReplied;
+      }
+    }
+  }
+  cold state AllReplied {
+    ignore ePong;
+  }
+}
+
+test DefaultImpl [main=Main]: assert Replies in { Main, Worker };

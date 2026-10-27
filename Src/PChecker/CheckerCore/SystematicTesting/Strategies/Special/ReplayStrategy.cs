@@ -47,6 +47,23 @@ namespace PChecker.SystematicTesting.Strategies.Special
         private int ScheduledSteps;
 
         /// <summary>
+        /// Description reported instead of "replay", or null.
+        /// </summary>
+        private readonly string Description;
+
+        /// <summary>
+        /// Did the schedule that produced the trace end because its strategy reached the
+        /// scheduling steps bound? If so, the replay reaches the bound at the end of the trace.
+        /// </summary>
+        private readonly bool IsTraceEndingAtStepsBound;
+
+        /// <summary>
+        /// Exit the process if the trace is not reproducible, unless the checkerConfiguration
+        /// disables it?
+        /// </summary>
+        private readonly bool IsDivergenceFatal;
+
+        /// <summary>
         /// Text describing a replay error.
         /// </summary>
         internal string ErrorText { get; private set; }
@@ -71,6 +88,22 @@ namespace PChecker.SystematicTesting.Strategies.Special
             IsReplaying = true;
             SuffixStrategy = suffixStrategy;
             ErrorText = string.Empty;
+            IsDivergenceFatal = true;
+        }
+
+        /// <summary>
+        /// Initializes a replay of a schedule that the specified strategy has just explored, to
+        /// trace it. The replay reports the description of that strategy, reaches the scheduling
+        /// steps bound where the explored schedule did, and never exits the process: if it is not
+        /// reproducible, it stops and records the reason in <see cref="ErrorText"/>.
+        /// </summary>
+        internal ReplayStrategy(CheckerConfiguration checkerConfiguration, ScheduleTrace trace,
+            ISchedulingStrategy explorer)
+            : this(checkerConfiguration, trace, explorer.IsFair(), null)
+        {
+            Description = explorer.GetDescription();
+            IsTraceEndingAtStepsBound = explorer.HasReachedMaxSchedulingSteps();
+            IsDivergenceFatal = false;
         }
 
         /// <inheritdoc/>
@@ -112,7 +145,7 @@ namespace PChecker.SystematicTesting.Strategies.Special
                 {
                     if (SuffixStrategy is null)
                     {
-                        if (!_checkerConfiguration.DisableEnvironmentExit)
+                        if (IsDivergenceFatal && !_checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }
@@ -164,7 +197,7 @@ namespace PChecker.SystematicTesting.Strategies.Special
                 {
                     if (SuffixStrategy is null)
                     {
-                        if (!_checkerConfiguration.DisableEnvironmentExit)
+                        if (IsDivergenceFatal && !_checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }
@@ -217,7 +250,7 @@ namespace PChecker.SystematicTesting.Strategies.Special
                 {
                     if (SuffixStrategy is null)
                     {
-                        if (!_checkerConfiguration.DisableEnvironmentExit)
+                        if (IsDivergenceFatal && !_checkerConfiguration.DisableEnvironmentExit)
                         {
                             Error.ReportAndExit(ex.Message);
                         }
@@ -269,7 +302,7 @@ namespace PChecker.SystematicTesting.Strategies.Special
                 return SuffixStrategy.HasReachedMaxSchedulingSteps();
             }
 
-            return false;
+            return IsTraceEndingAtStepsBound && ScheduledSteps >= ScheduleTrace.Count;
         }
 
         /// <inheritdoc/>
@@ -291,7 +324,7 @@ namespace PChecker.SystematicTesting.Strategies.Special
                 return "replay(" + SuffixStrategy.GetDescription() + ")";
             }
 
-            return "replay";
+            return Description ?? "replay";
         }
 
         /// <inheritdoc/>

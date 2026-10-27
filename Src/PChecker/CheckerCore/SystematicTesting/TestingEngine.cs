@@ -526,7 +526,11 @@ namespace PChecker.SystematicTesting
 
             // Untraced schedules skip building text and JSON traces; a failing one is
             // replayed with tracing to produce them.
-            var isTraced = _checkerConfiguration.IsVerbose || IsReplayModeEnabled;
+            var isTraced = _checkerConfiguration.IsVerbose || IsReplayModeEnabled ||
+                           _checkerConfiguration.IsTracingEverySchedule;
+
+            // Why the replay of a failing schedule did not reproduce its bug, if it did not.
+            string traceDivergence = null;
 
             // Gets a handle to the standard output and error streams.
             var stdOut = Console.Out;
@@ -621,16 +625,22 @@ namespace PChecker.SystematicTesting
                     }
                 }
 
-                if (!IsReplayModeEnabled && TestReport.NumOfFoundBugs > 0)
+                // Traces are only built for a schedule that found a bug. With full exploration they
+                // are never emitted, so only the reproducible trace of the first bug is kept, and
+                // no schedule is replayed: a replay would also rerun foreign code between schedules.
+                if (!IsReplayModeEnabled && runtime.Scheduler.BugFound &&
+                    (!_checkerConfiguration.PerformFullExploration || string.IsNullOrEmpty(ReproducableTrace)))
                 {
-                    if (!isTraced)
+                    if (!isTraced && !_checkerConfiguration.PerformFullExploration)
                     {
-                        runtimeLogger = TraceSchedule(runtime.Scheduler.ScheduleTrace);
+                        runtimeLogger = TraceSchedule(runtime, out traceDivergence);
                     }
 
                     if (runtimeLogger != null)
                     {
-                        ReadableTrace = runtimeLogger.ToString();
+                        ReadableTrace = traceDivergence is null ? string.Empty :
+                            $"<StrategyLog> WARNING: {GetTraceDivergenceWarning(traceDivergence)}{Environment.NewLine}";
+                        ReadableTrace += runtimeLogger.ToString();
                         ReadableTrace += TestReport.GetText(_checkerConfiguration, "<StrategyLog>");
                     }
 
@@ -650,6 +660,11 @@ namespace PChecker.SystematicTesting
                 if (ShouldPrintIteration(schedule))
                 {
                     var seconds = watch.Elapsed.TotalSeconds;
+                }
+
+                if (traceDivergence != null)
+                {
+                    Logger.WriteLine($"... WARNING: {GetTraceDivergenceWarning(traceDivergence)}");
                 }
 
                 if (runtime?.Scheduler.InternalError != null)
@@ -673,12 +688,19 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
-        /// Replays the specified schedule with tracing enabled, and returns its text trace.
-        /// The JSON trace is left in <see cref="JsonLogger"/>.
+        /// Replays the schedule that the specified runtime has just explored with tracing enabled,
+        /// and returns its text trace. The JSON trace is left in <see cref="JsonLogger"/>.
         /// </summary>
-        private InMemoryLogger TraceSchedule(ScheduleTrace trace)
+        /// <param name="explored">The runtime that explored the schedule and found a bug.</param>
+        /// <param name="divergence">
+        /// Why the replay did not reproduce the bug of the explored schedule, or null if it did. Both
+        /// traces then end with the bug found by exploration.
+        /// </param>
+        private InMemoryLogger TraceSchedule(ControlledRuntime explored, out string divergence)
         {
-            var strategy = new ReplayStrategy(_checkerConfiguration, trace, Strategy.IsFair());
+            // Replays with the same configuration, fairness and steps bound, and reports the
+            // description of the strategy that explored the schedule (e.g. its seed).
+            var strategy = new ReplayStrategy(_checkerConfiguration, explored.Scheduler.ScheduleTrace, Strategy);
             var runtime = new ControlledRuntime(_checkerConfiguration, strategy);
             var logger = new InMemoryLogger();
             try
@@ -686,9 +708,21 @@ namespace PChecker.SystematicTesting
                 RegisterObservers(runtime);
                 runtime.SetLogger(logger);
                 runtime.RunTest(TestMethodInfo.Method, TestMethodInfo.Name);
+
+                // Like after any schedule, so that state the test resets per schedule is clean again.
+                TestMethodInfo.DisposeCurrentIteration();
                 if (!runtime.Scheduler.BugFound)
                 {
                     runtime.CheckNoMonitorInHotStateAtTermination();
+                }
+
+                divergence = GetReplayDivergence(explored.Scheduler, runtime.Scheduler, strategy);
+                if (divergence != null && runtime.Scheduler.BugReport != explored.Scheduler.BugReport)
+                {
+                    // The trace must still say which bug was found.
+                    runtime.LogWriter.LogAssertionFailure($"<ErrorLog> {explored.Scheduler.BugReport}");
+                    runtime.LogWriter.LogStrategyDescription(_checkerConfiguration.SchedulingStrategy,
+                        Strategy.GetDescription());
                 }
 
                 runtime.LogWriter.LogCompletion();
@@ -700,6 +734,46 @@ namespace PChecker.SystematicTesting
 
             return logger;
         }
+
+        /// <summary>
+        /// Returns why the replay of an explored schedule did not reproduce it, or null if it found
+        /// the same bug after the same number of steps.
+        /// </summary>
+        private static string GetReplayDivergence(OperationScheduler explored, OperationScheduler replayed,
+            ReplayStrategy strategy)
+        {
+            string reason = null;
+            if (!replayed.BugFound)
+            {
+                reason = replayed.InternalError is null ? "the replay found no bug" :
+                    $"the replay failed with an internal error: {replayed.InternalError}";
+            }
+            else if (replayed.BugReport != explored.BugReport)
+            {
+                reason = $"the replay found another bug: {replayed.BugReport}";
+            }
+            else if (replayed.ScheduleTrace.Count != explored.ScheduleTrace.Count)
+            {
+                reason = $"the replay took {replayed.ScheduleTrace.Count} steps instead of " +
+                         $"{explored.ScheduleTrace.Count}";
+            }
+
+            if (reason != null && !string.IsNullOrEmpty(strategy.ErrorText))
+            {
+                reason += $" ({strategy.ErrorText.TrimEnd('.')})";
+            }
+
+            return reason;
+        }
+
+        /// <summary>
+        /// Returns the warning that the trace of a failing schedule does not show its bug.
+        /// </summary>
+        private static string GetTraceDivergenceWarning(string divergence) =>
+            "Replaying the failing schedule to trace it did not reproduce the bug: " + divergence + ". " +
+            "The trace may not show how the bug happens. This happens when the program depends on " +
+            "state that the schedule does not control, such as static state in foreign code. Rerun " +
+            "with --verbose to trace every schedule as it runs.";
 
         /// <summary>
         /// Stops the testing engine.

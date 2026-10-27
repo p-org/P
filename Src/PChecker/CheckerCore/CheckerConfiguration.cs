@@ -209,6 +209,12 @@ namespace PChecker
         public bool IsVerbose { get; set; }
 
         /// <summary>
+        /// If true, every schedule builds its text and JSON traces as it runs, instead of only
+        /// a replay of a failing schedule. Slower; tests use it to check the replayed traces.
+        /// </summary>
+        internal bool IsTracingEverySchedule { get; set; }
+
+        /// <summary>
         /// Enables code coverage reporting of a program.
         /// </summary>
         [DataMember]

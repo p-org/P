@@ -183,9 +183,10 @@ namespace PChecker.SystematicTesting
                 testMethodInfo = TestMethodInfo.GetFromAssembly(assembly, checkerConfiguration.TestCaseName);
                 Console.Out.WriteLine($".. Test case :: {testMethodInfo.Name}");
             }
-            catch
+            catch (Exception ex)
             {
-                Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly '{assembly.FullName}'");
+                Error.ReportAndExit($"Failed to get test method '{checkerConfiguration.TestCaseName}' from assembly " +
+                                    $"'{assembly.FullName}'{TestMethodInfo.GetDiscoveryFailureHint(ex)}");
             }
 
             return new TestingEngine(checkerConfiguration, testMethodInfo);

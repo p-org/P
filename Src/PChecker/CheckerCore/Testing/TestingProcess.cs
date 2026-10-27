@@ -137,9 +137,10 @@ namespace PChecker.Testing
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                Error.ReportAndExit($"Failed to list test methods from assembly '{assembly.FullName}'");
+                Error.ReportAndExit($"Failed to list test methods from assembly '{assembly.FullName}'" +
+                                    TestMethodInfo.GetDiscoveryFailureHint(ex));
             }
             return testCases;
         }

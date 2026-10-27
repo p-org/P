@@ -264,6 +264,29 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
+        /// Sends an asynchronous <see cref="Event"/> to a state machine on behalf of the executing
+        /// state machine, e.g. from its foreign code. This is not a scheduling point: the event is
+        /// enqueued right away. As before, it skips the checks and the monitor announcement of a
+        /// P <c>send</c>, which <see cref="StateMachine.SendEvent"/> performs.
+        /// </summary>
+        /// <remarks>
+        /// It cannot be called from the test method, which is not a state machine (this failed before
+        /// as well).
+        /// </remarks>
+        [Obsolete("Call StateMachine.SendEvent on the state machine passed to the foreign function instead.")]
+        public void SendEvent(StateMachineId targetId, Event e)
+        {
+            Assert(e != null, "Cannot send a null event.");
+            Assert(targetId != null, "Cannot send event {0} to a null state machine.", e);
+
+            CheckSchedulerIsRunning();
+            var sender = Scheduler.GetExecutingOperation<StateMachineOperation>()?.StateMachine;
+            Assert(sender != null, "ControlledRuntime.SendEvent can only be called while a state machine is " +
+                                   "executing (e.g. from its foreign code), not from the test method.");
+            SendEvent(targetId, e, sender);
+        }
+
+        /// <summary>
         /// Runs the specified test method, and then every operation it transitively creates,
         /// until the schedule terminates.
         /// </summary>

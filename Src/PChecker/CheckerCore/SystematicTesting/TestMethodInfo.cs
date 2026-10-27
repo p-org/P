@@ -228,6 +228,36 @@ namespace PChecker.SystematicTesting
         }
 
         /// <summary>
+        /// Returns a hint to append to the error message when test discovery failed with the
+        /// specified exception, or an empty string.
+        /// </summary>
+        /// <remarks>
+        /// An assembly built against an older PCheckerCore can reference types that no longer exist
+        /// (e.g. from the PChecker.Tasks namespace), and then none of its types can be loaded.
+        /// </remarks>
+        internal static string GetDiscoveryFailureHint(Exception ex)
+        {
+            if (!(ex is ReflectionTypeLoadException typeLoadException))
+            {
+                return string.Empty;
+            }
+
+            var reasons = typeLoadException.LoaderExceptions.Where(e => e != null).Select(e => e.Message)
+                .Distinct().ToList();
+            var hint = ":\n  " + string.Join("\n  ", reasons) + "\n" +
+                       "The assembly was probably compiled against another version of the P runtime. Please " +
+                       "recompile it (re-run 'p compile' for a P project).";
+            if (reasons.Any(r => r.Contains("PChecker.Tasks")))
+            {
+                hint += " The PChecker.Tasks namespace, asynchronous test methods and " +
+                        "TestingEngine.Create(CheckerConfiguration, Func<Task>) are no longer supported: test " +
+                        "methods must be synchronous ('public static void').";
+            }
+
+            return hint;
+        }
+
+        /// <summary>
         /// Finds the test methods with the specified attribute in the given assembly.
         /// Returns an empty list if no such methods are found.
         /// </summary>

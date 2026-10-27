@@ -1,5 +1,15 @@
 P 3.0 Changes
 
+=== PChecker runtime values used by foreign code ===
+- `PTuple.fieldValues` and `PNamedTuple.fieldValues` are now
+  `IReadOnlyList<IPValue>` (they were `List<IPValue>`): change a field through
+  the tuple's indexer (`t[i] = v`, `t["name"] = v`). `PNamedTuple.fieldNames`
+  is now a `ReadOnlyCollection<string>`, because tuples of a type share their
+  field names. Tuples can no longer grow, and `new PNamedTuple()` is gone.
+- The tuple constructors copy the arrays they are given, as before.
+  Generated code uses `PTuple.FromOwnedValues`/`PNamedTuple.FromOwnedValues`,
+  which keep the array.
+
 === Multi-Error Type Checker (#957, #963, #965, #967, #970) ===
 - `p compile` now reports ALL type errors in one pass by default, sorted by
   source location, instead of aborting on the first error.

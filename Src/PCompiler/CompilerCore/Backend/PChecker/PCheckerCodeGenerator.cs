@@ -1066,7 +1066,7 @@ namespace Plang.Compiler.Backend.CSharp
                 if (ctorStmt.Arguments.Count > 1)
                 {
                     //create tuple from rvaluelist
-                    context.Write(output, "new PTuple(");
+                    context.Write(output, "PTuple.FromOwnedValues(");
                     var septor = "";
                     foreach (var ctorExprArgument in ctorStmt.Arguments)
                     {
@@ -1578,7 +1578,7 @@ namespace Plang.Compiler.Backend.CSharp
                 if (ctorExpr.Arguments.Count > 1)
                 {
                     //create tuple from rvaluelist
-                    context.Write(output, "new PTuple(");
+                    context.Write(output, "PTuple.FromOwnedValues(");
                     var septor = "";
                     foreach (var ctorExprArgument in ctorExpr.Arguments)
                     {
@@ -1677,8 +1677,9 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr namedTupleExpr)
         {
+            // The fields are temporaries that hold fresh values, so the tuple can own them.
             var fieldNamesArray = GetFieldNamesArray(context, (NamedTupleType)namedTupleExpr.Type);
-            context.Write(output, $"(new {GetCSharpType(namedTupleExpr.Type)}({fieldNamesArray}, ");
+            context.Write(output, $"({GetCSharpType(namedTupleExpr.Type)}.FromOwnedValues({fieldNamesArray}, ");
             for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
             {
                 if (i > 0)
@@ -1735,7 +1736,8 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteUnnamedTupleExpr(CompilationContext context, StringWriter output, UnnamedTupleExpr unnamedTupleExpr)
         {
-            context.Write(output, $"new {GetCSharpType(unnamedTupleExpr.Type)}(");
+            // The fields are temporaries that hold fresh values, so the tuple can own them.
+            context.Write(output, $"{GetCSharpType(unnamedTupleExpr.Type)}.FromOwnedValues(");
             var sep = "";
             foreach (var field in unnamedTupleExpr.TupleFields)
             {
@@ -1901,12 +1903,12 @@ namespace Plang.Compiler.Backend.CSharp
                     var fieldNamesArray = GetFieldNamesArray(context, namedTupleType);
                     var fieldDefaults =
                         string.Join(", ", namedTupleType.Types.Select(t => GetDefaultValue(context, t)));
-                    return $"(new {GetCSharpType(namedTupleType)}({fieldNamesArray},{fieldDefaults}))";
+                    return $"({GetCSharpType(namedTupleType)}.FromOwnedValues({fieldNamesArray},{fieldDefaults}))";
 
                 case TupleType tupleType:
                     var defaultTupleValues =
                         string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(context, t)));
-                    return $"(new {GetCSharpType(tupleType)}({defaultTupleValues}))";
+                    return $"({GetCSharpType(tupleType)}.FromOwnedValues({defaultTupleValues}))";
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return "((PBool)false)";

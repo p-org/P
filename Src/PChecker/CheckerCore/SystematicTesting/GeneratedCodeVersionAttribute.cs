@@ -22,7 +22,7 @@ namespace PChecker.SystematicTesting
         /// The version of the generated code interface of this runtime. Assemblies generated
         /// before this attribute existed have no stamp, and count as version 1.
         /// </summary>
-        public const int Current = 2;
+        public const int Current = 3;
 
         /// <summary>
         /// The version the assembly was generated for.

@@ -34,7 +34,8 @@ namespace PImplementation
     {
         public eReq() : base() {}
         public eReq (PInt payload): base(payload){ }
-        public override IPValue Clone() { return new eReq() { Payload = null };}
+        internal eReq(global::PChecker.Runtime.Events.LazyDefaultPayload tag): base(tag) { }
+        public override IPValue Clone() { return new eReq();}
         protected override IPValue CreateDefaultPayload() => ((PInt)0);
     }
 }
@@ -44,7 +45,8 @@ namespace PImplementation
     {
         public eResp() : base() {}
         public eResp (PInt payload): base(payload){ }
-        public override IPValue Clone() { return new eResp() { Payload = null };}
+        internal eResp(global::PChecker.Runtime.Events.LazyDefaultPayload tag): base(tag) { }
+        public override IPValue Clone() { return new eResp();}
         protected override IPValue CreateDefaultPayload() => ((PInt)0);
     }
 }

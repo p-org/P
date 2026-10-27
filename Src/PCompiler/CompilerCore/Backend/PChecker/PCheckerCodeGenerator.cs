@@ -199,6 +199,8 @@ namespace Plang.Compiler.Backend.CSharp
 
         private const string FieldNameArraysClassName = "_PFieldNames";
 
+        private const string LazyDefaultPayloadType = "global::PChecker.Runtime.Events.LazyDefaultPayload";
+
         private static string GetFieldNamesArray(CompilationContext context, NamedTupleType namedTupleType)
         {
             var initializer = "new string[]{" + string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\"")) + "}";
@@ -623,7 +625,8 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "{");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
             context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
-            context.WriteLine(output, $"public override IPValue Clone() {{ return new {declName}() {{ Payload = null }};}}");
+            context.WriteLine(output, $"internal {declName}({LazyDefaultPayloadType} tag): base(tag) {{ }}");
+            context.WriteLine(output, $"public override IPValue Clone() {{ return new {declName}();}}");
             context.WriteLine(output, $"protected override IPValue CreateDefaultPayload() => {GetDefaultValue(context, pEvent.PayloadType)};");
             context.WriteLine(output, "}");
 
@@ -1614,7 +1617,7 @@ namespace Plang.Compiler.Backend.CSharp
             var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
             switch (eventName)
             {
-                case "Halt":
+                case "PHalt":
                     context.Write(output, "new PHalt()");
                     break;
 
@@ -1624,7 +1627,7 @@ namespace Plang.Compiler.Backend.CSharp
 
                 default:
                     // The payload defaults lazily; it is usually assigned right after.
-                    context.Write(output, $"new {eventName}()");
+                    context.Write(output, $"new {eventName}(default({LazyDefaultPayloadType}))");
                     break;
             }
         }

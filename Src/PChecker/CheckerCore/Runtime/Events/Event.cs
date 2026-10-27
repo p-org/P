@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.ComponentModel;
 using System.Runtime.Serialization;
 using PChecker.Runtime.Values;
 
@@ -13,6 +14,9 @@ namespace PChecker.Runtime.Events
     [DataContract]
     public class Event: IPValue
     {
+        /// <summary>
+        /// Initializes an event without a payload.
+        /// </summary>
         public Event()
         {
         }
@@ -21,22 +25,31 @@ namespace PChecker.Runtime.Events
         {
             Payload = payload;
         }
-        
-        private IPValue payload;
-        private bool isPayloadSet;
 
         /// <summary>
-        /// The payload. Until assigned, it is the default value of the event's payload type,
-        /// built on first read: events are usually created only to have a payload assigned.
+        /// Initializes an event whose payload is the default value of its payload type, which is
+        /// built when the payload is first read: generated code creates events like this, and
+        /// usually assigns their payload right after.
+        /// </summary>
+        protected Event(LazyDefaultPayload _)
+        {
+            isDefaultPayloadPending = true;
+        }
+        
+        private IPValue payload;
+        private bool isDefaultPayloadPending;
+
+        /// <summary>
+        /// The payload.
         /// </summary>
         public IPValue Payload
         {
             get
             {
-                if (!isPayloadSet)
+                if (isDefaultPayloadPending)
                 {
                     payload = CreateDefaultPayload();
-                    isPayloadSet = true;
+                    isDefaultPayloadPending = false;
                 }
 
                 return payload;
@@ -44,7 +57,7 @@ namespace PChecker.Runtime.Events
             set
             {
                 payload = value;
-                isPayloadSet = true;
+                isDefaultPayloadPending = false;
             }
         }
 
@@ -84,6 +97,15 @@ namespace PChecker.Runtime.Events
         }
     }
     
+    /// <summary>
+    /// Selects the event constructor that gives the event the default payload of its type.
+    /// For generated code.
+    /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public readonly struct LazyDefaultPayload
+    {
+    }
+
     public class PHalt : Event
     {
         public PHalt()

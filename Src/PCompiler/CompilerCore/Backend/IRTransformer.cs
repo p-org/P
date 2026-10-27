@@ -92,9 +92,13 @@ namespace Plang.Compiler.Backend
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
+        /// <summary>
+        /// Simplifies an expression whose value is stored or passed on. Accesses into a value (and choose
+        /// from a collection) return the element itself, not a copy, so they are cloned into a temporary;
+        /// every other temporary returned by <see cref="SimplifyExpression"/> already holds a fresh value.
+        /// </summary>
         private (IExprTerm, List<IPStmt>) SimplifyRvalue(IPExpr expr)
         {
-            // TODO: I am suspicious.
             var location = expr.SourceLocation;
             var type = expr.Type;
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block
@@ -105,6 +109,7 @@ namespace Plang.Compiler.Backend
                 case SetAccessExpr _:
                 case TupleAccessExpr _:
                 case MapAccessExpr _:
+                case ChooseExpr { SubExpr: not null }:
                     (var dataTypeItem, var dataTypeItemDeps) = SimplifyExpression(expr);
                     (IExprTerm cloneddataTypeItem, var cloneddataTypeItemDeps) = SaveInTemporary(new CloneExpr(dataTypeItem));
                     return (cloneddataTypeItem, dataTypeItemDeps.Append(cloneddataTypeItemDeps).ToList());
@@ -338,9 +343,14 @@ namespace Plang.Compiler.Backend
                     throw new ArgumentNullException(nameof(statement));
                 case AnnounceStmt announceStmt:
                     (var annEvt, var annEvtDeps) = SimplifyExpression(announceStmt.Event);
-                    (IExprTerm annPayload, List<IPStmt> annPayloadDeps) = announceStmt.Payload == null
-                        ? (null, new List<IPStmt>())
-                        : SimplifyExpression(announceStmt.Payload);
+                    // Monitors receive the payload as a parameter they may change, so pass a copy.
+                    (IExprTerm annPayload, List<IPStmt> annPayloadDeps) = (null, new List<IPStmt>());
+                    if (announceStmt.Payload != null)
+                    {
+                        (var annArgs, var annArgDeps) = SimplifyArgPack(new[] { announceStmt.Payload });
+                        (annPayload, annPayloadDeps) = (annArgs[0], annArgDeps);
+                    }
+
                     return annEvtDeps.Concat(annPayloadDeps)
                         .Concat(new[]
                         {
@@ -751,13 +761,11 @@ namespace Plang.Compiler.Backend
             var deps = new List<IPStmt>();
             for (var i = 0; i < funCallArgs.Count; i++)
             {
-                (var argExpr, var argDeps) = SimplifyExpression(funCallArgs[i]);
+                (var argExpr, var argDeps) = SimplifyRvalue(funCallArgs[i]);
                 deps.AddRange(argDeps);
-                // My thoughts: if SimplifyExpression returns a temporary, there's no way that came from user code, thus
-                // it must be either an intermediate expression, or an explicit clone of another value. In either case, the
-                // memory there is invisible to the rest of the program and so it can be moved safely. The first case below
-                // is therefore an optimization that assumes this holds. If things go wrong, comment it out and take the extra
-                // allocations as a hit.
+                // A temporary returned by SimplifyRvalue holds either an intermediate value or an explicit clone of
+                // another value (accesses into values are cloned there). In either case, the memory there is invisible
+                // to the rest of the program and so it can be moved safely.
                 switch (argExpr)
                 {
                     // Move temporaries...

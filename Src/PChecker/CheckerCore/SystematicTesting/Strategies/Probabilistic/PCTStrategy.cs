@@ -20,7 +20,7 @@ namespace PChecker.SystematicTesting.Strategies.Probabilistic
     /// </remarks>
     internal sealed class PCTStrategy : ISchedulingStrategy
     {
-        private protected readonly List<AsyncOperation> EnabledBuffer = new List<AsyncOperation>();
+        private readonly List<AsyncOperation> EnabledBuffer = new List<AsyncOperation>();
 
         /// <summary>
         /// Random value generator.

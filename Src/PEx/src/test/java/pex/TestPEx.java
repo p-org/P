@@ -97,6 +97,7 @@ public class TestPEx {
         excluded.add(testBasePath + "Integration/Correct/ForeignEventPayloads");
         excluded.add(testBasePath + "Integration/Correct/ForeignCallsBack");
         excluded.add(testBasePath + "Integration/Correct/ForeignAnnounceOrder");
+        excluded.add(testBasePath + "Integration/Correct/ForeignPayloadSnapshot");
         excluded.add(testBasePath + "Integration/Correct/ForeignUnawaitedSend");
         excluded.add(testBasePath + "Integration/DynamicError/ForeignSendInterleaving");
 

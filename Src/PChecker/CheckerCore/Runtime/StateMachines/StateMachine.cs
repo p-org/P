@@ -376,16 +376,24 @@ namespace PChecker.Runtime.StateMachines
                 ev = HaltEvent.Instance;
             }
 
-            var @event = AnnouncedEventFactories.GetOrAdd(ev.GetType(), CreateAnnouncedEventFactory)(payload);
+            var factory = AnnouncedEventFactories.GetOrAdd(ev.GetType(), CreateAnnouncedEventFactory);
             if (ForeignCallDepth > 0)
             {
                 // Announced by foreign code, or by a P function it calls back: monitors must observe
-                // it after the sends requested before it, which are deferred.
+                // it after the sends requested before it, which are deferred. They observe the payload
+                // as it is now, even if the foreign code changes it before returning.
                 Runtime.CheckForeignCaller(this, "Announce");
-                AddForeignOperation(new ForeignOperation(ForeignOperationKind.Announce, null, @event, null, null,
-                    payload));
+                if (payload is IPValue value)
+                {
+                    payload = PValues.Clone(value);
+                }
+
+                AddForeignOperation(new ForeignOperation(ForeignOperationKind.Announce, null, factory(payload), null,
+                    null, payload));
                 return;
             }
+
+            var @event = factory(payload);
 
             if (IsTraceEnabled)
             {
@@ -732,7 +740,20 @@ namespace PChecker.Runtime.StateMachines
         /// </summary>
         /// <param name="target">The target.</param>
         /// <param name="ev">The event to send.</param>
+        /// <remarks>
+        /// The payload is copied, so that monitors and the target observe it as it is now, even if
+        /// the foreign code changes it before returning.
+        /// </remarks>
         public void SendEvent(PMachineValue target, Event ev)
+        {
+            DeferCheckedSend(target, ev);
+            ev.Payload = PValues.Clone(ev.Payload);
+        }
+
+        /// <summary>
+        /// Checks a send from foreign code, or from a P function it calls back, and defers it.
+        /// </summary>
+        private void DeferCheckedSend(PMachineValue target, Event ev)
         {
             // Check for misuse first, so monitors never observe a send that cannot happen.
             Runtime.CheckForeignCaller(this, "SendEvent");
@@ -751,8 +772,9 @@ namespace PChecker.Runtime.StateMachines
         {
             if (ForeignCallDepth > 0)
             {
-                // A P function that foreign code calls back cannot be suspended either.
-                SendEvent(target, ev);
+                // A P function that foreign code calls back cannot be suspended either. Its payload
+                // is already a copy.
+                DeferCheckedSend(target, ev);
                 return default;
             }
 

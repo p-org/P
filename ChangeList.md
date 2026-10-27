@@ -77,7 +77,10 @@ P 3.0 Changes
   checked right away but performed when the foreign function returns to P
   code, each at the scheduling point of a P `send` or `new`, in order. The
   checker explores the same interleavings as before. Monitors observe these
-  sends (and events announced while the foreign function runs) at that time.
+  sends (and events announced while the foreign function runs) at that time,
+  with a copy of the payload taken when the foreign code sent or announced
+  it, so changing the payload afterwards changes neither what monitors nor
+  what the target observes.
   A machine created by foreign code can be sent to, but does not run, until
   then. Its id is numbered at the scheduling point of the create, as for a P
   `new`, unless the foreign code prints, compares or hashes it before.

@@ -530,7 +530,7 @@ namespace PChecker.Coverage
         /// </summary>
         private Graph CachedGraph;
         private readonly Dictionary<(string, string, string, string), GraphNode> ChildCache = new();
-        private readonly Dictionary<(GraphNode, GraphNode, string, string), GraphLink> EventLinkCache = new();
+        private readonly Dictionary<(GraphNode, GraphNode, string), GraphLink> EventLinkCache = new();
 
         private void InvalidateCachesIfGraphChanged()
         {
@@ -589,16 +589,18 @@ namespace PChecker.Coverage
             lock (Inbox)
             {
                 InvalidateCachesIfGraphChanged();
-                var cacheKey = (source, target, e.Event, e.HandlingState);
-                if (EventLinkCache.TryGetValue(cacheKey, out link))
+                // Only finding the link is memoized. Its attributes are set on every call, as the
+                // latest event linking the two states determines them.
+                var cacheKey = (source, target, e.Event);
+                if (!EventLinkCache.TryGetValue(cacheKey, out link))
                 {
-                    return link;
+                    var label = GetEventLabel(e.Event);
+                    var index = GetLinkIndex(source, target, label);
+                    var category = GetEventCategory(e.Event);
+                    link = Graph.GetOrCreateLink(source, target, index, label, category);
+                    EventLinkCache[cacheKey] = link;
                 }
 
-                var label = GetEventLabel(e.Event);
-                var index = GetLinkIndex(source, target, label);
-                var category = GetEventCategory(e.Event);
-                link = Graph.GetOrCreateLink(source, target, index, label, category);
                 if (MergeEventLinks)
                 {
                     if (link.AddListAttribute("EventIds", e.Event) > 1)
@@ -614,8 +616,6 @@ namespace PChecker.Coverage
                         link.AddAttribute("HandledBy", e.HandlingState);
                     }
                 }
-
-                EventLinkCache[cacheKey] = link;
             }
 
             return link;

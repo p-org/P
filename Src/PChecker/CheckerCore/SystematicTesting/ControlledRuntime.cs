@@ -402,7 +402,13 @@ namespace PChecker.SystematicTesting
             {
                 id = new StateMachineId(type, name, this);
             }
-            
+            else
+            {
+                // The id of a create deferred from foreign code gets its value here, after the
+                // scheduling point, as above.
+                id.Bind();
+            }
+
             var stateMachine = Create(type);
             IStateMachineManager stateMachineManager = new StateMachineManager(this, stateMachine);
 

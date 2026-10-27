@@ -838,12 +838,14 @@ namespace PChecker.Runtime.StateMachines
 
         /// <summary>
         /// Records a create to perform at its scheduling point once control returns to P code, and
-        /// returns the id of the state machine to create.
+        /// returns the id of the state machine to create. A new id gets its value only when the
+        /// machine is created, after the scheduling point, like the id of a P <c>new</c> (see
+        /// <see cref="StateMachineId.CreateUnbound"/>).
         /// </summary>
         internal StateMachineId DeferCreateStateMachine(StateMachineId id, Type type, string name, Event initialEvent)
         {
             Assert(type.IsSubclassOf(typeof(StateMachine)), "Type '{0}' is not a state machine.", type.FullName);
-            id ??= new StateMachineId(type, name, Runtime);
+            id ??= StateMachineId.CreateUnbound(type, name, Runtime);
             AddForeignOperation(new ForeignOperation(ForeignOperationKind.Create, id, initialEvent, type, name, null));
             return id;
         }

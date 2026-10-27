@@ -17,8 +17,9 @@ namespace UnitTests
     /// Foreign code cannot be suspended, so its sends and creates are deferred until it returns to
     /// P code, where each takes the scheduling point of a P <c>send</c> or <c>new</c>. The checker
     /// must then explore exactly the schedules of the equivalent P code (as it did when foreign code
-    /// ran on its own thread): same seed, same strategy, same order of events in every schedule.
-    /// Without these scheduling points, Other could never send before the first foreign send.
+    /// ran on its own thread): same seed, same strategy, same order of events in every schedule,
+    /// and the same machine ids. Without these scheduling points, Other could never send before the
+    /// first foreign send.
     /// </summary>
     [TestFixture]
     public class ForeignSchedulingParityTest
@@ -29,6 +30,7 @@ namespace UnitTests
 event eA: int;
 event eB: int;
 event eC;
+event eM: machine;
 
 fun Record(trace: string);
 
@@ -52,7 +54,17 @@ machine Other {
   start state Init {
     entry (s: Server) {
       send s, eB, 10;
+      // Allocates a machine id at a scheduling point of Work, before or after the foreign create.
+      new Helper(s);
       send s, eB, 11;
+    }
+  }
+}
+
+machine Helper {
+  start state Init {
+    entry (s: Server) {
+      send s, eM, this;
     }
   }
 }
@@ -60,7 +72,7 @@ machine Other {
 machine Worker {
   start state Init {
     entry (s: Server) {
-      send s, eB, 20;
+      send s, eM, this;
     }
     ignore eC;
   }
@@ -70,13 +82,15 @@ machine Server {
   var trace: string;
   var n: int;
   start state Init {
-    on eA do (v: int) { Add(v); }
-    on eB do (v: int) { Add(v); }
+    on eA do (v: int) { Add(format(""{0}"", v)); }
+    on eB do (v: int) { Add(format(""{0}"", v)); }
+    // Records the machine names, so that the ids are compared as well.
+    on eM do (m: machine) { Add(format(""{0}"", m)); }
   }
-  fun Add(v: int) {
+  fun Add(v: string) {
     trace = format(""{0} {1}"", trace, v);
     n = n + 1;
-    if (n == 7) {
+    if (n == 8) {
       Record(trace);
     }
   }
@@ -127,14 +141,16 @@ namespace PImplementation
         }
 ";
 
+        private const string Machines = "Main, Other, Helper, Worker, Server";
+
         private static string foreignDll;
         private static string pDll;
 
         [OneTimeSetUp]
         public void Compile()
         {
-            foreignDll = Build("ParityForeign", Common + ForeignWork, RecordCode + ForeignWorkCode + "}}");
-            pDll = Build("ParityP", Common + PWork, RecordCode + "}}");
+            foreignDll = Build("ParityForeign", Common + ForeignWork, RecordCode + ForeignWorkCode + "}}", Machines);
+            pDll = Build("ParityP", Common + PWork, RecordCode + "}}", Machines);
         }
 
         private static IEnumerable<TestCaseData> Configurations()
@@ -201,12 +217,12 @@ namespace PImplementation
             }
         }
 
-        private static string Build(string name, string model, string foreignCode)
+        private static string Build(string name, string model, string foreignCode, string machines)
         {
             var sourceDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory,
                 nameof(ForeignSchedulingParityTest), "src", name));
             var pFile = new FileInfo(Path.Combine(sourceDir.FullName, name + ".p"));
-            File.WriteAllText(pFile.FullName, model + "\ntest DefaultImpl [main=Main]: { Main, Other, Worker, Server };\n");
+            File.WriteAllText(pFile.FullName, model + $"\ntest DefaultImpl [main=Main]: {{ {machines} }};\n");
             var csFile = new FileInfo(Path.Combine(sourceDir.FullName, "ForeignFunctions.cs"));
             File.WriteAllText(csFile.FullName, foreignCode);
 

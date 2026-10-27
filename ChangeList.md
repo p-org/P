@@ -79,7 +79,8 @@ P 3.0 Changes
   checker explores the same interleavings as before. Monitors observe these
   sends (and events announced while the foreign function runs) at that time.
   A machine created by foreign code can be sent to, but does not run, until
-  then.
+  then. Its id is numbered at the scheduling point of the create, as for a P
+  `new`, unless the foreign code prints, compares or hashes it before.
 - P functions that call foreign functions (directly or through callees), and
   P functions that send or create, are now `async` in the generated C# code.
   Foreign code that calls them back gets a `Task`, which has already

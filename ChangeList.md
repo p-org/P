@@ -9,6 +9,8 @@ P 3.0 Changes
 - The tuple constructors copy the arrays they are given, as before.
   Generated code uses `PTuple.FromOwnedValues`/`PNamedTuple.FromOwnedValues`,
   which keep the array.
+- `PMachineValue.Permissions` is now a `ReadOnlyCollection<string>` (it was
+  a `List<string>`), because copies of a machine reference share it.
 
 === Multi-Error Type Checker (#957, #963, #965, #967, #970) ===
 - `p compile` now reports ALL type errors in one pass by default, sorted by

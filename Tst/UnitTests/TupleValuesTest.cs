@@ -182,5 +182,21 @@ namespace UnitTests
             Assert.Throws<NotSupportedException>(() => ((IList<string>)first.fieldNames)[0] = "x");
             Assert.AreEqual((PInt)3, second["a"]);
         }
+
+        [Test]
+        public void MachineReferencePermissionsCannotBeChanged()
+        {
+            var permissions = new List<string> { "eA" };
+            var machine = new PMachineValue(null, permissions);
+            permissions.Add("eB");
+            CollectionAssert.AreEqual(new[] { "eA" }, machine.Permissions);
+
+            // Copies of a machine reference share it, and its permissions.
+            var copy = (PMachineValue)PValues.Clone(machine);
+            Assert.AreSame(machine, copy);
+            Assert.Throws<NotSupportedException>(() => ((IList<string>)copy.Permissions).Add("eB"));
+            Assert.IsFalse(machine.Permissions.Contains("eB"));
+            Assert.AreSame(machine.Permissions, new PMachineValue(machine).Permissions);
+        }
     }
 }

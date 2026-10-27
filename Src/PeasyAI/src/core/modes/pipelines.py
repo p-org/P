@@ -495,7 +495,8 @@ def categorize_error(log):
 
 def identify_error_category(trace_str):
     error_lines = re.findall(r'<ErrorLog> (.*?)$', trace_str, re.MULTILINE)
-    return categorize_error(error_lines[0])
+    # The last one is the reported bug: a replay that traces the schedule may hit another bug first.
+    return categorize_error(error_lines[-1])
     
 
 def compute_progress_percentage(i, total):

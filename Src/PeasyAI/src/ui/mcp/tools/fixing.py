@@ -6,6 +6,7 @@ from pathlib import Path
 import logging
 
 from core.services.compilation import ParsedError
+from core.compilation.checker_error_parser import reported_error_message
 from core.security import (
     validate_project_path,
     validate_file_read_path,
@@ -258,10 +259,7 @@ def _try_llm_checker_fix(
 
 def _basic_trace_analysis(trace_content: str, project_path: str, services) -> Dict[str, Any]:
     """Basic trace analysis without specialized modules."""
-    import re
-
-    error_match = re.search(r'<ErrorLog>\s*(.+)', trace_content)
-    error_msg = error_match.group(1) if error_match else "Unknown error"
+    error_msg = reported_error_message(trace_content) or "Unknown error"
 
     if "null" in error_msg.lower():
         category = "null_target"
@@ -494,14 +492,13 @@ If the auto-fix fails, returns requires_manual_fix=true with step-by-step guidan
         # Rank traces by error category actionability so we fix the most
         # impactful bug first.  Order: unhandled_event > null_target >
         # assertion_failure > deadlock > unknown.
-        import re as _trace_re
         _PRIORITY = {"unhandled_event": 0, "null_target": 1, "assertion_failure": 2, "deadlock": 3}
 
         def _trace_priority(content: str) -> int:
-            error_match = _trace_re.search(r'<ErrorLog>\s*(.+)', content)
-            if not error_match:
+            error_msg = reported_error_message(content)
+            if not error_msg:
                 return 99
-            msg = error_match.group(1).lower()
+            msg = error_msg.lower()
             if "cannot be handled" in msg or "unhandled" in msg:
                 return _PRIORITY["unhandled_event"]
             if "null" in msg:

@@ -23,6 +23,13 @@ namespace Plang.Compiler.Backend.CSharp
         /// </summary>
         public Dictionary<string, string> FieldNameArrays { get; } = new Dictionary<string, string>();
 
+        /// <summary>
+        /// Foreign functions and every function that transitively calls one. Foreign code can
+        /// raise or goto through the machine, so calls to these functions may leave a pending
+        /// transition.
+        /// </summary>
+        public HashSet<Function> ForeignCallers { get; set; } = new HashSet<Function>();
+
         public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 
         public string GlobalFunctionClassName { get; }

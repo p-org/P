@@ -91,6 +91,8 @@ public class TestPEx {
         // Foreign functions implemented only in C# (PChecker runtime interop)
         excluded.add(testBasePath + "Integration/Correct/ForeignSend");
         excluded.add(testBasePath + "Integration/Correct/ForeignCreate");
+        excluded.add(testBasePath + "Integration/Correct/ForeignRaiseGoto");
+        excluded.add(testBasePath + "Integration/Correct/ForeignRaiseGotoMonitor");
 
         /**
          * TODO: liveness with temperatures

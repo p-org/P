@@ -106,6 +106,7 @@ namespace Plang.Compiler.Backend.CSharp
 
             _globalParams = globalScope.GetGlobalVariables();
             _scenarioMonitors = globalScope.Machines.Where(m => m.IsScenario).ToList();
+            context.ForeignCallers = ComputeForeignCallers(globalScope);
 
             DeclareGlobalParams(context, source.Stream);
             
@@ -790,10 +791,37 @@ namespace Plang.Compiler.Backend.CSharp
         /// <summary>
         /// A goto or raise sets a pending transition and returns. The caller must then return as
         /// well, until control reaches the action that the state machine invoked. A receive can
-        /// raise the halt event.
+        /// raise the halt event. Foreign code can raise or goto through the machine (or call back
+        /// into P code that does), so a foreign function and every function that transitively
+        /// calls one may leave a pending transition too.
         /// </summary>
-        private static bool MayLeavePendingTransition(Function function) =>
-            function.CanRaiseEvent || function.CanChangeState || function.CanReceive;
+        private static bool MayLeavePendingTransition(CompilationContext context, Function function) =>
+            function.CanRaiseEvent || function.CanChangeState || function.CanReceive ||
+            context.ForeignCallers.Contains(function);
+
+        /// <summary>
+        /// Returns the foreign functions and every function that transitively calls one.
+        /// </summary>
+        private static HashSet<Function> ComputeForeignCallers(Scope globalScope)
+        {
+            var result = new HashSet<Function>();
+            var worklist = new Stack<Function>(globalScope.GetAllMethods().Where(f => f.IsForeign));
+            while (worklist.Count > 0)
+            {
+                var function = worklist.Pop();
+                if (!result.Add(function))
+                {
+                    continue;
+                }
+
+                foreach (var caller in function.Callers)
+                {
+                    worklist.Push(caller);
+                }
+            }
+
+            return result;
+        }
 
         private string ReturnDefault(Function function) =>
             GetCSharpType(function.Signature.ReturnType) == "void" ? "return;" : "return default;";
@@ -801,7 +829,7 @@ namespace Plang.Compiler.Backend.CSharp
         private void WritePendingTransitionCheck(CompilationContext context, StringWriter output, Function function,
             Function callee)
         {
-            if (!callee.IsForeign && MayLeavePendingTransition(callee))
+            if (MayLeavePendingTransition(context, callee))
             {
                 context.WriteLine(output, $"if (currentMachine.HasPendingTransition) {ReturnDefault(function)}");
             }

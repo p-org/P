@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using PChecker;
 using PChecker.Runtime.Events;
@@ -210,6 +211,29 @@ namespace UnitTests
             Assert.That(engine.ReadableTrace, Does.Contain($"<ErrorLog> {bug}{Environment.NewLine}"));
             Assert.That(GetJsonEntries(json, "AssertionFailure"), Is.EqualTo(new[] { bug }));
             Assert.That(GetJsonEntries(json, "StrategyDescription").Single(), Does.StartWith("random[seed '"));
+        }
+
+        [Test]
+        public void TraceReportsTheBugWhenTheReplayFindsAnotherBug()
+        {
+            // The replay sees the next counter, so it fails with another bug than the schedule.
+            var (engine, json) = Check("tcCounterInBug", Configuration());
+
+            var bug = engine.TestReport.BugReports.Single();
+            var counter = int.Parse(Regex.Match(bug, "counter is ([0-9]+)$").Groups[1].Value);
+            var replayBug = bug.Substring(0, bug.Length - counter.ToString().Length) + (counter + 1);
+            Assert.That(engine.ReadableTrace, Does.StartWith(
+                "<StrategyLog> WARNING: Replaying the failing schedule to trace it did not reproduce the bug: the " +
+                $"replay found another bug: {replayBug}. "));
+
+            // The trace is that of the replay, so it shows the bug of the replay where the replay hit
+            // it, and then ends with the bug that exploration found, which is the one reported.
+            var errorLogs = engine.ReadableTrace.Split(Environment.NewLine)
+                .Where(line => line.StartsWith("<ErrorLog> ")).ToArray();
+            Assert.That(errorLogs, Is.EqualTo(new[] { $"<ErrorLog> {replayBug}", $"<ErrorLog> {bug}" }));
+            Assert.That(GetJsonEntries(json, "AssertionFailure"), Is.EqualTo(new[] { replayBug, bug }));
+            Assert.That(GetJsonEntries(json, "StrategyDescription"),
+                Has.Length.EqualTo(2).And.All.StartWith("random[seed '"));
         }
 
         [Test]

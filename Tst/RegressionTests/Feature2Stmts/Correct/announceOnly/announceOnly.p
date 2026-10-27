@@ -1,6 +1,8 @@
 // Announcing is not a scheduling point, so functions that only announce are compiled as
 // synchronous methods, while functions that also send (directly or through callees) are
-// awaited. Monitors must observe every announcement in program order either way.
+// awaited. Monitors must observe every announcement in program order either way, so this
+// program passes whether or not those functions are async: SchedulingPointCodegenTest and
+// AnnounceOnlyFailureTest in Tst/UnitTests check that they are synchronous.
 event eTick: int;
 event eGo;
 event eDone;

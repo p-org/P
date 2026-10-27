@@ -112,8 +112,20 @@ machine Counter {
   }
 }
 
+// Fails on every schedule with the counter in its bug, so the replay finds another bug.
+machine CounterInBug {
+  start state Run {
+    entry {
+      var c: int;
+      c = NextCounter();
+      assert c < 0, format("counter is {0}", c);
+    }
+  }
+}
+
 test tcAssert [main=Race]: { Race, Receiver, Sender };
 test tcMaxSteps [main=Forever]: { Forever };
 test tcHotAtEnd [main=Requests]: assert Responded in { Requests };
 test tcTemperature [main=Ticker]: assert Progress in { Ticker };
 test tcCounter [main=Counter]: { Counter };
+test tcCounterInBug [main=CounterInBug]: { CounterInBug };

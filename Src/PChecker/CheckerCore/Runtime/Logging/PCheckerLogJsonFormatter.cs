@@ -3,7 +3,6 @@
 
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Exceptions;
 using PChecker.Runtime.StateMachines;
@@ -120,7 +119,8 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc/>
         public void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType)
         {
-            var source = creatorName ?? $"task '{Task.CurrentId}'";
+            // A state machine without a creator was created by the test method.
+            var source = creatorName ?? "the test";
             var log = $"{id} was created by {source}.";
 
             Writer.AddLogType(JsonWriter.LogType.CreateStateMachine);

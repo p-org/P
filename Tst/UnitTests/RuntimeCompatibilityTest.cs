@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using NUnit.Framework;
 using PChecker;
 using PChecker.Runtime.Events;
+using PChecker.Runtime.Logging;
 using PChecker.Runtime.StateMachines;
 using PChecker.Runtime.Values;
 using PChecker.SystematicTesting;
@@ -19,7 +20,8 @@ namespace UnitTests
     /// <summary>
     /// Code compiled against another version of the P runtime must be reported as a tool error that
     /// asks to recompile, never as a bug in the program under test (or silently run with different
-    /// semantics). Also covers the compatibility shims kept for foreign and C# test code.
+    /// semantics). Also covers the compatibility shims kept for foreign and C# test code, and the
+    /// creator label of state machines created by the test method in traces.
     /// </summary>
     [TestFixture]
     public class RuntimeCompatibilityTest
@@ -61,6 +63,20 @@ namespace UnitTests
 #pragma warning disable CS0618
                 currentRuntime.SendEvent(((PMachineValue)e.Payload).Id, new Ping());
 #pragma warning restore CS0618
+            }
+
+            [Start]
+            [OnEntry(nameof(Entry))]
+            private class Init : State
+            {
+            }
+        }
+
+        private class Failing : StateMachine
+        {
+            private void Entry()
+            {
+                Assert(false);
             }
 
             [Start]
@@ -154,6 +170,24 @@ namespace UnitTests
             }
 
             Assert.That(report.BugReports.Single(), Does.Contain("not from the test method"));
+        }
+
+        [Test]
+        public void TraceNamesTheTestAsCreator()
+        {
+            string trace;
+            lock (PCheckerRunner.CheckerLock)
+            {
+                Run(runtime =>
+                {
+                    runtime.RegisterLog(new PCheckerLogTextFormatter());
+                    runtime.CreateStateMachine(typeof(Failing));
+                }, 1, out var engine);
+                trace = engine.ReadableTrace;
+            }
+
+            Assert.That(trace, Does.Match(@"<CreateLog> \S*Failing\(1\) was created by the test\."));
+            Assert.That(trace, Does.Not.Contain("created by task"));
         }
 
         private static Assembly DefineAssembly(bool generatedByP, int? stamp)

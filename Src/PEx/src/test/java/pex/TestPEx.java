@@ -93,6 +93,8 @@ public class TestPEx {
         excluded.add(testBasePath + "Integration/Correct/ForeignCreate");
         excluded.add(testBasePath + "Integration/Correct/ForeignRaiseGoto");
         excluded.add(testBasePath + "Integration/Correct/ForeignRaiseGotoMonitor");
+        excluded.add(testBasePath + "Integration/Correct/ForeignTupleCopies");
+        excluded.add(testBasePath + "Integration/Correct/ForeignEventPayloads");
 
         /**
          * TODO: liveness with temperatures

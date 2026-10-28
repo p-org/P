@@ -21,6 +21,11 @@ namespace UnitTests
     /// and the same machine ids. Without these scheduling points, Other could never send before the
     /// first foreign send.
     /// </summary>
+    /// <remarks>
+    /// One exception is pinned by <see cref="ForeignChoicesReachTheSameTracesAsPChoices"/>: a choice
+    /// that foreign code makes is taken right away, before the scheduling points of the sends and
+    /// creates it requested earlier. The same traces are reachable, but a seed can pick another one.
+    /// </remarks>
     [TestFixture]
     public class ForeignSchedulingParityTest
     {
@@ -143,14 +148,92 @@ namespace PImplementation
 
         private const string Machines = "Main, Other, Helper, Worker, Server";
 
+        // Main runs Work, which sends eA(1) and then eA(2) or eA(3), while Other sends eB 10 and 11.
+        private const string ChoiceCommon = @"
+event eA: int;
+event eB: int;
+
+fun Record(trace: string);
+
+machine Main {
+  start state Init {
+    entry {
+      var s: Server;
+      s = new Server();
+      new Other(s);
+      Work(s);
+    }
+  }
+  // Puts eA in the sends set of Main, for the foreign Work.
+  fun Unused(s: Server) {
+    send s, eA, 4;
+  }
+}
+
+machine Other {
+  start state Init {
+    entry (s: Server) {
+      send s, eB, 10;
+      send s, eB, 11;
+    }
+  }
+}
+
+machine Server {
+  var trace: string;
+  var n: int;
+  start state Init {
+    on eA do (v: int) { Add(v); }
+    on eB do (v: int) { Add(v); }
+  }
+  fun Add(v: int) {
+    trace = format(""{0} {1}"", trace, v);
+    n = n + 1;
+    if (n == 4) {
+      Record(trace);
+    }
+  }
+}
+";
+
+        private const string ChoiceForeignWork = @"
+fun Work(s: Server);
+";
+
+        private const string ChoicePWork = @"
+fun Work(s: Server) {
+  send s, eA, 1;
+  if ($) {
+    send s, eA, 2;
+  } else {
+    send s, eA, 3;
+  }
+}
+";
+
+        private const string ChoiceForeignWorkCode = @"
+        public static void Work(PMachineValue s, StateMachine machine)
+        {
+            machine.SendEvent(s, new eA(1));
+            machine.SendEvent(s, new eA(machine.RandomBoolean() ? 2 : 3));
+        }
+";
+
+        private const string ChoiceMachines = "Main, Other, Server";
+
         private static string foreignDll;
         private static string pDll;
+        private static string choiceForeignDll;
+        private static string choicePDll;
 
         [OneTimeSetUp]
         public void Compile()
         {
             foreignDll = Build("ParityForeign", Common + ForeignWork, RecordCode + ForeignWorkCode + "}}", Machines);
             pDll = Build("ParityP", Common + PWork, RecordCode + "}}", Machines);
+            choiceForeignDll = Build("ParityChoiceForeign", ChoiceCommon + ChoiceForeignWork,
+                RecordCode + ChoiceForeignWorkCode + "}}", ChoiceMachines);
+            choicePDll = Build("ParityChoiceP", ChoiceCommon + ChoicePWork, RecordCode + "}}", ChoiceMachines);
         }
 
         private static IEnumerable<TestCaseData> Configurations()
@@ -182,10 +265,28 @@ namespace PImplementation
             Assert.That(traces, Has.Some.StartsWith(" 1 "));
         }
 
-        private static List<string> Run(string dll, string strategy, uint seed)
+        /// <summary>
+        /// Foreign code needs the value of a choice right away, so the choice is taken before the
+        /// scheduling point of the deferred send of eA(1), while the P code takes it after. The
+        /// strategy is asked in another order, so a seed can explore another schedule than for the
+        /// P code (and than on master), but the same traces are reachable: all 12 interleavings of
+        /// 1, then 2 or 3, with 10, 11.
+        /// </summary>
+        [Test]
+        public void ForeignChoicesReachTheSameTracesAsPChoices()
+        {
+            const uint iterations = 300;
+            var foreignTraces = new HashSet<string>(Run(choiceForeignDll, "random", 0, iterations));
+            var pTraces = new HashSet<string>(Run(choicePDll, "random", 0, iterations));
+
+            Assert.That(pTraces, Has.Count.EqualTo(12));
+            Assert.That(foreignTraces, Is.EquivalentTo(pTraces));
+        }
+
+        private static List<string> Run(string dll, string strategy, uint seed, uint iterations = Iterations)
         {
             var configuration = CheckerConfiguration.Create()
-                .WithTestingIterations(Iterations)
+                .WithTestingIterations(iterations)
                 .WithMaxSchedulingSteps(1000)
                 .WithRandomGeneratorSeed(seed);
             configuration = strategy == "pct"

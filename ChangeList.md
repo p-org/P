@@ -84,6 +84,12 @@ P 3.0 Changes
   A machine created by foreign code can be sent to, but does not run, until
   then. Its id is numbered at the scheduling point of the create, as for a P
   `new`, unless the foreign code prints, compares or hashes it before.
+- A choice made by foreign code (`StateMachine.RandomBoolean`,
+  `RandomInteger`) is taken right away, before the scheduling points of the
+  sends and creates it requested earlier in the same call, whereas the
+  equivalent P code takes it after them. The same schedules are reachable,
+  but for such foreign code a seed can explore another schedule than on
+  master, and `.schedule` files recorded on master may not replay.
 - P functions that call foreign functions (directly or through callees), and
   P functions that send or create, are now `async` in the generated C# code.
   Foreign code that calls them back gets a `Task`, which has already

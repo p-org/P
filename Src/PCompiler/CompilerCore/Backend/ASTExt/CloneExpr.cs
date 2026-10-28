@@ -7,14 +7,18 @@ namespace Plang.Compiler.Backend.ASTExt
 {
     internal class CloneExpr : IPExpr
     {
-        public CloneExpr(IExprTerm term)
+        /// <summary>
+        /// The full lowering only clones terms. The C# lowering (<see cref="LoweringMode.CSharp"/>) leaves
+        /// expressions inline, so it also clones accesses into values and other non-terms.
+        /// </summary>
+        public CloneExpr(IPExpr term)
         {
             Term = term;
             SourceLocation = term.SourceLocation;
             Type = term.Type;
         }
 
-        public IExprTerm Term { get; }
+        public IPExpr Term { get; }
 
         public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type { get; }

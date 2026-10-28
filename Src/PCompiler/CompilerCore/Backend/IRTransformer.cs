@@ -11,7 +11,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend
 {
-    public class IRTransformer
+    public partial class IRTransformer
     {
         private readonly Function function;
         private int numTemp;

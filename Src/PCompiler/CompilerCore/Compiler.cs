@@ -78,6 +78,9 @@ namespace Plang.Compiler
                 return Environment.ExitCode;
             }
 
+            // Functions are converted to lowered SSA form with explicit cloning, as much as each
+            // backend needs (see LoweringMode), right before its code is generated.
+            ScopeLowering lowering = null;
             if (job.OutputLanguages.Contains(CompilerOutput.PVerifier))
             {
                 // If using the PVerifier, don't output anything else
@@ -88,11 +91,7 @@ namespace Plang.Compiler
             }
             else
             {
-                // Convert functions to lowered SSA form with explicit cloning
-                foreach (var fun in scope.GetAllMethods())
-                {
-                    IRTransformer.SimplifyMethod(fun);
-                }
+                lowering = new ScopeLowering(scope);
             }
             
             DirectoryInfo parentDirectory = job.OutputDirectory;
@@ -101,6 +100,7 @@ namespace Plang.Compiler
                 job.OutputDirectory = Directory.CreateDirectory(Path.Combine(parentDirectory.FullName, entry.ToString()));
                 job.Output = new DefaultCompilerOutput(job.OutputDirectory);
                 job.Backend = TargetLanguage.GetCodeGenerator(entry);
+                lowering?.LowerFor(entry);
 
                 job.Output.WriteInfo("----------------------------------------");
                 job.Output.WriteInfo($"Code generation for {entry}...");
@@ -186,10 +186,7 @@ namespace Plang.Compiler
 
             if (!job.OutputLanguages.Contains(CompilerOutput.PVerifier))
             {
-                foreach (var fun in scope.GetAllMethods())
-                {
-                    IRTransformer.SimplifyMethod(fun);
-                }
+                new ScopeLowering(scope).LowerFor(job.OutputLanguages.Single());
             }
 
             var backend = TargetLanguage.GetCodeGenerator(job.OutputLanguages.Single());

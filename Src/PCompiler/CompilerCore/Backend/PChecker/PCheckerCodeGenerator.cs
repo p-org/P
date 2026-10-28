@@ -843,26 +843,8 @@ namespace Plang.Compiler.Backend.CSharp
         /// <summary>
         /// Returns the foreign functions and every function that transitively calls one.
         /// </summary>
-        private static HashSet<Function> ComputeForeignCallers(Scope globalScope)
-        {
-            var result = new HashSet<Function>();
-            var worklist = new Stack<Function>(globalScope.GetAllMethods().Where(f => f.IsForeign));
-            while (worklist.Count > 0)
-            {
-                var function = worklist.Pop();
-                if (!result.Add(function))
-                {
-                    continue;
-                }
-
-                foreach (var caller in function.Callers)
-                {
-                    worklist.Push(caller);
-                }
-            }
-
-            return result;
-        }
+        private static HashSet<Function> ComputeForeignCallers(Scope globalScope) =>
+            IRTransformer.ComputeForeignCallers(globalScope);
 
         private string ReturnDefault(Function function) =>
             GetCSharpType(function.Signature.ReturnType) == "void" ? "return;" : "return default;";
@@ -1059,7 +1041,17 @@ namespace Plang.Compiler.Backend.CSharp
 
         public bool WriteAssignStmt(CompilationContext context, StringWriter output, Function function, AssignStmt assignStmt)
         {
-            var needCtorAdapter = !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
+            // A copy of a variable is converted with a constructor. A fresh value (the C# lowering
+            // assigns those directly) is only cast, as a moved temporary was.
+            var isVariableCopy = assignStmt.Value switch
+            {
+                VariableAccessExpr variableAccess => !variableAccess.Variable.Role.HasFlag(VariableRole.Temp),
+                CloneExpr { Term: VariableAccessExpr variableAccess } => !variableAccess.Variable.Role.HasFlag(VariableRole.Temp),
+                CloneExpr { Term: IExprTerm } => true,
+                _ => false
+            };
+            var needCtorAdapter = isVariableCopy
+                                  && !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
                                   && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
                                   && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
             if (assignStmt.Value is FunCallExpr foreignCallExpr)
@@ -1123,7 +1115,7 @@ namespace Plang.Compiler.Backend.CSharp
                     foreach (var ctorExprArgument in ctorStmt.Arguments)
                     {
                         context.Write(output, septor);
-                        this.WriteExpr(context, output, ctorExprArgument);
+                        WriteOwnedValue(context, output, ctorExprArgument);
                         septor = ",";
                     }
 
@@ -1264,6 +1256,16 @@ namespace Plang.Compiler.Backend.CSharp
         public bool WriteRaiseStmt(CompilationContext context, StringWriter output, Function function, RaiseStmt raiseStmt)
         {
             //last statement
+            if (raiseStmt.Payload.Any() && raiseStmt.Event is EventRefExpr eventRef)
+            {
+                // The C# lowering leaves event literals inline (see IRTransformer.IsEventLiteral).
+                context.Write(output, "currentMachine.RaiseEvent(");
+                WriteEventWithPayload(context, output, eventRef, raiseStmt.Payload.First());
+                context.WriteLine(output, ");");
+                context.WriteLine(output, ReturnDefault(function));
+                return false;
+            }
+
             if (raiseStmt.Payload.Any())
             {
                 this.WriteExpr(context, output, raiseStmt.Event);
@@ -1387,6 +1389,16 @@ namespace Plang.Compiler.Backend.CSharp
 
         public bool WriteSendStmt(CompilationContext context, StringWriter output, Function function, SendStmt sendStmt)
         {
+            if (sendStmt.Arguments.Any() && sendStmt.Evt is EventRefExpr eventRef)
+            {
+                context.Write(output, "await currentMachine.SendEventAsync(");
+                this.WriteExpr(context, output, sendStmt.MachineExpr);
+                context.Write(output, ", ");
+                WriteEventWithPayload(context, output, eventRef, sendStmt.Arguments.First());
+                context.WriteLine(output, ");");
+                return false;
+            }
+
             if (sendStmt.Arguments.Any())
             {
                 this.WriteExpr(context, output, sendStmt.Evt);
@@ -1403,11 +1415,40 @@ namespace Plang.Compiler.Backend.CSharp
             return false;
         }
 
+        /// <summary>
+        /// Writes a new event of the specified kind with the specified payload.
+        /// </summary>
+        private void WriteEventWithPayload(CompilationContext context, StringWriter output, EventRefExpr eventRef,
+            IPExpr payload)
+        {
+            var payloadType = GetCSharpType(eventRef.Value.PayloadType, true);
+            context.Write(output, $"new {context.Names.GetNameForDecl(eventRef.Value)}(({payloadType})(");
+            this.WriteExpr(context, output, payload);
+            context.Write(output, "))");
+        }
+
         public bool WriteForeachStmt(CompilationContext context, StringWriter output, Function function, ForeachStmt foreachStmt)
         {
-            var tempVarName = $"__temp_{context.Names.GetNameForDecl(foreachStmt.Item)}";
+            var tempVarName = context.Names.GetTemporaryName($"iter_{context.Names.GetNameForDecl(foreachStmt.Item)}");
             context.Write(output, $"foreach (var {tempVarName} in ");
-            this.WriteExpr(context, output, foreachStmt.IterCollection);
+            // The C# lowering iterates over a copy of a collection that is not fresh, since the body may
+            // change it. A shallow copy is enough if nothing can change the elements in place: the
+            // elements of a set are frozen, and immutable elements cannot change. (The lowering copies
+            // the item of a set if it is changed in place.)
+            var collectionType = foreachStmt.IterCollection.Type.Canonicalize();
+            if (foreachStmt.IterCollection is CloneExpr snapshot &&
+                (collectionType is SetType ||
+                 (collectionType is SequenceType sequenceType && IsImmutableCSharpType(GetCSharpType(sequenceType.ElementType)))))
+            {
+                context.Write(output, $"global::System.Linq.Enumerable.ToArray(({GetCSharpType(collectionType)})(");
+                this.WriteExpr(context, output, snapshot.Term);
+                context.Write(output, "))");
+            }
+            else
+            {
+                this.WriteExpr(context, output, foreachStmt.IterCollection);
+            }
+
             context.WriteLine(output, ") {");
             context.WriteLine(output, $"{context.Names.GetNameForDecl(foreachStmt.Item)} = ({GetCSharpType(foreachStmt.Item.Type)}) {tempVarName};");
             this.WriteStmt(context, output, function, foreachStmt.Body);
@@ -1480,15 +1521,41 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(lvalue));
+                    // An access into the value of another expression (only read, never assigned).
+                    context.Write(output, "(");
+                    this.WriteExpr(context, output, lvalue);
+                    context.Write(output, ")");
+                    break;
             }
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         public void WriteCloneExpr(CompilationContext context, StringWriter output, CloneExpr cloneExpr)
         {
-            WriteClone(context, output, cloneExpr.Term);
+            if (cloneExpr.Term is IExprTerm term)
+            {
+                WriteClone(context, output, term);
+                return;
+            }
+
+            // The C# lowering also clones accesses into values and choices from collections.
+            var csharpType = GetCSharpType(cloneExpr.Type);
+            if (IsImmutableCSharpType(csharpType))
+            {
+                this.WriteExpr(context, output, cloneExpr.Term);
+                return;
+            }
+
+            context.Write(output, $"(({csharpType})((IPValue)(");
+            this.WriteExpr(context, output, cloneExpr.Term);
+            context.Write(output, "))?.Clone())");
         }
+
+        /// <summary>
+        /// Values of these types are immutable, so they are never cloned.
+        /// </summary>
+        private static bool IsImmutableCSharpType(string csharpType) =>
+            csharpType is "PInt" or "PBool" or "PFloat" or "PString" or "PMachineValue";
 
         public void WriteBinOpExpr(CompilationContext context, StringWriter output, BinOpExpr binOpExpr)
         {
@@ -1496,7 +1563,8 @@ namespace Plang.Compiler.Backend.CSharp
             if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
             {
                 var negate = binOpExpr.Operation == BinOpType.Neq ? "!" : "";
-                context.Write(output, $"({negate}PValues.SafeEquals(");
+                // Typed as PBool, like the other operators, since the C# lowering leaves it inline.
+                context.Write(output, $"((PBool)({negate}PValues.SafeEquals(");
                 if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
                 {
                     context.Write(output, "PValues.Box((long) ");
@@ -1520,11 +1588,13 @@ namespace Plang.Compiler.Backend.CSharp
                     this.WriteExpr(context, output, binOpExpr.Rhs);
                 }
 
-                context.Write(output, "))");
+                context.Write(output, ")))");
             }
             else
             {
-                context.Write(output, "(");
+                // Typed, since the C# lowering leaves it inline and some operators (e.g. % on PInt)
+                // are applied to the converted C# numbers.
+                context.Write(output, $"(({GetCSharpType(binOpExpr.Type)})((");
                 if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
                 {
                     context.Write(output, "(long)");
@@ -1538,7 +1608,7 @@ namespace Plang.Compiler.Backend.CSharp
                 }
 
                 this.WriteExpr(context, output, binOpExpr.Rhs);
-                context.Write(output, ")");
+                context.Write(output, ")))");
             }
         }
 
@@ -1560,9 +1630,9 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
                 case PrimitiveType oldType1 when oldType1.IsSameTypeAs(PrimitiveType.Int):
-                    context.Write(output, "(");
+                    context.Write(output, $"(({GetCSharpType(coerceExpr.Type)})(");
                     this.WriteExpr(context, output, coerceExpr.SubExpr);
-                    context.Write(output, ")");
+                    context.Write(output, "))");
                     break;
 
                 case PermissionType _:
@@ -1637,7 +1707,7 @@ namespace Plang.Compiler.Backend.CSharp
                     foreach (var ctorExprArgument in ctorExpr.Arguments)
                     {
                         context.Write(output, septor);
-                        this.WriteExpr(context, output, ctorExprArgument);
+                        WriteOwnedValue(context, output, ctorExprArgument);
                         septor = ",";
                     }
 
@@ -1731,7 +1801,7 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr namedTupleExpr)
         {
-            // The fields are temporaries that hold fresh values, so the tuple can own them.
+            // The fields hold fresh values (copies), so the tuple can own them.
             var fieldNamesArray = GetFieldNamesArray(context, (NamedTupleType)namedTupleExpr.Type);
             context.Write(output, $"({GetCSharpType(namedTupleExpr.Type)}.FromOwnedValues({fieldNamesArray}, ");
             for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
@@ -1741,10 +1811,24 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, ", ");
                 }
 
-                this.WriteExpr(context, output, namedTupleExpr.TupleFields[i]);
+                WriteOwnedValue(context, output, namedTupleExpr.TupleFields[i]);
             }
 
             context.Write(output, "))");
+        }
+
+        /// <summary>
+        /// Writes an argument of FromOwnedValues. A single untyped null would be passed as its params
+        /// array, so null is typed.
+        /// </summary>
+        private void WriteOwnedValue(CompilationContext context, StringWriter output, IPExpr value)
+        {
+            if (value is NullLiteralExpr || (value is DefaultExpr && GetDefaultValue(context, value.Type) == "null"))
+            {
+                context.Write(output, "(IPValue)");
+            }
+
+            this.WriteExpr(context, output, value);
         }
 
         public void WriteNondetExpr(CompilationContext context, StringWriter output, NondetExpr expr)
@@ -1790,13 +1874,13 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteUnnamedTupleExpr(CompilationContext context, StringWriter output, UnnamedTupleExpr unnamedTupleExpr)
         {
-            // The fields are temporaries that hold fresh values, so the tuple can own them.
+            // The fields hold fresh values (copies), so the tuple can own them.
             context.Write(output, $"{GetCSharpType(unnamedTupleExpr.Type)}.FromOwnedValues(");
             var sep = "";
             foreach (var field in unnamedTupleExpr.TupleFields)
             {
                 context.Write(output, sep);
-                this.WriteExpr(context, output, field);
+                WriteOwnedValue(context, output, field);
                 sep = ", ";
             }
 
@@ -1812,32 +1896,50 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteMapAccessExpr(CompilationContext context, StringWriter output, MapAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteSetAccessExpr(CompilationContext context, StringWriter output, SetAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteNamedTupleAccessExpr(CompilationContext context, StringWriter output, NamedTupleAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteSeqAccessExpr(CompilationContext context, StringWriter output, SeqAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteTupleAccessExpr(CompilationContext context, StringWriter output, TupleAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteVariableAccessExpr(CompilationContext context, StringWriter output, VariableAccessExpr expr)
         {
             WriteLValue(context, output, expr);
+        }
+
+        /// <summary>
+        /// Elements are stored as IPValue. The C# lowering leaves accesses inline, so they are cast to
+        /// the element type.
+        /// </summary>
+        private void WriteElementAccess(CompilationContext context, StringWriter output, IPExpr access)
+        {
+            var csharpType = GetCSharpType(access.Type);
+            if (csharpType == "IPValue")
+            {
+                WriteLValue(context, output, access);
+                return;
+            }
+
+            context.Write(output, $"(({csharpType})");
+            WriteLValue(context, output, access);
+            context.Write(output, ")");
         }
 
         private void WriteClone(CompilationContext context, StringWriter output, IExprTerm cloneExprTerm)
@@ -1852,7 +1954,7 @@ namespace Plang.Compiler.Backend.CSharp
             var csharpType = GetCSharpType(variableRef.Type);
 
             // These values are immutable, and cloning a struct would box it twice.
-            if (csharpType is "PInt" or "PBool" or "PFloat" or "PString" or "PMachineValue")
+            if (IsImmutableCSharpType(csharpType))
             {
                 context.Write(output, varName);
                 return;

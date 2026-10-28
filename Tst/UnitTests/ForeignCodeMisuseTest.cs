@@ -39,6 +39,21 @@ namespace UnitTests
             Assert.That(stderr, Does.Contain("tried to receive an event in a P function called from foreign code"));
         }
 
+        /// <summary>
+        /// Foreign code that drops the awaitable of a scheduling point keeps running after the
+        /// scheduler switched to another operation; its next call into the runtime is reported.
+        /// </summary>
+        [Test]
+        public void UnawaitedSchedulingPointIsAnInternalError()
+        {
+            var (exitCode, stdout, stderr) = Run("ForeignUnawaitedCreate");
+
+            Assert.That(exitCode, Is.EqualTo(2), $"expected an internal error\nstdout: {stdout}\nstderr: {stderr}");
+            Assert.That(stdout, Is.Empty, "no bug must be reported");
+            Assert.That(stderr, Does.Contain("was scheduled to resume from a scheduling point"));
+            Assert.That(stderr, Does.Contain("drops the awaitable of a scheduling point"));
+        }
+
         private static (int? exitCode, string stdout, string stderr) Run(string testName)
         {
             var testDir = new DirectoryInfo(Path.Combine(Constants.TestDirectory, "RegressionTests", "Integration",

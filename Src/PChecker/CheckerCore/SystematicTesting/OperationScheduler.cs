@@ -438,6 +438,15 @@ namespace PChecker.SystematicTesting
         /// operation. Continuing would run two operations at once and lose the parked one, so this
         /// stops the schedule with an internal error.
         /// </summary>
+        /// <remarks>
+        /// Sends and creates of foreign code (and of P functions it calls back) are deferred, so they
+        /// never leave a parked operation, even when foreign code drops the awaitable of
+        /// <c>SendEventAsync</c> or <c>CreateInterfaceAsync</c>. What remains is code that drops the
+        /// awaitable of a scheduling point that is not deferred, like the protected
+        /// <c>StateMachine.CreateStateMachineAsync</c> called from a local foreign function (see
+        /// Tst/RegressionTests/Integration/InternalError/ForeignUnawaitedCreate), and code that calls
+        /// the runtime from outside of the scheduler.
+        /// </remarks>
 #if !DEBUG
         [DebuggerHidden]
 #endif
@@ -452,9 +461,10 @@ namespace PChecker.SystematicTesting
             NotifyInternalError(string.Format(CultureInfo.InvariantCulture,
                 "A P runtime method was called while operation '{0}' was scheduled to resume from a " +
                 "scheduling point, so the caller is running outside of the scheduler. This happens when " +
-                "code does not await an asynchronous P runtime method (e.g. 'StateMachine.SendEventAsync' or " +
-                "'StateMachine.CreateInterfaceAsync', which are meant for generated code). Foreign code must " +
-                "call 'StateMachine.SendEvent' and 'StateMachine.CreateInterface' instead.", op.Name));
+                "code drops the awaitable of a scheduling point instead of awaiting it (e.g. foreign code that " +
+                "calls 'StateMachine.CreateStateMachineAsync' without awaiting it), or calls the P runtime from " +
+                "code that the scheduler does not control. Foreign code must call " +
+                "'StateMachine.CreateInterface' and 'StateMachine.SendEvent', which do not suspend.", op.Name));
         }
 
         /// <summary>

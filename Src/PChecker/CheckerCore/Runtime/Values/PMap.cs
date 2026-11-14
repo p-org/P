@@ -112,9 +112,10 @@ namespace PChecker.Runtime.Values
             get => map[key];
             set
             {
-                if (key is IPMutableValue && !map.ContainsKey(key))
+                if (!map.ContainsKey(key))
                 {
-                    // A new key is stored: store a frozen copy, as Add does.
+                    // A new key is stored: store a frozen copy, as Add does. Tuples are not
+                    // IPMutableValue but change in place, so every new key is copied.
                     key = MutabilityHelper.FrozenCopy(key);
                 }
 

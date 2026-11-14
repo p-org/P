@@ -164,7 +164,8 @@ namespace PChecker.Runtime.Values
         }
         public void UnionWith(IEnumerable<IPValue> other)
         {
-            set.UnionWith(other.Select(i => PValues.Clone(i)));
+            IsDirty = true;
+            set.UnionWith(other.Select(MutabilityHelper.FrozenCopy));
         }
 
         public void IntersectWith(IEnumerable<IPValue> other)

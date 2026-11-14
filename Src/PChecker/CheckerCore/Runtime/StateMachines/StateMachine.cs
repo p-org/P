@@ -251,13 +251,17 @@ namespace PChecker.Runtime.StateMachines
         /// a P <c>new</c>) only once the foreign call returns to P code. Until then the caller can
         /// only pass the returned reference around or send to it.
         /// </summary>
+        /// <remarks>
+        /// The payload is copied, so that the new machine gets it as it is now, even if the foreign
+        /// code changes it before returning.
+        /// </remarks>
         public PMachineValue CreateInterface<T>(StateMachine creator, IPValue payload = null)
             where T : PMachineValue
         {
             Runtime.CheckForeignCaller(this, "CreateInterface");
             var createdInterface = GetCreatedInterface<T>(creator);
             var machineId = DeferCreateStateMachine(null, PModule.interfaceDefinitionMap[createdInterface],
-                createdInterface.Substring(2), GetConstructorEvent(payload));
+                createdInterface.Substring(2), GetConstructorEvent(PValues.Clone(payload)));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
 
@@ -712,11 +716,17 @@ namespace PChecker.Runtime.StateMachines
         /// This is not a scheduling point, so it can be called from code that cannot await, like
         /// <see cref="CreateInterface{T}"/>: the id is returned right away, and the machine is
         /// created at its scheduling point once control returns to P code. Use
-        /// <see cref="CreateStateMachineAsync"/> from code that can await.
+        /// <see cref="CreateStateMachineAsync"/> from code that can await. The payload of
+        /// <paramref name="initialEvent"/> is copied, so that the new machine gets it as it is now.
         /// </remarks>
         protected StateMachineId CreateStateMachine(Type type, string name, Event initialEvent = null)
         {
             Runtime.CheckForeignCaller(this, "CreateStateMachine");
+            if (initialEvent != null)
+            {
+                initialEvent.Payload = PValues.Clone(initialEvent.Payload);
+            }
+
             return DeferCreateStateMachine(null, type, name, initialEvent);
         }
 

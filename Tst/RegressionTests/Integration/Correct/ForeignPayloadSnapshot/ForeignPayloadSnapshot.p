@@ -1,6 +1,7 @@
-// Foreign code sends and announces a payload, and changes it before it returns. Its sends and
-// announces are performed when it returns to P code, but monitors and the target must observe
-// each payload as it was when the foreign code sent or announced it.
+// Foreign code sends, announces and creates a machine with a payload, and changes each payload
+// before it returns. Its sends, announces and creates are performed when it returns to P code,
+// but monitors, the target and the created machine must observe each payload as it was when the
+// foreign code sent, announced or created with it.
 event eSeq: seq[int];
 event eAnnounced: seq[int];
 
@@ -14,6 +15,16 @@ machine Main {
       ForeignSendAndChange(r);
       // Puts eSeq in the sends set of Main, for the foreign code.
       send r, eSeq, default(seq[int]);
+      // Puts Created in the creates set of Main, for the foreign code.
+      new Created(default(seq[int]));
+    }
+  }
+}
+
+machine Created {
+  start state Init {
+    entry (p: seq[int]) {
+      assert sizeof(p) == 0, format("created machine got a payload changed after the create: {0}", p);
     }
   }
 }
@@ -37,4 +48,4 @@ spec Unchanged observes eSeq, eAnnounced {
   }
 }
 
-test DefaultImpl [main=Main]: assert Unchanged in { Main, Receiver };
+test DefaultImpl [main=Main]: assert Unchanged in { Main, Receiver, Created };

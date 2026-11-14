@@ -14,6 +14,10 @@ namespace PImplementation
             var announced = new PSeq();
             machine.Announce(new eAnnounced(), announced);
             announced.Add((PInt)2);
+
+            var created = new PSeq();
+            machine.CreateInterface<I_Created>(machine, created);
+            created.Add((PInt)3);
         }
     }
 }

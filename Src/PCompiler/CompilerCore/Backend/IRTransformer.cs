@@ -515,7 +515,7 @@ namespace Plang.Compiler.Backend
 
                     (var raiseArgs, var raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);
 
-                    return raiseEventDeps.Concat(raiseEventDeps)
+                    return raiseEventDeps
                         .Concat(raiseArgDeps)
                         .Concat(new[] { raiseEventTempDep })
                         .Concat(new[]

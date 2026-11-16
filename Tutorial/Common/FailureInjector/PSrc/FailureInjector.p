@@ -33,9 +33,7 @@ machine FailureInjector {
           nodes -= (fail);
           nFailures = nFailures - 1;
         }
-        else {
-          send this, eDelayNodeFailure;
-        }
+        send this, eDelayNodeFailure;
       }
     }
 

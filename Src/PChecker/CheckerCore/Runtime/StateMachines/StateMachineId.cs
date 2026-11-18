@@ -17,8 +17,21 @@ namespace PChecker.Runtime.StateMachines
         /// <summary>
         /// Unique id, when <see cref="NameValue"/> is empty.
         /// </summary>
-        [DataMember]
-        public readonly ulong Value;
+        public ulong Value
+        {
+            get
+            {
+                if (PendingRuntime != null)
+                {
+                    Bind();
+                }
+
+                return value;
+            }
+        }
+
+        [DataMember(Name = nameof(Value))]
+        private ulong value;
 
         /// <summary>
         /// Unique id, when non-empty.
@@ -35,8 +48,32 @@ namespace PChecker.Runtime.StateMachines
         /// <summary>
         /// Name used for logging.
         /// </summary>
-        [DataMember]
-        public readonly string Name;
+        public string Name
+        {
+            get
+            {
+                if (PendingRuntime != null)
+                {
+                    Bind();
+                }
+
+                return name;
+            }
+        }
+
+        [DataMember(Name = nameof(Name))]
+        private string name;
+
+        /// <summary>
+        /// The name passed when the id was created, until <see cref="Bind"/> allocates its value.
+        /// </summary>
+        private string PendingName;
+
+        /// <summary>
+        /// The runtime that allocates the value of an id created by <see cref="CreateUnbound"/>,
+        /// or null once it is allocated.
+        /// </summary>
+        private ControlledRuntime PendingRuntime;
 
         /// <summary>
         /// True if <see cref="NameValue"/> is used as the unique id, else false.
@@ -48,28 +85,62 @@ namespace PChecker.Runtime.StateMachines
         /// </summary>
         internal StateMachineId(Type type, string name, ControlledRuntime runtime, bool useNameForHashing = false)
         {
-
+            Type = type.FullName;
             if (useNameForHashing)
             {
-                Value = 0;
+                value = 0;
                 NameValue = name;
+                this.name = NameValue;
             }
             else
             {
-                Value = runtime.GetNextOperationId();
                 NameValue = string.Empty;
+                SetValue(runtime.GetNextOperationId(), name);
+            }
+        }
+
+        private StateMachineId(Type type, string name, ControlledRuntime runtime)
+        {
+            Type = type.FullName;
+            NameValue = string.Empty;
+            PendingName = name;
+            PendingRuntime = runtime;
+        }
+
+        /// <summary>
+        /// Creates an id whose value is allocated only by <see cref="Bind"/>, or on first use.
+        /// </summary>
+        /// <remarks>
+        /// Foreign code gets the id of the state machine it creates right away, but the machine is
+        /// created only at the Create scheduling point once the foreign call returns. Binding the
+        /// value there allocates it in the same order as a P <c>new</c>, which allocates it right
+        /// after its scheduling point, so ids and schedules are the same. If foreign code hashes,
+        /// compares or prints the id before that, the value is allocated then.
+        /// </remarks>
+        internal static StateMachineId CreateUnbound(Type type, string name, ControlledRuntime runtime) =>
+            new StateMachineId(type, name, runtime);
+
+        /// <summary>
+        /// Allocates the value of an id created by <see cref="CreateUnbound"/>, if not yet allocated.
+        /// </summary>
+        internal void Bind()
+        {
+            var runtime = PendingRuntime;
+            if (runtime is null)
+            {
+                return;
             }
 
-            Type = type.FullName;
-            if (IsNameUsedForHashing)
-            {
-                Name = NameValue;
-            }
-            else
-            {
-                Name = string.Format(CultureInfo.InvariantCulture, "{0}({1})",
-                    string.IsNullOrEmpty(name) ? Type : name, Value.ToString());
-            }
+            PendingRuntime = null;
+            SetValue(runtime.GetNextOperationId(), PendingName);
+            PendingName = null;
+        }
+
+        private void SetValue(ulong id, string machineName)
+        {
+            value = id;
+            name = string.Format(CultureInfo.InvariantCulture, "{0}({1})",
+                string.IsNullOrEmpty(machineName) ? Type : machineName, id.ToString());
         }
 
         /// <summary>

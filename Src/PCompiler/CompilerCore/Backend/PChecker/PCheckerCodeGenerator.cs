@@ -106,6 +106,7 @@ namespace Plang.Compiler.Backend.CSharp
 
             _globalParams = globalScope.GetGlobalVariables();
             _scenarioMonitors = globalScope.Machines.Where(m => m.IsScenario).ToList();
+            context.ForeignCallers = ComputeForeignCallers(globalScope);
 
             DeclareGlobalParams(context, source.Stream);
             
@@ -120,6 +121,8 @@ namespace Plang.Compiler.Backend.CSharp
 
             // write the enum declarations
             WriteInitializeEnums(context, source.Stream, globalScope.Enums);
+
+            WriteFieldNameArrays(context, source.Stream);
 
             WriteSourceEpilogue(context, source.Stream);
 
@@ -185,10 +188,43 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);
+            // Lets the checker refuse to run this code with a runtime it was not compiled for.
+            context.WriteLine(output, "[assembly: global::PChecker.SystematicTesting.GeneratedCodeVersion(" +
+                                      "global::PChecker.SystematicTesting.GeneratedCodeVersionAttribute.Current)]");
             context.WriteLine(output, "#pragma warning disable 162, 219, 414, 1998");
             context.WriteLine(output, "namespace PImplementation");
             context.WriteLine(output, "{");
             context.WriteLine(output, "}");
+        }
+
+        private const string FieldNameArraysClassName = "_PFieldNames";
+
+        private const string LazyDefaultPayloadType = "global::PChecker.Runtime.Events.LazyDefaultPayload";
+
+        private static string GetFieldNamesArray(CompilationContext context, NamedTupleType namedTupleType)
+        {
+            var initializer = "new string[]{" + string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\"")) + "}";
+            if (!context.FieldNameArrays.TryGetValue(initializer, out var fieldName))
+            {
+                fieldName = $"F{context.FieldNameArrays.Count}";
+                context.FieldNameArrays.Add(initializer, fieldName);
+            }
+
+            return $"{FieldNameArraysClassName}.{fieldName}";
+        }
+
+        private void WriteFieldNameArrays(CompilationContext context, StringWriter output)
+        {
+            WriteNameSpacePrologue(context, output);
+            context.WriteLine(output, $"internal static class {FieldNameArraysClassName}");
+            context.WriteLine(output, "{");
+            foreach (var (initializer, fieldName) in context.FieldNameArrays)
+            {
+                context.WriteLine(output, $"internal static readonly string[] {fieldName} = {initializer};");
+            }
+
+            context.WriteLine(output, "}");
+            WriteNameSpaceEpilogue(context, output);
         }
 
         private void WriteSourceEpilogue(CompilationContext context, StringWriter output)
@@ -295,7 +331,7 @@ namespace Plang.Compiler.Backend.CSharp
                 }
                 context.Write(output,
                     $"  public static {GetCSharpType(v.Type, true)} {context.Names.GetNameForDecl(v)} = ");
-                context.Write(output, $"{GetDefaultValue(v.Type)}");
+                context.Write(output, $"{GetDefaultValue(context, v.Type)}");
                 context.WriteLine(output, $";");
             }
             context.WriteLine(output, "}");
@@ -313,15 +349,18 @@ namespace Plang.Compiler.Backend.CSharp
             foreach (var field in machine.Fields)
             {
                 context.WriteLine(output,
-                    $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(field.Type)};");
+                    $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
             }
 
             WriteMonitorConstructor(context, output, machine);
 
+            context.WritingMonitorCode = true;
             foreach (var method in machine.Methods)
             {
                 WriteFunction(context, output, method);
             }
+
+            context.WritingMonitorCode = false;
 
             foreach (var state in machine.States)
             {
@@ -589,7 +628,9 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "{");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
             context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
+            context.WriteLine(output, $"internal {declName}({LazyDefaultPayloadType} tag): base(tag) {{ }}");
             context.WriteLine(output, $"public override IPValue Clone() {{ return new {declName}();}}");
+            context.WriteLine(output, $"protected override IPValue CreateDefaultPayload() => {GetDefaultValue(context, pEvent.PayloadType)};");
             context.WriteLine(output, "}");
 
             WriteNameSpaceEpilogue(context, output);
@@ -606,7 +647,7 @@ namespace Plang.Compiler.Backend.CSharp
             foreach (var field in machine.Fields)
             {
                 context.WriteLine(output,
-                    $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(field.Type)};");
+                    $"private {GetCSharpType(field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
             }
 
             //create the constructor event
@@ -749,12 +790,80 @@ namespace Plang.Compiler.Backend.CSharp
             context.WriteLine(output, "}");
         }
 
+        /// <summary>
+        /// Receiving, sending and creating are scheduling points, which the checker implements
+        /// as awaits, so a function doing any of them (directly or through callees) is async.
+        /// Announcing is not a scheduling point, so it does not make a function async. A foreign
+        /// call may send or create, which takes its scheduling points after the call returns (see
+        /// <see cref="WriteForeignCallEpilogue"/>), so a function calling foreign code is async too.
+        /// Monitor code cannot send or create, so it is never async.
+        /// </summary>
+        private static bool IsAsync(CompilationContext context, Function function) =>
+            !context.WritingMonitorCode &&
+            (function.CanReceive || function.CanSendToMachine || function.CanCreate ||
+             (!function.IsForeign && context.ForeignCallers.Contains(function)));
+
+        /// <summary>
+        /// Foreign code cannot be suspended, so the sends and creates it requests are deferred until
+        /// the call returns (see <c>StateMachine.EndForeignCallAsync</c>). Monitors cannot send or
+        /// create, so nothing is written there.
+        /// </summary>
+        private static void WriteForeignCallPrologue(CompilationContext context, StringWriter output, Function callee)
+        {
+            if (callee.IsForeign && !context.WritingMonitorCode)
+            {
+                context.WriteLine(output, "currentMachine.BeginForeignCall();");
+            }
+        }
+
+        /// <summary>
+        /// Takes the scheduling points of the sends and creates that a foreign call requested, in
+        /// order, before anything else runs (in particular before a pending transition unwinds the
+        /// caller).
+        /// </summary>
+        private static void WriteForeignCallEpilogue(CompilationContext context, StringWriter output, Function callee)
+        {
+            if (callee.IsForeign && !context.WritingMonitorCode)
+            {
+                context.WriteLine(output, "await currentMachine.EndForeignCallAsync();");
+            }
+        }
+
+        /// <summary>
+        /// A goto or raise sets a pending transition and returns. The caller must then return as
+        /// well, until control reaches the action that the state machine invoked. A receive can
+        /// raise the halt event. Foreign code can raise or goto through the machine (or call back
+        /// into P code that does), so a foreign function and every function that transitively
+        /// calls one may leave a pending transition too.
+        /// </summary>
+        private static bool MayLeavePendingTransition(CompilationContext context, Function function) =>
+            function.CanRaiseEvent || function.CanChangeState || function.CanReceive ||
+            context.ForeignCallers.Contains(function);
+
+        /// <summary>
+        /// Returns the foreign functions and every function that transitively calls one.
+        /// </summary>
+        private static HashSet<Function> ComputeForeignCallers(Scope globalScope) =>
+            IRTransformer.ComputeForeignCallers(globalScope);
+
+        private string ReturnDefault(Function function) =>
+            GetCSharpType(function.Signature.ReturnType) == "void" ? "return;" : "return default;";
+
+        private void WritePendingTransitionCheck(CompilationContext context, StringWriter output, Function function,
+            Function callee)
+        {
+            if (MayLeavePendingTransition(context, callee))
+            {
+                context.WriteLine(output, $"if (currentMachine.HasPendingTransition) {ReturnDefault(function)}");
+            }
+        }
+
         private void WriteNamedFunctionWrapper(CompilationContext context, StringWriter output, Function function)
         {
             if (function.Role == FunctionRole.Method || function.Role == FunctionRole.Foreign)
                 return;
 
-            var isAsync = function.CanReceive;
+            var isAsync = IsAsync(context, function);
             var signature = function.Signature;
 
             var functionName = context.Names.GetNameForDecl(function);
@@ -798,17 +907,8 @@ namespace Plang.Compiler.Backend.CSharp
                 WriteNamedFunctionWrapper(context, output, function);
             }
 
-            var isAsync = function.CanReceive;
             var signature = function.Signature;
-
             var staticKeyword = isStatic ? "static " : "";
-            var asyncKeyword = isAsync ? "async " : "";
-            var returnType = GetCSharpType(signature.ReturnType);
-
-            if (isAsync)
-            {
-                returnType = returnType == "void" ? "Task" : $"Task<{returnType}>";
-            }
 
             var functionName = context.Names.GetNameForDecl(function);
             var functionParameters = "";
@@ -830,26 +930,43 @@ namespace Plang.Compiler.Backend.CSharp
                 var seperator = functionParameters == "" ? "" : ", ";
                 var functionParameters_machine = functionParameters + string.Concat(seperator, "StateMachine currentMachine");
                 context.WriteLine(output,
-                    $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_machine})");
+                    $"public {staticKeyword}{GetFunctionReturnType(context, function)} {functionName}({functionParameters_machine})");
                 WriteFunctionBody(context, output, function);
 
                 // for monitor
                 if (!(function.CanCreate || function.CanSend || function.IsNondeterministic || function.CanReceive))
                 {
                     var functionParameters_monitor = functionParameters + string.Concat(seperator, "Monitor currentMachine");
+                    var writingMonitorCode = context.WritingMonitorCode;
+                    context.WritingMonitorCode = true;
                     context.WriteLine(output,
-                        $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters_monitor})");
+                        $"public {staticKeyword}{GetFunctionReturnType(context, function)} {functionName}({functionParameters_monitor})");
                     WriteFunctionBody(context, output, function);
+                    context.WritingMonitorCode = writingMonitorCode;
                 }
 
             }
             else
             {
                 context.WriteLine(output,
-                    $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters})");
+                    $"public {staticKeyword}{GetFunctionReturnType(context, function)} {functionName}({functionParameters})");
                 WriteFunctionBody(context, output, function);
             }
 
+        }
+
+        /// <summary>
+        /// Returns the (async) return type of a function, as declared in the current context.
+        /// </summary>
+        private string GetFunctionReturnType(CompilationContext context, Function function)
+        {
+            var returnType = GetCSharpType(function.Signature.ReturnType);
+            if (!IsAsync(context, function))
+            {
+                return returnType;
+            }
+
+            return "async " + (returnType == "void" ? "Task" : $"Task<{returnType}>");
         }
 
         private void WriteFunctionBody(CompilationContext context, StringWriter output, Function function)
@@ -877,7 +994,7 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 var type = local.Type;
                 context.WriteLine(output,
-                    $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
+                    $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetLocalInitializer(context, local)};");
             }
 
             foreach (var bodyStatement in function.Body.Statements)
@@ -924,9 +1041,24 @@ namespace Plang.Compiler.Backend.CSharp
 
         public bool WriteAssignStmt(CompilationContext context, StringWriter output, Function function, AssignStmt assignStmt)
         {
-            var needCtorAdapter = !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
+            // A copy of a variable is converted with a constructor. A fresh value (the C# lowering
+            // assigns those directly) is only cast, as a moved temporary was.
+            var isVariableCopy = assignStmt.Value switch
+            {
+                VariableAccessExpr variableAccess => !variableAccess.Variable.Role.HasFlag(VariableRole.Temp),
+                CloneExpr { Term: VariableAccessExpr variableAccess } => !variableAccess.Variable.Role.HasFlag(VariableRole.Temp),
+                CloneExpr { Term: IExprTerm } => true,
+                _ => false
+            };
+            var needCtorAdapter = isVariableCopy
+                                  && !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
                                   && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
                                   && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
+            if (assignStmt.Value is FunCallExpr foreignCallExpr)
+            {
+                WriteForeignCallPrologue(context, output, foreignCallExpr.Function);
+            }
+
             WriteLValue(context, output, assignStmt.Location);
             context.Write(output, $" = ({GetCSharpType(assignStmt.Location.Type, true)})(");
             if (needCtorAdapter)
@@ -946,6 +1078,12 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             context.WriteLine(output, ");");
+            if (assignStmt.Value is FunCallExpr funCallExpr)
+            {
+                WriteForeignCallEpilogue(context, output, funCallExpr.Function);
+                WritePendingTransitionCheck(context, output, function, funCallExpr.Function);
+            }
+
             return false;
         }
 
@@ -964,7 +1102,7 @@ namespace Plang.Compiler.Backend.CSharp
         public bool WriteCtorStmt(CompilationContext context, StringWriter output, Function function, CtorStmt ctorStmt)
         {
             context.Write(output,
-                $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
+                $"await currentMachine.CreateInterfaceAsync<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
             context.Write(output, "currentMachine");
             if (ctorStmt.Arguments.Any())
             {
@@ -972,12 +1110,12 @@ namespace Plang.Compiler.Backend.CSharp
                 if (ctorStmt.Arguments.Count > 1)
                 {
                     //create tuple from rvaluelist
-                    context.Write(output, "new PTuple(");
+                    context.Write(output, "PTuple.FromOwnedValues(");
                     var septor = "";
                     foreach (var ctorExprArgument in ctorStmt.Arguments)
                     {
                         context.Write(output, septor);
-                        this.WriteExpr(context, output, ctorExprArgument);
+                        WriteOwnedValue(context, output, ctorExprArgument);
                         septor = ",";
                     }
 
@@ -996,7 +1134,8 @@ namespace Plang.Compiler.Backend.CSharp
         public bool WriteFunCallStmt(CompilationContext context, StringWriter output, Function function, FunCallStmt funCallStmt)
         {
             var isStatic = funCallStmt.Function.Owner == null;
-            var awaitMethod = funCallStmt.Function.CanReceive ? "await " : "";
+            var awaitMethod = IsAsync(context, funCallStmt.Function) ? "await " : "";
+            WriteForeignCallPrologue(context, output, funCallStmt.Function);
             var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
             context.Write(output,
                 $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
@@ -1015,6 +1154,8 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             context.WriteLine(output, ");");
+            WriteForeignCallEpilogue(context, output, funCallStmt.Function);
+            WritePendingTransitionCheck(context, output, function, funCallStmt.Function);
             return false;
         }
 
@@ -1028,7 +1169,7 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             context.WriteLine(output, ");");
-            context.WriteLine(output, "return;");
+            context.WriteLine(output, ReturnDefault(function));
             return false;
         }
 
@@ -1104,7 +1245,9 @@ namespace Plang.Compiler.Backend.CSharp
 
         public bool WritePrintStmt(CompilationContext context, StringWriter output, Function function, PrintStmt printStmt)
         {
-            context.Write(output, "currentMachine.LogLine(\"\" + ");
+            // A formatted message is left inline by IRTransformer, which lifts everything that can
+            // have side effects or fail out of it, so this skips formatting it when nothing is logged.
+            context.Write(output, "if (currentMachine.IsTraceEnabled) currentMachine.LogLine(\"\" + ");
             this.WriteExpr(context, output, printStmt.Message);
             context.WriteLine(output, ");");
             return false;
@@ -1113,6 +1256,16 @@ namespace Plang.Compiler.Backend.CSharp
         public bool WriteRaiseStmt(CompilationContext context, StringWriter output, Function function, RaiseStmt raiseStmt)
         {
             //last statement
+            if (raiseStmt.Payload.Any() && raiseStmt.Event is EventRefExpr eventRef)
+            {
+                // The C# lowering leaves event literals inline (see IRTransformer.IsEventLiteral).
+                context.Write(output, "currentMachine.RaiseEvent(");
+                WriteEventWithPayload(context, output, eventRef, raiseStmt.Payload.First());
+                context.WriteLine(output, ");");
+                context.WriteLine(output, ReturnDefault(function));
+                return false;
+            }
+
             if (raiseStmt.Payload.Any())
             {
                 this.WriteExpr(context, output, raiseStmt.Event);
@@ -1123,7 +1276,7 @@ namespace Plang.Compiler.Backend.CSharp
             context.Write(output, "currentMachine.RaiseEvent(");
             this.WriteExpr(context, output, raiseStmt.Event);
             context.WriteLine(output, ");");
-            context.WriteLine(output, "return;");
+            context.WriteLine(output, ReturnDefault(function));
             return false;
         }
 
@@ -1139,7 +1292,7 @@ namespace Plang.Compiler.Backend.CSharp
             // add halt as a special case if doesnt exist
             if (receiveStmt.Cases.All(kv => kv.Key.Name != "PHalt"))
             {
-                context.WriteLine(output,"case PHalt _hv: { currentMachine.RaiseEvent(_hv); break;} ");
+                context.WriteLine(output, $"case PHalt _hv: {{ currentMachine.RaiseEvent(_hv); {ReturnDefault(function)} }}");
 
             }
 
@@ -1157,7 +1310,7 @@ namespace Plang.Compiler.Backend.CSharp
                 {
                     var type = local.Type;
                     context.WriteLine(output,
-                        $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(type)};");
+                        $"{GetCSharpType(type, true)} {context.Names.GetNameForDecl(local)} = {GetLocalInitializer(context, local)};");
                 }
 
                 foreach (var caseStmt in value.Body.Statements)
@@ -1236,6 +1389,16 @@ namespace Plang.Compiler.Backend.CSharp
 
         public bool WriteSendStmt(CompilationContext context, StringWriter output, Function function, SendStmt sendStmt)
         {
+            if (sendStmt.Arguments.Any() && sendStmt.Evt is EventRefExpr eventRef)
+            {
+                context.Write(output, "await currentMachine.SendEventAsync(");
+                this.WriteExpr(context, output, sendStmt.MachineExpr);
+                context.Write(output, ", ");
+                WriteEventWithPayload(context, output, eventRef, sendStmt.Arguments.First());
+                context.WriteLine(output, ");");
+                return false;
+            }
+
             if (sendStmt.Arguments.Any())
             {
                 this.WriteExpr(context, output, sendStmt.Evt);
@@ -1243,7 +1406,7 @@ namespace Plang.Compiler.Backend.CSharp
                 this.WriteExpr(context, output, sendStmt.Arguments.First());
                 context.WriteLine(output, ";");
             }
-            context.Write(output, "currentMachine.SendEvent(");
+            context.Write(output, "await currentMachine.SendEventAsync(");
             this.WriteExpr(context, output, sendStmt.MachineExpr);
             context.Write(output, ", (Event)");
             this.WriteExpr(context, output, sendStmt.Evt);
@@ -1252,11 +1415,40 @@ namespace Plang.Compiler.Backend.CSharp
             return false;
         }
 
+        /// <summary>
+        /// Writes a new event of the specified kind with the specified payload.
+        /// </summary>
+        private void WriteEventWithPayload(CompilationContext context, StringWriter output, EventRefExpr eventRef,
+            IPExpr payload)
+        {
+            var payloadType = GetCSharpType(eventRef.Value.PayloadType, true);
+            context.Write(output, $"new {context.Names.GetNameForDecl(eventRef.Value)}(({payloadType})(");
+            this.WriteExpr(context, output, payload);
+            context.Write(output, "))");
+        }
+
         public bool WriteForeachStmt(CompilationContext context, StringWriter output, Function function, ForeachStmt foreachStmt)
         {
-            var tempVarName = $"__temp_{context.Names.GetNameForDecl(foreachStmt.Item)}";
+            var tempVarName = context.Names.GetTemporaryName($"iter_{context.Names.GetNameForDecl(foreachStmt.Item)}");
             context.Write(output, $"foreach (var {tempVarName} in ");
-            this.WriteExpr(context, output, foreachStmt.IterCollection);
+            // The C# lowering iterates over a copy of a collection that is not fresh, since the body may
+            // change it. A shallow copy is enough if nothing can change the elements in place: the
+            // elements of a set are frozen, and immutable elements cannot change. (The lowering copies
+            // the item of a set if it is changed in place.)
+            var collectionType = foreachStmt.IterCollection.Type.Canonicalize();
+            if (foreachStmt.IterCollection is CloneExpr snapshot &&
+                (collectionType is SetType ||
+                 (collectionType is SequenceType sequenceType && IsImmutableCSharpType(GetCSharpType(sequenceType.ElementType)))))
+            {
+                context.Write(output, $"global::System.Linq.Enumerable.ToArray(({GetCSharpType(collectionType)})(");
+                this.WriteExpr(context, output, snapshot.Term);
+                context.Write(output, "))");
+            }
+            else
+            {
+                this.WriteExpr(context, output, foreachStmt.IterCollection);
+            }
+
             context.WriteLine(output, ") {");
             context.WriteLine(output, $"{context.Names.GetNameForDecl(foreachStmt.Item)} = ({GetCSharpType(foreachStmt.Item.Type)}) {tempVarName};");
             this.WriteStmt(context, output, function, foreachStmt.Body);
@@ -1329,15 +1521,41 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(lvalue));
+                    // An access into the value of another expression (only read, never assigned).
+                    context.Write(output, "(");
+                    this.WriteExpr(context, output, lvalue);
+                    context.Write(output, ")");
+                    break;
             }
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
         public void WriteCloneExpr(CompilationContext context, StringWriter output, CloneExpr cloneExpr)
         {
-            WriteClone(context, output, cloneExpr.Term);
+            if (cloneExpr.Term is IExprTerm term)
+            {
+                WriteClone(context, output, term);
+                return;
+            }
+
+            // The C# lowering also clones accesses into values and choices from collections.
+            var csharpType = GetCSharpType(cloneExpr.Type);
+            if (IsImmutableCSharpType(csharpType))
+            {
+                this.WriteExpr(context, output, cloneExpr.Term);
+                return;
+            }
+
+            context.Write(output, $"(({csharpType})((IPValue)(");
+            this.WriteExpr(context, output, cloneExpr.Term);
+            context.Write(output, "))?.Clone())");
         }
+
+        /// <summary>
+        /// Values of these types are immutable, so they are never cloned.
+        /// </summary>
+        private static bool IsImmutableCSharpType(string csharpType) =>
+            csharpType is "PInt" or "PBool" or "PFloat" or "PString" or "PMachineValue";
 
         public void WriteBinOpExpr(CompilationContext context, StringWriter output, BinOpExpr binOpExpr)
         {
@@ -1345,7 +1563,8 @@ namespace Plang.Compiler.Backend.CSharp
             if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
             {
                 var negate = binOpExpr.Operation == BinOpType.Neq ? "!" : "";
-                context.Write(output, $"({negate}PValues.SafeEquals(");
+                // Typed as PBool, like the other operators, since the C# lowering leaves it inline.
+                context.Write(output, $"((PBool)({negate}PValues.SafeEquals(");
                 if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
                 {
                     context.Write(output, "PValues.Box((long) ");
@@ -1369,11 +1588,13 @@ namespace Plang.Compiler.Backend.CSharp
                     this.WriteExpr(context, output, binOpExpr.Rhs);
                 }
 
-                context.Write(output, "))");
+                context.Write(output, ")))");
             }
             else
             {
-                context.Write(output, "(");
+                // Typed, since the C# lowering leaves it inline and some operators (e.g. % on PInt)
+                // are applied to the converted C# numbers.
+                context.Write(output, $"(({GetCSharpType(binOpExpr.Type)})((");
                 if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
                 {
                     context.Write(output, "(long)");
@@ -1387,7 +1608,7 @@ namespace Plang.Compiler.Backend.CSharp
                 }
 
                 this.WriteExpr(context, output, binOpExpr.Rhs);
-                context.Write(output, ")");
+                context.Write(output, ")))");
             }
         }
 
@@ -1409,9 +1630,9 @@ namespace Plang.Compiler.Backend.CSharp
             {
                 case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
                 case PrimitiveType oldType1 when oldType1.IsSameTypeAs(PrimitiveType.Int):
-                    context.Write(output, "(");
+                    context.Write(output, $"(({GetCSharpType(coerceExpr.Type)})(");
                     this.WriteExpr(context, output, coerceExpr.SubExpr);
-                    context.Write(output, ")");
+                    context.Write(output, "))");
                     break;
 
                 case PermissionType _:
@@ -1473,7 +1694,7 @@ namespace Plang.Compiler.Backend.CSharp
         public void WriteCtorExpr(CompilationContext context, StringWriter output, CtorExpr ctorExpr)
         {
             context.Write(output,
-                $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
+                $"(await currentMachine.CreateInterfaceAsync<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
             context.Write(output, "currentMachine");
             if (ctorExpr.Arguments.Any())
             {
@@ -1481,12 +1702,12 @@ namespace Plang.Compiler.Backend.CSharp
                 if (ctorExpr.Arguments.Count > 1)
                 {
                     //create tuple from rvaluelist
-                    context.Write(output, "new PTuple(");
+                    context.Write(output, "PTuple.FromOwnedValues(");
                     var septor = "";
                     foreach (var ctorExprArgument in ctorExpr.Arguments)
                     {
                         context.Write(output, septor);
-                        this.WriteExpr(context, output, ctorExprArgument);
+                        WriteOwnedValue(context, output, ctorExprArgument);
                         septor = ",";
                     }
 
@@ -1498,12 +1719,12 @@ namespace Plang.Compiler.Backend.CSharp
                 }
             }
 
-            context.Write(output, ")");
+            context.Write(output, "))");
         }
 
         public void WriteDefaultExpr(CompilationContext context, StringWriter output, DefaultExpr defaultExpr)
         {
-            context.Write(output, GetDefaultValue(defaultExpr.Type));
+            context.Write(output, GetDefaultValue(context, defaultExpr.Type));
         }
 
         public void WriteEnumElemRefExpr(CompilationContext context, StringWriter output, EnumElemRefExpr enumElemRefExpr)
@@ -1517,7 +1738,7 @@ namespace Plang.Compiler.Backend.CSharp
             var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
             switch (eventName)
             {
-                case "Halt":
+                case "PHalt":
                     context.Write(output, "new PHalt()");
                     break;
 
@@ -1526,8 +1747,8 @@ namespace Plang.Compiler.Backend.CSharp
                     break;
 
                 default:
-                    var payloadExpr = GetDefaultValue(eventRefExpr.Value.PayloadType);
-                    context.Write(output, $"new {eventName}({payloadExpr})");
+                    // The payload defaults lazily; it is usually assigned right after.
+                    context.Write(output, $"new {eventName}(default({LazyDefaultPayloadType}))");
                     break;
             }
         }
@@ -1545,7 +1766,7 @@ namespace Plang.Compiler.Backend.CSharp
         public void WriteFunCallExpr(CompilationContext context, StringWriter output, FunCallExpr funCallExpr)
         {
             var isStatic = funCallExpr.Function.Owner == null;
-            var awaitMethod = funCallExpr.Function.CanReceive ? "await " : "";
+            var awaitMethod = IsAsync(context, funCallExpr.Function) ? "await " : "";
             var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
             context.Write(output,
                 $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");
@@ -1580,10 +1801,9 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteNamedTupleExpr(CompilationContext context, StringWriter output, NamedTupleExpr namedTupleExpr)
         {
-            var fieldNamesArray = string.Join(",",
-                ((NamedTupleType)namedTupleExpr.Type).Names.Select(n => $"\"{n}\""));
-            fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
-            context.Write(output, $"(new {GetCSharpType(namedTupleExpr.Type)}({fieldNamesArray}, ");
+            // The fields hold fresh values (copies), so the tuple can own them.
+            var fieldNamesArray = GetFieldNamesArray(context, (NamedTupleType)namedTupleExpr.Type);
+            context.Write(output, $"({GetCSharpType(namedTupleExpr.Type)}.FromOwnedValues({fieldNamesArray}, ");
             for (var i = 0; i < namedTupleExpr.TupleFields.Count; i++)
             {
                 if (i > 0)
@@ -1591,10 +1811,24 @@ namespace Plang.Compiler.Backend.CSharp
                     context.Write(output, ", ");
                 }
 
-                this.WriteExpr(context, output, namedTupleExpr.TupleFields[i]);
+                WriteOwnedValue(context, output, namedTupleExpr.TupleFields[i]);
             }
 
             context.Write(output, "))");
+        }
+
+        /// <summary>
+        /// Writes an argument of FromOwnedValues. A single untyped null would be passed as its params
+        /// array, so null is typed.
+        /// </summary>
+        private void WriteOwnedValue(CompilationContext context, StringWriter output, IPExpr value)
+        {
+            if (value is NullLiteralExpr || (value is DefaultExpr && GetDefaultValue(context, value.Type) == "null"))
+            {
+                context.Write(output, "(IPValue)");
+            }
+
+            this.WriteExpr(context, output, value);
         }
 
         public void WriteNondetExpr(CompilationContext context, StringWriter output, NondetExpr expr)
@@ -1640,12 +1874,13 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteUnnamedTupleExpr(CompilationContext context, StringWriter output, UnnamedTupleExpr unnamedTupleExpr)
         {
-            context.Write(output, $"new {GetCSharpType(unnamedTupleExpr.Type)}(");
+            // The fields hold fresh values (copies), so the tuple can own them.
+            context.Write(output, $"{GetCSharpType(unnamedTupleExpr.Type)}.FromOwnedValues(");
             var sep = "";
             foreach (var field in unnamedTupleExpr.TupleFields)
             {
                 context.Write(output, sep);
-                this.WriteExpr(context, output, field);
+                WriteOwnedValue(context, output, field);
                 sep = ", ";
             }
 
@@ -1661,32 +1896,50 @@ namespace Plang.Compiler.Backend.CSharp
 
         public void WriteMapAccessExpr(CompilationContext context, StringWriter output, MapAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteSetAccessExpr(CompilationContext context, StringWriter output, SetAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteNamedTupleAccessExpr(CompilationContext context, StringWriter output, NamedTupleAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteSeqAccessExpr(CompilationContext context, StringWriter output, SeqAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteTupleAccessExpr(CompilationContext context, StringWriter output, TupleAccessExpr expr)
         {
-            WriteLValue(context, output, expr);
+            WriteElementAccess(context, output, expr);
         }
 
         public void WriteVariableAccessExpr(CompilationContext context, StringWriter output, VariableAccessExpr expr)
         {
             WriteLValue(context, output, expr);
+        }
+
+        /// <summary>
+        /// Elements are stored as IPValue. The C# lowering leaves accesses inline, so they are cast to
+        /// the element type.
+        /// </summary>
+        private void WriteElementAccess(CompilationContext context, StringWriter output, IPExpr access)
+        {
+            var csharpType = GetCSharpType(access.Type);
+            if (csharpType == "IPValue")
+            {
+                WriteLValue(context, output, access);
+                return;
+            }
+
+            context.Write(output, $"(({csharpType})");
+            WriteLValue(context, output, access);
+            context.Write(output, ")");
         }
 
         private void WriteClone(CompilationContext context, StringWriter output, IExprTerm cloneExprTerm)
@@ -1698,7 +1951,16 @@ namespace Plang.Compiler.Backend.CSharp
             }
 
             var varName = GetGlobalParamAndLocalVariableName(context, variableRef.Variable);
-            context.Write(output, $"(({GetCSharpType(variableRef.Type)})((IPValue){varName})?.Clone())");
+            var csharpType = GetCSharpType(variableRef.Type);
+
+            // These values are immutable, and cloning a struct would box it twice.
+            if (IsImmutableCSharpType(csharpType))
+            {
+                context.Write(output, varName);
+                return;
+            }
+
+            context.Write(output, $"(({csharpType})((IPValue){varName})?.Clone())");
         }
 
         private string GetCSharpType(PLanguageType type, bool isVar = false)
@@ -1761,7 +2023,23 @@ namespace Plang.Compiler.Backend.CSharp
             }
         }
 
-        private string GetDefaultValue(PLanguageType returnType)
+        /// <summary>
+        /// Temporaries are always assigned before they are read, so building a default value for
+        /// them only allocates. Struct-typed values are free to default and keep their initializer.
+        /// </summary>
+        private string GetLocalInitializer(CompilationContext context, Variable local)
+        {
+            var csharpType = GetCSharpType(local.Type, true);
+            if (local.Role.HasFlag(VariableRole.Temp) &&
+                csharpType is not ("PInt" or "PBool" or "PFloat" or "PString"))
+            {
+                return "null";
+            }
+
+            return GetDefaultValue(context, local.Type);
+        }
+
+        private string GetDefaultValue(CompilationContext context, PLanguageType returnType)
         {
             switch (returnType.Canonicalize())
             {
@@ -1778,16 +2056,15 @@ namespace Plang.Compiler.Backend.CSharp
                     return $"new {GetCSharpType(setType)}()";
 
                 case NamedTupleType namedTupleType:
-                    var fieldNamesArray = string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\""));
-                    fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
+                    var fieldNamesArray = GetFieldNamesArray(context, namedTupleType);
                     var fieldDefaults =
-                        string.Join(", ", namedTupleType.Types.Select(t => GetDefaultValue(t)));
-                    return $"(new {GetCSharpType(namedTupleType)}({fieldNamesArray},{fieldDefaults}))";
+                        string.Join(", ", namedTupleType.Types.Select(t => GetDefaultValue(context, t)));
+                    return $"({GetCSharpType(namedTupleType)}.FromOwnedValues({fieldNamesArray},{fieldDefaults}))";
 
                 case TupleType tupleType:
                     var defaultTupleValues =
-                        string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(t)));
-                    return $"(new {GetCSharpType(tupleType)}({defaultTupleValues}))";
+                        string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(context, t)));
+                    return $"({GetCSharpType(tupleType)}.FromOwnedValues({defaultTupleValues}))";
 
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return "((PBool)false)";

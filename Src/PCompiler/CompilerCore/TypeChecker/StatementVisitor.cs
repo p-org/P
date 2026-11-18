@@ -456,6 +456,7 @@ namespace Plang.Compiler.TypeChecker
             }
 
             method.CanSend = true;
+            method.CanSendToMachine = true;
 
             return new SendStmt(context, machineExpr, evtExpr, args);
         }

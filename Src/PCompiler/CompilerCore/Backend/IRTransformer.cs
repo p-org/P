@@ -11,7 +11,7 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.Backend
 {
-    public class IRTransformer
+    public partial class IRTransformer
     {
         private readonly Function function;
         private int numTemp;
@@ -92,9 +92,13 @@ namespace Plang.Compiler.Backend
 #pragma warning restore CCN0002 // Non exhaustive patterns in switch block
         }
 
+        /// <summary>
+        /// Simplifies an expression whose value is stored or passed on. Accesses into a value (and choose
+        /// from a collection) return the element itself, not a copy, so they are cloned into a temporary;
+        /// every other temporary returned by <see cref="SimplifyExpression"/> already holds a fresh value.
+        /// </summary>
         private (IExprTerm, List<IPStmt>) SimplifyRvalue(IPExpr expr)
         {
-            // TODO: I am suspicious.
             var location = expr.SourceLocation;
             var type = expr.Type;
 #pragma warning disable CCN0002 // Non exhaustive patterns in switch block
@@ -105,6 +109,7 @@ namespace Plang.Compiler.Backend
                 case SetAccessExpr _:
                 case TupleAccessExpr _:
                 case MapAccessExpr _:
+                case ChooseExpr { SubExpr: not null }:
                     (var dataTypeItem, var dataTypeItemDeps) = SimplifyExpression(expr);
                     (IExprTerm cloneddataTypeItem, var cloneddataTypeItemDeps) = SaveInTemporary(new CloneExpr(dataTypeItem));
                     return (cloneddataTypeItem, dataTypeItemDeps.Append(cloneddataTypeItemDeps).ToList());
@@ -318,7 +323,8 @@ namespace Plang.Compiler.Backend
                     return (valuesTemp, deps);
 
                 case StringExpr stringExpr:
-                    (IPExpr[] stringArgs, var stringArgsDeps) = SimplifyFunArgs(stringExpr.Args);
+                    // Formatting only reads its arguments, so they need not be copied out of other values.
+                    (IPExpr[] stringArgs, var stringArgsDeps) = SimplifyFunArgs(stringExpr.Args, copyElements: false);
                     (var stringTemp, var stringStore) = SaveInTemporary(new StringExpr(location, stringExpr.BaseString, stringArgs.ToList()));
                     deps.AddRange(stringArgsDeps);
                     deps.Add(stringStore);
@@ -338,9 +344,14 @@ namespace Plang.Compiler.Backend
                     throw new ArgumentNullException(nameof(statement));
                 case AnnounceStmt announceStmt:
                     (var annEvt, var annEvtDeps) = SimplifyExpression(announceStmt.Event);
-                    (IExprTerm annPayload, List<IPStmt> annPayloadDeps) = announceStmt.Payload == null
-                        ? (null, new List<IPStmt>())
-                        : SimplifyExpression(announceStmt.Payload);
+                    // Monitors receive the payload as a parameter they may change, so pass a copy.
+                    (IExprTerm annPayload, List<IPStmt> annPayloadDeps) = (null, new List<IPStmt>());
+                    if (announceStmt.Payload != null)
+                    {
+                        (var annArgs, var annArgDeps) = SimplifyArgPack(new[] { announceStmt.Payload });
+                        (annPayload, annPayloadDeps) = (annArgs[0], annArgDeps);
+                    }
+
                     return annEvtDeps.Concat(annPayloadDeps)
                         .Concat(new[]
                         {
@@ -451,8 +462,9 @@ namespace Plang.Compiler.Backend
                         .ToList();
                 case AddStmt addStmt:
                     var (addVar, addVarDeps) = SimplifyLvalue(addStmt.Variable);
-                    var (addVal, addValDeps) = SimplifyArgPack(new[] { addStmt.Value });
-                    Debug.Assert(addVal.Count == 1);
+                    // Collections store copies of the values added to them.
+                    var (addVal, addValDeps) = SimplifyFunArgs(new[] { addStmt.Value }, copyElements: false);
+                    Debug.Assert(addVal.Length == 1);
                     return addVarDeps.Concat(addValDeps)
                         .Concat(new[]
                         {
@@ -463,8 +475,9 @@ namespace Plang.Compiler.Backend
                 case InsertStmt insertStmt:
                     (var insVar, var insVarDeps) = SimplifyLvalue(insertStmt.Variable);
                     (var insIdx, var insIdxDeps) = SimplifyExpression(insertStmt.Index);
-                    (var insVal, var insValDeps) = SimplifyArgPack(new[] { insertStmt.Value });
-                    Debug.Assert(insVal.Count == 1);
+                    // Collections store copies of the values inserted into them.
+                    (var insVal, var insValDeps) = SimplifyFunArgs(new[] { insertStmt.Value }, copyElements: false);
+                    Debug.Assert(insVal.Length == 1);
                     return insVarDeps.Concat(insIdxDeps)
                         .Concat(insValDeps)
                         .Concat(new[]
@@ -484,6 +497,12 @@ namespace Plang.Compiler.Backend
                 case NoStmt _:
                     return new List<IPStmt>();
 
+                case PrintStmt { Message: StringExpr printString }
+                    when !printString.Args.Any(arg => MayFormatForeignValue(arg.Type)):
+                    (var printArgs, var printArgDeps) = SimplifyPrintArgs(printString.Args);
+                    return printArgDeps.Append(new PrintStmt(location,
+                        new StringExpr(printString.SourceLocation, printString.BaseString, printArgs))).ToList();
+
                 case PrintStmt printStmt:
                     var deps = new List<IPStmt>();
                     (var newMessage, var printDeps) = SimplifyExpression(printStmt.Message);
@@ -496,7 +515,7 @@ namespace Plang.Compiler.Backend
 
                     (var raiseArgs, var raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);
 
-                    return raiseEventDeps.Concat(raiseEventDeps)
+                    return raiseEventDeps
                         .Concat(raiseArgDeps)
                         .Concat(new[] { raiseEventTempDep })
                         .Concat(new[]
@@ -676,19 +695,87 @@ namespace Plang.Compiler.Backend
             return (refArgs, deps);
         }
 
-        private (IVariableRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs)
+        /// <summary>
+        /// Simplifies the arguments of a formatted print message, which stays inline in the print
+        /// statement so that a backend can skip formatting it when nothing is logged. Everything that
+        /// can have side effects or fail (calls, choices, map and sequence accesses) is lifted into
+        /// the returned statements, which always run, so only the formatting of variables is skipped.
+        /// Unlike call arguments, a variable is not cloned unless a later argument runs statements
+        /// that could change it before the message is formatted.
+        /// </summary>
+        private (List<IPExpr>, List<IPStmt>) SimplifyPrintArgs(IReadOnlyList<IPExpr> printArgs)
+        {
+            var simplified = printArgs.Select(SimplifyExpression).ToList();
+            var args = new List<IPExpr>();
+            var deps = new List<IPStmt>();
+            for (var i = 0; i < simplified.Count; i++)
+            {
+                (var argExpr, var argDeps) = simplified[i];
+                deps.AddRange(argDeps);
+                var isStable = argExpr is VariableAccessExpr variableAccessExpr &&
+                               (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Temp) ||
+                                simplified.Skip(i + 1).All(later => later.Item2.Count == 0));
+                if (isStable)
+                {
+                    args.Add(argExpr);
+                }
+                else
+                {
+                    (var temp, var tempDep) = SaveInTemporary(new CloneExpr(argExpr));
+                    deps.Add(tempDep);
+                    args.Add(temp);
+                }
+            }
+
+            return (args, deps);
+        }
+
+        /// <summary>
+        /// Can formatting a value of the specified type run foreign code (its ToString)? Such a
+        /// print message is formatted even when nothing is logged, in case that code has side effects.
+        /// </summary>
+        private static bool MayFormatForeignValue(PLanguageType type)
+        {
+            switch (type.Canonicalize())
+            {
+                case ForeignType _:
+                case DataType _:
+                    return true;
+                case PrimitiveType primitiveType:
+                    return primitiveType.IsSameTypeAs(PrimitiveType.Any);
+                case SequenceType sequenceType:
+                    return MayFormatForeignValue(sequenceType.ElementType);
+                case SetType setType:
+                    return MayFormatForeignValue(setType.ElementType);
+                case MapType mapType:
+                    return MayFormatForeignValue(mapType.KeyType) || MayFormatForeignValue(mapType.ValueType);
+                case TupleType tupleType:
+                    return tupleType.Types.Any(MayFormatForeignValue);
+                case NamedTupleType namedTupleType:
+                    return namedTupleType.Types.Any(MayFormatForeignValue);
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Simplifies arguments into temporaries that hold copies of their values, which can be moved. With
+        /// <paramref name="copyElements"/> false, a temporary may instead be an element of another value (see
+        /// <see cref="SimplifyRvalue"/>), for uses that only read it or copy it themselves.
+        /// </summary>
+        private (IVariableRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs, bool copyElements = true)
         {
             var funArgs = new IVariableRef[funCallArgs.Count];
             var deps = new List<IPStmt>();
             for (var i = 0; i < funCallArgs.Count; i++)
             {
-                (var argExpr, var argDeps) = SimplifyExpression(funCallArgs[i]);
+                (var argExpr, var argDeps) = copyElements
+                    ? SimplifyRvalue(funCallArgs[i])
+                    : SimplifyExpression(funCallArgs[i]);
                 deps.AddRange(argDeps);
-                // My thoughts: if SimplifyExpression returns a temporary, there's no way that came from user code, thus
-                // it must be either an intermediate expression, or an explicit clone of another value. In either case, the
-                // memory there is invisible to the rest of the program and so it can be moved safely. The first case below
-                // is therefore an optimization that assumes this holds. If things go wrong, comment it out and take the extra
-                // allocations as a hit.
+                // A temporary returned by SimplifyRvalue holds either an intermediate value or an explicit clone of
+                // another value (accesses into values are cloned there). In either case, the memory there is invisible
+                // to the rest of the program and so it can be moved safely.
                 switch (argExpr)
                 {
                     // Move temporaries...

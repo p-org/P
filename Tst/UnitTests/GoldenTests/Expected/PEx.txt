@@ -96,12 +96,6 @@ public class GoldenPModel implements PModel {
             PBool var_$tmp3 =
                 new PBool(false);
             
-            PInt var_$tmp4 =
-                new PInt(0);
-            
-            PString var_$tmp5 =
-                new PString("");
-            
             PInt temp_var_1;
             temp_var_1 = (PInt) (var_count).add(var_n);
             var_$tmp0 = temp_var_1;
@@ -136,15 +130,7 @@ public class GoldenPModel implements PModel {
             }
             else {
                 // 'else' branch
-                PInt temp_var_9;
-                temp_var_9 = (PInt) var_count;
-                var_$tmp4 = temp_var_9;
-                
-                PString temp_var_10;
-                temp_var_10 = (PString) new PString("count={0}", var_$tmp4);
-                var_$tmp5 = temp_var_10;
-                
-                PExGlobal.getScheduler().getLogger().logModel(var_$tmp5.toString());
+                PExGlobal.getScheduler().getLogger().logModel(new PString("count={0}", var_count).toString());
                 
             }
             
@@ -190,35 +176,35 @@ public class GoldenPModel implements PModel {
             PString var_$tmp4 =
                 new PString("");
             
-            PInt temp_var_11;
-            temp_var_11 = (PInt) (var_total).add(var_n);
-            var_$tmp0 = temp_var_11;
+            PInt temp_var_9;
+            temp_var_9 = (PInt) (var_total).add(var_n);
+            var_$tmp0 = temp_var_9;
             
-            PInt temp_var_12;
-            temp_var_12 = (PInt) var_$tmp0;
-            var_total = temp_var_12;
+            PInt temp_var_10;
+            temp_var_10 = (PInt) var_$tmp0;
+            var_total = temp_var_10;
             
-            PBool temp_var_13;
-            temp_var_13 = (PBool) (var_total).ge(new PInt(0));
-            var_$tmp1 = temp_var_13;
+            PBool temp_var_11;
+            temp_var_11 = (PBool) (var_total).ge(new PInt(0));
+            var_$tmp1 = temp_var_11;
             
-            PBool temp_var_14 = var_$tmp1;
-            if (temp_var_14.getValue()) {
+            PBool temp_var_12 = var_$tmp1;
+            if (temp_var_12.getValue()) {
                 // 'then' branch
             }
             else {
                 // 'else' branch
+                PString temp_var_13;
+                temp_var_13 = (PString) new PString("golden.p:37:13");
+                var_$tmp2 = temp_var_13;
+                
+                PString temp_var_14;
+                temp_var_14 = (PString) new PString("total must stay non-negative");
+                var_$tmp3 = temp_var_14;
+                
                 PString temp_var_15;
-                temp_var_15 = (PString) new PString("golden.p:37:13");
-                var_$tmp2 = temp_var_15;
-                
-                PString temp_var_16;
-                temp_var_16 = (PString) new PString("total must stay non-negative");
-                var_$tmp3 = temp_var_16;
-                
-                PString temp_var_17;
-                temp_var_17 = (PString) new PString("{0} {1}", var_$tmp2, var_$tmp3);
-                var_$tmp4 = temp_var_17;
+                temp_var_15 = (PString) new PString("{0} {1}", var_$tmp2, var_$tmp3);
+                var_$tmp4 = temp_var_15;
                 
                 Assert.fromModel((var_$tmp1).getValue(), var_$tmp4);
             }

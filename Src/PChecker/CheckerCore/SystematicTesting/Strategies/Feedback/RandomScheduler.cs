@@ -3,11 +3,14 @@ using System.Linq;
 using PChecker.Generator.Object;
 using PChecker.Random;
 using PChecker.SystematicTesting.Operations;
+using PChecker.SystematicTesting.Strategies;
 
 namespace PChecker.SystematicTesting.Strategies.Probabilistic;
 
 internal class RandomScheduler : IScheduler
 {
+    private protected readonly List<AsyncOperation> EnabledBuffer = new List<AsyncOperation>();
+
     private readonly IRandomValueGenerator _randomValueGenerator;
     public RandomScheduler(IRandomValueGenerator randomValueGenerator)
     {
@@ -16,7 +19,7 @@ internal class RandomScheduler : IScheduler
 
     public bool GetNextOperation(AsyncOperation current, IEnumerable<AsyncOperation> ops, out AsyncOperation next)
     {
-        var enabledOperations = ops.Where(op => op.Status is AsyncOperationStatus.Enabled).ToList();
+        var enabledOperations = EnabledOperations.Collect(ops, EnabledBuffer);
         next = null;
         if (enabledOperations.Count == 0)
         {

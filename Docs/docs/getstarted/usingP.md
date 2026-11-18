@@ -310,6 +310,13 @@ sequence of steps from the initial state to the error state;
 trace and single step through the P program with the generated error trace for debugging
 (more details about debugging P error traces: [here](../advanced/debuggingerror.md)).
 
+After exploring the schedules, the checker also writes an **activity coverage** report: the states,
+transitions and events of each machine that the explored schedules covered (`ClientServer.coverage.txt`,
+plus `ClientServer.sci`, a serialized form of the same data). Collecting it slows down exploration,
+so if you do not need these reports pass `--no-activity-coverage` to skip them. This option does not
+affect scenario coverage (the `*_scenario_coverage.json` report that `p merge-scenario-coverage`
+aggregates).
+
 
 
 

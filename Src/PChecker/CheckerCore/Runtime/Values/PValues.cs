@@ -42,6 +42,13 @@
             return ReferenceEquals(val1, val2) || val1 != null && val1.Equals(val2);
         }
 
+        /// <summary>
+        /// Deep-copies a value. Primitives and machine references are immutable, so the copy
+        /// shares them instead of boxing a new instance.
+        /// </summary>
+        public static IPValue Clone(IPValue value) =>
+            value is PInt or PBool or PFloat or PString or PMachineValue ? value : value?.Clone();
+
         public static IPValue PCastValue(IPValue value, PType type)
         {
             //todo: Needs to be fixed for better error message

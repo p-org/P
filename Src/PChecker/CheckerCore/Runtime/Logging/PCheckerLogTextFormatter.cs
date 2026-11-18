@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using PChecker.IO.Logging;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.Exceptions;
@@ -56,7 +55,8 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc/>
         public void OnCreateStateMachine(StateMachineId id, string creatorName, string creatorType)
         {
-            var source = creatorName ?? $"task '{Task.CurrentId}'";
+            // A state machine without a creator was created by the test method.
+            var source = creatorName ?? "the test";
             var text = $"<CreateLog> {id} was created by {source}.";
             Logger.WriteLine(text);
         }
@@ -278,10 +278,6 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc/>
         public void OnExceptionHandled(StateMachineId id, string stateName, string actionName, Exception ex)
         {
-            if (ex is PNonStandardReturnException)
-            {
-                return;
-            }
             string text;
             if (stateName is null)
             {
@@ -298,10 +294,6 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc/>
         public void OnExceptionThrown(StateMachineId id, string stateName, string actionName, Exception ex)
         {
-            if (ex is PNonStandardReturnException)
-            {
-                return;
-            }
             string text;
             if (stateName is null)
             {
@@ -330,7 +322,7 @@ namespace PChecker.Runtime.Logging
         /// <inheritdoc/>
         public void OnRandom(object result, string callerName, string callerType)
         {
-            var source = callerName ?? $"Task '{Task.CurrentId}'";
+            var source = callerName ?? "The test";
             var text = $"<RandomLog> {source} nondeterministically chose '{result}'.";
             Logger.WriteLine(text);
         }

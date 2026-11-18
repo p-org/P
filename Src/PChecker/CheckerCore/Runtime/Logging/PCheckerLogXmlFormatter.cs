@@ -3,7 +3,6 @@
 
 using System;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using PChecker.Runtime.Events;
 using PChecker.Runtime.StateMachines;
@@ -64,8 +63,8 @@ namespace PChecker.Runtime.Logging
             }
             else
             {
-                Writer.WriteAttributeString("creatorName", Task.CurrentId.ToString());
-                Writer.WriteAttributeString("creatorType", "task");
+                Writer.WriteAttributeString("creatorName", "test");
+                Writer.WriteAttributeString("creatorType", "test");
             }
 
             Writer.WriteEndElement();
@@ -424,8 +423,8 @@ namespace PChecker.Runtime.Logging
             }
             else
             {
-                Writer.WriteAttributeString("senderName", Task.CurrentId.ToString());
-                Writer.WriteAttributeString("senderType", "task");
+                Writer.WriteAttributeString("senderName", "test");
+                Writer.WriteAttributeString("senderType", "test");
             }
 
             // TODO: should this be guarded as above?
@@ -486,8 +485,8 @@ namespace PChecker.Runtime.Logging
             }
             else
             {
-                Writer.WriteAttributeString("creatorName", Task.CurrentId.ToString());
-                Writer.WriteAttributeString("creatorType", "task");
+                Writer.WriteAttributeString("creatorName", "test");
+                Writer.WriteAttributeString("creatorType", "test");
             }
 
             Writer.WriteEndElement();

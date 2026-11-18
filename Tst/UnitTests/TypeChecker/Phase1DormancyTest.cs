@@ -132,6 +132,14 @@ public class Phase1DormancyTest
             scratchTag,
             testDir.FullName.GetHashCode().ToString("X8")));
 
+        // Foreign C# code next to the P files is built with the generated code, as in
+        // PCheckerRunner.cs.
+        var generatedDir = Directory.CreateDirectory(Path.Combine(scratchDir.FullName, "PChecker"));
+        foreach (var nativeFile in testDir.GetFiles("*.cs"))
+        {
+            nativeFile.CopyTo(Path.Combine(generatedDir.FullName, nativeFile.Name), true);
+        }
+
         var config = new CompilerConfiguration(
             output,
             scratchDir,

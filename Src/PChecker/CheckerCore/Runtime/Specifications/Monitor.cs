@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -197,14 +197,30 @@ namespace PChecker.Runtime.Specifications
             Assert(e != null, "{0} is raising a null event.", GetType().FullName);
             CheckDanglingTransition();
             PendingTransition = new Transition(Transition.Type.Raise, default, e);
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Raise };
         }
+
+        /// <summary>
+        /// True if the current action raised an event or a goto transition. Generated code
+        /// checks it after each call that may raise, and returns to unwind the action.
+        /// </summary>
+        public bool HasPendingTransition => PendingTransition.TypeValue != Transition.Type.None;
+
+        /// <summary>
+        /// False while exploring schedules that are not traced. Generated code skips
+        /// formatting print messages then.
+        /// </summary>
+        public bool IsTraceEnabled => Runtime.LogWriter.IsTraceEnabled;
 
         /// <summary>
         /// Writes PrintLog messages to logger.
         /// </summary>
         public void LogLine(string message)
         {
+            if (!IsTraceEnabled)
+            {
+                return;
+            }
+
             Logger.WriteLine($"<PrintLog> {message}");
 
             // Log message to JSON output
@@ -218,6 +234,11 @@ namespace PChecker.Runtime.Specifications
         /// </summary>
         public void Log(string message)
         {
+            if (!IsTraceEnabled)
+            {
+                return;
+            }
+
             Logger.Write($"{message}");
         }
 
@@ -244,7 +265,6 @@ namespace PChecker.Runtime.Specifications
         {
             gotoPayload = payload;
             RaiseGotoStateEvent(typeof(S));
-            throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };
         }
 
         /// <summary>
@@ -488,11 +508,6 @@ namespace PChecker.Runtime.Specifications
                     innerException = innerException.InnerException;
                 }
 
-                if (innerException is PNonStandardReturnException)
-                {
-                    return;
-                }
-                
                 if (innerException is AggregateException)
                 {
                     innerException = innerException.InnerException;

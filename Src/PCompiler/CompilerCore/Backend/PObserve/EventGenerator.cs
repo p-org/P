@@ -18,6 +18,7 @@ namespace Plang.Compiler.Backend.Java
         /// </summary>
         protected override void GenerateCodeImpl()
         {
+            WriteLine(Constants.GeneratedAnnotation);
             WriteLine($"public class {Constants.EventNamespaceName} {{");
             foreach (var e in monitoredEvents(GlobalScope.Machines))
             {

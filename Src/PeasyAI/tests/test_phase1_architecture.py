@@ -96,7 +96,8 @@ class TestLLMProviderFactory(unittest.TestCase):
         reset_default_provider()
         # Clear relevant env vars
         for var in ["LLM_PROVIDER", "OPENAI_BASE_URL", "OPENAI_API_KEY",
-                    "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL"]:
+                    "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL",
+                    "GEMINI_API_KEY", "GOOGLE_API_KEY"]:
             if var in os.environ:
                 del os.environ[var]
     
@@ -125,6 +126,17 @@ class TestLLMProviderFactory(unittest.TestCase):
         os.environ.pop("OPENAI_BASE_URL", None)
         provider = LLMProviderFactory.from_env()
         self.assertEqual(provider.name, "anthropic")
+
+    @patch.dict(
+        os.environ,
+        {"GEMINI_API_KEY": "gemini-key", "GOOGLE_API_KEY": "google-key"},
+        clear=True,
+    )
+    def test_auto_detect_gemini_uses_sdk_key_precedence(self):
+        provider = LLMProviderFactory.from_env()
+
+        self.assertEqual(provider.name, "gemini")
+        self.assertEqual(provider._api_key, "google-key")
     
     def test_explicit_provider_selection(self):
         """Test explicit provider selection via env var"""
@@ -344,5 +356,4 @@ class TestServiceIntegration(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
-
 

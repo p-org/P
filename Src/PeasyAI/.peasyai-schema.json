@@ -14,7 +14,7 @@
         "provider": {
           "type": "string",
           "description": "Active LLM provider",
-          "enum": ["snowflake", "anthropic", "bedrock"],
+          "enum": ["snowflake", "anthropic", "bedrock", "gemini", "google_gemini"],
           "default": "bedrock"
         },
         "model": {
@@ -43,6 +43,13 @@
                 "api_key": { "type": "string", "description": "Anthropic API key" },
                 "model": { "type": "string", "description": "Anthropic model name", "default": "claude-3-5-sonnet-20241022" },
                 "base_url": { "type": "string", "description": "Optional custom base URL" }
+              }
+            },
+            "gemini": {
+              "type": "object",
+              "properties": {
+                "api_key": { "type": "string", "description": "Gemini API key" },
+                "model": { "type": "string", "description": "Gemini model name", "default": "gemini-3.6-flash" }
               }
             },
             "bedrock": {

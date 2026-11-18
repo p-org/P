@@ -132,6 +132,20 @@ class TestToEnvVars(unittest.TestCase):
         self.assertEqual(env["AWS_REGION"], "us-east-1")
         self.assertEqual(env["BEDROCK_MODEL_ID"], "anthropic.claude-3-5-sonnet-20241022-v2:0")
 
+    def test_gemini_env_vars(self):
+        s = PeasyAISettings(
+            llm=LLMConfig(
+                provider="gemini",
+                providers={"gemini": ProviderConfig(api_key="gem-key")},
+            )
+        )
+        with patch.dict(os.environ, {}, clear=True):
+            os.environ.pop("LLM_PROVIDER", None)
+            env = s.to_env_vars()
+        self.assertEqual(env["GEMINI_API_KEY"], "gem-key")
+        self.assertEqual(env["GOOGLE_API_KEY"], "gem-key")
+        self.assertEqual(env["GEMINI_MODEL_NAME"], "gemini-3.6-flash")
+
     def test_model_precedence_llm_level_over_provider(self):
         """llm.model should take priority over providers.snowflake.model."""
         s = PeasyAISettings(

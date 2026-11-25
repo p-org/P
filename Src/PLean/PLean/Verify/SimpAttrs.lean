@@ -1,10 +1,10 @@
 /-
-PLean.Verify.SimpAttrs — register the `pverifySimp` simp attribute.
+PLean.Verify.SimpAttrs — the `pverifySimp` simp set: the rewrite rules
+that normalise a handler obligation after `vcgen` (unfold `commit`, push
+projections through `if`s, …) before it reaches `crush`.
 
-`register_simp_attr` runs at command initialization, so it must be
-elaborated in a different file than any `@[pverifySimp]` use site.
-The lemmas that populate the set live in `Verify/SimpLemmas.lean`;
-the consuming tactics live in `Verify/Tactic.lean`. -/
+`register_simp_attr` must be elaborated in a different file than any use.
+-/
 import Lean
 
 register_simp_attr pverifySimp

@@ -107,7 +107,7 @@ target downloadDependencies pkg : Array FilePath := do
 
 @[default_target]
 lean_lib PLean where
-  globs := #[Glob.one `PLean, Glob.submodules `PLean]
+  globs := #[Glob.one `PLean]
   extraDepTargets := #[``downloadDependencies]
 
 lean_lib Examples where
@@ -115,5 +115,5 @@ lean_lib Examples where
   extraDepTargets := #[``downloadDependencies]
 
 lean_lib Tests where
-  globs := #[Glob.submodules `Tests]
+  globs := #[Glob.submodules `Tests.Prototype, Glob.one `Tests.Semantics.CrushRoundtrip]
   extraDepTargets := #[``downloadDependencies]

@@ -58,6 +58,8 @@ structure PEventDecl where
   /-- Name of the payload type (resolves to a `PTypeDecl` in the module).
       `none` means the event has no payload. -/
   payload   : Option Name
+  /-- True iff the event carries a payload (`event e : T`), whatever `T` is. -/
+  hasPayload : Bool := false
   /-- Saved declaration syntax for replay at `#gen_module` time.
       Deferred for the same reason as types: an event's payload may
       reference a type that is itself deferred. -/
@@ -95,6 +97,8 @@ structure PStateDecl where
       `#gen_module` avoid emitting a handler def and `#pverify` avoid
       emitting per-handler triples + the auto-default obligation. -/
   ignoredEvents : Array Name := #[]
+  /-- Events listed under `defer <e1>, …;`: not delivered in this state. -/
+  deferredEvents : Array Name := #[]
   ref         : Syntax
   deriving Inhabited
 

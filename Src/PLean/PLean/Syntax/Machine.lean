@@ -83,6 +83,10 @@ VC is vacuously satisfied because the state and buffers don't change.
 Saves the SMT pass on shells like `state Won { ignore eNominate; }`. -/
 syntax (name := pStateIgnore)       "ignore " ident,+ : pStateBodyItem
 
+/-- `defer <e1>, <e2>, …;` — the state leaves these events queued: they
+are not delivered while the machine is in this state. -/
+syntax (name := pStateDefer)        "defer " ident,+ : pStateBodyItem
+
 /-! ## Machine-body items
 
   var <ident> : <term>
@@ -158,6 +162,12 @@ private def collectStateMetadata (sname : Name) (isStart : Bool) (ref : Syntax)
         decl := { decl with
                     handles       := decl.handles.push evN
                     ignoredEvents := decl.ignoredEvents.push evN }
+    | `(pStateBodyItem| defer $evs:ident,*) =>
+      for evStx in evs.getElems do
+        let evN := evStx.getId
+        if decl.handles.contains evN || decl.deferredEvents.contains evN then
+          throwErrorAt evStx "state `{sname}` already handles or defers event `{evN}`"
+        decl := { decl with deferredEvents := decl.deferredEvents.push evN }
     | _ => throwErrorAt it "unrecognised state body item"
   return decl
 

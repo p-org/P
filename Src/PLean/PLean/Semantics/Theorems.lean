@@ -42,6 +42,34 @@ def RunOK (Post : GWorld S E F G W → Prop) (g : GWorld S E F G W) (m : Machine
   ∀ coins, Triple act (fun hs => hs = HState.start g.toWorld m ms coins)
     (fun _ hs => Post (gcommit g m hs)) (fun _ => False)
 
+theorem triple_of_run {act : HandlerM S E F G W Unit} {hs0 : HState S E F G W}
+    {Q : Unit → HState S E F G W → Prop} (hs : HState S E F G W)
+    (hrun : act.run hs0 = .ok ((), hs)) (hq : Q () hs) :
+    Triple act (fun hs => hs = hs0) Q (fun _ => False) := by
+  constructor
+  intro s hs'
+  subst hs'
+  show wp act Q (fun _ => False) s
+  rw [StateT.wp_apply_eq, hrun]
+  exact hq
+
+/-- Two handler obligations about the same run combine. -/
+theorem RunOK.and {P Q : GWorld S E F G W → Prop} {g : GWorld S E F G W} {m ms act}
+    (h1 : RunOK P g m ms act) (h2 : RunOK Q g m ms act) :
+    RunOK (fun g' => P g' ∧ Q g') g m ms act := by
+  intro coins
+  obtain ⟨hs, hrun, hp⟩ := triple_run_ok (h1 coins)
+  obtain ⟨hs', hrun', hq⟩ := triple_run_ok (h2 coins)
+  rw [hrun] at hrun'
+  cases hrun'
+  exact triple_of_run hs hrun ⟨hp, hq⟩
+
+theorem RunOK.mono {P Q : GWorld S E F G W → Prop} {g : GWorld S E F G W} {m ms act}
+    (hpq : ∀ g', P g' → Q g') (h : RunOK P g m ms act) : RunOK Q g m ms act := by
+  intro coins
+  obtain ⟨hs, hrun, hp⟩ := triple_run_ok (h coins)
+  exact triple_of_run hs hrun (hpq _ hp)
+
 theorem RunOK.run {Post : GWorld S E F G W → Prop} {g : GWorld S E F G W} {m ms act}
     (h : RunOK Post g m ms act) (coins : Nat → Nat) :
     ∃ hs, g.toWorld.run m ms coins act = (commit g.toWorld m hs, some hs) ∧

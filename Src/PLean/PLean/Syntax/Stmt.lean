@@ -1,49 +1,34 @@
 /-
-PLean.Syntax.Stmt — `doElem`-level macros for statements inside a
-handler body: `send`, `raise`, `goto`, `pnew`, `announce`, plus the
-machine-var assignment `<v> = <expr>`. Each rewrites to a call into
-the corresponding `PLean.*` primitive over the per-pmodule `Sig`.
+PLean.Syntax.Stmt — P statements inside handler bodies, as `doElem`
+macros over the handler primitives (`PLean.H.*`).
 
-Macro hygiene: identifiers that must resolve against user-namespace
-constants emitted by `#gen_module` (`Sig`, `E`/`G` constructors,
-`<S>_st` aliases, the handler's `this`) are built via `mkIdent` and
-spliced in. Bare names inside macro quotations pick up hygiene marks
-and fail to resolve.
+Handler bodies are elaborated inside the machine's namespace, after
+`#gen_module` has emitted the per-pmodule names they refer to: the event
+type `E`, the entry-argument type `G`, the per-machine field accessors
+`<v>_set`, the state aliases `<S>_st` / `<S>_garg`, and the handlers
+`<ev>_handler` (for an inlined `raise`). Those names are built with
+`mkIdent` so they resolve against the user's namespaces rather than
+picking up macro hygiene.
+
+Every machine variable `v` is a `let mut` local of the handler, kept in
+sync with the machine's field: each write updates both.
 -/
 import Lean
-import PLean.Semantics.Primitives
+import PLean.Semantics.Handler
 import PLean.Semantics.Containers
-
-open Lean
 
 namespace PLean
 
-/-! ## Unhygienic identifier helpers (see file-level note on hygiene). -/
+open Lean
 
-private def idThis : Ident := mkIdent `this
-private def idSig  : Ident := mkIdent `Sig
-private def idG    : Ident := mkIdent `G
-private def idGUnit : Ident := mkIdent (`G ++ `unit)
+private def evCtorIdent (ev : Ident) : Ident := mkIdentFrom ev (`E ++ ev.getId)
+private def setterOf (v : Ident) : Ident := mkIdentFrom v (v.getId.appendAfter "_set")
 
-private def thisRef : MacroM (TSyntax `term) := do
-  let thisI := idThis
-  `($thisI |>.ref)
+/-! ## `send` / `announce` -/
 
-private def evCtorIdent (evIdent : Ident) : Ident :=
-  -- `<evname>` ↦ `E.<evname>` (the per-pmodule event-union constructor).
-  mkIdentFrom evIdent (`E ++ evIdent.getId)
-
-/-! ## Send -/
-
-/-- One `field = value` entry in a send payload. -/
 syntax pNamedTupleField := ident " = " term
-
-/-- A non-empty named-tuple payload: `(f = v, …)`. -/
 syntax pSendNamedTuple := "(" pNamedTupleField,+ ")"
 
--- `priority := high` so the named-tuple form wins over the generic
--- `pSendPayload` (a `term` would otherwise consume the parenthesised
--- tuple as an anonymous expression).
 syntax (name := pSendNamed) (priority := high)
   "send " term ", " term ", " pSendNamedTuple : doElem
 syntax (name := pSendPayload)   "send " term ", " term ", " term : doElem
@@ -57,229 +42,125 @@ private def buildAnonRecord (fields : Array (TSyntax `PLean.pNamedTupleField)) :
     `(Lean.Parser.Term.structInstField| $id:ident := $v)
   `({ $entries:structInstField,* })
 
+/-- The event value `E.<ev> payload` (or `E.<ev>`) for an event name. -/
+private def eventValue (ev : TSyntax `term) (payload : Option (TSyntax `term)) :
+    MacroM (TSyntax `term) := do
+  if ev.raw.isIdent then
+    let c := evCtorIdent ⟨ev.raw⟩
+    match payload with
+    | some p => `($c $p)
+    | none => `($c)
+  else pure ev
+
 macro_rules
   | `(doElem| send $target, $ev, ($[$flds:pNamedTupleField],*)) => do
-    let rec : TSyntax `term ← buildAnonRecord flds
-    if ev.raw.isIdent then
-      let evIdent : Ident := ⟨ev.raw⟩
-      let payloadTy := mkIdentFrom evIdent (evIdent.getId.appendAfter "_payload")
-      let evCtor := evCtorIdent evIdent
-      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef)
-                  ($evCtor ($rec : $payloadTy)))
-    else
-      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) $ev)
+    let rec_ ← buildAnonRecord flds
+    let payloadTy := mkIdentFrom ev (ev.raw.getId.appendAfter "_payload")
+    let v ← eventValue ev (some (← `(($rec_ : $payloadTy))))
+    `(doElem| PLean.H.send ($target : PLean.MachineRef) $v)
   | `(doElem| send $target, $ev, $payload:term) => do
-    if ev.raw.isIdent then
-      let evIdent : Ident := ⟨ev.raw⟩
-      let evCtor := evCtorIdent evIdent
-      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) ($evCtor $payload))
-    else
-      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) $ev)
+    `(doElem| PLean.H.send ($target : PLean.MachineRef) $(← eventValue ev (some payload)))
   | `(doElem| send $target, $ev) => do
-    if ev.raw.isIdent then
-      let evIdent : Ident := ⟨ev.raw⟩
-      let evCtor := evCtorIdent evIdent
-      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) $evCtor)
-    else
-      `(doElem| PLean.send (P := $idSig) ($target : PLean.MachineRef) $ev)
-
-/-! ## Raise — intra-machine `send`. -/
-
-syntax (name := pRaisePayload) "raise " term ", " term : doElem
-syntax (name := pRaiseNoPayload) "raise " term : doElem
-
-macro_rules
-  | `(doElem| raise $ev, $payload) => do
-    let tref ← thisRef
-    if ev.raw.isIdent then
-      let evIdent : Ident := ⟨ev.raw⟩
-      let evCtor := evCtorIdent evIdent
-      `(doElem| PLean.raise (P := $idSig) $tref ($evCtor $payload))
-    else
-      `(doElem| PLean.raise (P := $idSig) $tref $ev)
-  | `(doElem| raise $ev) => do
-    let tref ← thisRef
-    if ev.raw.isIdent then
-      let evIdent : Ident := ⟨ev.raw⟩
-      let evCtor := evCtorIdent evIdent
-      `(doElem| PLean.raise (P := $idSig) $tref $evCtor)
-    else
-      `(doElem| PLean.raise (P := $idSig) $tref $ev)
-
-/-! ## Goto — real state transition. -/
-
-syntax (name := pGotoNoPayload) "goto " ident : doElem
-syntax (name := pGotoPayload) "goto " ident ", " term : doElem
-
-macro_rules
-  | `(doElem| goto $st:ident) => do
-    let tref ← thisRef
-    let stTag := mkIdentFrom st (st.getId.appendAfter "_st")
-    `(doElem| PLean.goto (P := $idSig) $tref $stTag $idGUnit)
-  | `(doElem| goto $_st:ident, $payload) => do
-    -- Payload-bearing `goto S, p` is parsed but not yet supported: the
-    -- per-pmodule `Sig.G` union is `Unit`-only. Erroring is safer than
-    -- silently discarding the payload.
-    Macro.throwErrorAt payload
-      "`goto <state>, <payload>` is not yet supported (the per-pmodule \
-       goto-payload union `Sig.G` is `Unit`-only). Use `goto <state>` \
-       and pass arguments via a separate `send`/`raise`."
-
-/-! ## New (machine creation) -/
-
-syntax (name := pNewNoArg) "pnew " ident : doElem
-syntax (name := pNewArg)   "pnew " ident ", " term : doElem
-
--- `pnew M` resolves the kind tag through the per-pmodule registered
--- `<M>_kind : Nat` def (emitted by `Commands/GenModule.lean::emitMachineKinds`).
--- Lean's namespace search picks `<Mod>.<M>_kind` because handler defs
--- elaborate inside `<Mod>.<MachineName>` after `open <Mod>` — the same
--- mechanism that resolves `Sig` and `is_<M>`. Using a hash of `m`'s
--- string form here would let the freshly-created machine violate
--- `<M>_allocated` (the registered tag and the hash needn't match).
-private def kindIdentFor (m : Ident) : Ident :=
-  mkIdentFrom m (m.getId.appendAfter "_kind")
-
-macro_rules
-  | `(doElem| pnew $m:ident) => do
-    let tref ← thisRef
-    let kindId := kindIdentFor m
-    `(doElem| PLean.newMachine (P := $idSig) $tref $kindId)
-  | `(doElem| pnew $m:ident, $_arg) => do
-    let tref ← thisRef
-    let kindId := kindIdentFor m
-    `(doElem| PLean.newMachine (P := $idSig) $tref $kindId)
-
-/-! ## Container mutation
-
-`s += (e)` / `s -= (e)` / `m[k] = v` / `m[k] += (e)` / `m[k] -= (e)`
-rewrite a machine `var` of container type by reading it, applying the
-op, and writing back. Each form re-binds `<v>` after the write so the
-post-update value is visible as a Lean local for the rest of the
-handler — same pattern as `pAssign`.
-
-Expansion table:
-
-| Surface         | Expansion                                                |
-|-----------------|-----------------------------------------------------------|
-| `s += (e)`      | `s := Insert.insert e s`                                  |
-| `s -= (e)`      | `s := PLean.containerErase s e`                           |
-| `m[k] = v`      | `m := PLean.mapInsert m k v`                              |
-| `m[k] += (e)`   | `m := PLean.mapModify m k (Insert.insert e)`              |
-| `m[k] -= (e)`   | `m := PLean.mapModify m k (PLean.containerErase · e)`      |
-
-`PLean.containerErase` is a typeclass that dispatches to set
-difference on `PSet T` and to `mapErase` on `PMap K V`, so `s -= (e)`
-works on both kinds. Map helpers live in `Semantics/Containers.lean`
-and are tagged `@[pverifySimp]` so SMT prep reduces them to their
-`if`-lambda bodies. A user with a `seq` var falls back to `xs = xs ++
-[e]` via the generic `pAssign` macro. -/
-
-syntax (name := pSetAdd) (priority := high)
-  ident " += " "(" term ")" : doElem
-syntax (name := pSetRemove) (priority := high)
-  ident " -= " "(" term ")" : doElem
-syntax (name := pMapAssign) (priority := high)
-  ident "[" term "]" " = " term : doElem
-syntax (name := pMapAdd) (priority := high)
-  ident "[" term "]" " += " "(" term ")" : doElem
-syntax (name := pMapRemove) (priority := high)
-  ident "[" term "]" " -= " "(" term ")" : doElem
-
-macro_rules
-  | `(doElem| $lhs:ident += ($e:term)) => do
-    let tref ← thisRef
-    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
-    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
-    `(doElem| do
-        let $lhs:ident ← $getIdent:ident $tref
-        $setIdent:ident $tref (Insert.insert $e $lhs)
-        let $lhs:ident ← $getIdent:ident $tref)
-  | `(doElem| $lhs:ident -= ($e:term)) => do
-    let tref ← thisRef
-    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
-    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
-    -- `PLean.containerErase` dispatches via the `PContainerErase`
-    -- typeclass: `PSet T` falls through to `\ {e}`, `PMap K V`
-    -- falls through to `mapErase`. The user's choice of `s -= (e)` thus
-    -- works on both shapes without picking up a Lean error at expansion.
-    `(doElem| do
-        let $lhs:ident ← $getIdent:ident $tref
-        $setIdent:ident $tref (PLean.containerErase $lhs $e)
-        let $lhs:ident ← $getIdent:ident $tref)
-  | `(doElem| $lhs:ident [ $k:term ] = $v:term) => do
-    let tref ← thisRef
-    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
-    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
-    `(doElem| do
-        let $lhs:ident ← $getIdent:ident $tref
-        $setIdent:ident $tref (PLean.mapInsert $lhs $k $v)
-        let $lhs:ident ← $getIdent:ident $tref)
-  | `(doElem| $lhs:ident [ $k:term ] += ($e:term)) => do
-    let tref ← thisRef
-    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
-    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
-    `(doElem| do
-        let $lhs:ident ← $getIdent:ident $tref
-        $setIdent:ident $tref
-          (PLean.mapModify $lhs $k (Insert.insert $e))
-        let $lhs:ident ← $getIdent:ident $tref)
-  | `(doElem| $lhs:ident [ $k:term ] -= ($e:term)) => do
-    let tref ← thisRef
-    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
-    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
-    `(doElem| do
-        let $lhs:ident ← $getIdent:ident $tref
-        $setIdent:ident $tref
-          (PLean.mapModify $lhs $k (fun __s => PLean.containerErase __s $e))
-        let $lhs:ident ← $getIdent:ident $tref)
-
-/-! ## Assignment
-
-`pAssign` parses `<ident> = <term>` at high priority (to win over Lean's
-default `=` parses inside a `do` block) and rewrites it into
-`<lhs>_set this.ref <rhs>; let <lhs> ← <lhs>_get this.ref`.
-
-Limitation: the macro fires on any identifier-followed-by-`=` form,
-including ones the user did not intend as a machine-var write. If
-`<lhs>` is not a machine var, the user sees a "unknown identifier
-`x_set`" error rather than a bespoke "var `x` is not declared in this
-machine". A registry-aware version of this macro requires access to the
-local pmodule context at expansion time (only reachable from
-`CommandElabM`, not `MacroM`). -/
-
-syntax (name := pAssign) (priority := high) ident " = " term : doElem
-
-macro_rules
-  | `(doElem| $lhs:ident = $rhs:term) => do
-    let tref ← thisRef
-    let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
-    let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
-    `(doElem| do
-        $setIdent:ident $tref $rhs
-        let $lhs:ident ← $getIdent:ident $tref)
-
-/-! ## Announce -/
+    `(doElem| PLean.H.send ($target : PLean.MachineRef) $(← eventValue ev none))
 
 syntax (name := pAnnouncePayload)   "announce " term ", " term : doElem
 syntax (name := pAnnounceNoPayload) "announce " term            : doElem
 
 macro_rules
   | `(doElem| announce $ev, $payload) => do
-    let tref ← thisRef
-    if ev.raw.isIdent then
-      let evIdent : Ident := ⟨ev.raw⟩
-      let evCtor := evCtorIdent evIdent
-      `(doElem| PLean.announce (P := $idSig) $tref ($evCtor $payload))
-    else
-      `(doElem| PLean.announce (P := $idSig) $tref $ev)
+    `(doElem| PLean.H.announce $(← eventValue ev (some payload)))
   | `(doElem| announce $ev) => do
-    let tref ← thisRef
-    if ev.raw.isIdent then
-      let evIdent : Ident := ⟨ev.raw⟩
-      let evCtor := evCtorIdent evIdent
-      `(doElem| PLean.announce (P := $idSig) $tref $evCtor)
+    `(doElem| PLean.H.announce $(← eventValue ev none))
+
+/-! ## Control: `goto`, `raise`, `halt` -/
+
+syntax (name := pGotoNoPayload) "goto " ident : doElem
+syntax (name := pGotoPayload) "goto " ident ", " term : doElem
+
+macro_rules
+  | `(doElem| goto $st:ident) => do
+    let tag := mkIdentFrom st (st.getId.appendAfter "_st")
+    `(doElem| do PLean.H.goto $tag $(mkIdent `G.none); return)
+  | `(doElem| goto $st:ident, $arg) => do
+    let tag := mkIdentFrom st (st.getId.appendAfter "_st")
+    let garg := mkIdentFrom st (st.getId.appendAfter "_garg")
+    `(doElem| do PLean.H.goto $tag ($garg $arg); return)
+
+/-- `raise ev[, payload]`: run the current state's handler for `ev` right
+away (P semantics: the raised event is handled before any dequeue), then
+end this handler. `raise halt` halts the machine. -/
+syntax (name := pRaisePayload) "raise " ident ", " term : doElem
+syntax (name := pRaiseNoPayload) "raise " ident : doElem
+
+macro_rules
+  | `(doElem| raise $ev:ident) => do
+    if ev.getId == `halt then
+      `(doElem| do PLean.H.halt; return)
     else
-      `(doElem| PLean.announce (P := $idSig) $tref $ev)
+      let h := mkIdentFrom ev (ev.getId.appendAfter "_handler")
+      `(doElem| do $h:ident; return)
+  | `(doElem| raise $ev:ident, $payload) => do
+    let h := mkIdentFrom ev (ev.getId.appendAfter "_handler")
+    `(doElem| do $h:ident $payload; return)
+
+/-! ## `new` -/
+
+syntax (name := pNewNoArg) "pnew " ident : doElem
+syntax (name := pNewArg)   "pnew " ident ", " term : doElem
+
+macro_rules
+  | `(doElem| pnew $m:ident) => do
+    let start := mkIdentFrom m (m.getId ++ `start_st)
+    `(doElem| discard <| PLean.H.new (PLean.MachineState.fresh $start $(mkIdent `G.none)))
+  | `(doElem| pnew $m:ident, $arg) => do
+    let start := mkIdentFrom m (m.getId ++ `start_st)
+    let garg := mkIdentFrom m (m.getId ++ `start_garg)
+    `(doElem| discard <| PLean.H.new (PLean.MachineState.fresh $start ($garg $arg)))
+
+/-! ## `assert` -/
+
+syntax (name := pAssert) "assert " term : doElem
+
+macro_rules
+  | `(doElem| assert $c) => `(doElem| PLean.H.passert (decide ($c)) 0)
+
+/-! ## Assignments and container updates
+
+Each writes the local `v` and the machine field `v`. -/
+
+syntax (name := pSetAdd) (priority := high) ident " += " "(" term ")" : doElem
+syntax (name := pSetRemove) (priority := high) ident " -= " "(" term ")" : doElem
+syntax (name := pMapAssign) (priority := high) ident "[" term "]" " = " term : doElem
+syntax (name := pMapAdd) (priority := high) ident "[" term "]" " += " "(" term ")" : doElem
+syntax (name := pMapRemove) (priority := high) ident "[" term "]" " -= " "(" term ")" : doElem
+syntax (name := pAssign) (priority := high) ident " = " term : doElem
+
+macro_rules
+  | `(doElem| $v:ident += ($e:term)) =>
+    `(doElem| do $v:ident := PLean.PContainerAdd.add $v $e; $(setterOf v):ident $v)
+  | `(doElem| $v:ident -= ($e:term)) =>
+    `(doElem| do $v:ident := PLean.PContainerErase.erase $v $e; $(setterOf v):ident $v)
+  | `(doElem| $v:ident [ $k:term ] = $x:term) =>
+    `(doElem| do $v:ident := PLean.PMap.put $v $k $x; $(setterOf v):ident $v)
+  | `(doElem| $v:ident [ $k:term ] += ($e:term)) =>
+    `(doElem| do
+        $v:ident := PLean.PMap.put $v $k (PLean.PContainerAdd.add (($v).get $k |>.getD default) $e)
+        $(setterOf v):ident $v)
+  | `(doElem| $v:ident [ $k:term ] -= ($e:term)) =>
+    `(doElem| do
+        $v:ident := PLean.PMap.put $v $k (PLean.PContainerErase.erase (($v).get $k |>.getD default) $e)
+        $(setterOf v):ident $v)
+  | `(doElem| $v:ident = $rhs:term) =>
+    `(doElem| do $v:ident := $rhs; $(setterOf v):ident $v)
+
+/-! ## Nondeterminism -/
+
+/-- What `choose(c)` picks from. -/
+class PChoose (C : Type) (R : outParam Type) where
+  choose {S E F G W : Type} : C → HandlerM S E F G W R
+
+instance : PChoose Int Int := ⟨H.chooseInt⟩
+instance {T : Type} [DecidableEq T] : PChoose (PSet T) T := ⟨H.chooseSet⟩
+instance {K V : Type} [DecidableEq K] : PChoose (PMap K V) K := ⟨fun m => H.chooseSet m.keySet⟩
 
 end PLean

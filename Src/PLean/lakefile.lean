@@ -115,5 +115,5 @@ lean_lib Examples where
   extraDepTargets := #[``downloadDependencies]
 
 lean_lib Tests where
-  globs := #[Glob.submodules `Tests.Prototype, Glob.one `Tests.Semantics.CrushRoundtrip]
+  globs := #[Glob.submodules `Tests]
   extraDepTargets := #[``downloadDependencies]

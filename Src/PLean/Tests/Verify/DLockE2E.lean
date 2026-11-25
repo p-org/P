@@ -1,33 +1,14 @@
 /-
-Profiling probe: a tiny pmodule with two trivial SMT obligations,
-run with `pverify.profile := true` and `pverify.cache := false`
-(so the solver runs on every obligation, no cache hits).
-
-We use a tiny synthetic pmodule rather than importing the real
-`DistributedLock` example so re-elaboration is forced and the
-instrumented branch of `pverify_smt` actually fires.
-
-The profile output is two `logInfo` tables:
-- per-obligation top-10 by wall time (cache.pp/hash/fs + smt.prep/auto/solver/assign);
-- stage aggregate with % of total.
-
-Read the aggregate row to identify the bottleneck. Headline finding
-(2026-06-19): `smt.auto` (lean-auto translation) dominates over
-`smt.solver` (cvc5 process), confirming the first cache attempt's
-postmortem — the solver is NOT the wall-clock bottleneck.
+End-to-end: DistributedLock through `#gen_module` / `#pverify`.
 -/
 import PLean
 
-open PLean Std.WP
+open PLean
 
-set_option pverify.profile true
-set_option pverify.cache true
-set_option pverify.smt.solver "cvc5"
-set_option pverify.smt.timeout 30
-set_option maxHeartbeats 4000000
+pmodule DLockT
 
-pmodule ProfileProbe
-
+  -- Name the pmodule's global state once; every `invariant` / `init-holds`
+  -- / `paxiom` body below may reference `s` as the live state.
   system s
 
   type tGrant  = (node : PLean.MachineRef, epoch : Int)
@@ -55,6 +36,14 @@ pmodule ProfileProbe
     }
   }
 
+  -- Ported from the P source's `init-condition`: at startup exactly
+  -- one Node holds the lock (with a positive epoch); every other Node
+  -- has `held = false` and `epoch = 0`. The `∀ n : Node` / `∃ n : Node`
+  -- quantifiers auto-inject `is_Node n.ref s` guards at materialisation
+  -- — bare `n : Node` value would otherwise admit refs whose state
+  -- slot is unallocated or has a different kind. The `n.held` / `n.epoch`
+  -- shorthand desugars to `(s.machines n.ref).fields.Node_held` /
+  -- `Node_epoch` via the field-projection sugar.
   init-holds (
     ∃ n : Node,
       n.held = true ∧
@@ -65,7 +54,6 @@ pmodule ProfileProbe
         n1.epoch = 0)
 
   Theorem safety {
-
     invariant unique_holder :
       ∀ n1 n2 : Node,
         n1.held = true →
@@ -81,26 +69,32 @@ pmodule ProfileProbe
       ∀ e1 e2 : eAccept,
         inflight e1 s → inflight e2 s → e1 = e2
 
+    -- Ported from the P source: when an eAccept is in flight from
+    -- node n1, n1 has already released the lock. `e.source` desugars
+    -- to `(eAccept_payload_of e).source` via the field-projection sugar.
     invariant not_held_after_release :
       ∀ n1 : Node, ∀ e : eAccept,
         inflight e s →
         e.source = n1.ref →
         n1.held = false
 
+    -- Ported from the P source: an in-flight eAccept always
+    -- transfers to a strictly higher epoch.
     invariant transfer_to_higher :
       ∀ (n1 : Node) (e : eAccept),
         inflight e s →
         e.source = n1.ref →
         e.epoch > n1.epoch
-  
   }
 
   Proof Safety {
     prove safety ;
-    prove default ;
   }
 
-end ProfileProbe
+end DLockT
 
-#gen_module ProfileProbe
-#pverify ProfileProbe
+#gen_module DLockT
+#pverify DLockT
+
+/-- info: 'DLockT.safety_holds' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in #print axioms DLockT.safety_holds

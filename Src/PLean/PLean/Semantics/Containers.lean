@@ -7,6 +7,7 @@ lookup unfolds to an `if` over the pre-state lookup. Values are finite by
 construction, which makes `support` / `card` (P's `sizeof`, `foreach`,
 `choose`) executable and their lemmas unconditional.
 -/
+import PLean.Verify.SimpAttrs
 
 namespace PLean
 
@@ -188,5 +189,57 @@ theorem mem_keySet : ∀ (m : PMap K V) (k : K), m.keySet.mem k = (m.get k).isSo
     by_cases h : k' = k <;> simp [h]
 
 end PMap
+
+/-! ## Surface instances: `∈`, `m[k]?`, `+=`, `-=`, iteration -/
+
+section Instances
+variable {T K V : Type} [DecidableEq T] [DecidableEq K]
+
+instance : Membership T (PSet T) := ⟨fun s x => s.mem x = true⟩
+instance (s : PSet T) (x : T) : Decidable (x ∈ s) := inferInstanceAs (Decidable (s.mem x = true))
+instance : Insert T (PSet T) := ⟨fun x s => s.add x⟩
+instance : EmptyCollection (PSet T) := ⟨.empty⟩
+
+instance : Membership K (PMap K V) := ⟨fun m k => m.has k = true⟩
+instance (m : PMap K V) (k : K) : Decidable (k ∈ m) := inferInstanceAs (Decidable (m.has k = true))
+instance : GetElem? (PMap K V) K V (fun m k => k ∈ m) where
+  getElem m k h := (m.get k).get (by simpa [Membership.mem, PMap.has, Option.isSome_iff_ne_none] using h)
+  getElem? m k := m.get k
+instance : EmptyCollection (PMap K V) := ⟨.empty⟩
+
+@[pverifySimp] theorem PSet.mem_iff (s : PSet T) (x : T) : x ∈ s ↔ s.mem x = true := Iff.rfl
+@[pverifySimp] theorem PSet.insert_eq (s : PSet T) (x : T) : insert x s = s.add x := rfl
+@[pverifySimp] theorem PSet.emptyc_eq : (∅ : PSet T) = .empty := rfl
+@[pverifySimp] theorem PMap.mem_iff (m : PMap K V) (k : K) : k ∈ m ↔ (m.get k).isSome = true := Iff.rfl
+@[pverifySimp] theorem PMap.getElem?_eq (m : PMap K V) (k : K) : m[k]? = m.get k := rfl
+@[pverifySimp] theorem PMap.emptyc_eq : (∅ : PMap K V) = .empty := rfl
+
+attribute [pverifySimp] PSet.mem PMap.get PMap.has
+
+/-- `c -= (e)`: remove an element (sets) or a key (maps). -/
+class PContainerErase (C : Type) (E : outParam Type) where
+  erase : C → E → C
+
+instance : PContainerErase (PSet T) T := ⟨PSet.del⟩
+instance : PContainerErase (PMap K V) K := ⟨PMap.del⟩
+
+/-- `c += (e)` on sets; `m += (k, v)` on maps (upsert). -/
+class PContainerAdd (C : Type) (E : outParam Type) where
+  add : C → E → C
+
+instance : PContainerAdd (PSet T) T := ⟨PSet.add⟩
+instance : PContainerAdd (PMap K V) (K × V) := ⟨fun m kv => m.put kv.1 kv.2⟩
+
+/-- What `foreach (x in c)` iterates over. -/
+class PIterable (C : Type) (T : outParam Type) where
+  toList : C → List T
+
+instance : PIterable (List T) T := ⟨id⟩
+instance : PIterable (PSet T) T := ⟨PSet.support⟩
+instance : PIterable (PMap K V) K := ⟨fun m => m.keySet.support⟩
+
+attribute [pverifySimp] PContainerErase.erase PContainerAdd.add
+
+end Instances
 
 end PLean

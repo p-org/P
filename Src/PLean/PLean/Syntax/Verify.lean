@@ -22,7 +22,7 @@ fail in any but the most trivial cases.
 import Lean
 import PLean.Internal.Decls
 import PLean.Internal.Registry
-import PLean.Semantics.GlobalState
+import PLean.Semantics.Msg
 
 open Lean Elab Command
 
@@ -287,8 +287,7 @@ wildcard binder there and there's no outer `<σ>` to shadow. -/
 private partial def containsExplicitStateBinder (stx : Syntax) : Option Syntax := Id.run do
   if stx.isIdent then
     let n := stx.getId
-    if n == ``PLean.GlobalState || n == `GlobalState
-        || n == `PLean.GlobalState then
+    if n == ``PLean.GWorld || n == `GWorld || n == `GW || n == `PLean.GWorld then
       return some stx
   for child in stx.getArgs do
     if let some hit := containsExplicitStateBinder child then
@@ -529,7 +528,7 @@ partial def injectKindGuards (machineKinds eventKinds : NameSet)
     (sBinder : Name) (stx : Syntax)
     (rewriteWrapperToRef : Bool := false) : MacroM Syntax := do
   let sIdent : Ident := mkIdent sBinder
-  let sigLabelTy : TSyntax `term ← `(($(mkIdent `Sig)).Label)
+  let sigLabelTy : TSyntax `term ← `(PLean.Msg $(mkIdent `E))
   let asTerm (s : Syntax) : TSyntax `term := ⟨s⟩
   -- First, normalise multi-binder forms (`∀ x y : T, …`,
   -- `∀ (x : T) (y : U), …`) to nested single-binder shape.
@@ -825,8 +824,6 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
   | some stx =>
     let `(invariant $id:ident : $prop:term) := stx
       | throwErrorAt stx "internal error: invariant defStx malformed"
-    let sigId : Ident := mkIdent `Sig
-    let gsTy : Ident := mkIdent ``PLean.GlobalState
     let binderIdent : Ident :=
       match d.stateBinder with
       | some sName => mkIdent sName
@@ -845,7 +842,7 @@ def materialiseInvariant (machineKinds eventKinds : NameSet)
         pure ⟨stxOut⟩
       | none => pure prop
     let cmd ← `(command|
-      @[reducible] def $id : ($gsTy $sigId) → Prop := fun $binderIdent => $prop')
+      @[reducible] def $id : $(mkIdent `GW) → Prop := fun $binderIdent => $prop')
     elabCommand cmd
 
 def materialiseAxiom (machineKinds eventKinds : NameSet)
@@ -879,9 +876,7 @@ def materialiseAxiom (machineKinds eventKinds : NameSet)
         injectKindGuards machineKinds eventKinds sName rewritten
       let prop' : TSyntax `term := ⟨guarded⟩
       let sBinder : Ident := mkIdent sName
-      let gsTy : Ident := mkIdent ``PLean.GlobalState
-      let sigId : Ident := mkIdent `Sig
-      elabCommand (← `(axiom $id : ∀ $sBinder : $gsTy $sigId, $prop'))
+      elabCommand (← `(axiom $id : ∀ $sBinder : $(mkIdent `GW), $prop'))
 
 def materialiseInit (_d : PInitDecl) : CommandElabM Unit := do
   -- Per-clause materialisation is a no-op: aggregation lives in

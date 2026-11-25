@@ -46,4 +46,22 @@ open Lean Elab Tactic in
 /-- Split every hypothesis that is (syntactically) a conjunction. -/
 elab "pv_split_ands" : tactic => liftMetaTactic fun g => return [← g.casesAnd]
 
+open Lean Meta Elab Tactic in
+/-- Destructure hypotheses that are conjunctions or existentials, and locals of
+a message type (`PLean.Msg`) or a machine-wrapper type (a structure whose only
+field is `ref`), so the obligation mentions their fields directly. -/
+elab "pv_destruct" : tactic => liftMetaTactic fun g => do
+  let env ← getEnv
+  g.casesRec fun d => do
+    if d.isImplementationDetail || d.isLet then return false
+    let t ← instantiateMVars d.type
+    if t.isAppOfArity ``And 2 || t.isAppOfArity ``Exists 2 then return true
+    match t.getAppFn with
+    | .const c _ =>
+      if c == `PLean.Msg then return true
+      match getStructureInfo? env c with
+      | some info => return info.fieldNames == #[`ref]
+      | none => return false
+    | _ => return false
+
 end PLean

@@ -22,7 +22,7 @@ private def lockCtx : CexNameCtx := {
 }
 
 /-- A cvc5 model for a DistributedLock `eGrant` obligation, as embedded
-in `loom_smt`'s `the goal is false:` diagnostic. -/
+in `plean_smt`'s `the goal is false:` diagnostic. -/
 private def capturedDiagnostic : String :=
   "cvc5: the goal is false:" ++
   "((define-fun |_this| () |_Node| (|_mk| 3)) " ++

@@ -7,7 +7,7 @@ obligation left is the base case for `always_true`, which closes by
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule PingPongTrivial
 

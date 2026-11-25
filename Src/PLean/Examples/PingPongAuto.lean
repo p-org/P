@@ -13,7 +13,7 @@ handler is a no-op so the invariant transfers verbatim.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule PingPongAuto
 

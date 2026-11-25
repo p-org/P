@@ -16,10 +16,10 @@ Soundness regressions for state-implicit invariants:
 -/
 import PLean
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 8
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 8
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## Probe 1 — a false invariant correctly fails.
 
@@ -207,7 +207,7 @@ end SoundnessR6
 #gen_module SoundnessR6
 
 namespace SoundnessR6
-open PartialCorrectness DemonicChoice
+open Std.WP
 
 -- A deliberately-sorried manual proof of the (false) obligation. Its
 -- statement type-checks, but the proof is a hole.

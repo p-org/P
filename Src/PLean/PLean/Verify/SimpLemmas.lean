@@ -16,7 +16,6 @@ Tactics that consume this set live in `Verify/Tactic.lean`
 (`pverify_smt_prep` / `pverify_smt`).
 -/
 import Lean
-import Loom.MonadAlgebras.WP.Tactic
 import PLean.Semantics.GlobalState
 import PLean.Semantics.Predicates
 import PLean.Verify.SimpAttrs
@@ -41,7 +40,7 @@ simproc ↓ funextEq (_ = _) :=
     let_expr Eq _ lhs rhs := e | return .continue
     let lhsT ← inferType lhs
     if lhsT.isArrow && (← inferType rhs).isArrow then
-      let bn ← Lean.Meta.getUnusedUserName `a
+      let bn := (← getLCtx).getUnusedName `a
       let bt := lhsT.bindingDomain!
       let nlhs := app lhs (bvar 0)
       let nrhs := app rhs (bvar 0)

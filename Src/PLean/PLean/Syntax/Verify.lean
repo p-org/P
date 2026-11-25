@@ -909,7 +909,7 @@ SMT-visibility gaps:
    Class.field>` gets type `[ord : <Class> <T>] → GS → Prop`, not
    `GS → Prop`. The bundle predicate `def L : GS → Prop := fun s =>
    P s` then can't typecheck (`P s` is missing the instance argument).
-2. Lctx invisibility. `loom_smt [*]` collects only the local context,
+2. Lctx invisibility. `plean_smt [*]` collects only the local context,
    so even if the invariant body elaborated, the class's stated axioms
    would be invisible to SMT.
 

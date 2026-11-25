@@ -11,7 +11,7 @@ Each `pinstance` synthesises an axiomatic witness, an anonymous
 `instance` for typeclass resolution, and one top-level axiom per
 Prop-typed class field. The obligation generator injects every
 pmodule axiom (hand-written `paxiom` or `pinstance`-synthesised) into
-every VC's local context, so `loom_smt [*]` sees them.
+every VC's local context, so `plean_smt [*]` sees them.
 
 `x is Won` is a state check (distinct from the event/machine-kind
 `is`); ported as `stateOf x s = Won_st`.
@@ -29,7 +29,7 @@ two manual proofs are the inductive steps through `goto Won`:
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 class LeOrder (t : Type) where
   le          : t → t → Bool
@@ -135,7 +135,7 @@ Manual proofs for the two `goto Won` inductive-step obligations
 obligation names `#pverify` prints.
 -/
 namespace RingLeader
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 -- `Safety` inductive step through `goto Won`. The solver can't
 -- synthesise the one fact it needs: `SelfPendingMax` applied to the

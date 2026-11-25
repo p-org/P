@@ -20,10 +20,10 @@ Target safety goals:
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 10
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 10
 set_option loom.solver.smt.retryOnUnknown false
 set_option auto.mono.ignoreNonQuasiHigherOrder true
 
@@ -325,7 +325,7 @@ end ClockBound
 #pwf        ClockBound
 
 namespace ClockBound
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 end ClockBound
 

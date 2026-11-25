@@ -2,7 +2,7 @@
 Tests.Verify.CexParserGolden — pin the counter-example parser/renderer
 output on fixed model strings.
 
-`renderModelText` consumes the model S-expression `loom_smt` embeds in
+`renderModelText` consumes the model S-expression `plean_smt` embeds in
 its SAT diagnostic, against a `CexNameCtx` carrying registry-derived
 names (state→machine, `Fields` order, event payload fields). These tests
 feed it a synthetic model + ctx and pin the rendered result, so parser

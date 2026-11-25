@@ -1,11 +1,17 @@
 import Lake
 open Lake DSL System
 
-require Loom from git "https://github.com/verse-lab/loom.git"
-  @ "d10340821daf0ea04e05e7eec53814e0a9b248ce"
+-- Verification-condition generation comes from Lean core (`Std.WP` /
+-- `vcgen`); SMT discharge goes through lean-auto's SMT-LIB translation
+-- (see `PLean/Verify/Smt.lean`). Mathlib is only used for `tauto` in
+-- the fallback tactics (`set[T]` is PLean's own `PSet`).
+require mathlib from git "https://github.com/leanprover-community/mathlib4" @ "v4.36.0"
+require auto from git "https://github.com/leanprover-community/lean-auto.git" @ "v4.36.0"
 
 package PLean where
-  leanOptions := #[⟨`pp.unicode.fun, true⟩]
+  -- `experimental.intrinsic` acknowledges core's (experimental) loop
+  -- `invariant` clauses, which PLean's `foreach` / `while` desugar to.
+  leanOptions := #[⟨`pp.unicode.fun, true⟩, ⟨`experimental.intrinsic, true⟩]
 
 -- Solver versions — must match dependencies.toml.
 def z3.version := "4.15.4"
@@ -90,13 +96,12 @@ def downloadDependency (pkg : Package) (oFile : FilePath) (build : Package → F
   let srcJob ← inputTextFile lakefilePath
   buildFileAfterDep oFile srcJob fun _srcFile => build pkg oFile
 
--- Loom's SMT.lean resolves solver paths relative to its own source via
--- `currentDirectory!`, which evaluates to `.lake/packages/Loom/.lake/build/`
--- when Loom is consumed as a dependency. We download solvers there.
-def loomBuildDir (pkg : Package) := pkg.lakeDir / "packages" / "Loom" / ".lake" / "build"
-
+-- `PLean/Verify/Smt.lean` resolves solver paths relative to its own
+-- source via `currentDirectory!`, i.e. `<PLean>/.lake/build/{z3,cvc5}` —
+-- `pkg.buildDir` both when PLean is the root package and when it is
+-- consumed as a dependency.
 target downloadDependencies pkg : Array FilePath := do
-  let solverDir := loomBuildDir pkg
+  let solverDir := pkg.buildDir
   let z3 ← downloadDependency pkg (solverDir / "z3") (downloadSolver Solver.z3)
   let cvc5 ← downloadDependency pkg (solverDir / "cvc5") (downloadSolver Solver.cvc5)
   return Job.collectArray #[z3, cvc5]

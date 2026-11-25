@@ -7,7 +7,7 @@ Side-by-side regression for the two `#pverify` paths:
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## Case A — without `@[pverifyProof]`, the auto path runs. -/
 

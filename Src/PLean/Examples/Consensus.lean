@@ -47,10 +47,10 @@ liveness (a quorum is reachable), not the safety property verified here.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 10
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 10
 
 pmodule Consensus
 
@@ -163,7 +163,7 @@ end Consensus
 #pwf        Consensus
 
 namespace Consensus
-open PartialCorrectness DemonicChoice
+open Std.WP
 
 -- Quorum-intersection axiom, phrased on *vote sets* exactly as P's
 -- source: any two quorum-strength vote sets share a member. This is
@@ -516,7 +516,7 @@ theorem Node.RequestVoting.entry_correct_block0_quorum_votes
     intro s h hk; exact ⟨h, hk⟩
   intro _
   show triple (l := PProp Sig) _ (Node.votes_get this.ref >>= fun _ => _) _
-  apply triple_bind (cut := fun _ : Set MachineRef =>
+  apply triple_bind (cut := fun _ : PSet MachineRef =>
     (fun s => quorum_votes s ∧ is_Node this.ref s : PProp Sig))
   · unfold Node.votes_get
     pverify_step_wp

@@ -1,6 +1,6 @@
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule MissingPremiseProbe
 

@@ -1,41 +1,34 @@
 /-
-PLean.Semantics.Monad — the P monad over Loom.
+PLean.Semantics.Monad — the P monad.
 
-  `PM P α := NonDetT (StateT (GlobalState P) DivM) α`
+  `PM P α := StateT (GlobalState P) Id α`
 
-with assertion lattice `PProp P := GlobalState P → Prop`. P's
-safety-only verification doesn't need an `ExceptT` layer on top.
+with assertion lattice `PProp P := GlobalState P → Prop`, which is
+exactly the `Pred` that `Std.WP`'s `StateT`/`Id` `WPMonad` instances
+assign to `PM P`, so `vcgen` applies to handler bodies directly.
 
-`NonDetT`-outermost is load-bearing for the partial-correctness +
-demonic-choice mode the verifier targets — the lattice instances live
-under `scoped` in `PartialCorrectness DemonicChoice`. Importers reach
-the instances via the standard preamble:
-
-  ```lean
-  import PLean.Semantics.Monad
-  open PLean PartialCorrectness DemonicChoice
-  ```
+INTERIM. This is the deterministic placeholder PLean adopted when it
+dropped Loom (whose `PM` was `NonDetT (StateT (GlobalState P) DivM)`).
+It is pending the transition-model redesign:
+- no nondeterminism layer, so `PLean.choose` is currently unavailable;
+- divergence is covered by `Lean.Order.MonadTail` (core provides it
+  for `StateT σ Id`), which is what `Std.WP`'s partial-correctness
+  `repeat`/`while` loop specs require.
 -/
-import Loom.MonadAlgebras.NonDetT.Basic
-import Loom.MonadAlgebras.Instances.StateT
-import Loom.MonadAlgebras.Instances.Basic
-import Loom.MonadAlgebras.WP.Basic
-import Loom.MonadAlgebras.WP.Tactic
+import Std.WP
 import PLean.Semantics.GlobalState
 
 namespace PLean
 
-/-- The P monad: nondeterministic state-passing over divergence. -/
+/-- The P monad: state-passing over the global system state. -/
 abbrev PM (P : ProgramSig) (α : Type) :=
-  NonDetT (StateT (GlobalState P) DivM) α
+  StateT (GlobalState P) Id α
 
 /-- The P assertion lattice: predicates over the global state. -/
 abbrev PProp (P : ProgramSig) := GlobalState P → Prop
 
-/-! ## Instance check (compile-time): every layer of the stack
-synthesises its `MAlgOrdered` instance once `PartialCorrectness
-DemonicChoice` is open. We instantiate the program signature with the
-trivial all-`Unit` shape so this check has zero runtime cost. -/
+/-! ## Instance check (compile-time): `PM` carries a `Std.WP`
+interpretation whose assertion language is `PProp`. -/
 
 namespace Internal
 
@@ -43,8 +36,8 @@ namespace Internal
 private def TrivialSig : ProgramSig :=
   { E := Unit, G := Unit, S := Unit, F := Unit }
 
-open PartialCorrectness DemonicChoice in
-noncomputable example : MAlgOrdered (PM TrivialSig) (PProp TrivialSig) :=
+open Std.WP in
+example : WPMonad (PM TrivialSig) (PProp TrivialSig) EStack⟨⟩ :=
   inferInstance
 
 end Internal

@@ -4,7 +4,7 @@ PLean.Commands.GenModule — `#gen_module M` finalisation command.
 Walks the registry and emits, in dependency order: machine wrapper
 structs; types and enums; per-event payload abbrevs; the per-pmodule
 unions (`<Mod>.E` / `G` / `S` / `Fields`) and aliases (`Sig` / `PM'` /
-`GS`); `#derive_lifted_wp` for `get`/`set`; per-machine var accessors,
+`GS`); per-machine var accessors,
 state-tag aliases, and handler defs; finally invariants / axioms /
 init-conditions / function / pinstance materialisation.
 
@@ -25,7 +25,6 @@ import PLean.Semantics.Monad
 import PLean.Semantics.Primitives
 import PLean.Semantics.Predicates
 import PLean.Semantics.Default
-import Loom.Meta
 import PLean.Verify.SimpAttrs
 
 open Lean Elab Command
@@ -54,7 +53,7 @@ structure VarInfo where
       instead of `Prop` (lean-auto rejects `Prop`-codomain functions
       under quantifiers as higher-order), and the accessor / field
       projection bridges between the storage Bool and the surface
-      `Set T`. -/
+      `PSet T`. -/
   isSetProp : Bool
 
 /-- Classify a container `var`'s declared type. Returns `(isContainer,
@@ -97,7 +96,6 @@ private def idGS       : Ident := mkIdent `GS
 private def idThis     : Ident := mkIdent `this
 private def idGet      : Ident := mkIdent `get
 private def idSet      : Ident := mkIdent `set
-private def idDivM     : Ident := mkIdent `DivM
 private def idMachineRef : Ident := mkIdent `PLean.MachineRef
 private def idProgramSig : Ident := mkIdent `PLean.ProgramSig
 private def idPM_PLean   : Ident := mkIdent `PLean.PM
@@ -346,7 +344,7 @@ private def emitProgramUnions (ctx : LocalPModuleCtx)
       -- `T → Prop`) trips lean-auto's SMT translator
       -- ("Higher order input?") when the container field type appears
       -- in `GlobalState`. Substitute `Bool` for the storage type and
-      -- bridge back to `Set T` in the accessor (`<v>_get` /
+      -- bridge back to `PSet T` in the accessor (`<v>_get` /
       -- `<v>_set`). Mirrors PVerifier's UCLID5 boolean-array encoding
       -- of `set[T]`.
       let (domStxOpt, codomStxOpt) ← Lean.Elab.Command.runTermElabM
@@ -525,7 +523,7 @@ exclude a spurious label of that tag, so the goal comes back `unknown`.
 
 The `@[pverifySimp]` tag means `pverify_smt_prep`'s `simp only
 [pverifySimp]` rewrites every `is_<ev> e` into the action equality
-before `loom_smt` runs, so SMT sees a concrete constructor equality.
+before `plean_smt` runs, so SMT sees a concrete constructor equality.
 Pairwise disjointness between events is then *derived* by the solver
 from `EventOrGoto` / `E` constructor injectivity — no separate
 disjointness lemma is needed. -/
@@ -561,31 +559,6 @@ private def emitIsCharacterizations (ctx : LocalPModuleCtx) : CommandElabM Unit 
           · simp_all
       ))
 
-/-! ## `#derive_lifted_wp` for the per-pmodule `get`/`set`
-
-These register `loomSpec` lemmas that teach `wpgen` how to step through
-state reads and writes. Without them, surface-emitted handler triples
-stall at the first `← get`. -/
-
-private def emitDerivedWP : CommandElabM Unit := do
-  -- The `open` is needed so `MAlgOrdered` and the lifted WP machinery
-  -- find the scoped instances. We *don't* bake it into the surrounding
-  -- file (that would force every importer into partial-correctness +
-  -- demonic-choice mode); we open it just for the duration of the
-  -- `#derive_lifted_wp` call.
-  let pcId : Ident := mkIdent `PartialCorrectness
-  let dcId : Ident := mkIdent `DemonicChoice
-  elabCommand (← `(open $pcId:ident $dcId:ident in
-    #derive_lifted_wp for
-      ($idGet : StateT $idGS $idDivM $idGS)
-      as $idPM $idGS
-  ))
-  elabCommand (← `(open $pcId:ident $dcId:ident in
-    #derive_lifted_wp (s : $idGS) for
-      ($idSet s : StateT $idGS $idDivM PUnit)
-      as $idPM PUnit
-  ))
-
 /-! ## Per-machine var accessors and state-tag aliases -/
 
 private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
@@ -616,7 +589,7 @@ private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
         if v.isSetProp then
           -- `set[T]` case: container field stores `MachineRef × T →
           -- Bool` (the SMT-friendly encoding); accessor lifts back to
-          -- `Set T = T → Prop` for the user surface. Writes go through
+          -- `PSet T = T → Prop` for the user surface. Writes go through
           -- `Classical.decide`-based conversion. Marked `noncomputable`
           -- because the bridge uses classical decidability; not a
           -- problem since handler bodies are only ever symbolically
@@ -675,15 +648,7 @@ private def emitVarAccessors (mname : Name) (vars : Array VarInfo) :
         ))
     else
       -- Accessors are `@[reducible] def` so the obligation generator's
-      -- `unfold <v>_get/<v>_set` step reaches the underlying `get`/`set`
-      -- whose `loomSpec` is registered by the per-pmodule
-      -- `#derive_lifted_wp` (`emitDerivedWP`).
-      --
-      -- WHY no type ascription on `← get`: the ascribed
-      -- `(get : StateT _ _ _)` form does not match the registered
-      -- discr-tree key, so `wpgen` falls back to `WPGen.default`. Letting
-      -- Lean pick `get` from the `MonadStateOf` instance produces the
-      -- key shape the spec expects.
+      -- `unfold <v>_get/<v>_set` step reaches the underlying `get`/`set`.
       elabCommand (← `(
         @[reducible] def $getName ($idThis : $idMachineRef) : $idPM $ty := do
           let s ← get
@@ -811,7 +776,7 @@ private def materialiseStateBodyItem (mname sname : Name) (vars : Array VarInfo)
     ))
   | `(pStateBodyItem| on $ev:ident goto $tgt:ident) =>
     -- Emit a synthetic `_handler` whose body is just the `goto`. The
-    -- per-handler obligation needs a Lean def to apply `wpgen` to; without
+    -- per-handler obligation needs a Lean def to apply `vcgen` to; without
     -- one, the (state, event) pair was silently skipped and the goto's
     -- `currentState` / `sent` / `actionCount` mutations went unverified.
     -- The binder list matches the obligation generator's call shape:
@@ -1099,7 +1064,6 @@ def elabPGenModule : CommandElab := fun stx => do
     -- `is_<ev>_iff` lemmas need both `is_<ev>` (from `emitIsPredicates`)
     -- and the union types (so `E.<ev>` resolves).
     emitIsCharacterizations ctx
-    emitDerivedWP
     -- Materialise `pure` functions, `paxiom`s, and `pinstance`s before
     -- the per-machine handler bodies and the verification declarations:
     -- handler bodies and invariants may reference a `function`, an

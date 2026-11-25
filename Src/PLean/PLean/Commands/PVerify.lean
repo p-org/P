@@ -57,7 +57,7 @@ private def renderDiagnostic (rec : Verify.ObligationRecord) : String :=
   | _ => ""
 where
   indentBy (n : Nat) (s : String) : String :=
-    let pad := String.mk (List.replicate n ' ')
+    let pad := String.ofList (List.replicate n ' ')
     String.intercalate "\n" (s.splitOn "\n" |>.map (pad ++ ·))
 
 /-- Render the manual-proof skeleton for a single failed obligation,
@@ -88,12 +88,11 @@ def elabPVerify : CommandElab := fun stx => do
     -- ref assignment) when profiling is off — cheap to always do.
     liftM (PLean.Verify.Profile.reset : IO Unit)
     liftM (PLean.resetDiagMap : IO Unit)
-    -- Open `<Mod>` and `PartialCorrectness.DemonicChoice` so emitted
-    -- theorems resolve unqualified module names and so `wpgen` sees
-    -- the scoped `MAlgOrdered` instances it needs.
+    -- Open `<Mod>` and `Std.WP` so emitted theorems resolve
+    -- unqualified module names and so the `Triple` statements see
+    -- `Std.WP`'s scoped `Prop`-lattice / `CCPO` instances.
     elabCommand (← `(namespace $name))
-    elabCommand (← `(open $(mkIdent `PartialCorrectness):ident
-                          $(mkIdent `DemonicChoice):ident))
+    elabCommand (← `(open $(mkIdent `Std.WP):ident))
     let result ← Verify.synthesise modName ctx
     elabCommand (← `(end $name))
     let proofCount := ctx.proofs.foldl (init := 0) fun acc p =>

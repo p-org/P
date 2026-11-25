@@ -16,7 +16,7 @@ after every `Node`-quantified binder.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule DistributedLock
 
@@ -111,7 +111,7 @@ end DistributedLock
 #pwf        DistributedLock
 
 namespace DistributedLock
-open PartialCorrectness DemonicChoice
+open Std.WP
 
 end DistributedLock
 

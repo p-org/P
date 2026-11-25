@@ -16,7 +16,7 @@ namespace PLean.Tests.Containers
 
 /-! ## Surface macros: type-level desugaring -/
 
-example : set[Nat] = Set Nat := rfl
+example : set[Nat] = PSet Nat := rfl
 example : seq[Nat] = List Nat := rfl
 example : map[Nat, Nat] = PMap Nat Nat := rfl
 example : map[Nat, Nat] = (Nat → Option Nat) := rfl
@@ -32,7 +32,7 @@ example (m : Nat → Option Nat) (k : Nat) :
     mapErase m k = fun x => if x = k then none else m x := by
   rfl
 
-example (m : Nat → Option (Set Nat)) (k : Nat) (f : Set Nat → Set Nat) :
+example (m : Nat → Option (PSet Nat)) (k : Nat) (f : PSet Nat → PSet Nat) :
     mapModify m k f = fun x => if x = k then (m x).map f else m x := by
   rfl
 
@@ -52,7 +52,7 @@ example (m : Nat → Option Nat) (k : Nat) :
     (mapErase m k) k = none :=
   mapErase_eq m k
 
-example (m : Nat → Option (Set Nat)) (k : Nat) (f : Set Nat → Set Nat) :
+example (m : Nat → Option (PSet Nat)) (k : Nat) (f : PSet Nat → PSet Nat) :
     (mapModify m k f) k = (m k).map f :=
   mapModify_eq m k f
 
@@ -72,13 +72,12 @@ predicate applications. Both shapes round-trip through cvc5 (see
 `Tests/Semantics/SmtVeilRecipe.lean` for `GlobalState.addSent`'s
 analogous shape). -/
 
-example (s : Set Nat) (x e : Nat) :
+example (s : PSet Nat) (x e : Nat) :
     x ∈ Insert.insert e s ↔ x = e ∨ x ∈ s := by
   simp only [pverifySimp]
 
-example (s : Set Nat) (x e : Nat) :
-    x ∈ s \ Set.singleton e ↔ x ∈ s ∧ x ≠ e := by
-  simp only [pverifySimp]
-  tauto
+example (s : PSet Nat) (x e : Nat) :
+    x ∈ s \ {e} ↔ x ∈ s ∧ x ≠ e := by
+  simp only [pverifySimp, ne_eq]
 
 end PLean.Tests.Containers

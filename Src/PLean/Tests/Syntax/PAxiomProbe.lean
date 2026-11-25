@@ -2,7 +2,7 @@
 Regression: `paxiom` declarations reach SMT in every obligation.
 
 PLean materialises `paxiom <id> : <prop>` as a top-level Lean `axiom`,
-but `loom_smt [*]` / lean-auto's `collectAllLemmas` reads only the
+but `plean_smt [*]` / lean-auto's `collectAllLemmas` reads only the
 local context — top-level axioms are invisible by default. The
 obligation generator (`Verify/Obligation.lean`) injects a
 `have hax_<id> := @<id>` per pmodule axiom into both per-handler and
@@ -21,7 +21,7 @@ without restating them as `invariant` bundles.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule AxiomProbe
 

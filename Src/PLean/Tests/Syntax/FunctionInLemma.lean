@@ -11,7 +11,7 @@ emitted invariants first, so a `Lemma`-block reference to a
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule FnInLemma
 

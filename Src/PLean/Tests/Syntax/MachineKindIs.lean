@@ -8,7 +8,7 @@ machine with one kind's tag and another kind's control state.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule Phase3R20Mod
 

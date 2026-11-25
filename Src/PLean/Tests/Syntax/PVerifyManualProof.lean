@@ -8,7 +8,7 @@ obligation.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule PVerifyManualProofDemo
 
@@ -33,7 +33,7 @@ end PVerifyManualProofDemo
 #gen_module PVerifyManualProofDemo
 
 namespace PVerifyManualProofDemo
-open PartialCorrectness DemonicChoice
+open Std.WP
 
 /-- User-supplied manual proof. The theorem name MUST match the shape
 `<M>.<S>.<ev>_correct_<proofTag>_<target>` the obligation generator

@@ -16,15 +16,15 @@ make it close. All 25 obligations discharge via SMT.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
-set_option loom.solver "cvc5"
+set_option pverify.smt.solver "cvc5"
 -- Each obligation now preserves the full invariant bundle (10 in
 -- `system_config`, 8 in `safety`), so the per-obligation VC is far
 -- larger than the single-invariant skeleton; the 3 s probe budget that
 -- the skeleton used returns `unknown` on these. 30 s matches the
 -- DistributedLock port.
-set_option loom.solver.smt.timeout 30
+set_option pverify.smt.timeout 30
 
 pmodule LockServer
 
@@ -176,7 +176,7 @@ end LockServer
 #pwf        LockServer
 
 namespace LockServer
-open PartialCorrectness DemonicChoice
+open Std.WP
 
 /-! ## Manual proofs for the three send-handler `system_config` obligations.
 

@@ -9,8 +9,8 @@ manual proofs of obligations SMT can't close (registered via
 User-facing tactics (a typical manual proof composes some of these):
 
 - `pverify` — auto-discharge: step WP + close-chain.
-- `pverify_step_wp` — run `wpgen` and clean up the resulting `WPGen`
-  shapes, leaving a propositional VC.
+- `pverify_step_wp` — run `vcgen` and normalise the resulting VCs
+  (INTERIM: the post-`vcgen` cleanup is untuned; see below).
 - `pverify_smt_prep`, `pverify_smt` — pre-SMT normalisation
   and the SMT discharger.
 - `pverify_split_smt`, `pverify_grind` — fallbacks for goals
@@ -26,17 +26,15 @@ helper. The obligation generator and manual proofs both call the named
 tactics; bare lemma references would get hygiene marks at expansion.
 -/
 import Lean
-import Loom.MonadAlgebras.WP.Basic
-import Loom.MonadAlgebras.WP.Tactic
-import Loom.SMT
+import Std.WP
 import Mathlib.Tactic.Tauto
 import PLean.Semantics.Default
 import PLean.Semantics.GlobalState
 import PLean.Semantics.Predicates
 import PLean.Semantics.Primitives
-import PLean.Semantics.Loop
 import PLean.Verify.SimpLemmas
 import PLean.Verify.Profile
+import PLean.Verify.Smt
 
 open Lean Elab Tactic Meta
 
@@ -115,74 +113,33 @@ elab_rules : tactic
           evalTactic (← `(tactic| sorry))
         | none => pure ()
 
-/-- Run `wpgen` and clean up the post-`wpgen` plumbing.
+/-- Run `vcgen` on a `Std.WP.Triple` obligation and normalise the
+verification conditions it emits.
 
-After `wpgen`, the goal carries `WPGen.bind` / `WPGen.pure` shapes,
-`GlobalState` update terms, and (for conditional handlers) Loom's
-`WithName` / `iInf` machinery from `if_pos` / `if_neg` branches. We
-strip each in sequence so the goal arrives at SMT prep as a clean
-propositional fact.
-
-For loop-bearing handlers (`foreach` / `while`), the post-`wpgen`
-goal additionally carries Loom's `forWithInvariantLoop` shape —
-`⌜∀ b, invariantSeq (inv b) ≤ (wpg b).get …⌝ ⊓ spec …`. The
-`invariantSeq` / `List.foldr` / `spec` unfolds turn that into a
-plain implication chain `∀ b, P1 b ∧ P2 b → … ≤ …`, ready for SMT
-or another `wpgen` pass on the body's `wpg`. -/
+INTERIM. This replaces Loom's `wpgen` plus its `WPGen.*` /
+`invariantSeq` / `spec` clean-up chain one-for-one, pending the
+transition-model redesign and the `vcgen` switch. The clean-up below
+only reduces `GlobalState` update helpers and the default-invariant
+aliases; it has not been tuned against `vcgen`'s goal shapes, so the
+SMT-prep pipeline that follows may not yet see the first-order shapes
+it expects. `vcgen` may emit several VCs (one per branch / loop
+obligation); every step below runs on all of them. -/
 syntax "pverify_step_wp" : tactic
 macro_rules
   | `(tactic| pverify_step_wp) => `(tactic| (
-      -- Run `wpgen` then a second pass on every subgoal it produces.
-      -- A loop-bearing handler's outer `wpgen` produces a subgoal
-      -- "WPGen (body x)" for the iteration body; the inner `wpgen`
-      -- on that subgoal peels the body's `send` / `set` calls down
-      -- to their registered `loomSpec`s. Without the second pass
-      -- the subgoal falls through to `WPGen.default`, leaving a
-      -- `Cont (PProp Sig) _`-typed atom lean-auto rejects.
-      wpgen
-      all_goals (try wpgen)
-      all_goals (first | apply WPGen.default | skip)
-      try simp only [loomLogicSimp, loomWpSimp, loomWPGenRewrite]
-      try simp only [PLean.GlobalState.addSent, PLean.GlobalState.bumpActionCount,
-                     PLean.GlobalState.addReceived, PLean.GlobalState.updateMachine]
-      try simp only [WithName.mk', WithName.erase, typeWithName.erase]
-      try simp only [iInf_apply, iInf_Prop_eq, iSup_apply, iSup_Prop_eq]
-      try simp only [if_true, if_false]
-      -- Loop-specific cleanup. After `wpgen` matches
-      -- `WPGen.forWithInvariantLoop`, the goal carries:
-      -- (1) `invariantSeq [I1, …, Ik] = I1 ⊓ … ⊓ Ik ⊓ ⊤` (the invariant
-      --     list folded into a meet);
-      -- (2) `spec pre post` (Loom's `pre ⊓ ⌜post ≤ wp ⌝` shape);
-      -- (3) `(I ⊓ ⊤) s` reads as a `Pi`-typed meet applied to `s` —
-      --     reduce via `Pi.inf_apply` / `Pi.top_apply` / `inf_Prop_eq`
-      --     so the goal becomes a plain `∧`-chain of `Prop`s.
-      try simp only [invariantSeq, List.foldr] at *
-      try unfold spec at *
-      try unfold WithName at *
-      try simp only [Pi.inf_apply, Pi.top_apply, inf_Prop_eq] at *
-      -- A second pass: after `spec` and `WithName` unfold, the
-      -- residual `invariantSeq`s buried in the body's WPGen result
-      -- get reduced too.
-      try simp only [invariantSeq, List.foldr] at *
-      try simp only [Pi.inf_apply, Pi.top_apply, inf_Prop_eq] at *
-      -- After the meet unfolds, residual `_ ∧ ⊤` clauses come from
-      -- the empty done-with branch of an unannotated loop. Collapse
-      -- them so the iteration VC reads as a plain `Prop` conjunction.
-      try simp only [Prop.top_eq_true, and_true, true_and] at *
-      -- A `Lean.Loop`-driven `while` whose body doesn't reference the
-      -- iteration carrier leaves `∀ _ : GlobalState Sig, P` with `P`
-      -- closed in the binder. lean-auto rejects the quantified
-      -- function-typed-record sort even when the binder is unused;
-      -- `forall_const` collapses the vacuous quantifier.
-      try simp only [forall_const] at *
-      -- Unfold framework default-invariant aliases so the iteration
-      -- VC's `DefaultInvariants s` becomes a plain conjunction of
-      -- `UniqueActions s ∧ IncreasingCount s ∧ ReceivedSubsetSent s`,
-      -- each of which lean-auto translates first-order.
-      try unfold PLean.DefaultInvariants at *
-      try unfold PLean.UniqueActions at *
-      try unfold PLean.IncreasingCount at *
-      try unfold PLean.ReceivedSubsetSent at *
+      set_option experimental.vcgen true in vcgen
+      all_goals (try simp only [PLean.GlobalState.addSent, PLean.GlobalState.bumpActionCount,
+                                PLean.GlobalState.addReceived, PLean.GlobalState.updateMachine])
+      all_goals (try simp only [if_true, if_false])
+      all_goals (try simp only [forall_const] at *)
+      -- Unfold framework default-invariant aliases so `DefaultInvariants
+      -- s` becomes `UniqueActions s ∧ IncreasingCount s ∧
+      -- ReceivedSubsetSent s`, each of which lean-auto translates
+      -- first-order.
+      all_goals (try unfold PLean.DefaultInvariants at *)
+      all_goals (try unfold PLean.UniqueActions at *)
+      all_goals (try unfold PLean.IncreasingCount at *)
+      all_goals (try unfold PLean.ReceivedSubsetSent at *)
     ))
 
 /-! ## Pre-SMT preparation (internal to `pverify_smt`)
@@ -194,6 +151,18 @@ compound `machines _` lookups under an opaque extractor). Manual
 proofs call `pverify_smt`, which calls `pverify_smt_prep`, which
 calls the other two; calling the internal tactics directly is rarely
 useful. -/
+
+/-- The first application subterm of `e` (pre-order; arguments before
+head) satisfying `p`. Shared traversal for the state-destructuring
+passes below. -/
+private partial def findAppSubtermM (p : Expr → MetaM Bool) (e : Expr) :
+    MetaM (Option Expr) := do
+  if e.isApp then
+    if ← p e then return some e
+  for sub in e.getAppArgs.push e.getAppFn do
+    if sub != e then
+      if let some hit ← findAppSubtermM p sub then return hit
+  return none
 
 /-- Destruct every `GlobalState`-typed local into its primitive
 fields (sent / received / machines / containers / actionCount),
@@ -354,14 +323,8 @@ elab_rules : tactic
           if codom.isArrow then return true
         | _ => pure ()
       return false
-    let rec firstMSProj (e : Expr) : MetaM (Option Expr) := do
-      if e.isApp then
-        if ← isMachineStateTy (← Lean.Meta.inferType e) then
-          return some e
-      for sub in e.getAppArgs.push e.getAppFn do
-        if sub != e then
-          if let some hit ← firstMSProj sub then return hit
-      return none
+    let firstMSProj : Expr → MetaM (Option Expr) :=
+      findAppSubtermM fun e => do isMachineStateTy (← Lean.Meta.inferType e)
     let collectAllInLocals : MetaM (Array Expr) := do
       let lctx ← getLCtx
       let mut acc : Array Expr := #[]
@@ -432,19 +395,13 @@ elab_rules : tactic
     -- First `machines`-field lookup `f a` in `e` whose result is
     -- `MachineState`, `f : _ → MachineState`, and `a` goes through a
     -- payload extractor. Recurses into subterms.
-    let rec firstLookup (e : Expr) : MetaM (Option Expr) := do
-      if e.isApp then
-        let arg := e.appArg!
-        if viaPayloadExtractor arg && (← isMachineStateTy (← Lean.Meta.inferType e)) then
-          match ← Lean.Meta.inferType e.appFn! with
-          | .forallE _ _ body _ =>
-            if !body.hasLooseBVars && (← isMachineStateTy body) then
-              return some e
-          | _ => pure ()
-      for sub in e.getAppArgs.push e.getAppFn do
-        if sub != e then
-          if let some hit ← firstLookup sub then return hit
-      return none
+    let firstLookup : Expr → MetaM (Option Expr) :=
+      findAppSubtermM fun e => do
+        unless viaPayloadExtractor e.appArg! && (← isMachineStateTy (← Lean.Meta.inferType e)) do
+          return false
+        match ← Lean.Meta.inferType e.appFn! with
+        | .forallE _ _ body _ => return !body.hasLooseBVars && (← isMachineStateTy body)
+        | _ => return false
     -- Bounded loop: each pass abstracts one compound lookup, then
     -- re-scans (the goal changed). 8 is a safe cap.
     for _ in [0:8] do
@@ -491,7 +448,7 @@ macro_rules
 
 Hash the elaborated obligation type and consult a per-project
 `<project>/.lake/build/pverify_cache/`. On a hit, close the obligation
-via `Loom.SMT.trust_smt` directly — same axiom `loom_smt` uses on
+via `PLean.Smt.trust_smt` directly — same axiom `plean_smt` uses on
 `unsat` — skipping prep, the lean-auto translation, and the solver
 call.
 
@@ -590,7 +547,7 @@ register_option pverify.cache : Bool := {
   descr := "If true (default), `#pverify` caches obligations already \
             certified `unsat` in <project>/.lake/build/pverify_cache/. \
             On a hit, the obligation is closed directly via the \
-            Loom.SMT.trust_smt axiom — bypassing pverify_smt_prep, \
+            PLean.Smt.trust_smt axiom — bypassing pverify_smt_prep, \
             lean-auto translation, and the solver invocation. Hashing \
             is by elaborated obligation `Expr`, so unrelated edits to \
             the same file don't invalidate. Reset with `lake clean`."
@@ -603,29 +560,29 @@ register_option pverify.profile : Bool := {
             solver, assign) with `IO.monoNanosNow` timers and records \
             into `PLean.Verify.Profile.stateRef`. `#pverify` emits a \
             summary table on completion. OFF by default — the inlined \
-            branch is not bit-identical to upstream `loom_smt` and is \
+            branch is not bit-identical to `plean_smt` and is \
             kept off the hot path."
 }
 
 /-! ## SMT discharge
 
 `pverify_smt` consults the obligation cache, then on miss runs
-`pverify_smt_prep; loom_smt [*]`. Under `set_option pverify.profile
+`pverify_smt_prep; plean_smt [*]`. Under `set_option pverify.profile
 true`, the work is inlined into PLean (via `pverifySmtCloseProfiled`
 below) so each stage can be timed separately; the default path stays
-on the unmodified `loom_smt` macro.
+on the unmodified `plean_smt` tactic (`Verify/Smt.lean`).
 
-`loom_smt` logs a "Goal proven by <solver>" info on success — one per
+`plean_smt` logs a "Goal proven by <solver>" info on success — one per
 obligation. Under `#pverify` that's per-obligation noise the command's
 consolidated report already subsumes, so the elab below drops new
 info-severity messages produced by either path (errors/warnings kept).
 -/
 
 /-- Default (unprofiled) path: identical to the pre-profile-instrumentation
-behaviour. Consults the cache, then runs `pverify_smt_prep; loom_smt [*]`
+behaviour. Consults the cache, then runs `pverify_smt_prep; plean_smt [*]`
 on a miss. The `prep` step itself sometimes closes the goal (via
 `simp` on a tautology, container-lemma rewrite landing in `True`,
-etc.), so `loom_smt` is gated on the prep leaving a non-empty goal
+etc.), so `plean_smt` is gated on the prep leaving a non-empty goal
 queue. Without the gate the post-prep run would error
 "No goals to be solved" and clobber a more meaningful upstream
 diagnostic. -/
@@ -644,21 +601,21 @@ def pverifySmtCloseDefault : TacticM Unit := do
     match cacheHash? with
     | some (hash, _) =>
       if (← liftM (pverifyCacheHas hash)) then
-        mv.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalType)
+        mv.assign (mkApp (mkConst ``PLean.Smt.trust_smt) goalType)
         pure true
       else pure false
     | none => pure false
   unless cacheHit do
     evalTactic (← `(tactic| pverify_smt_prep))
     unless (← getGoals).isEmpty do
-      evalTactic (← `(tactic| loom_smt [*]))
+      evalTactic (← `(tactic| plean_smt [*]))
     if let some (hash, text) := cacheHash? then
       liftM (pverifyCacheInsert hash text)
 
-/-- Instrumented path: inlines `loom_smt`'s `prepareLeanAutoQuery +
+/-- Instrumented path: inlines `plean_smt`'s `prepareLeanAutoQuery +
 querySolver + trust_smt.assign` so we can time each segment separately.
 Records into `PLean.Verify.Profile.inFlightRowsRef` under this
-obligation's key. NOT bit-identical to upstream `loom_smt` (no `Goal
+obligation's key. NOT bit-identical to `plean_smt` (no `Goal
 proven by …` log, no `retryOnUnknown` cross-solver fallback by
 default), so we keep it behind `set_option pverify.profile true`. -/
 def pverifySmtCloseProfiled : TacticM Unit := do
@@ -690,7 +647,7 @@ def pverifySmtCloseProfiled : TacticM Unit := do
       if hit then
         let (_, assignNs) ← liftM (m := MetaM)
           (PLean.Verify.Profile.timeMetaNanos
-            (mv.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalType)))
+            (mv.assign (mkApp (mkConst ``PLean.Smt.trust_smt) goalType)))
         liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
           { r with cached := true, smtAssign := r.smtAssign + assignNs }))
         pure true
@@ -708,34 +665,33 @@ def pverifySmtCloseProfiled : TacticM Unit := do
     withMainContext do
     let mv' ← getMainGoal
     let opts ← getOptions
-    let withTimeout := loom.solver.smt.timeout.get opts
+    let withTimeout := PLean.Smt.pverify.smt.timeout.get opts
     let hints : TSyntax `Auto.hints ← `(Auto.hints| [*])
     let (cmdString, autoNs) ← PLean.Verify.Profile.timeTacticNanos
-      (Loom.SMT.prepareLeanAutoQuery mv' hints)
+      (PLean.Smt.prepareLeanAutoQuery mv' hints)
     liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
       { r with smtAuto := r.smtAuto + autoNs }))
     let ((res, solverUsed), solverNs) ← liftM (m := MetaM)
       (PLean.Verify.Profile.timeMetaNanos
-        (Loom.SMT.querySolver cmdString withTimeout
-          (forceSolver := Loom.SMT.specifiedSmtSolver (loom.solver.get opts))
-          (retryOnUnknown := loom.solver.smt.retryOnUnknown.get opts)))
+        (PLean.Smt.querySolver cmdString withTimeout (PLean.Smt.selectedSolver opts)
+          (retryOnUnknown := PLean.Smt.pverify.smt.retryOnUnknown.get opts)))
     liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
       { r with smtSolver := r.smtSolver + solverNs }))
     match res with
-    | .Sat none       => throwError s!"{Loom.SMT.satGoalStr solverUsed}"
-    | .Sat (some m)   => throwError s!"{Loom.SMT.satGoalStr solverUsed}:{m}"
+    | .Sat none       => throwError s!"{PLean.Smt.satGoalStr solverUsed}"
+    | .Sat (some m)   => throwError s!"{PLean.Smt.satGoalStr solverUsed}:{m}"
     | .Unknown reason =>
       let suffix := match reason with | some r => s!": {r}" | none => ""
-      throwError s!"{Loom.SMT.unknownGoalStr solverUsed}{suffix}"
+      throwError s!"{PLean.Smt.unknownGoalStr solverUsed}{suffix}"
     | .Failure reason =>
       let suffix := match reason with | some r => s!": {r}" | none => ""
-      throwError s!"{Loom.SMT.failureGoalStr solverUsed}{suffix}"
+      throwError s!"{PLean.Smt.failureGoalStr solverUsed}{suffix}"
     | .Unsat =>
       let mvPost ← getMainGoal
       let goalTypePost ← mvPost.getType
       let (_, assignNs) ← liftM (m := MetaM)
         (PLean.Verify.Profile.timeMetaNanos
-          (mvPost.assign (mkApp (mkConst ``Loom.SMT.trust_smt) goalTypePost)))
+          (mvPost.assign (mkApp (mkConst ``PLean.Smt.trust_smt) goalTypePost)))
       liftM (m := IO) (PLean.Verify.Profile.modifyRow key (fun r =>
         { r with smtAssign := r.smtAssign + assignNs }))
       if let some (hash, text) := cacheHash? then
@@ -865,10 +821,6 @@ elab_rules : tactic
 macro_rules
   | `(tactic| default_inv) => `(tactic| (
       default_inv_guard
-      -- Goal might be `(WPGen.default x).get post s` or already
-      -- `DefaultInvariants s'`; reduce both via `WPGen.default` +
-      -- the WP rewrite set so we land at `DefaultInvariants <update>`.
-      try simp [WPGen.default, loomWPGenRewrite, loomLogicLiftSimp]
       -- Unfold `DefaultInvariants` AND its three components in the
       -- local context so pre-state hypotheses are in implication form
       -- (otherwise `grind` can't peel the named constants).
@@ -1247,71 +1199,37 @@ post matches a pre-clause); full chain — step WP, intros, flatten the
 precondition's conjunction, then run the close-chain. -/
 macro_rules
   | `(tactic| pverify) => `(tactic| (
-      first
-        -- Trivial-handler branch: step WP closes it directly. `done`
-        -- guards against a follow-on `intros` erroring on no-goals.
-        | (pverify_step_wp; done)
-        -- Post-equals-pre branch.
-        | (pverify_step_wp
-           intros
-           assumption)
-        -- Full chain.
-        | (pverify_step_wp
-           intros
-           split_conjunction_hyps
-           pverify_close_chain)
+      pverify_step_wp
+      -- `vcgen` may leave zero or several VCs; close each independently.
+      all_goals
+        first
+          -- Post-equals-pre branch.
+          | (intros
+             assumption)
+          -- Full chain.
+          | (intros
+             split_conjunction_hyps
+             pverify_close_chain)
     ))
 
-/-! ## Loop-aware default discharge
+/-! ## Default-invariant discharge
 
-For a handler whose body contains a `pforeach` (P's `foreach`), the
-auto-default obligation `triple (DefaultInvariants ∧ …) handler
-DefaultInvariants` cannot close through `WPGen.pforeach` alone: the
-loop's user-supplied invariant list need not entail `DefaultInvariants`,
-so the `invariantSeq inv s' → DefaultInvariants s'` half of the
-`spec` translation is unsatisfiable abstractly.
-
-`triple_pforeach_with` (in `Semantics/Loop.lean`) carries an *external*
-invariant `Q` through the loop independently of the user-supplied list,
-provided the body preserves `Q`. Each `send` / `set` in the body
-preserves `DefaultInvariants` via the standard `default_inv` chain, so
-`Q := DefaultInvariants` composes.
-
-Manual `@[pverifyProof]` proofs for loop-bearing default obligations
-follow the same shape:
-
-```
-apply triple_cons (pre := DefaultInvariants)
-  (post := fun _ => DefaultInvariants)
-· intro s ⟨h, _, _⟩; exact h
-· intro _ s h; exact h
-unfold <handler>
-apply triple_bind (cut := fun _ => DefaultInvariants)
-· unfold <var1>_get; pverify
-…
-apply triple_pforeach_with (Q := DefaultInvariants)
-intro _
-unfold PLean.send; pverify
-```
-
-A future tactic could automate this walk, but the elab-level
-implementation must address two subtleties: (1) each `apply
-triple_bind` requires the head program to be in `_ >>= _` shape,
-which means unfolding `<var>_get`/`<var>_set` before the apply; (2)
-the head subgoal's `pverify` must FULLY close — a partial close
-(reducing `triple` to `wp`) leaves residual goals that confuse the
-walker's structural classifier. -/
+`pverify_default` discharges an auto-emitted `prove default;`
+obligation. Loop-bearing handlers previously closed via Loom's
+`triple_pforeach_with` (an external invariant carried through the
+loop); that lemma went with Loom and is pending the `vcgen` port. -/
 
 macro_rules
   | `(tactic| pverify_default) => `(tactic| (
       pverify_step_wp
-      first
-        | (intro s h; exact h)
-        | (intros
-           simp only [PLean.DefaultInvariants, PLean.UniqueActions,
-                      PLean.IncreasingCount, PLean.ReceivedSubsetSent] at *
-           split_conjunction_hyps
-           pverify_close_chain_smt_first)
+      all_goals
+        first
+          | (intro s h; exact h)
+          | (intros
+             simp only [PLean.DefaultInvariants, PLean.UniqueActions,
+                        PLean.IncreasingCount, PLean.ReceivedSubsetSent] at *
+             split_conjunction_hyps
+             pverify_close_chain_smt_first)
     ))
 
 end PLean

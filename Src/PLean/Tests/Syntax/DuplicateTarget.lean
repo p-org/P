@@ -5,7 +5,7 @@ in the obligation name to disambiguate.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule Phase3DuplicateTargetMod
 

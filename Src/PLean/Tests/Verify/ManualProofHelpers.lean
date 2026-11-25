@@ -20,10 +20,10 @@ they do NOT depend on the full M3 ports.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 8
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 8
 
 namespace PLean.Tests.ManualProofHelpers
 

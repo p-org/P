@@ -211,7 +211,7 @@ bodies overlap.
 
 The proof tactic is `pverify` (or `pverify_default` for `prove default`).
 `varNames`, `lemmaInvNames`, and `machineNames` feed the `unfold` chain
-so `wpgen` steps through state reads/writes, invariant bundles unfold,
+so `vcgen` steps through state reads/writes, invariant bundles unfold,
 and kind-tag checks reduce. `is_<ev>` predicates are intentionally left
 folded — their `match` bodies trip lean-auto's monomorphizer, but as
 opaque predicates they translate fine. -/
@@ -363,7 +363,7 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
       let hypId : Ident :=
         mkIdent (Name.mkSimple ("hspec_" ++ en.toString))
       specHaves := specHaves.push (← `(tactic| have $hypId:ident := $specId:ident))
-    -- One `have` per pmodule-declared `paxiom`. `loom_smt [*]` reads
+    -- One `have` per pmodule-declared `paxiom`. `plean_smt [*]` reads
     -- only the local context, so top-level Lean `axiom`s (produced by
     -- `paxiom` / `pinstance`-field synthesis) need to be lifted in
     -- explicitly.
@@ -380,7 +380,7 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
     -- Unfold order: handler → target lemma → using-lemmas → kind
     -- helpers → accessors → PLean primitives → closing tactic.
     -- Accessors must precede primitives, otherwise reversing the
-    -- order trips `wpgen` into `WPGen.default`.
+    -- order hides the primitives' `get`/`set` from `vcgen`.
     let mut steps : Array (TSyntax `tactic) := #[]
     steps := steps.push (← `(tactic| unfold $handlerUnfold:ident))
     unless isDefault do
@@ -427,14 +427,14 @@ def emitOneObligation (modName : Name) (mname sname evname : Name)
         set_option pverify.obligationKey $keyLit in
         theorem $thmId
             ($idThis : $mIdent) ($idParam : $payloadTy) ($idLbl : ($idSig).Label) :
-            triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
+            Std.WP.Triple (Pred := $prpAbbrev) $handlerTerm $preTerm $postTerm Lean.Order.bot := by
           $wrappedProof)
     else
       `(set_option linter.unusedTactic false in
         set_option pverify.obligationKey $keyLit in
         theorem $thmId
             ($idThis : $mIdent) ($idLbl : ($idSig).Label) :
-            triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
+            Std.WP.Triple (Pred := $prpAbbrev) $handlerTerm $preTerm $postTerm Lean.Order.bot := by
           $wrappedProof)
   elabCommand stx
   return manualProof
@@ -597,14 +597,14 @@ def emitEntryObligation (modName : Name) (mname sname : Name)
         set_option pverify.obligationKey $keyLit in
         theorem $thmId
             ($idThis : $mIdent) ($idParam : $payloadTyTerm) :
-            triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
+            Std.WP.Triple (Pred := $prpAbbrev) $handlerTerm $preTerm $postTerm Lean.Order.bot := by
           $wrappedProof)
     | none =>
       `(set_option linter.unusedTactic false in
         set_option pverify.obligationKey $keyLit in
         theorem $thmId
             ($idThis : $mIdent) :
-            triple (l := $prpAbbrev) $preTerm $handlerTerm $postTerm := by
+            Std.WP.Triple (Pred := $prpAbbrev) $handlerTerm $preTerm $postTerm Lean.Order.bot := by
           $wrappedProof)
   elabCommand stx
   return manualProof
@@ -666,7 +666,7 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
     let goalType : TSyntax `term ←
       `(∀ $idS : PLean.GlobalState $idSig,
           ($initsId : $prpAbbrev) $idS → ($invIdent) $idS)
-    -- Unfold chain (no `wpgen` needed for a base case): inits,
+    -- Unfold chain (no `vcgen` needed for a base case): inits,
     -- invariant, kind helpers, then close via SMT.
     let mut steps : Array (TSyntax `tactic) := #[]
     steps := steps.push (← `(tactic| try unfold $initsId:ident))
@@ -684,7 +684,7 @@ def emitBaseCaseObligation (modName : Name) (invName : Name)
         try unfold PLean.UniqueActions PLean.IncreasingCount
                    PLean.ReceivedSubsetSent))
     -- Lift each `paxiom` into the local context (same reason as in
-    -- `emitOneObligation`: `loom_smt [*]` reads only the lctx).
+    -- `emitOneObligation`: `plean_smt [*]` reads only the lctx).
     for an in axiomNames do
       let axId : Ident := mkIdent an
       let hypId : Ident :=
@@ -996,17 +996,7 @@ private def buildCexNameCtx (modName : Name) (ctx : LocalPModuleCtx) :
 /-! ## Failure classification helpers. -/
 
 private def hasSubstring (s : String) (pattern : String) : Bool :=
-  let pLen := pattern.length
-  let sLen := s.length
-  if pLen == 0 then true
-  else if pLen > sLen then false
-  else Id.run do
-    let mut i : Nat := 0
-    while i + pLen ≤ sLen do
-      if s.extract ⟨i⟩ ⟨i + pLen⟩ == pattern then
-        return true
-      i := i + 1
-    return false
+  pattern.isEmpty || (s.splitOn pattern).length > 1
 
 /-- Cap a multi-line diagnostic so the report doesn't degenerate into a
 wall of solver output. `maxLines` / `maxChars` default to the tight
@@ -1016,9 +1006,9 @@ private def truncateForReport (s : String)
     (maxLines : Nat := 12) (maxChars : Nat := 1500) : String :=
   let lines := s.splitOn "\n"
   let joined := String.intercalate "\n" (lines.take maxLines)
-  if joined.length > maxChars then joined.take maxChars ++ " …" else joined
+  if joined.length > maxChars then (joined.take maxChars).toString ++ " …" else joined
 
-/-- Turn `loom_smt`'s SAT diagnostic into a readable counter-example.
+/-- Turn `plean_smt`'s SAT diagnostic into a readable counter-example.
 Decodes the embedded model into the per-machine state table + the
 `sent` trace ordered by `actionCount`, using `ctx` to recover field /
 state / payload names. Falls back to the de-mangled raw model when the
@@ -1089,7 +1079,7 @@ obligation noise from the message log. Classification is deferred to
 
 Message scrubbing runs inline before the next emission appends. It
 drops sync error messages (their content is already in `emitError?` /
-the diag map) and Loom's per-obligation info logs. A buggy user
+the diag map) and the SMT bridge's per-obligation info logs. A buggy user
 `@[pverifyProof]` whose declaration name collides with the emitter's
 output produces a duplicate-decl error here — without the scrub that
 would break `#guard_msgs` even though the obligation's own classify

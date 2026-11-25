@@ -24,28 +24,30 @@ is read via a `get` immediately before the gadget call.
 
 ## Desugaring
 
-Both forms target Lean's native `for _ in Lean.Loop.mk do …` (for
-`while`) or `for x in xs do …` (for `foreach`), with Loom's gadget
-chain placed at the top of the body:
+Both forms target the loop syntax of Lean core's `do` notation, whose
+`invariant` clause the `do` elaborator turns into the `Std.WP` loop
+gadgets that `vcgen` reads:
 
 ```
-  for _ in Lean.Loop.mk do
-    let s ← get
-    PLean.loopInvariantGadget [I1 s, …, Ik s]
-    onDoneGadget <doneWith>
-    decreasingGadget <measure?>
-    if <cond> then <body> else break
+  foreach (x in xs) invariant N1 : I1; … { body }
+    ↝ for x in xs invariant _pref _suff s => I1 ∧ … ∧ Ik do body
+
+  while (cond) invariant N1 : I1; … [done_with D;] { body }
+    ↝ while cond invariant exit s => (I1 ∧ … ∧ Ik) ∧ (exit = true → D)
+        do body
 ```
 
-The shape matches Loom's `WPGen.forWithInvariantLoop`
-(`@[loomSpec, loomWpSimp]`).
+`s` is the state argument of `PProp Sig = GlobalState Sig → Prop`
+(the assertion language `Std.WP` assigns `PM Sig`); invariant bodies
+refer to the live state through it. A loop without invariant clauses
+desugars to the plain core loop.
 
 ## Done-with / decreasing
 
-`done_with` defaults to `¬cond`; `decreasing` defaults to `none`.
-Under `PartialCorrectness DemonicChoice` (PLean's default lattice
-mode) the measure is informational only; a future total-correctness
-mode picks it up via the same WPGen entry.
+`done_with` defaults to `¬cond`. `decreasing` is parsed but not
+forwarded: PLean's loops are verified for partial correctness, and
+core's `decreasing` clause would make `vcgen` demand a termination
+proof.
 
 ## Limitations
 
@@ -59,7 +61,6 @@ mode picks it up via the same WPGen entry.
   PLean doesn't yet provide.
 -/
 import Lean
-import PLean.Semantics.Loop
 import PLean.Semantics.Monad
 import PLean.Internal.Registry
 import PLean.Syntax.Verify
@@ -155,7 +156,7 @@ syntax (name := pWhile)
 /-! ## Macro helpers. -/
 
 /-- Collect the prop syntax from a `pLoopInv` clause array. -/
-private partial def collectInvariantProps
+private def collectInvariantProps
     (invs : Array (TSyntax `pLoopInv)) :
     MacroM (Array (TSyntax `term)) := do
   let mut out : Array (TSyntax `term) := #[]
@@ -166,151 +167,53 @@ private partial def collectInvariantProps
     | _ => Macro.throwErrorAt inv "internal: unexpected loop-invariant clause"
   return out
 
-/-- Build the gadget-prelude `doElem`s the macro splices into the
-loop body. Three items in this fixed order (the order Loom's
-`WPGen.forWithInvariantLoop` matches on):
-
-1. `loopInvariantGadget [P1, …, Pk]` — the WP gadget. Each `Pi` is
-   a `PProp Sig = GlobalState → Prop`; the WP evaluates them against
-   the live state automatically (the gadget operates at the
-   assertion-lattice level, not at the program-state level).
-2. `onDoneGadget <doneWith>` — always emitted (defaults to `⊤` /
-   `fun _ => True`). The pattern Loom matches requires a 3-item
-   chain regardless of whether the user wrote `done_with` or not.
-3. `decreasingGadget <measure?>` — always emitted; `none` is fine.
-
-The pattern is rigid: Loom's `WPGen.forWithInvariantLoop` matches the
-exact body shape `do invariantGadget … ; onDoneGadget … ;
-decreasingGadget … ; f u b`. Inserting extra `do`-statements before
-or between the gadgets makes the match fail and `wpgen` falls back to
-`WPGen.default`, leaving an opaque `wp (forIn …)` term that lean-auto
-can't translate.
-
-The state binder `s` is named-only (each user prop becomes
-`fun s => <body>` — the WP applies the live state under the
-hood). The name avoids shadowing a user `s` from an enclosing
-`system` block. -/
-private def buildGadgetPrelude
-    (invs : Array (TSyntax `pLoopInv))
-    (doneWith? : Option (TSyntax `term))
-    (measure? : Option (TSyntax `term))
-    (iterBinder : Ident) :
-    MacroM (Array (TSyntax `doElem)) := do
+/-- The conjunction `I1 ∧ … ∧ Ik` of the loop's invariant bodies over
+the state binder `s`, each wrapped in `pLoopInvWrap% (s)` so
+kind-guard injection runs at term-elab time (when the registry is
+available). `none` when the loop has no invariant clauses. -/
+private def buildInvariantConj (invs : Array (TSyntax `pLoopInv))
+    (sBinder : Ident) : MacroM (Option (TSyntax `term)) := do
   let props ← collectInvariantProps invs
-  let sBinder : Ident := mkIdent `s
-  let sigIdent : Ident := mkIdent `Sig
-  let mut entries : Array (TSyntax `term) := #[]
-  for p in props do
-    -- Wrap in `pLoopInvWrap% (s) <body>` so kind-guard injection
-    -- happens at term-elab time (when the registry is available).
-    entries := entries.push
-      (← `(((fun $sBinder =>
-              pLoopInvWrap% ($sBinder) $p) : PLean.PProp $sigIdent)))
-  let listLit : TSyntax `term ← `([ $entries,* ])
-  -- The gadgets take `inv : β → List l` / `on_done' : β → l` /
-  -- `measure : β → Option ℕ`. We thread the iteration binder
-  -- through (`fun <iter> => …`) even when the user's invariants
-  -- don't reference it — Loom's pattern match requires the
-  -- gadget arg to be β-parameterised.
-  let doneTerm : TSyntax `term ← match doneWith? with
-    | some t => `(((fun $sBinder => $t) : PLean.PProp $sigIdent))
-    | none   => `(((fun _ => True) : PLean.PProp $sigIdent))
-  let measureTerm : TSyntax `term ← match measure? with
-    | some t => `(fun $iterBinder => some $t)
-    | none   => `(fun _ => (none : Option Nat))
-  let mut out : Array (TSyntax `doElem) := #[]
-  -- Iteration-parameterised wrappers — `inv b` / `on_done' b` /
-  -- `measure b`. For `Lean.Loop.mk` (β = Unit) the binder is `_`; for
-  -- a foreach over a list it's the element. The actual list /
-  -- predicate / option-Nat is constant inside.
-  out := out.push (← `(doElem|
-    PLean.loopInvariantGadget (P := $sigIdent) ((fun $iterBinder => $listLit) $iterBinder)))
-  out := out.push (← `(doElem|
-    onDoneGadget (m := PLean.PM $sigIdent)
-      ((fun $iterBinder => $doneTerm) $iterBinder)))
-  out := out.push (← `(doElem|
-    decreasingGadget (m := PLean.PM $sigIdent) ($measureTerm $iterBinder)))
-  return out
+  let wrapped ← props.mapM fun p => `(pLoopInvWrap% ($sBinder) $p)
+  match wrapped.back? with
+  | none => return none
+  | some last =>
+    some <$> wrapped.pop.foldrM (init := last) fun p acc => `($p ∧ $acc)
 
 /-! ## Macro expansions. -/
-
-/-- Splice an array of `doElem`s into a single `doSeq` followed by
-the user's `body` `doSeq`. We can't write `$[$p:doElem]* $body:doSeq`
-inside a `for … do` quotation because Lean's `do`-grammar accepts a
-single `doSeq`, not a sequence of items + a trailing doSeq. Instead
-we build the combined `doSeq` as a leaf via `mkNullNode`. -/
-private def mkLoopBody (prelude : Array (TSyntax `doElem))
-    (body : TSyntax ``Parser.Term.doSeq) :
-    MacroM (TSyntax ``Parser.Term.doSeq) := do
-  let bodyItems : Array (TSyntax `doElem) :=
-    if body.raw.getKind == ``Parser.Term.doSeqIndent then
-      body.raw[0].getArgs.map fun arg => ⟨arg[0]⟩
-    else if body.raw.getKind == ``Parser.Term.doSeqBracketed then
-      body.raw[1].getArgs.map fun arg => ⟨arg[0]⟩
-    else
-      #[]
-  let allItems : Array (TSyntax `doElem) := prelude ++ bodyItems
-  `(Parser.Term.doSeq| $[$allItems:doElem]*)
-
-/-- Build the `[I1, …, Ik]` literal of `PProp Sig`-typed invariants
-the `pforeach` / `WPGen.forWithInvariantLoop` specs both consume. -/
-private def buildInvariantList (invs : Array (TSyntax `pLoopInv)) :
-    MacroM (TSyntax `term) := do
-  let props ← collectInvariantProps invs
-  let sBinder : Ident := mkIdent `s
-  let sigIdent : Ident := mkIdent `Sig
-  let mut entries : Array (TSyntax `term) := #[]
-  for p in props do
-    -- Same `pLoopInvWrap%` indirection as `buildGadgetPrelude` —
-    -- elab-time kind-guard injection on each invariant body.
-    entries := entries.push
-      (← `(((fun $sBinder =>
-              pLoopInvWrap% ($sBinder) $p) : PLean.PProp $sigIdent)))
-  `([ $entries,* ])
 
 macro_rules
   | `(doElem| foreach ($x:ident in $xs:term)
                 $[$invs:pLoopInv]*
               { $body:doSeq }) => do
-    -- `pforeach xs invList (fun x => do body)` — matches
-    -- `WPGen.pforeach`'s `@[loomSpec]` registration so `wpgen` peels
-    -- the iteration. The body Lean expects is a single `PM P Unit`
-    -- term, so we wrap the user's doSeq in `do …`.
-    let invList ← buildInvariantList invs
-    let sigIdent : Ident := mkIdent `Sig
-    `(doElem|
-        PLean.pforeach (P := $sigIdent) $xs $invList (fun $x => do $body))
+    let sBinder : Ident := mkIdent `s
+    match ← buildInvariantConj invs sBinder with
+    | some conj =>
+      `(doElem| for $x:ident in $xs invariant _pref _suff $sBinder:ident => $conj do $body)
+    | none =>
+      `(doElem| for $x:ident in $xs do $body)
   | `(doElem| while ($cond:term)
                 $[$invs:pLoopInv]*
                 $[$dw:pLoopDoneWith]?
-                $[$decr:pLoopDecreasing]?
+                $[$_decr:pLoopDecreasing]?
               { $body:doSeq }) => do
-    let doneWith? : Option (TSyntax `term) ←
+    let sBinder : Ident := mkIdent `s
+    let doneWith : TSyntax `term ←
       match dw with
       | some dwStx => match dwStx with
-        | `(pLoopDoneWith| done_with $t:term ;) => pure (some t)
+        | `(pLoopDoneWith| done_with $t:term ;) => pure t
         | _ => Macro.throwErrorAt dwStx "internal: malformed done_with"
-      | none =>
-        let cNeg : TSyntax `term ← `(¬ $cond)
-        pure (some cNeg)
-    let measure? : Option (TSyntax `term) ←
-      match decr with
-      | some dStx => match dStx with
-        | `(pLoopDecreasing| decreasing $t:term ;) => pure (some t)
-        | _ => Macro.throwErrorAt dStx "internal: malformed decreasing"
-      | none => pure none
-    -- The `Lean.Loop.mk`-driven loop binds `_ : Unit` per iteration.
-    let unitBinder : Ident := mkIdent `__lpUnit
-    let prelude ← buildGadgetPrelude invs doneWith? measure? unitBinder
-    let guardedBody : TSyntax ``Parser.Term.doSeq :=
-      ⟨(← `(doSeq|
-          if $cond then
-            $body:doSeq
-          else
-            break)).raw⟩
-    let loopBody ← mkLoopBody prelude guardedBody
-    `(doElem|
-        for $unitBinder:ident in Lean.Loop.mk do
-          $loopBody:doSeq)
+      | none => `(¬ $cond)
+    let invConj ← match ← buildInvariantConj invs sBinder with
+      | some conj => pure conj
+      | none => `(True)
+    -- With no invariant and no `done_with`, emit the plain core loop
+    -- and let `vcgen` handle it unannotated.
+    if invs.isEmpty && dw.isNone then
+      `(doElem| while $cond:term do $body)
+    else
+      `(doElem| while $cond:term
+                  invariant exit $sBinder:ident => $invConj ∧ (exit = true → $doneWith)
+                  do $body)
 
 end PLean

@@ -12,7 +12,7 @@ and friends.
 import PLean
 import PLean.Verify.Tactic
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule PVerifyTacticTest
 

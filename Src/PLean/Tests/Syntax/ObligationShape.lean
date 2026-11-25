@@ -9,7 +9,7 @@ disambiguation embedded in the theorem name.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule ObligationShapeMod
 
@@ -52,16 +52,14 @@ namespace ObligationShapeMod
 -- handler; the post carries the target.
 /--
 info: M.S.eHello_correct_Block1_safety : ∀ (this : M) (lbl : Sig.Label),
-  triple
-    (fun s ↦
-      safety s ∧
-        inflight lbl s ∧
-          lbl.target = this.ref ∧
-            is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
-    (do
-      markReceived lbl
-      M.S.eHello_handler this)
-    fun x s ↦ safety s
+  ⦃ fun s ↦
+    safety s ∧
+      inflight lbl s ∧
+        lbl.target = this.ref ∧
+          is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello ⦄
+    do
+    markReceived lbl
+    M.S.eHello_handler this ⦃ fun x s ↦ safety s ⦄
 -/
 #guard_msgs in
 #check @M.S.eHello_correct_Block1_safety
@@ -71,16 +69,14 @@ info: M.S.eHello_correct_Block1_safety : ∀ (this : M) (lbl : Sig.Label),
 -- duplicate conjunct.
 /--
 info: M.S.eHello_correct_Block2_default : ∀ (this : M) (lbl : Sig.Label),
-  triple
-    (fun s ↦
-      DefaultInvariants s ∧
-        inflight lbl s ∧
-          lbl.target = this.ref ∧
-            is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello)
-    (do
-      markReceived lbl
-      M.S.eHello_handler this)
-    fun x s ↦ DefaultInvariants s
+  ⦃ fun s ↦
+    DefaultInvariants s ∧
+      inflight lbl s ∧
+        lbl.target = this.ref ∧
+          is_M this.ref s ∧ (s.machines this.ref).currentState = M.S_st ∧ lbl.action = EventOrGoto.event E.eHello ⦄
+    do
+    markReceived lbl
+    M.S.eHello_handler this ⦃ fun x s ↦ DefaultInvariants s ⦄
 -/
 #guard_msgs in
 #check @M.S.eHello_correct_Block2_default

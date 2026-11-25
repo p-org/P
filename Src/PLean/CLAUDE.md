@@ -7,8 +7,10 @@ parent-repo `CLAUDE.md` (one level up) covers P / PChecker / PeasyAI.
 ## What PLean is
 
 A port of the P language and its PVerifier verification backend into
-Lean 4, using [Loom](https://github.com/verse-lab/loom) as the proof
-backend. The user surface mirrors P's grammar — machines, states,
+Lean 4, using Lean core's `Std.WP` / `vcgen` for verification-condition
+generation and SMT (z3 / cvc5 via lean-auto) for discharge. (PLean
+used [Loom](https://github.com/verse-lab/loom) until the Lean v4.36
+bump; Loom stopped at v4.24.) The user surface mirrors P's grammar — machines, states,
 events, invariants, the temporal `≺` precedence operator — and adds
 verification-declaration blocks (`Lemma` / `Theorem` / `Proof`).
 
@@ -20,7 +22,15 @@ The user-facing pipeline:
    per `(machine, state, event, prove-directive)` (plus one base-case
    VC per `(directive, invariant)`), consults the `@[pverifyProof]`
    attribute for user-supplied manual proofs, and discharges the rest
-   via an SMT-backed tactic chain (`pverify_smt` → `loom_smt`).
+   via an SMT-backed tactic chain (`pverify_smt` → `plean_smt`).
+
+> **Transition in progress.** The semantic core (`PM`, primitives,
+> `choose`) and the `vcgen`-based discharge chain are interim pending
+> the transition-model redesign: `PM` is a deterministic
+> `StateT (GlobalState P) Id` placeholder, `PLean.choose` is
+> unavailable, and `pverify_step_wp` runs `vcgen` with an untuned
+> clean-up chain, so most per-handler obligations do not yet close.
+> Base-case (`InitConditions → Inv`) VCs are WP-free and unaffected.
 
 PLean is **not** a wrapper around PChecker or PVerifier. It's a
 parallel-language port whose deliverable is "P programs verify in
@@ -40,9 +50,11 @@ lake build Examples.DistributedLock  # one specific protocol
 ```
 
 `lake build` from the repo root will fail. The first build downloads
-`z3` and `cvc5` solvers (~100 MB) into Loom's build directory; the
-lakefile arranges this so `loom_smt` resolves them. Toolchain pinned
-to **Lean v4.24.0** in `lean-toolchain`.
+`z3` and `cvc5` solvers (~100 MB) into `.lake/build/`, where
+`PLean/Verify/Smt.lean` resolves them. Toolchain pinned to **Lean
+v4.36.0** in `lean-toolchain`; Mathlib and lean-auto are pinned to
+their matching `v4.36.0` tags in `lakefile.lean`. After a fresh clone
+run `lake exe cache get` for Mathlib's prebuilt oleans.
 
 ## Architecture
 
@@ -54,18 +66,17 @@ PLean/
   Semantics/
     Label.lean       -- Label, EventOrGoto, MachineState
     GlobalState.lean -- ProgramSig, GlobalState
-    Monad.lean       -- PM := NonDetT (StateT (GlobalState P) DivM)
+    Monad.lean       -- PM := StateT (GlobalState P) Id  (interim)
     Primitives.lean  -- send / raise / goto / announce / markReceived
     Predicates.lean  -- inflight / sent / received / precedes / stateOf
     Default.lean     -- UniqueActions / IncreasingCount / ReceivedSubsetSent
-    Loop.lean        -- pforeach primitive + @[loomSpec] WPGen.pforeach
   Syntax/
     Module.lean      -- pmodule M ... end M
     Types.lean       -- type N / enum N / type N = (...)
     Events.lean      -- event ev : T
     Machine.lean     -- machine M { var ...; state S { ... } }
     Stmt.lean        -- send / raise / goto / announce / var-assign macros
-    Loop.lean        -- foreach / while macros + loop-invariant clauses
+    Loop.lean        -- foreach / while → core `for`/`while … invariant`
     Verify.lean      -- invariant / Lemma / Theorem / Proof / system <s>
                         paxiom / init-holds / function / pinstance,
                         plus the field-projection sugar and kind-guard
@@ -144,7 +155,7 @@ reserved word or builtin. Mechanical replacements when porting `.p`:
 | `pure`          | `function`             |
 | `init`          | `init-holds`           |
 | `do` (in `on`)  | (dropped)              |
-| `choose(n)`     | `← PLean.choose n`     |
+| `choose(n)`     | (unavailable until the transition-model redesign) |
 | `foreach (x in xs) inv N : I; { … }` | same surface, identifier-only invariant names |
 | `while (c) inv N : I; [done_with …;] [decreasing …;] { … }` | same surface, optional `done_with` / `decreasing` clauses |
 
@@ -152,15 +163,14 @@ reserved word or builtin. Mechanical replacements when porting `.p`:
 new-in-PLean keywords for the verification-declaration surface
 (Phase 3); `default` is a reserved sentinel inside `Proof` blocks.
 
-`PLean.choose : Int → PM Int` returns a nondeterministically-chosen
-`Int` in `[0, bound]`. Implemented via `MonadNonDet.pickSuchThat`;
-the WP spec (registered as `@[loomSpec]`) gives the verifier `0 ≤ x
-∧ x ≤ bound` as a hypothesis at the call site. See
-[`Examples/ClockBound.lean`](Examples/ClockBound.lean) for usage.
+`PLean.choose` (P's `choose(n)`) was built on Loom's `NonDetT`; the
+interim deterministic `PM` has no nondeterminism layer, so it is
+unavailable and [`Examples/ClockBound.lean`](Examples/ClockBound.lean)
+does not build until the redesign restores it.
 
 ### Container types
 
-Surface macros: `set[T]` → `Set T`, `map[K, V]` → `K → Option V`,
+Surface macros: `set[T]` → `PSet T` (PLean's `T → Prop`; Mathlib's `Set` became a structure), `map[K, V]` → `K → Option V`,
 `seq[T]` → `List T` (no SMT), `option[T]` → `Option T`. Mutation
 macros: `s += (e)`, `s -= (e)`, `m[k] = v`, `m[k] += (e)`,
 `m[k] -= (e)`. Lookup-after-mutation lemmas are tagged
@@ -171,10 +181,11 @@ See [`Examples/ShardedKV.lean`](Examples/ShardedKV.lean).
 
 `foreach (x in xs) invariant N : I ; { body }` and `while (cond)
 invariant N : I ; [done_with …;] [decreasing …;] { body }`. Both
-desugar to a rigid gadget chain that `wpgen` matches — inserting
-extra `do`-statements between gadgets or omitting one collapses the
-match. `done_with` defaults to `¬cond` for `while`; `decreasing`
-defaults to `none` (informational only under partial correctness).
+desugar to Lean core's `for x in xs invariant _ _ s => … do …` /
+`while c invariant exit s => … do …`, which the `do` elaborator turns
+into the `Std.WP` loop gadgets `vcgen` reads. Invariants are
+conjoined; `done_with` (default `¬cond`) becomes `exit = true → D`.
+`decreasing` is parsed but not forwarded (partial correctness).
 
 **Limitation.** Auto-emitted `prove default;` under a loop-bearing
 handler can disprove when the loop invariant is too weak to entail
@@ -248,10 +259,11 @@ load-bearing invariants you need to respect when editing.
   against user-namespace constants (`Sig`, `E`, `G`, `this`,
   `<S>_st`, …) must be built via `mkIdent` and spliced. Bare names
   inside `` `(...) `` quotations get hygiene marks and fail to
-  resolve. Symptom: `PLean.DivM✝` or `Sig✝` in error output.
-- **`loom_solve` is CaseStudies-only.** PLean uses `wpgen` + simp
-  set + Veil-style preprocessing + `loom_smt`; see
-  `Verify/Tactic.lean`.
+  resolve. Symptom: `PLean.PM✝` or `Sig✝` in error output.
+- **Discharge chain.** PLean uses `vcgen` + simp set + Veil-style
+  preprocessing + `plean_smt` (`Verify/Smt.lean`, ported from Loom);
+  see `Verify/Tactic.lean`. SMT options are `pverify.smt.solver` /
+  `.timeout` / `.seed` / `.retryOnUnknown` (formerly `loom.solver*`).
 - **Tag new state-update helpers `@[pverifySimp]`.** The pre-SMT
   simp pass uses this set; an untagged helper reaches lean-auto
   as an opaque symbol and the obligation returns `unknown`.
@@ -295,7 +307,7 @@ the Lean extension catch most issues without re-running `lake`.
 
 ### Run cvc5 / z3 from Lean
 
-The solvers are downloaded into Loom's build dir on first build.
+The solvers are downloaded into `.lake/build/` on first build.
 To verify they're reachable:
 
 ```bash

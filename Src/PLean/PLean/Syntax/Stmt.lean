@@ -166,10 +166,10 @@ Expansion table:
 | `s -= (e)`      | `s := PLean.containerErase s e`                           |
 | `m[k] = v`      | `m := PLean.mapInsert m k v`                              |
 | `m[k] += (e)`   | `m := PLean.mapModify m k (Insert.insert e)`              |
-| `m[k] -= (e)`   | `m := PLean.mapModify m k (· \ Set.singleton e)`          |
+| `m[k] -= (e)`   | `m := PLean.mapModify m k (PLean.containerErase · e)`      |
 
 `PLean.containerErase` is a typeclass that dispatches to set
-difference on `Set T` and to `mapErase` on `PMap K V`, so `s -= (e)`
+difference on `PSet T` and to `mapErase` on `PMap K V`, so `s -= (e)`
 works on both kinds. Map helpers live in `Semantics/Containers.lean`
 and are tagged `@[pverifySimp]` so SMT prep reduces them to their
 `if`-lambda bodies. A user with a `seq` var falls back to `xs = xs ++
@@ -200,7 +200,7 @@ macro_rules
     let setIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_set")
     let getIdent := mkIdentFrom lhs (lhs.getId.appendAfter "_get")
     -- `PLean.containerErase` dispatches via the `PContainerErase`
-    -- typeclass: `Set T` falls through to `\ Set.singleton`, `PMap K V`
+    -- typeclass: `PSet T` falls through to `\ {e}`, `PMap K V`
     -- falls through to `mapErase`. The user's choice of `s -= (e)` thus
     -- works on both shapes without picking up a Lean error at expansion.
     `(doElem| do
@@ -231,7 +231,7 @@ macro_rules
     `(doElem| do
         let $lhs:ident ← $getIdent:ident $tref
         $setIdent:ident $tref
-          (PLean.mapModify $lhs $k (· \ (Set.singleton $e)))
+          (PLean.mapModify $lhs $k (fun __s => PLean.containerErase __s $e))
         let $lhs:ident ← $getIdent:ident $tref)
 
 /-! ## Assignment

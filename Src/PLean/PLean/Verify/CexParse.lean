@@ -2,7 +2,7 @@
 PLean.Verify.CexParse — parse a solver `(get-model)` reply into
 `define-fun` entries and de-mangle lean-auto's atom names.
 
-`loom_smt` throws `"<solver>: the goal is false:<MODEL>"` where
+`plean_smt` throws `"<solver>: the goal is false:<MODEL>"` where
 `<MODEL>` is the solver's model re-stringified from a parsed
 S-expression. This module recovers the structure: it strips the prose
 prefix, re-parses the S-expression with `Auto.Parser.SMTSexp`, keeps
@@ -47,8 +47,8 @@ A trailing `.<digits>` segment whose component is all digits is treated
 as a gensym tag and dropped; a `.<member>` segment (e.g. `actionCount`)
 is kept. -/
 def demangle (s : String) : String :=
-  let s := if s.startsWith "_" then s.drop 1 else s
-  let s := if s.endsWith "_" then s.dropRight 1 else s
+  let s := if s.startsWith "_" then (s.drop 1).toString else s
+  let s := if s.endsWith "_" then (s.dropEnd 1).toString else s
   let parts := s.splitOn "."
   -- Drop any trailing all-digit segments (gensym counters).
   let isDigits (p : String) : Bool := !p.isEmpty && p.all Char.isDigit
@@ -81,13 +81,13 @@ def isBoilerplateName (s : String) : Bool :=
   || s.startsWith "_uniq"
   || s == "trust_smt"
 
-/-- Pull the model S-expression out of `loom_smt`'s thrown message.
+/-- Pull the model S-expression out of `plean_smt`'s thrown message.
 Returns the text after the first `the goal is false:` marker, or `none`
 if the marker is absent (so a non-SAT diagnostic falls through). -/
 def extractModelText (msg : String) : Option String :=
   let marker := "the goal is false:"
   match (msg.splitOn marker) with
-  | _ :: rest@(_ :: _) => some (marker.intercalate rest).trimLeft
+  | _ :: rest@(_ :: _) => some (marker.intercalate rest).trimAsciiStart.toString
   | _                  => none
 
 /-- Recognise a `(define-fun NAME (ARGS…) SORT BODY)` node. -/

@@ -22,7 +22,7 @@ unanimous YES broadcasting `eCommit` (else `eAbort`).
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 -- The eYes commit guard is a `∀`-Prop over the vote set (`∀ p,
 -- inParticipants p → yesVotes p`), matching P's `yesVotes ==
 -- participants()`. `open Classical` supplies the `Decidable` instance the
@@ -30,8 +30,8 @@ open PLean PartialCorrectness DemonicChoice
 -- decidable — but this model is only ever symbolically evaluated).
 open Classical
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 5
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 5
 
 pmodule TwoPhaseCommit
 
@@ -208,7 +208,7 @@ end TwoPhaseCommit
 #pwf        TwoPhaseCommit
 
 namespace TwoPhaseCommit
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## Local helpers for the foreach-bearing Coordinator handlers.
 
@@ -1092,7 +1092,7 @@ theorem Coordinator.Init.entry_correct_of_safety_safety_using_commit_sent
   unfold Coordinator.Init.entry
   show triple (l := PProp Sig) _ (Coordinator.yesVotes_get this.ref >>= fun _ => _) _
   apply triple_bind
-    (cut := fun _ : Set MachineRef =>
+    (cut := fun _ : PSet MachineRef =>
       (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
   · unfold Coordinator.yesVotes_get
     pverify_step_wp
@@ -1153,7 +1153,7 @@ theorem Coordinator.WaitForResponses.eNo_correct_of_safety_safety_using_commit_s
     (yesVotes_get this.ref >>= fun _ => _) _
   apply triple_bind
     (pre := (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
-    (cut := fun _ : Set MachineRef =>
+    (cut := fun _ : PSet MachineRef =>
       (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
     (post := fun _ s => safety s)
   · unfold yesVotes_get
@@ -1225,7 +1225,7 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_safety_safety_using_commit_
     (yesVotes_get this.ref >>= fun _ => _) _
   apply triple_bind
     (pre := (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
-    (cut := fun _ : Set MachineRef =>
+    (cut := fun _ : PSet MachineRef =>
       (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
     (post := fun _ s => safety s)
   · unfold yesVotes_get
@@ -1238,7 +1238,7 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_safety_safety_using_commit_
     (yesVotes_get this.ref >>= fun _ => _) _
   apply triple_bind
     (pre := (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
-    (cut := fun _ : Set MachineRef =>
+    (cut := fun _ : PSet MachineRef =>
       (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
     (post := fun _ s => safety s)
   · unfold yesVotes_get
@@ -1268,7 +1268,7 @@ theorem Coordinator.WaitForResponses.eYes_correct_of_safety_safety_using_commit_
     (yesVotes_get this.ref >>= fun _ => _) _
   apply triple_bind
     (pre := (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
-    (cut := fun _ : Set MachineRef =>
+    (cut := fun _ : PSet MachineRef =>
       (fun s => safety s ∧ is_Coordinator this.ref s : PProp Sig))
     (post := fun _ s => safety s)
   · unfold yesVotes_get

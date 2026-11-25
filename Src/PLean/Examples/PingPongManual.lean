@@ -7,9 +7,8 @@ executed program is `markReceived lbl >>= handler …`) and discharged
 manually rather than via the `pverify` tactic.
 -/
 import PLean
-import Loom.Meta
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule PingPongManual
 

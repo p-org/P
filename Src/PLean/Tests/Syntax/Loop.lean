@@ -31,7 +31,7 @@ future work.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## Probe 1: `foreach` over a `seq[T]`. -/
 

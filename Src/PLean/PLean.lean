@@ -1,5 +1,5 @@
--- PLean: a port of the P language and PVerifier into Lean 4, using Loom
--- as the verification backend.
+-- PLean: a port of the P language and PVerifier into Lean 4, using Lean
+-- core's `Std.WP` / `vcgen` and SMT (via lean-auto) as the verification backend.
 --
 -- Top-level facade. Re-exports the public surface so users only need
 -- `import PLean`.
@@ -12,7 +12,6 @@ import PLean.Semantics.Primitives
 import PLean.Semantics.Predicates
 import PLean.Semantics.Default
 import PLean.Semantics.Containers
-import PLean.Semantics.Loop
 import PLean.Syntax.Containers
 import PLean.Syntax.Loop
 import PLean.Syntax.Module

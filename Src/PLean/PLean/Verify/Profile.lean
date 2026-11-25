@@ -17,10 +17,10 @@ Stages recorded per obligation:
 The profile path is exact-equivalent in *what* it does to the
 unprofiled path (same trust_smt axiom, same lean-auto translation,
 same solver invocation). It differs only in being inlined into PLean
-rather than going through `loom_smt`, so the segment timings sum to
+rather than going through `plean_smt`, so the segment timings sum to
 approximately the same wall-clock the unprofiled path would have.
 
-To avoid divergence from the upstream `loom_smt`, the profile path is
+To avoid divergence from the `plean_smt`, the profile path is
 ONLY taken when the option is explicitly enabled. Default `false`.
 
 Output: a per-obligation row plus a stage-aggregate table emitted on
@@ -117,7 +117,7 @@ def fmtMs (n : Nat) : String :=
 /-- Pad a string to width `w` on the right. -/
 def padRight (s : String) (w : Nat) : String :=
   let pad := w - s.length
-  if pad ≤ 0 then s else s ++ String.mk (List.replicate pad ' ')
+  if pad ≤ 0 then s else s ++ String.ofList (List.replicate pad ' ')
 
 /-- Render the per-obligation rows table. -/
 def renderRows (rows : Array Row) : String :=

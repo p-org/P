@@ -8,7 +8,7 @@ hold for every chosen `n`. If `wpgen` doesn't step through
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule ChooseProbe
   event eDone
@@ -38,7 +38,7 @@ end ChooseProbe
 
 -- Smoke check that wpgen reaches choose / pick.
 namespace ChooseProbe
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 example : triple (l := PProp Sig)
     (fun _ => True)

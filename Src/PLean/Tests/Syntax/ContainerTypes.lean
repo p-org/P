@@ -10,7 +10,7 @@ invariant lives in `Tests/Verify/ContainerVerify.lean`.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## Set container -/
 

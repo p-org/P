@@ -8,10 +8,10 @@ reverts any step in `pverify_smt_prep` is caught here.
 import PLean
 import PLean.Verify.Tactic
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 8
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 8
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## A tiny `Sig` for the probe -/
 

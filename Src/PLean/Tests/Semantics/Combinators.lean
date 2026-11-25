@@ -7,11 +7,8 @@ This is the executable counterpart of M1's triples — confirming the
 primitives compute the buffer/counter updates we proved them to
 preserve.
 
-Uses the `#eval (prog args).run.run.run initState` idiom for our
-two-transformer stack: the `.run.run.run` chain unwraps
-`NonDetT → StateT → DivM`; the final `DivM` value is destructured via
-`DivM.run` (`Inhabited`-defaulted on divergence, which the terminating
-test programs never trigger).
+Uses `(prog.run initState).run` — `PM` is `StateT (GlobalState P) Id`,
+so `StateT.run` yields the `(result, final state)` pair in `Id`.
 
 Tests are `theorem`s (not `example`s) because `decide`'s reflection
 step generates auxiliary `match_*` constants and needs a stable
@@ -21,7 +18,6 @@ the IDE-side `nativeDecide` path complains about the missing
 -/
 import PLean.Semantics.Monad
 import PLean.Semantics.Primitives
-import Loom.MonadAlgebras.NonDetT.Extract
 
 namespace PLean.CombinatorTests
 
@@ -51,12 +47,10 @@ def init0 : GlobalState Sig :=
   GlobalState.initial' (P := Sig) fun _ =>
     { stage := true, currentState := St.A, fields := () }
 
-/-- Run a `PM Sig α` to its final `(α, GlobalState)` pair, projecting
-out of `DivM` with `default` on divergence. The test programs all
-terminate, so the `default` branch is never taken. -/
+/-- Run a `PM Sig α` to its final `(α, GlobalState)` pair. -/
 def runPM {α : Type} [Inhabited α]
     (m : M' α) (s : GlobalState Sig) : α × GlobalState Sig :=
-  DivM.run (m.run.run s)
+  (m.run s).run
 
 /-! ## Tests -/
 

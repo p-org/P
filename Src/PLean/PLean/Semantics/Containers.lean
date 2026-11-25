@@ -2,19 +2,24 @@
 PLean.Semantics.Containers — SMT-prep tags + map helpers for P's
 container types.
 
-Surface macros (`Syntax/Containers.lean`) desugar to bare Lean /
-Mathlib types:
+Surface macros (`Syntax/Containers.lean`) desugar to bare Lean types
+plus two PLean encodings:
 
-  set[T]     ↝ Set T                -- Mathlib (α → Prop)
+  set[T]     ↝ PSet T := T → Prop
   seq[T]     ↝ List T               -- core; no SMT support
   map[K, V]  ↝ PMap K V := K → Option V
   option[T]  ↝ Option T             -- core inductive
 
-`PMap` matches PVerifier's UCLID5 `[K]Option V` array layout. `Set α`
-is `α → Prop`; lean-auto handles function-typed atoms when *applied*,
-so the SMT prep recipe unfolds `Membership.mem` / `Set.insert` /
-`Set.diff` via the `pverifySimp` set before the solver runs, leaving
-the goal as boolean combinations of `s x : Prop` atoms.
+`PMap` matches PVerifier's UCLID5 `[K]Option V` array layout; `PSet`
+its `[T]boolean` set layout. `PSet T` is a plain `def` for `T → Prop`
+(what Mathlib's `Set` used to be before it became a structure): `whnf`
+exposes the arrow, which `#gen_module` relies on to hoist set-typed
+vars into `Containers`, while instance resolution still keys on the
+`PSet` head (so `default` is `∅`, not the `Pi`-instance's universal
+set). lean-auto handles function-typed atoms when *applied*, so the
+SMT prep recipe unfolds membership / insert / difference via the
+`pverifySimp` set before the solver runs, leaving the goal as boolean
+combinations of `s x : Prop` atoms.
 
 `List α` mutates fine but isn't SMT-decidable in general; verification
 of seq-mutating handlers is out of scope.
@@ -25,11 +30,70 @@ inductive whose constructors are simple (parameter args, no dependent
 args). The `type` / `enum` materialisers already emit `deriving
 Inhabited, DecidableEq`, satisfying the prerequisites.
 -/
-import Mathlib.Data.Set.Basic
-import Mathlib.Data.Set.Insert
 import PLean.Verify.SimpAttrs
 
 namespace PLean
+
+/-! ## `PSet T` — the encoding of P's `set[T]` -/
+
+/-- `PSet T` — a predicate-encoded set, `T → Prop`. Applying it
+(`s x`) is membership. -/
+def PSet (T : Type) : Type := T → Prop
+
+namespace PSet
+
+variable {T : Type}
+
+instance : Membership T (PSet T) where
+  mem s x := s x
+
+instance : EmptyCollection (PSet T) where
+  emptyCollection := fun _ => False
+
+instance : Inhabited (PSet T) := ⟨∅⟩
+
+instance : Singleton T (PSet T) where
+  singleton a := fun x => x = a
+
+instance : Insert T (PSet T) where
+  insert a s := fun x => x = a ∨ s x
+
+instance : SDiff (PSet T) where
+  sdiff s t := fun x => s x ∧ ¬ t x
+
+instance : Union (PSet T) where
+  union s t := fun x => s x ∨ t x
+
+instance : Inter (PSet T) where
+  inter s t := fun x => s x ∧ t x
+
+/-- The universal set. -/
+def univ : PSet T := fun _ => True
+
+@[simp] theorem mem_def (s : PSet T) (x : T) : x ∈ s ↔ s x := Iff.rfl
+
+@[simp] theorem mem_empty_iff_false (x : T) : x ∈ (∅ : PSet T) ↔ False := Iff.rfl
+
+@[simp] theorem mem_singleton_iff (a x : T) : x ∈ ({a} : PSet T) ↔ x = a := Iff.rfl
+
+@[simp] theorem mem_insert_iff (a x : T) (s : PSet T) :
+    x ∈ insert a s ↔ x = a ∨ x ∈ s := Iff.rfl
+
+@[simp] theorem mem_sdiff (s t : PSet T) (x : T) : x ∈ s \ t ↔ x ∈ s ∧ x ∉ t := Iff.rfl
+
+@[simp] theorem mem_union (s t : PSet T) (x : T) : x ∈ s ∪ t ↔ x ∈ s ∨ x ∈ t := Iff.rfl
+
+@[simp] theorem mem_inter_iff (s t : PSet T) (x : T) : x ∈ s ∩ t ↔ x ∈ s ∧ x ∈ t := Iff.rfl
+
+@[simp] theorem mem_univ (x : T) : x ∈ (univ : PSet T) ↔ True := Iff.rfl
+
+/-- Extensionality: sets with the same members are equal. -/
+theorem ext {s t : PSet T} (h : ∀ x, x ∈ s ↔ x ∈ t) : s = t :=
+  funext fun x => propext (h x)
+
+end PSet
+
+/-! ## `PMap K V` — the encoding of P's `map[K, V]` -/
 
 variable {K V : Type}
 
@@ -79,20 +143,20 @@ instance [DecidableEq K] (m : PMap K V) (k : K) :
     Decidable (k ∈ m) :=
   match h : m k with
   | .some v => isTrue ⟨v, h⟩
-  | .none   => isFalse (fun ⟨_, hv⟩ => by rw [h] at hv; exact Option.noConfusion hv)
+  | .none   => isFalse (fun ⟨_, hv⟩ => by rw [h] at hv; cases hv)
 
-/-! ## Removal — one operator over `Set` and `PMap`
+/-! ## Removal — one operator over `PSet` and `PMap`
 
 `s -= (e)` in a handler body expands to `PLean.containerErase s e`.
-The typeclass dispatches to `Set` set-difference for `Set T`, to
+The typeclass dispatches to set difference for `PSet T`, to
 `mapErase` for `PMap K V`. PVerifier's surface uses the same `-=`
 form for both kinds, so we keep parity. -/
 
 class PContainerErase (C : Type) (E : outParam Type) where
   erase : C → E → C
 
-instance {T : Type} [DecidableEq T] : PContainerErase (Set T) T where
-  erase s e := s \ Set.singleton e
+instance {T : Type} : PContainerErase (PSet T) T where
+  erase s e := s \ {e}
 
 instance {K V : Type} [DecidableEq K] : PContainerErase (PMap K V) K where
   erase m k := mapErase m k
@@ -180,7 +244,7 @@ After `simp only [pverifySimp]`, every container atom appears as a
 pure FOL combination of applied uninterpreted symbols and concrete
 constructors — the shape lean-auto's monomorphizer accepts.
 
-- `Set` ops unfold via Mathlib's `mem_insert_iff` / `mem_diff` /
+- `PSet` ops unfold via `PSet.mem_insert_iff` / `mem_sdiff` /
   `mem_singleton_iff` / `mem_empty_iff_false` / `mem_union` /
   `mem_inter_iff` / `mem_univ`.
 - `Option`'s pattern-match reduces by the standard simp set already.
@@ -189,13 +253,13 @@ constructors — the shape lean-auto's monomorphizer accepts.
 -/
 
 attribute [pverifySimp]
-  Set.mem_insert_iff
-  Set.mem_singleton_iff
-  Set.mem_diff
-  Set.mem_union
-  Set.mem_inter_iff
-  Set.mem_empty_iff_false
-  Set.mem_univ
+  PLean.PSet.mem_insert_iff
+  PLean.PSet.mem_singleton_iff
+  PLean.PSet.mem_sdiff
+  PLean.PSet.mem_union
+  PLean.PSet.mem_inter_iff
+  PLean.PSet.mem_empty_iff_false
+  PLean.PSet.mem_univ
   PLean.PMap
   PLean.mapEmpty
   PLean.mapInsert

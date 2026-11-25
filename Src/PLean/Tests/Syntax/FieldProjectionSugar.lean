@@ -20,7 +20,7 @@ rewrite — they have no `s` binder for the machine-field expansion.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## Machine-field projection: `n.<v>` -/
 

@@ -31,7 +31,7 @@ loop invariant entailing `DefaultInvariants` or a hand-written
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## Probe 1: single invariant — baseline. -/
 

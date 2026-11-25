@@ -18,12 +18,12 @@ postmortem — the solver is NOT the wall-clock bottleneck.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 set_option pverify.profile true
 set_option pverify.cache true
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 30
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 30
 set_option maxHeartbeats 4000000
 
 pmodule ProfileProbe

@@ -11,9 +11,8 @@ confirms `var x = expr` actually mutates state, that `send` enqueues
 the right buffer entry, and that `goto S` updates `currentState`.
 -/
 import PLean
-import Loom.MonadAlgebras.NonDetT.Extract
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule SurfCombinators
 
@@ -46,7 +45,7 @@ def init0 : GlobalState Sig :=
 /-- Run a `PM Sig α` to its final `(α, GlobalState)`. -/
 def runPM {α : Type} [Inhabited α]
     (m : PM' α) (s : GlobalState Sig) : α × GlobalState Sig :=
-  DivM.run (m.run.run s)
+  (m.run s).run
 
 /-! ## Tests -/
 

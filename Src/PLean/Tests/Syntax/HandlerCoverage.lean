@@ -18,10 +18,10 @@ makes the `#check`-by-name fail with `Unknown constant`.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 8
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 8
 
 /-! ## Probe 1 — `on ev goto tgt` gets a per-handler obligation. -/
 

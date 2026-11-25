@@ -21,7 +21,7 @@ mutation reaches SMT and closes the user invariant.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 /-! ## Probe 1: set add — both user-invariant and default close -/
 

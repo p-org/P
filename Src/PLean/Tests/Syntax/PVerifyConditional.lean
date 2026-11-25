@@ -9,10 +9,10 @@ accessor + primitive unfold path through `wpgen`.
 -/
 import PLean
 
-set_option loom.solver "cvc5"
-set_option loom.solver.smt.timeout 8
+set_option pverify.smt.solver "cvc5"
+set_option pverify.smt.timeout 8
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 pmodule PVerifyConditionalProbe
 

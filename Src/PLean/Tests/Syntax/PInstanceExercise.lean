@@ -12,7 +12,7 @@ SMT-visibility gaps:
    the obligation skeleton rendered as `sorry ∧ True`.
 2. **Lctx invisibility.** Even with the bundle fixed, the class's
    stated axioms (e.g. `TotalOrder.le_refl`) wouldn't reach SMT —
-   `loom_smt [*]` collects only the local context.
+   `plean_smt [*]` collects only the local context.
 
 The current implementation closes both: `materialiseInstance` emits a
 `noncomputable axiom <id> : <Class> <T>` plus an anonymous
@@ -31,7 +31,7 @@ reported `disproved`.
 -/
 import PLean
 
-open PLean PartialCorrectness DemonicChoice
+open PLean Std.WP
 
 class TotalOrder (t : Type) where
   le : t → t → Bool

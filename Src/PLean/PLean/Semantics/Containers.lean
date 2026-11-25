@@ -216,6 +216,26 @@ instance : EmptyCollection (PMap K V) := ⟨.empty⟩
 
 attribute [pverifySimp] PSet.mem PMap.get PMap.has
 
+/-! Container lookups through `if` (what a post-state lookup looks like after
+`commit`), so they meet the update constructors and unfold. -/
+section ite
+variable {c : Prop} [Decidable c]
+@[pverifySimp] theorem PSet.mem_ite (a b : PSet T) (x : T) :
+    (if c then a else b).mem x = if c then a.mem x else b.mem x := by split <;> rfl
+@[pverifySimp] theorem PSet.card_ite (a b : PSet T) :
+    (if c then a else b).card = if c then a.card else b.card := by split <;> rfl
+@[pverifySimp] theorem PMap.get_ite (a b : PMap K V) (k : K) :
+    (if c then a else b).get k = if c then a.get k else b.get k := by split <;> rfl
+@[pverifySimp] theorem PMap.card_ite (a b : PMap K V) :
+    (if c then a else b).card = if c then a.card else b.card := by split <;> rfl
+@[pverifySimp] theorem Option.isSome_ite' {α : Type} (a b : Option α) :
+    (if c then a else b).isSome = if c then a.isSome else b.isSome := by split <;> rfl
+@[pverifySimp] theorem Option.getD_ite' {α : Type} (a b : Option α) (d : α) :
+    (if c then a else b).getD d = if c then a.getD d else b.getD d := by split <;> rfl
+end ite
+
+attribute [pverifySimp] Option.isSome_some Option.isSome_none Option.getD_some
+
 /-- `c -= (e)`: remove an element (sets) or a key (maps). -/
 class PContainerErase (C : Type) (E : outParam Type) where
   erase : C → E → C

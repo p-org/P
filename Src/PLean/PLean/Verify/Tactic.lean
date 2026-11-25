@@ -38,10 +38,17 @@ def evalPverifyClose : Tactic := fun stx => do
   evalTactic (← `(tactic| all_goals pv_destruct))
   evalTactic (← `(tactic| all_goals (try subst_vars)))
   evalTactic (← `(tactic| all_goals (try and_intros)))
-  if ls.isEmpty then
-    evalTactic (← `(tactic| all_goals crush [*]))
-  else
-    let hints ← ls.mapM fun l => `(Crush.crushHintElem| $l:term)
-    evalTactic (← `(tactic| all_goals crush [*, $[$hints],*]))
+  let crushTac ← if ls.isEmpty then `(tactic| crush [*])
+    else
+      let hints ← ls.mapM fun l => `(Crush.crushHintElem| $l:term)
+      `(tactic| crush [*, $[$hints],*])
+  -- On failure, record the goal handed to `crush` (for `#pverify`'s report).
+  for g in ← getGoals do
+    setGoals [g]
+    try evalTactic crushTac
+    catch e =>
+      logInfo m!"pverify-goal: {← Meta.ppGoal g}"
+      throw e
+  setGoals []
 
 end PLean

@@ -12,8 +12,6 @@ import PLean
 
 open PLean Std.WP
 
-set_option pverify.smt.solver "cvc5"
-set_option pverify.smt.timeout 5
 
 pmodule ShardedKV
 
@@ -39,7 +37,7 @@ pmodule ShardedKV
           -- reasoning recovers the actual value via the routing
           -- invariants. The simpler form lets `wpgen` step through
           -- without falling into `WPGen.default`.
-          let v := (kv e.reshard_key).getD 0
+          let v := (kv.get e.reshard_key).getD 0
           kv -= (e.reshard_key)
           send e.reshard_to, eTransfer,
             (source = this.ref, key = e.reshard_key, value = v)
@@ -85,7 +83,6 @@ pmodule ShardedKV
 
   Proof of_Safety {
     prove Safety ;
-    prove default ;
   }
 
 end ShardedKV

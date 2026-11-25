@@ -13,7 +13,7 @@ namespace PLean
 
 variable {S E F G W : Type}
 
-attribute [pverifySimp] gcommit commit logAfter GWorld.consume World.consume HState.start
+attribute [pverifySimp] Framework gcommit commit logAfter GWorld.consume World.consume HState.start
   Log.push Log.startingAt Log.empty MachineState.gotoState HState.tick
 
 section

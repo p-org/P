@@ -39,14 +39,21 @@ pmodule PingPongAuto
   Theorem safety {
 
     invariant pong_after_ping :
-      ∀ q : ePong, s.sent q = true →
-        ∃ p : ePing, s.sent p = true ∧ p ≺ q
+      ∀ q : ePong, sent q s →
+        ∃ p : ePing, sent p s ∧ p ≺ q
+
+    -- Routing: needed for the "never receives" checks (a Server never
+    -- gets an `ePong`, a Client never gets an `ePing`).
+    invariant ping_routing :
+      ∀ e : ePing, sent e s → is_Server e.target s ∧ is_Client (ePing_payload_of e) s
+
+    invariant pong_routing :
+      ∀ e : ePong, sent e s → is_Client e.target s
 
   }
 
   Proof Safety {
-    prove safety using default ;
-    prove default ;
+    prove safety ;
   }
 
 end PingPongAuto

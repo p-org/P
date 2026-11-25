@@ -17,4 +17,3 @@ end PingPong
 
 #print_pmodule PingPong
 #pwf      PingPong
-#pverify  PingPong

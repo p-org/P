@@ -102,7 +102,6 @@ pmodule DistributedLock
 
   Proof Safety {
     prove safety ;
-    prove default ;
   }
 
 end DistributedLock

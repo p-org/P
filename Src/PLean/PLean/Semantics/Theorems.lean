@@ -80,6 +80,17 @@ theorem RunOK.run {Post : GWorld S E F G W → Prop} {g : GWorld S E F G W} {m m
 /-! ## Framework -/
 
 omit [Inhabited F] in
+/-- An in-flight packet is in the ghost log. -/
+theorem Framework.log_of_net {g : GWorld S E F G W} (hF : Framework g) {i : Nat} {p : Packet E}
+    (h : g.net i = some p) : g.log i = some p := hF.2.2.1 i p h
+
+/-- An in-flight packet's id is below the clock. -/
+theorem Framework.lt_clock_of_net {g : GWorld S E F G W} (hF : Framework g) {i : Nat}
+    {p : Packet E} (h : g.net i = some p) : i < g.clock := by
+  rcases Nat.lt_or_ge i g.clock with h' | h'
+  · exact h'
+  · rw [hF.1 i h'] at h; cases h
+
 theorem framework_consume {g : GWorld S E F G W} (i : Nat) (hF : Framework g) :
     Framework (g.consume i) := by
   obtain ⟨h1, h2, h3, h4⟩ := hF

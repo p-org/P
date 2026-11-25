@@ -50,11 +50,12 @@ lake build Examples.DistributedLock  # one specific protocol
 ```
 
 `lake build` from the repo root will fail. The first build downloads
-`z3` and `cvc5` solvers (~100 MB) into `.lake/build/`, where
-`PLean/Verify/Smt.lean` resolves them. Toolchain pinned to **Lean
-v4.36.0** in `lean-toolchain`; Mathlib and lean-auto are pinned to
-their matching `v4.36.0` tags in `lakefile.lean`. After a fresh clone
-run `lake exe cache get` for Mathlib's prebuilt oleans.
+`z3` and `cvc5` (~100 MB) into `.lake/build/bin/`. `crush` finds
+solvers on `PATH`, so add `<PLean>/.lake/build/bin` to `PATH`.
+Toolchain pinned to **Lean v4.36.0** in `lean-toolchain`; Mathlib and
+lean-auto are pinned to their matching `v4.36.0` tags in
+`lakefile.lean`. After a fresh clone run `lake exe cache get` for
+Mathlib's prebuilt oleans.
 
 ## Architecture
 
@@ -307,10 +308,11 @@ the Lean extension catch most issues without re-running `lake`.
 
 ### Run cvc5 / z3 from Lean
 
-The solvers are downloaded into `.lake/build/` on first build.
+The solvers are downloaded into `.lake/build/bin/` on first build.
 To verify they're reachable:
 
 ```bash
+lake build Tests.Semantics.CrushRoundtrip
 lake build Tests.Semantics.SmtRoundtrip
 # expect: "Goal proven by cvc5. Trusting SMT solver result."
 ```

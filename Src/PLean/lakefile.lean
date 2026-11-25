@@ -7,6 +7,7 @@ open Lake DSL System
 -- the fallback tactics (`set[T]` is PLean's own `PSet`).
 require mathlib from git "https://github.com/leanprover-community/mathlib4" @ "v4.36.0"
 require auto from git "https://github.com/leanprover-community/lean-auto.git" @ "v4.36.0"
+require crush from git "https://github.com/AD1024/lean-crush" @ "bump/4.36.0"
 
 package PLean where
   -- `experimental.intrinsic` acknowledges core's (experimental) loop
@@ -15,7 +16,7 @@ package PLean where
 
 -- Solver versions — must match dependencies.toml.
 def z3.version := "4.15.4"
-def cvc5.version := "1.3.1"
+def cvc5.version := "1.3.4"
 def dependencyFile := "dependencies.toml"
 
 def z3.baseUrl := "https://github.com/Z3Prover/z3/releases/download"
@@ -75,7 +76,7 @@ def copyFile' (src : FilePath) (dst : FilePath) : LogIO PUnit := do
 
 def downloadSolver (solver : Solver) (pkg : Package) (oFile : FilePath) : JobM PUnit := do
   let zipPath := (pkg.buildDir / s!"{solver}").addExtension "zip"
-  logInfo s!"Downloading {solver} from {solver.url}"
+  logVerbose s!"Downloading {solver} from {solver.url}"
   download solver.url zipPath
   let extractedPath := pkg.buildDir / solver.fullName
   if ← extractedPath.pathExists then
@@ -85,25 +86,23 @@ def downloadSolver (solver : Solver) (pkg : Package) (oFile : FilePath) : JobM P
   IO.FS.createDirAll oFile.parent.get!
   copyFile' binPath oFile
   if ← oFile.pathExists then
-    logInfo s!"{solver} is now at {oFile}"
+    logVerbose s!"{solver} is now at {oFile}"
   else
     logError s!"Failed to download {solver} to {oFile}"
   IO.FS.removeFile zipPath
   IO.FS.removeDirAll extractedPath
 
-def downloadDependency (pkg : Package) (oFile : FilePath) (build : Package → FilePath → JobM PUnit) := do
+def downloadDependency (pkg : Package) (solver : Solver) (oFile : FilePath) := do
   let lakefilePath := pkg.lakeDir / ".." / dependencyFile
   let srcJob ← inputTextFile lakefilePath
-  buildFileAfterDep oFile srcJob fun _srcFile => build pkg oFile
+  buildFileAfterDep oFile srcJob (fun _srcFile => downloadSolver solver pkg oFile)
+    (extraDepTrace := pure (.ofHash (Hash.ofString solver.url) s!"{solver} url: {solver.url}"))
 
--- `PLean/Verify/Smt.lean` resolves solver paths relative to its own
--- source via `currentDirectory!`, i.e. `<PLean>/.lake/build/{z3,cvc5}` —
--- `pkg.buildDir` both when PLean is the root package and when it is
--- consumed as a dependency.
+-- Solvers are installed into `<PLean>/.lake/build/bin`.
 target downloadDependencies pkg : Array FilePath := do
-  let solverDir := pkg.buildDir
-  let z3 ← downloadDependency pkg (solverDir / "z3") (downloadSolver Solver.z3)
-  let cvc5 ← downloadDependency pkg (solverDir / "cvc5") (downloadSolver Solver.cvc5)
+  let solverDir := pkg.buildDir / "bin"
+  let z3 ← downloadDependency pkg Solver.z3 (solverDir / "z3")
+  let cvc5 ← downloadDependency pkg Solver.cvc5 (solverDir / "cvc5")
   return Job.collectArray #[z3, cvc5]
 
 @[default_target]

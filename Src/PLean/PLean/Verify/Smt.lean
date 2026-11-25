@@ -118,12 +118,12 @@ open Elab Term in
     return mkStrLit s!"{srcDir}"
   | _, _ => throwUnsupportedSyntax
 
-/-- `<PLean>/.lake/build`: this file lives at `<PLean>/PLean/Verify/`. -/
+/-- `<PLean>/.lake/build`: this file lives at `<PLean>/PLean/Verify/`. Solvers live in its `bin/`. -/
 private def buildDir : System.FilePath :=
   System.mkFilePath [currentDirectory!] / ".." / ".." / ".lake" / "build"
 
-def z3Path   : System.FilePath := buildDir / "z3"
-def cvc5Path : System.FilePath := buildDir / "cvc5"
+def z3Path   : System.FilePath := buildDir / "bin" / "z3"
+def cvc5Path : System.FilePath := buildDir / "bin" / "cvc5"
 
 /-! ## lean-auto query construction -/
 

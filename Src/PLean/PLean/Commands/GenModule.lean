@@ -14,8 +14,11 @@ Emitted inside `namespace M`:
 * per machine: state aliases `<S>_st` / `<S>_garg`, field accessors
   `<v>_set`, handlers `<S>.<ev>_handler`, entries `<S>.entry`;
 * `prog : PLean.Program S E F G W`;
-* `InitConditions`, the invariants and `Lemma` / `Theorem` bundles, and the
-  automatic invariant `NoHalt` when no machine ever halts.
+* `InitConditions` (every machine in its start state, its start entry
+  pending), the invariants and `Lemma` / `Theorem` bundles, and the
+  automatic invariants `NoHalt` (when no machine ever halts) and
+  `Transient` (a machine is never idle in a state whose entry always ends
+  in a `goto`).
 -/
 import Lean
 import PLean.Internal.Decls
@@ -89,6 +92,23 @@ def programHalts (ctx : LocalPModuleCtx) : Bool :=
     match ctx.machines.find? m with
     | some md => md.body.any fun b => (raisedEvents b).contains `halt
     | none => false
+
+/-- The states of `md` whose entry always ends in a `goto` (a machine is
+never idle in them). -/
+def transientStates (md : PMachineDecl) : Array Name := Id.run do
+  let mut out := #[]
+  for (sname, _, items) in machineStates md.body do
+    for it in items do
+      let body? : Option Syntax := match it with
+        | `(pStateBodyItem| entry { $b:doSeq }) => some b
+        | `(pStateBodyItem| entry ( $_:ident : $_:term ) { $b:doSeq }) => some b
+        | _ => none
+      let some b := body? | continue
+      let seq := if b.getKind == ``Lean.Parser.Term.doSeqBracketed then b[1] else b[0]
+      if let some item := seq.getArgs.back? then
+        if item[0].getKind == ``pGotoNoPayload || item[0].getKind == ``pGotoPayload then
+          out := out.push sname
+  return out
 
 /-- The event handled by a state item, with its body (`none` for `goto`-only
 and `ignore` items). -/
@@ -293,13 +313,18 @@ private def emitStateHandlers (mname sname : Name) (items : Array Syntax) (vars 
   let ordered ← match orderForRaise items with
     | .ok o => pure o
     | .error msg => throwError "state `{mname}.{sname}`: {msg}"
+  let localize (body : TSyntax ``Lean.Parser.Term.doSeq) :
+      CommandElabM (TSyntax ``Lean.Parser.Term.doSeq) :=
+    return ⟨← liftMacroM (localizeAssigns (collectLocals body) body)⟩
   for it in ordered do
     match it with
     | `(pStateBodyItem| on $ev:ident ( $p:ident : $ty:term ) { $body:doSeq }) =>
+      let body ← localize body
       elabCommand (← `(def $(hName ev.getId) ($p : $ty) : $idHM Unit := do
           $pre*
           do $body))
     | `(pStateBodyItem| on $ev:ident { $body:doSeq }) =>
+      let body ← localize body
       match payloadTy ev.getId with
       | some pt =>
         elabCommand (← `(def $(hName ev.getId) (_payload : $(mkIdent pt)) : $idHM Unit := do
@@ -325,11 +350,13 @@ private def emitStateHandlers (mname sname : Name) (items : Array Syntax) (vars 
   for it in items do
     match it with
     | `(pStateBodyItem| entry { $body:doSeq }) =>
+      let body ← localize body
       elabCommand (← `(def $entryName (_ : $idG) : $idHM Unit := do
           $pre*
           do $body))
       emitted := true
     | `(pStateBodyItem| entry ( $p:ident : $ty:term ) { $body:doSeq }) =>
+      let body ← localize body
       let gctor := mkIdent (`G ++ stateTagName mname sname)
       elabCommand (← `(def $entryName ($arg : $idG) : $idHM Unit := do
           let $p : $ty := match $arg:ident with
@@ -420,7 +447,7 @@ private def emitInitConditions (ctx : LocalPModuleCtx) (mk ek : NameSet)
     (← `(∀ $j:ident, ($s).log $j = none), false),
     (← `(($s).error = none), false),
     (← `(∀ $r:ident, ($s).nextRef ≤ $r → (($s).machines $r).state = none), false),
-    (← `(∀ $r:ident, $r < ($s).nextRef → $startD ∧ (($s).machines $r).pending = none ∧
+    (← `(∀ $r:ident, $r < ($s).nextRef → $startD ∧ (($s).machines $r).pending ≠ none ∧
           (($s).machines $r).waiting = none), false),
     (← `(∀ $r:ident, (($s).machines $r).halted = false), false)]
   for d in ctx.inits do
@@ -484,6 +511,9 @@ def elabPGenModule : CommandElab := fun stx => do
     match ctx.events.find? ev with
     | some e => if e.hasPayload then some (ev.appendAfter "_payload") else none
     | none => none
+  -- Axiomatised instances (`pinstance`) make the program noncomputable.
+  let noncomp := !ctx.instances.isEmpty
+  if noncomp then elabCommand (← `(noncomputable section))
   for mname in ctx.machineOrder do
     let some m := ctx.machines.find? mname | continue
     let mvars := (vars.find? mname).getD #[]
@@ -494,6 +524,7 @@ def elabPGenModule : CommandElab := fun stx => do
       emitStateHandlers mname sname items mvars payloadTy
     elabCommand (← `(end $(mkIdent mname)))
   emitProgram ctx
+  if noncomp then elabCommand (← `(end))
   -- specifications
   for (_, d) in ctx.invariants.toList do
     materialiseInvariant machineKinds eventKinds machineFields {} {} eventFields d
@@ -504,11 +535,24 @@ def elabPGenModule : CommandElab := fun stx => do
   unless programHalts ctx do
     elabCommand (← `(@[reducible] def $(mkIdent `NoHalt) (s : $idGW) : Prop :=
         ∀ r, (s.machines r).halted = false))
+  let mut transient : Array (TSyntax `term) := #[]
+  for mname in ctx.machineOrder do
+    let some md := ctx.machines.find? mname | continue
+    for sname in transientStates md do
+      transient := transient.push (← `(((s.machines r).state = some $(mkIdent (`S ++ stateTagName mname sname)))))
+  if let some last := transient.back? then
+    let disj ← transient.pop.foldrM (init := last) fun d acc => `($d ∨ $acc)
+    elabCommand (← `(@[reducible] def $(mkIdent `Transient) (s : $idGW) : Prop :=
+        ∀ r, $disj → (s.machines r).pending ≠ none))
+  -- `pinstance` class fields become named facts, used as solver hints.
+  let mut axioms := ctx.axioms
   for (_, d) in ctx.instances.toList do
-    discard <| synthInstanceFieldAxioms modName d
+    for ax in ← synthInstanceFieldAxioms modName d do
+      axioms := axioms.insert ax.name ax
   elabCommand (← `(end $name))
   setPModule
     { ctx with
+      axioms
       machines := ctx.machines.foldl (init := {}) fun acc n d => acc.insert n { d with materialised := true } }
 
 end PLean

@@ -53,6 +53,59 @@ theorem triple_of_run {act : HandlerM S E F G W Unit} {hs0 : HState S E F G W}
   rw [StateT.wp_apply_eq, hrun]
   exact hq
 
+/-- A handler triple with exception postcondition `True` holds of a
+successful run. -/
+theorem triple_run_post {act : HandlerM S E F G W Unit} {hs0 hs : HState S E F G W}
+    {Q : Unit → HState S E F G W → Prop}
+    (h : Triple act (fun hs => hs = hs0) Q (fun _ => True)) (hrun : act.run hs0 = .ok ((), hs)) :
+    Q () hs := by
+  have h1 : wp act Q (fun _ => True) hs0 := h.le_wp hs0 rfl
+  rw [StateT.wp_apply_eq] at h1
+  revert h1
+  rw [hrun]
+  exact id
+
+theorem triple_post_of {act : HandlerM S E F G W Unit} {hs0 : HState S E F G W}
+    {Q : Unit → HState S E F G W → Prop} (h : ∀ hs, act.run hs0 = .ok ((), hs) → Q () hs) :
+    Triple act (fun hs => hs = hs0) Q (fun _ => True) := by
+  constructor
+  intro s hs'
+  subst hs'
+  show wp act Q (fun _ => True) s
+  rw [StateT.wp_apply_eq]
+  revert h
+  cases act.run s with
+  | ok r => intro h; exact h r.2 rfl
+  | error _ => intro _; trivial
+
+/-- Running `act` as machine `m` never errs. -/
+def RunSafe (g : GWorld S E F G W) (m : MachineRef) (ms : MachineState S E F G W)
+    (act : HandlerM S E F G W Unit) : Prop :=
+  ∀ coins, Triple act (fun hs => hs = HState.start g.toWorld m ms coins)
+    (fun _ _ => True) (fun _ => False)
+
+/-- `Post` holds once the effects of every successful run of `act` are
+committed. -/
+def RunPost (Post : GWorld S E F G W → Prop) (g : GWorld S E F G W) (m : MachineRef)
+    (ms : MachineState S E F G W) (act : HandlerM S E F G W Unit) : Prop :=
+  ∀ coins, Triple act (fun hs => hs = HState.start g.toWorld m ms coins)
+    (fun _ hs => Post (gcommit g m hs)) (fun _ => True)
+
+theorem RunOK.of_safe_post {Post : GWorld S E F G W → Prop} {g : GWorld S E F G W} {m ms act}
+    (h1 : RunSafe g m ms act) (h2 : RunPost Post g m ms act) : RunOK Post g m ms act := by
+  intro coins
+  obtain ⟨hs, hrun, -⟩ := triple_run_ok (h1 coins)
+  exact triple_of_run hs hrun (triple_run_post (h2 coins) hrun)
+
+theorem RunPost.and {P Q : GWorld S E F G W → Prop} {g : GWorld S E F G W} {m ms act}
+    (h1 : RunPost P g m ms act) (h2 : RunPost Q g m ms act) :
+    RunPost (fun g' => P g' ∧ Q g') g m ms act := fun coins =>
+  triple_post_of fun _ hrun => ⟨triple_run_post (h1 coins) hrun, triple_run_post (h2 coins) hrun⟩
+
+theorem RunPost.mono {P Q : GWorld S E F G W → Prop} {g : GWorld S E F G W} {m ms act}
+    (hpq : ∀ g', P g' → Q g') (h : RunPost P g m ms act) : RunPost Q g m ms act := fun coins =>
+  triple_post_of fun _ hrun => hpq _ (triple_run_post (h coins) hrun)
+
 /-- Two handler obligations about the same run combine. -/
 theorem RunOK.and {P Q : GWorld S E F G W → Prop} {g : GWorld S E F G W} {m ms act}
     (h1 : RunOK P g m ms act) (h2 : RunOK Q g m ms act) :

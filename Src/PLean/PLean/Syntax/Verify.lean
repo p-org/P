@@ -80,9 +80,8 @@ def elabPInvariant : CommandElab := fun stx => do
 
 `paxiom <name> : <body>` registers an axiom whose body may name the
 pmodule's `system`-declared `<σ>` to refer to the global state — the
-materialiser binds it as `∀ <σ> : GlobalState Sig, <body>`. A pmodule
-that has not declared `system <σ>` admits the body verbatim
-(state-independent axiom). -/
+materialiser binds it as `∀ <σ> : GW, <body>`. A body that does not
+name `<σ>` (or a pmodule without `system <σ>`) is admitted verbatim. -/
 
 syntax (name := pAxiom) "paxiom " ident " : " term : command
 
@@ -270,20 +269,18 @@ Replay each verification declaration as a Lean def. Called by
 `#gen_module` after machines have been materialised so invariant /
 axiom bodies can reference machine fields and event payloads. -/
 
-/-- Reject any reference to the `GlobalState` / `PLean.GlobalState`
-type identifier inside a state-bound invariant body. A binder of type
-`GlobalState <Sig>` (in any form — `∀`/`∃`/`let`/`have`/`fun`/`λ`)
-would shadow the pmodule's `system`-declared `<σ>` and silently
-decouple the invariant from per-handler state, letting a *false*
-property verify as a clean pass.
+/-- Reject any reference to the world type (`GW` / `GWorld`) inside a
+state-bound invariant body. A binder of that type (in any form —
+`∀`/`∃`/`let`/`have`/`fun`/`λ`) would shadow the pmodule's
+`system`-declared `<σ>` and silently decouple the invariant from the
+world it is checked on, letting a *false* property verify.
 
 The check is intentionally name-based rather than binder-shape-based:
 a well-formed state-bound invariant has no reason to name the state
 type (it references the bound `<σ>` directly), so rejecting *any*
 mention is a sound over-approximation that no new binder syntax can
-evade. A bare `invariant … : ∀ s : GlobalState Sig, P` in a pmodule
-without `system <σ>` is still allowed because the materialiser uses a
-wildcard binder there and there's no outer `<σ>` to shadow. -/
+evade. In a pmodule without `system <σ>` there is no outer `<σ>` to
+shadow, so the check does not apply. -/
 private partial def containsExplicitStateBinder (stx : Syntax) : Option Syntax := Id.run do
   if stx.isIdent then
     let n := stx.getId
@@ -298,26 +295,22 @@ private def rejectExplicitStateBinder (id : Ident) (prop : TSyntax `term) :
     CommandElabM Unit := do
   match containsExplicitStateBinder prop with
   | some hit =>
-    throwErrorAt hit m!"invariant `{id.getId}` body names the `GlobalState` \
-      type. A `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` \
-      shadows the pmodule's `system` state binder and silently decouples the \
-      invariant from per-handler state (a soundness hole). Reference the \
-      pmodule's `system`-declared state binder directly in the body instead \
-      of introducing a new `GlobalState`-typed variable."
+    throwErrorAt hit m!"invariant `{id.getId}` body names the world type. A \
+      binder of that type shadows the pmodule's `system` state binder and \
+      decouples the invariant from the world it is checked on. Refer to the \
+      `system`-declared binder instead."
   | none => pure ()
 
 /-- Public guard for `init-holds` / `paxiom` bodies: reject a body
-that names the `GlobalState` type, since such a binder shadows the
+that names the world type, since such a binder shadows the
 state binder the materialiser introduces. Same soundness rationale
 as `rejectExplicitStateBinder` for invariants. -/
 def rejectStateShadowIn (what : String) (prop : Syntax) : CommandElabM Unit := do
   match containsExplicitStateBinder prop with
   | some hit =>
-    throwErrorAt hit m!"{what} body names the `GlobalState` type. A \
-      `∀`/`∃`/`let`/`have`/`fun` binder of type `GlobalState <Sig>` shadows \
-      the materialiser's state binder and decouples the clause from the \
-      actual state (a soundness hole). Reference the state directly rather \
-      than introducing a new `GlobalState`-typed variable."
+    throwErrorAt hit m!"{what} body names the world type. A binder of that \
+      type shadows the `system` state binder and decouples the clause from \
+      the world. Refer to the `system`-declared binder instead."
   | none => pure ()
 
 /-! ## Auto-injection of kind guards over machines and events
@@ -876,7 +869,12 @@ def materialiseAxiom (machineKinds eventKinds : NameSet)
         injectKindGuards machineKinds eventKinds sName rewritten
       let prop' : TSyntax `term := ⟨guarded⟩
       let sBinder : Ident := mkIdent sName
-      elabCommand (← `(axiom $id : ∀ $sBinder : $(mkIdent `GW), $prop'))
+      -- A state-independent axiom stays first-order for the solver.
+      let mentionsState := (guarded.find? fun s => s.isIdent && s.getId == sName).isSome
+      if mentionsState then
+        elabCommand (← `(axiom $id : ∀ $sBinder : $(mkIdent `GW), $prop'))
+      else
+        elabCommand (← `(axiom $id : $prop'))
 
 def materialiseInit (_d : PInitDecl) : CommandElabM Unit := do
   -- Per-clause materialisation is a no-op: aggregation lives in

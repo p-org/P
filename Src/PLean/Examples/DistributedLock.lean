@@ -1,18 +1,13 @@
 /-
 PLean port of [`Tutorial/Advanced/6_DistributedLock`](../../../Tutorial/Advanced/6_DistributedLock/PSrc/System.p).
 
-`Theorem safety` ports all five P-source invariants (including
-`not_held_after_release` and `transfer_to_higher`); the P source's
+`Theorem safety` ports the P-source invariants; the P source's
 `init-condition` ("exactly one Node holds the lock at startup") is
-ported as the `init-holds` clause below. All ten base-case obligations
-and both `prove default` inductive obligations discharge via SMT; the
-two `prove safety` inductive-step obligations remain disproved — a
-genuine inductiveness gap across the `eGrant`/`eAccept` handlers.
+ported as the `init-holds` clause below.
 
-Quantifiers over a machine kind (`∀ n : Node, …`) auto-inject
-runtime kind guards (`is_Node n.ref s →`) at materialisation, so the
-user doesn't have to spell out `Node_allocated n.ref s →` manually
-after every `Node`-quantified binder.
+Quantifiers over a machine kind (`∀ n : Node, …`) auto-inject kind
+guards (`is_Node n.ref s →`), so the user doesn't have to spell them
+out after every `Node`-quantified binder.
 -/
 import PLean
 

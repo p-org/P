@@ -23,14 +23,14 @@
 | D4 | The model is executable (compiled, and kernel-reducible where possible), so that P's model-checking algorithms can be built on it. |
 | D5 | **Message history is ghost state.** The real world holds only in-flight packets. The ghost layer adds the log of everything ever sent. |
 | D6 | SMT discharge goes through **lean-crush**, branch `bump/4.36.0`. lean-auto and Mathlib are dropped. |
-| D7 | Proofs are relative to `InitConditions`. **`init-holds` describes the set of initial states symbolically.** No start entry is run or pending at init. Model checking starts from a concrete initial world that satisfies `InitConditions`. |
+| D7 | Proofs are relative to `InitConditions`. **`init-holds` describes the set of initial states symbolically.** As in PVerifier, every machine starts in its start state with its start entry pending. Model checking starts from a concrete initial world that satisfies `InitConditions`. |
 | D8 | **Simple encodings.** Verification conditions only mention:<ul><li>total functions with counter-bounded domains, for world-level state;</li><li>`Nat` counters;</li><li>non-recursive datatypes;</li><li>the two container history datatypes of §3.1. Their lookup equations are exactly the defining equations of the corresponding closures.</li></ul> |
 | D9 | **Specs are formulas** over the ghost world. There is no trace semantics (§4.6). |
 | D10 | `$`, `$$` and `choose` are in scope. **`choose(n)` ranges over `[0, n]`**, PVerifier's contract. |
 | D11 | **Unhandled events are errors**, checked by "never receives" obligations. |
 | D12 | `receive` is supported, but **not inside recursive functions** yet. |
 | D13 | **`defer` is supported; `exit` handlers are not.** |
-| D14 | **Default trust policy: `reconstruct`.** |
+| D14 | **Default trust policy: `reconstructOrTrust`,** with trusted obligations reported as such; `reconstruct` is opt-in. |
 | D15 | **First model checker: explicit-state BMC** (§6). |
 
 **Goals.**
@@ -297,9 +297,9 @@ error'      = hs.err
 
 - **Proofs:** any `g : GWorld` with `InitConditions g`. That means:
   - `clock = 0`, `net = log = fun _ => none`;
-  - every `r < nextRef` is allocated and in its start state, with no `pending` or `waiting`;
+  - every `r < nextRef` is allocated and in its start state, with its start entry pending (any argument) and no `waiting`;
   - every `r ≥ nextRef` is unallocated;
-  - the user's `init-holds` facts, which describe the initial states symbolically, including whatever the start entries would have established.
+  - the user's `init-holds` facts, which describe the initial states symbolically.
 - **Model checking:** a concrete `World` that satisfies `InitConditions`. It is either given by the user, or generated, then validated with `decide` when `InitConditions` is decidable on concrete worlds (§6).
 
 ### 3.9 Hook for spec monitors (ROADMAP Phase 4)
@@ -357,7 +357,7 @@ These are proved inductive generically, about `gcommit`. As a result:
    - World-level updates are lambdas, which crush defunctionalizes.
    - Container updates are constructor terms, which crush unfolds through `mem`/`get`.
    - A `dsimp` projection pass is kept only if P1 shows it helps.
-3. **Trust (D14):** `pverify.trust` defaults to `reconstruct`. An obligation that the solver proves but reconstruction can't replay is reported as its own outcome, `reconstruct-failed`. `reconstructOrTrust` / `trust` are opt-in.
+3. **Trust (D14):** `pverify.trust` defaults to `reconstructOrTrust`: an obligation that the solver proves but reconstruction can't replay is reported as `✓ (trusted)` (its theorem then depends on crush's trust axiom). `reconstruct` makes such obligations fail.
 4. **Counterexamples:** decoded from crush's `get-model` output. A decoded world can be re-checked with `decide`.
 
 **Removed:**
@@ -508,7 +508,7 @@ implementation waits until P5 is done.
 - **Visited-set `foreach` rule:** the `support`-prefix membership must stay manageable for crush. P1 checks this.
 - **`receive` splitting:** code-size growth, and loops where only some paths hit a `receive`.
 - **Semantic shift for existing proofs:**
-  - entries run only after `goto` (start entries never run; `init-holds` describes the initial states);
+  - start entries are pending in every initial world, so they run like any other entry;
   - `raise` is local;
   - goto labels leave the network.
 - **`vcgen` is experimental:** its API may change across toolchain bumps.

@@ -40,6 +40,38 @@ variable {S E F G W : Type}
 @[pverifySimp] def received (m : Msg E) (s : GWorld S E F G W) : Prop :=
   s.log m.id = some m.packet ∧ s.net m.id = none
 
+/-- The state of machine `r` (`none` when unallocated). -/
+@[pverifySimp] def stateOf (r : MachineRef) (s : GWorld S E F G W) : Option S := (s.machines r).state
+
+/-- Every message a handler sent between handler states `hs0` and `hs`
+satisfies `P`. -/
+def sentSince (hs0 hs : HState S E F G W) (P : Msg E → Prop) : Prop :=
+  ∀ j p, hs0.out.size ≤ j → j < hs.out.size → hs.out.get j = some p → P ⟨j, p.src, p.dst, p.ev⟩
+
+/-! A loop's sends, one at a time (applied before `sentSince` is unfolded). -/
+
+@[pverifySimp] theorem sentSince_self (hs : HState S E F G W) (P : Msg E → Prop) :
+    sentSince hs hs P ↔ True :=
+  ⟨fun _ => trivial, fun _ j _ h1 h2 => absurd (Nat.lt_of_lt_of_le h2 h1) (Nat.lt_irrefl _)⟩
+
+@[pverifySimp] theorem sentSince_push (hs0 : HState S E F G W) (r : MachineRef)
+    (ms : MachineState S E F G W) (out : Log (Packet E)) (p : Packet E)
+    (sp : Log (MachineState S E F G W)) (ob : Log E) (c : Nat → Nat) (u : Nat) (P : Msg E → Prop) :
+    sentSince hs0 ⟨r, ms, out.push p, sp, ob, c, u⟩ P ↔
+      sentSince hs0 ⟨r, ms, out, sp, ob, c, u⟩ P ∧
+        (hs0.out.size ≤ out.size → P ⟨out.size, p.src, p.dst, p.ev⟩) := by
+  simp only [sentSince, Log.push_size, Log.push_get]
+  constructor
+  · intro h
+    refine ⟨fun j q h1 h2 h3 => ?_, fun h1 => h out.size p h1 (Nat.lt_succ_self _) (by simp)⟩
+    have hne : j ≠ out.size := Nat.ne_of_lt h2
+    exact h j q h1 (Nat.lt_succ_of_lt h2) (by simp [hne, h3])
+  · intro ⟨h, hnew⟩ j q h1 h2 h3
+    by_cases hj : j = out.size
+    · subst hj; simp at h3; subst h3; exact hnew h1
+    · simp [hj] at h3
+      exact h j q h1 (Nat.lt_of_le_of_ne (Nat.le_of_lt_succ h2) hj) h3
+
 /-- `a` was sent before `b`. -/
 @[pverifySimp] def precedes (a b : Msg E) : Prop := a.id < b.id
 

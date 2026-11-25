@@ -46,6 +46,17 @@ abbrev HandlerM (S E F G W : Type) := StateT (HState S E F G W) (Except PError)
     (arg : G) : MachineState S E F G W :=
   { ms with state := some s, pending := some arg }
 
+/-- What a loop body leaves unchanged: the loop invariant conjunct that
+`foreach` / `while` add automatically (`hs0` is the handler's start state).
+Earlier sends are kept, and the machine state / outbox / spawned machines /
+announcements are unchanged when the body cannot touch them. -/
+@[reducible] def HState.frame {S E F G W : Type} (hs0 hs : HState S E F G W)
+    (msFixed outFixed spawnFixed obsFixed : Bool) : Prop :=
+  hs.ref = hs0.ref ∧ hs0.out.size ≤ hs.out.size ∧
+  (∀ j, j < hs0.out.size → hs.out.get j = hs0.out.get j) ∧
+  (msFixed = true → hs.ms = hs0.ms) ∧ (outFixed = true → hs.out = hs0.out) ∧
+  (spawnFixed = true → hs.spawn = hs0.spawn) ∧ (obsFixed = true → hs.obs = hs0.obs)
+
 namespace H
 
 variable {S E F G W : Type}

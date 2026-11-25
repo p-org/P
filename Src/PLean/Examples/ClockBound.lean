@@ -1,31 +1,23 @@
 /-
-PLean port of the ClockBound protocol (`https://github.com/aws/clock-bound`)
+PLean port of the ClockBound protocol (https://github.com/aws/clock-bound).
 
-The P source has three impl machines (GlobalClock, LocalClock, Client)
-plus a `spec Correctness` that observes `eLocalResponse`. PLean's
-verification model doesn't need the runtime setup machinery — we drop
-the per-machine `Init` states and the `Client` machine entirely, and
-state the global safety properties directly over the `sent` set,
-indexed by `eLocalResponse` labels.
+A GlobalClock serves the true time. Each LocalClock, when its Client
+asks, queries the GlobalClock and answers with an uncertainty interval
+`[earliest, latest]` around the true time; `choose` models the clock
+error.
 
-`choose(n)` is modelled as `MonadNonDet.pickSuchThat Int (0 ≤ x ≤ n)`
-([`PLean.choose`](../PLean/Semantics/Primitives.lean)): the WP gives
-the verifier `0 ≤ x ∧ x ≤ n` as a hypothesis about the chosen value.
+Safety, over the sent `eLocalResponse`s `e0`, `e1`:
+  G1: e0.latest < e1.earliest → e0.trueTime < e1.trueTime
+  G2: e0.trueTime < e1.trueTime → e0.earliest < e1.latest
+  G3: e0.trueTime < e1.trueTime → e0.target = e1.target →
+        e0.earliest ≤ e1.earliest
 
-Target safety goals:
-  G1: sent e0 → sent e1 → e0.latest < e1.earliest → e0.trueTime < e1.trueTime
-  G2: sent e0 → sent e1 → e0.trueTime < e1.trueTime → e0.earliest < e1.latest
-  G3: sent e0 → sent e1 → e0.trueTime < e1.trueTime →
-        e0.target = e1.target → e0.earliest ≤ e1.earliest
+`eGlobalResponse` / `eLocalResponse` carry a payload field `target`; an
+invariant reaches the message's own target through a `PLean.Msg E` binder.
 -/
 import PLean
 
-open PLean Std.WP
-
-set_option pverify.smt.solver "cvc5"
-set_option pverify.smt.timeout 10
-set_option loom.solver.smt.retryOnUnknown false
-set_option auto.mono.ignoreNonQuasiHigherOrder true
+open PLean
 
 pmodule ClockBound
 
@@ -41,16 +33,15 @@ pmodule ClockBound
   event eGlobalResponse : tGlobalResponse
   event eLocalResponse  : tLocalResponse
 
-  -- Unique GlobalClock (the global() function from the reference).
+  -- The unique GlobalClock.
   function global_clock : GlobalClock
 
-  -- GlobalClock's `time` is the monotone source of true time.
   machine GlobalClock {
     var time : Int
 
     start state Serving {
       on eGlobalQuery (payload : tGlobalQuery) {
-        let delta ← PLean.choose 10
+        let delta ← choose (10 : Int)
         time = time + delta + 1
         send payload.localClock, eGlobalResponse,
           (target = payload.localClock, trueTime = time)
@@ -58,17 +49,12 @@ pmodule ClockBound
     }
   }
 
-  -- LocalClock keeps its current uncertainty bounds plus refs to its
-  -- GlobalClock and its Client. The two states (`Idle` and
-  -- `Waiting`) track whether this LC has an outstanding
-  -- eGlobalQuery — required to prove that at most one
-  -- eGlobalResponse to this LC is in flight at any time.
   machine LocalClock {
-    var currEarlyBound  : Int
-    var currLateBound   : Int
-    var maxUncertainty  : Int
-    var globalClock     : PLean.MachineRef
-    var client          : PLean.MachineRef
+    var currEarlyBound : Int
+    var currLateBound  : Int
+    var maxUncertainty : Int
+    var globalClock    : PLean.MachineRef
+    var client         : PLean.MachineRef
 
     start state Idle {
       on eLocalQuery {
@@ -78,16 +64,16 @@ pmodule ClockBound
     }
 
     state Waiting {
+      defer eLocalQuery
+
       on eGlobalResponse (payload : tGlobalResponse) {
-        -- P: early = currEarlyBound + choose(payload.trueTime - currEarlyBound + 1)
-        --   ⇒ early ∈ [currEarlyBound, payload.trueTime]
-        let earlyDelta ← PLean.choose (payload.trueTime - currEarlyBound)
-        let lateDelta  ← PLean.choose maxUncertainty
+        -- early ∈ [currEarlyBound, trueTime], late ∈ [trueTime, trueTime + maxUncertainty]
+        let earlyDelta ← choose (payload.trueTime - currEarlyBound)
+        let lateDelta  ← choose maxUncertainty
         let early : Int := currEarlyBound + earlyDelta
         let late  : Int := payload.trueTime + lateDelta
         send client, eLocalResponse,
-          (target = client, trueTime = payload.trueTime,
-           earliest = early, latest = late)
+          (target = client, trueTime = payload.trueTime, earliest = early, latest = late)
         currEarlyBound = early
         currLateBound = late
         goto Idle
@@ -95,209 +81,142 @@ pmodule ClockBound
     }
   }
 
-  /-! ## Init-holds: pin the steady-state configuration. -/
+  -- Asks its LocalClock for the time, again after every answer.
+  machine Client {
+    var localClock : PLean.MachineRef
+
+    start state Querying {
+      entry {
+        send localClock, eLocalQuery
+      }
+
+      on eLocalResponse (payload : tLocalResponse) {
+        send localClock, eLocalQuery
+      }
+    }
+  }
 
   init-holds ∀ g : GlobalClock, g = global_clock
-  init-holds is_GlobalClock global_clock s
+  init-holds is_GlobalClock global_clock.ref s
   init-holds ∀ g : GlobalClock, g.time = 0
   init-holds ∀ lc : LocalClock, lc.currEarlyBound = 0
   init-holds ∀ lc : LocalClock, lc.currLateBound = 0
   init-holds ∀ lc : LocalClock, lc.maxUncertainty > 0
-  init-holds ∀ lc : LocalClock, lc.globalClock = global_clock
+  init-holds ∀ lc : LocalClock, lc.globalClock = global_clock.ref
+  init-holds ∀ lc : LocalClock, is_Client lc.client s
   init-holds ∀ lc1 lc2 : LocalClock, lc1.client = lc2.client → lc1 = lc2
+  init-holds ∀ c : Client, is_LocalClock c.localClock s
 
-  /-! ## Inductive invariants
-
-  The safety goals G1–G3 are not inductive on their own; they hold by
-  consequence of structural invariants linking each `eLocalResponse`
-  payload to the LocalClock that sent it and to the GlobalClock's
-  `time`. -/
-
-  -- Topology lemma: there is a unique GlobalClock, every LocalClock
-  -- points at it. Mirrors LockServer's `system_config`.
+  -- One GlobalClock; who talks to whom.
   Lemma topology {
-
     invariant gc_is_unique : ∀ g : GlobalClock, g = global_clock
-    invariant gc_kind : is_GlobalClock global_clock s
-    invariant lc_global : ∀ lc : LocalClock, lc.globalClock = global_clock
-
-    -- Each LocalClock has a distinct client (one-to-one mapping).
+    invariant gc_kind : is_GlobalClock global_clock.ref s
+    invariant lc_global : ∀ lc : LocalClock, lc.globalClock = global_clock.ref
+    invariant lc_uncertainty : ∀ lc : LocalClock, lc.maxUncertainty > 0
+    invariant lc_client_kind : ∀ lc : LocalClock, is_Client lc.client s
+    invariant client_lc_kind : ∀ c : Client, is_LocalClock c.localClock s
+    -- Each LocalClock has its own client.
     invariant lc_client_injective :
-      ∀ lc1 lc2 : LocalClock,
-        lc1.client = lc2.client → lc1 = lc2
+      ∀ lc1 lc2 : LocalClock, lc1.client = lc2.client → lc1 = lc2
 
-    -- For any sent label `e` whose action is an `eGlobalResponse`,
-    -- the label's `target` field matches the payload's `target`
-    -- field. The GC handler sets both to `payload.localClock` at
-    -- send time. We quantify over `Sig.Label` (not `eGlobalResponse`)
-    -- so the `e.target` on the LHS stays the label's `target` field;
-    -- the field-projection sugar (`rewriteFieldProjections` in
-    -- `Syntax/Verify.lean`) would otherwise rewrite it to
-    -- `(eGlobalResponse_payload_of e).target` (since `e` would have a
-    -- registered event kind and `target` is a registered payload
-    -- field), trivializing the equation.
-    invariant gResp_label_payload_target_match :
-      ∀ e : Sig.Label,
-        is_eGlobalResponse e → s.sent e = true →
+    invariant gResp_target_match :
+      ∀ e : PLean.Msg E, is_eGlobalResponse e → sent e s →
         e.target = (eGlobalResponse_payload_of e).target
-
-    -- Similarly for eGlobalQuery: label.target = global_clock.ref.
-    invariant gQuery_label_target_is_gc :
-      ∀ q : Sig.Label,
-        is_eGlobalQuery q → s.sent q = true →
-        q.target = global_clock.ref
-
-    -- For sent eLocalResponse, label.target = payload.target = sender's client.
-    invariant lResp_label_payload_target_match :
-      ∀ e : Sig.Label,
-        is_eLocalResponse e → s.sent e = true →
+    invariant gQuery_to_gc :
+      ∀ q : PLean.Msg E, is_eGlobalQuery q → sent q s → q.target = global_clock.ref
+    invariant gQuery_from_lc :
+      ∀ q : eGlobalQuery, inflight q s → is_LocalClock q.localClock s
+    invariant gResp_to_lc :
+      ∀ e : eGlobalResponse, inflight e s → is_LocalClock e.target s
+    invariant lQuery_to_lc :
+      ∀ q : PLean.Msg E, is_eLocalQuery q → inflight q s → is_LocalClock q.target s
+    invariant lResp_target_match :
+      ∀ e : PLean.Msg E, is_eLocalResponse e → sent e s →
         e.target = (eLocalResponse_payload_of e).target
+    invariant lResp_to_client :
+      ∀ e : PLean.Msg E, is_eLocalResponse e → inflight e s → is_Client e.target s
   }
 
-  -- Global-time facts: every sent eGlobalResponse has positive
-  -- trueTime ≤ the (unique) GlobalClock's `time`. Also: every
-  -- LocalClock's `currEarlyBound` lies in `[0, globalClock.time]`.
+  -- Every sent `eGlobalResponse` carries a positive time at most the
+  -- GlobalClock's; every LocalClock's early bound lies in `[0, time]`.
   Lemma global_time {
-
-    invariant globalTime_nonneg :
-      ∀ g : GlobalClock, 0 ≤ g.time
-
+    invariant globalTime_nonneg : ∀ g : GlobalClock, 0 ≤ g.time
     invariant gResp_trueTime_le_globalTime :
-      ∀ e : eGlobalResponse, ∀ g : GlobalClock,
-        s.sent e = true → e.trueTime ≤ g.time
-
-    invariant gResp_trueTime_pos :
-      ∀ e : eGlobalResponse, s.sent e = true → 0 < e.trueTime
-
+      ∀ (e : eGlobalResponse) (g : GlobalClock), sent e s → e.trueTime ≤ g.time
+    invariant gResp_trueTime_pos : ∀ e : eGlobalResponse, sent e s → 0 < e.trueTime
     invariant lc_currEarly_le_globalTime :
-      ∀ lc : LocalClock, ∀ g : GlobalClock,
-        lc.currEarlyBound ≤ g.time
-
-    invariant lc_currEarly_nonneg :
-      ∀ lc : LocalClock, 0 ≤ lc.currEarlyBound
-
-    -- Every sent eLocalResponse's trueTime ≤ GC.time (since it came
-    -- from a received eGlobalResponse, whose trueTime ≤ GC.time).
+      ∀ (lc : LocalClock) (g : GlobalClock), lc.currEarlyBound ≤ g.time
+    invariant lc_currEarly_nonneg : ∀ lc : LocalClock, 0 ≤ lc.currEarlyBound
     invariant lResp_trueTime_le_globalTime :
-      ∀ e : eLocalResponse, ∀ g : GlobalClock,
-        s.sent e = true → e.trueTime ≤ g.time
-
+      ∀ (e : eLocalResponse) (g : GlobalClock), sent e s → e.trueTime ≤ g.time
   }
 
-  -- Causal-chain bundle: per-LC, the in-flight `eGlobalQuery` and
-  -- `eGlobalResponse` form a coupled state. Joint invariants
-  -- proved together since they're mutually inductive.
+  -- Per LocalClock, at most one query or response is in flight, and only
+  -- while it is `Waiting`.
   Lemma causal {
-
     invariant idle_no_gQuery :
-      ∀ lc : LocalClock, ∀ q : eGlobalQuery,
-        stateOf lc.ref s = LocalClock.Idle_st →
-        inflight q s →
-        ¬ (q.localClock = lc.ref)
-
+      ∀ (lc : LocalClock) (q : eGlobalQuery),
+        stateOf lc.ref s = some LocalClock.Idle_st → inflight q s → q.localClock ≠ lc.ref
     invariant idle_no_gResp :
-      ∀ lc : LocalClock, ∀ e : eGlobalResponse,
-        stateOf lc.ref s = LocalClock.Idle_st →
-        inflight e s →
-        ¬ (e.target = lc.ref)
-
+      ∀ (lc : LocalClock) (e : eGlobalResponse),
+        stateOf lc.ref s = some LocalClock.Idle_st → inflight e s → e.target ≠ lc.ref
     invariant gResp_unique_per_lc :
-      ∀ lc : LocalClock, ∀ e1 e2 : eGlobalResponse,
-        inflight e1 s → inflight e2 s →
-        e1.target = lc.ref → e2.target = lc.ref →
-        e1 = e2
-
+      ∀ (lc : LocalClock) (e1 e2 : eGlobalResponse),
+        inflight e1 s → inflight e2 s → e1.target = lc.ref → e2.target = lc.ref → e1 = e2
     invariant gQuery_unique_per_lc :
-      ∀ lc : LocalClock, ∀ q1 q2 : eGlobalQuery,
-        inflight q1 s → inflight q2 s →
-        q1.localClock = lc.ref → q2.localClock = lc.ref →
-        q1 = q2
-
+      ∀ (lc : LocalClock) (q1 q2 : eGlobalQuery),
+        inflight q1 s → inflight q2 s → q1.localClock = lc.ref → q2.localClock = lc.ref → q1 = q2
     invariant gQuery_excludes_gResp :
-      ∀ lc : LocalClock, ∀ q : eGlobalQuery, ∀ e : eGlobalResponse,
-        inflight q s → inflight e s →
-        q.localClock = lc.ref → ¬ (e.target = lc.ref)
+      ∀ (lc : LocalClock) (q : eGlobalQuery) (e : eGlobalResponse),
+        inflight q s → inflight e s → q.localClock = lc.ref → e.target ≠ lc.ref
   }
 
-  -- Linking invariants tying gResp in-flight to LC's state.
   Lemma linking {
-
     invariant gResp_target_currEarly :
-      ∀ lc : LocalClock, ∀ e : eGlobalResponse,
-        inflight e s →
-        e.target = lc.ref →
-        lc.currEarlyBound ≤ e.trueTime
-
-    -- Past sent eLocalResponse trueTime ≤ in-flight gResp trueTime
-    -- (for matching LC ↔ client). Captures GC time monotonicity.
+      ∀ (lc : LocalClock) (e : eGlobalResponse),
+        inflight e s → e.target = lc.ref → lc.currEarlyBound ≤ e.trueTime
+    -- Earlier answers to a client carry no later time than the
+    -- in-flight response to its LocalClock.
     invariant lResp_trueTime_le_inflight_gResp :
-      ∀ lc : LocalClock,
-      ∀ e_lresp : eLocalResponse, ∀ e_gresp : eGlobalResponse,
-        s.sent e_lresp = true → e_lresp.target = lc.client →
+      ∀ (lc : LocalClock) (e_lresp : eLocalResponse) (e_gresp : eGlobalResponse),
+        sent e_lresp s → e_lresp.target = lc.client →
         inflight e_gresp s → e_gresp.target = lc.ref →
         e_lresp.trueTime ≤ e_gresp.trueTime
-
   }
 
-  -- Local-clock bounds on sent eLocalResponses (one invariant per
-  -- Lemma so each SMT query stays small).
   Lemma lresp_earliest_le_trueTime_lemma {
-
     invariant lResp_earliest_le_trueTime :
-      ∀ e : eLocalResponse,
-        s.sent e = true → e.earliest ≤ e.trueTime
-
+      ∀ e : eLocalResponse, sent e s → e.earliest ≤ e.trueTime
   }
 
   Lemma lresp_trueTime_le_latest_lemma {
-
     invariant lResp_trueTime_le_latest :
-      ∀ e : eLocalResponse,
-        s.sent e = true → e.trueTime ≤ e.latest
-
+      ∀ e : eLocalResponse, sent e s → e.trueTime ≤ e.latest
   }
 
   Lemma lc_currEarly_bounds_earliest_lemma {
-
     invariant lc_currEarly_bounds_earliest :
-      ∀ lc : LocalClock, ∀ e : eLocalResponse,
-        s.sent e = true →
-        e.target = lc.client →
-        e.earliest ≤ lc.currEarlyBound
-
+      ∀ (lc : LocalClock) (e : eLocalResponse),
+        sent e s → e.target = lc.client → e.earliest ≤ lc.currEarlyBound
   }
 
-  /-! ## Target safety properties. -/
-
   Theorem G1 {
-
     invariant g1 :
       ∀ e0 e1 : eLocalResponse,
-        s.sent e0 = true → s.sent e1 = true →
-        e0.latest < e1.earliest →
-        e0.trueTime < e1.trueTime
-
+        sent e0 s → sent e1 s → e0.latest < e1.earliest → e0.trueTime < e1.trueTime
   }
 
   Theorem G2 {
-
     invariant g2 :
       ∀ e0 e1 : eLocalResponse,
-        s.sent e0 = true → s.sent e1 = true →
-        e0.trueTime < e1.trueTime →
-        e0.earliest < e1.latest
-
+        sent e0 s → sent e1 s → e0.trueTime < e1.trueTime → e0.earliest < e1.latest
   }
 
   Theorem G3 {
-
     invariant g3 :
       ∀ e0 e1 : eLocalResponse,
-        s.sent e0 = true → s.sent e1 = true →
-        e0.trueTime < e1.trueTime →
-        e0.target = e1.target →
-        e0.earliest ≤ e1.earliest
-
+        sent e0 s → sent e1 s → e0.trueTime < e1.trueTime →
+        e0.target = e1.target → e0.earliest ≤ e1.earliest
   }
 
   Proof Safety {
@@ -324,10 +243,4 @@ end ClockBound
 #gen_module ClockBound
 #pwf        ClockBound
 
-namespace ClockBound
-open PLean Std.WP
-
-end ClockBound
-
-set_option maxHeartbeats 4000000 in
 #pverify ClockBound

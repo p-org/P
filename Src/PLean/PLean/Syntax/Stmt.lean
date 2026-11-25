@@ -153,7 +153,63 @@ macro_rules
   | `(doElem| $v:ident = $rhs:term) =>
     `(doElem| do $v:ident := $rhs; $(setterOf v):ident $v)
 
+/-! ## Local variables
+
+`var x : T` declares a handler local, initialised to `default`. Writes to
+a local do not touch the machine's fields: `#gen_module` rewrites the
+assignments to declared locals with `localizeAssigns`. -/
+
+syntax (name := pLocalVar) "var " ident " : " term : doElem
+
+macro_rules
+  | `(doElem| var $x:ident : $t:term) => `(doElem| let mut $x:ident : $t := default)
+
+/-- The locals a handler body declares with `var`. -/
+partial def collectLocals (stx : Syntax) : NameSet :=
+  let here := if stx.getKind == ``pLocalVar then ({} : NameSet).insert stx[1].getId else {}
+  stx.getArgs.foldl (fun acc a => (collectLocals a).foldl NameSet.insert acc) here
+
+/-- Turn assignments to the given locals into plain reassignments. -/
+def localizeAssigns (locals : NameSet) (stx : Syntax) : MacroM Syntax :=
+  if locals.isEmpty then pure stx else
+  stx.replaceM fun s => do
+    let isLocal (v : Ident) := locals.contains v.getId
+    match s with
+    | `(doElem| $v:ident = $rhs:term) =>
+      if isLocal v then some <$> `(doElem| $v:ident := $rhs) else pure none
+    | `(doElem| $v:ident += ($e:term)) =>
+      if isLocal v then some <$> `(doElem| $v:ident := PLean.PContainerAdd.add $v $e) else pure none
+    | `(doElem| $v:ident -= ($e:term)) =>
+      if isLocal v then some <$> `(doElem| $v:ident := PLean.PContainerErase.erase $v $e) else pure none
+    | `(doElem| $v:ident [ $k:term ] = $x:term) =>
+      if isLocal v then some <$> `(doElem| $v:ident := PLean.PMap.put $v $k $x) else pure none
+    | `(doElem| $v:ident [ $k:term ] += ($e:term)) =>
+      if isLocal v then
+        some <$> `(doElem| $v:ident :=
+          PLean.PMap.put $v $k (PLean.PContainerAdd.add (($v).get $k |>.getD default) $e))
+      else pure none
+    | `(doElem| $v:ident [ $k:term ] -= ($e:term)) =>
+      if isLocal v then
+        some <$> `(doElem| $v:ident :=
+          PLean.PMap.put $v $k (PLean.PContainerErase.erase (($v).get $k |>.getD default) $e))
+      else pure none
+    | _ => pure none
+
 /-! ## Nondeterminism -/
+
+/-- `if ($) then … else …` (and `$$`): a nondeterministic branch. -/
+syntax (name := pIfNondet) "if " "($)" " then " doSeq (" else " doSeq)? : doElem
+syntax (name := pIfNondet2) "if " "($$)" " then " doSeq (" else " doSeq)? : doElem
+
+macro_rules
+  | `(doElem| if ($) then $a:doSeq) =>
+    `(doElem| do let c ← PLean.H.flip; if c then do $a)
+  | `(doElem| if ($) then $a:doSeq else $b:doSeq) =>
+    `(doElem| do let c ← PLean.H.flip; if c then do $a else do $b)
+  | `(doElem| if ($$) then $a:doSeq) =>
+    `(doElem| do let c ← PLean.H.flip; if c then do $a)
+  | `(doElem| if ($$) then $a:doSeq else $b:doSeq) =>
+    `(doElem| do let c ← PLean.H.flip; if c then do $a else do $b)
 
 /-- What `choose(c)` picks from. -/
 class PChoose (C : Type) (R : outParam Type) where
@@ -162,5 +218,35 @@ class PChoose (C : Type) (R : outParam Type) where
 instance : PChoose Int Int := ⟨H.chooseInt⟩
 instance {T : Type} [DecidableEq T] : PChoose (PSet T) T := ⟨H.chooseSet⟩
 instance {K V : Type} [DecidableEq K] : PChoose (PMap K V) K := ⟨fun m => H.chooseSet m.keySet⟩
+
+/-- P's `choose(c)`: an integer in `[0, c]`, a member of a set, or a key of
+a map (`let x ← choose c`). -/
+@[inline] def choose {S E F G W C R : Type} [PChoose C R] (c : C) : HandlerM S E F G W R :=
+  PChoose.choose c
+
+section
+open Std.WP
+variable {S E F G W : Type} {epost : PError → Prop}
+
+@[spec] theorem choose_int_spec {n : Int} {post : Int → HState S E F G W → Prop} :
+    Triple (choose (S := S) (E := E) (F := F) (G := G) (W := W) n)
+      (fun hs => (n < 0 → epost .badChoose) ∧
+                 (0 ≤ n → ∀ i : Int, 0 ≤ i → i ≤ n → post i hs.tick)) post epost :=
+  H.chooseInt_spec
+
+@[spec] theorem choose_set_spec {T : Type} [DecidableEq T] {s : PSet T}
+    {post : T → HState S E F G W → Prop} :
+    Triple (choose (S := S) (E := E) (F := F) (G := G) (W := W) s)
+      (fun hs => (s.card = 0 → epost .emptyChoose) ∧
+                 (∀ x, s.mem x = true → post x hs.tick)) post epost :=
+  H.chooseSet_spec
+
+@[spec] theorem choose_map_spec {K V : Type} [DecidableEq K] {m : PMap K V}
+    {post : K → HState S E F G W → Prop} :
+    Triple (choose (S := S) (E := E) (F := F) (G := G) (W := W) m)
+      (fun hs => (m.keySet.card = 0 → epost .emptyChoose) ∧
+                 (∀ x, m.keySet.mem x = true → post x hs.tick)) post epost :=
+  H.chooseSet_spec
+end
 
 end PLean

@@ -10,14 +10,19 @@ Both desugar to Lean core's loop syntax, which `vcgen` reads:
 proposition over the handler state `hs` (this machine's state `hs.ms`,
 its sends so far `hs.out`, …) and the handler's mutable locals;
 `foreach` invariants may also name `pref` / `suff`, the items already
-visited / still to visit. `foreach` iterates sets (their members), maps
-(their keys) and sequences.
+visited / still to visit. Every loop invariant automatically includes the
+frame `HState.frame __loop0 hs …`: what the body cannot change, relative
+to the handler state `__loop0` at loop entry. `new_sends e => P` states
+that every message the loop has sent so far satisfies `P`. `foreach` iterates
+sets (their members), maps (their keys) and sequences.
 
 `vcgen` proves `while` loops totally correct, so a `while` loop in a
 verified handler needs a `decreasing` measure.
 -/
 import Lean
 import PLean.Semantics.Containers
+import PLean.Semantics.Msg
+import PLean.Syntax.Stmt
 
 namespace PLean
 
@@ -37,23 +42,47 @@ syntax (name := pForeach)
 syntax (name := pWhile)
   "while " "(" term ")" pLoopInv* (pLoopDoneWith)? (pLoopDecreasing)? "{" doSeq "}" : doElem
 
-/-- `I1 ∧ … ∧ Ik`, or `none` without invariants. -/
-private def invariantConj (invs : Array (TSyntax `pLoopInv)) : MacroM (Option (TSyntax `term)) := do
+/-- In a loop invariant: every message the loop has sent so far satisfies
+`P`. -/
+syntax (name := pNewSends) "new_sends " ident " => " term : term
+
+macro_rules
+  | `(new_sends $x:ident => $p) =>
+    `($(mkIdent ``PLean.sentSince) $(mkIdent `__loop0) $(mkIdent `hs) (fun $x => $p))
+
+/-- Whether `stx` contains a node of one of these kinds. -/
+private partial def mentionsKind (ks : Array SyntaxNodeKind) (stx : Syntax) : Bool :=
+  ks.contains stx.getKind || stx.getArgs.any (mentionsKind ks)
+
+/-- The automatic frame conjunct `HState.frame __loop0 hs …` for a loop body. -/
+private def frameOf (body : Syntax) : MacroM (TSyntax `term) := do
+  -- a raised event's handler may do anything
+  let raises := mentionsKind #[``pRaisePayload, ``pRaiseNoPayload] body
+  let writesMs := raises || mentionsKind #[``pAssign, ``pSetAdd, ``pSetRemove, ``pMapAssign,
+    ``pMapAdd, ``pMapRemove, ``pGotoNoPayload, ``pGotoPayload] body
+  let sends := raises || mentionsKind #[``pSendNamed, ``pSendPayload, ``pSendNoPayload] body
+  let spawns := raises || mentionsKind #[``pNewNoArg, ``pNewArg] body
+  let announces := raises || mentionsKind #[``pAnnouncePayload, ``pAnnounceNoPayload] body
+  let b (x : Bool) : MacroM (TSyntax `term) := if x then `(true) else `(false)
+  `($(mkIdent ``PLean.HState.frame) $(mkIdent `__loop0) $(mkIdent `hs) $(← b !writesMs)
+      $(← b !sends) $(← b !spawns) $(← b !announces))
+
+/-- `frame ∧ I1 ∧ … ∧ Ik`. -/
+private def invariantConj (invs : Array (TSyntax `pLoopInv)) (body : Syntax) :
+    MacroM (TSyntax `term) := do
   let props ← invs.mapM fun inv => match inv with
     | `(pLoopInv| invariant $_:ident : $prop:term ;) => pure prop
     | _ => Macro.throwErrorAt inv "internal: unexpected loop-invariant clause"
-  match props.back? with
-  | none => return none
-  | some last => some <$> props.pop.foldrM (init := last) fun p acc => `($p ∧ $acc)
+  props.foldrM (init := ← frameOf body) fun p acc => `($acc ∧ $p)
 
 macro_rules
   | `(doElem| foreach ($x:ident in $xs:term) $[$invs:pLoopInv]* { $body:doSeq }) => do
     let hs := mkIdent `hs
-    match ← invariantConj invs with
-    | some conj =>
-      `(doElem| for $x:ident in PLean.PIterable.toList $xs
-                  invariant $(mkIdent `pref) $(mkIdent `suff) $hs:ident => $conj do $body)
-    | none => `(doElem| for $x:ident in PLean.PIterable.toList $xs do $body)
+    let conj ← invariantConj invs body
+    `(doElem| do
+        let $(mkIdent `__loop0):ident ← get
+        for $x:ident in PLean.PIterable.toList $xs
+          invariant $(mkIdent `pref) $(mkIdent `suff) $hs:ident => $conj do $body)
   | `(doElem| while ($cond:term) $[$invs:pLoopInv]* $[$dw:pLoopDoneWith]? $[$decr:pLoopDecreasing]?
               { $body:doSeq }) => do
     let hs := mkIdent `hs
@@ -63,22 +92,31 @@ macro_rules
         | `(pLoopDoneWith| done_with $t:term ;) => pure t
         | _ => Macro.throwErrorAt d "internal: malformed done_with"
       | none => `(¬ $cond)
-    let invConj ← match ← invariantConj invs with
-      | some conj => pure conj
-      | none => `(True)
+    let invConj ← invariantConj invs body
     match decr with
     | some d => match d with
       | `(pLoopDecreasing| decreasing $m:term ;) =>
-        `(doElem| while $cond:term
-                    invariant $exit:ident $hs:ident => $invConj ∧ ($exit = true → $doneWith)
-                    decreasing $hs:ident => $m
-                    do $body)
+        -- a measure over locals only is state-independent
+        if (m.raw.find? fun s => s.isIdent && s.getId == `hs).isSome then
+          `(doElem| do
+              let $(mkIdent `__loop0):ident ← get
+              while $cond:term
+                invariant $exit:ident $hs:ident => $invConj ∧ ($exit = true → $doneWith)
+                decreasing $hs:ident => $m
+                do $body)
+        else
+          `(doElem| do
+              let $(mkIdent `__loop0):ident ← get
+              while $cond:term
+                invariant $exit:ident $hs:ident => $invConj ∧ ($exit = true → $doneWith)
+                decreasing $m
+                do $body)
       | _ => Macro.throwErrorAt d "internal: malformed decreasing"
     | none =>
-      if invs.isEmpty && dw.isNone then `(doElem| while $cond:term do $body)
-      else
-        `(doElem| while $cond:term
-                    invariant $exit:ident $hs:ident => $invConj ∧ ($exit = true → $doneWith)
-                    do $body)
+      `(doElem| do
+          let $(mkIdent `__loop0):ident ← get
+          while $cond:term
+            invariant $exit:ident $hs:ident => $invConj ∧ ($exit = true → $doneWith)
+            do $body)
 
 end PLean

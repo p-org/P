@@ -2,11 +2,7 @@ import Lake
 open Lake DSL System
 
 -- Verification-condition generation comes from Lean core (`Std.WP` /
--- `vcgen`); SMT discharge goes through lean-auto's SMT-LIB translation
--- (see `PLean/Verify/Smt.lean`). Mathlib is only used for `tauto` in
--- the fallback tactics (`set[T]` is PLean's own `PSet`).
-require mathlib from git "https://github.com/leanprover-community/mathlib4" @ "v4.36.0"
-require auto from git "https://github.com/leanprover-community/lean-auto.git" @ "v4.36.0"
+-- `vcgen`); SMT discharge goes through lean-crush.
 require crush from git "https://github.com/AD1024/lean-crush" @ "bump/4.36.0"
 
 package PLean where

@@ -197,6 +197,12 @@ variable {T K V : Type} [DecidableEq T] [DecidableEq K]
 
 instance : Membership T (PSet T) := ⟨fun s x => s.mem x = true⟩
 instance (s : PSet T) (x : T) : Decidable (x ∈ s) := inferInstanceAs (Decidable (s.mem x = true))
+/-- A bounded `∀ x, x ∈ s → P x` ranges over the support. -/
+instance PSet.decidableBAll (s : PSet T) (P : T → Prop) [DecidablePred P] :
+    Decidable (∀ x, x ∈ s → P x) :=
+  decidable_of_iff (∀ x, x ∈ s.support → P x)
+    ⟨fun h x hx => h x ((PSet.mem_support s x).mpr hx),
+     fun h x hx => h x ((PSet.mem_support s x).mp hx)⟩
 instance : Insert T (PSet T) := ⟨fun x s => s.add x⟩
 instance : EmptyCollection (PSet T) := ⟨.empty⟩
 
